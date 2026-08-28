@@ -6,10 +6,12 @@ claim: >
   rights-safe, point-in-time U.S. equity 4H research panel whose bars match a frozen
   session/clock contract and Terminal semantics.
 falsifier: >
-  Produce a current owner-approved artifact and receipts that demonstrate historical
-  depth, point-in-time source availability, session/bar definition, split and
-  correction policy, delisted and ticker-reuse handling, per-date universe coverage,
-  rights for intended use, and Terminal parity for the claimed panel.
+  Run `python3 scripts/agentos.py validate` and inspect
+  `research/technical_opportunity/W2_REPORT.md`; this claim is falsified only if that
+  accepted report and its cited receipts prove historical depth, point-in-time source
+  availability, exact session/bar definition, split and correction policy, delisted
+  and ticker-reuse handling, per-date universe coverage, intended-use rights, and
+  Terminal parity for the claimed panel.
 so_what: >
   W3 Compression Release outcome testing must remain blocked until W2-0 assigns the
   combined panel a canonical capability state with `w3_admission=ADMIT`, or Sol
