@@ -562,9 +562,28 @@ emptied the pool on 2026-07-26 and 2026-08-09:
 - re-dispatching a main proof workflow (`ci.yml` / `fences.yml` /
   `integration-baseline.yml`) over one already in flight on main.
 
+It also **flags** — never denies — one more shape (7): re-reading the same status
+inside 300s, which attaches an `additionalContext` note and lets the call through.
+
 The guard governs HOW you watch, never WHETHER you may: reading your own pull
 request's check state is part of owning it through to the merge, and no state
-outside the command line makes that read illegal. What is on you: preflight
+outside the command line makes that read illegal. That rule is older and stronger
+than shape 7, which is exactly why shape 7 advises instead of denying — escalating
+it to a deny is a RULING for the operator, not a refactor.
+
+**A blocked Stop is not a demand for a fresh poll** (operator 2026-08-24, repeated
+2026-08-27). The commonest burn is neither a loop nor a hot interval: it is one
+`gh pr checks <n>` per Stop-hook cycle while a 30–45 minute run finishes. Measured
+on 2026-08-27: about twenty-five consecutive Stop cycles, one poll each, by a
+session that already had a watcher armed at 150s reporting every transition for
+free. The mechanism is not laziness — the Stop hook fires on every turn and
+escalates to "If the same genuine blocker persists after another attempt, finish
+with `SHIP LOOP BLOCKED:`", which reads as pressure to show a fresh attempt. It is
+not. Answer a blocked Stop with a one-line hold note and no tool call; waiting on
+CI is explicitly not a qualifying blocker for the escape ladder, so there is
+nothing to prove by looking again. The tell: three identical bucket counts in a row
+means every further read is waste, and an armed watcher makes polling redundant
+because its notifications ARE the check. What is on you: preflight
 `gh api rate_limit --jq '.resources.core.remaining'` before arming any long watch,
 run exactly ONE watcher per endpoint (a second watcher on the same run buys no
 information and doubles the burn), and never read an empty or 403 response as a
