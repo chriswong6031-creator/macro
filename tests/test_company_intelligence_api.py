@@ -495,8 +495,76 @@ def test_event_workspace_glance_200_and_leak_denylist(client, monkeypatch, tmp_p
         assert forbidden not in dumped, f"leak: {forbidden!r} found in 200 glance"
 
     qs = next((s for s in payload["coverage_states"] if s.get("id") == "questions_count"), None)
-    assert qs is None or qs["state"] == "unstructured"
+    assert qs is not None
+    assert qs["state"] == "7 exchanges"
     assert '"questions_count": 14' not in dumped
+
+
+def test_event_workspace_glance_empty_qa_stays_unstructured(client, monkeypatch, tmp_path) -> None:
+    """Empty Q&A keeps the honest unstructured/absence glance and the leak denylist."""
+    success = _workspace_success_reader_result(tmp_path)
+    workspace = dict(success["workspace"])
+    workspace["qa_exchanges"] = []
+    facts = [fact for fact in list(workspace.get("facts") or []) if fact.get("metric") != "questions_count"]
+    facts.append({
+        "schema": "event_fact.v1",
+        "fact_id": "fact_questions_count",
+        "event_id": FLAGSHIP_EVENT_ID,
+        "metric": "questions_count",
+        "typed_absence": {
+            "schema": "typed_absence.v1",
+            "authority": "context_only",
+            "reason": "no_span_addressable_evidence",
+            "subject": "questions_count",
+            "detail": "analyst questions are not span-addressable on the held transcript",
+            "event_id": FLAGSHIP_EVENT_ID,
+            "document_id": "tx:AAPL/2026Q3",
+            "missing_fields": [],
+        },
+    })
+    workspace["facts"] = facts
+    success = {**success, "workspace": workspace}
+    v1_called: list[bool] = []
+    monkeypatch.setattr(
+        company_intelligence_api, "_read_current_event_workspace", lambda _p: success
+    )
+    monkeypatch.setattr(
+        company_intelligence_api,
+        "_read_company_intelligence",
+        lambda *a, **kw: v1_called.append(True) or {},
+    )
+
+    response = client.get("/api/event-workspace/AAPL")
+    assert response.status_code == 200, response.text
+    assert v1_called == []
+    payload = response.json()
+    dumped = json.dumps(payload, sort_keys=True, ensure_ascii=False)
+    for forbidden in (
+        "r2.dev",
+        "workspace_url",
+        "marker_url",
+        "source_sha256",
+        "text_sha256",
+        "segment_sha256",
+        "span_start_byte",
+        "locator",
+        "warnings",
+        "score_overlay",
+        "prophet",
+        "http://",
+        "https://",
+        "beat",
+        "miss",
+        "bullish",
+        '"summary"',
+        "claim_text",
+    ):
+        assert forbidden not in dumped, f"leak: {forbidden!r} found in empty-Q&A glance"
+    qs = next((s for s in payload["coverage_states"] if s.get("id") == "questions_count"), None)
+    assert qs is not None
+    assert qs["state"] == "unstructured"
+    assert '"questions_count": 14' not in dumped
+    assert "7 exchanges" not in dumped
 
 
 def test_event_workspace_glance_404_uncovered_ticker(client, monkeypatch) -> None:

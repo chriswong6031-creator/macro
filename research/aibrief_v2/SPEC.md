@@ -55,6 +55,31 @@ Engine-emitted (deterministic — never from the LLM):
 | `key_facts` | list[obj], ≤6 | `{key, label_en, label_zh, value_en, value_zh, tone}` — tone ∈ good/warn/bad/neutral/info. Built per lens from calibrated state (§6). Fail-open: missing source → chip omitted, never raises. |
 | `refresh_days` | int | the lens's interval (1 or 3) — UI renders the cadence chip honestly |
 | `style_flags` | list[str] | banned tokens that survived the rewrite retry (observability; NOT rendered on user tiers) |
+| `served_by` | str \| None | NEW (provider ladder). The rung that actually served this brief — `"codex"` / `"oauth"` / `"anthropic"` / `"deepseek"` — or `"cache"` on a reply-cache hit, or `None` on a degraded call. `model` is now the model id of THAT rung (falls back to the configured `llm_model` on a cache hit, a degraded call, or a `call`/`_call_model` stub that ignores the new `served` out-param). Makes the load balancer verifiable from the artifact itself instead of every brief always reading as `deepseek-v4-pro`. Same treatment applies to `ai_desk.v1`'s `model`/`served_by`. |
+
+Two consequences of routing this lane onto the shared ladder, recorded because
+neither is visible in the field table and both change what a brief actually is:
+
+- **DeepSeek serves this lane with reasoning mode OFF.** `build_providers` wraps the
+  DeepSeek rung in `_deepseek_no_thinking()`, which the old hand-built client did not.
+  So on a DeepSeek-served night the briefs are non-reasoning completions, while
+  `model` still reads `deepseek-v4-pro`. The `max_tokens: 8000` note in `config.yml`
+  budgets for thinking tokens and now applies only to the Claude rungs. Quality impact
+  is **unmeasured** — this is a disclosure, not a verdict.
+- **The writer translates its own brief** (operator 2026-08-27; supersedes the
+  "zh half is still DeepSeek-only" note recorded here a day earlier).
+  `_translate_brief` used to build a hardcoded DeepSeek V4-Flash `tcfg` for
+  `engine.translate`, which has no ladder — so a DeepSeek balance exhaustion left the
+  English brief standing and silently dropped `brief["zh"]` on all three lenses, and
+  every zh pass was billed to the one metered provider even on nights Codex or Claude
+  wrote the English for free. It now goes through `_call_model`: same
+  codex → oauth → anthropic → deepseek waterfall, same lane, same cooling policy, with
+  the lens `usage_stage` suffixed `-zh` so the cost ledger still separates the two
+  passes. Batched at 6 items; a malformed or truncated reply fails ITS BATCH closed
+  (a short array would shift every later field onto the wrong key) and the remaining
+  batches still land. `engine/translate.py` itself is unchanged and still ladderless —
+  it is shared by `catalyst_stock` and `scripts/translate_profiles`, which are separate
+  lanes and out of scope here.
 
 `schema` field bumps to `"master_brief.v2"`. Builder greps every consumer of the literal
 `master_brief.v1` and fixes string-matches (renderers are `get()`-based fail-open;

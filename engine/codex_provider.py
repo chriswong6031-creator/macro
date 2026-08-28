@@ -31,6 +31,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import tempfile
 import uuid
 from dataclasses import dataclass, field
@@ -42,6 +43,11 @@ from engine.codex_lane.runner import resolve_codex_bin, run_codex
 CODEX_CAPABILITY_ID = "codex_account"
 CODEX_ENV_ID = "CODEX_ACCOUNT_ATTACHED"
 CODEX_ACCOUNT_HOMES_ENV = "CODEX_ACCOUNT_HOMES"
+CAPACITY_ACCOUNT_IDS = (
+    "codex_account",
+    "codex_account_2",
+    "codex_account_3",
+)
 
 SOL_MODEL = "gpt-5.6-sol"
 TERRA_MODEL = "gpt-5.6-terra"
@@ -141,6 +147,96 @@ def available_accounts() -> list[tuple[str, Path | None]]:
     if any(bool(os.environ.get(name)) for name in ("CODEX_ACCESS_TOKEN", "CODEX_API_KEY")):
         return [(CODEX_CAPABILITY_ID, None)]
     return []
+
+
+def capacity_account_observations() -> dict[str, Any]:
+    """Return secret-free, orthogonal Codex capacity observations.
+
+    Unlike :func:`available_accounts`, this read-only seam does not combine the
+    provider switch, executable readiness and attached-login presence into one
+    usability answer.  It emits the reviewed three-slot inventory even when a
+    slot is absent or the provider is disabled.  Credential files are tested
+    only with ``is_file()`` and are never opened; environment credentials are
+    checked only for non-empty presence and never returned.
+
+    The result contains no CODEX_HOME value or local path.  Source failures are
+    represented as ``None`` plus bounded quality codes so a consumer cannot
+    reinterpret a fail-soft ``False`` as observed absence.
+    """
+    result: dict[str, Any] = {
+        "quality": "ok",
+        "enabled": None,
+        "executable_present": None,
+        "slots": [
+            {"capability_id": capability_id, "present": None, "codes": []}
+            for capability_id in CAPACITY_ACCOUNT_IDS
+        ],
+        "codes": [],
+    }
+
+    try:
+        result["enabled"] = bool(provider_enabled())
+    except Exception:  # noqa: BLE001 - preserve unknown, never fail-open here
+        result["quality"] = "unreadable"
+        result["codes"].append("PROVIDER_ENABLEMENT_UNKNOWN")
+
+    try:
+        binary = resolve_codex_bin()
+        result["executable_present"] = bool(
+            (binary != "codex" and Path(binary).is_file())
+            or shutil.which(binary)
+        )
+    except Exception:  # noqa: BLE001
+        result["quality"] = "unreadable"
+        result["codes"].append("PROVIDER_HEALTH_UNKNOWN")
+
+    try:
+        homes = account_homes()
+    except Exception:  # noqa: BLE001
+        homes = []
+        result["quality"] = "unreadable"
+        result["codes"].append("PROVIDER_PRESENCE_UNKNOWN")
+        return result
+
+    if len(homes) > len(CAPACITY_ACCOUNT_IDS):
+        result["quality"] = "ambiguous"
+        result["codes"].append("PROVIDER_INVENTORY_UNKNOWN")
+
+    for index, row in enumerate(result["slots"]):
+        try:
+            file_present = False
+            if index < len(homes):
+                path = auth_file_path(homes[index])
+                try:
+                    file_present = stat.S_ISREG(path.stat().st_mode)
+                except FileNotFoundError:
+                    file_present = False
+                except OSError:
+                    row["present"] = None
+                    row["codes"].extend(
+                        ["SOURCE_UNREADABLE", "PROVIDER_PRESENCE_UNKNOWN"]
+                    )
+                    result["quality"] = "unreadable"
+                    continue
+            env_present = False
+            if index == 0:
+                env_present = any(
+                    bool(os.environ.get(name))
+                    for name in ("CODEX_ACCESS_TOKEN", "CODEX_API_KEY")
+                )
+            row["present"] = bool(file_present or env_present)
+        except Exception:  # noqa: BLE001
+            row["present"] = None
+            result["quality"] = "unreadable"
+            row["codes"].extend(
+                ["SOURCE_UNREADABLE", "PROVIDER_PRESENCE_UNKNOWN"]
+            )
+
+    for row in result["slots"]:
+        row["codes"] = sorted(set(row["codes"]))
+
+    result["codes"] = sorted(set(result["codes"]))
+    return result
 
 
 def is_available() -> bool:

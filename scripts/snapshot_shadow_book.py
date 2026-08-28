@@ -21,6 +21,12 @@ BOARD = "site/factordata/us_standouts.json"
 
 
 def rows_from_board(board: dict):
+    """Freeze (ticker, score, percentile, regime) rows off the board dict. `percentile`
+    is the cross-sectional pct rank within THIS snapshot's scored universe — the object
+    the pre-registration grades (SHADOW_BOOK_PREREGISTRATION.md §1) — never the raw
+    score. Rows are stamped pct_basis="xs_rank"; book rows without that stamp predate
+    the 2026-08-26 fix and carry the raw score in `percentile` (append-only history is
+    never restated, so the grader splits eras on the stamp)."""
     asof = board.get("as_of")
     out = []
     for bucket in ("buy", "watch", "laggards"):
@@ -31,7 +37,10 @@ def rows_from_board(board: dict):
                 continue
             reg = (conv.get("regime") or {}).get("state") if isinstance(conv.get("regime"), dict) else None
             out.append({"ticker": r["ticker"], "score": score,
-                        "percentile": score, "regime": reg})
+                        "regime": reg, "pct_basis": "xs_rank"})
+    pcts = SB.xs_percentile([r["score"] for r in out])
+    for r, p in zip(out, pcts):
+        r["percentile"] = p
     return asof, out
 
 

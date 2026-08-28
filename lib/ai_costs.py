@@ -66,6 +66,13 @@ LOBE_ORDER: list[str] = [
 
 _LANE_LOBE_EXACT: dict[str, str] = {
     "master-brain": "Master Brain",
+    # AI Desk briefs through master_brain._call_model. It used to inherit the
+    # hardcoded usage_lane "master-brain" and was told apart only by usage_stage;
+    # since 2026-08-26 it carries its own lane so the provider ladder can be
+    # cooled and audited per lane. Mapped to the same lobe deliberately — a new
+    # lane with no entry here silently falls through to "Other", which would have
+    # moved AI Desk spend off the Master Brain row on the AI Cost page.
+    "ai-desk": "Master Brain",
     "brain-fast": "Mastermind", "brain-pro": "Mastermind",
     "ask-brain": "Mastermind", "cortex": "Mastermind",
     "orchestrator-chat": "Mastermind",

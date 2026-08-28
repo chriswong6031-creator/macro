@@ -1,0 +1,21 @@
+{
+ "articles": [
+  {
+   "final_url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/03/sweden-m142-high-mobility-artillery-rocket-systems",
+   "http_status": 200,
+   "local_path": "state-sweden-m142.html",
+   "sha256": "af39ea6f7a01e9f1491fd649211a4eb171f478307bfcb549ea2830f64996e884",
+   "url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/03/sweden-m142-high-mobility-artillery-rocket-systems"
+  }
+ ],
+ "captured_at": "2026-08-26T00:00:00+00:00",
+ "kind": "fms_state_staged_v1",
+ "listing": {
+  "final_url": "https://www.state.gov/arms-sales-congressional-notifications",
+  "http_status": 200,
+  "local_path": "state-listing.html",
+  "sha256": "e672638fabfb375919fa0d121b9f6d3008f2500e836b1b6c6a1415433ecc00a1",
+  "url": "https://www.state.gov/arms-sales-congressional-notifications"
+ },
+ "transport": "cli_residential"
+}

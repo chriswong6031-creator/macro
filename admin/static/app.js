@@ -34,6 +34,21 @@ const API_CACHE_BYPASS = new Set([
   "/api/analytics/fp/realtime",
 ]);
 
+/* The analytics panels are the one family where 15s is the wrong number. They are
+   snapshots of an append-only event store over a window measured in hours or days,
+   so a minute of staleness is invisible in the answer — but 15s is shorter than the
+   time an operator actually spends reading a table, which means every trip back to
+   a tab they were just on paid for the whole fold again. The genuinely live number
+   on that screen (the "N active" pill) is /fp/realtime, and it stays on BYPASS
+   above, so nothing the operator watches for freshness is cached at all. */
+const API_CACHE_TTL_OVERRIDES = [[/^\/api\/analytics\/fp\//, 60000]];
+
+function apiCacheTtl(path) {
+  const pathname = String(path || "").split("?", 1)[0];
+  const hit = API_CACHE_TTL_OVERRIDES.find(([re]) => re.test(pathname));
+  return hit ? hit[1] : API_CACHE_TTL_MS;
+}
+
 function apiCacheable(path, opts) {
   if (opts || !String(path || "").startsWith("/api/")) return false;
   const pathname = String(path).split("?", 1)[0];
@@ -179,7 +194,7 @@ async function api(path, opts) {
     }
     const value = await readJson(r);
     if (cacheable && generation === API_CACHE_GENERATION) {
-      if (r.ok) apiCacheStore(path, { value, expiresAt: Date.now() + API_CACHE_TTL_MS });
+      if (r.ok) apiCacheStore(path, { value, expiresAt: Date.now() + apiCacheTtl(path) });
       else API_CACHE.delete(path);
     }
     return value;
@@ -1676,6 +1691,37 @@ const AN_RENDER = {};
 const AN_WINDOWS = [[60, "1h"], [180, "3h"], [360, "6h"], [720, "12h"], [1440, "24h"], [4320, "3d"], [10080, "7d"], [43200, "30d"]];
 function anWinLabel() { const f = AN_WINDOWS.find(w => w[0] === AN.minutes); return f ? f[1] : Math.round(AN.minutes / 1440) + "d"; }
 
+/* ONE definition of each sub-tab's request, because the prefetch below has to ask
+   for the byte-identical URL the renderer will ask for — API_CACHE is keyed on the
+   whole path, so a prefetch that differs by a single query param is not a warm
+   cache, it is a second full fold of the same panel. Keeping both callers on this
+   function is what makes them impossible to drift apart. */
+function anUrl(sub) {
+  const m = AN.minutes;
+  if (sub === "visitors" || sub === "sessions") {
+    const st = AN.tbl[sub];
+    return `/api/analytics/fp/${sub}?limit=${st.rows}&q=${encodeURIComponent(st.q || "")}` +
+           `${st.bots ? "&bots=1" : ""}&minutes=${m}`;
+  }
+  if (sub === "pages") return `/api/analytics/fp/pages?minutes=${m}&limit=40`;
+  if (sub === "geo") return `/api/analytics/fp/geo?minutes=${m}&limit=250`;
+  if (sub === "flow") return `/api/analytics/fp/flow?minutes=${m}&limit=40`;
+  if (sub === "terminal") return `/api/analytics/fp/terminal?minutes=${m}&limit=25`;
+  return `/api/analytics/fp/overview?minutes=${m}`;
+}
+
+/* Warm a sub-tab on hover/focus. Every panel here costs a round trip to Supabase,
+   so the gap between "operator has decided to click" and "operator clicks" is free
+   time we were throwing away. api() stores the in-flight promise, so the click that
+   follows joins the same request rather than starting a second one — and if the
+   pointer just passes over the tab strip, the worst case is one warm cache entry.
+   Deliberately NOT wired to the detail routes (#/session, #/visitor): those are
+   per-id, so hovering a table of 250 rows would fan out 250 requests. */
+function anPrefetch(sub) {
+  if (!sub || sub === AN.tab) return;
+  try { api(anUrl(sub)); } catch (e) { /* prefetch is best-effort by definition */ }
+}
+
 /* Two different failures used to share one headline. "Not connected" is a SETUP state —
    the reader answers it with `configured:false` plus the steps to fix it. A query that
    errored, timed out, or came back as a gateway page is a RUNNING system failing a
@@ -1801,7 +1847,7 @@ async function anUmamiStrip() {
 }
 
 AN_RENDER.overview = async () => {
-  const d = await api(`/api/analytics/fp/overview?minutes=${AN.minutes}`);
+  const d = await api(anUrl("overview"));
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   const w = d.window || {}, at = d.alltime || {}, daily = d.daily || [], bots = d.bots || {};
   const maxV = Math.max(1, ...daily.map(x => x.visitors));
@@ -1821,7 +1867,7 @@ AN_RENDER.overview = async () => {
   anUmamiStrip();
 };
 AN_RENDER.pages = async () => {
-  const d = await api(`/api/analytics/fp/pages?minutes=${AN.minutes}&limit=40`);
+  const d = await api(anUrl("pages"));
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   const rows = d.pages || [];
   b.innerHTML = `<div class="section">Top pages (${anWinLabel()}) <span class="cnt">${rows.length}</span></div>
@@ -1830,7 +1876,7 @@ AN_RENDER.pages = async () => {
     </tbody></table>`;
 };
 AN_RENDER.geo = async () => {
-  const d = await api(`/api/analytics/fp/geo?minutes=${AN.minutes}&limit=250`);
+  const d = await api(anUrl("geo"));
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   const countries = d.countries || [], cities = d.cities || [];
   const unresolved = countries.some(c => !c.country_code);
@@ -1871,7 +1917,7 @@ async function anLoadTable(kind) {
   const st = AN.tbl[kind];
   const host = $("#anTbl"); if (!host) return;
   host.setAttribute("aria-busy", "true");
-  const d = await api(`/api/analytics/fp/${kind}?limit=${st.rows}&q=${encodeURIComponent(st.q || "")}${st.bots ? "&bots=1" : ""}&minutes=${AN.minutes}`);
+  const d = await api(anUrl(kind));
   if ($("#anTbl") !== host) return;               // tab switched mid-fetch — drop stale result
   if (!d.ok) { host.innerHTML = anNotReady(d); return; }
   const rows = kind === "visitors" ? (d.visitors || []) : (d.sessions || []);
@@ -1951,13 +1997,13 @@ AN_RENDER.visitors = async () => {
   await anLoadTable("visitors");
 };
 AN_RENDER.flow = async () => {
-  const d = await api(`/api/analytics/fp/flow?minutes=${AN.minutes}&limit=40`);
+  const d = await api(anUrl("flow"));
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   b.innerHTML = `<div class="section">Navigation patterns (${anWinLabel()}) <span class="sub">— most common page-to-page moves across all visitors</span></div>
     <div class="card">${anBars(d.edges || [], r => `<span class="mono an-from">${esc(r.from_path || "")}</span> <span class="an-arrow">→</span> <span class="mono an-to">${esc(r.to_path || "")}</span>`, "n")}</div>`;
 };
 AN_RENDER.terminal = async () => {
-  const d = await api(`/api/analytics/fp/terminal?minutes=${AN.minutes}&limit=25`);
+  const d = await api(anUrl("terminal"));
   const b = $("#anBody"); if (!d.ok) { b.innerHTML = anNotReady(d); return; }
   const t = d.totals || {};
   b.innerHTML = `<div class="grid">
@@ -1987,6 +2033,16 @@ RENDER.analytics = async () => {
     AN.tab = btn.dataset.at;
     document.querySelectorAll(".an-tab").forEach(x => x.classList.toggle("active", x.dataset.at === AN.tab));
     anLoad(AN.tab);
+  });
+  // Delegated onto the strip rather than bound per button, so it keeps working
+  // however the buttons are re-rendered. `mouseover`/`focusin` specifically —
+  // `mouseenter`/`focus` do not bubble, so they cannot be delegated. Keyboard users
+  // get the same warm-up from focusin as they tab across the strip.
+  $(".an-tabs").addEventListener("mouseover", (e) => {
+    const btn = e.target.closest(".an-tab"); if (btn) anPrefetch(btn.dataset.at);
+  });
+  $(".an-tabs").addEventListener("focusin", (e) => {
+    const btn = e.target.closest(".an-tab"); if (btn) anPrefetch(btn.dataset.at);
   });
   const poll = async () => {
     if (CURRENT !== "analytics" || !$("#anLiveN")) { if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; } return; }

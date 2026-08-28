@@ -143,6 +143,9 @@ PCT_UNALIGNED = "unaligned_no_anchor"
 #: it re-opens the window and needs a deliberate audit of what is under the prefix.
 LEDGER_FLOOR_SESSION = "2026-07-30"
 
+#: Schema a staged PIT pending input must declare (see load_pending).
+PENDING_SCHEMA = "prophet_live.recovered_events/v1"
+
 
 def _iso(now: datetime) -> str:
     t = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
@@ -184,6 +187,55 @@ def spool_sessions(*, s3=None, prefix: str = r2io.EVENTS_PREFIX,
                 continue
             out.setdefault(sess, []).append(key)
     return {k: sorted(v) for k, v in sorted(out.items())}
+
+
+def load_pending(pending_dir: Path, sessions: list[str] | None = None
+                 ) -> dict[str, list[dict[str, Any]]]:
+    """``{session: [event rows]}`` from a staged PIT pending input.
+
+    The 2026-08 outage published no spool at all (the evaluator had no credentials for
+    27 days), so the events it genuinely emitted exist only in the producer's own
+    journal. ``scripts/prophet_live_journal_recovery.py`` stages them here in the same
+    row shape ``load_events`` yields, and this reader is the ONLY new way rows enter.
+    Everything downstream -- vintage-correct confirmation, close joins, next-close
+    fill, first/last occurrence, FIRST_WINS merge, key dedupe -- is unchanged, and this
+    module stays the sole writer of the ledger (LEDGER LAW D10).
+
+    Fail-closed: an unreadable file, a wrong schema, or a row whose ``session_et``
+    disagrees with its filename is refused rather than silently skipped. A pending
+    input is an explicit operator act; a partially-ingested one is the worst outcome.
+    """
+    import json  # noqa: PLC0415 - module-level json is deliberately not imported here
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    if not pending_dir.is_dir():
+        raise FileNotFoundError(f"pending input {pending_dir} is not a directory")
+    for path in sorted(pending_dir.glob("*.json")):
+        if path.name.startswith("_"):
+            continue  # receipts, not sessions
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        schema = payload.get("schema")
+        if schema != PENDING_SCHEMA:
+            raise ValueError(f"{path}: schema {schema!r} != {PENDING_SCHEMA!r}")
+        sess = str(payload.get("session_et") or "")
+        if sess != path.stem:
+            raise ValueError(f"{path}: session_et {sess!r} != filename {path.stem!r}")
+        if sess < LEDGER_FLOOR_SESSION:
+            raise ValueError(f"{path}: session {sess} is before the ledger floor "
+                             f"{LEDGER_FLOOR_SESSION}")
+        if sessions is not None and sess not in sessions:
+            continue
+        rows: list[dict[str, Any]] = []
+        for ev in payload.get("events") or []:
+            if not isinstance(ev, dict) or not ev.get("ticker") or not ev.get("kind"):
+                raise ValueError(f"{path}: an event row is missing ticker/kind")
+            if str(ev.get("session_et")) != sess:
+                raise ValueError(f"{path}: row session_et {ev.get('session_et')!r} "
+                                 f"disagrees with the file's {sess!r}")
+            rows.append({**ev, "_spool_key": f"pending:{path.name}"})
+        if rows:
+            out[sess] = rows
+    return dict(sorted(out.items()))
 
 
 def load_events(keys: list[str], *, s3=None) -> list[dict[str, Any]]:
@@ -631,14 +683,15 @@ def load_verdicts(pack_path: Path | None, *, s3=None) -> tuple[dict[str, bool], 
 
 
 def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = None,
-        sessions: list[str] | None = None, dry_run: bool = False) -> int:
+        sessions: list[str] | None = None, dry_run: bool = False,
+        pending_dir: Path | None = None) -> int:
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
     path = root / LEDGER_REL
 
     s3 = r2io.client()
-    if s3 is None:
+    if s3 is None and pending_dir is None:
         print("::warning title=prophet-live-reconcile::no R2 credentials — the event "
               "spool cannot be listed; nothing accrued tonight", flush=True)
         return 0
@@ -656,13 +709,24 @@ def run(root: Path, *, now: datetime | None = None, pack_path: Path | None = Non
               f"floor {LEDGER_FLOOR_SESSION} — nothing accrued", flush=True)
         return 0
 
-    spool = spool_sessions(s3=s3, sessions=sessions)
     events: list[dict[str, Any]] = []
-    for sess, keys in spool.items():
-        got = load_events(keys, s3=s3)
-        print(f"prophet-live reconcile: session {sess} passes={len(keys)} events={len(got)}",
-              flush=True)
-        events.extend(got)
+    if pending_dir is not None:
+        # Explicit PIT pending input. Deliberately EXCLUSIVE of the R2 spool: mixing
+        # the two in one run would make "which source wrote this row" unanswerable
+        # afterwards, and live evidence must always be able to win a collision on its
+        # own terms (it does, through FIRST_WINS on a later ordinary nightly).
+        pending = load_pending(pending_dir, sessions)
+        for sess, rows in pending.items():
+            print(f"prophet-live reconcile: session {sess} PENDING events={len(rows)}",
+                  flush=True)
+            events.extend(rows)
+    else:
+        spool = spool_sessions(s3=s3, sessions=sessions)
+        for sess, keys in spool.items():
+            got = load_events(keys, s3=s3)
+            print(f"prophet-live reconcile: session {sess} passes={len(keys)} events={len(got)}",
+                  flush=True)
+            events.extend(got)
 
     verdicts, pack_as_of = load_verdicts(pack_path, s3=s3)
     if not verdicts:
@@ -740,6 +804,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="restrict to this ET session date (repeatable)")
     parser.add_argument("--now", default=None, help="ISO timestamp override (tests / replays)")
     parser.add_argument("--root", default=None, help="repo root (default: this script's parent)")
+    parser.add_argument("--pending", default=None,
+                        help="absorb a staged PIT pending input instead of the R2 spool")
     parser.add_argument("--dry-run", action="store_true", dest="dry_run",
                         help="compute and report; write no parquet")
     args = parser.parse_args(argv)
@@ -761,7 +827,8 @@ def main(argv: list[str] | None = None) -> int:
     root = Path(args.root) if args.root else Path(_CODE_ROOT)
     try:
         return run(root, now=now, pack_path=Path(args.pack) if args.pack else None,
-                   sessions=args.session, dry_run=bool(args.dry_run))
+                   sessions=args.session, dry_run=bool(args.dry_run),
+                   pending_dir=Path(args.pending) if args.pending else None)
     except Exception as exc:  # noqa: BLE001
         print(f"::warning title=prophet-live-reconcile::reconcile failed: {exc}", flush=True)
         log.warning("reconcile_prophet_live: unexpected failure", exc_info=True)

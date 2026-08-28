@@ -3857,3 +3857,480 @@
 {"date": "2026-08-21", "ticker": "PRGO", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-21", "ticker": "WDC", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-08-21", "ticker": "WEN", "score": 34.0, "percentile": 34.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "STRA", "score": 50.0, "percentile": 50.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PCG", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "BJ", "score": 52.0, "percentile": 52.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "VTR", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "YUM", "score": 54.0, "percentile": 54.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "STC", "score": 42.0, "percentile": 42.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ALV", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MMI", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ECL", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HOG", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FCFS", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "V", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "VALE", "score": 49.0, "percentile": 49.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MMS", "score": 86.0, "percentile": 86.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CWST", "score": 43.0, "percentile": 43.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "WMG", "score": 58.0, "percentile": 58.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CPNG", "score": 84.0, "percentile": 84.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SPGI", "score": 43.0, "percentile": 43.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "RHI", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "LNN", "score": 42.0, "percentile": 42.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "VIR", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FCN", "score": 60.0, "percentile": 60.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "UGI", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PRDO", "score": 52.0, "percentile": 52.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "BL", "score": 83.0, "percentile": 83.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MCO", "score": 35.0, "percentile": 35.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ELS", "score": 40.0, "percentile": 40.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CMG", "score": 62.0, "percentile": 62.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AJG", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "NVR", "score": 60.0, "percentile": 60.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "REXR", "score": 57.0, "percentile": 57.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "UPS", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "OHI", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HST", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "NBIX", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PECO", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "DEA", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HLT", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FE", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SNEX", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "QCOM", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "RNR", "score": 42.0, "percentile": 42.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "STAG", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ASTE", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HLI", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "BALL", "score": 48.0, "percentile": 48.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SLGN", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ROL", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FMC", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AMN", "score": 26.0, "percentile": 26.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SPG", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AZN", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "DAVE", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MAT", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CI", "score": 31.0, "percentile": 31.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CVS", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PSMT", "score": 25.0, "percentile": 25.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AM", "score": 19.0, "percentile": 19.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "TDC", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "DVA", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "UTHR", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MCRI", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "BEN", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "TALO", "score": 51.0, "percentile": 51.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MGY", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "WDC", "score": 43.0, "percentile": 43.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "LSCC", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MEDP", "score": 41.0, "percentile": 41.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SONO", "score": 35.0, "percentile": 35.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CARG", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "JBHT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HUBG", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "GIII", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "RL", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MRP", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PJT", "score": 52.0, "percentile": 52.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SEZL", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CL", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "TER", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PGNY", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AMAT", "score": 15.0, "percentile": 15.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HWM", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "GWW", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "YETI", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MSM", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "LIVN", "score": 27.0, "percentile": 27.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "KLIC", "score": 15.0, "percentile": 15.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "COCO", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "TPR", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CROX", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SNDK", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "MYRG", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ARLO", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FTI", "score": 24.0, "percentile": 24.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AMG", "score": 27.0, "percentile": 27.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SNDR", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "YOU", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "DRH", "score": 54.0, "percentile": 54.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "SHOO", "score": 50.0, "percentile": 50.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ROST", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "HCSG", "score": 48.0, "percentile": 48.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "FORM", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ODFL", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "ECG", "score": 14.0, "percentile": 14.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "IBKR", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "AME", "score": 28.0, "percentile": 28.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "KNX", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "INDV", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "LFUS", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "CLSK", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "WING", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PMT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "LGIH", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PZZA", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "DFH", "score": 30.0, "percentile": 30.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "TEAM", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "WEN", "score": 35.0, "percentile": 35.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PRGO", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "GSHD", "score": 44.0, "percentile": 44.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-24", "ticker": "PRKS", "score": 23.0, "percentile": 23.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "STRA", "score": 49.0, "percentile": 49.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ALV", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MMI", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "YUM", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PLNT", "score": 86.0, "percentile": 86.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ECL", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "VALE", "score": 47.0, "percentile": 47.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MMS", "score": 93.0, "percentile": 93.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "WMG", "score": 56.0, "percentile": 56.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "VIR", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CPNG", "score": 81.0, "percentile": 81.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HOOD", "score": 58.0, "percentile": 58.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LRN", "score": 74.0, "percentile": 74.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PRDO", "score": 52.0, "percentile": 52.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "UGI", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MCO", "score": 35.0, "percentile": 35.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CMG", "score": 50.0, "percentile": 50.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "AJG", "score": 41.0, "percentile": 41.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "NVR", "score": 47.0, "percentile": 47.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "REXR", "score": 54.0, "percentile": 54.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "DVA", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "VTR", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "NBIX", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "FCFS", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PECO", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "DEA", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "AZN", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "FE", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HLT", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "UTHR", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "VCYT", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "IART", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "QCOM", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "STAG", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "RNR", "score": 40.0, "percentile": 40.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ASTE", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ALHC", "score": 15.0, "percentile": 15.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HLI", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PRVA", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "BALL", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SLGN", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "NXPI", "score": 15.0, "percentile": 15.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "GLXY", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CWST", "score": 45.0, "percentile": 45.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "FMC", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "UPS", "score": 31.0, "percentile": 31.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PCG", "score": 24.0, "percentile": 24.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "OHI", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PSMT", "score": 31.0, "percentile": 31.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HST", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "STC", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "V", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "RHI", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SPGI", "score": 29.0, "percentile": 29.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SW", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "BL", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TDC", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "AMN", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "DAVE", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SEZL", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LAUR", "score": 41.0, "percentile": 41.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SNEX", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "BEN", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CARG", "score": 51.0, "percentile": 51.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TALO", "score": 24.0, "percentile": 24.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MGY", "score": 28.0, "percentile": 28.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "WDC", "score": 49.0, "percentile": 49.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "GIII", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LSCC", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SONO", "score": 36.0, "percentile": 36.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HUBG", "score": 38.0, "percentile": 38.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "JBHT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CL", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LIVN", "score": 27.0, "percentile": 27.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MEDP", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MRP", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PGNY", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "GWW", "score": 24.0, "percentile": 24.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MSM", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "YETI", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "AMAT", "score": 16.0, "percentile": 16.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HWM", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "KLIC", "score": 16.0, "percentile": 16.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TER", "score": 13.0, "percentile": 13.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PJT", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TPR", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "COCO", "score": 37.0, "percentile": 37.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SNDK", "score": 15.0, "percentile": 15.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ROST", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ARLO", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ETSY", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "WTS", "score": 52.0, "percentile": 52.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "YOU", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "RL", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CROX", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HCSG", "score": 48.0, "percentile": 48.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "MYRG", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SNDR", "score": 8.0, "percentile": 8.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "DRH", "score": 54.0, "percentile": 54.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "SHOO", "score": 51.0, "percentile": 51.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TJX", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "AME", "score": 28.0, "percentile": 28.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HR", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "ECG", "score": 14.0, "percentile": 14.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LFUS", "score": 11.0, "percentile": 11.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "INDV", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "WING", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "CLSK", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PMT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PZZA", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "LGIH", "score": 39.0, "percentile": 39.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "DFH", "score": 58.0, "percentile": 58.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "TEAM", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PRKS", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "WEN", "score": 33.0, "percentile": 33.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "PRGO", "score": 5.0, "percentile": 5.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-25", "ticker": "HUBS", "score": 6.0, "percentile": 6.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-08-26", "ticker": "PM", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "VIRT", "score": 59.0, "percentile": 0.9421487603305785, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "KDP", "score": 45.0, "percentile": 0.8388429752066116, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SCI", "score": 46.0, "percentile": 0.8636363636363636, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PGR", "score": 36.0, "percentile": 0.6735537190082644, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SW", "score": 38.0, "percentile": 0.7272727272727273, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "BGC", "score": 45.0, "percentile": 0.8388429752066116, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "FTRE", "score": 55.0, "percentile": 0.9338842975206612, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AHR", "score": 46.0, "percentile": 0.8636363636363636, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "YUM", "score": 46.0, "percentile": 0.8636363636363636, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "OSK", "score": 42.0, "percentile": 0.8099173553719008, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "RNR", "score": 37.0, "percentile": 0.7066115702479339, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MMS", "score": 91.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HLT", "score": 41.0, "percentile": 0.8016528925619835, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CHD", "score": 37.0, "percentile": 0.7066115702479339, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WOR", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "IPAR", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "LAUR", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HOOD", "score": 60.0, "percentile": 0.9504132231404959, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "GEN", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SFM", "score": 67.0, "percentile": 0.9669421487603306, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AEO", "score": 84.0, "percentile": 0.9917355371900827, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "KMPR", "score": 62.0, "percentile": 0.9586776859504132, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "STC", "score": 43.0, "percentile": 0.8181818181818182, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CTRE", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "EZPW", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CVS", "score": 10.0, "percentile": 0.39669421487603307, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "GRBK", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WMB", "score": 6.0, "percentile": 0.23553719008264462, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "DHI", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ELV", "score": 46.0, "percentile": 0.8636363636363636, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SEDG", "score": 12.0, "percentile": 0.47107438016528924, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CENTA", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CCJ", "score": 49.0, "percentile": 0.8925619834710744, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AGCO", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "OI", "score": 12.0, "percentile": 0.47107438016528924, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AM", "score": 6.0, "percentile": 0.23553719008264462, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "POST", "score": 11.0, "percentile": 0.4380165289256198, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "EXTR", "score": 13.0, "percentile": 0.5, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CHRW", "score": 13.0, "percentile": 0.5, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CI", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PPG", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "BALL", "score": 44.0, "percentile": 0.8264462809917356, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "INVA", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "EU", "score": 13.0, "percentile": 0.5, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "UEC", "score": 72.0, "percentile": 0.9834710743801653, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ROL", "score": 9.0, "percentile": 0.36363636363636365, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WH", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HLI", "score": 10.0, "percentile": 0.39669421487603307, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "VYX", "score": 71.0, "percentile": 0.9752066115702479, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ELAN", "score": 34.0, "percentile": 0.6487603305785123, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SPGI", "score": 28.0, "percentile": 0.5950413223140496, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ALV", "score": 3.0, "percentile": 0.1859504132231405, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "VIR", "score": 21.0, "percentile": 0.5619834710743802, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CWST", "score": 3.0, "percentile": 0.1859504132231405, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MPT", "score": 30.0, "percentile": 0.6157024793388429, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PFGC", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ULS", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "NXRT", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "RRX", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HE", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SAH", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CARG", "score": 50.0, "percentile": 0.9049586776859504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "TALO", "score": 33.0, "percentile": 0.6363636363636364, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MGY", "score": 30.0, "percentile": 0.6157024793388429, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SONO", "score": 36.0, "percentile": 0.6735537190082644, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "GIII", "score": 10.0, "percentile": 0.39669421487603307, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HUBG", "score": 37.0, "percentile": 0.7066115702479339, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MEDP", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "LSCC", "score": 11.0, "percentile": 0.4380165289256198, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "JBHT", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CL", "score": 7.0, "percentile": 0.2727272727272727, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ETSY", "score": 9.0, "percentile": 0.36363636363636365, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "LIVN", "score": 25.0, "percentile": 0.5785123966942148, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AMG", "score": 50.0, "percentile": 0.9049586776859504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "GWW", "score": 36.0, "percentile": 0.6735537190082644, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PGNY", "score": 11.0, "percentile": 0.4380165289256198, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HWM", "score": 29.0, "percentile": 0.6033057851239669, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ROST", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "KLIC", "score": 15.0, "percentile": 0.5413223140495868, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "TER", "score": 14.0, "percentile": 0.5247933884297521, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "YETI", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PJT", "score": 4.0, "percentile": 0.2066115702479339, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "COCO", "score": 37.0, "percentile": 0.7066115702479339, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "TPR", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AMAT", "score": 17.0, "percentile": 0.5537190082644629, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ARLO", "score": 13.0, "percentile": 0.5, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SNDK", "score": 14.0, "percentile": 0.5247933884297521, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "RL", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "HCSG", "score": 48.0, "percentile": 0.8842975206611571, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "YOU", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "VSEC", "score": 52.0, "percentile": 0.9173553719008265, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "FORM", "score": 15.0, "percentile": 0.5413223140495868, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CROX", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "DRH", "score": 40.0, "percentile": 0.768595041322314, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MYRG", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "SNDR", "score": 8.0, "percentile": 0.32644628099173556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "TJX", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MOG-A", "score": 12.0, "percentile": 0.47107438016528924, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "MRP", "score": 3.0, "percentile": 0.1859504132231405, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "INDV", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "AME", "score": 27.0, "percentile": 0.5867768595041323, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "LFUS", "score": 11.0, "percentile": 0.4380165289256198, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "ODFL", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "FTI", "score": 23.0, "percentile": 0.5702479338842975, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "OPLN", "score": 11.0, "percentile": 0.4380165289256198, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "UNFI", "score": 54.0, "percentile": 0.9256198347107438, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "NUE", "score": 10.0, "percentile": 0.39669421487603307, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WDC", "score": 5.0, "percentile": 0.2190082644628099, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CLSK", "score": 9.0, "percentile": 0.36363636363636365, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PZZA", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PMT", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WING", "score": 36.0, "percentile": 0.6735537190082644, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "FMC", "score": 10.0, "percentile": 0.39669421487603307, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "DFH", "score": 31.0, "percentile": 0.628099173553719, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "LGIH", "score": 39.0, "percentile": 0.7355371900826446, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "TEAM", "score": 3.0, "percentile": 0.1859504132231405, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "PRKS", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "WEN", "score": 34.0, "percentile": 0.6487603305785123, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "CPRT", "score": 5.0, "percentile": 0.2190082644628099, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-26", "ticker": "NRG", "score": 0.0, "percentile": 0.08677685950413223, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "RIVN", "score": 62.0, "percentile": 0.9658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "EZPW", "score": 47.0, "percentile": 0.8547008547008547, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "LAUR", "score": 38.0, "percentile": 0.7478632478632479, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "VIRT", "score": 57.0, "percentile": 0.9572649572649573, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "BGC", "score": 44.0, "percentile": 0.8290598290598291, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ALV", "score": 37.0, "percentile": 0.7222222222222222, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "FTRE", "score": 51.0, "percentile": 0.8931623931623932, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "OSK", "score": 42.0, "percentile": 0.7863247863247863, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CMG", "score": 52.0, "percentile": 0.9145299145299145, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "RNR", "score": 36.0, "percentile": 0.7051282051282052, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MMS", "score": 85.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "IPAR", "score": 38.0, "percentile": 0.7478632478632479, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "GEN", "score": 38.0, "percentile": 0.7478632478632479, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "VRSN", "score": 52.0, "percentile": 0.9145299145299145, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "IBM", "score": 75.0, "percentile": 0.9914529914529915, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SWKS", "score": 45.0, "percentile": 0.8461538461538461, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "NVR", "score": 44.0, "percentile": 0.8290598290598291, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CWST", "score": 43.0, "percentile": 0.8034188034188035, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CVS", "score": 9.0, "percentile": 0.3504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WMB", "score": 7.0, "percentile": 0.2863247863247863, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "NTCT", "score": 9.0, "percentile": 0.3504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TSLA", "score": 8.0, "percentile": 0.3162393162393162, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SEDG", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "AGCO", "score": 7.0, "percentile": 0.2863247863247863, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SAH", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "AM", "score": 6.0, "percentile": 0.2564102564102564, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ATEN", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "OI", "score": 11.0, "percentile": 0.4188034188034188, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CHRW", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "UTHR", "score": 6.0, "percentile": 0.2564102564102564, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "EXTR", "score": 13.0, "percentile": 0.5128205128205128, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CI", "score": 7.0, "percentile": 0.2863247863247863, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "EU", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "AESI", "score": 7.0, "percentile": 0.2863247863247863, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "VYX", "score": 67.0, "percentile": 0.9829059829059829, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SPGI", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PCG", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ECL", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ELV", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HOG", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MC", "score": 29.0, "percentile": 0.6581196581196581, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "VIR", "score": 20.0, "percentile": 0.5641025641025641, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "RHI", "score": 5.0, "percentile": 0.23504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HOOD", "score": 5.0, "percentile": 0.23504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "STC", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "UEC", "score": 43.0, "percentile": 0.8034188034188035, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WH", "score": 28.0, "percentile": 0.6452991452991453, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PIPR", "score": 27.0, "percentile": 0.6282051282051282, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TTD", "score": 6.0, "percentile": 0.2564102564102564, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HLI", "score": 40.0, "percentile": 0.7735042735042735, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "YUM", "score": 23.0, "percentile": 0.5982905982905983, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MPT", "score": 30.0, "percentile": 0.6752136752136753, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PFGC", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ULS", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MIDD", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "RRX", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HE", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "BHF", "score": 14.0, "percentile": 0.5427350427350427, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CB", "score": 24.0, "percentile": 0.6111111111111112, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CARG", "score": 49.0, "percentile": 0.8717948717948718, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MGY", "score": 28.0, "percentile": 0.6452991452991453, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TALO", "score": 24.0, "percentile": 0.6111111111111112, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SONO", "score": 36.0, "percentile": 0.7051282051282052, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "GIII", "score": 10.0, "percentile": 0.38461538461538464, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HUBG", "score": 53.0, "percentile": 0.9316239316239316, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "LSCC", "score": 12.0, "percentile": 0.4658119658119658, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CL", "score": 8.0, "percentile": 0.3162393162393162, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ETSY", "score": 52.0, "percentile": 0.9145299145299145, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WDC", "score": 44.0, "percentile": 0.8290598290598291, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "AMG", "score": 51.0, "percentile": 0.8931623931623932, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MEDP", "score": 3.0, "percentile": 0.18803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "GWW", "score": 37.0, "percentile": 0.7222222222222222, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "JBHT", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "KEYS", "score": 64.0, "percentile": 0.9743589743589743, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PGNY", "score": 11.0, "percentile": 0.4188034188034188, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PJT", "score": 50.0, "percentile": 0.8803418803418803, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ROST", "score": 9.0, "percentile": 0.3504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HWM", "score": 30.0, "percentile": 0.6752136752136753, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "LIVN", "score": 8.0, "percentile": 0.3162393162393162, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "YETI", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "VSEC", "score": 56.0, "percentile": 0.9487179487179487, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ARLO", "score": 13.0, "percentile": 0.5128205128205128, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TER", "score": 13.0, "percentile": 0.5128205128205128, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SNDK", "score": 13.0, "percentile": 0.5128205128205128, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "FORM", "score": 13.0, "percentile": 0.5128205128205128, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "RL", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "YOU", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TPR", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "HCSG", "score": 48.0, "percentile": 0.8632478632478633, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "BJ", "score": 31.0, "percentile": 0.6923076923076923, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CROX", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WTS", "score": 54.0, "percentile": 0.9401709401709402, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "AMAT", "score": 15.0, "percentile": 0.5555555555555556, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "KLIC", "score": 14.0, "percentile": 0.5427350427350427, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "LFUS", "score": 11.0, "percentile": 0.4188034188034188, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MSM", "score": 9.0, "percentile": 0.3504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "DRH", "score": 40.0, "percentile": 0.7735042735042735, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "COCO", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MYRG", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "FTI", "score": 21.0, "percentile": 0.5811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "TJX", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "KNX", "score": 10.0, "percentile": 0.38461538461538464, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "OPLN", "score": 11.0, "percentile": 0.4188034188034188, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ABBV", "score": 21.0, "percentile": 0.5811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "ODFL", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CLSK", "score": 9.0, "percentile": 0.3504273504273504, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PZZA", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WING", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "FMC", "score": 11.0, "percentile": 0.4188034188034188, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "PMT", "score": 10.0, "percentile": 0.38461538461538464, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "DFH", "score": 30.0, "percentile": 0.6752136752136753, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "LGIH", "score": 38.0, "percentile": 0.7478632478632479, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MSTR", "score": 43.0, "percentile": 0.8034188034188035, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CG", "score": 4.0, "percentile": 0.2222222222222222, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WEN", "score": 21.0, "percentile": 0.5811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "WYNN", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "CPRT", "score": 27.0, "percentile": 0.6282051282051282, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SNDR", "score": 8.0, "percentile": 0.32051282051282054, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MOS", "score": 4.0, "percentile": 0.21794871794871795, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}

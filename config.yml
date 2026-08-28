@@ -4861,6 +4861,33 @@ master_brain:
   max_tokens: 8000                # V4 Pro is a REASONING model — thinking tokens count
                                   # against this cap, so the JSON needs headroom above
                                   # the ~1.2k it occupies (4000 truncated china/btc mid-JSON)
+  # provider ladder (Codex -> Claude oauth/API -> DeepSeek). DeepSeek stays LAST
+  # because it is the only metered pay-per-use rung — Codex and Claude are
+  # subscriptions already paid for. A DeepSeek balance exhaustion now falls
+  # back instead of blanking the brief.
+  provider_order: [codex, oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  oauth_pool_lane: master-brain
+  anthropic_key_env: ANTHROPIC_API_KEY
+  opus_model: claude-opus-4-8
+  deepseek_key_env: DEEPSEEK_API_KEY
+  deepseek_model: deepseek-v4-pro
+  usage_lane: master-brain
+  # KEEP THE MANDATED ORDER even when subscription keys are cooling. llm_auth's
+  # cooling sort moves recently-429'd cap_ids to the back; the DeepSeek rung
+  # carries a cap_id and ANTHROPIC_API_KEY is not a configured repo secret, so on
+  # a night when every Claude key is cooling (that exact shape happened
+  # 2026-08-03) DeepSeek becomes the only non-cooling rung and sorts to FIRST —
+  # the metered floor silently serving the whole night. That is the "SILENT
+  # ROUTING INVERSION" llm_auth warns about, and it inverts the one thing this
+  # lane's order exists to state. Cooling rungs are still tried here, just in the
+  # configured order: a cooling key fails fast with a 429 and the waterfall moves
+  # on, which costs a cheap failed request instead of a paid DeepSeek brief.
+  respect_provider_cooling: false
+  # NOTE: on the DeepSeek rung, build_providers wraps the client in
+  # _deepseek_no_thinking(), so V4 Pro serves this lane WITHOUT reasoning mode.
+  # The max_tokens note above budgets for thinking tokens and no longer applies
+  # when DeepSeek serves; it still applies to the Claude rungs.
   translate_zh: true              # attach a 中文 version (cheap V4-Flash pass) per brief
   # rotation_thesis: "<override the macro lens's liquidity-rotation hypothesis>"
   # china_thesis: "<override the china lens's working thesis>"
@@ -4886,6 +4913,25 @@ ai_desk:
   llm_base_url: https://api.deepseek.com/anthropic
   llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later
   max_tokens: 8000                # reasoning model — thinking tokens count vs cap
+  # provider ladder (Codex -> Claude oauth/API -> DeepSeek). DeepSeek stays LAST
+  # because it is the only metered pay-per-use rung — Codex and Claude are
+  # subscriptions already paid for. Own oauth_pool_lane/usage_lane keep AI
+  # Desk cost attribution distinct from master-brain.
+  provider_order: [codex, oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  oauth_pool_lane: ai-desk
+  anthropic_key_env: ANTHROPIC_API_KEY
+  opus_model: claude-opus-4-8
+  deepseek_key_env: DEEPSEEK_API_KEY
+  deepseek_model: deepseek-v4-pro
+  usage_lane: ai-desk
+  # Keep the mandated order even when subscription keys are cooling — see the
+  # master_brain block above for why the cooling sort would otherwise promote the
+  # metered DeepSeek rung to FIRST on exactly the nights it should serve last.
+  respect_provider_cooling: false
+  # As above: the DeepSeek rung is wrapped by _deepseek_no_thinking(), so V4 Pro
+  # serves this lane with reasoning mode OFF; the max_tokens note is a Claude-rung
+  # budget now.
   max_theses: 3                   # cap leans per note (honesty over content)
   default_horizon_d: 20           # trading-day horizon when the model omits one
   falsifier_defaults:

@@ -1,0 +1,157 @@
+{
+  "expected_code": "too_many_widgets",
+  "input": {
+    "link_groups": {
+      "primary_security": {
+        "entity_type": "security"
+      }
+    },
+    "migration": {
+      "source": "chart_layout_v2",
+      "source_revision": 2
+    },
+    "name": null,
+    "requires": {
+      "floor": 1
+    },
+    "revision": 3,
+    "schema": "workspace_layout.v1",
+    "widgets": [
+      {
+        "config": {
+          "activePane": 0,
+          "chartType": "candles",
+          "compare": [],
+          "compareCfg": {},
+          "hidden": [],
+          "indParams": {},
+          "inds": [
+            "ema21"
+          ],
+          "lockedVLine": null,
+          "paneTfs": [
+            "1D"
+          ],
+          "panes": [
+            "NVDA"
+          ],
+          "split": 1,
+          "sync": true
+        },
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [
+          "primary_security"
+        ],
+        "grid": {
+          "h": 18,
+          "w": 16,
+          "x": 0,
+          "y": 0
+        },
+        "id": "chart-main",
+        "semantic_lane": "primary",
+        "type": "chart"
+      },
+      {
+        "config": {},
+        "context_in": [
+          "primary_security"
+        ],
+        "context_out": [],
+        "id": "brain-dock",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-0",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-1",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-2",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-3",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-4",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-5",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-6",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-7",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-8",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-9",
+        "semantic_lane": "dock",
+        "type": "brain"
+      },
+      {
+        "config": {},
+        "context_in": [],
+        "context_out": [],
+        "id": "extra-10",
+        "semantic_lane": "dock",
+        "type": "brain"
+      }
+    ]
+  }
+}

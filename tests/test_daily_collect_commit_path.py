@@ -65,6 +65,8 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 DAILY = ROOT / ".github/workflows/daily.yml"
 
@@ -743,8 +745,10 @@ def test_no_job_restores_a_stale_cache_over_data_it_will_commit(job_name):
     doc = yaml.safe_load(DAILY.read_text())
     job = doc["jobs"][job_name]
     steps = job.get("steps") or []
+    # 512KB-cap diet: some commit bodies live in scripts/ci/ — resolve the
+    # effective source so the unstage carve-outs below stay visible.
     commit_run = "\n".join(
-        (s.get("run") or "") for s in steps
+        resolve_run_source(str(s.get("run") or ""), ROOT) for s in steps
         if "commit" in ((s.get("name") or "").lower())
     )
 

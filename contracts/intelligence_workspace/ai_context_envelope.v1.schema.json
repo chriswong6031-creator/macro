@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermindx.ai/contracts/intelligence_workspace/ai_context_envelope.v1.schema.json",
+  "title": "DeepVue W1-C visible-context envelope v1",
+  "description": "Deterministic compiled resolution of explicit/pinned/active/ambient context for one Brain turn. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "request_id", "origin", "explicit_entities", "pinned_context",
+    "active_selection", "ambient_widget_context", "effective_context", "dropped",
+    "unsupported", "context_flags", "field_requests", "latency_lane",
+    "provenance_requirement", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "ai_context_envelope.v1"},
+    "request_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin_id", "context_revision", "captured_at", "legacy"],
+      "properties": {
+        "origin_id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "context_revision": {"type": "integer", "minimum": 0},
+        "captured_at": {"type": "string", "minLength": 1},
+        "legacy": {"type": "boolean"}
+      }
+    },
+    "explicit_entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+    "pinned_context": {"type": "array", "maxItems": 3, "items": {"$ref": "#/$defs/entity"}},
+    "active_selection": {"type": "array", "maxItems": 1, "items": {"$ref": "#/$defs/entity"}},
+    "ambient_widget_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "timeframe", "page", "panel"],
+      "properties": {
+        "symbol": {"type": ["string", "null"], "pattern": "^[A-Z]{1,5}$"},
+        "timeframe": {"type": ["string", "null"], "maxLength": 32},
+        "page": {"type": ["string", "null"], "maxLength": 32},
+        "panel": {"type": ["string", "null"], "maxLength": 32}
+      }
+    },
+    "effective_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entities", "source", "reason", "precedence"],
+      "properties": {
+        "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+        "source": {"enum": ["explicit", "pinned", "active", "ambient", "none"]},
+        "reason": {
+          "enum": [
+            "explicit_request", "explicit_entity_wins", "pinned_context",
+            "active_selection", "ambient_context", "no_context"
+          ]
+        },
+        "precedence": {
+          "enum": [
+            "explicit_over_pinned", "explicit_over_active", "explicit_over_ambient",
+            "pinned_over_active", "pinned_over_ambient", "active_over_ambient",
+            "explicit_only", "pinned_only", "active_only", "ambient_only", "none"
+          ]
+        }
+      }
+    },
+    "dropped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity", "level", "reason"],
+        "properties": {
+          "entity": {"$ref": "#/$defs/entity"},
+          "level": {"enum": ["pinned", "active", "ambient"]},
+          "reason": {
+            "enum": [
+              "outranked_by_explicit", "outranked_by_pinned", "outranked_by_active"
+            ]
+          }
+        }
+      }
+    },
+    "unsupported": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity", "reason", "level"],
+        "properties": {
+          "entity": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "type": {"type": ["string", "null"], "maxLength": 64},
+              "id": {"type": ["string", "null"], "maxLength": 64}
+            }
+          },
+          "reason": {
+            "enum": ["unsupported_entity_type", "invalid_symbol", "invalid_entity_shape"]
+          },
+          "level": {"enum": ["pinned", "active", "ambient"]}
+        }
+      }
+    },
+    "context_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stale", "malformed", "malformed_reason", "ambiguous_explicit",
+        "rejected_fields", "ignored_fields", "echo_sanitized"
+      ],
+      "properties": {
+        "stale": {"type": "boolean"},
+        "malformed": {"type": "boolean"},
+        "malformed_reason": {"type": ["string", "null"]},
+        "ambiguous_explicit": {"type": "boolean"},
+        "rejected_fields": {"type": "array", "items": {"type": "string"}},
+        "ignored_fields": {"type": "array", "items": {"type": "string"}},
+        "echo_sanitized": {"type": "boolean"}
+      }
+    },
+    "field_requests": {"type": "array"},
+    "latency_lane": {"type": "string", "minLength": 1, "maxLength": 64},
+    "provenance_requirement": {"type": "string", "minLength": 1, "maxLength": 64},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["may_execute", "may_originate_signal"],
+      "properties": {
+        "may_execute": {"const": false},
+        "may_originate_signal": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": {"const": "security"},
+        "id": {"type": "string", "pattern": "^[A-Z]{1,5}$"}
+      }
+    }
+  }
+}

@@ -4,8 +4,11 @@ title: DeepVue clean-room intelligence workspace
 objective: >
   Build the bounded DeepVue-inspired intelligence workspace on Mastermind's existing
   identity, typed datapoint, owner, Brain and Terminal architecture. Done through the
-  current boundary means W0-B, W1-A and W1-B are merged and production-proven with an
-  immutable before/after receipt, while W1-C and W2 remain explicitly unstarted.
+  current boundary means W0-B, W1-A, W1-B and W1-C are merged and production-proven
+  with immutable receipts — W1-C proven for the accepted guest production boundary,
+  with signed-in persistence/resume BUILT_NOT_PROVEN behind the authorized-principal
+  gate — while W2 remains explicitly unstarted and requires a new Chairman/Sol
+  commission.
 status: parked
 program: macro-mastermind-ai
 p0: PRODUCT_TRUST_COHERENCE
@@ -51,11 +54,32 @@ waves:
       do not hide the warm-p95 or multi-field assembly misses.
   - id: W1-C
     title: Visible context compiler and effective-context receipt
-    status: todo
+    status: done
     depends_on: [W1-B]
+    pr: [6421, 6428, 6430]
     next_action: >
-      Wait for a new explicit Chairman commission. Do not infer W1-C authority from the
-      W1-B merge, this workstream record, or the recommendation in the validation receipt.
+      Done under the explicit Sol commission of 2026-08-25 (Macro merges cdd2b99dcdde,
+      d00ca51e0f0c, e79586728194; Terminal mastermind-terminal#473 merge 580de03e7a75).
+      Contract frozen in research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md;
+      delivery receipt in research/DEEPVUE_W1C_VALIDATION_RECEIPT_2026-08-26.md.
+      Signed-in production persistence/resume remains BUILT_NOT_PROVEN behind the
+      external principal gate. W2 stays unstarted pending a new explicit commission.
+  - id: W2-A
+    title: Versioned workspace schema and lossless migration
+    status: done
+    depends_on: [W1-C]
+    pr: [6473]
+    next_action: >
+      Done under the explicit Sol commission of 2026-08-26 (Macro #6473 merge
+      f507a25aee69; Terminal mastermind-terminal#480 merge b1b21a17f843; deployed
+      2026-08-27T06:11Z). Contract + Amendments A1-A3 frozen in
+      research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md; delivery
+      receipt research/DEEPVUE_W2A_VALIDATION_RECEIPT_2026-08-27.md; golden-vector
+      digest 3e7c1c50faf8b03b4fa2f3ad2c66db3ebf9ba3ebd93bbb15b228654c382ff339
+      pinned in both repos. Guest production surface PROVEN_LIVE; the signed-in
+      persisted-user journeys remain BUILT_NOT_PROVEN behind the external
+      authorized-principal gate. W2-B stays unstarted pending a new explicit
+      commission.
 landmines:
   - >-
     The W1-A architecture freeze is binding: no second registry, resolver, identity
@@ -83,15 +107,25 @@ artifacts:
   - research/DEEPVUE_W1A_TYPED_DATAPOINT_CONTRACT_2026-08-23.md
   - research/DEEPVUE_W1A_TYPED_DATAPOINT_VALIDATION_RECEIPT_2026-08-23.md
   - research/DEEPVUE_W0B_W1B_NATIVE_FACTS_VALIDATION_RECEIPT_2026-08-24.md
+  - research/DEEPVUE_W2A_WORKSPACE_LAYOUT_CONTRACT_2026-08-26.md
+  - research/DEEPVUE_W2A_VALIDATION_RECEIPT_2026-08-27.md
 next_action: >
-  Return W1-B to the Chairman and remain parked. If the Chairman explicitly commissions
-  W1-C, execute only the visible context compiler/effective-context receipt boundary named
-  in the validation receipt, prove guest/auth/resume and responsive Terminal parity, and
-  stop before W2. Any owner-waterfall latency change requires its own bounded authority.
+  Return W2-A to Sol and remain parked. W2-B (semantic link-group propagation)
+  and later waves require their own explicit Chairman/Sol commission. Open
+  external gate: an authorized signed-in production principal (plus a second
+  account for the cross-account half) to execute the persisted-user production
+  journeys for both the W1-C resume residual and the W2-A save/reopen/rename/
+  duplicate/import/export/stale-fork/isolation proofs. The W1-B latency and
+  deep-provider residuals remain separate bounded authorities.
 ---
 
 ## Parked boundary
 
-W0-B, W1-A and W1-B are complete. W1-C is a named future wave, not live authority.
-The live W1-B capability is correct and production-proven; its latency residuals remain
-visible rather than converted into a second owner or cache.
+W0-B, W1-A, W1-B, W1-C and W2-A are complete. W2-B is a named future wave, not
+live authority. The live capability set (deterministic visible context with
+receipts; one versioned `workspace_layout.v1` law with lossless migration, CAS
+persistence over the single `chart_layouts` owner, and a generic chart+brain
+widget graph with workspace management UX) is production-proven for guest
+principals; every signed-in persisted-user journey is BUILT_NOT_PROVEN behind
+the external authorized-principal gate. Latency residuals remain visible rather
+than converted into a second owner or cache.

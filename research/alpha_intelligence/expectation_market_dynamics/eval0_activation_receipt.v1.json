@@ -1,0 +1,31 @@
+{
+  "record": "k3e_eval0_activation_receipt",
+  "record_version": 1,
+  "registration": "K3E-EVAL-0-V1",
+  "preregistration_record": "research/alpha_intelligence/expectation_market_dynamics/eval0_preregistration.v1.json",
+  "preregistration_prose": "research/alpha_intelligence/expectation_market_dynamics/EVALUATION_PREREG.md",
+  "freeze_boundary_rule": "first_nyse_session_open_strictly_after_origin_main_commit_containing_exact_registration_digest/v1",
+  "accepted_pr": 6341,
+  "accepted_merge_commit": "8185690d04dd96f871fa4858c6352ff2a95880eb",
+  "accepted_merged_at_utc": "2026-08-23T16:08:05Z",
+  "canonical_registration_digest_sha256": "986ec117e8517b77e8dece565fd9d9dc169e758beb9d1619acc443e061ef87fd",
+  "pretty_file_sha256": "664f03b651892c86af0998d993c0a514255414b35e93b240fe2e8c0a4c55c3a7",
+  "resolved_first_eligible_nyse_session": "2026-08-24",
+  "boundary_resolution_basis": "2026-08-23T16:08:05Z fell on a Sunday; the next NYSE session open strictly after that instant was Monday 2026-08-24 09:30 America/New_York; no scheduled NYSE closure falls between the merge instant and that open (next 2026 NYSE holiday after the merge is Labor Day 2026-09-07). Positive open-session receipt: the nightly engine commit be061c6d49e9b9e40cea5b01b9b7b9acacdc757a records data/allocation/latest_us.json with as_of 2026-08-24 for region us.",
+  "prospective_shadow_note": "Prospective eligibility begins at the resolved boundary above per the frozen freeze_boundary_rule. PROSPECTIVE_SHADOW corroboration activity begins only after this receipt exists; no EVAL-0 prospective-shadow evaluation row, challenger trial, or shadow read was registered before this receipt was created, so no pre-receipt EVAL-0 activity requires relabeling. SRC-A1 prospective-source accrual observations (e.g. the first natural scheduled collection published 2026-08-25T05:42:31Z) are source-plane records under DEC:SRC-A1-PROSPECTIVE-EXPECTATION-SOURCE-CONTRACT, not EVAL-0 shadow-era evaluation rows.",
+  "boundary_gap_disclosure": "The registration's freeze_boundary_rule resolves prospective ELIGIBILITY to 2026-08-24, while the PROSPECTIVE_SHADOW era purpose says corroboration begins only after the activation receipt (created 2026-08-25T20:43:13Z) — roughly 35 hours apart. This receipt records both instants and takes no position on the era label of any observation collected in that gap; any such row's era treatment is decided at first evaluation use under the frozen registration, not here.",
+  "digest_verification": {
+    "method": "sha256 over UTF-8 JSON with recursively sorted keys, compact separators, ensure_ascii=false, exactly as specified in EVALUATION_PREREG.md",
+    "verified_at_utc": "2026-08-25T20:43:13Z",
+    "verified_at_commits": {
+      "accepted_merge_commit": "8185690d04dd96f871fa4858c6352ff2a95880eb",
+      "origin_main_at_verification": "4ba89a2b44e90fb236b801c0a8062e10f57c25f3"
+    },
+    "result": "canonical digest matches at both commits; eval0_preregistration.v1.json is byte-identical between the accepted merge commit and origin/main at verification time"
+  },
+  "receipt_created_at_utc": "2026-08-25T20:43:13Z",
+  "receipt_created_retroactively": true,
+  "retroactivity_note": "The resolved boundary (2026-08-24) had already passed when this receipt was written (2026-08-25). This receipt documents an already-crossed rule-determined boundary; it does not move the boundary, amend the frozen registration, or register any result.",
+  "created_by_session": "claude/k3e-records-refresh-20260825",
+  "authority_note": "Records-only receipt required by the frozen registration's activation clause (activation_receipt_required: true). It changes no evaluation law, registers no outcome, spends no trial budget, and grants no model, predictive, fair-value, rank, gate, size, trade, Prophet, product, or production authority."
+}

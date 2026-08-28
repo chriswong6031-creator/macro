@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -334,6 +338,201 @@ def test_red_pack_results_are_captured_instead_of_aborting_the_receipt_path() ->
         capture = command.index("pack_rc=${PIPESTATUS[0]}")
         assert command.index("set +e") < pack < capture
         assert command.index("set -e", capture) > capture
+
+
+def test_canary_pins_python_3_12_13_everywhere_not_a_floating_version() -> None:
+    """Mutation-lock (#6351 spec E.1): the pre-bridge canary used a floating
+    ``python-version: "3.12"`` on every setup-python step. Every one must now
+    pin the exact patch — gate:code / RUNNER_CONTRACT v2 parity with
+    production's ci-pack setup-python step requires it (ci.yml pins 3.12.13
+    for the same document-term-parser-fingerprint reason).
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    checked = 0
+    for job_id, job in document["jobs"].items():
+        for step in job.get("steps", []) or []:
+            if str(step.get("uses", "")).startswith("actions/setup-python@"):
+                assert step["with"]["python-version"] == "3.12.13", job_id
+                checked += 1
+    assert checked >= 3, "expected setup-python in plan, hosted-control, and selfhosted-pack"
+
+
+def test_canary_planner_and_both_consumers_declare_gate_code() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_run = next(
+        step["run"] for step in document["jobs"]["plan"]["steps"] if step.get("id") == "plan"
+    )
+    assert "--gate code" in plan_run
+    for job_id in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_id]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        assert "--gate code" in command
+
+
+def test_canary_consumers_use_the_published_plan_not_independent_replanning() -> None:
+    """Mutation-lock: the pre-bridge consumer steps re-derived their own plan
+    on every runner via ``--changed-from`` + ``--expect-plan-sha``, which
+    could disagree between runners. Both consumers must load the ONE
+    published ``--plan-json``, mirroring ci.yml's ci-pack step template.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    for job_id in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_id]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        assert "--plan-json" in command
+        assert "--changed-files-file" in command
+        assert "--expect-plan-sha" in command
+        assert "--expect-tested-tree-sha" in command
+        assert "--expect-subject-head-sha" in command
+        assert "--expect-base-sha" in command
+        assert "--emit-semantic-fragment" in command
+        assert "--changed-from" not in command
+
+
+def test_canary_planner_passes_full_explicit_provenance_for_both_branches() -> None:
+    """Mutation-lock: the pre-bridge planner passed ``--changed-from``
+    unconditionally, including for pr_number=0 — an unsupported shape under
+    current law. The pr_number=0 branch must never pass ``--changed-from``.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_run = next(
+        step["run"] for step in document["jobs"]["plan"]["steps"] if step.get("id") == "plan"
+    )
+    assert "--workflow-name infrastructure-selfhosted-ci-canary" in plan_run
+    assert "--event workflow_dispatch" in plan_run
+    assert "--role pr_head" in plan_run
+    assert "--role main" in plan_run
+    assert "--tested-tree-sha" in plan_run
+    assert "--subject-head-sha" in plan_run
+    assert "--base-sha" in plan_run
+    assert '--changed-from "${{ steps.ref.outputs.base_sha }}"' in plan_run
+    pr0_branch = plan_run.split("else", 1)[1]
+    assert "--changed-from" not in pr0_branch
+
+
+def test_canary_hosted_control_is_a_matrix_over_the_same_selected_packs() -> None:
+    """spec item C.5: three hosted controls for three self-hosted packs."""
+    document = workflow("selfhosted-ci-canary.yml")
+    hosted = document["jobs"]["hosted-control"]
+    assert hosted["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    assert hosted["name"] == "diagnostic-hosted-control-pack-${{ matrix.pack }}"
+    upload_names = {
+        step["with"]["name"]
+        for step in hosted["steps"]
+        if step.get("uses") == "actions/upload-artifact@v4"
+    }
+    assert "ci-canary-hosted-${{ matrix.pack }}" in upload_names
+    assert "ci-canary-hosted-fragment-${{ matrix.pack }}" in upload_names
+
+
+def test_canary_compare_runs_for_both_slot_counts_over_the_selected_packs() -> None:
+    """spec item C.6: strict fragment equality covers every selected pack for
+    BOTH slots=1 and slots=3, not only the single-pack slots=1 shape.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    compare = document["jobs"]["compare"]
+    assert compare["if"] == "always()"
+    assert compare["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    gate = next(
+        step
+        for step in compare["steps"]
+        if step.get("name") == "require every infrastructure leg to conclude"
+    )
+    assert "SLOTS" in gate["env"]
+    assert 'if [ "$SLOTS" = "1" ]; then' in gate["run"]
+    command = next(
+        step["run"]
+        for step in compare["steps"]
+        if step.get("name")
+        == "compare logical jobs, failures, receipts, and semantic fragments"
+    )
+    assert "--hosted-fragment" in command
+    assert "--selfhosted-fragment" in command
+
+
+def test_canary_compare_uses_trusted_control_artifact_without_repo_checkout() -> None:
+    """Receipt comparison must not rematerialize the multi-gigabyte repository."""
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_steps = document["jobs"]["plan"]["steps"]
+    preserve = next(
+        step["run"]
+        for step in plan_steps
+        if step.get("name") == "preserve trusted control helpers outside the candidate workspace"
+    )
+    assert 'mkdir -p "$RUNNER_TEMP/ci-canary-compare-control/scripts"' in preserve
+    for helper in (
+        "scripts/__init__.py",
+        "scripts/compare_ci_canary_receipts.py",
+        "scripts/ci_semantic_proof.py",
+    ):
+        assert helper in preserve
+
+    control_upload_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    control_upload = plan_steps[control_upload_index]
+    assert control_upload["with"]["path"] == "${{ runner.temp }}/ci-canary-compare-control"
+    assert control_upload["with"]["if-no-files-found"] == "error"
+    candidate_checkout_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "checkout the exact candidate tree on hosted control"
+    )
+    candidate_plan_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "freeze the current logical plan"
+    )
+    assert control_upload_index < candidate_checkout_index < candidate_plan_index
+
+    compare_steps = document["jobs"]["compare"]["steps"]
+    assert all(step.get("uses") != "actions/checkout@v4" for step in compare_steps)
+    control_download = next(
+        step
+        for step in compare_steps
+        if step.get("uses") == "actions/download-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    assert control_download["with"]["path"] == "${{ runner.temp }}/control"
+
+    command = next(
+        step["run"]
+        for step in compare_steps
+        if step.get("name")
+        == "compare logical jobs, failures, receipts, and semantic fragments"
+    )
+    assert 'python3 "$RUNNER_TEMP/control/scripts/compare_ci_canary_receipts.py"' in command
+    assert "python3 scripts/compare_ci_canary_receipts.py" not in command
+
+
+def test_canary_compare_control_bundle_is_runtime_complete() -> None:
+    """Reproduce the uploaded package layout and prove its entrypoint imports."""
+    with tempfile.TemporaryDirectory() as temp:
+        bundle = Path(temp) / "ci-canary-compare-control" / "scripts"
+        bundle.mkdir(parents=True)
+        for helper in (
+            "__init__.py",
+            "compare_ci_canary_receipts.py",
+            "ci_semantic_proof.py",
+        ):
+            shutil.copy2(ROOT / "scripts" / helper, bundle / helper)
+        completed = subprocess.run(
+            [sys.executable, str(bundle / "compare_ci_canary_receipts.py"), "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    assert completed.returncode == 0, completed.stderr
+    assert "--hosted-fragment" in completed.stdout
 
 
 def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:

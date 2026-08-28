@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TPR-BULL-20260722",
-  "asof": "2026-08-22",
-  "phase": "triggered_pre_t1",
-  "detection_phase": "triggered_pre_t1",
-  "management_confidence": 35.1,
-  "raw_confidence": 24.0,
-  "delta_vs_base": -24.9,
-  "recommended_action": "hold",
-  "human_state": "Stalling",
+  "asof": "2026-08-28",
+  "phase": "invalidated",
+  "detection_phase": "invalidated",
+  "management_confidence": 12.1,
+  "raw_confidence": 8.0,
+  "delta_vs_base": -47.9,
+  "recommended_action": "invalidated",
+  "human_state": "Invalidated",
   "components": {
-    "validity": 9.1,
+    "validity": 0.0,
     "progress": 0.0,
-    "pace": 7.2,
-    "retention": 50.0,
-    "overlay": 64.0
+    "pace": 0.0,
+    "retention": 0.0,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.197,
+    "dist_to_stop_r": -0.071,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 55.6,
-    "p1": -0.5352,
-    "p2": -0.2676,
+    "horizon_pct_used": 68.9,
+    "p1": -0.7142,
+    "p2": -0.3571,
     "p3": null,
-    "move_r": -0.803,
+    "move_r": -1.071,
     "mfe_r": 0.538,
-    "mae_r": -0.872
+    "mae_r": -1.071
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 13.87999877929687,
-  "_mae": -22.510000610351568,
+  "_mae": -27.660002136230474,
   "_max_p1": 0.358378486426462,
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 25,
-  "tau": 0.5556
+  "days_elapsed": 31,
+  "tau": 0.6889
 }

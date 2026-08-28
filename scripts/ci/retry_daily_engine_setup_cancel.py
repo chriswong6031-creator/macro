@@ -23,7 +23,12 @@ from pathlib import Path
 from typing import Any
 
 API_VERSION = "2022-11-28"
-EXPECTED_WORKFLOW_NAME = "daily"
+# ``path`` is the authoritative identity of a workflow run and is assigned by
+# GitHub.  ``run.name`` is NOT identity: the runs API reports the RENDERED
+# ``run-name:``, which daily.yml templates per firing (``daily 30 23 * * *``).
+# Comparing that display string against the workflow name rejected 28
+# consecutive nightlies after #5723 added run-name on 2026-08-15.  Never
+# reintroduce an identity assertion on author-controlled display text.
 EXPECTED_WORKFLOW_PATH = ".github/workflows/daily.yml"
 TARGET_JOB_NAME = "engine"
 TRUSTED_EVENTS = frozenset({"schedule", "workflow_dispatch"})
@@ -100,8 +105,6 @@ def _validate_run(
 ) -> None:
     if _positive_int(run.get("id"), "run.id") != run_id:
         raise RetryContractError("event run id does not match the API run")
-    if run.get("name") != EXPECTED_WORKFLOW_NAME:
-        raise RetryContractError("run is not the daily workflow")
     if run.get("path") != EXPECTED_WORKFLOW_PATH:
         raise RetryContractError("run path is not the authoritative daily workflow")
     if require_terminal and run.get("status") != "completed":
@@ -165,6 +168,12 @@ def decide_retry(
         )
 
     engine_jobs = [job for job in jobs if job.get("name") == TARGET_JOB_NAME]
+    if not engine_jobs:
+        # A daily cancelled during an upstream job (observed: run 32194718597,
+        # collect cancelled, two job rows total) never creates the engine job at
+        # all.  Nothing is ambiguous and nothing can be retried, so disclose a
+        # no-op instead of reddening the recovery lane on an ordinary shape.
+        return RetryDecision(None, "daily attempt never created an engine job")
     if len(engine_jobs) != 1:
         raise RetryContractError("daily attempt must contain exactly one engine job")
     engine = engine_jobs[0]

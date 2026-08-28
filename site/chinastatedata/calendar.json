@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-24",
-  "generated_at_utc": "2026-08-24T10:01:15.419574+00:00",
+  "asof": "2026-08-26",
+  "generated_at_utc": "2026-08-27T23:41:06.198865+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-24",
+      "date": "2026-08-26",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",

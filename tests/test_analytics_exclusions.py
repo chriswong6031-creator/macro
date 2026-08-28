@@ -314,3 +314,64 @@ def test_apply_geo_overrides_custom_key(monkeypatch):
     rows = [{"last_ip": "191.40.9.9", "country_code": "DE"}]
     a._apply_geo_overrides(rows, "last_ip")
     assert rows[0]["country_code"] == "HK"
+
+
+# ---- panel cost: the shapes that made every tab slow -----------------------
+# These pin the two rewrites landed 2026-08-26 after the console started answering
+# HTTP 524 on the Visitors tab. Both are SHAPE assertions rather than timings,
+# because the thing that regresses is the SQL, not the clock: `excluded` and `bots`
+# are embedded in every statement of every analytics surface, so a cost restored
+# here is a cost paid by the whole console, on every tab, forever.
+_BARE_CFG = {"emails": [], "locations": [], "ips": [], "visitor_ids": [],
+             "bots": {}, "geo_overrides": []}
+
+
+def test_excl_link_does_not_join_on_an_or_of_two_keys(monkeypatch):
+    """The fingerprint arm and the IP arm must stay SEPARATE equi-joins.
+
+    Joining on `(e2.fp = k.fp) or (e2.ip = k.ip)` is not hashable or mergeable, so
+    Postgres planned a nested loop: measured on production, 58,702 events x 271
+    anchors = 15.9M filter evaluations and 3.75s of a 3.9s CTE, on a 40MB table.
+    A UNION of the two arms returns the identical set (verified against the live
+    table by symmetric difference inside one snapshot) at a fraction of the cost.
+    """
+    monkeypatch.setattr(a, "_load_exclusions", lambda: dict(_BARE_CFG, ips=["9.9.9.9"]))
+    cte = a._excluded_cte()
+    link = cte.split("excl_link as (", 1)[1].split("excluded as (", 1)[0]
+    assert " union " in link, "the two link arms must stay a UNION, not an OR-join"
+    assert "or (e2.ip = k.ip" not in link and "on (e2.fp = k.fp" not in link
+    # Both anchors still bound, and the IP arm still routable-guarded on both sides.
+    assert "kf.fp = e2.fp" in link and "ki.ip = e2.ip" in link
+    assert link.count("not in ('unknown','::1','127.0.0.1','localhost')") == 2
+
+
+def test_bot_signals_are_evaluated_per_identity_not_per_event(monkeypatch):
+    """The bot predicates must read a DISTINCT (visitor_id, ua, ip, fp) set.
+
+    Every signal is a function of that tuple plus the ip_geo row `ip` joins to, and
+    the output is a distinct visitor_id either way — so running them per event just
+    re-ran the 40-branch case-insensitive UA regex on rows that could not change the
+    answer (production: 58,702 evaluations vs 8,189, 2.32s -> 0.72s, same 4,192 ids).
+    """
+    monkeypatch.setattr(a, "_load_exclusions", lambda: dict(_BARE_CFG))
+    cte = a._bot_cte()
+    assert "bot_sig as (select distinct visitor_id, ua, ip, fp" in cte
+    bots = cte.split("bots as (", 1)[1]
+    assert "from bot_sig e" in bots, "bots must read the reduced set, not the event table"
+    assert "from public.analytics_events e " not in bots
+    # The signals themselves are unchanged — this is a cost fix, not a policy change.
+    assert "e.ua ~*" in bots and "g.is_hosting is true" in bots and "e.fp in (select fp from fp_farm)" in bots
+
+
+def test_request_budget_stays_under_the_edge_origin_pull_timeout():
+    """The surface budget only does its job if it is BELOW the edge's patience.
+
+    admin.* is served through EdgeOne, so a request that outruns the edge's
+    origin-pull timeout is answered by the EDGE — the operator gets a 524 with an
+    empty body, and this module's {ok: False, error: ...} envelope never ships. At
+    22.0s it was above it: production folded `overview` in 14.9s and the admin
+    journal recorded BrokenPipeError writing the response, i.e. the edge had already
+    hung up. Anything at or above 15s (EdgeOne's documented default) reopens that.
+    """
+    assert a._REQUEST_BUDGET_S <= 12.0
+    assert a._QUERY_TIMEOUT_S <= a._REQUEST_BUDGET_S

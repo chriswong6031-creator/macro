@@ -1,0 +1,107 @@
+{
+  "schema": "mastermind.r3b2.label_map_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "term": {
+    "en": "Strength",
+    "zh": "强度"
+  },
+  "cells": [
+    {
+      "lang": "en",
+      "legend": "Strength",
+      "row_captions": [
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength",
+        "Strength"
+      ],
+      "texteq_th": "Strength",
+      "vh_caption": "Text equivalent of the rotation map — every group, where it sits, its strength, its 20-day move against the S&P and its rank move this week.",
+      "scatter_tooltip": "Big Pharma HealthcareLeading — strong & risingStrength 77 · 20d +11.5%",
+      "selected_dts": [
+        "Where it sits",
+        "Rank",
+        "Strength",
+        "20 days vs S&P",
+        "Rank move this week"
+      ],
+      "selected_dt_site5": "Strength",
+      "trace_conviction": {
+        "keys": [
+          "Cycle",
+          "Conviction",
+          "Confluence",
+          "Cycle position"
+        ],
+        "values": [
+          "Prime entry",
+          "75 Accumulate",
+          "3/3",
+          "22/100"
+        ]
+      },
+      "confluence_header": "Conviction",
+      "confluence_row_labels": [
+        "Conviction",
+        "Conviction"
+      ],
+      "failures": []
+    },
+    {
+      "lang": "zh",
+      "legend": "强度",
+      "row_captions": [
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度",
+        "强度"
+      ],
+      "texteq_th": "强度",
+      "vh_caption": "轮动图的文字等价表 — 每个板块所处位置、强度、20日相对标普涨跌与本周排名变化。",
+      "scatter_tooltip": "大型药企 Healthcare领先 — 强且上行强度 77 · 20日 +11.5%",
+      "selected_dts": [
+        "所处位置",
+        "排名",
+        "强度",
+        "20日相对标普",
+        "本周排名变化"
+      ],
+      "selected_dt_site5": "强度",
+      "trace_conviction": {
+        "keys": [
+          "周期",
+          "信心",
+          "共振",
+          "周期位置"
+        ],
+        "values": [
+          "Prime entry",
+          "75 积极配置",
+          "3/3",
+          "22/100"
+        ]
+      },
+      "confluence_header": "综合把握",
+      "confluence_row_labels": [
+        "综合把握",
+        "综合把握"
+      ],
+      "failures": []
+    }
+  ],
+  "pass": true
+}

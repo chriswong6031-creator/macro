@@ -32,8 +32,11 @@ _RENDER_KEYS = (
     # live reader produced, so a frozen hand-authored string never reads as this morning's truth
     "state_live", "state_as_of",
 )
-# statuses that are already concluded (don't re-flag their come-back date as "newly ready")
-_DONE = {"validated", "proven"}
+# statuses that are already concluded (don't re-flag their come-back date as "newly ready").
+# Keep in step with engine/experiments_registry._DONE — the panel re-derives `ready` with
+# THIS set, so a status the engine considers concluded (gate_open, no_go) but the panel
+# does not re-flags daily forever (2026-08-26 audit: the no_go cortex hypotheses).
+_DONE = {"validated", "proven", "gate_open", "no_go"}
 # kinds that never auto-mature a result on their come-back date (a re-check prompt, not a result)
 _NO_AUTO_READY = {"parked_research"}
 
