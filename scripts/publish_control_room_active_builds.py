@@ -16,6 +16,7 @@ from __future__ import annotations
 import grp
 import json
 import os
+import re
 import secrets
 import selectors
 import signal
@@ -46,6 +47,10 @@ STDERR_LIMIT_BYTES = 16 * 1024
 SOURCE_MAX_AGE_SECONDS = 300
 SOURCE_FUTURE_TOLERANCE_SECONDS = 0
 COLLECTION_MIN_INTERVAL_SECONDS = 9 * 60
+UTC_CLOCK_RE = re.compile(
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+    r"(?:\.[0-9]{1,6})?(?:Z|\+00:00)"
+)
 
 
 class PublishError(RuntimeError):
@@ -163,7 +168,6 @@ def run_bounded(
                 break
 
         if reason is not None:
-            _terminate_and_reap(process)
             raise PublishError(reason)
 
         returncode = process.wait(timeout=max(0.1, deadline - time.monotonic()))
@@ -171,7 +175,6 @@ def run_bounded(
             raise PublishError("COLLECT_EXIT")
         return BoundedResult(stdout=bytes(buffers["stdout"]), returncode=returncode)
     except subprocess.TimeoutExpired as exc:
-        _terminate_and_reap(process)
         raise PublishError("COLLECT_TIMEOUT") from exc
     finally:
         selector.close()
@@ -183,8 +186,10 @@ def run_bounded(
             process.stderr.close()
         except OSError:
             pass
-        if process.poll() is None:
-            _terminate_and_reap(process)
+        # The direct child may have exited successfully after forking a
+        # pipe-detached descendant. Always close the owned process group, not
+        # only terminal paths where the direct child is still visible.
+        _terminate_and_reap(process)
 
 
 def _reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -228,7 +233,7 @@ def _decode_document(raw: bytes) -> tuple[dict[str, Any], datetime]:
         raise PublishError("DOCUMENT_NONCANONICAL")
 
     stamp_text = document.get("collected_at")
-    if not isinstance(stamp_text, str):
+    if not isinstance(stamp_text, str) or UTC_CLOCK_RE.fullmatch(stamp_text) is None:
         raise PublishError("SOURCE_CLOCK")
     try:
         stamp = datetime.fromisoformat(stamp_text.replace("Z", "+00:00"))
@@ -236,7 +241,9 @@ def _decode_document(raw: bytes) -> tuple[dict[str, Any], datetime]:
         raise PublishError("SOURCE_CLOCK") from exc
     if stamp.tzinfo is None or stamp.utcoffset() != timedelta(0):
         raise PublishError("SOURCE_CLOCK")
-    return document, stamp
+    normalized = dict(document)
+    normalized["collected_at"] = stamp.isoformat().replace("+00:00", "Z")
+    return normalized, stamp
 
 
 def validate_document(raw: bytes, *, now: datetime | None = None) -> bytes:

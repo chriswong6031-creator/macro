@@ -159,6 +159,12 @@ def test_safe_directory_fstat_failure_is_sanitized_and_descriptor_is_closed(
         b'{"schema":"wrong","collected_at":"2026-08-28T00:00:00+00:00"}',
         b'{"schema":"project_active_builds.v1","collected_at":"not-a-clock"}',
         b'{"schema":"project_active_builds.v1","collected_at":"2026-08-28T00:00:00"}',
+        _encoded(_payload(collected_at=datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc))).replace(
+            b"T12:00:00+00:00", b" 12:00:00+00:00"
+        ),
+        _encoded(_payload(collected_at=datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc))).replace(
+            b"+00:00", b"+0000"
+        ),
     ],
 )
 def test_document_parser_rejects_empty_duplicate_nonfinite_schema_and_bad_clock(raw):
@@ -176,6 +182,14 @@ def test_document_parser_rejects_stale_and_future_collection_clocks():
         publisher.validate_document(
             _encoded(_payload(collected_at=now + timedelta(minutes=2))), now=now
         )
+
+
+@pytest.mark.parametrize("suffix", ["Z", "+00:00"])
+def test_document_parser_accepts_only_canonical_utc_forms_and_normalizes_to_z(suffix):
+    now = datetime(2026, 8, 28, 12, 0, tzinfo=timezone.utc)
+    raw = _encoded(_payload(collected_at=now)).replace(b"+00:00", suffix.encode())
+    normalized = json.loads(publisher.validate_document(raw, now=now))
+    assert normalized["collected_at"] == "2026-08-28T12:00:00Z"
 
 
 def test_bounded_process_accepts_small_stdout_and_never_forwards_stderr():
@@ -239,6 +253,38 @@ def test_bounded_process_kills_descendant_group_after_parent_already_exited(tmp_
         if time.monotonic() >= deadline:
             os.kill(child_pid, signal.SIGKILL)
             pytest.fail("bounded collector leaked a descendant process group")
+        time.sleep(0.02)
+
+
+def test_bounded_process_kills_pipe_detached_descendant_after_successful_parent(tmp_path):
+    child_pid_path = tmp_path / "detached-child.pid"
+    program = (
+        "import pathlib,subprocess,sys; "
+        "child=subprocess.Popen([sys.executable,'-c','import time; time.sleep(20)'],"
+        "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); "
+        f"pathlib.Path({str(child_pid_path)!r}).write_text(str(child.pid)); "
+        "raise SystemExit(0)"
+    )
+
+    result = publisher.run_bounded(
+        [sys.executable, "-c", program],
+        cwd=Path.cwd(),
+        timeout_seconds=2,
+        stdout_limit=128,
+        stderr_limit=128,
+    )
+    assert result.returncode == 0
+
+    child_pid = int(child_pid_path.read_text())
+    deadline = time.monotonic() + 2
+    while True:
+        try:
+            os.kill(child_pid, 0)
+        except ProcessLookupError:
+            break
+        if time.monotonic() >= deadline:
+            os.kill(child_pid, signal.SIGKILL)
+            pytest.fail("successful collector leaked a pipe-detached descendant")
         time.sleep(0.02)
 
 
