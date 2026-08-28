@@ -5,7 +5,7 @@ claim: >
   some planned ownership, while current main still leaves W3 OPEX risk disconnected from merged W4
   event-window context and contains other material semantic-staleness/evidence-epoch gaps.
 falsifier: >
-  Re-read current protected/master and macro/main, then show all of the following false: (1)
+  Re-read current protected/master and macro/main, then show all of the following true: (1)
   engine/opex_risk.py no longer hard-codes event_collision=None / 'W4 not yet built'; (2) a current
   RIC yield-momentum organ exists; (3) data/release_forecast/latest.json no longer withholds accuracy
   under an experimental target epoch; (4) data/rates_command/latest.json carries fresh component
@@ -38,8 +38,9 @@ confidence: verified
 - `engine/yield_momentum.py` and `engine/ric_scorecard.py` are absent on the recovered main lineage.
 - Macro Release Intelligence's current artifact calls present forecast points experimental and
   withholds accuracy until clean aligned forward evidence accrues.
-- The current Forward Path artifact is fresh at the file level while one policy-intelligence input is
-  44 days stale, proving file timestamp is not sufficient health evidence.
+- The current Forward Path artifact is fresh at the file level while one policy-intelligence input
+  (intel_as_of 2026-07-13) was 44 days stale at the 2026-08-27 recovery read and keeps aging on later
+  main, proving file timestamp is not sufficient health evidence.
 - The broad options-surface backfill exists, but committed parquet/history does not prove the current
   production collector/build lane is advancing.
 - Later Transmission Intelligence explicitly says not to build a new causal brain and names the

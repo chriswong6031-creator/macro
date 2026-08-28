@@ -18,7 +18,7 @@ owns_paths:
   - engine/release_forecast*.py
   - engine/event_calendar.py
   - engine/event_window.py
-  - engine/opex*.py
+  - engine/opex_risk.py
   - engine/options_surface.py
   - engine/rate_inflation_transmission.py
   - engine/rates_inflation_command.py

@@ -66,7 +66,7 @@ Completion does **not** require forcing an experimental forecast or dealer hypot
 - **Release intelligence:** existing MRI `engine/release_forecast*`, official release adapters, release ledger and Release Radar. Extend; never create `release_lab` or a second forecast truth store.
 - **Scheduled events:** `engine/event_calendar.py` is the canonical upcoming calendar. Historical PIT release-date work must extend/consume this release/event family and official-vintage receipts, not create a second calendar.
 - **OPEX calendar:** `engine/opex.py` remains the expiration owner; event-window code delegates.
-- **Options/dealer data:** current ThetaData options plane + `engine/options_surface.py` and its committed aggregate stores. Do not resurrect retired Polygon assumptions or add a parallel surface history.
+- **Options/dealer data:** current ThetaData options plane + `engine/options_surface.py` and its committed aggregate stores. ThetaData is the Chairman-ruled canonical source (`DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA`); the data plane is owned by active `WS:ADVANCED-DATA-OPTIONS`, and options-intelligence recovery is separately owned by `WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY` (OA0 freeze, landed on main 2026-08-27 after this record's recovery base). RIC composes these planes as a consumer; it does not adjudicate options-domain ownership. Do not resurrect retired Polygon assumptions or add a parallel surface history.
 - **Risk:** existing Risk Radar remains the risk owner. Event/OPEX context never enters `_SCARES` or sizing/gating.
 - **Rates data:** existing FRED/curve collection. DGS20 ownership is CCW / alias `us20y`; RIC consumes it.
 - **Transmission:** `engine/rate_inflation_transmission.py`, `stock_macro_sensitivity.py`, and the later Transmission Intelligence program. No second causal/transmission brain.
@@ -162,9 +162,9 @@ Current accepted Autonomy V1 law does not allow absent-recipient Fable delivery 
 
 **Precedence:** protected Skillpack -> DNR calendar-gated-risk kill -> this freeze -> RIC masterplan/prereg -> existing options/OPEX implementations.
 
-**Scope:** Macro only; current ThetaData/options-surface pipeline, `engine/opex_risk.py`, `engine/event_window.py`, `engine/opex.py`, existing OVC stamps/consumers, HS3/HS4 research/tests. Respect any current Intraday Flow OPEX ownership; do not duplicate its paths.
+**Scope:** Macro only; current ThetaData/options-surface pipeline, `engine/opex_risk.py`, `engine/event_window.py`, `engine/opex.py`, existing OVC stamps/consumers, HS3/HS4 research/tests. Respect any current Intraday Flow OPEX ownership (`WS:INTRADAY-FLOW-P0-RECOVERY` owns `engine/opex.py`) and the active options-domain owners `WS:ADVANCED-DATA-OPTIONS` and `WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY`; do not duplicate their paths.
 
-**Non-goals:** no directional OPEX signal; no `_SCARES`; no weighting/fused 0-100 score; no dealer-sign certainty; no early dealer-load promotion; no second surface store/provider path.
+**Non-goals:** no directional OPEX signal; no `_SCARES`; no weighting/fused 0-100 score; no dealer-sign certainty; no early dealer-load promotion; no second surface store/provider path; no charm-flow directional narratives (`DNR:KILL-CHARM-NARRATIVES`).
 
 **Journey:** user sees current cycle phase, dealer concentration/load, vanna/charm context, event collision and historical base-rate caveats with freshness/coverage; missing/stale theta data yields explicit degraded state, not a plausible stale read.
 
@@ -172,7 +172,7 @@ Current accepted Autonomy V1 law does not allow absent-recipient Fable delivery 
 
 **Acceptance:** W3 consumes W4 collision correctly; 2017-2026 historical studies are reproducible; live theta surface freshness is proven on the real production lane; real OPEX/event date flows to actual UI/context consumer; authority remains false.
 
-**Stop:** stop on provider/source ambiguity, collision with an active Intraday Flow owner, prereg change after outcomes, or any request to promote dealer-load early. Return exact carrier/evidence packet.
+**Stop:** stop on provider/source ambiguity, collision with an active Intraday Flow, Advanced-Data/Options or Options-Alpha owner, prereg change after outcomes, or any request to promote dealer-load early. Return exact carrier/evidence packet.
 
 ### Commission RIC-F3 — Yield Momentum & Canonical Transmission
 
