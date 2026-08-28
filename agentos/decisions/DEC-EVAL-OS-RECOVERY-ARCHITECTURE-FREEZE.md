@@ -42,7 +42,7 @@ alternatives:
       Real focal desk clocks are incomplete, T4 is not production-proven, illegal-promotion
       acceptance is not unified, and the L4 human answer layer is not built.
 evidence:
-  - "Protected Sol Skillpack pin: mastermindx-market-intelligence/Mastermind@ac1c045ed4cdf0b2b87fbc81760effa909271436."
+  - "Protected Sol Skillpack pin: mastermindx-market-intelligence/Mastermind@d508e30c865bd2425bb551650b71381b7eb6d4f8."
   - "Macro recovery base: d84468e41f40f8dfb2404b2f51be557aade8f0ec."
   - "T1 #5620 / d13259abc51c; lifecycle closeout #6392 / MAS-131."
   - "T4 #5721 / a77d874a1c23c7e4e2db0000db75164fcc56bcc2; old claude/eval-os-t4-output-health ref no longer exists."
