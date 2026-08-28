@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -9,6 +10,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 CADDY = ROOT / "app" / "deploy" / "Caddyfile"
+CADDY_BIN = os.environ.get("CADDY_BIN", "caddy")
 
 
 def _site_block(text: str, host: str) -> str:
@@ -36,7 +38,7 @@ def _control_block() -> str:
 def _adapted_control_execution_labels() -> list[str]:
     """Return security-relevant handlers in Caddy's real adapted order."""
     result = subprocess.run(
-        ["caddy", "adapt", "--config", str(CADDY), "--pretty"],
+        [CADDY_BIN, "adapt", "--config", str(CADDY), "--pretty"],
         cwd=ROOT,
         check=True,
         capture_output=True,
