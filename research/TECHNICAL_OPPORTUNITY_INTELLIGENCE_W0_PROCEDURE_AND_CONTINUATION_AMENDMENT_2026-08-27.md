@@ -4,7 +4,7 @@
 **Program:** `WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE`  
 **Amends:** the W1 Evidence Census and W2-0 Data/Clock Archaeology commission packets  
 **Original W0 authoring procedure pin:** `Mastermind@af43f356f4f7f34cb3514d1d1099b50444af8487`  
-**Current final-review and commission procedure pin:** `Mastermind@ac1c045ed4cdf0b2b87fbc81760effa909271436`  
+**Final-review and commission procedure pin at authoring time (2026-08-27):** `Mastermind@ac1c045ed4cdf0b2b87fbc81760effa909271436` — superseded for finalization by the pin in §8  
 **Authority:** current protected `COMMISSION_WAVE.md` continuation-watch law; records only
 
 ---
@@ -173,3 +173,14 @@ No downstream claim is authorized merely because:
 - a watcher surfaced a message.
 
 Sol reviews each returned exact head and evidence packet against the accepted mission. W3 remains held until both W1 and W2-0 are accepted and Sol freezes a new preregistration with exact species versions, clocks, targets, comparators, search-family size, and kill gates.
+
+---
+
+## 8. W0 finalization re-pin (2026-08-28, `technical-opportunity-w0-finalize-20260828-sol-001`)
+
+The W0 carrier was finalized for Sol acceptance under a fresh protected-procedure pin. Earlier pins in this document and in the sibling W0 records are preserved as history and remain the pins under which their evidence was actually gathered; they are not retroactively rewritten.
+
+- **Finalization procedure pin:** `Mastermind@038d1271b98e88b24e039c1ce4127d6503945845` (protected `master`; schema `mastermind.sol_skillpack.v1`, skillpack_version 1.0.1, minimum_bootstrap_major 1; `RECONCILE_STATE` and `COMMISSION_WAVE` re-read at this pin).
+- **Reconciliation base:** Macro `main@ba270c60c1fe825f2e9fce1fcf507b7272a67b63`, merged into the carrier with zero conflicts; none of the 42 main commits since merge-base `463bb3b4` touched any W0 file, and no open PR other than #6570 touches the W0 records.
+- **No architecture change:** the frozen two-queue law, Setup Species ownership, Live Entry Radar boundary, 4H evidence gate, wave scopes, and all DNR/do-not-redo entries are unchanged by this finalization. Only reconciliation and procedure-currency records were added.
+- **Boundary for later pins:** per §1, a still-later protected Skillpack at W1/W2-0 dispatch time is re-pinned by the dispatching Sol at that moment; this section does not freeze procedure for downstream waves.
