@@ -213,6 +213,24 @@ pages:
 
   macro:canada_stocks:
     archetype: "discovery_board"
+    design_system:
+      compliant: true
+      migrated_pr: 6612
+      governed_regions:
+        - {template: templates/stock-dashboard.css, region: .mx-stockdash--ca}
+      evidence: mockups/evidence/theme-parity/tp1-canada/manifest.json
+    evidence:
+      - mockups/evidence/theme-parity/tp1-canada/manifest.json
+      - research/THEME_PARITY_TP1_CANADA_ACCEPTANCE.md
+    why: >
+      TP-1 theme-parity closeout (theme-parity-tp1-canada-20260828-sol-001):
+      compliant flips ONLY here, after PR #6612 merged (squash e2091032ad1f,
+      Sol release 2026-08-28) and the entitled production proof passed on the
+      merged bytes. The governed region is the extracted stock-dashboard
+      presentation pair under .mx-stockdash--ca — not the whole legacy
+      canada.html.j2 shell, which keeps its pre-existing debt outside the
+      composed surface. Amendment 1 §A2: registry compliance is post-proof
+      truth, never same-PR self-declaration.
 
   macro:china_heatmap:
     archetype: "discovery_board"
