@@ -1,0 +1,443 @@
+{
+  "schema": "mastermind.r3b2.treemap_labels_audit.v1",
+  "candidate": "MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html",
+  "overlap_tolerance_px": 0.5,
+  "touch_floor_px": 24.0,
+  "mobile_breakpoint_px": 640,
+  "cells": [
+    {
+      "width": 320,
+      "lang": "en",
+      "theme": "dark",
+      "mobile": true,
+      "tiles": 485,
+      "painted_labels": 14,
+      "sector_names": 3,
+      "tickers": 7,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2998.2,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2859.4,
+          "summary_w": 268,
+          "summary_h": 62.8
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2936.2,
+          "summary_w": 268,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 320,
+      "lang": "en",
+      "theme": "light",
+      "mobile": true,
+      "tiles": 485,
+      "painted_labels": 14,
+      "sector_names": 3,
+      "tickers": 7,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2998.2,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2859.4,
+          "summary_w": 268,
+          "summary_h": 62.8
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2936.2,
+          "summary_w": 268,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 320,
+      "lang": "zh",
+      "theme": "dark",
+      "mobile": true,
+      "tiles": 485,
+      "painted_labels": 16,
+      "sector_names": 5,
+      "tickers": 7,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2760.6,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2636.6,
+          "summary_w": 268,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2698.6,
+          "summary_w": 268,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 320,
+      "lang": "zh",
+      "theme": "light",
+      "mobile": true,
+      "tiles": 485,
+      "painted_labels": 16,
+      "sector_names": 5,
+      "tickers": 7,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2760.6,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2636.6,
+          "summary_w": 268,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2698.6,
+          "summary_w": 268,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "en",
+      "theme": "dark",
+      "mobile": true,
+      "tiles": 495,
+      "painted_labels": 18,
+      "sector_names": 4,
+      "tickers": 10,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2772.8,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2634,
+          "summary_w": 322,
+          "summary_h": 62.8
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2710.8,
+          "summary_w": 322,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "en",
+      "theme": "light",
+      "mobile": true,
+      "tiles": 495,
+      "painted_labels": 18,
+      "sector_names": 4,
+      "tickers": 10,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2772.8,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2634,
+          "summary_w": 322,
+          "summary_h": 62.8
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2710.8,
+          "summary_w": 322,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "zh",
+      "theme": "dark",
+      "mobile": true,
+      "tiles": 495,
+      "painted_labels": 21,
+      "sector_names": 5,
+      "tickers": 10,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2614.9,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2490.9,
+          "summary_w": 322,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2552.9,
+          "summary_w": 322,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 390,
+      "lang": "zh",
+      "theme": "light",
+      "mobile": true,
+      "tiles": 495,
+      "painted_labels": 21,
+      "sector_names": 5,
+      "tickers": 10,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 3,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "none",
+      "map_role": "img",
+      "map_top": 2614.9,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2490.9,
+          "summary_w": 322,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2552.9,
+          "summary_w": 322,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 820,
+      "lang": "en",
+      "theme": "dark",
+      "mobile": false,
+      "tiles": 502,
+      "painted_labels": 35,
+      "sector_names": 4,
+      "tickers": 20,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 10,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "auto",
+      "map_role": "img",
+      "map_top": 2046.2,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2451.2,
+          "summary_w": 572,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2513.2,
+          "summary_w": 572,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 820,
+      "lang": "en",
+      "theme": "light",
+      "mobile": false,
+      "tiles": 502,
+      "painted_labels": 35,
+      "sector_names": 4,
+      "tickers": 20,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 10,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "auto",
+      "map_role": "img",
+      "map_top": 2046.2,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "Read the map as a table 11 sectors · 503 names",
+          "y": 2451.2,
+          "summary_w": 572,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "Browse the names 503 names",
+          "y": 2513.2,
+          "summary_w": 572,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 820,
+      "lang": "zh",
+      "theme": "dark",
+      "mobile": false,
+      "tiles": 502,
+      "painted_labels": 40,
+      "sector_names": 6,
+      "tickers": 21,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 10,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "auto",
+      "map_role": "img",
+      "map_top": 1957.5,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2343.7,
+          "summary_w": 572,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2405.7,
+          "summary_w": 572,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    },
+    {
+      "width": 820,
+      "lang": "zh",
+      "theme": "light",
+      "mobile": false,
+      "tiles": 502,
+      "painted_labels": 40,
+      "sector_names": 6,
+      "tickers": 21,
+      "overlaps": [],
+      "intra_owner_line_box_contacts": 10,
+      "interactive_in_map": 0,
+      "sub_floor_interactive": [],
+      "tile_pointer_events": "auto",
+      "map_role": "img",
+      "map_top": 1957.5,
+      "hatches": [
+        {
+          "id": "hm-alt",
+          "present": true,
+          "text": "以表格阅读该图 11 个板块 · 503 只",
+          "y": 2343.7,
+          "summary_w": 572,
+          "summary_h": 48
+        },
+        {
+          "id": "hm-names",
+          "present": true,
+          "text": "浏览个股 503 只",
+          "y": 2405.7,
+          "summary_w": 572,
+          "summary_h": 48
+        }
+      ],
+      "failures": []
+    }
+  ],
+  "failing_cells": [],
+  "pass": true
+}

@@ -944,6 +944,90 @@
       status: pos.status === 'closed' ? 'closed' : 'open'
     };
   }
+  function pfImportApi() {
+    return window.PortfolioImport || null;
+  }
+  function pfIsUuid(id) {
+    var api = pfImportApi();
+    return !!(api && api.isUuid && api.isUuid(id));
+  }
+  function pfImportSemantic(row) {
+    var api = pfImportApi();
+    if (api && api.semantic) return api.semantic(row);
+    return {
+      id: row.id, ticker: row.ticker,
+      shares: row.shares == null ? null : Number(row.shares),
+      entry_price: row.entry_price == null ? null : Number(row.entry_price),
+      entry_date: row.entry_date || null,
+      notes: row.notes == null || row.notes === '' ? null : String(row.notes),
+      status: row.status === 'closed' ? 'closed' : 'open'
+    };
+  }
+  function pfImportSame(a, b) {
+    var api = pfImportApi();
+    if (api && api.sameSemantic) return api.sameSemantic(a, b);
+    return JSON.stringify(pfImportSemantic(a)) === JSON.stringify(pfImportSemantic(b));
+  }
+  function pfImportValidate(rows) {
+    var api = pfImportApi();
+    if (!api || !api.validate) return { ok: false, code: 'import-contract-unavailable' };
+    return api.validate(rows);
+  }
+  function pfImportClassify(wanted, found, uid) {
+    var byId = {}, exact = 0, conflicts = 0, wrongOwner = 0;
+    (found || []).forEach(function (row) { byId[String(row.id)] = row; });
+    (wanted || []).forEach(function (row) {
+      var got = byId[String(row.id)];
+      if (!got) return;
+      if (uid && String(got.user_id) !== String(uid)) { wrongOwner++; return; }
+      if (pfImportSame(row, got)) exact++; else conflicts++;
+    });
+    if (wrongOwner) return { state: 'owner_conflict', exact: exact, conflicts: conflicts };
+    if (conflicts) return { state: 'conflict', exact: exact, conflicts: conflicts };
+    if (exact === wanted.length && (found || []).length === wanted.length) {
+      return { state: 'all', exact: exact, conflicts: 0 };
+    }
+    if (exact === 0 && !(found || []).length) return { state: 'zero', exact: 0, conflicts: 0 };
+    return { state: 'some', exact: exact, conflicts: conflicts };
+  }
+  function pfImportResult(ok, state, extra) {
+    var out = { ok: !!ok, state: state };
+    Object.keys(extra || {}).forEach(function (key) { out[key] = extra[key]; });
+    return out;
+  }
+
+  /* A1B anonymous save: the complete next book is serialized once and written with
+     ONE localStorage.setItem. Stable draft UUIDs are the idempotency key. An existing
+     exact batch is success; a partial batch or same-id/different-semantics collision
+     is terminal and the old book is left byte-for-byte untouched. */
+  function pfLocalImport(rows) {
+    var check = pfImportValidate(rows);
+    if (!check.ok) return Promise.resolve(pfImportResult(false, 'invalid_draft', { code: check.code }));
+    var wanted = rows.map(pfImportSemantic), current = pfRead().rows;
+    var found = current.filter(function (row) {
+      return wanted.some(function (want) { return String(want.id) === String(row.id); });
+    });
+    var before = pfImportClassify(wanted, found, null);
+    if (before.state === 'all') {
+      return Promise.resolve(pfImportResult(true, 'saved', { authority: 'local', rows: wanted }));
+    }
+    if (before.state !== 'zero') {
+      return Promise.resolve(pfImportResult(false, before.state, { authority: 'local' }));
+    }
+    var next = current.concat(wanted);
+    if (!pfWrite(next)) {
+      return Promise.resolve(pfImportResult(false, 'local_write_failed', { authority: 'local' }));
+    }
+    var afterRows = pfRead().rows.filter(function (row) {
+      return wanted.some(function (want) { return String(want.id) === String(row.id); });
+    });
+    var after = pfImportClassify(wanted, afterRows, null);
+    return after.state === 'all'
+      ? Promise.resolve(pfImportResult(true, 'saved', { authority: 'local', rows: wanted }))
+      : Promise.resolve(pfImportResult(false, 'local_verify_failed', {
+        authority: 'local', effect: 'unknown', retryable: false
+      }));
+  }
   // dedupe identity for the fold: ticker + entry_date + shares (spec §5.5)
   function pfKey(r) {
     var sh = pfNumOrNull(r && r.shares);
@@ -995,6 +1079,33 @@
   // ---- one-shot fold: local rows -> the user's own Supabase rows -------------
   // Mirrors the watchlist fold exactly: marker only on SUCCESS, so a failed fold is
   // retried next session rather than silently dropping the visitor's book.
+  function _foldLegacyPortfolio(local) {
+    if (!local.length) return Promise.resolve(true);
+    var epochAtCall = authEpoch, uidAtCall = user && user.id;
+    return sb.from('portfolio_positions')
+      .select('ticker, entry_date, shares')
+      .eq('user_id', uidAtCall)
+      .then(function (res) {
+        if (authEpoch !== epochAtCall || !user || user.id !== uidAtCall) return false;
+        if (res.error) throw res.error;
+        var toInsert = pfFoldPlan(local, res.data || []);
+        if (!toInsert.length) return true;
+        var rows = toInsert.map(function (r) {
+          return {
+            user_id: uidAtCall, ticker: r.ticker, shares: pfNumOrNull(r.shares),
+            entry_price: pfNumOrNull(r.entry_price), entry_date: r.entry_date || null,
+            notes: r.notes || null, status: r.status === 'closed' ? 'closed' : 'open',
+            updated_at: new Date().toISOString()
+          };
+        });
+        return sb.from('portfolio_positions').insert(rows).then(function (ins) {
+          if (authEpoch !== epochAtCall || !user || user.id !== uidAtCall) return false;
+          if (ins.error) throw ins.error;
+          return true;
+        });
+      });
+  }
+
   function _foldLocalPortfolio() {
     if (!user || !sb) return Promise.resolve();
     var already = false;
@@ -1005,26 +1116,23 @@
     // before the visitor ever built one (the watchlist fold's exact trap).
     if (!local.length) return Promise.resolve();
 
-    return sb.from('portfolio_positions')
-      .select('ticker, entry_date, shares')
-      .eq('user_id', user.id)
-      .then(function (res) {
-        if (res.error) throw res.error;
-        var toInsert = pfFoldPlan(local, res.data || []);
-        if (!toInsert.length) { _markPfFolded(); pfClear(); return; }
-        var rows = toInsert.map(function (r) {
-          return {
-            user_id: user.id, ticker: r.ticker, shares: pfNumOrNull(r.shares),
-            entry_price: pfNumOrNull(r.entry_price), entry_date: r.entry_date || null,
-            notes: r.notes || null, status: r.status === 'closed' ? 'closed' : 'open',
-            updated_at: new Date().toISOString()
-          };
-        });
-        return sb.from('portfolio_positions').insert(rows).then(function (ins) {
-          if (ins.error) throw ins.error;
-          _markPfFolded();
-          pfClear();
-        });
+    var stable = local.filter(function (row) { return pfIsUuid(row.id); });
+    var legacy = local.filter(function (row) { return !pfIsUuid(row.id); });
+    /* A1B rows keep their explicit UUID through the fold. Reconciliation is by id,
+       not ticker/lot, so duplicate lots remain legal and a repeated fold cannot make
+       a second row. Legacy loc-* rows retain the pre-A1B safest existing semantic
+       fold; A1B does not rewrite their historical identity law. */
+    var stableCheck = stable.length ? pfImportValidate(stable) : { ok: true };
+    var stablePromise = !stableCheck.ok
+      ? Promise.resolve({ ok: false })
+      : (stable.length ? pfCloudImport(stable.map(pfImportSemantic)) : Promise.resolve({ ok: true }));
+    return stablePromise.then(function (stableResult) {
+        if (!stableResult || !stableResult.ok) throw new Error('stable-import-unconfirmed');
+        return _foldLegacyPortfolio(legacy);
+      }).then(function (legacyOk) {
+        if (!legacyOk) throw new Error('legacy-import-unconfirmed');
+        _markPfFolded();
+        pfClear();
       })
       .catch(function (err) {
         // no marker -> retried next session. Message only; never row contents.
@@ -1178,6 +1286,148 @@
   }
   function portfolioReadState() { return pfReadState; }
 
+  var PF_IMPORT_SELECT = 'id, user_id, ticker, shares, entry_price, entry_date, notes, status';
+
+  function pfCloudRows(rows, uid) {
+    return rows.map(function (row) {
+      var s = pfImportSemantic(row);
+      return {
+        id: s.id, user_id: uid, ticker: s.ticker, shares: s.shares,
+        entry_price: s.entry_price, entry_date: s.entry_date,
+        notes: s.notes, status: s.status
+      };
+    });
+  }
+  function pfCloudReconcile(wanted, uid, epoch) {
+    var ids = wanted.map(function (row) { return row.id; });
+    return Promise.resolve(sb.from('portfolio_positions')
+      .select(PF_IMPORT_SELECT)
+      .eq('user_id', uid)
+      .in('id', ids))
+      .then(function (res) {
+        if (authEpoch !== epoch || !user || user.id !== uid) return { stale: true };
+        if (res.error) throw res.error;
+        return { classification: pfImportClassify(wanted, res.data || [], uid), rows: res.data || [] };
+      });
+  }
+  function pfCloudAuthoritativeRead(wanted, uid, epoch) {
+    return portfolioList().then(function (allRows) {
+      if (authEpoch !== epoch || !user || user.id !== uid) return pfImportResult(false, 'stale_auth');
+      var rs = portfolioReadState();
+      if (!rs || rs.authority !== 'cloud' || rs.state !== 'ready' || allRows === null) {
+        return pfImportResult(false, 'authoritative_reread_failed', { effect: 'confirmed' });
+      }
+      var ids = {};
+      wanted.forEach(function (row) { ids[String(row.id)] = true; });
+      var found = allRows.filter(function (row) { return ids[String(row.id)]; });
+      var classification = pfImportClassify(wanted, found, uid);
+      if (classification.state !== 'all') {
+        return pfImportResult(false, 'authoritative_reread_mismatch', { effect: 'confirmed' });
+      }
+      return pfImportResult(true, 'saved', {
+        authority: 'cloud', rows: wanted.map(pfImportSemantic), canonical_rows: allRows
+      });
+    });
+  }
+  function pfCloudReceipt(wanted, data, uid) {
+    if (!Array.isArray(data) || data.length !== wanted.length) return false;
+    return pfImportClassify(wanted, data, uid).state === 'all';
+  }
+  function pfCloudInsertOnce(wanted, uid, epoch) {
+    if (authEpoch !== epoch || !user || user.id !== uid) {
+      return Promise.resolve({ kind: 'stale' });
+    }
+    var query;
+    try {
+      query = sb.from('portfolio_positions')
+        .insert(pfCloudRows(wanted, uid))
+        .select(PF_IMPORT_SELECT);
+    } catch (err) {
+      return Promise.resolve({ kind: 'lost', error: err });
+    }
+    return Promise.resolve(query).then(function (res) {
+      if (authEpoch !== epoch || !user || user.id !== uid) return { kind: 'stale' };
+      if (res.error) return { kind: 'rejected', error: res.error };
+      return pfCloudReceipt(wanted, res.data, uid)
+        ? { kind: 'exact', data: res.data }
+        : { kind: 'ambiguous_receipt', data: res.data || [] };
+    }).catch(function (err) {
+      if (authEpoch !== epoch || !user || user.id !== uid) return { kind: 'stale' };
+      return { kind: 'lost', error: err };
+    });
+  }
+  function pfCloudAfterLost(wanted, uid, epoch, mayRetry) {
+    return pfCloudReconcile(wanted, uid, epoch).then(function (rec) {
+      if (rec.stale) return pfImportResult(false, 'stale_auth');
+      var state = rec.classification.state;
+      if (state === 'all') return pfCloudAuthoritativeRead(wanted, uid, epoch);
+      if (state !== 'zero') return pfImportResult(false, state, { effect: 'ambiguous' });
+      if (!mayRetry) return pfImportResult(false, 'effect_unknown', { retryable: false });
+      return pfCloudInsertOnce(wanted, uid, epoch).then(function (retry) {
+        if (retry.kind === 'exact') return pfCloudAuthoritativeRead(wanted, uid, epoch);
+        if (retry.kind === 'rejected') return pfImportResult(false, 'rejected', { retryable: true });
+        if (retry.kind === 'stale') return pfImportResult(false, 'stale_auth');
+        if (retry.kind === 'ambiguous_receipt') {
+          return pfImportResult(false, 'ambiguous_receipt', { effect: 'unknown', retryable: false });
+        }
+        return pfCloudAfterLost(wanted, uid, epoch, false);
+      });
+    }, function () {
+      // The INSERT response was already lost. If its identity-bound reconciliation
+      // is unavailable, the durable effect is unknowable and must never be retried.
+      return pfImportResult(false, 'effect_unknown', { retryable: false });
+    });
+  }
+  function pfCloudImport(wanted) {
+    var epoch = authEpoch, uid = user && user.id;
+    /* A read-before-insert is the idempotency gate for a resumed fold or a caller
+       replaying the same frozen draft. It never dedupes by ticker: only exact UUIDs
+       can suppress the one batch INSERT. */
+    return pfCloudReconcile(wanted, uid, epoch).then(function (rec) {
+      if (rec.stale) return pfImportResult(false, 'stale_auth');
+      var state = rec.classification.state;
+      if (state === 'all') return pfCloudAuthoritativeRead(wanted, uid, epoch);
+      if (state !== 'zero') return pfImportResult(false, state, { effect: 'none' });
+      return pfCloudInsertOnce(wanted, uid, epoch).then(function (attempt) {
+        if (attempt.kind === 'exact') return pfCloudAuthoritativeRead(wanted, uid, epoch);
+        if (attempt.kind === 'rejected') return pfImportResult(false, 'rejected', { effect: 'none' });
+        if (attempt.kind === 'stale') return pfImportResult(false, 'stale_auth');
+        if (attempt.kind === 'ambiguous_receipt') {
+          return pfCloudReconcile(wanted, uid, epoch).then(function (after) {
+            return pfImportResult(false, 'ambiguous_receipt', {
+              effect: after.stale ? 'unknown' : after.classification.state,
+              retryable: false
+            });
+          }).catch(function () {
+            return pfImportResult(false, 'ambiguous_receipt', { effect: 'unknown', retryable: false });
+          });
+        }
+        return pfCloudAfterLost(wanted, uid, epoch, true);
+      });
+    }, function () {
+      // This is the pre-insert idempotency read: no mutation has begun.
+      return pfImportResult(false, 'unavailable', { effect: 'none', retryable: true });
+    });
+  }
+  function portfolioImportBatch(rows) {
+    var check = pfImportValidate(rows);
+    if (!check.ok) return Promise.resolve(pfImportResult(false, 'invalid_draft', { code: check.code }));
+    var wanted = rows.map(pfImportSemantic);
+    if (_isClientUnavailable() || _isCloudLoading()) {
+      return Promise.resolve(pfImportResult(false, 'unavailable', { authority: 'cloud' }));
+    }
+    if (_isLocalMode()) return pfLocalImport(wanted);
+    /* A signed-in import starts only from a healthy authoritative read. This keeps a
+       degraded/unknown Portfolio read from becoming a write whose surrounding book
+       cannot be proven, and it keeps a failed preflight read honestly in the
+       zero-effect `unavailable` class rather than an EFFECT_UNKNOWN mutation class. */
+    if (!pfReadState || pfReadState.authority !== 'cloud' || pfReadState.state !== 'ready') {
+      return Promise.resolve(pfImportResult(false, 'unavailable', { authority: 'cloud' }));
+    }
+    try { return pfCloudImport(wanted); }
+    catch (e) { return Promise.resolve(pfImportResult(false, 'unavailable', { effect: 'none' })); }
+  }
+
   function portfolioUpsert(pos) {
     // pos: { ticker, shares, entry_price, entry_date, notes, status }
     // status must be 'open' or 'closed'
@@ -1320,6 +1570,7 @@
     portfolio: {
       list: portfolioList,
       upsert: portfolioUpsert,
+      importBatch: portfolioImportBatch,
       close: portfolioClose,
       remove: portfolioRemove,
       // 'local' = the localStorage book — signed OUT only (A1A authority law, §10).

@@ -20,20 +20,54 @@ depends_on:
   - WS:EARNINGS-INTELLIGENCE-OS
 decisions:
   - DEC:E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER
+  - DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT
+  - DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT
+  - DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS
 next_action: >
-  E3-A2 landed as a deterministic shadow structural method, not
-  production-live Q&A. Immutable squash-merge
-  1158c9a17712084c011581cd68933f09100c2e5a (#6306). E3-B remains
-  LOCKED. Do not start E3-B.
+  E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress,
+  NOT complete; Sol has ruled (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) and nothing is awaiting
+  Sol on that receipt. The separate method-hardening arc Sol required is now partly landed and is
+  the live front of this workstream.
+  TFG-0 (transcript format generalization architecture) is LANDED and SPEC_ONLY: merge
+  a2dd436722dd0e6c6cb1e17bfa1c888c706c15d0 (#6521) froze the source-native separator/proxy/role
+  law, a 16-revision development corpus chosen before body inspection, and an eight-revision
+  metadata-only holdout (ranks 17-24). It added no runtime capability.
+  TFG-1 v1 (operation tfg1-deterministic-transcript-format-hardening-20260827-v1) is TERMINAL at
+  STOPPED_AT_DEVELOPMENT_GATE with an ACCEPTED falsifier. Implementing the frozen separator law
+  faithfully recovered all 110 frozen handoffs with zero false negatives and exact direct-name
+  extraction, and found three further genuine combined Q&A-opener-plus-first-question separators the
+  frozen TFG-0 gold omitted (MBLY/2026Q2 #21, ARRY/2026Q2 #31, KREF/2026Q2 #15). Sol ruled YES/YES/YES
+  and ratified DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS. No compiler code was written,
+  no implementation head was frozen, and the holdout was never opened.
+  Ratified R2 development truth is 113 structural separators / 97 direct / 6 explicit proxies /
+  103 source-supported / 10 unresolved / 9 source-clean calls / 7 expected-refusal calls.
+  MBLY/2026Q2 leaves the source-clean set because #21 is a mandatory separator whose questioner is
+  unresolved under the already-frozen placeholder + first-name-only law. Machine grading truth is
+  research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json; the
+  historical 110-boundary TFG-0 receipt is preserved unchanged as falsified evidence.
+  TFG-1 R2 is NOT_BUILT. The successor is a distinct logical operation,
+  tfg1-r2-deterministic-transcript-format-hardening-20260827-v1, whose sole packet is
+  research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md.
+  It may not begin until the v1 closeout PR #6555 is Sol-accepted and landed. The v1 operation key is
+  spent and must not be reused. The eight holdout revisions remain SEALED
+  (holdout_bodies_inspected: 0) until R2's corrected development gates are green and an exact
+  implementation head is frozen.
+  AAPL stays exactly 7 exchanges / 26 management answer turns / 68 replay spans and production
+  revision admission stays AAPL-only. E3-C remains in progress: TFG completion is not E3-C
+  completion, a fresh untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered event is
+  still required to close it, and E3-P remains locked behind E3-C.
 owns_paths:
   - research/earnings_intelligence/e3/**
   - engine/company_intelligence/qa_reconstruction.py
   - tests/test_company_intelligence_qa_reconstruction.py
+  - engine/company_intelligence/qa_exchange.py
+  - tests/test_company_intelligence_qa_exchange.py
 artifacts:
   - research/earnings_intelligence/e3/E3_EVENT_INTELLIGENCE_COMPILER_FREEZE_2026-08-20.md
   - research/earnings_intelligence/e3/E3A_AAPL_SHADOW_EXTRACTION_HANDOFF_2026-08-20.md
   - research/earnings_intelligence/e3/E3B_AAPL_LIVE_QA_HANDOFF_2026-08-20.md
   - research/earnings_intelligence/e3/E3C_SECOND_EVENT_GENERALIZATION_HANDOFF_2026-08-20.md
+  - research/earnings_intelligence/e3/e3c_googl_2026q2_source_completeness_receipt.json
   - research/earnings_intelligence/e3/E3P_NATURAL_CYCLE_COMMISSIONING_HANDOFF_2026-08-20.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-21.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-22.md
@@ -43,6 +77,16 @@ artifacts:
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-23-e3a2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2.md
   - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3a2-landed.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-24-e3b-r1.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-25-e3b-built-not-proven.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-26-e3b-live-proof-narrowed.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-e3c-refusal.md
+  - agentos/decisions/DEC-E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT.md
+  - research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json
+  - tests/test_company_intelligence_qa_generalization_e3c.py
+  - engine/company_intelligence/qa_exchange.py
+  - tests/test_company_intelligence_qa_exchange.py
   - engine/company_intelligence/qa_reconstruction.py
   - tests/test_company_intelligence_qa_reconstruction.py
   - research/earnings_intelligence/e3/e3a2_aapl_fy2026_q3_reconstruction_receipt.json
@@ -50,6 +94,19 @@ artifacts:
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_eval_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json
   - research/earnings_intelligence/e3/gold/aapl_fy2026_q3_blind_pass_b.json
+  - research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md
+  - research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md
+  - research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json
+  - research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json
+  - research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md
+  - research/earnings_intelligence/e3/tfg1_development_separator_falsifier_receipt.json
+  - research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py
+  - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json
+  - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+  - agentos/decisions/DEC-E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT.md
+  - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-falsifier.md
+  - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-27-tfg1-r2-ready.md
 landmines:
   - WS:EARNINGS-INTELLIGENCE-OS is done; do not reopen E2-T1 or E2-D to make E3 look active.
   - Parent event_workspace.v1 WORKSPACE_KEYS are closed; a new top-level key is a schema bump Terminal exactKeys will fail.
@@ -59,7 +116,12 @@ landmines:
   - Local Qwen _call_openai_compat currently writes no ai_costs row; E3 must ledger it.
   - earnings_qual head/tail truncation is not canonical extraction.
   - identity_not_in_source is not a valid TypedAbsence reason; use speaker_unresolvable.
-  - N=7 AAPL gold is calibration, not OOS; do not auto-unlock E3-B without a pre-frozen or Sol-granted usefulness gate.
+  - N=7 AAPL gold is calibration, not OOS; Chairman+Sol unlocked E3-B as deterministic structural publication with topics=["unavailable"], not as a numeric usefulness threshold.
+  - GOOGL source selection does not mean Alphabet is already in event_workspace.production_registry; current registry is AAPL + DHI/PHM/KBH/TOL. E3-C must extend that existing identity plane for GOOGL+GOOG, never add a second registry or duplicate GOOG event.
+  - The 10 GOOGL Operator-intro detections are source-admission evidence only; they are not canonical qa_exchange.v1 extraction output and cannot be used to call E3-C complete.
+  - Source admission is NOT reconstructability. The source census counted 10 Operator question-intro boundaries on GOOGL, but the compiler's _qualifying_boundaries admits only Operator segments containing the literal "go ahead" and found exactly ONE — segment 0's pre-presentation IR handoff, a false boundary. A passing admission census can sit on a transcript the reconstructor refuses outright.
+  - Transcript segment ROLE vocabulary is vendor-specific and load-bearing. AAPL's held body publishes IR/CEO/CFO/Operator roles; GOOGL's publishes only {Operator, IR, ''} with all management roleless. qa_reconstruction._is_management is bool(role) and qa_exchange._assert_respondent_identity requires a non-empty role, so a roleless body cannot produce a source-supported respondent at either layer. Check the role histogram before assuming any new issuer is reconstructable.
+  - The GOOGL refusal is a source-format dependency, NOT ticker hard-coding. The Q&A path carries no ticker literal; the only AAPL-derived runtime literal is the accepted-revision digest at engine/company_intelligence/qa_exchange.py:35, and the transcript document id is built generically at engine/company_intelligence/event_workspace_build.py:265. Do not "fix" this by hunting for ticker branches that do not exist.
 do_not_redo:
   - Do not reopen the ratified E3-0 freeze (#6161 / 22686d255eb047cf5bffc91a35984515acb3d466).
   - Do not implement runtime E3 in the architecture wave.
@@ -67,7 +129,7 @@ do_not_redo:
   - Do not create a second Q&A store beside qa_exchanges.
   - Do not create a second model-routing control plane.
   - Do not create a durable candidate database or R2 plane in E3-A or E3-B.
-  - Do not freeze GOOGL (or CAT/BAC/SNOW) as the E3-C issuer before a held source-completeness receipt.
+  - Do not rerun the GOOGL→CAT→BAC→SNOW selection or switch to CAT/BAC/SNOW after GOOGL has been frozen unless the held GOOGL source revision is later falsified before extraction.
   - Do not invent or loosen Q&A usefulness thresholds after seeing model results.
   - Do not stamp generated_at or conference time as transcript source_available_at.
   - Do not mint a second earnings-intelligence program key.
@@ -81,11 +143,26 @@ do_not_redo:
   - Do not treat Haiku topic Jaccard as usefulness, promotion, or topic-model authority.
   - Do not grant Haiku production authority.
   - Do not manufacture a numeric usefulness threshold from N=7.
-  - Do not start E3-B. E3-B remains locked until Sol unlocks it.
   - Do not describe E3-A2 as production-live Q&A.
-  - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority.
+  - Do not treat E3-A2 structural reconstruction as qa_exchange.v1 publication authority without the E3-B canonical adapter/validator.
   - Do not copy Pass-A topic labels into deterministic reconstruction.
-  - Do not put AAPL names, tickers, or boundary indexes in qa_reconstruction.py.
+  - Do not put AAPL or GOOGL names, tickers, or boundary indexes in qa_reconstruction.py.
+  - Do not treat the E3-B merges or publisher success as final production proof; final acceptance is the combined immutable/public/authenticated-browser receipt recorded in the E3-B closeout.
+  - Do not rerun or republish merely to replace the already-successful scheduled E3-B generation.
+  - Do not start E3-P.
+  - Do not tune the compiler on the frozen GOOGL event and then grade GOOGL as the E3-C OOS pass. Sol ruled 2026-08-27 (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) that GOOGL is a PERMANENT source-format falsifier and is SPENT as OOS acceptance evidence: its exact failure cues ("Your line is now open", roleless management, affiliation terminator) are development-visible, so any repair motivated by them makes GOOGL a development/regression fixture, never an untouched OOS proof. Source-format generality is legitimate product work, but only inside the separate pre-registered E3-FMT wave.
+  - Do not source-swap the GOOGL carrier. Sol ruled 2026-08-27 that NO second held GOOGL Q2 FY2026 body/provider revision is evidenced in the canonical estate — mastermind.tx-index/v1 keys a revision by ticker/transcript_id plus one advertised body SHA and carries no provider dimension. An externally sourced role-annotated body is not a held canonical source and may not be substituted post-result into this frozen test.
+  - Do not switch to CAT/BAC/SNOW to rescue this wave. Sol ruled 2026-08-27: NO under the current E3-C selection law — GOOGL was frozen before extraction and its bytes are intact, not falsified. CAT/BAC/SNOW remain uninspected. A later fresh OOS wave may draw from the remaining golden universe, but only as a NEW pre-registered selection operation under whatever source law Sol freezes then — never as continuation or re-entry of the old GOOGL walk, and never represented as rescuing E3-C by issuer switch.
+  - Do not invent Management/CEO/CFO roles or make a source-supported role silently optional to get past B2/B3. qa_exchange.v1 promises source-supported respondent identity; if role availability needs a new `unresolved` state that is an explicit contract/architecture change for Sol to adjudicate, not an inference hack.
+  - Do not treat E3-FMT completion as E3-C completion. Only a pass on a fresh untouched-OOS acceptance wave (E3-OOS2) may close parent E3-C, and E3-P stays locked until it does.
+  - Do not add Alphabet to event_workspace.production_registry() until a wave can publish non-empty accepted Q&A for it; registering it now ships a live workspace with empty qa_exchanges (capability false) and breaks tests/test_issuer_profiles_a5a.py:110.
+  - Do not re-run the GOOGL reconstruction expecting a different answer; it is deterministic, pinned by tests/test_company_intelligence_qa_generalization_e3c.py, and the fixture is byte-frozen at the receipt SHA.
+  - Do not reuse operation key tfg1-deterministic-transcript-format-hardening-20260827-v1. Sol ruled it terminates at the accepted development-gold falsifier; the successor is the distinct key tfg1-r2-deterministic-transcript-format-hardening-20260827-v1.
+  - Do not grade TFG against the historical 110/101/9/10 TFG-0 gold. Sol ratified the R2 truth (113/97/6/103/10, 9 source-clean, 7 expected refusal) in DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS; the old receipt is preserved only as falsified evidence.
+  - Do not re-derive the three omitted first-handoff separators or re-test the two refuted explanations for them (TFG-0 probe 650-char truncation; a deliberate first-handoff convention). Both are measured and dead, and research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py re-derives the whole finding from a clean fetch in ~11s.
+  - Do not open the eight TFG holdout revisions (ranks 17-24) until R2's corrected development gates are green and an exact implementation head is frozen. The holdout is single-use and explicitly non-replaceable; spending it against an unratified gold destroys the only unseen format evidence TFG owns.
+  - Do not rescue MBLY/2026Q2 #21 with a first-handoff exemption, edit distance, nickname map, initials expansion or external identity. Sol ruled it a mandatory separator with an unresolved questioner, so MBLY must refuse full-call publication.
+  - Do not byte-replay transcript revisions with sha256 of the raw decompressed body; mastermind.tx-index/v1 body_sha256 is a canonical-JSON re-serialization hash and the raw convention reports a false SOURCE_REVISION_MISMATCH on COF/2026Q2 (DSC:TX-BODY-SHA-IS-CANONICAL-JSON-NOT-RAW-BYTES).
 waves:
   - id: E3-0
     title: Compiler architecture freeze
@@ -131,19 +208,104 @@ waves:
       a6c075f18a7205d943bf6d95aaf904e782a1267c). Landed capability is a
       deterministic shadow structural method, not production-live Q&A.
       Source-format limitations preserved for later generalization.
-      Do not start E3-B.
+      E3-B unlocked separately by Chairman+Sol; do not reopen E3-A2.
   - id: E3-B
     title: AAPL live Q&A into event_workspace.v1
-    status: todo
+    status: done
     depends_on: [E3-A2]
     next_action: >
-      LOCKED. Do not start E3-B. E3-A2 landing does not unlock live
-      qa_exchanges. Requires an explicit Sol unlock.
+      PROVEN_LIVE / DONE. Terminal consumer #470 landed at
+      ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d and Macro producer #6376 landed at
+      94285d03ba60fe3a6bdfcad8109cfb329fc08843. Scheduled production run 32928671722
+      published generation 5517b178afbab673bc8c7c5f; exact live readback proved transcript
+      SHA a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f,
+      seven qa_exchange.v1, 26 management turns and 68 replay spans. Public AAPL/LMND/E2/
+      Prophet safety regressions passed. Authenticated Terminal production acceptance on the
+      existing Chrome profile passed 1440 EN / 820 EN / 390 ZH with seven rendered exchanges,
+      revision-safe 2026Q3 transcript navigation, zero horizontal overflow and zero application/
+      browser errors. SOURCE_CLOCK_OWNER_GAP remains explicit and lawful.
   - id: E3-C
     title: Second-event generalization
-    status: todo
+    status: in_progress
     depends_on: [E3-B]
-    next_action: Register pass rule, freeze issuer from §11 receipt, then extract. GOOGL only if held.
+    artifacts:
+      - research/earnings_intelligence/e3/e3c_googl_2026q2_source_completeness_receipt.json
+      - research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json
+      - tests/test_company_intelligence_qa_generalization_e3c.py
+      - tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz
+    next_action: >
+      GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress, NOT complete. Sol has RULED
+      (2026-08-27, DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT); nothing is awaiting Sol.
+      The unchanged compiler was run against the frozen GOOGL package and refused
+      (operator_intro_identity_unparsed at boundary segment 0; 0 exchanges; accepted set
+      []). Honest refusal is a receipt, not wave completion, so E3-C stays in progress.
+      Three independent blockers are recorded in
+      research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json:
+      vendor-specific "go ahead" boundary cue, a transcript body that publishes no
+      management role at all, and qa_exchange's non-empty respondent-role requirement.
+      The compiler was NOT tuned, Alphabet was NOT production-registered, and the issuer
+      was NOT switched. Safety gates held: accepted-unsupported 0, cross-event 0, both
+      AAPL cross-event poisons rejected, fail-closed on a mutated SHA for both issuers,
+      and AAPL exact at 7 exchanges / 26 turns / 68 spans. Sol's answers, now binding:
+      (1) source-format generalization is legitimate product work but NOT an in-scope E3-C
+      repair — it needs its own pre-registered E3-FMT wave on independently chosen
+      development transcripts, and GOOGL is a PERMANENT source-format falsifier, spent as
+      OOS acceptance evidence; (2) no role-annotated GOOGL revision is evidenced in the
+      canonical held estate, so the carrier may NOT be source-swapped; (3) NO CAT/BAC/SNOW
+      rescue in this wave — a later fresh untouched-OOS acceptance wave (E3-OOS2) must be a
+      NEW pre-registered selection operation, not re-entry of the GOOGL walk. Only an
+      E3-OOS2 pass closes E3-C; E3-P stays locked.
+  - id: E3-FMT-TFG-0
+    title: Transcript format generalization architecture freeze
+    status: done
+    depends_on: [E3-C]
+    pr: 6521
+    artifacts:
+      - research/earnings_intelligence/e3/TFG0_TRANSCRIPT_FORMAT_GENERALIZATION_ARCHITECTURE_FREEZE_2026-08-27.md
+      - research/earnings_intelligence/e3/TFG0_R1_BOUNDARY_IDENTITY_AND_HOLDOUT_SCORING_AMENDMENT_2026-08-27.md
+      - research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json
+      - research/earnings_intelligence/e3/tfg1_transcript_format_holdout_selection.json
+    next_action: >
+      LANDED / SPEC_ONLY. Merge a2dd436722dd0e6c6cb1e17bfa1c888c706c15d0 (#6521) from accepted head
+      5f5f3373bca621d41db87b8764ed38bce3ccb783. Froze the source-native structural-separator, direct/
+      explicit-proxy questioner and same-revision role law, a 16-revision development corpus selected
+      before body inspection, and an eight-revision metadata-only holdout (ranks 17-24). Measured the
+      unchanged compiler at 0/16. No runtime capability added; do not reopen the architecture.
+  - id: E3-FMT-TFG-1-V1
+    title: Deterministic transcript-format hardening — v1
+    status: done
+    depends_on: [E3-FMT-TFG-0]
+    pr: 6555
+    artifacts:
+      - research/earnings_intelligence/e3/TFG1_DEVELOPMENT_ADJUDICATION_FALSIFIER_2026-08-27.md
+      - research/earnings_intelligence/e3/tfg1_development_separator_falsifier_receipt.json
+      - research/earnings_intelligence/e3/tfg1_separator_falsifier_measurement.py
+      - research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json
+      - agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md
+    next_action: >
+      TERMINAL at STOPPED_AT_DEVELOPMENT_GATE with an ACCEPTED falsifier — done as a completed
+      negative/gold-correction result, not as an implementation. Operation
+      tfg1-deterministic-transcript-format-hardening-20260827-v1 is SPENT and must not be reused.
+      Applying the frozen separator law recovered 110/110 frozen handoffs with zero false negatives
+      and 95/95 exact direct-name extraction, and found three further genuine combined
+      Q&A-opener-plus-first-question separators the frozen gold omitted: MBLY/2026Q2 #21,
+      ARRY/2026Q2 #31, KREF/2026Q2 #15. Sol ruled YES/YES/YES and ratified
+      DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS. No compiler code was written, no
+      implementation head was frozen, and holdout_bodies_inspected remained 0 throughout.
+  - id: E3-FMT-TFG-1-R2
+    title: Deterministic transcript-format hardening — R2 successor
+    status: todo
+    depends_on: [E3-FMT-TFG-1-V1]
+    artifacts:
+      - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+    next_action: >
+      NOT_BUILT. Distinct logical operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1;
+      sole packet is TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md. May not
+      begin until the v1 closeout PR #6555 is Sol-accepted and landed. Grades against the ratified R2
+      gold: 113 separators / 97 direct / 6 proxy / 103 supported / 10 unresolved / 9 source-clean /
+      7 expected-refusal, AAPL exact 7/26/68, accepted unsupported 0, cross-event 0, replay 100%.
+      The eight holdout revisions stay SEALED until every corrected development gate is green and an
+      exact implementation head is frozen; no code change is permitted after holdout unseal.
   - id: E3-P
     title: Natural-cycle commissioning
     status: todo
@@ -155,4 +317,12 @@ E3-0 landed on main at `22686d255eb047cf5bffc91a35984515acb3d466` (#6161; Sol re
 
 E3-A is done as a completed calibration / negative-method experiment. Immutable squash-merge SHA: `d919637f3680d3da25a904484749409b043f60e9` (#6245; Sol review 5001747968; accepted head `b403fba8e141e4a12083f97d104a851178f68051`; merged 2026-08-23T05:57:38Z). Gold is `aapl_fy2026_q3_qa_gold.v2` SHA `fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c`; v1 `6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761` is superseded calibration gold. Canonical taxonomy remains `qa_topic.v1` / `a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e`. The immutable blind Pass B packet stores `b2ae2508877ccda4dea911d52952c49f78b0dbc26049326d542ee77439cf9a14` as a **noncanonical pass-local members digest**, not the qa_topic.v1 hash; enum membership matches. **Topic adjudication is UNRESOLVED / PASS_A_REFERENCE_ONLY** — Pass A and Pass B disagree on all 7 per-exchange topic sets; Haiku Jaccard 0.722 is descriptive against Pass-A reference labels only and grants zero topic-model authority. Structural gold is accepted: 7 Operator-delimited exchanges, exact source spans, identities, 26 management answer-turns. Measured eval `run_id=27e3e380f70658c1`: Qwen `[]` (NOT_EXERCISED, local $0.00) — full-transcript Qwen structural extraction is **not promoted**; Haiku remains **benchmark-only**. No numeric usefulness threshold was manufactured.
 
-E3-A2 is done as a landed **deterministic shadow structural method**, not production-live Q&A. Immutable squash-merge SHA: `1158c9a17712084c011581cd68933f09100c2e5a` (#6306; Sol PASS; accepted head `2f8b7ab443bcd020f0baef618b7ce90f2d6c90fa`; H_IMPL `a6c075f18a7205d943bf6d95aaf904e782a1267c`; merged 2026-08-24T09:37:22Z). Runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only: no model calls, no gold import, no issuer literals, no live `qa_exchanges`. AAPL oracle parity remains 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Source-format limitations (operator-intro identity grammar; other vendor intros may refuse) are preserved for later generalization. **E3-B stays locked.** Do not start E3-B.
+E3-A2 is done as a landed **deterministic shadow structural method**, not production-live Q&A. Immutable squash-merge SHA: `1158c9a17712084c011581cd68933f09100c2e5a` (#6306; Sol PASS; accepted head `2f8b7ab443bcd020f0baef618b7ce90f2d6c90fa`; H_IMPL `a6c075f18a7205d943bf6d95aaf904e782a1267c`; merged 2026-08-24T09:37:22Z). Runtime `engine/company_intelligence/qa_reconstruction.py` reconstructs Operator-`go ahead` exchanges from source segments only: no model calls, no gold import, no issuer literals, no live `qa_exchanges`. AAPL oracle parity remains 7 exchanges / 32 question spans / 36 answer spans / 26 turns / 68 replay. Topics remain UNRESOLVED / PASS_A_REFERENCE_ONLY. Source-format limitations (operator-intro identity grammar; other vendor intros may refuse) are preserved for later generalization. Chairman+Sol unlocked E3-B as deterministic structural publication with `topics=["unavailable"]`. E3-B is now closed; those AAPL-specific calibration limits remain relevant to E3-C generalization.
+
+E3-B is **PROVEN_LIVE / DONE**. Terminal consumer #470 is merged at `ab7ef1d7dc5c9218ff5f94575596d74e24cbf35d`; Macro producer #6376 is merged at `94285d03ba60fe3a6bdfcad8109cfb329fc08843`; scheduled `company-intelligence` run `32928671722` published generation `5517b178afbab673bc8c7c5f`; exact live readback proved the accepted transcript revision plus seven `qa_exchange.v1` / 26 management turns / 68 replay spans; bounded public AAPL/LMND/E2/Prophet safety regressions passed; and the final authenticated Terminal acceptance on Slack carrier `1787728244.427289` passed at 1440 EN / 820 EN / 390 ZH with exact analyst/respondent ordering, Operator exclusion, revision-safe `2026Q3` transcript navigation, zero horizontal overflow, and zero application/browser errors. `SOURCE_CLOCK_OWNER_GAP` remains explicit and truthful.
+
+E3-C is now **`GENERALIZATION_REFUSED_ON_SOURCE_FORMAT`** — in progress, **not** complete. **Sol ruled on 2026-08-27** (PR #6497 review `5037388696`, recorded as `DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT`): the refusal is **accepted** as a valid negative E3-C receipt, and no ruling is outstanding. Operation `e3c-googl-generalization-20260826-v1` ran the **unchanged** E3-A2 reconstructor and E3-B `qa_exchange.v1` adapter against the frozen GOOGL package and the compiler **refused**: `reconstruct_qa` returned `status=failed` / `operator_intro_identity_unparsed` at boundary segment 0 with **0 exchanges**, and `accepted_qa_exchanges_for_transcript` returned `[]`. No workspace was written, no typed absence was invented, and the E2 event did not regress. Three blockers were measured, each sufficient alone: **B1** the `go ahead` boundary cue is absent from all nine real analyst intros (they close "Your line is now open"), so the only cue hit is segment 0's pre-presentation IR handoff — a false boundary; **B2** this transcript vendor publishes **no management role at all** (role vocabulary `{Operator, IR, ''}` = 12/3/75, with Pichai/Schindler/Ashkenazi all roleless), so `_is_management` (which is `bool(role)`) cannot classify management speech; **B3** `qa_exchange._assert_respondent_identity` requires a non-empty source role, so no respondent could be minted source-supported even downstream. Per the commission's scientific stop the compiler was **not** tuned, no GOOGL-specific extraction or boundary constant was added, Alphabet was **not** production-registered, and the issuer was **not** switched to CAT/BAC/SNOW. Safety gates held throughout: accepted-unsupported 0, cross-event 0, both planted AAPL cross-event poisons rejected (`event_id does not match parent workspace`; then `span document_id mismatch` after relabelling), fail-closed on a mutated SHA for both issuers, and the AAPL regression exact at **7 exchanges / 26 management turns / 68 replay spans**. The refusal is a **source-format** dependency, not ticker hard-coding: the Q&A path holds no ticker literal, the sole AAPL-derived runtime literal is the accepted-revision digest at `engine/company_intelligence/qa_exchange.py:35`, and the transcript document id is built generically at `engine/company_intelligence/event_workspace_build.py:265`. E3-A2 predicted exactly this ("other vendor intros may refuse"). Canonical receipt: `research/earnings_intelligence/e3/e3c_googl_2026q2_reconstruction_refusal_receipt.json`; regression `tests/test_company_intelligence_qa_generalization_e3c.py`; byte-frozen fixture `tests/fixtures/company_intelligence/googl_fy2026_q2.json.gz`.
+
+**Sol's continuation law for E3-C** (`DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT`, `decided_by: sol`, 2026-08-27). GOOGL Q2 FY2026 is a **permanent source-format falsifier** and is **spent** as out-of-sample acceptance evidence: the exact failure cues — the `Your line is now open` intro terminator, roleless management speech, and the affiliation terminator — are now development-visible, so §11.2 forbids repairing the parser from them and then grading this same event as an E3-C OOS pass. There is **no CAT/BAC/SNOW rescue in this wave**; those issuers remain uninspected, and the frozen GOOGL bytes are intact rather than falsified, so the no-switch law still binds the failed attempt. The carrier may **not** be source-swapped: no second held GOOGL Q2 body/provider revision is evidenced in the canonical estate, because `mastermind.tx-index/v1` keys a revision by `ticker/transcript_id` plus one advertised body SHA and carries no provider dimension. The next dependency is therefore a **separate, pre-registered Transcript Format Generalization method-hardening wave (E3-FMT)** that declares a bounded development corpus before its first behavior change, excludes CAT/BAC/SNOW, never uses GOOGL as a success criterion, preserves the AAPL 7/26/68 oracle and byte replay, and adjudicates the respondent-identity contract explicitly — inventing `Management`/CEO/CFO roles or making a source-supported role silently optional is an inference hack, and any new `unresolved` state is a contract change for Sol, not a builder inference. GOOGL may become a regression fixture once the method is frozen, never the OOS clearance set. After E3-FMT is independently reviewed, accepted and frozen, a **fresh untouched-OOS acceptance wave (E3-OOS2)** on a newly pre-registered selection operation over an untouched event is required; only an E3-OOS2 pass may close parent E3-C. **E3-P remains locked.**
+
+The superseded selection context remains true: fresh source census operation `e3c-source-census-20260826-v1` selected GOOGL Q2 FY2026 first and stopped without inspecting CAT/BAC/SNOW. The frozen package is `evt_cik0001652044_2026q2_results`, SEC accession `0001652044-26-000066`, Exhibit 99.1 SHA `a01f6bd87c7fa0dcb562493dda7348a1a37d017b4a4b5edb39b915b45688237e`, 8-K SHA `9e881beb88f9496e316a412fdb881a22b9244fdec75131b4fb00ae11d0f9f7e4`, and transcript `tx:GOOGL/2026Q2` SHA `a44db883463181ba73a536cb3643b81ea59a3e10c0f191859f7717538452d2a9`. Source-only admission found 10 Operator question-intro boundaries; these are not canonical extraction results. The receipt preserves transcript clock `unknown/null`, existing `rp_public_primary_v1` rights, and the dual-class requirement that GOOGL and GOOG remain one CIK-backed issuer/event. Current production workspace registry still lacks Alphabet, so the next E3-C implementation must extend that existing registry rather than fork identity. E3-C remains incomplete until non-empty accepted Q&A is published and consumed. E3-P remains locked.

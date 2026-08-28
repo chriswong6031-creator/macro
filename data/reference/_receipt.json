@@ -13,34 +13,22 @@
     "evidence_sources": {
       "cn": {
         "dataset": "data/china_filings/filings.parquet",
-        "newest_observation": "2026-08-24",
+        "newest_observation": "2026-08-27",
         "provenance": "CNInfo (\u5de8\u6f6e\u8d44\u8baf\u7f51) SSE+SZSE disclosure metadata (collectors/china_filings.py)"
       },
       "hk": {
         "dataset": "data/hk_shorts/positions.parquet + data/hk_shorts/turnover.parquet",
-        "newest_observation": "2026-08-24",
+        "newest_observation": "2026-08-26",
         "provenance": "SFC official Short Position Reports + HKEX official turnover statistics (collectors/hk_shorts.py)"
       }
     },
     "refusals_this_run": {
       "cn": [
         {
-          "listing_key": "CN-XSHE-000021",
-          "node_id": "co:cn:000021.SZ",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "000021.SZ"
-        },
-        {
           "listing_key": "CN-XSHE-000538",
           "node_id": "co:cn:000538.SZ",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "000538.SZ"
-        },
-        {
-          "listing_key": "CN-XSHE-000733",
-          "node_id": "co:cn:000733.SZ",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "000733.SZ"
         },
         {
           "listing_key": "CN-XSHE-002195",
@@ -67,12 +55,6 @@
           "symbol": "300229.SZ"
         },
         {
-          "listing_key": "CN-XSHE-300680",
-          "node_id": "co:cn:300680.SZ",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "300680.SZ"
-        },
-        {
           "listing_key": "CN-XSHE-300926",
           "node_id": "co:cn:300926.SZ",
           "reason": "no_committed_primary_source_evidence",
@@ -89,12 +71,6 @@
           "node_id": "co:cn:301293.SZ",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "301293.SZ"
-        },
-        {
-          "listing_key": "CN-XSHE-301327",
-          "node_id": "co:cn:301327.SZ",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "301327.SZ"
         },
         {
           "listing_key": "CN-XSHE-301556",
@@ -127,46 +103,16 @@
           "symbol": "600295.SS"
         },
         {
-          "listing_key": "CN-XSHG-600348",
-          "node_id": "co:cn:600348.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "600348.SS"
-        },
-        {
           "listing_key": "CN-XSHG-600559",
           "node_id": "co:cn:600559.SS",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "600559.SS"
         },
         {
-          "listing_key": "CN-XSHG-600925",
-          "node_id": "co:cn:600925.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "600925.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-601100",
-          "node_id": "co:cn:601100.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "601100.SS"
-        },
-        {
           "listing_key": "CN-XSHG-601126",
           "node_id": "co:cn:601126.SS",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "601126.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-601890",
-          "node_id": "co:cn:601890.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "601890.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-603005",
-          "node_id": "co:cn:603005.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "603005.SS"
         },
         {
           "listing_key": "CN-XSHG-603435",
@@ -181,18 +127,6 @@
           "symbol": "603915.SS"
         },
         {
-          "listing_key": "CN-XSHG-688050",
-          "node_id": "co:cn:688050.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "688050.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-688396",
-          "node_id": "co:cn:688396.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "688396.SS"
-        },
-        {
           "listing_key": "CN-XSHG-688567",
           "node_id": "co:cn:688567.SS",
           "reason": "no_committed_primary_source_evidence",
@@ -203,24 +137,12 @@
           "node_id": "co:cn:688586.SS",
           "reason": "no_committed_primary_source_evidence",
           "symbol": "688586.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-688726",
-          "node_id": "co:cn:688726.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "688726.SS"
-        },
-        {
-          "listing_key": "CN-XSHG-688727",
-          "node_id": "co:cn:688727.SS",
-          "reason": "no_committed_primary_source_evidence",
-          "symbol": "688727.SS"
         }
       ],
       "hk": []
     },
     "refused_this_run": {
-      "cn": 32,
+      "cn": 19,
       "hk": 0
     },
     "resolved_this_run": {
@@ -228,7 +150,7 @@
       "hk": 0
     },
     "resolved_total": {
-      "cn": 989,
+      "cn": 1002,
       "hk": 147
     },
     "target_n": {
@@ -238,7 +160,7 @@
     "target_population_source": "data/theme_graph/nodes.parquet (kind=company, market_scope in cn/hk)"
   },
   "cik_map_snapshot": "2026-08-25",
-  "code_version": "25029ccf8406d49f8acc7e80c4f56b29fed98a83",
+  "code_version": "4ac1c60e408f6cd36af5295444ac6f290942e33f",
   "coverage": {
     "resolved": 702,
     "total": 712,
@@ -263,7 +185,7 @@
     "reference.issuer_migrations",
     "reference.security_migrations"
   ],
-  "generated_at": "2026-08-25T01:32:23",
+  "generated_at": "2026-08-28T04:46:06",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -279,15 +201,15 @@
     }
   ],
   "inputs": {
-    "config.yml": "6182aa7f380211a709de98d91406671ea04e3c2adaa21bd2fe9c8a735bdf362f",
+    "config.yml": "6c904dd08626142e6d755e731a45c0268544ed291cc87359be7e6e9dd3275371",
     "config/delisted_symbols.yml": "6c2a0194fa1e612b207bafa730ce78cbc6c41c252ead5f558a48901aac4c1cb5",
     "data/baskets/membership.json": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
-    "data/breadth/constituents.parquet": "da3272832612d93e7f80362ba4c185d798594f8cb80a345b34205a7299346753",
-    "data/china_filings/filings.parquet": "3a04b4a5446c3f2ef7aebda8385370695d412dcc36816e54068b9dac9418299d",
+    "data/breadth/constituents.parquet": "54c8da450dc728d1a03ce8fcd554d0f578f59764f6303bf6e0e787ab0c9e1bc4",
+    "data/china_filings/filings.parquet": "d97fb7232e2047fdb0c972ac1ab22421ad7d8c169ba1cefbb04acb20d81d4557",
     "data/hk_shorts/positions.parquet": "e07951c6247d50100f585f7d87d9377c4e787ba5cb7faabc9ced5ec422d7328a",
-    "data/hk_shorts/turnover.parquet": "29f73563130c011459e88d9dbf6e4420ec54f0177ee2216a08dbf80ec76a87ab",
+    "data/hk_shorts/turnover.parquet": "b4351a036455bd83423f74d396ed406822bd74157643211c4189e9fc597ba4d6",
     "data/symbol_directory/cik_map": "4712fbc9553748863c7c6db1c7b17e3b7c087117901767795af6f75f77599247",
-    "data/symbol_directory/snapshots": "9a417939a87c147e0c5e7a1c26de23182d590200b9fb1bbc0ff2e0bcadc4d5e4",
+    "data/symbol_directory/snapshots": "3f4b1d936b9a8bce64f71701c8b54a8c052ff4af80a9097e77412c0886ff9c8c",
     "data/theme_graph/nodes.parquet": "145d1994bbf25360afb4ca69cc0d1b6dd7fce25686eac2f5cb1aa483a4559c7e",
     "lib/ticker_aliases.py": "b47e717a10c833187f43f8ab27617b02230cebc7efd79a6b2415e6afdca236f8"
   },
@@ -321,7 +243,7 @@
     ],
     "state_counts": {
       "DEFERRED_IDENTITY_EXCEPTION": 1,
-      "NO_ISSUER_EVIDENCE": 1139,
+      "NO_ISSUER_EVIDENCE": 1152,
       "RESOLVED": 1208
     }
   },
@@ -371,29 +293,29 @@
   "row_counts": {
     "issuer_master": 1209,
     "issuer_migrations": 3,
-    "security_master": 2349,
+    "security_master": 2362,
     "security_migrations": 1,
-    "vendor_alias_rows_readable": 5991,
-    "vendor_aliases": 5991
+    "vendor_alias_rows_readable": 6004,
+    "vendor_aliases": 6004
   },
   "security": {
     "era": "security_supersession_duplicate_mint_v1",
     "era_migrations_total": 1,
     "migrations_this_run": 0,
     "state_counts": {
-      "ACTIVE": 2348,
+      "ACTIVE": 2361,
       "SUPERSEDED_DUPLICATE_MINT": 1
     }
   },
   "seed_counts": {
     "delisted_keys": 3,
-    "directory_symbols": 13169,
+    "directory_symbols": 13184,
     "gmi_seed_keys": 1238,
     "ticker_fixups": 3,
     "ticker_key_migrations": 1,
     "universe_keys": 710
   },
-  "symbol_directory_snapshot": "2026-08-25",
+  "symbol_directory_snapshot": "2026-08-28",
   "undated_renames": [
     {
       "evidence": "lib/ticker_aliases.py YAHOO_FETCH_ALIASES FI->FISV (vendor LAGS the rename); config.yml breadth.ticker_fixups FISV->FI; no in-repo date for the 2023 change",

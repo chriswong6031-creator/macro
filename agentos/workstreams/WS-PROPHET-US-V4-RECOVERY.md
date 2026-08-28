@@ -29,6 +29,15 @@ owns_paths:
   - tests/test_prophet_lab.py
   - tests/test_prophet_lab_api.py
   - tests/fixtures/prophet_lab/
+  - engine/us_candidate_episode.py
+  - engine/us_candidate_episode_intake.py
+  - scripts/reconcile_us_candidate_episodes.py
+  - data/us_prophet_rank/episode_inputs/turn_watch/
+  - data/us_prophet_rank/episodes/
+  - tests/test_us_candidate_episode.py
+  - tests/test_us_candidate_episode_intake.py
+  - tests/test_us_candidate_episode_reconciler.py
+  - tests/test_us_candidate_episode_wiring.py
 depends_on:
   - WS:PROPHET-US-AVAILABILITY
   - WS:LIVE-ENTRY-RADAR
@@ -41,14 +50,15 @@ depends_on:
 decisions:
   - DEC:PROPHET-V4-THEIA-SOURCE-RIGHTS
   - DEC:PROPHET-LAB-B5A-RECUT
+  - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
+  - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
 landmines:
-  - "THE OUTAGE was LIVE at 0A (2026-08-17) and STILL UNRESOLVED on the reader at the
-    0B pin (2026-08-18T00Z: source_asof=2026-08-13, 206 plans): #5742 open; sibling
-    sessions + operator own recovery (triage: push-freeze ruleset GH013, theta-m1
-    label pin, runner saturation; overlapping bakes at 23:56Z). The candidate store
-    data/us_prophet_rank/candidates/ + legacy-shadow parts remain stalled with it.
-    V4 does NOT implement — a1 is acceptance-by-adoption. Current deltas:
-    research/prophet_v4/POST_0A_RECONCILIATION_2026-08-17.md."
+  - "THE OUTAGE was LIVE at 0A (2026-08-17) and still unresolved at the 0B pin
+    (2026-08-18T00Z: source_asof=2026-08-13, 206 plans). That historical fact is
+    preserved. A1 is now RESOLVED by adoption of A1R #6320 plus the ordinary scheduled
+    run 32786919396 and private served-byte proof on 2026-08-25. Exact receipts and the
+    unrelated late Marketing cancellation boundary are indexed in
+    agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md."
   - "Prophet index top-level asof is WALL-CLOCK (DSC:PROPHET-ASOF-IS-WALL-CLOCK);
     freshness = source_asof + per-plan cohorts. Run conclusions decouple from Prophet
     delivery in both directions (DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET)."
@@ -69,8 +79,10 @@ landmines:
     prophet_arena C0-C7 execution policies vs audit C0-C4; two same-named 'arena'
     systems; _v2 paths are SCHEMA versions, not the v2 ranker era; two 'board history'
     stores. Disambiguation table: CURRENT_STATE §9 — binding on every handoff."
-  - "TURN WATCH is an orphan desk this WS now owns: artifact stale (data_session
-    2026-08-13), page never built, engine copy has zero template consumers."
+  - "TURN WATCH is owned by this WS and its canonical artifacts are current at
+    data_session=2026-08-24 after the accepted A1 natural run. The page is still NOT
+    BUILT and the engine copy still has zero template consumers; artifact freshness is
+    not B5B product proof."
   - "MP-1 (research/migration_packets/MP-1-prophet-board.md) is design-ratified with
     all spawn gates satisfied and NOT executed — B5/E2 build against it; its
     population re-source must be checked against DNR:KILL-PROPHET-POP-MERGE first."
@@ -81,6 +93,23 @@ landmines:
     ENTRY_RADAR_LIVE_ENABLE); B-15..B-19 dispositions post-#5370-heal are UNKNOWN —
     B2 opens with the matrix, do not assume the heal closed them."
 do_not_redo:
+  - "D5 v1 does NOT mutate or widen engine/us_context_vector.py; Context Vector is a
+    read/reference-only PIT history/research substrate for D5."
+  - "An unbuilt D5 adapter emits no evidence-family envelope. Adapter readiness may accrue
+    outside evidence_families[], but missing/unbuilt is never zero or neutral."
+  - "Runtime D5 requires the owner-issued canonical prophet.candidate_episode/v1 from B1.
+    Never alias mastermind.live_entry_episode.v1 or mint ticker/date surrogate episodes."
+  - "Do not read Earnings decision-time evidence through read_event_workspace /
+    read_current_event_workspace. They resolve the CURRENT generation and take no as-of
+    argument, so they present post-cut corrected values as decision-time belief while passing
+    the contracts stated admissibility test. Decision-time access is
+    read_event_source_revisions / read_all_event_source_revisions only."
+  - "Do not admit an Earnings revision on source_available_at alone. Admission is the
+    CONJUNCTION source_available_at <= cut AND observed_at <= cut, because the owner enforces
+    only observed_at >= source_available_at (events.py:249-252), so a filing available before
+    the cut but observed after it is a legal state and admitting it is lookahead. That case is
+    NOT_CAPTURED_AT_DECISION; a null or unknown admission clock is UNKNOWN, never a silent
+    skip. See CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md A7."
   - "Do not spend a PR removing the bridge candidate cap: N_CANDIDATES=12 survives
     only as an OVERRIDDEN DEFAULT (prophet_bridge.py:146,1147) — production passes
     n=None (:4127; daily.yml:2270). A grep hitting the constant does not contradict
@@ -96,6 +125,10 @@ do_not_redo:
     entry-detector fusion is Radar's reserved F1_FUSION slot."
   - "Do not synthesize the missed Aug-14 session from later knowledge — exact
     reconstruction from Aug-14-knowable data or an explicit unrecoverable receipt."
+  - "Do not replay US 2026-08-14 again. DEC:FORCE-MAJEURE-SESSIONS-ARE-BACKFILLED-BY-DEFAULT
+    authorized one PIT reconstruction; A1R #6320 executed it, and natural run 32786919396
+    absorbed it. Reconstructed rows remain unmarked and this authority does not extend
+    to data-defect windows or a second replay."
 artifacts:
   - research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md
   - research/prophet_v4/PROPHET_US_V4_RECOVERY_AND_INTELLIGENCE_GRAPH_OS_MASTERPLAN_BY_SOL_2026-08-17.md
@@ -104,10 +137,18 @@ artifacts:
   - research/prophet_v4/CAPABILITY_LEDGER.md
   - research/prophet_v4/ARCHITECTURE_FREEZE.md
   - research/prophet_v4/CONTRACT_AND_OWNER_MAP.md
+  - research/prophet_v4/D1_D5_READINESS_RULING.md
+  - research/prophet_v4/B1_NATURAL_ACCEPTANCE_PROBE.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_EVIDENCE_TRANSLATION_AND_TRAJECTORY_CONTRACT_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_ADVERSARIAL_REVIEW_AMENDMENTS_2026-08-22.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_CANDIDATE_REFERENCE_COMPOSITIONS_AND_E1_BASELINE_2026-08-23.md
+  - research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md
   - research/prophet_v4/SOURCE_RIGHTS_AND_COVERAGE_REGISTRY.md
   - research/prophet_v4/EXPERIENCE_REFERENCE_COMPOSITIONS.md
   - research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md
   - research/prophet_v4/V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md
+  - agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md
+  - agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-b1-built.md
 waves:
   - id: 0a
     title: "V4-0A — estate archaeology + architecture freeze. Merged #5832
@@ -123,15 +164,14 @@ waves:
     pr: 5847
   - id: a1
     depends_on: [0a]
-    title: "V4-A1 — owed-session settlement recovery. DO NOT SPAWN: implementation is
-      owned by the active Availability/outage sessions (incident receipt #5742);
-      V4_A1_AVAILABILITY_RECOVERY_HANDOFF.md is the ACCEPTANCE CONTRACT Sol reviews
-      the sibling return against — never a command to launch a competing session."
-    status: todo
+    title: "V4-A1 — owed-session settlement recovery. Accepted by Chairman-authorized
+      adoption on 2026-08-25 from A1R #6320 plus the ordinary natural-run and private
+      reader packet; this is not a claim of separate Sol review."
+    status: done
     next_action: >
-      Acceptance-by-adoption only: when the Availability/outage return arrives, map it
-      to the A1 gates and route to Sol for acceptance. A fresh board or a green run
-      alone does not close this wave.
+      DONE. Preserve the exact receipt in
+      agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-25-a1-acceptance.md; never rerun
+      the Aug-14 replay. B1 is dependency-ready. A2/A3/A4 remain distinct waves.
   - id: a2
     depends_on: [a1]
     title: "V4-A2 — canonical settlement manifest (prophet.settlement_manifest/v1)"
@@ -154,7 +194,17 @@ waves:
   - id: b1
     depends_on: [a1]
     title: "V4-B1 — canonical candidate episode registry (prophet.candidate_episode/v1)"
-    status: todo
+    status: in_progress
+    next_action: >
+      BUILT_PENDING_NATURAL_ACCEPTANCE. Merge the reviewed B1 code/wiring, then wait
+      for the first ordinary scheduled nightly descendant. Accept only from its exact
+      HEAD-referenced immutable generation, receipt/source hashes, workflow ancestry,
+      and read-only canonical-reader proof. The B1 step itself is schedule-only and is
+      skipped by daily workflow_dispatch; a manual dispatch, rerun, replay, report mode,
+      or CI fixture is not natural acceptance. The Radar lineage input remains
+      PROPOSED/STAGED_NOT_ARMED: only WS:LIVE-ENTRY-RADAR may freeze and validate its
+      forward-projection contract and require exact immutable event_id before PRODUCED.
+      Do not arm or manufacture that store here. D5 remains blocked until then.
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
@@ -301,7 +351,15 @@ waves:
       readable — Radar-owner escalation). Residual chores: tonight's
       stays-gone receipt (tombstone-enforced), M1 flow-ops-wt pin advance
       (marks stale during RTH until then), Terminal deploy of #439, site-full
-      token proofs, pixel crops. Handoff:
+      token proofs, pixel crops. CORRECTION 2026-08-25 (B1-A): the 'M1
+      flow-ops-wt pin advance' chore must NOT be read as authority to advance,
+      reset, clean or reconstruct that checkout. Its detached dirty pin at
+      a5f79c83 is the deliberate ENGINE the merged #6363 publisher lanes consume
+      via PYTHONPATH/WorkingDirectory/.env; normalizing it destroys the governed
+      runtime. The marks lane was separately migrated to ~/prophet-marks-runtime
+      on 2026-08-23 and no longer depends on that pin. See
+      DSC:M1-PUBLISHER-RUNTIME-IS-HOST-LOCAL-AND-DELIBERATELY-PINNED and
+      DEC:B1A-M1-RUNTIME-RECOVERED-NO-SUPERSESSION. Handoff:
       agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-21-lab-day5.md."
     status: in_progress
   - id: b5b
@@ -511,7 +569,7 @@ waves:
     title: "V4-D4 — peer and transmission features"
     status: todo
   - id: d5
-    depends_on: [d1]
+    depends_on: [b1]
     title: "V4-D5 — V4 intelligence-vector contract (prophet.intelligence_vector/v1).
       Sol ADJUDICATED 2026-08-18 (D2A commission §19): D1's readiness ruling
       ACCEPTED WITH BOUNDARY — contract work may later proceed in parallel once Sol
@@ -519,7 +577,15 @@ waves:
       measured fields = null, contribution = none; no provisional theme score, no
       fake zero, no rank authority. Execution NOT authorized during D2A. Original
       ruling: research/prophet_v4/D1_D5_READINESS_RULING.md (no ticker-string joins;
-      SPARSE coverage band is the honest scan-tier default)."
+      SPARSE coverage band is the honest scan-tier default). ARCHITECTURE RECONCILED
+      2026-08-26 (PR #6275 amended, not superseded): the 2026-08-22 Cell F contract's
+      epistemic core stands; three BLOCKING defects repaired in
+      research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md —
+      A7 binds Earnings decision-time reads to the revision-chain reader and FORBIDS
+      read_event_workspace there; A8 binds decision_cut to B1-owned opened_at/opened_session
+      and sets tradable_at NOT_ASSERTED until B4; A9 requires episode_ref to pin the B1
+      generation_id. Runtime D5 stays gated on B1 natural-production acceptance (B1 is
+      MERGED / BUILT_NOT_PROVEN as 878930b3b2f9)."
     status: todo
   - id: d6
     depends_on: [d5]
@@ -559,18 +625,14 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  V4-D1 complete. Route to Sol for three adjudications: (1) commission d2 with GMI
-  per research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md; (2) ratify the
-  D3/W3B merge-order recommendation with GMI; (3) optionally commission the d5
-  contract-only lane in parallel (D1_D5_READINESS_RULING.md). Rights decisions
-  routed in the census §7 await Chairman/Sol. A-lane unchanged: DO NOT SPAWN A1 —
-  sibling-owned, acceptance-by-adoption (#5742); a2/a3 adopt-first. B5A LAB lane
-  (Chairman 2026-08-18): day-1 wave COMPLETE 2026-08-19 — W4.1 #5929 + P-LAB-API
-  #5928 built, twice-reviewed MERGE-SAFE, armed (merge gated on the house-law-registry
-  VMRK self-heal at the next nightly snapshot); R5 RIG cycle verdict REVISE recorded
-  on #5931 (armed); R5.1+R5.2 revision built on #5940 at frozen SHA f40ae70ac989 with
-  its two-pass critic cycle + verdict OWED. Next session: execute
-  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-19-lab-day1.md §1 in order.
+  B1 is BUILT_PENDING_NATURAL_ACCEPTANCE on its single reviewed carrier. Merge it,
+  then wait for the first ordinary scheduled nightly descendant and validate the exact
+  HEAD-selected immutable generation, receipt/source hashes, ancestry, and canonical
+  read path. The B1 workflow step is schedule-only; do not dispatch, rerun, or replay as
+  a substitute. Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner
+  freezes and validates an exact immutable-event relationship contract. D5 remains blocked;
+  PR #6275 stays a contract-only carrier to reconcile only after B1 acceptance without
+  losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain separate.
 ---
 
 ## Context

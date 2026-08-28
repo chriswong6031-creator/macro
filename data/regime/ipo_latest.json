@@ -1,16 +1,16 @@
 {
-  "date": "2026-08-21",
-  "window_band": "OPEN",
-  "ipo_5y": -0.026094745665932284,
-  "spy_5y": 0.1300852243909445,
-  "gap_5y": -0.15617997005687678,
-  "priced_90d": 88,
+  "date": "2026-08-27",
+  "window_band": "MIXED",
+  "ipo_5y": -0.034743720824530255,
+  "spy_5y": 0.12818389232621508,
+  "gap_5y": -0.16292761315074533,
+  "priced_90d": 90,
   "spac_pct_90d": 51,
-  "upcoming_n": 1,
+  "upcoming_n": 2,
   "verdict": "trails",
   "lockups_approaching": 6,
-  "lockups_just_expired": 21,
+  "lockups_just_expired": 16,
   "next_lockup": "MMED",
   "next_lockup_date": "2026-09-02",
-  "built": "2026-08-23 04:26 UTC"
+  "built": "2026-08-28 13:00 UTC"
 }

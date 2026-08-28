@@ -1,0 +1,35 @@
+{
+  "schema": "tfg1.format_holdout_selection.v1",
+  "parent_operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "frozen_at": "2026-08-27T05:46:19.464501+00:00",
+  "selection_law": "same TFG0 eligible ordering; ranks 17-24 (1-indexed)",
+  "rank_start": 17,
+  "rank_end": 24,
+  "holdout_count": 8,
+  "eligible_count": 2909,
+  "bodies_inspected": 0,
+  "excluded_symbols": ["AAPL", "BAC", "CAT", "GOOG", "GOOGL", "SNOW"],
+  "tx_index": {
+    "schema": "mastermind.tx-index/v1",
+    "generated_at": "2026-08-27T00:17:17.252644+00:00",
+    "body_count": 28741,
+    "symbol_count": 3572,
+    "raw_sha256": "58f15ff0540f2aa0228348dda6f0ee34b26ef6d3227582fe59793fd43e0af496"
+  },
+  "selected": [
+    {"pair":"H/2026Q2","ticker":"H","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"5a2cec9244fbba95b674adadf85a98902b87d9d67c3570066fc1c550eb5a6d19","selection_hash":"019d6e08045d784a159ae7713c581e38c1b145f374e9eaebf04f207c7ff03db4"},
+    {"pair":"OMCL/2026Q2","ticker":"OMCL","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"b151d84b03515f6536f26c4115c6ea2633873abae6ae1dd77c519563d6c8a5a7","selection_hash":"01d0c9c79552504b63dfdbb7e465ec20c23757f17590547fe135b2b19c6bdc2e"},
+    {"pair":"MMS/2026Q3","ticker":"MMS","transcript_id":"2026Q3","call_date":"2026-08-06","body_sha256":"65dc2ff0d32c4df58d1f0445961acfbb9755af6628f4aacd0f32e273a93c660a","selection_hash":"01e6b73b57ef18829892dfa7c7fc151efcae541f37d47613906986ebb3427495"},
+    {"pair":"HSHP/2026Q2","ticker":"HSHP","transcript_id":"2026Q2","call_date":"2026-08-11","body_sha256":"76e892f51fcaacd8f70ec9ec50b9b444dcf434f4e0fd50dbc76fe429267b2375","selection_hash":"01ec25db9d844daa7ee740590af1c1b5a204a67eec073de2cd51441953638f80"},
+    {"pair":"YUM/2026Q2","ticker":"YUM","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"754b6f4e02b79fdcddf996206b359ab817e513df1f07cf5761e624527770d623","selection_hash":"0200843516237aecf537d10795e14d3b4c8ad0ad9fbca7ef8f0dcaf94a1f8cec"},
+    {"pair":"QMLS/2026Q2","ticker":"QMLS","transcript_id":"2026Q2","call_date":"2026-08-25","body_sha256":"330900c4a3a30c303bdf021d5d29762c442fc9f31b3e5afcac4eab942e67db78","selection_hash":"0201ad4882b23ae25cd42be519b984f67f9a353810057c4baba582b22d229d2b"},
+    {"pair":"MA/2026Q2","ticker":"MA","transcript_id":"2026Q2","call_date":"2026-07-30","body_sha256":"76c4c1da721d2d3e969c97500020d7bd91a59f01ccba9129e12f4d5780eccdbd","selection_hash":"020c248495fb23855597d30018af65659fd5834b8ed380b89377d095238975b3"},
+    {"pair":"KYMR/2026Q2","ticker":"KYMR","transcript_id":"2026Q2","call_date":"2026-08-05","body_sha256":"4a83fe7eca1f095f4ad85985f8fd2b3685e88ae2251fb5d97a2fdf208b027087","selection_hash":"0231b59193da0b0341c5347aa8893d2fcfba8ca4ce9f5b7fa4d698c5bf338d9a"}
+  ],
+  "evidence": {
+    "github_run_id": 33043554816,
+    "freeze_job_id": 98422311316,
+    "artifact_id": 9634756392,
+    "artifact_sha256": "464a65d696dc97ee82780c857924da72f3757b12f5f86c196470e943b456675f"
+  }
+}

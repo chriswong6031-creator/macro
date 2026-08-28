@@ -48,6 +48,7 @@ from engine.options_signal_episode import (
 from engine.session_digest import session_window_et
 from lib import nyse_calendar
 from scripts import audit_options_market_memory_context as options_context_audit
+from scripts import workflow_run_source
 
 
 def _event(**overrides) -> dict:
@@ -2856,7 +2857,11 @@ def test_committed_options_pit_ledgers_are_strict_valid_joined_shadow_data() -> 
 
 def test_daily_options_pit_checkpoint_is_immediate_success_only_metadata_replay() -> None:
     repo = Path(__file__).resolve().parents[1]
-    workflow = (repo / ".github/workflows/daily.yml").read_text()
+    # 512KB-cap diet: engine bodies live in scripts/ci/ — splice them back IN
+    # PLACE so the positional index() slicing below keeps its meaning.
+    workflow = workflow_run_source.resolved_workflow_text(
+        repo / ".github/workflows/daily.yml", repo
+    )
     helper = (repo / "scripts/ci/options_signal_nightly.sh").read_text()
     builder_name = (
         "      - name: OIP PIT — durable episodes + H+60 and "

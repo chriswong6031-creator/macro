@@ -55,6 +55,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -143,6 +154,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -203,6 +225,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -261,6 +294,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -319,6 +363,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -377,6 +432,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -435,6 +501,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -493,6 +570,17 @@ capabilities:
       - orchestrator-chat
       - brain-fast       # MNZ-W6a: haiku fallback for fast lane when DeepSeek absent
       - brain-pro        # MNZ-W6a: opus/sonnet pro lane
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # The AI Daily Brief (engine/master_brain.py) and the AI Desk
+      # (engine/ai_desk.py, which briefs through master_brain._call_model) ran
+      # DeepSeek-ONLY until 2026-08-26 — one metered rung, so the day its balance
+      # ran out the brief stopped rendering. Both now run codex → oauth pool →
+      # ANTHROPIC_API_KEY → DeepSeek. This allowlist is FAIL-CLOSED, and a
+      # pool-aware lane that resolves nothing silently falls back to the single
+      # deprecated legacy token — omitting these names shrinks Claude to one key
+      # rather than failing loudly.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -539,6 +627,13 @@ capabilities:
       - narrative-brain
       - altdata-brain
       - whitehouse
+      # AI Daily Brief lanes (operator directive 2026-08-26). Both have used this
+      # key since they shipped; they were never listed because master_brain called
+      # DeepSeek directly instead of going through the shared waterfall. Now that
+      # they do, DeepSeek is their LAST rung — the metered floor beneath Codex and
+      # Claude, not the default.
+      - master-brain
+      - ai-desk
     allowed_tiers:
       - T0
       - T1
@@ -580,6 +675,13 @@ capabilities:
       - orchestrator-chat
       - brain-fast
       - brain-pro
+      # ── AI Daily Brief lanes (operator directive 2026-08-26) ─────────────
+      # Codex is the FIRST rung for both brief lanes (a paid subscription beats a
+      # metered key). build_providers does not broker-gate the codex rung today, so
+      # these two names are declaratory — they keep the manifest an honest record of
+      # which lanes actually consume this account.
+      - master-brain
+      - ai-desk
       # ── Marketing content lanes (operator directive 2026-07-29) ──────────
       # ChatGPT-first: the marketing writing lanes default to the attached Codex
       # account so Claude subscription tokens stay reserved for website-building
@@ -635,6 +737,9 @@ capabilities:
       - orchestrator-chat
       - brain-fast
       - brain-pro
+      # AI Daily Brief lanes (operator directive 2026-08-26) — see codex_account.
+      - master-brain
+      - ai-desk
       - marketing-copywriter
       - marketing-breaking
       - marketing-copy-review
@@ -680,6 +785,9 @@ capabilities:
       - orchestrator-chat
       - brain-fast
       - brain-pro
+      # AI Daily Brief lanes (operator directive 2026-08-26) — see codex_account.
+      - master-brain
+      - ai-desk
       - marketing-copywriter
       - marketing-breaking
       - marketing-copy-review

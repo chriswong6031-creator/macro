@@ -64,6 +64,52 @@ Migration work follows `research/DESIGN_MIGRATION_FACTORY_V1.md`: builders execu
 a committed migration packet exactly and never invent design language — a builder
 that believes the packet is wrong stops and escalates.
 
+### Theme art direction — required (TP-0, 2026-08-27)
+
+Dark and light are **two deliberate art directions of one semantic system**, not
+a design and its skin. They share information architecture, component semantics,
+spacing/type scales, state meanings, user actions, data contracts, ordering and
+density law, and interaction behavior. They do **not** have to share material
+treatment: dark is a command center (luminance depth, instrument calm, restrained
+glow); light is a research workspace (cool canvas, white material, hairline
+discipline, shadow instead of glow).
+
+**Token substitution alone is never proof of a light design.** "The same CSS
+still renders once the tokens swap" is exactly the failure this law exists to
+stop.
+
+Every material UI packet must name: DARK TREATMENT; LIGHT TREATMENT; which
+mechanisms intentionally differ and why; the reference/baseline; theme-specific
+degraded states; and the evidence matrix (dark/light × EN/ZH × desktop 1440 /
+mobile 390). A packet missing the light art direction or its evidence is
+`PARTIAL/BLOCKED`, never `PASS`.
+
+- **Designer:** state both art directions separately and supply both evidence
+  sets; never approve "same CSS, tokens swap" without arguing why the mechanism
+  genuinely works in both luminance environments.
+- **Builder:** if a frozen spec lacks LIGHT TREATMENT or its required evidence,
+  stop `PARTIAL/BLOCKED` — do not invent or silently translate one, and never
+  add an opaque runtime stylesheet to escape a design-system constraint.
+- **Reviewer:** `PASS` on a material UI change requires dark and light each
+  adjudicated as designs — hierarchy, material depth, semantic color, responsive
+  composition, EN/ZH parity. Functional browser success is necessary, never
+  sufficient.
+
+**Substantive product styling may not be authored as an opaque runtime
+stylesheet system inside page/composer JavaScript** — no multi-kilobyte
+`style.textContent` material system, no parallel palette/token family, no
+duplicated light/dark stylesheet branches invisible to the design-system
+checker. JavaScript may mount and recompose canonical DOM, set state
+classes/attributes, select existing variants, and apply genuinely data-dependent
+inline geometry; governed presentation source owns the material decisions.
+
+Forward-only enforcement (inherited debt reports, but does not newly block):
+`scripts/check_design_system.py --mode enforce-added` on changed lines,
+`scripts/check_runtime_style_injection.py` as a ratcheted budget that may only
+stay flat or shrink, and `scripts/check_ui_visual_evidence.py` for the committed
+dual-theme evidence receipt. CI checks evidence existence and state identity
+only — a human/Opus reviewer owns visual taste.
+
 ## Workspace and git
 
 - The canonical tree is GitHub `origin/main`
@@ -562,14 +608,49 @@ emptied the pool on 2026-07-26 and 2026-08-09:
 - re-dispatching a main proof workflow (`ci.yml` / `fences.yml` /
   `integration-baseline.yml`) over one already in flight on main.
 
+It also **flags** — never denies — one more shape (7): re-reading the same status
+inside 300s, which attaches an `additionalContext` note and lets the call through.
+
 The guard governs HOW you watch, never WHETHER you may: reading your own pull
 request's check state is part of owning it through to the merge, and no state
-outside the command line makes that read illegal. What is on you: preflight
+outside the command line makes that read illegal. That rule is older and stronger
+than shape 7, which is exactly why shape 7 advises instead of denying — escalating
+it to a deny is a RULING for the operator, not a refactor.
+
+**A blocked Stop is not a demand for a fresh poll** (operator 2026-08-24, repeated
+2026-08-27). The commonest burn is neither a loop nor a hot interval: it is one
+`gh pr checks <n>` per Stop-hook cycle while a 30–45 minute run finishes. Measured
+on 2026-08-27: about twenty-five consecutive Stop cycles, one poll each, by a
+session that already had a watcher armed at 150s reporting every transition for
+free. The mechanism is not laziness — the Stop hook fires on every turn and
+escalates to "If the same genuine blocker persists after another attempt, finish
+with `SHIP LOOP BLOCKED:`", which reads as pressure to show a fresh attempt. It is
+not. Answer a blocked Stop with a one-line hold note and no tool call; waiting on
+CI is explicitly not a qualifying blocker for the escape ladder, so there is
+nothing to prove by looking again. The tell: three identical bucket counts in a row
+means every further read is waste, and an armed watcher makes polling redundant
+because its notifications ARE the check. What is on you: preflight
 `gh api rate_limit --jq '.resources.core.remaining'` before arming any long watch,
 run exactly ONE watcher per endpoint (a second watcher on the same run buys no
 information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
+
+**Hold notes do not end the Stop loop — go quiet through the ladder, not through
+repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
+above but is not terminal to the guard: the Stop hook blocks again seconds later,
+and a session that answers every block with another note types near-identical
+hold notes in a tight billed loop for hours (about one hundred such turns measured
+on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
+under an armed watcher; the cost is context × turns and the notes carry zero
+information after the first). When a long external wait is owned by an armed
+watcher or cron and the guard keeps blocking, check the escape-ladder threshold
+(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
+literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
+the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
+no per-Stop hold notes, no tailing your own watcher's output file between ticks.
+Real events (watcher exit, cron fire, task notification, operator message)
+re-invoke the session; that is the only lawful cadence for a parked wait.
 
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.

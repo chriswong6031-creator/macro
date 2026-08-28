@@ -1,15 +1,15 @@
 {
   "appended": 0,
-  "asof": "2026-08-21",
+  "asof": "2026-08-27",
   "candidates": {
     "R": 2,
-    "T": 5,
-    "W": 35
+    "T": 3,
+    "W": 33
   },
   "deduped": {
     "R": 2,
-    "T": 5,
-    "W": 35
+    "T": 3,
+    "W": 33
   },
   "dry_run": false,
   "feature_source": {
@@ -80,47 +80,47 @@
     "T": [],
     "W": []
   },
-  "n_universe": 1495,
+  "n_universe": 1496,
   "overflow": {
     "R": 0,
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-24 04:24:41",
-  "runtime_s": 107.9,
+  "run_utc": "2026-08-28 14:26:53",
+  "runtime_s": 114.3,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
-    "asof": "2026-08-21",
-    "n_members": 170,
+    "age_days": -1,
+    "asof": "2026-08-28",
+    "n_members": 134,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.807,
+        "emerging_score": 2.962,
         "rank": 1,
+        "theme": "Cybersecurity"
+      },
+      {
+        "emerging_score": 2.734,
+        "rank": 2,
         "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 2.529,
-        "rank": 2,
-        "theme": "Commodities Agriculture"
-      },
-      {
-        "emerging_score": 2.09,
+        "emerging_score": 1.776,
         "rank": 3,
-        "theme": "Crypto & Blockchain"
+        "theme": "Mega-Cap"
       },
       {
-        "emerging_score": 1.629,
+        "emerging_score": 1.77,
         "rank": 4,
-        "theme": "Agriculture & FoodTech"
+        "theme": "Biometrics"
       },
       {
-        "emerging_score": 1.605,
+        "emerging_score": 1.333,
         "rank": 5,
-        "theme": "Healthcare & Biotech"
+        "theme": "Software"
       }
     ]
   },
@@ -129,19 +129,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 35,
-    "asof_max": "2026-08-21",
+    "aligned": 33,
+    "asof_max": "2026-08-27",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-21",
+    "asof_run": "2026-08-27",
     "evaluated": 712,
-    "fresh": 36,
+    "fresh": 35,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 18.8,
+    "runtime_s": 21.6,
     "skipped": 5,
     "source": "baskets/membership.json",
-    "state_turn": 98,
+    "state_turn": 97,
     "universe_n": 717
   }
 }

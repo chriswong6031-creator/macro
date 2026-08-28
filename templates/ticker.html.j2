@@ -41,6 +41,7 @@
 <link rel="stylesheet" href="../theme.css">
 <script defer src="../theme.js"></script>
 <script defer src="../assets/js/company-intelligence-dossier.js?v=20260820a"></script>
+<script defer src="../assets/js/dossier-live-quote.js?v=20260827a"></script>
 <style>
 /* ══ dossier v6 ═══════════════════════════════════════════════════════════
    One voice: Inter (--font-ui) everywhere; numbers are tabular Inter, never
@@ -147,6 +148,19 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .livestamp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--ink-ok, var(--ok));white-space:nowrap;}
 [data-lang="zh"] .livestamp{letter-spacing:0;text-transform:none;}
+/* Quote-state stamp. The pip and its label are painted from the QUOTE's own
+   measured freshness, never from the build date — a nightly page used to print
+   a pulsing green "Live" beside a price that was a day old. The green pulse is
+   therefore reserved for `live`: a measured realtime row inside an open
+   regular session. Every weaker state is a still, muted pip, so "current"
+   can never be implied by decoration alone. */
+.dq-stamp[data-dq-state]{color:var(--muted);}
+.dq-stamp[data-dq-state] .live-dot{background:var(--muted);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="delayed"]{color:var(--warn);}
+.dq-stamp[data-dq-state="delayed"] .live-dot{background:var(--warn);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="live"]{color:var(--ink-ok,var(--ok));}
+.dq-stamp[data-dq-state="live"] .live-dot{background:var(--ok);
+  box-shadow:0 0 7px 1px color-mix(in srgb,var(--ok) 60%,transparent);animation:v6lp 2.6s ease-in-out infinite;}
 .wk52{margin-top:16px;}
 .wk52 .lbls{display:flex;justify-content:space-between;gap:14px;font-size:10.5px;color:var(--muted);margin-bottom:5px;}
 .wk52 .lbls b{color:var(--text);font-weight:650;}
@@ -312,6 +326,200 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .powered:hover{color:var(--ink-link, var(--link));}
 .powered .bolt{width:16px;height:16px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;
   background:linear-gradient(135deg,var(--link),var(--info));color:#0f1115;font-size:10px;font-weight:900;}
+
+{%- if security_state %}
+{# The Decision Spine ships its own CSS only on the pages that render it: a
+   listing whose blob carries no security_state block must stay byte-for-byte
+   what it was before this section existed. #}
+/* ══ SECURITY STATE — the Decision Spine ═══════════════════════════════════
+   Six separate reads on one listing, each carrying its own coverage state.
+   The composition decisions, written down because they are choices:
+
+   · ONE panel holding six cells, not six floating panels. The job is "one
+     coherent answer you can audit"; six independent cards read as six
+     independent widgets. The cell is the .ci-lens idiom (panel2 tint, hairline,
+     left rail) widened to a three-column grid — house idiom extended, not a
+     second card system. Nesting depth stays 2.
+   · The LEFT RAIL is the signature, and its SHAPE is the state class, not just
+     its hue: solid = covered · dashed = interrupted (stale/partial/corrected) ·
+     hairline = absent (unavailable/not covered/not applicable/rights blocked) ·
+     split = contradicted. Hue is never the only channel, so the grid survives
+     zh, light mode and colour blindness. The chip dot repeats the same four
+     shapes at glyph scale, and the tally ticks below the grid repeat them
+     again — the strip is literally the grid's legend.
+   · Absence is GREY. Only a contradiction between sources earns --act. An
+     unavailable owner painted red would be a finding nobody made.
+   · Ink marks epistemic status, never content: a covered card's answer prints
+     in --text, a degraded card's headline prints in its state ink.
+   · No composite. No total row, no score, no average, anywhere.               */
+.ss-t-ok  {--ss-c:var(--ok);  --ss-ink:var(--ink-ok,  var(--ok));}
+.ss-t-warn{--ss-c:var(--warn);--ss-ink:var(--ink-warn,var(--warn));}
+.ss-t-act {--ss-c:var(--act); --ss-ink:var(--ink-act, var(--act));}
+.ss-t-off {--ss-c:var(--muted);--ss-ink:var(--muted);}
+.ss-tone-ink{color:var(--ss-ink);}
+
+.ss-mod{margin-top:20px;}
+.ss-sub{margin:-4px 0 15px;max-width:76ch;font-size:12.5px;line-height:1.55;color:var(--muted);}
+.ss-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.ss-cell{position:relative;display:flex;flex-direction:column;min-width:0;
+  padding:14px 15px 12px 17px;border:1px solid var(--hair);border-radius:13px;
+  background:color-mix(in srgb,var(--panel2) 62%,transparent);}
+.ss-cell::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;}
+.ss-r-solid::before {background:var(--ss-c);}
+.ss-r-dash::before  {background:repeating-linear-gradient(180deg,var(--ss-c) 0 11px,transparent 11px 17px);}
+.ss-r-hollow::before{left:1px;width:1px;background:color-mix(in srgb,var(--ss-c) 85%,transparent);}
+.ss-r-split::before {background:linear-gradient(180deg,var(--warn) 0 50%,var(--act) 50% 100%);}
+
+.ss-axis{display:flex;align-items:center;gap:9px;margin:0 0 9px;min-width:0;
+  font-size:10px;font-weight:780;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.ss-axis>span:first-child{min-width:0;overflow-wrap:anywhere;}
+.ss-chip{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;margin-left:auto;
+  padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:720;letter-spacing:.01em;text-transform:none;
+  color:var(--ss-ink);background:color-mix(in srgb,var(--ss-c) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ss-c) 30%,transparent);}
+/* the chip dot is the rail vocabulary at glyph scale */
+.ss-chip::before{content:"";flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--ss-c);}
+.ss-r-dash   .ss-chip::before{width:7px;height:2px;border-radius:1px;}
+.ss-r-hollow .ss-chip::before{background:transparent;box-shadow:inset 0 0 0 1px var(--ss-c);}
+.ss-r-split  .ss-chip::before{border-radius:1px;background:linear-gradient(90deg,var(--warn) 0 50%,var(--act) 50% 100%);}
+
+.ss-head{margin:0;font-size:14.5px;font-weight:700;line-height:1.32;letter-spacing:-.012em;
+  color:var(--text);overflow-wrap:anywhere;}
+.ss-cell:not(.is-ok) .ss-head{color:var(--ss-ink);}
+.ss-body{margin:7px 0 0;font-size:12.5px;line-height:1.55;color:var(--text);overflow-wrap:anywhere;}
+.ss-why{margin:6px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;}
+.ss-note{margin:10px 0 0;padding-top:10px;border-top:1px solid var(--hair);
+  font-size:11.5px;line-height:1.5;color:var(--muted);min-width:0;}
+.ss-note b{display:block;margin-bottom:4px;font-size:9.5px;font-weight:780;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);}
+.ss-note .v{color:var(--text);font-weight:600;overflow-wrap:anywhere;}
+.ss-list{list-style:none;margin:0;padding:0;}
+.ss-list li{position:relative;padding:2px 0 2px 13px;color:var(--text);overflow-wrap:anywhere;}
+.ss-list li::before{content:"";position:absolute;left:1px;top:10px;width:5px;height:1px;background:var(--muted);}
+.ss-more{display:block;margin-top:4px;}
+
+.ss-foot{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;width:100%;margin-top:auto;
+  padding:11px 0 0;border:0;border-top:1px solid var(--hair);background:none;text-align:left;
+  appearance:none;cursor:pointer;font:inherit;color:inherit;transition:color .16s ease;}
+.ss-foot .ss-clock{font-size:10.5px;line-height:1.4;color:var(--muted);font-variant-numeric:tabular-nums;
+  min-width:0;overflow-wrap:anywhere;}
+.ss-foot .ss-go{margin-left:auto;flex:0 0 auto;font-size:10.5px;font-weight:700;color:var(--muted);white-space:nowrap;}
+.ss-foot .ss-go::after{content:" \2192";}
+.ss-foot:hover .ss-go,.ss-foot:focus-visible .ss-go{color:var(--ink-link, var(--link));}
+.ss-foot:focus-visible{outline:2px solid color-mix(in srgb,var(--link) 72%,transparent);outline-offset:3px;border-radius:4px;}
+
+/* the one flag: identity that is not proven, or a read that could not be built.
+   It names what failed AND what still works — never a bare degraded panel. */
+.ss-flag{display:block;margin:0 0 14px;padding:11px 14px;border-radius:11px;
+  border:1px solid color-mix(in srgb,var(--ss-c) 26%,var(--hair));border-left:3px solid var(--ss-c);
+  background:color-mix(in srgb,var(--ss-c) 7%,transparent);font-size:12px;line-height:1.55;color:var(--text);}
+.ss-flag b{display:block;margin-bottom:3px;font-size:11.5px;font-weight:750;color:var(--ss-ink);}
+
+/* evidence strip — the grid's legend and its one panel-level as-of */
+.ss-ev{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-top:16px;padding-top:13px;
+  border-top:1px solid var(--hair);}
+.ss-ev-label{flex:0 0 auto;font-size:10px;font-weight:780;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.ss-tally{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;min-width:0;font-size:11.5px;color:var(--muted);}
+.ss-tally>span{display:inline-flex;align-items:center;gap:6px;min-width:0;}
+.ss-tally b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;}
+.ss-tick{flex:0 0 auto;width:3px;height:12px;border-radius:2px;background:var(--ss-c);}
+.ss-tick.ss-r-dash  {background:repeating-linear-gradient(180deg,var(--ss-c) 0 3px,transparent 3px 6px);}
+.ss-tick.ss-r-hollow{width:1px;background:color-mix(in srgb,var(--ss-c) 85%,transparent);}
+.ss-tick.ss-r-split {background:linear-gradient(180deg,var(--warn) 0 50%,var(--act) 50% 100%);}
+.ss-ev .gbtn{margin-left:auto;flex:0 0 auto;}
+
+/* hero chip — additive, one element, jumps to the section it summarises */
+.ss-hchip{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;padding:4px 11px;border-radius:999px;
+  font-size:10.5px;font-weight:700;line-height:1.35;white-space:nowrap;color:var(--ss-ink);
+  background:color-mix(in srgb,var(--ss-c) 11%,transparent);
+  border:1px solid color-mix(in srgb,var(--ss-c) 28%,transparent);transition:border-color .16s ease;}
+.ss-hchip::before{content:"";flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:var(--ss-c);}
+.ss-hchip:hover{border-color:color-mix(in srgb,var(--ss-c) 54%,transparent);}
+.ss-hchip:focus-visible{outline:2px solid color-mix(in srgb,var(--link) 72%,transparent);outline-offset:2px;}
+
+/* drilldown internals — reuse .dpanel/.dkv/.dnotes; mono is for the machine
+   identifiers only (owner object ids, recipe id, gate codes), never for words */
+.ss-dp{margin:0 0 8px;font-size:13px;line-height:1.6;}
+.ss-dp:last-child{margin-bottom:0;}
+.ss-dp.mut{font-size:12.5px;color:var(--muted);}
+.ss-id{font-family:var(--font-mono);font-size:11px;letter-spacing:0;overflow-wrap:anywhere;}
+.ss-gate{padding:9px 0;border-bottom:1px solid var(--hair);}
+.ss-gate:last-child{border-bottom:0;}
+.ss-gate .g{font-size:12.5px;font-weight:650;line-height:1.45;}
+.ss-gate .c{display:block;margin-top:3px;color:var(--muted);}
+.ss-gate .w{display:block;margin-top:4px;font-size:11.5px;line-height:1.5;color:var(--muted);}
+.ss-gate .w em{font-style:normal;font-weight:650;color:var(--text);}
+.ss-receipt{margin-top:8px;font-size:11.5px;line-height:1.55;color:var(--muted);}
+
+/* ── the provenance register ──────────────────────────────────────────────
+   Two kinds of line live in this panel: values quoted from an owner, and
+   values worked out here from those quotes. Quoting is the majority and the
+   default, so the QUOTED lines carry no mark at all and the worked-out ones
+   carry this tag — mark the exception, not the rule, or the mark stops
+   meaning anything. It is a tag, not a badge: hairline, muted, no hue, so it
+   never competes with the state rail for attention.                        */
+.ss-prov{display:inline-flex;align-items:center;flex:0 0 auto;margin-left:8px;padding:1px 6px;
+  border:1px solid var(--hair);border-radius:5px;vertical-align:middle;
+  font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  line-height:1.6;white-space:nowrap;color:var(--muted);}
+.dpanel h3 .ss-prov{position:relative;top:-1px;}
+
+/* estimated timing — an estimate that could be mistaken for a diary entry is
+   the failure mode this element exists to prevent, so the qualifier sits on
+   its own line under the window rather than in a tooltip. */
+.ss-est{display:block;margin-top:2px;font-size:10.5px;line-height:1.45;color:var(--ink-warn,var(--warn));}
+.ss-when{font-variant-numeric:tabular-nums;}
+
+/* nested owner reads inside one leg (opportunity context) */
+.ss-subs{display:flex;flex-direction:column;gap:4px;}
+.ss-sub-r{display:flex;align-items:baseline;gap:8px;min-width:0;}
+.ss-sub-r>.n{min-width:0;overflow-wrap:anywhere;color:var(--text);}
+.ss-sub-r>.s{margin-left:auto;flex:0 0 auto;font-size:10.5px;font-weight:650;color:var(--ss-ink);}
+.ss-sub-r>.s::before{content:"";display:inline-block;width:5px;height:5px;margin-right:5px;
+  border-radius:50%;background:var(--ss-c);vertical-align:middle;}
+.ss-sub-r.ss-r-hollow>.s::before{background:transparent;box-shadow:inset 0 0 0 1px var(--ss-c);}
+.ss-sub-r.ss-r-dash>.s::before{width:7px;height:2px;border-radius:1px;}
+
+/* identity receipt rows — R1…R9, one block each, in the .ss-gate family */
+.ss-chk{padding:11px 0;border-bottom:1px solid var(--hair);}
+.ss-chk:last-child{border-bottom:0;}
+.ss-chk-h{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+.ss-chk-h .r{font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--text);}
+.ss-chk-h .v{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ss-ink);}
+.ss-chk-h .v::before{content:"";display:inline-block;width:5px;height:5px;margin-right:5px;
+  border-radius:50%;background:var(--ss-c);vertical-align:middle;}
+.ss-chk-h .c{margin-left:auto;color:var(--muted);}
+.ss-chk-d{margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--text);overflow-wrap:anywhere;}
+.ss-chk-s{margin:4px 0 0;font-size:10.5px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere;}
+.ss-chk-v{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;margin-top:6px;}
+.ss-chk-v dt,.ss-chk-v dd{margin:0;font-family:var(--font-mono);font-size:10.5px;line-height:1.55;
+  overflow-wrap:anywhere;}
+.ss-chk-v dt{color:var(--muted);}
+.ss-chk-v dd{color:var(--text);}
+
+[data-lang="zh"] :is(.ss-axis,.ss-ev-label,.ss-note b,.ss-prov,.ss-chk-h .v){letter-spacing:0;text-transform:none;}
+
+/* Light is designed, not translated: a 10% mix of a hue with `transparent`
+   sits on white glass and disappears, so light tints mix with #fff instead,
+   and the hairline rail is given more ink to stay ≥3:1 on white. */
+[data-theme="light"] .ss-cell{background:var(--panel2);}
+[data-theme="light"] .ss-chip{background:color-mix(in srgb,var(--ss-c) 13%,#fff);
+  border-color:color-mix(in srgb,var(--ss-c) 42%,transparent);}
+[data-theme="light"] .ss-flag{background:color-mix(in srgb,var(--ss-c) 9%,#fff);}
+[data-theme="light"] .ss-hchip{background:color-mix(in srgb,var(--ss-c) 12%,#fff);
+  border-color:color-mix(in srgb,var(--ss-c) 40%,transparent);}
+[data-theme="light"] :is(.ss-r-hollow::before,.ss-tick.ss-r-hollow){background:var(--ss-c);}
+
+@media(max-width:1023px){.ss-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:640px){
+  .ss-mod{padding:18px 16px 18px;}
+  .ss-grid{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .ss-cell{padding:13px 14px 11px 16px;}
+  .ss-sub{margin:-2px 0 14px;font-size:12px;}
+  .ss-foot{padding-top:14px;padding-bottom:2px;min-height:40px;}
+  .ss-ev .gbtn{width:100%;justify-content:center;margin-left:0;min-height:40px;}
+}
+{%- endif %}
 
 /* two-column zone */
 .cols{display:grid;grid-template-columns:minmax(0,1fr) 322px;gap:20px;margin-top:20px;align-items:start;}
@@ -649,7 +857,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 <div class="strip" id="v6strip" aria-hidden="true">
   <span class="stk">{{ ticker }}</span>
   <span class="sname mut sm">{{ name }}</span>
-  {% if hero and hero.price %}<span class="stp num">$<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ hero.price }}</span></span>{% endif %}
+  {# dq-px, NOT nb-px: the dossier price is owned by dossier-live-quote.js and
+     must not also be a target of the shared live.js poller. Two owners writing
+     one node is a race whose loser is whichever fetch returns second. #}
+  {% if hero and hero.price %}<span class="stp num">$<span class="dq-px" data-dq-sym="{{ ticker }}">{{ hero.price }}</span></span>{% endif %}
   {% if hero %}<span class="schip">{{ t(hero.stance_en, hero.stance_zh) }}</span>{% endif %}
   <nav id="v6jumps">
     <a href="#company-update">{{ t('Company', '公司动态') }}</a>
@@ -702,21 +913,26 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="px-block hi hi2">
       <div class="px-big num">
         {%- if hero and hero.price -%}
-        $<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ hero.price }}</span>
+        $<span class="dq-px" data-dq-sym="{{ ticker }}">{{ hero.price }}</span>
         {%- else -%}—{%- endif -%}
       </div>
+      {# The day move repaints WITH the price from one quote. It used to be
+         static HTML beside a live-looking price, so a repaint could leave a
+         current price next to yesterday's move — the two must move together
+         or not at all. The pip that used to sit here was decorative (it keyed
+         off the BUILD's date); freshness is now stated once, on the stamp. #}
       {% if hero and hero.chg %}
-      <div class="px-chg {{ 'pos' if hero.chg.pos else 'neg' }}">
-        <span class="pill6 num">{{ hero.chg.abs }} · {{ hero.chg.pct }}</span>
-        {% if not stale %}<span class="live-dot"></span>{% endif %}
+      <div class="px-chg {{ 'pos' if hero.chg.pos else 'neg' }}" data-dq-chg>
+        <span class="pill6 num"><span data-dq-abs>{{ hero.chg.abs }}</span> · <span data-dq-pct>{{ hero.chg.pct }}</span></span>
       </div>
-      {% elif not stale %}
-      <div class="px-chg pos"><span class="live-dot"></span></div>
       {% endif %}
       {% if hero and hero.range52 %}
       <div class="wk52">
         <div class="lbls"><span>{{ t('52w low', '52周低') }} <b class="num">{{ hero.range52.lo }}</b></span><span>{{ t('high', '高') }} <b class="num">{{ hero.range52.hi }}</b></span></div>
-        <div class="track"><div class="fill" style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" style="left:{{ hero.range52.pos_pct }}%;"></div></div>
+        {# The bar repaints with the price. Left baked it would place the NEW
+           price at the OLD point on the scale — the one element whose whole job
+           is "where in the range are we", answering it wrong. #}
+        <div class="track" data-dq-range{% if hero.range52.lo_raw is not none %} data-dq-lo="{{ hero.range52.lo_raw }}" data-dq-hi="{{ hero.range52.hi_raw }}"{% endif %}><div class="fill" data-dq-fill style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" data-dq-dot style="left:{{ hero.range52.pos_pct }}%;"></div></div>
       </div>
       {% endif %}
     </div>
@@ -731,8 +947,19 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
        it — "Engine read" named the plumbing. Fresh reads carry the same live
        pip as the price above; a stale one still prints its date, because that
        is the case where the date is the whole point. #}
+    {%- if security_state %}
+    {# Dominant degradation, additive: one chip that jumps to the section it
+       summarises. It prints on a clean read too — "checked and current" and
+       "never checked" must not look the same from the hero. #}
+    <a class="ss-hchip ss-t-{{ security_state.degradation.tone }}" href="#security-state">{{ t(security_state.degradation.en, security_state.degradation.zh) }}</a>
+    {%- endif %}
     {% if stale %}<span class="asof wrn">{{ t('May be stale', '可能过期') }} · {{ freshness }}</span>
-    {% else %}<span class="livestamp"><span class="live-dot"></span>{{ t('Live', '实时') }}</span>{% endif %}
+    {# This said "Live" unconditionally, decided by the BUILD's own date: a page
+       rendered last night printed a pulsing green "Live" next to a baked price
+       that was a full session old. It now ships in the honest `baked` state —
+       naming the date of the bytes actually served — and is upgraded ONLY by a
+       measured quote, by dossier-live-quote.js. With JS off it stays truthful. #}
+    {% else %}<span class="livestamp dq-stamp" data-dq-stamp data-dq-state="baked"><span class="live-dot"></span>{{ t('As of ' ~ freshness, '截至 ' ~ freshness) }}</span>{% endif %}
   </div>
   {% endif %}
 </header>
@@ -833,6 +1060,91 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <a class="powered" href="{{ terminal_url }}" rel="noopener noreferrer" target="_blank"><span class="bolt">M</span>{{ t('Mastermind Terminal — live & interactive', 'Mastermind 终端 — 实时互动') }} ↗</a>
   </div>
 </section>
+
+{%- if security_state %}{% set ss = security_state %}
+
+<!-- ═ SECURITY STATE — six separate reads, each carrying its own coverage ═ -->
+<section class="mod ss-mod rv" id="security-state" aria-labelledby="ss-title">
+  <div class="mod-hd">
+    <h2 id="ss-title">{{ t('Security state', '证券状态') }}</h2>
+    <span class="hint">{{ t('six reads', '六项读数') }}</span>
+  </div>
+  <p class="ss-sub">{{ t('Six separate reads on this listing — what each one rests on, and how old it is. Use it to check the rest of the page. Not a buy or sell signal, and never blended into a score.', '对该证券的六项独立读数 — 每项的依据来源与时效。可用于核对本页其余内容。不构成买卖信号，也不会合并为任何评分。') }}</p>
+
+  {# One flag, at most. A read that could not be built outranks an identity
+     problem; both name what still works, so the reader never has to guess how
+     far the failure reaches. #}
+  {% if ss.degradation.failed %}
+  {# The last-good citation is gated on a read that actually succeeded: a
+     recorded fallback whose own compile failed is not something to fall back
+     on, and naming it would promise the reader a version that never existed. #}
+  <p class="ss-flag ss-t-act"><b>{{ t('This read could not be built', '本次读数无法生成') }}</b>{{ t('The six reads below could not be compiled from their sources this run. The price, chart and company sections above are unaffected.', '本次运行未能从来源生成下方六项读数。上方的价格、图表与公司板块不受影响。') }}{% if ss.last_good.ok %} {{ t('Last complete read:', '上次完整读数：') }} {{ ss.last_good.at }}{% if ss.last_good.deg and ss.last_good.deg.code != 'NONE' %} — {{ t(ss.last_good.deg.en|lower, ss.last_good.deg.zh) }}{% endif %}.{% endif %}</p>
+  {% elif not ss.identity.ok %}
+  <p class="ss-flag ss-t-{{ ss.identity.tone }}"><b>{{ t(ss.identity.en, ss.identity.zh) }}</b>{{ t(ss.identity.why_en, ss.identity.why_zh) }}</p>
+  {% endif %}
+
+  <div class="ss-grid">
+    {% for a in ss.axes %}
+    <article class="ss-cell ss-t-{{ a.tone }} ss-r-{{ a.rail }}{{ ' is-ok' if a.ok }}">
+      <h3 class="ss-axis"><span>{{ t(a.title_en, a.title_zh) }}</span><span class="ss-chip">{{ t(a.cov_en, a.cov_zh) }}</span></h3>
+      <p class="ss-head">{{ t(a.headline.en, a.headline.zh) }}</p>
+      {% if a.clause %}<p class="ss-body">{{ t(a.clause.en, a.clause.zh) }}</p>{% endif %}
+      {% if a.why %}<p class="{{ 'ss-why' if a.clause else 'ss-body' }}">{{ t(a.why.en, a.why.zh) }}</p>{% endif %}
+
+      {# The strongest unresolved fact sits ahead of every secondary block in
+         DOM order, so the mobile column needs no reordering to satisfy it. #}
+      {# Direction is a second quoted field, not a second opinion — one short
+         row, and only when the page can say it in both languages. #}
+      {% if a.direction %}
+      <div class="ss-note"><b>{{ t('Direction', '方向') }}</b><span class="v">{{ t(a.direction.en, a.direction.zh) }}</span></div>
+      {% endif %}
+      {% if a.subreads %}
+      <div class="ss-note"><b>{{ t('Reads behind this', '构成这项的读数') }}</b>
+        <div class="ss-subs">{% for s in a.subreads %}<span class="ss-sub-r ss-t-{{ s.tone }} ss-r-{{ s.rail }}"><span class="n">{{ t(s.en, s.zh) }}</span><span class="s">{{ t(s.cov_en, s.cov_zh) }}</span></span>{% endfor %}</div>
+      </div>
+      {% endif %}
+      {% if a.unresolved %}
+      <div class="ss-note"><b>{{ t('Biggest open question', '最大未决问题') }}<span class="ss-prov">{{ t('worked out here', '本页推算') }}</span></b><span class="v">{{ t(a.unresolved.en, a.unresolved.zh) }}</span></div>
+      {% endif %}
+      {% if a.gates %}
+      <div class="ss-note"><b>{{ t('Checks not cleared', '未通过的检查') }}</b>
+        <ul class="ss-list">{% for g in a.gates[:2] %}<li>{{ t(g.en, g.zh) }}</li>{% endfor %}</ul>
+        {% if a.gates|length > 2 %}<span class="ss-more">+{{ a.gates|length - 2 }} {{ t('more, with codes, in receipts', '项（含代码）见凭证') }}</span>{% endif %}
+      </div>
+      {% endif %}
+      {% if a.observables %}
+      <div class="ss-note"><b>{{ t('Next observable', '下一个可观测点') }}</b>
+        <ul class="ss-list">{% for o in a.observables[:3] %}<li>{{ t(o.en, o.zh) }}{% if o.when %} <span class="mut ss-when">· {{ o.when }}</span>{% endif %}{% if o.est %}<span class="ss-est">{{ t('Estimated window — not an announced date', '预计窗口 — 并非官方公布日期') }}</span>{% endif %}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+      {% if a.warnings %}
+      <div class="ss-note"><b>{{ t('Noted while building', '生成过程中的提示') }}</b>
+        <ul class="ss-list">{% for w in a.warnings[:2] %}<li>{{ t(w.en, w.zh) }}</li>{% endfor %}</ul>
+      </div>
+      {% endif %}
+
+      {# One drill target per card, and it is the whole receipt line: a bigger
+         hit area than a pill, no six-times-repeated button, and the clock sits
+         inside the control that explains where the clock came from. #}
+      <button type="button" class="ss-foot" onclick="dsrOpenDlg('dlg-{{ a.dlg }}')">
+        {% if a.asof %}<span class="ss-clock">{{ t('as of', '截至') }} {{ a.asof }}</span>{% endif %}
+        <span class="ss-go">{{ t('Receipts', '凭证') }}<span class="ci-sr"> — {{ t(a.title_en, a.title_zh) }}</span></span>
+      </button>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="ss-ev">
+    <span class="ss-ev-label">{{ t('Evidence & receipts', '证据与凭证') }}</span>
+    <span class="ss-tally">
+      {% for b in ss.tally %}<span class="ss-t-{{ b.tone }}"><i class="ss-tick ss-r-{{ b.rail }}" aria-hidden="true"></i><b>{{ b.n }}</b> {{ t(b.en|lower, b.zh) }}</span>{% endfor %}
+      <span class="ss-prov">{{ t('counted here', '本页统计') }}</span>
+    </span>
+    {% if ss.frontier_at %}<span class="ss-clock">{{ t('sources through', '来源截至') }} {{ ss.frontier_at }}</span>{% endif %}
+    <button type="button" class="gbtn gbtn-sm" onclick="dsrOpenDlg('dlg-ss-evidence')">{{ t('Open evidence', '查看证据') }}</button>
+  </div>
+</section>
+{%- endif %}
 
 <!-- ═ MAIN + RAIL (rail begins under the chart) ═ -->
 <div class="cols">
@@ -1387,6 +1699,254 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 </footer>
 
 </div><!-- /page-wrap -->
+
+{%- if security_state %}{% set ss = security_state %}
+{# ═ SECURITY STATE drilldowns ═ These live at the dialog layer, not inside the
+   section: .mod carries backdrop-filter and .rv carries a transform, and either
+   one makes itself the containing block for position:fixed descendants — a
+   dialog nested in the section would be trapped inside the card. They reuse the
+   page's dsrOpenDlg mechanics wholesale (focus trap, Escape, scroll lock, and
+   the ≤640px bottom-sheet geometry the drawer requirement asks for). #}
+{% for a in ss.axes %}
+<div class="dsr-dlg" id="dlg-{{ a.dlg }}" role="dialog" aria-labelledby="dlg-{{ a.dlg }}-title">
+  <div class="dsr-dlg-backdrop"></div>
+  <div class="dsr-dlg-panel">
+    <div class="dsr-dlg-header">
+      <span class="dsr-dlg-title" id="dlg-{{ a.dlg }}-title">{{ t(a.title_en, a.title_zh) }}</span>
+      <button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">✕</button>
+    </div>
+    <div class="dsr-dlg-body">
+      <section class="dpanel">
+        <h3>{{ t('What this read says', '这项读数说了什么') }}</h3>
+        <p class="ss-dp">{{ t(a.headline.en, a.headline.zh) }}</p>
+        {% if a.clause %}<p class="ss-dp mut">{{ t(a.clause.en, a.clause.zh) }}</p>{% endif %}
+        {% if a.why %}<p class="ss-dp mut">{{ t(a.why.en, a.why.zh) }}</p>{% endif %}
+        {% if a.derived %}<div class="dfoot">{{ t('This sentence is our plain wording of the values in this panel. The values themselves are quoted.', '此表述为本页对本面板数值的通俗措辞；数值本身为原样引用。') }}</div>{% endif %}
+      </section>
+
+      <section class="dpanel">
+        <h3>{{ t('Where it comes from', '来源与时间') }}</h3>
+        <div class="dkv">
+          <div class="r6d"><span class="k">{{ t('Field status', '字段状态') }}</span><span class="vv ss-t-{{ a.tone }} ss-tone-ink">{{ t(a.cov_en, a.cov_zh) }}</span></div>
+          {% if a.owner %}<div class="r6d"><span class="k">{{ t('Canonical owner', '权威来源方') }}</span><span class="vv">{{ a.owner }}</span></div>{% endif %}
+          {% if a.owner_object %}<div class="r6d"><span class="k">{{ t('Owner object', '来源对象') }}</span><span class="vv ss-id">{{ a.owner_object }}</span></div>{% endif %}
+          {% if a.source %}<div class="r6d"><span class="k">{{ t('Source', '原始来源') }}</span><span class="vv">{{ a.source }}</span></div>{% endif %}
+          {% if a.generation_id %}<div class="r6d"><span class="k">{{ t('Generation', '生成批次') }}</span><span class="vv ss-id">{{ a.generation_id }}</span></div>{% endif %}
+          {% for c in a.clocks %}<div class="r6d"><span class="k">{{ t(c.en, c.zh) }}</span><span class="vv num">{{ c.v }}</span></div>{% endfor %}
+          <div class="r6d"><span class="k">{{ t('Correction state', '更正状态') }}</span><span class="vv">{{ a.correction if a.correction else t('None recorded', '无记录') }}</span></div>
+        </div>
+      </section>
+
+      {# The quoted values the card's sentence rests on. The sentence above is
+         this page's wording; these are the source's own fields, unchanged. #}
+      {% if a.fields %}
+      <section class="dpanel">
+        <h3>{{ t('Fields read, exactly as recorded', '按原样读取的字段') }}</h3>
+        <dl class="ss-chk-v">{% for f in a.fields %}<dt>{{ f.k }}</dt><dd>{{ f.v if f.v else '—' }}</dd>{% endfor %}</dl>
+        {% if a.quoted_summary %}<p class="ss-receipt">{{ t('Recorded as', '记录原文') }}: <span class="ss-id">{{ t(a.quoted_summary.en, a.quoted_summary.zh) }}</span></p>{% endif %}
+      </section>
+      {% endif %}
+
+      {% if a.subreads %}
+      <section class="dpanel">
+        <h3>{{ t('Reads behind this', '构成这项的读数') }}</h3>
+        <div class="dkv">
+          {% for s in a.subreads %}<div class="r6d"><span class="k">{{ t(s.en, s.zh) }}</span><span class="vv ss-t-{{ s.tone }} ss-tone-ink">{{ t(s.cov_en, s.cov_zh) }}</span></div>{% endfor %}
+        </div>
+        {% for s in a.subreads %}{% if s.reason %}<p class="ss-receipt">{{ t(s.en, s.zh) }} — {{ s.reason }}</p>{% endif %}{% endfor %}
+        <div class="dfoot">{{ t('A read that is not available is left out. No rank, score or stand-in value is put in its place.', '不可用的读数即留空，不会以任何排名、评分或替代数值填补。') }}</div>
+      </section>
+      {% endif %}
+
+      {% if a.unresolved %}
+      <section class="dpanel">
+        <h3>{{ t('Biggest open question', '最大未决问题') }}</h3>
+        <p class="ss-dp">{{ t(a.unresolved.en, a.unresolved.zh) }}</p>
+      </section>
+      {% endif %}
+
+      {% if a.gates %}
+      <section class="dpanel">
+        <h3>{{ t('Checks not cleared', '未通过的检查') }}</h3>
+        {% for g in a.gates %}
+        <div class="ss-gate">
+          <span class="g">{{ t(g.en, g.zh) }}<span class="c ss-id">{{ g.code }}</span></span>
+          <span class="w"><em>{{ t('Clears when', '通过条件') }}:</em> {{ t(g.clear_en, g.clear_zh) }}</span>
+        </div>
+        {% endfor %}
+        <div class="dfoot">{{ t('A check that did not clear is shown as not cleared. It is never rounded up to a pass or replaced with a neutral value.', '未通过的检查即按未通过呈现，不会被计为通过，也不会以中性数值替代。') }}</div>
+      </section>
+      {% endif %}
+
+      {% if a.observables %}
+      <section class="dpanel">
+        <h3>{{ t('What to watch next', '接下来关注什么') }}{% if a.observables|selectattr('est')|list %}<span class="ss-prov">{{ t('worked out here', '本页推算') }}</span>{% endif %}</h3>
+        {% for o in a.observables %}
+        <div class="ss-gate">
+          <span class="g">{{ t(o.en, o.zh) }}{% if o.when %}<span class="c ss-when">{{ o.when }}</span>{% endif %}</span>
+          {% if o.est %}<span class="ss-est">{{ t('Estimated window — not an announced date', '预计窗口 — 并非官方公布日期') }}</span>{% endif %}
+          {% if o.basis %}<span class="w"><em>{{ t('Worked out from', '推算依据') }}:</em> {{ o.basis }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if a.warnings %}
+      <section class="dpanel">
+        <h3>{{ t('Noted while building', '生成过程中的提示') }}</h3>
+        {% for w in a.warnings %}
+        <div class="ss-gate"><span class="g">{{ t(w.en, w.zh) }}{% if w.code %}<span class="c ss-id">{{ w.code }}</span>{% endif %}</span></div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if a.refs %}
+      <section class="dpanel">
+        <h3>{{ t('Supported claims', '受支持的依据') }}</h3>
+        <ul class="dnotes">{% for r in a.refs %}<li class="ss-id">{{ r }}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+
+      <section class="dpanel">
+        <h3>{{ t('Can you act on this', '是否可据此行动') }}</h3>
+        <p class="ss-dp">{{ t(a.actionable.en, a.actionable.zh) }}</p>
+      </section>
+      {# Provenance, in two registers. The panel used to claim it calculated
+         nothing — it does: it counts, it picks, it estimates a window. Saying
+         so, and marking which lines those are, is worth more than a promise
+         the panel could not keep. #}
+      <div class="dfoot">{{ t("Most lines here are quoted — copied as recorded from the source named beside them. Lines tagged “worked out here” are produced by Mastermind from those quoted values under a fixed rule, never by judgement. The plain wording of a source's own status is ours; the status itself is the source's, and a missing source stays missing.", '本面板多数内容为引用 — 按记录原样复制自旁注来源。标注「本页推算」的内容由 Mastermind 依据这些引用值按固定规则得出，不含主观判断。来源状态的通俗措辞由本页给出，状态本身来自来源；缺失的来源仍按缺失呈现。') }}</div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<div class="dsr-dlg" id="dlg-ss-evidence" role="dialog" aria-labelledby="dlg-ss-evidence-title">
+  <div class="dsr-dlg-backdrop"></div>
+  <div class="dsr-dlg-panel">
+    <div class="dsr-dlg-header">
+      <span class="dsr-dlg-title" id="dlg-ss-evidence-title">{{ t('Evidence & receipts', '证据与凭证') }}</span>
+      <button class="dsr-dlg-close" onclick="dsrCloseDlg()" aria-label="Close">✕</button>
+    </div>
+    <div class="dsr-dlg-body">
+      <section class="dpanel">
+        <h3>{{ t('Coverage of the six reads', '六项读数的覆盖情况') }}<span class="ss-prov">{{ t('counted here', '本页统计') }}</span></h3>
+        <div class="dkv">
+          {% for b in ss.tally %}<div class="r6d"><span class="k ss-t-{{ b.tone }} ss-tone-ink">{{ t(b.en, b.zh) }}</span><span class="vv num">{{ b.n }} / {{ ss.axes|length }}</span></div>{% endfor %}
+        </div>
+      </section>
+
+      {# Two different questions, so two different rows. "Current" counts only
+         reads that came back current; "not in the way" also counts a read that
+         does not apply to this listing or sits outside its coverage. Folding
+         them into one number is how a read that does not apply ends up looking
+         like a read that is fine. #}
+      {% if ss.coverage.req_total is not none or ss.coverage.opt_total is not none %}
+      <section class="dpanel">
+        <h3>{{ t('Required and optional reads', '必需与可选读数') }}</h3>
+        <div class="dkv">
+          {% if ss.coverage.req_total is not none %}
+          <div class="r6d"><span class="k">{{ t('Required reads, current', '必需读数：当前') }}</span><span class="vv num">{{ ss.coverage.req_avail if ss.coverage.req_avail is not none else '—' }} / {{ ss.coverage.req_total }}</span></div>
+          {% if ss.coverage.req_nonblock is not none %}<div class="r6d"><span class="k">{{ t('Required reads, not in the way', '必需读数：不构成阻碍') }}</span><span class="vv num">{{ ss.coverage.req_nonblock }} / {{ ss.coverage.req_total }}</span></div>{% endif %}
+          {% endif %}
+          {% if ss.coverage.opt_total is not none %}
+          <div class="r6d"><span class="k">{{ t('Optional reads, current', '可选读数：当前') }}</span><span class="vv num">{{ ss.coverage.opt_avail if ss.coverage.opt_avail is not none else '—' }} / {{ ss.coverage.opt_total }}</span></div>
+          {% if ss.coverage.opt_nonblock is not none %}<div class="r6d"><span class="k">{{ t('Optional reads, not in the way', '可选读数：不构成阻碍') }}</span><span class="vv num">{{ ss.coverage.opt_nonblock }} / {{ ss.coverage.opt_total }}</span></div>{% endif %}
+          {% endif %}
+        </div>
+        <div class="dfoot">{{ t('"Current" counts only reads that came back current. "Not in the way" also counts a read that does not apply to this listing, or sits outside its coverage — which is not the same as current. These counts include the evidence read, which has its own panel below rather than a card above.', '「当前」仅统计返回为当前的读数；「不构成阻碍」还包括不适用于该证券或不在覆盖范围内的读数 — 与「当前」并不相同。以上计数包含证据读数，该读数在下方独立面板中呈现，而非上方卡片。') }}</div>
+      </section>
+      {% endif %}
+
+      {% if ss.gates %}
+      <section class="dpanel">
+        <h3>{{ t('Every check that did not clear', '所有未通过的检查') }}</h3>
+        {% for g in ss.gates %}
+        <div class="ss-gate">
+          <span class="g">{{ t(g.en, g.zh) }}<span class="c ss-id">{{ g.code }}</span></span>
+          <span class="w"><em>{{ t('Clears when', '通过条件') }}:</em> {{ t(g.clear_en, g.clear_zh) }}</span>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if ss.evidence.refs %}
+      <section class="dpanel">
+        <h3>{{ t('Supported claims', '受支持的依据') }}</h3>
+        <ul class="dnotes">{% for r in ss.evidence.refs %}<li class="ss-id">{{ r }}</li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+
+      <section class="dpanel">
+        <h3>{{ t('How this was put together', '生成过程') }}</h3>
+        <div class="dkv">
+          {% if ss.evidence.recipe_id %}<div class="r6d"><span class="k">{{ t('Recipe', '配方') }}</span><span class="vv ss-id">{{ ss.evidence.recipe_id }}</span></div>{% endif %}
+          {% if ss.version %}<div class="r6d"><span class="k">{{ t('Schema', '数据结构') }}</span><span class="vv ss-id">{{ ss.version }}</span></div>{% endif %}
+          {% if ss.listing_key %}<div class="r6d"><span class="k">{{ t('Listing', '上市代码') }}</span><span class="vv ss-id">{{ ss.listing_key }}</span></div>{% endif %}
+          {% if ss.security_id %}<div class="r6d"><span class="k">{{ t('Security', '证券标识') }}</span><span class="vv ss-id">{{ ss.security_id }}</span></div>{% endif %}
+          {% if ss.issuer_id %}<div class="r6d"><span class="k">{{ t('Issuer', '发行人标识') }}</span><span class="vv ss-id">{{ ss.issuer_id }}</span></div>{% endif %}
+          {% if ss.content_sha256 %}<div class="r6d"><span class="k">{{ t('Content fingerprint', '内容指纹') }}</span><span class="vv ss-id">{{ ss.content_sha256 }}</span></div>{% endif %}
+          {% if ss.market_at %}<div class="r6d"><span class="k">{{ t('Market data through', '行情数据截至') }}</span><span class="vv num">{{ ss.market_at }}</span></div>{% endif %}
+          {% if ss.frontier_at %}<div class="r6d"><span class="k">{{ t('Sources through', '来源截至') }}</span><span class="vv num">{{ ss.frontier_at }}</span></div>{% endif %}
+          {% if ss.compiled_at %}<div class="r6d"><span class="k">{{ t('Compiled', '编排时间') }}</span><span class="vv num">{{ ss.compiled_at }}</span></div>{% endif %}
+        </div>
+        {# identity_proof PROVEN is a quiet receipt line, never a banner. #}
+        <p class="ss-receipt">{{ t(ss.identity.en, ss.identity.zh) }}{% if ss.identity.legs %} · {{ ss.identity.legs|length }} {{ t('source checks', '项来源核对') }}{% endif %}{% if ss.identity.equalities %} · {{ ss.identity.equalities|length }} {{ t('matches', '项一致') }}{% endif %}{% if ss.identity.why_en %} — {{ t(ss.identity.why_en, ss.identity.why_zh) }}{% endif %}</p>
+      </section>
+
+      {# The evidence read's own receipt: which records were asked for, which
+         were used, and what happened to the rest. The zeros print too. #}
+      {% if ss.evidence.compile_state or ss.evidence.counts %}
+      <section class="dpanel">
+        <h3>{{ t('What went into the evidence', '证据的构成') }}<span class="ss-prov">{{ t('counted here', '本页统计') }}</span></h3>
+        <div class="dkv">
+          {% if ss.evidence.compile_state %}<div class="r6d"><span class="k">{{ t('Evidence compiled', '证据编排结果') }}</span><span class="vv ss-t-{{ ss.evidence.compile_state.tone }} ss-tone-ink">{{ t(ss.evidence.compile_state.en, ss.evidence.compile_state.zh) }}</span></div>{% endif %}
+          {% for c in ss.evidence.counts %}<div class="r6d"><span class="k">{{ t(c.en, c.zh) }}</span><span class="vv num">{{ c.v }}</span></div>{% endfor %}
+          {% if ss.evidence.compiled_at %}<div class="r6d"><span class="k">{{ t('Compiled', '编排时间') }}</span><span class="vv num">{{ ss.evidence.compiled_at }}</span></div>{% endif %}
+        </div>
+        {% if ss.evidence.conflicts %}<ul class="dnotes">{% for c in ss.evidence.conflicts %}<li>{{ c }}</li>{% endfor %}</ul>{% endif %}
+      </section>
+      {% endif %}
+
+      {% if ss.identity.legs or ss.identity.refusals or ss.identity.disclosures %}
+      <section class="dpanel">
+        <h3>{{ t('Identity checks', '身份核对') }}</h3>
+        {% for lg in ss.identity.legs %}
+        <div class="ss-chk ss-t-{{ lg.tone }}">
+          <div class="ss-chk-h">
+            <span class="r">{{ lg.check }}</span>
+            <span class="v">{{ t(lg.result_en, lg.result_zh) }}</span>
+            {% if lg.code %}<span class="c ss-id">{{ lg.code }}</span>{% endif %}
+          </div>
+          {% if lg.desc %}<p class="ss-chk-d">{{ lg.desc }}</p>{% endif %}
+          {% if lg.artifact %}<p class="ss-chk-s"><span class="ss-id">{{ lg.artifact }}</span></p>{% endif %}
+          {% if lg.reader %}<p class="ss-chk-s">{{ t('read by', '读取方') }} <span class="ss-id">{{ lg.reader }}</span></p>{% endif %}
+          {% if lg.reads %}<dl class="ss-chk-v">{% for v in lg.reads %}<dt>{{ v.k }}</dt><dd>{{ v.v if v.v else '—' }}</dd>{% endfor %}</dl>{% endif %}
+        </div>
+        {% endfor %}
+        {% if ss.identity.equalities %}<ul class="dnotes">{% for e in ss.identity.equalities %}<li class="ss-id">{{ e }}</li>{% endfor %}</ul>{% endif %}
+        {% if ss.identity.refusals %}<div class="dfoot">{{ t('Held back', '暂不呈现') }}: {% for r in ss.identity.refusals %}{{ r }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+        {% if ss.identity.disclosures %}<div class="dfoot">{% for d in ss.identity.disclosures %}{{ d }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+      </section>
+      {% endif %}
+
+      {% if ss.last_good.ok %}
+      <section class="dpanel">
+        <h3>{{ t('Last complete read', '上次完整读数') }}</h3>
+        <div class="dkv">
+          <div class="r6d"><span class="k">{{ t('Built', '生成时间') }}</span><span class="vv num">{{ ss.last_good.at }}</span></div>
+          {% if ss.last_good.deg %}<div class="r6d"><span class="k">{{ t('Its own coverage', '其自身覆盖情况') }}</span><span class="vv ss-t-{{ ss.last_good.deg.tone }} ss-tone-ink">{{ t(ss.last_good.deg.en, ss.last_good.deg.zh) }}</span></div>{% endif %}
+          {% if ss.last_good.sha %}<div class="r6d"><span class="k">{{ t('Content fingerprint', '内容指纹') }}</span><span class="vv ss-id">{{ ss.last_good.sha }}</span></div>{% endif %}
+        </div>
+        {% if ss.last_good.reason %}<p class="ss-receipt">{{ t('Why this earlier read is named', '为何列出这一较早读数') }}: {{ t(ss.last_good.reason.en, ss.last_good.reason.zh) }}</p>{% endif %}
+      </section>
+      {% endif %}
+
+      <div class="dfoot">{{ t("This panel is a receipt. Anything untagged is quoted from the owner named beside it. The tagged lines — the counts, the pick of the biggest open question, and the estimated window — are worked out here from those quotes under a fixed rule. Nothing is estimated to cover a gap, and no missing source is replaced by a neutral value.", '本面板为凭证。未加标注的内容均引用自旁注来源方；标注项 — 各项计数、最大未决问题的选取，以及预计窗口 — 由本页依据上述引用按固定规则得出。缺失的来源不会被推算填补，也不会以中性数值替代。') }}</div>
+    </div>
+  </div>
+</div>
+{%- endif %}
 
 {% if deep %}
 {% for d in deep.dialogs %}

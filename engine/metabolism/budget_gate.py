@@ -29,6 +29,7 @@ import json
 import logging
 import os
 import re
+import stat
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -80,6 +81,64 @@ def load_budget_cfg(root: Path | None = None) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.warning("budget_gate.load_budget_cfg: %s — using defaults", exc)
         return dict(_DEFAULTS)
+
+
+def capacity_budget_config(root: Path | None = None) -> dict[str, Any]:
+    """Return strict estimator inputs without the gate's fail-open defaults.
+
+    The existing gate must remain NEVER-RAISE for dispatch compatibility.  A
+    capacity projection instead needs to know whether the config was absent,
+    corrupt or actually declared no estimator, because those states cannot all
+    become zero/free quota.
+    """
+    result: dict[str, Any] = {
+        "quality": "ok",
+        "est_budget_5h_tokens": None,
+        "est_budget_weekly_tokens": None,
+        "codes": [],
+    }
+    try:
+        import yaml  # noqa: PLC0415
+
+        base = root if root is not None else _repo_root()
+        path = base / _CFG_REL
+        try:
+            mode = path.lstat().st_mode
+        except FileNotFoundError:
+            result["quality"] = "missing"
+            result["codes"] = ["PROVIDER_BUDGET_UNKNOWN"]
+            return result
+        except OSError:
+            result["quality"] = "unreadable"
+            result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_BUDGET_UNKNOWN"]
+            return result
+        if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+            result["quality"] = "unreadable"
+            result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_BUDGET_UNKNOWN"]
+            return result
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        if not isinstance(raw, dict):
+            raise ValueError("budget config must be an object")
+        src = raw.get("gate_policy", raw)
+        if not isinstance(src, dict):
+            raise ValueError("gate_policy must be an object")
+        for key in ("est_budget_5h_tokens", "est_budget_weekly_tokens"):
+            value = src.get(key)
+            if value is None:
+                continue
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"{key} must be numeric or null")
+            value = float(value)
+            if not (value > 0 and value < float("inf")):
+                raise ValueError(f"{key} must be finite and positive")
+            result[key] = value
+    except (OSError, UnicodeError):
+        result["quality"] = "unreadable"
+        result["codes"] = ["SOURCE_UNREADABLE", "PROVIDER_BUDGET_UNKNOWN"]
+    except Exception:  # noqa: BLE001
+        result["quality"] = "corrupt"
+        result["codes"] = ["SOURCE_CORRUPT", "PROVIDER_BUDGET_UNKNOWN"]
+    return result
 
 
 # ── Header parsing ────────────────────────────────────────────────────────────

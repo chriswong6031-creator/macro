@@ -1,0 +1,91 @@
+{
+  "_meta": {
+    "what": "D6-B U4 boundary-window cutover sweep (Sol merge gate, macro #6404 comment 5416302430): exhaustive census of 36(b)(1) certifications delivered to Congress 2026-02-06 through 2026-02-26 inclusive, classified against the DSCA and State web surfaces using an independent official Federal Register denominator.",
+    "verdict": "ABSENT_FROM_BOTH FOUND — HOLD-FOR-SOL. Per the Sol U4 ruling and the D6-B commission stop conditions, the wave stops at ordered-sequence step 3; no implementation was started.",
+    "generated_at": "2026-08-25T21:20:00Z",
+    "window": ["2026-02-06", "2026-02-26"],
+    "method": "Deterministic script (no model in the loop): FR API search for Defense Department 'Arms Sales Notification' NOTICE documents published 2026-02-06..2026-08-25 (133 documents scanned, every raw text fetched and sha256-receipted); bracket-header transmittal extraction with the frozen numeric YY-N grammar; 36(b)(5)(C)/RSAT amendment and modification notices (letter-suffixed bracket transmittals, e.g. 26-0G / 0M-25, which reference an earlier original certification) excluded with reason; 'Date Report Delivered to Congress' parsed per document; window filter inclusive. Companion raw receipt: fms_u4_fr_denominator_2026-08-25.json.",
+    "denominator_completeness_note": "FR publication lags delivery by ~5-10 weeks in the scanned corpus (worst observed lag inside the corpus: delivered 2026-02-06, published 2026-04-15). By 2026-08-25 every window delivery should long since have published; a certification delivered in the window but still unpublished in FR after ~6 months would be unprecedented in the scanned corpus and cannot be excluded with certainty. Congressional Record was not additionally swept (Sol's ruling permits 'Federal Register and/or Congressional Record')."
+  },
+  "denominator": [
+    {
+      "transmittal": "25-105",
+      "purchaser": "Government of Ukraine",
+      "capability": "Ukraine—Class IX Spare Parts",
+      "estimated_value_source_text": "estimated cost of $185 million",
+      "delivered_to_congress": "2026-02-06",
+      "fr_document": "2026-07276",
+      "fr_citation": "91 FR 20144",
+      "fr_publication_date": "2026-04-15"
+    },
+    {
+      "transmittal": "26-23",
+      "purchaser": "Government of Jordan",
+      "capability": "Jordan—Ku band multi-function radio frequency system radars (KuMRFS)",
+      "estimated_value_source_text": "estimated total cost is $280 million",
+      "delivered_to_congress": "2026-02-26",
+      "fr_document": "2026-07278",
+      "fr_citation": "91 FR 20139",
+      "fr_publication_date": "2026-04-15",
+      "fr_raw_text_sha256_local": "82c815924153b2e4 (first 16 hex; full receipt in companion denominator file)"
+    }
+  ],
+  "classifications": {
+    "dsca_only": [
+      {
+        "transmittal": "25-105",
+        "evidence": {
+          "dsca_article": "https://www.dsca.mil/Press-Media/Major-Arms-Sales/Article-Display/Article/4399552/ukraine-class-ix-spare-parts",
+          "dsca_article_receipt": {"transport": "browser_in_page_fetch", "status": 200, "bytes": 63198, "sha256": "f3981f7c94217ed8f0ae54737238aff1367bd5adf55a0c0599a31241df2ff70a", "fetched_at": "2026-08-25T21:16:48Z"},
+          "transmittal_label_in_body": "Transmittal No. 25-105",
+          "dsca_dateline": "February 6, 2026",
+          "attachment_pdf": "https://media.defense.gov/2026/Feb/06/2003871961/-1/-1/1/PRESS RELEASE - UKRAINE 25-105 CN.PDF",
+          "state_absence": "not among the 46-article State corpus (full pagination enumeration below); no ukraine article except two 2026/05 cases (HAWK sustainment, JDAM-ER) which are different capabilities"
+        }
+      }
+    ],
+    "state_only": [],
+    "both": [],
+    "absent_from_both": [
+      {
+        "transmittal": "26-23",
+        "purchaser": "Government of Jordan",
+        "delivered_to_congress": "2026-02-26",
+        "state_absence_evidence": [
+          "Full State CN listing enumerated 2026-08-25: pages 1-7 fetched CLI (page shas bb62673dc431b55a / 2cf0e6fd36498136 / 6fefcbf82f70640d / 511efdbe12461f5d / df3207c0c4bbdb85 / 227dc9d947eb1995 / 82e450bbaaa8c8a8), 46 unique article hrefs, month distribution 2026/03..2026/08, ZERO 2026/02 posts, zero slugs containing 'jordan'",
+          "State site search '?s=jordan+radio+frequency' returned no PM-release hits",
+          "Direct slug probes 404: /2026/02/ and /2026/03/ jordan-ku-band-multi-function-radio-frequency-system-radars (and multifunction variant)",
+          "Wayback CDX state.gov/releases/bureau-of-political-military-affairs* jordan filter, 2026: zero snapshots"
+        ],
+        "dsca_absence_evidence": [
+          "DSCA Major Arms Sales landing (browser receipt 04c2ce0aa95d9e3427447e68befdae6fbec924ded401a93340e0170779157840, 79,526 B, 2026-08-25T21:16:48Z): newest article is 25-105 (Feb 6); newest-first ordering confirmed against Page=2 (receipt bc197c23291cd8af63835e4e4a90cc20c4302c1a35258da91c2bd1e5aef432b5, 79,817 B)",
+          "DSCA Major Arms Sales Library (receipt a1e5f91ea74698f2a3f2427d210f51e13085ece8eef9e6faab9c51bd31f5ba9b, 110,947 B): newest CN-named PDFs are 26-13 / 26-12; zero JORDAN entries",
+          "Wayback CDX dsca.mil/press-media/major-arms-sales/article-display/article* 2026-02..2026-08: 197 rows, zero jordan, max article id 4399552 (= the Feb-6 Ukraine post)"
+        ],
+        "interpretation": "26-23 was certified to Congress on exactly the cutover date (2026-02-26) and was never web-posted by either agency. DSCA's last post is 2026-02-06 (25-105); State's earliest post is 2026-03-10. Every fact is consistent with 'never posted', not 'posted then removed'."
+      }
+    ]
+  },
+  "collateral_findings": [
+    {
+      "finding": "STATE-ERA UNDER-COVERAGE IS A STANDING CLASS, NOT A CUTOVER ONE-OFF",
+      "exemplar": "Transmittal 26-28 (Government of Japan — Upgraded Hyper Velocity Gliding Projectiles Support, $340M, delivered 2026-03-24, FR 2026-09109 / 91 FR 24848) is absent from the State surface: zero japan slugs in the 46-article corpus, direct slug probes 404 (2026/03, /04, /05). This case is outside the U4 window but proves the State web surface under-covers the 36(b)(1) certification population even in its own era.",
+      "so_what": "The FMS read model's coverage semantics cannot equate 'full current State corpus' with 'all current 36(b)(1) certifications'. FR is the more complete official record but is frozen as supplementary (cannot mint cases). Sol must rule how coverage truth is represented before the vertical can honestly ship."
+    },
+    {
+      "finding": "FR 'Arms Sales Notification' title covers two populations",
+      "detail": "Original 36(b)(1) certifications carry numeric bracket transmittals ([Transmittal No. 26-23]); 36(b)(5)(C)/RSAT amendment and modification notices carry letter-suffixed transmittals ([Transmittal No. 26-0G], [Transmittal No. 0M-25]) and reference the original certification they amend (e.g. 26-0G references 17-80). A naive transmittal regex mints a phantom '26-0' case from every amendment notice. The frozen FREEZE §6 grammar's numeric-only rule plus bracket-header site is the correct filter; the D6-B implementation and its kill tests must cover the amendment class explicitly."
+    },
+    {
+      "finding": "Delivery-to-post lag on State can run weeks",
+      "detail": "Several FR-certified State-era cases (26-21 Belgium delivered 2026-03-24, Belgium post appears 2026/05; 26-24 Singapore delivered 2026-04-01, Singapore posts appear 2026/06) show the State web post appearing one-to-two months after certification, unless those posts are different cases entirely (transmittal-level confirmation requires fetching each article body — deferred to implementation). official_web_publication_date must never proxy for official_notification_date (already frozen law, FREEZE §7)."
+    }
+  ],
+  "step2_re_receipts": {
+    "state_listing": {"url": "https://www.state.gov/arms-sales-congressional-notifications/", "transport": "cli", "status": 200, "sha256": "bb62673dc431b55a7d0c0990b73c00db37ec8025e1f8bb430941900a9c3be49e", "bytes": 193794, "fetched_at": "2026-08-25T20:59:17Z"},
+    "state_26_27_article": {"url": "https://www.state.gov/releases/bureau-of-political-military-affairs/2026/03/sweden-m142-high-mobility-artillery-rocket-systems/", "transport": "cli", "status": 200, "sha256": "5cc8a485aa5ca5bd297397d84600df3f35b6430ec58a6c7abc1d3c43751360f6", "bytes": 175791, "fetched_at": "2026-08-25T20:59:19Z", "determinism": "second fetch byte-identical (same sha256)", "note": "bytes differ from the 2026-08-25T15:18Z B0 census CLI receipt (692236b0…, 176,926 B) — State edited or re-served the page between the two census points; append-only observation, not an error"},
+    "samm_c5": {"url": "https://samm.dsca.mil/chapter/chapter-5", "transport": "cli", "status": 200, "sha256": "b98a113875f43aad6ee0cabcfed4e332c26c9690d93568384809c41c76513d95", "bytes": 439875, "fetched_at": "2026-08-25T21:00:01Z", "note": "C5.7 'Congressional Notification - Arms Export Control Act 36(b) for Security Assistance Programs' present with C5.7.1+ subsections — the Sol-required current first-party C5.7 receipt captured before any implementation mutation (none occurred)"},
+    "fr_26_27_metadata": {"url": "https://www.federalregister.gov/api/v1/documents/2026-07237.json", "transport": "cli", "status": 200, "sha256": "ab7533e4fd6d8c166638ca4d1d1d65d1b318df5241d52e57da91f4d7cc47c21d", "bytes": 2157, "fetched_at": "2026-08-25T21:00:04Z"},
+    "fr_26_27_raw_text": {"url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07237.txt", "transport": "cli", "status": 200, "sha256": "d64ae8f732bb1dc40537984e24ec7922fee5a2800724570cbeed852997a3ca7c", "bytes": 13961, "fetched_at": "2026-08-25T21:00:23Z", "verified": "Transmittal No. 26-27; Sweden; Date Report Delivered to Congress: March 10, 2026; citation 91 FR 19115; publication 2026-04-14"}
+  }
+}

@@ -274,6 +274,13 @@ MUST_RESTART = [
     "config/intelligence_workspace/datapoints.v1.json",
     "contracts/intelligence_workspace/datapoint_registry.schema.json",
     "contracts/intelligence_workspace/datapoint_value.schema.json",
+    # W1-C: the visible-context compiler + its schema (contract:
+    # research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md). The compiler
+    # is a pure module but lives in the W1-A package, so it is pulled in on the
+    # same first-request path; the schema is read (not lru-cached) but is still
+    # named here for symmetry with the sibling datapoint schemas above.
+    "engine/intelligence_workspace/context_compiler.py",
+    "contracts/intelligence_workspace/ai_context_envelope.v1.schema.json",
     # W1-B request-time transitive closure. These modules/configs are imported
     # or lru-cached by the frozen runtime after the first native request.
     "lib/dataos/__init__.py",
@@ -383,6 +390,7 @@ MUST_NOT_RESTART = [
     # Hostile lookalikes must not widen the exact W1-A restart closure.
     "config/intelligence_workspace/datapoints.v1.json.bak",
     "contracts/intelligence_workspace/datapoint_value.schema.json.bak",
+    "contracts/intelligence_workspace/ai_context_envelope.v1.schema.json.bak",
     "engine/intelligence_workspaces/resolver.py",
     "lib/dataoses/registry.py",
     "config/dataset_registry.yml.bak",

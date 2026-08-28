@@ -1,0 +1,8 @@
+evidence_id,artifact_or_source,kind,scope,verification_or_observation,retention_status,notes
+E-001,agentos/discoveries/DSC-MARKET-ONTOLOGY-PUBLIC-P1-CORPUS-RETAINED-OUTSIDE-GITHUB.md,repository-discovery,historical-public-P1,Records exact V5 CSV/JSON identities and import requirement,RETAINED_METADATA_ONLY,Source artifact bytes remain absent
+E-002,MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_LEDGER_2026-08-26.csv,repository-ledger,authenticated-paid-baseline,88 rows read before current reconciliation,RETAINED,No rows changed
+E-003,MARKET_ONTOLOGY_CURRENT_PUBLIC_DELTA_LEDGER_2026-08-26.csv,repository-ledger,current-public-delta,42 rows read before final route challenge,RETAINED,No rows changed
+E-004,operator-supplied-robots-and-sitemap-index,operator-provided-public-policy,public-route-boundary,Allowed route inventory used while listed disallow paths were excluded,RETAINED_AS_METHOD_RECEIPT,Not a request to edit crawler-policy source
+E-005,marketontology.com/sitemap-*.xml,public-route-index,route-family-enumeration,Read-only counts recorded in audit section 4,EXTERNAL_OBSERVATION_ONLY,No mass crawl performed
+E-006,public-product-pages,visible-public-browser-state,representative-functional-samples,Semantic fields/transitions/access boundaries entered in observation matrix,EXTERNAL_OBSERVATION_ONLY,No screenshots/prose/source code copied
+E-007,public-auth-gate,visible-public-browser-state,authenticated-boundary,Sign-in creation wall recorded without interaction,EXTERNAL_OBSERVATION_ONLY,No account created or sign-in attempted

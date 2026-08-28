@@ -1,0 +1,1 @@
+Authority packet frozen by Sol under the Chairman's 2026-08-21 TuShare compliance override. Runtime/masterplan implementation remains required before merge and is bounded by the accompanying Fable handoff.

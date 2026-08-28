@@ -1,0 +1,11 @@
+# The per-session pending files are STAGE-AND-ABSORB, not a persistent queue
+# (commission §14). They are ~10 MB and fully regenerable:
+#
+#   gzip -dc journal_2026-07-30_2026-08-25.txt.gz > /tmp/j.txt
+#   python -m scripts.prophet_live_journal_recovery \
+#       --journal /tmp/j.txt --out data/pit_replay/prophet_live_recovery --execute
+#
+# What IS committed is the evidence and the proof: the producer's own journal
+# (197 KB gzipped, sha256 in the receipt) and _recovery_receipt.json. Those make the
+# absorbed ledger reproducible byte-for-byte without carrying the intermediate.
+2???-??-??.json

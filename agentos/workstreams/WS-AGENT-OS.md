@@ -65,9 +65,17 @@ waves:
     depends_on: [MAS28-W0B]
   - id: MAS28-W1
     title: "MAS-28 — pure report-only PR-linkage validator implementation"
-    status: in_progress
-    pr: 6328
+    status: done
+    pr: 6383
     depends_on: [MAS28-W0R]
+    next_action: >
+      None for implementation. The repaired report-only W1 head
+      b0f12b97a7209d87ef6d3088a6e5d75d362ceb31 passed fences 32800454604 and
+      semantic CI 32800454750, then squash-merged as
+      35e83b79ac026345a17d5d2d13774bb74e8a994c on 2026-08-25. The earlier #6328
+      squash carried the rejected defect shape and is historical evidence, not W1
+      acceptance. Enforcement remains REPORT_ONLY. MAS-28 itself remains
+      BUILT_NOT_PROVEN until the separate calibration stop condition is satisfied.
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -100,11 +108,13 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Refresh W1 PR #6328 only after MAS28-W0R is merged: adopt the reconciled ruleset digest,
-  require exact `target` evidence for every R028 finding, propagate the new contract markers
-  to the Mastermind and Terminal templates in their own bounded carriers, and rerun the full
-  hostile/property/mutation/purity review. The pre-existing Agent OS Phase 4 remains eligible
-  but is a separate high-blast-radius, report-only hook wave and has not started.
+  MAS-28 W1 implementation is merged and accepted as report-only / BUILT_NOT_PROVEN.
+  The next MAS-28 operation is calibration only: run the representative frozen corpus
+  required by MAS-28, record false positives, false negatives and incomplete observations,
+  and return a recommendation to remain report-only, amend rules, or propose a separate
+  bounded enforcement review. Do not arm a hard gate from W1. The pre-existing Agent OS
+  Phase 4 W4 remains a separate high-blast-radius report-only hook wave and is still todo;
+  this records correction does not commission it.
 ---
 
 ## Context

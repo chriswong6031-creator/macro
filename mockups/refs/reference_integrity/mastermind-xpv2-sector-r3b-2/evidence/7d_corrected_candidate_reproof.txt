@@ -1,0 +1,36 @@
+XPV2-SC-R3B.2 corrected-candidate re-proof
+Candidate sha256: 4adb4b6245e8e4aa5b68c850a615461327c0a5d2e672e4c203d6ba32a3b8d53c
+Candidate size: 5,506,871 bytes (20 bytes smaller than the provisional candidate)
+
+Exact candidate delta:
+  One source line and its deterministic assembled-output twin changed.
+  EN: "&#128202; Track record" -> "Track record"
+  ZH: "&#128202; 跟踪记录" -> "跟踪记录"
+  Candidate diff: 1 insertion, 1 deletion.
+
+Proof results against the corrected bytes:
+  PASS — deterministic double-build; both outputs sha256 4adb4b6245e8...
+  PASS — successor verifier 23/23 ALL GREEN
+  PASS — R3A attack-floor suite 59 passed
+  PASS — RIG checker: 9 artifact sets, 1 approved
+  PASS — RIG mandate continuity: 12 derived, 12 current, exact ordered match
+  PASS — duplicate IDs: 0; all 75 ARIA references resolved in EN and ZH
+  PASS — href="#" census: 0
+  PASS — canonical + legacy hash smoke: 27/27
+  PASS — B2-01 label-map audit + unique-red mutation
+  PASS — B2-12 thin/reliability audit + unique-red mutation
+  PASS — B2-13 aria-receipt audit + unique-red mutation
+  PASS — decoded-output no-emoji audit 12/12 + unique-owner mutation
+  PASS — zoom geometry: 48/48 cells
+  PASS — contrast: 0 AA failures across 15,388 reference-authored cells
+  PASS — six-view first-viewport smoke and four exact Moving-panel captures
+  PASS — production-path three-dot diff: zero paths
+
+Explicit non-claim:
+  Heatmap colour-field axis remains UNMEASURED (approximately 440 shadowed
+  .hm-t cells); it was excluded from the flat-surface colour gate and was never
+  converted into PASS.
+
+Test note:
+  The R3A suite emitted three pytest temporary-directory cleanup warnings after
+  its 59 passing tests; no test failed.

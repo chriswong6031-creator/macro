@@ -69,13 +69,16 @@ def test_the_committed_registry_loads_and_has_no_violations() -> None:
     assert violations == [], "\n".join(violations)
 
 
-def test_the_committed_registry_carries_the_ten_seeded_datasets() -> None:
-    """Ten, not nine: V4-D2B1-R1 (2026-08-20) added ``reference.security_migrations``
-    — same producer (``scripts/build_security_master.py``), same reference plane as
-    ``reference.security_master``, the security-axis mirror of
-    ``reference.issuer_migrations`` (added by V4-D2B1, 2026-08-19)."""
+def test_the_committed_registry_retains_the_ten_seeded_datasets() -> None:
+    """The original ten remain present as later programs add lawful contracts.
+
+    V4-D2B1-R1 added ``reference.security_migrations`` beside the issuer-migration
+    plane. B1's six additions have their own exact field assertions in
+    ``test_us_candidate_episode_wiring.py``; this seed fence must not freeze the
+    global registry cardinality forever.
+    """
     registry = load_registry()
-    assert set(registry.ids()) == {
+    assert {
         "equity.bars.daily.stocks",
         "equity.bars.daily.yahoo",
         "equity.bars.daily.massive",
@@ -86,8 +89,7 @@ def test_the_committed_registry_carries_the_ten_seeded_datasets() -> None:
         "reference.issuer_master",
         "reference.issuer_migrations",
         "reference.security_migrations",
-    }
-    assert len(registry) == 10
+    } <= set(registry.ids())
 
 
 def test_nothing_unproduced_is_marked_produced() -> None:
@@ -164,10 +166,10 @@ def test_the_real_dag_edges_and_reverse_edges_agree() -> None:
     # inputs: [reference.security_master] alongside reference.vendor_aliases.
     # V4-D2B1-R1 (2026-08-20) added a THIRD — reference.security_migrations, the
     # security-axis mirror of reference.issuer_migrations.
-    assert registry.consumers_of("reference.security_master") == (
+    assert {
         "reference.vendor_aliases", "reference.issuer_master", "reference.issuer_migrations",
         "reference.security_migrations",
-    )
+    } <= set(registry.consumers_of("reference.security_master"))
     assert registry.consumers_of("equity.bars.daily.stocks") == ()
 
 

@@ -1,0 +1,13 @@
+# XPV2-SC-R3B.2 — four Confluence universe tab counts
+candidate sha256: ea2e09b812d1435103e491973ae01d2c4fca63c3a29186023f40f137fc10aba8
+
+Painted tab labels (language-resolved):
+  'S&P 500标普50065'
+  'Nasdaq-100纳斯达克10012'
+  'Russell-2000罗素200093'
+  'Thematic Baskets主题篮子49'
+  'Entry now现可入场1'
+  'Tailwind顺风16'
+  'Neutral中性21'
+  'Late偏晚18'
+  'Headwind逆风9'

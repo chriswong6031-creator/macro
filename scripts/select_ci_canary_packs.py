@@ -7,6 +7,28 @@ import argparse
 import json
 from pathlib import Path
 
+# This must stay a self-contained stdlib-only literal, NOT an import of
+# scripts.ci_semantic_proof.PLAN_SCHEMA: the canary workflow copies this file
+# alone into a trusted-control directory OUTSIDE the untrusted candidate
+# checkout (`cp scripts/select_ci_canary_packs.py "$RUNNER_TEMP/ci-canary-control/"`,
+# .github/workflows/selfhosted-ci-canary.yml `plan` job) precisely so a
+# malicious PR tree cannot substitute its own copy of a script this trust
+# boundary depends on. A cross-module import would need scripts/ at the same
+# relative path as the copy, which does not exist there — see
+# scripts/resolve_ci_canary_ref.py and scripts/monitor_ci_host_resources.py,
+# the sibling trusted-control scripts, which are stdlib-only for the same
+# reason.
+#
+# The pack runner emits `schema: PLAN_SCHEMA` from
+# scripts/ci_semantic_proof.py, which moved to "ci.pack_plan.v2" well before
+# this literal was written here. Discovered 2026-08-25 (issue #6351 P0R
+# bridge): the stale "ci.pack_plan.v1" literal rejected every plan.json
+# scripts/run_ci_pack.py --emit-plan-json actually writes, so this selector
+# could never have succeeded once run_ci_pack.py's plan-only path was
+# reachable. tests/test_ci_canary_tools.py pins this literal against the
+# live PLAN_SCHEMA constant so the two cannot drift apart silently again.
+_PLAN_SCHEMA = "ci.pack_plan.v2"
+
 
 def write_outputs(path: Path, values: dict[str, str]) -> None:
     with path.open("a", encoding="utf-8") as handle:
@@ -15,7 +37,7 @@ def write_outputs(path: Path, values: dict[str, str]) -> None:
 
 
 def select(plan: dict[str, object], count: int) -> list[dict[str, object]]:
-    if plan.get("schema") != "ci.pack_plan.v1":
+    if plan.get("schema") != _PLAN_SCHEMA:
         raise ValueError("unexpected CI plan schema")
     packs = plan.get("packs")
     if not isinstance(packs, list):

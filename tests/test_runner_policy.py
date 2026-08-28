@@ -42,6 +42,7 @@ def fixture_tree(tmp_path: Path) -> tuple[Path, Path, Path]:
         "selfhosted-ci-canary.yml",
         "m1-runner-canary.yml",
         "ci-authority.yml",
+        "trusted-ci-executor.yml",
     ):
         (workflows / name).write_text((WORKFLOWS / name).read_text(encoding="utf-8"), encoding="utf-8")
     registry = root / ".github" / "runner-policy.yml"
@@ -90,6 +91,177 @@ def test_server_side_runner_group_cannot_lose_main_pinned_workflow_restriction(
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "runner-group policy drifted" in result.stdout
+
+
+def test_p3bb_executor_is_main_pinned_and_only_same_repo_execution_moves() -> None:
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    assert registry["phase"] == "p3b-b-production-route"
+    selected = set(registry["runtime_runner_group"]["selected_workflows"])
+    assert (
+        "mastermindx-market-intelligence/macro/.github/workflows/"
+        "trusted-ci-executor.yml@refs/heads/main"
+    ) in selected
+    assert registry["scenario_routes"]["same_repo_ordinary_pr"] == (
+        "pc-ci-via-main-executor"
+    )
+    assert registry["scenario_routes"]["fork_pr"] == "github-hosted"
+    route = registry["trusted_executor_route"]
+    assert route == {
+        "workflow": ".github/workflows/trusted-ci-executor.yml",
+        "job": "trusted-pack",
+        "group": "macro-home-canary",
+        "labels": ["ci-linux"],
+        "call_enabled": True,
+        "production_enabled": True,
+    }
+
+
+def test_p3bb_policy_rejects_disabling_the_declared_production_route(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["trusted_executor_route"].__setitem__(
+            "production_enabled", False
+        ),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+    assert "P3B-B" in result.stdout
+
+
+def test_p3bb_policy_rejects_a_candidate_pinned_executor_call(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    rendered = path.read_text(encoding="utf-8")
+    assert "trusted-ci-executor.yml@main" in rendered
+    path.write_text(
+        rendered.replace(
+            "trusted-ci-executor.yml@main",
+            "trusted-ci-executor.yml@${{ github.sha }}",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+    assert "R13" in result.stdout
+
+
+def test_p3bb_policy_rejects_caller_supplied_executor_inputs(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["jobs"]["trusted-ci"]["with"] = {"tested_sha": "${{ github.sha }}"}
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+    assert "R13" in result.stdout
+
+
+def test_p3bb_policy_rejects_same_repo_candidate_checkout_in_anchor(
+    tmp_path: Path,
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "ci.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    checkout = next(
+        step
+        for step in document["jobs"]["ci-pack"]["steps"]
+        if step.get("uses") == "actions/checkout@v4"
+    )
+    checkout.pop("if")
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def _mutate_trusted_gate(tmp_path: Path, old: str, new: str) -> subprocess.CompletedProcess[str]:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "trusted-ci-executor.yml"
+    rendered = path.read_text(encoding="utf-8")
+    assert old in rendered
+    path.write_text(rendered.replace(old, new, 1), encoding="utf-8")
+    return run_guard(root, registry, workflows)
+
+
+def test_p3ba_policy_rejects_disabled_main_called_workflow_refusal(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_trusted_gate(
+        tmp_path,
+        'test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {',
+        'true || { # test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {',
+    )
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_disabled_direct_main_ref_refusal(tmp_path: Path) -> None:
+    result = _mutate_trusted_gate(
+        tmp_path,
+        'test "$TRUSTED_REF" = refs/heads/main || {',
+        'true || { # test "$TRUSTED_REF" = refs/heads/main || {',
+    )
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_disabled_same_repo_refusal(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_trusted_gate(
+        tmp_path,
+        'test "$HEAD_REPOSITORY" = "$REPOSITORY" || {',
+        'true || { # test "$HEAD_REPOSITORY" = "$REPOSITORY" || {',
+    )
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_disabled_exact_ci_caller_refusal(
+    tmp_path: Path,
+) -> None:
+    result = _mutate_trusted_gate(
+        tmp_path,
+        'test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {',
+        'true || { # test "$CALLER_WORKFLOW_REF" = "$expected_caller_ref" || {',
+    )
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_new_caller_supplied_inputs(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "trusted-ci-executor.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    trigger_config = document.get("on", document.get(True))
+    trigger_config["workflow_call"]["inputs"]["tested_sha"] = {
+        "required": False,
+        "type": "string",
+    }
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+
+
+def test_p3ba_policy_rejects_a_second_runner_group_consumer(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "trusted-ci-executor.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["jobs"]["rogue-group-job"] = {
+        "runs-on": {"group": "macro-home-canary"},
+        "steps": [{"run": "echo rogue"}],
+    }
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R13" in result.stdout
+    assert "runner-group consumer" in result.stdout
 
 
 def test_ordinary_ci_and_fences_cannot_move_off_hosted(tmp_path: Path) -> None:
@@ -359,6 +531,12 @@ def test_fromjson_expression_label_is_extracted_by_r11(tmp_path: Path) -> None:
 
 def test_scheduled_workflow_on_orphaned_label_without_waiver_fails_r12(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["label_registry"]["ci-linux"].update(
+            {"status": "orphaned", "carried_by": []}
+        ),
+    )
     write_synthetic_workflow(
         workflows,
         "orphan-cron.yml",
@@ -384,13 +562,19 @@ def test_scheduled_orphaned_label_with_valid_waiver_does_not_fail_r12(tmp_path: 
         "    runs-on: [self-hosted, ci-linux]\n"
         "    steps:\n      - run: true\n",
     )
-    mutate_registry(
-        registry,
-        lambda doc: doc["label_registry"]["ci-linux"].__setitem__(
-            "scheduled_use_waiver",
-            {"since": "2026-08-17", "reason": "test waiver has both fields"},
-        ),
-    )
+    def orphan_with_waiver(document: dict) -> None:
+        document["label_registry"]["ci-linux"].update(
+            {
+                "status": "orphaned",
+                "carried_by": [],
+                "scheduled_use_waiver": {
+                    "since": "2026-08-17",
+                    "reason": "test waiver has both fields",
+                },
+            }
+        )
+
+    mutate_registry(registry, orphan_with_waiver)
     result = run_guard(root, registry, workflows)
     assert "R12" not in result.stdout
 

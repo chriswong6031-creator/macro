@@ -1576,14 +1576,83 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
     {% set _cn_delayed = _cn_stale.get('delayed') if _cn_stale else false %}
     {% set _cn_degraded = _cn_delayed or (_cn_cov.partial_session if _cn_cov else false) or _cn_outage.get('flag') %}
     {% set _cn_through = (_cn_cov.data_through if _cn_cov else none) or (setups.as_of if setups else none) or latest.date %}
+    {#- ── THE BOARD'S ONE VINTAGE STAMP (2026-08-27, the CN twin of PR #6532).
+        This pill used to read "Fresh 2026-08-26": a self-assessment plus an UNLABELLED
+        date. A bare date answers no question on its own, so the reader had to guess what
+        it was the date OF — and this page gave them a second, competing place to guess
+        from: the same date, unlabelled again, on every card in the grid below (the
+        zone-row chip, now removed). Measured by RENDERING the shipped artifacts through
+        the branch-point template:
+
+          · the card chip printed `(n.signal).asof or setups.as_of`, and on all three
+            boards checked every rendered chip was the board's own `as_of` — 85 chips
+            all reading "Aug 26" on 2026-08-26, 55 all "Aug 25" on 08-25, 43 all
+            "Aug 24" on 08-24. One constant, verbatim, once per card, directly beneath
+            the header that already stated it.
+          · zones move nightly, so that date was never the zone's vintage either:
+            08-24 -> 08-25, 49 of the 50 tickers carrying a zone on both boards had
+            `low`/`high` MOVE; 08-25 -> 08-26, 34 of 36 moved.
+          · the `signal.asof` leg is a live hazard rather than a shipped one. It is
+            currently dead on every CARDED shelf (the only rows carrying that key sit on
+            `laggards`, which renders no cards), but the artifact does carry genuinely
+            older values there — `2026-08-21` on the 08-25 board, four sessions behind
+            it. The day such a row reaches a carded shelf, this slot would have printed
+            two different clocks side by side with nothing to tell them apart.
+
+        The fix is to make the ONE authoritative stamp say what it is (DESIGN_DOCTRINE
+        Law 3 — a number on Tier 1 arrives with its interpretation; Law 4 — one as-of
+        stamp per panel, and no per-row repetition of a constant). "Data through <date>"
+        is the whole answer to "how fresh is this?", and it needs no arithmetic to read.
+
+        The bare word "Fresh" is deliberately gone: the green dot already carries the
+        healthy state non-verbally, and a labelled date is a fact the reader can check
+        rather than a claim they must trust. Both ALARM states keep their word — colour
+        must never be the only carrier of a warning — and CN keeps its own three-state
+        ladder (delayed > partial > healthy), which the US board does not have. The ZH
+        delayed word stays `数据延迟`, the exact word the delayed banner at the top of
+        this page already uses: one page, one name for one state.
+
+        ISO, not a prettified "Aug 26": this is the stamp a reader compares against
+        today's date, and it is the form the US twin prints, so the shared
+        `#stocks-header` family stays consistent.
+
+        The entry-signal clock is NOT deleted, it is demoted to this chip's Tier-2 LENS
+        hover, where a board-level constant belongs. It is derived defensively twice
+        over: the clause renders only when the whole board agrees on ONE signal date
+        (so a future per-card artifact silently stops the sentence rather than
+        generalising one row's value to all of them) AND only when that date actually
+        differs from the board's vintage — on the 2026-08-26 board the two coincide,
+        and "a card can carry a signal older than the board" would be a lie there. -#}
+    {%- set _cn_sig_ns = namespace(vals=[]) -%}
+    {%- if setups -%}
+      {%- for _r in ((setups.get('buy') or []) + (setups.get('more_actionable') or [])
+                     + (setups.get('ran') or []) + (setups.get('late_or_unfillable') or [])) -%}
+        {%- set _v = (_r.get('signal') or {}).get('asof') if _r is mapping else none -%}
+        {%- if _v and _v not in _cn_sig_ns.vals %}{% set _cn_sig_ns.vals = _cn_sig_ns.vals + [_v] %}{% endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    {%- set _cn_sig_asof = _cn_sig_ns.vals[0] if ((_cn_sig_ns.vals | length) == 1 and _cn_sig_ns.vals[0] != _cn_through) else none -%}
+    {%- set _cn_vint_tip_en = 'The date is the last A-share session this board has data for. Prices, buy zones and the ranking are rebuilt every session, so they are all as of this date.'
+         ~ (' Entry signals are re-scored on their own slower cycle; the current set dates from ' ~ _cn_sig_asof ~ ', which is why a card can carry a signal older than the board.' if _cn_sig_asof else '')
+         ~ ((' A delayed board keeps showing its last good data rather than nothing — check a live quote before you act.' if _cn_delayed
+             else ' This session was only partly collected, so some names may be missing — the board is short, not wrong.') if _cn_degraded else '') -%}
+    {%- set _cn_vint_tip_zh = '此日期是本榜单最后一个有数据的A股交易日。价格、买区和排序每个交易日都会重算，因此都截至该日期。'
+         ~ ('入场信号按各自较慢的周期重新评分，当前这一批的日期是 ' ~ _cn_sig_asof ~ '，所以卡片上的信号可能比榜单更早。' if _cn_sig_asof else '')
+         ~ (('数据延迟时，榜单会继续显示最后一批有效数据，而不是留空——操作前请先看一下实时报价。' if _cn_delayed
+             else '本交易日的数据只采集了一部分，可能有个股缺失——榜单是不全，而不是错误。') if _cn_degraded else '') -%}
     <div class="stk-headline">
       <h1>🇨🇳 {{ t('A-Share Stock Dashboard', 'A股个股看板') }}
         {{ help('A stock-picking watchlist for China A-shares: names that sold off hard and just started turning back up. Rank means how ready a setup looks to buy — research context, not advice.', 'A股选股观察表：大幅回调后刚开始回升的个股。排序表示形态离买点有多近——研究参考，非投资建议。') }}</h1>
       <div class="stk-head-meta">
-        <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}">
+        <span class="stk-status{{ ' is-delayed' if _cn_degraded else '' }}"
+              {%- if _cn_through %} data-tip-en="{{ _cn_vint_tip_en|e }}" data-tip-zh="{{ _cn_vint_tip_zh|e }}"{% endif %}>
           <span class="stk-fresh-dot" aria-hidden="true"></span>
+          {%- if _cn_through %}
+          <span class="l-en">{{ 'Delayed · data through' if _cn_delayed else ('Partial data · data through' if _cn_degraded else 'Data through') }}</span><span class="l-zh">{{ '数据延迟 · 数据截至' if _cn_delayed else ('数据不全 · 数据截至' if _cn_degraded else '数据截至') }}</span>
+          <strong>{{ _cn_through }}</strong>
+          {%- else %}
           <span class="l-en">{{ 'Delayed' if _cn_delayed else ('Partial data' if _cn_degraded else 'Fresh') }}</span><span class="l-zh">{{ '数据延迟' if _cn_delayed else ('数据不全' if _cn_degraded else '新鲜') }}</span>
-          {% if _cn_through %}<strong>{{ _cn_through }}</strong>{% endif %}
+          {%- endif %}
         </span>
       {# Regime + Posture header pills, aligned with the US stock dashboard #}
         <span class="stk-status">
@@ -3177,7 +3246,32 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
   {% set _n_early = (_rip_basing | length) + (_rip_fall | length) + _n_forming_lane %}
   {% set _n_ran = (_ran_late_rows | length) + (_ran | length) + _n_late_lane %}
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
-  <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
+  {#- `data-board-asof` is the board's vintage in machine-readable form, on the board
+      container itself, so a monitor can grade the RENDERED page rather than inferring
+      freshness from the artifact it hoped the page was built from (2026-08-27, the CN
+      twin of PR #6532). It is the same `_cn_through` the header chip prints in words —
+      one clock, two readers, so a monitor and a human can never disagree.
+
+      `data-board-delayed` carries the ENGINE's own verdict alongside it so a monitor
+      never re-derives "is this late?" with client-side calendar arithmetic — which on
+      the A-share calendar is exactly how Golden Week and Spring Festival get mistaken
+      for a ten-day outage (see lib/cn_calendar.py and compute_board_staleness).
+
+      `data-board-partial` has no US counterpart and is not decoration: the CN pill has a
+      THREE-state ladder (delayed > partial > healthy), and without it a monitor reading
+      `data-board-delayed="0"` would call a partly-collected board healthy while the
+      header says "Partial data" in words. It is the partial-collection leg alone
+      (coverage.partial_session / data_outage.flag), i.e. `_cn_degraded` with the delayed
+      leg removed, so the two attributes stay independent rather than overlapping.
+
+      All three are absent when the board has no vintage at all, which is itself the
+      honest signal. Guarded with `is defined` so a slice-render harness that mounts this
+      block without the header's context degrades to no attributes instead of raising. -#}
+  {%- set _sd_asof = _cn_through if _cn_through is defined else none -%}
+  {%- set _sd_delayed = _cn_delayed if _cn_delayed is defined else false -%}
+  {%- set _sd_partial = (_cn_degraded and not _sd_delayed) if _cn_degraded is defined else false -%}
+  <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}"
+       {%- if _sd_asof %} data-board-asof="{{ _sd_asof|e }}" data-board-delayed="{{ '1' if _sd_delayed else '0' }}" data-board-partial="{{ '1' if _sd_partial else '0' }}"{% endif %}>
     <h2>{% if _cn_v2 %}{{ t('⚡ China Prophet — Live Board', '⚡ 中国 Prophet — 实时榜单') }}{% else %}{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国 Prophet — 精选入场') }}{% endif %}
       {#- MERGE NOTE (this branch × the G0.2 unified-grid branch). The title split is
           G0.2's and is test-pinned; the TIP is this branch's plain-word LENS card,
@@ -3472,6 +3566,42 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
                          else (('%.0f'|format(c.score)) if (c and c.score is number) else none)) if _cn_v2
                          else (_pr.get('score') if _pr.get('score') is not none
                                else (c.score if (c and c.score is not none) else none)) %}
+      {#- ── NO DATE IN THE ZONE ROW (2026-08-27, the CN twin of PR #6532).
+           The `date` slot below used to carry `(n.signal).asof or setups.as_of`, which put
+           a bare date immediately after the buy-zone numbers — and a date pinned against
+           numbers reads as the vintage OF those numbers. It is not. Measured by RENDERING
+           the shipped artifacts through the branch-point template:
+
+             · every rendered chip was the board's own `as_of`, on all three boards
+               checked: 85 chips all reading "Aug 26" on the 2026-08-26 board, 55 all
+               "Aug 25" on 08-25, 43 all "Aug 24" on 08-24. The `or setups.as_of`
+               fallback simply reprinted the header's vintage once per card, unlabelled,
+               next to numbers it does not describe.
+             · the date was never the zone's vintage — zones are recomputed every
+               session. 08-24 -> 08-25: 49 of the 50 tickers carrying a zone on both
+               boards had `low`/`high` MOVE (1 held). 08-25 -> 08-26: 34 of 36 moved.
+               So the one thing a reader would reasonably take the date to mean is the
+               one thing it never meant.
+             · the `signal.asof` leg is a LIVE hazard, not a shipped one. Today the only
+               rows carrying that key sit on `laggards`, which renders no cards — but the
+               artifact's values there are genuinely older (`2026-08-21` on the 08-25
+               board, four sessions behind it). Had such a row reached a carded shelf,
+               this one bare slot would have printed two different clocks side by side
+               with nothing to distinguish them.
+
+           Two doctrine rules land on the same answer (DESIGN_DOCTRINE Law 4): "one as-of
+           stamp per panel", and "no per-row repetition of a constant — a constant belongs
+           in the footer, once". Nothing per-card is lost by removing it, because nothing
+           per-card was ever in it. The board's real vintage is now stated ONCE, in plain
+           words, on the page header (#stocks-header .stk-status), whose Tier-2 hover also
+           carries the entry-signal bucket date — at board level, where it is true.
+
+           DO NOT restore a date here. If a future artifact ever makes signal.asof
+           genuinely per-card, it still would not be the ZONE's vintage, and it would need
+           its own labelled slot rather than this bare one. `date` is kept as an explicit
+           `none` rather than a deleted key so the slot reads as a decision rather than an
+           oversight. The shared macro keeps full `date` support for the callers whose
+           dates ARE per-row and honest. -#}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
@@ -3487,7 +3617,7 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
-        'date': (n.signal or {}).get('asof') or setups.get('as_of'),
+        'date': none,
         'flags': _fl.rows
       }) }}
     {% endfor %}
@@ -3573,6 +3703,9 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
       {# `marks` is always a LIST here, never `none`: every card on this shelf earns an
          entry-read chip, so reserving the slot on the handful that do not keeps the tracker
          and zone rows aligned across a grid row (macro law). #}
+      {#- `'date': none` below — same removal, same reason as the ENTRY shelf above. These
+          rows come from the same artifact and carried the same two-clock bare date; see the
+          measurement fence at the ENTRY shelf's pv_card call. -#}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
@@ -3588,7 +3721,7 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
         'zone_kind': 'note',
         'zone_note_en': 'Entry passed — wait for the pullback; do not chase',
         'zone_note_zh': '入场已过 — 等待回调，不要追涨',
-        'date': (n.signal or {}).get('asof') or setups.get('as_of'),
+        'date': none,
         'flags': _fl.rows
       }) }}
     {% endfor %}

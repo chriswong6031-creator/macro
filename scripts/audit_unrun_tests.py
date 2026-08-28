@@ -79,6 +79,7 @@ import ast
 import fnmatch
 import functools
 import json
+import os
 import re
 import subprocess
 import sys
@@ -95,7 +96,33 @@ from scripts.workflow_run_source import (  # noqa: E402
     resolved_workflow_text,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
+_TRUSTED_CONTROL_REPO_ROOT_ENV = "MASTERMIND_TRUSTED_CI_REPO_ROOT"
+
+
+def _repository_root() -> Path:
+    """Bind copied trusted control code to its explicitly selected candidate tree."""
+    default = Path(__file__).resolve().parent.parent
+    raw = os.environ.get(_TRUSTED_CONTROL_REPO_ROOT_ENV)
+    if raw is None:
+        return default
+    if not raw or not Path(raw).is_absolute():
+        raise RuntimeError(
+            f"{_TRUSTED_CONTROL_REPO_ROOT_ENV} must be a non-empty absolute path"
+        )
+    candidate = Path(raw).resolve(strict=True)
+    if Path.cwd().resolve() != candidate:
+        raise RuntimeError(
+            f"{_TRUSTED_CONTROL_REPO_ROOT_ENV} {candidate} does not match cwd "
+            f"{Path.cwd().resolve()}"
+        )
+    if not (candidate / ".git").exists():
+        raise RuntimeError(
+            f"{_TRUSTED_CONTROL_REPO_ROOT_ENV} {candidate} is not a Git checkout"
+        )
+    return candidate
+
+
+ROOT = _repository_root()
 WORKFLOWS = ROOT / ".github/workflows"
 CI_MANIFEST = ROOT / ".github/ci/legacy-jobs.yml"
 # The two files the gate reads. Both are OPTIONAL on disk: a checkout without them

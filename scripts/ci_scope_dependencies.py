@@ -15,14 +15,21 @@ domain or keep that job always-on; ambiguity is never permission to skip work.
 from __future__ import annotations
 
 import ast
+import argparse
+import contextlib
 import functools
+import hashlib
 import io
+import json
+import os
 import re
 import shlex
+import subprocess
 import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator
 
 # Direct file execution must resolve this checkout's ``scripts`` package before
 # any installed namesake.  The import-hygiene gate requires the unconditional
@@ -31,6 +38,306 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
 from scripts.audit_unrun_tests import FIRST_PARTY, ROOT
+
+
+TRACKED_PATHS_SCHEMA = "ci.tracked_paths.v1"
+_MAX_TRACKED_PATHS_BYTES = 64 * 1024 * 1024
+
+
+class TrackedPathInventoryError(RuntimeError):
+    """The tested tree's ephemeral path oracle is absent or cannot be trusted."""
+
+
+class ScopeMaterializationError(RuntimeError):
+    """A tracked file whose bytes affect selection is missing from the checkout."""
+
+
+@dataclass(frozen=True)
+class TrackedPathInventory:
+    """Exact tracked file/directory membership for one immutable tested tree.
+
+    This is an existence oracle only. It never supplies source bytes and never
+    participates in selection or partitioning. A caller that needs bytes must
+    still require the file to be materialized in the sparse checkout.
+    """
+
+    root: Path
+    tested_tree_sha: str
+    files: frozenset[str]
+    directories: frozenset[str]
+    payload_sha256: str
+
+
+_ACTIVE_TRACKED_PATHS: TrackedPathInventory | None = None
+
+
+def _git_bytes(root: Path, *args: str) -> bytes:
+    try:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=root,
+            capture_output=True,
+            check=True,
+            timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise TrackedPathInventoryError(
+            f"git {' '.join(args)} failed while binding the tracked-path inventory: {exc}"
+        ) from exc
+    return completed.stdout
+
+
+def _exact_commit(root: Path, value: str, *, label: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{40}", value):
+        raise TrackedPathInventoryError(
+            f"{label} must be a lowercase 40-character commit SHA, got {value!r}"
+        )
+    resolved = _git_bytes(root, "rev-parse", "--verify", f"{value}^{{commit}}")
+    actual = resolved.decode("ascii", errors="strict").strip()
+    if actual != value:
+        raise TrackedPathInventoryError(
+            f"{label} {value} resolved to a different commit {actual}"
+        )
+    return actual
+
+
+def _tree_path_payload(root: Path, tested_tree_sha: str) -> bytes:
+    return _git_bytes(
+        root, "ls-tree", "-r", "--name-only", "-z", tested_tree_sha
+    )
+
+
+def write_tracked_path_inventory(
+    output: Path,
+    tested_tree_sha: str,
+    *,
+    root: Path | None = None,
+) -> TrackedPathInventory:
+    """Write a bounded handle for the exact tested tree's tracked path set."""
+    base = (ROOT if root is None else root).resolve()
+    _exact_commit(base, tested_tree_sha, label="tested tree")
+    head = _git_bytes(base, "rev-parse", "HEAD").decode("ascii").strip()
+    if head != tested_tree_sha:
+        raise TrackedPathInventoryError(
+            f"checkout HEAD {head} does not match tested tree {tested_tree_sha}"
+        )
+    payload = _tree_path_payload(base, tested_tree_sha)
+    if len(payload) > _MAX_TRACKED_PATHS_BYTES:
+        raise TrackedPathInventoryError(
+            f"tracked-path payload is {len(payload)} bytes, above the "
+            f"{_MAX_TRACKED_PATHS_BYTES}-byte safety bound"
+        )
+    count = 0 if not payload else len(payload.split(b"\0")) - 1
+    header = {
+        "path_count": count,
+        "paths_sha256": hashlib.sha256(payload).hexdigest(),
+        "schema": TRACKED_PATHS_SCHEMA,
+        "tested_tree_sha": tested_tree_sha,
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(
+        json.dumps(header, sort_keys=True, separators=(",", ":")).encode("ascii")
+        + b"\n"
+        + payload
+    )
+    return load_tracked_path_inventory(output, tested_tree_sha, root=base)
+
+
+def load_tracked_path_inventory(
+    source: Path,
+    tested_tree_sha: str,
+    *,
+    root: Path | None = None,
+) -> TrackedPathInventory:
+    """Validate schema, tree, digest, paths, and exact Git-tree parity."""
+    base = (ROOT if root is None else root).resolve()
+    _exact_commit(base, tested_tree_sha, label="expected tested tree")
+    head = _git_bytes(base, "rev-parse", "HEAD").decode("ascii").strip()
+    if head != tested_tree_sha:
+        raise TrackedPathInventoryError(
+            f"checkout HEAD {head} does not match expected tested tree {tested_tree_sha}"
+        )
+    try:
+        raw = source.read_bytes()
+    except OSError as exc:
+        raise TrackedPathInventoryError(
+            f"tracked-path inventory {source} is unreadable: {exc}"
+        ) from exc
+    if len(raw) > _MAX_TRACKED_PATHS_BYTES:
+        raise TrackedPathInventoryError(
+            f"tracked-path inventory is {len(raw)} bytes, above the "
+            f"{_MAX_TRACKED_PATHS_BYTES}-byte safety bound"
+        )
+    header_raw, separator, payload = raw.partition(b"\n")
+    if not separator:
+        raise TrackedPathInventoryError("tracked-path inventory has no header boundary")
+    try:
+        header = json.loads(header_raw.decode("ascii"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise TrackedPathInventoryError(
+            f"tracked-path inventory header is malformed: {exc}"
+        ) from exc
+    expected_keys = {"path_count", "paths_sha256", "schema", "tested_tree_sha"}
+    if not isinstance(header, dict) or set(header) != expected_keys:
+        raise TrackedPathInventoryError(
+            "tracked-path inventory header fields do not match the v1 contract"
+        )
+    if header["schema"] != TRACKED_PATHS_SCHEMA:
+        raise TrackedPathInventoryError(
+            f"tracked-path inventory schema is {header['schema']!r}, expected "
+            f"{TRACKED_PATHS_SCHEMA!r}"
+        )
+    if header["tested_tree_sha"] != tested_tree_sha:
+        raise TrackedPathInventoryError(
+            f"tracked-path inventory tree {header['tested_tree_sha']!r} does not "
+            f"match expected tree {tested_tree_sha}"
+        )
+    digest = hashlib.sha256(payload).hexdigest()
+    if header["paths_sha256"] != digest:
+        raise TrackedPathInventoryError(
+            "tracked-path inventory payload digest does not match its header"
+        )
+    if payload and not payload.endswith(b"\0"):
+        raise TrackedPathInventoryError(
+            "tracked-path inventory payload is not NUL terminated"
+        )
+    encoded_paths = payload[:-1].split(b"\0") if payload else []
+    if not isinstance(header["path_count"], int) or header["path_count"] != len(
+        encoded_paths
+    ):
+        raise TrackedPathInventoryError(
+            "tracked-path inventory count does not match its payload"
+        )
+    canonical_payload = _tree_path_payload(base, tested_tree_sha)
+    if payload != canonical_payload:
+        raise TrackedPathInventoryError(
+            "tracked-path inventory payload is not byte-identical to git ls-tree "
+            f"for {tested_tree_sha}"
+        )
+
+    paths: list[str] = []
+    for encoded in encoded_paths:
+        if not encoded:
+            raise TrackedPathInventoryError(
+                "tracked-path inventory contains an empty path record"
+            )
+        path = os.fsdecode(encoded)
+        parts = path.split("/")
+        if path.startswith("/") or any(part in {"", ".", ".."} for part in parts):
+            raise TrackedPathInventoryError(
+                f"tracked-path inventory contains non-canonical path {path!r}"
+            )
+        paths.append(path)
+    if len(set(paths)) != len(paths):
+        raise TrackedPathInventoryError(
+            "tracked-path inventory contains duplicate path records"
+        )
+    directories = {
+        "/".join(parts[:index])
+        for path in paths
+        for parts in (path.split("/"),)
+        for index in range(1, len(parts))
+    }
+    return TrackedPathInventory(
+        root=base,
+        tested_tree_sha=tested_tree_sha,
+        files=frozenset(paths),
+        directories=frozenset(directories),
+        payload_sha256=digest,
+    )
+
+
+@contextlib.contextmanager
+def planner_tracked_path_inventory(
+    source: Path,
+    tested_tree_sha: str,
+    *,
+    root: Path | None = None,
+) -> Iterator[TrackedPathInventory]:
+    """Activate one validated inventory only for the planner's scope census."""
+    global _ACTIVE_TRACKED_PATHS
+    inventory = load_tracked_path_inventory(source, tested_tree_sha, root=root)
+    previous = _ACTIVE_TRACKED_PATHS
+    _ACTIVE_TRACKED_PATHS = inventory
+    try:
+        yield inventory
+    finally:
+        _ACTIVE_TRACKED_PATHS = previous
+
+
+def _physical_and_relative(path: Path) -> tuple[Path, str | None]:
+    inventory = _ACTIVE_TRACKED_PATHS
+    if inventory is None:
+        return path, None
+    if path.is_absolute():
+        physical = path
+        try:
+            relative = path.relative_to(inventory.root)
+        except ValueError:
+            return physical, None
+    else:
+        physical = inventory.root / path
+        relative = path
+    # Planner paths are lexical repository paths. Resolving every one through
+    # the filesystem would turn this O(1) membership oracle back into hundreds
+    # of thousands of stats on a sparse tree (408k in the mechanical census).
+    # Refuse lexical escapes instead; Git itself cannot track `.` / `..` records.
+    if any(part in {"", ".", ".."} for part in relative.parts):
+        return physical, None
+    rel = relative.as_posix()
+    return physical, rel if rel != "." else ""
+
+
+def planner_path_is_file(path: str | Path) -> bool:
+    candidate = Path(path)
+    physical, rel = _physical_and_relative(candidate)
+    if _ACTIVE_TRACKED_PATHS is None:
+        return candidate.is_file()
+    return (rel is not None and rel in _ACTIVE_TRACKED_PATHS.files) or physical.is_file()
+
+
+def planner_path_is_dir(path: str | Path) -> bool:
+    candidate = Path(path)
+    physical, rel = _physical_and_relative(candidate)
+    if _ACTIVE_TRACKED_PATHS is None:
+        return candidate.is_dir()
+    return (
+        rel is not None and rel in _ACTIVE_TRACKED_PATHS.directories
+    ) or physical.is_dir()
+
+
+def planner_path_exists(path: str | Path) -> bool:
+    candidate = Path(path)
+    physical, rel = _physical_and_relative(candidate)
+    if _ACTIVE_TRACKED_PATHS is None:
+        return candidate.exists()
+    return (
+        rel is not None
+        and (
+            rel in _ACTIVE_TRACKED_PATHS.files
+            or rel in _ACTIVE_TRACKED_PATHS.directories
+        )
+    ) or physical.exists()
+
+
+def require_materialized_file(path: str | Path, *, reason: str) -> Path:
+    """Return an available file or fail closed when only the oracle can see it."""
+    candidate = Path(path)
+    physical, rel = _physical_and_relative(candidate)
+    if physical.is_file():
+        return physical
+    if (
+        _ACTIVE_TRACKED_PATHS is not None
+        and rel is not None
+        and rel in _ACTIVE_TRACKED_PATHS.files
+    ):
+        raise ScopeMaterializationError(
+            f"tracked path {rel!r} is omitted from the planner checkout but its "
+            f"content is required for {reason}; widen the ci-plan sparse profile"
+        )
+    raise ScopeMaterializationError(
+        f"required planner file {rel or physical.as_posix()!r} is unavailable for {reason}"
+    )
 
 
 # Keep this set identical to the former trigger-closure implementation.  ``data``
@@ -213,11 +520,14 @@ def _data_lines(source: str, tree: ast.Module) -> set[int]:
 def _resolve(module: str) -> list[str]:
     """Repository-relative files a dotted module can denote, existing only."""
     base = module.replace(".", "/")
-    return [
-        candidate
-        for candidate in (f"{base}.py", f"{base}/__init__.py")
-        if (ROOT / candidate).is_file()
-    ]
+    resolved: list[str] = []
+    for candidate in (f"{base}.py", f"{base}/__init__.py"):
+        path = ROOT / candidate
+        if not planner_path_is_file(path):
+            continue
+        require_materialized_file(path, reason=f"static import resolution of {module}")
+        resolved.append(candidate)
+    return resolved
 
 
 def direct_reads(
@@ -280,7 +590,9 @@ def direct_reads(
             and id(node) not in docstrings
         ):
             match = _PATH_LITERAL.fullmatch(node.value.strip())
-            if match and (ROOT / match.group(0).split("#")[0]).is_file():
+            if match and planner_path_is_file(
+                ROOT / match.group(0).split("#")[0]
+            ):
                 rel = match.group(0).split("#")[0]
                 if node.lineno in data_lines:
                     excused(rel, "path literal", node.lineno)
@@ -298,7 +610,7 @@ def direct_reads(
                 if (
                     rooted
                     and joined.split("/")[0] in LITERAL_DIRS
-                    and (ROOT / joined).is_file()
+                    and planner_path_is_file(ROOT / joined)
                 ):
                     if node.lineno in data_lines:
                         excused(joined, "path join", node.lineno)
@@ -602,7 +914,9 @@ def _selector_file_analysis(rel: str) -> tuple[tuple[str, ...], tuple[str, ...]]
     test starts.  A GitHub job's checkout is immutable for the life of the process,
     so caching by canonical repository path is exact.
     """
-    path = ROOT / rel
+    path = require_materialized_file(
+        ROOT / rel, reason=f"selector analysis of {rel}"
+    )
     try:
         tree = ast.parse(path.read_text(errors="ignore"))
     except SyntaxError as exc:
@@ -642,7 +956,7 @@ def pytest_invocation_ambiguities(command: str) -> tuple[str, ...]:
             findings.add(f"dynamic pytest target {token!r}")
             continue
         candidate = ROOT / target
-        if candidate.is_dir():
+        if planner_path_is_dir(candidate):
             findings.add(f"directory pytest target {token!r}")
     return tuple(sorted(findings))
 
@@ -664,8 +978,9 @@ def suite_dependency_closure(
         rel = path.resolve().relative_to(ROOT.resolve()).as_posix()
     except ValueError:
         return DependencyClosure((), (f"suite is outside repository: {path}",))
-    if not path.is_file():
+    if not planner_path_is_file(path):
         return DependencyClosure((), (f"suite does not exist: {rel}",))
+    path = require_materialized_file(path, reason=f"suite analysis of {rel}")
 
     files: set[str] = {rel}
     ambiguities: set[str] = set()
@@ -682,12 +997,48 @@ def suite_dependency_closure(
         reads = set(reads_raw)
         for dependency in reads:
             dependency_path = ROOT / dependency
-            if not dependency_path.is_file():
+            if not planner_path_is_file(dependency_path):
                 continue
             files.add(dependency)
             if dependency.endswith(".py") and dependency not in visited:
-                frontier.append(dependency_path)
+                frontier.append(
+                    require_materialized_file(
+                        dependency_path,
+                        reason=f"transitive dependency analysis from {current_rel}",
+                    )
+                )
 
     if pytest_command is not None:
         ambiguities.update(pytest_invocation_ambiguities(pytest_command))
     return DependencyClosure(tuple(sorted(files)), tuple(sorted(ambiguities)))
+
+
+def _inventory_cli(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Build ci-plan's ephemeral exact-tree tracked-path inventory."
+    )
+    parser.add_argument("--write-tracked-paths", type=Path, required=True)
+    parser.add_argument("--tested-tree-sha", required=True)
+    args = parser.parse_args(argv)
+    inventory = write_tracked_path_inventory(
+        args.write_tracked_paths, args.tested_tree_sha
+    )
+    print(
+        "TRACKED_PATH_INVENTORY="
+        + json.dumps(
+            {
+                "path_count": len(inventory.files),
+                "paths_sha256": inventory.payload_sha256,
+                "schema": TRACKED_PATHS_SCHEMA,
+                "tested_tree_sha": inventory.tested_tree_sha,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+        flush=True,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_inventory_cli())
