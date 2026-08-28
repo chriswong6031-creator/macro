@@ -17,10 +17,14 @@ answer: >
   clocks, evidence, contradictions, missingness, and healthy abstention/degraded
   states; keep the Terminal heuristic as Attention/Salience rather than probability;
   preserve the existing unsigned FS family; and require a separately preregistered,
-  prospectively validated right-conditioned family before any bullish/bearish
-  calibrated probability can be promoted. Exact-option lifecycle/outcome work must
-  extend the existing episode/Issue Desk owners and use exact NBBO rules. No
-  implementation wave begins until the Chairman separately approves the written spec.
+  prospectively evaluated right-conditioned family before any bullish/bearish
+  calibrated probability can even be considered for promotion. Existing DNR law is
+  not amended by this decision: new positioning/GEX/OI fusion into an Options Alpha
+  predictive score requires an explicit DNR scope adjudication before testing, and any
+  trained calibrated probability requires a separate promotion review against current
+  DNR:KILL-FUSED-COMPOSITE scope. Exact-option lifecycle/outcome work must extend the
+  existing episode/Issue Desk owners and use exact NBBO rules. No implementation wave
+  begins until the Chairman separately approves the written spec.
 rationale: >
   The estate already contains most of the expensive foundations but they are not
   connected to the user outcome. At the action-time base, flow_signals.gate/v2
@@ -33,9 +37,10 @@ rationale: >
   Building another heuristic score or another campaign/store would discard this moat
   and violate one-canonical-system law. The selected architecture turns the existing
   evidence ledgers into an end-to-end learning/product loop while preserving the
-  boundary between observation, salience, research candidate, calibrated signal,
-  operator issue and trade. It also keeps current DNR law intact: no LLM origination,
-  no generic fused composite, no positioning fusion, no revival of the killed DOI,
+  boundary between observation, salience, research candidate, calibrated statistical
+  evidence, separately adjudicated signal authority, operator issue and trade. It
+  preserves current DNR law rather than inferring new exceptions: no LLM origination,
+  no generic fused composite, no new positioning fusion, no revival of the killed DOI,
   skew-deceleration or charm narratives, and no tick-rule Theta-tape authority.
 alternatives:
   - option: Terminal-first heuristic fusion into one larger 0-100 Options Alpha score
@@ -80,5 +85,5 @@ decided_at: 2026-08-27
 ---
 
 This decision freezes ownership and architecture only. It does not grant an
-implementation carrier, model promotion, Terminal UI mutation, scheduler change,
-Issue Desk issue, portfolio action, or brokerage authority.
+implementation carrier, model promotion, DNR exception, Terminal UI mutation,
+scheduler change, Issue Desk issue, portfolio action, or brokerage authority.
