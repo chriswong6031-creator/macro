@@ -46,6 +46,49 @@ _NON_MANAGEMENT_ROLES = frozenset({
     "participant",
 })
 
+# --- TFG-1 R2 structural separator + proxy grammar -------------------------------
+# Frozen law (DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT):
+# terminal cue phrases ("go ahead", "line is open", "proceed") carry ZERO admission
+# authority. A structural separator is an unambiguous question-bearing housekeeping
+# handoff immediately followed by a non-housekeeping source turn -- whether or not the
+# questioner can be canonicalized.
+#
+# Case-sensitive and period-free so a name can never run across a sentence boundary
+# into a following return clause, even under IGNORECASE cue matching.
+_R2_NAME = r"(?-i:[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*(?:\s+[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*){0,3})"
+
+# "our next question comes from the line of Joe Osha with Guggenheim"
+_R2_ATTRIB = re.compile(
+    r"\bquestions?\b[^.?!]{0,60}?\b(?:from|of|the\s+line\s+of)\s+(?:the\s+line\s+of\s+)?"
+    r"(?P<name>" + _R2_NAME + r")",
+    re.IGNORECASE,
+)
+# "One moment for our first question. It's from Richard Garchitorena with Barclays."
+_R2_ATTRIB_CONT = re.compile(
+    r"\bquestions?\b[^.?!]{0,40}[.]\s*(?:It(?:'s|\u2019s| is)|This is)\s+from\s+"
+    r"(?P<name>" + _R2_NAME + r")",
+    re.IGNORECASE,
+)
+# "We'll now move on to Tom Catherwood" / "let's go to Joe Osha"
+_R2_CONTINUE = re.compile(
+    r"\b(?:we(?:'ll|\u2019ll| will| shall)?\s+)?(?:now\s+)?(?:mov(?:e|ing)\s+on|go)\s+"
+    r"(?:on\s+)?(?:now\s+)?to\s+(?P<name>" + _R2_NAME + r")",
+    re.IGNORECASE,
+)
+# A return of the floor to management is never a question handoff.
+_R2_RETURN = re.compile(
+    r"\b(?:turn|hand|pass|give|send)\b[^.?!]{0,60}?\bback\b|\bback\s+(?:over\s+)?to\b"
+    r"|\b(?:turn|hand)\s+(?:the\s+)?(?:call|conference|floor|program|meeting)\s+over\s+to\b",
+    re.IGNORECASE,
+)
+# A personal full name: at least two alphabetic capitalised tokens. "Speaker 4" is not
+# one, which is why a placeholder can never be canonicalised even when its utterance
+# carries an otherwise well-formed on-for clause (BANR #71 in the frozen corpus).
+_R2_FULL_NAME_RE = re.compile(
+    r"^(?-i:[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*(?:\s+[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*)+)$"
+)
+
+
 _FAILURE_CODES = frozenset({
     "transcript_sha_invalid",
     "empty_segments",
@@ -54,6 +97,7 @@ _FAILURE_CODES = frozenset({
     "duplicate_or_unordered_boundaries",
     "operator_intro_identity_unparsed",
     "operator_analyst_name_conflict",
+    "unresolved_questioner_identity",
     "analyst_speaker_missing",
     "unexpected_non_housekeeping_speaker",
     "management_identity_insufficient",
@@ -108,7 +152,7 @@ def reconstruct_qa(
 
     boundaries = _qualifying_boundaries(segs)
     if not boundaries:
-        return _fail(base, "zero_qa_boundaries", "no Operator segments contain the go-ahead introduction")
+        return _fail(base, "zero_qa_boundaries", "no question-bearing handoff is followed by a source turn")
     if boundaries != sorted(set(boundaries)):
         return _fail(base, "duplicate_or_unordered_boundaries", "qualifying boundaries are not strictly increasing")
     base["qualifying_boundaries"] = list(boundaries)
@@ -211,12 +255,54 @@ def _contains_go_ahead(text: str) -> bool:
     return _GO_AHEAD in " ".join(str(text).split()).casefold()
 
 
+def _return_spans(text: str) -> list[tuple[int, int]]:
+    """Character ranges of return-the-floor clauses, which cannot carry a questioner."""
+    spans: list[tuple[int, int]] = []
+    for match in _R2_RETURN.finditer(text):
+        end = text.find(".", match.end())
+        spans.append((match.start(), len(text) if end < 0 else end))
+    return spans
+
+
+def _handoff_name(text: object) -> tuple[int, str] | None:
+    """Position and name of the questioner named by a question-bearing handoff."""
+    body = " ".join(str(text or "").split())
+    blocked = _return_spans(body)
+    hits: list[tuple[int, str]] = []
+    for pattern in (_R2_ATTRIB, _R2_ATTRIB_CONT, _R2_CONTINUE):
+        for match in pattern.finditer(body):
+            pos = match.start("name")
+            if any(lo <= pos <= hi for lo, hi in blocked):
+                continue
+            name = match.group("name").strip(" ,.")
+            if name:
+                hits.append((pos, name))
+    if not hits:
+        return None
+    hits.sort()
+    return hits[-1]
+
+
+def _next_source_turn(segments: Sequence[Mapping[str, Any]], index: int) -> int | None:
+    for j in range(index + 1, len(segments)):
+        seg = segments[j]
+        if _role_key(seg) in _HOUSEKEEPING_ROLES:
+            continue
+        if not _speaker_name(seg):
+            continue
+        return j
+    return None
+
+
 def _qualifying_boundaries(segments: Sequence[Mapping[str, Any]]) -> list[int]:
-    out: list[int] = []
-    for idx, seg in enumerate(segments):
-        if _is_operator(seg) and _contains_go_ahead(_text(seg)):
-            out.append(idx)
-    return out
+    """Structural separators. Terminal cues have no admission authority here."""
+    return [
+        idx
+        for idx, seg in enumerate(segments)
+        if _is_housekeeping(seg)
+        and _handoff_name(_text(seg)) is not None
+        and _next_source_turn(segments, idx) is not None
+    ]
 
 
 def _affiliation_is_truncated(body: str, parsed: str) -> bool:
@@ -242,32 +328,50 @@ def _parse_affiliation_after(after: str) -> tuple[str, str]:
 
 
 def _parse_operator_identity(text: str) -> dict[str, Any] | None:
-    source = str(text)
-    matches = list(_NAME_CUE_RE.finditer(source))
-    if not matches:
+    source = " ".join(str(text).split())
+    hit = _handoff_name(source)
+    if hit is None:
         return None
-    names = {match.group("name").strip() for match in matches}
-    names.discard("")
-    if len(names) != 1:
-        return None
-    name = next(iter(names))
-    affiliations: set[str] = set()
-    for i, match in enumerate(matches):
-        after_end = matches[i + 1].start() if i + 1 < len(matches) else len(source)
-        affiliation, state = _parse_affiliation_after(source[match.end():after_end])
-        if state == "source_supported" and affiliation:
-            affiliations.add(affiliation)
-    if len(affiliations) == 1:
+    position, name = hit
+    affiliation, state = _parse_affiliation_after(source[position + len(name):])
+    if state == "source_supported" and affiliation:
         return {
             "name": name,
-            "affiliation": next(iter(affiliations)),
+            "affiliation": affiliation,
             "affiliation_state": "source_supported",
         }
-    return {
-        "name": name,
-        "affiliation": "",
-        "affiliation_state": "unresolved",
-    }
+    return {"name": name, "affiliation": "", "affiliation_state": "unresolved"}
+
+
+def _is_explicit_full_name_proxy(speaker: str, principal: str, utterance: str) -> bool:
+    """A differing next speaker is source-supported only when their OWN first source
+    utterance explicitly binds them as on-for/sitting-in-for the Operator-named
+    principal.
+
+    The speaker must itself be a personal full name: a structured placeholder such as
+    "Speaker 9" cannot be canonicalised even when its utterance carries an otherwise
+    well-formed on-for clause naming the principal in full. Affiliation never transfers
+    from the principal to the proxy.
+    """
+    speaker = " ".join(str(speaker or "").split())
+    if not _R2_FULL_NAME_RE.match(speaker):
+        return False
+    body = " ".join(str(utterance or "").split())
+    relation = re.compile(
+        re.escape(speaker)
+        + r"\s*,?\s*(?:is\s+)?(?:on|sitting\s+in|in)\s+for\s+"
+        + r"(?P<principal>" + _R2_NAME + r")",
+        re.IGNORECASE,
+    )
+    match = relation.search(body)
+    if not match:
+        return False
+    claimed = _norm_person(match.group("principal").strip(" ,."))
+    full = _norm_person(principal)
+    if not claimed or not full:
+        return False
+    # Full name, or the principal's own first name -- never a different person.
+    return claimed == full or claimed == full.split(" ")[0]
 
 
 def _whole_segment_span(seg: Mapping[str, Any], index: int) -> dict[str, Any] | None:
@@ -343,17 +447,27 @@ def _reconstruct_exchange(
                 "message": f"analyst speaker at segment {first_analyst_idx} is empty",
             },
         }
-    if _norm_person(parsed["name"]) != _norm_person(speaker):
-        return {
-            "status": "failed",
-            "failure": {
-                "code": "operator_analyst_name_conflict",
-                "message": (
-                    f"Operator intro name {parsed['name']!r} does not match "
-                    f"first analyst speaker {speaker!r}"
-                ),
-            },
-        }
+    principal = parsed["name"]
+    if _norm_person(principal) != _norm_person(speaker):
+        if _is_explicit_full_name_proxy(speaker, principal, _text(first_analyst)):
+            # Proxy is source-supported; the principal's affiliation does not transfer.
+            parsed = {
+                "name": speaker,
+                "affiliation": "",
+                "affiliation_state": "unresolved",
+            }
+        else:
+            return {
+                "status": "failed",
+                "failure": {
+                    "code": "unresolved_questioner_identity",
+                    "message": (
+                        f"Operator named {principal!r} but the next source speaker is "
+                        f"{speaker!r} with no explicit on-for relation; the structural "
+                        f"separator stands and no canonical Q&A may be minted"
+                    ),
+                },
+            }
     questioner_name = speaker
 
     question_spans: list[dict[str, Any]] = []
