@@ -29,13 +29,13 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-if __package__ in {None, ""}:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
 
-from scripts import build_project_active_build_map as project_map
+from scripts import build_project_active_build_map as project_map  # noqa: E402
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = _ROOT
 SOURCE_DIRECTORY = Path("/var/lib/mastermind-control-room-sources")
 OUTPUT_PATH = SOURCE_DIRECTORY / "project-active-builds.json"
 SERVICE_GROUP = "caddy"
