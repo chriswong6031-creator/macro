@@ -60,7 +60,7 @@ affects:
   - site/winner_health.html
   - research/top_anatomy/
 confidence: high
-reversibility: medium
+reversibility: costly
 decided_by: chairman-chris-and-sol
 decided_at: 2026-08-28
 ---
