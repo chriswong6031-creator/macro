@@ -151,6 +151,33 @@ def test_a_dead_hub_still_fails_closed_outside_regular_hours(client, monkeypatch
     assert client.get("/api/dossier-quote/NVDA").json()["freshness"] == "stale"
 
 
+def test_a_far_future_clock_is_a_fault_not_a_fresh_quote(client, monkeypatch) -> None:
+    """A negative age must not sail through both age gates into "live".
+
+    This guard is easy to delete because it reads like a paranoid edge case. It
+    is not: a negative age passes `age > bound` (false) AND satisfies
+    `age <= _LIVE_MAX_AGE_SECONDS`, so without it any upstream clock fault — a
+    timezone slip, or millis stamped into a seconds field — MINTS the one
+    verdict this module exists to make unfakeable.
+    """
+    _patch_hub(
+        monkeypatch,
+        _hub_row(live=True, basis="REALTIME", marketSession="regular"),
+        now=1787871758 - 86_400,
+    )
+    assert client.get("/api/dossier-quote/NVDA").json()["freshness"] == "stale"
+
+
+def test_millis_in_the_seconds_field_cannot_read_as_live(client, monkeypatch) -> None:
+    """The concrete shape of the clock fault above, using a real magnitude."""
+    _patch_hub(
+        monkeypatch,
+        _hub_row(live=True, basis="REALTIME", marketSession="regular", ts=1787871758_000),
+        now=1787871758,
+    )
+    assert client.get("/api/dossier-quote/NVDA").json()["freshness"] == "stale"
+
+
 def test_missing_timestamp_fails_closed_rather_than_assuming_fresh(client, monkeypatch) -> None:
     row = _hub_row(live=True, basis="REALTIME", marketSession="regular")
     row["NVDA"].pop("ts")
