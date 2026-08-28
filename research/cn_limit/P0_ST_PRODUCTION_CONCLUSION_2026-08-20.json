@@ -1,0 +1,27 @@
+{
+  "schema": "cn_limit.p0_st_production_conclusion.v1",
+  "purpose": "Records-only disambiguation wrapper. The wrapped replay artifact's top-level `zero_corrections_required` is a FROZEN ARMS-IDENTITY PREDICATE ('current-vs-superseded rule arms identical for every affected name'), not a statement about the produced canonical store. It reads false on this run because the repair was consequential (600745.SS arms diverge). No machine consumer may read zero_corrections_required=false from the wrapped artifact and conclude the canonical store needs correction; this receipt carries the unambiguous production conclusion.",
+  "wraps": {
+    "artifact": "research/cn_limit/P0_ST_PRODUCTION_PROOF_2026-08-20.json",
+    "artifact_schema": "cn_limit.p0_st_band_replay.v1",
+    "replay_predicate_field": "zero_corrections_required",
+    "replay_predicate_value": false,
+    "replay_predicate_frozen_meaning": "all current-vs-superseded rule arms identical for every affected name",
+    "preserved_unmodified": true
+  },
+  "production_conclusion": {
+    "rule_arms_identical": false,
+    "produced_store_matches_lawful_arm": true,
+    "produced_store_corrections_required": false,
+    "repair_consequential": true,
+    "superseded_only_event_count": 17,
+    "current_only_event_count": 1,
+    "diverging_name": "600745.SS",
+    "detail": "The superseded always-5% arm would have written 17 phantom events for 600745.SS and missed the one real 10% event; the produced store's post-2026-07-06 rows equal the current (lawful +/-10%) arm exactly. Zero corrections are required to any produced canonical store."
+  },
+  "identity": {
+    "workflow_run_id": 32348780228,
+    "production_commit": "baf4cf7c9291",
+    "definition_hash_sha256": "e0c70f39f62e7639355128644f872c4e992699524bbdca775f24f1e1ad45e4a4"
+  }
+}

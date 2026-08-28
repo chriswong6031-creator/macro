@@ -1,0 +1,27 @@
+<SEC-DOCUMENT>0001234567-26-099001.txt
+<ACCEPTANCE-DATETIME>20260801120000
+<FILE-NUMBER>333-199001
+<SEC-HEADER>
+COMPANY CONFORMED NAME: TEST ISSUER CORP
+CENTRAL INDEX KEY: 1234599
+SEC FILE NUMBER: 333-199001
+</SEC-HEADER>
+<DOCUMENT>
+<TYPE>S-3
+<SEQUENCE>1
+<FILENAME>forms3.htm
+<DESCRIPTION>REGISTRATION STATEMENT
+<TEXT>
+<html><body><p>This is the primary registration statement document for Test Issuer Corp.</p></body></html>
+</TEXT>
+</DOCUMENT>
+<DOCUMENT>
+<TYPE>EX-23.1
+<SEQUENCE>2
+<FILENAME>consent.htm
+<DESCRIPTION>CONSENT OF INDEPENDENT AUDITOR
+<TEXT>
+<html><body><p>We consent to the incorporation by reference of our report dated January 1, 2026.</p></body></html>
+</TEXT>
+</DOCUMENT>
+</SEC-DOCUMENT>

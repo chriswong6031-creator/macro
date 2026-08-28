@@ -223,6 +223,48 @@ def test_decision_sentence_never_carries_a_signal_word_or_a_falsifier():
         assert "_" not in english
 
 
+def test_the_two_stale_causes_do_not_share_one_race_sentence():
+    """A page behind its freshness budget did not have the register move under it.
+
+    Both causes legitimately rank eighth, so they were folded into a single
+    `noteState` call whose sentence — "the register moved while this page
+    loaded" — is true only of a generation that changed mid-pagination. A
+    reader of a merely old page was told a race had happened that had not:
+    observed live 2026-08-21 against a generation whose last success was the
+    prior day, where the stamp claimed the register had moved while the status
+    band correctly said an update was in progress. The rank is shared; the
+    sentence must not be.
+    """
+
+    body = JS[JS.index("function resolveStates()") : JS.index("function paintDecision()")]
+    freshness = re.search(
+        r"if \(healthState === 'stale'\) noteState\(list, 'stale', knownAt, '([^']*)', '([^']*)'\)",
+        body,
+    )
+    # `else if` is load-bearing, not style: two live notes would rank `stale`
+    # twice and reprint "needs refresh" in the secondary-state footer.
+    restarted = re.search(
+        r"else if \(state\.restarted\) noteState\(list, 'stale', knownAt, '([^']*)', '([^']*)'\)",
+        body,
+    )
+    assert freshness, "the freshness cause must raise its own stale sentence"
+    assert restarted, "the mid-load restart must raise its own stale sentence"
+
+    # Distinct in both languages, or the split is cosmetic.
+    assert freshness.group(1) != restarted.group(1)
+    assert freshness.group(2) != restarted.group(2)
+
+    # Only the restart may say something moved while the reader was loading.
+    assert "while this page loaded" in restarted.group(1)
+    assert "加载期间" in restarted.group(2)
+    for claim in ("moved", "changed", "while"):
+        assert claim not in freshness.group(1), freshness.group(1)
+    assert "期间" not in freshness.group(2), freshness.group(2)
+
+    # Splitting the words must not move either cause off the eighth rank.
+    assert ("stale", 8) in STATE_PRECEDENCE
+
+
 def test_the_decision_sentence_ships_even_when_the_answer_is_nothing():
     assert "'empty', knownAt, 'nothing matches what you asked for.'" in JS
     assert "'locked', knownAt, 'this view needs full access.'" in JS
@@ -277,7 +319,7 @@ def test_secondary_states_are_named_once_in_the_footer_not_on_every_row():
 
     assert "states.slice(1).map(stateLabel)" in JS
     assert "function paintPanelFoot()" in JS
-    assert 'ui.panelFoot.appendChild(el(\'b\', \'\', tr(\'One page, one receipt. \'' in JS
+    assert 'ui.panelFoot.appendChild(el(\'b\', \'\', tr(\'Source evidence stays attached to every row. \'' in JS
     # The row renderers must not reprint the panel-wide caveats.
     row = JS[JS.index("function makeChangeRow(") : JS.index("function screenText(")]
     assert "no trade call" not in row.lower()

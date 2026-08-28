@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -59,6 +60,11 @@ from engine.government_revenue.idv_dossiers import (  # noqa: E402
     idv_dossier_content_id,
     is_valid_idv_dossier_payload,
 )
+from engine.government_revenue.fms_cases import (  # noqa: E402
+    AUTHORITY as FMS_CASE_GRAPH_AUTHORITY,
+    FMS_CASE_GRAPH_CONTRACT,
+    fms_case_graph_content_id,
+)
 from engine.government_revenue.idv_bridge import (  # noqa: E402
     build_idv_bridge_payload,
     is_valid_idv_bridge_payload,
@@ -66,6 +72,11 @@ from engine.government_revenue.idv_bridge import (  # noqa: E402
 from engine.government_revenue.entity_resolution import (  # noqa: E402
     is_valid_recipient_resolution_coverage,
     load_recipient_entity_graph,
+)
+from engine.government_revenue.identity_atlas import (  # noqa: E402
+    IDENTITY_ATLAS_CONTRACT,
+    build_identity_atlas_payload,
+    is_valid_identity_atlas_payload,
 )
 from engine.government_revenue.metrics import (  # noqa: E402
     AWARD_ACTION_VERSIONS_FILENAME,
@@ -75,6 +86,8 @@ from engine.government_revenue.metrics import (  # noqa: E402
     RECIPIENT_RESOLUTION_COVERAGE_FILENAME,
 )
 from engine.government_revenue.workspace import is_valid_procurement_workspace  # noqa: E402
+from engine.government_revenue import program_ontology as _d5_program_ontology  # noqa: E402
+from engine.government_revenue import program_dossier as _d5_program_dossier  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_government_revenue")
@@ -90,10 +103,19 @@ SHELL_JSON_BUDGET_BYTES = 100_000
 # fact disclosure added in #5369 are legitimate bounded presentation markup.
 # With the current committed evidence they render to 277,445 raw bytes, which
 # exceeded the old 275,000-byte fence and blocked engine-render 31594939986
-# before publication. 288 KiB restores 17,467 bytes (5.9%) of measured
+# before publication. 288 KiB restored 17,467 bytes (5.9%) of measured
 # headroom while preserving the stricter 100 KB embedded-data cap; the radar
 # runtime itself remains an external, cacheable asset.
-RAW_HTML_BUDGET_BYTES = 294_912
+# D3 (#6048) added the Change Tape temporal-truth markup — dual-clock tape
+# rows, the inspector Clocks block with its named-null source-publication
+# row, and the correction/successor state — 3,465 rendered bytes of bounded
+# presentation law that left 65 bytes of headroom under 288 KiB: one nightly
+# payload wobble from blocking the render lane (this exact page baked to
+# 294,847 against the committed 2026-08-20 evidence). 296 KiB restores 8,257
+# bytes (2.8%) of measured headroom; the embedded-data cap is unchanged and
+# the D3 inline comments were simultaneously trimmed to pointer form so the
+# raise covers real markup, not narration.
+RAW_HTML_BUDGET_BYTES = 303_104
 SHELL_COMPANY_METRICS = (
     "ttm_obligations",
     "award_velocity_yoy_pct",
@@ -519,6 +541,17 @@ def _validate_dossier_payload(payload: object) -> dict:
     return payload
 
 
+def _validate_program_dossier_payload(payload: object) -> dict:
+    """Reject a D5 program-dossier generation before either public twin is replaced."""
+    if (
+        not isinstance(payload, dict)
+        or payload.get("contract") != _d5_program_dossier.CONTRACT
+        or not _d5_program_dossier.is_valid_program_dossier_payload(payload)
+    ):
+        raise ValueError("D5 government revenue program dossier returned an invalid schema")
+    return payload
+
+
 def _prime_award_key_by_generated_id(dossier: dict) -> dict[str, str]:
     """Return the sole legal bridge from a source parent ID to a dossier key.
 
@@ -833,6 +866,71 @@ def _write_budget_program_graph_twins(root: Path, graph_raw: str) -> tuple[Path,
     return canonical, site
 
 
+def _validate_fms_case_graph_payload(payload: object) -> dict:
+    """Admit only the immutable, display-tier FMS case graph contract.
+
+    Mirrors ``_validate_budget_program_graph_payload``. The FMS case graph
+    is produced exclusively by the live acquisition CLI
+    (``collectors/fms_notifications_live.py::run_fms_acquisition``, D6-B1
+    packet 1, frozen) -- this builder never re-derives cases from raw
+    observations, it only admits and mirrors an already-built generation.
+    """
+    if not isinstance(payload, dict) or payload.get("contract") != FMS_CASE_GRAPH_CONTRACT:
+        raise ValueError("government revenue FMS case graph returned an invalid schema")
+    schema_path = _ROOT / "contracts" / "government_revenue" / "government_fms_case.v1.schema.json"
+    try:
+        from jsonschema import Draft202012Validator, FormatChecker  # noqa: PLC0415
+
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        Draft202012Validator(schema, format_checker=FormatChecker()).validate(payload)
+    except Exception as exc:
+        raise ValueError("government revenue FMS case graph failed schema validation") from exc
+    if fms_case_graph_content_id(payload) != payload.get("content_id"):
+        raise ValueError("government revenue FMS case graph content_id mismatch")
+    if payload.get("authority") != FMS_CASE_GRAPH_AUTHORITY:
+        raise ValueError("government revenue FMS case graph authority mismatch")
+    return payload
+
+
+def _write_fms_case_twins(root: Path, graph_raw: str) -> tuple[Path, Path]:
+    """Publish one exact FMS case graph to canonical and static locations."""
+    canonical = root / "data" / "government_revenue" / "fms_case_graph.json"
+    site = root / "site" / "government-revenue-data" / "fms-cases.json"
+    _atomic_write_text(canonical, graph_raw)
+    _atomic_write_text(site, graph_raw)
+    return canonical, site
+
+
+def _load_optional_canonical_fms_case_graph(root: Path) -> tuple[str, dict] | None:
+    """Read a precomputed optional FMS case graph without rebuilding it.
+
+    Preserve-if-absent, identical in shape to
+    :func:`_load_optional_canonical_budget_graph`: a checkout without the
+    fms triad/graph builds with the rail typed absent, never a fabricated
+    empty one (spec §3/§7).
+    """
+    canonical = root / "data" / "government_revenue" / "fms_case_graph.json"
+    site = root / "site" / "government-revenue-data" / "fms-cases.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public FMS case graph exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        graph = _validate_fms_case_graph_payload(json.loads(raw))
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical FMS case graph is invalid") from exc
+    # The live acquisition CLI (frozen packet 1) writes this artifact via
+    # json.dumps(sort_keys=True, separators=(",", ":")) without
+    # ensure_ascii=False -- verify against that exact serialization rather
+    # than this module's own _canonical_json convention (the two coincide
+    # for the ASCII-only v1 corpus; see DEVIATIONS in the D6-B1 packet 2
+    # build report).
+    if json.dumps(graph, sort_keys=True, separators=(",", ":")) != raw:
+        raise ValueError("canonical FMS case graph bytes are non-canonical")
+    return raw, graph
+
+
 def _write_idv_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
     """Publish one exact, independently content-addressed IDV relationship rail."""
     canonical = root / "data" / "government_revenue" / "idv_dossiers.json"
@@ -840,6 +938,116 @@ def _write_idv_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
     _atomic_write_text(canonical, dossier_raw)
     _atomic_write_text(site, dossier_raw)
     return canonical, site
+
+
+def _write_identity_atlas_twins(root: Path, atlas_raw: str) -> tuple[Path, Path]:
+    """Publish the D2 Identity Atlas — display/context only, no writes elsewhere."""
+    canonical = root / "data" / "government_revenue" / "identity_atlas.json"
+    site = root / "site" / "government-revenue-data" / "identity-atlas.json"
+    _atomic_write_text(canonical, atlas_raw)
+    _atomic_write_text(site, atlas_raw)
+    return canonical, site
+
+
+def _write_program_dossier_twins(root: Path, dossier_raw: str) -> tuple[Path, Path]:
+    """Publish the D5 Program/Platform Dossier bundle -- display/context only.
+
+    Absent ontology input composes the frozen bundle-level unavailable form
+    (``dossiers: []`` + ``ontology_graph_id: null``, never a crash) --
+    freeze DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md SS4.
+    """
+    canonical = root / "data" / "government_revenue" / "program_dossier.json"
+    site = root / "site" / "government-revenue-data" / "program-dossier.json"
+    _atomic_write_text(canonical, dossier_raw)
+    _atomic_write_text(site, dossier_raw)
+    return canonical, site
+
+
+def _workspace_events_by_id(workspace: dict | None) -> dict[str, dict]:
+    events = (workspace or {}).get("events")
+    if not isinstance(events, list):
+        return {}
+    return {
+        event["event_id"]: event
+        for event in events
+        if isinstance(event, dict) and event.get("event_id")
+    }
+
+
+def _load_optional_canonical_program_ontology(
+    root: Path, *, workspace: dict | None = None,
+) -> tuple[str, dict] | None:
+    """Read the curate-published D5 ontology, if one exists.
+
+    This script never writes the canonical artifact (curate is the only
+    producer, freeze SS3.2) -- it only mirrors verified bytes to the site
+    twin when a certified canonical artifact exists.
+
+    ``workspace`` (freeze SS3.1b, load-time half), when supplied, re-
+    verifies source-identity/canonical-identity hash agreement for every
+    linked event still present in it -- a mismatch refuses the WHOLE
+    artifact's certification via `event_identity_mismatch`, exactly like
+    every other load-time law.
+    """
+    canonical = root / "data" / "government_revenue" / "program_ontology.json"
+    if not canonical.exists():
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        graph = json.loads(raw)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical D5 program ontology is invalid JSON") from exc
+    loaded = _d5_program_ontology.load_program_ontology_graph(
+        graph, workspace_events=_workspace_events_by_id(workspace),
+    )
+    return raw, loaded
+
+
+def _write_program_ontology_site_twin(root: Path, ontology_raw: str) -> Path:
+    site = root / "site" / "government-revenue-data" / "program-ontology.json"
+    _atomic_write_text(site, ontology_raw)
+    return site
+
+
+def _apply_d5_program_link(
+    workspace: dict, ontology_graph: dict | None, *, as_of: str | None,
+) -> None:
+    """Attach the D5 `program_link` field to every award_change event.
+
+    Freeze SS4: a refused/absent ontology composes the fourth
+    ``source_unavailable``/``ontology_unavailable`` shape, never a crash.
+    """
+    analysis_cutoff = _d5_program_ontology.analysis_as_of(as_of) if as_of else None
+    graph_id = ontology_graph.get("graph_id") if ontology_graph is not None else None
+    events = workspace.get("events")
+    if not isinstance(events, list):
+        return
+    for event in events:
+        if not isinstance(event, dict) or event.get("kind") != "award_change":
+            continue
+        event["program_link"] = _d5_program_ontology.derive_workspace_program_link(
+            ontology_graph, event_id=event.get("event_id"), analysis_as_of=analysis_cutoff, graph_id=graph_id,
+        )
+
+
+def _load_optional_canonical_identity_atlas(root: Path) -> tuple[str, dict] | None:
+    """Read one committed Identity Atlas without recomputing a source generation."""
+    canonical = root / "data" / "government_revenue" / "identity_atlas.json"
+    site = root / "site" / "government-revenue-data" / "identity-atlas.json"
+    if not canonical.exists():
+        if site.exists():
+            raise ValueError("public Identity Atlas exists without canonical bytes")
+        return None
+    try:
+        raw = canonical.read_text(encoding="utf-8")
+        atlas = json.loads(raw)
+    except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("canonical Identity Atlas is invalid") from exc
+    if not is_valid_identity_atlas_payload(atlas):
+        raise ValueError("canonical Identity Atlas failed schema/content-id admission")
+    if _canonical_json(atlas) != raw:
+        raise ValueError("canonical Identity Atlas bytes are non-canonical")
+    return raw, atlas
 
 
 def _load_optional_canonical_budget_graph(root: Path, dossier: dict) -> tuple[str, dict] | None:
@@ -998,11 +1206,50 @@ def build(
         as_of=payload.get("as_of"),
         dossier=dossier,
     )
+    # D2 Identity Atlas: display/context only, read-only over the reviewed
+    # graph/SI snapshot/mapping backlog/dossier observations/curated PIT file.
+    # It never opens dossiers.json, workspace.json, or a candidate ledger for
+    # writing -- its write path is limited to identity_atlas.json.
+    #
+    # graph_as_of is bound to the PLANE clock (this generation's own as_of),
+    # never left self-referential to the graph's own graph_known_at.  A graph
+    # minted ahead of the plane must be caught by the exact same
+    # future-known-graph gate the candidates plane already enforces
+    # (entity_resolution.load_recipient_entity_graph) -- otherwise a graph
+    # that the candidates plane correctly refuses as not-yet-knowable would
+    # still render "reviewed" here.  When admission fails, every issuer
+    # degrades to not_asserted and the header's graph_status records why
+    # (never silently "reviewed" on a future-dated graph).
+    identity_atlas_generated_at = (
+        payload.get("generated_at")
+        or payload.get("known_at")
+        or datetime.now(timezone.utc).isoformat()
+    )
+    identity_atlas = build_identity_atlas_payload(
+        root=root,
+        generated_at=identity_atlas_generated_at,
+        graph_as_of=payload.get("as_of"),
+    )
+    if not is_valid_identity_atlas_payload(identity_atlas):
+        raise ValueError("government revenue identity atlas returned an invalid schema")
 
     canonical_dir = root / "data" / "government_revenue"
     canonical_dir.mkdir(parents=True, exist_ok=True)
     canonical_path = canonical_dir / "latest.json"
     workspace = payload.get("procurement_workspace")
+
+    # D5 Program/Mission/Capability/Product ontology (display/context only,
+    # freeze DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md). Consumers catch
+    # a refused certification -- never a hard pipeline failure -- and compose
+    # the typed unavailable forms instead (SS3.2/SS4).
+    try:
+        preserved_ontology = _load_optional_canonical_program_ontology(root, workspace=workspace)
+    except (ValueError, _d5_program_ontology.OntologyInputError) as exc:
+        log.warning("government revenue D5 program ontology failed certification: %s", exc)
+        preserved_ontology = None
+    d5_ontology_graph = preserved_ontology[1] if preserved_ontology is not None else None
+    _apply_d5_program_link(workspace, d5_ontology_graph, as_of=payload.get("as_of"))
+
     workspace["bundle_id"] = _workspace_bundle_id(workspace)
     workspace_raw = _canonical_json(workspace)
     latest_raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
@@ -1017,6 +1264,17 @@ def build(
     _write_dossier_twins(root, dossier_raw)
     _write_subaward_dossier_twins(root, _canonical_json(subaward_dossier))
     _write_idv_dossier_twins(root, _canonical_json(idv_dossier))
+    _write_identity_atlas_twins(root, _canonical_json(identity_atlas))
+    program_dossier_bundle = _d5_program_dossier.compose_program_dossier_bundle(
+        ontology_graph=d5_ontology_graph,
+        as_of=payload.get("as_of"),
+        generated_at=payload.get("generated_at") or payload.get("known_at"),
+        workspace=workspace,
+        identity_atlas=identity_atlas,
+    )
+    _write_program_dossier_twins(root, _canonical_json(program_dossier_bundle))
+    if preserved_ontology is not None:
+        _write_program_ontology_site_twin(root, preserved_ontology[0])
     if budget_graph is not None:
         _write_budget_program_graph_twins(root, _canonical_json(budget_graph))
     else:
@@ -1027,6 +1285,14 @@ def build(
         preserved_graph = _load_optional_canonical_budget_graph(root, dossier)
         if preserved_graph is not None:
             _write_budget_program_graph_twins(root, preserved_graph[0])
+    # D6-B1 FMS congressional-notification rail: the case graph is built
+    # exclusively by the live acquisition CLI (never re-derived here); mirror
+    # its exact committed bytes to the site twin when present, and leave the
+    # rail typed-absent (never a fabricated empty graph) when a checkout
+    # carries no fms triad/graph yet.
+    preserved_fms_graph = _load_optional_canonical_fms_case_graph(root)
+    if preserved_fms_graph is not None:
+        _write_fms_case_twins(root, preserved_fms_graph[0])
     candidate_projection = _candidate_projection(
         root,
         live_materialization=live_materialization,
@@ -1122,10 +1388,62 @@ def build_site_only(root: Path) -> tuple[Path, Path, Path]:
         optional_budget_graph = _load_optional_canonical_budget_graph(root, dossier)
         if optional_budget_graph is not None:
             _write_budget_program_graph_twins(root, optional_budget_graph[0])
+        optional_identity_atlas = _load_optional_canonical_identity_atlas(root)
+        if optional_identity_atlas is not None:
+            _write_identity_atlas_twins(root, optional_identity_atlas[0])
+        # D6-B1 FMS congressional-notification rail: same preserve-if-absent
+        # mirror as the budget graph above; never re-derived from raw
+        # observations here.
+        optional_fms_graph = _load_optional_canonical_fms_case_graph(root)
+        if optional_fms_graph is not None:
+            _write_fms_case_twins(root, optional_fms_graph[0])
     elif (canonical_dir / "subaward_dossiers.json").exists():
         raise ValueError("canonical subaward dossier exists without a prime dossier")
-    elif any((canonical_dir / name).exists() for name in ("idv_dossiers.json", "budget_program_graph.json")):
+    elif any(
+        (canonical_dir / name).exists()
+        for name in (
+            "idv_dossiers.json", "budget_program_graph.json", "identity_atlas.json",
+            "fms_case_graph.json",
+        )
+    ):
         raise ValueError("canonical optional Government Revenue rail exists without a prime dossier")
+
+    # D5 Program/Mission/Capability/Product graph (freeze
+    # DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md). Independent of the D4
+    # dossier chain above: the composed bundle is a legitimate artifact even
+    # when no ontology has ever been admitted (freeze SS4's bundle-level
+    # unavailable form, dossiers: [] + ontology_graph_id: null), so neither
+    # file's presence requires the other's. A renderer never recomputes
+    # either -- it certifies/validates committed canonical bytes and mirrors
+    # them; pre-D5 historical checkouts (neither file present) skip quietly,
+    # same as the D4 chain above.
+    program_ontology_path = canonical_dir / "program_ontology.json"
+    if program_ontology_path.exists():
+        try:
+            program_ontology_raw = program_ontology_path.read_text(encoding="utf-8")
+            program_ontology_raw_obj = json.loads(program_ontology_raw)
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical D5 program ontology is invalid JSON") from exc
+        # Certify via the loader, same as every other consumer (freeze SS3.2)
+        # -- a refused certification on already-committed canonical bytes is
+        # corrupt state, not a degraded rail, so this raises rather than
+        # silently skipping the twin the way an absent/uncertified artifact
+        # degrades for a live composer.
+        _d5_program_ontology.load_program_ontology_graph(
+            program_ontology_raw_obj, workspace_events=_workspace_events_by_id(workspace),
+        )
+        _write_program_ontology_site_twin(root, program_ontology_raw)
+    program_dossier_path = canonical_dir / "program_dossier.json"
+    if program_dossier_path.exists():
+        try:
+            program_dossier_raw = program_dossier_path.read_text(encoding="utf-8")
+            program_dossier_bundle = _validate_program_dossier_payload(json.loads(program_dossier_raw))
+        except (OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
+            raise ValueError("canonical D5 program dossier is invalid") from exc
+        if _canonical_json(program_dossier_bundle) != program_dossier_raw:
+            raise ValueError("canonical D5 program dossier bytes are non-canonical")
+        _write_program_dossier_twins(root, program_dossier_raw)
+
     candidate_projection = _candidate_projection(
         root,
         live_materialization=False,

@@ -47,6 +47,21 @@ def _load_cmd_full(site: Path) -> dict | None:
     return None
 
 
+def _env() -> Environment:
+    """The production Jinja environment for china_intel.html.j2.
+
+    Extracted so tests can import the SAME environment build() renders
+    with — a hand-rolled Environment() in a test can silently pass
+    (wrong autoescape, missing i18n globals) while the real page fails,
+    or vice versa. See tests/test_china_intel_visits_render.py.
+    """
+    env = Environment(
+        loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    from engine import i18n
+    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    return env
+
+
 def build() -> dict | None:
     from engine import china_intel_bus
 
@@ -62,10 +77,7 @@ def build() -> dict | None:
     # (the bus block only carries a compact top-10 for Mastermind transport)
     cmd_full = _load_cmd_full(site)
 
-    env = Environment(
-        loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
-    from engine import i18n
-    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    env = _env()
     html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=cmd_full)
     write_page(site / "china_intel.html", html)
     for a in ASSETS:

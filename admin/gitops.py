@@ -8,6 +8,7 @@ require confirm=True and are surfaced in the UI with a confirmation prompt.
 from __future__ import annotations
 
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 
 from .paths import ROOT
 
@@ -38,20 +39,42 @@ def _git(*args, timeout: int = 20) -> tuple[int, str, str]:
 
 
 def status() -> dict:
+    """Branch/upstream/dirty/ahead-behind for the landing snapshot.
+
+    Four git invocations, run CONCURRENTLY. They used to run in sequence and, on the
+    admin's boot path, were the largest single cost in /api/summary. Two details make
+    the concurrency possible and safe:
+
+      * the ahead/behind count is asked for against the `@{u}` REVISION rather than the
+        upstream's resolved NAME, so it no longer has to wait for the name lookup. When
+        there is no upstream, git exits non-zero and we report 0/0 — the same answer the
+        sequential `if upstream:` guard produced.
+      * the dirty check passes `-uno`. Walking the working tree for UNTRACKED files was
+        ~3x the cost of the entire rest of the call (measured 2026-08-19), and it cannot
+        change this answer: `_FILE` is tracked, so its porcelain status never depends on
+        what untracked files exist beside it.
+
+    git subprocesses release the GIL while they run, so the wall time is the slowest
+    call rather than their sum.
+    """
     branch = upstream = None
     config_dirty = False
     ahead = behind = 0
     try:
-        _, branch, _ = _git("rev-parse", "--abbrev-ref", "HEAD")
-        rc, up, _ = _git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="admin-git") as pool:
+            f_branch = pool.submit(_git, "rev-parse", "--abbrev-ref", "HEAD")
+            f_up = pool.submit(_git, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
+            f_dirty = pool.submit(_git, "status", "--porcelain", "-uno", "--", _FILE)
+            f_count = pool.submit(_git, "rev-list", "--left-right", "--count", "@{u}...HEAD")
+        _, branch, _ = f_branch.result()
+        rc, up, _ = f_up.result()
         upstream = up if rc == 0 else None
-        rc, out, _ = _git("status", "--porcelain", "--", _FILE)
+        _, out, _ = f_dirty.result()
         config_dirty = bool(out.strip())
-        if upstream:
-            rc, counts, _ = _git("rev-list", "--left-right", "--count", f"{upstream}...HEAD")
-            if rc == 0 and "\t" in counts:
-                b, a = counts.split("\t")
-                behind, ahead = int(b), int(a)
+        rc, counts, _ = f_count.result()
+        if upstream and rc == 0 and "\t" in counts:
+            b, a = counts.split("\t")
+            behind, ahead = int(b), int(a)
     except Exception:  # noqa: BLE001
         pass
     on_main = branch in ("main", "master")

@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mastermind LENS V2 — R2 Freeze Candidate</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b1018;--panel:#111823;--panel2:#171f2b;--line:#2b3544;
+  --text:#eef3f8;--muted:#97a3b4;--faint:#697588;--link:#68a8ff;
+  --up:#49cc7c;--warn:#e8ad42;--shadow:0 24px 70px rgba(0,0,0,.50);
+  --gutter:clamp(14px,3vw,34px);--radius:14px;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+html[data-theme="light"]{
+  color-scheme:light;
+  --bg:#eef2f7;--panel:#fff;--panel2:#f6f8fb;--line:#d7dee8;
+  --text:#17202e;--muted:#5f6b7c;--faint:#8792a1;--link:#2f69bb;
+  --up:#177f45;--warn:#8e5b00;--shadow:0 24px 60px rgba(35,48,70,.18);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;background:
+  radial-gradient(circle at 10% 0%,color-mix(in srgb,var(--up) 8%,transparent),transparent 26rem),
+  var(--bg);color:var(--text)
+}
+button,a{font:inherit}
+a{color:inherit}
+.shell{max-width:1180px;margin:auto;padding:22px var(--gutter) 80px}
+.toolbar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:28px}
+.toggle{
+  min-height:40px;padding:0 13px;border:1px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--muted);cursor:pointer
+}
+.toggle[aria-pressed="true"]{
+  color:var(--text);border-color:color-mix(in srgb,var(--link) 55%,var(--line));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--link) 22%,transparent)
+}
+.product{max-width:980px}
+.live{
+  display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;
+  font-weight:700;letter-spacing:.12em;text-transform:uppercase
+}
+.live::before{
+  content:"";width:8px;height:8px;border-radius:50%;background:var(--up);
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--up) 12%,transparent)
+}
+h1{font-size:clamp(32px,4vw,48px);line-height:1.03;letter-spacing:-.038em;margin:10px 0 8px}
+.lede-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lede{font-size:15px;color:var(--muted);margin:0;line-height:1.5}
+.explain-button{
+  width:40px;height:40px;border:0;background:transparent;color:var(--link);border-radius:999px;
+  display:inline-grid;place-items:center;cursor:pointer;position:relative;flex:none
+}
+.explain-button::before{
+  content:"?";width:20px;height:20px;display:grid;place-items:center;border:1px solid currentColor;
+  border-radius:50%;font-weight:750;font-size:12px;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--link) 8%,transparent)
+}
+.explain-button:hover,.explain-button[aria-expanded="true"]{
+  background:color-mix(in srgb,var(--link) 9%,transparent)
+}
+.explain-button:focus-visible,.toggle:focus-visible,.close:focus-visible,.method-link:focus-visible{
+  outline:3px solid color-mix(in srgb,var(--link) 55%,transparent);outline-offset:2px
+}
+.context{
+  display:flex;gap:10px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)
+}
+.chip{
+  font-size:12px;color:var(--muted);padding:6px 9px;border-radius:999px;
+  background:var(--panel);border:1px solid var(--line)
+}
+.chip b{color:var(--text);font-weight:680}
+.section{margin-top:42px}
+.section-h{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.section-h h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin:0}
+.rule{height:1px;background:var(--line);flex:1}
+.card{
+  width:min(100%,360px);background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--up);border-radius:var(--radius);padding:17px 18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08)
+}
+.card-top{display:flex;gap:9px;align-items:center}
+.ticker{font-weight:800}
+.badge{
+  font-size:11px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;border-radius:7px;
+  padding:3px 7px;background:color-mix(in srgb,var(--up) 15%,transparent);color:var(--up);
+  border:1px solid color-mix(in srgb,var(--up) 35%,transparent)
+}
+.score{margin-left:auto;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.card p{margin:11px 0 13px;color:var(--muted);font-size:14px}
+.meter-row{display:flex;align-items:center;gap:10px}
+.meter-label{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.track{height:4px;background:var(--panel2);border-radius:999px;flex:1;overflow:hidden}
+.fill{height:100%;width:78%;background:var(--up)}
+.meter-val{font-variant-numeric:tabular-nums;font-size:12px;font-weight:700;color:var(--muted)}
+.reference-status{
+  display:inline-flex;align-items:center;gap:7px;margin-top:34px;color:var(--faint);
+  font-size:12px;line-height:1.5
+}
+.reference-status::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--warn)}
+
+/* Desktop explain disclosure */
+.explain{
+  position:fixed;z-index:40;width:min(348px,calc(100vw - 24px));background:var(--panel);
+  border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:18px;
+  opacity:0;pointer-events:none;transform:translateY(6px) scale(.985);
+  transition:opacity .16s,transform .18s
+}
+.explain.open{opacity:1;pointer-events:auto;transform:none}
+.explain::before{
+  content:"";position:absolute;width:12px;height:12px;top:-7px;left:var(--caret-x,40px);
+  transform:rotate(45deg);background:var(--panel);border-left:1px solid var(--line);
+  border-top:1px solid var(--line)
+}
+.explain-head{display:grid;grid-template-columns:36px 1fr 40px;gap:11px;align-items:start}
+.explain-icon{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--link);
+  background:color-mix(in srgb,var(--link) 12%,transparent);font-weight:800
+}
+.kicker{font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.explain h2{font-size:17px;line-height:1.22;margin:3px 0 0;letter-spacing:-.015em}
+.close{
+  width:40px;height:40px;border:0;border-radius:10px;background:transparent;color:var(--muted);
+  cursor:pointer;font-size:20px
+}
+.answer{font-size:14px;line-height:1.5;margin:15px 0;color:var(--text)}
+.rows{display:grid;gap:9px;border-top:1px solid var(--line);padding-top:13px}
+.row{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:start}
+.row b{
+  font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding-top:2px
+}
+.row span{font-size:14px;line-height:1.42;color:var(--text)}
+.receipt{
+  margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);font-size:12px;
+  line-height:1.48;color:var(--muted)
+}
+.method-link{
+  display:inline-flex;align-items:center;min-height:40px;margin-top:9px;color:var(--link);
+  text-decoration:none;font-size:13px;font-weight:700
+}
+.scrim{
+  position:fixed;inset:0;background:rgba(3,7,13,.58);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:.18s;z-index:30
+}
+.scrim.open{opacity:1;pointer-events:auto}
+.l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] .l-zh{display:inline}
+
+@media(max-width:700px){
+  .shell{padding-top:14px}
+  .toolbar{margin-bottom:20px}
+  h1{font-size:34px}
+  .section{margin-top:34px}
+  .card{width:100%}
+  .explain{
+    left:0!important;right:0!important;bottom:0!important;top:auto!important;width:100%;
+    max-height:min(80vh,650px);overflow:auto;border-radius:20px 20px 0 0;
+    padding:18px max(18px,env(safe-area-inset-right))
+      max(22px,calc(16px + env(safe-area-inset-bottom)))
+      max(18px,env(safe-area-inset-left));transform:translateY(28px)
+  }
+  .explain.open{transform:none}
+  .explain::before{
+    position:static;display:block;width:40px;height:4px;border:0;border-radius:999px;
+    background:var(--line);transform:none;margin:-6px auto 14px
+  }
+  .answer,.row span{font-size:15px}
+  .row{grid-template-columns:82px 1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto!important}
+  .scrim,.explain{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="shell" id="pageShell">
+  <div class="toolbar" aria-label="Reference controls">
+    <button class="toggle" id="themeBtn" aria-pressed="false">Light</button>
+    <button class="toggle" id="langBtn" aria-pressed="false">中文</button>
+  </div>
+
+  <main class="product">
+    <div class="live"><span class="l-en">Live · 2026-08-20</span><span class="l-zh">实时 · 2026-08-20</span></div>
+    <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中枢</span></h1>
+    <div class="lede-row">
+      <p class="lede">
+        <span class="l-en">Early opportunities, ranked by signal, runway and timing.</span>
+        <span class="l-zh">按信号、剩余空间与时机排序的早期机会。</span>
+      </p>
+      <button class="explain-button" id="help" type="button" aria-expanded="false"
+        aria-controls="explain" aria-label="How ranking works"></button>
+    </div>
+
+    <div class="context">
+      <span class="chip"><span class="l-en">Regime</span><span class="l-zh">环境</span> <b>Reflation Q2</b></span>
+      <span class="chip"><span class="l-en">Cycle</span><span class="l-zh">周期</span> <b>Late</b></span>
+      <span class="chip"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>Contracting</b></span>
+    </div>
+
+    <section class="section" aria-labelledby="edge">
+      <div class="section-h">
+        <h2 id="edge"><span class="l-en">Emerging edge</span><span class="l-zh">新兴机会</span></h2>
+        <div class="rule"></div>
+      </div>
+      <article class="card">
+        <div class="card-top">
+          <span class="ticker">BG</span>
+          <span class="badge"><span class="l-en">Early</span><span class="l-zh">早期</span></span>
+          <span class="badge">⚡ Entry T2</span>
+          <span class="score">15</span>
+        </div>
+        <p><span class="l-en">RS −13% vs SPY · basket laggard</span><span class="l-zh">相对标普 −13% · 板块中仍落后</span></p>
+        <div class="meter-row">
+          <span class="meter-label"><span class="l-en">Room left</span><span class="l-zh">剩余空间</span></span>
+          <div class="track" aria-hidden="true"><div class="fill"></div></div>
+          <span class="meter-val">78%</span>
+        </div>
+      </article>
+    </section>
+
+    <div class="reference-status">
+      <span class="l-en">R2 freeze candidate · ranking language reconciled to the current engine.</span>
+      <span class="l-zh">R2 冻结候选稿 · 排名说明已与当前引擎对齐。</span>
+    </div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<section class="explain" id="explain" role="dialog" aria-modal="false"
+  aria-labelledby="explainTitle" hidden>
+  <div class="explain-head">
+    <div class="explain-icon" aria-hidden="true">↗</div>
+    <div>
+      <div class="kicker"><span class="l-en">How ranking works</span><span class="l-zh">排名方式</span></div>
+      <h2 id="explainTitle" tabindex="-1">
+        <span class="l-en">Signal, runway, then timing</span>
+        <span class="l-zh">先看信号，再看空间与时机</span>
+      </h2>
+    </div>
+    <button class="close" id="close" type="button" aria-label="Close">×</button>
+  </div>
+  <p class="answer" id="explainAnswer">
+    <span class="l-en">Rank rises when evidence is strong, runway remains, and leading signals appear before the crowd.</span>
+    <span class="l-zh">证据越强、空间越大、领先信号越早出现，排名越靠前。</span>
+  </p>
+  <div class="rows">
+    <div class="row">
+      <b><span class="l-en">Signal</span><span class="l-zh">信号</span></b>
+      <span><span class="l-en">Independent evidence must be present.</span><span class="l-zh">必须存在独立证据。</span></span>
+    </div>
+    <div class="row">
+      <b><span class="l-en">Runway</span><span class="l-zh">空间</span></b>
+      <span><span class="l-en">Estimates how much of the move may remain.</span><span class="l-zh">估计行情可能还剩多少空间。</span></span>
+    </div>
+    <div class="row">
+      <b><span class="l-en">Timing</span><span class="l-zh">时机</span></b>
+      <span><span class="l-en">Early evidence ahead of news and momentum lifts rank.</span><span class="l-zh">领先于新闻与动量的早期证据会提高排名。</span></span>
+    </div>
+  </div>
+  <div class="receipt">
+    <span class="l-en">Conviction breaks ties. Proven feeder weakness can only reduce rank. Policy is context and never votes. Context only—not a trade trigger.</span>
+    <span class="l-zh">信念度仅用于同分排序。已证实的来源弱点只会下调排名。政策仅作背景，从不参与投票。仅供参考，不触发交易。</span>
+  </div>
+  <a class="method-link" href="#method">
+    <span class="l-en">Open methodology →</span><span class="l-zh">查看方法说明 →</span>
+  </a>
+</section>
+
+<script>
+(function(){
+  const html=document.documentElement;
+  const shell=document.getElementById('pageShell');
+  const help=document.getElementById('help');
+  const panel=document.getElementById('explain');
+  const title=document.getElementById('explainTitle');
+  const close=document.getElementById('close');
+  const scrim=document.getElementById('scrim');
+  const themeBtn=document.getElementById('themeBtn');
+  const langBtn=document.getElementById('langBtn');
+  let open=false;
+
+  function isMobile(){return matchMedia('(max-width:700px)').matches}
+  function focusables(){
+    return [...panel.querySelectorAll('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')];
+  }
+  function place(){
+    if(isMobile()) return;
+    const r=help.getBoundingClientRect();
+    const pw=panel.offsetWidth,ph=panel.offsetHeight;
+    let left=Math.min(innerWidth-pw-12,Math.max(12,r.left+r.width/2-pw/2));
+    let top=r.bottom+10;
+    let above=false;
+    if(top+ph>innerHeight-12){top=Math.max(12,r.top-ph-10);above=true}
+    panel.style.left=Math.round(left)+'px';
+    panel.style.top=Math.round(top)+'px';
+    panel.style.bottom='auto';
+    panel.style.setProperty('--caret-x',Math.max(20,Math.min(pw-28,r.left+r.width/2-left-6))+'px');
+    panel.classList.toggle('above',above);
+  }
+  function setBackgroundInert(value){
+    if('inert' in shell) shell.inert=value;
+    if(value) shell.setAttribute('aria-hidden','true'); else shell.removeAttribute('aria-hidden');
+  }
+  function openPanel(){
+    if(open) return;
+    open=true;
+    panel.hidden=false;
+    help.setAttribute('aria-expanded','true');
+    panel.setAttribute('aria-modal',isMobile()?'true':'false');
+    if(isMobile()){
+      scrim.classList.add('open');
+      setBackgroundInert(true);
+      document.body.style.overflow='hidden';
+    }else{
+      place();
+    }
+    requestAnimationFrame(()=>{
+      panel.classList.add('open');
+      if(isMobile()) title.focus();
+    });
+  }
+  function closePanel(returnFocus=true){
+    if(!open) return;
+    open=false;
+    panel.classList.remove('open');
+    scrim.classList.remove('open');
+    help.setAttribute('aria-expanded','false');
+    setBackgroundInert(false);
+    document.body.style.overflow='';
+    setTimeout(()=>{
+      panel.hidden=true;
+      if(returnFocus) help.focus();
+    },matchMedia('(prefers-reduced-motion:reduce)').matches?0:180);
+  }
+  help.addEventListener('click',()=>open?closePanel():openPanel());
+  close.addEventListener('click',()=>closePanel());
+  scrim.addEventListener('click',()=>closePanel());
+  document.addEventListener('pointerdown',e=>{
+    if(!open||isMobile()) return;
+    if(!panel.contains(e.target)&&!help.contains(e.target)) closePanel(false);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&open){e.preventDefault();closePanel();return}
+    if(!open||!isMobile()||e.key!=='Tab') return;
+    const f=focusables();
+    if(!f.length){e.preventDefault();title.focus();return}
+    const first=f[0],last=f[f.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  });
+  addEventListener('resize',()=>{
+    if(!open) return;
+    panel.setAttribute('aria-modal',isMobile()?'true':'false');
+    if(isMobile()){
+      scrim.classList.add('open');setBackgroundInert(true);document.body.style.overflow='hidden';
+      panel.style.left='';panel.style.top='';panel.style.bottom='';
+    }else{
+      scrim.classList.remove('open');setBackgroundInert(false);document.body.style.overflow='';place();
+    }
+  });
+  themeBtn.addEventListener('click',()=>{
+    const light=html.dataset.theme!=='light';
+    html.dataset.theme=light?'light':'dark';
+    themeBtn.setAttribute('aria-pressed',String(light));
+    themeBtn.textContent=light?'Dark':'Light';
+  });
+  langBtn.addEventListener('click',()=>{
+    const zh=html.dataset.lang!=='zh';
+    html.dataset.lang=zh?'zh':'en';
+    html.lang=zh?'zh':'en';
+    langBtn.setAttribute('aria-pressed',String(zh));
+    langBtn.textContent=zh?'English':'中文';
+  });
+})();
+</script>
+</body>
+</html>

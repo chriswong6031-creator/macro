@@ -9,9 +9,16 @@ For each new PDF in ``research_inbox/`` (one whose receipt
   4. measure the deterministic facts (probe.py: pages, content hash, text-layer
      density, PDF provenance) — these OVERRIDE sidecar claims for the same field,
   5. recover the real title when the sidecar gave us the PDF's FILENAME (title.py),
-  6. promote the PDF → ``research_vault/<id>.pdf``,
+  6. promote the PDF → ``research_vault/<id>.pdf`` — a FAILED put fails the ITEM
+     (no catalog row, no corpus row, no receipt) so the vault can never admit a
+     report whose canonical object is absent,
   7. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
   8. write the receipt ``research_inbox/_processed/<id>.json``.
+
+Publication is ordered corpus → catalog → receipts → repo mirror, and each step
+gates the next. The catalog is the VISIBILITY COMMIT: a report becomes public
+exactly when the catalog publish succeeds, which is why receipts (that make a
+document unre-ingestable) and the git mirror may only advance behind it.
 
 Receipted PDFs are never re-ingested, so three passes over the ALREADY-published
 catalog/corpus are the only way a later correction ever reaches them:
@@ -266,8 +273,28 @@ def _ingest_one(store, conn, pdf_key: str, dry_run: bool = False) -> dict:
         result["title_source"] = src
 
         # Promote the canonical PDF into the vault (private). Skipped on dry-run.
+        #
+        # A FAILED promotion fails the ITEM (Wave 4, Defect 5). The put result used
+        # to be discarded, so the document went on to enter the corpus, the catalog
+        # and eventually a receipt while its canonical PDF did not exist — a Pro
+        # reader could open an apparently valid report and get a 404 from
+        # /api/research/view. Admission to the vault therefore REQUIRES the object
+        # to be there: return before the corpus upsert, leave no receipt, and let
+        # the batch continue with the next PDF. This is the document/plane line —
+        # one bad object fails one report, not the run.
         if not dry_run:
-            store.put_bytes(f"{VAULT_PREFIX}{item_id}.pdf", pdf_bytes, "application/pdf")
+            promoted = store.put_bytes(f"{VAULT_PREFIX}{item_id}.pdf", pdf_bytes,
+                                       "application/pdf")
+            if not promoted:
+                detail = getattr(store, "last_put_error", None)
+                result["reason"] = "pdf_promotion_failed"
+                print(f"::warning title=research_vault::{item_id}: canonical PDF "
+                      f"promotion FAILED ({detail or 'no detail'}) — report omitted "
+                      f"from this run (no catalog row, no corpus row, no receipt); "
+                      f"it retries next run", flush=True)
+                log.warning("research_vault: %s pdf promotion failed — item omitted",
+                            item_id)
+                return result
 
         # Upsert corpus (title/summary/body/institution/date + measured facts).
         corpus_mod.upsert(conn, item, body_text, facts=facts)
@@ -366,11 +393,18 @@ REFRESH_MAX = 500
 def _resync_corpus_summaries(cat: dict, conn) -> int:
     """Copy catalog ``summary_points`` onto any corpus row whose summary is blank.
 
-    Closes a skew the refresh pass would otherwise make PERMANENT. ``run()``
-    writes the catalog BEFORE it publishes the corpus, so a failed corpus publish
-    leaves the store holding a catalog row with bullets and a corpus row without
-    them. That row is then no longer a refresh candidate (its ``summary_points``
-    is non-empty), so search would rank it on stale text forever.
+    Closes a skew the refresh pass would otherwise make PERMANENT: a catalog row
+    carrying bullets whose corpus row has none. Such a row is no longer a refresh
+    candidate (its ``summary_points`` is non-empty), so search would rank it on
+    stale text forever.
+
+    Wave 4 removed the mechanism that MANUFACTURED this skew — ``run()`` used to
+    publish the catalog before the corpus, so a failed corpus publish stranded
+    bullets in the catalog; the order is now corpus → catalog, and a failed corpus
+    publish stops before the catalog is written at all. The pass stays for two
+    reasons: rows skewed by that historical ordering are still in the published
+    store and nothing else can reach them, and it is cheap and self-quiescing (one
+    local query, no store reads, and normally it finds nothing).
 
     Purely local — one query plus an UPDATE per skewed row, no store reads. Runs
     every pass because it is the cheap direction: normally it finds nothing.
@@ -736,6 +770,78 @@ def _restore_corpus(store, corpus_path: str | Path) -> str:
 CHECKPOINT_EVERY = 100
 
 
+def _vault_history(store, corpus_restored: bool) -> dict:
+    """Evidence that a rebuild-from-empty would LOSE published documents.
+
+    Gates the bootstrap-from-empty path (Wave 4, Defect 2 — the P0). The old
+    ``catalog.load`` returned :func:`catalog.empty` for a missing OR corrupt
+    catalog, on the stated theory that a later ingest would heal it. That theory
+    is false here, because ingest is receipt-idempotent: with ~1,400 historical
+    PDFs already receipted, every one of them is SKIPPED, so a run that starts
+    from empty admits only the handful of genuinely new PDFs and republishes a
+    catalog of count≈2 with a brand-new ``generated_at``. Storage corruption
+    would become fresh, authoritative, published data loss.
+
+    **RECEIPTS are the trigger, and the reason is mechanical.** A rebuild from
+    zero is safe exactly when every document the vault exposes will be re-admitted
+    by the pass, and the pass admits precisely "inbox PDFs without a receipt". So
+    a receipted document is the one thing a rebuild provably drops. A promoted
+    vault PDF or a corpus row WITHOUT a receipt is re-ingested normally — that is
+    the ordinary state left behind by a run whose receipts did not flush, and
+    gating on it would wedge a brand-new vault forever the first time a publish
+    failed, converting a transient error into a permanent operator ticket.
+
+    Both are still COUNTED, because an operator reading the refusal needs to see
+    the scale of what was protected — and because vault PDFs or corpus rows with
+    ZERO receipts is itself anomalous (receipts do not delete themselves), which
+    is reported as a loud warning rather than silently ignored.
+
+    Any probe error counts AS history: we cannot prove a virgin store, and the
+    safe answer when unsure is to refuse to publish rather than to truncate.
+
+    Returns ``{receipts, vault_pdfs, corpus_rows, corpus, probe_failed,
+    has_history}``.
+    """
+    evidence = {"receipts": 0, "vault_pdfs": 0, "corpus_rows": 0,
+                "corpus": bool(corpus_restored), "probe_failed": False}
+    try:
+        evidence["receipts"] = sum(
+            1 for k in store.list_prefix(PROCESSED_PREFIX) if k.endswith(".json"))
+    except Exception as e:  # noqa: BLE001 — cannot prove absence → assume history
+        evidence["probe_failed"] = True
+        log.warning("research_vault: receipt probe failed (%s) — assuming history", e)
+    try:
+        evidence["vault_pdfs"] = sum(
+            1 for k in store.list_prefix(VAULT_PREFIX) if k.lower().endswith(".pdf"))
+    except Exception as e:  # noqa: BLE001 — corroborating only; never gates alone
+        log.warning("research_vault: vault PDF probe failed (%s)", e)
+    evidence["has_history"] = bool(evidence["receipts"] or evidence["probe_failed"])
+    return evidence
+
+
+def _corpus_row_count(corpus_path: str | Path) -> int:
+    """Rows in the RESTORED local corpus, or 0. Read-only; never migrates or raises.
+
+    Deliberately not ``corpus.open_db``: this runs inside the pre-publish gate,
+    whose contract is that it mutates nothing, and ``open_db`` would migrate the
+    schema of a database we may be about to refuse to touch.
+    """
+    import sqlite3  # noqa: PLC0415 — local: only the refusal path pays for it
+
+    p = Path(corpus_path)
+    if not p.is_file():
+        return 0
+    try:
+        conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
+        try:
+            return int(conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0])
+        finally:
+            conn.close()
+    except Exception as e:  # noqa: BLE001 — evidence only, never the gate
+        log.warning("research_vault: corpus row probe failed (%s)", e)
+        return 0
+
+
 def run(store, corpus_path: str | Path, now: datetime | None = None,
         dry_run: bool = False, checkpoint_every: int = CHECKPOINT_EVERY) -> dict:
     """Run one ingestion pass. Idempotent + never-raise-per-item.
@@ -752,7 +858,28 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
          summaries_resynced,
          bodies_reextracted, reextract_facts_only, reextract_checked,
          reextract_pdf_missing, reextract_remaining[, reextract_aborted],
-         coverage, catalog_bytes[, corpus_published][, error]}
+         coverage, catalog_bytes, catalog_state[, corpus_published]
+         [, catalog_published][, receipts_unflushed][, error]}
+
+    PLANE-level outcomes the caller MUST act on (they are what separates a green
+    hourly lane from a silently broken one — Wave 4, Defect 6):
+
+      * ``error='catalog_unavailable'`` — the authoritative catalog is missing or
+        corrupt AND this vault has published before, so an empty-start bootstrap
+        would republish a truncated catalog over it. Nothing was read, written, or
+        receipted; recover from the last known-good snapshot (see
+        :func:`_vault_history`).
+      * ``error='corpus_restore_failed'`` — a store corpus exists but could not be
+        restored locally; publishing would clobber it with a truncated rebuild.
+      * ``error='corpus_publish_failed'`` / ``'catalog_publish_failed'`` — the
+        publication commit did not complete. ``corpus_published`` /
+        ``catalog_published`` say exactly how far it got, and
+        ``receipts_unflushed`` counts the documents that stayed unreceipted (they
+        re-ingest next run).
+
+    A per-DOCUMENT failure is NOT a plane failure: it increments ``failed`` and
+    the batch continues. That asymmetry is deliberate — one malformed PDF must
+    never red the hourly lane, and a failed publish must never be green.
 
     ``coverage`` is the per-field fill rate over the final catalog
     (:func:`catalog.coverage`) — the signal that ``needs_metadata`` cannot give,
@@ -790,10 +917,91 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         summary["error"] = "corpus_restore_failed"
         return summary
 
+    # ── the destructive-bootstrap gate (Wave 4, Defect 2 — the P0) ────────────
+    #
+    # The authoritative catalog is read FAIL-CLOSED. What this gate protects
+    # against is precisely ONE thing: starting from zero rows and republishing a
+    # catalog that has LOST the vault's history. Ingest is receipt-idempotent, so
+    # every historical PDF is skipped — a run that starts empty admits only the
+    # handful of genuinely new documents and publishes count≈2 with a fresh
+    # generated_at, turning storage corruption into authoritative data loss.
+    #
+    # TWO different inputs reach that same catastrophe, and both are gated here:
+    #   * the catalog is unavailable (missing / malformed JSON / wrong schema /
+    #     items not a list / undatable), and
+    #   * the catalog is structurally VALID but carries zero items — a corrupted
+    #     object can perfectly well parse to an empty item list, and that path
+    #     would otherwise sail straight through validation into the same loss.
+    #
+    # Per-ROW junk is deliberately NOT gated (``check_items=False``). One
+    # unidentifiable row does not truncate anything: the other ~1,400 rows are
+    # intact and republish unchanged, the downstream passes already survive a
+    # malformed row, and refusing over it would recreate exactly the "one bad
+    # document kills the batch" failure this whole module is built to avoid.
+    # Strict per-row validation belongs to the SERVING tier, whose job is to
+    # answer "which ids are admitted" and which therefore cannot tolerate a row it
+    # cannot identify. Same reasoning for ``check_future_clock=False``: ingest
+    # makes no freshness claim and rewrites generated_at on the next publish, so
+    # runner clock skew must not be able to refuse a publish (catalog.validate).
+    catalog_problem = None
+    try:
+        cat = catalog_mod.read_strict(store, check_future_clock=False,
+                                      check_items=False)
+        summary["catalog_state"] = "valid"
+    except catalog_mod.CatalogUnavailable as exc:
+        cat, catalog_problem = None, exc
+
+    if catalog_problem is not None or not (cat.get("items") or []):
+        reason = (catalog_problem.reason if catalog_problem is not None
+                  else "valid_but_empty")
+        detail = (catalog_problem.detail if catalog_problem is not None
+                  else "catalog parsed cleanly but carries zero items")
+        history = _vault_history(store, corpus_restored=(restore == "restored"))
+        history["corpus_rows"] = _corpus_row_count(corpus_path)
+        summary["catalog_state"] = "unavailable"
+        summary["catalog_unavailable_reason"] = reason
+        summary["vault_history"] = history
+        if history["has_history"]:
+            print(f"::error title=research_vault::authoritative catalog would start "
+                  f"from ZERO rows ({reason}: {detail}) while this vault holds "
+                  f"{history['receipts']} receipt(s), {history['vault_pdfs']} "
+                  f"promoted PDF(s), {history['corpus_rows']} corpus row(s)"
+                  f"{', PROBE FAILED' if history['probe_failed'] else ''} — REFUSING "
+                  f"to publish a bootstrap catalog over a mature vault. Every "
+                  f"receipted PDF is skipped by this pass, so republishing from "
+                  f"empty would drop those reports from the public catalog. Receipts "
+                  f"are untouched and nothing was published; recover the catalog from "
+                  f"the last known-good git snapshot / corpus / receipts and verify "
+                  f"id counts before republishing (research vault Wave 4, Defect 2).",
+                  flush=True)
+            log.error("research_vault: refusing empty-catalog bootstrap over a "
+                      "mature vault (%s)", reason)
+            # Returns BEFORE the corpus DB is opened and before any receipt is
+            # accumulated, so this path mutates nothing anywhere.
+            summary["error"] = "catalog_unavailable"
+            return summary
+        if history["vault_pdfs"] or history["corpus_rows"]:
+            # Safe to proceed — with no receipts every inbox PDF is re-admitted, so
+            # the rebuild is complete by construction — but receipts do not delete
+            # themselves, so say so rather than rebuilding silently.
+            print(f"::warning title=research_vault::rebuilding the catalog from "
+                  f"empty ({reason}) with ZERO receipts but "
+                  f"{history['vault_pdfs']} promoted PDF(s) and "
+                  f"{history['corpus_rows']} corpus row(s) — every inbox PDF will be "
+                  f"re-ingested, but a vault holding objects with no receipts is "
+                  f"anomalous and worth an operator's eye", flush=True)
+        # Genuine bootstrap: nothing receipted, so nothing can be dropped.
+        log.info("research_vault: empty start with no receipted history (%s) — "
+                 "bootstrap", reason)
+        summary["catalog_state"] = "bootstrap"
+        cat = cat if cat is not None else catalog_mod.empty()
+
     conn = corpus_mod.open_db(corpus_path)
     pending_receipts: list = []  # (key, body) — flushed only after a publish
     try:
-        cat = catalog_mod.load(store)
+        # Titles already published can only be healed on load (receipted docs never
+        # re-ingest); read_strict does not do it, so run the same repair here.
+        catalog_mod.heal_titles(cat)
 
         # Heal filename-shaped titles already in the catalog (receipted docs are
         # never re-ingested, so this is the only path that reaches them).
@@ -885,15 +1093,17 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
             if item.get("needs_metadata"):
                 summary["needs_metadata"] += 1
 
-            # Mid-run checkpoint (real runs only): publish catalog + corpus, then
-            # flush this batch's receipts. Publish failure keeps the receipts
-            # pending (the docs retry at the next checkpoint / next run).
+            # Mid-run checkpoint (real runs only): CORPUS first, then CATALOG, then
+            # this batch's receipts. Order is the freeze (§A): the catalog is the
+            # visibility commit, so it publishes LAST — if the corpus put fails the
+            # catalog must not admit rows the corpus cannot serve, and if either
+            # fails the receipts stay pending so the docs retry next run.
             if (not dry_run and checkpoint_every > 0
                     and summary["ingested"] % checkpoint_every == 0):
-                catalog_mod.write(store, cat, now=now)
                 conn.commit()
                 if publish_corpus(store, corpus_path):
-                    _flush_receipts(store, pending_receipts)
+                    if catalog_mod.publish(store, cat, now=now).published:
+                        _flush_receipts(store, pending_receipts)
                 log.info("research_vault: checkpoint at %d ingested",
                          summary["ingested"])
 
@@ -934,12 +1144,12 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         # not an event.
         summary["coverage"] = catalog_mod.coverage(cat)
 
-        # Catalog: serialize always (for the repo snapshot); write to the store
-        # only on a real run.
+        # Catalog: a dry run serializes only (nothing is published anywhere). The
+        # real publish happens AFTER the corpus, below, once the connection is
+        # closed — see the final-publish block.
         if dry_run:
             summary["catalog_bytes"] = catalog_mod.serialize(cat, now=now)
         else:
-            summary["catalog_bytes"] = catalog_mod.write(store, cat, now=now)
             conn.commit()
 
         # Flag rather than silently ship: these reports are published under a
@@ -956,17 +1166,42 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
     finally:
         conn.close()
 
-    # Final publish (real runs only), after the connection is closed. Receipts
-    # for the last partial batch flush only on success — on failure they stay
-    # unwritten and the batch re-ingests cleanly next run.
+    # Final publish (real runs only), after the connection is closed.
+    #
+    # THE PUBLICATION COMMIT, in order (freeze §A):
+    #   corpus  → the searchable body; may legitimately run AHEAD of the catalog
+    #   catalog → the visibility commit; a report becomes public exactly here
+    #   receipts → only now, because a receipt makes a document unre-ingestable
+    #   repo mirror → the CLI's job, gated on `catalog_published` (freeze §B)
+    #
+    # Each step gates the next. Publishing the catalog over a failed corpus would
+    # admit rows search cannot answer for; flushing receipts over a failed catalog
+    # would permanently strand documents that never became visible (Defect 4).
     if not dry_run:
         summary["corpus_published"] = publish_corpus(store, corpus_path)
+        summary["catalog_published"] = False
         if summary["corpus_published"]:
-            _flush_receipts(store, pending_receipts)
+            published = catalog_mod.publish(store, cat, now=now)
+            summary["catalog_bytes"] = published.data
+            summary["catalog_published"] = published.published
+            if published.published:
+                _flush_receipts(store, pending_receipts)
+            else:
+                summary["error"] = "catalog_publish_failed"
+        else:
+            # No catalog publish at all: the prior catalog stays the visibility
+            # authority rather than admitting rows the corpus cannot serve.
+            summary["error"] = "corpus_publish_failed"
+            print("::error title=research_vault::corpus publish FAILED — catalog "
+                  "NOT published, receipts NOT flushed, repo mirror NOT advanced. "
+                  "The previously published catalog remains the visibility "
+                  "authority.", flush=True)
         if pending_receipts:
-            print(f"::error::research_vault: {len(pending_receipts)} receipts unflushed "
-                  f"(corpus publish failed) — the docs will re-ingest next run",
-                  flush=True)
+            print(f"::error title=research_vault::{len(pending_receipts)} receipt(s) "
+                  f"unflushed (corpus_published="
+                  f"{summary['corpus_published']}, catalog_published="
+                  f"{summary['catalog_published']}) — those documents will "
+                  f"re-ingest next run", flush=True)
             summary["receipts_unflushed"] = len(pending_receipts)
 
     return summary

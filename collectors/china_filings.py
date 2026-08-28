@@ -15,11 +15,42 @@ Category normalizer: title-keyword → category. Priority order is encoded in
 CATEGORY_PRIORITY so investigation > inquiry_letter > other. First-match-wins.
 
 Pacing: 1.5 s + jitter between page requests.
+
+P1-R2 announcement-id integrity (2026-08-22, DSC:CHINA-VISITS-UNTYPED-
+ANNOUNCEMENT-ID-DROP): announcementId is this plane's natural key, and a
+falsy/NaN/whitespace key used to be dropped SILENTLY — drop_duplicates()
+treats every row sharing "" as a duplicate of every other such row, so N
+malformed rows collapsed into ONE with no counter, no log, no health note.
+key_anomaly()/normalize_announcement_id()/partition_by_key_integrity() below
+are the single typed predicate for "is this key malformed, and how";
+write_filings() now excludes malformed rows as a TYPED, COUNTED exclusion
+(module global LAST_KEY_INTEGRITY, folded into LAST_RUN_OUTCOME) instead of
+letting them silently collapse or appending them keyless. collectors/
+china_visits.py imports key_anomaly() from here rather than growing its own
+opinion, so china_filings' write boundary and china_visits' candidate filter
+can never silently diverge on what counts as malformed.
+
+P1-R3A crash consistency at the source boundary (2026-08-22, Sol review of
+PR #6242). Excluding a malformed row from the canonical store is only half
+the contract — the observation still has to be REMEMBERED. Until P1-R3A the
+only record of it between this module's write and china_visits' next run was
+the process-local LAST_KEY_INTEGRITY handoff, so a hard kill in that window
+(the asia lane runs under one) erased the observation from every durable
+store at once. write_filings() now makes the exception DURABLE FIRST, via
+china_visits.persist_boundary_exceptions() (_fence_coverage_exceptions()
+below), and REFUSES its own canonical commit when that fails:
+
+    durable coverage exception  ->  canonical filtered filing-store commit
+
+The fence is INERT on the common path — it returns at its first line when
+nothing was excluded, so a normal night neither imports china_visits nor
+touches the ledger.
 """
 from __future__ import annotations
 
 import logging
 import random
+import re
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -30,6 +61,73 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# P1-R1 same-cycle derivation contract: process-local outcome of the MOST RECENT
+# fetch() call in THIS process. Read by collectors/china_visits.py when both run in
+# one collect invocation (same cninfo host-group thread, china_filings then
+# china_visits — see scripts/collect.py _CONCURRENT_HOSTS). None means china_filings
+# has not run in this process (e.g. `--only china_visits`) and the derived plane
+# then reads the committed store — the legitimate proof/debug path. Set FAIL-CLOSED
+# at fetch() entry so an escape (an exception that somehow skips every later
+# assignment) reads as a failed refresh, never as "not run". Process-local by
+# design, never persisted to disk — a sidecar file would make a later
+# `--only china_visits` run inherit a stale verdict from a prior process. Exchange
+# budget truncation (_EXCHANGE_BUDGET_S) is deliberately NOT a degradation signal
+# here: it is self-healing by design (keep-FIRST dedup + the 3-day re-pull), so a
+# truncated-but-successful exchange still counts as ok.
+LAST_RUN_OUTCOME: dict | None = None
+
+# P1-R2 announcement-id integrity contract: process-local outcome of the
+# key-integrity partition performed by the MOST RECENT write_filings() call in
+# THIS process. Never persisted to disk — same rationale as LAST_RUN_OUTCOME
+# above (a sidecar would let a later `--only china_visits` run inherit a
+# stale verdict from a prior process). Reset fail-closed to None at
+# ChinaFilingsAdapter.fetch() entry, same as LAST_RUN_OUTCOME, so a fetch()
+# that raises before ever calling write_filings() reads as "unknown", never
+# as a false "clean". write_filings() itself sets this on EVERY call (zeros
+# when clean) — see its docstring. Canonical shape, every field always
+# present when set:
+#   {"excluded_total": int, "excluded_by_type": {anomaly: count},
+#    "preexisting_unkeyed": int, "at": iso}
+LAST_KEY_INTEGRITY: dict | None = None
+
+
+def _zero_key_integrity(at: str = "") -> dict:
+    """Fresh canonical-shape LAST_KEY_INTEGRITY dict, all zeros/empty.
+
+    A function (not a shared module-level constant) so every caller gets its
+    own `excluded_by_type` dict / `excluded_rows` list — a shared mutable
+    default would let one caller's count (or list mutation) leak into
+    another's "zero" reading.
+
+    P1-R3 (durable scoped key-exclusion recovery): `excluded_rows` carries
+    THIS call's malformed row dicts verbatim (uncapped — bounded only by
+    batch size), so collectors/china_visits.py can harvest them into a
+    durable coverage-exception ledger instead of relying on this process-
+    local global surviving into the same run china_visits happens to read
+    it in. See write_filings()'s docstring for how it is populated. P1-R3A
+    narrowed that: china_visits no longer HARVESTS `excluded_rows` (the
+    source-boundary fence already persisted them), so it is now a verbatim
+    diagnostic receipt rather than a handoff channel.
+
+    P1-R3A (crash consistency): `boundary_persist_ok` records whether the
+    coverage-exception fence made THIS call's P1-relevant malformed rows
+    durable BEFORE the canonical commit, and `boundary_fingerprints` names
+    the observations it made durable (china_visits.refresh()'s same-
+    invocation double-count guard). The zero shape says True/[] because a
+    call with nothing to exclude has nothing to persist — "unknown" is
+    carried by LAST_RUN_OUTCOME["key_integrity_known"], not by this field.
+    """
+    return {
+        "excluded_total": 0,
+        "excluded_by_type": {},
+        "preexisting_unkeyed": 0,
+        "excluded_rows": [],
+        "boundary_persist_ok": True,
+        "boundary_fingerprints": [],
+        "at": at,
+    }
+
 
 # ------------------------------------------------------------------ constants --
 
@@ -86,7 +184,12 @@ def _store_path() -> Path:
 
 
 def load_filings() -> pd.DataFrame:
-    """Read existing parquet, or return an empty frame with the canonical schema."""
+    """Read existing parquet, or return an empty frame with the canonical schema.
+
+    A present-but-unreadable store also reads EMPTY here, because a reader must
+    not crash. Callers that go on to REWRITE the store must not use this — see
+    _read_filings_strict() and write_filings().
+    """
     path = _store_path()
     if path.exists():
         try:
@@ -96,32 +199,391 @@ def load_filings() -> pd.DataFrame:
     return pd.DataFrame(columns=list(_COLUMNS))
 
 
+def _read_filings_strict() -> pd.DataFrame | None:
+    """Like load_filings() but returns None (not empty) for a present-but-
+    UNREADABLE store, so write_filings() can ABORT instead of overwriting it.
+
+    Why this exists (P1-R2, adversarial review 2026-08-22): write_filings()
+    rewrites the entire accrued tape every night, and it used to source that
+    rewrite from load_filings(), which swallows a read error and answers
+    EMPTY. A corrupt store therefore read as "no existing rows" and the next
+    write REPLACED the whole tape with tonight's batch — measured, a 500-row
+    store became 1 row, with net_new reported as 1 and every key-integrity
+    instrument reading clean. That is the same class of lie this repair
+    exists to close (missing data silently becoming clean authority), just
+    with a far larger blast radius than a malformed key. collectors/
+    china_visits.py has carried exactly this strict-read + ABORT pattern
+    since P1 (_read_store_strict / write_visits); china_filings simply never
+    grew one.
+    """
+    path = _store_path()
+    if not path.exists():
+        return pd.DataFrame(columns=list(_COLUMNS))
+    try:
+        return pd.read_parquet(path).reindex(columns=list(_COLUMNS))
+    except Exception as e:  # noqa: BLE001
+        log.error("china_filings: filings.parquet is present but UNREADABLE (%s)", e)
+        return None
+
+
+# ------------------------------------------------------------------ key integrity (P1-R2) --
+#
+# announcementId is the natural key of this whole plane — china_visits derives
+# its own natural key from it 1:1. drop_duplicates(subset=["announcementId"])
+# below treats every row sharing a falsy key ("", None-as-NaN once frame-ified,
+# etc.) as a DUPLICATE of every other such row, so N malformed rows silently
+# COLLAPSE INTO ONE with no counter, no log, no health note — a real filing
+# quietly becomes indistinguishable from "no filing". Recorded as
+# DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP. These three functions are the
+# single typed predicate for "is this key malformed, and how" — china_visits.py
+# imports key_anomaly() from here rather than growing a second opinion, so the
+# two boundaries (this module's store write, and china_visits' candidate
+# filter) can never silently diverge on what counts as malformed.
+
+_KEY_ANOMALIES = ("missing", "nan", "empty", "whitespace")
+
+
+def key_anomaly(value) -> str | None:
+    """Classify one raw announcementId value's malformation, or None if it is
+    well-formed. Pure, and — deliberately — NEVER raises, for any input.
+
+    Returns exactly one of the frozen typed anomaly names:
+      "missing"    — value is None (including a dict key that was absent:
+                     row.get("announcementId") already yields None for that).
+      "nan"        — value is a NaN-like scalar: float('nan'), pd.NA, pd.NaT,
+                     np.nan (anything pandas' own pd.isna() calls missing).
+      "empty"      — value is a string equal to "".
+      "whitespace" — value is a non-empty string that STRIPS to "" — covers
+                     plain space, tab, newline, and the ideographic space
+                     "　" (U+3000), which .strip() also removes.
+    None (well-formed) otherwise — including a non-string scalar that
+    coerces to a non-empty string (e.g. an int id): only a string carries
+    the empty/whitespace anomalies, and a non-string is never NaN-like once
+    the pd.isna() check above has already passed.
+
+    Ordering is load-bearing: the NaN check runs BEFORE any str() coercion,
+    because str(float('nan')) == 'nan' — a non-empty string that would
+    misread as well-formed if the string branch ran first.
+
+    pd.isna() is guarded rather than trusted: it returns an ARRAY (not a
+    scalar bool) for list/array-like input instead of raising, and truth-
+    testing that array raises ValueError ("ambiguous"); some object types
+    raise TypeError directly. Catch both — a non-scalar value is never
+    NaN-like, and this helper must never raise for weird input (a list, a
+    dict, a tuple all pass through unharmed).
+    """
+    if value is None:
+        return "missing"
+    try:
+        if pd.isna(value):
+            return "nan"
+    except (TypeError, ValueError):
+        pass  # non-scalar (list/array/...) input — never NaN-like
+    if isinstance(value, str):
+        if value == "":
+            return "empty"
+        if value.strip() == "":
+            return "whitespace"
+        return None
+    return None
+
+
+def normalize_announcement_id(value) -> str:
+    """"" for every malformed form key_anomaly() names; otherwise
+    str(value).strip(). Pure, and — like key_anomaly() — NEVER raises.
+
+    The str() coercion is guarded rather than trusted: key_anomaly() answers
+    None (well-formed) for any non-string object it cannot call NaN-like,
+    including one whose own __str__ raises, so an unguarded str() here would
+    be the one path in this pair that can throw. Measured 2026-08-22 by
+    probing both helpers over a hostile input table: key_anomaly() survived
+    every case, this function raised RuntimeError on an object with a raising
+    __str__. No production caller exists today (this helper is the canonical
+    normalizer for future callers), but it sits one import away from the C0
+    market-critical Asia lane, where a raise is a lane failure — so an
+    un-stringable value is treated as exactly what it is, a key we cannot
+    read, and normalizes to "".
+    """
+    if key_anomaly(value) is not None:
+        return ""
+    try:
+        return str(value).strip()
+    except Exception:  # noqa: BLE001 — an un-stringable key is an absent key
+        return ""
+
+
+def partition_by_key_integrity(
+    rows,
+) -> tuple[list[dict], list[dict], dict[str, int]]:
+    """Split row dicts on key_anomaly(row.get("announcementId")). Pure.
+
+    Returns (well_keyed, malformed, counts) — counts maps anomaly name ->
+    occurrence count for the anomalies that actually occurred (an anomaly
+    name that never fired is omitted, not zero-valued). Each malformed row
+    is counted INDIVIDUALLY: three rows sharing "" are three, never one —
+    this is the property drop_duplicates lacks and the whole repair exists
+    to restore. Input order is preserved within each output list.
+    """
+    well_keyed: list[dict] = []
+    malformed: list[dict] = []
+    counts: dict[str, int] = {}
+    for row in rows:
+        anomaly = key_anomaly(row.get("announcementId"))
+        if anomaly is None:
+            well_keyed.append(row)
+        else:
+            malformed.append(row)
+            counts[anomaly] = counts.get(anomaly, 0) + 1
+    return well_keyed, malformed, counts
+
+
+def _commit_filings(df: pd.DataFrame, path: Path) -> None:
+    """THE canonical filtered-store commit. Extracted as a named seam so the
+    P1-R3A ordering invariant
+
+        durable coverage exception  ->  canonical filtered filing-store commit
+
+    is directly OBSERVABLE by a test (tests/test_china_filings_collector.py's
+    mutation guard records the call order of this function against
+    china_visits._atomic_write and fails if a mutation ever puts the
+    canonical commit first). Inline `final.to_parquet(path)` had no seam to
+    observe, so the ordering could only be argued, never pinned."""
+    df.to_parquet(path, index=False)
+
+
+def _fence_coverage_exceptions(malformed: list[dict]) -> dict:
+    """P1-R3A crash-consistency fence — the china_filings half.
+
+    Makes THIS call's P1-relevant malformed observations durable in
+    china_visits' coverage-exception ledger BEFORE write_filings() commits a
+    filtered canonical store that omits them. Thin by design: every rule
+    about the ledger (its path, its schema, the fingerprint law, the
+    P1-relevance filter, the upsert/dedup semantics) lives in
+    collectors/china_visits.py and is CALLED here, never re-implemented —
+    two copies of that law would be free to diverge, and this module's whole
+    P1-R2 contribution was making one predicate serve both boundaries.
+
+    Never raises. Returns china_visits.persist_boundary_exceptions()'s
+    receipt shape, or a synthesized `ok: False` receipt when the import or
+    the call itself fails.
+
+    An import failure is deliberately `ok: False` (not a permissive skip):
+    if this process cannot reach the ledger's owner, it cannot make the
+    observation durable, and the caller must therefore not commit a store
+    that forgets it. That refusal can only ever fire on a night that already
+    contains a malformed P1-relevant row — the common path returns at the
+    first line without importing anything.
+    """
+    if not malformed:
+        return {"ok": True, "n_relevant": 0, "n_new": 0, "n_reaffirmed": 0,
+                "fingerprints": [], "detail": ""}
+    try:
+        from collectors import china_visits as _cv  # noqa: PLC0415 — lazy: import cycle
+    except Exception as e:  # noqa: BLE001
+        detail = f"collectors.china_visits import failed: {e}"
+        log.error("china_filings: coverage-exception fence — %s", detail)
+        return {"ok": False, "n_relevant": len(malformed), "n_new": 0,
+                "n_reaffirmed": 0, "fingerprints": [], "detail": detail}
+    try:
+        return _cv.persist_boundary_exceptions(malformed, key_anomaly)
+    except Exception as e:  # noqa: BLE001 — persist_* is contracted never to raise
+        detail = f"persist_boundary_exceptions raised unexpectedly: {e}"
+        log.error("china_filings: coverage-exception fence — %s", detail)
+        return {"ok": False, "n_relevant": len(malformed), "n_new": 0,
+                "n_reaffirmed": 0, "fingerprints": [], "detail": detail}
+
+
 def write_filings(new_rows: list[dict]) -> int:
     """Append rows to filings.parquet, keep-FIRST on announcementId.
 
     Returns the count of net-new rows written (0 when all duplicates).
     Never raises — failures are logged and silently skipped.
+
+    P1-R2: `new_rows` is partitioned by key integrity BEFORE any dedup — only
+    well-keyed rows ever enter the keep-FIRST dedup pool. A malformed row is a
+    TYPED, COUNTED exclusion, never a silent drop_duplicates collapse and
+    never appended keyless (that would grow the store unbounded across the
+    3-day re-pull, and minting a fallback key is a forbidden new identity
+    system). The ACCRUED store gets the same protection: any row already on
+    disk with a malformed key is split off as `preexisting_unkeyed` and
+    written back VERBATIM, untouched by the keyed dedup, so a historical
+    malformed row can never be silently collapsed into a keyed row's slot
+    either. net_new is computed off the KEYED frames only, so a malformed
+    row can never inflate or deflate that count.
+
+    Sets module-global LAST_KEY_INTEGRITY on every call (zeros when clean —
+    see _zero_key_integrity()). LOUD (log.error + a bare line-start GitHub
+    annotation — never through the logger, see
+    tests/test_gh_annotation_line_start.py) whenever anything was excluded
+    or a pre-existing unkeyed row was carried forward.
     """
+    global LAST_KEY_INTEGRITY
     if not new_rows:
+        LAST_KEY_INTEGRITY = _zero_key_integrity(datetime.now(timezone.utc).isoformat())
         return 0
     try:
         path = _store_path()
-        new_df = pd.DataFrame(new_rows).reindex(columns=list(_COLUMNS))
-        existing = load_filings()
-        if existing.empty:
-            # No existing store: dedup within the new batch itself, then write.
-            merged = new_df.drop_duplicates(subset=["announcementId"], keep="first")
-            net_new = len(merged)
+        well_keyed, malformed, new_counts = partition_by_key_integrity(new_rows)
+        new_df = pd.DataFrame(well_keyed).reindex(columns=list(_COLUMNS))
+        if not new_df.empty:
+            # Canonicalize the key of every row that IS well-keyed. Without
+            # this, " 1223456789 " and "1223456789" are two distinct keys, so
+            # the same filing published once with incidental padding stores
+            # TWICE and shows twice in the dossier's recent-visit list — a
+            # duplicate-identity bug the malformed-key partition does not
+            # catch, because padding that strips to a real value is not
+            # malformed. It also coerces any non-string key to its string
+            # form, which keeps drop_duplicates() hashable: an unhashable
+            # value (a list, a Series) would otherwise raise inside the
+            # try/except below and lose the WHOLE batch silently. Measured
+            # 2026-08-22: 0 of the 54,078 accrued keys are padded, so this is
+            # a no-op on today's tape and pure protection going forward.
+            new_df["announcementId"] = new_df["announcementId"].map(
+                normalize_announcement_id
+            )
+
+        existing = _read_filings_strict()
+        if existing is None:
+            log.error("china_filings: ABORTING the filings.parquet write — the accrued "
+                      "store is unreadable and is left untouched for manual recovery")
+            print(
+                "::warning title=china-filings-store-unreadable::"
+                "filings.parquet is present but unreadable — the nightly write was "
+                "ABORTED and the accrued store left untouched for manual recovery",
+                flush=True,
+            )
+            return 0
+        # Split the ACCRUED store with a vectorized mask over the SAME
+        # predicate, not partition_by_key_integrity(existing.to_dict("records")).
+        # The two are semantically identical, but the dict spelling materializes
+        # one dict per stored row and rebuilds a frame from them; masking walks
+        # the key column once and slices the ORIGINAL frame, so the store keeps
+        # its own dtypes and column order untouched. Measured 2026-08-22 on the
+        # real 54,078-row store: 0.55s vs 0.01s (~45x), and that cost grows with
+        # the store (~2,860 net-new rows/night) on the 4-core-bound runner where
+        # the render budget is law. partition_by_key_integrity() still owns the
+        # NEW batch, which arrives as dicts and is ~13k rows, not the whole tape.
+        unkeyed_mask = existing["announcementId"].map(key_anomaly).notna()
+        existing_keyed_df = existing[~unkeyed_mask]
+        existing_unkeyed_df = existing[unkeyed_mask]
+        preexisting_unkeyed = int(unkeyed_mask.sum())
+
+        if existing_keyed_df.empty:
+            # No existing keyed rows: dedup within the new well-keyed batch itself.
+            merged_keyed = new_df.drop_duplicates(subset=["announcementId"], keep="first")
+            net_new = len(merged_keyed)
         else:
-            pre_count = existing["announcementId"].nunique()
-            merged = pd.concat([existing, new_df], ignore_index=True)
-            merged = merged.drop_duplicates(subset=["announcementId"], keep="first")
-            post_count = merged["announcementId"].nunique()
+            pre_count = existing_keyed_df["announcementId"].nunique()
+            merged_keyed = pd.concat([existing_keyed_df, new_df], ignore_index=True)
+            merged_keyed = merged_keyed.drop_duplicates(subset=["announcementId"], keep="first")
+            post_count = merged_keyed["announcementId"].nunique()
             net_new = post_count - pre_count
-        merged = merged.sort_values(
+
+        # Pre-existing unkeyed rows ride along VERBATIM — never subjected to
+        # the keyed dedup, never dropped.
+        final = pd.concat([existing_unkeyed_df, merged_keyed], ignore_index=True)
+        final = final.sort_values(
             ["publish_ts", "announcementId"], na_position="last"
         ).reset_index(drop=True)
-        merged.to_parquet(path, index=False)
+
+        excluded_total = len(malformed)
+
+        # ---------------- P1-R3A CRASH-CONSISTENCY FENCE ---------------- #
+        # ORDERING INVARIANT, and the reason this block sits HERE and not one
+        # line lower:
+        #
+        #     durable coverage exception  ->  canonical filtered commit
+        #
+        # `final` above is the filtered canonical store — it OMITS every
+        # malformed row by design. Committing it while the only record of
+        # those observations is the process-local LAST_KEY_INTEGRITY handoff
+        # below means a hard kill (the asia lane runs under one) erases the
+        # observation from every durable store at once: absent from
+        # filings.parquet by construction, never written to
+        # coverage_exceptions.parquet, and aged out of the source's 3-day
+        # re-pull window within days. So the exception is made DURABLE first,
+        # and the commit is REFUSED outright if that fails — a filtered store
+        # that forgets what it filtered is the failure this whole wave exists
+        # to close. Nothing between this fence and _commit_filings() may
+        # touch the store.
+        boundary = _fence_coverage_exceptions(malformed)
+        if not boundary["ok"]:
+            LAST_KEY_INTEGRITY = {
+                "excluded_total": excluded_total,
+                "excluded_by_type": dict(new_counts),
+                "preexisting_unkeyed": preexisting_unkeyed,
+                "excluded_rows": list(malformed),
+                "boundary_persist_ok": False,
+                "boundary_fingerprints": [],
+                "at": datetime.now(timezone.utc).isoformat(),
+            }
+            # n_relevant, not excluded_total: the fence only ever owns the
+            # P1-RELEVANT subset, and on an import failure it could not even
+            # measure that subset (it reports len(malformed) then, which is
+            # the honest upper bound rather than a false precise count).
+            n_rel = boundary.get("n_relevant", excluded_total)
+            log.error(
+                "china_filings: ABORTING the filings.parquet write — %d of %d "
+                "malformed row(s) are P1-relevant and could not be made durable in "
+                "the coverage-exception ledger (%s); the accrued store is left "
+                "BYTE-IDENTICAL rather than committing a filtered store that "
+                "forgets them",
+                n_rel, excluded_total, boundary["detail"],
+            )
+            # Bare print, NOT log.* — see the malformed-key annotation below.
+            print(
+                f"::warning title=china-filings-coverage-exception-fence-refused::"
+                f"the filings.parquet write was ABORTED: {n_rel} of {excluded_total} "
+                f"malformed row(s) could not be made durable in the coverage-exception "
+                f"ledger ({boundary['detail']}) — the store was left untouched",
+                flush=True,
+            )
+            return 0
+
+        _commit_filings(final, path)
+
+        LAST_KEY_INTEGRITY = {
+            "excluded_total": excluded_total,
+            "excluded_by_type": dict(new_counts),
+            "preexisting_unkeyed": preexisting_unkeyed,
+            # P1-R3: the malformed row dicts VERBATIM from THIS call's
+            # new_rows batch (never the accrued preexisting_unkeyed rows —
+            # those are harvested by china_visits' own whole-tape candidate
+            # scan instead, origin="visits_candidate"). china_visits.refresh()
+            # harvests these as origin="filings_boundary" coverage
+            # exceptions. Uncapped — bounded by batch size, not a fixed cap
+            # like excluded_identities elsewhere.
+            #
+            # P1-R3A: china_visits.refresh() no longer HARVESTS this list —
+            # the fence above already made every P1-relevant row durable, and
+            # re-harvesting would double-count it. It stays as this call's
+            # verbatim diagnostic receipt of what it excluded.
+            "excluded_rows": list(malformed),
+            # P1-R3A: the fence succeeded (we would have returned above
+            # otherwise), and these are the observations it made durable —
+            # china_visits.refresh()'s same-invocation double-count guard.
+            "boundary_persist_ok": True,
+            "boundary_fingerprints": list(boundary["fingerprints"]),
+            "at": datetime.now(timezone.utc).isoformat(),
+        }
+        if excluded_total or preexisting_unkeyed:
+            log.error(
+                "china_filings: %d malformed announcementId row(s) excluded this "
+                "call (%s); %d pre-existing unkeyed row(s) preserved verbatim in "
+                "the store (never collapsed by the keyed dedup)",
+                excluded_total, new_counts, preexisting_unkeyed,
+            )
+            # Bare print, NOT log.* — this repo's loggers prefix the line
+            # (e.g. "ERROR ..."), which makes GitHub silently drop the
+            # annotation because it only parses "::" at column 0
+            # (tests/test_gh_annotation_line_start.py).
+            print(
+                f"::warning title=china-filings-malformed-announcement-id::"
+                f"{excluded_total} malformed announcementId row(s) excluded "
+                f"this call ({new_counts}); {preexisting_unkeyed} pre-existing "
+                f"unkeyed row(s) preserved verbatim in the store",
+                flush=True,
+            )
         return net_new
     except Exception as e:  # noqa: BLE001
         log.error("china_filings.write_filings failed: %s", e)
@@ -146,6 +608,14 @@ CATEGORY_PRIORITY: list[tuple[str, list[str]]] = [
     ("pledge",              ["质押"]),
     ("holder_change_down",  ["减持"]),
     ("holder_change_up",    ["增持"]),
+    # institutional-visit / IR-activity family (P1, China Alpha Intelligence
+    # RIGHTS-0 §1: rights-clear metadata plane, extraction was the gap).
+    # Lowest priority among the named categories (only "other" ranks below
+    # it) — 调研 is a broad word and this ordering guarantees the addition
+    # never reclassifies any filing that already matched a higher-priority
+    # category above (investigation/inquiry_letter/... unchanged).
+    ("institutional_visit", ["投资者关系活动记录表", "特定对象调研",
+                             "分析师会议", "业绩说明会", "调研"]),
 ]
 _OTHER = "other"
 
@@ -157,24 +627,53 @@ _KIND_ATTACHMENT_KW = ("专项说明", "核查意见", "专项核查意见")
 # 复函 (formal reply letter) added: confirmed in 4 live inquiry.parquet rows
 # e.g. "股票交易异常波动问询函的复函-郁敏珺". 答复 kept (deliberate superset ruling).
 _KIND_REPLY_KW = ("回函", "回复", "答复", "复函")
+# Reply-side forms that the two lists above miss. `letter` used to be the
+# fall-through for the whole family, so ANY reply-side document whose title did
+# not happen to contain one of the words above was stored as an exchange-issued
+# inquiry. Measured 2026-08-19 on data/china_filings/filings.parquet: 100 of the
+# 140 rows stored kind="letter" were 会计师事务所…说明, 独立董事…意见,
+# 律师…法律意见书 or 评估机构…发表意见 — reply-side filings published as
+# unanswered regulatory questions (PR #5975).
+#
+# 意见 is matched broadly rather than enumerated: the reply side keeps inventing
+# organ and adviser forms (独立董事意见, 董事会审计委员会…相关意见, 专项法律意见,
+# 评估机构…发表意见), and an enumeration silently re-admits each new one.
+_KIND_REPLY_SIDE_KW = ("意见", "说明")
+# 延期回复 says the reply is POSTPONED. It contains 回复 and every one of the 41
+# such notices in the store was classified `reply`, which is the inverse of the
+# truth: the filing announcing that no reply has been made would mark the inquiry
+# answered. It is reply-SIDE (not an exchange letter) but it is not a reply.
+_KIND_DEFERRAL_RE = re.compile(r"(?:延期|延长|推迟|顺延)回复")
 
 
 def classify_kind(title: str) -> str | None:
     """Return the inquiry-letter sub-kind for a title, or None if not applicable.
 
     Only called when the enclosing category is 'inquiry_letter'. Within that
-    family precedence is: attachment > reply > letter (default).
+    family precedence is:
+      deferral > attachment > reply > reply_side > letter
 
-      'letter'     — exchange-issued inquiry (问询函/监管函/关注函), the default
-      'reply'      — company reply (回函/回复/答复)
-      'attachment' — third-party verification / specialist note (专项说明/核查意见)
+      'letter'     — an exchange-issued inquiry, or the company's receipt of one
+      'reply'      — the company's reply (回函/回复/答复/复函)
+      'attachment' — third-party verification note (专项说明/核查意见)
+      'reply_side' — any other filing made in ANSWER to an inquiry: an adviser's
+                     说明, an organ's 意见, a 法律意见书. Not an inquiry, and not
+                     itself the reply.
+      'deferral'   — a notice that the reply is postponed; answers nothing.
+
+    `letter` is deliberately no longer the catch-all: a title that names none of
+    these forms is an inquiry, and everything else must say what it is.
 
     Pure function; unit-testable without any I/O.
     """
+    if _KIND_DEFERRAL_RE.search(title):
+        return "deferral"
     if any(kw in title for kw in _KIND_ATTACHMENT_KW):
         return "attachment"
     if any(kw in title for kw in _KIND_REPLY_KW):
         return "reply"
+    if any(kw in title for kw in _KIND_REPLY_SIDE_KW):
+        return "reply_side"
     return "letter"
 
 
@@ -183,7 +682,7 @@ def categorize(title: str) -> str:
 
     Priority order: investigation > inquiry_letter > delisting_risk >
     earnings_preann > restructuring > major_contract > buyback > pledge >
-    holder_change_down > holder_change_up > other.
+    holder_change_down > holder_change_up > institutional_visit > other.
 
     Pure function; unit-testable without any I/O.
     """
@@ -255,13 +754,20 @@ def _fetch_page(
 
 
 def _parse_announcement(ann: dict, exchange: str, collected_at: str) -> dict:
-    """Map one raw announcement dict → canonical row dict. Pure (no I/O)."""
+    """Map one raw announcement dict → canonical row dict. Pure (no I/O).
+
+    announcementId: P1-R2 — a truly ABSENT key must stay None ("missing" per
+    key_anomaly()), never get flattened to "" ("empty"). Both are malformed
+    and both get typed-excluded at write_filings(), but collapsing "missing"
+    into "empty" here would have thrown away the more specific anomaly name
+    before it ever reached the partition.
+    """
     title = ann.get("announcementTitle") or ""
     ts_ms = ann.get("announcementTime")
     cat = categorize(title)
     kind: str | None = classify_kind(title) if cat == "inquiry_letter" else None
     return {
-        "announcementId": ann.get("announcementId", ""),
+        "announcementId": ann.get("announcementId"),
         "sec_code": ann.get("secCode", ""),
         "sec_name": ann.get("secName", ""),
         "org_id": ann.get("orgId", ""),
@@ -366,6 +872,22 @@ class ChinaFilingsAdapter(Adapter):
         date_range = self._date_range(full_history)
         collected_at = datetime.now(timezone.utc).isoformat()
 
+        global LAST_RUN_OUTCOME, LAST_KEY_INTEGRITY
+        LAST_KEY_INTEGRITY = None  # P1-R2: fail-closed at entry, mirrors LAST_RUN_OUTCOME
+        LAST_RUN_OUTCOME = {
+            "ok": False,
+            "errors": ["refresh started but did not complete"],
+            "per_exchange": {},
+            "at": collected_at,
+            "key_integrity": _zero_key_integrity(collected_at),
+            # P1-R3: fail-closed at entry, same rationale as every other field
+            # here — an escape before either is ever recomputed below must
+            # read as "transport unproven" / "integrity unknown", never as a
+            # false clean.
+            "transport_ok": False,
+            "key_integrity_known": False,
+        }
+
         session = requests.Session()
         all_rows: list[dict] = []
         per_exchange: dict[str, int] = {}
@@ -387,15 +909,98 @@ class ChinaFilingsAdapter(Adapter):
                 )
 
         if not all_rows and errors:
+            LAST_RUN_OUTCOME = {
+                "ok": False,
+                "errors": errors,
+                "per_exchange": per_exchange,
+                "at": collected_at,
+                "key_integrity": _zero_key_integrity(collected_at),
+                # Both exchanges raised -> transport is definitively NOT ok;
+                # write_filings() is never reached on this path, so the
+                # key-integrity partition is definitively unknown too.
+                "transport_ok": False,
+                "key_integrity_known": False,
+            }
             raise RuntimeError(
                 "china_filings: all exchanges failed — " + " | ".join(errors)
             )
+
+        # P1-R3 §9: "no exchange raised" is measured HERE, before any
+        # key-integrity errors are appended below — those are a distinct
+        # typed cause and must never be folded into transport_ok.
+        transport_ok = not errors
 
         net_new = write_filings(all_rows)
         log.info(
             "china_filings: %d raw rows collected, %d net-new stored (%s)",
             len(all_rows), net_new, per_exchange,
         )
+
+        # P1-R2: write_filings() just set LAST_KEY_INTEGRITY (canonical shape,
+        # zeros when clean). Fold it into LAST_RUN_OUTCOME so every consumer
+        # reads one stable shape, and — FAIL-SOFT PRESERVED — malformed keys
+        # degrade `ok` to False via a typed errors[] entry rather than ever
+        # raising; the only raise in this method stays the all-exchanges-
+        # failed branch above. Valid sibling rows are still fetched, stored,
+        # and returned even when this branch fires.
+        # LAST_KEY_INTEGRITY is None ONLY when write_filings() did not reach its
+        # own assignment — i.e. its internal try/except fired (a store write or
+        # read blew up) and it returned 0 without telling us what it had
+        # partitioned. That is UNKNOWN, and `or _zero_key_integrity(...)` alone
+        # would silently launder it into "clean": measured 2026-08-22, a batch
+        # of 4 rows with 3 malformed and a failing to_parquet folded in
+        # excluded_total=0, left ok=True, and china_visits then stamped
+        # coverage and advanced last_success_utc over a store that was never
+        # written — a false clean absence, the exact failure this repair
+        # exists to prevent. Fail closed: name the unknown in errors[] so `ok`
+        # degrades, and keep the zero-shape only so consumers still read one
+        # stable shape.
+        # P1-R3 §9: captured HERE, before the `or _zero_key_integrity(...)`
+        # fallback below launders a None into the zero-shape — this is the
+        # one moment that distinguishes "write_filings() told us nothing"
+        # from "write_filings() told us it was clean". china_visits reads
+        # this typed boolean instead of string-sniffing errors[].
+        key_integrity_known = LAST_KEY_INTEGRITY is not None
+        if LAST_KEY_INTEGRITY is None:
+            errors.append(
+                "key_integrity: UNKNOWN — write_filings() did not complete its "
+                "key-integrity partition, so this run proves nothing about "
+                "whether malformed rows were excluded"
+            )
+        key_integrity = LAST_KEY_INTEGRITY or _zero_key_integrity(collected_at)
+        if not key_integrity.get("boundary_persist_ok", True):
+            # P1-R3A: the coverage-exception fence refused, so write_filings()
+            # left filings.parquet BYTE-IDENTICAL — tonight's rows were never
+            # stored. FAIL-SOFT (a typed errors[] entry degrading `ok`, never
+            # a raise, exactly like the malformed-key entry below), but loud
+            # enough that china_visits refuses to assert absence over the
+            # stale tape. transport_ok was measured ABOVE this point and is
+            # deliberately untouched — the transport was fine.
+            errors.append(
+                "key_integrity: coverage-exception fence REFUSED — malformed "
+                "P1-relevant row(s) could not be made durable, so the filtered "
+                "canonical filings write was NOT committed and the store is stale"
+            )
+        if key_integrity["excluded_total"] or key_integrity["preexisting_unkeyed"]:
+            errors.append(
+                f"key_integrity: {key_integrity['excluded_total']} malformed "
+                f"announcementId row(s) excluded ({key_integrity['excluded_by_type']}); "
+                f"{key_integrity['preexisting_unkeyed']} pre-existing unkeyed row(s) "
+                "in store"
+            )
+
+        LAST_RUN_OUTCOME = {
+            "ok": not errors,
+            "errors": errors,
+            "per_exchange": per_exchange,
+            "at": collected_at,
+            "key_integrity": key_integrity,
+            # P1-R3 §9: typed booleans so china_visits can separate "transport
+            # degraded" from "key integrity unknown" without string-sniffing
+            # errors[]. `ok` semantics are UNCHANGED for every other consumer.
+            "transport_ok": transport_ok,
+            "key_integrity_known": key_integrity_known,
+        }
 
         # Summary frame — DatetimeIndex is required by base.validate() /
         # store.upsert(). Follow china_official_corpora precedent (line 468):

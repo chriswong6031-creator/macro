@@ -29,6 +29,7 @@ through a logger is silently dropped (tests/test_gh_annotation_line_start.py).
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -152,6 +153,83 @@ def test_policy_is_absent_from_the_voting_desks():
     to go through this constant, and this assertion fails when it does."""
     assert "policy" not in IH._VOTING_DESKS
     assert set(IH._VOTING_DESKS) == {"news", "alt", "radar", "standout"}
+
+
+# ── ITEM 1 (D13), user-facing half — the page must not TELL the reader that policy votes ──
+# The engine heal above removed the vote; the production tooltip kept saying "Five desks vote
+# on each name: ... policy intent." for the whole life of the heal, so a reader asking how
+# ranking works was handed a false authority story that the engine tests could not see. These
+# three bind the shipped copy to `_VOTING_DESKS` itself.
+_HUB_TEMPLATE = Path(__file__).resolve().parent.parent / "templates" / "intelligence_hub.html.j2"
+
+#: `_VOTING_DESKS` key -> the (EN, ZH) display name the hero tooltip uses for that desk.
+_VOTING_DESK_COPY = {
+    "news": ("news flow", "新闻流"),
+    "alt": ("alt-data", "另类数据"),
+    "radar": ("divergence radar", "背离雷达"),
+    "standout": ("buy-board", "买入榜"),
+}
+
+#: an "<N> desks vote" claim in either language. The page must make no such claim at all:
+#: the agreement matrix draws FIVE dots (policy included, as context), so any desk-count
+#: pinned to the word "vote" reads as "policy is one of the voters" no matter which N is used.
+_VOTE_CLAIM_EN = re.compile(r"(?i)\b[a-z0-9]+\s+desks?\s+vote")
+_VOTE_CLAIM_ZH = re.compile(r"[零一二三四五六七八九十\d]+\s*台[^。\"]{0,12}投票")
+
+
+def _hub_template_copy() -> str:
+    """The template with Jinja comments stripped — a `{# ... #}` source note explaining the
+    vote heal is not customer copy and must not be able to fail (or satisfy) this gate."""
+    return re.sub(r"\{#.*?#\}", " ", _HUB_TEMPLATE.read_text(encoding="utf-8"), flags=re.S)
+
+
+def _hero_rank_tooltip() -> tuple[str, str]:
+    """The hero 'how this page ranks names' lens tooltip — (EN, ZH)."""
+    m = re.search(r'<button class="lens-q"[^>]*?data-tip-en="([^"]*)"[^>]*?data-tip-zh="([^"]*)"',
+                  _hub_template_copy(), re.S)
+    assert m, "hero .lens-q ranking tooltip not found in templates/intelligence_hub.html.j2"
+    return m.group(1), m.group(2)
+
+
+def test_policy_is_never_described_as_a_voting_desk():
+    """REGRESSION (the shipped false sentence): 'Five desks vote on each name: news flow,
+    alt-data, divergence radar, buy-board, policy intent.' / '五台对每个标的投票：…、政策意图。'
+    Policy is display/context-only (`_VOTING_DESKS`), so no surface on this page may present
+    it as casting a vote."""
+    copy = _hub_template_copy()
+    assert _VOTE_CLAIM_EN.search(copy) is None, (
+        f"Intelligence Hub copy claims desks vote: {_VOTE_CLAIM_EN.search(copy).group(0)!r} — "
+        "policy is not in IH._VOTING_DESKS and the matrix shows it as a fifth dot")
+    assert _VOTE_CLAIM_ZH.search(copy) is None, (
+        f"中文文案称各台投票：{_VOTE_CLAIM_ZH.search(copy).group(0)!r} —— 政策不参与排序")
+
+
+def test_ranking_help_names_exactly_the_voting_desks():
+    """The copy's desk list is pinned to the engine constant: re-adding policy to
+    `_VOTING_DESKS` (or dropping an evidence desk) reds here and forces the tooltip to be
+    re-derived rather than silently drifting away from what actually scores."""
+    assert set(_VOTING_DESK_COPY) == set(IH._VOTING_DESKS), (
+        "IH._VOTING_DESKS changed — re-derive the Intelligence Hub ranking tooltip")
+    en, zh = _hero_rank_tooltip()
+    for key, (en_name, zh_name) in _VOTING_DESK_COPY.items():
+        assert en_name in en, f"{key} missing from the EN ranking tooltip"
+        assert zh_name in zh, f"{key} missing from the ZH ranking tooltip"
+
+
+@pytest.mark.parametrize("lang, needles", [
+    # policy is context and never votes; conviction is only a tie-break; a proven-weak feeder
+    # can only de-escalate (gov_mult <= 1.0); the panel is not a trade trigger.
+    ("en", ("Policy intent is shown as context", "never moves a name's rank",
+            "conviction only breaks ties", "can only pull a name down, never lift it",
+            "never a trade trigger")),
+    ("zh", ("政策意图仅作背景展示", "绝不影响排名", "并列", "只能下调排名", "绝非交易触发")),
+])
+def test_ranking_help_states_the_real_ranking_semantics(lang, needles):
+    """EN and ZH must BOTH carry the corrected story — a bilingual page that heals only the
+    English half still lies to half its readers."""
+    tip = _hero_rank_tooltip()[0 if lang == "en" else 1]
+    for needle in needles:
+        assert needle in tip, f"{lang} ranking tooltip is missing {needle!r}"
 
 
 def test_known_residual_policy_still_widens_base_when_brain_priority_is_zero(_no_velocity):

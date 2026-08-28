@@ -6,8 +6,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   # Serialized batch lane shared with backfill / special-sits-backfill. daily has its own
@@ -237,6 +235,20 @@ jobs:
         run: |
           printf '{"last_run": "%s", "run_id": "%s", "workflow": "weekly"}\n' \
             "$(date -u +%FT%T+00:00)" "${GITHUB_RUN_ID:-local}" > data/weekly_status.json
+      # W1 repair (2026-08-26 experiments audit §3): the BH-FDR consumer the cortex
+      # evaluator has promised since W7b PR2 and that did not exist — H5's "queued for
+      # FDR" pass sat in the experiments panel with nothing to read it.
+      #
+      # It rides WEEKLY, not with the nightly evaluator that feeds it. daily.yml is
+      # ~250 bytes under the 487,000-byte budget that guards GitHub's silent
+      # ~512,000-byte processing cap (#5416: over it, cron stops firing and dispatched
+      # runs strand queued with zero jobs, uncancellable) — a quarter-scoped batch is
+      # not worth spending that headroom on. Cadence is not correctness here: the batch
+      # groups by QUARTER, is idempotent, and appends a governance event only when the
+      # BH decision changes, so a weekly re-run of the same quarter is a no-op.
+      - name: quarterly cortex FDR batch (W1 — promotes nothing; records the BH account)
+        run: |
+          python -m scripts.quarterly_cortex_fdr || echo "::warning title=cortex_fdr::batch failed (non-fatal)"
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
@@ -363,25 +375,11 @@ jobs:
             push_backoff
           done
           push_lost
-          echo "::error title=weekly outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the weekly data/ outputs exist only on this runner and are lost at the next checkout (the site still deploys via artifact). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
-          echo "### ❌ weekly outputs NOT pushed after $PUSH_ATTEMPT attempts — weekly data day at risk (site still deploys via artifact)" >> "$GITHUB_STEP_SUMMARY"
-      - name: strip heavy per-ticker stores from the Pages artifact (served from R2 now)
-        if: always()
-        run: |
-          rm -rf site/ohlc site/chinaohlc site/hkohlc site/intlohlc site/canadaohlc site/subsectorohlc site/subsectorohlc_china site/subsectorohlc_russell site/subsectorohlc_nasdaq site/stockdata site/chinastockdata site/hkstockdata site/canadastockdata site/intlstockdata site/intraday site/oddsmatrix 2>/dev/null || true
-      - name: upload pages artifact
-        if: always()   # deploy must not hinge on the commit-push above succeeding
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
+          echo "::error title=weekly outputs NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — the weekly data/ outputs exist only on this runner and are lost at the next checkout (no Pages-artifact fallback anymore — the VPS/origin deploy only gets this render once it lands on main). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
+          echo "### ❌ weekly outputs NOT pushed after $PUSH_ATTEMPT attempts — weekly data day at risk (no Pages-artifact fallback anymore)" >> "$GITHUB_STEP_SUMMARY"
 
-  publish:
-    needs: weekly-report
-    if: always()            # deploy the artifact even if a builder/commit step warned
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+  # The `publish` GitHub Pages deploy job (needs: weekly-report, deploy-pages@v4) was
+  # RETIRED pre-private-cutover (DEC:B1-MACRO-PRIVATE-CUTOVER) — the Pages mirror
+  # served the premium book/premiumdata anonymously and must not keep re-publishing
+  # once the repo goes private. The VPS/origin deploy (the site's real serving path)
+  # is untouched; only the Pages producer went away.

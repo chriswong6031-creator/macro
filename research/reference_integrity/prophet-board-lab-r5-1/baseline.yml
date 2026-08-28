@@ -1,0 +1,197 @@
+# Production Baseline Manifest (RIG V1 §4/§5) — design memory for D-LAB-R5.1.
+#
+# THE BASELINE MOVED. At R5 the baseline was the board alone, because the Lab
+# did not exist. R5 shipped nine Lab capabilities that two independent critics
+# examined and largely praised, so R5.1's baseline is the BOARD **plus those
+# nine** — a revision may not quietly lose what the cycle it answers created,
+# and the R5 verdict's `preserved_strengths` list is the record of what must
+# survive. Capability ids are stable across revisions (RIG §5), so every board
+# id below is byte-identical to the one in prophet-board-lab-r5/baseline.yml.
+schema: mastermind.rig_baseline.v1
+reference_id: prophet-board-lab-r5-1
+captured_at: "2026-08-19"
+
+production:
+  route: us_stocks.html
+  live_url: https://mastermindx.io/us_stocks.html
+  source_commit: d772fbd6f884
+  source_paths:
+    - templates/dashboard.html.j2
+    - templates/_prophet_card.html.j2
+    - templates/_us_board_cards.html.j2
+    - templates/tier_preview.js
+    - templates/theme.css
+    - engine/us_board_rank.py
+    - engine/prophet_board_read.py
+    - scripts/build_stock_library.py
+    - scripts/build_prophet.py
+  shared_surfaces:
+    - stock.html
+  reference_baseline:
+    path: mockups/refs/prophet_lab
+    frozen_sha: 6ee8f34480ce3299b4692a3e732c6a5c75d9782a
+    verdict: REVISE
+    verdict_ref: research/reference_integrity/prophet-board-lab-r5/verdict.yml
+    status: "REVISE — 3 majors (VTL-401/402/403) + 18 conditions; the artifact this cycle revises"
+  underlying_reference:
+    path: mockups/refs/institutionalize/us_stocks
+    frozen_sha: 168a9be00691
+    status: "NOT APPROVED and NEVER INDEPENDENTLY REVIEWED — R5 verdict condition C8; loaded unmodified"
+
+evidence:
+  screenshots:
+    # the R5 artifact's own crops are the visual before-state for this revision
+    - {path: mockups/refs/institutionalize/us_stocks/crops/01-desktop-dark-en.png, viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/04-desktop-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/25-filter-delivering-zero.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/01-live-desktop-dark-en.png,  viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/10-lab-desktop-dark-en.png,   viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/13-lab-desktop-light-zh.png,  viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/14-lab-mobile390-dark-en.png, viewport: mobile,  theme: dark,  locale: en}
+  gaps:
+    - axis: access
+      value: "the R5 artifact's crops as committed AT the R5 SHA"
+      reason: >
+        The crop filenames are shared between R5 and R5.1 (one frozen path, one atomic freeze —
+        RIG §3, and the R5 verdict's crops_namespace adjudication), so the paths above now render
+        the R5.1 bytes. The R5 pixels remain retrievable at the frozen SHA
+        `git show 6ee8f34480ce:mockups/refs/prophet_lab/crops/<name>`, and the R5 critic receipts
+        quote what they showed. Recorded because "the before-shot is in git, not on disk" is a
+        real limitation of freezing one path rather than two.
+    - axis: access
+      value: "live production screenshots of us_stocks.html"
+      reason: >
+        Unchanged from R5: the live board is behind paid auth and this worktree is sparse.
+        Production's current behaviour is re-censused from source with file:line receipts in
+        research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md (citations corrected under C5).
+    - axis: viewport
+      value: "tablet widths (768-1180)"
+      reason: >
+        Still not captured as crops. R5.1 added a NEW breakpoint at 980w and R5.2 RETIRED it —
+        PR51-2 made the selector wrap unconditional, because the 980 threshold rested on a false
+        premise (the strip clears 981w by 22px, and pill widths track counts the surface does not
+        control). What remains in this band is therefore the ≤1180w chart/Prophet-column narrowing
+        and the ≤980w row restack, both real layout changes that no committed crop shows. D20d
+        pins 1000w behaviourally, which is why this stayed a gap rather than a blocker.
+        R5.3 re-stamp (editorial, verdict condition R53-SCOPE): the 980w wording above was stale
+        for two rounds and is corrected here rather than carried a third time.
+
+user_job: >
+  The Chairman opens the U.S. Prophet page to see every plan being tracked on US stocks and where
+  each one stands today — and, as an operator, to inspect exact early-entry candidates in real
+  time before Prophet has written a plan for them, without losing the rest of the page while he
+  does it.
+
+core_interactions:
+  - "Scan the board and find what is actionable now."
+  - "Read one setup completely without opening it."
+  - "Filter the board by lifecycle cell from the ladder."
+  - "Open a name's detail surface from its card."
+  - "Reveal the tail of the book in place."
+  - "Read the record (Evidence), the sourced Groups band, and the Candidates population."
+  - "As an operator: flip to LAB, inspect early candidates, and flip back."
+  - "In LAB: choose one of six boards, filter by observation class, tell a live sighting from history, and compare a candidate to Prophet."
+
+information_hierarchy:
+  - "Page title + purpose + one as-of / freshness state"
+  - "The headline live count and the seven-cell lifecycle ladder"
+  - "The principal grid region — Setups in LIVE, the Lab observation stream in LAB"
+  - "Candidates: a separate population in a different form"
+  - "Groups (sourced themes) and Evidence (the track record with its interval)"
+
+design_lineage:
+  rulings:
+    - ref: "R5 verdict — prophet-board-lab-r5/verdict.yml"
+      evidence: "research/reference_integrity/prophet-board-lab-r5/verdict.yml"
+      implication: >
+        REVISE over VTL-401/402/403 plus 18 conditions. Also rules: approval warrants
+        composition and disclosure only (never the two warranted:false authority claims);
+        R4's composition is unreviewed and blocks P-MP1-SHELL (C8); the r3 amendment is
+        accepted, bounded by C9; crops stay beside the artifact.
+    - ref: "LAB-0 §6.5 — 'the principal Prophet grid'"
+      evidence: "research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.5"
+      implication: >
+        Ruled at R5 to be a NARROWING clause: the controller owns one region of a page that
+        demonstrably has others. A page-level mode would not have been written as 'grid'.
+    - ref: "R4 count-cell precedent (key-absence renders an em dash plus a disclosure line)"
+      evidence: "mockups/refs/institutionalize/us_stocks/crops/25-filter-delivering-zero.png"
+      implication: "The house idiom for 'unknown' at a count position, adopted by R5.1 for the pill row."
+    - ref: "DESIGN_DOCTRINE Law 4 — no per-row repetition of a constant"
+      evidence: "docs/DESIGN_DOCTRINE.md §2 Law 4"
+      implication: >
+        R5 argued an exception for the seed chip; VTL-408 refused it and R5.1 withdrew the
+        exception, replacing 23 repeats with a sticky divider — which R5.2 then had to make
+        genuinely pin (PR51-1). R5.3 re-stamp (editorial, verdict condition R53-SCOPE): this
+        implication was stale, because the constant survived the fix TWICE more in other slots.
+        It had THREE homes on the row, closed one per round: the class CHIP (VTL-408, R5.1), the
+        "not a sighting" RAIL (R52-D1, R5.2) and the "Lead not measurable" LEAD SLOT (VTL52-602,
+        R5.3, now an em dash in the null idiom with the statement merged into the pinned strip).
+        The durable lesson for the next cycle is the criterion, not the count: a LABEL names the
+        value beside it and may repeat; a CLAIM asserts a fact about the row and belongs once, on
+        the structure that governs the region. D6i4 enforces it over the whole seed region rather
+        than one selector at a time.
+    - ref: "MASTER_PRODUCT_DESIGN_SYSTEM_V1 §9.12 error law / §15 touch floor"
+      evidence: "research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:407, :550, :645"
+      implication: "An error names what failed AND what still works, WITH retry; touch targets >=40x40."
+    - ref: "DNR:KILL-PROPHET-POP-MERGE · DNR:KILL-WASHOUT-TURN · DNR:KILL-OUTCOME-AUDITION"
+      evidence: "research/DO_NOT_REBUILD.md"
+      implication: "Unchanged from R5: no population change, intersection mints nothing, no outcome read for ranking."
+    - ref: "DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED"
+      evidence: "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
+      implication: "One card may carry multiple experts[], each keeping its exact identity."
+  rejected_variants:
+    - "R5: LAB as a page-level mode (VTL-401 — deletion of two core sections)."
+    - "R5: one pill treatment for both 'unknown' and 'zero' (VTL-402)."
+    - "R5: the favourable lead in accent ink with the adverse result in the absence idiom (VTL-403)."
+    - "R5: the per-row seed chip repeated 23 times, argued as a Law-4 exception (VTL-408 — withdrawn)."
+    - "R5.1, considered and rejected: adding an edge-fade/chevron affordance to the 390 selector scroller. Removing the scroller is better than affording it — six boards are a product contract, not an overflow."
+    - "R5.1, considered and rejected: hiding the ladder in LAB to buy back a 390 fold. That is the deletion VTL-401 blocked, in miniature."
+    - "R5.1, considered and rejected: pagination of the Lab stream (see proposal.yml information_economics)."
+  comments:
+    - path: "mockups/refs/institutionalize/us_stocks/board.css:996"
+      note: "R4 hides .bh-purpose below 720w ('the h1 already says what this is') — which is why the R5.1 survivor test is DIFFERENTIAL against LIVE at the same viewport rather than an absolute count."
+    - path: "mockups/refs/prophet_lab/lab.js (lead)"
+      note: "The sign is the branch. A generator convention (null for adverse) had been standing in for a guard, and it hid two of five branches from every crop."
+
+capabilities:
+  # ── the board (ids stable from prophet-board-lab-r5/baseline.yml) ───────
+  - {id: board.title_and_purpose, user_job: "Know what page this is and what it is for", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1107-1112", importance: core}
+  - {id: board.freshness_state, user_job: "Know whether the ranking is on settled or stale prices", evidence: "mockups/refs/institutionalize/us_stocks/board.js:168-190,1119-1145", importance: core}
+  - {id: board.headline_count, user_job: "See how many live setups there are tonight", evidence: "mockups/refs/institutionalize/us_stocks/board.js:221-240", importance: core}
+  - {id: board.lifecycle_ladder, user_job: "See the book partitioned by lifecycle, and filter to one cell", evidence: "mockups/refs/institutionalize/us_stocks/board.js:221-334", importance: core}
+  - {id: board.count_law, user_job: "Trust the integers: every printed quantity reconciles", evidence: "mockups/refs/institutionalize/us_stocks/board.js:119-128", importance: core}
+  - {id: board.key_absence_disclosure, user_job: "Tell 'not published' apart from 'zero'", evidence: "mockups/refs/institutionalize/us_stocks/board.js:129", importance: core}
+  - {id: board.progressive_expansion, user_job: "Reach every plan row as a card, in place", evidence: "mockups/refs/institutionalize/us_stocks/board.js:851-870", importance: core}
+  - {id: board.table_view, user_job: "Read the book as an alternate tabular representation", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1155-1161", importance: supporting}
+  - {id: board.anonymous_gate, user_job: "As an unentitled reader, see what the paid board provides", evidence: "mockups/refs/institutionalize/us_stocks/board.js:611-636", importance: core}
+  - {id: board.empty_state, user_job: "Understand a quiet day without mistaking it for a broken page", evidence: "mockups/refs/institutionalize/us_stocks/board.js:190-196", importance: supporting}
+  - {id: card.chart_hero, user_job: "See the recent shape of the name first", evidence: "mockups/refs/institutionalize/us_stocks/board.js:571-580", importance: core}
+  - {id: card.printed_null_chart, user_job: "Tell an unpublished chart apart from a broken one", evidence: "mockups/refs/institutionalize/us_stocks/board.css:533-541", importance: core}
+  - {id: card.live_quote, user_job: "See the current price and today's move", evidence: "mockups/refs/institutionalize/us_stocks/board.js:439-451", importance: core}
+  - {id: card.stance_chip, user_job: "Know what Prophet thinks in one word", evidence: "mockups/refs/institutionalize/us_stocks/board.js:400-417", importance: core}
+  - {id: card.no_read_chip, user_job: "Know when the entry read has NOT published", evidence: "mockups/refs/institutionalize/us_stocks/board.js:400-417", importance: core}
+  - {id: card.identity_link, user_job: "Open the name's detail surface from the card", evidence: "mockups/refs/institutionalize/us_stocks/board.js:387-399", importance: core}
+  - {id: card.priority, user_job: "Scan readiness rank without reading it as a win probability", evidence: "mockups/refs/institutionalize/us_stocks/board.js:588-596", importance: core}
+  - {id: card.trigger_chip, user_job: "See a sourced recent trigger event", evidence: "mockups/refs/institutionalize/us_stocks/board.js:418-438", importance: supporting}
+  - {id: card.marks, user_job: "See Featured / New / entry-construction marks, restrained to three", evidence: "mockups/refs/institutionalize/us_stocks/board.js:452-491", importance: supporting}
+  - {id: card.caution_carrier, user_job: "See counted risk flags at glance, sentences one hover deeper", evidence: "mockups/refs/institutionalize/us_stocks/board.js:355-377", importance: core}
+  - {id: card.lifecycle_mark, user_job: "See where the plan sits in its lifecycle, weight-only", evidence: "mockups/refs/institutionalize/us_stocks/board.js:492-511", importance: core}
+  - {id: card.zone_footer, user_job: "See which price area matters, treated by stance", evidence: "mockups/refs/institutionalize/us_stocks/board.js:512-533", importance: core}
+  - {id: card.episode_chip, user_job: "Disambiguate a ticker's multiple plan episodes on a card seen alone", evidence: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:404-414", importance: supporting}
+  - {id: section.candidates, user_job: "Read the screened candidate population as a separate noun and form", evidence: "mockups/refs/institutionalize/us_stocks/board.js:871-945", importance: core}
+  - {id: section.groups, user_job: "See which themes are in favour, from a canonical producer", evidence: "mockups/refs/institutionalize/us_stocks/board.js:946-1022", importance: supporting}
+  - {id: section.evidence_record, user_job: "See the track record with its confidence interval", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1023-1102", importance: core}
+  - {id: xc.bilingual, user_job: "Read the whole surface natively in EN or ZH, with the direction flip", evidence: "mockups/refs/institutionalize/us_stocks/board.css:99-118", importance: core}
+  - {id: xc.light_dark, user_job: "Use the page in either theme, each designed rather than translated", evidence: "mockups/refs/institutionalize/us_stocks/board.css:69-97", importance: core}
+  - {id: xc.mobile_390, user_job: "Use the board at the 390w design floor with no horizontal scroll", evidence: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:110-112", importance: core}
+  - {id: xc.lens_receipts, user_job: "Reach mechanics, definitions and provenance one hover/focus deeper", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1285-1330", importance: core}
+  # ── the Lab, as R5 established it and both critics examined it ──────────
+  - {id: lab.mode_control, user_job: "As an operator, enter and leave the Lab without disturbing the board", evidence: "prophet-board-lab-r5/proposal.yml additions add.mode_control", importance: core}
+  - {id: lab.six_boards, user_job: "Look at one detector family at a time, in plain words", evidence: "prophet-board-lab-r5/proposal.yml additions add.six_boards", importance: core}
+  - {id: lab.observation_spine, user_job: "Read early candidates newest-first on a continuous time spine", evidence: "prophet-board-lab-r5/verdict.yml preserved_strengths[0]", importance: core}
+  - {id: lab.observation_class, user_job: "Tell a genuinely live sighting from a retrospective seed", evidence: "prophet-board-lab-r5/verdict.yml preserved_strengths[0] — five-channel encoding + dated divider", importance: core}
+  - {id: lab.expert_chips, user_job: "See exactly which readings fired, identities never merged", evidence: "prophet-board-lab-r5/proposal.yml additions add.expert_chips", importance: core}
+  - {id: lab.prophet_comparison, user_job: "See how a candidate compares to current Prophet state", evidence: "prophet-board-lab-r5/proposal.yml additions add.prophet_comparison", importance: core}
+  - {id: lab.measured_lead, user_job: "See how early (or late) the Lab was against Prophet's plan", evidence: "prophet-board-lab-r5/proposal.yml additions add.measured_lead", importance: core}
+  - {id: lab.degraded_states, user_job: "Know whether the Lab is showing current observations", evidence: "prophet-board-lab-r5/verdict.yml preserved_strengths[2] — designed stale state", importance: core}
+  - {id: lab.authority_disclosure, user_job: "Know that nothing here ranks, sizes or changes a plan", evidence: "prophet-board-lab-r5/proposal.yml additions add.authority_disclosure", importance: core}

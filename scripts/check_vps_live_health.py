@@ -37,6 +37,51 @@ def _require_age(
         failures.append(f"{key}: stale at {age:.1f}m (limit {maximum:.1f}m)")
 
 
+def _source_age_min(breadth: dict[str, Any], now: datetime) -> float | None:
+    """Minutes between the live-breadth SOURCE snapshot and `now`.
+
+    Derived from the absolute ``source_asof`` stamp, NOT from the payload's own
+    ``source_age_min`` (which is frozen at build time and therefore stops ageing
+    the moment the producer dies). Falls back to ``source_age_min`` plus the
+    artifact's own ``age_min`` when the absolute stamp is unparseable, which is
+    the same quantity computed the long way round. Returns None when neither
+    path yields a number — the caller fails closed on that.
+    """
+    raw = breadth.get("source_asof")
+    if isinstance(raw, str) and raw.strip():
+        try:
+            stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        except ValueError:
+            stamp = None
+        if stamp is not None:
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=timezone.utc)
+            return (now - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+    try:
+        return float(breadth["source_age_min"]) + float(breadth.get("age_min") or 0.0)
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def _abs_age_min(raw: Any, now: datetime) -> float | None:
+    """Minutes between an ABSOLUTE ISO stamp and `now`; None when unusable.
+
+    Absolute stamps are the only clocks that keep ageing after a producer dies.
+    A build-time scalar (`age_min`, `*_age_min` baked into the payload) freezes
+    the moment the writer stops and therefore reads healthy forever -- the exact
+    mechanism that let the US Prophet Live lane sit dead for 27 days in 2026-08.
+    """
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return (now - stamp.astimezone(timezone.utc)).total_seconds() / 60.0
+
+
 def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[str]:
     """Return human-readable health failures; an empty list is healthy."""
     current = now or datetime.now(timezone.utc)
@@ -156,6 +201,151 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
     if weekday and 14 <= hour <= 22:
         require_lane("bars", 90)
         _require_age(failures, checks, "flow_pulse", 90)
+        pulse = checks.get("flow_pulse")
+        if isinstance(pulse, dict):
+            n_tickers = int(pulse.get("n_tickers") or 0)
+            with_bars = int(pulse.get("with_bars") or 0)
+            if pulse.get("mode") != "fastpath" or n_tickers <= 0:
+                failures.append(
+                    f"flow_pulse: semantically unavailable (mode={pulse.get('mode') or 'missing'})"
+                )
+            elif with_bars / n_tickers < 0.80:
+                failures.append(
+                    f"flow_pulse: only {with_bars}/{n_tickers} tickers have current-session bars"
+                )
+    # Live-breadth truth boundary (FROZEN CONTRACT §6). ABSENT-OK — same
+    # precedent as cn_prophet_live above: a box that has not deployed the
+    # `macro-live-breadth` lane yet must not red the whole dead-man.
+    breadth = checks.get("breadth")
+    if isinstance(breadth, dict):
+        if breadth.get("session") == "closed" or not weekday:
+            # Stale last-session data outside a session is legitimate evidence
+            # of nothing being wrong — never a fault (explicit spec requirement).
+            pass
+        elif 14 <= hour <= 20:
+            # Expected live window: ~10:00-16:00 ET, safely inside RTH for both
+            # DST offsets. `usable` is the semantic truth — never inferred from
+            # artifact age alone (a fresh deploy can copy OLD content).
+            if breadth.get("usable") is not True:
+                reason = breadth.get("unusable_reason")
+                failures.append(
+                    "breadth: not usable during the live window"
+                    + (f" ({reason})" if reason else "")
+                )
+            # Source age is measured against NOW from the ABSOLUTE source_asof,
+            # never from the payload's own source_age_min. That field is frozen at
+            # BUILD time, so a producer that died three hours ago keeps serving an
+            # artifact reading `source_age_min: 16` forever — a dead lane would
+            # look perfectly healthy and the dead-man would never fire. The
+            # absolute stamp is the only value that keeps ageing after the writer
+            # stops, so it answers both "is the source stale?" and "did the
+            # producer actually run?" with one check and no reliance on mtime.
+            source_age = _source_age_min(breadth, current)
+            if source_age is None:
+                failures.append("breadth: missing or invalid source_asof")
+            elif source_age > 25:
+                failures.append(
+                    f"breadth: source stale at {source_age:.1f}m (limit 25.0m) — "
+                    "stale feed or a producer that stopped writing"
+                )
+            try:
+                coverage_pct = float(breadth["coverage_pct"])
+            except (KeyError, TypeError, ValueError):
+                failures.append("breadth: missing or invalid coverage_pct")
+            else:
+                if coverage_pct < 90:
+                    failures.append(
+                        f"breadth: coverage low at {coverage_pct:.1f}% (minimum 90.0%)"
+                    )
+            producer = breadth.get("producer")
+            if not isinstance(producer, str) or not producer.strip():
+                failures.append("breadth: missing producer (unowned)")
+        # else: weekday, session open, but outside the expected live window —
+        # require only that the key parses (already true); report nothing.
+    # ---- US Prophet Live: THE US product lane -------------------------------
+    # Deliberately NOT the ABSENT-OK precedent used by cn_prophet_live and
+    # breadth above. Those lanes may legitimately not be deployed on a given box.
+    # This one is the US product lane, and "the key simply isn't there" is
+    # exactly how the 2026-07-30 -> 2026-08-26 freeze stayed invisible: the
+    # evaluator ran every 5 minutes, published nothing (credentials were never
+    # seeded at cutover), exited 0, and this dead-man printed "VPS live plane
+    # healthy" for 27 days across ~18 lost sessions.
+    #
+    # `expected_now` is computed SERVER-SIDE from the repo's own NYSE calendar and
+    # window law (engine.prophet_live.live_states), so this stdlib-only monitor
+    # never mints a second holiday calendar. The coarse UTC guard below decides
+    # only WHETHER to demand the key when the key is missing entirely -- it never
+    # decides a freshness verdict.
+    prophet = checks.get("prophet_live")
+    coarse_us_window = weekday and 14 <= hour <= 20
+    if not isinstance(prophet, dict):
+        if coarse_us_window:
+            failures.append(
+                "prophet_live: check absent from /api/status during the US session "
+                "— the product lane is ungraded (deploy the status projection)"
+            )
+    else:
+        expected = prophet.get("expected_now")
+        if expected is None and coarse_us_window:
+            failures.append(
+                "prophet_live: expected_now unavailable — the status surface could "
+                "not evaluate the session law (failing closed)"
+            )
+        elif expected:
+            status = prophet.get("status")
+            reason = prophet.get("reason")
+            if status == "absent":
+                failures.append(
+                    "prophet_live: no served artifact during an expected session"
+                    + (f" ({reason})" if reason else "")
+                )
+            elif status == "unparseable":
+                failures.append("prophet_live: served artifact is unparseable")
+            else:
+                # Absolute pass clock. The producer fires every 5 minutes, so 15
+                # minutes is three missed passes -- inside the two-cadence
+                # (20 min) detection budget with headroom for scheduler jitter.
+                pass_age = _abs_age_min(prophet.get("pass_ts"), current)
+                if pass_age is None:
+                    failures.append("prophet_live: missing or invalid pass_ts")
+                elif pass_age > 15:
+                    failures.append(
+                        f"prophet_live: last pass {pass_age:.1f}m ago (limit 15.0m) "
+                        "— the producer stopped writing or cannot publish"
+                    )
+                # Quote clock, graded against the lane's own 25m freshness gate.
+                quote_age = _abs_age_min(prophet.get("quote_asof"), current)
+                if quote_age is None:
+                    failures.append("prophet_live: missing or invalid quote_asof")
+                elif quote_age > 25:
+                    failures.append(
+                        f"prophet_live: quote source stale at {quote_age:.1f}m "
+                        "(limit 25.0m)"
+                    )
+                # Pack basis. A same-day or weekend `as_of` darkens the whole
+                # session; that defect alone darkened 11 of the 18 sessions lost
+                # in the 2026-08 incident, so it is graded by name.
+                if prophet.get("pack_ok") is False:
+                    failures.append(
+                        "prophet_live: armed pack is not the last completed session "
+                        f"(as_of={prophet.get('pack_as_of')!r}, "
+                        f"expected={prophet.get('pack_expected')!r})"
+                    )
+                elif prophet.get("pack_ok") is None:
+                    failures.append("prophet_live: pack basis could not be established")
+                # A globally dark artifact during an expected session is an
+                # outage, not a market condition. Per-name darkness is normal and
+                # lives in state_counts, never in the top-level status.
+                if status == "dark":
+                    failures.append(
+                        "prophet_live: artifact globally dark during an expected session"
+                        + (f" ({reason})" if reason else "")
+                    )
+                producer = prophet.get("producer")
+                if not isinstance(producer, str) or not producer.strip():
+                    failures.append("prophet_live: missing producer (unowned lane)")
+        # else: not an expected session — no freshness is required, and a stale
+        # last-session artifact is legitimate evidence of nothing being wrong.
     return failures
 
 

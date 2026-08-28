@@ -214,6 +214,13 @@ class Materialization:
     #: longer resolves to a code. Report-only, exactly like unknown_ths_codes: an edge is
     #: minted on resolution, never on a name we could not resolve.
     unknown_ths_concepts: list[str] = field(default_factory=list)
+    #: V4-D2B3 (R-D2B3-4 / R-A1 / R-A6) — one typed refusal per structurally-suppressed
+    #: company mint: an entity-kind conflict (a company symbol also minted as an
+    #: etf-kind node in THIS SAME build) or a re-mint of a node whose latest lifecycle
+    #: status is retired/merged. Never a raise (R-A6): the nightly bake must not become
+    #: an outage weapon. Structural evidence only — no ticker literals anywhere in the
+    #: logic that produces this list.
+    company_mint_refusals: list[dict] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +245,8 @@ class _Builder:
                  finviz_seed_path: Path | None = None,
                  finviz_history_path: Path | None = None,
                  finviz_live_tree_path: Path | None = None,
-                 substrate_dir: Path | None = None) -> None:
+                 substrate_dir: Path | None = None,
+                 retired_node_ids: frozenset[str] | None = None) -> None:
         self.data_dir = data_dir
         self.crosswalk_path = crosswalk_path
         self.era = era
@@ -250,6 +258,11 @@ class _Builder:
         self.finviz_live_tree_path = finviz_live_tree_path
         self.substrate_dir = substrate_dir or data_dir
         self.breaks = identity.load_breaks()
+        # V4-D2B3 (R-A6): materialize stays PURE — it reads no store. Lifecycle state
+        # is read by the impure orchestrator (scripts/build_theme_graph.py) and handed
+        # in here as a plain frozenset of node_ids whose latest lifecycle status is
+        # retired/merged.
+        self.retired_node_ids: frozenset[str] = retired_node_ids or frozenset()
         self.out = Materialization()
         self._nodes: dict[str, dict] = {}
         self._edges: dict[str, dict] = {}
@@ -909,18 +922,118 @@ class _Builder:
         self.out.nodes = [self._nodes[k] for k in sorted(self._nodes)]
         self.out.edges = [self._edges[k] for k in sorted(self._edges)]
         self.out.evidence = [self._evidence[k] for k in sorted(self._evidence)]
+        # V4-D2B3 (R-A1): a POST-PASS structural filter, run only once every suite and
+        # local plane has contributed — the etf node set is complete ONLY here.
+        # Resurrection-proofing: belief_time is the run date (R-A1), so write-side
+        # keep-first protects nothing across days; the only durable fence is the bake
+        # never COMPUTING the corrected node/edge in the first place.
+        self.out.nodes, self.out.edges, self.out.company_mint_refusals = (
+            _suppress_conflicts_and_retired(
+                self.out.nodes, self.out.edges,
+                retired_node_ids=self.retired_node_ids))
         self.out.capability = capability_rule.derive_rows(
             self.out.nodes, self.out.edges,
             substrate=capability_rule.load_substrate(self.substrate_dir),
             computed_at=self.computed_at, engine_version=ENGINE_VERSION)
-        # V4-D2A: the GMI -> Data OS identity bridge, over the SAME generation's node
-        # list (so the etf/company entity-type-conflict check — rule 4 — sees exactly
-        # this build's topology, not a stale committed one).
+        # V4-D2A: the GMI -> Data OS identity bridge, over the SAME (already-suppressed)
+        # generation's node list (so the etf/company entity-type-conflict check — rule 4
+        # — sees exactly this build's post-correction topology; a suppressed company
+        # node is no longer in self.out.nodes at all, so it contributes zero rows here,
+        # which is precisely R-A3's "the live conflict counter lawfully drops to 0").
         self.out.identity_resolution = identity_resolution.derive_rows(
             self.out.nodes, resolution_asof=self.belief_time,
             computed_at=self.computed_at, engine_version=ENGINE_VERSION,
             data_dir=self.data_dir)
         return self.out
+
+
+def _node_symbol(node: dict) -> str | None:
+    """A node's ``external_ids.symbol``, uppercased — the same field every builder path
+    here sets (``_node(..., external_ids={"symbol": ...})``). None when absent/blank."""
+    try:
+        ext = json.loads(node.get("external_ids") or "{}")
+    except Exception:  # noqa: BLE001 — malformed external_ids is not fatal here
+        return None
+    sym = ext.get("symbol")
+    return str(sym).strip().upper() if sym else None
+
+
+def _etf_symbol_set(nodes: list[dict]) -> frozenset[str]:
+    """Every ``etf``-kind node's symbol, from THIS SAME generation's node list. Purely
+    structural — no ticker literal, no name heuristic (matches the D2A rule-4 evidence
+    identity_resolution._etf_symbols already uses over the same generation)."""
+    return frozenset(
+        sym for n in nodes
+        if str(n.get("kind")) == "etf" and (sym := _node_symbol(n)))
+
+
+def _suite_from_provenance(provenance: object) -> str | None:
+    """Best-effort suite name for a refusal receipt — presentational only, never a
+    routing decision. ``membership_doc:<suite>`` splits cleanly; the Finviz local plane
+    mints companies under its own confidence-basis provenance string instead of a
+    suite, so it is named ``finviz_themes`` (its market/suite namespace, identity.py's
+    own SUITE_MARKET key) for readability."""
+    p = str(provenance or "")
+    if p.startswith("membership_doc:"):
+        return p.split(":", 1)[1]
+    if p.startswith(FINVIZ_CONFIDENCE_BASIS):
+        return "finviz_themes"
+    return None
+
+
+def _suppress_conflicts_and_retired(
+        nodes: list[dict], edges: list[dict], *,
+        retired_node_ids: frozenset[str]) -> tuple[list[dict], list[dict], list[dict]]:
+    """R-D2B3-4 / R-A1 / R-A6 — the resurrection-proof POST-PASS filter.
+
+    Removes, from THIS build's own computed view (never from the committed store):
+
+    (a) every company-kind node whose symbol also exists as an etf-kind node in the
+        SAME generation's node set (entity-kind conflict — structural, same-generation
+        evidence only, no ticker literal, no Data OS read);
+    (b) every company-kind node whose node_id is in ``retired_node_ids`` (a re-mint of
+        a node the lifecycle lineage says is retired/merged — defense-in-depth; for a
+        RATIFIED identity-break symbol the live epoch law already routes new evidence
+        to ``#<epoch>``, so the epoch-1 id is structurally unmintable and this branch is
+        the backstop, never the primary fence).
+
+    Every edge whose ``src`` is a removed node is removed with it (a company node is
+    always MEMBER_OF's ``src``, never its ``dst`` — EDGE_PAIRING pins this). One typed
+    refusal dict is emitted per removed node; never a raise (R-A6) — a raise inside the
+    nightly bake would be an outage weapon, not a fence.
+    """
+    etf_syms = _etf_symbol_set(nodes)
+    removed_ids: set[str] = set()
+    refusals: list[dict] = []
+    kept_nodes: list[dict] = []
+    for n in nodes:
+        if str(n.get("kind")) != "company":
+            kept_nodes.append(n)
+            continue
+        node_id = str(n.get("node_id"))
+        sym = _node_symbol(n)
+        suite = _suite_from_provenance(n.get("provenance"))
+        if sym and sym in etf_syms:
+            removed_ids.add(node_id)
+            refusals.append({
+                "symbol": sym, "suite": suite, "reason": "etf_conflict",
+                "conflicting_node": f"etf:{sym}",
+            })
+            continue
+        if node_id in retired_node_ids:
+            removed_ids.add(node_id)
+            refusals.append({
+                "symbol": sym, "suite": suite, "reason": "retired_remint",
+                "conflicting_node": node_id,
+            })
+            continue
+        kept_nodes.append(n)
+    if not removed_ids:
+        return nodes, edges, []
+    kept_edges = [e for e in edges if str(e.get("src")) not in removed_ids]
+    refusals.sort(key=lambda r: (str(r["reason"]), str(r["symbol"] or ""),
+                                 str(r["conflicting_node"] or "")))
+    return kept_nodes, kept_edges, refusals
 
 
 def build(*, era: str, belief_time: str | None = None,
@@ -931,8 +1044,14 @@ def build(*, era: str, belief_time: str | None = None,
           finviz_seed_path: Path | None = None,
           finviz_history_path: Path | None = None,
           finviz_live_tree_path: Path | None = None,
-          substrate_dir: Path | None = None) -> Materialization:
-    """Compute the whole graph view. Pure: reads inputs, writes nothing."""
+          substrate_dir: Path | None = None,
+          retired_node_ids: frozenset[str] | None = None) -> Materialization:
+    """Compute the whole graph view. Pure: reads inputs, writes nothing.
+
+    ``retired_node_ids`` (V4-D2B3, R-A6): node_ids whose latest ``node_lifecycle``
+    status is retired/merged, read by the caller (the impure orchestrator) and handed
+    in as a plain frozenset — materialize itself never touches the store.
+    """
     if era not in ("reconstruction", "observed"):
         raise ValueError(f"era must be reconstruction|observed, got {era!r}")
     root = Path(__file__).resolve().parent.parent.parent
@@ -947,6 +1066,7 @@ def build(*, era: str, belief_time: str | None = None,
         finviz_history_path=finviz_history_path,
         finviz_live_tree_path=finviz_live_tree_path,
         substrate_dir=substrate_dir,
+        retired_node_ids=retired_node_ids,
     ).run()
 
 

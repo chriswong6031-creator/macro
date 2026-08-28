@@ -41,6 +41,18 @@ LEDGER_GROUPS = {
     ),
 }
 
+# Per-module launch-row fields beyond the shared CR1/CD1/AF1 registration shape. AF1's
+# writer deliberately stamps an extra frozen-membership hash the other two lanes never
+# modelled (engine/personality_flow_absorption.py:363) — it authenticates which FINRA
+# prefix rows AF1's construction is frozen against, the same role construction_sha256
+# plays for the graph shape. CR1/CD1 carry none, so their launch row is the bare shared
+# shape unchanged.
+EXTRA_LAUNCH_FIELDS = {
+    cr1.PROGRAM_ID: {},
+    cd1.PROGRAM_ID: {},
+    af1.PROGRAM_ID: {"finra_prefix_sha256": af1.FINRA_PREFIX_SHA256},
+}
+
 
 def _copy_registration(root: Path, module) -> None:
     target = root / "personality_timing"
@@ -148,7 +160,7 @@ def test_frozen_registrations_and_committed_ledgers_preserve_launch():
         rows = _committed_rows(module)
         assert rows
         launch, *events = rows
-        assert launch == {
+        expected_launch = {
             "kind": "registration",
             "schema": module.LEDGER_SCHEMA,
             "program_id": module.PROGRAM_ID,
@@ -159,7 +171,9 @@ def test_frozen_registrations_and_committed_ledgers_preserve_launch():
             "not_before_session": common.NOT_BEFORE_SESSION,
             "event_rows_at_launch": 0,
             "authority": dict(common.AUTHORITY),
+            **EXTRA_LAUNCH_FIELDS[module.PROGRAM_ID],
         }
+        assert launch == expected_launch
         for event in events:
             assert event["kind"] == "event"
             assert event["schema"] == module.LEDGER_SCHEMA

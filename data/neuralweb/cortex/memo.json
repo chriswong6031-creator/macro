@@ -1,14 +1,34 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-18T14:50:39+00:00",
-  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
-  "what_fired": [],
-  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
-  "decaying_families": [],
-  "deserves_operator": [],
+  "as_of": "2026-08-28T14:31:38+00:00",
+  "summary": "Context-only committee read: the headline tape is risk-on and the risk radar is calm/receding, but this is not a clean all-clear. The confirmed US regime remains Q2 Reflation at low confidence (0.218) even though its current axes read raw Q3: growth -0.267 and inflation +0.36, with only 1 of 7 confirmation sessions complete. Liquidity is contracting in an orderly, non-stressed drain; credit is healthy and tight; volatility is normalizing; breadth remains broadly intact above the 200-day measure, although the latest session had more decliners than advancers. No market-recovery confirmation chip is fresh, so the recovery context should not be described as confirmed. Factor intelligence is immature: only 10 panel dates, no Pair G records, no factor-attention grading history, no scorecard survivors, and the composite is non-tradeable. This memo annotates existing evidence only and originates no signal, ranking, trade, or probability.",
+  "what_fired": [
+    "World-state display verdict: RISK_ON, score 77, as of 2026-08-27.",
+    "Risk radar calm and receding: measured 21-day >=5% pullback rate 13.0% versus 17.8% base rate; this is below-base context, not an edge.",
+    "Raw regime axes no longer support confirmed Q2; Q3 transition count is 1 of 7 sessions.",
+    "Confluence contradiction: DHI and KDP buy-lane context versus five-day-rising OTM-put skew, as of 2026-08-19.",
+    "Briefing-divergence tension: 31 ticker-level demand-versus-supply divergences, including IBM, VSAT, RKLB, and NET.",
+    "Factor Pair G did not fire: ledger absent because the panel has fewer than 60 distinct dates."
+  ],
+  "contradictions_review": "Two current graph contradictions were found. First, the briefing contains 31 directional demand-versus-supply divergences; this is a broad tension, not a directional conclusion. Second, DHI and KDP have rising put-skew context against existing buy-lane membership; the legal use is de-escalation only. Separately, the regime label is internally stale relative to its axes: confirmed Q2 versus raw Q3. The factor contradiction ledger is dormant, so absence means insufficient history rather than agreement. Review of the master-brain ledger found many open theses past their check_by dates. Several semiconductor underweight theses deserve explicit review against current mixed evidence: SMH is above its 200-day trend and up 2.27% over 20 days, but down 10.95% over 60 days, semiconductor migration breadth is weak, and the AI-semiconductor thematic falsifier has fired. That is conflicted context, not validation of either side. The open growth-over-value underweight thesis also needs review because IWF/IWD is +2.76% over 20 days while real yields remain restrictive; its dated falsifier must be evaluated rather than informally extended.",
+  "decaying_families": [
+    "Radar claims: kernel estimates are negative across 5-, 21-, and 63-day signed-excess horizons in Q2/all-regime rows; no radar kernel row is armed.",
+    "Policy family: negative signed-excess estimates at 5-, 21-, and 63-day horizons; all rows remain unarmed or underpowered.",
+    "Thematic-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous one-contributor held-out comparison.",
+    "Stock-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous held-out comparison.",
+    "Altdata: positive five-day estimates decay to negative 21- and 63-day estimates; pooled implementation remains unarmed after losing out of sample.",
+    "US-board Q2: negative signed-excess estimates at five and ten days; pooled implementation remains unarmed. Board and track-record rows using unsigned MFE proxies must not be read as directional alpha."
+  ],
+  "deserves_operator": [
+    "US regime-label mismatch: confirmed Q2 versus raw Q3, with a pre-committed seven-session resolution criterion.",
+    "DHI and KDP options contradiction: clear only when buy-lane membership or rising-skew condition ceases on refreshed data.",
+    "Overdue master-brain thesis hygiene: close, score, or explicitly re-register every thesis past its check_by date.",
+    "Semiconductor underweight theses: current evidence is conflicted and several evaluation deadlines have passed; apply their registered falsifiers rather than carrying the narrative forward.",
+    "Factor coverage caveat: Pair G and attention authority have no usable grading history; zero records are insufficient coverage, not evidence of no contradictions."
+  ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-18",
+    "as_of": "2026-08-28",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -20,120 +40,74 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 1,
-      "total_rows": 9
+      "ungradeable": 18,
+      "total_rows": 26
     },
     "is_context_only": true
   },
-  "tool_call_census": {},
+  "tool_call_census": {
+    "read_world_state": 1,
+    "read_factor_state": 1,
+    "query_spine": 1,
+    "read_contradictions": 1,
+    "list_factor_contradictions": 1,
+    "read_kernel": 1,
+    "read_master_brain_theses": 1,
+    "flag_attention": 1,
+    "write_memo": 1
+  },
   "is_context_only": true,
   "run_status": {
-    "status": "degraded",
-    "degraded": true,
-    "degradation_reason": "model_unavailable",
-    "model_used": "claude-sonnet-4-6",
+    "status": "ok",
+    "degraded": false,
+    "degradation_reason": null,
+    "model_used": "claude-opus-4-8",
     "provider_attempts": [
       {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
+        "provider": "codex",
+        "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQDQzpxf9F1PneYGGBP'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQEj8GY8K4VzWgZSJyv'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQKLRfNDYmczqzHzD2n'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQYp6v9Mfs8iTf61xKY'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
         "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "429 Codex usage limit reached"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdWhnykvUcL9rvGY67'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdg2dXzGDr3vQV5ANg'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQdryhM2gMhb2JdXBsX'}"
-      },
-      {
-        "provider": "oauth",
-        "model": "claude-sonnet-4-6",
-        "attempted": true,
-        "ok": false,
-        "error_type": "rate_limit",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CeAQe2QjAuNKZ95EQg9pk'}"
+        "ok": true,
+        "error_type": null,
+        "error_message": null
       }
     ],
-    "tool_call_batches": 0,
-    "individual_tool_calls": 0,
+    "tool_call_batches": 4,
+    "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-18T11:39:40Z"
+    "context_as_of": "2026-08-28T13:34:04Z"
   }
 }

@@ -451,8 +451,19 @@ def _iso(ts: datetime | None) -> str | None:
 
 
 def _quote_ts(row: Mapping[str, Any]) -> datetime | None:
-    """The quote's own timestamp.  Milliseconds since epoch per §3b."""
+    """The quote's own timestamp.  Milliseconds since epoch per §3b.
+
+    Accepts BOTH row shapes this lane actually receives: the raw snapshot's
+    ``ts`` AND live_verify's normalized ``ts_ms`` — scripts/entry_radar_live.py
+    builds its book through ``LV._quotes_from_snapshot``/``_merge_quotes``,
+    which re-key the timestamp to ``ts_ms``. Reading only ``ts`` here darked
+    the ENTIRE probe set as ``no_quote`` (coverage 0/2979) on the first real
+    in-window commissioning pass, 2026-08-20 — a fresh, correct 2,089-symbol
+    snapshot rendered invisible by the key mismatch.
+    """
     raw = row.get("ts")
+    if raw is None:
+        raw = row.get("ts_ms")
     if raw is None:
         return None
     try:
@@ -2088,18 +2099,23 @@ def _c4_context(*, ticker: str, daily: ch.DailyHistory,
 
 
 def _nightly_lanes(pack: lp.LivePack, ticker: str) -> dict[str, Any]:
-    """G0/C5 confirmed-bar states from the pack manifest, honestly absent.
+    """G0/C5 confirmed-bar states off the v2 pack's ``confirmed_lanes`` (W4.1).
 
-    §3b: no Terminal slice store exists in production, so these publish
-    ``unavailable`` with ``slice_store_unconfigured`` until the artifact plane
-    lands.  Reading them off the pack keeps the RTH lane out of that ingest
-    entirely.
+    §3b: the nightly builder (``scripts/entry_radar_live_pack.py``) reads the
+    Terminal slice store when ``ENTRY_RADAR_SLICE_DIR`` points at one and embeds
+    a per-ticker row in the pack; reading it here keeps this RTH lane out of
+    that ingest entirely.  A pre-W4.1 (v1) pack, a pack this ticker was never
+    probed in, or a malformed row all fall to the same honest
+    ``unavailable``/``slice_store_unconfigured`` shape this reader has always
+    published — never a silent KeyError, and never a plausible-looking
+    "no candidates" for a lane that never ran.
     """
-    lanes = (pack.probe_set or {}).get("nightly_lanes")
+    lanes = getattr(pack, "confirmed_lanes", None)
     if isinstance(lanes, Mapping):
         row = lanes.get(ticker)
-        if isinstance(row, Mapping):
-            return dict(row)
+        if isinstance(row, Mapping) and isinstance(row.get("g0"), Mapping) \
+                and isinstance(row.get("c5"), Mapping):
+            return {"g0": dict(row["g0"]), "c5": dict(row["c5"])}
     return {"g0": {"availability": "unavailable", "reason": "slice_store_unconfigured"},
             "c5": {"availability": "unavailable", "reason": "slice_store_unconfigured"}}
 

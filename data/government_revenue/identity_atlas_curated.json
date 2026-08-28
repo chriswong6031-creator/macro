@@ -1,0 +1,164 @@
+{
+  "contract": "government_revenue_identity_atlas_curated.v1",
+  "schema_version": "1.1.0",
+  "generated_at": "2026-08-19T04:20:00+00:00",
+  "issuers": {
+    "SPR": {
+      "company_name": "Spirit AeroSystems Holdings, Inc.",
+      "public_security_state": "listing_terminated",
+      "listing_events": [
+        {
+          "event": "acquisition_close",
+          "acquirer": "The Boeing Company",
+          "effective_at": "2025-12-08",
+          "headline_en": "Boeing completed its acquisition of Spirit AeroSystems Holdings, Inc. on 2025-12-08; SPR ceased to trade as an independent public security and is absent from the Stock Identity universe snapshot.",
+          "headline_zh": "波音公司于2025年12月8日完成对Spirit AeroSystems Holdings, Inc.的收购；SPR不再作为独立上市证券交易，也不在Stock Identity全样本快照中。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:12927:0001628280-25-055825:ba-20251208.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/12927/000162828025055825/ba-20251208.htm"
+            },
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1364885:0001104659-25-119096:tm2532915d1_8k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1364885/000110465925119096/tm2532915d1_8k.htm"
+            }
+          ]
+        }
+      ]
+    },
+    "GE": {
+      "registrant": {
+        "name": "General Electric Company",
+        "cik": "0000040545",
+        "trade_name": "GE Aerospace"
+      },
+      "attribution_reason_en": "At least five distinct SAM UEIs display as \"GENERAL ELECTRIC COMPANY\" on USAspending awards; none is SAM-verified to CIK 0000040545 through a reviewed Ex.21 exhibit or comparable exact document join, so no reviewed exact recipient → legal entity → GE Aerospace path exists.",
+      "attribution_reason_zh": "USAspending奖励记录中至少有五个不同的SAM UEI显示为“GENERAL ELECTRIC COMPANY”；均未通过已审核的Ex.21附件或同等的精确文件比对验证到CIK 0000040545，因此不存在已审核的“精确受益人 → 法律实体 → GE Aerospace 路径”。",
+      "gaps": [
+        {
+          "code": "no_reviewed_exact_path",
+          "text_en": "no reviewed exact recipient → legal entity → GE Aerospace path.",
+          "text_zh": "不存在已审核的“精确受益人 → 法律实体 → GE Aerospace 路径”。"
+        }
+      ],
+      "separation_events": [
+        {
+          "event": "spin_off",
+          "spinco": "GE HealthCare Technologies Inc.",
+          "effective_at": "2023-01-03",
+          "headline_en": "General Electric Company completed the spin-off of GE HealthCare Technologies Inc. (GEHC). The registrant (CIK 0000040545) continued under its own name; this is a separation boundary, never a backdating point for pre-split identifiers.",
+          "headline_zh": "通用电气公司（General Electric Company）完成了GE HealthCare Technologies Inc.（GEHC）的分拆。注册主体（CIK 0000040545）仍以原名称存续；这是一个分离边界，绝不能作为拆分前标识符的回溯定价点。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:40545:0001193125-23-001157:d431727d8k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/40545/000119312523001157/d431727d8k.htm"
+            }
+          ]
+        },
+        {
+          "event": "spin_off",
+          "spinco": "GE Vernova Inc.",
+          "effective_at": "2024-04-02",
+          "headline_en": "General Electric Company completed the spin-off of GE Vernova Inc. (GEV); the registrant began operating as \"GE Aerospace\" going forward while keeping its own CIK and legal name.",
+          "headline_zh": "通用电气公司完成了GE Vernova Inc.（GEV）的分拆；此后注册主体以“GE Aerospace”名义运营，但CIK和法定名称保持不变。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:40545:0001193125-24-084038:d792336d8k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/40545/000119312524084038/d792336d8k.htm"
+            }
+          ]
+        }
+      ]
+    },
+    "BWXT": {
+      "unresolved_identifiers": [
+        {
+          "namespace": "sam_uei",
+          "value": "MMACD85DT5D5",
+          "observed_name": "BWXT ORDNANCE TENNESSEE, INC.",
+          "state": "evidence_conflict",
+          "reason_en": "BWXT Ordnance Tennessee, Inc. is named as a guarantor in BWX Technologies' 2025-11-10 Indenture guarantor schedule, but the most recently observed USAspending award action for this UEI records its parent as L3HARRIS TECHNOLOGIES, INC. Guarantor status is an affiliation disclosure, not an ownership percentage, so this stays an explicit conflict rather than a reviewed 100% chain.",
+          "reason_zh": "BWXT Ordnance Tennessee, Inc. 在BWX Technologies 2025年11月10日《契约》担保人清单中被列为担保人，但该UEI最近一次观测到的USAspending奖励行动记录的母公司为L3HARRIS TECHNOLOGIES, INC。担保人身份只是关联关系披露，并非已审核的所有权比例，因此这里保留为明确冲突，而非已审核的100%持股链。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001104659-25-109152:tm2530675d1_ex4-1.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/tm2530675d1_ex4-1.htm"
+            },
+            {
+              "publisher": "USAspending.gov",
+              "record_id": "CONT_AWD_W15QKN26F0107_9700_W15QKN23D0018_9700",
+              "url": "https://api.usaspending.gov/api/v2/awards/CONT_AWD_W15QKN26F0107_9700_W15QKN23D0018_9700/"
+            }
+          ]
+        },
+        {
+          "namespace": "sam_uei",
+          "value": "PM7HBL2KDX46",
+          "observed_name": "BWXT NOG TECHNOLOGIES, INC.",
+          "state": "mapping_needed",
+          "reason_en": "BWXT NOG Technologies, Inc. is named as a guarantor in the same 2025-11-10 Indenture schedule, but no FY2023–FY2025 Ex.21 exhibit lists a subsidiary of this name; guarantor status alone is not a reviewed ownership percentage, so no exact recipient → legal entity path is reviewed for this identifier.",
+          "reason_zh": "BWXT NOG Technologies, Inc. 在同一份2025年11月10日《契约》担保人清单中被列为担保人，但FY2023–FY2025的Ex.21附件均未列出该名称的子公司；仅凭担保人身份并非已审核的所有权比例，因此该标识符不存在已审核的“精确受益人 → 法律实体”路径。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001104659-25-109152:tm2530675d1_ex4-1.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/tm2530675d1_ex4-1.htm"
+            },
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm"
+            }
+          ]
+        },
+        {
+          "namespace": "sam_uei",
+          "value": "URJ3CAC3MSH8",
+          "observed_name": "BWXT ENRICHMENT OPERATIONS, LLC",
+          "state": "mapping_needed",
+          "reason_en": "BWXT Enrichment Operations, LLC is named as a guarantor in the same 2025-11-10 Indenture schedule, but no FY2023–FY2025 Ex.21 exhibit lists a subsidiary of this name; guarantor status alone is not a reviewed ownership percentage, so no exact recipient → legal entity path is reviewed for this identifier.",
+          "reason_zh": "BWXT Enrichment Operations, LLC 在同一份2025年11月10日《契约》担保人清单中被列为担保人，但FY2023–FY2025的Ex.21附件均未列出该名称的子公司；仅凭担保人身份并非已审核的所有权比例，因此该标识符不存在已审核的“精确受益人 → 法律实体”路径。",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001104659-25-109152:tm2530675d1_ex4-1.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000110465925109152/tm2530675d1_ex4-1.htm"
+            },
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm"
+            }
+          ]
+        }
+      ],
+      "notes": [
+        {
+          "text": "BWX Technologies, Inc. completed the acquisition of Advanced Overseas Technologies (A.O.T) on 2025-01-03 per the FY2025 10-K business narrative; A.O.T is not yet a reviewed Ex.21 entity and carries no identifier row in defense21-v1.",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:bwxt-20251231.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/bwxt-20251231.htm"
+            }
+          ]
+        },
+        {
+          "text": "BWXT Government Group, Inc. is Ex.21-proven (100% owned, Delaware, FY2023–FY2025) but has zero observed USAspending award rows to attach as of this construction; it stays display-only until an award record exists to review.",
+          "evidence": [
+            {
+              "publisher": "SEC",
+              "record_id": "sec:1486957:0001486957-26-000007:exhibit211_123125x10k.htm",
+              "url": "https://www.sec.gov/Archives/edgar/data/1486957/000148695726000007/exhibit211_123125x10k.htm"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -83,8 +83,95 @@ waves:
   - id: W4.1
     title: PR-4.1 live transport correction (confirmed-lane pack field + W4→W5 spool
       envelope contract)
-    status: todo
+    status: done
+    pr: [5929, 5995]
     depends_on: [W4, W5]
+    # DONE at ACTUAL merge: #5929 MERGED 2026-08-19T17:27:25Z (squash 9ef200f);
+    # commissioning-prep companion #5995 MERGED 2026-08-19T19:51:58Z (squash
+    # 85d651bc5bbb) — R2-first spool resolution ladder for the Lab API
+    # (resolve_radar_spool), scripts/prophet_lab_baseline.py provisioning
+    # (baseline strictly after the latest REAL spooled pass; --remint /
+    # --allow-stale-source / rehearsal flag; skew<=0 hard refusal), e2e contract
+    # test first-spooled-pass -> baseline marker -> later event live_forward,
+    # gate:code `prophet-lab` job in .github/ci/legacy-jobs.yml (the Lab suites
+    # were previously dark in merge gates), and app/deploy/update.sh restart
+    # regex for engine/entry_radar/(__init__|contracts|spool).py.
+    # LIVE-VERIFIED 2026-08-19: https://www.mastermind-x.com/api/health reports
+    # commit 85d651bc5bb (the #5995 squash) and /api/prophet/lab/v1 answers 401
+    # fail-closed. W4 ARMING REMAINS AN OPERATOR ACT — runbook
+    # research/prophet_v4/P_LAB_COMMISSIONING_NOTES.md; backend gates (the
+    # day-2 directive's "#5929 + transport/provisioning merged") are now clear.
+    # DAY-3 COMMISSIONING ATTEMPT (2026-08-20, Sol directive Gate B) — verdict
+    # BLOCKED-ON-OPERATOR, receipts at /var/lib/macro-live/state/prophet_lab/
+    # commissioning_receipt_2026-08-20.json (VPS). FOUND: W4 was ALREADY armed
+    # 2026-08-18 13:04 by a prior operator (env header "W6 commissioning") and
+    # ran 215 armed passes through 08-19 — 160 IN-WINDOW, every one refused
+    # 'no_pack' (the pack service exited 5 on the 08-19 windows: the daily
+    # store's newest session had not advanced — an HONEST refusal that
+    # self-resolved; 08-20 dry-run builds names=241 with inversion proof
+    # 725/725 pass). ARMED IS NOT PRODUCING: zero envelopes have EVER been
+    # written to the canonical spool (R2 mastermindx/live_flow/
+    # entry_radar_events = 0 keys; the sibling nominations prefix holds 195
+    # keys written by the marketing hot-tape workflow, proving transport).
+    # Four config blockers, all staged for repair, application = OPERATOR act
+    # (the session harness denies remote production config mutation): B2 the
+    # writer env (/etc/macro-live.env) has neither R2 credentials nor a spool
+    # dir — spool_then_commit withholds every transition fail-closed with no
+    # error surface; B3 same-host split-brain — the API env reads the R2
+    # events prefix the writer never writes; B4 the API env lacks
+    # PROPHET_LAB_OBSERVATION_BASELINE_PATH; B5 ENTRY_RADAR_SLICE_DIR unset
+    # (G0/C5 publish slice_store_unconfigured; the LAB-0 candidate path
+    # /opt/terminal/terminal/public/data is NOW VERIFIED live: 5.7G, 44,436
+    # entries, manifest.json, fresh mtime). Staged repair = a systemd drop-in
+    # giving the evaluator unit EnvironmentFile=/etc/macro-api.env (no
+    # credential VALUES handled anywhere; same-source by construction; 0 env
+    # name collisions, only the four R2_* names referenced by spool.py) + the
+    # two path appends + macro-api restart. Baseline NOT minted — the CLI
+    # refused on zero spooled passes, verbatim refusal preserved (correct:
+    # never self-baseline). Known residual risks for the applier: the pack
+    # service caps MemoryMax=512M vs ~857MB observed unconstrained build RSS
+    # (watch the next 10:20:35Z run's exit); the remote-route same-source
+    # proof needs a site-full operator bearer token (none exists on the host;
+    # none was minted); an in-window pass with an EMPTY delta spools nothing,
+    # so first-envelope timing depends on real transitions after 13:29Z.
+    # DAY-4 (2026-08-20): COMMISSIONED. Repairs applied by the Fable session
+    # under explicit Chairman admin grant (drop-in EnvironmentFile=
+    # /etc/macro-api.env on the evaluator unit; ENTRY_RADAR_SLICE_DIR;
+    # PROPHET_LAB_OBSERVATION_BASELINE_PATH + macro-api restart). NEW code
+    # blocker found by the first real in-window pass and healed same-day
+    # (#6095: live_eval._quote_ts read only 'ts' but the local-quote loader
+    # normalizes rows to 'ts_ms' via live_verify._merge_quotes — a fresh,
+    # correct 2,089-symbol quotes_full.json darked the ENTIRE probe set
+    # 0/2979; e2e regression now runs the real loader chain). Two bounded
+    # resource rulings on macro-live-entry-radar.service (drop-ins:
+    # MemoryHigh=768M/MemoryMax=1G after a 256M-throttle swap-crawl kill;
+    # TimeoutStartSec=570 after a cold-I/O ~10min first pass — 60-150s CPU,
+    # rest I/O over the 5.7G slice tree). First genuine envelope
+    # live_flow/entry_radar_events/2026-08-20/115834-entry_radar_live.json
+    # (supervised manual pass, timer stopped/restarted around it: 240/2979
+    # usable quotes, 54 transitions, 27 events, 237 basis audits 0 mismatch).
+    # Baseline minted lawfully 16:10:41Z (dry-run first, backend r2).
+    # Post-mint SERVICE cycles self-sustain at ~5min (warm ledger = delta
+    # passes fit the window): live_forward=49 / retrospective_seed=150,
+    # pools separate, coverage_verified true. OWNER FOLLOW-UP (cadence): any
+    # long gap re-creates the cold-start wedge — a first pass after a dark
+    # period exceeds the 5-min tick + 570s timeout; consider substrate
+    # caching or a bootstrap path. SOL RULING (Day-5, 2026-08-21): accepted
+    # as a Radar-owner follow-up, NOT a Prophet Lab defect. Target
+    # capability: after a genuine dark gap the Radar autonomously reaches
+    # its first valid envelope without timeout/overlap failure while
+    # retaining the healthy 5-min warm cadence. Do NOT solve by arbitrary
+    # timeout/memory inflation — measure the cold-start phases, establish
+    # the actual bottleneck, then commission a bounded Radar-owner wave if
+    # needed. Proceeds independently; blocks neither B1 nor P-LAB-UI.
+    # SECURITY ESCALATION (Day-5, DSC:RADAR-SPOOL-PUBLIC-R2): the canonical
+    # spool prefix live_flow/entry_radar_events/ is ANONYMOUSLY READABLE on
+    # the public R2 dev host with guessable dated keys (verified 200,
+    # 2026-08-21). Radar-owner + delivery-plane-program item; deliberately
+    # untouched by the B1 wave. Pack-unit MemoryMax remains untested for
+    # a full in-service build. Per the LAB-0 non-completion rule this
+    # commissioning contributes evidence toward B6 but does NOT close it
+    # (full-RTH-session cadence proof still owed).
     # Commissioned 2026-08-18 by the Chairman's Prophet Operator Lab program (V4-B5A,
     # DEC:PROPHET-LAB-B5A-RECUT; contract research/prophet_v4/
     # LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §6.2A). Executes under THIS
@@ -106,9 +193,21 @@ waves:
     # build_event_payload() → read_spool_events(). (4) W5 stays sole durable
     # data/entry_radar writer; NO detector spec hash changes; Prophet protected
     # paths byte-clean; never mutate the immutable mastermind.entry_event.v1 event.
-    # Baseline discipline: #5897 (open, test-only tests/test_entry_radar_w4_lane.py)
-    # collides with nothing here but do not merge W4.1 against a knowingly red W4
-    # test baseline — land or reconcile #5897 first.
+    # Baseline discipline: #5897 MERGED 2026-08-19 (bc7bf982a45a) mid-build —
+    # this wave's branch rebased onto its post-merge main; the W4 test baseline
+    # is green, not a knowingly-red base.
+    # Build-worker receipts (in progress, not yet merged): SCHEMA_LIVE_PACK
+    # bumped v1->v2 with confirmed_lanes covered by compute_pack_hash();
+    # live_eval._nightly_lanes() reads pack.confirmed_lanes;
+    # entry_radar_live_pack.py's slice_lanes() read moved before build_pack()
+    # so the pack can carry it; reconcile_entry_radar.read_spool_events()
+    # accepts the real entry_radar.events/v1 envelope (unwraps events[],
+    # validates each via EntryEvent.from_dict, derives observed_at from the
+    # earliest carrying envelope's pass_ts) while keeping the bare-event shape
+    # for back-compat. 14 new tests (tests/test_entry_radar_w41_transport.py);
+    # full entry_radar suite 1467 passed/3 skipped against post-#5897/#5924
+    # main; six spec hashes unchanged; Prophet-protected paths byte-clean.
+    # Receipts: research/live_entry_radar/W41_TRANSPORT_NOTES.md.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
     status: done
@@ -150,6 +249,10 @@ waves:
     title: PR-7 outcome-calibrated Opportunity model (gated on honest sample)
     status: todo
     depends_on: [W6]
+    # Completion-freeze mapping (2026-08-28): runs as child LER-C7 only when the
+    # preregistered prospective sample gate is satisfied by real W5/qledger
+    # accrual; honest ACCRUING/NOT YET MEASURED otherwise. Sol owns the
+    # scientific verdict. Never fabricated to unblock W9/product.
   - id: W8
     title: PR-8 UI reference + RIG (Prophet Board sister language, operator directive 2026-08-13)
     status: in_progress
@@ -158,11 +261,21 @@ waves:
     # Opened as a reviewable reference PR (#5737). NOT done until merged.
     # Commissioning 2026-08-17: freeze a8c763dc APPROVE_WITH_CONDITIONS.
     # Do not auto-roll W9.
-
+    # Completion-freeze mapping (2026-08-28): sole existing carrier is OPEN PR
+    # #5737 (reference-only, head b30243f3efd2 at freeze). Child LER-C5
+    # reconciles and lands THAT carrier history-preservingly; a replacement W8
+    # branch/PR is forbidden. May run independently of C1-C4 after fresh
+    # path/authority disjointness proof. Reference completion only — landing
+    # W8 does not authorize starting W9.
   - id: W9
     title: PR-9 production UI + live RTH verification
     status: todo
     depends_on: [W4, W6, W8]
+    # Completion-freeze mapping (2026-08-28): runs as child LER-C6 after
+    # C2 (reliability), C4 (real Research Priority acceptance) and C5 (W8
+    # reference on main); C3 must be working for prospective-evidence fields.
+    # No templates/entry_radar.html.j2 exists on current main at freeze. The
+    # W7 Opportunity slot ships NOT YET MEASURED until LER-C7 concludes.
 landmines:
   - "Session worktrees are sparse: data/, site/, mockups/ are absent locally — artifact-existence checks must use git ls-files / git show or the primary checkout (read-only), never a bare ls."
   - "DNR:KILL-WASHOUT-TURN (entry-stack Amendment-3, #1747) is adjacent: any promotion of a Radar detector must confront that kill by name; display/accruing tier is free, authority is not."
@@ -171,7 +284,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9). NEW: W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) — see the W4.1 wave row for frozen scope/receipts; do not merge it against a knowingly red W4 baseline (#5897 open, test-only)."
+next_action: "Completion program governs (2026-08-28, DEC:LER-END-TO-END-COMPLETION-ARCHITECTURE-FREEZE, records carrier #6599). SUPERSEDED sequencing: the prior next_action's '#5929 OPEN and NOT YET MERGED' clause is stale — #5929 MERGED 2026-08-19T17:27:25Z (squash 9ef200f), #5995 MERGED 2026-08-19T19:51:58Z, quote-ts heal #6095 MERGED 2026-08-20T15:03:30Z, and W4.1 was genuinely commissioned 2026-08-20 (first real envelope 240/2979 usable, then warm ~5-min Lab live_forward; see W4.1 row — all receipts preserved). Commissioning did NOT complete the program: dark-gap/cold-start recovery and full-natural-RTH cadence remain open (Sol Day-5 ruling), DSC:RADAR-SPOOL-PUBLIC-R2 is unrebutted with no accepted remediation, and the canonical W5 prospective consumer is DISCONNECTED (DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED — ledger_state.json session 2026-08-27 = WAITING_FOR_LIVE_SOURCE, spool_dir=null, zero observed/live-forward/qledger; Prophet Lab live_forward is NOT W5/Eval-OS evidence). W6 stays in_progress: #5834+#5845 merged but not accepted on a non-empty real developing-RTH board; do not redesign the score. Remaining work runs as bounded child waves LER-C0..C8 under research/live_entry_radar/LIVE_ENTRY_RADAR_COMPLETION_ARCHITECTURE_MASTERPLAN_2026-08-28.md with a sustained Fable COO (one fresh operation key + one carrier + terminal watcher boundary per modifying child; graph in §Completion program below). Immediate next: after C0 (#6599) merges, start LER-C1 private evidence transport. Frozen: Prophet paths, detector formulas/hashes G0 9be89a8acc8b905c / C1 f0bbd6cf3a6e2339 / C2 d8ba60a25cfa7400 / C3 d54dc1e55c4261c8 / C4 dce21ac680233ee2 (context-only) / C5 13dec66345a0376c; F1 unbuilt/refusing. W8 = existing #5737 only (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9); W9 not started before C2/C4/C5."
 ---
 
 ## Context
@@ -189,3 +302,44 @@ Champion G0 is the Terminal repo's early anticipation dot (`charting-app/signal_
 cross-repo parity is fixture-enforced, never copy-paste drift. Evaluation reuses the
 Evaluation OS + the PSS §7 timing-ruler discipline; ranking ships as ACCRUING Research
 Priority until house promotion gates clear.
+
+## Completion program (Chairman-approved freeze, 2026-08-28)
+
+Governing records — all on carrier
+[#6599](https://github.com/mastermindx-market-intelligence/macro/pull/6599):
+
+- `research/live_entry_radar/LIVE_ENTRY_RADAR_COMPLETION_ARCHITECTURE_MASTERPLAN_2026-08-28.md`
+  (completion outcome, capability ledger, architecture freeze, completion law);
+- `DEC:LER-END-TO-END-COMPLETION-ARCHITECTURE-FREEZE` (sequencing/no-rebuild ruling;
+  supersedes ONLY the stale #5929-open next-action assumptions — every historical
+  receipt in the wave rows above is preserved verbatim and remains controlling);
+- `DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED` (Lab live_forward ≠ canonical
+  W5/Evaluation-OS prospective evidence; current durable ledger is
+  WAITING_FOR_LIVE_SOURCE with a null spool path);
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-28-fable-coo-program.md` (sustained
+  Fable COO operating contract + child-wave watcher protocol);
+- `docs/superpowers/plans/2026-08-28-live-entry-radar-completion-program.md`
+  (task-by-task C0-C8 program).
+
+Accepted child-wave graph (each modifying child = one fresh stable operation key,
+one GitHub carrier, one exact Slack thread, terminal watcher boundary):
+
+```text
+LER-C0 records/program-control acceptance (carrier #6599; this reconciliation)
+ -> LER-C1 W4.2 private evidence transport (spool non-anonymous; existing R2 owner)
+ -> LER-C2 W4.3 dark-gap recovery + full natural RTH cadence + current coverage
+ -> LER-C3 W5.2 prospective Eval OS reconnect (real event -> private spool ->
+            forward.parquet -> qledger; existing sole reconciler only)
+ -> LER-C4 W6.1 real non-empty Research Priority acceptance (Sol scientific gate)
+ -> LER-C5 W8 reconciliation of existing #5737 only (independent when disjoint)
+ -> LER-C6 W9 production entry_radar.html (real data; browser acceptance)
+ -> LER-C7 W7 Opportunity science only when sample-ready (Sol scientific gate)
+ -> LER-C8 integrated acceptance + read-only Stock Identity handoff
+```
+
+Wave mapping: C1/C2 close the W4.1 residues; C3 closes the W5 prospective gap;
+C4 closes W6; C5 lands W8; C6 ships W9; C7 adjudicates W7; C8 closes the
+program under the masterplan §11 completion law (Truth / Intelligence / Product /
+Learning). Radar records expert events; `WS:STOCK-IDENTITY` (active carrier
+#6529, not editable from Radar children) remains the sole per-security
+expert-routing owner, consuming a read-only event boundary.

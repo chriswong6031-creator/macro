@@ -305,6 +305,58 @@ def test_withhold_never_sweeps_unrelated_dirty_files(lane, capsys):
     ), "the dirty edit must still be dirty, for --autostash to park"
 
 
+def test_cs_stale_generation_withholds_whole_family_not_one_file(tmp_path, capsys):
+    """A CS candidate that drops main's source_manifest.jsonl prefix must withhold
+    data/capital_structure AND site/capital-structure-data together.
+
+    Proves: the fence does not partially withhold (e.g. only source_manifest.jsonl)
+    when the CS family is triggered; both withhold_paths are reset together.
+    """
+    cs_manifest = "data/capital_structure/source_manifest.jsonl"
+    cs_site = "site/capital-structure-data"
+
+    origin = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "--quiet", "--bare", "-b", "main", str(origin)], check=True)
+    runner = tmp_path / "runner"
+    subprocess.run(["git", "init", "--quiet", "-b", "main", str(runner)], check=True)
+    _git(runner, "config", "user.email", "bot@example.invalid")
+    _git(runner, "config", "user.name", "dashboard-bot")
+    _git(runner, "remote", "add", "origin", str(origin))
+
+    # origin/main: has two manifest rows and a site file
+    base_manifest = (
+        b'{"manifest_id":"manifest:cs:aaaa"}\n'
+        b'{"manifest_id":"manifest:cs:bbbb"}\n'
+    )
+    _write(runner, cs_manifest, base_manifest)
+    _write(runner, f"{cs_site}/events.json", b'{"generation":"A"}')
+    _git(runner, "add", "-A")
+    _git(runner, "commit", "--quiet", "-m", "base: cs generation A")
+    _git(runner, "push", "--quiet", "origin", "main")
+
+    # HEAD: stale generation that drops manifest:cs:bbbb
+    stale_manifest = b'{"manifest_id":"manifest:cs:aaaa"}\n'
+    _write(runner, cs_manifest, stale_manifest)
+    _write(runner, f"{cs_site}/events.json", b'{"generation":"B-stale"}')
+    _git(runner, "add", "-A")
+    _git(runner, "commit", "--quiet", "-m", "data: cs generation B (stale)")
+    _git(runner, "fetch", "--quiet", "origin", "main")
+
+    exit_code = fence.run(runner, onto="origin/main", head="HEAD", registry=REGISTRY, restore=True, amend=False)
+    out = capsys.readouterr().out
+    assert exit_code == 0
+    assert "WITHHELD" in out
+
+    # After withhold, BOTH paths must match origin/main — not just the manifest
+    head_manifest = _git(runner, "show", f"HEAD:{cs_manifest}")
+    main_manifest = _git(runner, "show", f"origin/main:{cs_manifest}")
+    assert head_manifest == main_manifest, "data/capital_structure/source_manifest.jsonl must be restored"
+
+    head_site = _git(runner, "show", f"HEAD:{cs_site}/events.json")
+    main_site = _git(runner, "show", f"origin/main:{cs_site}/events.json")
+    assert head_site == main_site, "site/capital-structure-data/events.json must be restored"
+
+
 def test_amend_folds_the_withhold_into_head(lane):
     repo = lane["repo"]
     before = _git(repo, "rev-list", "--count", "origin/main..HEAD").strip()
@@ -438,6 +490,19 @@ def test_every_registry_member_lives_under_a_withhold_path():
                 member.path == root or member.path.startswith(root.rstrip("/") + "/")
                 for root in family.withhold_paths
             ), f"{member.path} is checked but never withheld"
+
+
+def test_registry_loads_and_declares_capital_structure_family():
+    families = fence.load_registry(REGISTRY)
+    keys = {family.key for family in families}
+    assert "capital-structure" in keys, (
+        "append_only_artifacts.json must declare capital-structure family"
+    )
+    cs = next(family for family in families if family.key == "capital-structure")
+    member_paths = {member.path for member in cs.members}
+    assert "data/capital_structure/source_manifest.jsonl" in member_paths
+    assert "data/capital_structure" in cs.withhold_paths
+    assert "site/capital-structure-data" in cs.withhold_paths
 
 
 def test_registry_identity_columns_exist_in_the_committed_artifacts():

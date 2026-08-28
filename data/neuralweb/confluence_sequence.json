@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-08-18",
+  "asof": "2026-08-28",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -12,10 +12,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-15",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -52,6 +52,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "BA",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "AVGO",
       "direction": 1,
       "horizon": "5.0",
@@ -74,6 +85,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "AVGO",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "BIIB",
       "direction": 1,
       "horizon": "5.0",
@@ -88,6 +110,17 @@
       "subject": "BIIB",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "BIIB",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -118,6 +151,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CIEN",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "CRM",
       "direction": 1,
       "horizon": "5.0",
@@ -132,6 +176,17 @@
       "subject": "CRM",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CRM",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -162,6 +217,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "DELL",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "HON",
       "direction": 1,
       "horizon": "5.0",
@@ -184,9 +250,9 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "HOOD",
+      "subject": "HON",
       "direction": 1,
-      "horizon": "5.0",
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -197,7 +263,29 @@
     {
       "subject": "HOOD",
       "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "HOOD",
+      "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "HOOD",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -228,6 +316,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "IBM",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-26",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "INTC",
       "direction": 1,
       "horizon": "5.0",
@@ -250,9 +349,9 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "NBIS",
+      "subject": "INTC",
       "direction": 1,
-      "horizon": "5.0",
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -263,7 +362,29 @@
     {
       "subject": "NBIS",
       "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "NBIS",
+      "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "NBIS",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -286,6 +407,17 @@
       "subject": "SMCI",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SMCI",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -316,6 +448,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "TDG",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "TXN",
       "direction": 1,
       "horizon": "5.0",
@@ -330,6 +473,17 @@
       "subject": "TXN",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TXN",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -382,6 +536,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CIFR",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-22",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "CRWD",
       "direction": 1,
       "horizon": "5.0",
@@ -399,8 +564,19 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-25",
+      "n_sessions_in_tape": 4,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CRWD",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-22",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -421,8 +597,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 5,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -440,6 +616,17 @@
       "subject": "IONQ",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-22",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "IONQ",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -503,14 +690,25 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "MPWR",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-22",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "ROST",
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 7,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 9,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -539,6 +737,17 @@
       "subject": "WDC",
       "direction": 1,
       "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-22",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "WDC",
+      "direction": 1,
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -580,14 +789,25 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "DDOG",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-23",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "JNJ",
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-24",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -602,6 +822,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "MTH",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-23",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "GNRC",
       "direction": 1,
       "horizon": "5.0",
@@ -628,6 +859,17 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "UNH",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
       "last_as_of": "2026-06-24",
@@ -637,7 +879,7 @@
     {
       "subject": "UNH",
       "direction": 1,
-      "horizon": "21.0",
+      "horizon": "63.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -694,10 +936,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-25",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -762,8 +1004,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -914,10 +1156,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-28",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1125,8 +1367,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-06",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1134,10 +1376,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-06-30",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1200,10 +1442,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-02",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 6,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1376,10 +1618,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-06",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1477,8 +1719,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-11",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 7,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1741,8 +1983,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-03",
-      "n_sessions_in_tape": 17,
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 18,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1752,8 +1994,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 12,
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 16,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -1983,8 +2225,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-13",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-30",
+      "n_sessions_in_tape": 5,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2192,8 +2434,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-07",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2476,10 +2718,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-15",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2555,8 +2797,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 6,
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 9,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2571,9 +2813,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CVX",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "GDDY",
       "direction": -1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "GDDY",
+      "direction": -1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2632,8 +2896,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 7,
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 9,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2643,8 +2907,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 5,
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 6,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2665,8 +2929,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2718,10 +2982,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-19",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2758,6 +3022,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CBOE",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "CVX",
       "direction": 1,
       "horizon": "63.0",
@@ -2769,7 +3044,29 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "CVX",
+      "subject": "DVN",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "DVN",
+      "direction": 1,
+      "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "DVN",
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
@@ -2780,28 +3077,6 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "DVN",
-      "direction": 1,
-      "horizon": "5.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
-      "subject": "DVN",
-      "direction": 1,
-      "horizon": "10.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
       "subject": "FANG",
       "direction": 1,
       "horizon": "5.0",
@@ -2816,6 +3091,17 @@
       "subject": "FANG",
       "direction": 1,
       "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "FANG",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2850,10 +3136,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": -1.0,
       "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2865,6 +3151,17 @@
       "state": "gone",
       "last_as_of": "2026-07-25",
       "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "FOXA",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2912,9 +3209,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "KMT",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "MO",
       "direction": 1,
       "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MO",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2949,10 +3268,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-20",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2962,9 +3281,9 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-07",
-      "n_sessions_in_tape": 7,
-      "n_independent_confirming_latest": 3.0
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 12,
+      "n_independent_confirming_latest": 2.0
     },
     {
       "subject": "MSFT",
@@ -2975,6 +3294,17 @@
       "state": "gone",
       "last_as_of": "2026-07-20",
       "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MSFT",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 6,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -2992,6 +3322,17 @@
       "subject": "PLD",
       "direction": 1,
       "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PLD",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3072,8 +3413,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3081,10 +3422,10 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-21",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3099,9 +3440,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "HWM",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "LEN",
       "direction": -1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "LEN",
+      "direction": -1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3149,8 +3512,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 10,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3171,8 +3534,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 7,
+      "last_as_of": "2026-08-12",
+      "n_sessions_in_tape": 8,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3187,17 +3550,6 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "MSFT",
-      "direction": 1,
-      "horizon": "21.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-23",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
       "subject": "VZ",
       "direction": 1,
       "horizon": "5.0",
@@ -3242,6 +3594,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "DLR",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-24",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "EXC",
       "direction": 1,
       "horizon": "5.0",
@@ -3256,6 +3619,17 @@
       "subject": "EXC",
       "direction": 1,
       "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-24",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "EXC",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3278,6 +3652,17 @@
       "subject": "AMP",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "AMP",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3314,8 +3699,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-05",
-      "n_sessions_in_tape": 8,
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 9,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3323,10 +3708,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 8,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3356,10 +3741,10 @@
       "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": 0.0,
+      "strength_slope": -0.5,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3385,6 +3770,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "IBKR",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "LMT",
       "direction": -1,
       "horizon": "5.0",
@@ -3400,10 +3796,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-31",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3424,8 +3820,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 7,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3435,8 +3831,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-27",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3444,10 +3840,10 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3468,8 +3864,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-26",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3499,16 +3895,27 @@
       "direction": -1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-25",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 3,
       "n_independent_confirming_latest": 2.0
     },
     {
       "subject": "SYF",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 4,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SYF",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3523,8 +3930,19 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-29",
-      "n_sessions_in_tape": 2,
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TPR",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-27",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3550,6 +3968,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "C",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 6,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "CHD",
       "direction": 1,
       "horizon": "5.0",
@@ -3564,6 +3993,17 @@
       "subject": "CL",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CL",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3605,6 +4045,17 @@
       "n_independent_confirming_latest": 3.0
     },
     {
+      "subject": "HSY",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-30",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "META",
       "direction": 1,
       "horizon": "5.0",
@@ -3616,9 +4067,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "META",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-30",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "NWS",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-07-29",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "NWS",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3649,9 +4122,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "OMC",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "PG",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 6,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PG",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3682,6 +4177,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "SO",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "T",
       "direction": 1,
       "horizon": "5.0",
@@ -3693,9 +4199,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "T",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "TFC",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TFC",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3718,6 +4246,17 @@
       "subject": "WMT",
       "direction": 1,
       "horizon": "10.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-28",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "WMT",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3781,6 +4320,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "ETN",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-03",
+      "n_sessions_in_tape": 5,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "EXR",
       "direction": 1,
       "horizon": "5.0",
@@ -3814,17 +4364,6 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "PG",
-      "direction": 1,
-      "horizon": "21.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-29",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
       "subject": "SYY",
       "direction": 1,
       "horizon": "5.0",
@@ -3847,9 +4386,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "TDG",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "TENB",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 9,
+      "n_independent_confirming_latest": 3.0
+    },
+    {
+      "subject": "TENB",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -3897,8 +4458,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-02",
-      "n_sessions_in_tape": 3,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 4,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -3916,17 +4477,6 @@
       "subject": "HPQ",
       "direction": 1,
       "horizon": "5.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
-      "subject": "HSY",
-      "direction": 1,
-      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -3968,17 +4518,6 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "META",
-      "direction": 1,
-      "horizon": "21.0",
-      "persistence_streak": 0,
-      "strength_slope": null,
-      "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 1,
-      "n_independent_confirming_latest": 2.0
-    },
-    {
       "subject": "PG",
       "direction": -1,
       "horizon": "5.0",
@@ -3987,6 +4526,17 @@
       "state": "gone",
       "last_as_of": "2026-08-07",
       "n_sessions_in_tape": 7,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PG",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 6,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4027,6 +4577,17 @@
       "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
+      "strength_slope": -1.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "WFC",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
       "last_as_of": "2026-07-30",
@@ -4049,6 +4610,17 @@
       "direction": -1,
       "horizon": "5.0",
       "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 4,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "HUBB",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
       "last_as_of": "2026-07-31",
@@ -4058,7 +4630,7 @@
     {
       "subject": "HUBB",
       "direction": -1,
-      "horizon": "5.0",
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4100,6 +4672,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "KVUE",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-31",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "PM",
       "direction": 1,
       "horizon": "5.0",
@@ -4122,9 +4705,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "REGN",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-31",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "S",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-31",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "S",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4139,8 +4744,19 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-05",
-      "n_sessions_in_tape": 5,
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 6,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TTWO",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 6,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4158,6 +4774,17 @@
       "subject": "AXP",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-01",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "AXP",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4177,9 +4804,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CIFR",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-03",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "F",
       "direction": -1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 4,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "F",
+      "direction": -1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
@@ -4192,10 +4841,10 @@
       "direction": 1,
       "horizon": "63.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-01",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4221,9 +4870,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "NVT",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-03",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "CASY",
       "direction": 1,
       "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-20",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CASY",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4243,9 +4914,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "KO",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "T",
       "direction": -1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "T",
+      "direction": -1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4298,6 +4991,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "NRG",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "RHHBY",
       "direction": -1,
       "horizon": "5.0",
@@ -4306,6 +5010,17 @@
       "state": "gone",
       "last_as_of": "2026-08-07",
       "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "RHHBY",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4320,9 +5035,31 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "SMR",
+      "direction": -1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "TTD",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-05",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TTD",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4412,10 +5149,10 @@
       "direction": -1,
       "horizon": "5.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-07",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-12",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4432,6 +5169,17 @@
     {
       "subject": "QQQ",
       "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-07",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SATL",
+      "direction": 1,
       "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
@@ -4474,6 +5222,105 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "ANET",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-12",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "BKSY",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-12",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ENTG",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "GS",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": -1.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "IRDM",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 5,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "OKTA",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PCOR",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "QLYS",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 5,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "TEAM",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 5,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "TGT",
       "direction": 1,
       "horizon": "63.0",
@@ -4485,9 +5332,42 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "AGI",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "BG",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 5,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "BLK",
       "direction": 1,
       "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "BLK",
+      "direction": 1,
+      "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4507,9 +5387,108 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CF",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CHTR",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "EOG",
       "direction": 1,
       "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "EQIX",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "FDS",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "FORM",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "GOOG",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "HPE",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KHC",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KMI",
+      "direction": 1,
+      "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -4540,8 +5519,63 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "TMUS",
+      "subject": "MDA",
       "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MU",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "OKE",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PL",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": -0.16667,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 4,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "RKLB",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": -1.0,
+      "state": "gone",
+      "last_as_of": "2026-08-14",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SMCI",
+      "direction": -1,
       "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
@@ -4553,12 +5587,23 @@
     {
       "subject": "TMUS",
       "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": -0.5,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 3,
+      "n_independent_confirming_latest": 3.0
+    },
+    {
+      "subject": "TMUS",
+      "direction": 1,
       "horizon": "21.0",
       "persistence_streak": 0,
-      "strength_slope": null,
+      "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-13",
-      "n_sessions_in_tape": 1,
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 2,
       "n_independent_confirming_latest": 2.0
     },
     {
@@ -4584,13 +5629,288 @@
       "n_independent_confirming_latest": 2.0
     },
     {
-      "subject": "TTWO",
+      "subject": "TRV",
       "direction": 1,
-      "horizon": "21.0",
+      "horizon": "5.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
       "last_as_of": "2026-08-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CB",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "GL",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "LUNR",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MRK",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "NVO",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PM",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-17",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KO",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KO",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ROST",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SNOW",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-18",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SPCX",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "AMGN",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "AMZN",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "APP",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ASTS",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CRM",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "PLTR",
+      "direction": -1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "MNST",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "VSAT",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-20",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ANET",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": 0.0,
+      "state": "gone",
+      "last_as_of": "2026-08-26",
+      "n_sessions_in_tape": 2,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "V",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-21",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "CLX",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-24",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "FTNT",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-24",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "SMH",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-24",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "STZ",
+      "direction": 1,
+      "horizon": "63.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-08-25",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
     }
@@ -4601,16 +5921,16 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-08-17",
-      "n_sessions_in_tape": 16
+      "last_as_of": "2026-08-19",
+      "n_sessions_in_tape": 18
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 1,
+      "persistence_streak": 3,
       "strength_slope": 0.0,
       "state": "stable",
-      "last_as_of": "2026-08-18",
-      "n_sessions_in_tape": 26
+      "last_as_of": "2026-08-28",
+      "n_sessions_in_tape": 34
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -4637,9 +5957,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 978,
+  "n_tape_rows": 1300,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-18T11:20:15Z",
+  "produced_at": "2026-08-28T13:16:39Z",
   "authority_check": []
 }

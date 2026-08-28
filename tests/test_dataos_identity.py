@@ -33,8 +33,10 @@ from lib.dataos.identity import (
     AliasRow,
     CNBoard,
     IdentityError,
+    IssuerMaster,
     KNOWN_MICS,
     ListingKey,
+    SecurityIssuerRow,
     VendorAliasTable,
     cn_board,
     fx_id,
@@ -415,3 +417,146 @@ def test_alias_rows_carry_half_open_intervals() -> None:
 def test_a_record_missing_a_required_column_raises_with_the_column_named() -> None:
     with pytest.raises(IdentityError, match="security_id"):
         VendorAliasTable.from_records([{"vendor": "yahoo", "vendor_symbol": "MMC"}])
+
+
+# ── the issuer master reader — V4-D2B1 (§3 Reader API) ─────────────────────────
+def test_issuer_master_finds_securities_of_a_shared_issuer() -> None:
+    """The §9.7 canonical query, pure over a hand-built record set — GOOG/GOOGL."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-GOOG", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNAS-GOOG"},
+        {"security_id": "SEC:US-XNAS-GOOGL", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNAS-GOOGL"},
+        {"security_id": "SEC:US-XNYS-MMC", "issuer_id": "ISS:US-XNYS-MMC",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNYS-MMC"},
+    ])
+    assert im.securities_of_issuer("ISS:US-XNAS-GOOG") == (
+        "SEC:US-XNAS-GOOG", "SEC:US-XNAS-GOOGL",
+    )
+    assert im.securities_of_issuer("ISS:US-XNYS-MMC") == ("SEC:US-XNYS-MMC",)
+    assert im.issuer_of_security("SEC:US-XNAS-GOOGL") == "ISS:US-XNAS-GOOG"
+    assert im.issuer_of_security("SEC:US-XNAS-GOOG") == "ISS:US-XNAS-GOOG"
+
+
+def test_issuer_master_answers_none_never_a_guess() -> None:
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-AEP", "issuer_id": None,
+         "issuer_state": "NO_ISSUER_EVIDENCE", "listing_key": "US-XNAS-AEP"},
+    ])
+    assert im.issuer_of_security("SEC:US-XNAS-AEP") is None
+    assert im.issuer_of_security("SEC:UNKNOWN") is None
+    assert im.securities_of_issuer("ISS:UNKNOWN") == ()
+    # A null-issuer row is never indexed under any issuer_id.
+    assert im.securities_of_issuer(None) == ()  # type: ignore[arg-type]
+
+
+def test_issuer_master_from_records_is_nan_safe_without_pandas() -> None:
+    """V4-D2B1 FIX 3 (M1): a ``pandas`` ``to_dict("records")`` round-trip can hand
+    back a genuine ``float('nan')`` — never ``None`` — for a null cell in a nullable
+    string column that also carries real strings.  ``lib/dataos/identity.py`` is
+    stdlib-only (module docstring) and must catch this WITHOUT importing pandas; a
+    NaN ``issuer_id`` must index as NO issuer, never the literal string ``'nan'``.
+    """
+    nan = float("nan")
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-AEP", "issuer_id": nan,
+         "issuer_state": nan, "listing_key": nan},
+        {"security_id": "SEC:US-XNAS-GOOG", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNAS-GOOG"},
+    ])
+    assert im.issuer_of_security("SEC:US-XNAS-AEP") is None
+    # The literal string 'nan' must never appear as a key or a matchable issuer id.
+    assert im.securities_of_issuer("nan") == ()
+    assert "nan" not in im._by_issuer  # noqa: SLF001 — pinning the index directly
+    assert im.issuer_of_security("SEC:US-XNAS-GOOG") == "ISS:US-XNAS-GOOG"
+
+
+def test_issuer_master_from_records_requires_security_id() -> None:
+    with pytest.raises(IdentityError, match="security_id"):
+        IssuerMaster.from_records([{"issuer_id": "ISS:US-XNYS-MMC"}])
+
+
+def test_security_issuer_row_is_a_frozen_pure_value() -> None:
+    row = SecurityIssuerRow(security_id="SEC:US-XNYS-MMC", issuer_id="ISS:US-XNYS-MMC",
+                            issuer_state="RESOLVED", listing_key="US-XNYS-MMC")
+    with pytest.raises(Exception):  # noqa: BLE001 — frozen dataclass raises FrozenInstanceError
+        row.security_id = "SEC:US-XNYS-OTHER"  # type: ignore[misc]
+
+
+# ── the security axis — V4-D2B1-R1 (§3.6 reader API) ───────────────────────────
+def test_security_state_is_null_by_default_and_excluded_rows_never_aggregate() -> None:
+    """A security-axis-superseded row (a tombstone) is excluded from
+    ``securities_of_issuer`` by construction, even when hand-fed the SAME
+    ``issuer_id`` as an active member — the exclusion is on ``security_state``, not
+    on the issuer axis at all."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNYS-EQR", "issuer_id": "ISS:US-XNYS-EQR",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNYS-EQR",
+         "security_state": None, "superseded_by": None},
+        {"security_id": "SEC:US-XNYS-VMRK", "issuer_id": "ISS:US-XNYS-EQR",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNYS-VMRK",
+         "security_state": "SUPERSEDED_DUPLICATE_MINT",
+         "superseded_by": "SEC:US-XNYS-EQR"},
+    ])
+    assert im.securities_of_issuer("ISS:US-XNYS-EQR") == ("SEC:US-XNYS-EQR",)
+    assert im.security_state_of("SEC:US-XNYS-VMRK") == "SUPERSEDED_DUPLICATE_MINT"
+    assert im.superseded_by_of("SEC:US-XNYS-VMRK") == "SEC:US-XNYS-EQR"
+    assert im.security_state_of("SEC:US-XNYS-EQR") is None
+    assert im.superseded_by_of("SEC:US-XNYS-EQR") is None
+    # Unknown security_id: both accessors answer None, never a raise or a guess.
+    assert im.security_state_of("SEC:UNKNOWN") is None
+    assert im.superseded_by_of("SEC:UNKNOWN") is None
+
+
+def test_security_axis_absent_columns_default_to_active_era_seam() -> None:
+    """A pre-V4-D2B1-R1 record (no security_state/superseded_by keys at all) reads as
+    an ACTIVE row — the era seam, same law as the issuer axis's own pre-D2B1
+    behaviour: an old record shape is 'not yet migrated', never a schema error."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNYS-AAPL", "issuer_id": "ISS:US-XNYS-AAPL",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNYS-AAPL"},
+    ])
+    assert im.security_state_of("SEC:US-XNYS-AAPL") is None
+    assert im.superseded_by_of("SEC:US-XNYS-AAPL") is None
+    assert im.securities_of_issuer("ISS:US-XNYS-AAPL") == ("SEC:US-XNYS-AAPL",)
+
+
+def test_security_axis_from_records_is_nan_safe_without_pandas() -> None:
+    """Same NaN-is-not-None trap as the issuer axis (FIX 3/M1) — a pandas
+    ``to_dict('records')`` round-trip can hand back a genuine ``float('nan')`` for a
+    null ``security_state``/``superseded_by`` cell, never the literal string 'nan'."""
+    nan = float("nan")
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNYS-EQR", "issuer_id": "ISS:US-XNYS-EQR",
+         "issuer_state": "RESOLVED", "listing_key": "US-XNYS-EQR",
+         "security_state": nan, "superseded_by": nan},
+    ])
+    assert im.security_state_of("SEC:US-XNYS-EQR") is None
+    assert im.superseded_by_of("SEC:US-XNYS-EQR") is None
+    assert im.securities_of_issuer("ISS:US-XNYS-EQR") == ("SEC:US-XNYS-EQR",), (
+        "a NaN security_state must read as active, never truthy"
+    )
+
+
+def test_security_issuer_row_carries_the_security_axis_and_stays_frozen() -> None:
+    row = SecurityIssuerRow(security_id="SEC:US-XNYS-VMRK", issuer_id=None,
+                            issuer_state="NO_ISSUER_EVIDENCE", listing_key="US-XNYS-VMRK",
+                            security_state="SUPERSEDED_DUPLICATE_MINT",
+                            superseded_by="SEC:US-XNYS-EQR")
+    assert row.security_state == "SUPERSEDED_DUPLICATE_MINT"
+    assert row.superseded_by == "SEC:US-XNYS-EQR"
+    with pytest.raises(Exception):  # noqa: BLE001 — frozen dataclass raises FrozenInstanceError
+        row.security_state = "ACTIVE"  # type: ignore[misc]
+    # Default construction (no security-axis kwargs) is active — matches the era seam.
+    active = SecurityIssuerRow(security_id="SEC:US-XNYS-EQR", issuer_id="ISS:US-XNYS-EQR",
+                               issuer_state="RESOLVED", listing_key="US-XNYS-EQR")
+    assert active.security_state is None
+    assert active.superseded_by is None
+
+
+def test_issuer_id_and_parse_id_are_unchanged_by_the_issuer_axis() -> None:
+    """Spec §2: grammar unchanged — ``issuer_id()``/``parse_id()`` stay pure
+    renderers; WHICH listing key the builder passes to ``issuer_id()`` is what
+    changed, not the function itself."""
+    assert issuer_id(MMC) == "ISS:US-XNYS-MMC"
+    assert parse_id("ISS:US-XNAS-GOOG") == ("issuer", ListingKey("US", XNAS, "GOOG"))

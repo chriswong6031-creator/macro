@@ -4,16 +4,23 @@
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
+{#- Second-layer non-finite guard (defensive; the producing boundary in
+    engine/quant_lab/page.py `_fmt` is the primary fix, but these macros are the
+    last thing before HTML so they must not trust it blindly). Pure-Jinja finite
+    test, no custom filter needed: `v != v` catches NaN (self-inequality, the house
+    idiom used elsewhere in this repo); `v * 0 != 0` catches +-inf (inf*0 is NaN,
+    and NaN != 0 is True) while leaving every finite number — including a
+    legitimate 0 — unaffected (0*0 == 0). -#}
 {% macro num(v, nd=4, plus=False) -%}
-{%- if v is none -%}<span class="muted">—</span>{%- elif plus -%}{{ ('%+.'~nd~'f')|format(v) }}{%- else -%}{{ ('%.'~nd~'f')|format(v) }}{%- endif -%}
+{%- if v is none or v != v or v * 0 != 0 -%}<span class="muted">—</span>{%- elif plus -%}{{ ('%+.'~nd~'f')|format(v) }}{%- else -%}{{ ('%.'~nd~'f')|format(v) }}{%- endif -%}
 {%- endmacro %}
 {% macro pct0(v) -%}
-{%- if v is none -%}<span class="muted">—</span>{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
+{%- if v is none or v != v or v * 0 != 0 -%}<span class="muted">—</span>{%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
 {%- endmacro %}
 {#- Percent that keeps a small non-zero value legible. Rounding 0.4% to "0%" would read as
     "never recorded" when the honest reading is "recorded, but far too thinly to use". -#}
 {% macro pctfine(v) -%}
-{%- if v is none -%}<span class="muted">—</span>
+{%- if v is none or v != v or v * 0 != 0 -%}<span class="muted">—</span>
 {%- elif v > 0 and v < 0.01 -%}{{ '%.1f%%'|format(v*100) }}
 {%- else -%}{{ '%.0f%%'|format(v*100) }}{%- endif -%}
 {%- endmacro %}

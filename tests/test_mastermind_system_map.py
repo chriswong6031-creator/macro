@@ -61,7 +61,9 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     registry = model.registry
     assert registry["schema"] == "mastermind_programs.v1"
     assert set(registry["repositories"]) == {"macro", "terminal", "mastermind"}
-    assert len(registry["programs"]) == 59
+    # 59 -> 60: Grey Deer GD-0A (#5963) landed grey-deer-risk-intelligence
+    # (records-only program registration; freeze research/grey_deer/, 2026-08-19).
+    assert len(registry["programs"]) == 60
     assert len(registry["product_surfaces"]) == 16
     assert len(registry["cross_repo_contracts"]) == 17
     assert {
@@ -74,7 +76,9 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     )
     # 98 -> 99: GMI W1b (#5343) made gmi-theme-graph a raw synapse owner
     # (theme-graph-nodes/edges/evidence); disposition row added in the same change.
-    assert len(raw_owners) == 99
+    # 99 -> 100: AD-1 (WS:ADVANCED-DATA-OPTIONS) made options-intelligence a raw
+    # synapse owner (options-intel-brief); disposition row added in the same change.
+    assert len(raw_owners) == 100
     assert raw_owners == set(registry["owner_program_dispositions"])
     assert raw_owners == {
         owner for repository, owner in model.dispositions if repository == "macro"

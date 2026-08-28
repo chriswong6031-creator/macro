@@ -27,14 +27,14 @@ import argparse
 import json
 import logging
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from lib import config, nyse_calendar  # noqa: E402
+from lib import config, hk_calendar, nyse_calendar  # noqa: E402
 
 log = logging.getLogger("check_surface_freshness")
 
@@ -42,7 +42,16 @@ log = logging.getLogger("check_surface_freshness")
 class ArtifactSpec(NamedTuple):
     path: str            # relative to config.ROOT
     as_of_key: str = "as_of"   # JSON key holding the session date string
+    clock: str = "nyse"         # ``nyse`` or a source-owned availability clock
 
+
+#: hk-discovery wave (WS:PROPHET-HK-CA-REVAMP; research/PROPHET_SHADOW_
+#: CONTRACT_V1.md §4's deferred surface-freshness wiring) — the receipt path
+#: engine/board_shadow.py's write_shadow additively writes. Named as a
+#: module constant, never re-typed, so this file's leakage-fence footprint
+#: (K6, tests/test_board_shadow.py) is exactly one occurrence to classify —
+#: see that test's reviewed allowlist entry for this file.
+_HK_DISCOVERY_RECEIPT_PATH = "data/prophet_shadow/hk_discovery_receipt.json"
 
 # Authoritative list of first-class surface artifacts (FT-R8).
 # Each must carry as_of == expected NYSE session after a healthy nightly.
@@ -54,7 +63,156 @@ _ARTIFACTS: list[ArtifactSpec] = [
     ArtifactSpec("site/basketdata/sector_pulse.json"),
     ArtifactSpec("site/basketdata/turn_watch.json"),  # FTR W4 basket turn-watch organ
     ArtifactSpec("site/factordata/us_standouts.json"),  # CSP-W5 FT-R8 registration
+    # Options Flow publishes ``asof`` (no underscore).  Registering the actual
+    # reader-facing manifest closes the gap where its producer could no-op for
+    # several sessions while this shared sentinel remained green.
+    ArtifactSpec("site/flow/index.json", "asof"),
+    # FINRA daily files have a later, source-owned 18:30 ET availability clock.
+    ArtifactSpec("site/darkpool_eod.json", "asof", "finra"),
+    # hk-discovery wave: the HK Lane-B discovery-challenger freshness receipt
+    # is DELIBERATELY NOT registered here (build commission R1/F1+F10). It
+    # has its own specialized check (check_hk_discovery_freshness below) with
+    # its own distinguishable states (missing / stale / registry error /
+    # challenger-failed) and its own HK-session gap arithmetic
+    # (lib.hk_calendar.sessions_behind) — folding it into this generic
+    # NYSE-clock loop would collapse those distinct states into one
+    # "SURFACE STALE" line AND would escalate it via _escalate/push_ops_alert
+    # under the WRONG (NYSE) session-gap arithmetic, exactly the mistake this
+    # commission closes. See check_hk_discovery_freshness's own docstring for
+    # the receipt's actual freshness contract.
 ]
+
+
+def _expected_for_spec(spec: ArtifactSpec, now: datetime | None) -> date:
+    if spec.clock == "finra":
+        from collectors.finra_short_volume import expected_available_session
+
+        return expected_available_session(now)
+    if spec.clock == "hkex":
+        return hk_calendar.expected_last_session(now)
+    return nyse_calendar.expected_last_session(now)
+
+
+def check_darkpool_population(root: Path) -> int | None:
+    """Warn when a nominally fresh Dark Pool universe mixes observation dates.
+
+    The current machine-facing ``universe`` must be a comparable cross-section:
+    every member's ``asof`` equals the artifact's top-level session.  Explicit
+    older rows may live under ``historical_rows`` and are not counted as mixed.
+    """
+    path = root / "site" / "darkpool_eod.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        asof = str(payload.get("asof") or "")
+        rows = payload.get("universe") or []
+        mixed = sum(
+            1 for row in rows
+            if isinstance(row, dict) and str(row.get("asof") or "") != asof
+        )
+    except FileNotFoundError:
+        return None
+    except Exception as e:  # noqa: BLE001 — sentinel remains warn-only
+        log.debug("darkpool population census unreadable (%s)", e)
+        return None
+    if mixed:
+        print(
+            "::warning::SURFACE MIXED: site/darkpool_eod.json "
+            f"universe_rows_off_clock={mixed} top_level_asof={asof}",
+            flush=True,
+        )
+        log.warning("Dark Pool mixed population: %d universe rows differ from %s", mixed, asof)
+    else:
+        log.info("Dark Pool population coherent: %d current rows at %s", len(rows), asof)
+    return mixed
+
+
+#: hk-discovery wave — the four distinguishable states the specialized
+#: receipt check below can report. 'fresh' means none of the other three
+#: fired (silent — no annotation) and is never itself printed.
+HK_DISCOVERY_MISSING = "missing"
+HK_DISCOVERY_STALE = "stale"
+HK_DISCOVERY_ERROR = "error"
+HK_DISCOVERY_CHALLENGER_FAILED = "challenger_failed"
+
+
+def check_hk_discovery_freshness(root: Path, now: datetime | None = None) -> list[str]:
+    """hk-discovery wave (contract §4's deferred surface-freshness wiring):
+    read the HK Lane-B discovery-challenger receipt and emit DISTINCT
+    line-start ``::warning`` annotations for each condition that fires.
+    Returns the list of condition tokens that fired (empty = healthy — a
+    fresh, zero-candidate session prints nothing; a lawful zero is not an
+    incident). Warn-only: never raises, never affects the sentinel's exit
+    code.
+
+    Build commission R1 (F1+F10): this is the SOLE receipt check — the
+    receipt is deliberately NOT registered in :data:`_ARTIFACTS`, so it never
+    enters the generic ``run()`` loop, never prints a ``SURFACE STALE``
+    annotation, and never reaches :func:`_escalate`/``push_ops_alert``. Its
+    own staleness measure is the HK-session gap
+    (:func:`lib.hk_calendar.sessions_behind`) against
+    :func:`lib.hk_calendar.expected_last_session` — never the NYSE calendar
+    ``_ARTIFACTS`` entries use.
+    """
+    fired: list[str] = []
+    path = root / _HK_DISCOVERY_RECEIPT_PATH
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        print(
+            "::warning title=hk-discovery-receipt-missing::"
+            f"{_HK_DISCOVERY_RECEIPT_PATH} is absent — the hk_discovery_v1 "
+            "challenger has not written a session yet (absent, not yet wired)",
+            flush=True,
+        )
+        return [HK_DISCOVERY_MISSING]
+    except Exception as e:  # noqa: BLE001 — sentinel remains warn-only
+        log.debug("hk discovery receipt unreadable (%s)", e)
+        return fired
+
+    as_of = str(payload.get("as_of") or "")
+    expected = str(hk_calendar.expected_last_session(now))
+    if not as_of or as_of < expected:
+        # R1/R11: the gap is reported on HKEX's OWN session calendar
+        # (lib.hk_calendar.sessions_behind), never the NYSE one — an
+        # unparseable as_of just omits the gap suffix rather than guessing.
+        gap: int | None = None
+        if as_of:
+            try:
+                gap = hk_calendar.sessions_behind(date.fromisoformat(as_of), now)
+            except ValueError:
+                gap = None
+        gap_suffix = f" sessions_behind={gap}" if gap is not None else ""
+        print(
+            "::warning title=hk-discovery-receipt-stale::"
+            f"{_HK_DISCOVERY_RECEIPT_PATH} as_of={as_of or 'MISSING'} "
+            f"expected={expected}{gap_suffix}",
+            flush=True,
+        )
+        fired.append(HK_DISCOVERY_STALE)
+
+    if payload.get("registry_state") == "error":
+        print(
+            "::warning title=hk-discovery-registry-error::"
+            f"{_HK_DISCOVERY_RECEIPT_PATH} registry_state=error — the "
+            "hk_discovery_v1 substrate failed this pass",
+            flush=True,
+        )
+        fired.append(HK_DISCOVERY_ERROR)
+
+    failures = payload.get("challenger_failures") or []
+    if failures:
+        names = sorted({
+            str(f.get("definition")) for f in failures if isinstance(f, dict)
+        }) or [str(len(failures))]
+        print(
+            "::warning title=hk-discovery-challenger-failed::"
+            f"{_HK_DISCOVERY_RECEIPT_PATH} challenger_failures="
+            f"{', '.join(names)}",
+            flush=True,
+        )
+        fired.append(HK_DISCOVERY_CHALLENGER_FAILED)
+
+    return fired
 
 
 def _read_as_of(root: Path, spec: ArtifactSpec) -> str | None:
@@ -248,10 +406,12 @@ def run(now: datetime | None = None, root: Path | None = None) -> int:
         check_candidates_freshness(root, now)
     except Exception as e:  # noqa: BLE001 — the sentinel never breaks the render
         log.warning("candidates freshness check failed (%s)", e)
-    expected_date = nyse_calendar.expected_last_session(now)
-    expected = str(expected_date)
     stale: list[tuple[str, str]] = []
+    expected_by_path: dict[str, date] = {}
     for spec in _ARTIFACTS:
+        expected_date = _expected_for_spec(spec, now)
+        expected = str(expected_date)
+        expected_by_path[spec.path] = expected_date
         as_of = _read_as_of(root, spec)
         actual = as_of or "MISSING"
         if not as_of or as_of < expected:
@@ -260,26 +420,43 @@ def run(now: datetime | None = None, root: Path | None = None) -> int:
             log.warning("SURFACE STALE: %s as_of=%s expected=%s", spec.path, actual, expected)
         else:
             log.info("fresh: %s as_of=%s", spec.path, as_of)
+    mixed_darkpool = check_darkpool_population(root)
+    try:
+        check_hk_discovery_freshness(root, now)
+    except Exception as e:  # noqa: BLE001 — the sentinel never breaks the render
+        log.warning("hk discovery-receipt freshness check failed (%s)", e)
     stale_count = len(stale)
     if stale_count == 0:
-        log.info("all %d surface artifacts are fresh for session %s", len(_ARTIFACTS), expected)
+        log.info(
+            "all %d surface artifacts are clock-current%s",
+            len(_ARTIFACTS),
+            "; Dark Pool population mixed" if mixed_darkpool else "",
+        )
         return 0
-    log.warning("%d/%d surface artifacts are stale (expected session %s)",
-                stale_count, len(_ARTIFACTS), expected)
+    log.warning("%d/%d surface artifacts are stale against their source clocks",
+                stale_count, len(_ARTIFACTS))
 
     # How far behind is the WORST one? A MISSING artifact has no date to measure, so it
     # counts as maximally behind — an artifact that is not there published nothing.
     worst = 0
-    for _path, actual in stale:
+    for path, actual in stale:
         if actual == "MISSING":
             worst = max(worst, ESCALATE_SESSIONS_BEHIND)
             continue
         try:
-            worst = max(worst, nyse_calendar.sessions_behind(date.fromisoformat(actual), now))
+            actual_date = date.fromisoformat(actual)
+            target = expected_by_path[path]
+            gap = len(nyse_calendar.sessions_between(
+                actual_date + timedelta(days=1), target
+            ))
+            worst = max(worst, gap)
         except Exception:  # noqa: BLE001 — an unparseable as_of is not this sentinel's subject
             continue
     if worst >= ESCALATE_SESSIONS_BEHIND:
-        _escalate(stale, worst, expected)
+        expected_summary = ", ".join(
+            sorted({str(expected_by_path[path]) for path, _actual in stale})
+        )
+        _escalate(stale, worst, expected_summary)
     else:
         log.info("worst surface is %d session(s) behind (< %d) — annotation only, no page",
                  worst, ESCALATE_SESSIONS_BEHIND)
@@ -302,7 +479,7 @@ def selftest() -> int:
         for spec in _ARTIFACTS:
             p = tmp / spec.path
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(json.dumps({"as_of": expected}))
+            p.write_text(json.dumps({spec.as_of_key: expected}))
 
         rc = run(now=datetime(2026, 7, 9, 3, 0, tzinfo=timezone.utc), root=tmp)
         assert rc == 0, f"fresh scenario returned {rc}"

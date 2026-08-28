@@ -721,6 +721,33 @@ def _event_risk(rec: dict) -> float:
 _SIZE_BUCKETS = [(0.66, "quarter", 25), (0.40, "half", 50), (0.20, "three-quarter", 75)]
 # canonical size ladder, for mapping a conviction-capped pct back to a bucket label
 _PCT_BUCKET = {0: "avoid", 25: "quarter", 50: "half", 75: "three-quarter", 100: "full"}
+
+# Human display twin for the `bucket` enum above — the browser renderer must never
+# print the raw slug (e.g. "three-quarter") in either language. Kept in ONE place
+# next to the enum it mirrors so the two never drift apart.
+_BUCKET_LABEL = {
+    "avoid":         ("Avoid", "回避"),
+    "quarter":       ("Quarter Size", "四分之一仓"),
+    "half":          ("Half Size", "半仓"),
+    "three-quarter": ("Three-Quarter Size", "四分之三仓"),
+    "full":          ("Full Size", "满仓"),
+}
+
+
+def bucket_display(bucket: str | None) -> tuple[str | None, str | None]:
+    """Human display twin for a `_SIZE_BUCKETS`/`_PCT_BUCKET` slug. An unknown bucket
+    degrades to a prettified English label (never a blank or a crash); the Chinese
+    twin falls back to that same prettified English rather than going blank. A
+    missing/empty bucket (no size block at all) returns (None, None) so the view
+    contract's existing "omit a missing leg" guard keeps applying."""
+    if not bucket:
+        return None, None
+    if bucket in _BUCKET_LABEL:
+        return _BUCKET_LABEL[bucket]
+    pretty = bucket.replace("-", " ").replace("_", " ").strip().title() or bucket
+    return pretty, pretty
+
+
 # The cycle/timing call is the BINDING cap on size. A partial-conviction entry
 # (HALF SIZE = the daily turn is in but the weekly hasn't confirmed) — or a
 # not-yet-triggered watch/wait — must never display a fuller size than the entry

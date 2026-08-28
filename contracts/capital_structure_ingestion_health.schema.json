@@ -47,7 +47,15 @@
         "deferred": {"type": "integer", "minimum": 0},
         "parser_deferred": {"type": "integer", "minimum": 0},
         "storage_deferred": {"type": "integer", "minimum": 0},
-        "parked": {"type": "integer", "minimum": 0}
+        "parked": {"type": "integer", "minimum": 0},
+        "re_observed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Verified successful re-observations of already-retained evidence_ids. Third progress term so idempotent nights are not the #5792 fail."
+        },
+        "unique_evidence_count": {"type": ["integer", "null"], "minimum": 0},
+        "manifest_revision_count": {"type": ["integer", "null"], "minimum": 0},
+        "observation_count": {"type": ["integer", "null"], "minimum": 0}
       }
     },
     "source_high_watermark_before": {"$ref": "#/$defs/watermark"},
@@ -74,7 +82,8 @@
     "verdict": {"type": "string", "enum": ["ok", "fail", "no_new_work"]},
     "verdict_reason": {"type": "string", "minLength": 1},
     "no_new_work_proven": {"type": "boolean"},
-    "no_new_work_reason": {"type": ["string", "null"]}
+    "no_new_work_reason": {"type": ["string", "null"]},
+    "horizon": {"$ref": "#/$defs/horizon"}
   },
   "$defs": {
     "watermark": {
@@ -89,6 +98,67 @@
         "complete_submission_count": {"type": "integer", "minimum": 0},
         "latest_retrieved_at": {"type": ["string", "null"]},
         "latest_filing_date": {"type": ["string", "null"]}
+      }
+    },
+    "horizon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason_codes", "target_sla_hours", "target_next_downstream_job", "compiler_generation_id", "compiler_as_of", "calculated_at", "watermarks", "gaps", "live_tail", "work_classes"],
+      "properties": {
+        "state": {"enum": ["current", "lagging", "degraded_capacity", "degraded_discovery", "unavailable"]},
+        "reason_codes": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "target_sla_hours": {"type": "number", "minimum": 0},
+        "target_next_downstream_job": {"type": "string", "minLength": 1},
+        "policy_version": {"type": ["string", "null"]},
+        "discovery_clock_policy_version": {"type": ["string", "null"]},
+        "compiler_generation_id": {"type": ["string", "null"]},
+        "compiler_as_of": {"type": ["string", "null"], "format": "date-time"},
+        "calculated_at": {"type": "string", "format": "date-time"},
+        "watermarks": {"$ref": "#/$defs/horizon_watermarks"},
+        "gaps": {"$ref": "#/$defs/horizon_gaps"},
+        "live_tail": {"$ref": "#/$defs/live_tail"},
+        "work_classes": {
+          "type": "array", "maxItems": 3,
+          "items": {"$ref": "#/$defs/horizon_work_class"}
+        }
+      }
+    },
+    "horizon_watermarks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["latest_expected_sec_index_date", "latest_expected_sec_index_status", "latest_completed_sec_index_date", "latest_discovered_in_policy_filing_date", "latest_discovered_observed_at", "latest_eligible_retained_filing_date", "latest_eligible_retained_retrieved_at", "latest_compiled_in_policy_filing_date"],
+      "properties": {
+        "latest_expected_sec_index_date": {"type": ["string", "null"], "format": "date"}, "latest_expected_sec_index_status": {"type": ["string", "null"]}, "latest_completed_sec_index_date": {"type": ["string", "null"], "format": "date"},
+        "latest_expected_realtime_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_filings_status": {"type": ["string", "null"]}, "latest_filings_observed_through": {"type": ["string", "null"], "format": "date-time"},
+        "latest_discovered_in_policy_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_discovered_observed_at": {"type": ["string", "null"], "format": "date-time"},
+        "latest_eligible_retained_filing_date": {"type": ["string", "null"], "format": "date"}, "latest_eligible_retained_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+        "latest_compiled_in_policy_filing_date": {"type": ["string", "null"], "format": "date"}
+      }
+    },
+    "horizon_gaps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["discovery_to_retained_completed_sessions", "retained_to_compiled_completed_sessions"],
+      "properties": {"discovery_to_retained_completed_sessions": {"type": ["integer", "null"], "minimum": 0}, "retained_to_compiled_completed_sessions": {"type": ["integer", "null"], "minimum": 0}}
+    },
+    "live_tail": {
+      "type": "object", "additionalProperties": false,
+      "required": ["live_tail_arrivals_current_run", "live_tail_effective_capacity", "live_tail_arrival_overflow", "live_tail_pending_before_selection", "live_tail_selected", "live_tail_unserved_after_selection"],
+      "properties": {
+        "live_tail_arrivals_current_run": {"type": ["integer", "null"], "minimum": 0}, "live_tail_effective_capacity": {"type": ["integer", "null"], "minimum": 0}, "live_tail_arrival_overflow": {"type": ["integer", "null"], "minimum": 0},
+        "live_tail_pending_before_selection": {"type": ["integer", "null"], "minimum": 0}, "live_tail_selected": {"type": ["integer", "null"], "minimum": 0}, "live_tail_unserved_after_selection": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "horizon_work_class": {
+      "type": "object", "additionalProperties": false,
+      "required": ["work_class", "pending_count", "selected_count", "deferred_count", "retrieved_count", "parser_deferred_count", "storage_deferred_count", "transient_error_count"],
+      "properties": {
+        "work_class": {"enum": ["LIVE_TAIL", "RECOVERY", "HISTORICAL_BACKFILL"]},
+        "pending_count": {"type": ["integer", "null"], "minimum": 0},
+        "selected_count": {"type": ["integer", "null"], "minimum": 0},
+        "deferred_count": {"type": ["integer", "null"], "minimum": 0},
+        "retrieved_count": {"type": ["integer", "null"], "minimum": 0},
+        "parser_deferred_count": {"type": ["integer", "null"], "minimum": 0},
+        "storage_deferred_count": {"type": ["integer", "null"], "minimum": 0},
+        "transient_error_count": {"type": ["integer", "null"], "minimum": 0}
       }
     },
     "census_row": {

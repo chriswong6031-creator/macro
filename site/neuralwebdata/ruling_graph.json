@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.ruling_graph.v1",
-  "source_sha256": "8c52ae03e7a20139498b213b2060093727e101a0fe878d8429b385ea9880949c",
+  "source_sha256": "fc0e9be566d41ba836a943021e98d9ef5bdb00b55a4d3df888a501eff94b20b8",
   "precedence_order": [
     "constitution_standing_law",
     "fable_adjudication_doc",
@@ -10,8 +10,8 @@
     "data_row_status_log",
     "research_packet"
   ],
-  "n_rulings_total": 500,
-  "n_rulings_public": 468,
+  "n_rulings_total": 501,
+  "n_rulings_public": 469,
   "rulings": [
     {
       "ruling_id": "RUL-CL-1",
@@ -17298,19 +17298,18 @@
       "local_id": "CPI-U12",
       "short_name": "forbidden-consumer-list-for-null-structural-truths",
       "title": "Forbidden consumer list for null/structural truths",
-      "ruling": "Null and structural truths must list board_rank, oracle_escalation, sector_central_direction_score, position_sizing, lead_lag_interaction_layer, ladder_calibration_input, and high_authority_truth_evidence in their forbidden_consumers. These surfaces may not cite null or structural truths.",
+      "ruling": "Every truth row's forbidden_consumers must carry the four universal money-path tokens (board_rank, oracle_escalation, sector_central_direction_score, position_sizing), regardless of status or effect_class (CPI-H1 ruling 5, 2026-08-21, machine-enforced by engine/cycle_pattern/consumer_authority.py). This narrows the prior blanket requirement to also list lead_lag_interaction_layer, ladder_calibration_input, and high_authority_truth_evidence on every null/structural truth: A2 (research/imce/IMCE_A2_CPI_TRUTH_VOCABULARY_AUDIT_V1.md) finding F7 named this exact ambiguity — a literal reading requiring all seven tokens, under which no row in the registry complied, versus a money-path-four reading — and CPI-H1 ruling 5 resolved it in favor of money-path-four. Those three tokens remain row/class-level narrow forbids, applied where a specific truth's statement calls for them, not universally required.",
       "status": "active_law",
       "object_kind": "constitution",
       "owner_program": "cycle-intelligence",
       "authority_ceiling": null,
       "privacy_class": "public_research",
-      "scope_fence": "Applies to all truths with effect_class=null or effect_class=structural.",
+      "scope_fence": "Applies to ALL truth rows regardless of status or effect_class (widened by CPI-H1 ruling 5, 2026-08-21; previously read as scoped to effect_class=null/structural only).",
       "forbidden_actions": [
-        "allow board_rank to cite null truth",
-        "allow oracle_escalation to cite null truth",
-        "allow position_sizing to cite null truth",
-        "allow ladder_calibration_input to cite structural truth",
-        "allow high_authority_truth_evidence to cite null truth"
+        "allow board_rank to cite null or structural truth",
+        "allow oracle_escalation to cite null or structural truth",
+        "allow sector_central_direction_score to cite null or structural truth",
+        "allow position_sizing to cite null or structural truth"
       ],
       "unblock_condition": null,
       "come_back_on": null,
@@ -17318,8 +17317,8 @@
       "fdr_family": null,
       "precedence_rank": 4,
       "source_doc": "config/cycle_pattern/truth_schema.md",
-      "source_quote": "Forbidden (must appear in `forbidden_consumers` for null/structural truths): `board_rank`, `oracle_escalation`, `sector_central_direction_score`, `position_sizing`, `lead_lag_interaction_layer`, `ladder_calibration_input`, `high_authority_truth_evidence`",
-      "source_pr": 1648,
+      "source_quote": "**Universal money-path floor (CPI-H1 ruling 5):** `forbidden_consumers` must carry all four of `board_rank`, `oracle_escalation`, `sector_central_direction_score`, `position_sizing` on EVERY row, regardless of `status` or `effect_class` — this resolves A2 finding F7's ambiguity in favor of the \"money-path-four\" reading. The other three schema-doc tokens (`lead_lag_interaction_layer`, `ladder_calibration_input`, `high_authority_truth_evidence`) remain row/class-level narrow forbids — not part of the universal floor.",
+      "source_pr": 6193,
       "supersedes": [],
       "superseded_by": [],
       "nondelegable": true,
@@ -17335,7 +17334,7 @@
         "CPI-U12",
         "forbidden consumer list"
       ],
-      "notes": "This is the core authority fence preventing null/structural truths from feeding positive consumers."
+      "notes": "This is the core authority fence preventing null/structural truths from feeding positive consumers. AMENDED 2026-08-21 (CPI-H1, PR #6193): the prior text (source_pr 1648) required all seven listed tokens on every null/structural truth's forbidden_consumers; CPI-H1 ruling 5 resolved A2 finding F7's ambiguity in favor of the money-path-four reading (the four tokens above, universal, every status/effect_class) and demoted lead_lag_interaction_layer/ladder_calibration_input/high_authority_truth_evidence to row/class-level narrow forbids. See research/imce/IMCE_D1C_RELEASE_RECORD.md."
     },
     {
       "ruling_id": "CPI-U13",
@@ -17626,17 +17625,18 @@
       "local_id": "CPI-U22",
       "short_name": "effect-class-null-structural-consumer-restriction-enforcemen",
       "title": "effect_class null/structural: consumer restriction enforcement via forbidden_consumers",
-      "ruling": "Truths with effect_class of null or structural must have the full set of positive-consumer surfaces in forbidden_consumers. The registry design principle is that null evidence must not feed ranking, escalation, or sizing decisions even if technically valid via active_truths().",
+      "ruling": "Truths must carry the four universal money-path tokens (board_rank, oracle_escalation, sector_central_direction_score, position_sizing) in forbidden_consumers regardless of effect_class (CPI-H1 ruling 5, 2026-08-21) — the registry design principle is that null/structural evidence must not feed ranking, escalation, or sizing decisions even if technically valid via active_truths(), and CPI-H1 widened the same floor to every effect_class rather than leaving null/structural as the only enforced case.",
       "status": "active_law",
       "object_kind": "constitution",
       "owner_program": "cycle-intelligence",
       "authority_ceiling": null,
       "privacy_class": "public_research",
-      "scope_fence": "Applies to all truths with effect_class=null or effect_class=structural.",
+      "scope_fence": "Applies to ALL truths regardless of effect_class (widened by CPI-H1 ruling 5, 2026-08-21; previously read as scoped to effect_class=null/structural only).",
       "forbidden_actions": [
         "allow null-class truth to feed board_rank",
         "allow structural-class truth to feed position_sizing",
-        "allow null-class truth to feed oracle_escalation"
+        "allow null-class truth to feed oracle_escalation",
+        "allow any-class truth to feed sector_central_direction_score without an explicit grant"
       ],
       "unblock_condition": null,
       "come_back_on": null,
@@ -17644,8 +17644,8 @@
       "fdr_family": null,
       "precedence_rank": 4,
       "source_doc": "config/cycle_pattern/truth_schema.md",
-      "source_quote": "Forbidden (must appear in `forbidden_consumers` for null/structural truths): `board_rank`, `oracle_escalation`, `sector_central_direction_score`, `position_sizing`, `lead_lag_interaction_layer`, `ladder_calibration_input`, `high_authority_truth_evidence`",
-      "source_pr": 1648,
+      "source_quote": "**Universal money-path floor (CPI-H1 ruling 5):** `forbidden_consumers` must carry all four of `board_rank`, `oracle_escalation`, `sector_central_direction_score`, `position_sizing` on EVERY row, regardless of `status` or `effect_class` — this resolves A2 finding F7's ambiguity in favor of the \"money-path-four\" reading. The other three schema-doc tokens (`lead_lag_interaction_layer`, `ladder_calibration_input`, `high_authority_truth_evidence`) remain row/class-level narrow forbids — not part of the universal floor.",
+      "source_pr": 6193,
       "supersedes": [],
       "superseded_by": [],
       "nondelegable": true,
@@ -17660,7 +17660,7 @@
         "CPI-U22",
         "null/structural consumer fence"
       ],
-      "notes": "Overlaps CPI-U12 but scoped to effect_class enforcement logic specifically."
+      "notes": "Overlaps CPI-U12 but scoped to effect_class enforcement logic specifically. AMENDED 2026-08-21 (CPI-H1, PR #6193): the prior text (source_pr 1648) scoped this to effect_class=null/structural only; CPI-H1 ruling 5 widened the four-token money-path floor to every effect_class. See research/imce/IMCE_D1C_RELEASE_RECORD.md."
     },
     {
       "ruling_id": "CPI-U3",
@@ -18967,6 +18967,49 @@
         "TR-1"
       ],
       "notes": "Defined in §8 preregistration amendments. Embargo 2024-01-01."
+    },
+    {
+      "ruling_id": "K3E-EVAL-0-R1",
+      "local_id": "EVAL-0-R1",
+      "short_name": "expectation-market-dynamics-v1-preregistered-evaluation-family",
+      "title": "K3E EVAL-0 v1 freezes one 64-trial BY-FDR family before advanced tuning",
+      "ruling": "K3E-EVAL-0-V1 preregisters the expectation-market-dynamics model competition as one dependent multiple-testing family, k3e_expectation_market_dynamics_v1, with at most 64 challenger trials and Benjamini-Yekutieli q=0.10. The fixed eras, targets, boring baselines, episode-N law, coverage gate, null/adverse publication law, and immutable amendment boundary are frozen in the exact content-addressed machine registration cited by the source document. EVAL-0 grants research procedure only and no fair-value, rank, gate, size, trade, Prophet, product, or production authority.\n",
+      "status": "active_law",
+      "object_kind": "study",
+      "owner_program": "alpha-intelligence-integration",
+      "authority_ceiling": "A1_EXPLAIN",
+      "privacy_class": "public_research",
+      "scope_fence": "Applies only to K3E expectation-dynamics research under existing Eval OS law. Reserved downstream targets remain ineligible until their named owner-native dependencies are accepted.\n",
+      "forbidden_actions": [
+        "starting an advanced challenger before the exact registration digest is accepted on origin/main",
+        "excluding failed, discarded, ablation, preprocessing, threshold, or seed-policy trials from the 64-trial budget",
+        "using a subgroup to rescue a failed overall result",
+        "changing fixed eras, targets, baselines, thresholds, or FDR procedure after outcome access without a new version and forward boundary",
+        "granting product, Prophet, fair-value, rank, gate, size, trade, or production authority from EVAL-0"
+      ],
+      "unblock_condition": "Exact registration digest accepted on origin/main; later source/surface dependencies accepted; activation receipt resolves the first eligible NYSE boundary; lawful data and rights support the registered grain.\n",
+      "come_back_on": null,
+      "experiment_ref": null,
+      "fdr_family": "k3e_expectation_market_dynamics_v1",
+      "precedence_rank": 7,
+      "source_doc": "research/alpha_intelligence/expectation_market_dynamics/EVALUATION_PREREG.md",
+      "source_quote": "All promotion-bearing challenger/target/horizon comparisons share FDR family `k3e_expectation_market_dynamics_v1`. Benjamini-Yekutieli at `q=0.10` applies across the full family because target/horizon losses are dependent.\n",
+      "source_pr": null,
+      "supersedes": [],
+      "superseded_by": [],
+      "nondelegable": true,
+      "match_terms": [
+        "K3E-EVAL-0-V1",
+        "k3e expectation market dynamics fdr",
+        "expectation dynamics trial budget",
+        "BY-FDR q 0.10 expectation",
+        "UNESTIMABLE_AS_PROGRAM"
+      ],
+      "aliases": [
+        "EVAL-0-R1",
+        "k3e-eval-family-v1"
+      ],
+      "notes": "This row registers the evaluation family in the existing Ruling Graph and Evaluation OS boundary. It creates no evaluator or result store; git history and the content-addressed JSON registration are the immutable record.\n"
     }
   ]
 }

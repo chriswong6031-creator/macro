@@ -1,8 +1,15 @@
-"""Incremental broad SEC source plane for Filing Forensics (FF-1).
+"""Incremental and bounded-recovery SEC source plane for Filing Forensics (FF-1).
 
-Polls Submissions for every issuer in ``data/edgar/fundamentals.parquet``,
-admits exact SEC bytes into a private content-addressed store, and fetches
-Company Facts only when that issuer's relevant periodic filing state changes.
+Discovers relevant 10-K/10-Q (and existing 20-F/40-F) changes from the official
+EDGAR full-index master ZIP, then fetches Submissions only for affected issuers
+in ``data/edgar/fundamentals.parquet``. Admits exact SEC bytes into a private
+content-addressed store and fetches Company Facts only when that issuer's
+relevant periodic filing state actually changes.
+
+FF-1R recovery freezes its candidate plan from a sha-verified complete index
+epoch before issuer network access, then advances a compact cursor through at
+most 64 selected CIKs per invocation. It does not change the live incremental
+discovery authority or publish a partial recovery as ``latest-complete``.
 
 This module is source truth only.  It does not rebuild workbench state, run
 detectors, or publish findings.  A rerender cannot make the source current:
@@ -23,19 +30,27 @@ poll clock.  Callers inject every clock; this kernel does not sample wall time.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+from functools import lru_cache
 from hashlib import sha256
+from zoneinfo import ZoneInfo
 import gzip
 import io
 import json
 import re
+import zipfile
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 from urllib.parse import urlparse
+
+from jsonschema import Draft202012Validator
 
 from collectors.edgar_forensics import (
     SecResponseTooLarge,
     _canonical_cik,
     endpoint_url,
+    full_master_index_url,
+    historical_submissions_url,
 )
 from collectors.fundamental_forensics_companyfacts import (
     CompanyFactsAcquisitionError,
@@ -55,8 +70,22 @@ RUN_SCHEMA = "fundamental_forensics.broad_sec.run.v1"
 MANIFEST_SCHEMA = "fundamental_forensics.broad_sec.issuer_manifest.v1"
 HEAD_SCHEMA = "fundamental_forensics.broad_sec.head.v1"
 OBSERVATION_SCHEMA = "fundamental_forensics.broad_sec.issuer_observations.v1"
-CONTINUATION_SCHEMA = "fundamental_forensics.broad_sec.recovery_continuation.v1"
+RECOVERY_PLAN_SCHEMA = "fundamental_forensics.broad_sec.recovery_plan.v1"
+CONTINUATION_SCHEMA = "fundamental_forensics.broad_sec.recovery_continuation.v2"
+RECOVERY_CONTINUATION_HEAD_SCHEMA = (
+    "fundamental_forensics.broad_sec.recovery_continuation_head.v2"
+)
 POINTER_MAX_BYTES = 16 * 1024
+# Read-only production census 2026-08-23: 4,819 immutable issuer manifests,
+# maximum 43,665 bytes (817 >16 KiB; 51 >32 KiB; zero >64 KiB).  The accepted
+# envelope is the smallest power of two at least twice that maximum.  This is
+# deliberately separate from the compact mutable-pointer ceiling above.
+ISSUER_MANIFEST_MAX_BYTES = 128 * 1024
+ISSUER_MANIFEST_SCHEMA_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "contracts"
+    / "fundamental_forensics_broad_sec_issuer_manifest.schema.json"
+)
 # Bind fence for the canonical parquet, not a crawl target. Live
 # data/edgar/fundamentals.parquet measured 2837 unique issuers on 2026-08-18
 # (run 32097495749, universe_invalid at 2500). 4000 admits that census with
@@ -66,6 +95,21 @@ MAX_SUBMISSIONS_BYTES = 8 * 1024 * 1024
 MAX_COMPANYFACTS_BYTES = 64 * 1024 * 1024
 MAX_AFFECTED_ISSUERS = 64
 MAX_COMPANYFACTS_BYTES_PER_RUN = 32 * 1024 * 1024
+MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER = 4
+MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_RUN = 64
+MAX_HISTORICAL_SUBMISSIONS_BYTES_PER_RUN = 32 * 1024 * 1024
+FF1R_RECOVERY_FROM = "2026-07-12T11:23:15Z"
+RECOVERY_SELECTION_POLICY = "filed-chronology-cik-accession/v1"
+# Live 2026 Q3 master.zip canary 2026-08-18: 2132920 compressed / 15184383
+# uncompressed. These bounds keep substantial growth room and fail closed
+# rather than silently rising.
+MAX_MASTER_INDEX_ZIP_BYTES = 16 * 1024 * 1024
+MAX_MASTER_INDEX_MEMBER_BYTES = 64 * 1024 * 1024
+MASTER_INDEX_MEMBER_NAME = "master.idx"
+MASTER_INDEX_HEADER = "CIK|Company Name|Form Type|Date Filed|Filename"
+INDEX_SOURCE_KIND = "sec_edgar_full_master_index"
+INDEX_SNAPSHOT_SCHEMA = "fundamental_forensics.broad_sec.index_snapshot.v1"
+PREVIOUS_QUARTER_RECONCILIATION_CADENCE = "weekly"
 RELEVANT_FORMS = frozenset(
     {
         "10-K",
@@ -92,9 +136,25 @@ REASON_CODES = frozenset(
         "issuer_manifest_invalid",
         "queue_overflow",
         "historical_submissions_required",
+        "edgar_index_unavailable",
+        "edgar_index_too_large",
+        "edgar_index_invalid",
+        "edgar_index_member_missing",
+        "edgar_index_cik_mismatch",
+        "edgar_index_gap",
+        "edgar_index_correction_requires_reconciliation",
+        "edgar_index_event_not_causally_admitted",
+        "recovery_plan_required",
+        "recovery_plan_invalid",
+        "recovery_in_progress",
+        "historical_submissions_conflict",
+        "historical_submissions_budget_exhausted",
     }
 )
 _ACCESSION_RE = re.compile(r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
+_INDEX_FILENAME_RE = re.compile(
+    r"^edgar/data/([0-9]+)/([0-9]{10}-[0-9]{2}-[0-9]{6})\.txt$"
+)
 _ISO_Z_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z$"
 )
@@ -134,6 +194,10 @@ class BroadSecStore(Protocol):
 
 
 FetchBytes = Callable[[str], tuple[bytes, Mapping[str, str | None]]]
+FetchCompanyFacts = Callable[[str, int], tuple[bytes, Mapping[str, str | None]]]
+FetchHistorical = Callable[[str, str, int], tuple[bytes, Mapping[str, str | None]]]
+FetchIndex = Callable[[int, int], tuple[bytes, Mapping[str, str | None]]]
+ProgressFn = Callable[[str, Mapping[str, Any]], None]
 
 
 @dataclass(frozen=True)
@@ -232,6 +296,58 @@ def recovery_continuation_object_key(digest: str) -> str:
     return f"{PREFIX}/recovery/objects/{digest[:2]}/{digest}.json.gz"
 
 
+def recovery_plan_object_key(digest: str) -> str:
+    return f"{PREFIX}/recovery/plans/{digest[:2]}/{digest}.json.gz"
+
+
+def index_object_key(digest: str) -> str:
+    return f"{PREFIX}/indexes/objects/sha256/{digest[:2]}/{digest}.idx.gz"
+
+
+def index_snapshot_key(quarter_id: str, snapshot_id: str) -> str:
+    return f"{PREFIX}/indexes/quarters/{quarter_id}/snapshots/{snapshot_id}.json"
+
+
+def index_latest_key(quarter_id: str) -> str:
+    return f"{PREFIX}/indexes/quarters/{quarter_id}/latest.json"
+
+
+def calendar_quarter(iso_z: str) -> tuple[int, int]:
+    """Route iso_z to (year, quarter) in America/New_York time, per SPEC item 4."""
+    stamp = _require_iso_z(iso_z, field="quarter_clock")
+    parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    eastern = parsed.astimezone(ZoneInfo("America/New_York"))
+    quarter = (eastern.month - 1) // 3 + 1
+    return eastern.year, quarter
+
+
+def quarter_id(year: int, quarter: int) -> str:
+    return f"{year}-Q{quarter}"
+
+
+def previous_quarter(year: int, quarter: int) -> tuple[int, int]:
+    if quarter == 1:
+        return year - 1, 4
+    return year, quarter - 1
+
+
+def previous_quarter_reconciliation_due(
+    *,
+    poll_started_at: str,
+    last_reconciled_at: str | None = None,
+) -> bool:
+    """SPEC_ONLY / NOT_BUILT: weekly previous-quarter reconciliation.
+
+    Current-quarter rebuilt-index corrections are implemented in this discovery
+    plane. Previous-quarter weekly crawling is not built and is required before
+    FF-1 can be called globally correction-safe. Cadence remains
+    ``PREVIOUS_QUARTER_RECONCILIATION_CADENCE`` ('weekly'). This function
+    returns False until that engine is commissioned (FF-1R / final closure).
+    """
+    del poll_started_at, last_reconciled_at
+    return False
+
+
 def _gzip_bytes(content: bytes) -> bytes:
     buffer = io.BytesIO()
     with gzip.GzipFile(filename="", fileobj=buffer, mode="wb", compresslevel=9, mtime=0) as handle:
@@ -247,7 +363,49 @@ def _ungzip_bytes(payload: bytes) -> bytes:
 def _require_iso_z(value: str, *, field: str) -> str:
     if not isinstance(value, str) or not _ISO_Z_RE.fullmatch(value):
         raise BroadSecError("source_binding_failure", f"{field} must be an ISO-8601 UTC Z timestamp")
+    try:
+        _iso_order_key(value)
+    except ValueError as exc:
+        raise BroadSecError(
+            "source_binding_failure",
+            f"{field} must be an ISO-8601 UTC Z timestamp",
+        ) from exc
     return value
+
+
+def _iso_order_key(value: str) -> tuple[str, str]:
+    """Lossless chronological key for a validated UTC timestamp.
+
+    Fractional digits are preserved in stored evidence.  Trailing zeroes are
+    removed only in the comparison key so numerically equal representations
+    compare equal without rounding to Python's microsecond precision.
+    """
+
+    if not isinstance(value, str) or _ISO_Z_RE.fullmatch(value) is None:
+        raise ValueError("timestamp shape is invalid")
+    body = value[:-1]
+    base, separator, fraction = body.partition(".")
+    datetime.fromisoformat(base + "+00:00")
+    return base, fraction.rstrip("0") if separator else ""
+
+
+def _iso_gt(left: str, right: str) -> bool:
+    return _iso_order_key(left) > _iso_order_key(right)
+
+
+def _iso_ge(left: str, right: str) -> bool:
+    return _iso_order_key(left) >= _iso_order_key(right)
+
+
+def _iso_lt(left: str, right: str) -> bool:
+    return _iso_order_key(left) < _iso_order_key(right)
+
+
+def _optional_iso_order_key(value: str | None) -> tuple[int, str, str]:
+    if value is None:
+        return 0, "", ""
+    base, fraction = _iso_order_key(value)
+    return 1, base, fraction
 
 
 def _parse_acceptance(value: Any) -> str | None:
@@ -260,12 +418,11 @@ def _parse_acceptance(value: Any) -> str | None:
         pass
     else:
         return None
-    if "T" not in text:
+    if "T" not in text or not _ISO_Z_RE.fullmatch(text):
         return None
-    if "." in text:
-        head, _frac = text[:-1].split(".", 1)
-        text = head + "Z"
-    if not _ISO_Z_RE.fullmatch(text):
+    try:
+        _iso_order_key(text)
+    except ValueError:
         return None
     return text
 
@@ -274,7 +431,7 @@ def _max_iso(values: list[str | None]) -> str | None:
     present = [item for item in values if item]
     if not present:
         return None
-    return max(present)
+    return max(present, key=_iso_order_key)
 
 
 def load_universe(path: Path, *, repo_root: Path | None = None) -> UniverseBinding:
@@ -368,6 +525,31 @@ def _bind_sec_url(url: str | None, *, cik: str, endpoint: str) -> str:
     if parsed.scheme != "https" or parsed.netloc != "data.sec.gov":
         raise BroadSecError("source_binding_failure", f"refusing non-SEC URL {url!r}")
     return url
+
+
+def _bind_sec_payload_cik(
+    payload: Mapping[str, Any],
+    *,
+    cik: str,
+    source: str,
+    allow_missing: bool = False,
+) -> None:
+    raw = payload.get("cik")
+    if raw is None and allow_missing:
+        return
+    if isinstance(raw, bool):
+        raise BroadSecError("source_binding_failure", f"{source} payload CIK is malformed")
+    if isinstance(raw, int):
+        digits = str(raw)
+    elif isinstance(raw, str) and raw.isascii() and raw.isdigit():
+        digits = raw
+    else:
+        raise BroadSecError("source_binding_failure", f"{source} payload CIK is malformed")
+    if len(digits) > 10 or int(digits) <= 0 or f"{int(digits):010d}" != cik:
+        raise BroadSecError(
+            "source_binding_failure",
+            f"{source} payload CIK does not match selected issuer",
+        )
 
 
 def classify_fetch_error(exc: BaseException) -> str:
@@ -474,7 +656,7 @@ def parse_relevant_filings(
             withheld.append(row)
             continue
         accept_times.append(accepted)
-        if accepted > selection_cutoff_at:
+        if _iso_gt(accepted, selection_cutoff_at):
             row["withheld_reason"] = "source_binding_failure"
             row["withheld_cause"] = "after_selection_cutoff"
             withheld.append(row)
@@ -484,13 +666,40 @@ def parse_relevant_filings(
     files = filings.get("files")
     historical_required = False
     if recovery_from and isinstance(files, list) and files:
-        oldest = min(accept_times) if accept_times else None
-        if oldest is None or oldest > recovery_from:
+        oldest = min(accept_times, key=_iso_order_key) if accept_times else None
+        if oldest is None or _iso_gt(oldest, recovery_from):
             historical_required = True
     return admitted, withheld, historical_required
 
 
 def issuer_source_identity(manifest: Mapping[str, Any]) -> str:
+    body = {
+        "cik": manifest["cik"],
+        "ticker": manifest["ticker"],
+        "submissions_sha256": manifest["submissions_sha256"],
+        "submissions_source_set_sha256": manifest.get("submissions_source_set_sha256"),
+        "submissions_components": manifest.get("submissions_components") or [],
+        "companyfacts_sha256": manifest.get("companyfacts_sha256"),
+        "relevant_accessions": [
+            item["accession_number"] for item in manifest.get("relevant_filings", [])
+        ],
+        "cumulative_relevant_accessions": list(
+            manifest.get("cumulative_relevant_accessions") or []
+        ),
+        "previous_manifest_id": manifest.get("previous_manifest_id"),
+    }
+    return sha256(canonical_json(body).encode("utf-8")).hexdigest()
+
+
+def _legacy_issuer_source_identity(manifest: Mapping[str, Any]) -> str:
+    """Recompute the #5898 identity for immutable pre-FF-1R manifests.
+
+    #6285 added component-set provenance to newly written identities. Existing
+    immutable manifests cannot be rewritten, so the reader recognizes the old
+    identity only when both component fields are absent. New writes are never
+    permitted to select this compatibility formula.
+    """
+
     body = {
         "cik": manifest["cik"],
         "ticker": manifest["ticker"],
@@ -565,6 +774,47 @@ def _put_pointer(store: BroadSecStore, key: str, payload: Mapping[str, Any]) -> 
         raise BroadSecError("store_readback_failure", f"pointer readback mismatch for {key}")
 
 
+def _put_pointer_if_unchanged(
+    store: BroadSecStore,
+    key: str,
+    payload: Mapping[str, Any],
+    *,
+    expected_current: Mapping[str, Any] | None,
+) -> None:
+    """CAS a pointer only from the exact state used to compose its successor."""
+
+    data = canonical_json(payload).encode("utf-8")
+    expected_data = (
+        canonical_json(expected_current).encode("utf-8")
+        if expected_current is not None
+        else None
+    )
+    if len(data) > POINTER_MAX_BYTES:
+        raise BroadSecError("store_write_failure", f"pointer {key} exceeds {POINTER_MAX_BYTES} bytes")
+    try:
+        current = store.get_bytes_strict_bounded_versioned(key, POINTER_MAX_BYTES)
+        if current.data != expected_data:
+            raise BroadSecError(
+                "store_write_failure",
+                f"pointer changed after recovery composition: {key}",
+            )
+        written = store.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=current.version,
+            content_type="application/json",
+        )
+    except BroadSecError:
+        raise
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", str(exc)) from exc
+    if not written:
+        raise BroadSecError("store_write_failure", f"CAS rejected for {key}")
+    readback = store.get_bytes_strict_bounded(key, POINTER_MAX_BYTES)
+    if readback != data:
+        raise BroadSecError("store_readback_failure", f"pointer readback mismatch for {key}")
+
+
 def admit_source_bytes(store: BroadSecStore, content: bytes) -> tuple[str, bool]:
     if not isinstance(content, (bytes, bytearray)):
         raise BroadSecError("invalid_sec_json", "SEC body is not bytes")
@@ -594,6 +844,415 @@ def admit_source_bytes(store: BroadSecStore, content: bytes) -> tuple[str, bool]
     if readback is None or sha256(_ungzip_bytes(readback)).hexdigest() != digest:
         raise BroadSecError("store_readback_failure", f"object readback mismatch for {key}")
     return digest, True
+
+
+def _progress(callback: ProgressFn | None, phase: str, **counts: Any) -> None:
+    if callback is None:
+        return
+    callback(phase, dict(counts))
+
+
+def _event_tuple(row: Mapping[str, str]) -> dict[str, str]:
+    return {
+        "cik": row["cik"],
+        "accession": row["accession"],
+        "form": row["form"],
+        "filed_on": row["filed_on"],
+        "filename": row["filename"],
+    }
+
+
+def _event_key(row: Mapping[str, str]) -> tuple[str, str, str, str, str]:
+    return (row["cik"], row["accession"], row["form"], row["filed_on"], row["filename"])
+
+
+def _bind_index_url(url: str | None, *, year: int, quarter: int) -> str:
+    expected = full_master_index_url(year, quarter)
+    if not isinstance(url, str) or url != expected:
+        raise BroadSecError(
+            "source_binding_failure",
+            f"index URL {url!r} does not bind {year} Q{quarter}",
+        )
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.netloc != "www.sec.gov":
+        raise BroadSecError("source_binding_failure", f"refusing non-SEC index URL {url!r}")
+    return url
+
+
+def parse_master_index_archive(
+    archive: bytes,
+    *,
+    canonical_ciks: set[str],
+) -> dict[str, Any]:
+    """Validate an untrusted EDGAR master ZIP and return canonical relevant rows."""
+    if not isinstance(archive, (bytes, bytearray)):
+        raise BroadSecError("edgar_index_invalid", "index archive is not bytes")
+    archive_bytes = bytes(archive)
+    if len(archive_bytes) > MAX_MASTER_INDEX_ZIP_BYTES:
+        raise BroadSecError(
+            "edgar_index_too_large",
+            f"index ZIP {len(archive_bytes)} exceeds {MAX_MASTER_INDEX_ZIP_BYTES}",
+        )
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive_bytes), "r") as handle:
+            infos = list(handle.infolist())
+            names = [info.filename for info in infos]
+            if len(names) != len(set(names)):
+                raise BroadSecError("edgar_index_invalid", "duplicate ZIP member names")
+            if any(bool(info.flag_bits & 0x1) for info in infos):
+                raise BroadSecError("edgar_index_invalid", "encrypted ZIP member")
+            for name in names:
+                if name.startswith("/") or name.startswith("\\") or ":" in name.split("/")[0]:
+                    raise BroadSecError("edgar_index_invalid", f"absolute ZIP member {name!r}")
+                if ".." in Path(name).parts:
+                    raise BroadSecError("edgar_index_invalid", f"traversal ZIP member {name!r}")
+            masters = [info for info in infos if info.filename == MASTER_INDEX_MEMBER_NAME]
+            if not masters:
+                raise BroadSecError("edgar_index_member_missing", "master.idx is missing")
+            if len(masters) != 1:
+                raise BroadSecError("edgar_index_invalid", "duplicate master.idx member")
+            info = masters[0]
+            if int(info.file_size) > MAX_MASTER_INDEX_MEMBER_BYTES:
+                raise BroadSecError(
+                    "edgar_index_too_large",
+                    f"master.idx {info.file_size} exceeds {MAX_MASTER_INDEX_MEMBER_BYTES}",
+                )
+            try:
+                member = handle.read(info.filename)
+            except Exception as exc:
+                raise BroadSecError("edgar_index_invalid", "ZIP CRC/read failed") from exc
+    except BroadSecError:
+        raise
+    except zipfile.BadZipFile as exc:
+        raise BroadSecError("edgar_index_invalid", "malformed ZIP") from exc
+    except Exception as exc:
+        raise BroadSecError("edgar_index_invalid", f"ZIP open failed: {exc}") from exc
+
+    if len(member) > MAX_MASTER_INDEX_MEMBER_BYTES:
+        raise BroadSecError(
+            "edgar_index_too_large",
+            f"master.idx {len(member)} exceeds {MAX_MASTER_INDEX_MEMBER_BYTES}",
+        )
+    text = None
+    encoding = None
+    for candidate in ("utf-8", "latin-1"):
+        try:
+            text = member.decode(candidate)
+            encoding = candidate
+            break
+        except UnicodeDecodeError:
+            continue
+    if text is None or encoding is None:
+        raise BroadSecError("edgar_index_invalid", "master.idx did not decode")
+
+    lines = text.splitlines()
+    header_at = None
+    for index, line in enumerate(lines):
+        if line.strip() == MASTER_INDEX_HEADER:
+            header_at = index
+            break
+    if header_at is None:
+        raise BroadSecError("edgar_index_invalid", "master.idx header is missing")
+    data_start = header_at + 1
+    if data_start < len(lines) and set(lines[data_start].strip()) <= {"-"}:
+        data_start += 1
+
+    all_rows: list[dict[str, str]] = []
+    relevant: list[dict[str, str]] = []
+    for line in lines[data_start:]:
+        if not line.strip():
+            continue
+        parts = line.split("|")
+        if len(parts) != 5:
+            raise BroadSecError("edgar_index_invalid", "malformed master.idx line")
+        cik_raw, _name, form, filed, filename = [part.strip() for part in parts]
+        # SPEC item 7: ASCII digits only before canonicalization. Reject, do not repair.
+        if not cik_raw or not cik_raw.isascii() or not cik_raw.isdigit():
+            raise BroadSecError(
+                "edgar_index_invalid",
+                f"master.idx CIK {cik_raw!r} is not ASCII digits-only",
+            )
+        cik = f"{int(cik_raw):010d}"
+        if not _DATE_RE.fullmatch(filed):
+            raise BroadSecError("edgar_index_invalid", f"invalid filing date {filed!r}")
+        try:
+            datetime.strptime(filed, "%Y-%m-%d")
+        except ValueError as exc:
+            raise BroadSecError("edgar_index_invalid", f"invalid filing date {filed!r}") from exc
+        path = _INDEX_FILENAME_RE.fullmatch(filename)
+        if path is None:
+            if form in RELEVANT_FORMS and cik in canonical_ciks:
+                raise BroadSecError(
+                    "edgar_index_invalid",
+                    f"malformed accession path for canonical CIK {cik}",
+                )
+            continue
+        path_cik = f"{int(path.group(1)):010d}"
+        accession = path.group(2)
+        if path_cik != cik:
+            raise BroadSecError(
+                "edgar_index_cik_mismatch",
+                f"path CIK {path_cik} does not match row CIK {cik}",
+            )
+        # Accession numbers are prefixed with the transmitting filer/agent CIK,
+        # not the subject issuer. Live Q3 canary: MSFT (0000789019) 10-K
+        # 0001193125-26-323660. Bind row CIK to path CIK; require accession
+        # *shape* only. Do not require accession[:10] == row CIK.
+        if _ACCESSION_RE.fullmatch(accession) is None:
+            raise BroadSecError(
+                "edgar_index_invalid",
+                f"malformed accession {accession!r}",
+            )
+        row = {
+            "cik": cik,
+            "form": form,
+            "filed_on": filed,
+            "filename": filename,
+            "accession": accession,
+        }
+        all_rows.append(row)
+        if cik in canonical_ciks and form in RELEVANT_FORMS:
+            relevant.append(_event_tuple(row))
+
+    if not all_rows:
+        raise BroadSecError("edgar_index_gap", "master.idx contains no filing rows")
+
+    relevant.sort(key=_event_key)
+    latest_filed = max((row["filed_on"] for row in all_rows), default=None)
+    relevant_digest = sha256(
+        canonical_json({"rows": relevant}).encode("utf-8")
+    ).hexdigest()
+    return {
+        "member_name": MASTER_INDEX_MEMBER_NAME,
+        "member": member,
+        "member_bytes": len(member),
+        "member_sha256": sha256(member).hexdigest(),
+        "member_encoding": encoding,
+        "parsed_row_count": len(all_rows),
+        "latest_filing_date": latest_filed,
+        "canonical_row_count": sum(1 for row in all_rows if row["cik"] in canonical_ciks),
+        "relevant_rows": relevant,
+        "relevant_set_sha256": relevant_digest,
+        "relevant_ciks": sorted({row["cik"] for row in relevant}),
+    }
+
+
+def diff_relevant_sets(
+    prior_rows: list[Mapping[str, str]],
+    current_rows: list[Mapping[str, str]],
+) -> dict[str, list[dict[str, str]]]:
+    prior_map = {_event_key(row): dict(row) for row in prior_rows}
+    current_map = {_event_key(row): dict(row) for row in current_rows}
+    new_rows = [current_map[key] for key in current_map if key not in prior_map]
+    removed_rows = [prior_map[key] for key in prior_map if key not in current_map]
+    unchanged_rows = [current_map[key] for key in current_map if key in prior_map]
+    new_rows.sort(key=_event_key)
+    removed_rows.sort(key=_event_key)
+    unchanged_rows.sort(key=_event_key)
+    return {"new": new_rows, "removed": removed_rows, "unchanged": unchanged_rows}
+
+
+def _index_identity_body(
+    *,
+    year: int,
+    quarter: int,
+    universe_sha: str,
+    member_sha256: str,
+    member_bytes: int,
+    archive_sha256: str,
+    relevant_rows: list[dict[str, str]],
+    relevant_set_sha256: str,
+    latest_filing_date: str | None,
+    parsed_row_count: int,
+    canonical_row_count: int,
+) -> dict[str, Any]:
+    return {
+        "schema": INDEX_SNAPSHOT_SCHEMA,
+        "year": year,
+        "quarter": quarter,
+        "quarter_id": quarter_id(year, quarter),
+        "universe_sha256": universe_sha,
+        "member_sha256": member_sha256,
+        "member_bytes": member_bytes,
+        "archive_sha256": archive_sha256,
+        "relevant_set": relevant_rows,
+        "relevant_set_sha256": relevant_set_sha256,
+        "latest_filing_date": latest_filing_date,
+        "parsed_row_count": parsed_row_count,
+        "canonical_row_count": canonical_row_count,
+        "relevant_row_count": len(relevant_rows),
+    }
+
+
+_SNAPSHOT_IDENTITY_KEYS = (
+    "schema", "year", "quarter", "quarter_id", "universe_sha256",
+    "member_sha256", "member_bytes", "archive_sha256",
+    "relevant_set", "relevant_set_sha256", "latest_filing_date",
+    "parsed_row_count", "canonical_row_count", "relevant_row_count",
+)
+
+
+def _verify_snapshot_identity(snapshot: Mapping[str, Any], *, expected_sha: str) -> None:
+    """Verify that a loaded index snapshot matches its expected content hash."""
+    identity = {key: snapshot.get(key) for key in _SNAPSHOT_IDENTITY_KEYS}
+    computed = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
+    if computed != expected_sha or snapshot.get("snapshot_id") != expected_sha:
+        raise BroadSecError("store_readback_failure", "index snapshot identity mismatch")
+
+
+@dataclass
+class PriorContext:
+    """Result of loading the prior-complete processed state."""
+    clock: str | None          # latest_relevant_sec_accepted_at from prior receipt
+    rows: list[dict[str, str]] # relevant_set for same quarter, or [] for different quarter
+    is_bootstrap: bool         # True when no prior-complete with index-discovery state exists
+    prev_snapshot_sha: str | None = None  # snapshot_sha256 from prior receipt (for lineage)
+    head: dict[str, Any] | None = None
+    receipt: dict[str, Any] | None = None
+    snapshot: dict[str, Any] | None = None
+
+
+def _load_prior_context(
+    store: BroadSecStore,
+    *,
+    current_year: int,
+    current_quarter: int,
+) -> PriorContext:
+    """Strict prior-complete reader per SPEC item 2.
+
+    Reads latest-complete.json, verifies compact head shape, verifies receipt
+    sha256, verifies index snapshot identity, and returns the prior clock and
+    relevant rows for the current quarter.  Fails closed on any mismatch.
+    If latest-complete is absent, returns bootstrap (None clock, empty rows).
+    """
+    raw_head = store.get_bytes_strict_bounded(latest_complete_key(), POINTER_MAX_BYTES)
+    if raw_head is None:
+        return PriorContext(clock=None, rows=[], is_bootstrap=True)
+
+    try:
+        head = json.loads(raw_head)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "latest-complete head is not JSON") from exc
+    if not isinstance(head, dict):
+        raise BroadSecError("store_readback_failure", "latest-complete head is not an object")
+
+    for field in (
+        "run_id",
+        "run_key",
+        "run_receipt_sha256",
+        "status",
+        "universe_sha256",
+        "observation_key",
+        "observation_sha256",
+    ):
+        if not isinstance(head.get(field), str):
+            raise BroadSecError("issuer_manifest_invalid", f"latest-complete head missing field: {field}")
+    if head.get("schema") != HEAD_SCHEMA:
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head has unexpected schema")
+    if head.get("status") != "complete":
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head has non-complete status")
+    expected_run_key = run_key(head["run_id"])
+    if head["run_key"] != expected_run_key:
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head run_key does not match run_id")
+    if (
+        re.fullmatch(r"[a-f0-9]{64}", head["run_receipt_sha256"]) is None
+        or re.fullmatch(r"[a-f0-9]{64}", head["observation_sha256"]) is None
+        or head["observation_key"] != issuer_observations_key(head["run_id"])
+    ):
+        raise BroadSecError("issuer_manifest_invalid", "latest-complete head identity is malformed")
+
+    receipt_bytes = store.get_bytes_strict(expected_run_key)
+    if receipt_bytes is None:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt missing")
+    if sha256(receipt_bytes).hexdigest() != head["run_receipt_sha256"]:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt sha256 mismatch")
+
+    try:
+        receipt = json.loads(receipt_bytes)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "prior complete run receipt is not JSON") from exc
+    if not isinstance(receipt, dict):
+        raise BroadSecError("store_readback_failure", "prior complete run receipt is not an object")
+    if receipt.get("schema") != RUN_SCHEMA:
+        raise BroadSecError("issuer_manifest_invalid", "prior complete receipt has unexpected schema")
+    if receipt.get("status") != "complete" or receipt.get("run_id") != head["run_id"]:
+        raise BroadSecError("issuer_manifest_invalid", "prior complete receipt has non-complete status")
+    receipt_universe = receipt.get("universe")
+    storage = receipt.get("storage")
+    if (
+        not isinstance(receipt_universe, dict)
+        or receipt_universe.get("content_sha256") != head["universe_sha256"]
+        or not isinstance(receipt_universe.get("issuer_count"), int)
+        or isinstance(receipt_universe.get("issuer_count"), bool)
+        or not isinstance(storage, dict)
+        or storage.get("run_key") != head["run_key"]
+        or storage.get("observation_key") != head["observation_key"]
+        or storage.get("observation_sha256") != head["observation_sha256"]
+        or storage.get("observation_row_count") != receipt_universe.get("issuer_count")
+        or receipt.get("poll_completed_at") != head.get("poll_completed_at")
+    ):
+        raise BroadSecError(
+            "store_readback_failure",
+            "latest-complete head does not bind its immutable receipt",
+        )
+
+    prior_clock = receipt.get("latest_relevant_sec_accepted_at")
+    if prior_clock is not None:
+        if not isinstance(prior_clock, str) or not _ISO_Z_RE.fullmatch(prior_clock):
+            raise BroadSecError("store_readback_failure", "prior complete receipt has invalid clock format")
+
+    index_info = receipt.get("index")
+    if not isinstance(index_info, dict):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "prior complete receipt is missing index discovery state",
+        )
+
+    snap_sha = index_info.get("snapshot_sha256")
+    prior_year = index_info.get("year")
+    prior_q = index_info.get("quarter")
+
+    if not isinstance(snap_sha, str) or not isinstance(prior_year, int) or not isinstance(prior_q, int):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "prior complete receipt index identity is incomplete",
+        )
+
+    snap_key = index_snapshot_key(quarter_id(prior_year, prior_q), snap_sha)
+    snap_raw = store.get_bytes_strict(snap_key)
+    if snap_raw is None:
+        raise BroadSecError("store_readback_failure", f"prior index snapshot missing: {snap_key}")
+    try:
+        snapshot = json.loads(snap_raw)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("store_readback_failure", "prior index snapshot is not JSON") from exc
+    if not isinstance(snapshot, dict):
+        raise BroadSecError("store_readback_failure", "prior index snapshot is not an object")
+    _verify_snapshot_identity(snapshot, expected_sha=snap_sha)
+
+    if prior_year != current_year or prior_q != current_quarter:
+        # Different quarter: prior rows for current quarter are empty, but NOT bootstrap.
+        # SPEC item 3: clock still loads from prior-complete; prev_snapshot_sha for lineage.
+        return PriorContext(
+            clock=prior_clock,
+            rows=[],
+            is_bootstrap=False,
+            prev_snapshot_sha=snap_sha,
+            head=dict(head),
+            receipt=dict(receipt),
+            snapshot=dict(snapshot),
+        )
+
+    prior_rows = [dict(row) for row in (snapshot.get("relevant_set") or [])]
+    return PriorContext(
+        clock=prior_clock,
+        rows=prior_rows,
+        is_bootstrap=False,
+        prev_snapshot_sha=snap_sha,
+        head=dict(head),
+        receipt=dict(receipt),
+        snapshot=dict(snapshot),
+    )
 
 
 def count_source_objects(store: BroadSecStore) -> int:
@@ -640,6 +1299,8 @@ def _empty_receipt(
     observation_key: str | None = None,
     observation_sha256: str | None = None,
     observation_row_count: int = 0,
+    index: dict[str, Any] | None = None,
+    recovery: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     return {
         "schema": RUN_SCHEMA,
@@ -657,6 +1318,8 @@ def _empty_receipt(
         "coverage": coverage,
         "change_summary": change_summary,
         "failures": failures,
+        "index": index,
+        "recovery": recovery,
         "storage": {
             "prefix": PREFIX,
             "run_key": run_key(run_id),
@@ -675,12 +1338,17 @@ def _compact_head(
     *,
     observation_key: str,
     observation_sha256: str | None,
+    receipt_sha256: str | None = None,
 ) -> dict[str, Any]:
+    # SPEC item 10: head.run_receipt_sha256 must equal sha256(exact bytes at run_key).
+    # Pass receipt_sha256 explicitly (precomputed from encoded_receipt) so that
+    # post-mutation calls still produce the correct SHA.
+    sha = receipt_sha256 if receipt_sha256 is not None else sha256(canonical_json(receipt).encode("utf-8")).hexdigest()
     return {
         "schema": HEAD_SCHEMA,
         "run_id": receipt["run_id"],
         "run_key": receipt["storage"]["run_key"],
-        "run_receipt_sha256": sha256(canonical_json(receipt).encode("utf-8")).hexdigest(),
+        "run_receipt_sha256": sha,
         "status": receipt["status"],
         "poll_completed_at": receipt["poll_completed_at"],
         "universe_sha256": receipt["universe"].get("content_sha256"),
@@ -705,46 +1373,444 @@ def _prior_ledger(prior_manifest: Mapping[str, Any] | None) -> list[str]:
     return accessions
 
 
+def _sha_json(value: Any) -> str:
+    return sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def _recovery_anchor(prior: PriorContext) -> dict[str, str]:
+    if prior.is_bootstrap or prior.head is None or prior.receipt is None:
+        raise BroadSecError(
+            "recovery_plan_required",
+            "FF-1R requires a sha-verified latest-complete P2R anchor",
+        )
+    head = prior.head
+    if not isinstance(head.get("observation_key"), str) or not isinstance(
+        head.get("observation_sha256"), str
+    ):
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "latest-complete anchor is missing observation identity",
+        )
+    return {
+        "run_id": str(head["run_id"]),
+        "run_key": str(head["run_key"]),
+        "run_receipt_sha256": str(head["run_receipt_sha256"]),
+        "observation_key": str(head["observation_key"]),
+        "observation_sha256": str(head["observation_sha256"]),
+    }
+
+
+def _build_recovery_plan(
+    *,
+    universe: UniverseBinding,
+    prior: PriorContext,
+    recovery_from: str,
+) -> dict[str, Any]:
+    if prior.snapshot is None or prior.receipt is None:
+        raise BroadSecError("recovery_plan_required", "latest-complete has no index snapshot")
+    anchor_universe = prior.receipt.get("universe")
+    if not isinstance(anchor_universe, dict) or anchor_universe != universe.to_dict():
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "canonical universe does not match the complete recovery anchor",
+        )
+    if prior.snapshot.get("universe_sha256") != universe.content_sha256:
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "anchor index snapshot belongs to a different canonical universe",
+        )
+    selection_cutoff_at = prior.receipt.get("selection_cutoff_at")
+    if not isinstance(selection_cutoff_at, str):
+        raise BroadSecError("recovery_plan_invalid", "anchor receipt has no selection cutoff")
+    _require_iso_z(selection_cutoff_at, field="selection_cutoff_at")
+    lower_day = recovery_from[:10]
+    upper_day = selection_cutoff_at[:10]
+    source_rows = prior.snapshot.get("relevant_set")
+    if not isinstance(source_rows, list):
+        raise BroadSecError("recovery_plan_invalid", "anchor index relevant_set is not an array")
+    if sha256(canonical_json({"rows": source_rows}).encode("utf-8")).hexdigest() != prior.snapshot.get(
+        "relevant_set_sha256"
+    ):
+        raise BroadSecError("recovery_plan_invalid", "anchor relevant-set digest mismatch")
+    candidate_rows = [
+        dict(row)
+        for row in source_rows
+        if isinstance(row, dict)
+        and isinstance(row.get("filed_on"), str)
+        and lower_day <= row["filed_on"] <= upper_day
+    ]
+    candidate_rows.sort(
+        key=lambda row: (
+            row.get("filed_on", ""),
+            row.get("cik", ""),
+            row.get("accession", ""),
+            row.get("form", ""),
+            row.get("filename", ""),
+        )
+    )
+    candidate_ciks: list[str] = []
+    seen: set[str] = set()
+    canonical_ciks = {issuer.cik for issuer in universe.issuers}
+    for row in candidate_rows:
+        cik = row.get("cik")
+        if not isinstance(cik, str) or cik not in canonical_ciks:
+            raise BroadSecError("recovery_plan_invalid", "plan row is outside canonical universe")
+        if cik not in seen:
+            seen.add(cik)
+            candidate_ciks.append(cik)
+    index_info = prior.receipt.get("index")
+    if not isinstance(index_info, dict):
+        raise BroadSecError("recovery_plan_invalid", "anchor receipt index is missing")
+    index_bindings = {
+        "year": prior.snapshot.get("year"),
+        "quarter": prior.snapshot.get("quarter"),
+        "snapshot_sha256": prior.snapshot.get("snapshot_id"),
+        "relevant_set_sha256": prior.snapshot.get("relevant_set_sha256"),
+        "archive_sha256": prior.snapshot.get("archive_sha256"),
+        "member_sha256": prior.snapshot.get("member_sha256"),
+    }
+    if any(index_info.get(key) != value for key, value in index_bindings.items()):
+        raise BroadSecError("recovery_plan_invalid", "anchor receipt and index snapshot disagree")
+    anchor = _recovery_anchor(prior)
+    return {
+        "schema": RECOVERY_PLAN_SCHEMA,
+        "recovery_from": recovery_from,
+        "selection_cutoff_at": selection_cutoff_at,
+        "selection_policy": RECOVERY_SELECTION_POLICY,
+        "universe": universe.to_dict(),
+        "anchor_complete": anchor,
+        "index": {
+            "year": index_info.get("year"),
+            "quarter": index_info.get("quarter"),
+            "snapshot_sha256": index_info.get("snapshot_sha256"),
+            "relevant_set_sha256": index_info.get("relevant_set_sha256"),
+            "archive_sha256": index_info.get("archive_sha256"),
+            "member_sha256": index_info.get("member_sha256"),
+        },
+        "candidate_row_count": len(candidate_rows),
+        "candidate_cik_count": len(candidate_ciks),
+        "candidate_rows_sha256": _sha_json(candidate_rows),
+        "candidate_ciks_sha256": _sha_json(candidate_ciks),
+        "candidate_rows": candidate_rows,
+        "candidate_ciks": candidate_ciks,
+    }
+
+
+def _verify_recovery_plan(
+    store: BroadSecStore,
+    *,
+    plan: Mapping[str, Any],
+    plan_sha256: str,
+    recovery_from: str,
+    universe: UniverseBinding,
+) -> None:
+    if plan.get("schema") != RECOVERY_PLAN_SCHEMA:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan schema mismatch")
+    if plan.get("recovery_from") != recovery_from or recovery_from != FF1R_RECOVERY_FROM:
+        raise BroadSecError("recovery_plan_invalid", "recovery anchor mismatch")
+    if plan.get("selection_policy") != RECOVERY_SELECTION_POLICY:
+        raise BroadSecError("recovery_plan_invalid", "recovery selection policy mismatch")
+    plan_universe = plan.get("universe")
+    if not isinstance(plan_universe, dict) or plan_universe != universe.to_dict():
+        raise BroadSecError("recovery_plan_invalid", "recovery plan universe mismatch")
+    rows = plan.get("candidate_rows")
+    ciks = plan.get("candidate_ciks")
+    if not isinstance(rows, list) or not isinstance(ciks, list):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan population is malformed")
+    if len(rows) != plan.get("candidate_row_count") or _sha_json(rows) != plan.get(
+        "candidate_rows_sha256"
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan row identity mismatch")
+    if len(ciks) != plan.get("candidate_cik_count") or _sha_json(ciks) != plan.get(
+        "candidate_ciks_sha256"
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan CIK identity mismatch")
+    canonical_ciks = {issuer.cik for issuer in universe.issuers}
+    if len(ciks) != len(set(ciks)) or any(
+        not isinstance(cik, str) or re.fullmatch(r"[0-9]{10}", cik) is None or cik not in canonical_ciks
+        for cik in ciks
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan CIK population is invalid")
+    expected_order: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise BroadSecError("recovery_plan_invalid", "recovery plan row is not an object")
+        cik = row.get("cik")
+        if isinstance(cik, str) and cik not in expected_order:
+            expected_order.append(cik)
+    if expected_order != ciks:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan CIK order mismatch")
+    if _sha_json(plan) != plan_sha256:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan digest mismatch")
+    anchor = plan.get("anchor_complete")
+    if not isinstance(anchor, dict):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan anchor is missing")
+    run_id = anchor.get("run_id")
+    run_ref = anchor.get("run_key")
+    receipt_sha = anchor.get("run_receipt_sha256")
+    if not isinstance(run_id, str) or run_ref != run_key(run_id) or not isinstance(receipt_sha, str):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan anchor identity is malformed")
+    receipt_raw = store.get_bytes_strict(run_ref)
+    if receipt_raw is None or sha256(receipt_raw).hexdigest() != receipt_sha:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan anchor receipt mismatch")
+    try:
+        anchor_receipt = json.loads(receipt_raw)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan anchor receipt is not JSON") from exc
+    if (
+        not isinstance(anchor_receipt, dict)
+        or anchor_receipt.get("status") != "complete"
+        or anchor_receipt.get("run_id") != run_id
+        or anchor_receipt.get("universe") != universe.to_dict()
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan anchor is not complete")
+    anchor_storage = anchor_receipt.get("storage")
+    if (
+        not isinstance(anchor_storage, dict)
+        or anchor_storage.get("run_key") != run_ref
+        or anchor.get("observation_key") != anchor_storage.get("observation_key")
+        or anchor.get("observation_sha256") != anchor_storage.get("observation_sha256")
+        or not isinstance(anchor_storage.get("observation_row_count"), int)
+        or isinstance(anchor_storage.get("observation_row_count"), bool)
+        or anchor_storage.get("observation_row_count") != universe.issuer_count
+    ):
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "recovery plan anchor observation does not bind its complete receipt",
+        )
+    try:
+        _load_observations(store, anchor, universe=universe)
+    except BroadSecError as exc:
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            f"recovery plan anchor observation is invalid: {exc.detail}",
+        ) from exc
+    index = plan.get("index")
+    if not isinstance(index, dict):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan index identity is missing")
+    year, quarter, snapshot_sha = index.get("year"), index.get("quarter"), index.get(
+        "snapshot_sha256"
+    )
+    if not isinstance(year, int) or not isinstance(quarter, int) or not isinstance(snapshot_sha, str):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan index identity is malformed")
+    snap_raw = store.get_bytes_strict(index_snapshot_key(quarter_id(year, quarter), snapshot_sha))
+    if snap_raw is None:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan index snapshot is missing")
+    try:
+        snapshot = json.loads(snap_raw)
+    except json.JSONDecodeError as exc:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan index snapshot is not JSON") from exc
+    if not isinstance(snapshot, dict):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan index snapshot is malformed")
+    _verify_snapshot_identity(snapshot, expected_sha=snapshot_sha)
+    if snapshot.get("relevant_set_sha256") != index.get("relevant_set_sha256"):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan relevant-set mismatch")
+    expected = _build_recovery_plan(
+        universe=universe,
+        prior=PriorContext(
+            clock=anchor_receipt.get("latest_relevant_sec_accepted_at"),
+            rows=list(snapshot.get("relevant_set") or []),
+            is_bootstrap=False,
+            prev_snapshot_sha=snapshot_sha,
+            head=dict(anchor),
+            receipt=dict(anchor_receipt),
+            snapshot=dict(snapshot),
+        ),
+        recovery_from=recovery_from,
+    )
+    if dict(plan) != expected:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan does not match anchor snapshot")
+
+
 def _load_continuation(
     store: BroadSecStore,
     *,
     recovery_from: str,
-    universe_sha: str,
-) -> dict[str, Any] | None:
+    universe: UniverseBinding,
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
     pointer = _read_json(store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES)
     if pointer is None:
         return None
-    if pointer.get("recovery_from") != recovery_from or pointer.get("universe_sha256") != universe_sha:
-        return None
+    if pointer.get("schema") != RECOVERY_CONTINUATION_HEAD_SCHEMA:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation head schema mismatch")
+    if pointer.get("recovery_from") != recovery_from:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation anchor mismatch")
+    if pointer.get("universe_sha256") != universe.content_sha256:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation universe mismatch")
+    plan_sha = pointer.get("plan_sha256")
+    plan_ref = pointer.get("plan_key")
+    if not isinstance(plan_sha, str) or plan_ref != recovery_plan_object_key(plan_sha):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation plan reference is invalid")
+    plan_packed = store.get_bytes_strict(plan_ref)
+    if plan_packed is None:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan object is missing")
+    try:
+        plan = json.loads(_ungzip_bytes(plan_packed))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BroadSecError("recovery_plan_invalid", "recovery plan object is corrupt") from exc
+    if not isinstance(plan, dict):
+        raise BroadSecError("recovery_plan_invalid", "recovery plan object is not a mapping")
+    _verify_recovery_plan(
+        store,
+        plan=plan,
+        plan_sha256=plan_sha,
+        recovery_from=recovery_from,
+        universe=universe,
+    )
+    total = plan["candidate_cik_count"]
+    pointer_bindings = {
+        "selection_cutoff_at": plan["selection_cutoff_at"],
+        "anchor_run_id": plan["anchor_complete"]["run_id"],
+        "anchor_run_receipt_sha256": plan["anchor_complete"]["run_receipt_sha256"],
+        "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
+        "candidate_cik_count": total,
+    }
+    if any(pointer.get(key) != value for key, value in pointer_bindings.items()):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation head binding mismatch")
     object_ref = pointer.get("object_key")
     digest = pointer.get("sha256")
-    if not isinstance(object_ref, str) or not isinstance(digest, str):
-        return None
+    if (
+        not isinstance(object_ref, str)
+        or not isinstance(digest, str)
+        or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+        or object_ref != recovery_continuation_object_key(digest)
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation object reference is invalid")
     packed = store.get_bytes_strict(object_ref)
     if packed is None:
-        return None
-    payload = json.loads(_ungzip_bytes(packed))
-    if not isinstance(payload, dict):
-        return None
-    if sha256(canonical_json(payload).encode("utf-8")).hexdigest() != digest:
-        raise BroadSecError("store_readback_failure", "recovery continuation digest mismatch")
-    return payload
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation object is missing")
+    try:
+        payload = json.loads(_ungzip_bytes(packed))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation object is corrupt") from exc
+    if not isinstance(payload, dict) or payload.get("schema") != CONTINUATION_SCHEMA:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation body is malformed")
+    if _sha_json(payload) != digest or payload.get("plan_sha256") != plan_sha:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation digest mismatch")
+    cursor = payload.get("next_ordinal")
+    if (
+        not isinstance(cursor, int)
+        or isinstance(cursor, bool)
+        or cursor < 0
+        or cursor > total
+        or payload.get("completed_count") != cursor
+        or payload.get("candidate_cik_count") != total
+        or payload.get("backlog_count") != total - cursor
+        or pointer.get("completed_count") != cursor
+        or pointer.get("backlog_count") != total - cursor
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation cursor is invalid")
+    body_bindings = {
+        "recovery_from": plan["recovery_from"],
+        "selection_cutoff_at": plan["selection_cutoff_at"],
+        "universe_sha256": plan["universe"]["content_sha256"],
+        "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
+    }
+    if any(payload.get(key) != value for key, value in body_bindings.items()):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation body binding mismatch")
+
+    cumulative_clock = payload.get("cumulative_sec_accepted_at")
+    if cumulative_clock is not None and (
+        not isinstance(cumulative_clock, str) or _ISO_Z_RE.fullmatch(cumulative_clock) is None
+    ):
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation source clock is invalid")
+    last_ref = payload.get("last_successful_run_receipt")
+    if last_ref is None:
+        if cursor != 0:
+            raise BroadSecError("recovery_plan_invalid", "advanced continuation lacks a recovery receipt")
+        anchor_raw = store.get_bytes_strict(plan["anchor_complete"]["run_key"])
+        if anchor_raw is None:
+            raise BroadSecError("recovery_plan_invalid", "recovery anchor receipt is missing")
+        try:
+            anchor_receipt = json.loads(anchor_raw)
+        except json.JSONDecodeError as exc:
+            raise BroadSecError("recovery_plan_invalid", "recovery anchor receipt is corrupt") from exc
+        if not isinstance(anchor_receipt, dict):
+            raise BroadSecError("recovery_plan_invalid", "recovery anchor receipt is malformed")
+        expected_clock = anchor_receipt.get("latest_relevant_sec_accepted_at")
+    else:
+        required_ref_keys = {
+            "run_id",
+            "run_key",
+            "run_receipt_sha256",
+            "observation_key",
+            "observation_sha256",
+        }
+        if not isinstance(last_ref, dict) or set(last_ref) != required_ref_keys:
+            raise BroadSecError("recovery_plan_invalid", "recovery receipt reference is malformed")
+        last_run_id = last_ref.get("run_id")
+        last_run_key = last_ref.get("run_key")
+        last_receipt_sha = last_ref.get("run_receipt_sha256")
+        if (
+            not isinstance(last_run_id, str)
+            or last_run_key != run_key(last_run_id)
+            or not isinstance(last_receipt_sha, str)
+            or re.fullmatch(r"[a-f0-9]{64}", last_receipt_sha) is None
+        ):
+            raise BroadSecError("recovery_plan_invalid", "recovery receipt identity is malformed")
+        last_raw = store.get_bytes_strict(last_run_key)
+        if last_raw is None or sha256(last_raw).hexdigest() != last_receipt_sha:
+            raise BroadSecError("recovery_plan_invalid", "recovery receipt identity mismatch")
+        try:
+            last_receipt = json.loads(last_raw)
+        except json.JSONDecodeError as exc:
+            raise BroadSecError("recovery_plan_invalid", "recovery receipt is corrupt") from exc
+        recovery = last_receipt.get("recovery") if isinstance(last_receipt, dict) else None
+        storage = last_receipt.get("storage") if isinstance(last_receipt, dict) else None
+        last_universe = last_receipt.get("universe") if isinstance(last_receipt, dict) else None
+        if (
+            not isinstance(last_receipt, dict)
+            or last_receipt.get("run_id") != last_run_id
+            or last_receipt.get("mode") != "recovery"
+            or not isinstance(last_universe, dict)
+            or last_universe.get("content_sha256")
+            != plan["universe"]["content_sha256"]
+            or not isinstance(recovery, dict)
+            or recovery.get("plan_sha256") != plan_sha
+            or recovery.get("selection_cutoff_at") != plan["selection_cutoff_at"]
+            or recovery.get("completed_total") != cursor
+            or recovery.get("backlog_count") != total - cursor
+            or not isinstance(storage, dict)
+            or storage.get("run_key") != last_run_key
+            or storage.get("observation_key") != last_ref.get("observation_key")
+            or storage.get("observation_sha256") != last_ref.get("observation_sha256")
+        ):
+            raise BroadSecError("recovery_plan_invalid", "recovery receipt does not bind continuation")
+        expected_clock = last_receipt.get("latest_relevant_sec_accepted_at")
+    if expected_clock is not None and (
+        not isinstance(expected_clock, str) or _ISO_Z_RE.fullmatch(expected_clock) is None
+    ):
+        raise BroadSecError("recovery_plan_invalid", "bound recovery receipt clock is invalid")
+    if cumulative_clock != expected_clock:
+        raise BroadSecError("recovery_plan_invalid", "recovery continuation source clock mismatch")
+    return plan, payload
 
 
 def _write_continuation(
     store: BroadSecStore,
     *,
-    recovery_from: str,
-    universe_sha: str,
-    pending_ciks: list[str],
-    completed_ciks: list[str],
-) -> None:
+    plan: Mapping[str, Any],
+    plan_sha256: str,
+    next_ordinal: int,
+    cumulative_sec_accepted_at: str | None,
+    last_successful_run_receipt: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    total = int(plan["candidate_cik_count"])
     body = {
         "schema": CONTINUATION_SCHEMA,
-        "recovery_from": recovery_from,
-        "universe_sha256": universe_sha,
-        "pending_ciks": pending_ciks,
-        "completed_ciks": completed_ciks,
+        "plan_sha256": plan_sha256,
+        "recovery_from": plan["recovery_from"],
+        "selection_cutoff_at": plan["selection_cutoff_at"],
+        "universe_sha256": plan["universe"]["content_sha256"],
+        "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
+        "next_ordinal": next_ordinal,
+        "candidate_cik_count": total,
+        "completed_count": next_ordinal,
+        "backlog_count": total - next_ordinal,
+        "cumulative_sec_accepted_at": cumulative_sec_accepted_at,
+        "last_successful_run_receipt": dict(last_successful_run_receipt)
+        if last_successful_run_receipt is not None
+        else None,
     }
     raw = canonical_json(body).encode("utf-8")
     digest = sha256(raw).hexdigest()
@@ -754,15 +1820,1380 @@ def _write_continuation(
         store,
         recovery_continuation_pointer_key(),
         {
-            "schema": "fundamental_forensics.broad_sec.recovery_continuation_head.v1",
-            "recovery_from": recovery_from,
-            "universe_sha256": universe_sha,
+            "schema": RECOVERY_CONTINUATION_HEAD_SCHEMA,
+            "plan_sha256": plan_sha256,
+            "plan_key": recovery_plan_object_key(plan_sha256),
+            "recovery_from": plan["recovery_from"],
+            "selection_cutoff_at": plan["selection_cutoff_at"],
+            "universe_sha256": plan["universe"]["content_sha256"],
+            "anchor_run_id": plan["anchor_complete"]["run_id"],
+            "anchor_run_receipt_sha256": plan["anchor_complete"]["run_receipt_sha256"],
+            "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
             "object_key": key,
             "sha256": digest,
-            "pending_count": len(pending_ciks),
-            "completed_count": len(completed_ciks),
+            "candidate_cik_count": total,
+            "completed_count": next_ordinal,
+            "backlog_count": total - next_ordinal,
         },
     )
+    return body
+
+
+def _historical_inventory(
+    payload: Mapping[str, Any],
+    *,
+    cik: str,
+    ticker: str,
+    planned_rows: list[dict[str, Any]],
+    known_accessions: set[str],
+) -> list[dict[str, str]]:
+    missing = [row for row in planned_rows if row.get("accession") not in known_accessions]
+    if not missing:
+        return []
+    filings = payload.get("filings")
+    files = filings.get("files") if isinstance(filings, Mapping) else None
+    if not isinstance(files, list):
+        raise BroadSecError(
+            "historical_submissions_required",
+            f"{ticker} planned accession is absent and filings.files is unavailable",
+        )
+    inventory: list[dict[str, str]] = []
+    seen_names: dict[str, tuple[str, str]] = {}
+    for entry in files:
+        if not isinstance(entry, Mapping):
+            raise BroadSecError("invalid_sec_json", f"{ticker} filings.files entry is not an object")
+        name = entry.get("name")
+        filing_from = entry.get("filingFrom")
+        filing_to = entry.get("filingTo")
+        if not isinstance(name, str) or not isinstance(filing_from, str) or not isinstance(
+            filing_to, str
+        ):
+            raise BroadSecError("invalid_sec_json", f"{ticker} filings.files entry is incomplete")
+        try:
+            historical_submissions_url(cik, name)
+        except ValueError as exc:
+            raise BroadSecError("source_binding_failure", str(exc)) from exc
+        if not _DATE_RE.fullmatch(filing_from) or not _DATE_RE.fullmatch(filing_to):
+            raise BroadSecError("invalid_sec_json", f"{ticker} filings.files date is malformed")
+        if filing_from > filing_to:
+            raise BroadSecError("invalid_sec_json", f"{ticker} filings.files date span is reversed")
+        span = (filing_from, filing_to)
+        if name in seen_names:
+            if seen_names[name] != span:
+                raise BroadSecError(
+                    "historical_submissions_conflict",
+                    f"{ticker} historical shard {name} has conflicting spans",
+                )
+            raise BroadSecError("invalid_sec_json", f"{ticker} historical shard {name} is duplicated")
+        seen_names[name] = span
+        inventory.append({"name": name, "filing_from": filing_from, "filing_to": filing_to})
+    selected: dict[str, dict[str, str]] = {}
+    for row in missing:
+        filed_on = row.get("filed_on")
+        if not isinstance(filed_on, str) or not _DATE_RE.fullmatch(filed_on):
+            raise BroadSecError("recovery_plan_invalid", f"{ticker} plan row has invalid filing date")
+        matches = [
+            entry
+            for entry in inventory
+            if entry["filing_from"] <= filed_on <= entry["filing_to"]
+        ]
+        if not matches:
+            raise BroadSecError(
+                "historical_submissions_required",
+                f"{ticker} has no declared shard spanning planned accession {row.get('accession')}",
+            )
+        for entry in matches:
+            selected[entry["name"]] = entry
+    ordered = sorted(
+        selected.values(), key=lambda item: (item["filing_from"], item["filing_to"], item["name"])
+    )
+    if len(ordered) > MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER:
+        raise BroadSecError(
+            "historical_submissions_budget_exhausted",
+            f"{ticker} requires {len(ordered)} historical shards; cap is "
+            f"{MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER}",
+        )
+    return ordered
+
+
+_FILING_FACT_FIELDS = (
+    "cik",
+    "ticker",
+    "form",
+    "filing_date",
+    "report_date",
+    "acceptance_datetime",
+    "primary_document",
+    "is_xbrl",
+    "is_inline_xbrl",
+)
+
+
+def _merge_filing_rows(*groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for rows in groups:
+        for raw in rows:
+            row = {key: value for key, value in raw.items() if not key.startswith("withheld_")}
+            accession = row.get("accession_number")
+            if not isinstance(accession, str) or not _ACCESSION_RE.fullmatch(accession):
+                raise BroadSecError(
+                    "historical_submissions_conflict",
+                    "cannot merge a filing without an exact accession identity",
+                )
+            existing = merged.get(accession)
+            if existing is None:
+                merged[accession] = row
+                continue
+            for field in _FILING_FACT_FIELDS:
+                left, right = existing.get(field), row.get(field)
+                if left is not None and right is not None and left != right:
+                    raise BroadSecError(
+                        "historical_submissions_conflict",
+                        f"accession {accession} conflicts on {field}",
+                    )
+                if left is None and right is not None:
+                    existing[field] = right
+    return sorted(
+        merged.values(),
+        key=lambda row: (
+            _optional_iso_order_key(row.get("acceptance_datetime")),
+            row.get("filing_date") or "",
+            row["accession_number"],
+        ),
+    )
+
+
+def _assert_no_duplicate_filing_conflicts(*groups: list[dict[str, Any]]) -> None:
+    """Reject contradictory facts even when one duplicate row was withheld."""
+
+    exact_rows = [
+        row
+        for rows in groups
+        for row in rows
+        if isinstance(row.get("accession_number"), str)
+        and _ACCESSION_RE.fullmatch(row["accession_number"])
+    ]
+    _merge_filing_rows(exact_rows)
+
+
+def _component_identity(components: list[dict[str, Any]]) -> str:
+    stable = [
+        {
+            key: component.get(key)
+            for key in (
+                "source_kind",
+                "source_name",
+                "url",
+                "sha256",
+                "bytes",
+                "filing_from",
+                "filing_to",
+            )
+        }
+        for component in components
+    ]
+    return _sha_json(stable)
+
+
+def _validate_modern_manifest_components(manifest: Mapping[str, Any]) -> None:
+    """Prove the component set agrees with the manifest's current source body."""
+
+    components = manifest.get("submissions_components")
+    source_set_sha = manifest.get("submissions_source_set_sha256")
+    if (
+        not isinstance(components, list)
+        or not components
+        or len(components) > 1 + MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER
+        or not isinstance(source_set_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", source_set_sha) is None
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component provenance is malformed",
+        )
+    if not all(isinstance(component, dict) for component in components):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component is not an object",
+        )
+    typed_components = [dict(component) for component in components]
+    if _component_identity(typed_components) != source_set_sha:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest component-set identity mismatch",
+        )
+    recent = [component for component in typed_components if component.get("source_kind") == "recent"]
+    historical = [
+        component for component in typed_components if component.get("source_kind") == "historical"
+    ]
+    if len(recent) != 1 or len(recent) + len(historical) != len(typed_components):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest must bind exactly one recent Submissions component",
+        )
+    if len(historical) > MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_ISSUER:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest historical component bound exceeded",
+        )
+    cik = manifest.get("cik")
+    submissions_sha = manifest.get("submissions_sha256")
+    current = recent[0]
+    if (
+        not isinstance(cik, str)
+        or not isinstance(submissions_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", submissions_sha) is None
+        or current.get("source_name") is not None
+        or current.get("sha256") != submissions_sha
+        or current.get("object_key") != object_key(submissions_sha)
+        or current.get("url") != endpoint_url(cik, "submissions")
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest recent component does not bind current Submissions",
+        )
+    for component in historical:
+        digest = component.get("sha256")
+        source_name = component.get("source_name")
+        if (
+            not isinstance(digest, str)
+            or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+            or component.get("object_key") != object_key(digest)
+            or not isinstance(source_name, str)
+            or component.get("url") != historical_submissions_url(cik, source_name)
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                "issuer manifest historical component binding is invalid",
+            )
+
+
+def _stored_issuer_source_identity(manifest: Mapping[str, Any]) -> str:
+    """Recompute one immutable manifest under its explicit stored identity era."""
+
+    has_components = "submissions_components" in manifest
+    has_source_set = "submissions_source_set_sha256" in manifest
+    if has_components != has_source_set:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest mixes legacy and component identity fields",
+        )
+    if not has_components:
+        return _legacy_issuer_source_identity(manifest)
+    _validate_modern_manifest_components(manifest)
+    return issuer_source_identity(manifest)
+
+
+@lru_cache(maxsize=1)
+def _issuer_manifest_validator() -> Draft202012Validator:
+    try:
+        schema = json.loads(ISSUER_MANIFEST_SCHEMA_PATH.read_text(encoding="utf-8"))
+        Draft202012Validator.check_schema(schema)
+        return Draft202012Validator(schema)
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            "issuer manifest schema authority cannot be loaded",
+        ) from exc
+
+
+def _validate_issuer_manifest_payload(
+    payload: Mapping[str, Any],
+    *,
+    expected_cik: str,
+    expected_ticker: str,
+    expected_manifest_id: str,
+    expected_key: str,
+    allow_legacy: bool,
+) -> None:
+    """Validate one readable issuer-manifest body against its lookup context."""
+
+    try:
+        schema_errors = sorted(
+            _issuer_manifest_validator().iter_errors(dict(payload)),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+    except BroadSecError:
+        raise
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            "issuer manifest schema authority evaluation failed",
+        ) from exc
+    if schema_errors:
+        error = schema_errors[0]
+        location = ".".join(str(part) for part in error.absolute_path) or "<root>"
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"issuer manifest schema invalid at {location} ({error.validator})",
+        )
+
+    if (
+        payload.get("schema") != MANIFEST_SCHEMA
+        or payload.get("cik") != expected_cik
+        or payload.get("ticker") != expected_ticker
+        or payload.get("manifest_id") != expected_manifest_id
+        or expected_key != issuer_manifest_key(expected_cik, expected_manifest_id)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest body does not bind its lookup identity",
+        )
+    has_components = "submissions_components" in payload
+    has_source_set = "submissions_source_set_sha256" in payload
+    if not allow_legacy and (not has_components or not has_source_set):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "new issuer manifest must use component-set identity",
+        )
+    submissions_sha = payload.get("submissions_sha256")
+    companyfacts_sha = payload.get("companyfacts_sha256")
+    if (
+        not isinstance(submissions_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", submissions_sha) is None
+        or (
+            companyfacts_sha is not None
+            and (
+                not isinstance(companyfacts_sha, str)
+                or re.fullmatch(r"[a-f0-9]{64}", companyfacts_sha) is None
+            )
+        )
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest source identity is malformed",
+        )
+    cumulative = payload.get("cumulative_relevant_accessions")
+    relevant = payload.get("relevant_filings")
+    if (
+        not isinstance(cumulative, list)
+        or any(
+            not isinstance(accession, str) or _ACCESSION_RE.fullmatch(accession) is None
+            for accession in cumulative
+        )
+        or len(cumulative) != len(set(cumulative))
+        or not isinstance(relevant, list)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest accession lineage is malformed",
+        )
+    cumulative_set = set(cumulative)
+    for row in relevant:
+        if (
+            not isinstance(row, dict)
+            or row.get("cik") != expected_cik
+            or row.get("ticker") != expected_ticker
+            or not isinstance(row.get("accession_number"), str)
+            or _ACCESSION_RE.fullmatch(row["accession_number"]) is None
+            or row["accession_number"] not in cumulative_set
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                "issuer manifest filing identity is malformed",
+            )
+    previous_id = payload.get("previous_manifest_id")
+    if previous_id is not None and (
+        not isinstance(previous_id, str)
+        or re.fullmatch(r"[a-f0-9]{64}", previous_id) is None
+        or previous_id == expected_manifest_id
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest previous-manifest identity is malformed",
+        )
+    try:
+        computed = _stored_issuer_source_identity(payload)
+    except BroadSecError:
+        raise
+    except Exception as exc:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest identity cannot be computed",
+        ) from exc
+    if computed != expected_manifest_id:
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            "issuer manifest source identity mismatch",
+        )
+
+
+def _read_issuer_manifest_bytes(store: BroadSecStore, key: str) -> bytes | None:
+    try:
+        return store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError(
+            "store_readback_failure",
+            f"issuer manifest transport failed for {key}: {exc}",
+        ) from exc
+
+
+def _parse_issuer_manifest_bytes(
+    raw: bytes,
+    *,
+    expected_cik: str,
+    expected_ticker: str,
+    expected_manifest_id: str,
+    expected_key: str,
+    allow_legacy: bool,
+) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise BroadSecError("issuer_manifest_invalid", f"{expected_key} is not JSON") from exc
+    if not isinstance(payload, dict):
+        raise BroadSecError("issuer_manifest_invalid", f"{expected_key} is not an object")
+    _validate_issuer_manifest_payload(
+        payload,
+        expected_cik=expected_cik,
+        expected_ticker=expected_ticker,
+        expected_manifest_id=expected_manifest_id,
+        expected_key=expected_key,
+        allow_legacy=allow_legacy,
+    )
+    return payload
+
+
+def _read_issuer_manifest(
+    store: BroadSecStore,
+    *,
+    pointer: Mapping[str, Any],
+    expected_cik: str,
+    expected_ticker: str,
+) -> dict[str, Any]:
+    """Read a full immutable issuer manifest through its own finite envelope."""
+
+    manifest_id = pointer.get("manifest_id")
+    manifest_ref = pointer.get("manifest_key")
+    if (
+        pointer.get("schema") != "fundamental_forensics.broad_sec.issuer_latest.v1"
+        or pointer.get("cik") != expected_cik
+        or pointer.get("ticker") != expected_ticker
+        or not isinstance(manifest_id, str)
+        or re.fullmatch(r"[a-f0-9]{64}", manifest_id) is None
+        or manifest_ref != issuer_manifest_key(expected_cik, manifest_id)
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"{expected_ticker} latest pointer does not bind its issuer manifest",
+        )
+    raw = _read_issuer_manifest_bytes(store, manifest_ref)
+    if raw is None:
+        raise BroadSecError(
+            "store_readback_failure",
+            f"{expected_ticker} immutable issuer manifest is missing: {manifest_ref}",
+        )
+    payload = _parse_issuer_manifest_bytes(
+        raw,
+        expected_cik=expected_cik,
+        expected_ticker=expected_ticker,
+        expected_manifest_id=manifest_id,
+        expected_key=manifest_ref,
+        allow_legacy=True,
+    )
+    if (
+        pointer.get("submissions_sha256") != payload.get("submissions_sha256")
+        or pointer.get("companyfacts_sha256") != payload.get("companyfacts_sha256")
+    ):
+        raise BroadSecError(
+            "issuer_manifest_invalid",
+            f"{expected_ticker} pointer source identity disagrees with manifest body",
+        )
+
+    previous_id = payload.get("previous_manifest_id")
+    if isinstance(previous_id, str):
+        previous_key = issuer_manifest_key(expected_cik, previous_id)
+        previous_raw = _read_issuer_manifest_bytes(store, previous_key)
+        if previous_raw is None:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{expected_ticker} previous issuer manifest is missing: {previous_key}",
+            )
+        try:
+            previous_unchecked = json.loads(previous_raw)
+        except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{previous_key} is not JSON",
+            ) from exc
+        if not isinstance(previous_unchecked, dict) or not isinstance(
+            previous_unchecked.get("ticker"), str
+        ):
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{previous_key} is not an issuer manifest object",
+            )
+        previous = _parse_issuer_manifest_bytes(
+            previous_raw,
+            expected_cik=expected_cik,
+            expected_ticker=previous_unchecked["ticker"],
+            expected_manifest_id=previous_id,
+            expected_key=previous_key,
+            allow_legacy=True,
+        )
+        prior_ledger = previous.get("cumulative_relevant_accessions")
+        current_ledger = payload.get("cumulative_relevant_accessions")
+        if not isinstance(prior_ledger, list) or current_ledger[: len(prior_ledger)] != prior_ledger:
+            raise BroadSecError(
+                "issuer_manifest_invalid",
+                f"{expected_ticker} previous issuer manifest lineage is not monotone",
+            )
+    return payload
+
+
+def _encode_issuer_manifest(manifest: Mapping[str, Any]) -> tuple[str, bytes]:
+    """Canonically encode a new manifest under the current finite contract."""
+
+    if "submissions_components" not in manifest or "submissions_source_set_sha256" not in manifest:
+        raise BroadSecError(
+            "store_write_failure",
+            "new issuer manifest is missing component-set identity",
+        )
+    try:
+        _validate_modern_manifest_components(manifest)
+        manifest_id = issuer_source_identity(manifest)
+        encoded_manifest = {**manifest, "manifest_id": manifest_id}
+        _validate_issuer_manifest_payload(
+            encoded_manifest,
+            expected_cik=str(manifest.get("cik")),
+            expected_ticker=str(manifest.get("ticker")),
+            expected_manifest_id=manifest_id,
+            expected_key=issuer_manifest_key(str(manifest.get("cik")), manifest_id),
+            allow_legacy=False,
+        )
+        encoded = canonical_json(encoded_manifest).encode("utf-8")
+    except BroadSecError as exc:
+        if exc.reason_code == "store_write_failure":
+            raise
+        raise BroadSecError("store_write_failure", exc.detail) from exc
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", "issuer manifest cannot be encoded") from exc
+    if len(encoded) > ISSUER_MANIFEST_MAX_BYTES:
+        raise BroadSecError(
+            "store_write_failure",
+            f"issuer manifest exceeds {ISSUER_MANIFEST_MAX_BYTES} bytes",
+        )
+    return manifest_id, encoded
+
+
+def _put_issuer_manifest(store: BroadSecStore, key: str, data: bytes) -> None:
+    """Conditionally create one issuer manifest with bounded comparisons/readback."""
+
+    if len(data) > ISSUER_MANIFEST_MAX_BYTES:
+        raise BroadSecError(
+            "store_write_failure",
+            f"issuer manifest exceeds {ISSUER_MANIFEST_MAX_BYTES} bytes",
+        )
+    try:
+        decoded = json.loads(data)
+        if not isinstance(decoded, dict):
+            raise BroadSecError("issuer_manifest_invalid", "issuer manifest is not an object")
+        cik = decoded.get("cik")
+        ticker = decoded.get("ticker")
+        manifest_id = decoded.get("manifest_id")
+        if not all(isinstance(value, str) for value in (cik, ticker, manifest_id)):
+            raise BroadSecError("issuer_manifest_invalid", "issuer manifest identity is malformed")
+        _validate_issuer_manifest_payload(
+            decoded,
+            expected_cik=cik,
+            expected_ticker=ticker,
+            expected_manifest_id=manifest_id,
+            expected_key=key,
+            allow_legacy=False,
+        )
+    except BroadSecError as exc:
+        raise BroadSecError("store_write_failure", exc.detail) from exc
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", "issuer manifest cannot be validated") from exc
+    try:
+        existing = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError("store_readback_failure", str(exc)) from exc
+    if existing == data:
+        return
+    if existing is not None:
+        raise BroadSecError("store_write_failure", f"immutable key already holds different bytes: {key}")
+    try:
+        written = store.put_bytes_strict_conditional(
+            key,
+            data,
+            expected_version=None,
+            content_type="application/json",
+        )
+    except Exception as exc:
+        raise BroadSecError("store_write_failure", str(exc)) from exc
+    if not written:
+        try:
+            raced = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+        except Exception as exc:
+            raise BroadSecError("store_readback_failure", str(exc)) from exc
+        if raced == data:
+            return
+        raise BroadSecError("store_write_failure", f"conditional create rejected for {key}")
+    try:
+        readback = store.get_bytes_strict_bounded(key, ISSUER_MANIFEST_MAX_BYTES)
+    except Exception as exc:
+        raise BroadSecError("store_readback_failure", str(exc)) from exc
+    if readback != data:
+        raise BroadSecError("store_readback_failure", f"readback mismatch for {key}")
+
+
+def _load_observations(
+    store: BroadSecStore,
+    reference: Mapping[str, Any] | None,
+    *,
+    universe: UniverseBinding,
+) -> dict[str, dict[str, Any]]:
+    if reference is None:
+        return {}
+    key = reference.get("observation_key")
+    expected_sha = reference.get("observation_sha256")
+    expected_run_id = reference.get("run_id")
+    if (
+        not isinstance(expected_run_id, str)
+        or key != issuer_observations_key(expected_run_id)
+        or not isinstance(expected_sha, str)
+        or re.fullmatch(r"[a-f0-9]{64}", expected_sha) is None
+    ):
+        raise BroadSecError("recovery_plan_invalid", "observation reference is incomplete")
+    packed = store.get_bytes_strict(key)
+    if packed is None:
+        raise BroadSecError("store_readback_failure", f"observation object is missing: {key}")
+    try:
+        raw = _ungzip_bytes(packed)
+        payload = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise BroadSecError("store_readback_failure", "observation object is corrupt") from exc
+    if sha256(raw).hexdigest() != expected_sha or not isinstance(payload, dict):
+        raise BroadSecError("store_readback_failure", "observation identity mismatch")
+    issuers = payload.get("issuers")
+    if (
+        payload.get("schema") != OBSERVATION_SCHEMA
+        or payload.get("run_id") != expected_run_id
+        or not isinstance(issuers, list)
+        or payload.get("row_count") != len(issuers)
+        or len(issuers) != universe.issuer_count
+    ):
+        raise BroadSecError("store_readback_failure", "observation issuers are malformed")
+    expected_issuers = {issuer.cik: issuer.ticker for issuer in universe.issuers}
+    result: dict[str, dict[str, Any]] = {}
+    for row in issuers:
+        if (
+            not isinstance(row, dict)
+            or not isinstance(row.get("cik"), str)
+            or row.get("cik") in result
+            or expected_issuers.get(row.get("cik")) != row.get("ticker")
+        ):
+            raise BroadSecError("store_readback_failure", "observation row is malformed")
+        result[row["cik"]] = dict(row)
+    if set(result) != set(expected_issuers):
+        raise BroadSecError("store_readback_failure", "observation census is incomplete")
+    return result
+
+
+def _run_recovery_poll(
+    *,
+    store: BroadSecStore,
+    universe: UniverseBinding,
+    fetch_submissions: FetchBytes,
+    fetch_historical_submissions: FetchHistorical,
+    fetch_companyfacts: FetchCompanyFacts,
+    clocks: PollClocks,
+    now: NowFn,
+    max_affected_issuers: int,
+    max_companyfacts_bytes_per_run: int,
+    on_progress: ProgressFn | None,
+) -> PollResult:
+    if (
+        not universe.canonical
+        or universe.path != UNIVERSE_RELATIVE_PATH
+        or universe.universe_id != UNIVERSE_ID
+    ):
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "FF-1R requires the canonical parquet universe binding",
+        )
+    if clocks.recovery_from != FF1R_RECOVERY_FROM:
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            f"FF-1R is bound to recovery_from={FF1R_RECOVERY_FROM}",
+        )
+    year, quarter = calendar_quarter(clocks.poll_started_at)
+    loaded = _load_continuation(
+        store,
+        recovery_from=clocks.recovery_from,
+        universe=universe,
+    )
+    current_prior = _load_prior_context(store, current_year=year, current_quarter=quarter)
+    if loaded is None:
+        plan = _build_recovery_plan(
+            universe=universe,
+            prior=current_prior,
+            recovery_from=clocks.recovery_from,
+        )
+        plan_raw = canonical_json(plan).encode("utf-8")
+        plan_sha = sha256(plan_raw).hexdigest()
+        _verify_recovery_plan(
+            store,
+            plan=plan,
+            plan_sha256=plan_sha,
+            recovery_from=clocks.recovery_from,
+            universe=universe,
+        )
+        _put_immutable(
+            store,
+            recovery_plan_object_key(plan_sha),
+            _gzip_bytes(plan_raw),
+            content_type="application/gzip",
+        )
+        state = _write_continuation(
+            store,
+            plan=plan,
+            plan_sha256=plan_sha,
+            next_ordinal=0,
+            cumulative_sec_accepted_at=current_prior.clock,
+            last_successful_run_receipt=None,
+        )
+    else:
+        plan, state = loaded
+        plan_sha = _sha_json(plan)
+
+    recovery_selection_cutoff_at = str(plan["selection_cutoff_at"])
+    composed_selection_cutoff_at = (
+        current_prior.receipt.get("selection_cutoff_at")
+        if isinstance(current_prior.receipt, Mapping)
+        else None
+    )
+    if (
+        not isinstance(composed_selection_cutoff_at, str)
+        or _ISO_Z_RE.fullmatch(composed_selection_cutoff_at) is None
+        or _iso_lt(composed_selection_cutoff_at, recovery_selection_cutoff_at)
+    ):
+        raise BroadSecError(
+            "recovery_plan_invalid",
+            "current complete receipt has no lawful composed selection cutoff",
+        )
+    candidate_ciks = list(plan["candidate_ciks"])
+    cursor = int(state["next_ordinal"])
+    selected_ciks = candidate_ciks[cursor : cursor + max_affected_issuers]
+    if len(selected_ciks) > MAX_AFFECTED_ISSUERS:
+        raise BroadSecError("recovery_plan_invalid", "recovery tranche exceeds hard issuer cap")
+    planned_by_cik: dict[str, list[dict[str, Any]]] = {}
+    for row in plan["candidate_rows"]:
+        planned_by_cik.setdefault(row["cik"], []).append(dict(row))
+    issuer_by_cik = {issuer.cik: issuer for issuer in universe.issuers}
+    _progress(
+        on_progress,
+        "recovery_select",
+        plan_ciks=len(candidate_ciks),
+        cursor=cursor,
+        selected=len(selected_ciks),
+    )
+
+    coverage = {
+        "expected_issuers": universe.issuer_count,
+        "observed_issuers": universe.issuer_count,
+        "failed_issuers": 0,
+        "companyfacts_fetched": 0,
+        "companyfacts_skipped_unchanged": 0,
+        "companyfacts_bytes_fetched": 0,
+        "companyfacts_deferred": 0,
+        "recovery_backlog": len(candidate_ciks) - cursor,
+        "selected_recovery_ciks": len(selected_ciks),
+        "submissions_fetched": 0,
+        "historical_submissions_fetched": 0,
+        "historical_submissions_bytes_fetched": 0,
+    }
+    change_summary = {
+        "new_relevant_accessions": 0,
+        "affected_issuers": 0,
+        "objects_admitted": 0,
+        "manifests_admitted": 0,
+    }
+    failures: list[IssuerFailure] = []
+    committed_this_run = 0
+    source_accepts: list[str | None] = []
+    facts_bytes = 0
+    historical_bytes = 0
+    historical_requests = 0
+    clocks.recorded_at = clocks.recorded_at or now()
+
+    prior_recovery_ref = state.get("last_successful_run_receipt")
+    base_observations = _load_observations(
+        store,
+        prior_recovery_ref if isinstance(prior_recovery_ref, Mapping) else plan["anchor_complete"],
+        universe=universe,
+    )
+    if current_prior.head is not None:
+        current_observations = _load_observations(store, current_prior.head, universe=universe)
+        for cik, row in current_observations.items():
+            if (
+                cik not in base_observations
+                or row.get("manifest_id")
+                or int(row.get("new_event_count") or 0) > 0
+                or int(row.get("correction_event_count") or 0) > 0
+                or row.get("outcome") == "failed"
+            ):
+                base_observations[cik] = row
+
+    def blank_observation(issuer: Issuer) -> dict[str, Any]:
+        return {
+            "ticker": issuer.ticker,
+            "cik": issuer.cik,
+            "outcome": "observed_no_relevant_change",
+            "reason_code": None,
+            "submissions_sha256": None,
+            "submissions_object_key": None,
+            "submissions_retrieved_at": None,
+            "manifest_id": None,
+            "manifest_key": None,
+            "companyfacts_fetched": False,
+            "companyfacts_sha256": None,
+            "companyfacts_object_key": None,
+            "companyfacts_retrieved_at": None,
+            "cumulative_manifest_id": None,
+            "withheld_count": 0,
+            "discovery_source": INDEX_SOURCE_KIND,
+            "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
+            "relevant_event_count": len(planned_by_cik.get(issuer.cik, [])),
+            "new_event_count": 0,
+            "correction_event_count": 0,
+            "submissions_fetched": False,
+        }
+
+    for issuer in universe.issuers:
+        base_observations.setdefault(issuer.cik, blank_observation(issuer))
+
+    for cik in selected_ciks:
+        issuer = issuer_by_cik[cik]
+        observation = blank_observation(issuer)
+        observation["outcome"] = "failed"
+        planned_rows = planned_by_cik[cik]
+        try:
+            body, headers = fetch_submissions(cik)
+            coverage["submissions_fetched"] += 1
+            headers = _stamp_after_fetch(headers, now=now)
+            current_url = _bind_sec_url(headers.get("url"), cik=cik, endpoint="submissions")
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError as exc:
+                raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not JSON") from exc
+            if not isinstance(payload, dict):
+                raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not an object")
+            _bind_sec_payload_cik(payload, cik=cik, source="Submissions")
+            current_rows, current_withheld, _ = parse_relevant_filings(
+                payload,
+                cik=cik,
+                ticker=issuer.ticker,
+                selection_cutoff_at=recovery_selection_cutoff_at,
+                recovery_from=None,
+            )
+            prior_pointer = _read_json(store, issuer_latest_key(cik), maximum_bytes=POINTER_MAX_BYTES)
+            prior_manifest = None
+            if prior_pointer is not None:
+                prior_manifest = _read_issuer_manifest(
+                    store,
+                    pointer=prior_pointer,
+                    expected_cik=cik,
+                    expected_ticker=issuer.ticker,
+                )
+            prior_rows = [
+                dict(row)
+                for row in (prior_manifest.get("relevant_filings") if prior_manifest else []) or []
+                if isinstance(row, dict)
+            ]
+            known_accessions = {
+                row["accession_number"]
+                for row in current_rows + prior_rows
+                if isinstance(row.get("accession_number"), str)
+                and _ACCESSION_RE.fullmatch(row["accession_number"])
+            }
+            known_accessions.update(
+                row["accession_number"]
+                for row in current_withheld
+                if isinstance(row.get("accession_number"), str)
+                and _ACCESSION_RE.fullmatch(row["accession_number"])
+                and row.get("withheld_cause") == "after_selection_cutoff"
+                and isinstance(row.get("acceptance_datetime"), str)
+            )
+            inventory = _historical_inventory(
+                payload,
+                cik=cik,
+                ticker=issuer.ticker,
+                planned_rows=planned_rows,
+                known_accessions=known_accessions,
+            )
+            if historical_requests + len(inventory) > MAX_HISTORICAL_SUBMISSIONS_SHARDS_PER_RUN:
+                raise BroadSecError(
+                    "historical_submissions_budget_exhausted",
+                    "historical shard request budget exhausted",
+                )
+
+            current_sha, created = admit_source_bytes(store, body)
+            if created:
+                change_summary["objects_admitted"] += 1
+            components: list[dict[str, Any]] = [
+                dict(component)
+                for component in (prior_manifest.get("submissions_components") if prior_manifest else []) or []
+                if isinstance(component, dict)
+                and component.get("source_kind") == "historical"
+            ]
+            current_component = {
+                "source_kind": "recent",
+                "source_name": None,
+                "url": current_url,
+                "sha256": current_sha,
+                "bytes": len(body),
+                "object_key": object_key(current_sha),
+                "retrieved_at": headers.get("retrieved_at"),
+                "http_etag": headers.get("http_etag"),
+                "http_last_modified": headers.get("http_last_modified"),
+                "filing_from": None,
+                "filing_to": None,
+            }
+            historical_rows: list[dict[str, Any]] = []
+            historical_withheld: list[dict[str, Any]] = []
+            new_components = [current_component]
+            for source in inventory:
+                remaining_history = MAX_HISTORICAL_SUBMISSIONS_BYTES_PER_RUN - historical_bytes
+                if remaining_history <= 0:
+                    raise BroadSecError(
+                        "historical_submissions_budget_exhausted",
+                        "historical Submissions byte budget exhausted",
+                    )
+                shard_body, shard_headers = fetch_historical_submissions(
+                    cik,
+                    source["name"],
+                    min(remaining_history, MAX_SUBMISSIONS_BYTES),
+                )
+                historical_requests += 1
+                coverage["historical_submissions_fetched"] += 1
+                shard_headers = _stamp_after_fetch(shard_headers, now=now)
+                expected_url = historical_submissions_url(cik, source["name"])
+                if shard_headers.get("url") != expected_url:
+                    raise BroadSecError("source_binding_failure", "historical Submissions URL mismatch")
+                if len(shard_body) > MAX_SUBMISSIONS_BYTES or len(shard_body) > remaining_history:
+                    raise BroadSecError(
+                        "historical_submissions_budget_exhausted",
+                        "historical Submissions body exceeds bounded run budget",
+                    )
+                historical_bytes += len(shard_body)
+                coverage["historical_submissions_bytes_fetched"] = historical_bytes
+                try:
+                    shard_payload = json.loads(shard_body)
+                except json.JSONDecodeError as exc:
+                    raise BroadSecError("invalid_sec_json", "historical Submissions is not JSON") from exc
+                if not isinstance(shard_payload, dict):
+                    raise BroadSecError("invalid_sec_json", "historical Submissions is not an object")
+                _bind_sec_payload_cik(
+                    shard_payload,
+                    cik=cik,
+                    source="historical Submissions",
+                    allow_missing=True,
+                )
+                shard_columns: Any = shard_payload
+                shard_filings = shard_payload.get("filings")
+                if isinstance(shard_filings, Mapping) and isinstance(shard_filings.get("recent"), Mapping):
+                    shard_columns = shard_filings["recent"]
+                shard_rows, shard_withheld, _ = parse_relevant_filings(
+                    {"filings": {"recent": shard_columns}},
+                    cik=cik,
+                    ticker=issuer.ticker,
+                    selection_cutoff_at=recovery_selection_cutoff_at,
+                    recovery_from=None,
+                )
+                shard_sha, shard_created = admit_source_bytes(store, shard_body)
+                if shard_created:
+                    change_summary["objects_admitted"] += 1
+                historical_rows.extend(shard_rows)
+                historical_withheld.extend(shard_withheld)
+                new_components.append(
+                    {
+                        "source_kind": "historical",
+                        "source_name": source["name"],
+                        "url": expected_url,
+                        "sha256": shard_sha,
+                        "bytes": len(shard_body),
+                        "object_key": object_key(shard_sha),
+                        "retrieved_at": shard_headers.get("retrieved_at"),
+                        "http_etag": shard_headers.get("http_etag"),
+                        "http_last_modified": shard_headers.get("http_last_modified"),
+                        "filing_from": source["filing_from"],
+                        "filing_to": source["filing_to"],
+                    }
+                )
+            component_by_identity: dict[tuple[Any, ...], dict[str, Any]] = {}
+            for component in components + new_components:
+                identity = tuple(
+                    component.get(key)
+                    for key in (
+                        "source_kind",
+                        "source_name",
+                        "url",
+                        "sha256",
+                        "bytes",
+                        "filing_from",
+                        "filing_to",
+                    )
+                )
+                component_by_identity.setdefault(identity, component)
+            components = sorted(
+                component_by_identity.values(),
+                key=lambda component: (
+                    0 if component.get("source_kind") == "recent" else 1,
+                    component.get("filing_from") or "",
+                    component.get("filing_to") or "",
+                    component.get("source_name") or "",
+                    component.get("sha256") or "",
+                ),
+            )
+            _assert_no_duplicate_filing_conflicts(
+                prior_rows,
+                current_rows,
+                current_withheld,
+                historical_rows,
+                historical_withheld,
+            )
+            merged_rows = _merge_filing_rows(prior_rows, current_rows, historical_rows)
+            exact_withheld = [
+                row
+                for row in current_withheld + historical_withheld
+                if isinstance(row.get("accession_number"), str)
+                and _ACCESSION_RE.fullmatch(row["accession_number"])
+            ]
+            evidence_rows = _merge_filing_rows(
+                prior_rows,
+                current_rows,
+                historical_rows,
+                exact_withheld,
+            )
+            by_accession = {row["accession_number"]: row for row in evidence_rows}
+            causal_rows: list[dict[str, Any]] = []
+            unresolved: list[str] = []
+            for planned in planned_rows:
+                accession = planned.get("accession")
+                if not isinstance(accession, str) or not _ACCESSION_RE.fullmatch(accession):
+                    raise BroadSecError("recovery_plan_invalid", "planned accession shape is invalid")
+                row = by_accession.get(accession)
+                accepted = row.get("acceptance_datetime") if row else None
+                if (
+                    row is None
+                    or row.get("cik") != cik
+                    or row.get("form") != planned.get("form")
+                    or row.get("filing_date") != planned.get("filed_on")
+                    or not isinstance(accepted, str)
+                ):
+                    unresolved.append(accession)
+                elif _iso_gt(accepted, recovery_selection_cutoff_at):
+                    # A frozen-plan accession cannot be satisfied by future
+                    # evidence. Leave it at the cursor for typed retry rather
+                    # than silently consuming incremental work as recovery.
+                    unresolved.append(accession)
+                elif _iso_ge(accepted, clocks.recovery_from):
+                    causal_rows.append(row)
+            if unresolved:
+                raise BroadSecError(
+                    "edgar_index_event_not_causally_admitted",
+                    f"{issuer.ticker} planned accession(s) unresolved: {', '.join(unresolved)}",
+                )
+            prior_ledger = _prior_ledger(prior_manifest)
+            new_causal = [
+                row for row in causal_rows if row["accession_number"] not in set(prior_ledger)
+            ]
+            change_summary["new_relevant_accessions"] += len(new_causal)
+            needs_facts = bool(new_causal)
+            facts_sha = None
+            facts_retrieved_at = None
+            snapshot_kind = "not_fetched"
+            if needs_facts:
+                remaining_facts = max_companyfacts_bytes_per_run - facts_bytes
+                if remaining_facts <= 0:
+                    raise BroadSecError("queue_overflow", "Company Facts byte budget exhausted")
+                facts_body, facts_headers = fetch_companyfacts(cik, remaining_facts)
+                facts_headers = _stamp_after_fetch(facts_headers, now=now)
+                if len(facts_body) > remaining_facts:
+                    raise BroadSecError("queue_overflow", "Company Facts byte budget exhausted")
+                _bind_sec_url(facts_headers.get("url"), cik=cik, endpoint="companyfacts")
+                try:
+                    facts_payload = json.loads(facts_body)
+                except json.JSONDecodeError as exc:
+                    raise BroadSecError("invalid_sec_json", "Company Facts is not JSON") from exc
+                if not isinstance(facts_payload, dict) or "as_of" in facts_payload or facts_headers.get("as_of"):
+                    raise BroadSecError("source_binding_failure", "Company Facts is not a current snapshot")
+                _bind_sec_payload_cik(facts_payload, cik=cik, source="Company Facts")
+                facts_bytes += len(facts_body)
+                coverage["companyfacts_fetched"] += 1
+                coverage["companyfacts_bytes_fetched"] = facts_bytes
+                facts_sha, facts_created = admit_source_bytes(store, facts_body)
+                if facts_created:
+                    change_summary["objects_admitted"] += 1
+                facts_retrieved_at = facts_headers.get("retrieved_at")
+                snapshot_kind = "current_observed"
+                observation["companyfacts_fetched"] = True
+            elif prior_manifest is not None:
+                facts_sha = prior_manifest.get("companyfacts_sha256")
+                facts_retrieved_at = prior_manifest.get("companyfacts_retrieved_at")
+                snapshot_kind = str(prior_manifest.get("companyfacts_snapshot_kind") or "not_fetched")
+                coverage["companyfacts_skipped_unchanged"] += 1
+
+            if (
+                prior_manifest is not None
+                and not new_causal
+                and not inventory
+                and prior_manifest.get("submissions_sha256") == current_sha
+            ):
+                manifest_id = prior_manifest["manifest_id"]
+                manifest_ref = issuer_manifest_key(cik, manifest_id)
+            else:
+                cumulative: list[str] = []
+                seen_accessions: set[str] = set()
+                for accession in prior_ledger + [row["accession_number"] for row in merged_rows]:
+                    if accession not in seen_accessions:
+                        seen_accessions.add(accession)
+                        cumulative.append(accession)
+                withheld = list(
+                    {
+                        _sha_json(row): row
+                        for row in (
+                            (prior_manifest.get("withheld_filings") if prior_manifest else []) or []
+                        )
+                        + current_withheld
+                        + historical_withheld
+                        if isinstance(row, dict)
+                    }.values()
+                )
+                manifest = {
+                    "schema": MANIFEST_SCHEMA,
+                    "cik": cik,
+                    "ticker": issuer.ticker,
+                    "submissions_sha256": current_sha,
+                    "submissions_url": current_url,
+                    "submissions_object_key": object_key(current_sha),
+                    "submissions_retrieved_at": headers.get("retrieved_at"),
+                    "submissions_components": components,
+                    "submissions_source_set_sha256": _component_identity(components),
+                    "companyfacts_sha256": facts_sha,
+                    "companyfacts_url": endpoint_url(cik, "companyfacts") if facts_sha else None,
+                    "companyfacts_object_key": object_key(facts_sha) if facts_sha else None,
+                    "companyfacts_retrieved_at": facts_retrieved_at,
+                    "companyfacts_snapshot_kind": snapshot_kind,
+                    "relevant_filings": merged_rows,
+                    "withheld_filings": withheld,
+                    "cumulative_relevant_accessions": cumulative,
+                    "previous_manifest_id": prior_manifest.get("manifest_id") if prior_manifest else None,
+                    "recorded_at": clocks.recorded_at,
+                    "sec_accepted_at": _max_iso(
+                        [row.get("acceptance_datetime") for row in merged_rows]
+                    ),
+                    "filed_on": max(
+                        (row["filing_date"] for row in merged_rows if row.get("filing_date")),
+                        default=None,
+                    ),
+                }
+                manifest_id, encoded_manifest = _encode_issuer_manifest(manifest)
+                manifest_ref = issuer_manifest_key(cik, manifest_id)
+                _put_issuer_manifest(store, manifest_ref, encoded_manifest)
+                _put_pointer_if_unchanged(
+                    store,
+                    issuer_latest_key(cik),
+                    {
+                        "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
+                        "cik": cik,
+                        "ticker": issuer.ticker,
+                        "manifest_id": manifest_id,
+                        "manifest_key": manifest_ref,
+                        "submissions_sha256": current_sha,
+                        "companyfacts_sha256": facts_sha,
+                    },
+                    expected_current=prior_pointer,
+                )
+                change_summary["manifests_admitted"] += 1
+                source_accepts.append(manifest.get("sec_accepted_at"))
+            observation.update(
+                {
+                    "outcome": "observed",
+                    "reason_code": None,
+                    "submissions_sha256": current_sha,
+                    "submissions_object_key": object_key(current_sha),
+                    "submissions_retrieved_at": headers.get("retrieved_at"),
+                    "submissions_fetched": True,
+                    "manifest_id": manifest_id,
+                    "manifest_key": manifest_ref,
+                    "cumulative_manifest_id": manifest_id,
+                    "companyfacts_sha256": facts_sha,
+                    "companyfacts_object_key": object_key(facts_sha) if facts_sha else None,
+                    "companyfacts_retrieved_at": facts_retrieved_at,
+                    "withheld_count": len(current_withheld) + len(historical_withheld),
+                    "new_event_count": len(new_causal),
+                }
+            )
+            base_observations[cik] = observation
+            committed_this_run += 1
+            change_summary["affected_issuers"] += int(bool(new_causal))
+        except BroadSecError as exc:
+            observation["reason_code"] = exc.reason_code
+            base_observations[cik] = observation
+            failures.append(IssuerFailure(issuer.ticker, cik, exc.reason_code, exc.detail))
+            coverage["failed_issuers"] += 1
+            if exc.reason_code == "queue_overflow":
+                coverage["companyfacts_deferred"] = 1
+            break
+        except Exception as exc:
+            reason = classify_fetch_error(exc)
+            observation["reason_code"] = reason
+            base_observations[cik] = observation
+            failures.append(IssuerFailure(issuer.ticker, cik, reason, str(exc)))
+            coverage["failed_issuers"] += 1
+            break
+
+    next_ordinal = cursor + committed_this_run
+    backlog = len(candidate_ciks) - next_ordinal
+    coverage["recovery_backlog"] = backlog
+    if backlog and coverage["companyfacts_deferred"] == 0:
+        coverage["companyfacts_deferred"] = max(0, len(selected_ciks) - committed_this_run)
+    cumulative_clock = _max_iso(
+        [current_prior.clock, state.get("cumulative_sec_accepted_at")] + source_accepts
+    )
+    clocks.poll_completed_at = clocks.poll_completed_at or now()
+    if failures:
+        status = "degraded" if committed_this_run else "failed"
+        reason_code = failures[0].reason_code
+        exit_code = 1
+    elif backlog:
+        status = "degraded"
+        reason_code = "recovery_in_progress"
+        exit_code = 1
+    else:
+        status = "complete"
+        reason_code = "complete"
+        exit_code = 0
+
+    observations = sorted(base_observations.values(), key=lambda row: (row["ticker"], row["cik"]))
+    observation_payload = {
+        "schema": OBSERVATION_SCHEMA,
+        "run_id": _build_run_id(
+            mode="recovery", poll_started_at=clocks.poll_started_at, universe_sha=universe.content_sha256
+        ),
+        "row_count": len(observations),
+        "issuers": observations,
+    }
+    run_id = observation_payload["run_id"]
+    observation_raw = canonical_json(observation_payload).encode("utf-8")
+    observation_sha = sha256(observation_raw).hexdigest()
+    observation_ref = issuer_observations_key(run_id)
+    current_index = dict(current_prior.receipt.get("index") or {}) if current_prior.receipt else None
+    recovery_receipt = {
+        "plan_sha256": plan_sha,
+        "plan_key": recovery_plan_object_key(plan_sha),
+        "selection_cutoff_at": recovery_selection_cutoff_at,
+        "anchor_complete": dict(plan["anchor_complete"]),
+        "index_snapshot_sha256": plan["index"]["snapshot_sha256"],
+        "relevant_set_sha256": plan["index"]["relevant_set_sha256"],
+        "candidate_row_count": plan["candidate_row_count"],
+        "candidate_cik_count": len(candidate_ciks),
+        "candidate_ciks_sha256": plan["candidate_ciks_sha256"],
+        "tranche_start_ordinal": cursor,
+        "selected_ciks": selected_ciks,
+        "selected_ciks_sha256": _sha_json(selected_ciks),
+        "selected_count": len(selected_ciks),
+        "submissions_fetched": coverage["submissions_fetched"],
+        "historical_submissions_fetched": coverage["historical_submissions_fetched"],
+        "completed_this_run": committed_this_run,
+        "completed_total": next_ordinal,
+        "backlog_count": backlog,
+        "cumulative_sec_accepted_at": cumulative_clock,
+    }
+    receipt_clocks = PollClocks(
+        poll_started_at=clocks.poll_started_at,
+        selection_cutoff_at=composed_selection_cutoff_at,
+        recovery_from=clocks.recovery_from,
+        recorded_at=clocks.recorded_at,
+        poll_completed_at=clocks.poll_completed_at,
+    )
+    receipt = _empty_receipt(
+        run_id=run_id,
+        mode="recovery",
+        status=status,
+        reason_code=reason_code,
+        clocks=receipt_clocks,
+        universe=universe,
+        coverage=coverage,
+        change_summary=change_summary,
+        latest_relevant_sec_accepted_at=cumulative_clock,
+        failures=[failure.to_dict() for failure in failures],
+        observation_key=observation_ref,
+        observation_sha256=observation_sha,
+        observation_row_count=len(observations),
+        index=current_index,
+        recovery=recovery_receipt,
+    )
+    encoded_receipt = canonical_json(receipt).encode("utf-8")
+    receipt_sha = sha256(encoded_receipt).hexdigest()
+    last_ref = {
+        "run_id": run_id,
+        "run_key": run_key(run_id),
+        "run_receipt_sha256": receipt_sha,
+        "observation_key": observation_ref,
+        "observation_sha256": observation_sha,
+    }
+    try:
+        _put_immutable(store, observation_ref, _gzip_bytes(observation_raw), content_type="application/gzip")
+        _put_immutable(store, run_key(run_id), encoded_receipt)
+        progress_receipt = committed_this_run > 0 or (not failures and backlog == 0)
+        continuation_ref = last_ref if progress_receipt else (
+            prior_recovery_ref if isinstance(prior_recovery_ref, Mapping) else None
+        )
+        continuation_clock = (
+            cumulative_clock if progress_receipt else state.get("cumulative_sec_accepted_at")
+        )
+        _write_continuation(
+            store,
+            plan=plan,
+            plan_sha256=plan_sha,
+            next_ordinal=next_ordinal,
+            cumulative_sec_accepted_at=continuation_clock,
+            last_successful_run_receipt=continuation_ref,
+        )
+        _put_pointer(
+            store,
+            latest_observation_key(),
+            _compact_head(
+                receipt,
+                observation_key=observation_ref,
+                observation_sha256=observation_sha,
+                receipt_sha256=receipt_sha,
+            ),
+        )
+        if status == "complete" and backlog == 0 and not failures:
+            _put_pointer_if_unchanged(
+                store,
+                latest_complete_key(),
+                _compact_head(
+                    receipt,
+                    observation_key=observation_ref,
+                    observation_sha256=observation_sha,
+                    receipt_sha256=receipt_sha,
+                ),
+                expected_current=current_prior.head,
+            )
+    except BroadSecError as exc:
+        failed = dict(receipt)
+        failed["status"] = "failed"
+        failed["reason_code"] = exc.reason_code
+        failed["failures"] = list(receipt["failures"]) + [
+            {"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}
+        ]
+        return PollResult(receipt=failed, exit_code=1)
+    _progress(
+        on_progress,
+        "recovery_finalize",
+        completed=next_ordinal,
+        backlog=backlog,
+        submissions=coverage["submissions_fetched"],
+        historical=coverage["historical_submissions_fetched"],
+        companyfacts=coverage["companyfacts_fetched"],
+    )
+    return PollResult(receipt=receipt, exit_code=exit_code)
 
 
 def _stamp_after_fetch(headers: Mapping[str, str | None], *, now: NowFn) -> dict[str, str | None]:
@@ -776,20 +3207,44 @@ def run_broad_sec_poll(
     store: BroadSecStore,
     universe_path: Path,
     fetch_submissions: FetchBytes,
-    fetch_companyfacts: FetchBytes,
+    fetch_companyfacts: FetchCompanyFacts,
     clocks: PollClocks,
     now: NowFn,
     mode: str = "incremental",
     repo_root: Path | None = None,
     max_affected_issuers: int = MAX_AFFECTED_ISSUERS,
     max_companyfacts_bytes_per_run: int = MAX_COMPANYFACTS_BYTES_PER_RUN,
+    fetch_historical_submissions: FetchHistorical | None = None,
+    fetch_master_index: FetchIndex | None = None,
+    on_progress: ProgressFn | None = None,
 ) -> PollResult:
     if mode not in {"incremental", "recovery"}:
         raise ValueError("mode must be incremental or recovery")
-    if mode == "recovery" and not clocks.recovery_from:
-        raise BroadSecError("universe_invalid", "recovery requires recovery_from")
+    if (
+        isinstance(max_affected_issuers, bool)
+        or not isinstance(max_affected_issuers, int)
+        or max_affected_issuers < 1
+        or max_affected_issuers > MAX_AFFECTED_ISSUERS
+    ):
+        raise BroadSecError("queue_overflow", "affected-issuer cap exceeds FF-1 hard bound")
+    if (
+        isinstance(max_companyfacts_bytes_per_run, bool)
+        or not isinstance(max_companyfacts_bytes_per_run, int)
+        or max_companyfacts_bytes_per_run < 1
+        or max_companyfacts_bytes_per_run > MAX_COMPANYFACTS_BYTES_PER_RUN
+    ):
+        raise BroadSecError("queue_overflow", "Company Facts run budget exceeds FF-1 hard bound")
     if mode == "incremental" and clocks.recovery_from:
         raise BroadSecError("universe_invalid", "incremental mode cannot carry a recovery window")
+    if mode == "recovery" and not clocks.recovery_from:
+        raise BroadSecError("recovery_plan_required", "recovery mode requires recovery_from")
+    if mode == "recovery" and fetch_historical_submissions is None:
+        raise BroadSecError(
+            "recovery_plan_required",
+            "recovery mode requires the bounded historical Submissions collector",
+        )
+    if mode == "incremental" and fetch_master_index is None:
+        raise BroadSecError("edgar_index_unavailable", "fetch_master_index is required")
     _require_iso_z(clocks.poll_started_at, field="poll_started_at")
     _require_iso_z(clocks.selection_cutoff_at, field="selection_cutoff_at")
     if clocks.recovery_from:
@@ -808,6 +3263,10 @@ def run_broad_sec_poll(
         "companyfacts_bytes_fetched": 0,
         "companyfacts_deferred": 0,
         "recovery_backlog": 0,
+        "selected_recovery_ciks": 0,
+        "submissions_fetched": 0,
+        "historical_submissions_fetched": 0,
+        "historical_submissions_bytes_fetched": 0,
     }
     change_summary = {
         "new_relevant_accessions": 0,
@@ -844,28 +3303,170 @@ def run_broad_sec_poll(
         universe_sha=universe.content_sha256,
     )
     coverage["expected_issuers"] = universe.issuer_count
+    if mode == "recovery":
+        try:
+            return _run_recovery_poll(
+                store=store,
+                universe=universe,
+                fetch_submissions=fetch_submissions,
+                fetch_historical_submissions=fetch_historical_submissions,
+                fetch_companyfacts=fetch_companyfacts,
+                clocks=clocks,
+                now=now,
+                max_affected_issuers=max_affected_issuers,
+                max_companyfacts_bytes_per_run=max_companyfacts_bytes_per_run,
+                on_progress=on_progress,
+            )
+        except BroadSecError as exc:
+            clocks.poll_completed_at = clocks.poll_completed_at or now()
+            clocks.recorded_at = clocks.recorded_at or now()
+            coverage["recovery_backlog"] = 0
+            return PollResult(
+                receipt=_empty_receipt(
+                    run_id=run_id,
+                    mode=mode,
+                    status="failed",
+                    reason_code=exc.reason_code,
+                    clocks=clocks,
+                    universe=universe,
+                    coverage=coverage,
+                    change_summary=change_summary,
+                    latest_relevant_sec_accepted_at=None,
+                    failures=[
+                        {
+                            "ticker": "",
+                            "cik": "",
+                            "reason_code": exc.reason_code,
+                            "detail": exc.detail,
+                        }
+                    ],
+                ),
+                exit_code=1,
+            )
+    # SPEC item 4: route with poll_started_at (Eastern time), not selection_cutoff_at.
+    year, quarter = calendar_quarter(clocks.poll_started_at)
+    canonical_ciks = {issuer.cik for issuer in universe.issuers}
+
+    def _fail_index(exc: BroadSecError) -> PollResult:
+        clocks.poll_completed_at = clocks.poll_completed_at or now()
+        clocks.recorded_at = clocks.recorded_at or now()
+        receipt = _empty_receipt(
+            run_id=run_id,
+            mode=mode,
+            status="failed",
+            reason_code=exc.reason_code,
+            clocks=clocks,
+            universe=universe,
+            coverage=coverage,
+            change_summary=change_summary,
+            latest_relevant_sec_accepted_at=None,
+            failures=[{"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}],
+        )
+        return PollResult(receipt=receipt, exit_code=1)
+
+    _progress(on_progress, "index_fetch", year=year, quarter=quarter)
+    try:
+        archive, index_headers = fetch_master_index(year, quarter)
+        index_headers = _stamp_after_fetch(index_headers, now=now)
+        url = _bind_index_url(index_headers.get("url"), year=year, quarter=quarter)
+        if len(archive) > MAX_MASTER_INDEX_ZIP_BYTES:
+            raise BroadSecError(
+                "edgar_index_too_large",
+                f"index ZIP {len(archive)} exceeds {MAX_MASTER_INDEX_ZIP_BYTES}",
+            )
+        parsed = parse_master_index_archive(archive, canonical_ciks=canonical_ciks)
+    except BroadSecError as exc:
+        return _fail_index(exc)
+    except SecResponseTooLarge as exc:
+        return _fail_index(BroadSecError("edgar_index_too_large", str(exc)))
+    except Exception as exc:
+        reason = classify_fetch_error(exc)
+        mapped = "edgar_index_unavailable"
+        if reason == "response_too_large":
+            mapped = "edgar_index_too_large"
+        elif reason == "source_binding_failure":
+            mapped = "source_binding_failure"
+        return _fail_index(BroadSecError(mapped, str(exc)))
+
+    _progress(
+        on_progress,
+        "index_parse",
+        rows=parsed["parsed_row_count"],
+        relevant=len(parsed["relevant_rows"]),
+        canonical=universe.issuer_count,
+    )
+    if previous_quarter_reconciliation_due(poll_started_at=clocks.poll_started_at):
+        raise BroadSecError(
+            "edgar_index_unavailable",
+            "weekly previous-quarter reconciliation is frozen; not implemented in this PR",
+        )
+    archive_sha = sha256(archive).hexdigest()
+    if index_headers.get("archive_sha256") and index_headers["archive_sha256"] != archive_sha:
+        return _fail_index(BroadSecError("edgar_index_invalid", "archive SHA-256 mismatch"))
+
+    identity = _index_identity_body(
+        year=year,
+        quarter=quarter,
+        universe_sha=universe.content_sha256,
+        member_sha256=parsed["member_sha256"],
+        member_bytes=parsed["member_bytes"],
+        archive_sha256=archive_sha,
+        relevant_rows=parsed["relevant_rows"],
+        relevant_set_sha256=parsed["relevant_set_sha256"],
+        latest_filing_date=parsed["latest_filing_date"],
+        parsed_row_count=parsed["parsed_row_count"],
+        canonical_row_count=parsed["canonical_row_count"],
+    )
+    snapshot_id = sha256(canonical_json(identity).encode("utf-8")).hexdigest()
+
+    # SPEC items 1, 2, 3: use prior-complete as sole processed authority.
+    try:
+        prior_context = _load_prior_context(store, current_year=year, current_quarter=quarter)
+    except BroadSecError as exc:
+        return _fail_index(exc)
+    prior_clock = prior_context.clock
+    prior_rows = prior_context.rows
+    # SPEC item 3: bootstrap only when prior-complete with index-discovery state is absent.
+    # A new quarter is NOT bootstrap; prior_rows are empty but prior_clock is preserved.
+    baseline = prior_context.is_bootstrap and mode == "incremental"
+    if baseline:
+        diff = {"new": [], "removed": [], "unchanged": list(parsed["relevant_rows"])}
+    else:
+        diff = diff_relevant_sets(prior_rows, parsed["relevant_rows"])
+    _progress(
+        on_progress,
+        "index_diff",
+        new=len(diff["new"]),
+        unchanged=len(diff["unchanged"]),
+        corrections=len(diff["removed"]),
+        baseline=int(baseline),
+    )
+
+    new_by_cik: dict[str, list[dict[str, str]]] = {}
+    removed_by_cik: dict[str, list[dict[str, str]]] = {}
+    relevant_by_cik: dict[str, list[dict[str, str]]] = {}
+    for row in parsed["relevant_rows"]:
+        relevant_by_cik.setdefault(row["cik"], []).append(row)
+    for row in diff["new"]:
+        new_by_cik.setdefault(row["cik"], []).append(row)
+    for row in diff["removed"]:
+        removed_by_cik.setdefault(row["cik"], []).append(row)
+
+    if baseline:
+        work_ciks = set()
+    else:
+        work_ciks = set(new_by_cik) | set(removed_by_cik)
+
+    work_ciks &= canonical_ciks
+    _progress(on_progress, "affected_submissions", affected=len(work_ciks))
+
     failures: list[IssuerFailure] = []
     observations: list[dict[str, Any]] = []
     prepared: list[dict[str, Any]] = []
     source_accepts: list[str | None] = []
-    continuation = None
-    continuation_pointer = _read_json(
-        store, recovery_continuation_pointer_key(), maximum_bytes=POINTER_MAX_BYTES
-    )
-    outstanding_backlog = (
-        continuation_pointer is not None
-        and continuation_pointer.get("universe_sha256") == universe.content_sha256
-        and int(continuation_pointer.get("pending_count") or 0) > 0
-    )
-    if mode == "recovery" and clocks.recovery_from:
-        continuation = _load_continuation(
-            store, recovery_from=clocks.recovery_from, universe_sha=universe.content_sha256
-        )
-    continuation_completed = set(continuation.get("completed_ciks", []) if continuation else [])
-    continuation_pending = set(continuation.get("pending_ciks", []) if continuation else [])
 
-    for issuer in universe.issuers:
-        observation: dict[str, Any] = {
+    def _blank_observation(issuer: Issuer) -> dict[str, Any]:
+        return {
             "ticker": issuer.ticker,
             "cik": issuer.cik,
             "outcome": "failed",
@@ -881,7 +3482,24 @@ def run_broad_sec_poll(
             "companyfacts_retrieved_at": None,
             "cumulative_manifest_id": None,
             "withheld_count": 0,
+            "discovery_source": INDEX_SOURCE_KIND,
+            "index_snapshot_sha256": snapshot_id,
+            "relevant_event_count": len(relevant_by_cik.get(issuer.cik, [])),
+            "new_event_count": len(new_by_cik.get(issuer.cik, [])),
+            "correction_event_count": len(removed_by_cik.get(issuer.cik, [])),
+            "submissions_fetched": False,
         }
+
+    for issuer in universe.issuers:
+        observation = _blank_observation(issuer)
+        if issuer.cik not in work_ciks:
+            observation["outcome"] = "observed_no_relevant_change"
+            if baseline:
+                observation["new_event_count"] = 0
+                observation["correction_event_count"] = 0
+            observations.append(observation)
+            coverage["observed_issuers"] += 1
+            continue
         try:
             body, headers = fetch_submissions(issuer.cik)
             headers = _stamp_after_fetch(headers, now=now)
@@ -892,6 +3510,7 @@ def run_broad_sec_poll(
                 raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not JSON") from exc
             if not isinstance(payload, dict):
                 raise BroadSecError("invalid_sec_json", f"{issuer.ticker} Submissions is not an object")
+            _bind_sec_payload_cik(payload, cik=issuer.cik, source="Submissions")
             admitted, withheld, historical_required = parse_relevant_filings(
                 payload,
                 cik=issuer.cik,
@@ -910,35 +3529,53 @@ def run_broad_sec_poll(
             prior_pointer = _read_json(store, issuer_latest_key(issuer.cik), maximum_bytes=POINTER_MAX_BYTES)
             prior_manifest = None
             if prior_pointer is not None:
-                manifest_key = prior_pointer.get("manifest_key")
-                if not isinstance(manifest_key, str):
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} latest pointer is missing manifest_key")
-                prior_manifest = _read_json(store, manifest_key, maximum_bytes=POINTER_MAX_BYTES)
-                if prior_manifest is None:
-                    raise BroadSecError("issuer_manifest_invalid", f"{issuer.ticker} prior manifest missing")
+                prior_manifest = _read_issuer_manifest(
+                    store,
+                    pointer=prior_pointer,
+                    expected_cik=issuer.cik,
+                    expected_ticker=issuer.ticker,
+                )
             prior_ledger = _prior_ledger(prior_manifest)
             current_accessions = [
                 item["accession_number"]
                 for item in admitted
                 if isinstance(item.get("accession_number"), str)
             ]
-            new_accessions = [acc for acc in current_accessions if acc not in prior_ledger]
+            index_new_accessions = {row["accession"] for row in new_by_cik.get(issuer.cik, [])}
+            new_accessions = [
+                acc
+                for acc in current_accessions
+                if acc in index_new_accessions and acc not in prior_ledger
+            ]
             recovery_delta = [
                 item
                 for item in admitted
                 if clocks.recovery_from
                 and isinstance(item.get("acceptance_datetime"), str)
-                and item["acceptance_datetime"] >= clocks.recovery_from
+                and _iso_ge(item["acceptance_datetime"], clocks.recovery_from)
             ]
-            if mode == "recovery":
-                needs_facts = bool(recovery_delta) or issuer.cik in continuation_pending
-                if issuer.cik in continuation_completed and not new_accessions:
-                    needs_facts = False
-            else:
-                needs_facts = prior_manifest is not None and bool(new_accessions)
-            change_summary["new_relevant_accessions"] += len(
-                recovery_delta if mode == "recovery" else new_accessions
-            )
+            needs_facts = bool(new_accessions)
+            withheld_by_acc = {
+                row["accession_number"]: row
+                for row in withheld
+                if isinstance(row.get("accession_number"), str)
+            }
+            unresolved_new: list[tuple[str, str]] = []
+            for row in new_by_cik.get(issuer.cik, []):
+                acc = row["accession"]
+                if acc in set(current_accessions):
+                    continue
+                withheld_row = withheld_by_acc.get(acc)
+                cause = (
+                    str(withheld_row.get("withheld_cause") or "unevaluable")
+                    if withheld_row is not None
+                    else "missing_from_submissions"
+                )
+                unresolved_new.append((acc, cause))
+            if unresolved_new:
+                needs_facts = False
+                observation["reason_code"] = "edgar_index_event_not_causally_admitted"
+            change_summary["new_relevant_accessions"] += len(new_accessions)
             observation.update(
                 {
                     "outcome": "observed",
@@ -946,21 +3583,26 @@ def run_broad_sec_poll(
                     "submissions_object_key": object_key(submissions_sha),
                     "submissions_retrieved_at": headers.get("retrieved_at"),
                     "withheld_count": len(withheld),
+                    "submissions_fetched": True,
                 }
             )
             prepared.append(
                 {
                     "issuer": issuer,
                     "submissions_sha": submissions_sha,
+                    "submissions_bytes": len(body),
                     "submissions_headers": headers,
                     "admitted": admitted,
                     "withheld": withheld,
+                    "prior_pointer": prior_pointer,
                     "prior_manifest": prior_manifest,
                     "prior_ledger": prior_ledger,
                     "new_accessions": new_accessions,
                     "recovery_delta": recovery_delta,
                     "needs_facts": needs_facts,
                     "observation": observation,
+                    "index_removed": removed_by_cik.get(issuer.cik, []),
+                    "unresolved_new": unresolved_new,
                 }
             )
             del url
@@ -976,30 +3618,30 @@ def run_broad_sec_poll(
             failures.append(IssuerFailure(issuer.ticker, issuer.cik, reason, str(exc)))
             coverage["failed_issuers"] += 1
 
+    for item in prepared:
+        unresolved = item.get("unresolved_new") or []
+        if not unresolved:
+            continue
+        issuer = item["issuer"]
+        causes = ", ".join(f"{acc}:{cause}" for acc, cause in unresolved)
+        failures.append(
+            IssuerFailure(
+                issuer.ticker,
+                issuer.cik,
+                "edgar_index_event_not_causally_admitted",
+                f"{issuer.ticker} index event(s) not causally admitted ({causes})",
+            )
+        )
+        coverage["failed_issuers"] += 1
+
     facts_candidates = [item for item in prepared if item["needs_facts"]]
+    # SPEC item 6: sort by (ticker, cik); satisfy first max_affected_issuers this run.
     facts_candidates.sort(key=lambda item: (item["issuer"].ticker, item["issuer"].cik))
     change_summary["affected_issuers"] = len(facts_candidates)
     overflow = False
     selected: list[dict[str, Any]] = []
     deferred: list[dict[str, Any]] = []
-    if mode == "incremental" and (
-        len(facts_candidates) > max_affected_issuers or outstanding_backlog
-    ):
-        overflow = True
-        deferred = list(facts_candidates)
-        failures.append(
-            IssuerFailure(
-                "",
-                "",
-                "queue_overflow",
-                (
-                    f"{len(facts_candidates)} issuers need Company Facts; "
-                    f"incremental cap is {max_affected_issuers}"
-                    + ("; recovery continuation is outstanding" if outstanding_backlog else "")
-                ),
-            )
-        )
-    elif len(facts_candidates) > max_affected_issuers:
+    if len(facts_candidates) > max_affected_issuers:
         overflow = True
         selected = facts_candidates[:max_affected_issuers]
         deferred = facts_candidates[max_affected_issuers:]
@@ -1016,12 +3658,8 @@ def run_broad_sec_poll(
     selected_ciks = {item["issuer"].cik for item in selected}
     coverage["companyfacts_deferred"] = len(deferred)
     coverage["recovery_backlog"] = len(deferred)
-    if mode == "incremental" and outstanding_backlog:
-        coverage["recovery_backlog"] = max(
-            coverage["recovery_backlog"],
-            int(continuation_pointer.get("pending_count") or 0),
-        )
 
+    _progress(on_progress, "companyfacts", candidates=len(facts_candidates), selected=len(selected))
     facts_bytes = 0
     stop_facts_network = False
     for item in prepared:
@@ -1044,7 +3682,7 @@ def run_broad_sec_poll(
                         {row["issuer"].cik for row in deferred}
                     )
                 else:
-                    facts_body, facts_headers = fetch_companyfacts(issuer.cik)
+                    facts_body, facts_headers = fetch_companyfacts(issuer.cik, remaining)
                     facts_headers = _stamp_after_fetch(facts_headers, now=now)
                     if len(facts_body) > remaining:
                         stop_facts_network = True
@@ -1075,6 +3713,11 @@ def run_broad_sec_poll(
                             raise BroadSecError(
                                 "invalid_sec_json", f"{issuer.ticker} Company Facts is not an object"
                             )
+                        _bind_sec_payload_cik(
+                            facts_payload,
+                            cik=issuer.cik,
+                            source="Company Facts",
+                        )
                         if "as_of" in facts_payload or facts_headers.get("as_of"):
                             raise BroadSecError(
                                 "source_binding_failure",
@@ -1115,6 +3758,7 @@ def run_broad_sec_poll(
                 and not item["new_accessions"]
                 and snapshot_kind == prior_manifest.get("companyfacts_snapshot_kind")
                 and facts_sha == prior_manifest.get("companyfacts_sha256")
+                and not item["index_removed"]
             )
             if submissions_unchanged:
                 observation["manifest_id"] = prior_manifest["manifest_id"]
@@ -1126,19 +3770,69 @@ def run_broad_sec_poll(
                 source_accepts.append(prior_manifest.get("sec_accepted_at"))
                 continue
 
-            cumulative = list(dict.fromkeys([*item["prior_ledger"], *item["new_accessions"]]))
-            if not cumulative:
-                cumulative = [
-                    row["accession_number"]
-                    for row in item["admitted"]
-                    if isinstance(row.get("accession_number"), str)
-                ]
-            else:
-                for acc in item["admitted"]:
-                    number = acc.get("accession_number")
-                    if isinstance(number, str) and number not in cumulative:
-                        cumulative.append(number)
+            prior_relevant = [
+                dict(row)
+                for row in (prior_manifest.get("relevant_filings") if prior_manifest else []) or []
+                if isinstance(row, dict)
+            ]
+            _assert_no_duplicate_filing_conflicts(
+                prior_relevant,
+                item["admitted"],
+                item["withheld"],
+            )
+            merged_relevant = _merge_filing_rows(prior_relevant, item["admitted"])
+            cumulative: list[str] = []
+            seen: dict[str, None] = {}
+
+            def _remember(accession: str) -> None:
+                if accession not in seen:
+                    seen[accession] = None
+                    cumulative.append(accession)
+
+            for acc in item["prior_ledger"]:
+                _remember(acc)
+            for acc in item["admitted"]:
+                number = acc.get("accession_number")
+                if isinstance(number, str):
+                    _remember(number)
+            for removed in item["index_removed"]:
+                accession = removed.get("accession")
+                if isinstance(accession, str):
+                    _remember(accession)
             previous_id = prior_manifest["manifest_id"] if prior_manifest else None
+            historical_components = [
+                dict(component)
+                for component in (
+                    prior_manifest.get("submissions_components") if prior_manifest else []
+                )
+                or []
+                if isinstance(component, dict)
+                and component.get("source_kind") == "historical"
+            ]
+            current_component = {
+                "source_kind": "recent",
+                "source_name": None,
+                "url": endpoint_url(issuer.cik, "submissions"),
+                "sha256": item["submissions_sha"],
+                "bytes": item["submissions_bytes"],
+                "object_key": object_key(item["submissions_sha"]),
+                "retrieved_at": item["submissions_headers"].get("retrieved_at"),
+                "http_etag": item["submissions_headers"].get("http_etag"),
+                "http_last_modified": item["submissions_headers"].get("http_last_modified"),
+                "filing_from": None,
+                "filing_to": None,
+            }
+            components = [current_component] + historical_components
+            withheld = list(
+                {
+                    _sha_json(row): row
+                    for row in (
+                        (prior_manifest.get("withheld_filings") if prior_manifest else []) or []
+                    )
+                    + item["withheld"]
+                    if isinstance(row, dict)
+                }.values()
+            )
             manifest = {
                 "schema": MANIFEST_SCHEMA,
                 "cik": issuer.cik,
@@ -1147,24 +3841,23 @@ def run_broad_sec_poll(
                 "submissions_url": endpoint_url(issuer.cik, "submissions"),
                 "submissions_object_key": object_key(item["submissions_sha"]),
                 "submissions_retrieved_at": item["submissions_headers"].get("retrieved_at"),
+                "submissions_components": components,
+                "submissions_source_set_sha256": _component_identity(components),
                 "companyfacts_sha256": facts_sha,
                 "companyfacts_url": endpoint_url(issuer.cik, "companyfacts") if facts_sha else None,
                 "companyfacts_object_key": object_key(facts_sha) if facts_sha else None,
                 "companyfacts_retrieved_at": facts_retrieved_at,
                 "companyfacts_snapshot_kind": snapshot_kind,
-                "relevant_filings": [
-                    {key: value for key, value in row.items() if not key.startswith("withheld_")}
-                    for row in item["admitted"]
-                ],
-                "withheld_filings": item["withheld"],
+                "relevant_filings": merged_relevant,
+                "withheld_filings": withheld,
                 "cumulative_relevant_accessions": cumulative,
                 "previous_manifest_id": previous_id,
                 "recorded_at": None,
                 "sec_accepted_at": _max_iso(
-                    [row.get("acceptance_datetime") for row in item["admitted"]]
+                    [row.get("acceptance_datetime") for row in merged_relevant]
                 ),
                 "filed_on": max(
-                    (row["filing_date"] for row in item["admitted"] if row.get("filing_date")),
+                    (row["filing_date"] for row in merged_relevant if row.get("filing_date")),
                     default=None,
                 ),
             }
@@ -1172,11 +3865,16 @@ def run_broad_sec_poll(
             item["cumulative"] = cumulative
             item["snapshot_kind"] = snapshot_kind
             item["facts_sha"] = facts_sha
-            prepared_ok = item
-            del prepared_ok
         except BroadSecError as exc:
             if exc.reason_code == "queue_overflow":
                 overflow = True
+                stop_facts_network = True
+                if item not in deferred:
+                    deferred.append(item)
+                coverage["companyfacts_deferred"] = len(
+                    {row["issuer"].cik for row in deferred}
+                )
+                coverage["recovery_backlog"] = coverage["companyfacts_deferred"]
             observation["outcome"] = "failed"
             observation["reason_code"] = exc.reason_code
             observations.append(observation)
@@ -1192,21 +3890,66 @@ def run_broad_sec_poll(
             coverage["failed_issuers"] += 1
             item["failed"] = True
 
+    still_open = [
+        item
+        for item in facts_candidates
+        if item["needs_facts"]
+        and not item["observation"].get("companyfacts_fetched")
+        and not item.get("failed")
+    ]
+    deferred = still_open
+    coverage["companyfacts_deferred"] = len(deferred)
+    coverage["recovery_backlog"] = len(deferred)
+    if still_open:
+        overflow = True
+
     clocks.recorded_at = clocks.recorded_at or now()
+    _progress(on_progress, "publish", prepared=len(prepared), observed=coverage["observed_issuers"])
+    # SPEC item 8: durably admit index object + snapshot; if that fails, census_complete=False.
+    index_admitted = False
+    try:
+        _put_immutable(
+            store,
+            index_object_key(parsed["member_sha256"]),
+            _gzip_bytes(parsed["member"]),
+            content_type="application/gzip",
+        )
+        stored_snapshot = {
+            **identity,
+            "snapshot_id": snapshot_id,
+        }
+        _put_immutable(
+            store,
+            index_snapshot_key(identity["quarter_id"], snapshot_id),
+            canonical_json(stored_snapshot).encode("utf-8"),
+        )
+        index_admitted = True
+    except BroadSecError as exc:
+        failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
+
     for item in prepared:
         if item.get("failed") or "manifest" not in item:
             continue
         issuer = item["issuer"]
         observation = item["observation"]
         manifest = item["manifest"]
+        # SPEC item 6: committable = (not facts_required) or facts_satisfied.
+        facts_satisfied = bool(observation.get("companyfacts_fetched"))
+        committable = (not item["needs_facts"]) or facts_satisfied
+        if not committable:
+            # Non-committable: do NOT write issuer_latest; do NOT add to source_accepts.
+            # Observation is recorded; latest-complete must not advance.
+            # Next run retries because latest-complete still names the prior snapshot.
+            observation["outcome"] = "observed"
+            observations.append(observation)
+            coverage["observed_issuers"] += 1
+            continue
         manifest["recorded_at"] = clocks.recorded_at
         if "as_of" in manifest:
             raise BroadSecError("source_binding_failure", "issuer manifest must not carry as_of")
-        manifest_id = issuer_source_identity(manifest)
-        manifest["manifest_id"] = manifest_id
-        encoded = canonical_json(manifest).encode("utf-8")
         try:
-            _put_immutable(store, issuer_manifest_key(issuer.cik, manifest_id), encoded)
+            manifest_id, encoded = _encode_issuer_manifest(manifest)
+            _put_issuer_manifest(store, issuer_manifest_key(issuer.cik, manifest_id), encoded)
             change_summary["manifests_admitted"] += 1
             pointer = {
                 "schema": "fundamental_forensics.broad_sec.issuer_latest.v1",
@@ -1217,13 +3960,19 @@ def run_broad_sec_poll(
                 "submissions_sha256": item["submissions_sha"],
                 "companyfacts_sha256": item.get("facts_sha"),
             }
-            _put_pointer(store, issuer_latest_key(issuer.cik), pointer)
+            _put_pointer_if_unchanged(
+                store,
+                issuer_latest_key(issuer.cik),
+                pointer,
+                expected_current=item["prior_pointer"],
+            )
             observation["manifest_id"] = manifest_id
             observation["manifest_key"] = issuer_manifest_key(issuer.cik, manifest_id)
             observation["cumulative_manifest_id"] = manifest_id
             observation["outcome"] = "observed"
             observations.append(observation)
             coverage["observed_issuers"] += 1
+            # SPEC item 5: clock advances from committable manifests only.
             source_accepts.append(manifest.get("sec_accepted_at"))
         except BroadSecError as exc:
             observation["outcome"] = "failed"
@@ -1232,42 +3981,10 @@ def run_broad_sec_poll(
             failures.append(IssuerFailure(issuer.ticker, issuer.cik, exc.reason_code, exc.detail))
             coverage["failed_issuers"] += 1
 
-    if mode == "recovery" and clocks.recovery_from:
-        pending_ciks = sorted(
-            {
-                item["issuer"].cik
-                for item in prepared
-                if item.get("needs_facts")
-                and not item["observation"].get("companyfacts_fetched")
-            }
-        )
-        completed_ciks = sorted(
-            (
-                continuation_completed
-                | {
-                    item["issuer"].cik
-                    for item in prepared
-                    if item["observation"].get("companyfacts_fetched")
-                }
-            )
-            - set(pending_ciks)
-        )
-        coverage["recovery_backlog"] = len(pending_ciks)
-        try:
-            _write_continuation(
-                store,
-                recovery_from=clocks.recovery_from,
-                universe_sha=universe.content_sha256,
-                pending_ciks=pending_ciks,
-                completed_ciks=completed_ciks,
-            )
-        except BroadSecError as exc:
-            failures.append(IssuerFailure("", "", exc.reason_code, exc.detail))
-        if pending_ciks:
-            overflow = True
-
     clocks.poll_completed_at = clocks.poll_completed_at or now()
-    latest_source = _max_iso(source_accepts)
+    # SPEC item 5: clock = max(prior_clock, committable accepts learned this run).
+    # Quiet run keeps prior_clock; quarter rollover does not reset it; bootstrap may be null.
+    latest_source = _max_iso([prior_clock] + source_accepts)
     backlog_remaining = coverage["recovery_backlog"] > 0
     complete = (
         coverage["failed_issuers"] == 0
@@ -1275,6 +3992,7 @@ def run_broad_sec_poll(
         and not backlog_remaining
         and coverage["observed_issuers"] == universe.issuer_count
         and universe.canonical
+        and index_admitted  # SPEC item 8: index must be durably admitted for census_complete
     )
     poll_complete = (
         coverage["failed_issuers"] == 0
@@ -1318,6 +4036,27 @@ def run_broad_sec_poll(
     observation_raw = canonical_json(observation_payload).encode("utf-8")
     observation_sha = sha256(observation_raw).hexdigest()
     observation_key = issuer_observations_key(run_id)
+    index_receipt = {
+        "source_kind": INDEX_SOURCE_KIND,
+        "index_url": full_master_index_url(year, quarter),
+        "year": year,
+        "quarter": quarter,
+        "archive_sha256": archive_sha,
+        "archive_bytes": len(archive),
+        "archive_retrieved_at": index_headers.get("retrieved_at"),
+        "http_etag": index_headers.get("http_etag"),
+        "http_last_modified": index_headers.get("http_last_modified"),
+        "member_name": MASTER_INDEX_MEMBER_NAME,
+        "member_sha256": parsed["member_sha256"],
+        "member_bytes": parsed["member_bytes"],
+        "latest_filing_date": parsed["latest_filing_date"],
+        "snapshot_sha256": snapshot_id,
+        "relevant_set_sha256": parsed["relevant_set_sha256"],
+        "new_events": 0 if baseline else len(diff["new"]),
+        "unchanged_events": len(diff["unchanged"]),
+        "correction_events": 0 if baseline else len(diff["removed"]),
+        "baseline": baseline,
+    }
     receipt = _empty_receipt(
         run_id=run_id,
         mode=mode,
@@ -1332,9 +4071,17 @@ def run_broad_sec_poll(
         observation_key=observation_key,
         observation_sha256=observation_sha,
         observation_row_count=len(observations),
+        index=index_receipt,
     )
+    # SPEC item 10: compute sha before writing so we never re-derive from a mutated dict.
     encoded_receipt = canonical_json(receipt).encode("utf-8")
+    receipt_sha256 = sha256(encoded_receipt).hexdigest()
     census_complete = status == "complete" and universe.canonical and exit_code == 0
+    _progress(on_progress, "finalize", status=status, complete=int(census_complete))
+    # SPEC item 9: publication order — index evidence (already written above), then committable
+    # issuer manifests/pointers (already written above), then issuer-observation immutable,
+    # then immutable run receipt, then latest-observation, then latest-complete LAST.
+    # SPEC item 1: Never write index_latest.
     try:
         _put_immutable(
             store,
@@ -1344,27 +4091,31 @@ def run_broad_sec_poll(
         )
         _put_immutable(store, run_key(run_id), encoded_receipt)
         _put_pointer(store, latest_observation_key(), _compact_head(
-            receipt, observation_key=observation_key, observation_sha256=observation_sha
+            receipt,
+            observation_key=observation_key,
+            observation_sha256=observation_sha,
+            receipt_sha256=receipt_sha256,
         ))
         if census_complete:
+            # SPEC item 9: latest-complete only after latest-observation succeeds.
+            # SPEC item 10: If latest-observation CAS fails, this branch is not reached.
             _put_pointer(store, latest_complete_key(), _compact_head(
-                receipt, observation_key=observation_key, observation_sha256=observation_sha
+                receipt,
+                observation_key=observation_key,
+                observation_sha256=observation_sha,
+                receipt_sha256=receipt_sha256,
             ))
     except BroadSecError as exc:
-        receipt["status"] = "failed"
-        receipt["reason_code"] = exc.reason_code
-        receipt["failures"] = list(receipt["failures"]) + [
+        # Do not mutate stored receipt bytes. Do not rewrite latest-observation
+        # to a failed head (that would clobber a successful observation pointer
+        # after a later latest-complete CAS miss, or name a receipt never stored).
+        failed_receipt = dict(receipt)
+        failed_receipt["status"] = "failed"
+        failed_receipt["reason_code"] = exc.reason_code
+        failed_receipt["failures"] = list(receipt["failures"]) + [
             {"ticker": "", "cik": "", "reason_code": exc.reason_code, "detail": exc.detail}
         ]
-        try:
-            failed_head = _compact_head(
-                receipt, observation_key=observation_key, observation_sha256=observation_sha
-            )
-            failed_head["status"] = "failed"
-            _put_pointer(store, latest_observation_key(), failed_head)
-        except BroadSecError:
-            pass
-        return PollResult(receipt=receipt, exit_code=1)
+        return PollResult(receipt=failed_receipt, exit_code=1)
     return PollResult(receipt=receipt, exit_code=exit_code)
 
 
@@ -1375,7 +4126,7 @@ def live_fetchers(
     submissions_session: Any = None,
     companyfacts_fetcher: Any = None,
     retrieved_at: str | None = None,
-) -> tuple[FetchBytes, FetchBytes]:
+) -> tuple[FetchBytes, FetchHistorical, FetchCompanyFacts, FetchIndex]:
     from collectors.edgar_forensics import SecForensicsCollector
     from collectors.fundamental_forensics_companyfacts import SecCompanyFactsCollector
 
@@ -1401,9 +4152,43 @@ def live_fetchers(
             raise BroadSecError(classify_fetch_error(exc), str(exc)) from exc
         return body, dict(headers)
 
-    def fetch_companyfacts(cik: str) -> tuple[bytes, Mapping[str, str | None]]:
+    def fetch_historical_submissions(
+        cik: str, source_name: str, maximum_bytes: int
+    ) -> tuple[bytes, Mapping[str, str | None]]:
+        if isinstance(maximum_bytes, bool) or not isinstance(maximum_bytes, int) or maximum_bytes < 1:
+            raise BroadSecError(
+                "historical_submissions_budget_exhausted",
+                "historical Submissions byte budget exhausted",
+            )
+        limit = min(maximum_bytes, MAX_SUBMISSIONS_BYTES)
         try:
-            body, headers = facts.fetch(cik, max_response_bytes=MAX_COMPANYFACTS_BYTES)
+            body, headers = submissions.retrieve_historical_submissions_file(
+                cik,
+                source_name,
+                max_response_bytes=limit,
+            )
+        except SecResponseTooLarge as exc:
+            reason = (
+                "historical_submissions_budget_exhausted"
+                if limit < MAX_SUBMISSIONS_BYTES
+                else "response_too_large"
+            )
+            raise BroadSecError(reason, str(exc)) from exc
+        except Exception as exc:
+            raise BroadSecError(classify_fetch_error(exc), str(exc)) from exc
+        return body, dict(headers)
+
+    def fetch_companyfacts(
+        cik: str, maximum_bytes: int
+    ) -> tuple[bytes, Mapping[str, str | None]]:
+        if isinstance(maximum_bytes, bool) or not isinstance(maximum_bytes, int) or maximum_bytes < 1:
+            raise BroadSecError("queue_overflow", "Company Facts byte budget exhausted")
+        limit = min(maximum_bytes, MAX_COMPANYFACTS_BYTES)
+        try:
+            body, headers = facts.fetch(cik, max_response_bytes=limit)
+        except CompanyFactsResponseTooLarge as exc:
+            reason = "queue_overflow" if limit < MAX_COMPANYFACTS_BYTES else "response_too_large"
+            raise BroadSecError(reason, str(exc)) from exc
         except Exception as exc:
             raise BroadSecError(classify_fetch_error(exc), str(exc)) from exc
         meta = dict(headers)
@@ -1411,7 +4196,28 @@ def live_fetchers(
             raise BroadSecError("source_binding_failure", "Company Facts headers must not carry as_of")
         return body, meta
 
-    return fetch_submissions, fetch_companyfacts
+    def fetch_master_index(year: int, quarter: int) -> tuple[bytes, Mapping[str, str | None]]:
+        dest = Path(scratch_root) / f"master-{year}-Q{quarter}.zip"
+        try:
+            body, headers = submissions.retrieve_full_master_index(
+                year,
+                quarter,
+                dest_path=dest,
+                max_archive_bytes=MAX_MASTER_INDEX_ZIP_BYTES,
+            )
+        except SecResponseTooLarge as exc:
+            raise BroadSecError("edgar_index_too_large", str(exc)) from exc
+        except Exception as exc:
+            reason = classify_fetch_error(exc)
+            mapped = "edgar_index_unavailable"
+            if reason == "response_too_large":
+                mapped = "edgar_index_too_large"
+            elif reason == "source_binding_failure":
+                mapped = "source_binding_failure"
+            raise BroadSecError(mapped, str(exc)) from exc
+        return body, dict(headers)
+
+    return fetch_submissions, fetch_historical_submissions, fetch_companyfacts, fetch_master_index
 
 
 def open_store(local_dir: Path | None) -> BroadSecStore:

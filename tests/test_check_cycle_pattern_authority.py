@@ -261,26 +261,26 @@ class TestConsumerMatrix:
             f"consumer_matrix.yml is missing artifact classes: {sorted(missing)}"
         )
 
-    def test_money_path_surfaces_in_forbidden_for_lake_and_candidates(self, matrix):
-        """Board-rank etc. must be forbidden for lake_artifacts and candidates."""
+    def test_money_path_surfaces_in_forbidden_for_every_artifact_class(self, matrix):
+        """CPI-H1 ruling 5 / Sol's "four universal money-path forbids on
+        every class" (MINOR-1 hygiene pass, CPI-H1.1, 2026-08-22):
+        board_rank, oracle_escalation, sector_central_direction_score, and
+        position_sizing must be forbidden for EVERY artifact_classes entry,
+        not just a hardcoded lake_artifacts/candidates/promoted_null triple
+        — that hardcoded subset left display/confirmer/scored/retired/
+        superseded unpinned at the envelope level even though every row's
+        forbidden_consumers is independently HARD-checked by
+        engine/cycle_pattern/consumer_authority.py's
+        validate_consumer_vocabulary(). This test pins the matrix's own
+        per-class declaration, not just per-row enforcement."""
+        assert matrix["artifact_classes"], "matrix declares no artifact_classes"
         for ac in matrix["artifact_classes"]:
-            if ac["class"] in ("lake_artifacts", "candidates"):
-                forbidden = set(ac.get("forbidden_consumers", []))
-                missing = self.MONEY_PATH_SURFACES - forbidden
-                assert not missing, (
-                    f"artifact_class {ac['class']!r}: money-path surfaces not in "
-                    f"forbidden_consumers: {sorted(missing)}"
-                )
-
-    def test_money_path_surfaces_in_forbidden_for_promoted_null(self, matrix):
-        for ac in matrix["artifact_classes"]:
-            if ac["class"] == "promoted_null":
-                forbidden = set(ac.get("forbidden_consumers", []))
-                missing = self.MONEY_PATH_SURFACES - forbidden
-                assert not missing, (
-                    f"promoted_null: money-path surfaces not in forbidden_consumers: "
-                    f"{sorted(missing)}"
-                )
+            forbidden = set(ac.get("forbidden_consumers", []))
+            missing = self.MONEY_PATH_SURFACES - forbidden
+            assert not missing, (
+                f"artifact_class {ac['class']!r}: money-path surfaces not in "
+                f"forbidden_consumers: {sorted(missing)}"
+            )
 
     def test_allowed_forbidden_disjoint_per_class(self, matrix):
         """allowed_consumers and forbidden_consumers must be disjoint."""

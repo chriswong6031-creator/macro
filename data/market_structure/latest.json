@@ -1,18 +1,18 @@
 {
   "schema": "market_structure_context.v1",
-  "asof": "2026-08-17",
-  "built_at": "2026-08-18T08:55:06.817584+00:00",
+  "asof": "2026-08-27",
+  "built_at": "2026-08-28T11:13:17.939185+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
     "regime": "long",
-    "net_gex_bn": 51.16865,
-    "net_gex_pctile": 71.0,
-    "gamma_flip": 7668.640755,
-    "spot": 7745.0601,
-    "dist_to_flip_pct": 0.99,
-    "days_in_regime": 12,
-    "days_in_regime_observed": 7,
+    "net_gex_bn": 54.942372,
+    "net_gex_pctile": 77.5,
+    "gamma_flip": 7648.811798,
+    "spot": 7730.99,
+    "dist_to_flip_pct": 1.06,
+    "days_in_regime": 4,
+    "days_in_regime_observed": 4,
     "series_start": "2026-06-15",
     "history": [
       {
@@ -231,116 +231,107 @@
         "regime": "long",
         "flip": 7668.640755,
         "spot": 7745.0601
+      },
+      {
+        "date": "2026-08-18",
+        "net_gex_bn": 10.715406,
+        "regime": "long",
+        "flip": 7674.296437,
+        "spot": 7691.7598
+      },
+      {
+        "date": "2026-08-19",
+        "net_gex_bn": 30.90462,
+        "regime": "long",
+        "flip": 7674.214764,
+        "spot": 7707.98
+      },
+      {
+        "date": "2026-08-20",
+        "net_gex_bn": -14.705398,
+        "regime": "short",
+        "flip": 7657.842617,
+        "spot": 7641.1602
+      },
+      {
+        "date": "2026-08-21",
+        "net_gex_bn": 9.356007,
+        "regime": "long",
+        "flip": 7658.401575,
+        "spot": 7674.3701
+      },
+      {
+        "date": "2026-08-24",
+        "net_gex_bn": -3.17979,
+        "regime": "short",
+        "flip": 7657.511361,
+        "spot": 7652.8599
+      },
+      {
+        "date": "2026-08-25",
+        "net_gex_bn": 17.728109,
+        "regime": "long",
+        "flip": 7652.512313,
+        "spot": 7677.2798
+      },
+      {
+        "date": "2026-08-26",
+        "net_gex_bn": 14.399353,
+        "regime": "long",
+        "flip": 7654.076996,
+        "spot": 7675.7002
+      },
+      {
+        "date": "2026-08-27",
+        "net_gex_bn": 53.772074,
+        "regime": "long",
+        "flip": 7661.670575,
+        "spot": 7730.9902
+      },
+      {
+        "date": "2026-08-28",
+        "net_gex_bn": 54.942372,
+        "regime": "long",
+        "flip": 7648.811798,
+        "spot": 7730.99
       }
     ],
     "coverage": {
-      "last_obs": "2026-08-17",
-      "expected_last_session": "2026-08-17",
+      "last_obs": "2026-08-28",
+      "expected_last_session": "2026-08-27",
       "sessions_behind": 0,
       "window_sessions": 20,
       "missing_recent": [
-        "2026-07-27",
-        "2026-07-30",
         "2026-08-03",
         "2026-08-04",
         "2026-08-05",
         "2026-08-11",
         "2026-08-14"
       ],
-      "missing_in_regime": [
-        "2026-08-03",
-        "2026-08-04",
-        "2026-08-05",
-        "2026-08-11",
-        "2026-08-14"
-      ],
+      "missing_in_regime": [],
       "complete": false
     }
   },
   "systematic": {
     "vc": {
-      "alloc_bn": 224.810959,
-      "alloc_frac": 0.74937,
-      "flow_1d_bn": 3.33997,
-      "flow_5d_bn": 5.912135,
-      "state": "adding",
+      "alloc_bn": 225.006278,
+      "alloc_frac": 0.750021,
+      "flow_1d_bn": -0.449547,
+      "flow_5d_bn": 0.476199,
+      "state": "pausing",
       "aum_bn": 300.0,
       "target_vol_pct": 10.0,
       "series_start": "1927-12-30"
     },
     "cta": {
-      "score": 1.196193,
-      "z": 0.292952,
-      "flow_1d": -0.048676,
-      "flow_5d": 0.132205,
+      "score": 1.418087,
+      "z": 0.641894,
+      "flow_1d": 0.168243,
+      "flow_5d": 0.225286,
       "state": "adding"
     },
-    "agreement": "aligned_adding",
+    "agreement": "split",
     "history": [
-      {
-        "date": "2024-08-19",
-        "vc_alloc_bn": 139.402022,
-        "vc_flow_bn": -0.43751,
-        "cta_score": 0.740076,
-        "cta_flow": 0.050546,
-        "spx_close": 5608.25
-      },
-      {
-        "date": "2024-08-20",
-        "vc_alloc_bn": 141.15612,
-        "vc_flow_bn": 1.754098,
-        "cta_score": 0.702177,
-        "cta_flow": -0.037899,
-        "spx_close": 5597.120117
-      },
-      {
-        "date": "2024-08-21",
-        "vc_alloc_bn": 140.975225,
-        "vc_flow_bn": -0.180895,
-        "cta_score": 0.804851,
-        "cta_flow": 0.102674,
-        "spx_close": 5620.850098
-      },
-      {
-        "date": "2024-08-22",
-        "vc_alloc_bn": 150.991096,
-        "vc_flow_bn": 10.015871,
-        "cta_score": 0.761821,
-        "cta_flow": -0.04303,
-        "spx_close": 5570.640137
-      },
-      {
-        "date": "2024-08-23",
-        "vc_alloc_bn": 149.894879,
-        "vc_flow_bn": -1.096217,
-        "cta_score": 0.823789,
-        "cta_flow": 0.061968,
-        "spx_close": 5634.609863
-      },
-      {
-        "date": "2024-08-26",
-        "vc_alloc_bn": 151.318024,
-        "vc_flow_bn": 1.423145,
-        "cta_score": 0.777052,
-        "cta_flow": -0.046737,
-        "spx_close": 5616.839844
-      },
-      {
-        "date": "2024-08-27",
-        "vc_alloc_bn": 151.327053,
-        "vc_flow_bn": 0.00903,
-        "cta_score": 0.844739,
-        "cta_flow": 0.067687,
-        "spx_close": 5625.799805
-      },
-      {
-        "date": "2024-08-28",
-        "vc_alloc_bn": 151.003458,
-        "vc_flow_bn": -0.323596,
-        "cta_score": 0.671245,
-        "cta_flow": -0.173494,
-        "spx_close": 5592.180176
-      },
       {
         "date": "2024-08-29",
         "vc_alloc_bn": 156.226648,
@@ -4276,88 +4267,120 @@
         "cta_score": 1.196193,
         "cta_flow": -0.048676,
         "spx_close": 7745.060059
+      },
+      {
+        "date": "2026-08-18",
+        "vc_alloc_bn": 223.426946,
+        "vc_flow_bn": -1.384013,
+        "cta_score": 1.089323,
+        "cta_flow": -0.10687,
+        "spx_close": 7691.759766
+      },
+      {
+        "date": "2026-08-19",
+        "vc_alloc_bn": 224.744284,
+        "vc_flow_bn": 1.317338,
+        "cta_score": 1.231209,
+        "cta_flow": 0.141886,
+        "spx_close": 7707.97998
+      },
+      {
+        "date": "2026-08-20",
+        "vc_alloc_bn": 224.530079,
+        "vc_flow_bn": -0.214205,
+        "cta_score": 1.192802,
+        "cta_flow": -0.038408,
+        "spx_close": 7641.160156
+      },
+      {
+        "date": "2026-08-21",
+        "vc_alloc_bn": 224.833116,
+        "vc_flow_bn": 0.303037,
+        "cta_score": 1.430285,
+        "cta_flow": 0.237484,
+        "spx_close": 7674.370117
+      },
+      {
+        "date": "2026-08-24",
+        "vc_alloc_bn": 224.832547,
+        "vc_flow_bn": -0.00057,
+        "cta_score": 1.210129,
+        "cta_flow": -0.220156,
+        "spx_close": 7652.859863
+      },
+      {
+        "date": "2026-08-25",
+        "vc_alloc_bn": 225.463058,
+        "vc_flow_bn": 0.630511,
+        "cta_score": 1.193801,
+        "cta_flow": -0.016328,
+        "spx_close": 7677.279785
+      },
+      {
+        "date": "2026-08-26",
+        "vc_alloc_bn": 225.455825,
+        "vc_flow_bn": -0.007233,
+        "cta_score": 1.249844,
+        "cta_flow": 0.056043,
+        "spx_close": 7675.700195
+      },
+      {
+        "date": "2026-08-27",
+        "vc_alloc_bn": 225.006278,
+        "vc_flow_bn": -0.449547,
+        "cta_score": 1.418087,
+        "cta_flow": 0.168243,
+        "spx_close": 7730.990234
       }
     ]
   },
   "vol": {
-    "rv21": 0.129254,
-    "rv63": 0.133445,
+    "rv21": 0.1131,
+    "rv63": 0.13333,
     "rv_cross_state": "calm",
     "vix_curve": [
       {
         "tenor": "M1",
-        "settle": 15.6125,
-        "dte": 2
+        "settle": 16.6614,
+        "dte": 20
       },
       {
         "tenor": "M2",
-        "settle": 18.0529,
-        "dte": 30
+        "settle": 18.5279,
+        "dte": 55
       },
       {
         "tenor": "M3",
-        "settle": 19.7501,
-        "dte": 65
+        "settle": 19.3117,
+        "dte": 83
       },
       {
         "tenor": "M4",
-        "settle": 20.3841,
-        "dte": 93
+        "settle": 19.4975,
+        "dte": 111
       },
       {
         "tenor": "M5",
-        "settle": 20.575,
-        "dte": 121
+        "settle": 20.5961,
+        "dte": 146
       },
       {
         "tenor": "M6",
-        "settle": 21.6679,
-        "dte": 156
+        "settle": 21.125,
+        "dte": 174
       }
     ],
-    "vix_curve_slope": 6.0554,
+    "vix_curve_slope": 4.4636,
     "series_start_curve": "2026-04-16"
   },
   "dispersion": {
-    "cor1m": 8.47,
+    "cor1m": 8.9,
     "cor1m_regime": "dispersion",
-    "cor1m_1y_delta": -1.75,
-    "cor1m_pctile_2y": 14.1,
-    "cor3m": 11.12,
-    "dspx": 34.46,
+    "cor1m_1y_delta": -1.29,
+    "cor1m_pctile_2y": 17.7,
+    "cor3m": 10.19,
+    "dspx": 33.52,
     "history": [
-      {
-        "date": "2024-08-19",
-        "cor1m": 10.86
-      },
-      {
-        "date": "2024-08-20",
-        "cor1m": 11.75
-      },
-      {
-        "date": "2024-08-21",
-        "cor1m": 12.56
-      },
-      {
-        "date": "2024-08-22",
-        "cor1m": 12.14
-      },
-      {
-        "date": "2024-08-23",
-        "cor1m": 9.49
-      },
-      {
-        "date": "2024-08-26",
-        "cor1m": 8.76
-      },
-      {
-        "date": "2024-08-27",
-        "cor1m": 8.61
-      },
-      {
-        "date": "2024-08-28",
-        "cor1m": 11.57
-      },
       {
         "date": "2024-08-29",
         "cor1m": 14.14
@@ -6325,33 +6348,82 @@
       {
         "date": "2026-08-17",
         "cor1m": 8.47
+      },
+      {
+        "date": "2026-08-18",
+        "cor1m": 9.55
+      },
+      {
+        "date": "2026-08-19",
+        "cor1m": 7.95
+      },
+      {
+        "date": "2026-08-20",
+        "cor1m": 9.46
+      },
+      {
+        "date": "2026-08-21",
+        "cor1m": 8.34
+      },
+      {
+        "date": "2026-08-24",
+        "cor1m": 9.28
+      },
+      {
+        "date": "2026-08-25",
+        "cor1m": 9.59
+      },
+      {
+        "date": "2026-08-26",
+        "cor1m": 9.09
+      },
+      {
+        "date": "2026-08-27",
+        "cor1m": 8.9
       }
     ]
   },
   "week_map": {
-    "week_start": "2026-08-17",
-    "week_end": "2026-08-21",
-    "locked_close": 7785.76,
-    "locked_at": "2026-08-14T00:00:00",
-    "band_1sigma_lo": 7654.19,
-    "band_1sigma_hi": 7917.33,
-    "band_2sigma_lo": 7522.63,
-    "band_2sigma_hi": 8048.89,
-    "gamma_flip": 7668.640755,
-    "implied_weekly_pct": 1.69,
+    "week_start": "2026-08-24",
+    "week_end": "2026-08-28",
+    "locked_close": 7674.37,
+    "locked_at": "2026-08-21T00:00:00",
+    "band_1sigma_lo": 7542.6,
+    "band_1sigma_hi": 7806.14,
+    "band_2sigma_lo": 7410.82,
+    "band_2sigma_hi": 7937.92,
+    "gamma_flip": 7648.811798,
+    "implied_weekly_pct": 1.72,
     "source": "spx_iv30_scaled_5d"
   },
   "state_changes": {
-    "vs_asof": "2026-08-13",
-    "items": []
+    "vs_asof": "2026-08-26",
+    "items": [
+      {
+        "key": "cta_state",
+        "from": "pausing",
+        "to": "adding",
+        "note_en": "CTA funds: pausing → adding",
+        "note_zh": "CTA基金：暂停 → 加仓",
+        "display_only": true
+      },
+      {
+        "key": "agreement",
+        "from": "paused",
+        "to": "split",
+        "note_en": "Systematic agreement: Both pausing → Split",
+        "note_zh": "系统化机构一致性：双方暂停 → 分歧",
+        "display_only": true
+      }
+    ]
   },
   "prev_state": {
-    "as_of": "2026-08-13",
+    "as_of": "2026-08-26",
     "state": {
       "gamma_regime": "long",
-      "vc_state": "adding",
-      "cta_state": "adding",
-      "agreement": "aligned_adding",
+      "vc_state": "pausing",
+      "cta_state": "pausing",
+      "agreement": "paused",
       "rv_cross_state": "calm",
       "cor1m_regime": "dispersion"
     }

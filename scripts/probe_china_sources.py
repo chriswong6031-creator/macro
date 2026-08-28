@@ -361,6 +361,17 @@ def build_probes() -> list[dict]:
              url="https://hq.sinajs.cn/list=sh600519",
              headers={"Referer": "https://finance.sina.com.cn/"},
              expect=dict(statuses=[200], min_bytes=100)),
+        # collectors/china_st.py reads the ST/risk-warning board from here. Its
+        # predecessor (em_push2_clist, in the known-dead block below) was probed
+        # dead on 2026-07-25 and the collector was never moved across, so the
+        # plane froze for six weeks with nothing but a debug log to show for it
+        # (PR #5975). This entry exists so the SAME blind spot cannot reopen: the
+        # endpoint we actually depend on is now the one under drift detection.
+        dict(name="em_push2delay_clist", family="quotes", cls="integrated", method="GET",
+             url=("https://push2delay.eastmoney.com/api/qt/clist/get"
+                  "?pn=1&pz=3&po=1&np=1&fltt=2&invt=2&fid=f3"
+                  "&fs=m:0+f:4,m:1+f:4&fields=f2,f3,f12,f14"),
+             expect=dict(statuses=[200], json_path=["data", "diff", 0, "f12"])),
         dict(name="wallstreetcn_feed", family="wire", cls="integrated", method="GET",
              url="https://api-one.wallstcn.com/apiv1/content/lives?channel=global-channel&limit=3",
              expect=dict(statuses=[200], json_path=["data", "items", 0, "id"])),

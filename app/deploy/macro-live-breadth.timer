@@ -1,0 +1,32 @@
+# Live breadth poller cadence. Same idiom as macro-live-prophet.timer: systemd
+# calendars have no ET, so the window is a UTC SPAN wide enough to cover the
+# session in BOTH DST regimes, and the pass itself stamps an honest
+# pre/rth/post/closed `session` (scripts.live_breadth_poller.session_tag, which
+# consults the NYSE calendar first — a holiday costs nothing beyond a few
+# out-of-window ticks that emit `usable: false`).
+#
+# 12..22 UTC widens macro-live-prophet's 13..21 UTC band by an hour on each
+# side (08:00-18:00 ET under EDT, 07:00-17:00 ET under EST) — comfortable
+# margin around RTH for pre/post coverage without the UTC-day-wrap that a
+# literal 04:00-20:00 ET pre/post span would need (that span crosses UTC
+# midnight under EST and cannot be expressed as one non-wrapping OnCalendar
+# line). It also safely brackets scripts/check_vps_live_health.py's expected
+# live window (weekday, UTC hour 14..20 inclusive).
+#
+# :01/2 — every 2 minutes (FROZEN CONTRACT §7), offset by 1 minute from the
+# top so this lane's snapshot call never lands on the exact same tick as a
+# sibling lane's cron boundary. Each `--once` run is exactly one Polygon
+# full-market snapshot; publication is an atomic rename, so a read is never
+# partial.
+[Unit]
+Description=Run the live breadth poller every two minutes across the US session
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 12..22:01/2:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=5s
+Persistent=false
+Unit=macro-live-breadth.service
+
+[Install]
+WantedBy=timers.target

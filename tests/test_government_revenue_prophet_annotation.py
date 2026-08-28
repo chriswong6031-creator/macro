@@ -454,6 +454,10 @@ ANNOTATION_SEAM_MODULES = frozenset({
     # Semantic labels/refusals only: this module cannot read observations or
     # construct a candidate and is safe on the annotate-only side.
     "engine.government_revenue.amount_semantics",
+    # Display-only per-issuer identity projector (D2 Identity Atlas): exact-ID
+    # graph traversal into its own artifact, no candidate mint/grade path and
+    # no ledger/queue write — the candidate builder does not import it.
+    "engine.government_revenue.identity_atlas",
 })
 
 def _prophet_modules() -> tuple[str, ...]:

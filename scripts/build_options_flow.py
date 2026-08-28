@@ -13,9 +13,10 @@ volume — replacing the long-call/short-put ASSUMPTION. Writes:
                              calibration/validation gate)
 
 Universe = the names we snapshot greeks for (config polygon.gex.symbols), since the MEASURED
-dealer read needs greeks. Graceful: no S3 creds / no minute file / no snapshot -> writes
-nothing and returns 0 (never breaks the daily build). Signing is the minute tick-rule (no NBBO
-on our plan); honesty carried in the payload. See engine/options_flow.py.
+dealer read needs greeks. A source failure preserves the prior published artifact but returns a
+degraded result: retaining a useful page is not evidence that this session published. Signing is
+the minute tick-rule (no NBBO on our plan); honesty carried in the payload. See
+engine/options_flow.py.
 
 Run: .venv/bin/python -m scripts.build_options_flow
 """
@@ -25,6 +26,7 @@ import glob
 import json
 import logging
 import sys
+from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 
@@ -41,6 +43,18 @@ log = logging.getLogger(__name__)
 SUMMARY_KEYS = ("spot", "volume", "premium_mn", "net_premium_mn", "pc_ratio", "signed_pc",
                 "zerodte_share", "gamma_flow_bn", "delta_flow_mn", "assumed_gex_bn",
                 "fresh_contracts", "net_doi", "doi_pc")
+
+
+@dataclass(frozen=True)
+class BuildOutcome:
+    """Publication result.  ``ok`` means the target session was actually written."""
+
+    ok: bool
+    target_session: date
+    source_session: date | None = None
+    reason: str = ""
+    detail: str = ""
+    rows: list[dict] = field(default_factory=list)
 
 
 def _chain_files() -> list[tuple[date, str]]:
@@ -85,26 +99,27 @@ def _chain_pair(d: date):
     return today, today_date, prior_df, prior_date
 
 
-def build() -> list[dict]:
-    """Build the flow desk; returns the manifest rows (empty when no data)."""
-    if not mf.enabled():
-        log.info("options_flow: no MASSIVE_S3 creds — skip")
-        return []
+def build(*, target_session: date | None = None) -> BuildOutcome:
+    """Build the target close, or retain the prior artifact with a typed failure."""
+    target = target_session or nyse_calendar.expected_last_session()
+    probe = mf.probe_available("minute", lookback=7, end_date=target)
+    if probe.available_date is None:
+        return BuildOutcome(False, target, reason=probe.reason, detail=probe.detail)
+    d = probe.available_date
+    if d != target:
+        return BuildOutcome(False, target, source_session=d, reason="target_session_unavailable",
+                            detail=f"newest readable minute object is {d}")
     from engine.options_universe import gex_symbols
     syms = gex_symbols((config.load().get("polygon", {}) or {}).get("gex"))
     if not syms:
-        log.info("options_flow: no universe configured")
-        return []
+        return BuildOutcome(False, target, source_session=d, reason="universe_missing")
     log.info("options_flow: universe = %d underlyings", len(syms))
-    d = mf.latest_available("minute")
-    if d is None:
-        log.info("options_flow: no entitled minute file in the recent window — skip")
-        return []
     minute = mf.fetch_aggs(d, "minute", underlyings=syms)
     if minute.empty:
-        log.warning("options_flow: minute file %s empty after filter", d)
-        return []
+        return BuildOutcome(False, target, source_session=d, reason="minute_input_empty_or_malformed")
     greeks, _gd, prior_chain, prior_date = _chain_pair(d)
+    if greeks is None:
+        return BuildOutcome(False, target, source_session=d, reason="options_chain_snapshot_missing")
     if prior_date is not None:
         log.info("options_flow: ΔOI positioning vs prior snapshot %s", prior_date)
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -172,7 +187,9 @@ def build() -> list[dict]:
             "schema": "options_flow.context.v1", "asof": str(d),
             "signing": "minute tick-rule (no NBBO) — approximate, Databento-calibratable",
             "names": masters}, separators=(",", ":"), default=float))
-    return manifest
+    if not manifest:
+        return BuildOutcome(False, target, source_session=d, reason="zero_names_published")
+    return BuildOutcome(True, target, source_session=d, rows=manifest)
 
 
 def _check_staleness() -> None:
@@ -203,9 +220,24 @@ def _check_staleness() -> None:
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
-    rows = build()
-    log.info("options_flow: built %d names", len(rows))
+    try:
+        outcome = build()
+    except Exception as exc:  # noqa: BLE001 — the lane still needs a typed receipt
+        log.exception("options_flow: producer exception")
+        print("::error title=options-flow-publication::"
+              f"producer_exception ({type(exc).__name__}: {exc}); previous artifact retained",
+              file=sys.stderr)
+        return 1
+    log.info("options_flow: built %d names | target=%s source=%s status=%s reason=%s",
+             len(outcome.rows), outcome.target_session, outcome.source_session,
+             "published" if outcome.ok else "degraded", outcome.reason or "none")
     _check_staleness()
+    if not outcome.ok:
+        detail = f" ({outcome.detail})" if outcome.detail else ""
+        print("::error title=options-flow-publication::"
+              f"target {outcome.target_session} was not published: {outcome.reason}{detail}; "
+              "previous artifact retained", file=sys.stderr)
+        return 1
     return 0
 
 

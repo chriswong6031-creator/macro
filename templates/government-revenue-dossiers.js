@@ -212,6 +212,569 @@
     return{loadCompany:loadCompany,invalidate:function(){epoch++;leaveAwardView(session);session=null;shellMode(false)}};
   };
 
+  /* Identity Atlas — the reviewed path from an exact award recipient up to a listed
+   * issuer, point in time. It is the identity rail ONLY: it carries no award, event,
+   * action or amount, so it structurally cannot leak attribution onto an unlinked
+   * event. Cookie plane (government-revenue-data/identity_atlas.json), fetched once
+   * per session and indexed by ticker; a 401/403 degrades to the same members-only
+   * teaser the workspace and candidate ledger already use. Every hop that is not
+   * reviewed renders as a broken link in the rail rather than a minted one. */
+  global.createGovernmentRevenueIdentityAtlas=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
+    var isZh=typeof api.zh==='function'?api.zh:function(){return false};
+    var ATLAS_PATH='government-revenue-data/identity-atlas.json';
+    var pending=null,index=null,header=null,loadState='idle',ticker='',epoch=0;
+
+    function failure(code){var error=new Error(code);error.code=code;return error}
+    function tone(host,name){if(!host||!host.classList||typeof host.classList.remove!=='function')return;host.classList.remove('is-unresolved','is-historic');if(name)host.classList.add(name)}
+    /* Localized field pick: the projector may ship `<base>`, `<base>_en` and `<base>_zh`.
+     * A zh reader never falls through to an English state name while a zh twin exists. */
+    function loc(row,base){
+      row=obj(row)?row:{};
+      var native=isZh()?row[base+'_zh']:row[base+'_en'],plain=row[base],other=isZh()?row[base+'_en']:row[base+'_zh'];
+      if(native!=null&&native!=='')return String(native);
+      if(plain!=null&&plain!=='')return String(plain);
+      if(other!=null&&other!=='')return String(other);
+      return'';
+    }
+    function relationshipWord(value){
+      if(value==='issuer_legal_entity')return tr('Issuer of record','登记发行主体');
+      if(value==='wholly_owned')return tr('Wholly owned','全资持有');
+      if(value==='majority_owned')return tr('Majority owned','多数持有');
+      if(value==='joint_venture')return tr('Joint venture','合资企业');
+      return tr('Relationship on file','档案所载关系');
+    }
+    function stateWord(value){
+      if(value==='reviewed')return tr('Reviewed','已核验');
+      if(value==='observed')return tr('Observed','已观测');
+      if(value==='mapping_needed')return tr('Link pending','关联待核');
+      if(value==='evidence_conflict')return tr('Conflict on record','记录存在冲突');
+      if(value==='not_asserted')return tr('Not asserted','未作断言');
+      return tr('State unclear','状态未知');
+    }
+    function stateChip(value){return value==='reviewed'?'reviewed':value==='observed'?'observed':value==='evidence_conflict'?'conflict':value==='not_asserted'?'historic':'derived'}
+    function gapWords(gap){
+      if(typeof gap==='string')return gap;
+      var direct=loc(gap,'text');if(direct)return direct;
+      var code=text(gap&&gap.code,'');
+      /* Projector-emitted codes (engine/government_revenue/identity_atlas.py) --
+       * fallbacks only, since every real gap already ships text_en/text_zh and
+       * takes the `direct` branch above. */
+      if(code==='no_reviewed_exact_path')return tr('no reviewed exact recipient → legal entity path exists','没有已核验的精确收款方 → 法律实体路径');
+      if(code==='unresolved_identifiers_present')return tr('some curated identifiers carry a reviewed conflict or gap and stay unresolved','部分已审核标识符存在冲突或缺口，保持未解决状态');
+      if(code==='observed_identifiers_without_reviewed_path')return tr('recipient identifiers observed in the discovery file have no reviewed path — discovery association only, never issuer proof','发现文件中观测到的收款方标识没有已审核路径 — 仅为发现关联，绝非发行人证明');
+      return'';
+    }
+    function reasonWords(row){
+      var direct=loc(row,'reason');if(direct)return direct;
+      return tr('No reason was recorded for this identifier.','该标识未记录原因。');
+    }
+    function evidenceList(row){var value=obj(row)?row.evidence:null;return Array.isArray(value)?value.filter(obj):obj(value)?[value]:[]}
+    function evidenceLinks(row,label){
+      return evidenceList(row).map(function(item){
+        var url=safeUrl(item.url);if(!url)return'';
+        return'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(text(item.publisher,label||tr('Open source record','打开来源记录')))+'</b><span>↗</span></a>';
+      }).join('');
+    }
+    function evidenceCode(row){
+      return evidenceList(row).map(function(item){
+        return tr('publisher: ','发布方：')+text(item.publisher)+'\n'+tr('record: ','记录：')+text(item.evidence_id)+'\nsha256: '+text(item.content_sha256);
+      }).join('\n\n');
+    }
+
+    function security(record){return obj(record.public_security)?record.public_security:{}}
+    function securityState(record){return text(security(record).state,'')}
+    function entities(record){return arr(record.entities).filter(obj)}
+    function unresolved(record){return arr(record.unresolved_identifiers).filter(obj)}
+    function reviewedIdCount(record){var total=0;entities(record).forEach(function(entity){total+=arr(entity.identifiers).filter(obj).length});return total}
+    function hasConflict(record){return unresolved(record).some(function(row){return row.state==='evidence_conflict'})}
+    function isHistoric(record){return securityState(record)==='listing_terminated'}
+    function endDate(record){var events=arr(record.listing_events).filter(obj);return date(security(record).last_date||(events[0]||{}).effective_at)}
+
+    function securityWords(record){
+      var state=securityState(record);
+      if(state==='verified_live')return tr('verified','已核验');
+      if(state==='listing_terminated')return isZh()?('上市已于 '+endDate(record)+' 终止'):('listing ended '+endDate(record));
+      if(state==='not_in_si_universe')return tr('not in the covered listing universe','不在已覆盖的上市范围内');
+      return tr('unconfirmed','未确认');
+    }
+    function recipientWords(record){
+      var reviewed=reviewedIdCount(record),open=unresolved(record).length;
+      if(!reviewed)return tr('unresolved','未解析');
+      if(open)return isZh()?('已核验，另有 '+open+' 项未解析'):('reviewed, '+open+' still unresolved');
+      return tr('reviewed','已核验');
+    }
+    function attributionWords(record){return record.issuer_attribution==='reviewed'?tr('reviewed','已核验'):tr('not asserted','未作断言')}
+    /* The one-sentence read. Composed, never stored, so the three hops always agree
+     * with the rail underneath and a zh reader gets a native sentence. */
+    function readLine(record){
+      var parts=[
+        tr('Public security: ','上市证券：')+securityWords(record),
+        tr('Government recipient attribution: ','政府收款方归属：')+recipientWords(record),
+        tr('Exact issuer attribution: ','精确发行人归属：')+attributionWords(record)
+      ];
+      var lead=gapWords(arr(record.gaps)[0]),out=parts.join(' · ')+(lead?' — '+lead:'');
+      return/[.。]$/.test(out)?out:out+(isZh()?'。':'.');
+    }
+    function stance(record){
+      if(isHistoric(record))return[tr('Ignore','忽略'),tr('This listing has ended. Read what follows as history — there is no live issuer behind it.','该股票已终止上市。以下内容仅为历史 — 其背后已无在市发行人。')];
+      if(record.issuer_attribution!=='reviewed')return[tr('Stand aside','暂不参与'),tr('No reviewed path ties an exact recipient to this issuer. Treat award totals under this name as unattributed.','没有已核验的路径将精确收款方与该发行人相连。请将该名称下的授标金额视为未归属。')];
+      if(unresolved(record).length)return[tr('Watch — don’t chase','观察，不要追高'),tr('The reviewed path holds for the identifiers below; the unresolved ones are not part of it. Read the award tape against the reviewed path only.','下方标识的已核验路径成立；未解析项不在其中。请仅依据已核验路径阅读授标脉搏。')];
+      return[tr('Watch — don’t chase','观察，不要追高'),tr('The path from award recipient to this issuer is reviewed. Read the award tape against it — a reviewed path is not a buy signal.','从授标收款方到该发行人的路径已核验。可据此阅读授标脉搏 — 已核验路径不是买入信号。')];
+    }
+    function chips(record){
+      var out=[];
+      if(record.issuer_attribution==='reviewed')out.push(['reviewed',tr('Reviewed issuer path','已核验发行人路径')]);
+      else out.push(['historic',tr('Identity unresolved','身份未解析')]);
+      if(unresolved(record).some(function(row){return row.state!=='evidence_conflict'}))out.push(['derived',tr('Link pending','关联待核')]);
+      if(hasConflict(record))out.push(['conflict',tr('Conflict on record','记录存在冲突')]);
+      if(isHistoric(record))out.push(['historic',tr('Listing terminated','上市已终止')]);
+      return'<div class="atlas-chips">'+out.map(function(pair){return'<span class="truth '+pair[0]+'">'+esc(pair[1])+'</span>'}).join('')+'</div>';
+    }
+
+    /* Named gap counts the rail must never contradict. `unresolved(record)` is
+     * curated-only (FIX-6/finding B6): a scope-observed identifier with no
+     * reviewed path and no curated review is never named, only counted in this
+     * gap. Folding it into the rung's own open-state keeps "every observed
+     * identifier sits on the reviewed path" from printing in the SAME breath as
+     * a gaps line saying N of them do not (FIX-D). */
+    function gapCount(record,code){
+      var row=arr(record.gaps).filter(obj).find(function(g){return g.code===code});
+      return row?(n(row.count)||0):0;
+    }
+    /* The rail. Four rungs, top to bottom; a rung whose successor is not reviewed
+     * carries a dashed connector, so the break in the chain is visible before a
+     * word is read. */
+    function hop(rung,tone,fact,note){return{rung:rung,tone:tone,fact:fact,note:note}}
+    function chain(record){
+      var state=securityState(record),issuer=obj(record.legal_issuer)?record.legal_issuer:null,rows=entities(record),reviewed=reviewedIdCount(record);
+      var curatedOpen=unresolved(record).length,observedOpen=gapCount(record,'observed_identifiers_without_reviewed_path'),open=curatedOpen+observedOpen;
+      var hops=[];
+      hops.push(hop(
+        tr('Public security','上市证券'),
+        state==='verified_live'?'reviewed':state==='listing_terminated'?'historic':'unresolved',
+        text(record.company_name,text(record.ticker))+' · '+text(record.ticker),
+        state==='verified_live'?(isZh()?('行情更新至 '+date(security(record).last_date)):('tape through '+date(security(record).last_date)))
+          :state==='listing_terminated'?(isZh()?('最后交易日 '+endDate(record)):('last traded '+endDate(record)))
+          :tr('No covered listing record','没有已覆盖的上市记录')
+      ));
+      hops.push(hop(
+        tr('Legal issuer','法律发行主体'),
+        issuer&&issuer.state==='reviewed'?'reviewed':'unresolved',
+        issuer&&issuer.state==='reviewed'?text(issuer.canonical_name,text(record.ticker)):tr('Not asserted','未作断言'),
+        issuer&&issuer.state==='reviewed'?stateWord(issuer.review_state):loc(record,'attribution_reason')||tr('No filing evidence names an issuer for these recipients.','没有披露证据为这些收款方指明发行主体。')
+      ));
+      hops.push(hop(
+        tr('Legal entities','法律实体'),
+        rows.length?'reviewed':'unresolved',
+        rows.length?(isZh()?(rows.length+' 个已核验法律实体'):(rows.length+' reviewed legal '+(rows.length===1?'entity':'entities'))):tr('No reviewed legal entity','没有已核验的法律实体'),
+        rows.length?tr('Named in the company’s own filing','由公司自身披露文件列明'):tr('Nothing is minted where the filing is silent','披露文件未提及之处不作推定')
+      ));
+      hops.push(hop(
+        tr('Recipient identifiers','收款方标识'),
+        reviewed?'reviewed':hasConflict(record)?'conflict':'unresolved',
+        reviewed?(isZh()?(reviewed+' 个精确收款方标识已核验'):(reviewed+' exact recipient '+(reviewed===1?'identifier':'identifiers')+' reviewed')):tr('No reviewed recipient identifier','没有已核验的收款方标识'),
+        open?(isZh()?(open+' 项仍未解析'+(curatedOpen?'，见下方':'')):(open+' still unresolved'+(curatedOpen?', listed below':''))):reviewed?tr('Every observed identifier sits on the reviewed path','每个已观测标识均位于已核验路径上'):tr('No recipient identifier is on record for this company','该公司没有在册的收款方标识')
+      ));
+      return'<ol class="atlas-chain">'+hops.map(function(row,i){
+        var next=hops[i+1],broken=next&&next.tone!=='reviewed'&&next.tone!=='historic';
+        return'<li class="atlas-hop '+row.tone+(broken?' break':'')+'"><i class="atlas-node" aria-hidden="true"></i><span class="atlas-rung">'+esc(row.rung)+'</span><strong class="atlas-fact">'+esc(row.fact)+'</strong><span class="atlas-note">'+esc(row.note)+'</span></li>';
+      }).join('')+'</ol>';
+    }
+
+    function sharePhrase(entity){
+      var share=n(entity.economic_share);
+      if(share==null)return'';
+      if(entity.relationship==='wholly_owned'&&share===1)return'';
+      return isZh()?(Math.round(share*1000)/10+'% 经济权益'):(Math.round(share*1000)/10+'% economic share');
+    }
+    function validityPhrase(entity){
+      var from=entity.valid_from?date(entity.valid_from):'',to=entity.valid_to?date(entity.valid_to):'';
+      if(!from&&!to)return tr('No validity interval on record','档案未记录有效区间');
+      if(from&&to)return isZh()?(from+' 至 '+to+' 在册'):('on record '+from+' to '+to);
+      if(from)return isZh()?('自 '+from+' 起在册'):('on record since '+from);
+      return isZh()?('至 '+to+' 止'):('on record until '+to);
+    }
+    function identifierCount(entity){
+      var rows=arr(entity.identifiers).filter(obj);
+      if(!rows.length)return tr('No award recipient identifier observed for this entity yet','尚未观测到该实体的授标收款方标识');
+      return isZh()?('持有 '+rows.length+' 个精确收款方标识'):('Holds '+rows.length+' exact recipient '+(rows.length===1?'identifier':'identifiers'));
+    }
+    function identifierRows(entity){
+      return arr(entity.identifiers).filter(obj).map(function(row){
+        return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(stateWord(row.verification_state))+'</b></div>';
+      }).join('');
+    }
+    function entityReceipt(entity){
+      var rows=arr(entity.identifiers).filter(obj),lines=[];
+      if(rows.length)lines.push(tr('identifier namespace: ','标识命名空间：')+text((rows[0]||{}).namespace));
+      lines.push(tr('valid from: ','有效自：')+text(entity.valid_from));
+      lines.push(tr('valid to: ','有效至：')+text(entity.valid_to,tr('open','未终止')));
+      lines.push(tr('first known at: ','首次获知：')+text(entity.known_at));
+      var code=evidenceCode(entity);if(code)lines.push(code);
+      rows.forEach(function(row){var extra=evidenceCode(row);if(extra)lines.push(text(row.value)+'\n'+extra)});
+      var summary=rows.length?tr('Show identifiers, dates and receipts','显示标识、日期与凭证'):tr('Show dates and the filing receipt','显示日期与披露凭证');
+      return'<details class="atlas-receipt"><summary>'+esc(summary)+'</summary><div class="atlas-receipt-body">'+identifierRows(entity)+'<div class="atlas-code">'+esc(lines.join('\n'))+'</div>'+evidenceLinks(entity,tr('Open filing source','打开披露来源'))+arr(entity.identifiers).filter(obj).map(function(row){return evidenceLinks(row,tr('Open award record','打开授标记录'))}).join('')+'</div></details>';
+    }
+    function entityCards(record){
+      var rows=entities(record);
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Legal entities on record','在册法律实体'))+'</div><div class="atlas-entities">'+rows.map(function(entity){
+        var meta=[relationshipWord(entity.relationship),sharePhrase(entity),validityPhrase(entity)].filter(Boolean).join(' · ');
+        return'<article class="atlas-entity '+esc(stateChip(entity.verification_state))+'"><div class="atlas-entity-top"><div><strong class="atlas-entity-name">'+esc(text(entity.canonical_name))+'</strong><span class="atlas-entity-meta">'+esc(meta)+'</span></div><span class="truth '+esc(stateChip(entity.verification_state))+'">'+esc(stateWord(entity.verification_state))+'</span></div><span class="atlas-entity-meta">'+esc(identifierCount(entity))+'</span>'+entityReceipt(entity)+'</article>';
+      }).join('')+'</div>';
+    }
+    /* Identifiers blocked for the SAME recorded reason are ONE card, not N copies of
+     * one sentence (GE ships five). A constant belongs once, and the count is the
+     * fact the reader needs; the individual identifiers stay one expand away. */
+    function unresolvedGroups(record){
+      var order=[],byKey={};
+      unresolved(record).forEach(function(row){
+        var key=text(row.state,'')+' '+reasonWords(row);
+        if(!byKey[key]){byKey[key]={state:row.state,reason:reasonWords(row),rows:[],links:[],seen:{}};order.push(key)}
+        var group=byKey[key];group.rows.push(row);
+        evidenceList(row).forEach(function(item){var url=safeUrl(item.url);if(url&&!group.seen[url]){group.seen[url]=true;group.links.push(item)}});
+      });
+      return order.map(function(key){return byKey[key]});
+    }
+    function groupHeadline(group){
+      var rows=group.rows,first=rows[0]||{},name=text(first.observed_name,'');
+      if(rows.length===1)return text(first.observed_name,tr('Recipient name not reported','未报告收款方名称'));
+      var same=rows.every(function(row){return text(row.observed_name,'')===name});
+      if(same&&name)return isZh()?(rows.length+' 个收款方登记均显示「'+name+'」'):(rows.length+' recipient registrations named “'+name+'”');
+      var names=rows.map(function(row){return text(row.observed_name,'')}).filter(Boolean);
+      if(names.length&&names.length<=3)return names.join(' · ');
+      return isZh()?(rows.length+' 个收款方标识'):(rows.length+' recipient identifiers');
+    }
+    function unresolvedCards(record){
+      var groups=unresolvedGroups(record);
+      if(!groups.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Where the trail stops','线索中断之处'))+'</div><div class="atlas-unresolved">'+groups.map(function(group){
+        var conflict=group.state==='evidence_conflict',lines=group.rows.map(function(row){
+          return'<div class="atlas-id"><code>'+esc(text(row.value))+'</code><b>'+esc(text(row.namespace))+'</b></div>';
+        }).join(''),code=group.rows.map(function(row){return text(row.value)+'\n'+evidenceCode(row)}).join('\n\n');
+        return'<div class="atlas-gap'+(conflict?' conflict':'')+'"><div class="atlas-gap-top"><strong>'+esc(groupHeadline(group))+'</strong><span class="truth '+esc(stateChip(group.state))+'">'+esc(stateWord(group.state))+'</span></div><span>'+esc(group.reason)+'</span>'+group.links.map(function(item){var url=safeUrl(item.url);return'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(text(item.publisher,tr('Open source record','打开来源记录')))+'</b><span>↗</span></a>'}).join('')+'<details class="atlas-receipt"><summary>'+esc(group.rows.length===1?tr('Show the identifier and its receipts','显示该标识及其凭证'):tr('Show every identifier and its receipts','显示全部标识及其凭证'))+'</summary><div class="atlas-receipt-body">'+lines+'<div class="atlas-code">'+esc(code.trim())+'</div></div></details></div>';
+      }).join('')+'</div>';
+    }
+    function eventWords(event){
+      var head=loc(event,'headline');if(head)return head;
+      if(event.event_type==='listing_terminated')return tr('The listing ended.','该股票终止上市。');
+      if(event.event_type==='spin_off')return tr('A business separated into its own listed company.','一项业务分拆为独立上市公司。');
+      if(event.event_type==='name_change')return tr('The trade name changed; the filing entity did not.','商号变更；披露主体未变。');
+      return tr('A corporate change is on record.','已记录一项公司变更。');
+    }
+    function historyCards(record){
+      var rows=arr(record.listing_events).filter(obj).concat(arr(record.separation_events).filter(obj));
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Corporate history on record','在册公司历史'))+'</div><div class="atlas-history">'+rows.map(function(event){
+        return'<div class="atlas-event"><time>'+esc(date(event.effective_at))+'</time><div><span>'+esc(eventWords(event))+'</span>'+evidenceLinks(event,tr('Open the filing','打开披露文件'))+'</div></div>';
+      }).join('')+'</div>';
+    }
+    function remainingGaps(record){
+      var rows=arr(record.gaps).slice(1).map(gapWords).filter(Boolean);
+      if(!rows.length)return'';
+      return'<div class="atlas-sub">'+esc(tr('Still unresolved','仍未解析'))+'</div><ul class="atlas-open">'+rows.map(function(row){return'<li>'+esc(row)+'</li>'}).join('')+'</ul>';
+    }
+    function cutReceipt(){
+      var head=obj(header)?header:{};
+      return'<details class="atlas-receipt"><summary>'+esc(tr('Show the evidence cut behind this path','显示该路径背后的证据截点'))+'</summary><div class="atlas-receipt-body"><div class="atlas-code">'+esc('graph_id: '+text(head.graph_id)+'\ngraph_digest: '+text(head.graph_digest)+'\nsi_asof: '+text(head.si_asof)+'\ncontract: '+text(head.contract)+'\nschema_version: '+text(head.schema_version))+'</div></div></details>';
+    }
+
+    function question(){return'<p class="atlas-question">'+esc(tr('Who the government actually paid, and how that reaches this ticker.','政府实际付款给谁，以及这如何连到该股票代码。'))+'</p>'}
+    function recordHtml(record){
+      var verdict=stance(record);
+      return question()+chips(record)+chain(record)+
+        '<p class="atlas-read">'+esc(readLine(record))+'</p>'+
+        '<div class="stance"><b>'+esc(verdict[0])+'</b><span>'+esc(verdict[1])+'</span></div>'+
+        entityCards(record)+unresolvedCards(record)+historyCards(record)+remainingGaps(record)+
+        '<div class="atlas-asof">'+esc(isZh()?('身份记录截至 '+date((header||{}).generated_at)):('Identity record as of '+date((header||{}).generated_at)))+'</div>'+
+        cutReceipt()+
+        '<div class="limit-copy">'+esc(tr('Identity paths only — no award, event or amount is attributed here. It cannot rank a company, size a position or trigger a trade.','仅为身份路径 — 此处不归属任何授标、事件或金额。不得为公司排序、调整仓位或触发交易。'))+'</div>';
+    }
+    function loadingHtml(){return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Tracing the identity path','正在追踪身份路径'))+'</b><span>'+esc(tr('Loading the reviewed recipient, entity and ownership record…','正在加载已核验的收款方、实体与所有权记录…'))+'</span></span><span class="dossier-count">•••</span></div>'}
+    function lockedHtml(){return question()+'<div class="dossier-empty"><strong>'+esc(tr('Identity path locked','身份路径已锁定'))+'</strong><p>'+esc(tr('The reviewed recipient-to-issuer path is part of a membership. Award history below stays open and is not issuer proof.','已核验的收款方至发行人路径包含在会员权益中。下方授标历史保持开放，且不构成发行人证明。'))+'</p><div class="candidate-empty-meta"><a class="tool-btn" href="plans.html">'+esc(tr('View membership plans','查看会员方案'))+'</a></div></div>'}
+    function errorHtml(){return'<div class="dossier-error"><strong>'+esc(tr('Identity path unavailable','身份路径不可用'))+'</strong><br>'+esc(tr('The identity record could not be verified. Award history below remains available and is not issuer proof.','身份记录无法完成核验。下方授标历史仍然可用，且不构成发行人证明。'))+'</div>'}
+    function absentHtml(){return question()+'<div class="dossier-empty"><strong>'+esc(tr('No identity record for this company','该公司暂无身份记录'))+'</strong><p>'+esc(tr('The reviewed identity record covers a bounded set of issuers in this evidence cut. Nothing is inferred for the others.','已核验的身份记录仅覆盖本证据截点内的有限发行人集合。对其他公司不作任何推断。'))+'</p></div>'}
+
+    function render(){
+      var host=hostFor();if(!host)return;
+      if(loadState==='loading'||loadState==='idle'){tone(host,null);host.innerHTML=loadingHtml();return}
+      if(loadState==='locked'){tone(host,'is-unresolved');host.innerHTML=lockedHtml();return}
+      if(loadState!=='ok'){tone(host,'is-unresolved');host.innerHTML=errorHtml();return}
+      var record=index&&index[ticker];
+      if(!obj(record)){tone(host,null);host.innerHTML=absentHtml();return}
+      tone(host,isHistoric(record)?'is-historic':record.issuer_attribution==='reviewed'?null:'is-unresolved');
+      host.innerHTML=recordHtml(record);
+    }
+    function ensure(){
+      if(pending)return pending;
+      if(typeof global.fetch!=='function'){loadState='unavailable';return Promise.resolve(false)}
+      loadState='loading';
+      pending=global.fetch(ATLAS_PATH,{credentials:'same-origin'}).then(function(response){
+        if(response.status===401||response.status===403)throw failure('locked');
+        if(!response.ok)throw failure('unavailable');
+        return response.json();
+      }).then(function(value){
+        if(!obj(value)||value.contract!=='government_revenue_identity_atlas.v1'||!/^1\./.test(text(value.schema_version,'')))throw failure('invalid');
+        header=value;index={};
+        arr(value.issuers).filter(obj).forEach(function(row){var key=text(row.ticker,'').toUpperCase();if(key&&!index[key])index[key]=row});
+        loadState='ok';return true;
+      }).catch(function(error){header=null;index=null;loadState=(error&&error.code)||'unavailable';return false});
+      return pending;
+    }
+    function loadCompany(value){
+      var ticket=++epoch;ticker=text(value,'').toUpperCase();
+      if(!hostFor())return;
+      if(loadState==='ok'||loadState==='locked')render();else{loadState=loadState==='idle'?'loading':loadState;render()}
+      ensure().then(function(){if(ticket===epoch)render()});
+    }
+    /* A member who signs in after the page loaded gets the path without a reload:
+     * only the locked arm is retried, so a healthy cache is never refetched. */
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();if(loadState!=='locked')return;pending=null;loadState='idle';if(ticker){var ticket=++epoch;render();ensure().then(function(){if(ticket===epoch)render()})}}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+    return{loadCompany:loadCompany,invalidate:function(){epoch++;ticker=''},state:function(){return loadState}};
+  };
+
+  /* D4 — Company Financial Truth Bridge (IRDM only, frozen golden constant).
+   * Puts the reviewed P00032 government fact beside the canonical earnings
+   * owner's v1 context packet, read-only, so a reader can separately answer
+   * what-the-government-recorded vs what-the-company-reports. Government
+   * facts come from the already-loaded workspace events (api.workspaceEvents)
+   * -- no new fetch -- and stay byte-identical across every company-packet
+   * variation. Comparison is FIXED closed-state copy (review amendment
+   * 2026-08-20, DEC:D4-COMPANY-RAIL-CONSUMES-CI-V1-CONTEXT): the module's
+   * ONLY network read is /api/company-intelligence/{ticker} -- no candidates
+   * artifact fetch, no ratio node ever, on any input. */
+  global.createGovernmentRevenueCompanyBridge=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,date=api.date,tr=api.tr,safeUrl=api.safeUrl,factCell=api.factCell,hostFor=api.host;
+    var workspaceEvents=typeof api.workspaceEvents==='function'?api.workspaceEvents:function(){return[]};
+    var workspaceReady=typeof api.workspaceComplete==='function'?api.workspaceComplete:function(){return true};
+    var FETCH_TIMEOUT_MS=typeof api.companyFetchTimeoutMs==='number'?api.companyFetchTimeoutMs:10000;
+    var IRDM='IRDM',AWARD_PIID='HC101319C0006',MOD_NUMBER='P00032',LINEAGE_OK='earnings_history',COMPANY_SCHEMA='company_intelligence_context.v1';
+    var epoch=0,ticker='',companyState='idle',companyPacket=null;
+    var pendingByTicker={},successByTicker={};
+
+    function modNumber(award){
+      var actionId=text(award.action_id,''),piid=text(award.piid,'');
+      if(!actionId||!piid)return'';
+      var marker='_'+piid+'_',idx=actionId.indexOf(marker);
+      if(idx<0)return'';
+      var rest=actionId.slice(idx+marker.length).split('_');
+      return rest[0]||'';
+    }
+    /* R10: constrain to events that actually carry the IRDM ticker (never
+     * trust piid/mod alone), and when more than one qualifies, prefer the
+     * one with the LATEST known_at -- the freshest reviewed record wins. */
+    function eventTickers(e){
+      var out=[],impacts=arr(e.listed_company_impacts).filter(obj);
+      impacts.forEach(function(row){var t=text(row.ticker,'');if(t)out.push(t)});
+      arr(e.tickers).forEach(function(t){if(typeof t==='string'&&t)out.push(t)});
+      var primary=text(e.primary_ticker,'');if(primary)out.push(primary);
+      return out;
+    }
+    function govEvent(){
+      var matches=arr(workspaceEvents()).filter(obj).filter(function(e){
+        var award=obj(e.award_change)?e.award_change:{};
+        return award.piid===AWARD_PIID&&modNumber(award)===MOD_NUMBER&&eventTickers(e).indexOf(IRDM)>-1;
+      });
+      if(!matches.length)return null;
+      matches.sort(function(a,b){
+        var ak=text((obj(a.change)?a.change:{}).known_at,''),bk=text((obj(b.change)?b.change:{}).known_at,'');
+        return bk<ak?-1:bk>ak?1:0;
+      });
+      return matches[0];
+    }
+    function amountValue(event){
+      var rows=arr(event.amounts).filter(obj),row=rows.find(function(r){return r.id==='federal_action_obligation'})||rows[0];
+      return row?n(row.value):null;
+    }
+    /* R12: exact, non-rounding display -- the reviewed obligation is never
+     * abbreviated to "$18.4M" the way money() would (§0 gate 1), and never
+     * ROUNDED the way toFixed(2) would either: whatever fractional digits the
+     * source number carries are shown verbatim, comma-grouped, nothing more. */
+    function preciseMoney(v){
+      v=n(v);if(v==null)return'—';
+      var neg=v<0,parts=String(Math.abs(v)).split('.');
+      parts[0]=parts[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+      return(neg?'−':'')+'$'+parts.join('.');
+    }
+    /* R4: the receipt bound to THIS action's own transaction record --
+     * matched by content_sha256 against award_change.source_identity, never
+     * by URL shape (an /awards/ URL is the AWARD snapshot receipt, a
+     * different observation from the action that actually carries P00032).
+     * R14: no exact sha match => NO source link, never a positional fallback --
+     * a missing/absent source_identity or a receipt set with no matching
+     * content_sha256 must never fall back to rows[0]: presenting an
+     * unrelated first receipt as "Open official receipt" recreates the
+     * award-snapshot-vs-transaction provenance error R4 exists to prevent.
+     * The government facts still render with no link at all in that case. */
+    function receiptUrl(event){
+      var award=obj(event.award_change)?event.award_change:{},identity=obj(award.source_identity)?award.source_identity:{},wantSha=text(identity.content_sha256,'');
+      var rows=arr((event.evidence||{}).receipts).filter(obj);
+      if(!wantSha)return'';
+      var pick=rows.find(function(r){return text(r.content_sha256,'')===wantSha});
+      if(!pick)return'';
+      return safeUrl(pick.url);
+    }
+    /* R5: govEvent() returning null is ambiguous between "not yet hydrated"
+     * (the embedded first-paint slice may not carry this event) and
+     * "genuinely absent". Only the latter may say "unavailable" -- see the
+     * `governmentworkspacehydrated` re-render pointer in government_revenue.html.j2
+     * for why a stale pre-hydration render self-heals without polling here. */
+    function govFactHtml(){
+      var event=govEvent();
+      if(!event){
+        if(!workspaceReady())return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Loading government record','正在加载政府记录'))+'</b></span></div>';
+        return'<div class="dossier-empty">'+esc(tr('Government fact unavailable','政府事实不可用'))+'</div>';
+      }
+      var award=obj(event.award_change)?event.award_change:{},change=obj(event.change)?event.change:{},late=award.is_late_discovery===true,url=receiptUrl(event);
+      return(late?'<div class="atlas-chips"><span class="truth late">'+esc(tr('Late discovery','延迟发现'))+'</span></div>':'')+
+        '<div class="facts-grid">'+
+          factCell(tr('Award / PIID','授标 / PIID'),text(award.piid))+
+          factCell(tr('Modification','修订编号'),modNumber(award)||'—')+
+          factCell(tr('Obligation','拨款义务'),preciseMoney(amountValue(event)))+
+          factCell(tr('Took effect','生效'),date(change.effective_at))+
+          factCell(tr('First known to Mastermind','Mastermind 首次获知'),date(change.known_at))+
+        '</div>'+
+        (url?'<a class="source-link" href="'+esc(url)+'" target="_blank" rel="noopener"><b>'+esc(tr('Open official receipt','打开官方凭证'))+'</b><span>↗</span></a>':'');
+    }
+
+    /* Company Truth -- read-only consumption of the canonical earnings owner's
+     * closed per-ticker packet. Only earnings_history-lineage fields render;
+     * score_overlay-lineage fields (e.g. summary) are never touched here.
+     * R2: bounded timeout races the fetch so a hung network call cannot leave
+     * an aria-busy state that lives forever -- it resolves to the same typed
+     * unavailable state as any other fetch failure. */
+    function withTimeout(promise,ms){
+      return new Promise(function(resolve,reject){
+        var settled=false,timer=global.setTimeout(function(){
+          if(settled)return;settled=true;reject(new Error('timeout'));
+        },ms);
+        promise.then(function(value){
+          if(settled)return;settled=true;global.clearTimeout(timer);resolve(value);
+        },function(error){
+          if(settled)return;settled=true;global.clearTimeout(timer);reject(error);
+        });
+      });
+    }
+    function fetchCompany(t){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      var chain=global.fetch('/api/company-intelligence/'+encodeURIComponent(t),{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(r){
+        if(r.status!==200)throw new Error('http_'+r.status);
+        return r.json();
+      }).then(function(data){
+        if(!obj(data)||data.available!==true||data.schema!==COMPANY_SCHEMA)throw new Error('contract');
+        return data;
+      });
+      return withTimeout(chain,FETCH_TIMEOUT_MS);
+    }
+    /* R7: memoize per ticker -- a success is cached (repeated selections and
+     * search keystrokes on an already-open IRDM panel never refetch); an
+     * in-flight fetch is shared; a failure is NEVER cached, so a fresh
+     * selection (which invalidate() always precedes) retries. Restatement
+     * (§0 gate 6 / T7) advances on the NEXT fresh load, i.e. after the panel
+     * is re-opened -- not mid-display on every keystroke. */
+    function loadCompanyPacket(t){
+      if(successByTicker[t])return Promise.resolve(successByTicker[t]);
+      if(pendingByTicker[t])return pendingByTicker[t];
+      var p=fetchCompany(t).then(function(data){
+        successByTicker[t]=data;delete pendingByTicker[t];return data;
+      },function(error){
+        delete pendingByTicker[t];throw error;
+      });
+      pendingByTicker[t]=p;
+      return p;
+    }
+    function highlightList(items,lineageArr,label){
+      items=arr(items);lineageArr=arr(lineageArr);
+      var kept=[];
+      for(var i=0;i<items.length&&kept.length<2;i++){
+        if(lineageArr[i]===LINEAGE_OK&&typeof items[i]==='string'&&items[i])kept.push(items[i]);
+      }
+      if(!kept.length)return'';
+      return'<div class="atlas-sub">'+esc(label)+'</div><ul class="atlas-open">'+kept.map(function(t){return'<li>'+esc(t)+'</li>'}).join('')+'</ul>';
+    }
+    function sourcesLine(latest){
+      /* R15: source-status metadata is lineage too. D4 may disclose the
+       * earnings/transcript rails, but must never surface the banned
+       * score_overlay rail merely because it arrived in latest.sources. */
+      var rows=arr(latest.sources).filter(obj).filter(function(s){return text(s.kind)!=='score_overlay'});
+      if(!rows.length)return'';
+      return'<div class="limit-copy">'+esc(rows.map(function(s){return text(s.kind)+': '+text(s.status)}).join(' · '))+'</div>';
+    }
+    function companyHtml(){
+      if(companyState==='unavailable')return'<div class="dossier-empty">'+esc(tr('Company packet unavailable','公司数据包不可用'))+'</div>';
+      if(companyState!=='ok'||!obj(companyPacket))return'<div class="dossier-status" aria-busy="true"><span><b>'+esc(tr('Loading company packet','正在加载公司数据包'))+'</b></span></div>';
+      var data=companyPacket,latest=obj(data.latest_event)?data.latest_event:{},lineage=obj(latest.field_lineage)?latest.field_lineage:{},metricsLineage=obj(lineage.metrics)?lineage.metrics:{},metrics=obj(latest.metrics)?latest.metrics:{};
+      var period=(latest.fiscal_year!=null?'FY'+text(latest.fiscal_year):'')+(latest.fiscal_quarter!=null?' Q'+text(latest.fiscal_quarter):'');
+      var rows=factCell(tr('Fiscal period','财报周期'),period||'—')+factCell(tr('Call date','电话会日期'),date(latest.call_date));
+      /* R9: a null/non-numeric growth figure is SKIPPED entirely -- never a
+       * "—" value claim standing in for a number the owner did not assert. */
+      if(metricsLineage.revenue_growth_pct===LINEAGE_OK){
+        var g=n(metrics.revenue_growth_pct);
+        if(g!=null)rows+=factCell(tr('Revenue growth (owner-reported)','收入增长（公司披露）'),(g>0?'+':'')+g+'%');
+      }
+      var html='<div class="facts-grid">'+rows+'</div>'+
+        highlightList(latest.positive_highlights,lineage.positive_highlights,tr('Positive highlights','正面亮点'))+
+        highlightList(latest.negative_highlights,lineage.negative_highlights,tr('Negative highlights','负面亮点'));
+      if(latest.claim_citations_pending===true)html+='<div class="limit-copy">'+esc(tr('Wording verification pending','措辞核验中'))+'</div>';
+      html+=sourcesLine(latest);
+      html+='<div class="atlas-asof">'+esc(tr('Company packet as of ','公司数据包截至 ')+date(data.generated_at))+'</div>';
+      return html;
+    }
+
+    /* Comparison -- FIXED closed-state copy (review amendment 2026-08-20).
+     * The producer's own recorded materiality
+     * (comparison_state: not_comparable, reason_code:
+     * exact_issuer_attributed_denominator_not_available) is the truth this
+     * copy mirrors, but the UI performs NO fetch for it: no ratio node ever
+     * renders on any input, so nothing here can vary with a network read. */
+    function comparisonHtml(){
+      return'<p class="limit-copy">'+esc(tr('Not comparable — no issuer-attributed denominator has been asserted.','不可比 — 尚无发行人归属的分母。'))+'</p>'+
+        '<p class="limit-copy">'+esc(tr('The government-side materiality record confirms no issuer-attributed denominator exists yet.','政府侧重要性记录确认目前尚无发行人归属的分母。'))+'</p>';
+    }
+
+    function researchHtml(){
+      return'<p class="atlas-question">'+esc(tr('Watch the next company print or owner packet for a lawful transmission bridge — windows, not certainties, redrawn on each new record.','关注下一次公司财报或所有者数据包，寻找合规的传导桥梁——这些只是观察窗口，并非确定结论，随每份新记录重新绘制。'))+'</p>';
+    }
+
+    function render(){
+      var host=hostFor();if(!host)return;
+      if(ticker!==IRDM){host.hidden=true;host.innerHTML='';return}
+      host.hidden=false;
+      host.innerHTML=
+        '<div class="inspect-label">'+esc(tr('Government fact','政府事实'))+'</div>'+govFactHtml()+
+        '<div class="inspect-label">'+esc(tr('Company truth','公司披露'))+'</div>'+companyHtml()+
+        '<div class="inspect-label">'+esc(tr('Comparison','可比性'))+'</div>'+comparisonHtml()+
+        '<div class="inspect-label">'+esc(tr('Research question','研究问题'))+'</div>'+researchHtml();
+    }
+
+    function loadCompany(value){
+      var ticket=++epoch;ticker=text(value,'').toUpperCase();
+      if(!hostFor())return;
+      if(ticker!==IRDM){render();return}
+      if(successByTicker[ticker]){companyPacket=successByTicker[ticker];companyState='ok';render();return}
+      companyState='loading';companyPacket=null;render();
+      loadCompanyPacket(ticker).then(function(data){
+        if(ticket!==epoch)return;
+        companyPacket=data;companyState='ok';render();
+      }).catch(function(){
+        if(ticket!==epoch)return;
+        companyPacket=null;companyState='unavailable';render();
+      });
+    }
+
+    return{loadCompany:loadCompany,invalidate:function(){
+      epoch++;ticker='';companyState='idle';companyPacket=null;
+      pendingByTicker={};successByTicker={};
+      var host=hostFor();if(host){host.hidden=true;host.innerHTML=''}
+    }};
+  };
+
   global.createGovernmentRevenueBudget=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var contentId=null,detailEpoch=0,loadEpoch=0,detailCache={},loadState='loading',listing=null;
@@ -275,7 +838,7 @@
       var program=detail.program||row.program||{},lines=arr(detail.lines).filter(obj),latest=latestLine(lines),coverage=obj(detail.source_coverage)?detail.source_coverage:{},doc=arr(detail.documents).filter(obj)[0]||{},src=safeUrl(doc.source_url),request=latest?semanticValue(latest,'president_budget_request_total'):null,disc=latest?semanticValue(latest,'discretionary_request'):null,recon=latest?semanticValue(latest,'reconciliation_request'):null,enacted=latest?semanticValue(latest,'prior_year_enacted_reference'):null;
       host.className='inspector budget-inspector';
       host.innerHTML='<div class="inspect-hero budget-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('DoD budget program','国防部预算项目'))+'</span><span class="inspect-id">'+esc(text(program.native_identifier))+'</span></div><h2>'+esc(text(program.name))+'</h2><div class="inspect-meta">'+esc(programKind(program.kind)+' · '+tr("President's Budget request lane","总统预算请求链路"))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Official request evidence','官方请求证据'))+'</span><span class="truth derived">'+esc(tr('Display only','仅展示'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-budget-evidence>'+esc(tr('View source chain','查看来源链'))+'</button><button class="tool-btn" type="button" data-budget-copy>'+esc(tr('Copy link','复制链接'))+'</button>'+(src?'<a class="tool-btn" href="'+esc(src)+'" target="_blank" rel="noopener">'+esc(tr('Official exhibit ↗','官方表件 ↗'))+'</a>':'')+'</div></div>'+
-        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Latest request frame','最新请求框架'))+'</div><div class="budget-amounts">'+amountCard(tr('FY '+text(latest&&latest.fiscal_year)+' total request','FY '+text(latest&&latest.fiscal_year)+' 请求总额'),request,tr('President’s Budget total','总统预算请求总额'),true)+amountCard(tr('Discretionary request','可自由支配请求'),disc,tr('Source-native column','来源原生列'),false)+amountCard(tr('Reconciliation request','调节请求'),recon,tr('Source-native column','来源原生列'),false)+amountCard(tr('Prior enacted reference','上年已颁参考'),enacted,tr('Historical reference only','仅历史参考'),false)+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Latest request frame','最新请求框架'))+'</div><div class="budget-amounts">'+amountCard(tr('FY '+text(latest&&latest.fiscal_year)+' total request','FY '+text(latest&&latest.fiscal_year)+' 请求总额'),request,tr('President’s Budget total','总统预算请求总额'),true)+amountCard(tr('Discretionary request','可自由支配请求'),disc,tr('Source-native column','来源原生列'),false)+amountCard(tr('Mandatory request','强制性请求'),recon,tr('Source-native column','来源原生列'),false)+amountCard(tr('Prior enacted reference','上年已颁参考'),enacted,tr('Historical reference only','仅历史参考'),false)+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Funding-stage firewall','资金阶段防火墙'))+'</div><div class="budget-coverage">'+coverageCard(tr("President's Budget request",'总统预算请求'),coverage.president_budget_request)+coverageCard(tr('Authorization','授权'),coverage.authorization)+coverageCard(tr('Enacted appropriation','已颁拨款'),coverage.appropriation_enacted)+coverageCard(tr('Execution','执行'),coverage.execution)+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Source-native program lines','来源原生项目行'))+'</div><div class="budget-lines">'+(lines.length?lineCards(lines):'<div class="budget-null">'+esc(tr('No retained line is available.','没有可用的保留项目行。'))+'</div>')+'</div></section>'+
         '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Reviewed award bridges','经核验的授标桥接'))+'</div><div class="budget-bridges">'+reviewedBridges(detail)+'</div></section>'+
@@ -293,4 +856,367 @@
     }
     return{load:load,refresh:function(){if(!listing||loadState!=='ok')return[];var rows=rowsFrom(listing);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows},render:render,invalidate:function(){detailEpoch++},state:function(){return loadState}};
   };
+
+  /* D5 Program/Platform Dossier -- composed `government_program_dossier.v1`
+   * bundle (engine/government_revenue/program_dossier.py), read-only, one
+   * static site twin fetched once: government-revenue-data/program-dossier.json.
+   * Same cookie-plane fetch idiom as the Identity Atlas above: same-origin
+   * credentials, a 401/403 degrades to the members-only teaser, any other
+   * failure is a typed `unavailable`, a contract mismatch is `invalid` --
+   * never a crash and never a blank (freeze DEFENSE_D5_PROGRAM_GRAPH_
+   * ARCHITECTURE_FREEZE.md SS4). The bundle-level pair `dossiers: []` +
+   * `ontology_graph_id: null` is the frozen page-level "no certified
+   * ontology yet" state (SS4); `dossiers: []` with a non-null graph id is
+   * the distinct, valid "certified ontology, zero current programs" state.
+   *
+   * Every rail renders a typed plain-word state, never a blank (SS4/SS6).
+   * No numeric budget/request figure is ever read, summed or compared here
+   * (T5 -- this module never calls a money/number formatter). No firm-to-
+   * firm edge or adjacency is ever rendered (T12). No node-link graph is
+   * rendered as the primary surface (SS9). Copy strings below reproduce the
+   * frozen bilingual copy table (D5 mode=programs surface, 2026-08-23)
+   * verbatim for every enum-keyed typed state and gap; ordinary structural
+   * labels (section headers already given by the freeze's six questions
+   * aside) follow the same plain house idiom used throughout this file. */
+  global.createGovernmentRevenueProgramDossier=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,tr=api.tr,hostFor=api.host;
+    var DOSSIER_PATH='government-revenue-data/program-dossier.json';
+    var pending=null,bundle=null,loadState='idle',epoch=0;
+
+    function failure(code){var e=new Error(code);e.code=code;return e}
+    function ensure(){
+      if(pending)return pending;
+      if(typeof global.fetch!=='function'){loadState='unavailable';return Promise.resolve(false)}
+      loadState='loading';
+      pending=global.fetch(DOSSIER_PATH,{credentials:'same-origin'}).then(function(response){
+        if(response.status===401||response.status===403)throw failure('locked');
+        if(!response.ok)throw failure('unavailable');
+        return response.json();
+      }).then(function(value){
+        if(!obj(value)||value.contract!=='government_program_dossier.v1'||!/^1\./.test(text(value.schema_version,'')))throw failure('invalid');
+        bundle=value;
+        loadState=value.ontology_graph_id==null?'ontology_unavailable':(arr(value.dossiers).filter(obj).length?'ok':'empty');
+        return true;
+      }).catch(function(error){bundle=null;loadState=(error&&error.code)||'unavailable';return false});
+      return pending;
+    }
+
+    // --- frozen typed-state copy (rail-scoped; verbatim from the D5 copy table) ---
+    function copyProgramUmbrella(){return tr('Program relationship: unresolved / not asserted','项目归属:未解决/未认定')}
+    function copyProgramConflicted(){return tr('Program attribution: conflicting reviewed claims — attribution withheld','项目归属:复核证据冲突——暂不认定')}
+    function copyQuantityGap(){return tr('Quantity is not representable from the award tape (v1); available once SAR/budget sources land','数量无法由合同事件源表示(v1);待SAR/预算来源接入后提供')}
+    function copyEconomicsGap(){return tr('No reviewed economic exposure — participation is not a revenue share','无已复核经济敞口——参与关系不代表收入份额')}
+    function copyContractTypeGap(){return tr('Contract type: available once an event is reviewed against this program','合同类型:待事件与该项目完成复核关联后提供')}
+    function copyGaoGap(){return tr('GAO/DOT&E assessment: not yet on file','GAO/DOT&E 评估:暂未收录')}
+    // Count-free (MEDIUM-6 repair): the row shape carries only a bool
+    // (`shared_scope`), never a program count, so the copy must never name
+    // a specific number -- a second shared-scope supplier spanning two or
+    // five programs would otherwise render a fabricated "three".
+    function copySharedScope(){return tr('Supplier scope shared across programs','供应范围横跨多个项目')}
+    function copyHistorical(){return tr('historical only','仅历史记录')}
+    function copyIssuerNotAsserted(){return tr('Issuer path: not asserted','发行人路径:未认定')}
+    function copyParticipationLimitation(){return tr('Companies on this rail participate in the same program; no commercial relationship between them is asserted.','本栏公司参与同一项目;不主张它们之间存在任何商业关系。')}
+    function copyAllocationLimitation(){return tr('Reviewed participation is not a share of revenue. Nothing here allocates award value to a ticker.','已复核的参与关系不代表收入份额。此处不将合同金额分配至任何股票。')}
+    function copyParticipantsNotReviewed(){return tr('Participants not yet reviewed','参与方尚未复核')}
+    function copyParticipantsReviewedNone(){return tr('Reviewed — no admissible participants','已复核——无可采信参与方')}
+    function copyMilestonesNotReviewed(){return tr('Forward milestones not yet reviewed','前瞻里程碑尚未复核')}
+    function copyMilestonesReviewedNone(){return tr('Reviewed — no admissible forward milestone','已复核——无可采信的前瞻里程碑')}
+    function copyMilestonesReviewedEmpty(){return tr('Reviewed — no upcoming milestone on file','已复核——暂无即将到来的里程碑')}
+    function copyBudget(stateName){return stateName==='projection_missing'?tr('Budget request rail unavailable — no budget projection exists yet (planned for a later wave)','预算请求栏不可用——预算投影尚未建立(规划于后续阶段)'):tr('Budget source unavailable','预算来源不可用')}
+    function copyEconomicRelationships(){return tr('No reviewed economic-relationship data','无已复核的经济关系数据')}
+    // House "windows, not certainties" idiom (vector.html.j2), reused verbatim.
+    function copyWindowsNotCertainties(){return tr('Windows, not certainties. The watch window is re-drawn nightly as the evidence changes.','这是观察窗口，不是确定预测。证据变化时，窗口会在每晚重新绘制。')}
+    var QUESTIONS=function(){return[
+      tr('What is this?','这是什么?'),
+      tr('Why does government need it?','政府为何需要?'),
+      tr('What changed?','有何变化?'),
+      tr('Which listed companies have reviewed access?','哪些上市公司经复核参与?'),
+      tr('What remains unresolved?','尚有哪些未决?'),
+      tr('What happens next?','接下来是什么?')
+    ]};
+
+    function chip(kind,label){return'<span class="truth '+esc(kind)+'">'+esc(label)+'</span>'}
+    function roleWord(role){
+      // Closed v1 role enum (freeze SS3.1); the pilot's three values get
+      // house copy, any other value degrades to a mechanical, non-invented
+      // snake_case-to-words transform rather than a fabricated label.
+      var known={prime_contractor:tr('Prime contractor','主承包商'),teaming_partner:tr('Teaming partner','联合承包伙伴'),supplier:tr('Supplier','供应商')};
+      return known[role]||text(role,'').replace(/_/g,' ')
+    }
+    function securityWord(stateName){
+      if(stateName==='verified_live')return tr('verified','已核验');
+      if(stateName==='listing_terminated')return tr('listing ended','上市已终止');
+      if(stateName==='not_in_si_universe')return tr('not in the covered listing universe','不在已覆盖的上市范围内');
+      return tr('unconfirmed','未确认')
+    }
+    function windowWords(window){
+      window=obj(window)?window:{};
+      var from=text(window.from,''),to=text(window.to,'');
+      if(from&&to)return from+' – '+to;
+      return to||from||tr('window not specified','窗口未指定')
+    }
+    function railState(rail,key){rail=obj(rail)?rail:{};return text(rail[key],'not_reviewed')}
+    function gapCopyFor(stateName){return stateName==='conflicted'?copyProgramConflicted():copyProgramUmbrella()}
+
+    function rowsFrom(value){
+      return arr((value||{}).dossiers).filter(obj).map(function(d){
+        var pi=obj(d.program_identity)?d.program_identity:{},reviewed=pi.state==='reviewed';
+        return{
+          id:'program:'+text(d.program_id),kind:'program_dossier',
+          truth:reviewed?'reviewed':'derived',
+          truthCopy:reviewed?tr('Program identity reviewed','项目身份已核验'):gapCopyFor(pi.state),
+          linked:false,defense:true,tickers:[],agency:text(pi.sponsor_agency,''),
+          date:text((value||{}).generated_at,''),
+          title:reviewed?text(pi.name,text(d.program_id)):text(d.program_id),
+          subtitle:reviewed?text(pi.phase,''):gapCopyFor(pi.state),
+          dossier:d,bundleLimitations:arr((value||{}).limitations)
+        };
+      });
+    }
+
+    function load(){
+      var ticket=++epoch;
+      if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+      return ensure().then(function(){
+        if(ticket!==epoch)return;
+        var ok=loadState==='ok'||loadState==='empty',rows=ok?rowsFrom(bundle):[];
+        if(typeof api.onRows==='function')api.onRows(rows,{status:loadState,content_id:bundle&&bundle.content_id||null,total:rows.length});
+      });
+    }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();if(loadState!=='locked')return;pending=null;load()}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+
+    // --- six-question sections (freeze SS9, in the frozen order) ---
+    function sectionWhatIsThis(d){
+      var pi=obj(d.program_identity)?d.program_identity:{};
+      if(pi.state!=='reviewed')return'<p class="inspect-value">'+esc(gapCopyFor(pi.state))+'</p>';
+      var meta=[pi.phase?tr('Phase: ','阶段：')+text(pi.phase):'',pi.sponsor_agency?tr('Sponsor: ','主管机构：')+text(pi.sponsor_agency):''].filter(Boolean).join(' · ');
+      var out='<p class="inspect-value"><strong>'+esc(text(pi.name))+'</strong></p>';
+      if(meta)out+='<p class="inspect-value">'+esc(meta)+'</p>';
+      out+='<p class="inspect-value">'+esc(pi.latest_platform_name?tr('Latest block in the reviewed record: ','已核验记录中的最新型别：')+text(pi.latest_platform_name):tr('No platform/block variant is yet in the reviewed record.','已核验记录中尚无型别/批次变体。'))+'</p>';
+      // LOW-2 repair: NO "read being updated" chip is rendered here. It was
+      // gated on `program_revision > 1`, which LATCHES FOREVER -- revision
+      // never decreases, so a pure rename from years ago would render the
+      // transient D3 chip permanently. D3's own chip (cycle_app.js
+      // firedBannerHTML) is gated on an engine-maintained boolean latch
+      // (`tw.state==='FIRED' && tw.latched`), not a client-side recency
+      // window -- there is no time-based mechanism in D3 to mirror. The
+      // frozen `government_program_dossier.v1` program_identity rail shape
+      // (freeze SS4) carries no `known_at`/succession timestamp of any
+      // kind, so the reviewer's fallback (`program_revision > 1 AND the
+      // resolved revision's known_at within 14 days of the bundle as_of`)
+      // cannot be computed client-side without an engine/schema change,
+      // which is out of this packet's scope. `bundle.generated_at` is not
+      // a substitute: it refreshes every nightly build regardless of
+      // whether this row's revision actually changed, so gating on it
+      // would still effectively latch (or worse, fabricate recency).
+      // Removed rather than ship either the original bug or a fabricated
+      // proxy; a correct implementation needs a revision-scoped `known_at`
+      // added to the rail by a future engine packet.
+      return out;
+    }
+    function sectionWhy(d){
+      var cap=obj(d.capability)?d.capability:{},out='';
+      if(cap.state!=='reviewed'){
+        out+='<p class="inspect-value">'+esc(gapCopyFor(cap.state))+'</p>';
+      }else{
+        out+='<p class="inspect-value"><strong>'+esc(text(cap.name))+'</strong></p>';
+        out+='<p class="inspect-value">'+esc(text(cap.need_statement,''))+'</p>';
+      }
+      // Freeze SS9: the quantity gap is named ALWAYS in v1, reviewed link or not.
+      out+='<div class="budget-null"><span>'+esc(copyQuantityGap())+'</span></div>';
+      out+='<div class="budget-null"><span>'+esc(copyEconomicsGap())+'</span></div>';
+      return out;
+    }
+    function sectionChanged(d){
+      var aw=obj(d.awards)?d.awards:{},src=railState(aw,'source_state'),link=railState(aw,'link_state'),out='';
+      if(link==='conflicted'){
+        out+='<div class="budget-rail warn"><span>'+esc(tr('Award attribution','授标归属'))+'</span><b>'+esc(tr('Event attribution conflicted — under review','事件归属存在冲突——复核中'))+'</b></div>';
+      }else if(src==='current'){
+        var msg=link==='reviewed_none'?tr('Award tape current — reviewed: no linkable events on the tape','合同事件源为最新——已复核:暂无可关联事件'):tr('Award tape current — no event reviewed against this program yet','合同事件源为最新——尚无事件与该项目完成复核关联');
+        out+='<div class="budget-rail'+(link==='reviewed'?' ok':' warn')+'"><span>'+esc(tr('Award source','合同事件源'))+'</span><b>'+esc(msg)+'</b></div>';
+      }else{
+        var srcCopy=src==='partial'?tr('Award source partial','合同事件源部分可用'):src==='stale'?tr('Award source stale (source latency: days to weeks)','合同事件源滞后(来源延迟数天至数周)'):tr('Award source unavailable','合同事件源不可用');
+        out+='<div class="budget-rail warn"><span>'+esc(tr('Award source','合同事件源'))+'</span><b>'+esc(srcCopy)+'</b></div>';
+      }
+      // Freeze SS9: contract type is read-only from the award plane joined on
+      // a reviewed program_event_link; this build never performs that join
+      // (see the packet's reported GAP), so the named gap always renders.
+      out+='<div class="budget-null"><span>'+esc(copyContractTypeGap())+'</span></div>';
+      return out;
+    }
+    function sectionParticipants(d){
+      var p=obj(d.participants)?d.participants:{},stateName=railState(p,'state'),out='';
+      if(stateName==='reviewed'){
+        var rows=arr(p.rows).filter(obj);
+        if(!rows.length){
+          out+='<div class="budget-null"><strong>'+esc(copyParticipantsReviewedNone())+'</strong></div>';
+        }else{
+          out+='<div class="atlas-chips" style="display:grid;gap:8px">'+rows.map(function(row){
+            var reviewedIssuer=row.issuer_path_state==='reviewed';
+            var issuerBit=reviewedIssuer?(text(row.central_id,'')+' · '+securityWord(row.public_security)):copyIssuerNotAsserted();
+            var chips=chip(reviewedIssuer?'reviewed':'derived',reviewedIssuer?tr('reviewed','已核验'):tr('not asserted','未认定'))
+              +(row.historical?chip('historic',copyHistorical()):'')
+              +(row.shared_scope?chip('derived',copySharedScope()):'');
+            return'<article class="atlas-entity'+(reviewedIssuer?'':' derived')+'"><div class="atlas-entity-top"><div><span class="atlas-entity-name">'+esc(roleWord(row.role))+(row.role_scope?' — '+esc(text(row.role_scope)):'')+'</span><span class="atlas-entity-meta">'+esc(issuerBit)+'</span></div>'+chips+'</div></article>';
+          }).join('')+'</div>';
+        }
+      }else{
+        out+='<div class="budget-null"><strong>'+esc(stateName==='conflicted'?copyProgramConflicted():stateName==='reviewed_none'?copyParticipantsReviewedNone():copyParticipantsNotReviewed())+'</strong></div>';
+      }
+      // Freeze SS4: both limitation strings are populated on every rail
+      // state, not only `reviewed` -- render them unconditionally (T12).
+      out+='<p class="limit-copy">'+esc(copyParticipationLimitation())+'</p>';
+      out+='<p class="limit-copy">'+esc(copyAllocationLimitation())+'</p>';
+      return out;
+    }
+    function sectionUnresolved(d){
+      var budget=obj(d.budget)?d.budget:{},out='';
+      out+='<div class="budget-rail warn"><span>'+esc(tr('Budget','预算'))+'</span><b>'+esc(copyBudget(railState(budget,'state')))+'</b></div>';
+      out+='<div class="budget-rail"><span>'+esc(tr('Economic relationships','经济关系'))+'</span><b>'+esc(copyEconomicRelationships())+'</b></div>';
+      var sharedRow=arr((obj(d.participants)?d.participants:{}).rows).filter(obj).some(function(row){return row.shared_scope});
+      if(sharedRow)out+='<div class="budget-rail warn"><span>'+esc(tr('Supplier scope','供应范围'))+'</span><b>'+esc(copySharedScope())+'</b></div>';
+      out+='<div class="budget-rail warn"><span>'+esc(tr('Oversight','监督'))+'</span><b>'+esc(copyGaoGap())+'</b></div>';
+      return out;
+    }
+    function sectionNext(d){
+      var m=obj(d.milestones)?d.milestones:{},stateName=railState(m,'state');
+      if(stateName==='reviewed'){
+        var rows=arr(m.rows).filter(obj);
+        if(!rows.length)return'<div class="budget-null"><strong>'+esc(copyMilestonesReviewedEmpty())+'</strong></div>';
+        return rows.map(function(row){
+          var when=row.temporal_kind==='window'?windowWords(row.window):text(row.date);
+          return'<div class="budget-rail ok"><span>'+esc(tr('Forward milestone','前瞻里程碑'))+'</span><b>'+esc(text(row.title))+'</b><small>'+esc(when)+'</small></div>';
+        }).join('')+'<p class="limit-copy">'+esc(copyWindowsNotCertainties())+'</p>';
+      }
+      return'<div class="budget-null"><strong>'+esc(stateName==='conflicted'?copyProgramConflicted():stateName==='reviewed_none'?copyMilestonesReviewedNone():copyMilestonesNotReviewed())+'</strong></div>';
+    }
+    function sectionInspectorIds(d){
+      var pi=obj(d.program_identity)?d.program_identity:{},cap=obj(d.capability)?d.capability:{},aw=obj(d.awards)?d.awards:{},p=obj(d.participants)?d.participants:{},m=obj(d.milestones)?d.milestones:{};
+      var lines=['program_id: '+text(d.program_id)];
+      if(pi.state==='reviewed'){
+        lines.push('program_revision: '+text(pi.program_revision));
+        if(pi.latest_platform_id)lines.push('latest_platform_id: '+text(pi.latest_platform_id));
+      }
+      if(cap.state==='reviewed'){
+        lines.push('capability_id: '+text(cap.capability_id));
+        lines.push('program_capability_link_id: '+text(cap.program_capability_link_id));
+      }
+      if(arr(aw.program_event_link_ids).length)lines.push('program_event_link_ids: '+arr(aw.program_event_link_ids).join(', '));
+      if(arr(aw.event_ids).length)lines.push('event_ids: '+arr(aw.event_ids).join(', '));
+      arr(p.rows).filter(obj).forEach(function(row){lines.push('role_assertion_id ('+text(row.role)+'): '+text(row.role_assertion_id))});
+      arr(m.rows).filter(obj).forEach(function(row){lines.push('milestone_id: '+text(row.milestone_id))});
+      return'<article class="receipt"><div class="receipt-kind">'+esc(tr('Technical identity','技术标识'))+'</div><div class="receipt-code">'+esc(lines.join('\n'))+'</div></article>';
+    }
+    function render(row){
+      var host=hostFor();if(!host||!row)return;
+      var d=obj(row.dossier)?row.dossier:{},pi=obj(d.program_identity)?d.program_identity:{},reviewed=pi.state==='reviewed';
+      var title=reviewed?text(pi.name,text(d.program_id)):text(d.program_id);
+      var questions=QUESTIONS();
+      var sections=[sectionWhatIsThis(d),sectionWhy(d),sectionChanged(d),sectionParticipants(d),sectionUnresolved(d),sectionNext(d)];
+      var stanceChips=chip(reviewed?'reviewed':'derived',reviewed?tr('Program identity reviewed','项目身份已核验'):gapCopyFor(pi.state))
+        +chip('derived',tr('Display only','仅展示'))
+        +chip('derived',tr("Watch — don't chase",'观察，不追逐'));
+      host.className='inspector program-inspector';
+      host.innerHTML=
+        '<div class="inspect-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('Program Dossier','项目档案'))+'</span><span class="inspect-id">'+esc(text(d.program_id))+'</span></div><h2>'+esc(title)+'</h2><div class="inspect-truth">'+stanceChips+'</div></div>'+
+        questions.map(function(question,i){return'<section class="inspect-section"><div class="inspect-label">'+esc(question)+'</div>'+sections[i]+'</section>'}).join('')+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Inspector · technical identity','检查器 · 技术标识'))+'</div>'+sectionInspectorIds(d)+'</section>'+
+        (arr(row.bundleLimitations).length?'<section class="inspect-section"><div class="inspect-label">'+esc(tr('Read-model limitations','读取模型限制'))+'</div><div class="limit-copy">'+esc(arr(row.bundleLimitations).join(' · '))+'</div></section>':'');
+      if(typeof api.setMobile==='function')api.setMobile(title,tr('Program Dossier','项目档案'));
+    }
+
+    return{
+      load:load,
+      refresh:function(){var ok=loadState==='ok'||loadState==='empty',rows=ok?rowsFrom(bundle):[];if(typeof api.onRows==='function')api.onRows(rows,{status:loadState,content_id:bundle&&bundle.content_id||null,total:rows.length});return rows},
+      render:render,
+      invalidate:function(){},
+      state:function(){return loadState}
+    };
+  };
+  /* D6-B1 FMS congressional-notification rail -- read-only projection of
+   * `government_fms_case.v1` (engine/government_revenue/fms_cases.py). One
+   * fetch of the full case graph; every case already carries its complete
+   * observation history (spec §4), so unlike the DoD budget rail above this
+   * factory never opens a second per-case detail request. Stage is always
+   * `congressional_notification` in v1 -- this file never computes, stores,
+   * or displays a review-period-elapsed conclusion (freeze §4.4, T3). Values
+   * are proposed-sale estimates and are never summed across cases (T13). The
+   * five-answer copy strings below reproduce the frozen U5 bilingual table
+   * (DEFENSE_D6B1_FMS_IMPLEMENTATION_SPEC_2026-08-25.md §9.3) verbatim. */
+  global.createGovernmentRevenueFms=function(api){
+    var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
+    var contentId=null,loadEpoch=0,loadState='loading',listing=null;
+
+    function validAuthority(value){return obj(value)&&value.tier==='display'&&value.context_only===true&&value.can_rank===false&&value.can_size===false&&value.can_gate===false&&value.can_originate_signal===false&&value.can_add_candidates===false&&value.can_escalate===false}
+    function fetchFms(route){
+      if(typeof global.fetch!=='function')return Promise.reject(new Error('unavailable'));
+      return withAuth({Accept:'application/json'}).then(function(headers){
+        return global.fetch('/api/government-revenue/'+route,{credentials:'same-origin',headers:headers});
+      }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+        if(!obj(value)||value.contract!=='government_fms_case.v1'||value.schema_version!=='1.0.0'||!/^grfms1-[a-f0-9]{24}$/.test(text(value.content_id,''))||!validAuthority(value.authority))throw new Error('contract');
+        return value;
+      });
+    }
+    function rowsFrom(value){return arr(value.cases).filter(obj).map(function(c){return{id:'fms:'+text(c.case_key),kind:'fms_case',truth:'official',truthCopy:tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'),linked:false,defense:true,tickers:[],agency:null,date:value.known_at,title:text(c.capability_title,text(c.customer_country)),subtitle:text(c.transmittal_number,'—')+' · '+text(c.customer_country),case:c,fmsEnvelope:{content_id:value.content_id,known_at:value.known_at,as_of:value.as_of,coverage:value.coverage,limitations:value.limitations}}})}
+    function load(){
+      var ticket=++loadEpoch;loadState='loading';
+      if(typeof api.onRows==='function'&&!listing)api.onRows([],{status:'loading',content_id:null,total:0});
+      return fetchFms('fms-cases').then(function(value){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        listing=value;contentId=value.content_id;loadState='ok';
+        var rows=rowsFrom(value);
+        if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});
+        return rows;
+      }).catch(function(error){
+        if(ticket!==loadEpoch)return listing?rowsFrom(listing):[];
+        var message=error&&error.message||'';
+        if((message==='http_401'||message==='http_403')&&!authSettled()){
+          loadState='loading';
+          if(typeof api.onRows==='function')api.onRows([],{status:'loading',content_id:null,total:0});
+          return[];
+        }
+        listing=null;contentId=null;
+        loadState=(message==='http_404'||message==='http_503'||message==='contract')?'unavailable':'unavailable';
+        if(typeof api.onRows==='function')api.onRows([],{status:loadState,content_id:null,total:0});
+        return[];
+      });
+    }
+    function bindAuthReload(){
+      function onAuth(){markAuthSettled();load();}
+      if(global.MDXAuth&&typeof global.MDXAuth.onChange==='function')global.MDXAuth.onChange(onAuth);
+      else if(typeof global.addEventListener==='function')global.addEventListener('mdx-auth',onAuth);
+    }
+    bindAuthReload();
+    function contractorRow(item){return'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Named in source — identity not reviewed','来源点名 — 身份未审核'))+'</span><strong>'+esc(text(item.name_as_printed))+'</strong>'+(item.location_as_printed?'<small>'+esc(text(item.location_as_printed))+'</small>':'')+'</article>'}
+    function evidenceHtml(c){
+      var html='';
+      arr(c.observations).filter(obj).forEach(function(o){
+        html+='<article class="receipt"><div class="receipt-kind">'+esc(text(o.source_surface)+' · '+text(o.kind))+'</div><p>'+esc(tr('Version','版本')+' '+text(o.version))+'</p><div class="receipt-code">'+esc('observation_id: '+text(o.observation_id)+'\nsha256: '+text(o.response_sha256)+'\nobserved_at: '+text(o.observed_at)+'\nknown_at: '+text(o.known_at))+'</div>'+(safeUrl(o.source_url)?'<a class="source-link" href="'+esc(safeUrl(o.source_url))+'" target="_blank" rel="noopener"><b>'+esc(tr('Open source receipt ↗','打开来源凭证 ↗'))+'</b><span>↗</span></a>':'')+'</article>';
+      });
+      return html;
+    }
+    function render(row){
+      var host=hostFor();if(!host||!row)return;
+      var c=row.case||{},env=row.fmsEnvelope||{},cov=obj(c.source_coverage)?c.source_coverage:{},clocks=obj(c.clocks)?c.clocks:{},notif=obj(clocks.official_notification_date)?clocks.official_notification_date:{},pub=obj(clocks.official_web_publication_date)?clocks.official_web_publication_date:{},contractors=arr(c.contractors).filter(obj);
+      host.className='inspector budget-inspector';
+      host.innerHTML='<div class="inspect-hero budget-hero"><div class="inspect-kicker"><span class="inspect-type">'+esc(tr('FMS congressional notification','FMS 国会通知'))+'</span><span class="inspect-id">'+esc(text(c.transmittal_number,'—'))+'</span></div><h2>'+esc(text(c.customer_country))+'</h2><div class="inspect-meta">'+esc(text(c.capability_title,tr('Capability not disclosed by an official web post','官方网页公告未披露该能力')))+'</div><div class="inspect-truth"><span class="truth official">'+esc(tr('Official 36(b) congressional notification','36(b) 国会通知官方记录'))+'</span><span class="truth derived">'+esc(tr('Display only','仅展示'))+'</span></div><div class="inspect-actions"><button class="tool-btn" type="button" data-fms-evidence>'+esc(tr('View source chain','查看来源链'))+'</button><button class="tool-btn" type="button" data-fms-copy>'+esc(tr('Copy link','复制链接'))+'</button></div></div>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Stage','阶段'))+'</div><div class="budget-boundary"><strong>'+esc(tr('Notified to Congress — not a signed sale','已通知国会 — 尚非已签署军售'))+'</strong><span>'+esc(tr('Later stage not observed','未观察到后续阶段'))+'</span></div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Amount','金额'))+'</div><div class="budget-amounts">'+'<div class="budget-amount primary"><span>'+esc(tr('Estimated notification value','通知估算金额'))+'</span><b>'+esc(money(c.estimated_notification_value))+'</b><small>'+esc(tr('Proposed-sale estimate — not an award, backlog, or revenue','拟议军售估算 — 并非合同授予、订单积压或收入'))+'</small></div>'+'</div>'+(c.source_caveat?'<p class="budget-null">'+esc(text(c.source_caveat))+'</p>':'')+'</section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Clocks','时间线'))+'</div><div class="budget-coverage">'+'<div class="budget-rail muted"><span>'+esc(tr('Official notification date','官方通知日期'))+'</span><b>'+esc(notif.value?date(notif.value):tr('Official notification date unavailable','官方通知日期暂无'))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('Official web publication date','官方网页发布日期'))+'</span><b>'+esc(date(pub.value))+'</b></div>'+'<div class="budget-rail muted"><span>'+esc(tr('First observed','首次获知'))+'</span><b>'+esc(date((clocks||{}).first_observed_at))+'</b></div>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Linkage','关联'))+'</div><div class="budget-bridges">'+(contractors.length?contractors.map(contractorRow).join(''):(c.contractor_note?'<p class="budget-null">'+esc(text(c.contractor_note))+'</p>':''))+'<article class="budget-bridge"><span class="truth observed">'+esc(tr('Program link not reviewed','项目关联未审核'))+'</span></article>'+'</div></section>'+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Advancement','推进'))+'</div><div class="budget-boundary"><span>'+esc(tr('Requires official evidence of an offered, accepted, or implemented LOA','须有官方证据证明 LOA 已提出、接受或实施'))+'</span></div></section>'+
+        (cov.web_presence===false?'<section class="inspect-section"><div class="inspect-label">'+esc(tr('Coverage note','覆盖说明'))+'</div><div class="budget-null"><span>'+esc(tr('Recovered from the Federal Register official record — no agency web post exists for this case.','该案例来自联邦公报官方记录 — 该机构未发布对应网页公告。'))+'</span><br><span>'+esc(text((env.coverage||{}).history_disclosure))+'</span></div></section>':'')+
+        '<section class="inspect-section"><div class="inspect-label">'+esc(tr('Evidence & limits','证据与限制'))+'</div><div class="limit-copy">'+esc(tr('Display-only context. It cannot rank a case, size a position, gate a trade, or add a candidate.','仅作展示情境。不得为案例排序、调整仓位、设闸或添加候选。'))+'</div></section>';
+      var evidence=host.querySelector('[data-fms-evidence]');if(evidence)evidence.addEventListener('click',function(){if(typeof api.openEvidenceDrawer==='function')api.openEvidenceDrawer({title:tr('FMS source chain','FMS 来源链'),html:evidenceHtml(c),focus:evidence})});
+      var copy=host.querySelector('[data-fms-copy]');if(copy)copy.addEventListener('click',function(){if(typeof api.copyLink==='function')api.copyLink(copy)});
+      if(typeof api.setMobile==='function')api.setMobile(text(c.customer_country),text(c.transmittal_number,'—'));
+    }
+    return{load:load,refresh:function(){if(!listing||loadState!=='ok')return[];var rows=rowsFrom(listing);if(typeof api.onRows==='function')api.onRows(rows,{status:'ok',content_id:contentId,total:rows.length});return rows},render:render,invalidate:function(){},state:function(){return loadState}};
+  };
+
 })(window);

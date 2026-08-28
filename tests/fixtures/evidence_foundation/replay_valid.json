@@ -1,0 +1,139 @@
+{
+  "schema": "evidence_foundation.reference.v1",
+  "version": "1.0.0",
+  "reference_id": "efr_1fc0ba3a966342494da48573e88593658898bc9ae9e27a9291f0e9f002f09e32",
+  "object_class": "world_observation",
+  "owner_store": "fif.raw_occurrence",
+  "native_identity": {
+    "occurrence_id": "rawfact_5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "native_schema": "fundamental_forensics.raw_ledger/v1#RawFactOccurrence",
+  "native_digest": {
+    "state": "known",
+    "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "coverage_class": "record_history_complete",
+  "subject": {
+    "key_type": "fif_occurrence_id",
+    "key": "rawfact_5555555555555555555555555555555555555555555555555555555555555555"
+  },
+  "secondary_subjects": [],
+  "clocks": [
+    {
+      "class": "source_published",
+      "field": "clocks.accepted_at",
+      "value_state": "known",
+      "value": "2026-07-30T20:30:00Z",
+      "grain": "datetime"
+    },
+    {
+      "class": "system_recorded",
+      "field": "clocks.recorded_at",
+      "value_state": "known",
+      "value": "2026-07-30T20:35:00Z",
+      "grain": "datetime"
+    },
+    {
+      "class": "knowable",
+      "field": "clocks.mapping_available_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "clocks.computed_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    },
+    {
+      "class": "belief_or_build",
+      "field": "clocks.published_at",
+      "value_state": "unknown",
+      "value": null,
+      "grain": "datetime"
+    }
+  ],
+  "provenance": {
+    "pointer_only": true,
+    "body_embedded": false,
+    "owner_reader": "engine.fundamental_forensics.raw_ledger.RawFactLedger.by_id",
+    "pointer": "fundamental-forensics://raw-occurrence/rawfact_5555555555555555555555555555555555555555555555555555555555555555",
+    "owner_reader_kind": "direct"
+  },
+  "relations": [],
+  "missingness": {
+    "state": "present",
+    "reason": null,
+    "zero_substituted": false
+  },
+  "correction": {
+    "kind": "none",
+    "predecessor_reference_ids": [],
+    "clock_field": null,
+    "append_only": true,
+    "mutates_predecessor": false,
+    "chronology_state": "not_applicable"
+  },
+  "replay": {
+    "mode": "historical_replay",
+    "cutoffs": {
+      "world_valid": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "source_published": {
+        "state": "known",
+        "value": "2026-07-30T20:31:00Z",
+        "grain": "datetime"
+      },
+      "knowable": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "observed": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "system_recorded": {
+        "state": "known",
+        "value": "2026-07-30T20:36:00Z",
+        "grain": "datetime"
+      },
+      "belief_or_build": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      },
+      "review_due": {
+        "state": "unknown",
+        "value": null,
+        "grain": "datetime"
+      }
+    },
+    "code_revision": "5902-vintage-sha-fixture",
+    "input_digest": "6666666666666666666666666666666666666666666666666666666666666666",
+    "vintage_state": "owner_native"
+  },
+  "authority": {
+    "can_rank": false,
+    "can_gate": false,
+    "can_size": false,
+    "can_originate": false,
+    "can_open_entry": false
+  },
+  "freshness": {
+    "state": "unknown",
+    "clock_field": null,
+    "policy_id": null
+  },
+  "rights": {
+    "state": "permitted",
+    "policy_id": null
+  },
+  "authority_class": "fact"
+}

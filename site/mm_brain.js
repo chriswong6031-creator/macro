@@ -12,6 +12,14 @@
  *   api:    gateway base (default '' = same origin)
  *   symbol: fn()->active ticker string (context awareness)
  *   page:   context label (default derived from location)
+ *   getAiContext: fn()->ai_context_client.v1 block (W1-C visible-context compiler —
+ *         research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md). Optional: a
+ *         host (Terminal) that owns a real active/ambient distinction supplies its own
+ *         {schema, origin_id, context_revision, captured_at, pinned, active, ambient}
+ *         here; absent, the dashboard synthesizes one from `symbol`/`page`/panel and its
+ *         own client-held pin list. Wrapped in try/catch — a throwing hook never breaks
+ *         send(). The effective-context strip + inspector consume the server's
+ *         `context_receipt` reply either way.
  * Public API: window.MMBrain = { open, close, toggle, expand, mounted:true }
  * ========================================================================== */
 (function () {
@@ -662,13 +670,82 @@
   .mmb-box.mmb-sent{animation:mmb-recoil .24s var(--mmb-ease)}
   @keyframes mmb-recoil{0%{transform:none}38%{transform:scale(.985) translateY(2px)}100%{transform:none}}
   @media(prefers-reduced-motion:reduce){.mmb-box.mmb-sent{animation:none}}
+  /* ── W1-C effective-context strip ─────────────────────────────────────────────
+     State 1 (nothing resolved) is simply .mmb-ctx with no ".on" — unchanged from
+     the original single-chip design. States 2 (pre-send preview) and 3 (post-
+     receipt, authoritative) share this same markup; only the chip contents and
+     the ".receipt" class (a slightly firmer border once the server has spoken)
+     differ. See research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md.
+     (Comment law for this block: this sits INSIDE the CSS template literal, so a
+     backtick here TERMINATES the string and the tail becomes a tagged-template
+     call at runtime — the exact outage this line repairs. Quotes only.) */
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
+  .mmb-ctx-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1;min-width:0;cursor:pointer;
+    background:none;border:none;padding:0;font:inherit;text-align:left}
+  .mmb-ctx-chips:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:3px;border-radius:10px}
   .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font:600 11.5px/1 var(--mmb-font);
     color:color-mix(in srgb,var(--mmb-info) 92%,var(--mmb-hi));background:color-mix(in srgb,var(--mmb-info) 13%,transparent);
     border:1px solid color-mix(in srgb,var(--mmb-info) 30%,transparent);border-radius:999px;padding:4px 11px 4px 8px}
   .mmb-ctx .chip .cx{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;opacity:.9;animation:mmb-breathe 4.6s ease-in-out infinite}
   .mmb-ctx .chip b{font:700 11.5px/1 var(--mmb-font);letter-spacing:.03em;color:var(--mmb-text)}
+  .mmb-ctx .chip .src{font:500 10.5px/1 var(--mmb-font);color:var(--mmb-muted);letter-spacing:normal}
+  .mmb-ctx.receipt .chip.eff{border-color:color-mix(in srgb,var(--mmb-info) 46%,transparent)}
+  /* muted chips: a dropped/stale/unsupported flag — never the loud info tint */
+  .mmb-ctx .chip.mut{color:var(--mmb-muted);background:color-mix(in srgb,var(--mmb-ink) 6%,transparent);
+    border-color:var(--mmb-line);font:500 11px/1 var(--mmb-font);padding:4px 10px}
+  .mmb-ctx .chip.pin{background:color-mix(in srgb,var(--mmb-violet) 14%,transparent);
+    border-color:color-mix(in srgb,var(--mmb-violet) 32%,transparent);color:color-mix(in srgb,var(--mmb-violet) 92%,var(--mmb-hi));padding:4px 6px 4px 8px}
+  .mmb-ctx .chip.pin svg{width:11px;height:11px;flex:none}
+  .mmb-ctx .chip.pin .un{width:15px;height:15px;flex:none;border:none;background:none;padding:0;margin-left:1px;
+    display:inline-flex;align-items:center;justify-content:center;border-radius:999px;color:inherit;cursor:pointer;opacity:.75}
+  .mmb-ctx .chip.pin .un:hover{opacity:1;background:color-mix(in srgb,var(--mmb-violet) 22%,transparent)}
+  .mmb-ctx .chip.pin .un svg{width:9px;height:9px}
+  .mmb-ctx-pin{flex:none;width:26px;height:26px;border-radius:999px;border:1px solid var(--mmb-line);background:none;
+    color:var(--mmb-muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:color .15s ease,background .15s ease,border-color .15s ease}
+  .mmb-ctx-pin svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7}
+  .mmb-ctx-pin:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
+  .mmb-ctx-pin.on{color:color-mix(in srgb,var(--mmb-violet) 92%,var(--mmb-hi));
+    background:color-mix(in srgb,var(--mmb-violet) 16%,transparent);border-color:color-mix(in srgb,var(--mmb-violet) 34%,transparent)}
+  .mmb-ctx-pin.on svg{fill:currentColor}
+  .mmb-ctx-pin:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
+
+  /* ── W1-C inspector drawer ─────────────────────────────────────────────────── */
+  .mmb-ctxinsp{display:none;position:absolute;left:0;right:0;bottom:100%;z-index:8;
+    max-height:min(64vh,480px);padding:0 clamp(18px,6%,64px) 10px}
+  .mmb-ctxinsp.on{display:block}
+  .mmb-ctxinsp-card{background:color-mix(in srgb,var(--mmb-panel) 96%,transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+    border:1px solid var(--mmb-line);border-radius:16px;box-shadow:var(--mmb-shadow-pop);
+    max-height:min(60vh,460px);display:flex;flex-direction:column;overflow:hidden;
+    transform:translateY(6px);opacity:0;transition:transform .18s var(--mmb-ease),opacity .18s var(--mmb-ease)}
+  .mmb-ctxinsp.on .mmb-ctxinsp-card{transform:none;opacity:1}
+  .mmb-ctxinsp-h{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;flex:none}
+  .mmb-ctxinsp-h .t{font:700 13.5px/1.3 var(--mmb-font);color:var(--mmb-text)}
+  .mmb-ctxinsp-h .rev{font:500 11.5px/1 var(--mmb-font);color:var(--mmb-muted)}
+  .mmb-ctxinsp-h .x{margin-left:auto;flex:none;width:26px;height:26px;border-radius:999px;border:none;background:none;
+    color:var(--mmb-muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:16px;line-height:1}
+  .mmb-ctxinsp-h .x:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
+  .mmb-ctxinsp-body{overflow-y:auto;padding:2px 16px 12px;flex:1;scrollbar-width:thin}
+  .mmb-ctxinsp-row{display:flex;align-items:baseline;gap:8px;padding:6px 0;font:12.5px/1.4 var(--mmb-font);border-top:1px solid var(--mmb-line)}
+  .mmb-ctxinsp-row:first-child{border-top:none}
+  .mmb-ctxinsp-row .k{flex:none;width:104px;color:var(--mmb-muted);font-weight:600}
+  .mmb-ctxinsp-row .v{flex:1;color:var(--mmb-text)}
+  .mmb-ctxinsp-row.win .v{color:color-mix(in srgb,var(--mmb-info) 88%,var(--mmb-hi));font-weight:700}
+  .mmb-ctxinsp-row .ov{margin-left:6px;color:var(--mmb-muted);font-size:11px;font-weight:500}
+  .mmb-ctxinsp-cond{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;margin:8px 0 0;border-radius:10px;
+    background:color-mix(in srgb,var(--mmb-warn) 12%,transparent);color:color-mix(in srgb,var(--mmb-warn) 92%,var(--mmb-hi));
+    font:12px/1.45 var(--mmb-font)}
+  .mmb-ctxinsp-facts{margin-top:10px}
+  .mmb-ctxinsp-facts .fh{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+  .mmb-ctxinsp-fact{display:flex;align-items:baseline;gap:8px;padding:5px 0;font:12.5px/1.4 var(--mmb-font);border-top:1px solid var(--mmb-line)}
+  .mmb-ctxinsp-fact:first-child{border-top:none}
+  .mmb-ctxinsp-fact .k{flex:none;width:104px;color:var(--mmb-muted)}
+  .mmb-ctxinsp-fact .v{flex:1;color:var(--mmb-text);font-weight:600}
+  .mmb-ctxinsp-fact .fr{flex:none;font-size:11px;color:var(--mmb-muted)}
+  .mmb-ctxinsp-f{flex:none;padding:10px 16px 14px;font:11px/1.5 var(--mmb-font);color:var(--mmb-muted);border-top:1px solid var(--mmb-line)}
+  .mmb-ctxinsp-f span{display:block}
+  @media(max-width:560px){.mmb-ctxinsp{padding:0 12px 8px}.mmb-ctxinsp-card{max-height:min(70vh,520px)}}
   .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
   .mmb-thumbs.on{display:flex}
   .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none;
@@ -1000,7 +1077,20 @@
         '</div></div>' +
         '<div class="mmb-scroll" id="mmb-scroll" role="log" aria-label="' + L('Conversation', '对话') + '" tabindex="0"></div>' +
         '<div id="mmb-live" class="mmb-sr" aria-live="polite" role="status"></div>' +
-        '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
+        '<div class="mmb-comp">' +
+          /* W1-C inspector drawer ("what the Brain used") — slides up from the
+             composer's own top edge, so it overlays the message scroll area and
+             never the composer itself. Built once, hidden until toggled. */
+          '<div class="mmb-ctxinsp" id="mmb-ctxinsp" aria-hidden="true"><div class="mmb-ctxinsp-card" role="dialog" aria-modal="true" aria-label="' +
+            esc(L('What the Brain used', '大脑使用的上下文')) + '">' +
+            '<div class="mmb-ctxinsp-h"><span class="t">' + LB('What the Brain used', '大脑使用的上下文') + '</span>' +
+            '<span class="rev" id="mmb-ctxinsp-rev"></span>' +
+            '<button class="x" data-act="ctx-close" aria-label="' + esc(L('Close', '关闭')) + '">&times;</button></div>' +
+            '<div class="mmb-ctxinsp-body" id="mmb-ctxinsp-body"></div>' +
+            '<div class="mmb-ctxinsp-f"><span>' + LB('Context is resolved by fixed rules, not by the AI.', '上下文按固定规则解析，并非由 AI 决定。') + '</span>' +
+            '<span>' + LB('No trading authority', '无交易权限') + '</span></div>' +
+          '</div></div>' +
+          '<div class="mmb-upgrade" id="mmb-upgrade"></div>' +
           '<div class="mmb-box"><div class="mmb-ctx" id="mmb-ctx"></div>' +
             '<div class="mmb-thumbs" id="mmb-thumbs"></div>' +
             '<textarea class="mmb-ta" id="mmb-ta" rows="1" maxlength="2000" data-ph-en="Ask about any dashboard, signal, or ticker…" data-ph-zh="询问任意看板、信号或标的…" placeholder="' + L('Ask about any dashboard, signal, or ticker…', '询问任意看板、信号或标的…') + '"></textarea>' +
@@ -1045,13 +1135,46 @@
       ta = $('#mmb-ta'), sendBtn = $('#mmb-send'), qEl = $('#mmb-q'), ctxEl = $('#mmb-ctx'),
       upgradeEl = $('#mmb-upgrade'), tlist = $('#mmb-tlist'), launch = $('#mmb-launch'),
       researchBtn = $('.mmb-rpill'), thumbsEl = $('#mmb-thumbs'), fileEl = $('#mmb-file'),
-      searchWrap = $('#mmb-search'), searchIn = $('#mmb-search-in'), boxEl = $('.mmb-box');
+      searchWrap = $('#mmb-search'), searchIn = $('#mmb-search-in'), boxEl = $('.mmb-box'),
+      ctxInspEl = $('#mmb-ctxinsp'), ctxInspBody = $('#mmb-ctxinsp-body'), ctxInspRev = $('#mmb-ctxinsp-rev');
 
   /* ── state ── */
   var lane = 'fast', researchMode = false, threadId = null, streaming = false,
       quotas = {}, authed = false, guestMode = false, ctxSymbol = '', streamAbort = null, pendingImages = [], proEligible = false;
   var MAX_IMAGES = 4;
   var explainPanel = null; /* set by MMBrain.explain(); attached once to the next send()'s context */
+
+  /* ── W1-C: visible-context state ──────────────────────────────────────────────
+     origin_id is minted ONCE per widget mount (a page reload is a new mount); the
+     revision counter increments exactly once per logical context transition (a
+     symbol change or a pin toggle), never per request — a consecutive send with
+     unchanged context reuses the current revision. `pinned` is client-held only
+     (no server store), capped at 3. See the frozen contract's Revision/origin law.
+     research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md */
+  var ctxState = {
+    originId: mintOriginId(),
+    /* Review repair (BLK-1): a host (Terminal) supplies its OWN origin_id via
+       MM_BRAIN_CFG.getAiContext() — the server always echoes back whatever
+       origin_id rode on the wire, never the widget's own minted `originId`. So
+       the qualification check in handleContextReceipt must compare against the
+       origin_id that was ACTUALLY SENT on the last request, not the widget's
+       own mint. `sentOriginId` starts equal to the mint (the dashboard fallback
+       path, where they are the same) and is updated by buildAiContext() on
+       every call, including the host-hook path. */
+    sentOriginId: null,
+    revision: 0,
+    pinned: [],                 /* [{type:'security', id:'NVDA'}, ...] */
+    lastAppliedRevision: -1,    /* highest context_revision applied to the live strip */
+    lastReceipt: null,          /* last AUTHORITATIVE (applied) context_receipt body */
+    lastHistoricalReceipt: null,/* a receipt that arrived but did not qualify to apply */
+    lastNativeFactReceipt: null /* for the inspector's fact list */
+  };
+  ctxState.sentOriginId = ctxState.originId;
+  var lastCtxView = null;       /* the view object the strip is currently painting */
+  function mintOriginId() {
+    try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '').slice(0, 32); } catch (e) {}
+    return 'mmb' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
 
   function esc(s) { var d = DOC.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
   function el(tag, cls) { var e = DOC.createElement(tag); if (cls) e.className = cls; return e; }
@@ -2154,6 +2277,8 @@
     if ($('#mmb-emptystate')) renderEmpty();
     paintThreads();   /* self-routes to the guest sign-in prompt when in guest mode */
     renderQuota();     /* refresh the meter's title in the new language sense */
+    if (lastCtxView) paintCtxStrip(lastCtxView);   /* W1-C: source word + flag chips are L()-baked */
+    if (ctxInspectorOpen()) renderCtxInspector();
     setBusy(streaming);   /* send↔stop label carries the shortcut — re-say it in the new language */
   }
 
@@ -2178,6 +2303,10 @@
        it, so a Chinese thread history can never drag an English turn's buttons into
        Chinese. A message typed in the other language still wins (server-side). */
     var ctx = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) ctx.symbol = ctxSymbol;
+    /* W1-C: the compiled envelope's client block rides alongside the legacy fields
+       above (never replacing them — the deep lane still reads context.symbol/page/
+       panel exactly as before). Built while `explainPanel` still holds its value. */
+    ctx.ai_context = buildAiContext();
     /* an "explain this panel" request carries the panel key once, then clears */
     if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
     var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
@@ -2195,7 +2324,7 @@
     if (streaming || !lastTurn) return;
     refreshCtx();
     runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
-                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) c.symbol = ctxSymbol; return c; })() }, false);
+                ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) c.symbol = ctxSymbol; c.ai_context = buildAiContext(); return c; })() }, false);
   }
   /* ── durable turns ───────────────────────────────────────────────────────────
      A turn is owned by the SERVER (app/brain_runs.py), not by the socket that
@@ -2442,6 +2571,10 @@
     if (j.type === 'run') { T.runId = j.run_id; if (j.thread_id) T.threadId = j.thread_id; saveRun(T); return false; }
     T.tries = 0;   /* bytes are flowing again — reset the reconnect backoff */
     if (j.type === 'meta') { if (j.thread_id) { threadId = j.thread_id; T.threadId = j.thread_id; } if (j.quota) { quotas[j.quota.lane] = j.quota; renderQuota(); } }
+    /* W1-C: the deterministic visible-context receipt, always right after meta and
+       before any delta/tool event — replayed VERBATIM by a resumed run (same code
+       path via readSse -> handleEvent), so a reconnect never recomputes it. */
+    else if (j.type === 'context_receipt') { handleContextReceipt(j); }
     /* stage narration; anything arriving after `done` is stale noise */
     else if (j.type === 'status') { if (!T.doneSeen) thinkStatus(T.tl, j); }
     else if (j.type === 'tool') { ensureBub(T); if (!T.doneSeen) thinkTool(T.tl, j); stickAfter(); }
@@ -2489,6 +2622,13 @@
   function finalizeDone(j, T) {
     if (T.doneSeen) return; T.doneSeen = true;
     clearRun();
+    /* W1-C: the native-fact lane's typed field receipt — kept only for the
+       inspector's "what it looked up" section, never rendered on the wire. */
+    if (j && j.native_fact_receipt) ctxState.lastNativeFactReceipt = j.native_fact_receipt;
+    /* `done` also carries the SAME context_receipt the dedicated event already
+       applied; if that event was somehow missed (an older buffered chunk), this
+       still applies it exactly the same gated way. */
+    if (j && j.context_receipt) handleContextReceipt(j.context_receipt);
     ensureBub(T); thinkTeardown(T.tl);
     T.stream.finalize(function () {
       if (j && j.citations && j.citations.length) addCites(T.bub, j.citations);
@@ -3130,7 +3270,21 @@
     else if (a === 'voice') startVoice();
     else if (a === 'attach') { if (proEligible) fileEl.click(); else showUpgrade(guestMode ? { feature: 'pro' } : { feature: 'vision' }); }
     else if (a === 'signin') { e.preventDefault(); if (window.MDXAuth) window.MDXAuth.open('signin'); }
+    /* W1-C: strip click opens/closes the inspector; the pin control and each
+       pinned chip's × are their OWN targets, never bubbling into ctx-toggle. */
+    else if (a === 'ctx-toggle') toggleCtxInspector();
+    else if (a === 'ctx-pin') toggleCurrentPin();
+    else if (a === 'ctx-unpin') unpinSymbol(t.dataset.unpinId);
+    else if (a === 'ctx-close') closeCtxInspector();
   });
+  /* Outside-tap dismiss: any click that lands neither on the drawer nor on the
+     strip that opens it closes the inspector (design spec: "dismiss on ×, Escape,
+     or outside tap"). Capture phase so it never races the delegated handler above. */
+  DOC.addEventListener('click', function (e) {
+    if (!ctxInspectorOpen()) return;
+    if (ctxInspEl.contains(e.target) || e.target.closest('[data-act="ctx-toggle"]')) return;
+    closeCtxInspector();
+  }, true);
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
   /* ── drag & drop ──────────────────────────────────────────────────────────────
      dragenter/dragleave fire for every child the pointer crosses, so a naive
@@ -3222,10 +3376,11 @@
     for (var i = 0; i < items.length; i++) { if (items[i].type && items[i].type.indexOf('image/') === 0) { var f = items[i].getAsFile(); if (f) files.push(f); } }
     if (files.length) { e.preventDefault(); addFiles(files); }
   });
-  /* Single Esc chain (priority): slash palette → stream → search → close. */
+  /* Single Esc chain (priority): slash palette → ctx inspector → stream → search → close. */
   DOC.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || !panel.classList.contains('open')) return;
     if (slashOpen()) { e.preventDefault(); closeSlash(); return; }
+    if (ctxInspectorOpen()) { e.preventDefault(); closeCtxInspector(); return; }
     if (streaming) { e.preventDefault(); stopStream(); return; }
     if (searchWrap && searchWrap.classList.contains('on')) { e.preventDefault(); toggleSearch(false); return; }
     e.preventDefault(); close();
@@ -3368,13 +3523,280 @@
     return false;
   }
 
-  /* ── context (active ticker) ── */
+  /* ── W1-C: context (active ticker) — compiler + envelope + receipt ──────────
+     research/DEEPVUE_W1C_CONTEXT_ENVELOPE_CONTRACT_2026-08-25.md
+     Frozen source-phrase vocabulary (bilingual, plain words, never an internal
+     schema slug or falsifier/refutation term). */
+  function ctxSourceLabel(source) {
+    if (source === 'explicit') return L('From your question', '来自提问');
+    if (source === 'pinned') return L('Pinned', '已固定');
+    if (source === 'active') return L('Active chart', '当前图表');
+    if (source === 'ambient') return L('From your screen', '来自当前页面');
+    return '';
+  }
+  /* Terminal (or any host) supplies its own ai_context_client.v1 block via
+     MM_BRAIN_CFG.getAiContext(); absent, the dashboard synthesizes one from the
+     SAME ctxSymbol/page/panel legacy fields the deep lane has always seen — this
+     is additive, never a replacement of the existing context.symbol/page/panel
+     keys send()/regenerate() already build. */
+  function buildAiContext() {
+    if (typeof CFG.getAiContext === 'function') {
+      try {
+        var supplied = CFG.getAiContext();
+        if (supplied && typeof supplied === 'object') {
+          /* Review repair (BLK-1): record the origin_id THIS block actually carries
+             — a host block's own id, never the widget's local mint — so a later
+             context_receipt echoing it back can be recognized as belonging to the
+             request just sent, on both the dashboard AND a host-integrated Terminal. */
+          ctxState.sentOriginId = supplied.origin_id || ctxState.originId;
+          return supplied;
+        }
+      } catch (e) {}
+    }
+    ctxState.sentOriginId = ctxState.originId;
+    return {
+      schema: 'ai_context_client.v1',
+      origin_id: ctxState.originId,
+      context_revision: ctxState.revision,
+      captured_at: new Date().toISOString(),
+      pinned: ctxState.pinned.slice(0, 3),
+      active: ctxSymbol ? { type: 'security', id: ctxSymbol } : null,
+      ambient: { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), panel: explainPanel || null }
+    };
+  }
+  /* Review repair (NB-1): esc() escapes <, >, & (via the textContent -> innerHTML
+     round trip) but NOT the double quote, so a value landing inside an
+     ATTRIBUTE value (rather than as element text) can still break out of it
+     with an embedded ". A ticker symbol has a known-safe charset — strip
+     anything else before a symbol ever reaches an attribute, regardless of
+     whether it came from the server receipt (already validated server-side)
+     or a host's own MM_BRAIN_CFG.getAiContext() hook (never trusted: a
+     misbehaving or compromised host integration must not be able to inject
+     markup through the preview path). */
+  function attrSafe(s) { return String(s == null ? '' : s).replace(/[^A-Z0-9.\-:]/g, ''); }
+  /* Client-side collapse of pinned > active > ambient — the SAME precedence the
+     server compiler applies, used only to paint a pre-send PREVIEW (state 2).
+     Explicit (typed-in-message) entities are never previewable client-side; the
+     authoritative post-receipt update (state 3) is what actually shows them. */
+  function previewEffective(block) {
+    if (!block) return null;
+    var pin = (block.pinned || [])[0];
+    if (pin && pin.id) return { source: 'pinned', symbol: attrSafe(String(pin.id).toUpperCase()) };
+    if (block.active && block.active.id) return { source: 'active', symbol: attrSafe(String(block.active.id).toUpperCase()) };
+    if (block.ambient && block.ambient.symbol) return { source: 'ambient', symbol: attrSafe(String(block.ambient.symbol).toUpperCase()) };
+    return null;
+  }
+  function ctxIsPinned(symbol) {
+    if (!symbol) return false;
+    for (var i = 0; i < ctxState.pinned.length; i++) if (ctxState.pinned[i].id === symbol) return true;
+    return false;
+  }
+  var PIN_ICON = '<svg viewBox="0 0 24 24"><path d="M14.5 3.5l6 6-3.2 1.2-3 3 .7 5.3-2-2-4.3 4.3-1-1L11.7 16l-2-2 5.3.7 3-3 1.2-3.2z"/></svg>';
+  var UNPIN_ICON = '<svg viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>';
+  /* One render path for BOTH the pre-send preview (state 2) and the post-receipt
+     authoritative update (state 3) — same chips, same pin control; only the
+     `authoritative` flag adds the firmer `.receipt` border and the extra flag
+     chips a receipt alone can carry (overrode/stale/unsupported). */
+  function paintCtxStrip(view) {
+    lastCtxView = view;
+    if (!view || !view.symbol) { ctxEl.className = 'mmb-ctx'; ctxEl.innerHTML = ''; if (ctxInspEl.classList.contains('on')) closeCtxInspector(); return; }
+    ctxEl.className = 'mmb-ctx on' + (view.authoritative ? ' receipt' : '');
+    var html = '<button type="button" class="mmb-ctx-chips" data-act="ctx-toggle" aria-haspopup="dialog" aria-label="' +
+      esc(L('What the Brain used', '大脑使用的上下文')) + '">';
+    html += '<span class="chip eff"><svg class="cx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg>' +
+      '<b>' + esc(view.symbol) + '</b><span class="src">' + esc(ctxSourceLabel(view.source)) + '</span></span>';
+    if (view.overrode) html += '<span class="chip mut">' + esc(L('overrode ' + view.overrode, '已覆盖 ' + view.overrode)) + '</span>';
+    if (view.stale) html += '<span class="chip mut">' + esc(L('Older context', '较早的上下文')) + '</span>';
+    if (view.unsupported) html += '<span class="chip mut">' + esc(L('Not supported', '暂不支持')) + '</span>';
+    html += '</button>';
+    ctxState.pinned.forEach(function (p) {
+      var pidAttr = attrSafe(p.id);
+      html += '<span class="chip pin">' + PIN_ICON + '<b>' + esc(p.id) + '</b>' +
+        '<button type="button" class="un" data-act="ctx-unpin" data-unpin-id="' + esc(pidAttr) + '" aria-label="' +
+        esc(L('Unpin ' + pidAttr, '取消固定 ' + pidAttr)) + '">' + UNPIN_ICON + '</button></span>';
+    });
+    var pinnedOn = ctxIsPinned(view.symbol);
+    var symAttr = attrSafe(view.symbol);
+    html += '<button type="button" class="mmb-ctx-pin' + (pinnedOn ? ' on' : '') + '" data-act="ctx-pin" aria-pressed="' +
+      (pinnedOn ? 'true' : 'false') + '" aria-label="' +
+      esc(pinnedOn ? L('Unpin ' + symAttr, '取消固定 ' + symAttr) : L('Pin ' + symAttr, '固定 ' + symAttr)) + '" title="' +
+      esc(pinnedOn ? L('Unpin', '取消固定') : L('Pin', '固定')) + '">' + PIN_ICON + '</button>';
+    ctxEl.innerHTML = html;
+    if (ctxInspEl.classList.contains('on')) renderCtxInspector();   /* keep an open drawer in sync */
+  }
+  /* Pin/unpin toggle bumps the revision exactly once per toggle (Revision/origin
+     law) — a pin is a logical context transition, same as a symbol change. */
+  function toggleCurrentPin() {
+    var view = lastCtxView; if (!view || !view.symbol) return;
+    if (ctxIsPinned(view.symbol)) { unpinSymbol(view.symbol); return; }
+    if (ctxState.pinned.length >= 3) ctxState.pinned.shift();
+    ctxState.pinned.push({ type: 'security', id: view.symbol });
+    ctxState.revision++;
+    paintCtxStrip(view);
+  }
+  function unpinSymbol(symbol) {
+    var next = ctxState.pinned.filter(function (p) { return p.id !== symbol; });
+    if (next.length === ctxState.pinned.length) return;
+    ctxState.pinned = next; ctxState.revision++;
+    paintCtxStrip(lastCtxView);
+  }
+  /* Re-derive the pre-send PREVIEW from the live ctxSymbol/pinned state. Bumping
+     the revision only on an actual symbol change (never per keystroke/send) is
+     the Revision/origin law's "one logical transition -> one increment". */
+  var _lastRefreshedSymbol = '';
   function refreshCtx() {
     var s = ''; try { s = (CFG.symbol && CFG.symbol()) || window.MDXActiveSymbol || window.MMBrainSymbol || window.ACTIVE_SYMBOL || ''; } catch (e) {}
     var m = /[?&]symbol=([A-Za-z0-9.\-:]+)/i.exec(location.search); if (!s && m) s = m[1];
     ctxSymbol = (s || '').toString().toUpperCase().slice(0, 24);
-    if (ctxSymbol) { ctxEl.className = 'mmb-ctx on'; ctxEl.innerHTML = '<span class="chip" title="Active symbol"><svg class="cx" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/></svg><b>' + esc(ctxSymbol) + '</b></span>'; }
-    else ctxEl.className = 'mmb-ctx';
+    if (ctxSymbol !== _lastRefreshedSymbol) { _lastRefreshedSymbol = ctxSymbol; ctxState.revision++; }
+    /* A host (Terminal) supplying its own ai_context previews from ITS OWN
+       pinned/active/ambient shape — more accurate than the dashboard's ctxSymbol
+       collapse below, and it is what will actually be SENT. Falls back to the
+       dashboard's own pin list + ctxSymbol when no host hook is wired. */
+    var hostBlock = null;
+    if (typeof CFG.getAiContext === 'function') { try { hostBlock = CFG.getAiContext(); } catch (e) {} }
+    var preview = hostBlock
+      ? previewEffective(hostBlock)
+      : previewEffective({ pinned: ctxState.pinned, active: ctxSymbol ? { id: ctxSymbol } : null, ambient: {} });
+    paintCtxStrip(preview);
+  }
+  /* Applies a `context_receipt` SSE/response event to the strip — but ONLY when
+     it belongs to THIS mount and is not older than what is already showing
+     (Revision/origin law: "a receipt is applied to the live strip only when its
+     origin_id matches the current mount and its context_revision >= the last
+     applied revision; anything else renders as historical [inspector-only],
+     never as current state"). A stale/foreign receipt never blanks the strip —
+     it is simply held for the inspector, never applied live. */
+  function handleContextReceipt(j) {
+    if (!j || typeof j !== 'object') return;
+    var origin = j.origin || {};
+    var rev = typeof origin.context_revision === 'number' ? origin.context_revision : -1;
+    /* Review repair (BLK-1): qualify against the origin_id that was actually SENT
+       (ctxState.sentOriginId, updated by buildAiContext() on every call — a host
+       block's own id when Terminal supplies one), never the widget's own local
+       mint. Comparing against `ctxState.originId` here made every host-supplied
+       receipt fail qualification on Terminal (a different origin_id), so the
+       authoritative strip/inspector update never rendered — see PR review. */
+    var qualifies = origin.origin_id === ctxState.sentOriginId && rev >= ctxState.lastAppliedRevision;
+    if (!qualifies) { ctxState.lastHistoricalReceipt = j; return; }
+    /* Review repair (MAJ-3): a STRICT duplicate — same origin_id, same revision
+       as the already-APPLIED receipt — is the same logical context event
+       re-transported (the native/instant lanes ship the receipt once as its own
+       SSE event and again inside `done`'s echo, and finalizeDone() re-feeds that
+       echo through this same function). "rev >= last applied" alone would
+       re-apply and repaint on the second copy; a strict duplicate must be a
+       no-op instead — never a second strip transition for one revision.
+       A duplicate is the SAME LOGICAL RESOLUTION re-transported, so it must
+       match on request_id as well: the chart context (and so the revision)
+       legitimately stays constant across many asks, and two different
+       requests at one revision resolve differently the moment the user names
+       a symbol in the prompt (explicit INOD at active-AAOI revision 1 —
+       production 2026-08-26). Keying the dedupe on revision alone ate every
+       later receipt at an unchanged revision and froze the strip on the
+       first resolution. */
+    if (ctxState.lastReceipt && rev === ctxState.lastAppliedRevision &&
+        j.request_id && ctxState.lastReceipt.request_id === j.request_id) return;
+    ctxState.lastAppliedRevision = rev;
+    ctxState.lastReceipt = j;
+    var eff = j.effective_context || {};
+    var entities = eff.entities || [];
+    var dropped = (j.dropped || [])[0];
+    var flags = j.context_flags || {};
+    paintCtxStrip(entities.length ? {
+      symbol: entities[0].id,
+      source: eff.source,
+      overrode: dropped ? dropped.entity && dropped.entity.id : null,
+      stale: !!flags.stale,
+      unsupported: !!(j.unsupported && j.unsupported.length),
+      authoritative: true
+    } : null);
+  }
+  /* ── inspector drawer ("what the Brain used") ── */
+  var CTX_FIELD_LABELS = {
+    'market.price.last': ['Price', '价格'], 'market.return.1m': ['1M return', '1个月回报'],
+    'market.return.3m': ['3M return', '3个月回报'], 'market.return.12m': ['12M return', '12个月回报'],
+    'stage.current': ['Stage', '阶段'], 'stage.weeks_in_stage': ['Weeks in stage', '阶段周数'],
+    'industry.rank.percentile': ['Industry rank', '行业排名'],
+    'security.industry_member.rs_percentile': ['Relative strength', '相对强度'],
+    'earnings.next_date': ['Next earnings', '下次财报'],
+    'earnings.latest.eps_growth_pct': ['EPS growth', '每股收益增长'],
+    'earnings.latest.revenue_growth_pct': ['Revenue growth', '营收增长'],
+    'theme.local.memberships': ['Themes', '主题']
+  };
+  /* Review repair (NB-7): the closed fact-status vocabulary (available/unknown/
+     unavailable/stale/not_applicable/rights_blocked — datapoint_value.schema.json)
+     is mapped to plain bilingual words here — never the raw internal slug,
+     which is exactly the "untranslated state name" the front-facing plain-word
+     law bans. Anything outside the two named cases collapses to one safe,
+     generic word rather than surfacing an internal reason code. */
+  var CTX_STATUS_WORDS = { available: ['current', '最新'], stale: ['older', '较早'] };
+  function ctxStatusWord(status) {
+    var pair = CTX_STATUS_WORDS[status];
+    return pair ? L(pair[0], pair[1]) : L('unavailable', '暂缺');
+  }
+  function ctxFactValue(f) {
+    if (!f) return '—';
+    if (f.status && f.status !== 'available') return ctxStatusWord(f.status);
+    var v = f.value, unit = f.unit || '';
+    if (f.field_id === 'theme.local.memberships') return (Array.isArray(v) && v.length) ? v.join(', ') : L('none', '无');
+    if (unit === 'percent' && typeof v === 'number') return v + '%';
+    if (unit === 'percentile' && typeof v === 'number') return v + (zh() ? ' 分位' : ' percentile');
+    if (unit && unit.length === 3 && unit === unit.toUpperCase() && typeof v === 'number') return unit + ' ' + v;
+    return v == null ? '—' : String(v);
+  }
+  function ctxOpenInspector() {
+    ctxInspEl.classList.add('on'); ctxInspEl.setAttribute('aria-hidden', 'false');
+    renderCtxInspector();
+  }
+  function closeCtxInspector() { ctxInspEl.classList.remove('on'); ctxInspEl.setAttribute('aria-hidden', 'true'); }
+  function toggleCtxInspector() { if (ctxInspEl.classList.contains('on')) closeCtxInspector(); else ctxOpenInspector(); }
+  function ctxInspectorOpen() { return ctxInspEl.classList.contains('on'); }
+  /* Renders EVERY row from plain words only — no internal schema slug, no
+     falsifier/refutation vocabulary, ever (front-facing law). */
+  function renderCtxInspector() {
+    var receipt = ctxState.lastReceipt;
+    var view = lastCtxView;
+    ctxInspRev.textContent = receipt && receipt.origin ? L('Update ', '第 ') + receipt.origin.context_revision + L('', ' 次更新') : '';
+    var rows = [
+      { key: 'explicit', label: L('From your question', '来自提问'), entities: (receipt && receipt.explicit_entities) || [] },
+      { key: 'pinned', label: L('Pinned', '已固定'), entities: (receipt && receipt.pinned_context) || ctxState.pinned },
+      { key: 'active', label: L('Active chart', '当前图表'), entities: (receipt && receipt.active_selection) || (ctxSymbol ? [{ id: ctxSymbol }] : []) },
+      { key: 'ambient', label: L('From your screen', '来自当前页面'),
+        entities: (receipt && receipt.ambient_widget_context && receipt.ambient_widget_context.symbol)
+          ? [{ id: receipt.ambient_widget_context.symbol }] : [] }
+    ];
+    var winner = (receipt && receipt.effective_context && receipt.effective_context.source) || (view && view.source) || null;
+    var html = '';
+    rows.forEach(function (r) {
+      var ids = r.entities.map(function (e) { return e && e.id; }).filter(Boolean);
+      var isWin = r.key === winner && ids.length > 0;
+      var overridden = ids.length > 0 && r.key !== winner;
+      html += '<div class="mmb-ctxinsp-row' + (isWin ? ' win' : '') + '"><span class="k">' + esc(r.label) + '</span><span class="v">' +
+        (ids.length ? esc(ids.join(', ')) : '—') +
+        (overridden ? '<span class="ov">' + esc(L('overridden', '已覆盖')) + '</span>' : '') + '</span></div>';
+    });
+    var flags = (receipt && receipt.context_flags) || {};
+    if (flags.malformed) html += '<div class="mmb-ctxinsp-cond">' + esc(L('Some context was unreadable and ignored', '部分上下文无法读取，已忽略')) + '</div>';
+    if (flags.ambiguous_explicit) html += '<div class="mmb-ctxinsp-cond">' + esc(L('Your question mentioned more than one possible symbol', '问题中可能涉及多个标的')) + '</div>';
+    if (flags.stale) html += '<div class="mmb-ctxinsp-cond">' + esc(L('Context may be a little old', '上下文可能有点旧')) + '</div>';
+    if (receipt && receipt.unsupported && receipt.unsupported.length) html += '<div class="mmb-ctxinsp-cond">' + esc(L("Some of what you selected isn't supported yet", '你选择的部分内容暂不支持')) + '</div>';
+    var nf = ctxState.lastNativeFactReceipt;
+    if (nf && nf.facts && nf.facts.length) {
+      html += '<div class="mmb-ctxinsp-facts"><div class="fh">' + esc(L('What it looked up', '查阅的数据')) + '</div>';
+      nf.facts.forEach(function (f) {
+        var lbl = CTX_FIELD_LABELS[f.field_id]; var label = lbl ? L(lbl[0], lbl[1]) : f.field_id;
+        var freshState = f.freshness && f.freshness.state;
+        var freshWord = freshState === 'stale' ? L('stale', '较早') : L('current', '最新');
+        /* Review repair (NB-7): source_family only — `owner` is an internal
+           label, not the plain-word "source family name" the design spec asks
+           for, so it is never shown even as a fallback. */
+        var family = (f.source && f.source.source_family) || '';
+        html += '<div class="mmb-ctxinsp-fact"><span class="k">' + esc(label) + '</span><span class="v">' + esc(ctxFactValue(f)) + '</span>' +
+          '<span class="fr">' + esc((f.as_of || '') + (f.as_of ? ' · ' : '') + freshWord + (family ? ' · ' + family : '')) + '</span></div>';
+      });
+      html += '</div>';
+    }
+    ctxInspBody.innerHTML = html;
   }
   refreshCtx(); renderEmpty();
   setBusy(false);   /* bake the send button's shortcut label once at boot, not on first stream */

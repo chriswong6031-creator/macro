@@ -1,71 +1,76 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-17",
-  "generated_at": "2026-08-18T09:47:40.576516+00:00",
+  "as_of": "2026-08-27",
+  "generated_at": "2026-08-28T11:58:53.433607+00:00",
   "is_context_only": true,
-  "n_snapshots": 291,
-  "n_days": 9,
+  "n_snapshots": 507,
+  "n_days": 17,
   "horizons": {
     "5": {
-      "n_matured": 209,
+      "n_matured": 396,
       "by_stage": {
         "running": {
-          "n": 194,
-          "mean_fwd_rel": -0.0,
-          "hit_rate": 0.495
+          "n": 350,
+          "mean_fwd_rel": -0.0012,
+          "hit_rate": 0.511
         },
         "coiling": {
-          "n": 7,
-          "mean_fwd_rel": -0.0072,
-          "hit_rate": 0.429
+          "n": 20,
+          "mean_fwd_rel": 0.0098,
+          "hit_rate": 0.75
         },
         "coiling_primed": {
-          "n": 8,
-          "mean_fwd_rel": 0.0212,
-          "hit_rate": 0.875
+          "n": 26,
+          "mean_fwd_rel": 0.021,
+          "hit_rate": 0.846
         }
       },
-      "running_ic": 0.1643,
-      "running_ic_t_hac": null,
+      "running_ic": 0.1273,
+      "running_ic_t_hac": 4.238,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 188,
+      "n_matured": 282,
       "by_stage": {
         "running": {
-          "n": 175,
-          "mean_fwd_rel": 0.0003,
-          "hit_rate": 0.531
+          "n": 250,
+          "mean_fwd_rel": -0.0026,
+          "hit_rate": 0.492
         },
         "coiling": {
-          "n": 7,
-          "mean_fwd_rel": -0.035,
-          "hit_rate": 0.143
+          "n": 13,
+          "mean_fwd_rel": -0.0121,
+          "hit_rate": 0.308
         },
         "coiling_primed": {
-          "n": 6,
-          "mean_fwd_rel": 0.0295,
-          "hit_rate": 0.667
+          "n": 19,
+          "mean_fwd_rel": 0.0447,
+          "hit_rate": 0.842
         }
       },
-      "running_ic": 0.1945,
-      "running_ic_t_hac": null,
+      "running_ic": 0.018,
+      "running_ic_t_hac": 0.414,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 30,
+      "n_matured": 166,
       "by_stage": {
         "running": {
-          "n": 24,
-          "mean_fwd_rel": -0.0193,
-          "hit_rate": 0.5
+          "n": 156,
+          "mean_fwd_rel": 0.0022,
+          "hit_rate": 0.558
         },
         "coiling": {
-          "n": 6,
-          "mean_fwd_rel": -0.0329,
-          "hit_rate": 0.5
+          "n": 8,
+          "mean_fwd_rel": -0.0218,
+          "hit_rate": 0.625
+        },
+        "coiling_primed": {
+          "n": 2,
+          "mean_fwd_rel": -0.027,
+          "hit_rate": 0.0
         }
       },
       "running_ic": null,
@@ -82,80 +87,80 @@
       "coiling_ic_t_hac": null
     }
   },
-  "lead_time_d": null,
-  "peak_ic": null,
+  "lead_time_d": 5,
+  "peak_ic": 0.1273,
   "proven": {
-    "5": false,
+    "5": true,
     "10": false,
     "21": false,
     "63": false
   },
   "any_matured": true,
-  "verdict": "measuring",
-  "note": "Accruing forward observations; no horizon clears the Newey-West significance bar yet. Early numbers are provisional, context-only.",
+  "verdict": "validated",
+  "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
-      "date": "2026-06-30",
-      "id": "nasdaq:semiconductor-equipment-materials",
-      "name": "Semiconductor Equipment & Materials",
+      "date": "2026-08-05",
+      "id": "russell:electronic-components",
+      "name": "Electronic Components",
       "stage": "running",
-      "fwd_rel": -0.2173,
+      "fwd_rel": -0.0889,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "baskets:semicap-equipment",
-      "name": "Semiconductor Equipment (WFE)",
+      "date": "2026-08-05",
+      "id": "subsectors:travel-services",
+      "name": "Travel Services",
       "stage": "running",
-      "fwd_rel": -0.2173,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:building-products-equipment",
-      "name": "Building Products & Equipment",
-      "stage": "running",
-      "fwd_rel": -0.0987,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:specialty-industrial-machinery",
-      "name": "Specialty Industrial Machinery",
-      "stage": "coiling",
-      "fwd_rel": -0.097,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "subsectors:industrial-distribution",
-      "name": "Industrial Distribution",
-      "stage": "running",
-      "fwd_rel": -0.0969,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "baskets:housing",
-      "name": "Housing Chain",
-      "stage": "running",
-      "fwd_rel": -0.0966,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-06-30",
-      "id": "russell:scientific-technical-instruments",
-      "name": "Scientific & Technical Instruments",
-      "stage": "coiling",
       "fwd_rel": -0.0865,
       "horizon_d": 21
     },
     {
-      "date": "2026-06-30",
-      "id": "russell:credit-services",
-      "name": "Credit Services",
+      "date": "2026-08-05",
+      "id": "baskets:defense",
+      "name": "Defense & Aerospace",
       "stage": "running",
-      "fwd_rel": -0.074,
+      "fwd_rel": -0.0637,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "subsectors:electronic-components",
+      "name": "Electronic Components",
+      "stage": "running",
+      "fwd_rel": -0.0579,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "baskets:industrial-distribution",
+      "name": "Industrial Distribution & Capital Goods",
+      "stage": "running",
+      "fwd_rel": -0.0479,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "russell:specialty-retail",
+      "name": "Specialty Retail",
+      "stage": "running",
+      "fwd_rel": -0.0464,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "subsectors:aerospace-defense",
+      "name": "Aerospace & Defense",
+      "stage": "running",
+      "fwd_rel": -0.046,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "baskets:reshoring",
+      "name": "Reshoring & Industrial Capex",
+      "stage": "running",
+      "fwd_rel": -0.0341,
       "horizon_d": 21
     }
   ],

@@ -1,0 +1,7 @@
+{
+  "claim_family": "demand_chain",
+  "declared_horizon_d": 126,
+  "first_prospective_registration_utc": "2026-08-19T08:10:37.995754+00:00",
+  "git_sha": "34899ec5235884e183be86088ab01f81e34a693f",
+  "horizon_unit": "trading_days"
+}

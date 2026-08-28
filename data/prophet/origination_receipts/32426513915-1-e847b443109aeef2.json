@@ -1,0 +1,4339 @@
+{
+  "originated_plan_ids": [
+    "DUOL-BULL-20260818",
+    "ED-BULL-20260622",
+    "MCO-BULL-20260818",
+    "NNN-BULL-20260714",
+    "PCG-BULL-20260609",
+    "PLNT-BULL-20260513",
+    "WH-BULL-20260625"
+  ],
+  "originations": [
+    {
+      "admission_rank": 23,
+      "asset": "DUOL",
+      "board_row": {
+        "above_trend": true,
+        "align_tier": null,
+        "alpha": -1.64,
+        "alpha_entry": "laggard",
+        "antichase_shadow_blocked": true,
+        "arbiter_note": "downgraded from TURN SIGNALED (extended)",
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": true,
+          "roc12_pctile": 0.8016
+        },
+        "coiled": {
+          "anchor_era": "coiled-mtf-abs-session-2026-08-06",
+          "bonus": 0.0,
+          "cohort": 0.222,
+          "coiled": false,
+          "div": false,
+          "star": false,
+          "washout_ctx": true
+        },
+        "composite": {
+          "legs": {
+            "momentum": -1.94,
+            "profitability": -0.18,
+            "quality": -0.87,
+            "revisions": -0.79
+          },
+          "n_legs": 4,
+          "z": -0.943
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": false,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "crossed",
+            "days_to_cross": null,
+            "entry_tier": "Extended \u2014 wait",
+            "entry_tier_zh": "\u5df2\u8fc7\u70ed \u2014 \u7b49\u56de\u8c03",
+            "ext_pct_used": 9.19,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly rising \u00b7 3-Day \u00b7 \u00b7 Daily crossed up",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4e0a\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u5df2\u4e0a\u7a7f",
+            "near": false,
+            "overextended": true,
+            "overextended_basis": "oscillator",
+            "overextended_legs": [
+              "daily_stochrsi_overbought"
+            ],
+            "quality": 42.7,
+            "reason": "Already extended (overbought / far above the 200-day) \u2014 wait for a pullback",
+            "reason_zh": "\u5df2\u8fc7\u70ed\uff08\u8d85\u4e70\uff0f\u8fdc\u9ad8\u4e8e200\u65e5\u5747\u7ebf\uff09\u2014 \u7b49\u5f85\u56de\u8c03",
+            "score": 42.7,
+            "three_day": "rising",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": null,
+            "weekly": "rising",
+            "weekly_ok": true
+          },
+          "axes": {
+            "entry": {
+              "blocked": true,
+              "pct": 28,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi",
+                "vol-squeeze",
+                "extension"
+              ],
+              "z": -1.5466666666666669
+            },
+            "quality": {
+              "flags": {
+                "accounting": "watch"
+              },
+              "pct": 47,
+              "present": [
+                "factors"
+              ],
+              "z": -0.225
+            },
+            "selection": {
+              "basis": [
+                {
+                  "fresh_days": 14,
+                  "label": "SUE",
+                  "label_zh": "\u76c8\u5229\u8d85\u9884\u671f",
+                  "leg": "sue",
+                  "tier": "validated",
+                  "z": -0.49
+                },
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": -0.88
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": -1.64
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 35,
+              "present": [
+                "sue",
+                "revision",
+                "alpha"
+              ],
+              "z": -1.029642857142857
+            },
+            "tailwind": {
+              "pct": 50,
+              "present": [
+                "spotlight"
+              ],
+              "z": 0.0
+            }
+          },
+          "band": "constructive",
+          "band_en": "Setting up",
+          "band_zh": "\u6b63\u5728\u7b51\u5e95",
+          "basket_alloc": {
+            "above_trend": true,
+            "book_wt": null,
+            "crowded": true,
+            "durability_bar": 0.74,
+            "eligible": false,
+            "label": "dominant",
+            "name": "AI Agents & Applications",
+            "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
+            "rank": 16,
+            "reco": "accumulate",
+            "ret_12m": -0.1136,
+            "score": 0.167,
+            "signal_grade": "descriptive",
+            "slug": "ai_agents"
+          },
+          "cautions": [
+            "Accounting quality is worth a second look.",
+            "Straight-up move. The easy part is behind it.",
+            "Its market cycle still argues for waiting (bottoming).",
+            "Its AI Agents & Applications basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one."
+          ],
+          "cautions_zh": [
+            "\u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002",
+            "\u6025\u6da8\u884c\u60c5\u3002\u8f7b\u677e\u9636\u6bb5\u5df2\u7ecf\u8fc7\u53bb\u3002",
+            "\u6240\u5904\u7684\u5e02\u573a\u5468\u671f\u4ecd\u5efa\u8bae\u7b49\u5f85\uff08\u7b51\u5e95\u4e2d\uff09\u3002",
+            "\u6240\u5c5e AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528 \u7bee\u5b50\u5df2\u8dcc\u7834\u957f\u671f\u8d8b\u52bf\u3002\u51cf\u5c0f\u4ed3\u4f4d\uff1a\u5f53\u524d\u884c\u60c5\u5956\u52b1\u9886\u5148\u677f\u5757\uff0c\u8be5\u7bee\u5b50\u5e76\u4e0d\u5728\u5176\u4e2d\u3002"
+          ],
+          "composite_z": -1.175,
+          "cycle_blocked": true,
+          "drivers": [],
+          "gex_confirm": {
+            "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+            "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "gate_scored": false,
+            "label": "Options neutral",
+            "label_zh": "\u671f\u6743\u4e2d\u6027",
+            "levels": {
+              "call_wall": 150.0,
+              "flip": 137.75,
+              "put_wall": 140.0,
+              "regime": "long",
+              "vol_hole_state": "COILED_UP"
+            },
+            "opex_days": 1,
+            "opex_suppressed": true,
+            "reasons": [
+              {
+                "en": "deep long-gamma (+6.3% over the flip) \u2014 dealers pin & fade breakouts",
+                "tone": "caution",
+                "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +6.3%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+              },
+              {
+                "en": "within ~1\u03c3 of the call wall (150) \u2014 mechanical resistance overhead",
+                "tone": "caution",
+                "zh": "\u63a5\u8fd1 Call \u5899\uff08150\uff09\u7ea6 1\u03c3 \u4ee5\u5185 \u2014 \u4e0a\u65b9\u6709\u673a\u68b0\u963b\u529b"
+              },
+              {
+                "en": "armed at the upper gamma band \u2014 a close above releases the move up",
+                "tone": "confirm",
+                "zh": "\u5728\u4e0a\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u7a81\u7834\u5373\u5411\u4e0a\u91ca\u653e"
+              }
+            ],
+            "score": -1.5,
+            "verdict": "neutral"
+          },
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "constructive",
+            "band_en": "Setting up",
+            "band_zh": "\u6b63\u5728\u7b51\u5e95",
+            "call": {
+              "fuel": 0.6,
+              "score": 56,
+              "ticker": "DUOL",
+              "tier": "setting_up",
+              "trigger": 0.92
+            },
+            "components": {
+              "confidence": 1.013,
+              "edge": 0.794,
+              "fuel": 0.6,
+              "survive": 1.0,
+              "tailwind": 0.99,
+              "trigger": 0.92
+            },
+            "reasoning": [
+              "cycle turning up now (BOTTOMING)",
+              "insider / earnings / revision edge leans against it",
+              "-58% off its high \u2014 room to recover",
+              "theme crowded \u2014 cap size"
+            ],
+            "score": 56,
+            "scored": true,
+            "tier": "setting_up"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "extension",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "sue",
+              "urgency",
+              "vol-squeeze"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 15,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "basket_trend": 0.5,
+              "ext": 1.0,
+              "lottery": 0.0
+            },
+            "drivers": null,
+            "idio": 0.66,
+            "idio_tax": 0.328,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.66,
+            "veto": null
+          },
+          "score": 56,
+          "score_edge": 15,
+          "score_timing": 56,
+          "size": {
+            "bucket": "avoid",
+            "note": "cycle/extension blocks a buy",
+            "pct": 0,
+            "risk": 0.66,
+            "vol_mult": 0.4
+          },
+          "spotlight": {
+            "clamped": "cycle-blocked",
+            "dir": "neutral",
+            "mult": 1.0,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLY",
+              "extended": false,
+              "name": "Consumer Discretionary",
+              "pctile_252d": 4.8,
+              "stage": "improving"
+            },
+            "sector_z": 0.1,
+            "theme": {
+              "label": "dominant",
+              "label_en": "DOMINANT",
+              "label_zh": "\u4e3b\u5bfc",
+              "name": "AI Agents & Applications",
+              "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
+              "reco": "accumulate",
+              "reco_en": "ACCUMULATE",
+              "reco_zh": "\u52a0\u4ed3",
+              "score": 69,
+              "slug": "ai_agents"
+            },
+            "theme_z": 0.68,
+            "z": 0.0
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Extended \u2014 wait for a pullback",
+          "verdict_zh": "\u8fc7\u5ea6\u62c9\u4f38 \u2014 \u7b49\u5f85\u56de\u64a4",
+          "vol_squeeze": {
+            "bbwp": 33.0,
+            "bias": "neutral",
+            "box_hi": null,
+            "box_lo": null,
+            "caveat": "Volatility is already elevated \u2014 realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u7387\u5df2\u5904\u4e8e\u9ad8\u4f4d \u2014 \u5b9e\u73b0\u6ce2\u52a8\u7387\u4f4d\u4e8e\u8fc7\u53bb\u4e00\u5e74\u524d\u4e94\u5206\u4e4b\u4e00\uff0c\u884c\u60c5\u5df2\u5728\u8fdb\u884c\uff0c\u800c\u975e\u84c4\u52bf\u3002\u8fd9\u4e0e\u538b\u7f29\u84c4\u52bf\u76f8\u53cd\uff1a\u5b89\u9759\u7684\u5165\u573a\u70b9\u5df2\u8fc7\u3002\u5c5e\u504f\u665a\u7684\u63d0\u793a\u8bfb\u6570\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "close",
+            "days_compressed": 0,
+            "fired_dir": null,
+            "hv_pctile": 82.0,
+            "pos": null,
+            "state": "EXPANSION",
+            "to_lower_pct": null,
+            "to_upper_pct": null,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 0,
+        "days_since_signal_basis": "sessions",
+        "dd_pct": null,
+        "dir": "up",
+        "display_rank": 11,
+        "dossier": {
+          "action": {
+            "tone": "wait",
+            "verb": "WAIT",
+            "verb_zh": "\u7b49\u5f85"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "extended"
+          ],
+          "stale_flags": [
+            "chase"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -11,
+          "in_blackout": false,
+          "next_date": "2026-08-05",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 3,
+          "action": "The daily turn is already in \u2014 a low formed ~21 day(s) ago @ 119.51 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+          "action_zh": "\u65e5\u7ebf\u8f6c\u5411\u5df2\u7ecf\u5b8c\u6210\u2014\u2014\u4f4e\u70b9\u4e8e\u7ea6 21 \u5929\u524d\u5f62\u6210 @ 119.51\uff0c\u4e14\u4ef7\u683c\u5df2\u91cd\u65b0\u7ad9\u4e0a 10 \u65e5\u5747\u7ebf\u3002\u5c1a\u7f3a\u7684\u662f\u5468\u7ebf\u5468\u671f\u7684\u786e\u8ba4\uff0c\u56e0\u6b64\u8fd9\u662f\u5f53\u4e0b\u53ef\u7528\u7684\u90e8\u5206\u4fe1\u5fc3\u5165\u573a\uff0c\u800c\u975e\u5f85\u89e6\u53d1\u4fe1\u53f7\uff1a\u53ef\u5728\u6b64\u5efa\u534a\u4ed3\uff0c\u6216\u7b49\u5f85\u5468\u7ebf\u8f6c\u5411\u3002",
+          "atr_pct": 4.02,
+          "buy_zone": {
+            "high": 147.0,
+            "low": 138.2,
+            "pct_from_spot": -3.0
+          },
+          "chase_above": 150.6,
+          "confidence": 21.2,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 36,
+            "pct_through": 82,
+            "phase": "in_band"
+          },
+          "entry_grade": "light",
+          "entry_z": 32.3,
+          "headline": "Partial entry \u2014 half size now",
+          "headline_zh": "\u90e8\u5206\u5165\u573a \u2014 \u5f53\u524d\u53ef\u5efa\u534a\u4ed3",
+          "horizon": {
+            "d21": 0.22,
+            "d3": 0.32,
+            "d63": 0.5
+          },
+          "spot": 147.0,
+          "status": "partial",
+          "stop": 119.5,
+          "timing": {
+            "next_trigger": "The daily turn is already in \u2014 a low formed ~21 day(s) ago @ 119.51 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+            "opens_in_days_hi": 0,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "now"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": 2.5,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.010989,
+        "factor_z": 0.084,
+        "featured": false,
+        "featured_blocked_by": [
+          "provisional",
+          "antichase_blocked",
+          "extended",
+          "alpha_below_floor"
+        ],
+        "gex_confirm": {
+          "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+          "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+          "label": "Options neutral",
+          "label_zh": "\u671f\u6743\u4e2d\u6027",
+          "levels": {
+            "call_wall": 150.0,
+            "flip": 137.75,
+            "put_wall": 140.0,
+            "regime": "long",
+            "vol_hole_state": "COILED_UP"
+          },
+          "opex_days": 1,
+          "opex_suppressed": true,
+          "reasons": [
+            {
+              "en": "deep long-gamma (+6.3% over the flip) \u2014 dealers pin & fade breakouts",
+              "tone": "caution",
+              "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +6.3%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+            },
+            {
+              "en": "within ~1\u03c3 of the call wall (150) \u2014 mechanical resistance overhead",
+              "tone": "caution",
+              "zh": "\u63a5\u8fd1 Call \u5899\uff08150\uff09\u7ea6 1\u03c3 \u4ee5\u5185 \u2014 \u4e0a\u65b9\u6709\u673a\u68b0\u963b\u529b"
+            },
+            {
+              "en": "armed at the upper gamma band \u2014 a close above releases the move up",
+              "tone": "confirm",
+              "zh": "\u5728\u4e0a\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u7a81\u7834\u5373\u5411\u4e0a\u91ca\u653e"
+            }
+          ],
+          "score": -1.5,
+          "verdict": "neutral"
+        },
+        "hold": {
+          "anchor": "2026-08-18",
+          "anchor_src": "take",
+          "days_basing": 2,
+          "invalidation": 87.33,
+          "maxup_pct": 5.29,
+          "ob_persist": false,
+          "provisional": false,
+          "ret_since_anchor_pct": 5.29,
+          "state": "launched"
+        },
+        "label": "BOTTOMING",
+        "label_zh": "\u7b51\u5e95\u4e2d",
+        "lane": "continuation",
+        "name": "Duolingo",
+        "new": false,
+        "off_high": -57.7,
+        "price": 147.03,
+        "prophet": {
+          "alpha_percentile": 0.047619,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 5.81,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.069767,
+              "insider_cluster": 0.488372,
+              "off_high": 0.046512,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 34.7,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.047619,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.0,
+            "entry": 1.0,
+            "quality": 0.4,
+            "runway": 0.0,
+            "signal": 0.6
+          },
+          "points": {
+            "edge": 0.0,
+            "entry": 25.0,
+            "quality": 4.0,
+            "runway": 0.0,
+            "signal": 18.0
+          },
+          "score": 47.0,
+          "score_rank": 10,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 0.4,
+          "regime_gross": 1.0,
+          "size_mult": 0.4,
+          "vol_ann_pct": 63.4,
+          "vol_pct": 0.84
+        },
+        "score_rank": 11,
+        "sector": "Consumer Discretionary",
+        "sector_n": 212,
+        "sector_pulse": {
+          "as_of": "2026-08-19",
+          "heat": "cooling",
+          "label": "dominant",
+          "n_themes": 49,
+          "rank": 6,
+          "rank_delta_5d": -3,
+          "reco": "accumulate",
+          "theme_id": "ai_agents",
+          "theme_ids": [
+            "ai_agents"
+          ],
+          "theme_name": "AI Agents & Applications",
+          "theme_name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528"
+        },
+        "sector_rank": 203,
+        "setup": 0.1,
+        "signal": {
+          "above200": true,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": 1.03,
+          "early_now": false,
+          "eligible": true,
+          "fresh_bars": 2,
+          "fresh_bars_knowable": 0,
+          "history_bars": 778,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "confirmed_date": null,
+            "date": "2026-08-18",
+            "quality": "pending",
+            "reason": "pending confirmation",
+            "signal_date": "2026-08-20",
+            "type": "rebuy"
+          },
+          "provisional": true,
+          "reason": "buy fired; forward confirmation pending",
+          "reasons": [
+            "buy fired; forward confirmation pending"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "long-bias",
+          "sub": "pending",
+          "ticks": 0,
+          "tier": "anticipation",
+          "tier_cascade": "T3",
+          "tier_event_date": null,
+          "tier_observation_provisional": true,
+          "tier_observed_date": "2026-08-20",
+          "tier_sub": "shallow",
+          "weekly_bull": true,
+          "weight": 0.6,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><rect x=\"144.0\" y=\"10.1\" width=\"96.0\" height=\"6.8\" fill=\"var(--up)\" fill-opacity=\"0.09\" stroke=\"none\"/><line x1=\"144.0\" y1=\"10.1\" x2=\"240\" y2=\"10.1\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"16.9\" x2=\"240\" y2=\"16.9\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,41.1 3.8,42.0 7.6,41.3 11.4,41.4 15.2,40.3 19.0,39.7 22.9,37.6 26.7,32.5 30.5,38.7 34.3,40.6 38.1,39.3 41.9,39.4 45.7,32.5 49.5,32.6 53.3,29.4 57.1,28.0 61.0,28.9 64.8,25.5 68.6,24.7 72.4,28.3 76.2,26.6 80.0,25.3 83.8,21.5 87.6,21.6 91.4,31.0 95.2,29.8 99.0,34.0 102.9,34.8 106.7,30.0 110.5,26.5 114.3,23.4 118.1,21.7 121.9,25.1 125.7,23.3 129.5,27.3 133.3,21.4 137.1,24.5 141.0,22.3 144.8,24.0 148.6,20.2 152.4,20.2 156.2,27.3 160.0,31.3 163.8,30.4 167.6,29.2 171.4,21.0 175.2,14.9 179.0,15.4 182.9,20.4 186.7,19.5 190.5,18.7 194.3,17.2 198.1,19.1 201.9,28.9 205.7,22.5 209.5,17.7 213.3,19.0 217.1,19.6 221.0,12.3 224.8,21.0 228.6,23.1 232.4,15.8 236.2,10.9 240.0,10.1 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,41.1 3.8,42.0 7.6,41.3 11.4,41.4 15.2,40.3 19.0,39.7 22.9,37.6 26.7,32.5 30.5,38.7 34.3,40.6 38.1,39.3 41.9,39.4 45.7,32.5 49.5,32.6 53.3,29.4 57.1,28.0 61.0,28.9 64.8,25.5 68.6,24.7 72.4,28.3 76.2,26.6 80.0,25.3 83.8,21.5 87.6,21.6 91.4,31.0 95.2,29.8 99.0,34.0 102.9,34.8 106.7,30.0 110.5,26.5 114.3,23.4 118.1,21.7 121.9,25.1 125.7,23.3 129.5,27.3 133.3,21.4 137.1,24.5 141.0,22.3 144.8,24.0 148.6,20.2 152.4,20.2 156.2,27.3 160.0,31.3 163.8,30.4 167.6,29.2 171.4,21.0 175.2,14.9 179.0,15.4 182.9,20.4 186.7,19.5 190.5,18.7 194.3,17.2 198.1,19.1 201.9,28.9 205.7,22.5 209.5,17.7 213.3,19.0 217.1,19.6 221.0,12.3 224.8,21.0 228.6,23.1 232.4,15.8 236.2,10.9 240.0,10.1\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"10.1\" r=\"2.6\" fill=\"var(--up)\"/></svg>",
+        "stage": "live",
+        "state": "HOLD \u2014 EXTENDED",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 380.0,
+          "scored": false,
+          "tail_pct": 1729.0
+        },
+        "sue_fresh_days": 14.0,
+        "theme": {
+          "bull_days": 1,
+          "clean_entry": true,
+          "id": "ai_agents",
+          "name": "AI Agents & Applications",
+          "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
+          "rank": 6,
+          "reco": "accumulate"
+        },
+        "ticker": "DUOL",
+        "urgency": "now",
+        "washout_active": true,
+        "weekly_phase": "rising"
+      },
+      "board_row_sha256": "6cd60d3c0987d3706e69cbfe26e9377320ec29746cfe1eadab24b61da5e094bd",
+      "formation_date": "2026-08-18",
+      "plan_id": "DUOL-BULL-20260818",
+      "plan_path": "site/prophet/plans/DUOL-BULL-20260818.json",
+      "plan_sha256": "3b21ec764eb21be42dc970abf8703eaeedd73bcdaa183cd6ce0b8ae6d091a44d"
+    },
+    {
+      "admission_rank": 3,
+      "asset": "ED",
+      "board_row": {
+        "above_trend": true,
+        "adv_dollar_20d_median": 263155308.0,
+        "adv_dollar_21d": 264691177.0,
+        "align_tier": null,
+        "alpha": 0.67,
+        "alpha_entry": "pullback",
+        "antichase_shadow_blocked": false,
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": true,
+          "roc12_pctile": 0.5397
+        },
+        "composite": {
+          "legs": {
+            "momentum": 0.98,
+            "quality": 0.31,
+            "revisions": 0.59,
+            "value": 0.39
+          },
+          "n_legs": 4,
+          "z": 0.571
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": true,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "crossed",
+            "days_to_cross": null,
+            "entry_tier": "Extended \u2014 wait",
+            "entry_tier_zh": "\u5df2\u8fc7\u70ed \u2014 \u7b49\u56de\u8c03",
+            "ext_pct_used": 3.24,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly falling \u00b7 3-Day \u00b7 \u00b7 Daily crossed up",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4ecd\u4e0b\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u5df2\u4e0a\u7a7f",
+            "near": false,
+            "overextended": true,
+            "overextended_basis": "oscillator",
+            "overextended_legs": [
+              "daily_stochrsi_overbought"
+            ],
+            "quality": 28.0,
+            "reason": "Already extended (overbought / far above the 200-day) \u2014 wait for a pullback",
+            "reason_zh": "\u5df2\u8fc7\u70ed\uff08\u8d85\u4e70\uff0f\u8fdc\u9ad8\u4e8e200\u65e5\u5747\u7ebf\uff09\u2014 \u7b49\u5f85\u56de\u8c03",
+            "score": 28.0,
+            "three_day": "basing",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": null,
+            "weekly": "falling",
+            "weekly_ok": false
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 51,
+              "present": [
+                "urgency",
+                "pullback/extended",
+                "off-high",
+                "rsi",
+                "trend-quality"
+              ],
+              "z": 0.039999999999999994
+            },
+            "quality": {
+              "flags": {
+                "accounting": "watch"
+              },
+              "pct": 44,
+              "present": [
+                "factors"
+              ],
+              "z": -0.36
+            },
+            "selection": {
+              "basis": [
+                {
+                  "fresh_days": 105,
+                  "label": "SUE",
+                  "label_zh": "\u76c8\u5229\u8d85\u9884\u671f",
+                  "leg": "sue",
+                  "tier": "validated",
+                  "z": -0.06
+                },
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": 0.08
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": 0.67
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 53,
+              "present": [
+                "sue",
+                "revision",
+                "alpha"
+              ],
+              "z": 0.2251785714285714
+            },
+            "tailwind": {
+              "pct": 45,
+              "present": [
+                "spotlight"
+              ],
+              "z": -0.35600000000000004
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": {
+            "above_trend": false,
+            "book_wt": null,
+            "crowded": false,
+            "durability_bar": 0.14,
+            "eligible": false,
+            "label": "deteriorating",
+            "name": "Utilities (Equal-Weight)",
+            "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
+            "rank": 48,
+            "reco": "avoid",
+            "ret_12m": 0.0695,
+            "score": -1.12,
+            "signal_grade": "backtested",
+            "slug": "us_sector_utilities"
+          },
+          "cautions": [
+            "Accounting quality is worth a second look.",
+            "Its Utilities (Equal-Weight) basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one."
+          ],
+          "cautions_zh": [
+            "\u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002",
+            "\u6240\u5c5e \u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09 \u7bee\u5b50\u5df2\u8dcc\u7834\u957f\u671f\u8d8b\u52bf\u3002\u51cf\u5c0f\u4ed3\u4f4d\uff1a\u5f53\u524d\u884c\u60c5\u5956\u52b1\u9886\u5148\u677f\u5757\uff0c\u8be5\u7bee\u5b50\u5e76\u4e0d\u5728\u5176\u4e2d\u3002"
+          ],
+          "composite_z": -0.001,
+          "cycle_blocked": false,
+          "drivers": [],
+          "gex_confirm": {
+            "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+            "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "gate_scored": false,
+            "label": "Options neutral",
+            "label_zh": "\u671f\u6743\u4e2d\u6027",
+            "levels": {
+              "call_wall": 110.0,
+              "flip": 100.67,
+              "put_wall": 105.0,
+              "regime": "long",
+              "vol_hole_state": "IN_HOLE"
+            },
+            "opex_days": 1,
+            "opex_suppressed": true,
+            "reasons": [
+              {
+                "en": "deep long-gamma (+7.0% over the flip) \u2014 dealers pin & fade breakouts",
+                "tone": "caution",
+                "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +7.0%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+              },
+              {
+                "en": "within 1d of monthly OPEX \u2014 charm/vanna flows dominate; wait for post-OPEX",
+                "tone": "neutral",
+                "zh": "\u8ddd\u6708\u5ea6\u671f\u6743\u5230\u671f 1 \u5929 \u2014 charm/vanna \u8d44\u91d1\u6d41\u4e3b\u5bfc\uff1b\u7b49\u5230\u671f\u540e\u518d\u786e\u8ba4"
+              }
+            ],
+            "score": -1.0,
+            "verdict": "neutral"
+          },
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "low",
+            "band_en": "No setup",
+            "band_zh": "\u6682\u65e0\u4e70\u70b9",
+            "call": {
+              "fuel": 0.079,
+              "score": 6,
+              "ticker": "ED",
+              "tier": "no_setup",
+              "trigger": 0.15
+            },
+            "components": {
+              "confidence": 0.949,
+              "edge": 1.045,
+              "fuel": 0.079,
+              "survive": 1.0,
+              "tailwind": 0.88,
+              "trigger": 0.15
+            },
+            "reasoning": [
+              "theme below trend / fading \u2014 de-risk"
+            ],
+            "score": 6,
+            "scored": true,
+            "tier": "no_setup"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "factors",
+              "off-high",
+              "pullback/extended",
+              "revision",
+              "rsi",
+              "spotlight",
+              "sue",
+              "trend-quality",
+              "urgency"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 72,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "basket_trend": 0.5,
+              "ext": 0.0,
+              "lottery": 0.0,
+              "out_of_play": 0.41
+            },
+            "drivers": null,
+            "idio": 0.0,
+            "idio_tax": null,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.5,
+            "veto": null
+          },
+          "score": 6,
+          "score_edge": 72,
+          "score_timing": 6,
+          "size": {
+            "bucket": "quarter",
+            "capped_by_entry": true,
+            "pct": 25,
+            "risk": 0.5,
+            "tier": "context",
+            "vol_mult": 2.19
+          },
+          "spotlight": {
+            "dir": "out_of_play",
+            "mult": 0.844,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLU",
+              "extended": false,
+              "name": "Utilities",
+              "pctile_252d": 5.6,
+              "stage": "lagging"
+            },
+            "sector_z": -0.8,
+            "theme": {
+              "label": "deteriorating",
+              "label_en": "DETERIORATING",
+              "label_zh": "\u8d70\u5f31",
+              "name": "Utilities (Equal-Weight)",
+              "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
+              "reco": "avoid",
+              "reco_en": "AVOID",
+              "reco_zh": "\u56de\u907f",
+              "score": 25,
+              "slug": "us_sector_utilities"
+            },
+            "theme_z": -0.95,
+            "z": -0.89
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Neutral \u2014 no clear edge",
+          "verdict_zh": "\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf",
+          "vol_squeeze": {
+            "bbwp": 39.0,
+            "bias": "neutral",
+            "box_hi": null,
+            "box_lo": null,
+            "caveat": "Volatility compression read \u2014 a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u538b\u7f29\u8bfb\u6570 \u2014 \u5c5e\u62e9\u65f6\u80cc\u666f\uff0c\u5e76\u975e\u65b9\u5411\u5224\u65ad\u3002\u6301\u7eed\u7684\u538b\u7f29\u610f\u5473\u7740\u66f4\u5927\u7684\u6ce2\u52a8\u6b63\u5728\u84c4\u52bf\uff1b\u65b9\u5411\u8981\u7b49\u4ef7\u683c\u653e\u91cf\u7a81\u7834\u538b\u7f29\u7bb1\u540e\u624d\u786e\u8ba4\u3002\u4e2d\u7b49\u6548\u529b\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "ohlcv",
+            "days_compressed": 0,
+            "fired_dir": null,
+            "hv_pctile": 4.0,
+            "pos": null,
+            "state": "NONE",
+            "to_lower_pct": null,
+            "to_upper_pct": null,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 2,
+        "days_since_signal_basis": "calendar",
+        "days_to_build_100k": 0.0,
+        "days_to_build_1m": 0.0,
+        "days_to_exit_at_10pct_adv": 0.0,
+        "dd_pct": null,
+        "dir": "caution",
+        "display_rank": 16,
+        "dossier": {
+          "action": {
+            "tone": "go",
+            "verb": "BUY",
+            "verb_zh": "\u4e70\u5165"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "capped_by_entry"
+          ],
+          "stale_flags": [
+            "capped_by_entry",
+            "bars-since-cross:14"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -10,
+          "in_blackout": false,
+          "next_date": "2026-08-06",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 0,
+          "action": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 105.44.",
+          "action_zh": "\u65e5\u7ebf\u4f4e\u70b9\u6b63\u5728\u5f62\u6210\uff0c\u4f46\u5927\u8d8b\u52bf\u4ecd\u504f\u7a7a\u3002\u53ea\u9002\u5408\u5c0f\u4ed3\u4f4d\uff1b\u6b62\u635f\u8bbe\u4e8e 105.44 \u4e0b\u65b9\u3002",
+          "atr_pct": 0.54,
+          "buy_zone": {
+            "high": 107.4,
+            "low": 107.4,
+            "pct_from_spot": -0.8
+          },
+          "chase_above": 108.3,
+          "confidence": 8.6,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 28,
+            "pct_through": 64,
+            "phase": "in_band"
+          },
+          "entry_grade": "minimal",
+          "entry_z": 13.4,
+          "headline": "Bounce \u2014 turn not confirmed; wait",
+          "headline_zh": "\u53cd\u5f39 \u2014 \u8f6c\u5411\u672a\u786e\u8ba4\uff0c\u5148\u89c2\u671b",
+          "horizon": {
+            "d21": -0.12,
+            "d3": 0.13,
+            "d63": 0.65
+          },
+          "spot": 108.3,
+          "status": "bounce_wait",
+          "stop": 105.4,
+          "timing": {
+            "next_trigger": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 105.44.",
+            "opens_in_days_hi": 16,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "caution"
+        },
+        "eq_dir": "flat",
+        "ext_unknown": false,
+        "ext_z": -0.19,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.32967,
+        "factor_z": -0.086,
+        "featured": false,
+        "featured_blocked_by": [
+          "tier_unknown",
+          "ticks_stale"
+        ],
+        "gex_confirm": {
+          "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+          "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+          "label": "Options neutral",
+          "label_zh": "\u671f\u6743\u4e2d\u6027",
+          "levels": {
+            "call_wall": 110.0,
+            "flip": 100.67,
+            "put_wall": 105.0,
+            "regime": "long",
+            "vol_hole_state": "IN_HOLE"
+          },
+          "opex_days": 1,
+          "opex_suppressed": true,
+          "reasons": [
+            {
+              "en": "deep long-gamma (+7.0% over the flip) \u2014 dealers pin & fade breakouts",
+              "tone": "caution",
+              "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +7.0%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+            },
+            {
+              "en": "within 1d of monthly OPEX \u2014 charm/vanna flows dominate; wait for post-OPEX",
+              "tone": "neutral",
+              "zh": "\u8ddd\u6708\u5ea6\u671f\u6743\u5230\u671f 1 \u5929 \u2014 charm/vanna \u8d44\u91d1\u6d41\u4e3b\u5bfc\uff1b\u7b49\u5230\u671f\u540e\u518d\u786e\u8ba4"
+            }
+          ],
+          "score": -1.0,
+          "verdict": "neutral"
+        },
+        "hold": {
+          "anchor": "2026-06-22",
+          "anchor_src": "cross",
+          "days_basing": 40,
+          "invalidation": 99.56,
+          "maxup_pct": 6.61,
+          "ob_persist": true,
+          "provisional": false,
+          "ret_since_anchor_pct": 2.13,
+          "state": "launched"
+        },
+        "label": "UNCONFIRMED TURN",
+        "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411",
+        "lane": "bottoming",
+        "liquidity_tier": "deep",
+        "name": "Consolidated Edison Inc",
+        "new": false,
+        "off_high": -4.6,
+        "price": 108.31,
+        "prophet": {
+          "alpha_percentile": 0.714286,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 81.4,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.72093,
+              "insider_cluster": 0.488372,
+              "off_high": 0.906977,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 59.9,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.714286,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.619048,
+            "entry": 1.0,
+            "quality": 0.0,
+            "runway": 1.0,
+            "signal": 0.0
+          },
+          "points": {
+            "edge": 15.4762,
+            "entry": 25.0,
+            "quality": 0.0,
+            "runway": 10.0,
+            "signal": 0.0
+          },
+          "score": 50.5,
+          "score_rank": 23,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 2.19,
+          "regime_gross": 1.0,
+          "size_mult": 2.19,
+          "vol_ann_pct": 10.0,
+          "vol_pct": 0.04
+        },
+        "score_rank": 16,
+        "sector": "Utilities",
+        "sector_n": 62,
+        "sector_pulse": {
+          "as_of": "2026-08-19",
+          "heat": "broken",
+          "label": "deteriorating",
+          "n_themes": 49,
+          "rank": 49,
+          "rank_delta_5d": 0,
+          "reco": "avoid",
+          "theme_id": "us_sector_utilities",
+          "theme_ids": [
+            "us_sector_utilities"
+          ],
+          "theme_name": "Utilities (Equal-Weight)",
+          "theme_name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09"
+        },
+        "sector_rank": 11,
+        "setup": 1.17,
+        "signal": {
+          "above200": true,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": true,
+          "eligible": true,
+          "fresh_bars": null,
+          "fresh_bars_knowable": null,
+          "history_bars": 16265,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "date": "2026-07-31",
+            "signal_date": "2026-08-04",
+            "type": "sell"
+          },
+          "provisional": false,
+          "reason": "early advance-warning (no open buy)",
+          "reasons": [
+            "early advance-warning (no open buy)"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "mixed",
+          "sub": "early",
+          "ticks": 14,
+          "tier": "anticipation",
+          "tier_cascade": null,
+          "tier_event_date": null,
+          "tier_observation_provisional": false,
+          "tier_observed_date": null,
+          "tier_sub": null,
+          "weekly_bull": false,
+          "weight": 0.0,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><line x1=\"144.0\" y1=\"27.4\" x2=\"240\" y2=\"27.4\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"27.4\" x2=\"240\" y2=\"27.4\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,32.8 3.8,27.8 7.6,33.4 11.4,30.1 15.2,26.6 19.0,29.2 22.9,28.2 26.7,33.4 30.5,35.5 34.3,41.6 38.1,41.1 41.9,42.0 45.7,40.2 49.5,33.6 53.3,39.5 57.1,33.1 61.0,29.5 64.8,31.8 68.6,29.1 72.4,29.1 76.2,27.1 80.0,31.2 83.8,33.3 87.6,31.6 91.4,26.0 95.2,20.0 99.0,19.9 102.9,15.9 106.7,15.2 110.5,20.3 114.3,19.3 118.1,10.1 121.9,16.3 125.7,13.1 129.5,15.9 133.3,21.4 137.1,18.8 141.0,16.7 144.8,16.2 148.6,21.3 152.4,14.9 156.2,15.0 160.0,19.0 163.8,13.7 167.6,13.1 171.4,17.6 175.2,16.2 179.0,15.4 182.9,23.2 186.7,25.7 190.5,28.4 194.3,27.0 198.1,27.3 201.9,25.4 205.7,28.3 209.5,33.4 213.3,29.8 217.1,28.9 221.0,27.1 224.8,25.8 228.6,25.3 232.4,24.7 236.2,25.6 240.0,24.6 240,42\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,32.8 3.8,27.8 7.6,33.4 11.4,30.1 15.2,26.6 19.0,29.2 22.9,28.2 26.7,33.4 30.5,35.5 34.3,41.6 38.1,41.1 41.9,42.0 45.7,40.2 49.5,33.6 53.3,39.5 57.1,33.1 61.0,29.5 64.8,31.8 68.6,29.1 72.4,29.1 76.2,27.1 80.0,31.2 83.8,33.3 87.6,31.6 91.4,26.0 95.2,20.0 99.0,19.9 102.9,15.9 106.7,15.2 110.5,20.3 114.3,19.3 118.1,10.1 121.9,16.3 125.7,13.1 129.5,15.9 133.3,21.4 137.1,18.8 141.0,16.7 144.8,16.2 148.6,21.3 152.4,14.9 156.2,15.0 160.0,19.0 163.8,13.7 167.6,13.1 171.4,17.6 175.2,16.2 179.0,15.4 182.9,23.2 186.7,25.7 190.5,28.4 194.3,27.0 198.1,27.3 201.9,25.4 205.7,28.3 209.5,33.4 213.3,29.8 217.1,28.9 221.0,27.1 224.8,25.8 228.6,25.3 232.4,24.7 236.2,25.6 240.0,24.6\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"24.6\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
+        "stage": "setting_up",
+        "state": "COUNTERTREND BOUNCE",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 84.0,
+          "scored": false,
+          "tail_pct": 385.0
+        },
+        "ticker": "ED",
+        "urgency": "caution",
+        "washout_active": false,
+        "weekly_phase": "falling"
+      },
+      "board_row_sha256": "86af8504e8ba2e175f75f53fd5e962456450e216bd4f7acf7aacad2d778fada8",
+      "formation_date": "2026-06-22",
+      "plan_id": "ED-BULL-20260622",
+      "plan_path": "site/prophet/plans/ED-BULL-20260622.json",
+      "plan_sha256": "afc3f420f1e578ef6c2d47220d44b2431cc4198925352d8d949afe89cca8fdda"
+    },
+    {
+      "admission_rank": 14,
+      "asset": "MCO",
+      "board_row": {
+        "above_trend": true,
+        "align_tier": null,
+        "alpha": -0.8,
+        "alpha_entry": "laggard",
+        "antichase_shadow_blocked": false,
+        "arbiter_note": "downgraded from TURN SIGNALED (extended)",
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": true,
+          "roc12_pctile": 0.7778
+        },
+        "coiled": {
+          "anchor_era": "coiled-mtf-abs-session-2026-08-06",
+          "bonus": 0.0,
+          "cohort": 0.177,
+          "coiled": false,
+          "div": false,
+          "star": false,
+          "washout_ctx": true
+        },
+        "composite": {
+          "legs": {
+            "momentum": -0.85,
+            "quality": -0.06,
+            "revisions": 0.8,
+            "value": -1.7
+          },
+          "n_legs": 4,
+          "z": -0.453
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": false,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "crossed",
+            "days_to_cross": null,
+            "entry_tier": "Extended \u2014 wait",
+            "entry_tier_zh": "\u5df2\u8fc7\u70ed \u2014 \u7b49\u56de\u8c03",
+            "ext_pct_used": 5.97,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly rising \u00b7 3-Day \u00b7 \u00b7 Daily crossed up",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4e0a\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u5df2\u4e0a\u7a7f",
+            "near": false,
+            "overextended": true,
+            "overextended_basis": "oscillator",
+            "overextended_legs": [
+              "daily_stochrsi_overbought"
+            ],
+            "quality": 42.7,
+            "reason": "Already extended (overbought / far above the 200-day) \u2014 wait for a pullback",
+            "reason_zh": "\u5df2\u8fc7\u70ed\uff08\u8d85\u4e70\uff0f\u8fdc\u9ad8\u4e8e200\u65e5\u5747\u7ebf\uff09\u2014 \u7b49\u5f85\u56de\u8c03",
+            "score": 42.7,
+            "three_day": "rising",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": null,
+            "weekly": "rising",
+            "weekly_ok": true
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 57,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi",
+                "extension"
+              ],
+              "z": 0.4266666666666667
+            },
+            "quality": {
+              "flags": {
+                "accounting": "clean"
+              },
+              "pct": 42,
+              "present": [
+                "factors"
+              ],
+              "z": -0.51
+            },
+            "selection": {
+              "basis": [
+                {
+                  "fresh_days": 82,
+                  "label": "SUE",
+                  "label_zh": "\u76c8\u5229\u8d85\u9884\u671f",
+                  "leg": "sue",
+                  "tier": "validated",
+                  "z": 0.03
+                },
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": 0.7
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": -0.8
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 52,
+              "present": [
+                "sue",
+                "revision",
+                "alpha"
+              ],
+              "z": 0.14999999999999994
+            },
+            "tailwind": {
+              "pct": 46,
+              "present": [
+                "spotlight"
+              ],
+              "z": -0.2856
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": {
+            "above_trend": true,
+            "book_wt": null,
+            "crowded": false,
+            "durability_bar": 0.69,
+            "eligible": true,
+            "label": "deteriorating",
+            "name": "Financials (Equal-Weight)",
+            "name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09",
+            "rank": 22,
+            "reco": "avoid",
+            "ret_12m": 0.1343,
+            "score": -0.098,
+            "signal_grade": "backtested",
+            "slug": "us_sector_financials"
+          },
+          "cautions": [
+            "Its Financials (Equal-Weight) basket is deteriorating. Trim, or take a smaller position than usual."
+          ],
+          "cautions_zh": [
+            "\u6240\u5c5e \u91d1\u878d\uff08\u7b49\u6743\uff09 \u7bee\u5b50\u6b63\u5728\u6076\u5316\u3002\u51cf\u4ed3\uff0c\u6216\u5c06\u4ed3\u4f4d\u63a7\u5236\u5728\u5e73\u5e38\u6c34\u5e73\u4ee5\u4e0b\u3002"
+          ],
+          "composite_z": -0.188,
+          "cycle_blocked": false,
+          "drivers": [
+            "entry"
+          ],
+          "gex_confirm": {
+            "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+            "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "gate_scored": false,
+            "label": "Options neutral",
+            "label_zh": "\u671f\u6743\u4e2d\u6027",
+            "levels": {
+              "call_wall": 500.0,
+              "flip": 479.23,
+              "put_wall": 470.0,
+              "regime": "long",
+              "vol_hole_state": "COILED_UP"
+            },
+            "opex_days": 1,
+            "opex_suppressed": true,
+            "reasons": [
+              {
+                "en": "deep long-gamma (+3.9% over the flip) \u2014 dealers pin & fade breakouts",
+                "tone": "caution",
+                "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +3.9%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+              },
+              {
+                "en": "within ~1\u03c3 of the call wall (500) \u2014 mechanical resistance overhead",
+                "tone": "caution",
+                "zh": "\u63a5\u8fd1 Call \u5899\uff08500\uff09\u7ea6 1\u03c3 \u4ee5\u5185 \u2014 \u4e0a\u65b9\u6709\u673a\u68b0\u963b\u529b"
+              },
+              {
+                "en": "armed at the upper gamma band \u2014 a close above releases the move up",
+                "tone": "confirm",
+                "zh": "\u5728\u4e0a\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u7a81\u7834\u5373\u5411\u4e0a\u91ca\u653e"
+              }
+            ],
+            "score": -1.5,
+            "verdict": "neutral"
+          },
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "neutral",
+            "band_en": "Watch",
+            "band_zh": "\u89c2\u5bdf",
+            "call": {
+              "fuel": 0.122,
+              "score": 42,
+              "ticker": "MCO",
+              "tier": "watch",
+              "trigger": 0.92
+            },
+            "components": {
+              "confidence": 1.0,
+              "edge": 1.03,
+              "fuel": 0.122,
+              "survive": 1.0,
+              "tailwind": 0.93,
+              "trigger": 0.92
+            },
+            "reasoning": [
+              "cycle turning up now (BOTTOMING)",
+              "theme below trend / fading \u2014 de-risk"
+            ],
+            "score": 42,
+            "scored": true,
+            "tier": "watch"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "extension",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "sue",
+              "urgency"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 60,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "basket_trend": 0.35,
+              "ext": 0.5,
+              "lottery": 0.0,
+              "out_of_play": 0.26
+            },
+            "drivers": null,
+            "idio": 0.33,
+            "idio_tax": 0.164,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.35,
+            "veto": null
+          },
+          "score": 42,
+          "score_edge": 60,
+          "score_timing": 42,
+          "size": {
+            "bucket": "half",
+            "capped_by_entry": true,
+            "pct": 50,
+            "risk": 0.35,
+            "tier": "context",
+            "vol_mult": 0.99
+          },
+          "spotlight": {
+            "dir": "out_of_play",
+            "mult": 0.875,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLF",
+              "extended": false,
+              "name": "Financials",
+              "pctile_252d": 29.4,
+              "stage": "lagging"
+            },
+            "sector_z": -0.765,
+            "theme": {
+              "label": "deteriorating",
+              "label_en": "DETERIORATING",
+              "label_zh": "\u8d70\u5f31",
+              "name": "Financials (Equal-Weight)",
+              "name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09",
+              "reco": "avoid",
+              "reco_en": "AVOID",
+              "reco_zh": "\u56de\u907f",
+              "score": 52,
+              "slug": "us_sector_financials"
+            },
+            "theme_z": -0.68,
+            "z": -0.714
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Neutral \u2014 no clear edge",
+          "verdict_zh": "\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf",
+          "vol_squeeze": {
+            "bbwp": 23.0,
+            "bias": "up",
+            "box_hi": 498.7699890136719,
+            "box_lo": 498.7699890136719,
+            "caveat": "Volatility compression read \u2014 a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u538b\u7f29\u8bfb\u6570 \u2014 \u5c5e\u62e9\u65f6\u80cc\u666f\uff0c\u5e76\u975e\u65b9\u5411\u5224\u65ad\u3002\u6301\u7eed\u7684\u538b\u7f29\u610f\u5473\u7740\u66f4\u5927\u7684\u6ce2\u52a8\u6b63\u5728\u84c4\u52bf\uff1b\u65b9\u5411\u8981\u7b49\u4ef7\u683c\u653e\u91cf\u7a81\u7834\u538b\u7f29\u7bb1\u540e\u624d\u786e\u8ba4\u3002\u4e2d\u7b49\u6548\u529b\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "close",
+            "days_compressed": 1,
+            "fired_dir": null,
+            "hv_pctile": 18.0,
+            "pos": null,
+            "state": "COMPRESSED",
+            "to_lower_pct": 0.0,
+            "to_upper_pct": 0.0,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 0,
+        "days_since_signal_basis": "sessions",
+        "dd_pct": null,
+        "dir": "up",
+        "display_rank": 7,
+        "dossier": {
+          "action": {
+            "tone": "trim",
+            "verb": "TRIM ONLY",
+            "verb_zh": "\u51cf\u4ed3"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "extended",
+            "capped_by_entry"
+          ],
+          "stale_flags": [
+            "chase",
+            "capped_by_entry",
+            "bars-since-cross:1"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -21,
+          "in_blackout": false,
+          "next_date": "2026-07-22",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 3,
+          "action": "The daily turn is already in \u2014 a low formed ~19 day(s) ago @ 470.51 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+          "action_zh": "\u65e5\u7ebf\u8f6c\u5411\u5df2\u7ecf\u5b8c\u6210\u2014\u2014\u4f4e\u70b9\u4e8e\u7ea6 19 \u5929\u524d\u5f62\u6210 @ 470.51\uff0c\u4e14\u4ef7\u683c\u5df2\u91cd\u65b0\u7ad9\u4e0a 10 \u65e5\u5747\u7ebf\u3002\u5c1a\u7f3a\u7684\u662f\u5468\u7ebf\u5468\u671f\u7684\u786e\u8ba4\uff0c\u56e0\u6b64\u8fd9\u662f\u5f53\u4e0b\u53ef\u7528\u7684\u90e8\u5206\u4fe1\u5fc3\u5165\u573a\uff0c\u800c\u975e\u5f85\u89e6\u53d1\u4fe1\u53f7\uff1a\u53ef\u5728\u6b64\u5efa\u534a\u4ed3\uff0c\u6216\u7b49\u5f85\u5468\u7ebf\u8f6c\u5411\u3002",
+          "atr_pct": 0.99,
+          "buy_zone": {
+            "high": 498.8,
+            "low": 491.4,
+            "pct_from_spot": -0.7
+          },
+          "chase_above": 501.7,
+          "confidence": 46.5,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 19,
+            "pct_through": 43,
+            "phase": "approaching_band"
+          },
+          "entry_grade": "strong",
+          "entry_z": 70.9,
+          "headline": "Partial entry \u2014 half size now",
+          "headline_zh": "\u90e8\u5206\u5165\u573a \u2014 \u5f53\u524d\u53ef\u5efa\u534a\u4ed3",
+          "horizon": {
+            "d21": 0.49,
+            "d3": 0.71,
+            "d63": 0.5
+          },
+          "spot": 498.8,
+          "status": "partial",
+          "stop": 470.5,
+          "timing": {
+            "next_trigger": "The daily turn is already in \u2014 a low formed ~19 day(s) ago @ 470.51 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+            "opens_in_days_hi": 0,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "now"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": 1.19,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.241758,
+        "factor_z": -0.552,
+        "featured": false,
+        "featured_blocked_by": [
+          "alpha_below_floor"
+        ],
+        "gex_confirm": {
+          "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+          "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+          "label": "Options neutral",
+          "label_zh": "\u671f\u6743\u4e2d\u6027",
+          "levels": {
+            "call_wall": 500.0,
+            "flip": 479.23,
+            "put_wall": 470.0,
+            "regime": "long",
+            "vol_hole_state": "COILED_UP"
+          },
+          "opex_days": 1,
+          "opex_suppressed": true,
+          "reasons": [
+            {
+              "en": "deep long-gamma (+3.9% over the flip) \u2014 dealers pin & fade breakouts",
+              "tone": "caution",
+              "zh": "\u6df1\u5ea6\u591a\u5934 Gamma\uff08\u9ad8\u4e8e\u7ffb\u8f6c\u4f4d +3.9%\uff09\u2014 \u505a\u5e02\u5546\u9489\u4ef7\u3001\u538b\u5236\u7a81\u7834"
+            },
+            {
+              "en": "within ~1\u03c3 of the call wall (500) \u2014 mechanical resistance overhead",
+              "tone": "caution",
+              "zh": "\u63a5\u8fd1 Call \u5899\uff08500\uff09\u7ea6 1\u03c3 \u4ee5\u5185 \u2014 \u4e0a\u65b9\u6709\u673a\u68b0\u963b\u529b"
+            },
+            {
+              "en": "armed at the upper gamma band \u2014 a close above releases the move up",
+              "tone": "confirm",
+              "zh": "\u5728\u4e0a\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u7a81\u7834\u5373\u5411\u4e0a\u91ca\u653e"
+            }
+          ],
+          "score": -1.5,
+          "verdict": "neutral"
+        },
+        "hold": {
+          "anchor": "2026-08-18",
+          "anchor_src": "take",
+          "days_basing": 2,
+          "invalidation": 413.6,
+          "maxup_pct": 2.67,
+          "ob_persist": false,
+          "provisional": false,
+          "ret_since_anchor_pct": 2.67,
+          "state": "intact"
+        },
+        "label": "BOTTOMING",
+        "label_zh": "\u7b51\u5e95\u4e2d",
+        "lane": "continuation",
+        "name": "Moody's Corporation",
+        "new": false,
+        "off_high": -7.1,
+        "price": 498.77,
+        "prophet": {
+          "alpha_percentile": 0.166667,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 44.19,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.186047,
+              "insider_cluster": 0.488372,
+              "off_high": 0.697674,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 47.5,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.166667,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.0,
+            "entry": 1.0,
+            "quality": 0.4,
+            "runway": 0.405,
+            "signal": 0.9
+          },
+          "points": {
+            "edge": 0.0,
+            "entry": 25.0,
+            "quality": 4.0,
+            "runway": 4.05,
+            "signal": 27.0
+          },
+          "score": 60.0,
+          "score_rank": 8,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 0.99,
+          "regime_gross": 1.0,
+          "size_mult": 0.99,
+          "vol_ann_pct": 22.3,
+          "vol_pct": 0.58
+        },
+        "score_rank": 7,
+        "sector": "Financials",
+        "sector_n": 262,
+        "sector_pulse": {
+          "as_of": "2026-08-19",
+          "heat": "idle",
+          "label": "neutral",
+          "n_themes": 49,
+          "rank": 28,
+          "rank_delta_5d": 4,
+          "reco": "hold",
+          "theme_id": "us_sector_financials",
+          "theme_ids": [
+            "us_sector_financials"
+          ],
+          "theme_name": "Financials (Equal-Weight)",
+          "theme_name_zh": "\u91d1\u878d\uff08\u7b49\u6743\uff09"
+        },
+        "sector_rank": 206,
+        "setup": 0.69,
+        "signal": {
+          "above200": true,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": false,
+          "eligible": true,
+          "fresh_bars": 2,
+          "fresh_bars_knowable": 0,
+          "history_bars": 359,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "confirmed_date": null,
+            "date": "2026-08-18",
+            "quality": "pending",
+            "reason": "pending confirmation",
+            "signal_date": "2026-08-20",
+            "type": "rebuy"
+          },
+          "provisional": false,
+          "reason": "buy fired; forward confirmation pending",
+          "reasons": [
+            "buy fired; forward confirmation pending"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "long-bias",
+          "sub": "pending",
+          "ticks": 1,
+          "tier": "anticipation",
+          "tier_cascade": "T1",
+          "tier_event_date": "2026-08-20",
+          "tier_observation_provisional": true,
+          "tier_observed_date": "2026-08-20",
+          "tier_sub": null,
+          "weekly_bull": false,
+          "weight": 0.9,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><rect x=\"144.0\" y=\"17.8\" width=\"96.0\" height=\"3.0\" fill=\"var(--up)\" fill-opacity=\"0.09\" stroke=\"none\"/><line x1=\"144.0\" y1=\"17.8\" x2=\"240\" y2=\"17.8\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"20.8\" x2=\"240\" y2=\"20.8\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,39.8 3.8,39.4 7.6,37.9 11.4,37.1 15.2,36.9 19.0,37.3 22.9,36.2 26.7,31.8 30.5,36.0 34.3,38.1 38.1,37.8 41.9,37.0 45.7,40.0 49.5,37.5 53.3,37.2 57.1,40.8 61.0,38.4 64.8,35.9 68.6,30.1 72.4,35.0 76.2,37.2 80.0,38.6 83.8,39.9 87.6,37.6 91.4,42.0 95.2,37.5 99.0,36.4 102.9,36.3 106.7,30.1 110.5,21.1 114.3,17.8 118.1,17.1 121.9,23.3 125.7,22.6 129.5,22.5 133.3,19.0 137.1,19.4 141.0,15.9 144.8,10.1 148.6,13.4 152.4,15.6 156.2,21.5 160.0,21.9 163.8,28.9 167.6,29.2 171.4,23.4 175.2,24.1 179.0,24.5 182.9,24.9 186.7,26.5 190.5,24.4 194.3,24.3 198.1,24.2 201.9,28.6 205.7,26.7 209.5,26.5 213.3,27.2 217.1,26.7 221.0,22.4 224.8,23.4 228.6,26.5 232.4,23.1 236.2,18.5 240.0,17.8 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,39.8 3.8,39.4 7.6,37.9 11.4,37.1 15.2,36.9 19.0,37.3 22.9,36.2 26.7,31.8 30.5,36.0 34.3,38.1 38.1,37.8 41.9,37.0 45.7,40.0 49.5,37.5 53.3,37.2 57.1,40.8 61.0,38.4 64.8,35.9 68.6,30.1 72.4,35.0 76.2,37.2 80.0,38.6 83.8,39.9 87.6,37.6 91.4,42.0 95.2,37.5 99.0,36.4 102.9,36.3 106.7,30.1 110.5,21.1 114.3,17.8 118.1,17.1 121.9,23.3 125.7,22.6 129.5,22.5 133.3,19.0 137.1,19.4 141.0,15.9 144.8,10.1 148.6,13.4 152.4,15.6 156.2,21.5 160.0,21.9 163.8,28.9 167.6,29.2 171.4,23.4 175.2,24.1 179.0,24.5 182.9,24.9 186.7,26.5 190.5,24.4 194.3,24.3 198.1,24.2 201.9,28.6 205.7,26.7 209.5,26.5 213.3,27.2 217.1,26.7 221.0,22.4 224.8,23.4 228.6,26.5 232.4,23.1 236.2,18.5 240.0,17.8\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"17.8\" r=\"2.6\" fill=\"var(--up)\"/></svg>",
+        "stage": "live",
+        "state": "HOLD \u2014 EXTENDED",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 188.0,
+          "scored": false,
+          "tail_pct": 570.0
+        },
+        "ticker": "MCO",
+        "urgency": "now",
+        "washout_active": true,
+        "weekly_phase": "rising"
+      },
+      "board_row_sha256": "260af2dad987962b37b4c7a1615fbdbea3540eed14cf19ac07f87d59791aa36e",
+      "formation_date": "2026-08-18",
+      "plan_id": "MCO-BULL-20260818",
+      "plan_path": "site/prophet/plans/MCO-BULL-20260818.json",
+      "plan_sha256": "8a6864ff4bba753853292f64930065341dcd13ed9c4ae8b2735fb4f3ead77a56"
+    },
+    {
+      "admission_rank": 4,
+      "asset": "NNN",
+      "board_row": {
+        "above_trend": true,
+        "align_tier": null,
+        "alpha": 0.34,
+        "alpha_entry": "neutral",
+        "antichase_shadow_blocked": false,
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": false,
+          "roc12_pctile": 0.1706
+        },
+        "composite": {
+          "legs": {
+            "momentum": 0.33,
+            "quality": -0.06,
+            "revisions": -0.73,
+            "value": -0.16
+          },
+          "n_legs": 4,
+          "z": -0.155
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": true,
+            "daily": "turning",
+            "daily_ok": false,
+            "daily_trigger": null,
+            "days_to_cross": 4,
+            "entry_tier": null,
+            "entry_tier_zh": null,
+            "ext_pct_used": 6.69,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly falling \u00b7 3-Day \u00b7 \u00b7 Daily \u2014",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4ecd\u4e0b\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u2014",
+            "near": false,
+            "overextended": false,
+            "overextended_basis": null,
+            "overextended_legs": [],
+            "quality": 0.0,
+            "reason": null,
+            "reason_zh": null,
+            "score": 0.0,
+            "three_day": "falling",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": null,
+            "weekly": "falling",
+            "weekly_ok": false
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 51,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi"
+              ],
+              "z": 0.05333333333333336
+            },
+            "quality": {
+              "flags": {
+                "accounting": "watch"
+              },
+              "pct": 45,
+              "present": [
+                "factors"
+              ],
+              "z": -0.3
+            },
+            "selection": {
+              "basis": [
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": -1.02
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": 0.34
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 42,
+              "present": [
+                "revision",
+                "alpha"
+              ],
+              "z": -0.5025999999999999
+            },
+            "tailwind": {
+              "pct": 45,
+              "present": [
+                "spotlight"
+              ],
+              "z": -0.30960000000000004
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": null,
+          "cautions": [
+            "Accounting quality is worth a second look."
+          ],
+          "cautions_zh": [
+            "\u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002"
+          ],
+          "composite_z": -0.342,
+          "cycle_blocked": false,
+          "drivers": [],
+          "gex_confirm": null,
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "low",
+            "band_en": "No setup",
+            "band_zh": "\u6682\u65e0\u4e70\u70b9",
+            "call": {
+              "fuel": 0.099,
+              "score": 7,
+              "ticker": "NNN",
+              "tier": "no_setup",
+              "trigger": 0.15
+            },
+            "components": {
+              "confidence": 1.049,
+              "edge": 0.899,
+              "fuel": 0.099,
+              "survive": 1.0,
+              "tailwind": 1.0,
+              "trigger": 0.15
+            },
+            "reasoning": [
+              "insider / earnings / revision edge leans against it"
+            ],
+            "score": 7,
+            "scored": true,
+            "tier": "no_setup"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "urgency"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 50,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "ext": 0.0,
+              "lottery": 0.0,
+              "out_of_play": 0.31
+            },
+            "drivers": null,
+            "idio": 0.0,
+            "idio_tax": null,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.31,
+            "veto": null
+          },
+          "score": 7,
+          "score_edge": 50,
+          "score_timing": 7,
+          "size": {
+            "bucket": "quarter",
+            "capped_by_entry": true,
+            "pct": 25,
+            "risk": 0.31,
+            "tier": "context",
+            "vol_mult": 1.72
+          },
+          "spotlight": {
+            "dir": "out_of_play",
+            "mult": 0.864,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLRE",
+              "extended": false,
+              "name": "Real Estate",
+              "pctile_252d": 28.2,
+              "stage": "lagging"
+            },
+            "sector_z": -0.774,
+            "theme": null,
+            "theme_z": null,
+            "z": -0.774
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Lagging \u2014 relative weakness",
+          "verdict_zh": "\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf",
+          "vol_squeeze": {
+            "bbwp": 79.0,
+            "bias": "neutral",
+            "box_hi": null,
+            "box_lo": null,
+            "caveat": "Volatility compression read \u2014 a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u538b\u7f29\u8bfb\u6570 \u2014 \u5c5e\u62e9\u65f6\u80cc\u666f\uff0c\u5e76\u975e\u65b9\u5411\u5224\u65ad\u3002\u6301\u7eed\u7684\u538b\u7f29\u610f\u5473\u7740\u66f4\u5927\u7684\u6ce2\u52a8\u6b63\u5728\u84c4\u52bf\uff1b\u65b9\u5411\u8981\u7b49\u4ef7\u683c\u653e\u91cf\u7a81\u7834\u538b\u7f29\u7bb1\u540e\u624d\u786e\u8ba4\u3002\u4e2d\u7b49\u6548\u529b\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "close",
+            "days_compressed": 0,
+            "fired_dir": null,
+            "hv_pctile": 21.0,
+            "pos": null,
+            "state": "NONE",
+            "to_lower_pct": null,
+            "to_upper_pct": null,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 2,
+        "days_since_signal_basis": "calendar",
+        "dd_pct": null,
+        "dir": "caution",
+        "display_rank": 20,
+        "dossier": {
+          "action": {
+            "tone": "go",
+            "verb": "BUY",
+            "verb_zh": "\u4e70\u5165"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "capped_by_entry"
+          ],
+          "stale_flags": [
+            "capped_by_entry",
+            "bars-since-cross:9"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -11,
+          "in_blackout": false,
+          "next_date": "2026-08-05",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 0,
+          "action": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 45.37.",
+          "action_zh": "\u65e5\u7ebf\u4f4e\u70b9\u6b63\u5728\u5f62\u6210\uff0c\u4f46\u5927\u8d8b\u52bf\u4ecd\u504f\u7a7a\u3002\u53ea\u9002\u5408\u5c0f\u4ed3\u4f4d\uff1b\u6b62\u635f\u8bbe\u4e8e 45.37 \u4e0b\u65b9\u3002",
+          "atr_pct": 0.72,
+          "buy_zone": {
+            "high": 45.76,
+            "low": 45.43,
+            "pct_from_spot": -1.1
+          },
+          "chase_above": 46.09,
+          "confidence": 21.1,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 30,
+            "pct_through": 68,
+            "phase": "in_band"
+          },
+          "entry_grade": "light",
+          "entry_z": 30.0,
+          "headline": "Bounce \u2014 turn not confirmed; wait",
+          "headline_zh": "\u53cd\u5f39 \u2014 \u8f6c\u5411\u672a\u786e\u8ba4\uff0c\u5148\u89c2\u671b",
+          "horizon": {
+            "d21": -0.06,
+            "d3": 0.3,
+            "d63": 0.65
+          },
+          "spot": 46.09,
+          "status": "bounce_wait",
+          "stop": 45.37,
+          "timing": {
+            "next_trigger": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 45.37.",
+            "opens_in_days_hi": 14,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "caution"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": 0.25,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.175824,
+        "factor_z": 0.129,
+        "featured": false,
+        "featured_blocked_by": [
+          "tier_unknown",
+          "ticks_stale"
+        ],
+        "hold": {
+          "anchor": "2026-07-14",
+          "anchor_src": "cross",
+          "days_basing": 27,
+          "invalidation": 40.07,
+          "maxup_pct": 4.71,
+          "ob_persist": true,
+          "provisional": false,
+          "ret_since_anchor_pct": -1.41,
+          "state": "launched"
+        },
+        "label": "UNCONFIRMED TURN",
+        "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411",
+        "lane": "bottoming",
+        "name": "NNN Reit",
+        "new": false,
+        "off_high": -5.8,
+        "price": 46.09,
+        "prophet": {
+          "alpha_percentile": 0.595238,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 71.51,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.604651,
+              "insider_cluster": 0.488372,
+              "off_high": 0.825581,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 56.6,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.595238,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.460317,
+            "entry": 1.0,
+            "quality": 0.0,
+            "runway": 0.875,
+            "signal": 0.0
+          },
+          "points": {
+            "edge": 11.5079,
+            "entry": 25.0,
+            "quality": 0.0,
+            "runway": 8.75,
+            "signal": 0.0
+          },
+          "score": 45.3,
+          "score_rank": 27,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 1.72,
+          "regime_gross": 1.0,
+          "size_mult": 1.72,
+          "vol_ann_pct": 12.8,
+          "vol_pct": 0.4
+        },
+        "score_rank": 20,
+        "sector": "Real Estate",
+        "sector_n": 101,
+        "sector_rank": 45,
+        "setup": 0.59,
+        "signal": {
+          "above200": true,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": true,
+          "eligible": true,
+          "fresh_bars": null,
+          "fresh_bars_knowable": null,
+          "history_bars": 778,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "date": "2026-07-31",
+            "signal_date": "2026-08-04",
+            "type": "sell"
+          },
+          "provisional": false,
+          "reason": "early advance-warning (no open buy)",
+          "reasons": [
+            "early advance-warning (no open buy)"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "mixed",
+          "sub": "early",
+          "ticks": 9,
+          "tier": "anticipation",
+          "tier_cascade": null,
+          "tier_event_date": null,
+          "tier_observation_provisional": false,
+          "tier_observed_date": null,
+          "tier_sub": null,
+          "weekly_bull": false,
+          "weight": 0.0,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><line x1=\"144.0\" y1=\"27.9\" x2=\"240\" y2=\"27.9\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"29.7\" x2=\"240\" y2=\"29.7\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,30.4 3.8,32.2 7.6,32.1 11.4,31.8 15.2,33.0 19.0,32.9 22.9,34.8 26.7,42.0 30.5,38.7 34.3,36.6 38.1,37.8 41.9,32.3 45.7,32.0 49.5,26.6 53.3,24.8 57.1,25.9 61.0,23.2 64.8,26.9 68.6,25.6 72.4,31.4 76.2,32.1 80.0,31.2 83.8,26.4 87.6,23.7 91.4,24.5 95.2,18.3 99.0,19.1 102.9,23.6 106.7,26.7 110.5,21.4 114.3,24.5 118.1,21.9 121.9,24.9 125.7,27.0 129.5,25.6 133.3,22.3 137.1,22.3 141.0,22.0 144.8,12.1 148.6,10.1 152.4,13.8 156.2,13.0 160.0,13.5 163.8,15.3 167.6,11.2 171.4,12.2 175.2,12.1 179.0,14.1 182.9,18.1 186.7,18.1 190.5,18.2 194.3,20.0 198.1,18.9 201.9,20.9 205.7,21.8 209.5,27.3 213.3,30.0 217.1,27.6 221.0,25.2 224.8,26.5 228.6,25.6 232.4,27.5 236.2,25.2 240.0,26.0 240,42\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,30.4 3.8,32.2 7.6,32.1 11.4,31.8 15.2,33.0 19.0,32.9 22.9,34.8 26.7,42.0 30.5,38.7 34.3,36.6 38.1,37.8 41.9,32.3 45.7,32.0 49.5,26.6 53.3,24.8 57.1,25.9 61.0,23.2 64.8,26.9 68.6,25.6 72.4,31.4 76.2,32.1 80.0,31.2 83.8,26.4 87.6,23.7 91.4,24.5 95.2,18.3 99.0,19.1 102.9,23.6 106.7,26.7 110.5,21.4 114.3,24.5 118.1,21.9 121.9,24.9 125.7,27.0 129.5,25.6 133.3,22.3 137.1,22.3 141.0,22.0 144.8,12.1 148.6,10.1 152.4,13.8 156.2,13.0 160.0,13.5 163.8,15.3 167.6,11.2 171.4,12.2 175.2,12.1 179.0,14.1 182.9,18.1 186.7,18.1 190.5,18.2 194.3,20.0 198.1,18.9 201.9,20.9 205.7,21.8 209.5,27.3 213.3,30.0 217.1,27.6 221.0,25.2 224.8,26.5 228.6,25.6 232.4,27.5 236.2,25.2 240.0,26.0\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"26.0\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
+        "stage": "setting_up",
+        "state": "COUNTERTREND BOUNCE",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 116.0,
+          "scored": false,
+          "tail_pct": 475.0
+        },
+        "ticker": "NNN",
+        "urgency": "caution",
+        "washout_active": false,
+        "weekly_phase": "falling"
+      },
+      "board_row_sha256": "912ccf241b2445b84282f331b9035bb41c0dd89f3a3e11f8862125481e82a0c1",
+      "formation_date": "2026-07-14",
+      "plan_id": "NNN-BULL-20260714",
+      "plan_path": "site/prophet/plans/NNN-BULL-20260714.json",
+      "plan_sha256": "bb6b564f2a6064461e620ed18a1fbb87925274411d535d6d383fa24de67d1ef5"
+    },
+    {
+      "admission_rank": 5,
+      "asset": "PCG",
+      "board_row": {
+        "above_trend": true,
+        "adv_dollar_20d_median": 427694775.0,
+        "adv_dollar_21d": 479237699.0,
+        "align_tier": null,
+        "alpha": 0.17,
+        "alpha_entry": "neutral",
+        "antichase_shadow_blocked": false,
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": true,
+          "roc12_pctile": 0.7262
+        },
+        "coiled": {
+          "anchor_era": "coiled-mtf-abs-session-2026-08-06",
+          "bonus": 0.25,
+          "cohort": 0.466,
+          "coiled": true,
+          "div": false,
+          "fire": true,
+          "fire_src": "m2d",
+          "fire_ticks": 0,
+          "star": false,
+          "washout_ctx": true
+        },
+        "composite": {
+          "legs": {
+            "momentum": 0.19,
+            "quality": -0.05,
+            "revisions": 0.0,
+            "value": 1.89
+          },
+          "n_legs": 4,
+          "z": 0.509
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": false,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "crossed",
+            "days_to_cross": null,
+            "entry_tier": "Extended \u2014 wait",
+            "entry_tier_zh": "\u5df2\u8fc7\u70ed \u2014 \u7b49\u56de\u8c03",
+            "ext_pct_used": 7.44,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly rising \u00b7 3-Day \u00b7 \u00b7 Daily crossed up",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4e0a\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u5df2\u4e0a\u7a7f",
+            "near": false,
+            "overextended": true,
+            "overextended_basis": "oscillator",
+            "overextended_legs": [
+              "daily_stochrsi_overbought"
+            ],
+            "quality": 42.7,
+            "reason": "Already extended (overbought / far above the 200-day) \u2014 wait for a pullback",
+            "reason_zh": "\u5df2\u8fc7\u70ed\uff08\u8d85\u4e70\uff0f\u8fdc\u9ad8\u4e8e200\u65e5\u5747\u7ebf\uff09\u2014 \u7b49\u5f85\u56de\u8c03",
+            "score": 42.7,
+            "three_day": "rising",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": null,
+            "weekly": "rising",
+            "weekly_ok": true
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 69,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi",
+                "trend-quality"
+              ],
+              "z": 1.3066666666666666
+            },
+            "quality": {
+              "flags": {
+                "accounting": "watch"
+              },
+              "pct": 42,
+              "present": [
+                "factors"
+              ],
+              "z": -0.52
+            },
+            "selection": {
+              "basis": [
+                {
+                  "fresh_days": 82,
+                  "label": "SUE",
+                  "label_zh": "\u76c8\u5229\u8d85\u9884\u671f",
+                  "leg": "sue",
+                  "tier": "validated",
+                  "z": 0.12
+                },
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": -0.32
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": 0.17
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 48,
+              "present": [
+                "sue",
+                "revision",
+                "alpha"
+              ],
+              "z": -0.10124999999999999
+            },
+            "tailwind": {
+              "pct": 45,
+              "present": [
+                "spotlight"
+              ],
+              "z": -0.35600000000000004
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": {
+            "above_trend": true,
+            "book_wt": null,
+            "crowded": false,
+            "durability_bar": 0.4,
+            "eligible": true,
+            "label": "deteriorating",
+            "name": "Power & Grid Buildout",
+            "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
+            "rank": 43,
+            "reco": "avoid",
+            "ret_12m": 0.2,
+            "score": -0.61,
+            "signal_grade": "backtested",
+            "slug": "power_grid"
+          },
+          "cautions": [
+            "Accounting quality is worth a second look.",
+            "Its Power & Grid Buildout basket is deteriorating. Trim, or take a smaller position than usual."
+          ],
+          "cautions_zh": [
+            "\u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002",
+            "\u6240\u5c5e \u7535\u529b\u4e0e\u7535\u7f51 \u7bee\u5b50\u6b63\u5728\u6076\u5316\u3002\u51cf\u4ed3\uff0c\u6216\u5c06\u4ed3\u4f4d\u63a7\u5236\u5728\u5e73\u5e38\u6c34\u5e73\u4ee5\u4e0b\u3002"
+          ],
+          "composite_z": -0.006,
+          "cycle_blocked": false,
+          "drivers": [
+            "entry"
+          ],
+          "gex_confirm": {
+            "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+            "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "gate_scored": false,
+            "label": "Options neutral",
+            "label_zh": "\u671f\u6743\u4e2d\u6027",
+            "levels": {
+              "call_wall": 20.0,
+              "flip": null,
+              "put_wall": 17.5,
+              "regime": "long",
+              "vol_hole_state": "COILED_DOWN"
+            },
+            "opex_days": 1,
+            "opex_suppressed": true,
+            "reasons": [
+              {
+                "en": "long-gamma \u2014 dealer hedging dampens the move",
+                "tone": "caution",
+                "zh": "\u591a\u5934 Gamma \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u6291\u5236\u6ce2\u52a8"
+              },
+              {
+                "en": "clear runway to the call wall with put-wall support below",
+                "tone": "confirm",
+                "zh": "\u4e0a\u884c\u81f3 Call \u5899\u7a7a\u95f4\u5145\u88d5\uff0c\u4e0b\u65b9\u6709 Put \u5899\u652f\u6491"
+              },
+              {
+                "en": "armed at the lower gamma band \u2014 a close below releases a downside move",
+                "tone": "caution",
+                "zh": "\u5728\u4e0b\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u8dcc\u7834\u5373\u5411\u4e0b\u91ca\u653e"
+              }
+            ],
+            "score": -0.5,
+            "verdict": "neutral"
+          },
+          "iv_spread_confirm": {
+            "atm_spread": 0.11965,
+            "caveat": "Cremers-Weinbaum call\u2212put IV spread (matched strikes, ~30d, OI-weighted). Calls richer than puts = informed bullish lean; puts richer = protection bid. A CROSS-SECTIONAL context read \u2014 dividends/borrow can bias the level, the feed is delayed EOD, and it is DISPLAY-ONLY until the forward-IC gate validates. It can amplify or caution a long the price thesis already likes, never create a buy.",
+            "caveat_zh": "Cremers-Weinbaum \u770b\u6da8\u2212\u770b\u8dcc\u9690\u542b\u6ce2\u52a8\u7387\u4ef7\u5dee\uff08\u540c\u884c\u6743\u4ef7\u914d\u5bf9\uff0c\u7ea630\u5929\uff0c\u6309\u672a\u5e73\u4ed3\u91cf\u52a0\u6743\uff09\u3002\u770b\u6da8\u6bd4\u770b\u8dcc\u66f4\u8d35 = \u77e5\u60c5\u8d44\u91d1\u504f\u591a\uff1b\u770b\u8dcc\u66f4\u8d35 = \u4e70\u5165\u4fdd\u62a4\u3002\u8fd9\u662f\u6a2a\u622a\u9762\u53c2\u8003\u8bfb\u6570 \u2014 \u80a1\u606f/\u501f\u5238\u6210\u672c\u4f1a\u6270\u52a8\u6c34\u5e73\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\uff0c\u4e14\u5728\u524d\u77bbIC\u9a8c\u8bc1\u901a\u8fc7\u524d\u4ec5\u4f5c\u5c55\u793a\u3002\u5b83\u53ea\u80fd\u653e\u5927\u6216\u8b66\u793a\u4ef7\u683c\u903b\u8f91\u672c\u5df2\u770b\u597d\u7684\u591a\u5934\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "chg": null,
+            "gate_scored": false,
+            "ivspread": 0.1967,
+            "ivspread_rel": 0.19959,
+            "label": "Options lean up",
+            "label_zh": "\u671f\u6743\u504f\u591a",
+            "n_pairs": 4,
+            "reasons": [
+              {
+                "en": "calls richer than puts by +20.0 vol pts vs peers \u2014 strong informed bullish lean",
+                "tone": "confirm",
+                "zh": "\u770b\u6da8\u6bd4\u770b\u8dcc\u8d35 +20.0 \u4e2a\u6ce2\u52a8\u70b9\uff08\u76f8\u5bf9\u540c\u4e1a\uff09 \u2014 \u77e5\u60c5\u8d44\u91d1\u5f3a\u70c8\u504f\u591a"
+              }
+            ],
+            "score": 1.0,
+            "tenor_days": 29.0,
+            "verdict": "confirm"
+          },
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "neutral",
+            "band_en": "Watch",
+            "band_zh": "\u89c2\u5bdf",
+            "call": {
+              "fuel": 0.094,
+              "score": 41,
+              "ticker": "PCG",
+              "tier": "watch",
+              "trigger": 0.92
+            },
+            "components": {
+              "confidence": 1.059,
+              "edge": 0.98,
+              "fuel": 0.094,
+              "survive": 1.0,
+              "tailwind": 0.93,
+              "trigger": 0.92
+            },
+            "reasoning": [
+              "cycle turning up now (BOTTOMING)",
+              "theme below trend / fading \u2014 de-risk"
+            ],
+            "score": 41,
+            "scored": true,
+            "tier": "watch"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "sue",
+              "trend-quality",
+              "urgency"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 71,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "basket_trend": 0.35,
+              "ext": 0.0,
+              "lottery": 0.0,
+              "out_of_play": 0.41
+            },
+            "drivers": null,
+            "idio": 0.0,
+            "idio_tax": null,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.41,
+            "veto": null
+          },
+          "score": 41,
+          "score_edge": 71,
+          "score_timing": 41,
+          "size": {
+            "bucket": "half",
+            "pct": 50,
+            "risk": 0.41,
+            "tier": "context",
+            "vol_mult": 0.87
+          },
+          "spotlight": {
+            "dir": "out_of_play",
+            "mult": 0.844,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLU",
+              "extended": false,
+              "name": "Utilities",
+              "pctile_252d": 5.6,
+              "stage": "lagging"
+            },
+            "sector_z": -0.8,
+            "theme": {
+              "label": "deteriorating",
+              "label_en": "DETERIORATING",
+              "label_zh": "\u8d70\u5f31",
+              "name": "Utilities (Equal-Weight)",
+              "name_zh": "\u516c\u7528\u4e8b\u4e1a\uff08\u7b49\u6743\uff09",
+              "reco": "avoid",
+              "reco_en": "AVOID",
+              "reco_zh": "\u56de\u907f",
+              "score": 25,
+              "slug": "us_sector_utilities"
+            },
+            "theme_z": -0.95,
+            "z": -0.89
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Neutral \u2014 no clear edge",
+          "verdict_zh": "\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf",
+          "vol_squeeze": {
+            "bbwp": 13.0,
+            "bias": "neutral",
+            "box_hi": null,
+            "box_lo": null,
+            "caveat": "Volatility compression read \u2014 a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u538b\u7f29\u8bfb\u6570 \u2014 \u5c5e\u62e9\u65f6\u80cc\u666f\uff0c\u5e76\u975e\u65b9\u5411\u5224\u65ad\u3002\u6301\u7eed\u7684\u538b\u7f29\u610f\u5473\u7740\u66f4\u5927\u7684\u6ce2\u52a8\u6b63\u5728\u84c4\u52bf\uff1b\u65b9\u5411\u8981\u7b49\u4ef7\u683c\u653e\u91cf\u7a81\u7834\u538b\u7f29\u7bb1\u540e\u624d\u786e\u8ba4\u3002\u4e2d\u7b49\u6548\u529b\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "ohlcv",
+            "days_compressed": 0,
+            "fired_dir": null,
+            "hv_pctile": 40.0,
+            "pos": null,
+            "state": "NONE",
+            "to_lower_pct": null,
+            "to_upper_pct": null,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 48,
+        "days_since_signal_basis": "sessions",
+        "days_to_build_100k": 0.0,
+        "days_to_build_1m": 0.0,
+        "days_to_exit_at_10pct_adv": 0.0,
+        "dd_pct": null,
+        "demand": {
+          "chain": "ai_datacenter",
+          "div": "ahead_of_consensus",
+          "tier": "power",
+          "yoy": 69.0
+        },
+        "dir": "up",
+        "display_rank": 2,
+        "dossier": {
+          "action": {
+            "tone": "go",
+            "verb": "BUY",
+            "verb_zh": "\u4e70\u5165"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          }
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -15,
+          "in_blackout": false,
+          "next_date": "2026-07-30",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 3,
+          "action": "The daily turn is already in \u2014 a low formed @ 17.0 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+          "action_zh": "\u65e5\u7ebf\u8f6c\u5411\u5df2\u7ecf\u5b8c\u6210\u2014\u2014\u4f4e\u70b9\u4e8e\u8fd1\u671f\u5f62\u6210 @ 17.0\uff0c\u4e14\u4ef7\u683c\u5df2\u91cd\u65b0\u7ad9\u4e0a 10 \u65e5\u5747\u7ebf\u3002\u5c1a\u7f3a\u7684\u662f\u5468\u7ebf\u5468\u671f\u7684\u786e\u8ba4\uff0c\u56e0\u6b64\u8fd9\u662f\u5f53\u4e0b\u53ef\u7528\u7684\u90e8\u5206\u4fe1\u5fc3\u5165\u573a\uff0c\u800c\u975e\u5f85\u89e6\u53d1\u4fe1\u53f7\uff1a\u53ef\u5728\u6b64\u5efa\u534a\u4ed3\uff0c\u6216\u7b49\u5f85\u5468\u7ebf\u8f6c\u5411\u3002",
+          "atr_pct": 1.37,
+          "buy_zone": {
+            "high": 17.96,
+            "low": 17.59,
+            "pct_from_spot": -1.0
+          },
+          "chase_above": 18.11,
+          "confidence": 46.1,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 10,
+            "pct_through": 23,
+            "phase": "new"
+          },
+          "entry_grade": "strong",
+          "entry_z": 72.0,
+          "headline": "Partial entry \u2014 half size now",
+          "headline_zh": "\u90e8\u5206\u5165\u573a \u2014 \u5f53\u524d\u53ef\u5efa\u534a\u4ed3",
+          "horizon": {
+            "d21": 0.54,
+            "d3": 0.72,
+            "d63": 0.5
+          },
+          "spot": 17.96,
+          "status": "partial",
+          "stop": 17.0,
+          "timing": {
+            "next_trigger": "The daily turn is already in \u2014 a low formed @ 17.0 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+            "opens_in_days_hi": 0,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "now"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": 0.48,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.318681,
+        "factor_z": 0.709,
+        "featured": true,
+        "gex_confirm": {
+          "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+          "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+          "label": "Options neutral",
+          "label_zh": "\u671f\u6743\u4e2d\u6027",
+          "levels": {
+            "call_wall": 20.0,
+            "flip": null,
+            "put_wall": 17.5,
+            "regime": "long",
+            "vol_hole_state": "COILED_DOWN"
+          },
+          "opex_days": 1,
+          "opex_suppressed": true,
+          "reasons": [
+            {
+              "en": "long-gamma \u2014 dealer hedging dampens the move",
+              "tone": "caution",
+              "zh": "\u591a\u5934 Gamma \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u6291\u5236\u6ce2\u52a8"
+            },
+            {
+              "en": "clear runway to the call wall with put-wall support below",
+              "tone": "confirm",
+              "zh": "\u4e0a\u884c\u81f3 Call \u5899\u7a7a\u95f4\u5145\u88d5\uff0c\u4e0b\u65b9\u6709 Put \u5899\u652f\u6491"
+            },
+            {
+              "en": "armed at the lower gamma band \u2014 a close below releases a downside move",
+              "tone": "caution",
+              "zh": "\u5728\u4e0b\u6cbf Gamma \u5e26\u84c4\u52bf \u2014 \u6536\u76d8\u8dcc\u7834\u5373\u5411\u4e0b\u91ca\u653e"
+            }
+          ],
+          "score": -0.5,
+          "verdict": "neutral"
+        },
+        "hold": {
+          "anchor": "2026-06-09",
+          "anchor_src": "take",
+          "days_basing": 50,
+          "invalidation": 14.54,
+          "maxup_pct": 9.55,
+          "ob_persist": true,
+          "provisional": false,
+          "ret_since_anchor_pct": 8.64,
+          "state": "launched"
+        },
+        "label": "BOTTOMING (blocked)",
+        "label_zh": "\u7b51\u5e95\u4e2d\uff08\u53d7\u963b\uff09",
+        "lane": "continuation",
+        "liquidity_tier": "deep",
+        "name": "P G + E Corp",
+        "new": false,
+        "off_high": -5.5,
+        "price": 17.96,
+        "prophet": {
+          "alpha_percentile": 0.547619,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 70.93,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.55814,
+              "insider_cluster": 0.488372,
+              "off_high": 0.860465,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 56.4,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.547619,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.396825,
+            "entry": 1.0,
+            "quality": 0.8,
+            "runway": 0.76,
+            "signal": 1.0
+          },
+          "points": {
+            "edge": 9.9206,
+            "entry": 25.0,
+            "quality": 8.0,
+            "runway": 7.6,
+            "signal": 30.0
+          },
+          "score": 80.5,
+          "score_rank": 1,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 0.87,
+          "regime_gross": 1.0,
+          "size_mult": 0.87,
+          "vol_ann_pct": 25.2,
+          "vol_pct": 0.74
+        },
+        "score_rank": 2,
+        "sector": "Utilities",
+        "sector_n": 62,
+        "sector_pulse": {
+          "as_of": "2026-08-19",
+          "heat": "broken",
+          "label": "deteriorating",
+          "n_themes": 49,
+          "rank": 48,
+          "rank_delta_5d": -4,
+          "reco": "avoid",
+          "theme_id": "power_grid",
+          "theme_ids": [
+            "power_grid",
+            "us_sector_utilities"
+          ],
+          "theme_name": "Power & Grid Buildout",
+          "theme_name_zh": "\u7535\u529b\u4e0e\u7535\u7f51"
+        },
+        "sector_rank": 25,
+        "setup": 1.37,
+        "signal": {
+          "above200": true,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": false,
+          "eligible": true,
+          "fresh_bars": 50,
+          "fresh_bars_knowable": 48,
+          "history_bars": 13668,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "confirmed_date": "2026-06-22",
+            "date": "2026-06-09",
+            "quality": "block",
+            "reason": "veto: bearish divergence",
+            "reasons": [
+              "veto: bearish divergence",
+              "failed next-bar hold"
+            ],
+            "signal_date": "2026-06-11",
+            "type": "buy"
+          },
+          "provisional": false,
+          "reason": "tier T2 (weight 1.0)",
+          "reasons": [
+            "tier T2 (weight 1.0)"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "long-bias",
+          "sub": null,
+          "ticks": 0,
+          "tier": null,
+          "tier_cascade": "T2",
+          "tier_event_date": "2026-08-20",
+          "tier_observation_provisional": false,
+          "tier_observed_date": "2026-08-20",
+          "tier_sub": "shallow",
+          "weekly_bull": true,
+          "weight": 1.0,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><rect x=\"144.0\" y=\"12.5\" width=\"96.0\" height=\"5.9\" fill=\"var(--up)\" fill-opacity=\"0.09\" stroke=\"none\"/><line x1=\"144.0\" y1=\"12.5\" x2=\"240\" y2=\"12.5\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"18.4\" x2=\"240\" y2=\"18.4\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,39.5 3.8,37.4 7.6,36.6 11.4,37.7 15.2,36.0 19.0,39.8 22.9,39.0 26.7,42.0 30.5,35.3 34.3,30.9 38.1,31.4 41.9,26.8 45.7,36.8 49.5,35.2 53.3,33.0 57.1,31.8 61.0,29.3 64.8,35.2 68.6,32.6 72.4,37.4 76.2,36.8 80.0,34.4 83.8,32.2 87.6,26.6 91.4,27.3 95.2,22.5 99.0,24.7 102.9,30.6 106.7,34.6 110.5,26.9 114.3,30.6 118.1,24.9 121.9,26.9 125.7,24.9 129.5,25.0 133.3,21.9 137.1,20.7 141.0,19.6 144.8,19.3 148.6,22.6 152.4,20.9 156.2,19.9 160.0,10.1 163.8,19.1 167.6,14.2 171.4,18.2 175.2,15.3 179.0,16.4 182.9,15.3 186.7,21.7 190.5,20.9 194.3,20.6 198.1,24.6 201.9,27.7 205.7,20.4 209.5,27.1 213.3,23.0 217.1,21.7 221.0,20.4 224.8,14.4 228.6,19.8 232.4,14.7 236.2,17.4 240.0,12.5 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,39.5 3.8,37.4 7.6,36.6 11.4,37.7 15.2,36.0 19.0,39.8 22.9,39.0 26.7,42.0 30.5,35.3 34.3,30.9 38.1,31.4 41.9,26.8 45.7,36.8 49.5,35.2 53.3,33.0 57.1,31.8 61.0,29.3 64.8,35.2 68.6,32.6 72.4,37.4 76.2,36.8 80.0,34.4 83.8,32.2 87.6,26.6 91.4,27.3 95.2,22.5 99.0,24.7 102.9,30.6 106.7,34.6 110.5,26.9 114.3,30.6 118.1,24.9 121.9,26.9 125.7,24.9 129.5,25.0 133.3,21.9 137.1,20.7 141.0,19.6 144.8,19.3 148.6,22.6 152.4,20.9 156.2,19.9 160.0,10.1 163.8,19.1 167.6,14.2 171.4,18.2 175.2,15.3 179.0,16.4 182.9,15.3 186.7,21.7 190.5,20.9 194.3,20.6 198.1,24.6 201.9,27.7 205.7,20.4 209.5,27.1 213.3,23.0 217.1,21.7 221.0,20.4 224.8,14.4 228.6,19.8 232.4,14.7 236.2,17.4 240.0,12.5\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"12.5\" r=\"2.6\" fill=\"var(--up)\"/></svg>",
+        "stage": "live",
+        "state": "TURN SIGNALED",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 180.0,
+          "scored": false,
+          "tail_pct": 693.0
+        },
+        "ticker": "PCG",
+        "urgency": "caution",
+        "washout_active": true,
+        "weekly_phase": "rising"
+      },
+      "board_row_sha256": "e8fde6735f9ba64cc76d391d99e7e19001f4bcd64152b94b30e12d244b5aa039",
+      "formation_date": "2026-06-09",
+      "plan_id": "PCG-BULL-20260609",
+      "plan_path": "site/prophet/plans/PCG-BULL-20260609.json",
+      "plan_sha256": "b172889cd55060dbb26f0213fde368708ad7ecd0a5dca817c484e7f1f614ae93"
+    },
+    {
+      "admission_rank": 7,
+      "asset": "PLNT",
+      "board_row": {
+        "above_trend": false,
+        "align_tier": "APPROACHING",
+        "alpha": -1.46,
+        "alpha_entry": "laggard",
+        "antichase_shadow_blocked": false,
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": false,
+          "roc12_pctile": 0.3651
+        },
+        "coiled": {
+          "anchor_era": "coiled-mtf-abs-session-2026-08-06",
+          "bonus": 0.0,
+          "cohort": 0.222,
+          "coiled": false,
+          "div": true,
+          "star": false,
+          "washout_ctx": true
+        },
+        "composite": {
+          "legs": {
+            "momentum": -1.74,
+            "quality": -2.3,
+            "revisions": 0.48
+          },
+          "n_legs": 3,
+          "z": -1.185
+        },
+        "confluence_plus": {
+          "groups": [
+            "INSIDER",
+            "SMARTMONEY"
+          ],
+          "k": 2
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": false,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "crossed",
+            "days_to_cross": null,
+            "entry_tier": "Approaching \u2014 early",
+            "entry_tier_zh": "\u4e34\u8fd1 \u2014 \u504f\u65e9",
+            "ext_pct_used": -30.52,
+            "have_tf": true,
+            "knife": 0.35,
+            "line": "Weekly rising \u00b7 3-Day \u00b7 \u00b7 Daily crossed up",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u4e0a\u884c \u00b7 3\u65e5\u00b7 \u00b7 \u65e5\u7ebf\u5df2\u4e0a\u7a7f",
+            "near": true,
+            "overextended": false,
+            "overextended_basis": null,
+            "overextended_legs": [],
+            "quality": 36.0,
+            "reason": "weekly uptrend",
+            "reason_zh": "\u5468\u7ebf\u4e0a\u884c",
+            "score": 36.0,
+            "three_day": "rising",
+            "three_day_ok": false,
+            "three_day_trigger": null,
+            "tier": "APPROACHING",
+            "weekly": "rising",
+            "weekly_ok": true
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 51,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi",
+                "vol-squeeze"
+              ],
+              "z": 0.05333333333333337
+            },
+            "quality": {
+              "flags": {
+                "accounting": "watch"
+              },
+              "pct": 18,
+              "present": [
+                "factors"
+              ],
+              "z": -2.44
+            },
+            "selection": {
+              "basis": [
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": 0.33
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": -1.46
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 46,
+              "present": [
+                "revision",
+                "alpha"
+              ],
+              "z": -0.271
+            },
+            "tailwind": {
+              "pct": 51,
+              "present": [
+                "spotlight"
+              ],
+              "z": 0.04000000000000001
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": null,
+          "cautions": [
+            "Accounting quality is worth a second look."
+          ],
+          "cautions_zh": [
+            "\u8d22\u52a1\u8d28\u91cf\u503c\u5f97\u518d\u6838\u67e5\u4e00\u6b21\u3002"
+          ],
+          "composite_z": -0.94,
+          "cycle_blocked": false,
+          "drivers": [],
+          "gex_confirm": null,
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "high",
+            "band_en": "Primed",
+            "band_zh": "\u84c4\u52bf\u5f85\u53d1",
+            "call": {
+              "fuel": 1.0,
+              "score": 88,
+              "ticker": "PLNT",
+              "tier": "primed",
+              "trigger": 0.92
+            },
+            "components": {
+              "confidence": 1.006,
+              "edge": 0.946,
+              "fuel": 1.0,
+              "survive": 1.0,
+              "tailwind": 1.0,
+              "trigger": 0.92
+            },
+            "reasoning": [
+              "cycle turning up now (BOTTOMING)",
+              "insider / earnings / revision edge leans against it",
+              "-53% off its high \u2014 room to recover",
+              "-30% below its 200-day \u2014 washed out"
+            ],
+            "score": 88,
+            "scored": true,
+            "tier": "primed"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "urgency",
+              "vol-squeeze"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 21,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "ext": 0.0,
+              "lottery": 0.0
+            },
+            "drivers": null,
+            "idio": 0.0,
+            "idio_tax": null,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.0,
+            "veto": null
+          },
+          "score": 88,
+          "score_edge": 21,
+          "score_timing": 88,
+          "size": {
+            "bucket": "half",
+            "capped_by_entry": true,
+            "pct": 50,
+            "risk": 0.0,
+            "tier": "context",
+            "vol_mult": 0.63
+          },
+          "spotlight": {
+            "dir": "neutral",
+            "mult": 1.018,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLY",
+              "extended": false,
+              "name": "Consumer Discretionary",
+              "pctile_252d": 4.8,
+              "stage": "improving"
+            },
+            "sector_z": 0.1,
+            "theme": null,
+            "theme_z": null,
+            "z": 0.1
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Neutral \u2014 no clear edge",
+          "verdict_zh": "\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf",
+          "vol_squeeze": {
+            "bbwp": 82.0,
+            "bias": "neutral",
+            "box_hi": null,
+            "box_lo": null,
+            "caveat": "Volatility is already elevated \u2014 realized vol sits in the top fifth of the past year, so the move is underway, not loading. This is the opposite of a coiled squeeze: the quiet entry is already gone. A late / heads-up read, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u7387\u5df2\u5904\u4e8e\u9ad8\u4f4d \u2014 \u5b9e\u73b0\u6ce2\u52a8\u7387\u4f4d\u4e8e\u8fc7\u53bb\u4e00\u5e74\u524d\u4e94\u5206\u4e4b\u4e00\uff0c\u884c\u60c5\u5df2\u5728\u8fdb\u884c\uff0c\u800c\u975e\u84c4\u52bf\u3002\u8fd9\u4e0e\u538b\u7f29\u84c4\u52bf\u76f8\u53cd\uff1a\u5b89\u9759\u7684\u5165\u573a\u70b9\u5df2\u8fc7\u3002\u5c5e\u504f\u665a\u7684\u63d0\u793a\u8bfb\u6570\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": false,
+            "coverage": "close",
+            "days_compressed": 0,
+            "fired_dir": null,
+            "hv_pctile": 83.0,
+            "pos": null,
+            "state": "EXPANSION",
+            "to_lower_pct": null,
+            "to_upper_pct": null,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 66,
+        "days_since_signal_basis": "sessions",
+        "dd_pct": null,
+        "dir": "up",
+        "display_rank": 4,
+        "dossier": {
+          "action": {
+            "tone": "go",
+            "verb": "BUY",
+            "verb_zh": "\u4e70\u5165"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "capped_by_entry"
+          ],
+          "stale_flags": [
+            "capped_by_entry"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -10,
+          "in_blackout": false,
+          "next_date": "2026-08-06",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 3,
+          "action": "The daily turn is already in \u2014 a low formed ~7 day(s) ago @ 47.92 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+          "action_zh": "\u65e5\u7ebf\u8f6c\u5411\u5df2\u7ecf\u5b8c\u6210\u2014\u2014\u4f4e\u70b9\u4e8e\u7ea6 7 \u5929\u524d\u5f62\u6210 @ 47.92\uff0c\u4e14\u4ef7\u683c\u5df2\u91cd\u65b0\u7ad9\u4e0a 10 \u65e5\u5747\u7ebf\u3002\u5c1a\u7f3a\u7684\u662f\u5468\u7ebf\u5468\u671f\u7684\u786e\u8ba4\uff0c\u56e0\u6b64\u8fd9\u662f\u5f53\u4e0b\u53ef\u7528\u7684\u90e8\u5206\u4fe1\u5fc3\u5165\u573a\uff0c\u800c\u975e\u5f85\u89e6\u53d1\u4fe1\u53f7\uff1a\u53ef\u5728\u6b64\u5efa\u534a\u4ed3\uff0c\u6216\u7b49\u5f85\u5468\u7ebf\u8f6c\u5411\u3002",
+          "atr_pct": 2.27,
+          "buy_zone": {
+            "high": 53.12,
+            "low": 51.31,
+            "pct_from_spot": -1.7
+          },
+          "chase_above": 53.84,
+          "confidence": 27.8,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 28,
+            "pct_through": 64,
+            "phase": "in_band"
+          },
+          "entry_grade": "solid",
+          "entry_z": 50.3,
+          "headline": "Partial entry \u2014 half size now",
+          "headline_zh": "\u90e8\u5206\u5165\u573a \u2014 \u5f53\u524d\u53ef\u5efa\u534a\u4ed3",
+          "horizon": {
+            "d21": 0.34,
+            "d3": 0.5,
+            "d63": -0.4
+          },
+          "spot": 53.12,
+          "status": "partial",
+          "stop": 47.92,
+          "timing": {
+            "next_trigger": "The daily turn is already in \u2014 a low formed ~7 day(s) ago @ 47.92 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.",
+            "opens_in_days_hi": 0,
+            "opens_in_days_lo": 0
+          },
+          "urgency": "now"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": -0.7,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.032967,
+        "factor_z": null,
+        "featured": false,
+        "featured_blocked_by": [
+          "alpha_below_floor"
+        ],
+        "hold": {
+          "anchor": "2026-05-13",
+          "anchor_src": "take",
+          "days_basing": 68,
+          "invalidation": 42.69,
+          "maxup_pct": 11.86,
+          "ob_persist": true,
+          "provisional": false,
+          "ret_since_anchor_pct": 5.0,
+          "state": "launched"
+        },
+        "insider_bps": null,
+        "insider_buyers": 2,
+        "insider_net_mn": 0.48,
+        "label": "BOTTOMING (blocked)",
+        "label_zh": "\u7b51\u5e95\u4e2d\uff08\u53d7\u963b\uff09",
+        "lane": "continuation",
+        "name": "Planet Fitness",
+        "new": false,
+        "off_high": -52.6,
+        "price": 53.12,
+        "prophet": {
+          "alpha_percentile": 0.095238,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 10.47,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 98.26
+            },
+            "member_percentiles": {
+              "alpha": 0.116279,
+              "insider_cluster": 0.988372,
+              "off_high": 0.093023,
+              "smartmoney_add": 0.976744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 52.9,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.095238,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.0,
+            "entry": 1.0,
+            "quality": 0.4,
+            "runway": 1.0,
+            "signal": 1.0
+          },
+          "points": {
+            "edge": 0.0,
+            "entry": 25.0,
+            "quality": 4.0,
+            "runway": 10.0,
+            "signal": 30.0
+          },
+          "score": 69.0,
+          "score_rank": 5,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 0.63,
+          "regime_gross": 1.0,
+          "size_mult": 0.63,
+          "vol_ann_pct": 34.8,
+          "vol_pct": 0.71
+        },
+        "score_rank": 4,
+        "sector": "Consumer Discretionary",
+        "sector_n": 212,
+        "sector_rank": 201,
+        "setup": 0.23,
+        "signal": {
+          "above200": false,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": false,
+          "eligible": true,
+          "fresh_bars": 68,
+          "fresh_bars_knowable": 66,
+          "history_bars": 778,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "confirmed_date": "2026-05-26",
+            "date": "2026-05-13",
+            "quality": "block",
+            "reason": "counter-trend, no 200-reclaim/hold",
+            "signal_date": "2026-05-15",
+            "type": "buy"
+          },
+          "provisional": false,
+          "reason": "tier T2 (weight 1.0)",
+          "reasons": [
+            "tier T2 (weight 1.0)"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "long-bias",
+          "sub": null,
+          "ticks": 0,
+          "tier": null,
+          "tier_cascade": "T2",
+          "tier_event_date": "2026-08-20",
+          "tier_observation_provisional": false,
+          "tier_observed_date": "2026-08-20",
+          "tier_sub": "shallow",
+          "weekly_bull": true,
+          "weight": 1.0,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "smartmoney_chip": {
+          "action": "new",
+          "best_fund": "Corvex Management",
+          "best_grade": "A",
+          "n_funds_adding": 1,
+          "period_end": "2026-06-30",
+          "staleness_caveat": "Q1-2026 13F"
+        },
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><rect x=\"144.0\" y=\"22.9\" width=\"96.0\" height=\"6.7\" fill=\"var(--up)\" fill-opacity=\"0.09\" stroke=\"none\"/><line x1=\"144.0\" y1=\"22.9\" x2=\"240\" y2=\"22.9\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"29.5\" x2=\"240\" y2=\"29.5\" stroke=\"var(--up)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,33.5 3.8,32.6 7.6,26.8 11.4,24.9 15.2,27.0 19.0,23.7 22.9,21.4 26.7,23.7 30.5,22.2 34.3,28.7 38.1,29.4 41.9,31.8 45.7,31.7 49.5,30.8 53.3,32.1 57.1,28.9 61.0,30.6 64.8,34.4 68.6,33.2 72.4,33.6 76.2,23.4 80.0,30.4 83.8,27.6 87.6,20.1 91.4,27.2 95.2,24.3 99.0,28.5 102.9,26.4 106.7,24.4 110.5,21.6 114.3,25.4 118.1,25.9 121.9,28.1 125.7,29.3 129.5,29.4 133.3,32.5 137.1,31.0 141.0,26.1 144.8,23.7 148.6,25.7 152.4,15.0 156.2,15.6 160.0,19.4 163.8,18.8 167.6,21.5 171.4,18.8 175.2,12.5 179.0,11.6 182.9,12.3 186.7,12.6 190.5,11.4 194.3,12.4 198.1,10.1 201.9,29.9 205.7,34.3 209.5,38.2 213.3,42.0 217.1,40.7 221.0,37.7 224.8,33.0 228.6,32.0 232.4,22.0 236.2,19.8 240.0,22.9 240,42\" fill=\"var(--up)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,33.5 3.8,32.6 7.6,26.8 11.4,24.9 15.2,27.0 19.0,23.7 22.9,21.4 26.7,23.7 30.5,22.2 34.3,28.7 38.1,29.4 41.9,31.8 45.7,31.7 49.5,30.8 53.3,32.1 57.1,28.9 61.0,30.6 64.8,34.4 68.6,33.2 72.4,33.6 76.2,23.4 80.0,30.4 83.8,27.6 87.6,20.1 91.4,27.2 95.2,24.3 99.0,28.5 102.9,26.4 106.7,24.4 110.5,21.6 114.3,25.4 118.1,25.9 121.9,28.1 125.7,29.3 129.5,29.4 133.3,32.5 137.1,31.0 141.0,26.1 144.8,23.7 148.6,25.7 152.4,15.0 156.2,15.6 160.0,19.4 163.8,18.8 167.6,21.5 171.4,18.8 175.2,12.5 179.0,11.6 182.9,12.3 186.7,12.6 190.5,11.4 194.3,12.4 198.1,10.1 201.9,29.9 205.7,34.3 209.5,38.2 213.3,42.0 217.1,40.7 221.0,37.7 224.8,33.0 228.6,32.0 232.4,22.0 236.2,19.8 240.0,22.9\" fill=\"none\" stroke=\"var(--up)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"22.9\" r=\"2.6\" fill=\"var(--up)\"/></svg>",
+        "stage": "live",
+        "state": "TURN SIGNALED",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 171.0,
+          "scored": false,
+          "tail_pct": 642.0
+        },
+        "ticker": "PLNT",
+        "urgency": "caution",
+        "washout_active": true,
+        "weekly_phase": "rising"
+      },
+      "board_row_sha256": "4832fc7d99e8b052ba2a2c968c91560cde013a7838761a8e59d2de626a8876a1",
+      "formation_date": "2026-05-13",
+      "plan_id": "PLNT-BULL-20260513",
+      "plan_path": "site/prophet/plans/PLNT-BULL-20260513.json",
+      "plan_sha256": "f5c2a8d3865717d1beedbd8b55f324e055a5bf025284f551ba6b966d03c8134f"
+    },
+    {
+      "admission_rank": 16,
+      "asset": "WH",
+      "board_row": {
+        "above_trend": false,
+        "align_tier": null,
+        "alpha": -0.61,
+        "alpha_entry": "laggard",
+        "antichase_shadow_blocked": false,
+        "blowoff": {
+          "asof": "2026-08-20",
+          "blowoff_risk": false,
+          "burst_mover": false,
+          "near_high_63": false,
+          "roc12_pctile": 0.5317
+        },
+        "coiled": {
+          "anchor_era": "coiled-mtf-abs-session-2026-08-06",
+          "bonus": 0.0,
+          "cohort": 0.217,
+          "coiled": false,
+          "div": false,
+          "star": false,
+          "washout_ctx": true
+        },
+        "composite": {
+          "legs": {
+            "momentum": -0.77,
+            "quality": 0.08,
+            "revisions": -0.04,
+            "value": -0.84
+          },
+          "n_legs": 4,
+          "z": -0.395
+        },
+        "conviction": {
+          "alignment": {
+            "aligned": false,
+            "blocked": true,
+            "daily": "rising",
+            "daily_ok": true,
+            "daily_trigger": "early",
+            "days_to_cross": null,
+            "entry_tier": "Extended \u2014 wait",
+            "entry_tier_zh": "\u5df2\u8fc7\u70ed \u2014 \u7b49\u56de\u8c03",
+            "ext_pct_used": -3.75,
+            "have_tf": true,
+            "knife": 0.0,
+            "line": "Weekly bear recovering \u00b7 3-Day turn\u2191 \u00b7 Daily rising",
+            "line_zh": "\u5468\u7ebf\u5468\u7ebf\u67f1\u72b6\u56fe\u56de\u5347\uff08\u4ecd\u504f\u718a\uff09 \u00b7 3\u65e5turn\u2191 \u00b7 \u65e5\u7ebf\u4e0a\u884c",
+            "near": false,
+            "overextended": true,
+            "overextended_basis": "oscillator",
+            "overextended_legs": [
+              "daily_stochrsi_overbought"
+            ],
+            "quality": 80.1,
+            "reason": "Already extended (overbought / far above the 200-day) \u2014 wait for a pullback",
+            "reason_zh": "\u5df2\u8fc7\u70ed\uff08\u8d85\u4e70\uff0f\u8fdc\u9ad8\u4e8e200\u65e5\u5747\u7ebf\uff09\u2014 \u7b49\u5f85\u56de\u8c03",
+            "score": 80.1,
+            "three_day": "turning",
+            "three_day_ok": true,
+            "three_day_trigger": "macd_trough",
+            "tier": null,
+            "weekly": "bear_recovering",
+            "weekly_ok": true
+          },
+          "axes": {
+            "entry": {
+              "blocked": false,
+              "pct": 48,
+              "present": [
+                "urgency",
+                "off-high",
+                "rsi"
+              ],
+              "z": -0.13333333333333333
+            },
+            "quality": {
+              "flags": {
+                "accounting": "clean"
+              },
+              "pct": 52,
+              "present": [
+                "factors"
+              ],
+              "z": 0.14
+            },
+            "selection": {
+              "basis": [
+                {
+                  "fresh_days": 82,
+                  "label": "SUE",
+                  "label_zh": "\u76c8\u5229\u8d85\u9884\u671f",
+                  "leg": "sue",
+                  "tier": "validated",
+                  "z": -0.28
+                },
+                {
+                  "label": "revisions",
+                  "label_zh": "\u8bc4\u7ea7\u8c03\u6574",
+                  "leg": "revision",
+                  "tier": "literature",
+                  "z": -0.17
+                },
+                {
+                  "label": "momentum",
+                  "label_zh": "\u52a8\u91cf",
+                  "leg": "alpha",
+                  "tier": "context",
+                  "z": -0.61
+                }
+              ],
+              "kind": "earnings \u00b7 insider \u00b7 revisions",
+              "kind_zh": "\u76c8\u5229 \u00b7 \u5185\u90e8\u4eba \u00b7 \u8bc4\u7ea7\u8c03\u6574",
+              "pct": 45,
+              "present": [
+                "sue",
+                "revision",
+                "alpha"
+              ],
+              "z": -0.3157142857142857
+            },
+            "tailwind": {
+              "pct": 47,
+              "present": [
+                "spotlight"
+              ],
+              "z": -0.1736
+            }
+          },
+          "band": "neutral",
+          "band_en": "neutral",
+          "band_zh": "\u4e2d\u6027",
+          "basket_alloc": {
+            "above_trend": true,
+            "book_wt": null,
+            "crowded": false,
+            "durability_bar": 0.45,
+            "eligible": true,
+            "label": "deteriorating",
+            "name": "Travel & Experiences",
+            "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
+            "rank": 35,
+            "reco": "avoid",
+            "ret_12m": 0.1141,
+            "score": -0.398,
+            "signal_grade": "backtested",
+            "slug": "travel"
+          },
+          "cautions": [
+            "Its Travel & Experiences basket is deteriorating. Trim, or take a smaller position than usual."
+          ],
+          "cautions_zh": [
+            "\u6240\u5c5e \u65c5\u884c\u4e0e\u4f53\u9a8c \u7bee\u5b50\u6b63\u5728\u6076\u5316\u3002\u51cf\u4ed3\uff0c\u6216\u5c06\u4ed3\u4f4d\u63a7\u5236\u5728\u5e73\u5e38\u6c34\u5e73\u4ee5\u4e0b\u3002"
+          ],
+          "composite_z": -0.133,
+          "cycle_blocked": false,
+          "drivers": [],
+          "gex_confirm": {
+            "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+            "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+            "gate_scored": false,
+            "label": "Options neutral",
+            "label_zh": "\u671f\u6743\u4e2d\u6027",
+            "levels": {
+              "call_wall": 80.0,
+              "flip": 76.51,
+              "put_wall": 75.0,
+              "regime": "short",
+              "vol_hole_state": "EXPANSION"
+            },
+            "opex_days": 1,
+            "opex_suppressed": true,
+            "reasons": [
+              {
+                "en": "negative-gamma tape \u2014 dealer hedging amplifies the move (fuel for a breakout)",
+                "tone": "confirm",
+                "zh": "\u8d1f Gamma \u884c\u60c5 \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u653e\u5927\u6ce2\u52a8\uff08\u5229\u4e8e\u7a81\u7834\uff09"
+              },
+              {
+                "en": "clear runway to the call wall with put-wall support below",
+                "tone": "confirm",
+                "zh": "\u4e0a\u884c\u81f3 Call \u5899\u7a7a\u95f4\u5145\u88d5\uff0c\u4e0b\u65b9\u6709 Put \u5899\u652f\u6491"
+              },
+              {
+                "en": "short-gamma expansion \u2014 realized vol elevated, no suppressive band",
+                "tone": "caution",
+                "zh": "\u7a7a\u5934 Gamma \u6269\u5f20 \u2014 \u5df2\u5b9e\u73b0\u6ce2\u52a8\u5347\u9ad8\uff0c\u65e0\u6291\u5236\u5e26"
+              }
+            ],
+            "score": 1.0,
+            "verdict": "neutral"
+          },
+          "iv_spread_confirm": null,
+          "n_axes": 4,
+          "notes": null,
+          "potential": {
+            "band": "low",
+            "band_en": "No setup",
+            "band_zh": "\u6682\u65e0\u4e70\u70b9",
+            "call": {
+              "fuel": 0.354,
+              "score": 8,
+              "ticker": "WH",
+              "tier": "no_setup",
+              "trigger": 0.15
+            },
+            "components": {
+              "confidence": 0.989,
+              "edge": 0.937,
+              "fuel": 0.354,
+              "survive": 1.0,
+              "tailwind": 0.93,
+              "trigger": 0.15
+            },
+            "reasoning": [
+              "insider / earnings / revision edge leans against it",
+              "-16% off its high \u2014 room to recover",
+              "theme below trend / fading \u2014 de-risk"
+            ],
+            "score": 8,
+            "scored": true,
+            "tier": "no_setup"
+          },
+          "provenance": {
+            "as_of": "2026-08-20",
+            "n_axes": 4,
+            "present": [
+              "alpha",
+              "factors",
+              "off-high",
+              "revision",
+              "rsi",
+              "spotlight",
+              "sue",
+              "urgency"
+            ],
+            "uncalibrated": true
+          },
+          "rank_pctile": 64,
+          "regime": {
+            "css": "rg-mixed",
+            "en": "Mixed tape \u2014 balanced momentum / earnings edge",
+            "state": "mixed",
+            "zh": "\u6df7\u5408\u884c\u60c5 \u2014 \u52a8\u91cf\u4e0e\u76c8\u5229\u4f18\u52bf\u5747\u8861"
+          },
+          "risk": {
+            "components": {
+              "basket_trend": 0.35,
+              "ext": 0.0,
+              "lottery": 0.0,
+              "out_of_play": 0.03
+            },
+            "drivers": null,
+            "idio": 0.0,
+            "idio_tax": null,
+            "macro_stress": null,
+            "macro_tax": null,
+            "total": 0.35,
+            "veto": null
+          },
+          "score": 8,
+          "score_edge": 64,
+          "score_timing": 8,
+          "size": {
+            "bucket": "quarter",
+            "capped_by_entry": true,
+            "pct": 25,
+            "risk": 0.35,
+            "tier": "context",
+            "vol_mult": 0.74
+          },
+          "spotlight": {
+            "dir": "out_of_play",
+            "mult": 0.924,
+            "oracle_z": null,
+            "sector": {
+              "etf": "XLY",
+              "extended": false,
+              "name": "Consumer Discretionary",
+              "pctile_252d": 4.8,
+              "stage": "improving"
+            },
+            "sector_z": 0.1,
+            "theme": {
+              "label": "deteriorating",
+              "label_en": "DETERIORATING",
+              "label_zh": "\u8d70\u5f31",
+              "name": "Travel & Experiences",
+              "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
+              "reco": "avoid",
+              "reco_en": "AVOID",
+              "reco_zh": "\u56de\u907f",
+              "score": 41,
+              "slug": "travel"
+            },
+            "theme_z": -0.79,
+            "z": -0.434
+          },
+          "trust_tier": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "validation_status": "neutral_ic",
+          "valuation_band": null,
+          "valuation_note": null,
+          "valuation_note_zh": null,
+          "valuation_watch": false,
+          "verdict": "Neutral \u2014 no clear edge",
+          "verdict_zh": "\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf",
+          "vol_squeeze": {
+            "bbwp": 8.0,
+            "bias": "up",
+            "box_hi": 75.8499984741211,
+            "box_lo": 72.94000244140625,
+            "caveat": "Volatility compression read \u2014 a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal.",
+            "caveat_zh": "\u6ce2\u52a8\u538b\u7f29\u8bfb\u6570 \u2014 \u5c5e\u62e9\u65f6\u80cc\u666f\uff0c\u5e76\u975e\u65b9\u5411\u5224\u65ad\u3002\u6301\u7eed\u7684\u538b\u7f29\u610f\u5473\u7740\u66f4\u5927\u7684\u6ce2\u52a8\u6b63\u5728\u84c4\u52bf\uff1b\u65b9\u5411\u8981\u7b49\u4ef7\u683c\u653e\u91cf\u7a81\u7834\u538b\u7f29\u7bb1\u540e\u624d\u786e\u8ba4\u3002\u4e2d\u7b49\u6548\u529b\uff0c\u7edd\u975e\u72ec\u7acb\u4fe1\u53f7\u3002",
+            "coiled": true,
+            "coverage": "close",
+            "days_compressed": 7,
+            "fired_dir": null,
+            "hv_pctile": 13.0,
+            "pos": 0.814,
+            "state": "COILED",
+            "to_lower_pct": 3.15,
+            "to_upper_pct": 0.72,
+            "volume_confirmed": null
+          }
+        },
+        "days_since_signal": 2,
+        "days_since_signal_basis": "calendar",
+        "dd_pct": null,
+        "dir": "caution",
+        "display_rank": 32,
+        "dossier": {
+          "action": {
+            "tone": "go",
+            "verb": "BUY",
+            "verb_zh": "\u4e70\u5165"
+          },
+          "authority_level": {
+            "css": "tt-context",
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha",
+            "tier": "event-edge",
+            "zh": "\u4e8b\u4ef6\u9a71\u52a8\u4f18\u52bf\uff1a\u5185\u90e8\u4eba\u4e70\u5165\uff08\u552f\u4e00\u901a\u8fc7 FDR \u7684\u56e0\u5b50\uff09\uff0b\u76c8\u5229\u8d85\u9884\u671f PEAD \u80cc\u666f\uff0b\u8bc4\u7ea7\u8c03\u6574 \u2014 \u7efc\u5408\u53c2\u8003\uff0c\u975e\u72ec\u7acb\u8d85\u989d\u6536\u76ca"
+          },
+          "no_buy_reasons": [
+            "capped_by_entry"
+          ],
+          "stale_flags": [
+            "capped_by_entry",
+            "bars-since-cross:13"
+          ]
+        },
+        "earnings_soon": {
+          "as_of_age_td": null,
+          "days_to_report": -21,
+          "in_blackout": false,
+          "next_date": "2026-07-22",
+          "reports_within_7": false,
+          "stale": null
+        },
+        "entry_signal": {
+          "act_level": 0,
+          "action": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 71.35.",
+          "action_zh": "\u65e5\u7ebf\u4f4e\u70b9\u6b63\u5728\u5f62\u6210\uff0c\u4f46\u5927\u8d8b\u52bf\u4ecd\u504f\u7a7a\u3002\u53ea\u9002\u5408\u5c0f\u4ed3\u4f4d\uff1b\u6b62\u635f\u8bbe\u4e8e 71.35 \u4e0b\u65b9\u3002",
+          "atr_pct": 1.34,
+          "buy_zone": {
+            "high": 74.53,
+            "low": 73.7,
+            "pct_from_spot": -1.6
+          },
+          "chase_above": 75.31,
+          "confidence": 19.8,
+          "confluence_gated": false,
+          "cycle_pos": {
+            "dc_band": [
+              23,
+              44
+            ],
+            "dc_day": 20,
+            "pct_through": 45,
+            "phase": "approaching_band"
+          },
+          "entry_grade": "light",
+          "entry_z": 22.2,
+          "headline": "Bounce \u2014 turn not confirmed; wait",
+          "headline_zh": "\u53cd\u5f39 \u2014 \u8f6c\u5411\u672a\u786e\u8ba4\uff0c\u5148\u89c2\u671b",
+          "horizon": {
+            "d21": -0.04,
+            "d3": 0.22,
+            "d63": -0.25
+          },
+          "spot": 75.31,
+          "status": "bounce_wait",
+          "stop": 71.35,
+          "timing": {
+            "next_trigger": "Daily low forming, but the bigger trend is still bearish. Small size only; stop below 71.35.",
+            "opens_in_days_hi": 24,
+            "opens_in_days_lo": 3
+          },
+          "urgency": "caution"
+        },
+        "eq_dir": "up",
+        "ext_unknown": false,
+        "ext_z": -0.05,
+        "f1d_shadow_bonus": 0.0,
+        "f1d_shadow_c6": false,
+        "f1d_shadow_rank": 0.274725,
+        "factor_z": 0.286,
+        "featured": false,
+        "featured_blocked_by": [
+          "tier_unknown",
+          "ticks_stale",
+          "alpha_below_floor"
+        ],
+        "gex_confirm": {
+          "caveat": "Dealer-gamma confirmer \u2014 context for HOW the next move behaves, not a name pick. Dealer sign is an assumption (fragile for single names) and the feed is delayed EOD. It can only lower conviction, never create a buy.",
+          "caveat_zh": "\u505a\u5e02\u5546 Gamma \u786e\u8ba4\u5668 \u2014 \u7528\u4e8e\u5224\u65ad\u4e0b\u4e00\u6b65\u6ce2\u52a8\u7684\u201c\u65b9\u5f0f\u201d\uff0c\u5e76\u975e\u9009\u80a1\u3002\u505a\u5e02\u5546\u65b9\u5411\u4e3a\u5047\u8bbe\uff08\u5bf9\u4e2a\u80a1\u8f83\u8106\u5f31\uff09\uff0c\u6570\u636e\u4e3a\u5ef6\u8fdf\u6536\u76d8\u3002\u5b83\u53ea\u80fd\u964d\u4f4e\u4fe1\u5fc3\uff0c\u7edd\u4e0d\u5236\u9020\u4e70\u5165\u4fe1\u53f7\u3002",
+          "label": "Options neutral",
+          "label_zh": "\u671f\u6743\u4e2d\u6027",
+          "levels": {
+            "call_wall": 80.0,
+            "flip": 76.51,
+            "put_wall": 75.0,
+            "regime": "short",
+            "vol_hole_state": "EXPANSION"
+          },
+          "opex_days": 1,
+          "opex_suppressed": true,
+          "reasons": [
+            {
+              "en": "negative-gamma tape \u2014 dealer hedging amplifies the move (fuel for a breakout)",
+              "tone": "confirm",
+              "zh": "\u8d1f Gamma \u884c\u60c5 \u2014 \u505a\u5e02\u5546\u5bf9\u51b2\u653e\u5927\u6ce2\u52a8\uff08\u5229\u4e8e\u7a81\u7834\uff09"
+            },
+            {
+              "en": "clear runway to the call wall with put-wall support below",
+              "tone": "confirm",
+              "zh": "\u4e0a\u884c\u81f3 Call \u5899\u7a7a\u95f4\u5145\u88d5\uff0c\u4e0b\u65b9\u6709 Put \u5899\u652f\u6491"
+            },
+            {
+              "en": "short-gamma expansion \u2014 realized vol elevated, no suppressive band",
+              "tone": "caution",
+              "zh": "\u7a7a\u5934 Gamma \u6269\u5f20 \u2014 \u5df2\u5b9e\u73b0\u6ce2\u52a8\u5347\u9ad8\uff0c\u65e0\u6291\u5236\u5e26"
+            }
+          ],
+          "score": 1.0,
+          "verdict": "neutral"
+        },
+        "hold": {
+          "anchor": "2026-06-25",
+          "anchor_src": "cross",
+          "days_basing": 39,
+          "invalidation": 70.82,
+          "maxup_pct": 1.45,
+          "ob_persist": false,
+          "provisional": false,
+          "ret_since_anchor_pct": -12.55,
+          "state": "intact"
+        },
+        "label": "UNCONFIRMED TURN",
+        "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411",
+        "lane": "bottoming",
+        "name": "Wyndham Hotels & Resorts",
+        "new": false,
+        "off_high": -16.2,
+        "price": 75.31,
+        "prophet": {
+          "alpha_percentile": 0.261905,
+          "fusion": {
+            "construction": "Per member: within-night cross-sectional percentile rank (average ties) of the value oriented by its REGISTERED sign. Per family: the mean of its present members' percentiles. Fusion: the equal-weight mean of the present family scores, x100. No interactions, no fitting beyond the per-night normalization, no weight read off any outcome. A member below 50% non-null coverage on tonight's pool DROPS (presence floor); a member with fewer than 2 distinct non-null oriented values tonight is VOTE-INERT (variance floor) and is disclosed rather than hidden; a family with no surviving member is ABSENT with its reason; a row missing a family is scored on the mean of ITS present families, and a row with no family at all scores null \u2014 never zero.",
+            "definition": "us_prophet_v3",
+            "families_abstaining": [
+              "F1_TECHNICAL_CONFLUENCE",
+              "F3_THEME_STRUCTURE",
+              "F6_MACRO_REGIME",
+              "F7_QUALITY_FUNDAMENTAL",
+              "F8_ATTENTION_CROWDING"
+            ],
+            "families_active": [
+              "F2_MOMENTUM_EXTENSION",
+              "F4_CATALYST_EVENT",
+              "F5_FLOW_POSITIONING"
+            ],
+            "family_contribution": {
+              "F2_MOMENTUM_EXTENSION": 37.21,
+              "F4_CATALYST_EVENT": 50.0,
+              "F5_FLOW_POSITIONING": 48.26
+            },
+            "member_percentiles": {
+              "alpha": 0.27907,
+              "insider_cluster": 0.488372,
+              "off_high": 0.465116,
+              "smartmoney_add": 0.476744,
+              "sue_fresh": 0.5
+            },
+            "n_families": 3
+          },
+          "score": 45.2,
+          "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+          "score_kind": "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a calibrated return forecast and not a promoted alpha model",
+          "version": "us_prophet_v3",
+          "zero_score_authority": [
+            "conviction_composite",
+            "setup",
+            "sector_turn",
+            "narrative",
+            "quality_factor",
+            "low_vol",
+            "risk_sizing",
+            "smartmoney",
+            "insider",
+            "sue",
+            "options_gex",
+            "theme",
+            "blowoff_risk",
+            "reversal_member"
+          ]
+        },
+        "prophet_shadow": {
+          "alpha_percentile": 0.261905,
+          "authority": "none \u2014 display and forward-grading only; originates no plan, controls no Featured slot, sets no priority and moves no user-visible order",
+          "components": {
+            "edge": 0.015873,
+            "entry": 1.0,
+            "quality": 0.4,
+            "runway": 1.0,
+            "signal": 0.0
+          },
+          "points": {
+            "edge": 0.3968,
+            "entry": 25.0,
+            "quality": 4.0,
+            "runway": 10.0,
+            "signal": 0.0
+          },
+          "score": 39.4,
+          "score_rank": 29,
+          "version": "us_prophet_v2_shadow"
+        },
+        "reversal_cohort": {
+          "basket_id": null,
+          "input": "present",
+          "member": false,
+          "state": null
+        },
+        "reversal_member": false,
+        "risk_sizing": {
+          "inv_vol_mult": 0.74,
+          "regime_gross": 1.0,
+          "size_mult": 0.74,
+          "vol_ann_pct": 29.6,
+          "vol_pct": 0.75
+        },
+        "score_rank": 32,
+        "sector": "Consumer Discretionary",
+        "sector_n": 212,
+        "sector_pulse": {
+          "as_of": "2026-08-19",
+          "heat": "broken",
+          "label": "deteriorating",
+          "n_themes": 49,
+          "rank": 37,
+          "rank_delta_5d": -15,
+          "reco": "avoid",
+          "theme_id": "travel",
+          "theme_ids": [
+            "travel"
+          ],
+          "theme_name": "Travel & Experiences",
+          "theme_name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c"
+        },
+        "sector_rank": 159,
+        "setup": -0.08,
+        "signal": {
+          "above200": false,
+          "anchor_era": "abs-session-2026-08-06",
+          "asof": "2026-08-18",
+          "bars_to_cross": null,
+          "early_now": true,
+          "eligible": true,
+          "fresh_bars": null,
+          "fresh_bars_knowable": null,
+          "history_bars": 778,
+          "htf_s1": false,
+          "htf_s2": false,
+          "last": {
+            "date": "2026-07-07",
+            "signal_date": "2026-07-09",
+            "type": "cut"
+          },
+          "provisional": false,
+          "reason": "early advance-warning (no open buy)",
+          "reasons": [
+            "early advance-warning (no open buy)"
+          ],
+          "sq_anchor_era": "sq-abs-session-2026-08-06",
+          "state": "mixed",
+          "sub": "early",
+          "ticks": 13,
+          "tier": "anticipation",
+          "tier_cascade": null,
+          "tier_event_date": null,
+          "tier_observation_provisional": false,
+          "tier_observed_date": null,
+          "tier_sub": null,
+          "weekly_bull": false,
+          "weight": 0.0,
+          "young_history": false
+        },
+        "signal_asof": "2026-08-18",
+        "spark_svg": "<svg class=\"nch\" viewBox=\"0 0 240 42\" preserveAspectRatio=\"none\" width=\"100%\" height=\"42\"><line x1=\"144.0\" y1=\"35.7\" x2=\"240\" y2=\"35.7\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><line x1=\"144.0\" y1=\"37.3\" x2=\"240\" y2=\"37.3\" stroke=\"var(--warn)\" stroke-width=\"1\" stroke-dasharray=\"4 3\" stroke-opacity=\"0.65\"/><polyline points=\"0,42 0.0,23.8 3.8,24.2 7.6,27.3 11.4,24.2 15.2,18.3 19.0,20.5 22.9,25.1 26.7,27.4 30.5,22.7 34.3,25.4 38.1,26.2 41.9,21.7 45.7,26.4 49.5,24.7 53.3,32.1 57.1,30.7 61.0,26.8 64.8,22.1 68.6,14.1 72.4,17.7 76.2,16.4 80.0,20.7 83.8,15.5 87.6,13.2 91.4,12.6 95.2,10.1 99.0,11.4 102.9,16.4 106.7,17.6 110.5,20.0 114.3,21.3 118.1,21.6 121.9,30.4 125.7,25.0 129.5,27.7 133.3,30.4 137.1,29.5 141.0,26.7 144.8,26.8 148.6,31.6 152.4,31.6 156.2,33.3 160.0,33.4 163.8,37.8 167.6,37.7 171.4,34.4 175.2,33.4 179.0,33.6 182.9,32.5 186.7,35.0 190.5,34.2 194.3,32.7 198.1,32.5 201.9,34.3 205.7,37.1 209.5,42.0 213.3,39.8 217.1,36.7 221.0,36.1 224.8,37.5 228.6,38.8 232.4,38.0 236.2,33.0 240.0,34.1 240,42\" fill=\"var(--warn)\" opacity=\"0.12\" stroke=\"none\"/><polyline points=\"0.0,23.8 3.8,24.2 7.6,27.3 11.4,24.2 15.2,18.3 19.0,20.5 22.9,25.1 26.7,27.4 30.5,22.7 34.3,25.4 38.1,26.2 41.9,21.7 45.7,26.4 49.5,24.7 53.3,32.1 57.1,30.7 61.0,26.8 64.8,22.1 68.6,14.1 72.4,17.7 76.2,16.4 80.0,20.7 83.8,15.5 87.6,13.2 91.4,12.6 95.2,10.1 99.0,11.4 102.9,16.4 106.7,17.6 110.5,20.0 114.3,21.3 118.1,21.6 121.9,30.4 125.7,25.0 129.5,27.7 133.3,30.4 137.1,29.5 141.0,26.7 144.8,26.8 148.6,31.6 152.4,31.6 156.2,33.3 160.0,33.4 163.8,37.8 167.6,37.7 171.4,34.4 175.2,33.4 179.0,33.6 182.9,32.5 186.7,35.0 190.5,34.2 194.3,32.7 198.1,32.5 201.9,34.3 205.7,37.1 209.5,42.0 213.3,39.8 217.1,36.7 221.0,36.1 224.8,37.5 228.6,38.8 232.4,38.0 236.2,33.0 240.0,34.1\" fill=\"none\" stroke=\"var(--warn)\" stroke-width=\"1.7\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/><circle cx=\"240.0\" cy=\"34.1\" r=\"2.6\" fill=\"var(--warn)\"/></svg>",
+        "stage": "setting_up",
+        "state": "COUNTERTREND BOUNCE",
+        "stop_guidance": {
+          "horizon": 5,
+          "pct": 183.0,
+          "scored": false,
+          "tail_pct": 609.0
+        },
+        "ticker": "WH",
+        "urgency": "caution",
+        "washout_active": true,
+        "weekly_phase": "bear_recovering"
+      },
+      "board_row_sha256": "11b84c97b1e85b1ed63c6053e6a8d55ec61ca59f671bae5b16bee11c9723c081",
+      "formation_date": "2026-06-25",
+      "plan_id": "WH-BULL-20260625",
+      "plan_path": "site/prophet/plans/WH-BULL-20260625.json",
+      "plan_sha256": "575a4ec943c8d7c8e9ec1e09dbcb9f5c7ce6a3cbf22ec65fedea603554e4266c"
+    }
+  ],
+  "receipt_id": "32426513915-1-e847b443109aeef2",
+  "recorded_utc": "2026-08-21T03:20:14.877895+00:00",
+  "run": {
+    "attempt": "1",
+    "event": "schedule",
+    "event_sha": "50577f18c5fb1d9f60c06aa7b925c9dbc17b7f24",
+    "id": "32426513915",
+    "ref": "refs/heads/main",
+    "source_checkout": "a65e15eafcd9cd28e6b325baa843bd08de95f3d2"
+  },
+  "schema": "prophet.origination_receipt/v1",
+  "selection": {
+    "admitted_count": 23,
+    "originated_count": 7,
+    "rule": "engine.prophet_bridge.select_candidates(n=None)"
+  },
+  "source": {
+    "basis": "panel_majority",
+    "board_asof": "2026-08-20",
+    "delayed": false,
+    "gate_go": false,
+    "path": "site/factordata/us_standouts.json",
+    "price_through": "2026-08-20",
+    "sha256": "e847b443109aeef28bcdef998bf6b991a050bdca04d8c315aa4be93cfdf012b2",
+    "size_bytes": 1704270,
+    "source_asof": "2026-08-20",
+    "source_basis": "panel_majority",
+    "staleness": {
+      "age_days": 0,
+      "basis": "panel_majority",
+      "delayed": false,
+      "inputs": {
+        "baskets_ohlcv_through": "2026-08-20",
+        "board_asof": "2026-08-20",
+        "panel": {
+          "majority_through": "2026-08-20",
+          "members_at_through": 3031,
+          "members_total": 3040,
+          "mixed_vintage": false,
+          "off_majority_tickers": [
+            "AVB",
+            "CTRA",
+            "CVR",
+            "CWEN-A",
+            "EA",
+            "EQR",
+            "PMPEX",
+            "TPH",
+            "WBS"
+          ],
+          "through": "2026-08-20",
+          "through_raw": "2026-08-20"
+        }
+      },
+      "max_through": "2026-08-20",
+      "price_through": "2026-08-20",
+      "sessions_behind": 0,
+      "unknown": false
+    },
+    "unknown": false
+  }
+}

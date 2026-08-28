@@ -321,7 +321,7 @@ def test_honest_totals_survive_the_gate():
     # number of preview cards that happen to sit under it
     for lane, true_count in (("bottoming", 2), ("continuation", 1), ("trend", 1),
                              ("recovery", 1), ("watch", 1)):
-        m = re.search(r'<div class="nb-lane-hd">\s*<span class="l-en">'
+        m = re.search(r'<div class="nb-lane-hd" data-lane="\w+">\s*<span class="l-en">'
                       + re.escape(lane.title() if lane != "watch" else "Watch")
                       + r" · (\d+)</span>", html)
         if m:  # heading only renders when at least one PREVIEW row is in that bucket

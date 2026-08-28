@@ -1,8 +1,8 @@
 {
   "XLY": {
-    "streak": 2,
-    "last_date": "2026-07-13",
-    "score": 0.7666
+    "streak": 3,
+    "last_date": "2026-08-24",
+    "score": 0.9716
   },
   "energy_complex": {
     "streak": 1,
@@ -35,8 +35,28 @@
     "score": 0.9804
   },
   "memory_storage": {
+    "streak": 2,
+    "last_date": "2026-08-18",
+    "score": 0.6997
+  },
+  "XLV": {
     "streak": 1,
-    "last_date": "2026-08-17",
-    "score": 1.0
+    "last_date": "2026-08-19",
+    "score": 0.8904
+  },
+  "crypto": {
+    "streak": 3,
+    "last_date": "2026-08-25",
+    "score": 0.8856
+  },
+  "ai_neoclouds": {
+    "streak": 1,
+    "last_date": "2026-08-26",
+    "score": 0.68
+  },
+  "SMH": {
+    "streak": 1,
+    "last_date": "2026-08-27",
+    "score": 0.9988
   }
 }

@@ -1,31 +1,31 @@
 {
-  "asof": "2026-08-17",
+  "asof": "2026-08-27",
   "state": {
     "rates": {
-      "real_10y": 2.41,
-      "real_10y_pctile": 0.98,
-      "real_10y_chg_63d_bp": 28.0,
-      "nominal_10y": 4.68,
-      "curve_2s10s": 0.53,
-      "curve_tp_adj": 0.53,
-      "policy_gap": 0.54,
+      "real_10y": 2.34,
+      "real_10y_pctile": 0.96,
+      "real_10y_chg_63d_bp": 27.0,
+      "nominal_10y": 4.66,
+      "curve_2s10s": 0.47,
+      "curve_tp_adj": 1.34,
+      "policy_gap": 0.56,
       "regime": "restrictive",
       "direction": "rising",
-      "real_10y_chg_22d_bp": 6.0,
+      "real_10y_chg_22d_bp": -7.0,
       "turn_watch": "extreme_watch",
       "label": {
-        "en": "Real 10y 2.41% (restrictive, rising — at a 5y extreme)",
-        "zh": "实际10年期 2.41%（偏紧，处于5年极值）"
+        "en": "Real 10y 2.34% (restrictive, rising — at a 5y extreme)",
+        "zh": "实际10年期 2.34%（偏紧，处于5年极值）"
       }
     },
     "inflation": {
-      "core_pce_yoy": 3.29,
+      "core_pce_yoy": 3.34,
       "core_cpi_yoy": 2.79,
       "headline_cpi_yoy": 3.54,
-      "core_pce_3m_ann": 2.89,
+      "core_pce_3m_ann": 3.05,
       "ppi_core_yoy": 4.16,
       "eci_comp_yoy": 3.38,
-      "vs_target_pp": 1.29,
+      "vs_target_pp": 1.34,
       "regime": "above target",
       "direction": "cooling",
       "label": {
@@ -34,34 +34,34 @@
       }
     },
     "expectations": {
-      "breakeven_10y": 2.28,
-      "breakeven_5y5y": 2.31,
+      "breakeven_10y": 2.33,
+      "breakeven_5y5y": 2.35,
       "model_5y": 2.48,
       "survey_1y": 4.6,
-      "market_minus_model_bp": -17.0,
+      "market_minus_model_bp": -13.0,
       "anchoring": "anchored",
       "label": {
-        "en": "5y5y breakeven 2.31% vs model 2.48% (anchored)",
-        "zh": "5年5年盈亏平衡 2.31% vs 模型 2.48%（锚定）"
+        "en": "5y5y breakeven 2.35% vs model 2.48% (anchored)",
+        "zh": "5年5年盈亏平衡 2.35% vs 模型 2.48%（锚定）"
       }
     }
   },
   "breakeven_decomp": {
-    "as_of": "2026-08-17",
-    "level": 2.28,
-    "level_5y5y": 2.31,
+    "as_of": "2026-08-27",
+    "level": 2.33,
+    "level_5y5y": 2.35,
     "velocity_bp": {
       "chg_5d_bp": -1.0,
-      "chg_10d_bp": 1.0,
-      "chg_20d_bp": 3.0,
-      "chg_63d_bp": -16.0
+      "chg_10d_bp": 9.0,
+      "chg_20d_bp": 6.0,
+      "chg_63d_bp": -7.0
     },
-    "accel_10d_bp": -1.0,
-    "fall_speed_pctile": 0.25,
+    "accel_10d_bp": 12.0,
+    "fall_speed_pctile": 0.47,
     "is_fast": false,
-    "trend": "choppy",
+    "trend": "uptrend",
     "direction": "flat",
-    "cross_check_5y5y_chg_20d_bp": 9.0,
+    "cross_check_5y5y_chg_20d_bp": 5.0,
     "tips_liquidity_flag": null,
     "cause_badge": {
       "cause": "quiet",
@@ -69,11 +69,11 @@
       "zh": "盈亏平衡大致平稳——无可操作变动。"
     },
     "costate": {
-      "oil_chg_20d_pct": 2.0,
-      "real10y_chg_20d_bp": 6.0,
-      "nom10y_chg_20d_bp": 8.0,
-      "hy_oas_z": -0.91,
-      "vix_pctile": 0.16
+      "oil_chg_20d_pct": -0.1,
+      "real10y_chg_20d_bp": -7.0,
+      "nom10y_chg_20d_bp": -2.0,
+      "hy_oas_z": -0.88,
+      "vix_pctile": 0.24
     },
     "caveat": {
       "en": "VISIBILITY ONLY — a falling breakeven is a thermometer, not a forecast. Across 2008 / 2014–15 / 2018 / 2020 / 2022 / 2023 it led the risk cascade in ~0 clean cases; breakeven velocity has ~0 forward-drawdown edge and the credit/vol co-state adds nothing beyond VIX. Use this to disambiguate an in-progress move (which kind of fall?), never to front-run one.",
@@ -89,8 +89,8 @@
     "core_services_yoy": 3.37,
     "shelter_yoy": 3.4,
     "services_minus_shelter": -0.04,
-    "pce_minus_cpi": 0.5,
-    "actual_vs_market_bp": 51.0,
+    "pce_minus_cpi": 0.56,
+    "actual_vs_market_bp": 46.0,
     "actual_vs_market_note": {
       "en": "realized core CPI vs the 10y breakeven the market prices",
       "zh": "已实现核心CPI vs 市场定价的10年期盈亏平衡"
@@ -103,31 +103,31 @@
         "zh": "标普500"
       },
       "kind": "equity",
-      "net": -0.175,
+      "net": -0.319,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.166,
-          "activation_z": 1.75,
-          "contribution": -0.116,
+          "activation_z": 1.81,
+          "contribution": -0.12,
           "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "curve_tp_adj",
-          "label": "TP-adjusted 2s10s curve",
-          "ic": -0.098,
-          "activation_z": -1.91,
-          "contribution": 0.075,
-          "verdict": "DIRECTIONAL"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
           "ic": -0.191,
-          "activation_z": 0.89,
-          "contribution": -0.068,
+          "activation_z": 0.83,
+          "contribution": -0.064,
+          "verdict": "CONFIRMED"
+        },
+        {
+          "driver": "corepce_gap",
+          "label": "Core PCE YoY − 2% target",
+          "ic": -0.103,
+          "activation_z": 1.48,
+          "contribution": -0.061,
           "verdict": "CONFIRMED"
         }
       ]
@@ -138,31 +138,31 @@
         "zh": "纳斯达克100（长久期成长）"
       },
       "kind": "equity",
-      "net": -0.216,
+      "net": -0.249,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.154,
-          "activation_z": 1.75,
-          "contribution": -0.108,
+          "activation_z": 1.81,
+          "contribution": -0.112,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.16,
-          "activation_z": 1.41,
-          "contribution": -0.09,
+          "ic": -0.161,
+          "activation_z": 1.48,
+          "contribution": -0.095,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.193,
-          "activation_z": 0.89,
-          "contribution": -0.069,
+          "ic": -0.194,
+          "activation_z": 0.83,
+          "contribution": -0.065,
           "verdict": "CONFIRMED"
         }
       ]
@@ -173,31 +173,31 @@
         "zh": "罗素2000（小盘）"
       },
       "kind": "equity",
-      "net": -0.205,
+      "net": -0.23,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.178,
-          "activation_z": 1.41,
-          "contribution": -0.1,
+          "ic": -0.176,
+          "activation_z": 1.48,
+          "contribution": -0.104,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.097,
-          "activation_z": 1.75,
-          "contribution": -0.068,
+          "ic": -0.096,
+          "activation_z": 1.81,
+          "contribution": -0.07,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.171,
-          "activation_z": 0.89,
-          "contribution": -0.061,
+          "ic": -0.169,
+          "activation_z": 0.83,
+          "contribution": -0.056,
           "verdict": "CONFIRMED"
         }
       ]
@@ -208,31 +208,31 @@
         "zh": "科技"
       },
       "kind": "sector",
-      "net": -0.238,
+      "net": -0.253,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.165,
-          "activation_z": 1.75,
-          "contribution": -0.115,
+          "activation_z": 1.81,
+          "contribution": -0.12,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.127,
-          "activation_z": 1.41,
-          "contribution": -0.072,
+          "ic": -0.126,
+          "activation_z": 1.48,
+          "contribution": -0.074,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.189,
-          "activation_z": 0.89,
-          "contribution": -0.068,
+          "ic": -0.188,
+          "activation_z": 0.83,
+          "contribution": -0.063,
           "verdict": "CONFIRMED"
         }
       ]
@@ -243,23 +243,23 @@
         "zh": "公用事业（类债券）"
       },
       "kind": "sector",
-      "net": -0.066,
-      "verdict": "headwind",
+      "net": -0.044,
+      "verdict": "neutral",
       "top_drivers": [
-        {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": 0.058,
-          "activation_z": -1.4,
-          "contribution": -0.033,
-          "verdict": "DIRECTIONAL"
-        },
         {
           "driver": "infl_accel",
           "label": "Inflation re-acceleration (3m−12m)",
           "ic": 0.097,
-          "activation_z": -0.86,
-          "contribution": -0.033,
+          "activation_z": -0.73,
+          "contribution": -0.028,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "be10y_chg63",
+          "label": "10y breakeven — 63d change",
+          "ic": 0.056,
+          "activation_z": -0.68,
+          "contribution": -0.015,
           "verdict": "DIRECTIONAL"
         }
       ]
@@ -280,31 +280,31 @@
         "zh": "金融（利率受益）"
       },
       "kind": "sector",
-      "net": -0.088,
+      "net": -0.276,
       "verdict": "headwind",
       "top_drivers": [
-        {
-          "driver": "curve_tp_adj",
-          "label": "TP-adjusted 2s10s curve",
-          "ic": -0.146,
-          "activation_z": -1.91,
-          "contribution": 0.111,
-          "verdict": "CONFIRMED"
-        },
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.14,
-          "activation_z": 1.75,
-          "contribution": -0.098,
+          "activation_z": 1.81,
+          "contribution": -0.102,
           "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "curve_tp_adj",
+          "label": "TP-adjusted 2s10s curve",
+          "ic": -0.146,
+          "activation_z": 1.4,
+          "contribution": -0.082,
+          "verdict": "CONFIRMED"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.108,
-          "activation_z": 1.41,
-          "contribution": -0.061,
+          "ic": -0.106,
+          "activation_z": 1.48,
+          "contribution": -0.063,
           "verdict": "CONFIRMED"
         }
       ]
@@ -315,15 +315,15 @@
         "zh": "能源（通胀受益）"
       },
       "kind": "sector",
-      "net": -0.041,
+      "net": -0.038,
       "verdict": "neutral",
       "top_drivers": [
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.114,
-          "activation_z": 0.89,
-          "contribution": -0.041,
+          "ic": -0.113,
+          "activation_z": 0.83,
+          "contribution": -0.038,
           "verdict": "CONFIRMED"
         }
       ]
@@ -334,31 +334,31 @@
         "zh": "材料（通胀受益）"
       },
       "kind": "sector",
-      "net": -0.234,
+      "net": -0.311,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.175,
-          "activation_z": 1.75,
-          "contribution": -0.122,
+          "ic": -0.176,
+          "activation_z": 1.81,
+          "contribution": -0.128,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.145,
-          "activation_z": 1.41,
-          "contribution": -0.082,
+          "ic": -0.144,
+          "activation_z": 1.48,
+          "contribution": -0.085,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.215,
-          "activation_z": 0.89,
-          "contribution": -0.077,
+          "ic": -0.214,
+          "activation_z": 0.83,
+          "contribution": -0.071,
           "verdict": "CONFIRMED"
         }
       ]
@@ -369,31 +369,31 @@
         "zh": "必需消费（防御）"
       },
       "kind": "sector",
-      "net": -0.164,
+      "net": -0.154,
       "verdict": "headwind",
       "top_drivers": [
-        {
-          "driver": "policy_gap",
-          "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.071,
-          "activation_z": 1.75,
-          "contribution": -0.05,
-          "verdict": "DIRECTIONAL"
-        },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
           "ic": -0.089,
-          "activation_z": 1.41,
-          "contribution": -0.05,
+          "activation_z": 1.48,
+          "contribution": -0.053,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "policy_gap",
+          "label": "us2y − funds (cut/hike pricing)",
+          "ic": -0.072,
+          "activation_z": 1.81,
+          "contribution": -0.052,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.128,
-          "activation_z": 0.89,
-          "contribution": -0.046,
+          "ic": -0.129,
+          "activation_z": 0.83,
+          "contribution": -0.043,
           "verdict": "CONFIRMED"
         }
       ]
@@ -404,31 +404,31 @@
         "zh": "医疗保健（防御）"
       },
       "kind": "sector",
-      "net": -0.197,
+      "net": -0.098,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.179,
-          "activation_z": 1.41,
-          "contribution": -0.101,
+          "ic": -0.175,
+          "activation_z": 1.48,
+          "contribution": -0.103,
           "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": 0.069,
-          "activation_z": -1.4,
-          "contribution": -0.039,
-          "verdict": "DIRECTIONAL"
         },
         {
           "driver": "curve_tp_adj",
           "label": "TP-adjusted 2s10s curve",
-          "ic": 0.043,
-          "activation_z": -1.91,
-          "contribution": -0.033,
+          "ic": 0.042,
+          "activation_z": 1.4,
+          "contribution": 0.023,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "be10y_chg63",
+          "label": "10y breakeven — 63d change",
+          "ic": 0.071,
+          "activation_z": -0.68,
+          "contribution": -0.019,
           "verdict": "DIRECTIONAL"
         }
       ]
@@ -439,31 +439,31 @@
         "zh": "黄金"
       },
       "kind": "commodity",
-      "net": 0.123,
-      "verdict": "tailwind",
+      "net": 0.044,
+      "verdict": "neutral",
       "top_drivers": [
         {
           "driver": "be10y_chg63",
           "label": "10y breakeven — 63d change",
-          "ic": -0.121,
-          "activation_z": -1.4,
-          "contribution": 0.068,
-          "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "exp_wedge",
-          "label": "Expectations wedge (mkt − model)",
-          "ic": -0.262,
-          "activation_z": -0.31,
-          "contribution": 0.032,
+          "ic": -0.122,
+          "activation_z": -0.68,
+          "contribution": 0.033,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "infl_accel",
           "label": "Inflation re-acceleration (3m−12m)",
-          "ic": -0.077,
-          "activation_z": -0.86,
-          "contribution": 0.027,
+          "ic": -0.078,
+          "activation_z": -0.73,
+          "contribution": 0.023,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "nom10y_chg63",
+          "label": "Nominal 10y — 63d change",
+          "ic": -0.066,
+          "activation_z": 0.4,
+          "contribution": -0.011,
           "verdict": "DIRECTIONAL"
         }
       ]
@@ -474,31 +474,31 @@
         "zh": "原油(WTI)"
       },
       "kind": "commodity",
-      "net": -0.161,
+      "net": -0.155,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.184,
-          "activation_z": 0.89,
-          "contribution": -0.066,
+          "ic": -0.186,
+          "activation_z": 0.83,
+          "contribution": -0.062,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.097,
-          "activation_z": 1.41,
-          "contribution": -0.055,
+          "ic": -0.099,
+          "activation_z": 1.48,
+          "contribution": -0.059,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "infl_accel",
           "label": "Inflation re-acceleration (3m−12m)",
-          "ic": 0.118,
-          "activation_z": -0.86,
-          "contribution": -0.041,
+          "ic": 0.117,
+          "activation_z": -0.73,
+          "contribution": -0.034,
           "verdict": "CONFIRMED"
         }
       ]
@@ -509,31 +509,31 @@
         "zh": "铜"
       },
       "kind": "commodity",
-      "net": -0.09,
+      "net": -0.105,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.166,
-          "activation_z": 0.89,
-          "contribution": -0.059,
+          "ic": -0.165,
+          "activation_z": 0.83,
+          "contribution": -0.055,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.085,
-          "activation_z": 1.41,
-          "contribution": -0.048,
+          "ic": -0.084,
+          "activation_z": 1.48,
+          "contribution": -0.05,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "exp_wedge",
           "label": "Expectations wedge (mkt − model)",
           "ic": -0.138,
-          "activation_z": -0.31,
-          "contribution": 0.017,
+          "activation_z": 0.01,
+          "contribution": -0.001,
           "verdict": "CONFIRMED"
         }
       ]
@@ -544,23 +544,23 @@
         "zh": "美元指数"
       },
       "kind": "fx",
-      "net": 0.006,
+      "net": 0.025,
       "verdict": "neutral",
       "top_drivers": [
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
           "ic": 0.041,
-          "activation_z": 1.41,
-          "contribution": 0.023,
+          "activation_z": 1.48,
+          "contribution": 0.024,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "exp_wedge",
           "label": "Expectations wedge (mkt − model)",
-          "ic": 0.14,
-          "activation_z": -0.31,
-          "contribution": -0.017,
+          "ic": 0.139,
+          "activation_z": 0.01,
+          "contribution": 0.001,
           "verdict": "CONFIRMED"
         }
       ]
@@ -581,31 +581,31 @@
         "zh": "长期美债(20年+)"
       },
       "kind": "bond",
-      "net": -0.125,
-      "verdict": "headwind",
+      "net": 0.193,
+      "verdict": "tailwind",
       "top_drivers": [
         {
           "driver": "curve_tp_adj",
           "label": "TP-adjusted 2s10s curve",
-          "ic": 0.239,
-          "activation_z": -1.91,
-          "contribution": -0.182,
+          "ic": 0.238,
+          "activation_z": 1.4,
+          "contribution": 0.133,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": 0.146,
-          "activation_z": 0.89,
-          "contribution": 0.052,
+          "ic": 0.144,
+          "activation_z": 0.83,
+          "contribution": 0.048,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "nom10y_chg63",
           "label": "Nominal 10y — 63d change",
-          "ic": 0.075,
-          "activation_z": 0.16,
-          "contribution": 0.005,
+          "ic": 0.073,
+          "activation_z": 0.4,
+          "contribution": 0.012,
           "verdict": "DIRECTIONAL"
         }
       ]
@@ -616,69 +616,69 @@
         "zh": "中国大盘（新兴市场代理）"
       },
       "kind": "em",
-      "net": 0.151,
-      "verdict": "tailwind",
+      "net": -0.026,
+      "verdict": "neutral",
       "top_drivers": [
-        {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": -0.121,
-          "activation_z": -1.4,
-          "contribution": 0.068,
-          "verdict": "CONFIRMED"
-        },
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.097,
-          "activation_z": 1.75,
-          "contribution": -0.068,
+          "activation_z": 1.81,
+          "contribution": -0.07,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "infl_accel",
           "label": "Inflation re-acceleration (3m−12m)",
-          "ic": -0.198,
-          "activation_z": -0.86,
-          "contribution": 0.068,
+          "ic": -0.199,
+          "activation_z": -0.73,
+          "contribution": 0.058,
           "verdict": "CONFIRMED"
+        },
+        {
+          "driver": "curve_tp_adj",
+          "label": "TP-adjusted 2s10s curve",
+          "ic": -0.082,
+          "activation_z": 1.4,
+          "contribution": -0.046,
+          "verdict": "DIRECTIONAL"
         }
       ]
     }
   },
   "headwinds": [
     {
-      "asset": "XLK",
+      "asset": "SPY",
       "label": {
-        "en": "Technology",
-        "zh": "科技"
+        "en": "S&P 500",
+        "zh": "标普500"
       },
-      "kind": "sector",
-      "net": -0.238,
+      "kind": "equity",
+      "net": -0.319,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.165,
-          "activation_z": 1.75,
-          "contribution": -0.115,
-          "verdict": "DIRECTIONAL"
-        },
-        {
-          "driver": "corepce_gap",
-          "label": "Core PCE YoY − 2% target",
-          "ic": -0.127,
-          "activation_z": 1.41,
-          "contribution": -0.072,
+          "ic": -0.166,
+          "activation_z": 1.81,
+          "contribution": -0.12,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.189,
-          "activation_z": 0.89,
-          "contribution": -0.068,
+          "ic": -0.191,
+          "activation_z": 0.83,
+          "contribution": -0.064,
+          "verdict": "CONFIRMED"
+        },
+        {
+          "driver": "corepce_gap",
+          "label": "Core PCE YoY − 2% target",
+          "ic": -0.103,
+          "activation_z": 1.48,
+          "contribution": -0.061,
           "verdict": "CONFIRMED"
         }
       ]
@@ -690,31 +690,103 @@
         "zh": "材料（通胀受益）"
       },
       "kind": "sector",
-      "net": -0.234,
+      "net": -0.311,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.175,
-          "activation_z": 1.75,
-          "contribution": -0.122,
+          "ic": -0.176,
+          "activation_z": 1.81,
+          "contribution": -0.128,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.145,
-          "activation_z": 1.41,
-          "contribution": -0.082,
+          "ic": -0.144,
+          "activation_z": 1.48,
+          "contribution": -0.085,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.215,
-          "activation_z": 0.89,
-          "contribution": -0.077,
+          "ic": -0.214,
+          "activation_z": 0.83,
+          "contribution": -0.071,
+          "verdict": "CONFIRMED"
+        }
+      ]
+    },
+    {
+      "asset": "XLF",
+      "label": {
+        "en": "Financials (rate beneficiary)",
+        "zh": "金融（利率受益）"
+      },
+      "kind": "sector",
+      "net": -0.276,
+      "verdict": "headwind",
+      "top_drivers": [
+        {
+          "driver": "policy_gap",
+          "label": "us2y − funds (cut/hike pricing)",
+          "ic": -0.14,
+          "activation_z": 1.81,
+          "contribution": -0.102,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "curve_tp_adj",
+          "label": "TP-adjusted 2s10s curve",
+          "ic": -0.146,
+          "activation_z": 1.4,
+          "contribution": -0.082,
+          "verdict": "CONFIRMED"
+        },
+        {
+          "driver": "corepce_gap",
+          "label": "Core PCE YoY − 2% target",
+          "ic": -0.106,
+          "activation_z": 1.48,
+          "contribution": -0.063,
+          "verdict": "CONFIRMED"
+        }
+      ]
+    },
+    {
+      "asset": "XLK",
+      "label": {
+        "en": "Technology",
+        "zh": "科技"
+      },
+      "kind": "sector",
+      "net": -0.253,
+      "verdict": "headwind",
+      "top_drivers": [
+        {
+          "driver": "policy_gap",
+          "label": "us2y − funds (cut/hike pricing)",
+          "ic": -0.165,
+          "activation_z": 1.81,
+          "contribution": -0.12,
+          "verdict": "DIRECTIONAL"
+        },
+        {
+          "driver": "corepce_gap",
+          "label": "Core PCE YoY − 2% target",
+          "ic": -0.126,
+          "activation_z": 1.48,
+          "contribution": -0.074,
+          "verdict": "CONFIRMED"
+        },
+        {
+          "driver": "real10y_chg63",
+          "label": "Real 10y — 63d change (speed)",
+          "ic": -0.188,
+          "activation_z": 0.83,
+          "contribution": -0.063,
           "verdict": "CONFIRMED"
         }
       ]
@@ -726,31 +798,31 @@
         "zh": "纳斯达克100（长久期成长）"
       },
       "kind": "equity",
-      "net": -0.216,
+      "net": -0.249,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
           "ic": -0.154,
-          "activation_z": 1.75,
-          "contribution": -0.108,
+          "activation_z": 1.81,
+          "contribution": -0.112,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.16,
-          "activation_z": 1.41,
-          "contribution": -0.09,
+          "ic": -0.161,
+          "activation_z": 1.48,
+          "contribution": -0.095,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.193,
-          "activation_z": 0.89,
-          "contribution": -0.069,
+          "ic": -0.194,
+          "activation_z": 0.83,
+          "contribution": -0.065,
           "verdict": "CONFIRMED"
         }
       ]
@@ -762,103 +834,31 @@
         "zh": "罗素2000（小盘）"
       },
       "kind": "equity",
-      "net": -0.205,
+      "net": -0.23,
       "verdict": "headwind",
       "top_drivers": [
         {
           "driver": "corepce_gap",
           "label": "Core PCE YoY − 2% target",
-          "ic": -0.178,
-          "activation_z": 1.41,
-          "contribution": -0.1,
+          "ic": -0.176,
+          "activation_z": 1.48,
+          "contribution": -0.104,
           "verdict": "CONFIRMED"
         },
         {
           "driver": "policy_gap",
           "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.097,
-          "activation_z": 1.75,
-          "contribution": -0.068,
+          "ic": -0.096,
+          "activation_z": 1.81,
+          "contribution": -0.07,
           "verdict": "DIRECTIONAL"
         },
         {
           "driver": "real10y_chg63",
           "label": "Real 10y — 63d change (speed)",
-          "ic": -0.171,
-          "activation_z": 0.89,
-          "contribution": -0.061,
-          "verdict": "CONFIRMED"
-        }
-      ]
-    },
-    {
-      "asset": "XLV",
-      "label": {
-        "en": "Health Care (defensive)",
-        "zh": "医疗保健（防御）"
-      },
-      "kind": "sector",
-      "net": -0.197,
-      "verdict": "headwind",
-      "top_drivers": [
-        {
-          "driver": "corepce_gap",
-          "label": "Core PCE YoY − 2% target",
-          "ic": -0.179,
-          "activation_z": 1.41,
-          "contribution": -0.101,
-          "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": 0.069,
-          "activation_z": -1.4,
-          "contribution": -0.039,
-          "verdict": "DIRECTIONAL"
-        },
-        {
-          "driver": "curve_tp_adj",
-          "label": "TP-adjusted 2s10s curve",
-          "ic": 0.043,
-          "activation_z": -1.91,
-          "contribution": -0.033,
-          "verdict": "DIRECTIONAL"
-        }
-      ]
-    },
-    {
-      "asset": "SPY",
-      "label": {
-        "en": "S&P 500",
-        "zh": "标普500"
-      },
-      "kind": "equity",
-      "net": -0.175,
-      "verdict": "headwind",
-      "top_drivers": [
-        {
-          "driver": "policy_gap",
-          "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.166,
-          "activation_z": 1.75,
-          "contribution": -0.116,
-          "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "curve_tp_adj",
-          "label": "TP-adjusted 2s10s curve",
-          "ic": -0.098,
-          "activation_z": -1.91,
-          "contribution": 0.075,
-          "verdict": "DIRECTIONAL"
-        },
-        {
-          "driver": "real10y_chg63",
-          "label": "Real 10y — 63d change (speed)",
-          "ic": -0.191,
-          "activation_z": 0.89,
-          "contribution": -0.068,
+          "ic": -0.169,
+          "activation_z": 0.83,
+          "contribution": -0.056,
           "verdict": "CONFIRMED"
         }
       ]
@@ -866,73 +866,37 @@
   ],
   "tailwinds": [
     {
-      "asset": "FXI",
+      "asset": "TLT",
       "label": {
-        "en": "China large-cap (EM proxy)",
-        "zh": "中国大盘（新兴市场代理）"
+        "en": "Long Treasuries (20y+)",
+        "zh": "长期美债(20年+)"
       },
-      "kind": "em",
-      "net": 0.151,
+      "kind": "bond",
+      "net": 0.193,
       "verdict": "tailwind",
       "top_drivers": [
         {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": -0.121,
-          "activation_z": -1.4,
-          "contribution": 0.068,
+          "driver": "curve_tp_adj",
+          "label": "TP-adjusted 2s10s curve",
+          "ic": 0.238,
+          "activation_z": 1.4,
+          "contribution": 0.133,
           "verdict": "CONFIRMED"
         },
         {
-          "driver": "policy_gap",
-          "label": "us2y − funds (cut/hike pricing)",
-          "ic": -0.097,
-          "activation_z": 1.75,
-          "contribution": -0.068,
-          "verdict": "DIRECTIONAL"
-        },
-        {
-          "driver": "infl_accel",
-          "label": "Inflation re-acceleration (3m−12m)",
-          "ic": -0.198,
-          "activation_z": -0.86,
-          "contribution": 0.068,
-          "verdict": "CONFIRMED"
-        }
-      ]
-    },
-    {
-      "asset": "GC=F",
-      "label": {
-        "en": "Gold",
-        "zh": "黄金"
-      },
-      "kind": "commodity",
-      "net": 0.123,
-      "verdict": "tailwind",
-      "top_drivers": [
-        {
-          "driver": "be10y_chg63",
-          "label": "10y breakeven — 63d change",
-          "ic": -0.121,
-          "activation_z": -1.4,
-          "contribution": 0.068,
+          "driver": "real10y_chg63",
+          "label": "Real 10y — 63d change (speed)",
+          "ic": 0.144,
+          "activation_z": 0.83,
+          "contribution": 0.048,
           "verdict": "CONFIRMED"
         },
         {
-          "driver": "exp_wedge",
-          "label": "Expectations wedge (mkt − model)",
-          "ic": -0.262,
-          "activation_z": -0.31,
-          "contribution": 0.032,
-          "verdict": "CONFIRMED"
-        },
-        {
-          "driver": "infl_accel",
-          "label": "Inflation re-acceleration (3m−12m)",
-          "ic": -0.077,
-          "activation_z": -0.86,
-          "contribution": 0.027,
+          "driver": "nom10y_chg63",
+          "label": "Nominal 10y — 63d change",
+          "ic": 0.073,
+          "activation_z": 0.4,
+          "contribution": 0.012,
           "verdict": "DIRECTIONAL"
         }
       ]
@@ -948,7 +912,7 @@
       "trigger": "real10y_chg63",
       "trigger_label": "Real 10y — 63d change (speed)",
       "active": true,
-      "trigger_z": 0.89,
+      "trigger_z": 0.83,
       "trigger_dir": "up",
       "orders": [
         {
@@ -961,14 +925,14 @@
             {
               "asset": "QQQ",
               "label": "Nasdaq 100 (long-duration growth)",
-              "ic": -0.193,
+              "ic": -0.194,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "XLK",
               "label": "Technology",
-              "ic": -0.189,
+              "ic": -0.188,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
@@ -982,14 +946,14 @@
             {
               "asset": "TLT",
               "label": "Long Treasuries (20y+)",
-              "ic": 0.146,
+              "ic": 0.144,
               "effect": "tailwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "BTC-USD",
               "label": "Bitcoin (long-duration)",
-              "ic": -0.312,
+              "ic": -0.314,
               "effect": "headwind",
               "verdict": "CONTEXT"
             }
@@ -1005,28 +969,28 @@
             {
               "asset": "DX-Y.NYB",
               "label": "US Dollar (DXY)",
-              "ic": 0.008,
+              "ic": 0.007,
               "effect": "neutral",
               "verdict": "CONTEXT"
             },
             {
               "asset": "GC=F",
               "label": "Gold",
-              "ic": -0.005,
+              "ic": -0.007,
               "effect": "neutral",
               "verdict": "CONTEXT"
             },
             {
               "asset": "HG=F",
               "label": "Copper",
-              "ic": -0.166,
+              "ic": -0.165,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "CL=F",
               "label": "Oil (WTI)",
-              "ic": -0.184,
+              "ic": -0.186,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
@@ -1049,21 +1013,21 @@
             {
               "asset": "XLE",
               "label": "Energy (inflation beneficiary)",
-              "ic": -0.114,
+              "ic": -0.113,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "XLB",
               "label": "Materials (inflation beneficiary)",
-              "ic": -0.215,
+              "ic": -0.214,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "XLF",
               "label": "Financials (rate beneficiary)",
-              "ic": -0.158,
+              "ic": -0.155,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             }
@@ -1080,7 +1044,7 @@
       "trigger": "corepce_gap",
       "trigger_label": "Core PCE YoY − 2% target",
       "active": true,
-      "trigger_z": 1.41,
+      "trigger_z": 1.48,
       "trigger_dir": "up",
       "orders": [
         {
@@ -1100,7 +1064,7 @@
             {
               "asset": "QQQ",
               "label": "Nasdaq 100 (long-duration growth)",
-              "ic": -0.16,
+              "ic": -0.161,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             }
@@ -1116,14 +1080,14 @@
             {
               "asset": "IWM",
               "label": "Russell 2000 (small caps)",
-              "ic": -0.178,
+              "ic": -0.176,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "XLF",
               "label": "Financials (rate beneficiary)",
-              "ic": -0.108,
+              "ic": -0.106,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             }
@@ -1146,7 +1110,7 @@
             {
               "asset": "XLV",
               "label": "Health Care (defensive)",
-              "ic": -0.179,
+              "ic": -0.175,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             }
@@ -1163,8 +1127,8 @@
       "trigger": "curve_tp_adj",
       "trigger_label": "TP-adjusted 2s10s curve",
       "active": true,
-      "trigger_z": -1.91,
-      "trigger_dir": "down",
+      "trigger_z": 1.4,
+      "trigger_dir": "up",
       "orders": [
         {
           "order": 1,
@@ -1176,7 +1140,7 @@
             {
               "asset": "TLT",
               "label": "Long Treasuries (20y+)",
-              "ic": 0.239,
+              "ic": 0.238,
               "effect": "tailwind",
               "verdict": "CONFIRMED"
             }
@@ -1199,7 +1163,7 @@
             {
               "asset": "XLRE",
               "label": "Real Estate (rate-sensitive)",
-              "ic": 0.162,
+              "ic": 0.165,
               "effect": "tailwind",
               "verdict": "CONTEXT"
             }
@@ -1239,8 +1203,8 @@
       "trigger": "exp_wedge",
       "trigger_label": "Expectations wedge (mkt − model)",
       "active": false,
-      "trigger_z": -0.31,
-      "trigger_dir": "down",
+      "trigger_z": 0.01,
+      "trigger_dir": "up",
       "orders": [
         {
           "order": 1,
@@ -1252,14 +1216,14 @@
             {
               "asset": "DX-Y.NYB",
               "label": "US Dollar (DXY)",
-              "ic": 0.14,
+              "ic": 0.139,
               "effect": "tailwind",
               "verdict": "CONFIRMED"
             },
             {
               "asset": "GC=F",
               "label": "Gold",
-              "ic": -0.262,
+              "ic": -0.258,
               "effect": "headwind",
               "verdict": "CONFIRMED"
             }
@@ -1275,14 +1239,14 @@
             {
               "asset": "QQQ",
               "label": "Nasdaq 100 (long-duration growth)",
-              "ic": -0.011,
+              "ic": -0.009,
               "effect": "neutral",
               "verdict": "CONTEXT"
             },
             {
               "asset": "XLV",
               "label": "Health Care (defensive)",
-              "ic": 0.201,
+              "ic": 0.196,
               "effect": "tailwind",
               "verdict": "CONFIRMED"
             }
@@ -1298,14 +1262,14 @@
             {
               "asset": "XLE",
               "label": "Energy (inflation beneficiary)",
-              "ic": 0.009,
+              "ic": 0.007,
               "effect": "neutral",
               "verdict": "CONTEXT"
             },
             {
               "asset": "XLB",
               "label": "Materials (inflation beneficiary)",
-              "ic": 0.005,
+              "ic": 0.003,
               "effect": "neutral",
               "verdict": "CONTEXT"
             }
@@ -1328,7 +1292,7 @@
         {
           "asset": "BTC-USD",
           "label": "Bitcoin (long-duration)",
-          "implied_move_pct": -8.7
+          "implied_move_pct": -8.8
         },
         {
           "asset": "TLT",
@@ -1338,7 +1302,7 @@
         {
           "asset": "XLRE",
           "label": "Real Estate (rate-sensitive)",
-          "implied_move_pct": -5.9
+          "implied_move_pct": -5.8
         },
         {
           "asset": "GC=F",
@@ -1399,7 +1363,7 @@
         {
           "asset": "BTC-USD",
           "label": "Bitcoin (long-duration)",
-          "implied_move_pct": 8.7
+          "implied_move_pct": 8.8
         },
         {
           "asset": "TLT",
@@ -1409,7 +1373,7 @@
         {
           "asset": "XLRE",
           "label": "Real Estate (rate-sensitive)",
-          "implied_move_pct": 5.9
+          "implied_move_pct": 5.8
         },
         {
           "asset": "GC=F",
@@ -1448,7 +1412,7 @@
         {
           "asset": "BTC-USD",
           "label": "Bitcoin (long-duration)",
-          "implied_move_pct": 17.8
+          "implied_move_pct": 17.9
         },
         {
           "asset": "CL=F",
@@ -1556,32 +1520,32 @@
   ],
   "calibrated": true,
   "yield_curve": {
-    "asof": "2026-08-17",
+    "asof": "2026-08-27",
     "shape": {
       "level": {
         "value": 4.33,
-        "pctile": 0.67,
-        "chg_63d": 15.0
+        "pctile": 0.66,
+        "chg_63d": 17.0
       },
       "slope_2s10s": {
-        "value": 0.53,
-        "pctile": 0.81,
-        "chg_63d": 0.0
+        "value": 0.47,
+        "pctile": 0.72,
+        "chg_63d": 5.0
       },
       "slope_3m10y": {
-        "value": 0.85,
-        "pctile": 0.84,
-        "chg_63d": -7.0
+        "value": 0.83,
+        "pctile": 0.85,
+        "chg_63d": 14.0
       },
       "fly_2s5s10s": {
-        "value": -0.13,
-        "pctile": 0.75,
-        "chg_63d": 4.0
+        "value": -0.11,
+        "pctile": 0.76,
+        "chg_63d": 5.0
       },
       "fly_5s10s30s": {
-        "value": -0.25,
-        "pctile": 0.17,
-        "chg_63d": -6.0
+        "value": -0.23,
+        "pctile": 0.26,
+        "chg_63d": 0.0
       },
       "pca": {
         "factors": [
@@ -1591,7 +1555,7 @@
               "en": "Level",
               "zh": "水平"
             },
-            "var_explained": 0.8254,
+            "var_explained": 0.8259,
             "loadings": {
               "us3m": 0.086,
               "us6m": 0.156,
@@ -1601,7 +1565,7 @@
               "us5y": 0.421,
               "us7y": 0.404,
               "us10y": 0.361,
-              "us30y": 0.272
+              "us30y": 0.273
             }
           },
           {
@@ -1610,17 +1574,17 @@
               "en": "Slope",
               "zh": "斜率"
             },
-            "var_explained": 0.0953,
+            "var_explained": 0.0951,
             "loadings": {
-              "us3m": -0.291,
-              "us6m": -0.367,
-              "us1y": -0.457,
-              "us2y": -0.318,
-              "us3y": -0.139,
-              "us5y": 0.086,
+              "us3m": -0.292,
+              "us6m": -0.368,
+              "us1y": -0.459,
+              "us2y": -0.316,
+              "us3y": -0.138,
+              "us5y": 0.087,
               "us7y": 0.239,
-              "us10y": 0.35,
-              "us30y": 0.515
+              "us10y": 0.349,
+              "us30y": 0.513
             }
           },
           {
@@ -1629,21 +1593,21 @@
               "en": "Curvature",
               "zh": "曲率"
             },
-            "var_explained": 0.0424,
+            "var_explained": 0.0423,
             "loadings": {
-              "us3m": -0.732,
-              "us6m": -0.386,
-              "us1y": -0.001,
-              "us2y": 0.292,
+              "us3m": -0.734,
+              "us6m": -0.384,
+              "us1y": 0.004,
+              "us2y": 0.291,
               "us3y": 0.254,
-              "us5y": 0.116,
-              "us7y": -0.004,
-              "us10y": -0.139,
+              "us5y": 0.114,
+              "us7y": -0.005,
+              "us10y": -0.14,
               "us30y": -0.364
             }
           }
         ],
-        "first3_var": 0.9631,
+        "first3_var": 0.9633,
         "window_d": 1260,
         "tenors": [
           "us3m",
@@ -1658,22 +1622,22 @@
         ],
         "pca_health": {
           "eigenvalue_gaps": {
-            "pc1_to_pc2": 8.6589,
-            "pc2_to_pc3": 2.2481,
-            "pc3_to_pc4": 2.566
+            "pc1_to_pc2": 8.6877,
+            "pc2_to_pc3": 2.2459,
+            "pc3_to_pc4": 2.5802
           },
-          "effective_dimension_pr": 1.4439,
-          "pc1_loading_turnover_vs_2y": 0.002746,
+          "effective_dimension_pr": 1.4423,
+          "pc1_loading_turnover_vs_2y": 0.003024,
           "oos_null": {
-            "observed": 0.5775,
-            "null_median": 0.4999,
-            "null_p90": 0.7308,
-            "pctile_vs_null": 0.6583,
+            "observed": 0.512,
+            "null_median": 0.5006,
+            "null_p90": 0.7408,
+            "pctile_vs_null": 0.5458,
             "n_null_draws": 240
           },
           "vol_match_multipliers": {
-            "pc2": 2.94,
-            "pc3": 4.41
+            "pc2": 2.95,
+            "pc3": 4.42
           },
           "curvature_stability_tag": "stable",
           "window_set": {
@@ -1690,9 +1654,9 @@
           "en": "2s10s (cycle slope)",
           "zh": "2-10年（周期斜率）"
         },
-        "value": 0.53,
-        "pctile": 0.81,
-        "chg_63d_bp": 0.0,
+        "value": 0.47,
+        "pctile": 0.72,
+        "chg_63d_bp": 5.0,
         "inverted": false
       },
       "3m10y": {
@@ -1700,9 +1664,9 @@
           "en": "3m10y (recession slope)",
           "zh": "3月-10年（衰退斜率）"
         },
-        "value": 0.85,
-        "pctile": 0.84,
-        "chg_63d_bp": -7.0,
+        "value": 0.83,
+        "pctile": 0.85,
+        "chg_63d_bp": 14.0,
         "inverted": false
       },
       "5s30s": {
@@ -1710,8 +1674,8 @@
           "en": "5s30s (long-end / term-premium)",
           "zh": "5-30年（长端/期限溢价）"
         },
-        "value": 0.89,
-        "pctile": 0.79,
+        "value": 0.81,
+        "pctile": 0.75,
         "chg_63d_bp": -0.0,
         "inverted": false
       },
@@ -1720,9 +1684,9 @@
           "en": "2s5s (front belly)",
           "zh": "2-5年（前段腹部）"
         },
-        "value": 0.19,
-        "pctile": 0.83,
-        "chg_63d_bp": 1.0,
+        "value": 0.18,
+        "pctile": 0.82,
+        "chg_63d_bp": 5.0,
         "inverted": false
       },
       "real_5s10s": {
@@ -1730,9 +1694,9 @@
           "en": "Real 5s10s (TIPS curve)",
           "zh": "实际5-10年（TIPS曲线）"
         },
-        "value": 0.29,
-        "pctile": 0.57,
-        "chg_63d_bp": -21.0,
+        "value": 0.28,
+        "pctile": 0.56,
+        "chg_63d_bp": -15.0,
         "inverted": false
       },
       "be_5s10s": {
@@ -1740,9 +1704,9 @@
           "en": "Breakeven 5s10s (inflation curve)",
           "zh": "盈亏平衡5-10年（通胀曲线）"
         },
-        "value": 0.03,
-        "pctile": 0.78,
-        "chg_63d_bp": 18.0,
+        "value": 0.02,
+        "pctile": 0.76,
+        "chg_63d_bp": 16.0,
         "inverted": false
       },
       "tp_adj": {
@@ -1750,58 +1714,56 @@
           "en": "TP-adjusted 2s10s",
           "zh": "期限溢价调整2-10年"
         },
-        "value": 0.53,
-        "pctile": 0.5,
-        "chg_63d_bp": -83.0,
+        "value": 1.34,
+        "pctile": 0.99,
+        "chg_63d_bp": 16.0,
         "inverted": false
       }
     },
     "momentum": {
-      "real10y_speed_bp": 28.0,
-      "nom10y_speed_bp": 11.0,
-      "front2y_speed_bp": 13.0,
-      "slope_chg_bp": 0.0,
-      "real_speed_pctile": 0.55,
-      "trend_spread": 0.18,
+      "real10y_speed_bp": 27.0,
+      "nom10y_speed_bp": 19.0,
+      "front2y_speed_bp": 14.0,
+      "slope_chg_bp": 5.0,
+      "real_speed_pctile": 0.52,
+      "trend_spread": 0.21,
       "trend_spread_dir": "rising",
-      "trend_spread_chg_1y_bp": 82.0,
+      "trend_spread_chg_1y_bp": 84.0,
       "window_d": 63
     },
     "regime": {
-      "key": "bear_steepener",
+      "key": "bull_steepener",
       "label": {
-        "en": "Bear steepener",
-        "zh": "熊市陡峭"
+        "en": "Bull steepener",
+        "zh": "牛市陡峭"
       },
       "desc": {
-        "en": "long rates rising faster than short — reflation / term-premium / fiscal repricing",
-        "zh": "长端利率上行快于短端 — 再通胀/期限溢价/财政重新定价"
+        "en": "short rates falling faster than long — the market is pricing Fed cuts",
+        "zh": "短端利率下行快于长端 — 市场在为美联储降息定价"
       },
       "fed_phase": {
-        "en": "Reflation / fiscal supply / term-premium repricing — long end rising fastest",
-        "zh": "再通胀／财政供给／期限溢价重新定价——长端上行最快"
+        "en": "Fed easing — front end falling fastest as cuts get priced (early recovery OR recessionary emergency easing)",
+        "zh": "美联储宽松——短端下行最快，市场计入降息（复苏初期或衰退式紧急宽松）"
       },
       "note": {
-        "en": "Historically the BEST equity regime overall (~+22% annualised across post-2000 growth-led episodes) — value, banks and real-asset cyclicals over long-duration growth/utilities/REITs. BUT a TERM-PREMIUM/fiscal-driven steepener (long end up with no growth) is not the bullish kind — check 5s30s + breakevens to disambiguate; rising term premium also breaks the 'duration = safe haven' assumption.",
-        "zh": "历史上整体最佳的股票状态（2000年后增长主导的episode年化约+22%）——价值、银行、实物资产周期跑赢长久期成长/公用/REITs。但由期限溢价/财政驱动的变陡（长端上行而无增长）并非看多版本——用5-30年与盈亏平衡来区分；上升的期限溢价也会打破“久期＝避风港”的假设。"
+        "en": "Two faces: the benign post-pivot recovery (small caps, banks via wider NIM, cyclicals lead) OR a recessionary emergency cut. Empirically bull steepeners have been ~flat-to-NEGATIVE for US equities (Lombard Odier 45-yr study), and emergency-cut versions ran S&P −10% to −35% (2001, 2008). Duration (TLT) is the one reliable winner; everything equity-side needs CREDIT confirmation before you trust the recovery read.",
+        "zh": "两副面孔：良性的转向后复苏（小盘、银行经更宽净息差、周期领涨）或衰退式紧急降息。实证上牛市变陡对美股大体为平至负（Lombard Odier 45年研究），紧急降息版本曾使标普下跌10%至35%（2001、2008）。久期（TLT）是唯一可靠赢家；股票端在信用确认前都不可轻信复苏判断。"
       },
       "favored": [
-        "XLE",
+        "TLT",
         "XLF",
+        "IWM",
         "XLB"
       ],
       "pressured": [
-        "QQQ",
-        "XLK",
-        "XLU",
-        "XLRE",
-        "TLT",
-        "GC=F"
+        "DX-Y.NYB",
+        "XLP",
+        "XLV"
       ],
-      "long_chg_bp": 13.0,
-      "slope_chg_bp": 16.0,
-      "term_premium_dir": "stable",
-      "term_premium_chg_bp": -4.0,
+      "long_chg_bp": -1.0,
+      "slope_chg_bp": 2.0,
+      "term_premium_dir": "rising",
+      "term_premium_chg_bp": 11.0,
       "window_d": 21
     },
     "recession": {
@@ -1809,7 +1771,7 @@
       "ntfs_signal": "positive — no near-term break priced",
       "nyfed_prob": 14.0,
       "uninversion": false,
-      "tp_adj_curve": 0.53,
+      "tp_adj_curve": 1.34,
       "flags": [],
       "n_flags": 0,
       "risk": "low",
@@ -1830,11 +1792,11 @@
     },
     "forwards": {
       "f_1y1y": 4.36,
-      "f_2y1y": 4.38,
-      "f_5y5y": 5.0,
-      "carry_10y_pct": 4.68,
-      "rolldown_10y_pct": 0.45,
-      "carry_roll_10y_pct": 5.13,
+      "f_2y1y": 4.49,
+      "f_5y5y": 4.95,
+      "carry_10y_pct": 4.66,
+      "rolldown_10y_pct": 0.4,
+      "carry_roll_10y_pct": 5.06,
       "note": {
         "en": "Forward rates are the market-implied future short rates embedded in today's curve; carry+roll-down is the total return a duration holder earns if the curve is unchanged in a year (the cushion before price loss).",
         "zh": "远期利率是今日曲线隐含的市场预期未来短端利率；carry＋滚动收益是久期持有者在曲线一年不变时获得的总回报（价格亏损前的缓冲）。"
@@ -1842,15 +1804,15 @@
     },
     "signals": {
       "core_macro": {
-        "en": "Curve: Bear steepener. recession dashboard low (0/4 flags).",
-        "zh": "曲线：熊市陡峭。衰退面板低（0/4 项亮起）。"
+        "en": "Curve: Bull steepener. recession dashboard low (0/4 flags).",
+        "zh": "曲线：牛市陡峭。衰退面板低（0/4 项亮起）。"
       },
       "sector": [
         {
           "etf": "XLF",
           "tilt": "tailwind",
           "basis": "measured",
-          "ic": -0.205,
+          "ic": -0.206,
           "ic_driver": "curvature",
           "verdict": "CONFIRMED",
           "duration": "short",
@@ -1860,36 +1822,10 @@
           }
         },
         {
-          "etf": "XLP",
-          "tilt": "tailwind",
-          "basis": "measured",
-          "ic": -0.105,
-          "ic_driver": "NTFS",
-          "verdict": "DIRECTIONAL",
-          "duration": "short",
-          "mech": {
-            "en": "staples — mild bond proxy with pricing power; relatively favoured when the curve flattens / growth slows (weaker rate sensitivity than utilities)",
-            "zh": "必需消费——具定价权的温和类债券；曲线趋平/增长放缓时相对受青睐（利率敏感度弱于公用事业）"
-          }
-        },
-        {
-          "etf": "XLV",
-          "tilt": "tailwind",
-          "basis": "measured",
-          "ic": -0.078,
-          "ic_driver": "curvature",
-          "verdict": "DIRECTIONAL",
-          "duration": "short",
-          "mech": {
-            "en": "health care defensive — low rate sensitivity, late-cycle relative haven",
-            "zh": "医疗防御——利率敏感度低、周期晚段相对避风港"
-          }
-        },
-        {
           "etf": "XLE",
           "tilt": "tailwind",
           "basis": "measured",
-          "ic": -0.101,
+          "ic": -0.102,
           "ic_driver": "curvature",
           "verdict": "CONFIRMED",
           "duration": "short",
@@ -1912,47 +1848,8 @@
           }
         },
         {
-          "etf": "XLRE",
-          "tilt": "headwind",
-          "basis": "theory",
-          "ic": null,
-          "ic_driver": null,
-          "verdict": null,
-          "duration": "long",
-          "mech": {
-            "en": "REITs are bond-proxy long-duration — hurt by higher long rates",
-            "zh": "REITs为类债券长久期——受长端利率上行拖累"
-          }
-        },
-        {
-          "etf": "XLU",
-          "tilt": "headwind",
-          "basis": "measured",
-          "ic": -0.051,
-          "ic_driver": "NTFS",
-          "verdict": "DIRECTIONAL",
-          "duration": "long",
-          "mech": {
-            "en": "utilities are the classic bond proxy — dividend yield competes with rates",
-            "zh": "公用事业为经典类债券——股息率与利率竞争"
-          }
-        },
-        {
-          "etf": "XLK",
-          "tilt": "headwind",
-          "basis": "measured",
-          "ic": -0.221,
-          "ic_driver": "curvature",
-          "verdict": "CONFIRMED",
-          "duration": "long",
-          "mech": {
-            "en": "long-duration growth — rising discount rate de-rates future cash flows",
-            "zh": "长久期成长——贴现率上行压低未来现金流估值"
-          }
-        },
-        {
           "etf": "XLI",
-          "tilt": "headwind",
+          "tilt": "tailwind",
           "basis": "theory",
           "ic": null,
           "ic_driver": null,
@@ -1965,7 +1862,7 @@
         },
         {
           "etf": "IWM",
-          "tilt": "headwind",
+          "tilt": "tailwind",
           "basis": "measured",
           "ic": -0.194,
           "ic_driver": "curvature",
@@ -1974,6 +1871,71 @@
           "mech": {
             "en": "small caps — heavy floating-rate debt; financing cost is the squeeze, easing the relief",
             "zh": "小盘——大量浮动利率债务；融资成本是挤压，宽松是缓解"
+          }
+        },
+        {
+          "etf": "XLK",
+          "tilt": "headwind",
+          "basis": "measured",
+          "ic": -0.222,
+          "ic_driver": "curvature",
+          "verdict": "CONFIRMED",
+          "duration": "long",
+          "mech": {
+            "en": "long-duration growth — rising discount rate de-rates future cash flows",
+            "zh": "长久期成长——贴现率上行压低未来现金流估值"
+          }
+        },
+        {
+          "etf": "XLP",
+          "tilt": "headwind",
+          "basis": "measured",
+          "ic": -0.105,
+          "ic_driver": "NTFS",
+          "verdict": "DIRECTIONAL",
+          "duration": "short",
+          "mech": {
+            "en": "staples — mild bond proxy with pricing power; relatively favoured when the curve flattens / growth slows (weaker rate sensitivity than utilities)",
+            "zh": "必需消费——具定价权的温和类债券；曲线趋平/增长放缓时相对受青睐（利率敏感度弱于公用事业）"
+          }
+        },
+        {
+          "etf": "XLV",
+          "tilt": "headwind",
+          "basis": "measured",
+          "ic": -0.079,
+          "ic_driver": "curvature",
+          "verdict": "DIRECTIONAL",
+          "duration": "short",
+          "mech": {
+            "en": "health care defensive — low rate sensitivity, late-cycle relative haven",
+            "zh": "医疗防御——利率敏感度低、周期晚段相对避风港"
+          }
+        },
+        {
+          "etf": "XLRE",
+          "tilt": "neutral",
+          "basis": "theory",
+          "ic": null,
+          "ic_driver": null,
+          "verdict": null,
+          "duration": "long",
+          "mech": {
+            "en": "REITs are bond-proxy long-duration — hurt by higher long rates",
+            "zh": "REITs为类债券长久期——受长端利率上行拖累"
+          }
+        },
+        {
+          "etf": "XLU",
+          "tilt": "neutral",
+          "basis": "measured",
+          "ic": -0.051,
+          "ic_driver": "NTFS",
+          "verdict": "DIRECTIONAL",
+          "duration": "long",
+          "mech": {
+            "en": "utilities are the classic bond proxy — dividend yield competes with rates",
+            "zh": "公用事业为经典类债券——股息率与利率竞争"
           }
         },
         {
@@ -1992,11 +1954,11 @@
       ],
       "stock_factor": {
         "value_vs_growth": "value",
-        "size": "neutral",
+        "size": "small",
         "duration_factor": "headwind",
         "label": {
-          "en": "Curve favours value over growth, no clear size.",
-          "zh": "曲线倾向于价值优于成长、规模无明显倾向。"
+          "en": "Curve favours value over growth, small caps.",
+          "zh": "曲线倾向于价值优于成长、小盘。"
         },
         "note": {
           "en": "Equity duration: growth stocks discount cash flows further out, so they behave as long-duration assets and de-rate when real yields rise (~2× the rate-sensitivity of value, BIS 2022); value/financials are short-duration. HONEST CAVEAT: the long-run correlation of the value-minus-growth factor with Δ10y is only ~0.10 (AQR/Asness) — the link is concentrated in episodes (the +25% growth→value rotation of 2022) and is largely NOT pure duration. Small caps are driven by the FRONT end (floating-rate debt cost), a distinct channel from value/growth duration.",
@@ -2005,7 +1967,7 @@
       },
       "market_tendency": {
         "drawdown_risk": "calm",
-        "real_speed_pctile": 0.55,
+        "real_speed_pctile": 0.52,
         "basis": "measured-direction, display-only",
         "label": {
           "en": "No fast real-rate repricing — the curve is not flagging near-term equity stress.",
@@ -2033,12 +1995,12 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-08-18",
-    "usd_dir": "flat",
+    "asof": "2026-08-28",
+    "usd_dir": "weakening",
     "roc_pct": null,
     "state": {
-      "en": "Flat",
-      "zh": "横盘"
+      "en": "Falling",
+      "zh": "走软"
     },
     "regime": {
       "en": "High real rates",
@@ -2079,21 +2041,21 @@
       }
     ],
     "corr": {
-      "GC=F": -0.67,
-      "HG=F": -0.66,
-      "SPY": -0.43,
-      "BTC": -0.4,
-      "EEM": -0.35,
-      "UST10": -0.23,
-      "CL=F": 0.21
+      "GC=F": -0.68,
+      "HG=F": -0.6,
+      "BTC": -0.43,
+      "SPY": -0.38,
+      "EEM": -0.33,
+      "CL=F": 0.15,
+      "UST10": -0.13
     },
     "scenario": null,
     "display_only": true
   },
   "hero": {
     "line": {
-      "en": "Rates are high & rising, inflation is cooling toward target, and the dollar is flat.",
-      "zh": "利率高位上行，通胀降温接近目标，美元横盘。"
+      "en": "Rates are high & rising, inflation is cooling toward target, and the dollar is falling.",
+      "zh": "利率高位上行，通胀降温接近目标，美元走软。"
     },
     "rates": {
       "state": {
@@ -2117,50 +2079,29 @@
     },
     "dollar": {
       "state": {
-        "en": "Flat",
-        "zh": "横盘"
+        "en": "Falling",
+        "zh": "走软"
       },
       "stance": {
-        "en": "Quiet — ignore for now",
-        "zh": "平静 — 暂可忽略"
+        "en": "Tailwind — watch for reversal",
+        "zh": "顺风 — 观察反转"
       }
     }
   },
   "changes": {
-    "vs_asof": "2026-08-13",
+    "vs_asof": "2026-08-26",
     "items": [
       {
-        "key": "usd_dir",
-        "from": "strengthening",
-        "to": "flat",
-        "en": "The dollar turned: rising → flat",
-        "zh": "美元转向：走强 → 横盘"
-      },
-      {
-        "key": "headwind_added",
-        "from": null,
-        "to": "Health Care (defensive)",
-        "en": "Health Care (defensive) moved into the headwind column",
-        "zh": "Health Care (defensive)转入逆风"
-      },
-      {
-        "key": "headwind_removed",
-        "from": "Financials (rate beneficiary)",
-        "to": null,
-        "en": "Financials (rate beneficiary) left the headwind column",
-        "zh": "Financials (rate beneficiary)移出逆风"
-      },
-      {
-        "key": "tailwind_removed",
-        "from": "Long Treasuries (20y+)",
-        "to": null,
-        "en": "Long Treasuries (20y+) left the tailwind column",
-        "zh": "Long Treasuries (20y+)移出顺风"
+        "key": "curve_regime",
+        "from": "bear_steepener",
+        "to": "bull_steepener",
+        "en": "Curve regime changed: bear steepener → bull steepener",
+        "zh": "曲线形态转变：熊市变陡 → 牛市变陡"
       }
     ]
   },
   "prev_state": {
-    "as_of": "2026-08-13",
+    "as_of": "2026-08-26",
     "state": {
       "rates_regime": "restrictive",
       "rates_dir": "rising",
@@ -2170,7 +2111,7 @@
       "be_cause": "quiet",
       "curve_regime": "bear_steepener",
       "rec_flags": 0,
-      "usd_dir": "strengthening",
+      "usd_dir": "weakening",
       "fx_scenario": null,
       "headwinds": [
         "Financials (rate beneficiary)",
@@ -2181,8 +2122,6 @@
         "Technology"
       ],
       "tailwinds": [
-        "China large-cap (EM proxy)",
-        "Gold",
         "Long Treasuries (20y+)"
       ]
     }

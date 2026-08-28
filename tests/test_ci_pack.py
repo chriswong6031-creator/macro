@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from types import SimpleNamespace
@@ -13,7 +14,18 @@ from pathlib import Path
 
 import pytest
 
+from scripts import audit_unrun_tests as AUDIT
+from scripts import ci_scope_dependencies as DEPS
 from scripts.ci_scope_dependencies import suite_dependency_closure
+# Plain package import (not the importlib-from-path PACK below) so this test and
+# scripts/check_contract_delta.py's own import of the same names resolve to the
+# identical `scripts.run_ci_pack` module object — see
+# test_curated_exclusive_closure_findings_is_the_shared_implementation in
+# tests/test_contract_delta.py, which pins that identity.
+from scripts.run_ci_pack import (
+    curated_exclusive_closure_findings,
+    inferred_as_if_not_exclusive,
+)
 import yaml
 
 
@@ -56,6 +68,69 @@ def test_all_legacy_jobs_are_disabled_and_packable() -> None:
     jobs = PACK.load_legacy_jobs(MANIFEST)
     assert len(jobs) >= 86
     assert all(job.definition["if"] == PACK.DISABLED_IF for job in jobs)
+
+
+def test_every_real_legacy_job_declares_its_gate() -> None:
+    """Every job in the real manifest says which tree moves its verdict.
+
+    The loader defaults an ABSENT `gate:` to "code" so synthetic fixtures keep
+    working (and so nothing can leave the merge gate silently), but the real
+    manifest must declare the field on every job: the code/data split is the
+    W1 deliverable of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md
+    and an undeclared job is an unclassified one, not a classified-by-default
+    one.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    undeclared = sorted(job.job_id for job in jobs if "gate" not in job.definition)
+    assert not undeclared, (
+        "legacy jobs without an explicit gate declaration: "
+        + ", ".join(undeclared)
+    )
+    assert all(job.gate in PACK.GATE_VALUES for job in jobs)
+
+
+def test_invalid_gate_value_fails_closed(tmp_path: Path) -> None:
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  typo:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: dtaa
+    steps:
+      - run: echo typo
+"""
+    )
+    with pytest.raises(PACK.ManifestError, match="gate must be one of code/data"):
+        PACK.load_legacy_jobs(workflow)
+
+
+def test_absent_gate_defaults_to_code_never_data(tmp_path: Path) -> None:
+    """An undeclared job stays a merge precondition — fail-closed direction."""
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  bare:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: bare step
+        proof_id: bare-step
+        run: echo bare
+"""
+    )
+    (job,) = PACK.load_legacy_jobs(workflow)
+    assert job.gate == "code"
 
 
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
@@ -202,12 +277,15 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
-    # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
-    # must survive every later edit to this block.
-    assert "merged" in ci["concurrency"]["group"], (
-        "a MERGED close must stay fenced into its own group, or a fast squash-merge "
-        "cancels the PR's own proof run and the merged head is unproven forever"
+    assert ci["concurrency"]["group"] == (
+        "ci-${{ github.event.pull_request.number || github.ref }}"
     )
+    triggers = ci.get("on") or ci.get(True)
+    assert triggers["pull_request"]["types"] == [
+        "opened", "synchronize", "reopened"
+    ], "a closed event must never occupy or replace the active PR proof slot"
+    assert "merged" not in ci["concurrency"]["group"]
+    assert "github.event.action" not in ci["concurrency"]["group"]
 
 
 def test_scope_glob_separator_semantics() -> None:
@@ -837,6 +915,16 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
         "engine/*",                     # single-level subset of engine/**
+        # SINGLE-LEVEL SUFFIX GLOB (2026-08-26).  SUFFIX_NARROWED_RE requires a
+        # `**/` before the suffix, and the bare-`/*` test does not fire on a
+        # pattern ending `*.py`, so these fell through to False despite being as
+        # strictly contained in `engine/**` as `engine/*` is.  `defense-rail-laws`
+        # derived exactly this shape and reported an unstartable gap against a
+        # trigger list carrying `engine/**`.  ci-pack is path-scoped, so only a PR
+        # touching .github/ci/ ever ran the test that noticed.
+        "engine/*.py",
+        "data/*.parquet",
+        "data/smart_money/*.py",        # ancestor proof: ⊂ data/smart_money/** ⊂ data/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -845,6 +933,8 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
         "app/*",                        # single-level, but app/** is not a trigger
+        "app/*.py",                     # same, suffixed — must NOT be relaxed
+        "*/engine/*.py",                # a glob in the PARENT proves nothing
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -987,6 +1077,312 @@ def test_empty_successful_diff_fails_closed(monkeypatch: pytest.MonkeyPatch) -> 
     assert PACK.changed_files("deadbeef") is None
 
 
+def _git_in(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
+
+
+def _commit_fixture(repo: Path, message: str) -> str:
+    _git_in(repo, "add", "-A")
+    _git_in(repo, "commit", "-m", message)
+    return _git_in(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _seed_tracked_path_repo(tmp_path: Path) -> tuple[Path, str, Path]:
+    repo = tmp_path / "tracked-path-repo"
+    repo.mkdir()
+    _git_in(repo, "init", "-b", "main")
+    _git_in(repo, "config", "user.email", "ci@example.invalid")
+    _git_in(repo, "config", "user.name", "CI Fixture")
+    for directory in ("engine", "tests", "site", "data"):
+        (repo / directory).mkdir()
+    (repo / "engine" / "__init__.py").write_text("", encoding="utf-8")
+    (repo / "engine" / "core.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (repo / "tests" / "test_owner.py").write_text(
+        "from pathlib import Path\n"
+        "from engine import core\n\n"
+        "def test_owner():\n"
+        "    assert core.VALUE and Path('site/owner.json').read_text()\n",
+        encoding="utf-8",
+    )
+    (repo / "tests" / "test_opaque.py").write_text(
+        "from pathlib import Path\n\n"
+        "def test_opaque():\n"
+        "    assert list(Path('data').rglob('*.json'))\n",
+        encoding="utf-8",
+    )
+    (repo / "site" / "owner.json").write_text('{"owner":true}\n', encoding="utf-8")
+    (repo / "site" / "old.json").write_text('{"old":true}\n', encoding="utf-8")
+    (repo / "site" / "omitted.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (repo / "data" / "feed.json").write_text("[]\n", encoding="utf-8")
+    sha = _commit_fixture(repo, "seed exact tree")
+    inventory = tmp_path / "tracked-paths.v1"
+    DEPS.write_tracked_path_inventory(inventory, sha, root=repo)
+    return repo, sha, inventory
+
+
+def test_depth_two_merge_needs_no_parent1_parent2_merge_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The authoritative diff is parent1...merge, not parent1...parent2.
+
+    A depth-two checkout has the exact synthetic merge and both direct parents,
+    but their common ancestor is deliberately outside the shallow boundary. The
+    current planner diff still resolves exactly; progressive ancestry acquisition
+    (the rejected #6261 design) is neither called nor needed.
+    """
+    source = tmp_path / "source"
+    source.mkdir()
+    _git_in(source, "init", "-b", "main")
+    _git_in(source, "config", "user.email", "ci@example.invalid")
+    _git_in(source, "config", "user.name", "CI Fixture")
+    (source / "base.txt").write_text("base\n", encoding="utf-8")
+    _commit_fixture(source, "base")
+    _git_in(source, "switch", "-c", "feature")
+    (source / "tests").mkdir()
+    (source / "tests" / "feature.py").write_text("FEATURE = True\n", encoding="utf-8")
+    _commit_fixture(source, "feature")
+    _git_in(source, "switch", "main")
+    (source / "engine").mkdir()
+    (source / "engine" / "main.py").write_text("MAIN = True\n", encoding="utf-8")
+    _commit_fixture(source, "main")
+    _git_in(source, "merge", "--no-ff", "feature", "-m", "synthetic merge")
+    _git_in(source, "branch", "candidate", "HEAD")
+
+    shallow = tmp_path / "depth-two"
+    subprocess.run(
+        [
+            "git", "clone", "--depth", "2", "--branch", "candidate",
+            f"file://{source}", str(shallow),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    fields = _git_in(shallow, "rev-list", "--parents", "-n", "1", "HEAD").stdout.split()
+    assert len(fields) == 3
+    merge_sha, parent1, parent2 = fields
+    assert _git_in(shallow, "rev-parse", "HEAD").stdout.strip() == merge_sha
+    assert _git_in(shallow, "merge-base", parent1, parent2, check=False).returncode == 1
+    assert _git_in(shallow, "merge-base", parent1, "HEAD").stdout.strip() == parent1
+
+    monkeypatch.chdir(shallow)
+    assert PACK.changed_files(parent1) == ["tests/feature.py"]
+
+
+def test_exact_tree_inventory_rejects_missing_malformed_wrong_and_mutated_inputs(
+    tmp_path: Path,
+) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    loaded = DEPS.load_tracked_path_inventory(inventory, sha, root=repo)
+    assert loaded.tested_tree_sha == sha
+    assert "site/owner.json" in loaded.files
+    assert "site" in loaded.directories
+
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="unreadable"):
+        DEPS.load_tracked_path_inventory(tmp_path / "missing.v1", sha, root=repo)
+
+    malformed = tmp_path / "malformed.v1"
+    malformed.write_bytes(b"not-json\nsite/owner.json\0")
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="header is malformed"):
+        DEPS.load_tracked_path_inventory(malformed, sha, root=repo)
+
+    header_raw, _, payload = inventory.read_bytes().partition(b"\n")
+    header = json.loads(header_raw)
+    wrong_tree = tmp_path / "wrong-tree.v1"
+    wrong_header = {**header, "tested_tree_sha": "0" * 40}
+    wrong_tree.write_bytes(
+        json.dumps(wrong_header, sort_keys=True, separators=(",", ":")).encode()
+        + b"\n"
+        + payload
+    )
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="does not match expected"):
+        DEPS.load_tracked_path_inventory(wrong_tree, sha, root=repo)
+
+    # Remove a real tracked path AND repair the mutation's own count/digest. The
+    # independent exact-tree comparison must still catch this, rather than
+    # trusting self-consistent but incomplete metadata.
+    records = payload[:-1].split(b"\0")
+    records.remove(b"site/owner.json")
+    truncated_payload = b"\0".join(records) + b"\0"
+    truncated_header = {
+        **header,
+        "path_count": len(records),
+        "paths_sha256": DEPS.hashlib.sha256(truncated_payload).hexdigest(),
+    }
+    truncated = tmp_path / "missing-path.v1"
+    truncated.write_bytes(
+        json.dumps(truncated_header, sort_keys=True, separators=(",", ":")).encode()
+        + b"\n"
+        + truncated_payload
+    )
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="not byte-identical"):
+        DEPS.load_tracked_path_inventory(truncated, sha, root=repo)
+
+
+def test_exact_tree_inventory_rejects_checkout_identity_drift(tmp_path: Path) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    (repo / "engine" / "later.py").write_text("LATER = True\n", encoding="utf-8")
+    later = _commit_fixture(repo, "move checkout")
+    assert later != sha
+    with pytest.raises(DEPS.TrackedPathInventoryError, match="checkout HEAD"):
+        DEPS.load_tracked_path_inventory(inventory, sha, root=repo)
+
+
+def test_inventory_preserves_omitted_tracked_existence_but_never_fakes_content(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    shutil.rmtree(repo / "site")
+    monkeypatch.setattr(DEPS, "ROOT", repo)
+    DEPS._selector_file_analysis.cache_clear()
+
+    with DEPS.planner_tracked_path_inventory(inventory, sha, root=repo):
+        reads = DEPS.direct_reads(repo / "tests" / "test_owner.py")
+        assert "site/owner.json" in reads
+        assert DEPS.pytest_invocation_ambiguities("pytest site") == (
+            "directory pytest target 'site'",
+        )
+        with pytest.raises(DEPS.ScopeMaterializationError, match="omitted.py"):
+            DEPS.suite_dependency_closure("site/omitted.py")
+
+
+def test_invalid_inventory_enters_the_existing_full_suite_planner_fallback(
+    tmp_path: Path,
+) -> None:
+    """Inventory doubt launches every pack; it can never publish no-work."""
+    output = tmp_path / "github-output"
+    sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert PACK.main(
+        [
+            "--workflow", str(MANIFEST),
+            "--pack-count", "12",
+            "--plan-only",
+            "--github-output", str(output),
+            "--tracked-paths-file", str(tmp_path / "missing.v1"),
+            "--tested-tree-sha", sha,
+        ]
+    ) == 0
+    outputs = _parse_github_output(output.read_text(encoding="utf-8"))
+    assert json.loads(outputs["matrix"]) == {
+        "include": [{"pack": index} for index in range(12)]
+    }
+    assert outputs["has_work"] == "true"
+    assert outputs["plan_sha"] == ""
+    assert "tracked-path inventory" in outputs["reason"]
+
+
+def test_virtual_existence_oracle_is_confined_to_planner_scope_derivation() -> None:
+    """The W3 oracle must never become a product/runtime filesystem law."""
+    tree = ast.parse((ROOT / "scripts" / "run_ci_pack.py").read_text())
+    oracle_calls = {
+        "planner_path_exists": set(),
+        "planner_path_is_file": set(),
+        "planner_tracked_path_inventory": set(),
+    }
+    for function in (
+        node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    ):
+        for node in ast.walk(function):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+                if node.func.id in oracle_calls:
+                    oracle_calls[node.func.id].add(function.name)
+    assert oracle_calls == {
+        "planner_path_exists": {"_scope_coverage_findings"},
+        # `infer_job_paths` is the nested implementation inside
+        # `infer_job_scopes`; ast.walk reports both lexical owners.
+        "planner_path_is_file": {"infer_job_paths", "infer_job_scopes"},
+        "planner_tracked_path_inventory": {"plan_from_workflow"},
+    }
+
+
+def test_full_and_sparse_planners_are_field_and_byte_identical_over_replay_corpus(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Selection, partition, semantic identity, and plan hash survive sparsity.
+
+    The corpus covers the handoff's distinct decision shapes. Changed path order
+    is intentionally preserved, including both rename/copy sides; exact Git
+    decoding is independently pinned by the hostile depth-two regression above.
+    """
+    repo, sha, inventory = _seed_tracked_path_repo(tmp_path)
+    monkeypatch.chdir(repo)
+    monkeypatch.setattr(DEPS, "ROOT", repo)
+    monkeypatch.setattr(AUDIT, "ROOT", repo)
+
+    def job(job_id: str, ordinal: int, suite: str, weight: int) -> object:
+        return PACK.LegacyJob(
+            job_id=job_id,
+            definition={
+                "if": PACK.DISABLED_IF,
+                "runs-on": "ubuntu-latest",
+                "steps": [
+                    {
+                        "name": f"{job_id} semantic proof",
+                        "run": f"python -m pytest {suite}",
+                    }
+                ],
+            },
+            ordinal=ordinal,
+            weight=weight,
+        )
+
+    jobs = [
+        job("literal-owner", 0, "tests/test_owner.py", 5),
+        job("opaque-data-owner", 1, "tests/test_opaque.py", 3),
+    ]
+    corpus = [
+        ["tests/test_owner.py"],
+        ["engine/core.py"],
+        ["site/owner.json"],
+        ["data/feed.json"],
+        ["site/old.json", "site/owner.json"],
+        [".github/ci/legacy-jobs.yml"],
+        ["research/PASSIVE_NOTE.md"],
+        ["brand_new_root/unknown.xyz"],
+    ]
+    identity = {
+        "changed_from": sha,
+        "scope_mode": "active",
+        "pack_count": 3,
+        "workflow_run_id": "replay",
+        "workflow": "ci",
+        "event": "pull_request",
+        "role": "pr_head",
+        "tested_tree_sha": sha,
+        "subject_head_sha": sha,
+        "base_sha": sha,
+    }
+    AUDIT._classify.cache_clear()
+    DEPS._selector_file_analysis.cache_clear()
+    full = [PACK.build_plan(jobs, changed, **identity) for changed in corpus]
+
+    shutil.rmtree(repo / "data")
+    shutil.rmtree(repo / "site")
+    AUDIT._classify.cache_clear()
+    DEPS._selector_file_analysis.cache_clear()
+    with DEPS.planner_tracked_path_inventory(inventory, sha, root=repo):
+        sparse = [PACK.build_plan(jobs, changed, **identity) for changed in corpus]
+
+    assert len(full) == len(sparse) == len(corpus)
+    for changed, full_plan, sparse_plan in zip(corpus, full, sparse, strict=True):
+        assert sparse_plan.changed_paths == full_plan.changed_paths == tuple(changed)
+        assert sparse_plan.changed_files_sha256 == PACK.changed_files_digest(changed)
+        assert sparse_plan.to_dict() == full_plan.to_dict()
+        assert sparse_plan.plan_sha256 == full_plan.plan_sha256
+
+
 def test_scope_mode_kill_switch_defaults_and_can_be_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1004,7 +1400,7 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     owner = PACK.LegacyJob("owner", definition, 0, 1, ("engine/**",))
     skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
     jobs = [owner, skipped]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: jobs)
     _stub_planner_paths(monkeypatch, ["engine/example.py"])
     monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
     assert PACK.main([
@@ -1092,6 +1488,94 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
         line for line in out.splitlines() if line.startswith("CI_PACK_FAILED_JOBS=")
     )
     assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
+
+
+def test_execution_timing_observations_do_not_change_semantic_fragment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Timing is useful evidence, never an input to semantic proof authority."""
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
+    job = PACK.LegacyJob("demo", definition, 0, 1, ("engine/**",))
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(PACK, "_dependency_environment", lambda *_args, **_kwargs: {})
+
+    def fake_run(current, **_kwargs):
+        specs = PACK.semantic_step_specs(current)
+        return PACK.JobExecution(
+            logical_job_id=current.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(current),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=None,
+        )
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    without_timing = tmp_path / "without-timing.json"
+    with_timing = tmp_path / "with-timing.json"
+    observations = tmp_path / "timing-observations.jsonl"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    unwritable_observations = blocked_parent / "timing-observations.jsonl"
+    with_unwritable_timing = tmp_path / "with-unwritable-timing.json"
+
+    assert PACK.execute_pack([job], emit_semantic_fragment=without_timing) == 0
+    ticks = iter((1_000, 1_100, 1_200, 1_500, 1_600, 1_700, 1_800, 2_100))
+    monkeypatch.setattr(PACK.time, "monotonic_ns", lambda: next(ticks))
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_timing,
+            emit_timing_observations=observations,
+        )
+        == 0
+    )
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_unwritable_timing,
+            emit_timing_observations=unwritable_observations,
+        )
+        == 0
+    )
+
+    assert with_timing.read_bytes() == without_timing.read_bytes()
+    assert with_unwritable_timing.read_bytes() == without_timing.read_bytes()
+    assert not unwritable_observations.exists()
+    assert "::warning title=ci timing telemetry degraded::" in capsys.readouterr().out
+    assert [
+        json.loads(line)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    ] == [
+        {
+            "duration_ns": 100,
+            "ended_monotonic_ns": 1_100,
+            "logical_job_id": "demo",
+            "phase": "dependency_install",
+            "started_monotonic_ns": 1_000,
+            "status": "observed",
+        },
+        {
+            "duration_ns": 300,
+            "ended_monotonic_ns": 1_500,
+            "logical_job_id": "demo",
+            "phase": "test",
+            "started_monotonic_ns": 1_200,
+            "status": "observed",
+        },
+    ]
 
 
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
@@ -1223,7 +1707,7 @@ def test_packing_contract_ignores_ambient_ci_changed_files_json(
         _plan_job("owner", 0, paths=("engine/**",)),
         _plan_job("would-skip", 1, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -1302,6 +1786,298 @@ def _full_plan() -> object:
 
 def _never_execute(*args: object, **kwargs: object) -> int:
     raise AssertionError("execute_pack must not be reached on this path")
+
+
+DATA_HEALTH = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_every_data_health_trigger_can_actually_mint_a_plan() -> None:
+    """The lane that took the data-gated jobs off the merge gate must be able to run.
+
+    ``data-health.yml`` fires on ``workflow_run`` (daily completed) and on a
+    13:30 UTC ``schedule`` backstop, and neither passes ``--role``/``--event``,
+    so both resolve to role ``main`` from the ambient ``GITHUB_EVENT_NAME``.
+    Until 2026-08-19 the supported set held only ``main/workflow_dispatch``, so
+    both raised ManifestError BEFORE any legacy job ran: run 32262001614
+    (schedule) died ``main/schedule is unsupported``, exit 2, in all six packs.
+    That is not a fail-closed that protects anything — it silently emptied the
+    only lane that grades the 74 ``gate: data`` jobs against a freshly written
+    data tree, which is the entire promise W2 made when it moved them off ci.yml.
+
+    This asserts the workflow's OWN trigger list, so adding a trigger there
+    without teaching the planner reds here instead of going quiet in production.
+    """
+    workflow = _yaml(DATA_HEALTH)
+    triggers = set((workflow.get("on") or workflow.get(True)).keys())
+    assert triggers, "data-health.yml must declare triggers"
+    for event in sorted(triggers):
+        assert ("main", event) in PACK.SUPPORTED_PLAN_ROLE_EVENTS, (
+            f"data-health.yml fires on {event!r} but the planner refuses "
+            f"main/{event}; that pack dies at exit 2 before a single job runs"
+        )
+
+
+def test_a_main_role_plan_from_a_data_health_trigger_carries_every_data_job(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Widening the transport must not have relaxed what ``main`` MEANS.
+
+    Both new events describe the shape ``main`` already required — a whole-tree
+    run at one checked-out SHA with no diff — so the plan they mint must be the
+    same full ``gate: data`` suite the manual dispatch minted, and it must carry
+    ``house-law-registry``: the guard whose input (the newest
+    ``data/symbol_directory`` snapshot) only ever moves on a nightly commit.
+    """
+    monkeypatch.setenv("GITHUB_SHA", "0" * 40)
+    monkeypatch.delenv("CI_SEMANTIC_ROLE", raising=False)
+    monkeypatch.delenv("CI_TESTED_TREE_SHA", raising=False)
+    monkeypatch.delenv("CI_SUBJECT_HEAD_SHA", raising=False)
+    monkeypatch.delenv("CI_BASE_SHA", raising=False)
+
+    plans = {}
+    for event in ("workflow_dispatch", "workflow_run", "schedule"):
+        monkeypatch.setenv("GITHUB_EVENT_NAME", event)
+        plan = PACK.plan_from_workflow(
+            MANIFEST, changed_from=None, scope_mode="active",
+            pack_count=6, gate="data",
+        )
+        assert plan.role == "main" and plan.event == event
+        assert plan.changed_from is None
+        plans[event] = {job for pack in plan.pack_jobs for job in pack}
+
+    assert "house-law-registry" in plans["schedule"]
+    assert plans["schedule"] == plans["workflow_dispatch"] == plans["workflow_run"]
+
+
+def test_the_supported_role_event_set_stays_closed() -> None:
+    """An unreasoned combination must still fail closed, both minting and consuming.
+
+    The widening above is two named transports for a role whose substance is
+    enforced elsewhere; it is not permission for any event to plan anything.
+    """
+    assert ("main", "push") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "schedule") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    assert ("pr_head", "workflow_dispatch") not in PACK.SUPPORTED_PLAN_ROLE_EVENTS
+    # One constant, both gates: the planner and the authoritative-plan reader
+    # cannot drift into disagreeing about what a legal plan is.
+    source = (ROOT / "scripts" / "run_ci_pack.py").read_text()
+    assert source.count("(role, event) not in SUPPORTED_PLAN_ROLE_EVENTS") == 2
+
+
+def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
+    """RUNNER_CONTRACT v2 (#6351 P0R bridge): a truthful logical claim about
+    the runtime `attest_execution_profile` enforces, replacing the
+    "ubuntu-latest" image name the v1 string aspirationally described.
+    """
+    assert PACK.RUNNER_CONTRACT == "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
+
+
+def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
+    assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+    assert PACK.TRUSTED_EXECUTOR_WORKFLOW == "trusted-ci-executor"
+    assert PACK.DIAGNOSTIC_PR_WORKFLOWS == frozenset(
+        {PACK.DIAGNOSTIC_CANARY_WORKFLOW, PACK.TRUSTED_EXECUTOR_WORKFLOW}
+    )
+
+
+def test_runner_contract_v2_participates_in_the_job_semantic_digest(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Changing the runtime contract must change what every job's digest
+    means — that is the whole point of a semantic contract version bump.
+    """
+    job = _plan_job("demo", 0)
+    before = PACK.semantic_job_digest(job)
+    monkeypatch.setattr(
+        PACK, "RUNNER_CONTRACT", "ci-pack/linux-x86_64/python-3.12.13/node-20/v3"
+    )
+    after = PACK.semantic_job_digest(job)
+    assert before != after
+
+
+def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``(pr_head, workflow_dispatch)`` is admitted ONLY when ``workflow``
+    equals the exact canary name — SUPPORTED_PLAN_ROLE_EVENTS itself stays
+    closed (pinned separately by test_the_supported_role_event_set_stays_closed).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    base = "b" * 40
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
+    assert plan.workflow == PACK.DIAGNOSTIC_CANARY_WORKFLOW
+
+    for other_workflow in ("ci", "some-other-workflow"):
+        with pytest.raises(PACK.ManifestError, match="unsupported"):
+            PACK.build_plan(
+                jobs,
+                ["engine/example.py"],
+                changed_from=base,
+                scope_mode="active",
+                pack_count=1,
+                workflow=other_workflow,
+                event="workflow_dispatch",
+                role="pr_head",
+                tested_tree_sha="a" * 40,
+                subject_head_sha="c" * 40,
+                base_sha=base,
+            )
+
+
+def test_p3a_executor_uses_the_same_closed_diagnostic_plan_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    base = "b" * 40
+    plan = PACK.build_plan(
+        [_plan_job("demo", 0)],
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.TRUSTED_EXECUTOR_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.workflow == PACK.TRUSTED_EXECUTOR_WORKFLOW
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
+
+
+def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The diagnostic pair is a narrower ADMISSION, not a relaxed invariant:
+    exact changed-file inventory and changed_from == base_sha still apply
+    (spec item A.2).
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        PACK.build_plan(
+            jobs,
+            None,
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="b" * 40,
+        )
+    with pytest.raises(PACK.ManifestError, match="changed_from must equal"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="b" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="pr_head",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="c" * 40,
+            base_sha="f" * 40,
+        )
+
+
+def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Mutation-lock (#6351 addendum): the pre-fix canary passed
+    ``--changed-from`` unconditionally, including for the ``pr_number=0``
+    main dispatch. That shape must stay refused — the fix is to stop
+    sending it for pr0, never to admit it.
+    """
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("demo", 0)]
+    with pytest.raises(PACK.ManifestError, match="main semantic plan"):
+        PACK.build_plan(
+            jobs,
+            ["engine/example.py"],
+            changed_from="a" * 40,
+            scope_mode="active",
+            pack_count=1,
+            workflow=PACK.DIAGNOSTIC_CANARY_WORKFLOW,
+            event="workflow_dispatch",
+            role="main",
+            tested_tree_sha="a" * 40,
+            subject_head_sha="a" * 40,
+            base_sha="a" * 40,
+        )
+
+
+def test_attest_execution_profile_refuses_on_a_non_linux_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The real guard refuses a deterministically simulated non-Linux host."""
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_system_machine_python_node_in_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
+    with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "arm64")
+    with pytest.raises(PACK.ExecutionProfileError, match="x86_64"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.14")
+    with pytest.raises(PACK.ExecutionProfileError, match="3.12.13"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 18)
+    with pytest.raises(PACK.ExecutionProfileError, match="node 20"):
+        PACK.attest_execution_profile(None)
+
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    # All four checks satisfied and no plan -> success (tree-sha check skipped).
+    PACK.attest_execution_profile(None)
+
+
+def test_attest_execution_profile_checks_checkout_head_against_the_plan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(PACK.platform, "machine", lambda: "x86_64")
+    monkeypatch.setattr(PACK.platform, "python_version", lambda: "3.12.13")
+    monkeypatch.setattr(PACK, "_node_major_version", lambda: 20)
+    plan = _full_plan()
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: Path("/tmp"))
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: "0" * 40)
+    with pytest.raises(PACK.ExecutionProfileError, match="does not match attested"):
+        PACK.attest_execution_profile(plan)
+
+    monkeypatch.setattr(PACK, "_current_commit_sha", lambda root: plan.tested_tree_sha)
+    PACK.attest_execution_profile(plan)  # no raise
 
 
 def test_plan_is_deterministic() -> None:
@@ -1542,7 +2318,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
         _plan_job("owns-new", 1, paths=("engine/new.py",)),
         _plan_job("elsewhere", 2, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     _stub_planner_paths(monkeypatch, ["engine/old.py", "engine/new.py"])
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
@@ -1570,7 +2346,7 @@ def test_planner_failure_never_emits_no_work(
     aggregate for a PR on which nothing ran.
     """
 
-    def explode(path: object) -> object:
+    def explode(path: object, gate: object = None) -> object:
         raise PACK.ManifestError("job 'x' is broken\njob 'y' is broken too")
 
     monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
@@ -1621,7 +2397,7 @@ def test_planner_failure_without_github_output_still_fails_loudly(
     fine on a developer's machine.
     """
 
-    def explode(path: object) -> object:
+    def explode(path: object, gate: object = None) -> object:
         raise PACK.ManifestError("manifest is broken")
 
     monkeypatch.setattr(PACK, "load_legacy_jobs", explode)
@@ -1695,7 +2471,7 @@ def test_a_pack_refuses_a_changed_file_list_it_cannot_prove(
         _plan_job("engine-owner", 0, paths=("engine/**",)),
         _plan_job("site-owner", 1, paths=("site/**",)),
     ]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     plan = PACK.plan_from_workflow(
         MANIFEST,
         changed_from="basesha",
@@ -1879,7 +2655,7 @@ def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
     """
     _freeze_scope_inference(monkeypatch)
     jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
-    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path, gate=None: list(jobs))
     _stub_planner_paths(monkeypatch, ["research/NOTE.md"])
     emitted: dict[str, dict[str, str]] = {}
     for mode in ("active", "shadow", "off"):
@@ -2097,23 +2873,42 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_anchors_or_fork_packs() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
     # invariant this file defends is that CI does not fan back out (86 VMs, one
-    # per legacy suite), so a FOURTH job here is the regression — while the exact
-    # ci-plan/ci-gate shape belongs to tests/test_ci_plan_workflow.py, which owns
-    # it positively. Two suites asserting the same equality would only mean two
-    # places to edit, and the weaker one would win.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "ci-gate"}
+    # per legacy suite), so a job-per-legacy-suite regression here is the thing
+    # this guards against — while the exact ci-plan/ci-gate shape belongs to
+    # tests/test_ci_plan_workflow.py, which owns it positively. Two suites
+    # asserting the same equality would only mean two places to edit, and the
+    # weaker one would win.
+    #
+    # `contract-delta` (2026-08-19) joined the allowed set deliberately: it is
+    # one small, purposeful, path-independent job — same shape as ci-plan/
+    # ci-pack/ci-gate, not a per-suite fan-out job — that re-derives two
+    # CI-contract finding classes ci-pack's own path scoping cannot reach (see
+    # scripts/check_contract_delta.py's module docstring). Adding it here is
+    # the same class of change as ci-plan/ci-gate joining originally; it does
+    # not reopen the 86-VM fan-out this test exists to prevent.
+    # `trusted-ci` (P3B-B) is one protected-main reusable call, not another
+    # planner, pack fan-out or scheduler. Its PC jobs are defined only by the
+    # called main workflow; the caller's ci-pack matrix remains the stable hosted
+    # anchor set and retains the full implementation only for forks.
+    assert set(workflow["jobs"]) <= {
+        "ci-plan",
+        "trusted-ci",
+        "ci-pack",
+        "contract-delta",
+        "ci-gate",
+    }
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
-    # agree with the --pack-count handed to the runner or some packs' jobs
-    # would execute nowhere.
+    # SHAPE is the contract: a small ordered matrix of stable hosted anchors
+    # (or full hosted fork packs), never one job per legacy suite (86 VMs), and
+    # the matrix must agree with the --pack-count handed to the runner or some
+    # packs' jobs would execute nowhere.
     #
     # Wave B made the matrix the PLANNER's, so the list of indices is no longer
     # in this file — `--pack-count 12` below is now the only place the twelve-way
@@ -2161,10 +2956,12 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    # The closed-event fence must LEAD the condition. Wave B appends
-    # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
-    # fence instead of extending it re-allocates a runner for every merged-close.
-    assert pack["if"].startswith("github.event.action != 'closed'")
+    assert pack["if"] == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
@@ -2175,7 +2972,9 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # manifest itself as a workflow.
     triggers = workflow.get("on") or workflow.get(True)
     assert ".github/ci/legacy-jobs.yml" in triggers["pull_request"]["paths"]
-    assert "closed" in triggers["pull_request"]["types"]
+    assert triggers["pull_request"]["types"] == [
+        "opened", "synchronize", "reopened"
+    ]
 
 
 def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
@@ -2246,7 +3045,8 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
     once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
     ci-plan's changed-file list and only need the current working tree (legacy
     suites inspect committed site/ artifacts, not historical blobs). Do not
-    replace this with sparse checkout.
+    replace the PACK checkout with sparse checkout. W3 contains only ci-plan's
+    working tree; ci-pack materialization remains W4.
     """
     workflow = _yaml(WORKFLOW)
     pack = workflow["jobs"]["ci-pack"]
@@ -2265,6 +3065,14 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert plan_checkout["with"]["fetch-depth"] == 0
+    assert plan_checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert plan_checkout["with"]["sparse-checkout"].splitlines() == [
+        "/*",
+        "!/data/",
+        "!/site/",
+        "!/mockups/",
+        "!/verify_shots/",
+    ]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
@@ -2285,7 +3093,12 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
-    assert checkout["with"]["fetch-depth"] == 0
+    # Commit 09abde056620 "fix(ci): contain fence checkout to proof surface"
+    # bounded fence-pack's checkout to fetch-depth 256 + sparse-checkout
+    # (~74.7k -> 4,994 files, production-proven). The exact shape (paths,
+    # cone-mode) is canonically owned by test_fence_checkout_contract.py;
+    # this assertion only keeps this file from drifting back to the old pin.
+    assert checkout["with"]["fetch-depth"] == 256
 
     publish = next(step for step in pack["steps"] if step.get("id") == "publish")
     assert publish["if"] == "always()"
@@ -2594,6 +3407,29 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
 # ---------------------------------------------------------------------------
 
 CURATED_EXCLUSIVE = {
+    # 2026-08-20. `regwall-boundary` carries tests/test_regwall_json_gate.py out
+    # of `tier-gate` (`gate: data`, never packed by ci.yml) and onto the merge
+    # gate. It is curated for COVERAGE, not to narrow: the suite names its two
+    # subjects — app/deploy/Caddyfile and config/site_access.yml — as segment
+    # literals (REPO_ROOT / "app" / "deploy" / "Caddyfile"), and no segment
+    # holds a `/`, so inference cannot see them and the job would not re-run on
+    # the Caddyfile edit that is the whole regression class. Exclusive is what
+    # makes the declared paths replace inference instead of riding a whole-tree
+    # fallback tier. Sole probe delta: templates/index.html +1, from the five
+    # public documents test_public_pages_fetch_nothing_under_paid_prefixes
+    # actually reads; the other two probes are unmoved.
+    "regwall-boundary",
+    # 2026-08-19 wave 5. #6027 moved #5984's three dossier suites into
+    # conviction-profile — the right call, because their #6023 home
+    # (unrun-publish-ops) is `gate: data`, which ci.yml never plans, so they
+    # were named by a run: step and still dark on every PR. But those suites
+    # import scripts/build_ticker_pages.py and check_stock_dossier_integrity.py,
+    # which rglob templates/ and site/, so the job inherited whole-tree
+    # fallback claims and newly matched templates/index.html — 128 > the 127
+    # ceiling below. Curated rather than paid for: its 59 concrete owned files
+    # plus the two templates build_ticker_pages loads by name. Probe returns
+    # to 127; weight and pack ceilings unmoved.
+    "conviction-profile",
     "unrun-government-revenue-grader",
     "biocatalyst-worker",
     "biocatalyst-serving",
@@ -2660,15 +3496,52 @@ CURATED_EXCLUSIVE = {
     # test and enumeration would drop them silently.
     "cn-standout-audit",
     "coiled-mtf-anchor-era",
+    # 2026-08-20 main-red-repair. serving-observability (#6115, Sentry arm for
+    # the macro-api serving tier) shipped with no scope at all. Its own subject
+    # (_release()'s `subprocess.run(["git", ...])` for the deployed SHA) is an
+    # opaque subprocess call scope inference cannot see through, so it fell back
+    # to SUBPROCESS_ROOTS — including site/** and templates/** — and matched
+    # every ordinary templates/index.html PR (128 > the 127 ceiling below).
+    # Curated at the source: its true subject is exactly app/observability.py
+    # and tests/test_observability_sentry.py, both declared and covered.
+    "serving-observability",
+    # 2026-08-20 main-red-repair (same wave). govrev-company-bridge (D4
+    # Company Financial Truth Bridge) also shipped with no scope. Its suite's
+    # own `node` subprocess call (tests/test_government_revenue_company_bridge.py:197)
+    # resolves to `subprocess roots=templates,tests`, widening to templates/**
+    # and matching every ordinary templates/index.html PR. Curated at the
+    # source: its true subject is the frozen fixture plus the two template
+    # files its own header comment already documents as the only reads.
+    "govrev-company-bridge",
+    # #6117 (records(dislocation): P0-A1 price-blind candidate harvest) shipped
+    # its own `scope: exclusive` declaration pre-curated — registered here so
+    # this file's pin does not drift from the manifest (no fix required, the
+    # job's own paths: already cover its full closure).
+    "dislocation-p0-a1-blind-harvest",
+    # 2026-08-26 (PR #6454): the D6-A + D6-B1 defense rail batteries moved
+    # onto the merge gate (they sat in gate:data unrun-government-revenue,
+    # which ci.yml never plans, so both commissioned merge-binding suites
+    # were dark). tests/test_fms_ui.py imports app.government_revenue for
+    # its route-boundary tests, whose closure's opaque edges smear whole-tree
+    # fallback claims (app/**, templates/**, site/**) — measured
+    # fallback-matching all four probes below and pushing
+    # templates/index.html to 130 > 129. Curated at the source, same
+    # treatment as stock-dossiers / cn-standout-audit / govrev-company-bridge:
+    # the declaration names the earned 563-file closure (flat engine/*.py +
+    # the read subpackages, deliberately not engine/**), the frozen fixture
+    # trees, and the sha-frozen staged goldens.
+    "defense-rail-laws",
 }
 
 
 def _inferred_as_if_not_exclusive() -> dict[str, PACK.LegacyJob]:
-    """What inference WOULD derive for the curated jobs, exclusivity aside."""
-    jobs = [PACK.replace(job, exclusive=False)
-            for job in PACK.load_legacy_jobs(MANIFEST)]
-    inferred, _ = PACK.infer_job_scopes(jobs)
-    return {job.job_id: job for job in inferred}
+    """What inference WOULD derive for the curated jobs, exclusivity aside.
+
+    Thin wrapper over the shared ``scripts.run_ci_pack.inferred_as_if_not_exclusive``
+    — kept so the other call sites below need no change; the computation itself now
+    lives in exactly one place (see the import block above).
+    """
+    return inferred_as_if_not_exclusive(MANIFEST)
 
 
 def test_the_curated_exclusive_set_is_actually_declared() -> None:
@@ -2685,17 +3558,14 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
     when its own dependency changes, and reports green forever. The manifest's
     load-time coverage audit only reaches the paths a job's COMMANDS name; the
     transitive import closure is one layer deeper and is checked here.
+
+    The computation itself is ``scripts.run_ci_pack.curated_exclusive_closure_findings``
+    — the same function ``scripts/check_contract_delta.py`` calls for the head side
+    of its PR-vs-base delta, so this test and that gate can never quietly diverge on
+    what "covered" means.
     """
-    would_infer = _inferred_as_if_not_exclusive()
-    declared = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
-                if job.exclusive}
-    misses: dict[str, list[str]] = {}
-    for job_id, job in sorted(declared.items()):
-        closure = [p for p in would_infer[job_id].paths if "*" not in p]
-        assert closure, f"{job_id} derives no closure — curation cannot be checked"
-        uncovered = [p for p in closure if not PACK._matches_any(job.paths, p)]
-        if uncovered:
-            misses[job_id] = uncovered[:8]
+    misses_full = curated_exclusive_closure_findings(MANIFEST)
+    misses = {job_id: list(paths[:8]) for job_id, paths in misses_full.items()}
     assert not misses, (
         "curated exclusive scope(s) no longer cover their own import closure:\n  "
         + "\n  ".join(f"{k}: {v}" for k, v in misses.items())
@@ -2847,12 +3717,90 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     ceilings are again NOT moved: the 18 weight-seconds removed here are two
     orders of magnitude below the ~1,550 a fallback-tier regression costs,
     and packs were 9 on every probe before and after.
+
+    JOB COUNT RE-BASED +1 on engine/prophet/plan_book.py only (120, wave 6,
+    2026-08-20 main-red-repair). Measured against the last lane-green main
+    commit (d972484c6474): baseline selects 119/195 jobs for this probe;
+    the current manifest selects 120/196, and diffing the two selected-job
+    NAME sets (not just counts) isolates the entire delta to one job,
+    ``reference-integrity`` — present in both manifests, but newly matching
+    this probe. #6122 (XPV2-SC-R3A, commit f4305a4485f6) added a third step
+    to that already-existing job (`tests/test_xpv2_sector_r3_fixture.py`,
+    over the frozen Sector Central fixture), and that suite's import closure
+    carries several ``dynamic import`` / ``subprocess invocation``
+    ambiguities several hops deep (engine/alert_triage.py,
+    engine/codex_lane/runner.py) that resolve to CODE_SCAN_ROOTS/
+    SUBPROCESS_ROOTS, which include ``engine/**`` — hence the new match on
+    engine/prophet/plan_book.py specifically, not anything Sector Central or
+    Prophet actually share.
+
+    This is NOT curated away like serving-observability's smear (2026-08-20
+    main-red-repair, same wave) or curated like dataos-identity-seams was
+    REJECTED (wave 2 note above): reference-integrity's own header comment
+    documents it as deliberately unscoped — "Unscoped on purpose: L7/L8/L9
+    are namespace and coupling closures over mockups/design_system,
+    research/migration_packets and the page registry, so a diff that adds a
+    file anywhere in those roots must re-run this" — a whole-tree RIG V1
+    reference-integrity gate that already existed pre-#6122 and is meant to
+    fire broadly. Declaring `scope: exclusive` on a job whose real purpose is
+    "catch reference laundering anywhere in these wide namespaces" would
+    either lie about coverage or degenerate straight back to the fallback
+    breadth it already carries — the identical failure mode
+    dataos-identity-seams was rejected for. One extra match on an
+    already-broad, already-reviewed, always-on gate costs nothing over the
+    ~1,550 weight-seconds/3-pack fallback-regression bound this file guards;
+    ratcheting the ceiling is the correct-risk response, not curation.
+    WEIGHT and PACK ceilings stay unmoved (5,600 / 9 packs, unchanged).
+
+    JOB COUNTS RE-BASED to 129/125/121 (wave 7, 2026-08-21) — a ratchet on the
+    templates probe, and the wave-3 headroom promise re-funded on all three.
+    Measured against the last commit at which this job's own lane was green
+    (48bfd3c97e8a, data-health run 32380507121), diffing the selected-job NAME
+    sets isolates one sole entrant per probe and nothing leaves:
+
+        templates/index.html          127 -> 128 jobs, 5,390 -> 5,420 weight
+        scripts/build_free_content.py 123 -> 124 jobs, 5,141 -> 5,173 weight
+        engine/prophet/plan_book.py   119 -> 120 jobs, 5,143 -> 5,175 weight
+
+    Only templates/index.html BREACHED (128 > 127). Its sole entrant is
+    ``regwall-boundary``, the new ``gate: code`` job #6141 added so that
+    tests/test_regwall_json_gate.py — whose only CI home had been the
+    ``gate: data`` job ``tier-gate``, i.e. off the merge gate entirely — can
+    actually block a merge. It matches on the DECLARED tier, not fallback:
+    #6141 gave it an explicit ``scope: exclusive`` + ``paths:`` precisely
+    because that suite names its subjects as segment literals
+    (``REPO_ROOT / "templates" / "index.html"``, tests/test_regwall_json_gate.py:102),
+    which SCOPE_REFERENCE_RE cannot see. So this is the ``intelligence-registry``
+    case verbatim (wave 3 note above), not the ``options-estate-guards`` smear:
+    there is no fallback claim to curate away, because the job arrived already
+    curated to the narrowest honest scope it has. Narrowing it further would
+    drop ``templates/index.html`` from the declaration of the one job whose
+    entire purpose is to assert the regwall boundary inside that file — a
+    silent false green, and ``curated_exclusive_closure_findings`` would hard-
+    fail the manifest for it anyway. Ratcheting is the correct-risk response.
+
+    The other two probes did NOT breach — but both sat at EXACTLY their
+    ceiling (124/124 and 120/120), which is the zero-headroom defect the #5620
+    note above already diagnosed once ("the very first honest new job breached
+    all three") and which wave 6 re-introduced by re-basing plan_book exact.
+    That is how this red reached main unseen: ``workflow-yaml`` is itself
+    ``gate: data``, so under W2 of
+    research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md this assertion
+    is packed only by data-health.yml, which has no ``pull_request`` trigger —
+    no PR can be blocked by it, so a zero-headroom ceiling does not red the
+    newcomer's PR, it reds MAIN, silently, one commit later. All three are
+    therefore set at measurement + 1 per the wave-3 rule, restoring the one
+    job of slack that makes the NEXT newcomer a visible event rather than a
+    fait accompli. WEIGHT and PACK ceilings stay unmoved (5,800 / 5,600 /
+    5,600 and 10 packs): weights are 5,420 / 5,173 / 5,175, and a fallback-
+    tier regression is still ~1,550 weight-seconds above them, so the bound
+    this file exists to hold is untouched.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 127, 5_800),
-        ("scripts/build_free_content.py", 124, 5_600),
-        ("engine/prophet/plan_book.py", 119, 5_600),
+        ("templates/index.html", 129, 5_800),
+        ("scripts/build_free_content.py", 125, 5_600),
+        ("engine/prophet/plan_book.py", 121, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
@@ -3044,3 +3992,222 @@ def test_ci_python_is_pinned_to_a_released_parser_runtime() -> None:
             "the 3.12.13 entry records its actions/python-versions archive "
             "SHA-256 — then bump this pin."
         )
+
+
+# ---------------------------------------------------------------------------
+# W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md: the merge
+# gate packs only `gate: code` legacy jobs; `gate: data` jobs move to the
+# post-nightly data-health.yml lane. `--gate` is the mechanism (load_legacy_jobs
+# filters immediately, before any partition/weight arithmetic); the two tests
+# below guard the mechanism itself and that every production caller actually
+# uses it, so a future edit cannot silently widen the merge gate back to 194.
+# ---------------------------------------------------------------------------
+
+DATA_HEALTH_WORKFLOW = ROOT / ".github" / "workflows" / "data-health.yml"
+
+
+def test_gate_filter_selects_only_matching_jobs(tmp_path: Path) -> None:
+    """`--gate` (via `load_legacy_jobs(gate=...)`) is a strict partition.
+
+    A synthetic two-job manifest — one `gate: code`, one `gate: data` — proves
+    `code` selection excludes the data job and vice versa, and that omitting
+    `gate` entirely (the pre-W2 default) still returns both, unchanged.
+    """
+    workflow = tmp_path / "ci.yml"
+    workflow.write_text(
+        """
+jobs:
+  ci-pack:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo pack
+  code-job:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: code
+    steps:
+      - name: code step
+        proof_id: code-step
+        run: echo code
+  data-job:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    gate: data
+    steps:
+      - name: data step
+        proof_id: data-step
+        run: echo data
+"""
+    )
+
+    code_only = PACK.load_legacy_jobs(workflow, gate="code")
+    assert [job.job_id for job in code_only] == ["code-job"]
+
+    data_only = PACK.load_legacy_jobs(workflow, gate="data")
+    assert [job.job_id for job in data_only] == ["data-job"]
+
+    unfiltered = PACK.load_legacy_jobs(workflow)
+    assert sorted(job.job_id for job in unfiltered) == ["code-job", "data-job"]
+
+    # partition_jobs only ever sees what it is handed — proving the filter
+    # runs before partitioning, not merely that the loader can produce it.
+    code_packs = PACK.partition_jobs(code_only, 3)
+    assert sum(len(pack) for pack in code_packs) == 1
+    assert "data-job" not in [job.job_id for pack in code_packs for job in pack]
+
+
+def _run_ci_pack_invocation_blocks(text: str) -> list[str]:
+    """Every shell block that actually invokes run_ci_pack.py, as raw text.
+
+    Matches only an interpreter invocation (`.../bin/python" scripts/
+    run_ci_pack.py`), never a `paths:` trigger entry or a prose/comment
+    mention of the filename — both of which also appear in ci.yml. A block
+    runs from the invocation line through every following line indented AT
+    LEAST as deep as it (YAML nesting, not blank lines: this file has no
+    blank line between many adjacent steps, so a blank-line terminator
+    swallows unrelated later steps — verified against the false positive
+    that shape produced here). This covers both invocation shapes used in
+    this repo: the `>-` folded-scalar argument list, whose continuation
+    lines sit at the SAME indentation as the interpreter line, and the
+    backslash-continued `run: |` block, whose continuation lines sit deeper.
+    Either way the block ends at the first line that DEDENTS below the
+    interpreter line — the next YAML key/step.
+    """
+    lines = text.splitlines()
+    invocation_re = re.compile(r'bin/python"?\s+scripts/run_ci_pack\.py\b')
+    blocks: list[str] = []
+    index = 0
+    while index < len(lines):
+        if invocation_re.search(lines[index]):
+            indent = len(lines[index]) - len(lines[index].lstrip(" "))
+            block: list[str] = [lines[index]]
+            cursor = index + 1
+            while cursor < len(lines):
+                line = lines[cursor]
+                if not line.strip():
+                    cursor += 1
+                    continue
+                line_indent = len(line) - len(line.lstrip(" "))
+                if line_indent < indent:
+                    break
+                block.append(line)
+                cursor += 1
+            blocks.append("\n".join(block))
+            index = cursor
+        else:
+            index += 1
+    return blocks
+
+
+# Workflows allowed to invoke run_ci_pack.py WITHOUT an explicit --gate, each
+# with a reason a reviewer can check. This is a NAMED exception list, not a
+# way to silence the guard — adding an entry here must be a deliberate,
+# reasoned call, the same way GATE_VALUES itself is deliberate.
+GATE_REACHABILITY_ALLOWLIST: dict[str, str] = {
+    "selfhosted-ci-canary.yml": (
+        "deliberate full-suite parity/contamination canary: it exists to "
+        "compare self-hosted runner output against the hosted baseline over "
+        "the COMPLETE manifest, so narrowing it to one gate would defeat its "
+        "purpose"
+    ),
+}
+
+
+def test_no_data_gated_job_is_reachable_from_ci_gate() -> None:
+    """Every merge-gate invocation of run_ci_pack.py passes `--gate code`.
+
+    This is the reachability half of the W2 guard: it is not enough for the
+    `--gate` flag to exist and work (see the unit test above) — every actual
+    caller inside ci.yml (the plan step and both pack-execution paths, plan-
+    json and the unpinned fail-safe fallback) must pass it, or a `gate: data`
+    job stays reachable from the merge gate despite the split. Symmetrically,
+    data-health.yml's own invocation must pass `--gate data`, or the new lane
+    silently re-runs (or worse, never runs) the wrong half of the manifest.
+
+    Widened (Opus review of commit 18e0f878) to enumerate EVERY workflow file
+    repo-wide, not just ci.yml and data-health.yml: a run_ci_pack.py call
+    anywhere without an explicit --gate is exactly the kind of silent
+    reachability hole this guard exists to catch, whichever workflow it is
+    added to later. `GATE_REACHABILITY_ALLOWLIST` is the one permitted
+    exception, and it is named and reasoned, not blanket.
+    """
+    ci_text = WORKFLOW.read_text()
+    ci_blocks = _run_ci_pack_invocation_blocks(ci_text)
+    assert len(ci_blocks) == 3, (
+        f"expected exactly 3 run_ci_pack.py invocations in ci.yml (ci-plan, "
+        f"the plan-json pack execution, and the unpinned fallback), found "
+        f"{len(ci_blocks)}: re-point this guard if ci.yml's call sites changed"
+    )
+    for block in ci_blocks:
+        assert "--gate code" in block, (
+            "a run_ci_pack.py invocation in ci.yml is missing --gate code — "
+            "this would leave a gate: data job reachable from the merge gate:\n"
+            + block
+        )
+
+    assert DATA_HEALTH_WORKFLOW.exists(), (
+        "W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md "
+        "requires .github/workflows/data-health.yml to exist"
+    )
+    data_health_text = DATA_HEALTH_WORKFLOW.read_text()
+    data_health_blocks = _run_ci_pack_invocation_blocks(data_health_text)
+    assert data_health_blocks, "data-health.yml never invokes run_ci_pack.py"
+    for block in data_health_blocks:
+        assert "--gate data" in block, (
+            "a run_ci_pack.py invocation in data-health.yml is missing "
+            "--gate data:\n" + block
+        )
+
+    data_health_workflow = _yaml(DATA_HEALTH_WORKFLOW)
+    for job_name, job in (data_health_workflow.get("jobs") or {}).items():
+        runs_on = job.get("runs-on")
+        assert runs_on == "ubuntu-latest" or (
+            isinstance(runs_on, list) and "self-hosted" not in runs_on
+        ), (
+            f"data-health.yml job {job_name!r} runs on {runs_on!r} — this lane "
+            "must stay on GitHub-hosted runners, never self-hosted "
+            "(CLAUDE.md — render/nightly compute stays off this pool)"
+        )
+
+    # Repo-wide sweep: any OTHER workflow (present or future) that invokes
+    # run_ci_pack.py must carry an explicit --gate, unless it is named in
+    # GATE_REACHABILITY_ALLOWLIST above.
+    workflows_dir = ROOT / ".github" / "workflows"
+    gate_flag_re = re.compile(r"--gate\s+(?:code|data)\b")
+    for workflow_path in sorted(workflows_dir.glob("*.yml")):
+        name = workflow_path.name
+        if name in {"ci.yml", "data-health.yml"}:
+            continue  # already fully covered above
+        blocks = _run_ci_pack_invocation_blocks(workflow_path.read_text())
+        if not blocks:
+            continue
+        if name in GATE_REACHABILITY_ALLOWLIST:
+            continue
+        for block in blocks:
+            assert gate_flag_re.search(block), (
+                f"{name} invokes run_ci_pack.py without an explicit --gate — "
+                "either pass --gate code/data or add a NAMED, reasoned entry "
+                f"to GATE_REACHABILITY_ALLOWLIST:\n{block}"
+            )
+
+
+def test_no_empty_pack_in_the_code_gate_partition() -> None:
+    """An empty ci-pack-N under the code gate would vanish from main's baseline.
+
+    ci-gate's base-inherited-red refresh resolves a PR's failing check NAMES
+    against main's own newest concluded ci.yml run by NAME (CLAUDE.md
+    "green proof against a stale base"; #5037). A pack index with zero jobs
+    still has to exist and publish a name on main's baseline, or a PR whose
+    plan happens to land work on that index has no baseline check of the same
+    name to compare against, and any red there becomes permanently
+    unrefreshable. The load-bearing property is "no pack is empty" — not any
+    particular per-pack job count, which shifts as the manifest grows.
+    """
+    jobs = PACK.load_legacy_jobs(MANIFEST, gate="code")
+    packs = PACK.partition_jobs(jobs, 12)
+    empty = [index for index, pack in enumerate(packs) if not pack]
+    assert not empty, (
+        f"pack index(es) {empty} are empty under --gate code with --pack-count "
+        "12 — an empty pack's name would vanish from main's ci.yml baseline "
+        "and any PR whose plan lands work there could never refresh a red"
+    )

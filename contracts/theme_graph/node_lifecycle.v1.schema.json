@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/node_lifecycle.v1.schema.json",
+  "title": "GMI theme-graph node lifecycle row v1",
+  "description": "One ROW of data/theme_graph/node_lifecycle.parquet, as a JSON object. Rule gmi.node_lifecycle/v1 (V4-D2B3, research/prophet_v4/d2/D2B3_FROZEN_CONTRACT_2026-08-21.md §2 R-D2B3-1). A SIDE-CAR lineage, never a nodes.parquet rewrite: node rows are keep-first write-once (NODE_KEY=(node_id,)), so a retirement/merge can never be expressed as an in-place status flip without rewriting history. Keyed (node_id, computed_at) with a latest-by-computed_at read collapse — the exact pattern capability.parquet and identity_resolution.parquet already use. store.read_nodes(current=True) overlays the latest row per node_id onto status/retire_date/merged_into; the raw table (current=False, the default) is unaffected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "node_id",
+    "status",
+    "reason",
+    "evidence",
+    "ratified_by",
+    "computed_at",
+    "engine_version"
+  ],
+  "properties": {
+    "schema": {
+      "const": "gmi.node_lifecycle/v1",
+      "description": "Contract id, constant."
+    },
+    "node_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The node this lineage row applies to. Must resolve to a row in nodes.parquet (guard-enforced) — a lifecycle row for a node that was never minted is a resolution of nothing."
+    },
+    "status": {
+      "enum": ["candidate", "canonical", "retired", "merged"],
+      "description": "Target state, from the SAME enum nodes.status carries. D2B3 mints only retired rows; merged is reserved for a future merge lineage using this same table."
+    },
+    "retire_date": {
+      "$ref": "#/$defs/nullable_date",
+      "description": "For reason=identity_break: the ratified break row's own break_date, VERBATIM (dates law, §9 — never invented, never backdated). For reason=entity_type_conflict: the correction's own execution date (there is no world-event break date; the company-plane interpretation was never true, so this records when the graph's active interpretation ENDED, not a fact about the world)."
+    },
+    "merged_into": {
+      "type": ["string", "null"],
+      "description": "Target node_id when status=merged. Null for every retired row D2B3 mints."
+    },
+    "reason": {
+      "enum": ["identity_break", "entity_type_conflict"],
+      "description": "identity_break: a ratified row in config/theme_graph_identity_breaks.yml retires the PRIOR holder of a reused symbol. entity_type_conflict: a company-kind node collides with an etf-kind node for the same symbol in the committed store — the company-plane interpretation was structurally wrong, not historically superseded."
+    },
+    "evidence": {
+      "type": "string",
+      "minLength": 1,
+      "description": "VERBATIM pointer, never free prose asserting a fact the pointer does not carry: for identity_break, the breaks-registry row's own (market, symbol) plus its ratified_at; for entity_type_conflict, the conflicting etf node id plus whatever machine-visible identity_resolution sidecar receipts already recorded the collision (same receipts the D2A sidecar's ENTITY_TYPE_CONFLICT rows already emit)."
+    },
+    "ratified_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "For identity_break: carried VERBATIM from the breaks-registry row's own ratified_by. For entity_type_conflict: the ratifying act — the V4-D2B3 frozen contract itself (Sol's commission), since no breaks-registry row exists for a structural entity-kind correction."
+    },
+    "computed_at": {
+      "$ref": "#/$defs/clock",
+      "description": "The ACTUAL correction execution time — never backdated (§9 dates law). For reason=identity_break this must not predate the cited breaks-registry row's own ratified_at (guard-enforced, matrix 7 / R-A4 / R-A9)."
+    },
+    "engine_version": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "nullable_date": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      ]
+    },
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+  }
+}

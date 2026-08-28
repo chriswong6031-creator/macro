@@ -135,13 +135,40 @@ def _pipeline_stance(froth_flags: list) -> tuple[str, str]:
     return STANCE["normal"]
 
 
+def _finite(v):
+    """Normalize NaN, NaT, pandas NA, and +-inf to None at the producing boundary;
+    a legitimate 0 (or any other real number) passes through unchanged — it must
+    never be confused with "missing". The engine hands back raw pandas cells (e.g.
+    `r.get('offer_price')` in engine/ipo_radar.py), which surface float NaN rather
+    than None for a missing field, so callers downstream of the engine cannot rely
+    on `is None` alone.
+
+    Uses the house `v != v` NaN idiom (engine/ipo_radar.py:199-203 `_spac_flag`)
+    wrapped in try/except: pandas' NA singleton returns `NA` (not a bool) from its
+    own (in)equality, and `bool(pd.NA)` raises TypeError rather than returning a
+    plain truth value, so a bare `if v != v` would crash instead of catching it.
+    """
+    if v is None:
+        return None
+    try:
+        if v != v:          # NaN / NaT self-inequality
+            return None
+    except TypeError:
+        return None          # pd.NA: `NA != NA` is NA, and bool(NA) raises
+    if isinstance(v, float) and (v == float("inf") or v == float("-inf")):
+        return None
+    return v
+
+
 def _pct(x, signed=True) -> str:
+    x = _finite(x)
     if x is None:
         return "—"
     return f"{x * 100:+.1f}%" if signed else f"{x * 100:.1f}%"
 
 
 def _usd(v) -> str:
+    v = _finite(v)
     if v is None:
         return "—"
     if v >= 1e9:
@@ -403,16 +430,16 @@ def _build_avoid(after: dict, pipe: dict, lk_summary: dict,
     just = lk_summary.get("just_expired") or 0
     nd = lk_summary.get("next_days")
     ntk = lk_summary.get("next_ticker")
-    nsize = lk_summary.get("next_size_usd")
+    nsize = _finite(lk_summary.get("next_size_usd"))
 
     # 1) lock-up cliff
     if (appr + just) > 0:
         tone = "red" if (nd is not None and nd <= 7) else "warn"
         if ntk and lk_summary.get("next_date"):
             when = _lockup_when_en(lk_summary.get("next_date"), nd)
-            sz = f" (~{_usd(nsize)})" if nsize else ""
+            sz = f" (~{_usd(nsize)})" if nsize is not None else ""
             det_en = f"{ntk} unlocks {when}{sz}; {appr} more within 45 days."
-            det_zh = f"{ntk} 于{_lockup_when_zh(lk_summary.get('next_date'), nd)}解禁{('（约' + _usd(nsize) + '）') if nsize else ''}；45 天内还有 {appr} 只。"
+            det_zh = f"{ntk} 于{_lockup_when_zh(lk_summary.get('next_date'), nd)}解禁{('（约' + _usd(nsize) + '）') if nsize is not None else ''}；45 天内还有 {appr} 只。"
         else:
             det_en = f"{appr} names unlock within 45 days; {just} just expired."
             det_zh = f"45 天内有 {appr} 只解禁；{just} 只刚刚解禁。"
@@ -654,15 +681,21 @@ def build() -> str:
             rev_en, rev_zh, rev_col = REV_LABEL.get(rev["label"], ("—", "—", "var(--muted)"))
             if rev.get("pct") is not None:
                 rev_pct = f" {rev['pct'] * 100:+.0f}%"
+        # explicit non-finite-safe checks (not truthiness — bool(float("nan")) is
+        # True, which used to pass NaN straight through the "if r[...]" guards below
+        # and into the format strings as literal "nan")
+        offer_price = _finite(r["offer_price"])
+        size_usd = _finite(r["size_usd"])
+        since_offer = _finite(r["since_offer"])
         recent.append({
             "ticker": r["ticker"] or "—", "company": r["company"] or "—",
-            "exchange": r["exchange"] or "", "offer": _usd(r["offer_price"]).replace("$", "$") if r["offer_price"] else "—",
-            "offer_price": (f"${r['offer_price']:.2f}" if r["offer_price"] else "—"),
-            "size": _usd(r["size_usd"]), "size_band": r["size_band"],
+            "exchange": r["exchange"] or "", "offer": _usd(offer_price),
+            "offer_price": (f"${offer_price:.2f}" if offer_price is not None else "—"),
+            "size": _usd(size_usd), "size_band": r["size_band"],
             "size_band_zh": SIZE_ZH.get(r["size_band"], r["size_band"] or ""),
             "date": r["priced_date"], "days_since": r["days_since"],
-            "is_spac": r["is_spac"], "since_offer": _pct(r["since_offer"]),
-            "since_color": ("#1FA971" if (r["since_offer"] or 0) > 0 else C["red"]) if r["since_offer"] is not None else C["muted"],
+            "is_spac": r["is_spac"], "since_offer": _pct(since_offer),
+            "since_color": ("#1FA971" if since_offer > 0 else C["red"]) if since_offer is not None else C["muted"],
             "rev_en": rev_en, "rev_zh": rev_zh, "rev_col": rev_col, "rev_pct": rev_pct,
             "has_rev": bool(rev),
         })
@@ -673,9 +706,17 @@ def build() -> str:
     rev_gate = ir.revision_gate(snap["recent"])
     upcoming = []
     for r in snap["upcoming"]:
-        rng = ("—" if r["range_low"] is None else
-               (f"${r['range_low']:.0f}–{r['range_high']:.0f}" if r["range_low"] != r["range_high"]
-                else f"${r['range_low']:.0f}"))
+        # non-finite-safe bounds: `r["range_low"] is None` never caught a NaN float
+        # (the calendar's raw pandas cell for a missing bound), which used to reach
+        # the format string as literal "$nan-nan". Both missing -> house null; only
+        # one side known -> show that one bound honestly, never fabricate the other.
+        lo, hi = _finite(r["range_low"]), _finite(r["range_high"])
+        if lo is None and hi is None:
+            rng = "—"
+        elif lo is not None and hi is not None:
+            rng = f"${lo:.0f}–{hi:.0f}" if lo != hi else f"${lo:.0f}"
+        else:
+            rng = f"${(lo if lo is not None else hi):.0f}"
         upcoming.append({
             "ticker": r["ticker"] or "—", "company": r["company"] or "—",
             "exchange": r["exchange"] or "", "range": rng,

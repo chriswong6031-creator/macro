@@ -138,9 +138,15 @@ Outputs:
     dashboard actually paints from is merged into live/prophet_live.json by a
     LATER, SEPARATE step that fails DARK by design
     (scripts/close_pass_mirror.annotate_live_strip returns False and writes
-    nothing when the evaluator's artifact is absent or unparseable, and its
-    caller discards that result). So the board can land fresh and on time while
-    no reader sees anything — and without this condition the SLA would score
+    nothing when the evaluator's artifact is absent or unparseable). Until
+    2026-08-26 that step's caller also DISCARDED the result outright, so a
+    material failure there — the served file absent, exactly the shape of the
+    27-day US Prophet Live freeze this module's ``prophet_live`` SURFACES entry
+    now closes independently — produced no signal anywhere on this path; the
+    caller now emits a loud ``::warning`` for exactly that class of failure
+    (scripts/close_pass_mirror.py module docstring, "THE CALLER USED TO
+    DISCARD ALL OF THAT"). So the board can land fresh and on time while no
+    reader sees anything — and without this condition the SLA would score
     those sessions as passes. An SLA that can pass while the feature is
     invisible measures the wrong thing.
 
@@ -204,7 +210,7 @@ import tempfile
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -296,6 +302,45 @@ VISIBLE_RESOLUTION_SECONDS = 1800
 #: month of real landing times rather than to this one.
 ARMED_PACK_MAX_SESSIONS_BEHIND = 1
 
+#: Minutes ``live/prophet_live.json``'s own semantic clock (``meta.pass_ts``) may
+#: lag, DURING the ET live window, before it is a breach (FROZEN SPEC Part A). Two
+#: missed 5-minute evaluator passes: the evaluator ticks every 5 minutes in RTH, so
+#: one missed pass is absorbed and the second is a definitive breach — the same
+#: "breach by the second miss" shape PROPHET_MAX_SESSIONS_BEHIND and
+#: ARMED_PACK_MAX_SESSIONS_BEHIND already use, translated into the minute grain this
+#: artifact's own cadence runs at. At the sentinel's real ~15-minute cadence
+#: (app/deploy/macro-sentinel.timer) a freeze is caught within two sentinel passes —
+#: the tight-latency instrument this incident needed and the GitHub heartbeat's
+#: */10 cron (measured 26-105 minute actual delivery) structurally cannot be.
+#:
+#: NEVER file mtime. The 27-day freeze this entry exists to catch (pass_ts stuck at
+#: 2026-07-30T17:20:53Z, discovered 2026-08-26) shipped with the SERVED file's mtime
+#: moving fine the entire time — the evaluator rewrote the file whole every five
+#: minutes with the SAME frozen payload, over and over. A budget keyed on mtime
+#: would have stayed green through the whole incident; this one is keyed on
+#: meta.pass_ts alone, by construction (see _check_live_window_surface).
+PROPHET_LIVE_MAX_AGE_MINUTES = 10.0
+
+#: Consecutive in-window sentinel passes an EMPTY ``states`` map is ABSORBED
+#: before it breaches (F2 fresh-but-empty, proven in production 2026-08-27: at
+#: 19:12Z this surface reported "ok (4.1 min old)" while the artifact carried
+#: n_states=0 mid-NYSE-window — the evaluator was refusing its poisoned pack as
+#: stale_pack all session and publishing fresh, EMPTY passes, so the
+#: meta.pass_ts budget above was satisfied by an artifact that served a reader
+#: nothing). The grace is 2 passes ≈ 1h at the sentinel cadence: the artifact
+#: can legitimately be empty in the first minutes after open (the evaluator's
+#: first ticks may not have quotes yet), and a single dark pass publishes
+#: ``states: {}`` BY DESIGN (engine/prophet_live/live_states.py's dark payload
+#: — a guessed state is the failure), so neither may page. The THIRD
+#: consecutive empty in-window observation breaches. The streak counts
+#: OBSERVATIONS of an open window with a parsed doc whose states container is
+#: empty — anything else (window closed, artifact absent, unparseable body,
+#: non-empty states) resets it to 0, so every session open gets its grace back
+#: and a Friday-close streak can never page at Monday's open. Each sentinel
+#: pass is its own oneshot process, so the streak is persisted across passes in
+#: <state-dir>/state.json under ``empty_states_passes`` (see run()).
+PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES = 2
+
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
 # the ENGINE says prices lag, so its presence is already trading-day aware —
@@ -369,6 +414,54 @@ SURFACES: list[dict] = [
             "source_delayed", "source_unknown", "source_mixed_vintage",
         ),
         "required_values": {"source_basis": "panel_majority"},
+        # PR-1 (Prophet US permanence net, 2026-08-27): the intake-IDENTITY check,
+        # independent of source_asof's own staleness budget above. A store can
+        # advance (source_asof current) while origination silently loses or
+        # miscounts candidates — sessions-behind arithmetic cannot see that, only
+        # the ledger's own accounting can. See intake_identity_breach() for the
+        # exact predicate; it is DELIBERATELY duplicated (not imported) in
+        # scripts/check_nightly_liveness.py, scripts/prophet_rescue.py and
+        # scripts/prophet_board_acceptance.py — four independent copies so a bug
+        # in one cannot blind the other three.
+        "intake_identity": True,
+    },
+    # PR-1 (Prophet US permanence net, 2026-08-27) — the served board of record
+    # itself, one layer ABOVE the Prophet plan index: us_standouts.json is what
+    # build_prophet.py actually reads to originate plans (daily.yml's "Prophet
+    # nightly" step comment: "reads site/factordata/us_standouts.json"), so a
+    # frozen or internally-inconsistent board here is upstream of everything the
+    # prophet_us entry above can see.
+    #
+    # served_file, not page/r2: same reasoning as prophet_us — a served-file read
+    # is the exact byte-for-byte payload Caddy hands an entitled reader on this
+    # host, and a missing/unreadable file is INDETERMINATE (the sentinel is
+    # blind), never a breach.
+    #
+    # cross_field_asof + non_vacuous are the two GENERIC, ADDITIVE extensions
+    # check_surface() gained for this entry (see their handling below) — nothing
+    # about the prophet_us or armed_pack entries changed to add them.
+    {
+        "id": "us_standouts",
+        "kind": "served_file",
+        "path": "/factordata/us_standouts.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "as_of",
+        "asof_max_sessions_behind": PROPHET_MAX_SESSIONS_BEHIND,
+        # The re-stamp trap one layer up: `as_of` is publication metadata and
+        # `staleness.price_through` is the ranked-price watermark the board's own
+        # numbers were actually built from (module docstring's re-stamp-trap
+        # paragraph). A rerun that re-stamps `as_of` while leaving the priced
+        # content frozen is exactly the shape that breach; the two are asserted
+        # equal so a divergence between publication clock and content clock is
+        # caught here rather than silently inherited by prophet_us above.
+        "cross_field_asof": ("staleness", "price_through"),
+        # Non-vacuity: a technically-fresh board that carries no actionable rows
+        # is functionally the same outage as a stale one (an empty buy lane is
+        # what a reader actually sees), and an absent/empty `lane_counts` means
+        # the board cannot even explain its own composition. Neither is caught by
+        # a timestamp check.
+        "non_vacuous": {"list_fields": ("buy",), "dict_fields": ("lane_counts",)},
     },
     # W-L1a — the evening close-pass provisional board, on the VPS live plane
     # (kind live_file: <public-dir>/live/…, the plane the daemons write, NOT the
@@ -401,9 +494,15 @@ SURFACES: list[dict] = [
     # absent or unparseable evaluator artifact. Both files are written by the
     # same 5-minute timer seconds apart, which is precisely why the divergence is
     # invisible until it happens: the board publishes FIRST and unconditionally,
-    # the annotate runs SECOND and its False return is discarded by the caller,
-    # so a dark surface leaves this artifact looking perfect. See the module
-    # docstring for why this read is not a surface of its own.
+    # the annotate runs SECOND, and — until 2026-08-26 — its caller discarded
+    # the return outright. See the module docstring for why THIS client-side
+    # read stays a non-surface (the reader-visibility question, deliberately
+    # withhold-only so it can never page). The artifact's OWN clock is a
+    # different question, closed below by the dedicated ``prophet_live``
+    # SURFACES entry: that one IS a first-class surface, grading
+    # live/prophet_live.json's ``meta.pass_ts`` directly rather than through
+    # this client-side detour, which is exactly what let the 27-day freeze
+    # (2026-07-30→08-26) go unseen by every instrument on this path.
     {
         "id": "us_board_provisional",
         "kind": "live_file",
@@ -500,6 +599,20 @@ SURFACES: list[dict] = [
         "asof_max_sessions_behind": ARMED_PACK_MAX_SESSIONS_BEHIND,
         # Coverage is DISCLOSED, never budgeted — see the module docstring.
         "facts": "armed_pack",
+        # D12 grader fence (2026-08-27): the as_of may lag by at most the
+        # budget above and may NEVER be AHEAD of the calendar. sessions_behind
+        # floors a future-dated stamp at 0 ("no completed session is missing" —
+        # its own docstring), so before this key the sentinel graded the
+        # D12-poisoned pack — as_of 2026-08-27 stamped MID-SESSION by a
+        # pre-#6554 build — "ok (0 sessions behind)" while the */5 evaluator
+        # refused the same object as stale_pack all session. An ahead stamp is
+        # never a freshness state: it is a poisoned or mid-session build
+        # (impossible at the producer since #6554 quarantined impossible tips
+        # at build; #6562 fixed the B1 intake crash the same day), so it is its
+        # own named breach (pack_ahead_of_calendar) and pages immediately — a
+        # definitive server answer gets no grace. Grader-side twin of those two
+        # producer-side fences.
+        "asof_never_ahead": True,
     },
     # CN-W-L3 — the mainland runtime board, on the same VPS live plane as the
     # US evening board. The ARTIFACT path is /live/cn_prophet_live.json (the
@@ -534,6 +647,62 @@ SURFACES: list[dict] = [
             "by_cst": "15:20",
             "sessions_required": 3,
         },
+    },
+    # US Prophet Live — the EVALUATOR'S OWN served artifact, /live/prophet_live.json,
+    # closing the blind spot the 27-day 2026-07-30→08-26 freeze exposed. pass_ts froze
+    # at 2026-07-30T17:20:53Z and stayed there for 27 days while THREE separate
+    # instruments read the estate as healthy: this module's own us_board_provisional
+    # entry above (module docstring, the close-pass paragraph) grades the ADJACENT
+    # provisional-board artifact and never this one; the on-site VPS health checker
+    # carries no US prophet_live check at all; and close_pass_mirror's caller used to
+    # discard annotate_live_strip's boolean outright (fixed the same day — see that
+    # module's docstring). None of the three could have caught THIS artifact freezing,
+    # because none of them read its own semantic clock.
+    #
+    # THE BUDGET SHAPE IS A DELIBERATE EXTENSION, not a reuse of an existing one.
+    # Every budget above this entry is either session-grained
+    # (``asof_max_sessions_behind`` — the right grain for a once-a-day publish) or
+    # hour-grained (``bake_budget_hours`` — the right grain for a nightly bake).
+    # Neither can express "no older than 10 minutes" without abusing its own unit: a
+    # sessions-behind budget would either never fire during the session (0 sessions
+    # behind all day) or fire on every session boundary, and an hours budget rounds
+    # ten minutes to zero. ``asof_max_age_minutes`` is therefore a NEW key, read by a
+    # dedicated evaluation path (``_check_live_window_surface``) instead of being bent
+    # into check_surface's existing session/hours branches — see that function's own
+    # docstring for why it is a separate path rather than a third branch grafted on.
+    #
+    # ``asof_field`` is a TUPLE here — also new. Every ``asof_field`` above this entry
+    # names a top-level key; this artifact's clock is nested (``meta.pass_ts``).
+    # ``_asof_field_value`` accepts either a bare string (top-level, every existing
+    # surface, unchanged) or a tuple/list (nested path) — the minimal extension nested
+    # access needed, nothing else in SURFACES required it until now.
+    #
+    # ``live_window_gate`` is the falsifier-law discipline the module docstring
+    # states everywhere else: the evaluator itself only runs 09:25-16:15 ET
+    # (config.yml ``prophet_live.window_et`` / ``window_grace_min``), so outside that
+    # window — overnight, weekends, NYSE holidays — the artifact is LEGITIMATELY
+    # absent or stale, and grading it on a 24/7 clock would page every single morning
+    # by construction. The window/session test is delegated to
+    # ``engine.prophet_live.live_states.in_window`` + ``live_cfg`` — the SAME
+    # NYSE-calendar-aware helper the evaluator itself gates its own passes on — rather
+    # than a hand-rolled hour band, so a holiday or a DST boundary can never disagree
+    # between the two. See ``_prophet_live_window_open``.
+    #
+    # NEVER mtime. ``bake_age_hours`` is still recorded on this entry's report for the
+    # operator line, but the verdict is computed from ``meta.pass_ts`` alone: the
+    # served file's mtime moved on schedule for all 27 days of the freeze (the
+    # evaluator rewrote the file whole every five minutes with the SAME frozen
+    # payload), so a budget keyed on mtime would have stayed green through the entire
+    # incident. This is the one property Part A exists to guarantee.
+    {
+        "id": "prophet_live",
+        "kind": "live_file",
+        "path": "/live/prophet_live.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": ("meta", "pass_ts"),
+        "asof_max_age_minutes": PROPHET_LIVE_MAX_AGE_MINUTES,
+        "live_window_gate": True,
     },
 ]
 
@@ -657,6 +826,54 @@ def board_delay_stamp(body: str) -> str | None:
     """
     dates = _DELAY_RE.findall(body or "")
     return min(dates) if dates else None
+
+
+def intake_identity_breach(intake: object) -> str | None:
+    """Breach reason(s) from site/prophet/index.json's ``intake`` block, or None
+    when it is healthy OR simply absent.
+
+    DELIBERATELY DUPLICATED in scripts/check_nightly_liveness.py,
+    scripts/prophet_rescue.py and scripts/prophet_board_acceptance.py rather
+    than imported from one shared module: this permanence net's whole point is
+    a SECOND, INDEPENDENT failure domain per instrument — a bug in one shared
+    copy of this ~10-line predicate would blind all four watchdogs identically,
+    exactly the class of failure a single stranded workflow file (#5362) taught
+    this program to distrust. Keep the four copies in semantic lockstep by
+    hand.
+
+    Three conditions: ``lossless`` must be True, ``unaccounted`` must be 0, and
+    a positive ``eligible_after_skips`` must not coexist with ``originated ==
+    0`` (the 2026-08-13 mixed-vintage wedge signature — a candidate cohort
+    existed and origination produced nothing from it).
+
+    An entirely absent/non-dict ``intake`` ABSTAINS (returns None) rather than
+    breaching: this predicate is exercised against synthetic fixtures that
+    predate the field and exist to test unrelated behavior, and those must not
+    spuriously start failing the day this check is added.
+    """
+    if not isinstance(intake, dict):
+        return None
+    reasons: list[str] = []
+    if "lossless" in intake and intake.get("lossless") is not True:
+        reasons.append(f"intake.lossless={intake.get('lossless')!r} (must be true)")
+    unaccounted = intake.get("unaccounted")
+    if (
+        isinstance(unaccounted, int)
+        and not isinstance(unaccounted, bool)
+        and unaccounted != 0
+    ):
+        reasons.append(f"intake.unaccounted={unaccounted} (must be 0)")
+    eligible = intake.get("eligible_after_skips")
+    originated = intake.get("originated")
+    if (
+        isinstance(eligible, int) and not isinstance(eligible, bool) and eligible > 0
+        and isinstance(originated, int) and not isinstance(originated, bool)
+        and originated == 0
+    ):
+        reasons.append(
+            f"intake.eligible_after_skips={eligible} but intake.originated=0"
+        )
+    return "; ".join(reasons) if reasons else None
 
 
 # --------------------------------------------------------------------------- #
@@ -825,8 +1042,266 @@ def _seconds_between(earlier: object, later: object) -> float | None:
 # --------------------------------------------------------------------------- #
 # Pure evaluation core
 # --------------------------------------------------------------------------- #
-def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
+def _asof_field_value(doc: object, field: str | tuple | list) -> object:
+    """One value out of ``doc``, by a top-level key (str — every surface above
+    the prophet_live entry uses this shape, unchanged) or a nested path
+    (tuple/list — the minimal extension nested access needed: nothing else in
+    SURFACES nests its clock, so nothing else needed this until prophet_live's
+    ``meta.pass_ts``). Fails dark to None on any shape mismatch, the same
+    discipline every other optional-field reader in this module uses.
+    """
+    if isinstance(field, (tuple, list)):
+        node = doc
+        for step in field:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(step)
+        return node
+    return doc.get(field) if isinstance(doc, dict) else None
+
+
+def _prophet_live_window_open(now: datetime) -> bool | None:
+    """Whether ``now`` is inside the Prophet Live evaluator's own ET window.
+
+    Delegates to ``engine.prophet_live.live_states.in_window`` + ``live_cfg`` —
+    the SAME NYSE-calendar-aware helper the evaluator itself gates its passes
+    on (FROZEN SPEC Part A #4) — rather than a hand-rolled hour band, so a
+    holiday or a DST boundary can never disagree between the two. ``live_cfg(None)``
+    resolves to config.yml's own defaults (window_et 09:25-16:15, 10 min grace),
+    the same values production carries today, without this module having to
+    parse config.yml itself.
+
+    Lazy, failure-guarded for the same reason lib.nyse_calendar's import is
+    (module docstring): a broken or half-pulled engine/ tree must degrade this
+    ONE surface to indeterminate, never take the whole watchdog down. None
+    means unknowable; the caller must never fold that into either a breach or
+    a false-clean.
+    """
+    try:
+        from engine.prophet_live.live_states import in_window, live_cfg  # noqa: PLC0415
+        return in_window(now, live_cfg(None))
+    except Exception as exc:  # noqa: BLE001
+        print(
+            "sentinel: prophet_live window check unavailable "
+            f"({type(exc).__name__}: {exc})",
+            file=sys.stderr,
+        )
+        return None
+
+
+#: Budget for the served-vs-R2 pass_ts divergence (PR-1, item 1c): one 5-minute
+#: evaluator tick (the cadence scripts/prophet_live_evaluator.py runs on) plus
+#: 30s of clock/transport slop. Tighter than PROPHET_LIVE_MAX_AGE_MINUTES on
+#: purpose — this is not an age budget, it is an AGREEMENT budget between two
+#: writes of the SAME instant by the SAME evaluator pass, so it can be far
+#: tighter than "how stale may the whole artifact be".
+PROPHET_LIVE_R2_AGREEMENT_SECONDS = 330.0
+
+
+def prophet_live_r2_agreement(served_body: str | None, now: datetime) -> tuple[str, str | None]:
+    """('ok'|'stale'|'no_creds', detail) comparing the served
+    /live/prophet_live.json's meta.pass_ts against the SAME artifact's mirror in
+    the private/operational R2 bucket (key engine.prophet_live.r2io.LIVE_KEY —
+    NOT the public r2.dev base every other R2 SURFACES entry reads).
+
+    Lazy, failure-guarded import of engine.prophet_live.r2io — the SECOND place
+    this stdlib-only module reaches into the venv/engine tree (the live-window
+    gate above is the first), because only boto3 can read R2 credentials and
+    only the VPS process holds them. 'no_creds' degrades to a WARNING, never a
+    page (item 1c's explicit requirement): a sentinel host with no
+    R2_ACCESS_KEY_ID configured is an ordinary deployment shape (e.g. a
+    developer running this module by hand), not an outage. Only a POSITIVE,
+    parsed divergence beyond one 5-minute tick is 'stale'.
+    """
+    try:
+        from engine.prophet_live import r2io  # noqa: PLC0415
+    except Exception as exc:  # noqa: BLE001
+        return "no_creds", f"engine.prophet_live.r2io unavailable ({type(exc).__name__}: {exc})"
+    client = r2io.client()
+    if client is None:
+        return "no_creds", "R2 credentials absent in this environment"
+    try:
+        r2_doc = r2io.get_json(r2io.LIVE_KEY, s3=client, allow_public=False)
+    except Exception as exc:  # noqa: BLE001
+        return "no_creds", f"R2 read failed ({type(exc).__name__}: {exc})"
+    if not isinstance(r2_doc, dict):
+        return "no_creds", "R2 mirror object absent or unparseable"
+    r2_pass_ts = _instant(_asof_field_value(r2_doc, ("meta", "pass_ts")))
+    served_doc = None
+    if served_body:
+        try:
+            served_doc = json.loads(served_body)
+        except ValueError:
+            served_doc = None
+    served_pass_ts = (
+        _instant(_asof_field_value(served_doc, ("meta", "pass_ts")))
+        if served_doc is not None else None
+    )
+    if r2_pass_ts is None or served_pass_ts is None:
+        return "no_creds", "one side has no usable meta.pass_ts to compare"
+    drift = abs((served_pass_ts - r2_pass_ts).total_seconds())
+    if drift > PROPHET_LIVE_R2_AGREEMENT_SECONDS:
+        return "stale", (
+            f"served meta.pass_ts {served_pass_ts.isoformat()} diverges from the "
+            f"R2 mirror's {r2_pass_ts.isoformat()} by {drift:.0f}s (budget "
+            f"{PROPHET_LIVE_R2_AGREEMENT_SECONDS:.0f}s — one 5-min evaluator tick)"
+        )
+    return "ok", None
+
+
+def _check_live_window_surface(surface: dict, fr: FetchResult, now: datetime,
+                               state: dict | None = None) -> dict:
+    """Minute-grained intraday freshness, gated to the ET live window.
+
+    See PROPHET_LIVE_MAX_AGE_MINUTES and the ``prophet_live`` SURFACES entry for
+    the incident and the budget this closes. A DIFFERENT verdict shape than
+    every check above: none of check_surface's session/hours budgets can
+    express "no older than 10 minutes, except overnight/weekends/holidays", so
+    this surface is evaluated on its own path instead of being bent to fit the
+    general machinery (FROZEN SPEC Part A #5).
+
+    Part B (F2 fresh-but-empty): ``state`` is the PRIOR pass's private counters
+    (state.json), consulted only for the consecutive-empty-states streak; None
+    restarts the grace, which is exactly what a lost or first-ever state file
+    should do.
+    """
+    out: dict = {
+        "id": surface["id"],
+        "kind": surface["kind"],
+        "status": "ok",
+        "bake_budget_hours": surface["bake_budget_hours"],
+        "delay_budget_days": surface["delay_budget_days"],
+        "bake_stamp": None,
+        "bake_age_hours": None,
+        "board_delayed": False,
+        "board_price_through": None,
+        "board_delay_days": None,
+        "asof": None,
+        "asof_sessions_behind": None,
+        "asof_age_minutes": None,
+        "n_states": None,
+        "states_empty_passes": 0,
+        "absent": False,
+        "facts": {},
+        "detail": "",
+    }
+    if fr.last_modified is not None:
+        out["bake_stamp"] = fr.last_modified.isoformat()
+        out["bake_age_hours"] = round(
+            (now - fr.last_modified).total_seconds() / 3600.0, 1
+        )
+
+    window = _prophet_live_window_open(now)
+    if window is None:
+        out["status"] = "indeterminate"
+        out["detail"] = (
+            "cannot evaluate the ET live window"
+            " (engine.prophet_live.live_states unavailable)"
+        )
+        return out
+    if not window:
+        # Outside 09:25-16:15 ET (+grace) — overnight, weekends, NYSE holidays.
+        # The evaluator itself does not run out here, so absence and staleness
+        # are the ORDINARY state, never a breach (falsifier law, module
+        # docstring): paging every morning by construction is the exact
+        # factory this discipline forbids.
+        out["detail"] = "outside the ET live window — not evaluated"
+        return out
+
+    # Inside the window: the artifact MUST exist and answer with a usable body.
+    if fr.error or fr.status != 200:
+        out["absent"] = "FileNotFoundError" in (fr.error or "")
+        reason = fr.error or f"HTTP {fr.status}"
+        out["status"] = "stale"
+        out["detail"] = (
+            f"absent during the live window ({reason}) — the evaluator should"
+            " be publishing a pass every 5 minutes right now"
+            if out["absent"] else
+            f"unreadable during the live window ({reason})"
+        )
+        return out
+
+    try:
+        doc = json.loads(fr.body or "")
+    except ValueError as exc:
+        # Unlike the general check_surface path, an unparseable body here is a
+        # BREACH, not indeterminate: inside the window the evaluator is meant
+        # to be writing a fresh document every 5 minutes, so a body that fails
+        # to parse is itself evidence the write is broken right now, not a
+        # transport hiccup to wait out via the blindness counter.
+        out["status"] = "stale"
+        out["detail"] = f"served body is not JSON during the live window ({exc})"
+        return out
+
+    # F2 non-vacuity (fresh-but-empty), counted BEFORE the pass_ts checks so
+    # the streak keeps accumulating while the clock is also broken: an
+    # evaluator that heals its stamp but keeps serving no states breaches on
+    # the heal pass rather than re-entering the grace. The container is the
+    # payload's top-level ``states`` map (a dict in production —
+    # engine/prophet_live/live_states.py writes ``states: {}`` on dark passes
+    # and a ticker-keyed dict on live ones; a list is tolerated for the same
+    # shape-lenience every optional reader here practices).
+    states = doc.get("states") if isinstance(doc, dict) else None
+    if isinstance(states, (dict, list)):
+        out["n_states"] = len(states)
+    prior_empty = 0
+    if isinstance(state, dict):
+        per_surface = state.get("empty_states_passes")
+        if isinstance(per_surface, dict):
+            raw = per_surface.get(surface["id"], 0)
+            if isinstance(raw, int) and not isinstance(raw, bool):
+                prior_empty = max(0, raw)
+    if out["n_states"] == 0:
+        out["states_empty_passes"] = prior_empty + 1
+
+    stamp = _asof_field_value(doc, surface["asof_field"])
+    if not isinstance(stamp, str) or not stamp:
+        out["status"] = "stale"
+        out["detail"] = (
+            "served payload carries no usable meta.pass_ts field during the"
+            " live window — the artifact cannot vouch for its own clock"
+        )
+        return out
+    out["asof"] = stamp
+    pass_ts = _instant(stamp)
+    if pass_ts is None:
+        out["status"] = "stale"
+        out["detail"] = f"unparseable meta.pass_ts {stamp!r} during the live window"
+        return out
+
+    age_min = (now - pass_ts).total_seconds() / 60.0
+    out["asof_age_minutes"] = round(age_min, 1)
+    budget = surface["asof_max_age_minutes"]
+    if age_min > budget:
+        msg = (
+            f"meta.pass_ts {stamp} is {age_min:.1f} min old during the live"
+            f" window (budget {budget:.0f} min)"
+        )
+        if out["bake_age_hours"] is not None and out["bake_age_hours"] < 1.0:
+            # The re-stamp trap one layer down: the served file's mtime is
+            # moving (the evaluator rewrote it), the SEMANTIC clock inside it
+            # is not — the exact shape of the 27-day freeze this entry closes.
+            msg += "; mtime is fresh, the semantic clock is not"
+        out["status"] = "stale"
+        out["detail"] = msg
+    if out["states_empty_passes"] > PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES:
+        empty_msg = (
+            f"states map empty for {out['states_empty_passes']} consecutive"
+            " sentinel passes during the live window (grace"
+            f" {PROPHET_LIVE_EMPTY_STATES_GRACE_PASSES} passes ≈ 1h) —"
+            " fresh-but-empty: the evaluator is publishing passes that carry"
+            " no states while the session is open"
+        )
+        out["status"] = "stale"
+        out["detail"] = (out["detail"] + "; " if out["detail"] else "") + empty_msg
+    return out
+
+
+def check_surface(surface: dict, fr: FetchResult, now: datetime,
+                  state: dict | None = None) -> dict:
     """One surface → {id, status ∈ ok|stale|indeterminate, ages, detail}."""
+    if surface.get("live_window_gate"):
+        return _check_live_window_surface(surface, fr, now, state)
     out: dict = {
         "id": surface["id"],
         "kind": surface["kind"],
@@ -942,6 +1417,14 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     f"served payload {field!r} must equal {expected!r} "
                     f"({value!r}) — Prophet source authority is not proven"
                 )
+        # PR-1 (Prophet US permanence net) — the intake-identity check, wired
+        # onto whichever surface names it (only prophet_us today). Independent
+        # of the sessions-behind budget below: a store can read current while
+        # origination silently loses or miscounts candidates.
+        if surface.get("intake_identity") and isinstance(doc, dict):
+            breach = intake_identity_breach(doc.get("intake"))
+            if breach:
+                problems.append(f"intake identity breach: {breach}")
         if not isinstance(stamp, str) or not stamp:
             # Well-formed JSON that cannot say when it is from IS a definitive
             # regression in the artifact, so it breaches rather than going
@@ -957,6 +1440,13 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
             budget = surface["asof_max_sessions_behind"]
             try:
                 behind = sessions_behind(stamp, now, calendar=surface.get("calendar"))
+                # Resolved inside the same guarded block as sessions_behind so
+                # a broken calendar degrades BOTH reads to indeterminate
+                # together rather than half-grading the surface.
+                expected_session = (
+                    _calendar_mod(surface.get("calendar")).expected_last_session(now)
+                    if surface.get("asof_never_ahead") else None
+                )
             except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
                 cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 out["status"] = "indeterminate"
@@ -978,6 +1468,56 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
                     # 2026-08-05 candidates freeze under a daily-fresh page).
                     msg += "; the file is being re-published, the store is not"
                 problems.append(msg)
+
+            # D12 grader fence — see the armed-pack SURFACES entry.
+            # sessions_behind floors a future-dated stamp at 0, so without an
+            # explicit comparison an ahead stamp reads exactly like a current
+            # one; the fence requires as_of to be neither behind beyond the
+            # budget above NOR ahead of the calendar at all.
+            if expected_session is not None:
+                out["asof_expected_session"] = expected_session.isoformat()
+                if date.fromisoformat(stamp) > expected_session:
+                    problems.append(
+                        f"pack_ahead_of_calendar: as_of {stamp} is AHEAD of the"
+                        " last completed session"
+                        f" {expected_session.isoformat()} — a stamp from the"
+                        " future is a poisoned or mid-session build, never"
+                        " freshness (the intraday evaluator refuses exactly"
+                        " this pack as stale_pack)"
+                    )
+
+            # PR-1 additive extensions — generic, and only exercised by a surface
+            # that names them (today: us_standouts). Neither existed before this
+            # program; adding them here costs nothing to every surface that does
+            # not opt in.
+            cross_field = surface.get("cross_field_asof")
+            if cross_field is not None:
+                other = _asof_field_value(doc, cross_field)
+                if other != stamp:
+                    label = (
+                        ".".join(cross_field) if isinstance(cross_field, (tuple, list))
+                        else str(cross_field)
+                    )
+                    problems.append(
+                        f"{surface['asof_field']!r} ({stamp!r}) disagrees with "
+                        f"{label!r} ({other!r}) — publication clock and content "
+                        "clock do not agree"
+                    )
+            non_vacuous = surface.get("non_vacuous") or {}
+            for field in non_vacuous.get("list_fields", ()):
+                value = doc.get(field) if isinstance(doc, dict) else None
+                if not isinstance(value, list) or not value:
+                    problems.append(
+                        f"{field!r} is empty or missing — board carries no "
+                        "actionable rows"
+                    )
+            for field in non_vacuous.get("dict_fields", ()):
+                value = doc.get(field) if isinstance(doc, dict) else None
+                if not isinstance(value, dict) or not value:
+                    problems.append(
+                        f"{field!r} is empty or missing — board coverage counts "
+                        "absent"
+                    )
 
     if problems:
         out["status"] = "stale"
@@ -1119,7 +1659,8 @@ def client_visible_session(fr: FetchResult | None, sla: dict,
 
 def evaluate(results: dict[str, FetchResult], now: datetime,
              surfaces: list[dict] | None = None,
-             client_reads: dict[str, FetchResult] | None = None) -> dict:
+             client_reads: dict[str, FetchResult] | None = None,
+             state: dict | None = None) -> dict:
     """All surfaces → this pass's report. ``ok`` here is the single-pass
     staleness verdict only; run() folds active-breach and blindness into the
     SERVED ok before publishing.
@@ -1130,9 +1671,14 @@ def evaluate(results: dict[str, FetchResult], now: datetime,
     the one thing the reader-side gate needs. Absent ⇒ every client session is
     unknown, which withholds SLA stamps rather than manufacturing verdicts —
     "I can't tell the reader saw it" must never score as a pass.
+
+    ``state`` is the PRIOR pass's private counters (state.json), consumed only
+    by the live-window surface's empty-states streak; evaluation stays pure
+    over its inputs — the caller owns persisting the updated streak (see
+    run()).
     """
     surfaces = SURFACES if surfaces is None else surfaces
-    checked = {s["id"]: check_surface(s, results[s["id"]], now) for s in surfaces}
+    checked = {s["id"]: check_surface(s, results[s["id"]], now, state=state) for s in surfaces}
     for s in surfaces:
         sla = s.get("sla") or {}
         if not sla.get("client_path"):
@@ -1755,12 +2301,73 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         if client_path and client_path not in client_reads:
             client_reads[client_path] = served_reader(public_dir, client_path)
 
-    report = evaluate(results, now, client_reads=client_reads)
+    # The PRIOR pass's private counters, read BEFORE evaluate() because the
+    # live-window surface's empty-states streak is a cross-pass observation
+    # (each sentinel pass is its own oneshot process — the timer fires a fresh
+    # python every pass, so consecutive-pass state can only live in
+    # state.json). Read-only here; the updated streak is folded back in below,
+    # and a dry run reads it without ever writing it back.
+    prior_state = load_state(state_dir)
+    report = evaluate(results, now, client_reads=client_reads, state=prior_state)
+
+    # PR-1 item 1c — prophet_live served-vs-R2 agreement. Injected post-evaluate()
+    # because it needs live R2 credentials that evaluate() has no business
+    # depending on (evaluate() stays pure/testable over already-fetched
+    # FetchResults; see its own docstring). Only attempted when the served read
+    # itself succeeded — outside the live window, or on a genuinely absent
+    # artifact, _check_live_window_surface already produced the right verdict
+    # and there is nothing here to compare.
+    prophet_live_check = report["surfaces"].get("prophet_live")
+    prophet_live_result = results.get("prophet_live")
+    if (
+        prophet_live_check is not None
+        and prophet_live_result is not None
+        and prophet_live_result.error is None
+    ):
+        agreement_status, agreement_detail = prophet_live_r2_agreement(
+            prophet_live_result.body, now
+        )
+        prophet_live_check["r2_agreement"] = {
+            "status": agreement_status, "detail": agreement_detail,
+        }
+        if agreement_status == "no_creds":
+            # Degrade to a named warning, never a page (item 1c's explicit
+            # requirement) — stdout/stderr only, never the served surface.
+            print(
+                f"sentinel: prophet_live R2 agreement degraded to warning "
+                f"({agreement_detail})",
+                file=sys.stderr,
+            )
+        elif agreement_status == "stale" and prophet_live_check["status"] == "ok":
+            prophet_live_check["status"] = "stale"
+            prophet_live_check["detail"] = (
+                (prophet_live_check["detail"] + "; " if prophet_live_check["detail"] else "")
+                + agreement_detail
+            )
+            if "prophet_live" not in report["stale_surfaces"]:
+                report["stale_surfaces"] = sorted(
+                    report["stale_surfaces"] + ["prophet_live"]
+                )
+                report["ok"] = False
+
     for sid, c in sorted(report["surfaces"].items()):
         if c.get("asof"):
-            label, content = "store", (
-                f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
-            )
+            # asof_age_minutes ⇒ a minute-grained live-window budget (prophet_live
+            # — see PROPHET_LIVE_MAX_AGE_MINUTES); every other asof-bearing surface
+            # carries a session-grained budget instead, so the two never both read.
+            if c.get("asof_age_minutes") is not None:
+                label = "store"
+                content = f"asof@{c['asof']} ({c['asof_age_minutes']:.1f} min old"
+                if "n_states" in c:
+                    # The count whose absence hid the 2026-08-27 fresh-but-empty
+                    # freeze from this line: "ok (4.1 min old)" disclosed
+                    # nothing about the artifact serving zero states.
+                    content += f", states={'?' if c['n_states'] is None else c['n_states']}"
+                content += ")"
+            else:
+                label, content = "store", (
+                    f"asof@{c['asof']} ({c['asof_sessions_behind']} session(s) behind)"
+                )
         else:
             label = "board"
             content = "delayed@" + c["board_price_through"] if c["board_delayed"] else "current"
@@ -1793,7 +2400,15 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         print("dry-run: no state written, no alert sent")
         return 0 if report["ok"] else 1
 
-    alerts, new_state = decide_alerts(report, load_state(state_dir), now)
+    # Fold the empty-states streak this pass observed into the state
+    # decide_alerts persists — decide_alerts copies unknown keys through, so
+    # the next pass's evaluate() reads back exactly what this pass saw.
+    prior_state["empty_states_passes"] = {
+        sid: c["states_empty_passes"]
+        for sid, c in report["surfaces"].items()
+        if isinstance(c, dict) and "states_empty_passes" in c
+    }
+    alerts, new_state = decide_alerts(report, prior_state, now)
 
     # ALERTS FIRST, state files second: a full disk or a permissions break on
     # /var/lib must never silence the alarm it should be raising.
@@ -1831,6 +2446,24 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     # put an append-only record inside an overwrite-only one.
     first_fresh = record_first_fresh(load_first_fresh(state_dir), report, now)
     report["sla"] = sla_summary(first_fresh, now)
+
+    # PR-1 item 1d — heartbeat. staleness.json's writer idiom (checked first:
+    # scripts/build_output_health.py is the only other module that touches this
+    # path, and it only READS it — freshness_sentinel.py is the sole writer) is
+    # to overwrite the whole file every pass with this ``report`` dict, whose
+    # existing top-level keys (generated_at, ok, stale_surfaces,
+    # indeterminate_surfaces, surfaces, active_breach, blind_surfaces, alerting,
+    # sla) are untouched above. This adds ONE new key alongside them — never
+    # clobbering, because there is no other writer's key to clobber.
+    # scripts/check_nightly_liveness.py's Check E reads exactly this key to
+    # grade the sentinel's own liveness from the GitHub failure domain, closing
+    # the loop the other way: this sentinel watches the estate from the VPS,
+    # and Check E watches THIS sentinel from GitHub.
+    report["heartbeat"] = {
+        "last_pass_utc": now.isoformat(),
+        "cadence_minutes": VISIBLE_RESOLUTION_SECONDS / 60.0,
+        "surfaces": {sid: c["status"] for sid, c in report["surfaces"].items()},
+    }
 
     for target, payload in (
         # public_report, never `report` — the private facts stop at the Caddy

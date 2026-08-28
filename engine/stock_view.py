@@ -28,6 +28,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from engine.stock_score import bucket_display as _bucket_display
+
 SCHEMA = "stock_view.v1"
 
 
@@ -395,6 +397,7 @@ def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
     timing = {
         "state": lad.get("state"),
         "state_label": lad.get("label") or lad.get("state"),
+        "state_label_zh": lad.get("label_zh") or lad.get("label") or lad.get("state"),
         "action": lad.get("action"),
         "tag": entry.get("tag"), "tag_zh": entry.get("tag_zh"),
         "urgency": entry.get("urgency"),
@@ -413,6 +416,13 @@ def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
     # contradicting page, so both are suppressed together whenever score is null —
     # not just for the demotion case, but for ANY conv with no score (consistent).
     _score = conv.get("score")
+    # Human display twin for the `bucket` enum (engine.stock_score._SIZE_BUCKETS /
+    # _PCT_BUCKET) — the browser renderer must never print the raw slug (e.g.
+    # "three-quarter") in either language. Copy so we never mutate `conv["size"]`.
+    _bucket_label_en, _bucket_label_zh = _bucket_display(size.get("bucket"))
+    size_out = dict(size)
+    size_out["bucket_label"] = _bucket_label_en
+    size_out["bucket_label_zh"] = _bucket_label_zh
     return {
         "headline": conv.get("verdict"), "headline_zh": conv.get("verdict_zh"),
         "gloss": gloss_en, "gloss_zh": gloss_zh,
@@ -425,7 +435,7 @@ def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
         # ACT-NOW lane (the "when / how much") — one buy-frame verb, decoupled from rank.
         "action": _action(conv, rec),
         "trust": conv.get("trust_tier"), "regime": conv.get("regime"),
-        "size": size, "timing": timing,
+        "size": size_out, "timing": timing,
         "why": _why(conv),
         "state": state, "conflict_pillars": conflict_pillars,
         "conflict_note": cn_en, "conflict_note_zh": cn_zh,
@@ -920,6 +930,8 @@ def build_view(rec: dict, market: str) -> dict:
             "trust": None, "regime": None, "size": {},
             "timing": {"state": lad.get("state"),
                        "state_label": lad.get("label") or lad.get("state"),
+                       "state_label_zh": lad.get("label_zh") or lad.get("label")
+                                         or lad.get("state"),
                        "tag": entry.get("tag"), "tag_zh": entry.get("tag_zh"),
                        "urgency": entry.get("urgency"),
                        "text": entry.get("text"), "text_zh": entry.get("text_zh")},

@@ -1,0 +1,60 @@
+{
+  "accepted": 313,
+  "access_log_sha256": "6648403ebf66bd8193a31a1131450bc46b0b6ba8f7d3f4f9d30b785d89df4321",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "banned_reads": [],
+  "blocked_families": {
+    "MACRO_OR_INDUSTRY_WIDE": "SOURCE_CAPACITY_SHORTFALL"
+  },
+  "by_family": {
+    "CYBER_OR_IT_INTERRUPTION": 48,
+    "EXTERNAL_HUMAN_INTERRUPTION": 47,
+    "PHYSICAL_MECHANICAL_INTERRUPTION": 48,
+    "RESOLVED_BEFORE_DISCLOSURE_CONTROL": 24,
+    "STRUCTURAL_IMPAIRMENT_CONTROL": 55,
+    "TEMPORARY_EXPECTATION_RESET": 45,
+    "WEATHER_OR_PHYSICAL_DISASTER": 46
+  },
+  "by_form": {
+    "6-K": 99,
+    "8-K": 214
+  },
+  "disagreements": 79,
+  "episodes": 313,
+  "extract_refusals": 7,
+  "fable_audit_command": "python3 scripts/research/dislocation_p0_a1_harvest.py report --out research/dislocation_intelligence/p0_a1",
+  "generated_at": "2026-08-20T19:04:39Z",
+  "modern_accepted": 204,
+  "quota_shortfalls": [
+    {
+      "family": "EXTERNAL_HUMAN_INTERRUPTION",
+      "have": 47,
+      "need": 48
+    },
+    {
+      "family": "WEATHER_OR_PHYSICAL_DISASTER",
+      "have": 46,
+      "need": 48
+    },
+    {
+      "family": "TEMPORARY_EXPECTATION_RESET",
+      "have": 45,
+      "need": 48
+    },
+    {
+      "blocked": "SOURCE_CAPACITY_SHORTFALL",
+      "family": "MACRO_OR_INDUSTRY_WIDE",
+      "have": 0,
+      "need": 24
+    }
+  ],
+  "raw_selected": 312,
+  "refusals": 284392,
+  "schema": "mastermind.dislocation_p0.a1g_coverage.v1"
+}

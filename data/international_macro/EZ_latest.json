@@ -7,26 +7,26 @@
   "flag": "🇪🇺",
   "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
   "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
-  "asof": "2026-08-14",
-  "built": "2026-08-18 10:56 UTC",
+  "asof": "2026-08-28",
+  "built": "2026-08-28 12:59 UTC",
   "regime": {
     "quad": "Q1",
     "name": "Goldilocks",
-    "growth_score": 0.286,
-    "inflation_score": -0.667,
-    "confidence": 0.476,
+    "growth_score": -0.143,
+    "inflation_score": 0.667,
+    "confidence": 0.405,
     "liquidity": "contracting",
-    "recession_score": 1.0,
+    "recession_score": 2.0,
     "recession_band": "low",
     "data_limited": false
   },
   "decision": {
-    "score": 51,
-    "state": "balanced",
-    "state_en": "Balanced",
-    "state_zh": "均衡",
-    "action_en": "Hold balanced risk while disinflation helps but credit transmission remains restrictive.",
-    "action_zh": "通胀回落提供支持但信贷传导仍偏紧时，保持均衡风险。",
+    "score": 35,
+    "state": "defensive",
+    "state_en": "Defensive",
+    "state_zh": "防御",
+    "action_en": "Protect against fragmentation: watch sovereign spreads, energy and bank credit.",
+    "action_zh": "防范碎片化：关注主权利差、能源与银行信贷。",
     "transitions_en": [
       "Upgrade: euro-area growth breadth improves as lending contraction bottoms.",
       "Policy turn: ECB easing transmits into household and business borrowing.",
@@ -39,9 +39,9 @@
     ],
     "parts": {
       "base": 50.0,
-      "growth": 6.29,
-      "inflation": -0.0,
-      "recession": -0.18,
+      "growth": -3.15,
+      "inflation": -6.67,
+      "recession": -0.36,
       "liquidity": -5.0,
       "risk_state": 0.0
     },
@@ -50,16 +50,6 @@
   },
   "history": {
     "values": [
-      65,
-      65,
-      68,
-      62,
-      62,
-      62,
-      59,
-      52,
-      52,
-      52,
       52,
       55,
       55,
@@ -109,19 +99,19 @@
       48,
       48,
       48,
-      51
+      51,
+      48,
+      48,
+      41,
+      48,
+      48,
+      48,
+      48,
+      48,
+      35,
+      35
     ],
     "dates": [
-      "2026-05-25",
-      "2026-05-26",
-      "2026-05-27",
-      "2026-05-28",
-      "2026-05-29",
-      "2026-06-01",
-      "2026-06-02",
-      "2026-06-03",
-      "2026-06-04",
-      "2026-06-05",
       "2026-06-08",
       "2026-06-09",
       "2026-06-10",
@@ -171,27 +161,37 @@
       "2026-08-11",
       "2026-08-12",
       "2026-08-13",
-      "2026-08-14"
+      "2026-08-14",
+      "2026-08-17",
+      "2026-08-18",
+      "2026-08-19",
+      "2026-08-20",
+      "2026-08-21",
+      "2026-08-24",
+      "2026-08-25",
+      "2026-08-26",
+      "2026-08-27",
+      "2026-08-28"
     ],
-    "points": "0.00,35.00 1.69,35.00 3.39,32.00 5.08,38.00 6.78,38.00 8.47,38.00 10.17,41.00 11.86,48.00 13.56,48.00 15.25,48.00 16.95,48.00 18.64,45.00 20.34,45.00 22.03,45.00 23.73,38.00 25.42,38.00 27.12,38.00 28.81,43.00 30.51,43.00 32.20,49.00 33.90,43.00 35.59,49.00 37.29,49.00 38.98,43.00 40.68,49.00 42.37,46.00 44.07,46.00 45.76,46.00 47.46,49.00 49.15,46.00 50.85,49.00 52.54,49.00 54.24,50.00 55.93,49.00 57.63,56.00 59.32,53.00 61.02,52.00 62.71,52.00 64.41,52.00 66.10,56.00 67.80,53.00 69.49,52.00 71.19,46.00 72.88,53.00 74.58,52.00 76.27,55.00 77.97,55.00 79.66,52.00 81.36,52.00 83.05,52.00 84.75,52.00 86.44,46.00 88.14,46.00 89.83,46.00 91.53,49.00 93.22,52.00 94.92,52.00 96.61,52.00 98.31,52.00 100.00,49.00",
-    "min": 44,
-    "max": 68,
-    "start": "2026-05-25",
-    "end": "2026-08-14"
+    "points": "0.00,48.00 1.69,45.00 3.39,45.00 5.08,45.00 6.78,38.00 8.47,38.00 10.17,38.00 11.86,43.00 13.56,43.00 15.25,49.00 16.95,43.00 18.64,49.00 20.34,49.00 22.03,43.00 23.73,49.00 25.42,46.00 27.12,46.00 28.81,46.00 30.51,49.00 32.20,46.00 33.90,49.00 35.59,49.00 37.29,50.00 38.98,49.00 40.68,56.00 42.37,53.00 44.07,52.00 45.76,52.00 47.46,52.00 49.15,56.00 50.85,53.00 52.54,52.00 54.24,46.00 55.93,53.00 57.63,52.00 59.32,55.00 61.02,55.00 62.71,52.00 64.41,52.00 66.10,52.00 67.80,52.00 69.49,46.00 71.19,46.00 72.88,46.00 74.58,49.00 76.27,52.00 77.97,52.00 79.66,52.00 81.36,52.00 83.05,49.00 84.75,52.00 86.44,52.00 88.14,59.00 89.83,52.00 91.53,52.00 93.22,52.00 94.92,52.00 96.61,52.00 98.31,65.00 100.00,65.00",
+    "min": 35,
+    "max": 62,
+    "start": "2026-06-08",
+    "end": "2026-08-28"
   },
   "market": {
     "index_label": "Euro STOXX / Europe context",
     "currency_label": "EUR/USD",
     "equity": {
-      "price": 657.86,
-      "off_52w_high": -0.4,
+      "price": 654.63,
+      "off_52w_high": -0.9,
       "above_50d": true,
       "above_200d": true,
-      "realvol": 7.5,
-      "rsi": 63.0,
-      "ext_z": 0.72,
-      "ext_grade": "steady",
-      "drawdown_risk": 1.0,
+      "realvol": 5.7,
+      "rsi": 54.0,
+      "ext_z": 0.17,
+      "ext_grade": "intrend",
+      "drawdown_risk": 2.0,
       "drawdown_band": "low",
       "bubble_flag": false
     }
@@ -203,35 +203,25 @@
     "curve": 1.19
   },
   "risk": {
-    "state": "watch",
-    "top_score": 61,
-    "dominant_en": "Parabolic extension / exhaustion",
-    "dominant_zh": "抛物线伸展／透支",
+    "state": "calm",
+    "top_score": 22,
+    "dominant_en": "Calm — no driver elevated",
+    "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.2,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 60.9,
-      "peak": 96.2,
+      "intensity": 21.6,
+      "peak": 89.7,
       "peak_days_ago": 23,
-      "off_peak": 35.3,
-      "velocity": -2.8,
-      "phase": "receding",
+      "off_peak": 68.1,
+      "velocity": 0.4,
+      "phase": "flat",
       "reached_risk": true,
-      "state_now": "watch",
+      "state_now": "calm",
       "odds_now": 0.2,
       "odds_peak": 0.2,
       "odds_delta": 0.0,
       "spark": [
-        96.2,
-        92.3,
-        73.8,
-        65.7,
-        67.7,
-        67.9,
-        80.4,
-        76.6,
-        85.3,
-        85.9,
         89.7,
         79.6,
         75.0,
@@ -245,16 +235,26 @@
         51.2,
         53.8,
         56.3,
-        60.9
+        60.9,
+        59.1,
+        41.5,
+        28.0,
+        17.7,
+        21.2,
+        17.7,
+        12.1,
+        21.2,
+        18.1,
+        21.6
       ],
-      "spark_pts": "3.0,3.0 6.9,4.7 10.8,13.0 14.7,16.6 18.7,15.7 22.6,15.6 26.5,10.0 30.4,11.7 34.3,7.8 38.2,7.6 42.1,5.9 46.0,10.4 50.0,12.4 53.9,14.5 57.8,14.3 61.7,12.0 65.6,19.0 69.5,18.8 73.4,17.4 77.3,16.8 81.3,23.0 85.2,21.8 89.1,20.7 93.0,18.7",
+      "spark_pts": "3.0,3.0 6.9,5.6 10.8,6.8 14.7,8.0 18.7,7.9 22.6,6.5 26.5,10.6 30.4,10.5 34.3,9.7 38.2,9.3 42.1,12.9 46.0,12.3 50.0,11.6 53.9,10.4 57.8,10.9 61.7,15.4 65.6,18.9 69.5,21.6 73.4,20.7 77.3,21.6 81.3,23.0 85.2,20.7 89.1,21.5 93.0,20.6",
       "spark_peak": {
         "x": 3.0,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 18.7
+        "y": 20.6
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,17 +266,17 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 76.4,
-        "band": "caution",
+        "score": 67.6,
+        "band": "watch",
         "firing_legs": [
           {
             "leg": "ext_idx",
-            "pctile": 0.827,
+            "pctile": 0.74,
             "confirmed": false
           },
           {
             "leg": "ext_etf",
-            "pctile": 0.701,
+            "pctile": 0.612,
             "confirmed": false
           }
         ]
@@ -286,27 +286,16 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 60.6,
-        "band": "watch",
-        "firing_legs": [
-          {
-            "leg": "us_rate_10y",
-            "pctile": 0.688,
-            "confirmed": false
-          },
-          {
-            "leg": "us_real_rate",
-            "pctile": 0.595,
-            "confirmed": false
-          }
-        ]
+        "score": 37.9,
+        "band": "calm",
+        "firing_legs": []
       },
       {
         "scare": "capital_flow",
         "tier": "A",
         "label_en": "Euro depreciation / outflows",
         "label_zh": "欧元贬值／资金外流",
-        "score": 42.7,
+        "score": 22.6,
         "band": "calm",
         "firing_legs": []
       }
@@ -318,10 +307,10 @@
       "key": "cpi_yoy",
       "label_en": "Inflation",
       "label_zh": "通胀",
-      "raw": 2.73,
-      "value": "2.73% y/y",
+      "raw": 2.93,
+      "value": "2.93% y/y",
       "unit": "% y/y",
-      "asof": "2026-06"
+      "asof": "2026-07"
     },
     {
       "key": "gdp_yoy",
@@ -372,8 +361,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.1535,
-      "value": "1.15",
+      "raw": 1.1651,
+      "value": "1.17",
       "unit": "",
       "asof": null
     },
@@ -381,8 +370,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 0.11,
-      "value": "0.11%",
+      "raw": 1.89,
+      "value": "1.89%",
       "unit": "%",
       "asof": null
     },
@@ -390,8 +379,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -0.4,
-      "value": "-0.40%",
+      "raw": -0.9,
+      "value": "-0.90%",
       "unit": "%",
       "asof": null
     },
@@ -399,8 +388,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 7.5,
-      "value": "7.50%",
+      "raw": 5.7,
+      "value": "5.70%",
       "unit": "%",
       "asof": null
     }
@@ -425,7 +414,7 @@
       "title_zh": "核心/服务HICP",
       "why_en": "Tests whether disinflation is broad enough for durable easing.",
       "why_zh": "检验通胀回落是否足够广泛以支持持续宽松。",
-      "value": "2.73% y/y",
+      "value": "2.93% y/y",
       "available": true,
       "metric": "cpi_yoy",
       "source_key": "eurostat",
@@ -540,8 +529,8 @@
   "health": [
     {
       "metric": "cpi_yoy",
-      "asof": "2026-06",
-      "age_days": 78,
+      "asof": "2026-07",
+      "age_days": 58,
       "state": "fresh",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -549,7 +538,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 139,
+      "age_days": 149,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -557,15 +546,15 @@
     {
       "metric": "unemployment",
       "asof": "2026-06",
-      "age_days": 78,
-      "state": "fresh",
+      "age_days": 88,
+      "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
     },
     {
       "metric": "yield_10y",
       "asof": "2026-01",
-      "age_days": 229,
+      "age_days": 239,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

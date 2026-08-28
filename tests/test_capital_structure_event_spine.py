@@ -18,6 +18,7 @@ from engine.capital_structure.event_spine import (
     append_event_versions_strict,
     build_event_version,
     build_review_queue,
+    compute_event_id,
     event_classification,
     make_stable_span,
     route_form,
@@ -221,3 +222,75 @@ def test_review_queue_contains_only_current_deferred_events():
     assert queue[0]["event_id"] == ambiguous["event_id"]
     assert queue[0]["classification_state"] == DEFERRED_AMBIGUOUS_CONTENT
     assert queue[0]["review_state"] == "pending"
+
+
+def test_historical_event_id_is_full_body_hash_without_identity_format():
+    event = build_event_version(_observation(), [_span()])
+    assert "identity_format" not in event["version"]
+    body = copy.deepcopy(event)
+    body.pop("event_id")
+    expected = "event:cs:" + hashlib.sha256(
+        json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    ).hexdigest()[:24]
+    assert event["event_id"] == expected
+    assert compute_event_id(event) == event["event_id"]
+
+
+def test_independent_post_w1_builds_share_event_id_despite_clocks_and_manifest_ids():
+    eid = "evidence:cs:" + "a" * 64
+    early = build_event_version(
+        _observation(
+            evidence_ids=[eid],
+            manifest_id="manifest:early",
+            first_seen_at="2026-08-01T10:00:03Z",
+            first_known_at="2026-08-01T10:00:03Z",
+        ),
+        [make_stable_span(
+            "manifest:early", "Registration statement",
+            locator_type="dom", locator="html/body[1]",
+        )],
+    )
+    late = build_event_version(
+        _observation(
+            evidence_ids=[eid],
+            manifest_id="manifest:late",
+            first_seen_at="2026-08-19T18:00:00Z",
+            first_known_at="2026-08-19T18:00:00Z",
+        ),
+        [make_stable_span(
+            "manifest:late", "Registration statement",
+            locator_type="dom", locator="html/body[1]",
+        )],
+    )
+    assert early["version"]["identity_format"] == 2
+    assert late["version"]["identity_format"] == 2
+    assert early["event_id"] == late["event_id"]
+    assert early["source"]["manifest_ids"] != late["source"]["manifest_ids"]
+    assert early["point_in_time"]["first_seen_at"] != late["point_in_time"]["first_seen_at"]
+    schema = json.loads((ROOT / "contracts" / "capital_structure_event.schema.json").read_text())
+    errors = list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(early))
+    assert not errors, "\n".join(error.message for error in errors)
+
+
+def test_post_w1_interpretation_correction_and_aba_chain_are_distinct():
+    eid = "evidence:cs:" + "b" * 64
+    original = build_event_version(
+        _observation(evidence_ids=[eid], file_number="333-100001"),
+        [_span()],
+    )
+    corrected = build_event_version(
+        _observation(evidence_ids=[eid], file_number="333-100002"),
+        [_span()],
+        correction_version=2,
+        correction_of=original["event_id"],
+    )
+    restored = build_event_version(
+        _observation(evidence_ids=[eid], file_number="333-100001"),
+        [_span()],
+        correction_version=3,
+        correction_of=corrected["event_id"],
+    )
+    assert original["event_id"] != corrected["event_id"]
+    assert restored["event_id"] != original["event_id"]
+    assert restored["event_id"] != corrected["event_id"]
+    assert restored["version"]["correction_of"] == corrected["event_id"]

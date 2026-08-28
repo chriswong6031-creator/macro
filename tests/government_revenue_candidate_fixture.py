@@ -142,7 +142,7 @@ def canonical_frozen_at() -> str:
 
 @lru_cache(maxsize=1)
 def canonical_candidate_census() -> int:
-    """Return how many candidate rows the canonical inputs currently yield.
+    """Return how many DISTINCT candidates the canonical inputs currently yield.
 
     The clock was not the only hand-typed vintage constant in these suites.  The
     *census* was one too: ``== 8`` was written on 2026-08-09, when the eight
@@ -167,6 +167,24 @@ def canonical_candidate_census() -> int:
     and measure exactly as the receipt recorded.  A source that has moved ahead of
     its receipt therefore fails loudly here, naming that condition, instead of
     surfacing as an unexplained off-by-N somewhere downstream.
+
+    A ledger LINE is not a candidate.  ``observation_id`` (and the candidate's
+    ``known_at``) fold the reviewed graph's digest
+    (``historical_suppression_entry_key``'s docstring, ``candidates.py:165-171``:
+    "``observation_id`` and candidate ``known_at`` both move when the reviewed
+    graph is re-published"), while ``candidate_id`` does not -- it is a digest of
+    ``candidate_family``/``issuer_company_id``/``event_id`` alone.  A graph
+    republish therefore makes the SAME candidate newly "unseen" by observation
+    key and appends a second line for it, byte-distinct from the first, without
+    minting a new candidate.  Measured on the 2026-08-19 defense19->defense21
+    republish: the append-only ledger grew from 62 to 116 lines while the
+    DISTINCT ``candidate_id`` count stayed 62 -- the same 62 the pure engine
+    (``build_candidate_queue``) still reports fresh against the current graph.
+    Counting raw lines conflates "how many candidates exist" with "how many
+    times this store has ever observed one," and a census that grows on every
+    graph re-review with no new candidate in sight is exactly the scheduled
+    failure this function exists to end -- so the census is the distinct-id
+    count, never the line count.
     """
     directory = ROOT / CANONICAL_DIRECTORY
     status = json.loads(
@@ -186,7 +204,8 @@ def canonical_candidate_census() -> int:
             "collection lane advanced without a projection, so no census is knowable"
         )
     ledger = (directory / "candidate_ledger.jsonl").read_bytes()
-    line_count = len([line for line in ledger.splitlines() if line.strip()])
+    lines = [line for line in ledger.splitlines() if line.strip()]
+    line_count = len(lines)
     if (
         sha256(ledger).hexdigest() != status.get("ledger_sha256")
         or len(ledger) != status.get("ledger_byte_count")
@@ -196,7 +215,8 @@ def canonical_candidate_census() -> int:
             "the committed append-only candidate ledger does not match the "
             "projection receipt bound to it: the receipt cannot be used as a census"
         )
-    return line_count
+    candidate_ids = {json.loads(line)["candidate_id"] for line in lines}
+    return len(candidate_ids)
 
 
 def utc_date(instant: str) -> str:

@@ -1943,7 +1943,17 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                     for e in (buys + watch + laggards + leaders + ran + vetoed)
                     if e.get("ticker")
                 }
-                _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read()}
+                # board_definition MUST come along (LEDGER-ERA track_ledger fence,
+                # 2026-08-20 review, BLOCKER-1): from_board_ledger_grade only fences
+                # rows/summary to the current era when the scorecard dict it is
+                # handed actually NAMES that era. _bt (board_ledger.grade("HK"),
+                # just computed above) already carries the same board_definition
+                # board_ledger.scorecard("HK") would derive — reuse it rather than
+                # a second scorecard() call, so hk_track_ledger.json's row table
+                # gets the same era fence the HK summary cards already have via
+                # _hk_track_record_vm() -> board_ledger.scorecard("HK") directly.
+                _hk_sc = {"status": "accruing", "first_read_est": board_ledger._est_first_read(),
+                          "board_definition": _bt.get("board_definition")}
                 _hk_doc = _tl.from_board_ledger_grade(
                     "HK", _bt, _hk_sc,
                     bench={"code": "_HSI", "en": "Hang Seng", "zh": "恒生指数"},
@@ -2101,6 +2111,110 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                  len(buys), len(watch), out["eligible"], out["universe"], risk_state)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk_standouts.json persist skipped (%s)", e)
+
+    # ---- ZERO-AUTHORITY SHADOW SUBSTRATE (WS:PROPHET-HK-CA-REVAMP,
+    # research/PROPHET_SHADOW_CONTRACT_V1.md §4) — placed BELOW the
+    # hk_standouts.json persist above, deliberately NOT beside the
+    # board_ledger.append_board call ~189 lines upstream: the buy/watch list
+    # objects that get serialized into hk_standouts.json are still live in
+    # scope up there, and a shadow call at that site could mutate the
+    # published board (contract §4, F1). Reuses the exact same `calls`
+    # population and `as_of` already handed to append_board. Fail-soft
+    # (write_shadow never raises) and wrapped anyway, so a defect here can
+    # never touch the standout-board persist above.
+    # hk-discovery wave (contract §4's "when a challenger registers" clause):
+    # register the FIRST real HK Lane-B discovery challenger immediately
+    # BEFORE write_shadow, in the same fail-soft try/except discipline. The
+    # market literal "HK" appears ONLY at this registration call —
+    # engine/hk_discovery_challenger.py never takes or infers a market. The
+    # evidence bundle is assembled from pre-cut structures already computed
+    # above in THIS function — deliberately never from `out` (the payload
+    # about to be serialized a few lines above) — so the challenger can
+    # never depend on the published board it exists to audit independently
+    # of (K-D9 publication-isolation).
+    try:
+        from engine import board_shadow, hk_discovery_challenger
+
+        # HK-DISCOVERY EVIDENCE ASSEMBLY START (build commission R3/K-D9
+        # structural pin: this token must sit strictly between the
+        # hk_standouts.json persist above and the register_challenger call
+        # below — tests/test_hk_discovery_challenger.py asserts that
+        # ordering by source offset, not merely that registration follows
+        # the persist).
+        _hk_disc_ripening_tickers: set[str] = set()
+        try:
+            _hk_disc_ripening_rows = hk_board_rank.build_ripening_rows(
+                sig_verdict, meta_by=_lane_meta, close_of=_lane_close_of,
+                exclude=(), board_asof=as_of,
+                cap=10**9, ready_cap=10**9,
+            )
+            _hk_disc_ripening_tickers = {
+                str(r.get("ticker")) for r in _hk_disc_ripening_rows if r.get("ticker")
+            }
+        except Exception as _disc_rip_ex:  # noqa: BLE001 — additive; a missing leg just drops that origin
+            print(
+                "::warning title=hk-discovery-evidence-leg::ripening evidence leg "
+                f"failed ({_disc_rip_ex}) — hk_discovery_v1 candidates lose the "
+                "'ripening' origin this pass; every other origin is unaffected",
+                flush=True,
+            )
+
+        # R5/F5: ripening_tickers enters the bundle as a SORTED list, never
+        # the raw set above — set iteration order is not stable across
+        # process runs (hash randomisation), and build_candidates()
+        # (engine/hk_discovery_challenger.py) asserts against a raw set
+        # reaching it for exactly this reason.
+        _hk_disc_evidence: dict = {
+            "washout_2w": dict(washout_2w),
+            "leadership": _leadership or {},
+            "ripening_tickers": sorted(_hk_disc_ripening_tickers),
+            "sig_verdict": sig_verdict,
+            "dir_by_ticker": {e.get("ticker"): e.get("dir") for e in enriched if e.get("ticker")},
+            "southbound": southbound,
+            "ah_value": ah_value,
+            "knife_risk": {e.get("ticker"): bool(e.get("knife_risk"))
+                          for e in enriched if e.get("ticker")},
+            # R4/F4: knife_available is True iff the falling-knife pass
+            # actually stamped this render — the SAME observable output
+            # (_knife_cut, the quintile cut float) _falling_knife_demote's
+            # own early-return already produces at the call site above
+            # (~L1581), never a second copy of its `len(alphas) < 5` gate.
+            "knife_available": bool(_knife_cut is not None),
+            "extended": {e.get("ticker"): bool(e.get("extended"))
+                        for e in enriched if e.get("ticker")},
+            # R4/F4: extension_signals() (engine/extension.py) returns an
+            # EMPTY map by construction whenever `closes` is absent/empty —
+            # per-name absence WITHIN a non-empty map is a genuinely
+            # resolved "no read" for that name and stays plain False; only
+            # the whole-map-absent case is threaded here, mirroring
+            # plc_available's own shape.
+            "extension_available": bool(closes is not None and not closes.empty),
+            "plc_map": dict(plc_map),
+            "plc_available": bool(_plc_ok),
+            "ran_require_above200": bool(HK_RAN_REQUIRE_ABOVE200),
+        }
+        # F3+F7 (build commission R3): deep-copy the assembled bundle ONCE
+        # before binding it into the registration closure below — nothing
+        # later in this function (today or after a future edit) can then
+        # mutate a live object the closure still holds a reference to.
+        import copy as _copy_disc
+        _hk_disc_evidence = _copy_disc.deepcopy(_hk_disc_evidence)
+
+        def _hk_discovery_fn(_asof_arg: str) -> list[dict]:
+            return hk_discovery_challenger.build_candidates(_hk_disc_evidence, _asof_arg)
+
+        board_shadow.register_challenger(
+            "HK", hk_discovery_challenger.DEFINITION, discovery_fn=_hk_discovery_fn,
+        )
+    except Exception as _disc_ex:  # noqa: BLE001 — registration must never break the build
+        log.warning("hk discovery-challenger registration failed (%s) — shadow write "
+                    "continues without it this render", _disc_ex)
+
+    try:
+        from engine import board_shadow
+        board_shadow.write_shadow(calls, market="HK", asof=str(as_of) if as_of else None)
+    except Exception as _bse:  # noqa: BLE001 — additive research telemetry; never fatal
+        log.warning("hk board_shadow write failed (%s) — render continues", _bse)
 
     # ---- HK PICK LAB PRODUCER BLOCK (spec §5, HKPL-R7) --------------------------------
     # Writes the nightly HK snapshot parquet and the 1D Velocity Desk price-only first

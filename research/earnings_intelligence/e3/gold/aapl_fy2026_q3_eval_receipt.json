@@ -1,0 +1,682 @@
+{
+  "schema": "e3a_eval_receipt.v1",
+  "run_id": "27e3e380f70658c1",
+  "lane": "earnings_event_compiler",
+  "event_id": "evt_cik0000320193_2026q3_results",
+  "gold_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
+  "telemetry": {
+    "ai_costs_shard": "e3a-pr6245-27e3e380f70658c1",
+    "provider_health_path": "research/earnings_intelligence/e3/gold/provider_health_27e3e380f70658c1.jsonl"
+  },
+  "steps": {
+    "sha_verification": {
+      "exhibit_sha": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+      "transcript_sha": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "check": "pass",
+      "frozen_exhibit_sha": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+      "frozen_transcript_sha": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+      "live_workspace": {
+        "available": true,
+        "generation_id": "d7b994675fe59d0181643b8b",
+        "workspace_sha256": "d360e1017dea2bbec7d44c37f48cf0565eb4f663edc99f1af00ce1e38dd642c5",
+        "release_source_sha256": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+        "transcript_source_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+        "source_shas_match": true,
+        "current_marker_is_calibration_generation": false,
+        "calibration_generation_id": "f709a0a6ec514282d5769e7d",
+        "calibration_workspace_sha256": "dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197",
+        "matches_frozen_fixtures": true,
+        "assumed_from_handoff": false,
+        "note": "current-marker generation moved; AAPL calibration remains bound to source SHAs and pinned generation f709a0a6ec514282d5769e7d; gold not rewritten",
+        "reader": "engine.neuralweb.company_intelligence_reader.read_event_workspace",
+        "workspace_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence/event_workspaces/generations/d7b994675fe59d0181643b8b/workspaces/evt_cik0000320193_2026q3_results.json",
+        "marker_url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence/event_workspaces/manifest.json"
+      }
+    },
+    "segmenter": {
+      "segment_count": 108,
+      "id_method": "sha256[:16]_index04d",
+      "truncation": "none",
+      "sample_ids": [
+        "seg_a8ff5d03e875fef5_0000",
+        "seg_a8ff5d03e875fef5_0001",
+        "seg_a8ff5d03e875fef5_0002"
+      ]
+    },
+    "gold_loaded": {
+      "gold_path": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_qa_gold.json",
+      "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
+      "gold_schema": "aapl_fy2026_q3_qa_gold.v2",
+      "superseded_gold_sha256_v1": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+      "taxonomy_version": "qa_topic.v1",
+      "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+      "exchange_count": 7,
+      "usefulness_bar_decision": "refusal",
+      "gold_labels_withheld_during_inference": true,
+      "adjudication_receipt": "research/earnings_intelligence/e3/gold/aapl_fy2026_q3_adjudication_receipt.json"
+    },
+    "prompt_built": {
+      "prompt_version": "e3a-qa-extraction-v1",
+      "segment_count": 108,
+      "uses_bounded_transcript_text": false,
+      "gold_labels_in_prompt": false
+    },
+    "comparator_freeze": {
+      "model": "claude-haiku-4-5",
+      "gold_labels": false,
+      "provider_plane": "llm_auth",
+      "provider": "oauth",
+      "available_rungs": [
+        "oauth",
+        "oauth",
+        "oauth",
+        "oauth",
+        "oauth",
+        "oauth",
+        "oauth",
+        "oauth"
+      ],
+      "n_oauth_rungs": 8,
+      "usage_cycle_id": "27e3e380f70658c1",
+      "status": "frozen"
+    }
+  },
+  "model_attempts": {
+    "qwen": {
+      "provider": "openai_compat",
+      "model": "qwen3.5:9b",
+      "endpoint_class": "loopback",
+      "base_url_source": "earnings_worker_plist",
+      "preflight": {
+        "endpoint_class": "loopback",
+        "model": "qwen3.5:9b",
+        "base_url_source": "earnings_worker_plist",
+        "model_source": "earnings_worker_plist",
+        "status": "ok",
+        "served_ids": [
+          "qwen3.5:9b"
+        ]
+      },
+      "status": "ok",
+      "degraded_reason": null,
+      "n_candidates": 0,
+      "raw_excerpt": "[]",
+      "latency_ms": 12153.6,
+      "input_tokens": 12477,
+      "output_tokens": 2,
+      "est_cost_usd": 0.0,
+      "cost_basis": "local",
+      "transport": "openai_compat",
+      "gold_labels_seen": false
+    },
+    "comparator": {
+      "provider": "oauth",
+      "model": "claude-haiku-4-5",
+      "is_comparator": true,
+      "non_authoritative": true,
+      "comparator_note": "Independent comparator \u2014 evaluation only, no production authority. Runs on the same held source bytes as Qwen. Gold labels withheld. Frozen model: claude-haiku-4-5 via existing llm_auth.",
+      "preflight": {
+        "comparator_freeze": {
+          "model": "claude-haiku-4-5",
+          "gold_labels": false,
+          "provider_plane": "llm_auth",
+          "provider": "oauth",
+          "available_rungs": [
+            "oauth",
+            "oauth",
+            "oauth",
+            "oauth",
+            "oauth",
+            "oauth",
+            "oauth",
+            "oauth"
+          ],
+          "n_oauth_rungs": 8,
+          "usage_cycle_id": "27e3e380f70658c1",
+          "status": "frozen"
+        },
+        "waterfall_attempts": [
+          {
+            "rung": "oauth",
+            "ok": false,
+            "error_class": "auth"
+          },
+          {
+            "rung": "oauth",
+            "ok": false,
+            "error_class": "auth"
+          },
+          {
+            "rung": "oauth",
+            "ok": true,
+            "error_class": ""
+          }
+        ]
+      },
+      "status": "ok",
+      "degraded_reason": null,
+      "n_candidates": 7,
+      "raw_excerpt": "```json\n[\n  {\n    \"ordinal\": 0,\n    \"boundary_segment_index\": 32,\n    \"questioner_name\": \"Amit Daryanani\",\n    \"affiliation\": \"Evercore\",\n    \"question_segment_indexes\": [33, 38],\n    \"answer_segment_indexes\": [34, 35, 36, 37, 39, 40],\n    \"respondents\": [\n      {\"name\": \"Kevan Parekh\", \"role\": \"CFO\"},\n      {\"name\": \"Tim Cook\", \"role\": \"CEO\"}\n    ],\n    \"topics\": [\"demand\", \"capacity\", \"costs_sup",
+      "latency_ms": 10739.2,
+      "input_tokens": 12940,
+      "output_tokens": 1048,
+      "est_cost_usd": 0.01818,
+      "gold_labels_seen": false
+    }
+  },
+  "scores": {
+    "qwen": {
+      "n_gold_exchanges": 7,
+      "n_model_candidates": 0,
+      "exchange_boundary_quality": {
+        "tp": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "note": "model_produced_no_candidates"
+      },
+      "source_span_replay_success_pct": null,
+      "unsupported_candidate_rate": null,
+      "cross_event_contamination_accepted": 0,
+      "topic_label_agreement_mean_jaccard": null,
+      "identity_role_availability": null,
+      "invalid_schema_rate": null,
+      "accepted_count": 0,
+      "unsupported_rejected": 0,
+      "invalid_schema_rejected": 0,
+      "cross_event_rejected": 0,
+      "accepted_unsupported": 0,
+      "accepted_cross_event": 0,
+      "invalid_schema_accepted": 0,
+      "accepted_span_replay_count": 0,
+      "valid_candidates": [],
+      "rejected_candidates": [],
+      "rejection_reason": null,
+      "hard_gates": {
+        "status": "NOT_EXERCISED",
+        "accepted_unsupported": 0,
+        "accepted_cross_event": 0,
+        "cross_event": 0,
+        "span_replay_of_accepted": "NOT_EXERCISED",
+        "invalid_schema_accepted": 0,
+        "all_pass": false
+      },
+      "per_exchange": [],
+      "status": "no_candidates"
+    },
+    "comparator": {
+      "n_gold_exchanges": 7,
+      "n_model_candidates": 7,
+      "exchange_boundary_quality": {
+        "tp": 6,
+        "fp": 1,
+        "fn": 1,
+        "precision": 0.8571428571428571,
+        "recall": 0.8571428571428571,
+        "f1": 0.8571428571428571
+      },
+      "source_span_replay_success_pct": 100.0,
+      "unsupported_candidate_rate": 0.0,
+      "cross_event_contamination_accepted": 0,
+      "topic_label_agreement_mean_jaccard": 0.7222222222222222,
+      "identity_role_availability": {
+        "matched_exchanges": 6,
+        "questioner_name_match_rate": 1.0,
+        "affiliation_match_rate": 1.0,
+        "respondent_name_order_match_rate": 0.0,
+        "respondent_role_order_match_rate": 0.0
+      },
+      "invalid_schema_rate": 0.14285714285714285,
+      "accepted_count": 6,
+      "unsupported_rejected": 0,
+      "invalid_schema_rejected": 1,
+      "cross_event_rejected": 0,
+      "accepted_unsupported": 0,
+      "accepted_cross_event": 0,
+      "invalid_schema_accepted": 0,
+      "accepted_span_replay_count": 6,
+      "valid_candidates": [
+        {
+          "ordinal": 1,
+          "boundary_segment_index": 42,
+          "questioner_name": "Michael Ng",
+          "affiliation": "Goldman Sachs",
+          "question_segment_indexes": [
+            43,
+            46
+          ],
+          "answer_segment_indexes": [
+            44,
+            45,
+            47,
+            48
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            },
+            {
+              "name": "Kevan Parekh",
+              "role": "CFO"
+            }
+          ],
+          "topics": [
+            "pricing",
+            "product",
+            "demand"
+          ]
+        },
+        {
+          "ordinal": 2,
+          "boundary_segment_index": 52,
+          "questioner_name": "Ben Reitzes",
+          "affiliation": "Melius Research",
+          "question_segment_indexes": [
+            53,
+            58
+          ],
+          "answer_segment_indexes": [
+            55,
+            56,
+            57,
+            59
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            },
+            {
+              "name": "Kevan Parekh",
+              "role": "CFO"
+            }
+          ],
+          "topics": [
+            "capacity",
+            "costs_supply",
+            "demand"
+          ]
+        },
+        {
+          "ordinal": 3,
+          "boundary_segment_index": 63,
+          "questioner_name": "Erik Woodring",
+          "affiliation": "Morgan Stanley",
+          "question_segment_indexes": [
+            64,
+            68
+          ],
+          "answer_segment_indexes": [
+            65,
+            67,
+            69,
+            70,
+            71,
+            72
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            },
+            {
+              "name": "Kevan Parekh",
+              "role": "CFO"
+            }
+          ],
+          "topics": [
+            "pricing",
+            "costs_supply",
+            "demand"
+          ]
+        },
+        {
+          "ordinal": 4,
+          "boundary_segment_index": 76,
+          "questioner_name": "Aaron Rakers",
+          "affiliation": "Wells Fargo",
+          "question_segment_indexes": [
+            77,
+            79
+          ],
+          "answer_segment_indexes": [
+            78,
+            80
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            }
+          ],
+          "topics": [
+            "demand",
+            "product"
+          ]
+        },
+        {
+          "ordinal": 5,
+          "boundary_segment_index": 84,
+          "questioner_name": "Wamsi Mohan",
+          "affiliation": "Bank of America",
+          "question_segment_indexes": [
+            89,
+            93
+          ],
+          "answer_segment_indexes": [
+            90,
+            92,
+            94
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            },
+            {
+              "name": "John Ternus",
+              "role": "CEO"
+            }
+          ],
+          "topics": [
+            "capital_allocation",
+            "product",
+            "costs_supply"
+          ]
+        },
+        {
+          "ordinal": 6,
+          "boundary_segment_index": 97,
+          "questioner_name": "Samik Chatterjee",
+          "affiliation": "JPMorgan",
+          "question_segment_indexes": [
+            98,
+            101
+          ],
+          "answer_segment_indexes": [
+            99,
+            100,
+            102,
+            103
+          ],
+          "respondents": [
+            {
+              "name": "Tim Cook",
+              "role": "CEO"
+            },
+            {
+              "name": "Kevan Parekh",
+              "role": "CFO"
+            }
+          ],
+          "topics": [
+            "regulation",
+            "product",
+            "costs_supply"
+          ]
+        }
+      ],
+      "rejected_candidates": [
+        {
+          "candidate": {
+            "ordinal": 0,
+            "boundary_segment_index": 32,
+            "questioner_name": "Amit Daryanani",
+            "affiliation": "Evercore",
+            "question_segment_indexes": [
+              33,
+              38
+            ],
+            "answer_segment_indexes": [
+              34,
+              35,
+              36,
+              37,
+              39,
+              40
+            ],
+            "respondents": [
+              {
+                "name": "Kevan Parekh",
+                "role": "CFO"
+              },
+              {
+                "name": "Tim Cook",
+                "role": "CEO"
+              }
+            ],
+            "topics": [
+              "demand",
+              "capacity",
+              "costs_supply",
+              "product"
+            ]
+          },
+          "rejection_reason": "invalid_schema",
+          "detail": "topics_arity"
+        }
+      ],
+      "rejection_reason": [
+        "invalid_schema"
+      ],
+      "hard_gates": {
+        "status": "PASS",
+        "accepted_unsupported": 0,
+        "accepted_cross_event": 0,
+        "cross_event": 0,
+        "span_replay_of_accepted": "100.0% (6 accepted)",
+        "invalid_schema_accepted": 0,
+        "all_pass": true
+      },
+      "per_exchange": [
+        {
+          "gold_ordinal": 1,
+          "gold_boundary_segment_index": 42,
+          "candidate_ordinal": 1,
+          "topic_jaccard": 0.6666666666666666,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 2,
+          "gold_boundary_segment_index": 52,
+          "candidate_ordinal": 2,
+          "topic_jaccard": 0.6666666666666666,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 3,
+          "gold_boundary_segment_index": 63,
+          "candidate_ordinal": 3,
+          "topic_jaccard": 0.6666666666666666,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 4,
+          "gold_boundary_segment_index": 76,
+          "candidate_ordinal": 4,
+          "topic_jaccard": 1.0,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 5,
+          "gold_boundary_segment_index": 84,
+          "candidate_ordinal": 5,
+          "topic_jaccard": 0.6666666666666666,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 6,
+          "gold_boundary_segment_index": 97,
+          "candidate_ordinal": 6,
+          "topic_jaccard": 0.6666666666666666,
+          "identity_errors": [
+            "respondent_names",
+            "respondent_roles"
+          ]
+        },
+        {
+          "gold_ordinal": 0,
+          "gold_boundary_segment_index": 32,
+          "candidate_ordinal": null,
+          "topic_jaccard": null,
+          "identity_errors": [
+            "unmatched"
+          ]
+        }
+      ],
+      "status": "scored"
+    }
+  },
+  "summary": {
+    "sha_check": "pass",
+    "live_workspace_verified": true,
+    "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
+    "gold_frozen_before_inference": true,
+    "neither_model_saw_gold_labels": true,
+    "qwen_status": "ok",
+    "comparator_status": "ok",
+    "hard_gates_qwen": "NOT_EXERCISED",
+    "hard_gates_comparator": "PASS",
+    "usefulness_bar_decision": "refusal_n7_too_small",
+    "return_to_sol": true,
+    "e3b_auto_unlocked": false,
+    "event_workspace_v1_advanced": false,
+    "r2_written": false,
+    "note": "Measured E3-A R2 packet. Gold v2 re-frozen for answer-turn respondents[] before this inference. Pre-inference usefulness decision remains the frozen N=7 refusal, so this returns to Sol regardless of scores. Full-transcript Qwen is not promoted. Haiku is benchmark-only. E3-B stays locked."
+  },
+  "bindings": {
+    "git_head": "154ec6204e585c70a576a7cf249acc2b394aa69c",
+    "compiler_sha256": "e3a6ab9e506cd7c0cc1f3cda149fab1fd1ee1e4a1c51b3ce1d1bca86187779c9",
+    "system_prompt_sha256": "013f48c105d3b70e7c07d41370704bbc3694bab9dd46bae0cba00d0d1df2b09d",
+    "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
+    "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+    "exhibit_sha256": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+    "transcript_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+    "workspace_sha256": "dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197",
+    "generation_id": "f709a0a6ec514282d5769e7d",
+    "run_id": "27e3e380f70658c1",
+    "superseded_gold_sha256_v1": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761"
+  },
+  "git_head": "154ec6204e585c70a576a7cf249acc2b394aa69c",
+  "compiler_sha256": "e3a6ab9e506cd7c0cc1f3cda149fab1fd1ee1e4a1c51b3ce1d1bca86187779c9",
+  "system_prompt_sha256": "013f48c105d3b70e7c07d41370704bbc3694bab9dd46bae0cba00d0d1df2b09d",
+  "gold_sha256": "fc6df84d2a8d0d96475ce697ba92ffdd071d5c283b8daee97c1b3381382fa42c",
+  "taxonomy_hash": "a928ca72ab2e91bda74bd1e69021e08a5234e501f095610e623655db7e323b5e",
+  "exhibit_sha256": "070abd6a9cdb7070e546d24ffcbc41c65450d939c6f88f189cb18ec711cf5fdb",
+  "transcript_sha256": "a8ff5d03e875fef5604791edbf625186c447af049e6e02f55bb89c68c7cc9f9f",
+  "workspace_sha256": "dbd50e5c30e8a031f844e02362ffd53b25e3230e75eeef19bf3825543cb81197",
+  "generation_id": "f709a0a6ec514282d5769e7d",
+  "superseded_gold_sha256_v1": "6b1100b148396db9a29974da5bc6e0cc55e5534185e50e061fe3635d429ed761",
+  "telemetry_proof": {
+    "lane": "earnings_event_compiler",
+    "ai_costs_shard": "e3a-pr6245-27e3e380f70658c1",
+    "provider_health_path": "research/earnings_intelligence/e3/gold/provider_health_27e3e380f70658c1.jsonl",
+    "ai_costs_rows": [
+      {
+        "ts": "2026-08-23T02:41:02Z",
+        "lane": "earnings_event_compiler",
+        "provider": "openai_compat",
+        "model": "qwen3.5:9b",
+        "input_tokens": 12477,
+        "output_tokens": 2,
+        "est_cost_usd": 0.0,
+        "cost_basis": "local",
+        "stage": "e3a_shadow_eval",
+        "note": "qwen_first_rung transport=openai_compat cost_basis=local",
+        "cycle_id": "27e3e380f70658c1"
+      },
+      {
+        "ts": "2026-08-23T02:41:13Z",
+        "lane": "earnings_event_compiler",
+        "provider": "claude_oauth",
+        "model": "claude-haiku-4-5",
+        "input_tokens": 12940,
+        "output_tokens": 1048,
+        "est_cost_usd": 0.01818,
+        "cost_basis": "subscription",
+        "stage": "e3a_shadow_comparator",
+        "note": "",
+        "cycle_id": "27e3e380f70658c1"
+      }
+    ],
+    "provider_health_rows": [
+      {
+        "ts": "2026-08-23T02:41:02Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_eval",
+        "rung": "openai_compat",
+        "model": "qwen3.5:9b",
+        "ok": true,
+        "latency_ms": 12153,
+        "error_class": ""
+      },
+      {
+        "ts": "2026-08-23T02:41:03Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_comparator",
+        "rung": null,
+        "model": null,
+        "ok": null,
+        "latency_ms": null,
+        "error_class": null
+      },
+      {
+        "ts": "2026-08-23T02:41:03Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_comparator",
+        "rung": null,
+        "model": null,
+        "ok": null,
+        "latency_ms": null,
+        "error_class": null
+      },
+      {
+        "ts": "2026-08-23T02:41:03Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_comparator",
+        "rung": "oauth",
+        "model": "claude-haiku-4-5",
+        "ok": false,
+        "latency_ms": 477,
+        "error_class": "auth"
+      },
+      {
+        "ts": "2026-08-23T02:41:04Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_comparator",
+        "rung": "oauth",
+        "model": "claude-haiku-4-5",
+        "ok": false,
+        "latency_ms": 793,
+        "error_class": "auth"
+      },
+      {
+        "ts": "2026-08-23T02:41:13Z",
+        "lane": "earnings_event_compiler",
+        "context": "e3a_shadow_comparator",
+        "rung": "oauth",
+        "model": "claude-haiku-4-5",
+        "ok": true,
+        "latency_ms": 9129,
+        "error_class": ""
+      }
+    ],
+    "ai_costs_shard_file": "data/ai_costs/usage.d/e3a-pr6245-27e3e380f70658c1.jsonl"
+  }
+}

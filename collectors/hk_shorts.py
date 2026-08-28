@@ -113,7 +113,9 @@ def _sfc_url(report_date: date) -> str:
 def _parse_sfc_csv(text: str) -> pd.DataFrame:
     """Parse one SFC CSV.  Returns empty DataFrame on parse failure."""
     try:
-        df = pd.read_csv(StringIO(text))
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(StringIO(text), keep_default_na=False, na_values=[""])
     except Exception:
         return pd.DataFrame()
     if df.empty or len(df.columns) < 4:

@@ -242,6 +242,54 @@ class CommittedTrialProjection:
 
 
 @dataclass(frozen=True)
+class ValidatedGenerationArtifacts:
+    """Normalized public artifacts admitted by one generation proof.
+
+    Request-local.  Projection assembly consumes these objects instead of
+    reopening generation files.  The next independent logical read must prove
+    the generation again and must not reuse this value.
+    """
+
+    source_states_by_nct: Mapping[str, dict[str, Any]]
+    trial_snapshots_by_nct: Mapping[str, dict[str, Any]]
+    protocols_by_nct: Mapping[str, dict[str, Any]]
+    history_models_by_nct: Mapping[str, dict[str, Any]]
+    prospective_models_by_nct: Mapping[str, dict[str, Any]]
+    change_tapes_by_nct: Mapping[str, dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class _MaterializedPublicGeneration:
+    """Internal fully-materialized generation proof for one logical read."""
+
+    manifest: Mapping[str, Any]
+    artifacts: ValidatedGenerationArtifacts
+
+
+@dataclass(frozen=True)
+class ValidatedPointerBoundGeneration:
+    """This pointer and this fully validated generation for this logical read.
+
+    Callers pass the value through one bundle construction.  The publisher
+    never retains it across calls; a later logical read must validate again.
+    """
+
+    pointer: Mapping[str, Any]
+    committed: CommittedGeneration
+    manifest: Mapping[str, Any]
+    artifacts: ValidatedGenerationArtifacts
+
+
+@dataclass(frozen=True)
+class ProductReadBundle:
+    """Projection and operational health derived from one validated generation."""
+
+    projection: CommittedTrialProjection
+    operational_health: Mapping[str, Any]
+    health_unavailable_reason: str | None = None
+
+
+@dataclass(frozen=True)
 class HistoryPublicationEvidence:
     """Private, replay-validated B2 evidence supplied for one public model.
 
@@ -1304,6 +1352,8 @@ class PublicGenerationPublisher:
         self.public_root = raw_public_root.resolve()
         self.now_fn = now_fn
         self._pointer_after_replace_hook = pointer_after_replace_hook
+        # Validated generations travel as explicit request-local values.
+        # This instance never stores a last-validated generation.
 
     @property
     def pointer_path(self) -> Path:
@@ -1325,7 +1375,11 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_POINTER_INVALID")
         return self._generations_root() / generation_id
 
-    def _load_generation_manifest(self, generation_id: str) -> dict[str, Any]:
+    def _materialize_validated_generation(
+        self, generation_id: str
+    ) -> _MaterializedPublicGeneration:
+        """Fully prove one generation and retain the admitted normalized artifacts."""
+
         generation = self._generation_dir(generation_id)
         if not generation.is_dir() or generation.is_symlink():
             raise PublicationError("PUBLIC_GENERATION_INVALID")
@@ -1565,6 +1619,12 @@ class PublicGenerationPublisher:
             name for name in seen if name.startswith("trials/")
         }:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
+        source_states_by_nct = {nct_id: state for nct_id, state in states}
+        trial_snapshots_by_nct: dict[str, dict[str, Any]] = {}
+        protocols_by_nct: dict[str, dict[str, Any]] = {}
+        history_models_by_nct: dict[str, dict[str, Any]] = {}
+        prospective_models_by_nct: dict[str, dict[str, Any]] = {}
+        change_tapes_by_nct: dict[str, dict[str, Any]] = {}
         if generation_schema == "1.0.0" and trial_snapshot_names:
             raise PublicationError("PUBLIC_GENERATION_INVALID")
         if generation_schema in {"1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
@@ -1580,7 +1640,7 @@ class PublicGenerationPublisher:
                     generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
                     code="TRIAL_PROJECTION_INVALID",
                 )
-                _validate_trial_snapshot_binding(
+                trial_snapshots_by_nct[nct_id] = _validate_trial_snapshot_binding(
                     product,
                     source_state=states_by_nct[nct_id],
                     nct_id=nct_id,
@@ -1597,7 +1657,9 @@ class PublicGenerationPublisher:
                         generation / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
                         code="TRIAL_HISTORY_PROJECTION_INVALID",
                     )
-                    _validate_trial_history_model_binding(history_model, nct_id=nct_id)
+                    history_models_by_nct[nct_id] = _validate_trial_history_model_binding(
+                        history_model, nct_id=nct_id
+                    )
             if generation_schema in {"1.3.0", "1.5.0", "1.7.0"}:
                 expected_prospective_names = {
                     f"{_TRIAL_PROSPECTIVE_DIRECTORY}/{nct_id}.json"
@@ -1616,6 +1678,7 @@ class PublicGenerationPublisher:
                         raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
                     if prospective_model.get("nct_id") != nct_id:
                         raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
+                    prospective_models_by_nct[nct_id] = prospective_model
             if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
                 expected_protocol_names = {
                     f"{_TRIAL_PROTOCOL_DIRECTORY}/{nct_id}.json"
@@ -1628,14 +1691,10 @@ class PublicGenerationPublisher:
                         generation / _TRIAL_PROTOCOL_DIRECTORY / f"{nct_id}.json",
                         code="TRIAL_PROTOCOL_PROJECTION_INVALID",
                     )
-                    snapshot = _load_json_object(
-                        generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
-                        code="TRIAL_PROJECTION_INVALID",
-                    )
-                    _validate_trial_protocol_projection_binding(
+                    protocols_by_nct[nct_id] = _validate_trial_protocol_projection_binding(
                         protocol,
                         source_state=states_by_nct[nct_id],
-                        trial_snapshot=snapshot,
+                        trial_snapshot=trial_snapshots_by_nct[nct_id],
                         nct_id=nct_id,
                     )
             if generation_schema in {"1.6.0", "1.7.0"}:
@@ -1651,7 +1710,10 @@ class PublicGenerationPublisher:
                         code="TRIAL_CHANGE_TAPE_PROJECTION_INVALID",
                     )
                     try:
-                        validate_trial_change_tape_read_model(tape, nct_id=nct_id)
+                        change_tapes_by_nct[nct_id] = validate_trial_change_tape_read_model(
+                            tape,
+                            nct_id=nct_id,
+                        )
                     except ChangeTapeError as exc:
                         raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_INVALID") from exc
         if (
@@ -1669,10 +1731,30 @@ class PublicGenerationPublisher:
             last_attempt_at=manifest["last_attempt_at"],
             last_success_at=manifest["last_success_at"],
         )
-        return manifest
+        return _MaterializedPublicGeneration(
+            manifest=manifest,
+            artifacts=ValidatedGenerationArtifacts(
+                source_states_by_nct=source_states_by_nct,
+                trial_snapshots_by_nct=trial_snapshots_by_nct,
+                protocols_by_nct=protocols_by_nct,
+                history_models_by_nct=history_models_by_nct,
+                prospective_models_by_nct=prospective_models_by_nct,
+                change_tapes_by_nct=change_tapes_by_nct,
+            ),
+        )
 
-    def read_committed(self) -> CommittedGeneration | None:
-        """Read a fully validated committed state, never a loose watermark file."""
+    def _load_generation_manifest(self, generation_id: str) -> dict[str, Any]:
+        """Validate a generation and return only its manifest.
+
+        Compatibility wrapper around the fully-materialized loader. Product
+        reads keep the retained artifacts; callers that only need the manifest
+        still receive a complete generation proof.
+        """
+
+        return dict(self._materialize_validated_generation(generation_id).manifest)
+
+    def _read_current_pointer(self) -> dict[str, Any] | None:
+        """Validate the current pointer file without loading its generation."""
 
         if self.pointer_path.is_symlink():
             raise PublicationError("PUBLIC_POINTER_INVALID")
@@ -1696,15 +1778,22 @@ class PublicGenerationPublisher:
             raise PublicationError("PUBLIC_POINTER_INVALID")
         _validate_utc_datetime(pointer.get("watermark_after"))
         _validate_utc_datetime(pointer.get("published_at"))
-        manifest = self._load_generation_manifest(generation_id)
+        return pointer
+
+    @staticmethod
+    def _committed_from_pointer_and_manifest(
+        pointer: Mapping[str, Any],
+        manifest: Mapping[str, Any],
+    ) -> CommittedGeneration:
         if (
-            pointer.get("manifest_sha256") != manifest["manifest_sha256"]
+            pointer.get("generation_id") != manifest.get("generation_id")
+            or pointer.get("manifest_sha256") != manifest["manifest_sha256"]
             or pointer.get("watermark_after") != manifest["watermark_after"]
             or pointer.get("published_at") != manifest["published_at"]
         ):
             raise PublicationError("PUBLIC_POINTER_INVALID")
         return CommittedGeneration(
-            generation_id=generation_id,
+            generation_id=str(pointer["generation_id"]),
             manifest_sha256=manifest["manifest_sha256"],
             watermark_after=manifest["watermark_after"],
             published_at=manifest["published_at"],
@@ -1716,6 +1805,80 @@ class PublicGenerationPublisher:
             schema_version=manifest["schema_version"],
         )
 
+    def read_validated_generation(self) -> ValidatedPointerBoundGeneration | None:
+        """Validate the current pointer and fully load that generation once.
+
+        The returned value is request-local.  This publisher instance does not
+        remember it, and a later logical read must prove the generation again.
+        """
+
+        pointer = self._read_current_pointer()
+        if pointer is None:
+            return None
+        materialized = self._materialize_validated_generation(pointer["generation_id"])
+        committed = self._committed_from_pointer_and_manifest(pointer, materialized.manifest)
+        return ValidatedPointerBoundGeneration(
+            pointer=dict(pointer),
+            committed=committed,
+            manifest=dict(materialized.manifest),
+            artifacts=materialized.artifacts,
+        )
+
+    def _pointer_matches_validated(self, validated: ValidatedPointerBoundGeneration) -> bool:
+        current = self._read_current_pointer()
+        if current is None:
+            return False
+        return (
+            current.get("generation_id") == validated.committed.generation_id
+            and current.get("manifest_sha256") == validated.committed.manifest_sha256
+            and current.get("watermark_after") == validated.committed.watermark_after
+            and current.get("published_at") == validated.committed.published_at
+        )
+
+    def read_committed(self) -> CommittedGeneration | None:
+        """Read a fully validated committed state, never a loose watermark file."""
+
+        validated = self.read_validated_generation()
+        if validated is None:
+            return None
+        return validated.committed
+
+    def read_product_bundle(self, *, now: datetime | None = None) -> ProductReadBundle | None:
+        """Return projection and health from one pointer-bound generation load."""
+
+        return self._read_product_bundle(now=now, retried=False)
+
+    def _read_product_bundle(
+        self,
+        *,
+        now: datetime | None,
+        retried: bool,
+    ) -> ProductReadBundle | None:
+        validated = self.read_validated_generation()
+        if validated is None:
+            return None
+        projection = self._trial_projection_from_validated(validated)
+        health_unavailable_reason: str | None = None
+        try:
+            health = self._operational_health_from_validated(validated, now=now)
+        except (OSError, PublicationError) as exc:
+            health_unavailable_reason = getattr(exc, "code", type(exc).__name__)
+            health = {
+                "state": "unavailable",
+                "last_success_at": projection.generation.last_success_at,
+                "last_attempt_at": projection.generation.last_attempt_at,
+                "last_error_code": "OPERATIONAL_HEALTH_UNAVAILABLE",
+            }
+        if not self._pointer_matches_validated(validated):
+            if retried:
+                raise PublicationError("PUBLIC_GENERATION_CHANGED")
+            return self._read_product_bundle(now=now, retried=True)
+        return ProductReadBundle(
+            projection=projection,
+            operational_health=dict(health),
+            health_unavailable_reason=health_unavailable_reason,
+        )
+
     def read_trial_projection(self) -> CommittedTrialProjection | None:
         """Return only current pointer-bound normalized trial facts.
 
@@ -1724,54 +1887,53 @@ class PublicGenerationPublisher:
         unavailable code until the worker publishes the first v1.1 generation.
         """
 
-        committed = self.read_committed()
-        if committed is None:
+        validated = self.read_validated_generation()
+        if validated is None:
             return None
-        manifest = self._load_generation_manifest(committed.generation_id)
+        return self._trial_projection_from_validated(validated)
+
+    def _trial_projection_from_validated(
+        self,
+        validated: ValidatedPointerBoundGeneration,
+    ) -> CommittedTrialProjection:
+        committed = validated.committed
+        manifest = validated.manifest
+        artifacts = validated.artifacts
         generation_schema = manifest.get("schema_version")
         if generation_schema not in {"1.1.0", "1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
             raise PublicationError("TRIAL_PROJECTION_UNAVAILABLE")
-        generation = self._generation_dir(committed.generation_id)
+        nct_ids = tuple(manifest["configured_nct_ids"])
+        if set(artifacts.source_states_by_nct) != set(nct_ids):
+            raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+        if set(artifacts.trial_snapshots_by_nct) != set(nct_ids):
+            raise PublicationError("TRIAL_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"} and set(
+            artifacts.protocols_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_PROTOCOL_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"} and set(
+            artifacts.history_models_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_HISTORY_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.3.0", "1.5.0", "1.7.0"} and set(
+            artifacts.prospective_models_by_nct
+        ) != set(nct_ids):
+            raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_BINDING_MISMATCH")
+        if generation_schema in {"1.6.0", "1.7.0"} and set(artifacts.change_tapes_by_nct) != set(
+            nct_ids
+        ):
+            raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_BINDING_MISMATCH")
         trials: list[dict[str, Any]] = []
         protocols_by_nct: dict[str, dict[str, Any]] = {}
         history_models_by_nct: dict[str, dict[str, Any]] = {}
         prospective_models_by_nct: dict[str, dict[str, Any]] = {}
         change_tapes_by_nct: dict[str, dict[str, Any]] = {}
-        for nct_id in manifest["configured_nct_ids"]:
-            source_state = _load_json_object(
-                generation / "trials" / f"{nct_id}.json",
-                code="COLLECTOR_PROJECTION_INVALID",
-            )
-            product = _load_json_object(
-                generation / _TRIAL_SNAPSHOT_DIRECTORY / f"{nct_id}.json",
-                code="TRIAL_PROJECTION_INVALID",
-            )
-            trial_snapshot = _validate_trial_snapshot_binding(
-                product,
-                source_state=source_state,
-                nct_id=nct_id,
-            )
-            trials.append(trial_snapshot)
+        for nct_id in nct_ids:
+            trials.append(artifacts.trial_snapshots_by_nct[nct_id])
             if generation_schema in {"1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
-                protocol = _load_json_object(
-                    generation / _TRIAL_PROTOCOL_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_PROTOCOL_PROJECTION_INVALID",
-                )
-                protocols_by_nct[nct_id] = _validate_trial_protocol_projection_binding(
-                    protocol,
-                    source_state=source_state,
-                    trial_snapshot=trial_snapshot,
-                    nct_id=nct_id,
-                )
+                protocols_by_nct[nct_id] = artifacts.protocols_by_nct[nct_id]
             if generation_schema in {"1.2.0", "1.3.0", "1.4.0", "1.5.0", "1.6.0", "1.7.0"}:
-                history_model = _load_json_object(
-                    generation / _TRIAL_HISTORY_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_HISTORY_PROJECTION_INVALID",
-                )
-                history_models_by_nct[nct_id] = _validate_trial_history_model_binding(
-                    history_model,
-                    nct_id=nct_id,
-                )
+                history_models_by_nct[nct_id] = artifacts.history_models_by_nct[nct_id]
             else:
                 # B1b remains readable after B2 ships.  It has no public
                 # history artifact, so state that absence explicitly instead
@@ -1781,34 +1943,14 @@ class PublicGenerationPublisher:
                     "unavailable_reason": "not_collected",
                 }
             if generation_schema in {"1.3.0", "1.5.0", "1.7.0"}:
-                prospective_model = _load_json_object(
-                    generation / _TRIAL_PROSPECTIVE_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_PROSPECTIVE_PROJECTION_INVALID",
-                )
-                try:
-                    validate_prospective_public_model(prospective_model)
-                except ProspectiveError as exc:
-                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID") from exc
-                if prospective_model.get("nct_id") != nct_id:
-                    raise PublicationError("TRIAL_PROSPECTIVE_PROJECTION_INVALID")
-                prospective_models_by_nct[nct_id] = prospective_model
+                prospective_models_by_nct[nct_id] = artifacts.prospective_models_by_nct[nct_id]
             else:
                 prospective_models_by_nct[nct_id] = {
                     "available": False,
                     "unavailable_reason": "baseline_not_established",
                 }
             if generation_schema in {"1.6.0", "1.7.0"}:
-                tape = _load_json_object(
-                    generation / _TRIAL_CHANGE_TAPE_DIRECTORY / f"{nct_id}.json",
-                    code="TRIAL_CHANGE_TAPE_PROJECTION_INVALID",
-                )
-                try:
-                    change_tapes_by_nct[nct_id] = validate_trial_change_tape_read_model(
-                        tape,
-                        nct_id=nct_id,
-                    )
-                except ChangeTapeError as exc:
-                    raise PublicationError("TRIAL_CHANGE_TAPE_PROJECTION_INVALID") from exc
+                change_tapes_by_nct[nct_id] = artifacts.change_tapes_by_nct[nct_id]
             else:
                 change_tapes_by_nct[nct_id] = {
                     "available": False,
@@ -2302,6 +2444,19 @@ class PublicGenerationPublisher:
             raise PublicationError("HEALTH_PAYLOAD_INVALID")
         atomic_write(self.health_path, _json_bytes(dict(payload)))
 
+    def _read_root_health(self) -> dict[str, Any]:
+        if self.health_path.is_symlink() or not self.health_path.exists():
+            raise PublicationError("HEALTH_PAYLOAD_INVALID")
+        try:
+            health_metadata = self.health_path.lstat()
+        except OSError as exc:
+            raise PublicationError("HEALTH_PAYLOAD_INVALID") from exc
+        if not stat.S_ISREG(health_metadata.st_mode):
+            raise PublicationError("HEALTH_PAYLOAD_INVALID")
+        health = _load_json_object(self.health_path, code="HEALTH_PAYLOAD_INVALID")
+        self._validate_health(health)
+        return health
+
     def read_operational_health(
         self,
         *,
@@ -2315,18 +2470,19 @@ class PublicGenerationPublisher:
         The derived downgrade is observational and never rewrites disk.
         """
 
-        if self.health_path.is_symlink() or not self.health_path.exists():
-            raise PublicationError("HEALTH_PAYLOAD_INVALID")
-        try:
-            health_metadata = self.health_path.lstat()
-        except OSError as exc:
-            raise PublicationError("HEALTH_PAYLOAD_INVALID") from exc
-        if not stat.S_ISREG(health_metadata.st_mode):
-            raise PublicationError("HEALTH_PAYLOAD_INVALID")
-        health = _load_json_object(self.health_path, code="HEALTH_PAYLOAD_INVALID")
-        self._validate_health(health)
+        return self._operational_health_from_validated(
+            self.read_validated_generation(),
+            now=now,
+        )
 
-        committed = self.read_committed()
+    def _operational_health_from_validated(
+        self,
+        validated: ValidatedPointerBoundGeneration | None,
+        *,
+        now: datetime | None = None,
+    ) -> dict[str, Any]:
+        health = self._read_root_health()
+        committed = None if validated is None else validated.committed
         generation_id = health.get("generation_id")
         if generation_id is not None:
             if committed is None or (

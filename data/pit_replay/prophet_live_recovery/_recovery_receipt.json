@@ -1,0 +1,24 @@
+{
+  "entered_board": 118,
+  "entered_contradictions": [],
+  "entered_cross": 23,
+  "entered_determined": 141,
+  "entered_null": 153,
+  "events_total": 25958,
+  "mismatched_passes": [],
+  "names_total": 294,
+  "orphan_event_lines": 0,
+  "passes_parsed": 588,
+  "passes_with_events": 588,
+  "schema": "prophet_live.recovered_events/v1",
+  "sessions": [
+    "2026-07-31",
+    "2026-08-07",
+    "2026-08-11",
+    "2026-08-14",
+    "2026-08-20",
+    "2026-08-21",
+    "2026-08-25"
+  ],
+  "source_sha256": "d3812a0cec8f50dff57523ffa7163c65d3a3f058da56286fa368185b74156a52"
+}

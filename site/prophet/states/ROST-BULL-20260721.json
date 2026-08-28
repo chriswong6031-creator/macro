@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ROST-BULL-20260721",
-  "asof": "2026-08-18",
+  "asof": "2026-08-28",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 45.4,
-  "raw_confidence": 40.8,
-  "delta_vs_base": -14.6,
+  "management_confidence": 37.2,
+  "raw_confidence": 35.1,
+  "delta_vs_base": -22.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 98.1,
+    "validity": 78.5,
     "progress": 0.0,
-    "pace": 5.0,
+    "pace": 0.2,
     "retention": 50.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.986,
+    "dist_to_stop_r": 0.836,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 62.2,
-    "p1": -0.0096,
-    "p2": -0.0048,
+    "horizon_pct_used": 84.4,
+    "p1": -0.1095,
+    "p2": -0.0548,
     "p3": null,
-    "move_r": -0.014,
+    "move_r": -0.164,
     "mfe_r": 0.538,
-    "mae_r": -0.014
+    "mae_r": -0.189
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 19.42999572753905,
-  "_mae": -0.5200012207031364,
+  "_mae": -6.809994506835949,
   "_max_p1": 0.3588180189757906,
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 28,
-  "tau": 0.6222
+  "days_elapsed": 38,
+  "tau": 0.8444
 }

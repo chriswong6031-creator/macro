@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_revenue_identity_atlas.v1.schema.json",
+  "title": "Government Revenue Identity Atlas v1",
+  "description": "Per-issuer identity path from a public security through the reviewed recipient entity graph to exact recipient identifiers, with per-hop evidence. Display/context only: no rank, size, or gate fields. Never carries an event or award reference.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "schema_version", "generated_at", "graph_id", "graph_digest",
+    "graph_status", "si_asof", "authority", "content_id", "issuers"
+  ],
+  "properties": {
+    "contract": {"const": "government_revenue_identity_atlas.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "generated_at": {"$ref": "#/$defs/dateTime"},
+    "graph_id": {"type": ["string", "null"]},
+    "graph_digest": {"type": ["string", "null"]},
+    "graph_status": {"type": ["string", "null"]},
+    "si_asof": {"type": ["string", "null"]},
+    "content_id": {"type": ["string", "null"], "pattern": "^gria1-[0-9a-f]{24}$"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier", "context_only", "can_rank", "can_size", "can_gate",
+        "can_originate_signal", "can_add_candidates", "can_escalate"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "context_only": {"const": true},
+        "can_rank": {"const": false},
+        "can_size": {"const": false},
+        "can_gate": {"const": false},
+        "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false},
+        "can_escalate": {"const": false}
+      }
+    },
+    "issuers": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/issuer"}
+    }
+  },
+  "$defs": {
+    "dateTime": {"type": "string", "format": "date-time"},
+    "nullableText": {"type": ["string", "null"]},
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidence_id", "publisher", "url", "content_sha256"],
+      "properties": {
+        "evidence_id": {"type": ["string", "null"]},
+        "publisher": {"type": ["string", "null"]},
+        "url": {"type": ["string", "null"]},
+        "content_sha256": {"type": ["string", "null"]}
+      }
+    },
+    "curatedEvidenceRef": {
+      "type": "object",
+      "properties": {
+        "publisher": {"type": ["string", "null"]},
+        "url": {"type": ["string", "null"]},
+        "record_id": {"type": ["string", "null"]}
+      }
+    },
+    "publicSecurity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "first_date", "last_date", "asof"],
+      "properties": {
+        "state": {"enum": ["verified_live", "listing_terminated", "not_in_si_universe"]},
+        "first_date": {"$ref": "#/$defs/nullableText"},
+        "last_date": {"$ref": "#/$defs/nullableText"},
+        "asof": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "legalIssuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "canonical_name", "review_state"],
+      "properties": {
+        "state": {"enum": ["reviewed", "not_asserted"]},
+        "canonical_name": {"$ref": "#/$defs/nullableText"},
+        "review_state": {"$ref": "#/$defs/nullableText"}
+      }
+    },
+    "identifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "namespace", "verification_state", "evidence"],
+      "properties": {
+        "value": {"$ref": "#/$defs/nullableText"},
+        "namespace": {"$ref": "#/$defs/nullableText"},
+        "verification_state": {"$ref": "#/$defs/nullableText"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}}
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id", "canonical_name", "relationship", "economic_share",
+        "valid_from", "valid_to", "known_at", "verification_state", "evidence", "identifiers"
+      ],
+      "properties": {
+        "entity_id": {"type": "string", "minLength": 1},
+        "canonical_name": {"$ref": "#/$defs/nullableText"},
+        "relationship": {"$ref": "#/$defs/nullableText"},
+        "economic_share": {"type": ["number", "null"]},
+        "valid_from": {"$ref": "#/$defs/nullableText"},
+        "valid_to": {"$ref": "#/$defs/nullableText"},
+        "known_at": {"$ref": "#/$defs/nullableText"},
+        "verification_state": {"$ref": "#/$defs/nullableText"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidenceRef"}},
+        "identifiers": {"type": "array", "items": {"$ref": "#/$defs/identifier"}}
+      }
+    },
+    "unresolvedIdentifier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace", "value", "observed_name", "state", "reason", "reason_en", "reason_zh", "evidence"
+      ],
+      "properties": {
+        "namespace": {"type": "string", "minLength": 1},
+        "value": {"type": "string", "minLength": 1},
+        "observed_name": {"$ref": "#/$defs/nullableText"},
+        "state": {"enum": ["mapping_needed", "evidence_conflict"]},
+        "reason": {"type": "string", "minLength": 1},
+        "reason_en": {"type": "string", "minLength": 1},
+        "reason_zh": {"type": "string", "minLength": 1},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/curatedEvidenceRef"}}
+      }
+    },
+    "listingEvent": {
+      "type": "object",
+      "required": ["event", "effective_at", "headline_en", "headline_zh"],
+      "properties": {
+        "event": {"type": "string", "minLength": 1},
+        "effective_at": {"$ref": "#/$defs/nullableText"},
+        "headline_en": {"$ref": "#/$defs/nullableText"},
+        "headline_zh": {"$ref": "#/$defs/nullableText"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/curatedEvidenceRef"}}
+      }
+    },
+    "separationEvent": {
+      "type": "object",
+      "required": ["event", "effective_at", "headline_en", "headline_zh"],
+      "properties": {
+        "event": {"type": "string", "minLength": 1},
+        "effective_at": {"$ref": "#/$defs/nullableText"},
+        "headline_en": {"$ref": "#/$defs/nullableText"},
+        "headline_zh": {"$ref": "#/$defs/nullableText"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/curatedEvidenceRef"}}
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "text_en", "text_zh"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1, "pattern": "^[a-z][a-z0-9_]*$"},
+        "count": {"type": "integer", "minimum": 0},
+        "text_en": {"type": "string", "minLength": 1},
+        "text_zh": {"type": "string", "minLength": 1}
+      }
+    },
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ticker", "company_name", "public_security", "legal_issuer", "entities",
+        "unresolved_identifiers", "issuer_attribution", "attribution_reason",
+        "attribution_reason_en", "attribution_reason_zh",
+        "listing_events", "separation_events", "gaps"
+      ],
+      "properties": {
+        "ticker": {"type": "string", "minLength": 1},
+        "company_name": {"$ref": "#/$defs/nullableText"},
+        "public_security": {"$ref": "#/$defs/publicSecurity"},
+        "legal_issuer": {"$ref": "#/$defs/legalIssuer"},
+        "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
+        "unresolved_identifiers": {"type": "array", "items": {"$ref": "#/$defs/unresolvedIdentifier"}},
+        "issuer_attribution": {"enum": ["reviewed", "not_asserted"]},
+        "attribution_reason": {"$ref": "#/$defs/nullableText"},
+        "attribution_reason_en": {"$ref": "#/$defs/nullableText"},
+        "attribution_reason_zh": {"$ref": "#/$defs/nullableText"},
+        "listing_events": {"type": "array", "items": {"$ref": "#/$defs/listingEvent"}},
+        "separation_events": {"type": "array", "items": {"$ref": "#/$defs/separationEvent"}},
+        "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}}
+      }
+    }
+  }
+}

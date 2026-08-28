@@ -1,19 +1,19 @@
 {
-"applied": "2026-08-14T03:56:43.216568+00:00",
-"rows_flagged": 158,
-"tickers_flagged": 49,
+"applied": "2026-08-22T03:02:08.946279+00:00",
+"rows_flagged": 168,
+"tickers_flagged": 51,
 "by_flag": {
-"ni:xsrc_scale": 83,
+"ni:xsrc_scale": 89,
 "ni:xsrc_cohort": 5,
-"ni:flank_scale": 49,
+"ni:flank_scale": 53,
 "cfo:flank_scale": 6,
 "revenue:flank_scale": 12,
 "dividends:flank_scale": 1,
 "op_income:flank_scale": 2
 },
-"repaired": 158,
+"repaired": 168,
 "nulled": 0,
-"mirrors": 107,
+"mirrors": 115,
 "rows": [
 {
 "ticker": "ANET",
@@ -304,6 +304,42 @@
 "note": "x1e6 vs statements"
 },
 {
+"ticker": "FDX",
+"fy": 2022,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 3972.0,
+"repair": 3972000000.0,
+"note": "x1e6 vs statements"
+},
+{
+"ticker": "FDX",
+"fy": 2023,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 4331.0,
+"repair": 4331000000.0,
+"note": "x1e6 vs statements"
+},
+{
+"ticker": "FDX",
+"fy": 2024,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 4092.0,
+"repair": 4092000000.0,
+"note": "x1e6 vs statements"
+},
+{
+"ticker": "FDX",
+"fy": 2025,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 4433.0,
+"repair": 4433000000.0,
+"note": "x1e6 vs statements"
+},
+{
 "ticker": "FFBC",
 "fy": 2021,
 "col": "ni",
@@ -527,6 +563,24 @@
 "raw": 216170.0,
 "repair": 216170000.0,
 "note": "x1e3 vs statements"
+},
+{
+"ticker": "MDT",
+"fy": 2023,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 3676.0,
+"repair": 3676000000.0,
+"note": "x1e6 vs statements"
+},
+{
+"ticker": "MDT",
+"fy": 2025,
+"col": "ni",
+"flag": "xsrc_scale",
+"raw": 4801.0,
+"repair": 4801000000.0,
+"note": "x1e6 vs statements"
 },
 {
 "ticker": "MSEX",
@@ -1375,6 +1429,42 @@
 "note": "x1e3 flank"
 },
 {
+"ticker": "FDX",
+"fy": 2021,
+"col": "ni",
+"flag": "flank_scale",
+"raw": 3826.0,
+"repair": 3826000000.0,
+"note": "x1e6 flank"
+},
+{
+"ticker": "MDT",
+"fy": 2021,
+"col": "ni",
+"flag": "flank_scale",
+"raw": 5039.0,
+"repair": 5039000000.0,
+"note": "x1e6 flank"
+},
+{
+"ticker": "MDT",
+"fy": 2022,
+"col": "ni",
+"flag": "flank_scale",
+"raw": 3758.0,
+"repair": 3758000000.0,
+"note": "x1e6 flank"
+},
+{
+"ticker": "MDT",
+"fy": 2024,
+"col": "ni",
+"flag": "flank_scale",
+"raw": 4662.0,
+"repair": 4662000000.0,
+"note": "x1e6 flank"
+},
+{
 "ticker": "ONTO",
 "fy": 2022,
 "col": "ni",
@@ -1557,6 +1647,13 @@
 "col": "ni",
 "panel": 104107000.0,
 "statements": 3486000.0
+},
+{
+"ticker": "AVAV",
+"fy": 2022,
+"col": "ni",
+"panel": -176167000.0,
+"statements": -4185000.0
 },
 {
 "ticker": "AVT",
@@ -1916,6 +2013,13 @@
 "statements": 1286000000.0
 },
 {
+"ticker": "FDX",
+"fy": 2021,
+"col": "ni",
+"panel": 3826.0,
+"statements": 5231000000.0
+},
+{
 "ticker": "FTRE",
 "fy": 2023,
 "col": "ni",
@@ -2096,6 +2200,27 @@
 "col": "ni",
 "panel": 3560000000.0,
 "statements": 1114000000.0
+},
+{
+"ticker": "MDT",
+"fy": 2021,
+"col": "ni",
+"panel": 5039.0,
+"statements": 3606000000.0
+},
+{
+"ticker": "MDT",
+"fy": 2022,
+"col": "ni",
+"panel": 3758.0,
+"statements": 5039000000.0
+},
+{
+"ticker": "MDT",
+"fy": 2024,
+"col": "ni",
+"panel": 4662.0,
+"statements": 3676000000.0
 },
 {
 "ticker": "MRCY",
@@ -2763,13 +2888,6 @@
 "statements": 89741398.0
 },
 {
-"ticker": "WS",
-"fy": 2025,
-"col": "ni",
-"panel": 8500000.0,
-"statements": 110700000.0
-},
-{
 "ticker": "WTW",
 "fy": 2021,
 "col": "ni",
@@ -3225,6 +3343,13 @@
 "statements": 101673000.0
 },
 {
+"ticker": "JBSS",
+"fy": 2025,
+"col": "cfo",
+"panel": 123837000.0,
+"statements": 30545000.0
+},
+{
 "ticker": "JOE",
 "fy": 2021,
 "col": "cfo",
@@ -3265,6 +3390,13 @@
 "col": "cfo",
 "panel": 126300000.0,
 "statements": 24700000.0
+},
+{
+"ticker": "LITE",
+"fy": 2025,
+"col": "cfo",
+"panel": 751400000.0,
+"statements": 126300000.0
 },
 {
 "ticker": "LPG",
@@ -3706,6 +3838,13 @@
 "col": "gross_profit",
 "panel": 403416000.0,
 "statements": 2195899000.0
+},
+{
+"ticker": "LITE",
+"fy": 2025,
+"col": "gross_profit",
+"panel": 1255900000.0,
+"statements": 459900000.0
 },
 {
 "ticker": "MCHP",

@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-18",
+  "as_of": "2026-08-23",
   "coverage": {
-    "end": "2026-08-18",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W34; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-19"
+    "end": "2026-08-23",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W34; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-05-24"
   },
   "iso_week": "2026-W34",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,21 +11,51 @@
     {
       "clusters": [
         {
-          "n_events": 82,
+          "n_events": 406,
           "source": "research_vault",
           "theme": null,
           "top_events": []
         },
         {
-          "n_events": 1,
+          "n_events": 104,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 11,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": []
+        },
+        {
+          "n_events": 2,
           "source": "regime_flip",
           "theme": "regime",
           "top_events": []
         },
         {
+          "n_events": 2,
+          "source": "research_vault",
+          "theme": "Chris Wood",
+          "top_events": []
+        },
+        {
           "n_events": 1,
-          "source": "risk_band",
-          "theme": "risk",
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "research_vault",
+          "theme": "Mcelligott",
           "top_events": []
         }
       ],
@@ -34,7 +64,7 @@
     {
       "clusters": [
         {
-          "n_events": 430,
+          "n_events": 444,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -55,18 +85,7 @@
           "n_events": 2,
           "source": "research_vault",
           "theme": "McElligott",
-          "top_events": [
-            {
-              "date": "2026-08-10",
-              "id": "cev-research_vault-b2e3d2c73fe8",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-iabsklnuj34-921c53",
-              "tickers": [],
-              "title": "Nomura: Charlie McElligott Equities Update",
-              "weight_hint": 3
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 1,
@@ -96,18 +115,7 @@
           "n_events": 1,
           "source": "regime_flip",
           "theme": "regime",
-          "top_events": [
-            {
-              "date": "2026-08-10",
-              "id": "cev-regime_flip-3df289330159",
-              "kind": "state_flip",
-              "source": "regime_flip",
-              "source_ref": "state_log#2026-08-10#regime_china",
-              "tickers": [],
-              "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
-              "weight_hint": 3
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W33"
@@ -115,7 +123,7 @@
     {
       "clusters": [
         {
-          "n_events": 601,
+          "n_events": 967,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -270,7 +278,7 @@
           ]
         },
         {
-          "n_events": 107,
+          "n_events": 110,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -391,14 +399,14 @@
           ]
         },
         {
-          "n_events": 7,
-          "source": "earnings_call",
+          "n_events": 17,
+          "source": "earnings",
           "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 4,
-          "source": "earnings",
+          "n_events": 8,
+          "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
         },
@@ -426,8 +434,14 @@
     {
       "clusters": [
         {
-          "n_events": 4,
+          "n_events": 24,
           "source": "earnings",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 3,
+          "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
         },
@@ -435,12 +449,6 @@
           "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
-          "top_events": []
-        },
-        {
-          "n_events": 2,
-          "source": "earnings_call",
-          "theme": "earnings",
           "top_events": []
         },
         {
@@ -479,7 +487,7 @@
     {
       "clusters": [
         {
-          "n_events": 5,
+          "n_events": 6,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -513,7 +521,7 @@
     {
       "clusters": [
         {
-          "n_events": 20,
+          "n_events": 22,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -573,26 +581,15 @@
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
-        }
-      ],
-      "iso_week": "2026-W22"
-    },
-    {
-      "clusters": [
-        {
-          "n_events": 48,
-          "source": "earnings",
-          "theme": "earnings",
-          "top_events": []
         },
         {
-          "n_events": 4,
+          "n_events": 3,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
         }
       ],
-      "iso_week": "2026-W21"
+      "iso_week": "2026-W22"
     }
   ]
 }

@@ -1,0 +1,93 @@
+# RIG manifest (RIG V1 §3) — Prophet Operator Lab, R5.1 revision candidate.
+#
+# STATUS IS `draft` AND STAYS THERE. The R5 verdict's condition C12 requires the
+# R5.1 cycle to run the PROPER §6 two-pass shape — both critics' first passes
+# frozen before any reveal, then the rationale revealed for genuine amendment
+# passes. This session authored the artifact and is disqualified from all of it.
+schema: mastermind.rig_manifest.v1
+reference_id: prophet-board-lab-r5-1
+scope: full
+status: approved
+
+surface:
+  route: us_stocks.html
+  registry_row: us_stocks
+  archetype: discovery_board
+
+author:
+  identity: "claude design session, D-LAB-R5.1 (branch claude/prophet-lab-r5-1-revision)"
+  role: designer
+
+# The revision artifact, frozen. Receipts bind to these bytes: R5's receipts are
+# stale against this SHA by construction (RIG §3), which is why this is a new
+# artifact set rather than an edit to prophet-board-lab-r5.
+reference_files:
+  - path: mockups/refs/prophet_lab
+    frozen_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+
+# SHA lineage within this reference id. A fix round re-freezes the artifact, so
+# receipts taken against an earlier SHA are stale by construction (RIG §3) — the
+# earlier SHAs are named rather than overwritten, because a critic must be able
+# to tell which bytes their finding was raised against.
+sha_lineage:
+  - sha: f889d5eb35f3080cf43136ad58bb780b1152c2dc
+    round: R5.1
+    note: >
+      First freeze. Closed the R5 REVISE verdict. Both first-pass critics ran against this SHA:
+      product_regression returned BLOCK (PR51-1 blocker + 8 minors), visual_taste returned
+      PASS_WITH_CONDITIONS (R52-D1, R52-D2 majors + VTL51-505/506). Their receipts are STALE against
+      the current SHA.
+  - sha: f40ae70ac98936b5c565a7a55ddd108cb70ae7fa
+    round: R5.2
+    note: >
+      Fix round. Answers every finding from both first passes; ledger in continuity.yml
+      `fix_rounds[R5.2]`, design record in DESIGN_NOTES.md §0b and §0b.1. verify.py 125/125,
+      mutation_test.py 26/26 caught with no shared sole catcher, capture.py 46 views / 63 files.
+      No composition redesign; R51-M1, R51-M2 and R51-M3 are all still closed and still guarded.
+      BOTH C12 SEATS RAN AGAINST THIS SHA and both returned PASS_WITH_CONDITIONS
+      (reviews/product_regression.yml: 4 majors + 3 minors + 3 nits, two withdrawals and one
+      downgrade on revealed evidence; reviews/visual_taste.yml: 5 majors + 3 minors + 1 nit, a
+      disclosed two-run continuation whose amendment pass is deferred). The authority issued
+      REVISE over six blocking rulings (verdict.yml). Their receipts are STALE against the current
+      SHA by construction (RIG §3) — which is why R53-SCOPE requires a scoped delta re-check
+      rather than treating R5.3's own claims as closure.
+  - sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+    round: R5.3
+    note: >
+      Final composition-touching round, scoped by verdict.yml condition R53-SCOPE. Closes all six
+      blocking rulings (PR52-1, VTL52-601, VTL52-602, VTL52-603+PR52-4, PR52-2, PR52-3) and every
+      takeable minor (PR52-6/7/8, VTL52-606/607/608, PR52-10); PR52-9 recorded NOT_ACTIONED and
+      VTL52-609 NOT_IN_SCOPE, both with reasons. Ledger in continuity.yml `fix_rounds[R5.3]`,
+      design record in DESIGN_NOTES.md §0c, and the R5.2 rows this round found FALSE are re-booked
+      in place with `r53_correction` blocks rather than edited over. verify.py 162/162,
+      mutation_test.py 34/34 caught with no shared sole catcher — obtained as TWO runs and
+      provenanced as such in continuity.yml `fix_rounds[R5.3].harness`, with the receipt the round
+      did NOT obtain (one uninterrupted 34-mutation pass at this SHA; a pass was started and
+      reached 7/34, all caught, before the host's load made it a ~3h job) named in
+      `harness_not_claimed` — capture.py 49 views / 66 files
+      including the two evidence crops the verdict named (55 = the chrome=1 seam; 56/57 = the LENS
+      open at 390 in EN and ZH). R51-M1, R51-M2, R51-M3 and the R5.2-verified pin all still hold.
+      NOT approved and no approval.yml: this answers a verdict, it does not close a cycle.
+
+# Ordered OLDEST -> NEAREST. Every non-approved set governing this route must be
+# named or `undeclared-predecessor` fires (RIG §13.2). The nearest is R5, whose
+# REVISE verdict this cycle answers item by item in continuity.yml.
+lineage:
+  predecessors:
+    - {reference_id: prophet-board-5514-original, verdict: REVISE,
+       note: "founding regression fixture (PR #5520)"}
+    - {reference_id: prophet-board-5514-r2, verdict: REVISE,
+       note: "r2 cycle (PR #5533)"}
+    - {reference_id: prophet-board-5514-r3, verdict: REVISE,
+       note: "r3 cycle (PR #5552); closed by the R4 artifact and carried in prophet-board-lab-r5"}
+    - {reference_id: prophet-board-lab-r5, verdict: REVISE,
+       note: "R5 cycle (PR #5931); 3 majors + 18 conditions, closed row by row in continuity.yml"}
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+  # approval: approval.yml    # ABSENT ON PURPOSE — see README.md

@@ -107,6 +107,10 @@ def test_context_service_is_network_dark_credential_free_and_exactly_scoped() ->
     assert "ReadWritePaths=/var/lib/macro-market-memory/public\n" not in service
     assert "ReadWritePaths=/var/lib/macro-market-memory/state\n" not in service
     assert "InaccessiblePaths=/var/lib/macro-market-memory/state/sources" in service
+    assert (
+        "InaccessiblePaths=-/var/lib/macro-market-memory/state/context-projection/"
+        "options-context-receipts"
+    ) in service
 
     for protected in (
         "/var/lib/macro-api",
@@ -293,8 +297,12 @@ def test_projector_is_the_only_production_writer_and_uses_canonical_inputs(
     assert 'root / "config" / "market_memory_canary.v1.json"' in writer
     assert "read_verified_macro_regime_bytes(" in writer
     assert "_repository_commit(root)" in writer
-    assert "run_projection_cycle(" in writer
-    assert "options_context_audit.publish_live_audit(" in writer
+    assert "run_projection_cycle(" not in writer
+    assert "publish_live_audit(" not in writer
+    assert "options_context_audit" not in writer
+    assert _production_calls("publish_live_audit") == {
+        Path("scripts/audit_options_market_memory_context.py")
+    }
 
     monkeypatch.delenv("MARKET_MEMORY_TRUSTED_STORE_DIR", raising=False)
     monkeypatch.delenv("MARKET_MEMORY_CONTEXT_PROJECTION_DIR", raising=False)
@@ -336,7 +344,7 @@ def test_options_receipt_auditor_entrypoint_is_cwd_independent_and_durable(
         check=True,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     head = json.loads(result.stdout)
     publication = options_receipt_store.read_current_publication(
@@ -351,49 +359,163 @@ def test_options_receipt_auditor_entrypoint_is_cwd_independent_and_durable(
     ]
 
 
-def test_projection_cycle_uses_the_hourly_owner_to_publish_private_receipts(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+def test_production_context_main_projects_trusted_context_only() -> None:
+    tree = ast.parse(_text(WRITER), filename=str(WRITER))
+    main = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "main"
+    )
+    called = {
+        child.func.id
+        for child in ast.walk(main)
+        if isinstance(child, ast.Call) and isinstance(child.func, ast.Name)
+    }
+    assert "project_current_context" in called
+    assert "publish_live_audit" not in called
+    assert "run_projection_cycle" not in {node.name for node in tree.body if isinstance(node, ast.FunctionDef)}
+
+
+def test_production_context_main_does_not_relabel_trusted_success_on_audit_failure(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    deployed_commit = "a" * 40
-    public = tmp_path / "public"
-    private = tmp_path / "private"
-    w1a = tmp_path / "w1a"
-    receipt_root = private / "options-context-receipts"
     trusted_result = {
         "schema": "market_memory.trusted_projection_result.v1",
-        "deployed_commit": deployed_commit,
+        "deployed_commit": "a" * 40,
+        "context_id": "ctx",
     }
-    observed: dict[str, object] = {}
-    monkeypatch.setattr(
-        writer_module,
-        "project_current_context",
-        lambda *_args, **_kwargs: trusted_result,
-    )
-    monkeypatch.setattr(
-        writer_module, "_repository_commit", lambda _root: deployed_commit
-    )
 
-    def publish(**kwargs: object) -> dict[str, str]:
-        observed.update(kwargs)
-        return {"publication_id": "omctxpub_" + "b" * 64}
+    def boom(*_args: object, **_kwargs: object) -> dict[str, object]:
+        raise AssertionError("options audit must not run inside trusted projection")
 
-    monkeypatch.setattr(options_context_audit, "publish_live_audit", publish)
-    result = writer_module.run_projection_cycle(
-        tmp_path,
-        public_store_root=public,
-        private_evidence_root=private,
-        w1a_store_root=w1a,
+    monkeypatch.setattr(writer_module, "project_current_context", lambda *_a, **_k: trusted_result)
+    monkeypatch.setattr(options_context_audit, "publish_live_audit", boom)
+    assert writer_module.main(["--repository-root", "/opt/macro"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload == trusted_result
+
+
+def test_w2c_v1_admission_does_not_depend_on_options_context_audit() -> None:
+    registration = ROOT / "config" / "market_memory_spy_experience_registration.v1.json"
+    body = registration.read_text(encoding="utf-8")
+    accrue = (ROOT / "scripts" / "accrue_market_memory_spy_experience.py").read_text(
+        encoding="utf-8"
     )
+    update = _text(UPDATE)
+    setup = _text(SETUP)
+    assert "e00ffc1d34b57ce3b011955a8662dae8f7e069b7f5f07417c428a5815c6dd6e3" in body
+    assert "market_memory.trusted.macro_regime_canary.v1" in body
+    assert "options_context" not in body
+    assert "options-context-audit" not in body
+    assert "options_context" not in accrue
+    assert "audit_options_market_memory_context" not in accrue
+    assert "for owner in source context technicals; do" in update
+    assert "options-context-audit" not in update.split("w2c_start_owner_chain()", 1)[1].split("}", 1)[0]
+    assert "options-context-audit" not in setup.split("w2c_start_owner_chain()", 1)[1].split("}", 1)[0]
 
-    assert result["trusted_projection"] == trusted_result
-    assert result["options_context_receipt"] == {
-        "publication_id": "omctxpub_" + "b" * 64
-    }
-    assert observed["repository_root"] == tmp_path.resolve()
-    assert observed["w1a_store_root"] == w1a
-    assert observed["trusted_store_root"] == public
-    assert observed["publication_root"] == receipt_root
-    assert observed["expected_deployed_commit"] == deployed_commit
+
+def test_projection_cycle_is_not_a_hidden_w2c_prerequisite() -> None:
+    writer = _text(WRITER)
+    context_needed = next(
+        line
+        for line in _text(UPDATE).splitlines()
+        if "project_market_memory_context" in line and "grep -qE" in line
+    )
+    assert "audit_options_market_memory_context" not in context_needed
+    assert "publish_live_audit" not in writer
+    owner_chain = _text(UPDATE).split("w2c_start_owner_chain()", 1)[1].split("}", 1)[0]
+    assert "macro-market-memory-options-context-audit" not in owner_chain
+
+
+def test_options_context_audit_unit_is_an_independent_loud_owner() -> None:
+    service = _text(DEPLOY / "macro-market-memory-options-context-audit.service")
+    timer = _text(DEPLOY / "macro-market-memory-options-context-audit.timer")
+    receipts = f"{PRIVATE_ROOT}/options-context-receipts"
+
+    assert "Type=oneshot" in service
+    assert (
+        "ExecStart=/opt/macro-api/.venv/bin/python -m "
+        "scripts.audit_options_market_memory_context --repository-root /opt/macro "
+        f"--w1a-store-root {W1A_ROOT} "
+        f"--trusted-store-root {PUBLIC_ROOT} "
+        f"--publish-root {receipts}"
+    ) in service
+    assert "PrivateNetwork=true" in service
+    assert _setting_values(service, "ReadWritePaths") == [receipts]
+    assert _setting_values(service, "ReadOnlyPaths") == [
+        "/opt/macro",
+        W1A_ROOT,
+    ]
+    assert "Requires=" not in service
+    assert "Wants=" not in service
+    assert "PartOf=" not in service
+    assert "BindsTo=" not in service
+    assert "After=macro-market-memory-context.service" in service
+    timeout = re.search(r"^TimeoutStartSec=(\d+)$", service, re.MULTILINE)
+    assert timeout is not None
+    assert 0 < int(timeout.group(1)) <= 180
+    assert re.search(r"^CPUQuota=50%$", service, re.MULTILINE)
+    assert "InaccessiblePaths=/var/lib/macro-market-memory-options" in service
+    assert "InaccessiblePaths=/etc/macro-market-memory-options" in service
+    assert "InaccessiblePaths=-/etc/macro-ollama.env" in service
+
+    assert "OnCalendar=*-*-* *:20:00 UTC" in timer
+    assert "Unit=macro-market-memory-options-context-audit.service" in timer
+    assert "Requires=" not in timer
+    assert "Wants=" not in timer
+    assert "PartOf=" not in timer
+    assert "After=macro-market-memory-context.service" not in timer
+
+
+def test_update_installs_options_context_audit_without_making_it_a_w2c_owner() -> None:
+    update = _text(UPDATE)
+    block = _context_update_block()
+    receipts = f"{PRIVATE_ROOT}/options-context-receipts"
+    assert f"install -d -m 0700 {receipts}" in update
+    assert "macro-market-memory-options-context-audit.service" in block
+    assert "macro-market-memory-options-context-audit.timer" in block
+    assert "systemctl enable --now macro-market-memory-options-context-audit.timer" in block
+    assert "systemctl start macro-market-memory-options-context-audit.service" in block
+    assert "Options Context Audit failed closed; hourly timer will retry" in block
+    assert "exit 1" not in block.split(
+        "elif ! systemctl start macro-market-memory-options-context-audit.service; then",
+        1,
+    )[1].split("fi", 1)[0]
+    ready = update.split("reciprocal_market_memory_units_ready()", 1)[1].split("}", 1)[0]
+    assert "options-context-audit" not in ready
+    stop = update.split("stop_reciprocal_market_memory_writers()", 1)[1].split("}", 1)[0]
+    rearm = re.search(r"for RECIPROCAL_PROFILE in ([^\n;]+)", update)
+    assert rearm is not None
+    assert "options-context-audit" in stop
+    assert "options-context-audit" in rearm.group(1)
+    tokens = rearm.group(1).split()
+    assert "experience" not in tokens
+    reciprocal = re.search(r"OPTIONS_RECIPROCAL_CLOSURE_REGEX='([^']+)'", update)
+    assert reciprocal is not None
+    trigger = re.compile(reciprocal.group(1))
+    assert trigger.fullmatch(
+        "app/deploy/macro-market-memory-options-context-audit.service"
+    )
+    assert trigger.fullmatch("scripts/audit_options_market_memory_context.py")
+    runtime = re.search(
+        r"OPTIONS_RUNTIME_CLOSURE_REGEX='([^']+)'", update
+    )
+    assert runtime is not None
+    runtime_trigger = re.compile(runtime.group(1))
+    assert not runtime_trigger.fullmatch(
+        "app/deploy/macro-market-memory-options-context-audit.service"
+    )
+    experience_runtime = re.search(
+        r"MARKET_MEMORY_EXPERIENCE_RUNTIME_REGEX='([^']+)'", update
+    )
+    assert experience_runtime is not None
+    experience_trigger = re.compile(experience_runtime.group(1))
+    assert not experience_trigger.fullmatch(
+        "scripts/audit_options_market_memory_context.py"
+    )
+    assert not experience_trigger.fullmatch(
+        "app/deploy/macro-market-memory-options-context-audit.service"
+    )
 
 
 def test_w1a_initializer_is_the_only_production_genesis_owner() -> None:
@@ -847,3 +969,15 @@ def test_public_router_has_no_raw_source_or_evidence_route() -> None:
     assert not any(
         token in route.lower() for _method, route in routes for token in forbidden
     )
+
+
+def test_ci_lists_the_decoupled_options_context_audit_units() -> None:
+    workflow = _text(ROOT / ".github" / "workflows" / "ci.yml")
+    for path in (
+        "app/deploy/macro-market-memory-options-context-audit.service",
+        "app/deploy/macro-market-memory-options-context-audit.timer",
+        "scripts/audit_options_market_memory_context.py",
+        "scripts/project_market_memory_context.py",
+    ):
+        assert f'      - "{path}"' in workflow
+

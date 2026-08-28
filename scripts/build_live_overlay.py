@@ -28,6 +28,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import urlparse
 
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
@@ -196,21 +197,51 @@ def resolve_worker_url() -> str:
     return url.rstrip("/")
 
 
+# GitHub anonymous-distribution hosts being retired for the private-repo cutover
+# (DEC:B1-MACRO-PRIVATE-CUTOVER). raw.githubusercontent.com/*.github.io serve the
+# macro repo's tree without auth even once the repo goes private (raw-git + Pages
+# are public planes independent of repo visibility); cdn.jsdelivr.net mirrors any
+# public GitHub ref via its jsDelivr-GH backend. None of these are approved public
+# serving planes going forward — same-origin or an approved plane (e.g. R2) only.
+_ANON_GITHUB_HOSTS = {"raw.githubusercontent.com", "cdn.jsdelivr.net"}
+
+
+def _is_anon_github_host(host: str) -> bool:
+    host = (host or "").lower()
+    return host in _ANON_GITHUB_HOSTS or host.endswith(".github.io")
+
+
 def resolve_snapshot_url() -> str:
     """The static live-quotes SNAPSHOT URL (the keyless, no-Worker fallback that
     live.js fetches when no Worker is configured). ENV override
     LIVE_QUOTES_SNAPSHOT_URL wins over config.yml live.snapshot_url; a non-https
     value is rejected so a malformed variable can't break live.js. Default points
     at the `live-data` branch raw.githubusercontent path the live-quotes Action
-    force-pushes (CORS '*', ~5-min CDN cache)."""
+    force-pushes (CORS '*', ~5-min CDN cache).
+
+    Pre-private-cutover guard: an absolute URL whose host is a GitHub anonymous-
+    distribution host (raw.githubusercontent.com, any *.github.io, or
+    cdn.jsdelivr.net) is rejected the same way a bad scheme is — those planes stay
+    reachable after the macro repo flips private and must not be re-wired in by a
+    future config change."""
     cfg = config.load().get("live") or {}
     url = (os.environ.get("LIVE_QUOTES_SNAPSHOT_URL", "").strip()
            or str(cfg.get("snapshot_url", "") or "").strip())
+    if not url:
+        return url
+    parsed = urlparse(url)
+    is_absolute = bool(parsed.scheme)
     # Allow a SAME-ORIGIN relative path (e.g. "live/quotes.json" — China-safe, no
     # raw.githubusercontent) OR an absolute https URL. Reject only an absolute URL
     # with a non-https scheme (malformed / mixed-content), which would break live.js.
-    if url and "://" in url and not url.startswith("https://"):
+    if is_absolute and not url.startswith("https://"):
         log.warning("live snapshot URL ignored (must be https:// or same-origin relative): %r", url)
+        return ""
+    if is_absolute and _is_anon_github_host(parsed.hostname or ""):
+        log.warning(
+            "live snapshot URL ignored (GitHub anonymous distribution is being "
+            "retired for the private-repo cutover; use a same-origin path or an "
+            "approved public plane): %r", url)
         return ""
     return url
 

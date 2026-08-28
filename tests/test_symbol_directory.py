@@ -199,6 +199,145 @@ class TestParsing:
 
 
 # ---------------------------------------------------------------------------
+# A2. NA-sentinel ticker regression (LHB-R8 stall 2026-08-11 -> 2026-08-19)
+# ---------------------------------------------------------------------------
+
+# Every symbol here is a pandas default NA sentinel or one letter away from it.
+# NA is a live Nasdaq listing (Nano Labs Ltd); parsing it as NaN dropped the row,
+# which tripped the parsed-vs-non-footer row-count guard in
+# _collect_symbol_snapshot and refused EVERY snapshot for eight nights while the
+# adapter kept reporting status 'ok'.
+_NA_SENTINEL_NASDAQ_TEXT = """\
+Symbol|Security Name|Market Category|Test Issue|Financial Status|Round Lot Size|ETF|NextShares
+NA|Nano Labs Ltd - Class A Ordinary Shares|G|N|N|100|N|N
+NAN|Nuveen New York Quality Municipal Income Fund|Q|N|N|100|N|N
+NULL|Null Test Corp|Q|N|N|100|N|N
+NONE|None Holdings Inc|Q|N|N|100|N|N
+File Creation Time: 8/19/2026 06:30:00\
+"""
+
+_NA_SENTINEL_OTHER_TEXT = """\
+ACT Symbol|Security Name|Exchange|CQS Symbol|ETF|Round Lot Size|Test Issue|NASDAQ Symbol
+NA|NA Test Common Stock|N|NA|N|100|N|NA
+NAT|Nordic American Tankers Limited Common Stock|N|NAT|N|100|N|NAT
+File Creation Time: 8/19/2026 06:31:00\
+"""
+
+
+def _non_footer_rows(text: str) -> int:
+    """Mirror the completeness check in _collect_symbol_snapshot."""
+    from collectors.symbol_directory import _FOOTER_MARKER
+
+    return len([
+        line for line in text.splitlines()[1:]
+        if line and not line.startswith(_FOOTER_MARKER)
+    ])
+
+
+class TestNaSentinelTickers:
+    def test_nasdaqlisted_keeps_na_sentinel_symbols(self):
+        from collectors.symbol_directory import _parse_nasdaqlisted
+
+        df = _parse_nasdaqlisted(_NA_SENTINEL_NASDAQ_TEXT)
+        assert list(df["symbol"]) == ["NA", "NAN", "NULL", "NONE"]
+
+    def test_otherlisted_keeps_na_sentinel_symbols(self):
+        from collectors.symbol_directory import _parse_otherlisted
+
+        df = _parse_otherlisted(_NA_SENTINEL_OTHER_TEXT)
+        assert list(df["symbol"]) == ["NA", "NAT"]
+
+    def test_nasdaqlisted_row_count_matches_source_lines(self):
+        """The exact invariant _collect_symbol_snapshot refuses the day over."""
+        from collectors.symbol_directory import _parse_nasdaqlisted
+
+        df = _parse_nasdaqlisted(_NA_SENTINEL_NASDAQ_TEXT)
+        assert len(df) == _non_footer_rows(_NA_SENTINEL_NASDAQ_TEXT)
+
+    def test_otherlisted_row_count_matches_source_lines(self):
+        from collectors.symbol_directory import _parse_otherlisted
+
+        df = _parse_otherlisted(_NA_SENTINEL_OTHER_TEXT)
+        assert len(df) == _non_footer_rows(_NA_SENTINEL_OTHER_TEXT)
+
+    def test_na_symbol_is_not_the_string_nan(self):
+        """Pre-#5270 the NaN leaked into the artifact as the literal 'nan'."""
+        from collectors.symbol_directory import _parse_nasdaqlisted
+
+        df = _parse_nasdaqlisted(_NA_SENTINEL_NASDAQ_TEXT)
+        assert "nan" not in set(df["symbol"])
+        assert df.loc[df["symbol"] == "NA", "security_name"].iloc[0].startswith("Nano Labs")
+
+    def test_snapshot_is_written_when_source_carries_na(self, tmp_path):
+        """End-to-end: an NA-bearing roster no longer suppresses the whole day."""
+        import collectors.symbol_directory as m
+
+        today_str = _engine_today().isoformat()
+        with patch("collectors.symbol_directory.config") as mock_cfg, \
+             patch("collectors.symbol_directory._fetch_text") as mock_text, \
+             patch("collectors.symbol_directory._fetch_sec_json") as mock_sec:
+            mock_cfg.data_dir.return_value = tmp_path
+            mock_text.side_effect = [
+                _NA_SENTINEL_NASDAQ_TEXT, _NA_SENTINEL_OTHER_TEXT,
+            ]
+            mock_sec.return_value = _SEC_TICKERS_JSON
+
+            adapter = m.SymbolDirectoryAdapter()
+            _disable_snapshot_floors(adapter)
+            result = adapter.fetch()
+
+        snap_path = tmp_path / "symbol_directory" / "snapshots" / f"{today_str}.parquet"
+        assert snap_path.exists(), f"Expected snapshot at {snap_path}"
+        assert result["symbol_directory__ingest"].iloc[0]["snapshot_written"] == 1
+        assert "NA" in set(pd.read_parquet(snap_path)["symbol"])
+
+
+class TestStalenessAnnotation:
+    def test_lag_days_computed(self):
+        from collectors.symbol_directory import _snapshot_lag_days
+
+        assert _snapshot_lag_days("2026-08-10", "2026-08-19") == 9
+
+    def test_lag_days_unknown_when_no_snapshot(self):
+        from collectors.symbol_directory import _snapshot_lag_days
+
+        assert _snapshot_lag_days(None, "2026-08-19") is None
+        assert _snapshot_lag_days("not-a-date", "2026-08-19") is None
+
+    def test_stale_directory_emits_line_start_annotation(self, tmp_path, capsys):
+        """A frozen roster must be loud: bare print, line-start, flushed."""
+        import collectors.symbol_directory as m
+
+        snap_dir = tmp_path / "symbol_directory" / "snapshots"
+        snap_dir.mkdir(parents=True)
+        stale = _engine_today() - timedelta(days=30)
+        pd.DataFrame({
+            "date": [stale.isoformat()], "symbol": ["AAPL"],
+            "security_name": ["Apple Inc."], "exchange": ["NASDAQ"],
+            "etf": [False], "test_issue": [False], "is_preferred": [False],
+            "source": ["nasdaqlisted"],
+        }).to_parquet(snap_dir / f"{stale.isoformat()}.parquet")
+
+        with patch("collectors.symbol_directory.config") as mock_cfg, \
+             patch("collectors.symbol_directory._fetch_text") as mock_text, \
+             patch("collectors.symbol_directory._fetch_sec_json") as mock_sec:
+            mock_cfg.data_dir.return_value = tmp_path
+            # Both source bodies unavailable -> today's write is refused.
+            mock_text.return_value = None
+            mock_sec.return_value = _SEC_TICKERS_JSON
+
+            adapter = m.SymbolDirectoryAdapter()
+            _disable_snapshot_floors(adapter)
+            adapter.fetch()
+
+        out = capsys.readouterr().out.splitlines()
+        skipped = [l for l in out if l.startswith("::warning title=symbol_directory-snapshot-skipped::")]
+        stale_lines = [l for l in out if l.startswith("::warning title=symbol_directory-stale::")]
+        assert skipped, out
+        assert stale_lines, out
+
+
+# ---------------------------------------------------------------------------
 # B. Snapshot-once-per-day idempotency
 # ---------------------------------------------------------------------------
 

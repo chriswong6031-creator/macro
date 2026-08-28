@@ -24,7 +24,6 @@ import os
 import re
 import secrets
 import stat
-import subprocess
 import sys
 from copy import deepcopy
 from datetime import date
@@ -37,6 +36,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from scripts import build_prophet_marks as mark_chain  # noqa: E402
+from scripts import prophet_canonical_git  # noqa: E402
 
 
 log = logging.getLogger(__name__)
@@ -63,16 +63,16 @@ DEFAULT_LEDGER_DIRECTORY = DEFAULT_STATE_ROOT / "canonical_ledger"
 DEFAULT_LEDGER_PATH = DEFAULT_LEDGER_DIRECTORY / "ledger.jsonl"
 DEFAULT_LEDGER_RECEIPT_PATH = DEFAULT_LEDGER_DIRECTORY / "receipt.json"
 
+#: Display-only provenance label recorded on the ledger snapshot receipt — never
+#: used for network access (DEC:B1-MACRO-PRIVATE-CUTOVER).
 CANONICAL_LEDGER_REPOSITORY = (
     "https://github.com/mastermindx-market-intelligence/macro"
 )
-CANONICAL_LEDGER_GIT_REMOTE = CANONICAL_LEDGER_REPOSITORY + ".git"
-CANONICAL_LEDGER_REF = "refs/heads/main"
+CANONICAL_LEDGER_REF = prophet_canonical_git.CANONICAL_SOURCE_REF
 CANONICAL_LEDGER_SOURCE_PATH = "data/prophet/ledger.jsonl"
-CANONICAL_LEDGER_RAW_TEMPLATE = (
-    "https://raw.githubusercontent.com/mastermindx-market-intelligence/macro/"
-    "{commit}/data/prophet/ledger.jsonl"
-)
+# DEC:B1-MACRO-PRIVATE-CUTOVER: commit resolution and blob retrieval use the
+# shared hard-coded, machine-authenticated Git seam.  Ambient origin, Git config,
+# SSH agent, working-tree bytes and public raw/clone fallbacks are not authority.
 
 MAX_LEDGER_BYTES = 32 * 1024 * 1024
 MAX_RECEIPT_BYTES = 64 * 1024
@@ -677,74 +677,6 @@ def _ledger_paths(
     return ledger_path, ledger_receipt_path
 
 
-def _resolve_current_main_commit() -> str:
-    environment = dict(os.environ)
-    environment["GIT_TERMINAL_PROMPT"] = "0"
-    try:
-        result = subprocess.run(
-            [
-                "/usr/bin/git",
-                "ls-remote",
-                CANONICAL_LEDGER_GIT_REMOTE,
-                CANONICAL_LEDGER_REF,
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            env=environment,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise ValueError(f"could not resolve canonical current main: {exc}") from exc
-    matches: list[str] = []
-    for line in result.stdout.splitlines():
-        fields = line.split()
-        if len(fields) == 2 and fields[1] == CANONICAL_LEDGER_REF:
-            matches.append(fields[0])
-    if result.returncode != 0 or len(matches) != 1 or not _GIT_COMMIT_RE.fullmatch(matches[0]):
-        detail = result.stderr.strip()[:240] or f"exit {result.returncode}"
-        raise ValueError(f"canonical current-main ref resolution failed: {detail}")
-    return matches[0]
-
-
-def _download_current_main_ledger(source_commit: str) -> bytes:
-    if not _GIT_COMMIT_RE.fullmatch(source_commit):
-        raise ValueError("canonical current-main commit is malformed")
-    url = CANONICAL_LEDGER_RAW_TEMPLATE.format(commit=source_commit)
-    try:
-        result = subprocess.run(
-            [
-                "/usr/bin/curl",
-                "--fail",
-                "--silent",
-                "--show-error",
-                "--location",
-                "--max-time",
-                "30",
-                "--max-filesize",
-                str(MAX_LEDGER_BYTES),
-                "--proto",
-                "=https",
-                "--user-agent",
-                "macro-prophet-shadow-lifecycle/1",
-                url,
-            ],
-            check=False,
-            capture_output=True,
-            timeout=35,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise ValueError(f"canonical current-main ledger download failed: {exc}") from exc
-    body = result.stdout
-    if result.returncode != 0 or not body or len(body) > MAX_LEDGER_BYTES:
-        detail = result.stderr.decode("utf-8", errors="replace").strip()[:240]
-        raise ValueError(
-            "canonical current-main ledger response is unsafe"
-            + (f": {detail}" if detail else "")
-        )
-    return body
-
-
 def sync_canonical_ledger(
     *,
     lifecycle_root: Path | None = None,
@@ -768,8 +700,16 @@ def sync_canonical_ledger(
     )
 
     with mark_chain._private_ledger_lock(lifecycle_root):
-        source_commit = _resolve_current_main_commit()
-        body = _download_current_main_ledger(source_commit)
+        canonical_blob = prophet_canonical_git.read_canonical_blob(
+            CANONICAL_LEDGER_SOURCE_PATH
+        )
+        if (
+            canonical_blob.source_ref != CANONICAL_LEDGER_REF
+            or canonical_blob.source_path != CANONICAL_LEDGER_SOURCE_PATH
+        ):
+            raise ValueError("canonical Prophet ledger source identity mismatch")
+        source_commit = canonical_blob.source_commit
+        body = canonical_blob.body
         rows = _ledger_rows(body)
         receipt = _ledger_receipt(body, rows, source_commit=source_commit)
 

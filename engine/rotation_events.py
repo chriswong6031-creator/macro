@@ -375,12 +375,20 @@ def to_alerts(payload: dict) -> list[dict]:
     """
     out = []
     created = set(payload.get("created_tonight") or [])
-    ts = payload.get("generated_utc") or payload.get("as_of") or ""
+    # THREE CLOCKS (2026-08-20 repair — engine/alert_time.py).  `ts` used to be
+    # `generated_utc or as_of`, i.e. the moment our builder ran, even though the id bucket
+    # right below already knew the event's own session.  On the Alert Command Center that
+    # made an Aug-19 handoff read "Aug-20 · today".  `recorded_at` now carries the build
+    # clock and `ts`/`event_date` carry the session.  The id expression is UNCHANGED, so
+    # no historical id moves and dedup behaviour is byte-identical.
+    recorded_at = payload.get("generated_utc") or ""
     for ev in payload.get("active", []):
         if ev["id"] not in created:
             continue
         sev = "high" if ev["severity"] == "major" else "minor"
         bucket = (ev.get("asof") or payload.get("as_of") or "")[:10]
+        event_date = bucket or None
+        ts = event_date or recorded_at or ""
         event_type = ev.get("event_type", "handoff")
 
         if event_type in _CROSS_EVENT_TYPES:
@@ -424,6 +432,9 @@ def to_alerts(payload: dict) -> list[dict]:
 
         out.append({"id": f"rotation:us:rotation_event:{ev['id']}:{bucket}",
                     "ts": ts, "source": "rotation", "asset": ev["id"],
+                    "event_date": event_date, "source_asof": event_date,
+                    "recorded_at": recorded_at or None,
+                    "date_precision": "date" if event_date else "unknown",
                     "type": "rotation_event", "severity": sev,
                     "headline": hl, "detail": det,
                     "headline_zh": hl_zh, "detail_zh": det_zh,

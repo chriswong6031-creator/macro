@@ -37,6 +37,16 @@ leave. The merge-on-CONCLUDED-checks law is unchanged — a pending check is not
 pass, and an ``--admin`` merge mid-flight destroyed the pull request's own proof
 run (#3867).
 
+THE GUARD MAY NOT WEDGE THE TREE IT IS JUDGING. Its own ``git status`` used to be
+run under a plain ``subprocess`` timeout, whose expiry is a SIGKILL git cannot
+catch; on 2026-08-19 that left a stale ``index.lock`` in a full worktree's gitdir
+and turned a slow read into a broken checkout. Timed-out git is now asked to leave
+with SIGTERM before it is killed, a timed-out status is retried once on the warm
+index the first pass paid for, and a lock this guard itself orphaned is swept —
+but only when zero-byte, unheld, and newer than this process. See
+``GIT_TERM_GRACE_SECONDS``, ``_status_output``, and ``_sweep_stale_index_lock``;
+none of them relaxes the gate, and a status that cannot answer twice still blocks.
+
 Every blocker also carries an escape ladder, because the field kept producing
 UNSATISFIABLE gates: one session refused Stop 258 consecutive times on ``unmerged``
 and another 245 times on ``render_failed``, and the guard took 13 patches in 17
@@ -162,23 +172,171 @@ AGENT_WORKTREE_ROOTS = (
     ".claire/worktrees/",
     ".codex/worktrees/",
     ".codex-worktrees/",
+    ".cursor/worktrees/",
+    ".grok/worktrees/",
+    ".warp/worktrees/",
 )
+# `subprocess.run(timeout=...)` shoots a straggler with SIGKILL, which git cannot
+# catch — so the `index.lock` git's own lockfile machinery would have unlinked on
+# its way out survives its owner. `git status` shrugs at a stale lock (it just
+# declines to write the refreshed index), which is what makes this quiet: what
+# fails is every git that WRITES the index — `add`, `commit`, `checkout`, `stash`
+# — i.e. exactly the session's next move. That is the #5907 class, a guard
+# timeout corrupting the checkout it was only reading, observed live 2026-08-19:
+# on a FULL worktree (~5,800 files, 3 GiB of `data/`) under fleet I/O load one
+# `git status` took 161s wall at 10% CPU, the 90s budget expired, the SIGKILLed
+# git left a zero-byte `index.lock` in the worktree gitdir, and the guard filed
+# `guard_error` against a tree it had just wedged itself. Asking before shooting
+# is the fix: git installs a SIGTERM handler for exactly this case.
+#
+# `scripts/worktree_sparse.py` fought the same hazard from the other end (#5907,
+# a killed `sparse-checkout add` leaving a truncated file plus a stale lock) and
+# landed on the same ladder; this is deliberately its `TERM_GRACE_S`, same value
+# and same reasoning — generous for a cleanup handler that measures well under a
+# second, bounded enough that a process ignoring SIGTERM dies promptly.
+GIT_TERM_GRACE_SECONDS = 10
+# Two status budgets, because the first `git status` on a cold full checkout PAYS
+# FOR the second: the same tree that needed 161s cold answered in 13s once its
+# index and page cache were warm. One budget cannot express that — it would have
+# to be the cold number, and the cold number does not fit the wall below.
+#
+# The wall is `.claude/settings.json`, where Stop gives this hook 540s
+# (SessionStart, 30s), and the HARNESS enforces it. Budgets larger than that wall
+# can never conclude: the hook is cancelled mid-flight and the Stop evaluation
+# silently does not happen at all, which is a fail-OPEN — strictly worse than the
+# block it was trying to file. So the numbers below are chosen so that the WHOLE
+# pathological path fits, sweeps, the untracked-cache heal, and grace periods
+# included, not just the two status attempts: 100 + 10 grace, + a first sweep
+# (5 + 10 grace to resolve the gitdir, 5 for lsof), + 260 + 10 grace, + a second
+# sweep (5 for lsof; the gitdir is cached by then), + the heal (5 + 10 to read the
+# config, 20 + 10 to test the filesystem, 5 + 10 to write it) = 465. That path ends
+# in a raise and a `guard_error` emit, which is all it needs after.
+#
+# 465 is NOT the whole story and the residual is deliberate, not slack. The costlier
+# shape is the one that SUCCEEDS: a retry that answers just under its budget reaches
+# ~449s (110 + 20 + 259 + the 60s heal) and then still owes the entire rest of
+# `_stop` — the PR lookup, CI attribution (up to ~16 REST calls when there is a red
+# to attribute), render coverage, live verification. Those are what the remaining
+# ~90s is for. Sizing the wall to 465 would leave that path ~15s and cancel the hook
+# mid-evaluation on exactly the trees this change is meant to serve. The same
+# reasoning covers the bounded probes in `main()` ahead of `_fingerprint`
+# (`_repo_root`'s `rev-parse` at the default 45s leash, run twice on the delegating
+# path): sub-second in health, and not silently assumed to be free.
+#
+# The 2026-08-21 rebalance (60/70 of a 180s wall -> 100/150 of a 300s wall) fixed a
+# tree the old split could not answer at all. The retry's whole premise is that the
+# first pass leaves a warmed index for the second — but that only holds if the first
+# pass is allowed to FINISH. A sparse, blobless worktree on a slow (iCloud-backed)
+# volume measured a ~78s cold `status` against a ~3s warm one: at a 60s first budget
+# the cold pass was SIGKILLed at ~77% done, warmed nothing, and the 70s retry then
+# paid full cold cost and died too — filing `guard_error` on a tree that answers in
+# 3s once warm. BOTH attempts sat under the cold cost, so the pair could never
+# succeed no matter how often it ran. The first budget must therefore clear a
+# realistic cold walk on its own (100 > 78), while the retry stays the longer of the
+# two for the genuinely pathological tree the original incident recorded (161s cold
+# / 13s warm): that one still misses the first pass and lands on the warm retry,
+# exactly as designed. Raising the wall is the cost of covering both shapes; a Stop
+# that takes 5 minutes on the pathological path still beats one that is killed
+# mid-evaluation, because a killed Stop hook fails OPEN.
+#
+# The SECOND rebalance (150 -> 260, 2026-08-21) is the same arithmetic failing at a
+# larger scale, and it is why `_enable_untracked_cache` exists. Worktree
+# `celh-cycle-autopsy-c5adcc` of the 250-worktree `Macro Dashboard` clone measured a
+# **333s** cold `status` (75,427 index entries, `core.untrackedCache` unset) against
+# a 1s warm one — the incident hit the then-current 60s first budget, which bought
+# ~18% of that walk before the SIGKILL, so the retry started essentially cold too
+# and blew its own — `guard_error` on a tree that was clean, committed and pushed.
+# A retry only 50% longer than the first attempt cannot absorb a cold walk several
+# times either budget: the retry has to clear what the warm-up pass did NOT reach.
+# 260 is sized on the assumption that warming is roughly linear in elapsed time —
+# 100s of a 333s walk leaves ~233s, so 260 carries ~11% margin. That model is an
+# ESTIMATE, not a measurement, and it is exactly why the heal below matters more
+# than this number: if the walk is worse than linear the retry still dies, and a
+# budget alone would leave the tree in the same loop it is in today.
+#
+# The budget is the fallback; the heal is the fix. `_enable_untracked_cache` turns
+# that walk into a sub-second one — measured on the same clone with it enabled:
+# 75,551 index entries, `UNTR` present in the index, `status` in 0.63s. Scope,
+# stated precisely because the loose version of this claim is wrong: the CONFIG is
+# clone-shared, so every worktree becomes ELIGIBLE at once, but the cache itself is
+# an index extension and each worktree has its OWN index — so each still pays a
+# single cold walk that must COMPLETE before it is cheap. This heals the clone; it
+# does not retroactively heal 250 checkouts.
+# `tests/test_ship_loop_guard.py` pins that arithmetic against the settings file so
+# the two cannot drift apart unnoticed.
+STATUS_TIMEOUT_SECONDS = 100
+STATUS_RETRY_TIMEOUT_SECONDS = 260
+# `git update-index --test-untracked-cache` measured 6.04/6.06/6.09s on the affected
+# volume — it is dominated by deliberate sleeps that probe mtime granularity, not by
+# repository size, so this is a ~3x leash on a near-constant cost rather than a
+# target. It is bounded at all because an unresponsive filesystem must not be able to
+# spend the retry's budget on a heal that is only ever an optimisation.
+UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS = 20
+# Metadata-only probes (`rev-parse`, `lsof`) that must never become the reason
+# the wall above is missed. Both are sub-second in health; this is the leash for
+# the pathological case, not a target.
+SWEEP_PROBE_TIMEOUT_SECONDS = 5
+# When this process started, and therefore the floor for "a lock THIS guard's own
+# killed git could have created". Anything older is somebody else's and is never
+# ours to remove. Module import time, not Stop time, because a SessionStart
+# fingerprint can orphan a lock just as a Stop one can.
+_GUARD_STARTED_AT = time.time()
+_INDEX_LOCK_CACHE: dict[str, Path | None] = {}
+# Whether `_enable_untracked_cache` has already run in this process. Its answer
+# cannot change mid-invocation, and its filesystem test costs ~6s to re-learn.
+_UNTRACKED_CACHE_HEAL_TRIED = False
 
 
 def _emit(value: dict[str, Any]) -> None:
     print(json.dumps(value, ensure_ascii=False))
 
 
-def _run(root: Path, *args: str, timeout: int = 45) -> str:
-    proc = subprocess.run(
+def _capture(
+    root: Path, args: tuple[str, ...], timeout: int
+) -> subprocess.CompletedProcess[str]:
+    """Run ``args`` in ``root``, escalating SIGTERM -> SIGKILL on a timeout.
+
+    Only the escalation distinguishes this from ``subprocess.run(timeout=...)``:
+    the same ``TimeoutExpired`` is raised with the same ``cmd``/``timeout``, and
+    the completed process carries the same fields, so no caller can tell the two
+    apart — except by the state of the worktree afterwards, which is the whole
+    point (see ``GIT_TERM_GRACE_SECONDS``). A child that ignores SIGTERM is still
+    killed, so this can never hang past ``timeout + GIT_TERM_GRACE_SECONDS``.
+
+    The sibling ladder is ``_run_git_timed`` in ``scripts/worktree_sparse.py``.
+    Deliberately NOT written as ``with subprocess.Popen(...)``: that context
+    manager's exit waits on the child unconditionally, so an unexpected failure
+    mid-``communicate`` would hang the guard on a process nobody has signalled.
+    """
+    proc = subprocess.Popen(
         args,
         cwd=root,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        timeout=timeout,
-        check=False,
     )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as expired:
+        proc.terminate()  # SIGTERM — lets git's own cleanup handlers run
+        try:
+            proc.communicate(timeout=GIT_TERM_GRACE_SECONDS)
+        except subprocess.TimeoutExpired:
+            proc.kill()  # last resort; `_sweep_stale_index_lock` is its backstop
+            proc.communicate()
+        raise expired
+    except BaseException:  # noqa: BLE001 — always reap, even on an unexpected exit
+        # `subprocess.run` reaps on BaseException too, and this claims to be
+        # indistinguishable from it. Narrowing to Exception would leak a live git
+        # on a KeyboardInterrupt or a SystemExit mid-read.
+        proc.kill()
+        proc.communicate()
+        raise
+    return subprocess.CompletedProcess(args, proc.returncode, stdout, stderr)
+
+
+def _run(root: Path, *args: str, timeout: int = 45) -> str:
+    proc = _capture(root, args, timeout)
     if proc.returncode:
         detail = (proc.stderr or proc.stdout).strip()
         raise RuntimeError(f"{' '.join(args)} failed: {detail[:500]}")
@@ -187,19 +345,115 @@ def _run(root: Path, *args: str, timeout: int = 45) -> str:
 
 def _run_raw(root: Path, *args: str, timeout: int = 45) -> str:
     """Run git while preserving porcelain's leading status column."""
-    proc = subprocess.run(
-        args,
-        cwd=root,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=timeout,
-        check=False,
-    )
+    proc = _capture(root, args, timeout)
     if proc.returncode:
         detail = (proc.stderr or proc.stdout).strip()
         raise RuntimeError(f"{' '.join(args)} failed: {detail[:500]}")
     return proc.stdout
+
+
+def _worktree_index_lock(root: Path) -> Path | None:
+    """``index.lock`` for THIS worktree — never the clone's shared one.
+
+    A linked worktree keeps its own index under ``<clone>/.git/worktrees/<name>/``,
+    so ``--git-common-dir`` (what ``_git_common_dir`` asks, for a different
+    question) would point every session in the clone at the PRIMARY checkout's
+    lock file — a file this guard must never touch. ``--absolute-git-dir`` is the
+    per-worktree answer, and is the same path the killed git wrote to. Same
+    resolution ``index_lock_path`` in ``scripts/worktree_sparse.py`` makes, and
+    the same None-on-unreadable contract.
+
+    Cached per root, including the failure: the second sweep runs on the far side
+    of a second blown budget, and re-paying a probe there is how the pathological
+    path would overrun the wall the budgets above are sized against.
+    """
+    key = str(root)
+    if key in _INDEX_LOCK_CACHE:
+        return _INDEX_LOCK_CACHE[key]
+    try:
+        found = _run(
+            root,
+            "git",
+            "rev-parse",
+            "--absolute-git-dir",
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        found = ""
+    lock = Path(found) / "index.lock" if found else None
+    _INDEX_LOCK_CACHE[key] = lock
+    return lock
+
+
+def _lock_is_held(lock: Path) -> bool:
+    """Whether any process still holds ``lock`` open — UNKNOWN counts as held.
+
+    ``lsof`` exits 1 both for "nobody has it open" and for its own errors, so the
+    exit code alone cannot answer this: a malformed invocation would read as proof
+    that a live git's lock is free. Measured (lsof 4.91, macOS), the three cases
+    separate cleanly on the streams instead — unheld: rc 1, both empty; held:
+    rc 0, stdout listing the holder; error (bad option, unreadable path): rc 1,
+    stdout empty, DIAGNOSTIC ON STDERR. So "unheld" requires all three of rc 1,
+    no stdout, and no stderr. ``-w`` suppresses the mount-scan warnings that would
+    otherwise put noise on stderr and cost a healthy machine the sweep.
+
+    Everything else is held: a missing ``lsof``, a hang, any other exit code.
+    """
+    try:
+        proc = subprocess.run(
+            ("lsof", "-w", "--", str(lock)),
+            capture_output=True,
+            text=True,
+            timeout=SWEEP_PROBE_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except Exception:
+        return True
+    quiet = not proc.stdout.strip() and not proc.stderr.strip()
+    return not (proc.returncode == 1 and quiet)
+
+
+def _sweep_stale_index_lock(root: Path) -> Path | None:
+    """Remove an ``index.lock`` this guard's OWN killed git left behind.
+
+    Called only after a git of ours timed out, and then only for a lock that is
+    all three of: zero-byte (git had not yet written a replacement index into it),
+    unheld (nothing is mid-write), and created after this process started (so it
+    cannot predate us, and cannot be the operator's or a sibling session's).
+
+    Every condition fails CLOSED — an unresolvable gitdir, an unreadable stat, an
+    ``lsof`` that cannot be trusted — because the two errors are not symmetric: a
+    lock left behind is loud and fixable with one `rm`, while a lock deleted out
+    from under a live git is silent index corruption in a tree somebody is using.
+
+    The sibling ``refuse_if_locked`` in ``scripts/worktree_sparse.py`` refuses on
+    ANY lock and deletes none, which is right for it: it is about to start a heavy
+    write and cannot know who else is in the tree. This one deletes, because it is
+    scoped to the lock its OWN kill just made — that provenance is what the three
+    conditions establish, and without all three it declines exactly like the
+    sibling does.
+    """
+    lock = _worktree_index_lock(root)
+    if lock is None:
+        return None
+    try:
+        if lock.is_symlink() or not lock.is_file():
+            return None
+        info = lock.stat()
+    except OSError:
+        return None
+    if info.st_size:
+        return None
+    created = getattr(info, "st_birthtime", info.st_ctime)
+    if created <= _GUARD_STARTED_AT:
+        return None
+    if _lock_is_held(lock):
+        return None
+    try:
+        lock.unlink()
+    except OSError:
+        return None
+    return lock
 
 
 def _repo_root(payload: dict[str, Any]) -> Path | None:
@@ -281,16 +535,214 @@ def _is_agent_worktree_path(path: str, status: str) -> bool:
     return any(path.startswith(root) for root in AGENT_WORKTREE_ROOTS)
 
 
+# Exactly what `git update-index --test-untracked-cache` builds inside its scratch
+# directory, measured across kill timings t=1..5s on git 2.46.1: a 6-character
+# mkdtemp suffix, and a subset of these three entries and nothing else. Pinned as
+# data because `_remove_mtime_test_scratch` refuses anything that does not match —
+# a future git that writes something else must be left alone, not guessed at.
+_MTIME_TEST_GLOB = "mtime-test-??????"
+_MTIME_TEST_ENTRIES = frozenset({"newfile", "new-dir", "new-dir/new"})
+
+
+def _mtime_test_scratches(root: Path) -> set[Path]:
+    """Scratch directories matching git's mtime-test glob, at the worktree root."""
+    try:
+        return set(root.glob(_MTIME_TEST_GLOB))
+    except OSError:
+        return set()
+
+
+def _remove_mtime_test_scratch(root: Path, preexisting: set[Path]) -> None:
+    """Delete the scratch directory a KILLED `--test-untracked-cache` leaves behind.
+
+    Measured on git 2.46.1: the mtime test builds `mtime-test-XXXXXX/` in the
+    process CWD — the worktree ROOT — and cleans it up itself on a normal exit, but
+    a SIGTERMed or SIGKILLed git leaves it there. Left alone that directory turns
+    the very next `status --untracked-files=all` into `?? mtime-test-XXXXXX/newfile`
+    on a tree that is otherwise clean, so the guard would file a false `uncommitted`
+    block naming a file THE GUARD ITSELF created — and `uncommitted` is an internal
+    code, escapable only at 10 consecutive blocks. Worse, the obvious way out of
+    that block is `git add -A && git commit`, which commits the guard's scratch.
+    Trading `guard_error` on a clean tree for a false `uncommitted` on a clean tree
+    is not a fix, so the heal cleans up after itself on every path.
+
+    Deliberately narrow, because this deletes inside somebody's worktree. Only a
+    directory that matches git's exact glob AT THE ROOT, is not a symlink, APPEARED
+    during the call being cleaned up, and whose entire contents are a subset of the
+    three entries git writes, is removed — and only ever with `unlink`/`rmdir`,
+    never a recursive delete. Anything else, including any OSError along the way, is
+    left exactly where it is: an unexpected `mtime-test-*` is far better reported as
+    dirt than deleted on a guess.
+
+    Provenance is a set difference against the directories that existed before the
+    call, NOT a birthtime comparison. A timestamp test has to assume the filesystem's
+    creation clock and `time.time()` agree closely enough to order two events
+    milliseconds apart; the set difference just asks whether the directory is new,
+    which is the actual question and cannot be lost to clock granularity or skew.
+    A sibling session's concurrent mtime test is therefore also safe: its scratch
+    either predates our snapshot (excluded) or, if it appears alongside ours, is
+    removed only once git has left it in the exact inert shape below.
+    """
+    for scratch in sorted(_mtime_test_scratches(root) - preexisting):
+        try:
+            if scratch.is_symlink() or not scratch.is_dir():
+                continue
+            found = [p for p in scratch.rglob("*")]
+            names = {p.relative_to(scratch).as_posix() for p in found}
+            if not names <= _MTIME_TEST_ENTRIES:
+                continue
+            if any(p.is_symlink() for p in found):
+                continue
+            for path in sorted(found, key=lambda p: len(p.parts), reverse=True):
+                path.rmdir() if path.is_dir() else path.unlink()
+            scratch.rmdir()
+        except OSError:
+            continue
+
+
+def _enable_untracked_cache(root: Path) -> bool:
+    """Turn on git's untracked cache after a status timeout, so the NEXT one is cheap.
+
+    This is the actual repair for the 2026-08-21 incident; the retry budget is only
+    the fallback that lets THIS invocation still answer. A `status
+    --untracked-files=all` on a cold cache re-walks every directory in the worktree,
+    which on the affected clone cost 333s; the untracked cache makes git reuse the
+    previous walk per directory, keyed on the directory's mtime, and the same clone
+    then answered in 0.63s. Enabling it converts a tree that cannot be read into one
+    that is read for free, permanently and for every worktree of the clone — a
+    linked worktree's unscoped `git config` write lands in the clone's SHARED
+    config, which is the right scope precisely because the next session gets a
+    healed tree without ever paying this path. That holds even though this clone
+    runs `extensions.worktreeConfig=true`: only an explicit `--worktree` writes the
+    per-worktree file, while `--get` still reads it, so a worktree-scoped value
+    would be seen and respected by the refusal below rather than silently reset.
+
+    The cache itself lives in each worktree's own index (the `UNTR` extension) and
+    is written by the first walk that COMPLETES there, so the config write is the
+    durable half and each worktree populates its own on first success.
+
+    Racing sessions are safe: `git config` takes `config.lock` and the losers exit
+    non-zero with `could not lock config file` (measured, 20 concurrent writers —
+    one winner, valid config, no duplicate keys), which this reads as "not ours to
+    claim" and drops. `--test-untracked-cache` never touches the index (measured:
+    identical index hash across it), so it cannot collide with a sibling's git.
+
+    Three refusals, all fail-SAFE, because a wrong "yes" here is the only way this
+    function could weaken the gate:
+
+    * An already-configured value is never overwritten, in either direction. An
+      operator (or a previous heal) who set `false` decided that deliberately, and
+      an unreadable/odd exit status is not evidence of anything — only a clean rc 1,
+      git's specific "this key is unset", is taken as permission to write.
+    * `--test-untracked-cache` must pass FIRST. The cache trusts directory mtimes,
+      so on a filesystem that does not update them reliably git would report a
+      directory as unchanged and MISS untracked files in it. That is a fail-OPEN in
+      the dirty check this whole hook exists to make — a session's new files would
+      simply not appear. Skipping the test to save its ~6s would trade a slow honest
+      answer for a fast dishonest one, so it is never skipped.
+    * Any exception at all leaves the cache alone. The heal is an optimisation on
+      the way to a retry that has its own budget; it must never become the reason
+      the retry does not happen.
+
+    Attempted at most once per process: a filesystem that fails the test would
+    otherwise re-pay those ~6s on every call, and the result cannot change mid-run.
+    """
+    global _UNTRACKED_CACHE_HEAL_TRIED
+    if _UNTRACKED_CACHE_HEAL_TRIED:
+        return False
+    _UNTRACKED_CACHE_HEAL_TRIED = True
+    try:
+        configured = _capture(
+            root,
+            ("git", "config", "--get", "core.untrackedCache"),
+            SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+        # rc 0 -> already set (leave it); rc 1 -> unset (ours to set); anything
+        # else is an error we decline to interpret.
+        if configured.returncode != 1:
+            return False
+        # The mtime test holds `index.lock` for its whole ~6s run and writes a
+        # scratch directory into the worktree root, so a killed one leaves BOTH
+        # behind. Clean up after it on every path — success, non-zero, or timeout.
+        preexisting = _mtime_test_scratches(root)
+        try:
+            tested = _capture(
+                root,
+                ("git", "update-index", "--test-untracked-cache"),
+                UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            _sweep_stale_index_lock(root)
+            raise
+        finally:
+            _remove_mtime_test_scratch(root, preexisting)
+        if tested.returncode != 0:
+            return False
+        written = _capture(
+            root,
+            ("git", "config", "core.untrackedCache", "true"),
+            SWEEP_PROBE_TIMEOUT_SECONDS,
+        )
+        return written.returncode == 0
+    except Exception:  # noqa: BLE001 — a failed optimisation must never block the retry
+        return False
+
+
+def _status_output(root: Path) -> str:
+    """`git status --porcelain`, retried ONCE because the first run warms the index.
+
+    The retry is not optimism, it is the measured shape of the failure: the
+    2026-08-19 tree that blew a 90s budget at 161s cold answered the very next
+    invocation in 13s, because the first pass had already paid the cold-cache
+    cost for the second. Failing on the first timeout threw that warm-up away and
+    reported `guard_error` on a tree that was one cheap re-run from answering.
+
+    Both timeout paths sweep, because a lock this guard orphaned outlives the
+    process that made it: once before the retry, so the retry does not trip over
+    our own wreckage, and once more before giving up, so the NEXT invocation
+    starts from a tree this one did not wedge.
+
+    A first attempt that timed out also triggers `_enable_untracked_cache`, which
+    is the difference between a tree that keeps timing out and one that stops: a
+    blown first budget is the only evidence this hook ever gets that a checkout is
+    too slow to read, and it is a good one — a healthy tree never reaches that
+    line, and so never pays the heal's ~6s filesystem test.
+
+    The heal runs AFTER the status has been read, never between the two attempts,
+    and that ordering is load-bearing rather than cosmetic. Its `--test-untracked-
+    cache` writes a scratch directory into the worktree root; a killed one leaves it
+    there (measured), and a `status` run afterwards would report it as untracked —
+    letting the guard file a false `uncommitted` block naming a file the guard
+    itself created. `_remove_mtime_test_scratch` is the direct repair for that, and
+    reading status first means even a cleanup that fails cannot contaminate THIS
+    invocation's answer. Nothing is lost by waiting: the cache is populated by the
+    first walk that COMPLETES, so it could never have rescued a retry that follows a
+    killed attempt anyway — the retry's own budget has to be able to finish the walk
+    alone, and the heal is for every invocation after this one.
+
+    Fail-closed is unchanged. A status that times out twice re-raises, `main`
+    files `guard_error`, and Stop blocks — the retry buys a second chance to
+    ANSWER, never permission to skip the question, and the heal changes only how
+    long the answer takes, never whether one is required.
+    """
+    args = ("git", "status", "--porcelain=v1", "--untracked-files=all")
+    try:
+        return _run_raw(root, *args, timeout=STATUS_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        _sweep_stale_index_lock(root)
+    try:
+        output = _run_raw(root, *args, timeout=STATUS_RETRY_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        _sweep_stale_index_lock(root)
+        _enable_untracked_cache(root)
+        raise
+    _enable_untracked_cache(root)
+    return output
+
+
 def _fingerprint(root: Path) -> dict[str, str]:
     """Return path -> status/content hash for the current dirty set."""
-    output = _run_raw(
-        root,
-        "git",
-        "status",
-        "--porcelain=v1",
-        "--untracked-files=all",
-        timeout=90,
-    )
+    output = _status_output(root)
     result: dict[str, str] = {}
     for line in output.splitlines():
         if len(line) < 4:
@@ -325,6 +777,92 @@ def _changed_since_baseline(baseline: dict[str, str], now: dict[str, str]) -> li
     not uncommitted work.
     """
     return sorted(path for path, value in now.items() if baseline.get(path) != value)
+
+
+def _shipped_identical_untracked(
+    root: Path, now: dict[str, str], dirty: list[str]
+) -> set[str]:
+    """Untracked paths whose bytes already sit at the same path on origin/main.
+
+    The 2026-08-20 class: the primary checkout sat on a detached 2026-07-14
+    HEAD while a repair session restored the WorktreeCreate hook bytes with
+    `git show origin/main:<path> > <path>` — the documented zero-git-state
+    repair for stale hook bytes. Those files are tracked on origin/main and
+    byte-identical to it, but the old HEAD predates them, so `git status`
+    reports `??` and every session evaluating that tree blocked at Stop on
+    content with nothing left to ship: a commit would add nothing that main
+    does not already have, and the escape ladder was the only exit.
+
+    Scope is deliberately narrow and fail-closed:
+    - `??` entries only. A TRACKED file modified to match origin/main still
+      blocks — its diff against HEAD is real checkout state, and excusing it
+      would also excuse an un-pulled revert riding in the working tree.
+    - Regular files only. The fingerprint digest is a content hash for files;
+      `dir`, `symlink:*`, and `missing` entries never qualify (a symlink's
+      blob is its target STRING, which `git hash-object` of the followed file
+      would misjudge).
+    - Identity is blob-OID equality at the SAME path: one `git ls-tree` for
+      origin/main's OIDs and one `git hash-object` for the working copies.
+      Neither reads blob content, so a blobless clone answers without a
+      promisor fetch.
+    - Any failure — no origin/main ref, a git error, a racing edit — excludes
+      nothing, and the path keeps blocking exactly as before.
+
+    A stale origin/main ref is safe on both edges: matching a stale blob
+    still proves the bytes shipped on SOME main commit, and failing to match
+    keeps the block (the pre-existing behavior).
+    """
+    candidates = []
+    for entry in dirty:
+        value = now.get(entry, "")
+        if not value.startswith("??:"):
+            continue
+        digest = value[3:]
+        if digest in ("dir", "missing") or digest.startswith("symlink:"):
+            continue
+        candidates.append(entry)
+    if not candidates:
+        return set()
+    try:
+        listing = _run_raw(
+            root,
+            "git",
+            "ls-tree",
+            "-z",
+            "refs/remotes/origin/main",
+            "--",
+            *candidates,
+        )
+        shipped_oid: dict[str, str] = {}
+        for record in listing.split("\0"):
+            if not record:
+                continue
+            meta, _, name = record.partition("\t")
+            fields = meta.split()
+            if len(fields) != 3:
+                continue
+            mode, object_type, oid = fields
+            # Blobs only, in the two regular-file modes. 120000 (symlink) and
+            # 160000 (gitlink) records name different object semantics, and a
+            # tree here means the untracked path collides with a shipped
+            # DIRECTORY — never equivalence.
+            if object_type != "blob" or mode not in ("100644", "100755"):
+                continue
+            shipped_oid[name] = oid
+        matched = [entry for entry in candidates if entry in shipped_oid]
+        if not matched:
+            return set()
+        hashed = _run_raw(root, "git", "hash-object", "--", *matched, timeout=90)
+        oids = hashed.split()
+        if len(oids) != len(matched):
+            return set()
+        return {
+            entry
+            for entry, oid in zip(matched, oids)
+            if shipped_oid[entry] == oid
+        }
+    except Exception:
+        return set()
 
 
 def _load(path: Path) -> dict[str, Any] | None:
@@ -1167,6 +1705,61 @@ def _semantic_authority_refusal(number: Any) -> str:
     )
 
 
+#: The emitter records the authority freeze ITSELF as an infrastructure row:
+#: `ci_semantic_proof.reconcile_evidence` appends this outcome on every pr_head
+#: artifact where `authority_changed` is true and any unit classified
+#: `inherited_base` (the motivating shape — an authority-changing PR merged
+#: while main was red). An infrastructure list holding NOTHING ELSE therefore
+#: IS the freeze, not ambiguity. Getting this wrong inverts the gate: the
+#: first draft of the predicate below required `infrastructure` empty and
+#: `gate.infrastructure_blocking` false, which made the clearing DEAD for the
+#: motivating case and OPEN for a head carrying its own classified
+#: `pr_regression` — caught by the pre-ship red team, 2026-08-19.
+_AUTHORITY_SELF_EXCUSE_OUTCOME = "authority_self_excuse_refused"
+
+
+def _authority_freeze_is_sole_nonunit_blocker(loaded: Any, gate: Any) -> bool:
+    """True when frozen semantic evidence blocks ONLY on the authority freeze.
+
+    This predicate scopes the ONE bounded clearing path an authority freeze has
+    (see `_check_ci`). It answers True exactly when every non-clear signal in
+    the artifact is the freeze itself: `authority_changed=true`, every
+    top-level infrastructure row is the emitter's own self-excuse refusal,
+    every job's infrastructure passed, and — decisive — the gate exposes ZERO
+    classified blocking units. A `pr_regression`/`unknown` unit is the head's
+    OWN red and must never be blanketed by a descendant baseline; those heads
+    keep the ordinary frozen refusal. Fail CLOSED on every unreadable shape.
+    (`gate.infrastructure_blocking` is deliberately NOT consulted: it is true
+    in the motivating case purely because of the self-excuse row.)
+    """
+    evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return False
+    if evidence.get("authority_changed") is not True:
+        return False
+    infrastructure = evidence.get("infrastructure")
+    if not isinstance(infrastructure, list):
+        return False
+    if any(
+        not isinstance(row, dict)
+        or row.get("outcome") != _AUTHORITY_SELF_EXCUSE_OUTCOME
+        for row in infrastructure
+    ):
+        return False
+    jobs = evidence.get("jobs")
+    if not isinstance(jobs, list):
+        return False
+    for job in jobs:
+        if not isinstance(job, dict):
+            return False
+        job_infrastructure = job.get("infrastructure")
+        if not isinstance(job_infrastructure, dict):
+            return False
+        if str(job_infrastructure.get("outcome", "passed")) != "passed":
+            return False
+    return not getattr(gate, "blocking", True)
+
+
 def _head_can_advertise_semantic_evidence(runs: list[dict[str, Any]]) -> bool:
     return any(
         str(run.get("name") or "") == "ci-gate"
@@ -1924,7 +2517,11 @@ def _check_ci(
     the point: E1 is the OPERATOR'S DELIBERATE UNBLOCK LEVER — dispatch ci.yml on
     main once the base-side cause is healed and every pinned session clears at
     once. This mirrors `_render_status` accepting a dispatched render on a
-    descendant.
+    descendant. Since 2026-08-19, E1 is also the ONE clearing path for a frozen
+    semantic `authority_changed=true` head whose only nonunit blocker is the
+    authority freeze itself: the descendant run executes ON the merged authority,
+    so it is proof of main under the new gate rather than the candidate-era
+    evidence the fence forbids. Infrastructure ambiguity stays outside it.
 
     E2, base-side-red confirmation (per check name, `failure` conclusions only):
     the SAME name concluded `failure` on at least TWO INDEPENDENT concurrent
@@ -2093,13 +2690,76 @@ def _check_ci(
     if gate is not None:
         semantic_resolved = bool(gate.clear)
         witness_notes: list[str] = []
+        unclearable_notes: list[str] = []
         unresolved_units: list[Any] = []
+        # None until the artifact window is actually read. Every consumer below
+        # treats None as "inventory unknown", which keeps the fail-closed
+        # reading when the witness search itself raised.
+        inventory: Any = None
         if not gate.clear:
             if _semantic_has_nonunit_blocker(loaded, gate):
-                return False, (
+                refusal = (
                     "Failing semantic CI on the frozen merged head: "
                     f"{_semantic_nonunit_refusal(loaded)}. Descendant unit healing "
                     "cannot erase infrastructure or authority ambiguity."
+                )
+                if not _authority_freeze_is_sole_nonunit_blocker(loaded, gate):
+                    return False, refusal
+                # An authority-only freeze has exactly ONE clearing path, and it
+                # is E1 above, not anything semantic: a completed+success ci.yml
+                # run on a main DESCENDANT of this merge. That run executes ON the
+                # merged authority, so it is proof of main under the new gate —
+                # the post-merge transposition of the pre-merge standard "an
+                # authority-changing PR needs main itself green" — and it uses
+                # none of the candidate-era classification machinery the fence
+                # exists to distrust. Before 2026-08-19 this branch returned the
+                # refusal unconditionally, which made an authority-changing PR
+                # merged while main was red UNCLEARABLE FOREVER (its own run is
+                # frozen at merge; unit healing is disabled here by design): a
+                # session that performed an operator-granted main-red-repair
+                # merge (#5954/#5969/#6002) re-blocked on every Stop for the rest
+                # of its life and could only exit by re-filing the same
+                # `SHIP LOOP BLOCKED:` report dozens of times. E1 was already
+                # doctrine on the legacy path below ("the OPERATOR'S DELIBERATE
+                # UNBLOCK LEVER ... clears EVERY bad conclusion") — advertising
+                # semantic evidence must not make a head strictly less clearable
+                # than having none. Fail-closed: an unanswerable probe keeps the
+                # refusal, and pending checks still outrank a clearing.
+                try:
+                    green = _merged_content_green(root, owner, repo, merge_sha)
+                except Exception as exc:  # noqa: BLE001 — unanswerable keeps the freeze
+                    return False, (
+                        f"{refusal} The one clearing path — a full ci.yml run "
+                        "concluding success on a main descendant of this merge — "
+                        f"could not be probed: {str(exc)[:200].strip()}."
+                    )
+                if green is None:
+                    return False, (
+                        f"{refusal} This authority-only freeze clears through "
+                        "exactly one lever: a completed ci.yml run concluding "
+                        "SUCCESS on branch=main whose head is a main descendant of "
+                        "this merge (proof of main under the merged authority "
+                        "itself, never candidate-era evidence). Preflight for an "
+                        "in-flight baseline (`gh run list --workflow ci.yml "
+                        "--branch main --json databaseId,status --jq "
+                        "'[.[]|select(.status!=\"completed\")]'`) and WATCH it "
+                        "(`gh run watch <id> --interval 60`) rather than "
+                        "re-dispatching over it; dispatch `gh workflow run ci.yml "
+                        "--ref main` only over a clear field. The next Stop "
+                        "re-reads the result."
+                    )
+                if pending:
+                    return False, "CI still running: " + ", ".join(pending[:8])
+                return True, (
+                    "Ignored frozen authority_changed semantic evidence on the "
+                    f"merged head: full ci.yml run {green.get('id')} concluded "
+                    "success on main descendant "
+                    f"{str(green.get('head_sha') or '')[:12]}, proving the merged "
+                    "content green under the merged authority (E1). The head's "
+                    "red — "
+                    + ", ".join(f"{name} ({conclusion})" for name, conclusion in bad[:8])
+                    + " — stays pinned to the frozen pull_request merge ref "
+                    "(base-side)."
                 )
             if not gate.blocking:
                 return False, (
@@ -2124,6 +2784,12 @@ def _check_ci(
                         ancestry_cache[key] = _is_ancestor(root, ancestor, descendant)
                     return ancestry_cache[key]
 
+                inventory = semantic_proof.main_role_job_inventory(
+                    merge_sha,
+                    candidates,
+                    ancestry_witness,
+                    max_candidates=SEMANTIC_RUN_LOOKBACK,
+                )
                 for unit in gate.blocking:
                     witness = semantic_proof.find_descendant_pass_witness(
                         unit.logical_job_id,
@@ -2148,6 +2814,52 @@ def _check_ci(
                         "contract_changed="
                         f"{str(bool(getattr(witness, 'contract_changed', False))).lower()})"
                     )
+                # THE PERMANENT-TRAP FENCE (2026-08-19, PR #5936).
+                #
+                # `find_descendant_pass_witness` clears a frozen blocking unit
+                # only with a main-role PASS naming the same `logical_job_id`.
+                # But semantic ELIGIBILITY is role-dependent: `ci.yml` plans the
+                # merge gate `--gate code`, while the 74 `gate: data` jobs moved
+                # to `data-health.yml` (W2, research/
+                # CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md), a lane
+                # that emits no main-role semantic evidence at all. A head
+                # planned before that split froze blocking units for jobs main
+                # will never name again, so the witness search could not
+                # succeed on any future run — measured on #5936's head run
+                # 32223270543 (`house-law-registry`, `signal-contract`) against
+                # seven consecutive post-merge main runs plus an hour-long
+                # ancestry watcher. A job that can never clear must never block:
+                # the session was pinned by the guard's own bookkeeping, not by
+                # anything wrong with its work.
+                #
+                # Fail-closed in both directions. The inventory is read from the
+                # SAME bounded artifacts the witness search already fetched (no
+                # extra API calls, no second source of truth), it counts only
+                # ancestry-valid main artifacts, and with fewer than
+                # `MIN_INVENTORY_ARTIFACTS` of them it answers "unknown" and
+                # every unit stays blocking exactly as before. Retirement is
+                # never silent: the excluded units are named in the release
+                # note, so a genuinely broken job cannot vanish from the record.
+                retired = semantic_proof.unclearable_units(
+                    unresolved_units, inventory
+                )
+                if retired:
+                    retired_ids = {id(unit) for unit in retired}
+                    unresolved_units = [
+                        unit
+                        for unit in unresolved_units
+                        if id(unit) not in retired_ids
+                    ]
+                    for unit in retired:
+                        unclearable_notes.append(
+                            f"{unit.logical_job_id}/{unit.proof_id} retired as "
+                            "structurally unclearable: "
+                            + semantic_proof.format_main_eligibility(
+                                unit, inventory
+                            )
+                            + " — no main-role run plans this logical job, so no "
+                            "descendant PASS can ever exist for it"
+                        )
                 semantic_resolved = not unresolved_units
             except Exception as exc:
                 unresolved_units = list(gate.blocking)
@@ -2157,7 +2869,22 @@ def _check_ci(
                 )
 
         if not semantic_resolved:
-            detail = "; ".join(_semantic_unit_details(unresolved_units or gate.blocking))
+            blocked_units = list(unresolved_units or gate.blocking)
+            detail = "; ".join(_semantic_unit_details(blocked_units))
+            # Whether waiting is even capable of helping is the one fact a
+            # pinned session cannot derive on its own, so state it per unit:
+            # `main-eligible=yes` means a later main run can still emit the PASS
+            # that clears this, `unknown` means the inventory was unreadable.
+            eligibility = [
+                f"{unit.logical_job_id}/{unit.proof_id}: "
+                + semantic_proof.format_main_eligibility(unit, inventory)
+                for unit in blocked_units[:8]
+                if inventory is not None
+            ]
+            if eligibility:
+                detail += "; " + "; ".join(eligibility)
+            if unclearable_notes:
+                detail += "; " + "; ".join(unclearable_notes)
             if semantic_notes:
                 detail += "; " + "; ".join(semantic_notes)
             return False, (
@@ -2171,12 +2898,17 @@ def _check_ci(
         # exact semantic units, even when its own overall workflow stayed red.
         def semantic_transport(entry: tuple[str, str]) -> bool:
             name = entry[0]
+            # A retirement supersedes the frozen `ci-gate` for the same reason
+            # a descendant PASS does: the units that reddened it are no longer
+            # a live verdict on this head. Leaving `ci-gate` behind would keep
+            # the exact trap this fence removes, one name further down.
             return bool(re.fullmatch(r"ci-pack-\d+", name)) or (
-                bool(witness_notes) and name == "ci-gate"
+                bool(witness_notes or unclearable_notes) and name == "ci-gate"
             )
 
         bad = [entry for entry in bad if not semantic_transport(entry)]
         semantic_notes.extend(witness_notes)
+        semantic_notes.extend(unclearable_notes)
         if not bad:
             if pending:
                 return False, "CI still running: " + ", ".join(pending[:8])
@@ -3077,6 +3809,7 @@ def _block(
     payload: dict[str, Any],
     code: str,
     reason: str,
+    exit_key: str = "",
 ) -> None:
     """Block Stop, except when a reported blocker has ping-ponged past the ceiling.
 
@@ -3111,7 +3844,32 @@ def _block(
     all. There is deliberately no valve for `unmerged` or `ci_failed_unmerged`: a
     session owns its pull request until the merge lands, and the internal ceiling
     is the only thing that can end that wait early.
+
+    A RATIFIED ladder exit is REMEMBERED for the exact frozen state it excused
+    (2026-08-19, operator complaint). ``exit_key`` names one evaluated state —
+    today only `ci_failed` on a merged head, keyed
+    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>``. The reason
+    digest is load-bearing, not decoration: a merged head's check SET is not
+    immutable (a `gh run rerun` or a late-attaching cron can bind a different
+    red to the same shas), so the shas alone would let one ratified report
+    cover an unbounded family of later, unrelated CI states. Digesting the
+    block reason pins the memory to the exact evidence the report answered —
+    any different red produces a different reason, a different key, and a fresh
+    block, which is the fail-closed direction. Without the memory, a long-lived
+    session re-blocked on every subsequent Stop and had to re-file the SAME
+    `SHIP LOOP BLOCKED:` report dozens of times (measured on the 2026-08-19
+    authority-frozen main-red-repair session). The memory records an exit key
+    ONLY at the moment an escape actually fires — which itself required the
+    full evidence report on a re-entrant Stop — and a later block carrying a
+    remembered key passes through without bumping any counter. A DIFFERENT key
+    (new PR, new merge, new evidence) never matches, internal codes never carry
+    a key, and an unratified block records nothing, so no ladder widens: the
+    report is demanded once per frozen state instead of once per Stop.
     """
+    exits = state.get("ladder_exits")
+    remembered = [str(item) for item in exits] if isinstance(exits, list) else []
+    if exit_key and exit_key in remembered:
+        return
     previous = state.get("last_blocker")
     count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
     state["last_blocker"] = code
@@ -3146,6 +3904,11 @@ def _block(
     external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
     any_code_escape = count >= 10 or total_blocks >= 15
     if reported and (external_escape or any_code_escape):
+        if exit_key:
+            # Bounded: the list only ever holds frozen merged-head identities,
+            # and a session mints at most a handful of merges.
+            state["ladder_exits"] = (remembered + [exit_key])[-20:]
+            _save(path, state)
         return
     # The escape hint is only inviting when an escape is plausibly one attempt away:
     # an external code (its ceiling is low), or an internal code already near the
@@ -3317,7 +4080,16 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
 
     baseline = state.get("baseline") or {}
-    dirty = _changed_since_baseline(baseline, _fingerprint(root))
+    now = _fingerprint(root)
+    dirty = _changed_since_baseline(baseline, now)
+    if dirty:
+        # Untracked bytes already shipped at the same path on origin/main are
+        # not committable work (see _shipped_identical_untracked). Checked only
+        # here, on the paths about to block, so the cost stays two bounded git
+        # calls at Stop rather than per-status-entry.
+        shipped = _shipped_identical_untracked(root, now, dirty)
+        if shipped:
+            dirty = [entry for entry in dirty if entry not in shipped]
     if dirty:
         preview = ", ".join(dirty[:12])
         _block(path, state, payload, "uncommitted", f"Session-created changes remain: {preview}")
@@ -3489,7 +4261,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _remember_proof(path, state, "ci", ci_key, {"reason": ci_reason})
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
-        _block(path, state, payload, code, ci_reason)
+        # Only the merged-head red carries an exit key, and the key binds the
+        # exact evidence text: one ratified ladder exit covers later Stops on
+        # the IDENTICAL frozen state only. A different red on the same head
+        # (rerun, late cron) yields a different reason and re-blocks.
+        # `render_pending` states evolve and never carry a key.
+        reason_digest = hashlib.sha256(ci_reason.encode("utf-8")).hexdigest()[:12]
+        _block(
+            path,
+            state,
+            payload,
+            code,
+            ci_reason,
+            exit_key=(
+                f"{code}:{ci_key}:{reason_digest}" if code == "ci_failed" else ""
+            ),
+        )
         return
     if _proof(state, "origin_main", merge_sha) is None:
         try:

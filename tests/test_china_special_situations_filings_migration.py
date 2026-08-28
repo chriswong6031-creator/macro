@@ -65,6 +65,12 @@ def test_inquiry_block_from_filings_same_shape(tmp_path, monkeypatch):
     Required output keys: asof, status, letters, n_letters, n_replies.
     Each letter dict: secCode, secName, title, date, pdf_url, has_reply, type_name.
     NO 'kind' key on letter dicts.
+
+    The letter and reply titles below must genuinely NAME the same inquiry thread
+    (a 《》-quoted inquiry name) for has_reply to resolve True — reply identity is
+    scoped to (issuer, inquiry thread), not issuer alone. See
+    tests/test_china_special_situations_truth_wave1.py for the full reply-identity
+    regression suite.
     """
     import lib.config as cfg
     monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
@@ -78,10 +84,12 @@ def test_inquiry_block_from_filings_same_shape(tmp_path, monkeypatch):
     yesterday = (pd.Timestamp.today() - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
 
     rows = [
-        _filings_row("000001", "平安银行", "关于问询函的回复", f"{today}T09:00:00+08:00",
-                     kind="letter", announcement_id="A001"),
-        _filings_row("000001", "平安银行", "关于上交所问询函的回复", f"{today}T10:00:00+08:00",
-                     kind="reply", announcement_id="A002"),
+        _filings_row("000001", "平安银行",
+                     "关于收到深圳证券交易所《关于平安银行2025年年报的问询函》的公告",
+                     f"{today}T09:00:00+08:00", kind="letter", announcement_id="A001"),
+        _filings_row("000001", "平安银行",
+                     "平安银行关于深圳证券交易所《关于平安银行2025年年报的问询函》的回复公告",
+                     f"{today}T10:00:00+08:00", kind="reply", announcement_id="A002"),
         # An attachment — must be excluded from letters list
         _filings_row("000002", "万科A", "专项核查意见", f"{yesterday}T09:00:00+08:00",
                      kind="attachment", announcement_id="A003"),
@@ -654,6 +662,12 @@ def test_fuhan_kind_reply_legacy_path(tmp_path, monkeypatch):
 
     Tests the LEGACY code path: legacy inquiry.parquet with kind='reply' for the 复函 row.
     Both code paths (legacy + filings) must agree on the reply classification.
+
+    The letter and 复函 reply titles below must genuinely NAME the same inquiry
+    thread (a 《》-quoted inquiry name) for has_reply to resolve True — reply
+    identity is scoped to (issuer, inquiry thread), not issuer alone. See
+    tests/test_china_special_situations_truth_wave1.py for the full reply-identity
+    regression suite.
     """
     import lib.config as cfg
     monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
@@ -667,11 +681,12 @@ def test_fuhan_kind_reply_legacy_path(tmp_path, monkeypatch):
 
     # No filings.parquet → legacy path is used
     _make_parquet(tmp_path / "data" / "china_inquiry" / "inquiry.parquet", [
-        {"secCode": "000555", "secName": "老格式银行", "announcementTitle": "关于问询函的说明",
+        {"secCode": "000555", "secName": "老格式银行",
+         "announcementTitle": "关于收到深圳证券交易所《关于老格式银行股票交易异常波动的问询函》的公告",
          "announcementTime": today, "adjunctUrl": "/x/letter.pdf",
          "announcementTypeName": "问询函", "kind": "letter", "asof": today},
         {"secCode": "000555", "secName": "老格式银行",
-         "announcementTitle": "股票交易异常波动问询函的复函-张三",
+         "announcementTitle": "老格式银行关于深圳证券交易所《关于老格式银行股票交易异常波动的问询函》的复函",
          "announcementTime": today, "adjunctUrl": "/x/fuhan.pdf",
          "announcementTypeName": "问询函回函", "kind": "reply", "asof": today},
     ])

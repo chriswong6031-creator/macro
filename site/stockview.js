@@ -43,8 +43,11 @@
       'reversal': ['Reversal · CN', '均值回归 · A股'], 'screen': ['Screen only', '仅筛选']
     };
     var ts = TRUST_SHORT[trust.tier] || (trust.en ? [trust.en, trust.zh] : null);
+    // decision-relevant trust explanation: data-tip-en/zh (LENS popover, theme.js) —
+    // never a translated title=, and never English-only when the model has trust.zh.
     var trustChip = ts ? '<span class="sv-trust ' + esc(trust.css || '') +
-      '" title="' + esc(trust.en || '') + '">' + B('🛈 ' + ts[0], '🛈 ' + ts[1]) + '</span>' : '';
+      '" data-tip-en="' + esc(trust.en || '') + '" data-tip-zh="' + esc(trust.zh || trust.en || '') +
+      '">' + B('🛈 ' + ts[0], '🛈 ' + ts[1]) + '</span>' : '';
 
     var headline = '<div class="sv-headline">' + B(d.headline, d.headline_zh) + '</div>';
     var gloss = (d.gloss) ? '<div class="sv-gloss">' + B(d.gloss, d.gloss_zh) + '</div>' : '';
@@ -52,7 +55,7 @@
     // timing sub-line (cycle + entry tag) — quiet, UNDER the verb, never a 2nd verb
     var t = d.timing || {};
     var timingBits = [];
-    if (t.state_label) timingBits.push(B(t.state_label, t.state_label));
+    if (t.state_label) timingBits.push(B(t.state_label, t.state_label_zh));
     if (t.tag) timingBits.push('<span class="sv-tag sv-urg-' + esc(t.urgency || '') + '">' + B(t.tag, t.tag_zh) + '</span>');
     // entry-quality grade is already shown by the header eq badge — not restated here.
     if (t.bc_score != null) timingBits.push(B('bottom-confidence ' + t.bc_score, '底部信心 ' + t.bc_score));
@@ -68,7 +71,7 @@
     var sizeLine = (size.pct != null)
       ? '<div class="sv-size"><span class="sv-size-lbl">' + B('Suggested size', '建议仓位') + '</span>' +
         '<span class="sv-size-pct sv-size-' + esc(size.bucket || '') + '">' + esc(size.pct) + '%</span>' +
-        (size.bucket ? '<span class="sv-size-bk">' + B(size.bucket, size.bucket) + '</span>' : '') +
+        (size.bucket ? '<span class="sv-size-bk">' + B(size.bucket_label, size.bucket_label_zh) + '</span>' : '') +
         '</div>'
       : '';
 
@@ -95,8 +98,9 @@
           '<span class="sv-band-word">' + B(d.name_label || d.band_en || '', d.name_label_zh || d.band_zh || '') + '</span>' +
           (score !== '' ? '<span class="sv-score">' + esc(score) + '<small>/100</small></span>' : '') +
         '</div>' +
-        (d.rank_note ? '<div class="sv-rank-note" title="' +
-          esc('Percentile RANK within today’s board, not a 0-100 buy score.') + '">' +
+        (d.rank_note ? '<div class="sv-rank-note" data-tip-en="' +
+          esc('Percentile RANK within today’s board, not a 0-100 buy score.') +
+          '" data-tip-zh="' + esc('在当日板块内的百分位排名，而非0-100的买入评分。') + '">' +
           B(d.rank_note, d.rank_note_zh) + '</div>' : '') +
         trustChip +
       '</div>';
@@ -169,8 +173,10 @@
     var ev = view.evidence || {};
     var cells = EV_ORDER.filter(function (k) { return ev[k]; }).map(function (k) {
       var c = ev[k];
-      var gloss = c.gloss ? ' title="' + esc(c.gloss) + '"' : '';
-      return '<div class="sv-dim ' + toneClass(c.tone) + '"' + gloss + '>' +
+      // no title= here: c.gloss is already rendered as a visible dual-span line
+      // below (.sv-dim-gloss) — an attribute repeating it is redundant and, per
+      // scripts/check_title_i18n.py, translated text cannot live inside title=.
+      return '<div class="sv-dim ' + toneClass(c.tone) + '">' +
         '<div class="sv-dim-lbl">' + B(c.label, c.label_zh) + '</div>' +
         '<div class="sv-dim-val">' + B(c.value, c.value_zh) + '</div>' +
         (c.gloss ? '<div class="sv-dim-gloss">' + B(c.gloss, c.gloss_zh) + '</div>' : '') +

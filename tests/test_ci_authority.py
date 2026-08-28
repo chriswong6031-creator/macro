@@ -33,6 +33,8 @@ HEAD = "a" * 40
 NEW_HEAD = "b" * 40
 BASE = "c" * 40
 OTHER_BASE = "d" * 40
+THIRD_BASE = "e" * 40
+FOURTH_BASE = "f" * 40
 BASE_REF = "main"
 
 
@@ -275,6 +277,91 @@ def test_edited_event_rechecks_the_same_head_and_base_identity() -> None:
     assert check["conclusion"] == "success"
 
 
+def test_same_base_ref_may_advance_after_event_without_changing_candidate() -> None:
+    api = FakeApi([_file("docs/ordinary-note.md")], base_sha=OTHER_BASE)
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(base_sha=BASE, base_ref="main"), REPOSITORY, api
+    )
+
+    assert code == 0
+    assert decision["base_sha"] == BASE
+    assert decision["current_base_sha"] == OTHER_BASE
+    assert decision["post_files_base_sha"] == OTHER_BASE
+    assert decision["inventory_base_sha"] == OTHER_BASE
+    assert decision["changed_files_snapshot_attempts"] == 1
+    assert decision["base_ref"] == "main"
+    assert decision["reason"] == "ordinary_change"
+    assert check["conclusion"] == "success"
+
+
+def test_same_base_ref_may_advance_again_during_file_enumeration() -> None:
+    class AdvancingBaseApi(FakeApi):
+        def get_pull(self, repository: str, number: int) -> object:
+            response = super().get_pull(repository, number)
+            if sum(call[0] == "pull" for call in self.calls) >= 2:
+                return _pull(self.files, base_sha=THIRD_BASE, base_ref="main")
+            return response
+
+        def list_pull_files(
+            self, repository: str, number: int, expected_count: int
+        ) -> object:
+            response = super().list_pull_files(repository, number, expected_count)
+            if sum(call[0] == "files" for call in self.calls) == 2:
+                return [_file("scripts/ci_authority.py")]
+            return response
+
+    api = AdvancingBaseApi(
+        [_file("docs/ordinary-note.md")],
+        base_sha=OTHER_BASE,
+        base_ref="main",
+        permission="admin",
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(base_sha=BASE, base_ref="main"), REPOSITORY, api
+    )
+
+    assert code == 0
+    assert decision["base_sha"] == BASE
+    assert decision["current_base_sha"] == OTHER_BASE
+    assert decision["post_files_base_sha"] == THIRD_BASE
+    assert decision["inventory_base_sha"] == THIRD_BASE
+    assert decision["changed_files_snapshot_attempts"] == 2
+    assert decision["authority_hits"] == ["scripts/ci_authority.py"]
+    assert decision["reason"] == "same_repo_admin_authority_change"
+    assert decision["admin_verified"] is True
+    assert sum(call[0] == "files" for call in api.calls) == 2
+    assert check["conclusion"] == "success"
+
+
+def test_same_ref_base_that_never_stabilizes_fails_for_unproven_inventory() -> None:
+    class ContinuouslyAdvancingBaseApi(FakeApi):
+        def get_pull(self, repository: str, number: int) -> object:
+            response = super().get_pull(repository, number)
+            pull_calls = sum(call[0] == "pull" for call in self.calls)
+            if pull_calls >= 3:
+                return _pull(self.files, base_sha=FOURTH_BASE, base_ref="main")
+            if pull_calls >= 2:
+                return _pull(self.files, base_sha=THIRD_BASE, base_ref="main")
+            return response
+
+    api = ContinuouslyAdvancingBaseApi(
+        [_file("docs/ordinary-note.md")], base_sha=OTHER_BASE, base_ref="main"
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(base_sha=BASE, base_ref="main"), REPOSITORY, api
+    )
+
+    assert code == 1
+    assert decision["current_base_sha"] == OTHER_BASE
+    assert decision["post_files_base_sha"] == FOURTH_BASE
+    assert decision["inventory_base_sha"] is None
+    assert decision["changed_files_snapshot_attempts"] == 2
+    assert decision["reason"] == "changed_files_snapshot_unstable"
+    assert sum(call[0] == "files" for call in api.calls) == 2
+    assert not any(call[0] == "permission" for call in api.calls)
+    assert check["conclusion"] == "failure"
+
+
 def test_main_and_pilot_retargets_invalidate_the_old_context_on_reused_head() -> None:
     files = [_file("docs/ordinary-note.md")]
     api = FakeApi(files)
@@ -422,6 +509,26 @@ def test_head_changing_during_file_pagination_fails_closed() -> None:
     assert [call[0] for call in api.calls] == [
         "pull", "files", "pull", "check", "check"
     ]
+
+
+def test_changed_file_count_changing_during_pagination_fails_closed() -> None:
+    class FileCountRacingApi(FakeApi):
+        def get_pull(self, repository: str, number: int) -> object:
+            response = super().get_pull(repository, number)
+            if sum(call[0] == "pull" for call in self.calls) == 2:
+                return _pull(self.files + [_file("docs/late.md")], base_sha=THIRD_BASE)
+            return response
+
+    api = FileCountRacingApi([_file("docs/readme.md")], base_sha=OTHER_BASE)
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(), REPOSITORY, api
+    )
+
+    assert code == 1
+    assert decision["current_base_sha"] == OTHER_BASE
+    assert decision["post_files_base_sha"] == THIRD_BASE
+    assert decision["reason"] == "event_head_base_or_files_drift"
+    assert check["conclusion"] == "failure"
 
 
 def test_base_retarget_with_reused_head_fails_before_files() -> None:

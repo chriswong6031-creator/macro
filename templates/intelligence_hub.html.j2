@@ -21,8 +21,8 @@
 {#- 5-desk agreement matrix: one dot per desk coloured by direction. A non-verbal
     encoding — it needs no vocabulary, so the conviction bar it replaced is gone. -#}
 {% macro matrix(dirs, conv=none, nconf=none) -%}
-<span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked.{% if conv is not none %} Agreement score {{ conv|round|int }}{% if nconf %} across {{ nconf }} desk{{ 's' if nconf != 1 else '' }}{% endif %}.{% endif %}"
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。{% if conv is not none %}一致度 {{ conv|round|int }}{% if nconf %}，来自 {{ nconf }} 个台{% endif %}。{% endif %}">
+<span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked.{% if conv is not none %} Agreement score {{ conv|round|int }}{% if nconf %} across {{ nconf }} desk{{ 's' if nconf != 1 else '' }}{% endif %}.{% endif %}"
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。{% if conv is not none %}一致度 {{ conv|round|int }}{% if nconf %}，来自 {{ nconf }} 个台{% endif %}。{% endif %}">
 {%- for k in ['news','alt','radar','standout','policy'] -%}
 {% set d = dirs.get(k) %}
 <span class="cell {{ 'up' if d==1 else 'dn' if d==-1 else 'nz' if d==0 else 'off' }}"></span>
@@ -403,8 +403,8 @@
       <p class="deck">{{ t('What still has room to run — surfaced before the crowd arrives.',
                           '仍有上行空间的机会 —— 抢在人群之前浮出水面。') }}
         <button class="lens-q" type="button" aria-label="How this page ranks names"
-          data-tip-en="Ranked by genuine signal × how much of the move is still ahead × whether a leading desk fired before the crowd. Deliberately NOT ranked by how many desks agree — agreement is a lagging condition, so a crowd favourite that has already run is demoted. Five desks vote on each name: news flow, alt-data, divergence radar, buy-board, policy intent. Context only, never a trade trigger."
-          data-tip-zh="排序依据：真实信号 × 行情尚未走完的幅度 × 领先信号台是否抢在人群之前发动。刻意不按「多少台一致」排序 —— 一致性是滞后条件，因此已经跑完的人群宠儿会被下调。五台对每个标的投票：新闻流、另类数据、背离雷达、买入榜、政策意图。仅供参考，绝非交易触发。">?</button></p>
+          data-tip-en="Ranked by genuine signal × how much of the move is still ahead × whether a leading desk fired before the crowd. Deliberately NOT ranked by how many desks agree — agreement is a lagging condition, so a crowd favourite that has already run is demoted. Four evidence desks carry a direction: news flow, alt-data, divergence radar, buy-board; conviction only breaks ties. Policy intent is shown as context and never moves a name's rank. A desk with a proven weak track record can only pull a name down, never lift it. Context only, never a trade trigger."
+          data-tip-zh="排序依据：真实信号 × 行情尚未走完的幅度 × 领先信号台是否抢在人群之前发动。刻意不按「多少台一致」排序 —— 一致性是滞后条件，因此已经跑完的人群宠儿会被下调。四个证据台给出方向：新闻流、另类数据、背离雷达、买入榜；信念度仅用于并列时分先后。政策意图仅作背景展示，绝不影响排名。历史表现经证实偏弱的台只能下调排名，绝不能上调。仅供参考，绝非交易触发。">?</button></p>
     </div>
     <div class="state">
       {% if MC.regime %}<i class="hot">{{ t('Regime', '格局') }} <b>{{ MC.regime }}{% if MC.quad %} {{ MC.quad }}{% endif %}</b></i>{% endif %}

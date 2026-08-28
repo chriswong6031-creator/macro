@@ -1,0 +1,632 @@
+# Machine-readable projection of the REGISTRATION-RELEVANT FIELDS of
+# research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md AND
+# research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md (carried by
+# path via d5_state_construction, never inlined). [AP8 F6] "lossless" is
+# dropped as inaccurate -- this is a partial projection (row schemas, cell
+# IDs, block caps, receipt statuses), not a byte-complete restatement of
+# either markdown document. Both markdown documents BIND; this YAML carries
+# no independent authority; on any apparent divergence, the two markdown
+# documents control. [A26]
+# Supersedes IMCE_PREREGISTRATION_CANDIDATE.yaml (schema v0).
+# V1.1 (2026-08-21): applies Sol's 18 A4G amendments (AG1-AG18) atop the 26
+# Round 3 amendments (A1-A26). Full rationale: IMCE_A4G_AMENDMENT_LOG.md.
+# V1.2 (2026-08-21): applies Sol's 8 A4P amendments (AP1-AP8) atop V1.1 -
+# preregistration criteria closure (phase-target mapping, historical basis
+# uniformity, prospective share, bootstrap, FDR runner obligation, macro
+# boundary receipts, packet regeneration) plus AP8, the same-branch revision
+# fixing Fable's adjudication of an Opus red-team pass. Full rationale: the
+# A4P section appended to IMCE_A4G_AMENDMENT_LOG.md.
+# V1.2.1 (2026-08-22): applies Sol's fourth-gate REQUEST_CHANGES preflight
+# closure (wave A4P.1, rulings R1-R7) atop V1.2 - retires the stale DEFF
+# machine-readable denomination from the coverage/abstention claim class
+# (R1); permanently freezes the historical v0 population as the PHM/KBH
+# named subset with a separate prospective eligible pooled cohort and a
+# three-row label truth table (R2); ratifies and normalizes the six frozen
+# cell IDs to the canonical forward_63_trading_day_drawdown_tail naming
+# (R3); freezes the complete A4 registration state-transition, byte-exact,
+# verbatim-or-abort (R4); settles Treasury CMT's storage/reuse disposition
+# as GO_LIMITED (R5); keeps boundary receipts honestly open with the two
+# lawful post-registration dispositions named (R6); and regenerates all
+# three declared_budget row reason strings and config_hash values (R7).
+# Full rationale: the A4P.1 section appended to IMCE_A4G_AMENDMENT_LOG.md.
+
+schema: imce.preregistration_candidate.v1
+status: registered
+version: "1.2.1"                                # [A4P.1-header] was 1.2/V1.2
+date: 2026-08-20
+amended_date: "2026-08-22"                     # [A4P.1-header] A4P.1 fourth-gate preflight-closure gate
+amendment_gate: A4P1                            # [A4P.1-header] was A4P; A4P1 supersedes as the latest gate
+amendment_gates_applied: [A4G, A4P, A4P1]       # [A4P.1-header] three gates applied, in order
+amendment_gate_authority: sol_fourth_gate_verdict_2026_08_22
+binds: research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
+supersedes:
+  md: IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT.md
+  yaml: IMCE_PREREGISTRATION_CANDIDATE.yaml
+
+authority:
+  may_rank: false
+  may_gate: false
+  may_size: false
+  may_escalate: false
+  may_trade: false
+  may_originate: false
+
+# Registered at A4 (IMCE-03): repository pin and config_hash are recorded
+# below, stamped at the moment of the actual registration commit. [A25]
+registration:
+  registered: true
+  repository_pin_observed: "782b6e5703505af04ba21943b7d0a332853e286d"
+  config_hash: "05b43f9119fd1fd357d3994bd652abbc3cdff3d8"
+  freezer_of_record: fable_operator
+  freeze_location:
+    - research/imce/IMCE_PREREGISTRATION_AND_EVALUATION_CONTRACT_V1.md
+    - trial-ledger declared_budget rows (appended at registration)
+  two_commit_discipline: criteria_commit_strictly_precedes_runner_or_outcome_commit
+
+owner_candidate: cycle_pattern
+requires_fable_adjudication: false
+
+primary_question: >-
+  Conditional on a source-backed mechanism state frozen before the outcome,
+  does a fixed market-recognition vector add out-of-sample information beyond
+  the mechanism-only baseline for a registered next-state or 63-trading-day
+  risk target?
+
+prospective_accrual_first_posture:            # [A24, strengthened AG1]
+  historical_arm_is_promotion_path: false
+  promotion_bearing_evidence_pct_prospective: 100      # [AG1] A4G binding
+  historical_replay_weight_in_promotion_decision: 0    # [AG1]
+  historical_replay_may_supply_prior_to_prospective_cell: false  # [AG1]
+  historical_arm_role: instrumentation_episode_record_design_validation
+  claim_classes:
+    - name: cycle_block_claims
+      description: forecast_edge
+      reachable_from_history: false
+      reachable_prospectively: true
+    - name: transcription_fidelity_claims       # [G8-B5]
+      description: passport_field_reproduction_denominator_crosswalk_fidelity
+      natural_replicate: issuer_quarter_row
+      reachable_from_history: true
+      forecast_authority: none
+    - name: coverage_abstention_claims          # [G8-B5]
+      description: coverage_and_abstention_calibration
+      natural_replicate: effective_block
+      denomination: independent_shock_blocks_capped_at_raw_closed_B  # [A4P.1 R1] was effective_blocks_under_independent_shock_law_with_deff (DEFF struck, AG3)
+      row_counts: printed_never_used_as_n
+      forecast_authority: none
+
+trials:                                        # [A5][A6]
+  - family_candidate: rf.cycle_pattern.imce_phase_v0
+    status: declared
+    cell_budget: 3
+    cell_definition: 3 state targets x historical v0 population named_subset_basis [PHM, KBH] (prospective v0 eligible pooled cohort [DHI, PHM, KBH, TOL], label truth table applies) x contrast [M vs family/age prior]  # [A4P.1 R2] was "pooled homebuilder stratum"
+    d5_state_mapping: order_softness                      # [AP1] settles the AG14/MAJ-5 open item — all 3 targets
+    d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
+    targets:
+      - next_local_state_1_reporting_period
+      - next_local_state_3_reporting_periods
+      - false_repair_3_reporting_periods
+    cell_ids:                                              # [AP8, M2] minted/frozen; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
+      - imce_phase_v0.next_order_softness_1rp
+      - imce_phase_v0.next_order_softness_3rp
+      - imce_phase_v0.order_softness_false_repair_3rp
+  - family_candidate: rf.cycle_pattern.imce_sync_v0
+    status: declared
+    cell_budget: 2
+    cell_definition: targets {next_local_state_1rp, forward_63_trading_day_drawdown_tail} x contrast [M+R vs M]  # [A4P.1 R3] was forward_63d_drawdown_tail
+    primary_comparison: mechanism_plus_recognition_vs_mechanism_only
+    cell_4_d5_state_mapping: order_softness                # [AP1] next_local_state_1rp -> same state as phase target (a)
+    cell_ids:                                              # [AP8, M2] minted; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
+      - imce_sync_v0.next_order_softness_1rp
+      - imce_sync_v0.forward_63_trading_day_drawdown_tail  # [A4P.1 R3] was imce_sync_v0.forward_63d_drawdown_tail
+  - family_candidate: rf.cycle_pattern.imce_risk_v0
+    status: declared
+    cell_budget: 1
+    cell_definition: forward_63_trading_day_drawdown_tail x [M vs family/stratum prior]  # [A4P.1 R3] was forward_63d_drawdown_tail
+    target: forward_63_trading_day_drawdown_tail
+    cell_ids:                                              # [AP8, M2] minted/frozen; [A4P.1 R3] ratified + naming normalized by Sol's fourth gate
+      - imce_risk_v0.forward_63_trading_day_drawdown_tail
+
+historical_cell_budget_total: 6                # [A5]
+all_6_cells_share_order_softness_basis: true    # [AP2] uniform B<=3, cancellation-scoped, LEN excluded from all 6
+six_cell_ids_union:                             # [AP8, M2] minted; [A4P.1 R3] final Sol ratification + naming normalization — the exact union the future runner must assert against [AP5]
+  - imce_phase_v0.next_order_softness_1rp
+  - imce_phase_v0.next_order_softness_3rp
+  - imce_phase_v0.order_softness_false_repair_3rp
+  - imce_sync_v0.next_order_softness_1rp
+  - imce_sync_v0.forward_63_trading_day_drawdown_tail  # [A4P.1 R3] was imce_sync_v0.forward_63d_drawdown_tail
+  - imce_risk_v0.forward_63_trading_day_drawdown_tail
+
+fdr:                                           # [A6]
+  partitions:
+    - name: imce_hist_v0
+      q: 0.10
+      member_cells: 6
+      note: single BH-FDR partition over the union of all 6 historical cells; the three rf.* family names are trial-ledger provenance labels, not separate FDR partitions
+      runner_obligation: assert_exactly_six_registered_cell_ids_before_bh_correction_one_correction_over_union_no_seventh_cell  # [AP5] registration stop condition, not code
+
+baselines:                                     # [A22][A23]
+  - family_age_prior
+  - tape_only
+  - mechanism_only
+  - recognition_only
+  - matched_macro_industry_state
+  - shuffled_mechanism_within_time_block
+  - pseudo_event_dates
+  - structural_epoch_placebo:
+      homebuilders: epoch_placebo
+      pre_declared_per_cohort: true
+  - current_snapshot_backfill_exclusion:
+      status: rule_not_control
+      rule: absence_of_captured_historical_snapshot_means_not_reconstructable_dropped_never_backfilled
+  - leave_issuer_out:
+      pre_declared_list: [DHI, PHM, TOL, KBH]
+      selection_rule: mechanical_estimability_rule
+  - leave_cycle_out: required
+
+secondary_comparisons:                         # [A7]
+  in_fdr_partition: false
+  budget: 0
+  verdict_bearing: false
+  print_only: true
+  members:
+    - R_vs_age_prior
+    - M_vs_age_prior
+    - M_plus_R_vs_tape_only
+
+validation:
+  time_split: rolling_or_expanding_origin_by_calendar_time
+  group_split: effective_cycle_block
+  embargo_trading_days: 63                     # [A22] was "at least the target horizon"
+  prospective_holdout_2024_plus:
+    selected: true                             # [A22] was "if that holdout is selected"
+    no_parameter_refit: true
+    is_the_open_accruing_affordability_era: true   # [AG8][M8-fix]
+    contributes_historical_n: false                # [AG8][M8-fix] zero until lawfully closed
+  leave_issuer_out: pre_declared_list_DHI_PHM_TOL_KBH   # [A22] was "where_estimable"
+  leave_cycle_out: required
+  fdr_q: 0.10
+  bootstrap:
+    unit: registered_block_cluster            # [AP8, M1 fix] was episode_or_month_block; the SAME cluster unit AG9 uses for inference - never a date/month block
+    unit_note: engine/grading_stats.py BOOT_DRAWS/BOOT_SEED (800/7) supply only the numeric defaults - its block_bootstrap_ci resamples whole calendar DATES, that unit is NOT imported
+    ci_type: one_sided_90_percent            # [A21]
+    draws_and_seed: 800_draws_seed_7         # [AP4] CPI house default VALUE convention, frozen, no tuning
+    draws: 800                                # [AP4]
+    seed: 7                                   # [AP4]
+    n_clusters_at_b3: 3                       # [AP8, M1 fix]
+    degenerate_disclosure_at_b3: true         # [AP8, M1 fix] bootstrap over 3 clusters is near-vacuous; same disclosure class as the BH-FDR low-n note
+  min_effective_blocks: 40                   # [A12]
+  parameter_ranges: single_frozen_values_required   # [A22] was "preferably single frozen values"; any grid counts into cell budget
+  sign_stability_share: 2_of_3_blocks        # [A21]
+  materiality_test: sign_survives_every_leave_one_block_out_and_every_leave_one_issuer_out_refit  # [A21]
+
+min_effective_blocks_provenance:               # [A12]
+  imported_from: BC-1
+  original_unit: monthly_panel_stamps
+  ruling: keep_40_for_promote_eligible
+  non_promoting_rung:
+    exists_today: false
+    condition_if_added_later: own_preregistered_floor_plus_hard_authority_ceiling_bound_to_all_false_authority_flags
+
+effective_block_law:                           # [A9, amended AG2/AG3/AG4/AG5/AG6/AG9]
+  unit: independent_shock_realization
+  forbidden_inflators: [issuers, rows, targets, horizons, directions, overlapping_windows]
+  issuer_replication_may_raise_n: false          # [AG2] statistical-unit law amendment
+  deff_formula_as_n_definition:                  # [AG3] STRUCK
+    status: struck
+    formula: "n_eff = (B x m) / [1 + (m-1)*rho]"
+    struck_because: violates_AG2_A9_whenever_it_exceeds_B_for_any_rho_lt_1
+    rho_required_frozen_parameter_for_n: false   # [AG3] closes lane-1 HB0 census gap 9
+    superseded_by: n_effective_blocks_capped_at_raw_block_count
+  n_effective_blocks_capped_at_raw_block_count:  # [AG3][AG5][AG6]
+    definition: "n_effective_blocks := min(B, any_other_candidate_estimator)"
+    general_cells:
+      b_upper_bound: 5
+      basis: five_closed_non_overlapping_blocks_1_2_3_4_5
+      is_upper_bound_not_point_estimate: true
+    cancellation_rate_cells:
+      b_upper_bound: 3
+      basis: only_grind_pandemic_boom_rate_shock_carry_denominator_reconstructable_disclosure
+      blocks_1_2_excluded_because: unstated_early_convention_cannot_be_assumed_to_match_later_stated_one
+    exact_pseudo_n_necessary: false               # upper bound already fails floor=40 by ~order of magnitude
+    cap_scoping: cell_level_not_feature_level      # [MAJ-1] a cell whose registered basis includes cancellation-rate data is B<=3 ENTIRE; order_softness (contract section 2, AG14) currently draws cancellation rate, so any cell targeting it is B<=3 as registered; stripping cancellation from a cell's basis is a future registration-time amendment, not an open election
+    grind_block_cancellation_coverage: partial_fy2016_plus_for_phm_and_nvr  # [AG6][M9-fix]
+  all_6_v0_historical_cells_uniform_basis:         # [AP2, A4P binding]
+    basis: order_softness_mechanism_basis_including_cancellation_evidence
+    applies_to_cells: [1, 2, 3, 4, 5, 6]
+    cap: 3
+    general_b5_cap_describes_any_registered_cell_today: false
+    len_excluded_from_all_6_cells: true
+    nvr_separate_stratum_unchanged: true
+    gfc_blocks_1_2_unusable_for_all_6_cells: true
+    contributing_blocks: [grind_2014_2019_partial_fy2016_plus, pandemic_boom, rate_shock_cancellation_spike]
+    may_never_relax_to_b5_to_obtain_larger_n: true
+    come_back_date_recomputed: true                # see prospective_law.come_back_date below
+  block_count_reconciliation:                    # [AG5] records the C2 disposition
+    lane1_source: research/imce/IMCE_HB0_SOURCE_DEFINITION_CENSUS_V1.md
+    lane2_source: research/imce/hb0/IMCE_HB0_INDEPENDENT_BLOCK_LIST.md
+    lane1_named_list_entries: 7
+    lane2_hardened_count_for_n: 5
+    ruling: b_equals_5_wins_for_n_accounting
+    named_7_list_retained: true
+    zero_contributing_entries: [taper_2013_partial, air_pocket_2018, affordability_incentive_era]  # [BLK-3 fix] was missing air_pocket_2018 and used non-matching names
+  sub_episodes_contribute_zero_n: true           # [AG7] closes lane-1 HB0 census gap 12
+  sub_episode_boundary_minting_required_for_n: false
+  open_era_contributes_zero_historical_n: true   # [AG8]
+  within_block_issuer_dependence:                # [AG4] renamed, demoted
+    status: precision_diagnostic_only
+    field_name: n_issuer_precision_diagnostic     # [AP8, M3(b)] frozen now, was proposed_field_name/TBD-at-registration
+    may_substitute_for_n_effective_blocks: false
+    can_satisfy_40_block_floor: false
+    carries_promotion_authority: false
+  inference_unit: block_cluster_leave_one_block_out   # [AG9]
+  dependence_adjustment_direction: may_only_reduce_never_increase_shock_count  # [AG9]
+  macro_boundary_receipt_required_before_outcome_partition: true  # [AG17]
+  not_yet_receipted_boundary_manufactures_new_block: false        # [AG17]
+  raw_block_count: always_printed_alongside_effective_count
+  post_registration_boundary_evidence_law:                        # [A4P.1 R6] Sol verbatim, 2026-08-22 — boundaries remain honestly open, no receipt fabricated to make A4 green
+    registration_permitted_with_open_boundary_receipts: true       # binding law is: no unreceipted boundary may be used to partition an outcome run
+    post_registration_options:                                     # exactly the two Sol names; a boundary evidence wave picks one per boundary
+      - receipt_the_already_frozen_v0_boundary_from_a_lawful_first_party_source
+      - NOT_RECONSTRUCTABLE_FOR_V0_OUTCOME_PARTITION
+    registered_v0_boundary_may_move_after_outcome_inspection: false
+    different_boundary_requires: new_preregistration_version
+
+frozen_hierarchy:                              # [A10]
+  meaning: frozen_in_the_pre_outcome_registration_commit
+  cross_cohort_pooling_may_shrink_estimates: true
+  cross_cohort_pooling_may_increase_n_effective_blocks: false
+
+issuer_residual_rungs:                         # [A11]
+  rung_8:
+    min_issuer_episodes: 8
+    min_distinct_blocks: 5
+    authority: research_only
+  rung_12:
+    min_issuer_episodes: 12
+    min_distinct_blocks: 8
+    additional_requirement: matured_prospective_cohort
+    authority: requires_separate_promotion
+  both_rungs_reachable_for_any_current_cohort: false
+
+frozen_historical_block_list:                  # [A8, restructured AG5/AG7/AG8]
+  - name: gfc_bust
+    start: 2006
+    end: 2009
+    proposed_month_start: "2006-01"            # A3 lane-2 proposal, not_yet_receipted
+    proposed_month_end: "2009-12"
+    counts_toward_n_effective_blocks: true
+  - name: gfc_recovery_land_light
+    start: 2010
+    end: 2013
+    proposed_month_start: "2010-01"
+    proposed_month_end: "2013-12"
+    counts_toward_n_effective_blocks: true
+  - name: taper_2013_partial
+    start: 2013
+    end: 2013
+    proposed_month_start: "2013-05"
+    proposed_month_end: "2013-12"
+    type: named_sub_episode_of_gfc_recovery_land_light   # [AG7]
+    counts_toward_n_effective_blocks: false              # [AG7] zero N, no boundary minting required for N
+  - name: grind_2014_2019_incl_2018_air_pocket
+    start: 2014
+    end: 2019
+    proposed_month_start: "2014-01"
+    proposed_month_end: "2019-12"
+    counts_toward_n_effective_blocks: true
+    sub_episodes:                                        # [AG7][BLK-3 fix] folded back in, was a flat 8th list entry
+      - name: air_pocket_2018
+        start: 2018
+        end: 2018
+        proposed_month_start: "2018-07"
+        proposed_month_end: "2018-12"
+        type: named_sub_episode_of_grind_2014_2019
+        counts_toward_n_effective_blocks: false          # [AG7] zero N
+  - name: pandemic_boom
+    start: 2020
+    end: 2021
+    proposed_month_start: "2020-03"
+    proposed_month_end: "2021-12"
+    counts_toward_n_effective_blocks: true
+  - name: rate_shock_cancellation_spike
+    start: 2022
+    end: 2023
+    proposed_month_start: "2022-01"
+    proposed_month_end: "2023-12"
+    counts_toward_n_effective_blocks: true
+  - name: affordability_incentive_era
+    start: 2024
+    end: 2026
+    proposed_month_start: "2024-01"
+    proposed_month_end: open                             # [AG8] OPEN_ACCRUING
+    status: open_accruing                                # [AG8]
+    counts_toward_n_effective_blocks: false               # [AG8] zero historical N
+    counts_toward_n_blocks_prosp_on_close: true
+named_list_entries_total: 7
+n_effective_blocks_contributing_entries: 5     # [AG5] block-list-level fact: 5 of 7 named blocks are closed/non-overlapping (taxonomy, not a per-cell cap). Per-cell cap for all 6 registered v0 historical cells is 3, not 5 [AP2] - only 3 of these 5 blocks carry cancellation-reconstructable disclosure.
+change_requires: new_amendment_log_entry
+month_boundaries_receipt_status: proposed_not_yet_receipted   # [AG17] see IMCE_A4G_SOURCE_BOUNDARY_TABLE.md
+
+reachable_status_table:                        # [A1]
+  celh:
+    honest_historical_blocks: barred_by_rule
+    historical_cells: 0
+    max_reachable_ladder_rung_on_history: DESCRIPTIVE
+  homebuilders:
+    honest_historical_blocks: "cap_3_uniform_all_6_cells_cancellation_scoped"  # [AP2] was "cap_general_5_cap_cancellation_3" (AG5/AG6); general cap_5 describes no cell registered today
+    historical_cells: 6
+    fdr_partition: imce_hist_v0
+    fdr_q: 0.10
+    max_reachable_ladder_rung_on_history: REGISTERED_TO_REPLAYED_ESTIMATION_ONLY
+    never_reaches: [DISPLAY, PROMOTE_ELIGIBLE]
+  memory:
+    honest_historical_blocks: "2 completed + 1 open (ungradeable)"
+    historical_cells: 0
+    max_reachable_ladder_rung_on_history: REGISTERED
+  banks:
+    honest_historical_blocks: "~3, 0 PIT-clean"
+    historical_cells: 0
+    max_reachable_ladder_rung_on_history: DESCRIPTIVE_FEASIBILITY
+preregistered_expectation: no_cohort_can_satisfy_min_effective_blocks_40_on_historical_data_all_historical_cell_statuses_fixed_pre_outcome
+
+predetermined_historical_status:               # [A2][A3]
+  status_labels:
+    - promoted_null
+    - underpowered_accruing
+  label_assignment: mechanical_by_preregistered_n_effective_blocks_vs_floor_computed_pre_outcome_never_post_hoc  # [A4P.1 R1] was ..._n_eff_vs_floor... — bare n_eff was the struck DEFF estimator's own variable name
+  all_6_historical_cells_prelabeled: underpowered_accruing
+  requeue_pointer_semantics: per_house_research_factory_runbook
+  sub_floor_nominal_pass:
+    outcome_label: underpowered_accruing
+    point_estimate_status: archived_descriptive_only    # [G8-B7] prior-carry deleted
+    role_in_prospective_cells: none
+    prospective_cells_graded: prior_free
+    display: false
+    truth_statement: false
+    citation: false
+  status_governance:                            # [G8-M7]
+    underpowered_accruing_is: research_factory_trial_ledger_status_only
+    cpi_truth_status: forbidden_without_schema_and_consumer_matrix_amendment
+
+celh:
+  role: descriptive_autopsy_only
+  may_enter_inferential_sample: false
+  status: barred
+  historical_cells: 0
+
+memory:                                        # [A14][A15]
+  honest_n_completed_episodes: 2
+  honest_n_open_episodes: 1
+  open_episode_gradeable: false
+  status: registered_only
+  historical_inferential_cells: 0
+  leave_cycle_out_defined_at_b2: false
+  two_axis_coupling:
+    axes: [legacy, hbm]
+    causally_coupled: true
+    coupling_date: "2025-01-01"
+    treated_as_two_strata: false
+    treated_as_two_blocks: false
+    mechanism_grammar_epochs_cross_folds: false
+
+homebuilders:                                  # [A1][A17][A18][G8-B4][G8-M2][G8-M6]
+  n_effective_blocks_cap_general: 5              # [AG5] BLK-3 fix, was honest_historical_blocks_min/max: 5/7 (stale); describes no cell registered today [AP2]
+  n_effective_blocks_cap_cancellation: 3         # [AG6] BLK-3 fix
+  n_effective_blocks_cap_applied_to_all_6_registered_cells: 3  # [AP2] uniform basis, all six v0 historical cells
+  named_list_entries: 7                          # unchanged — the 7-entry named taxonomy (§3), never widened
+  historical_cells: 6
+  max_reachable_ladder_rung_on_history: REGISTERED_TO_REPLAYED_ESTIMATION_ONLY
+  never_reaches: [DISPLAY, PROMOTE_ELIGIBLE]
+  episode_rekey_basis: calendar_month
+  fiscal_to_calendar_crosswalk: frozen_pre_outcome
+  survivorship:
+    roster_is_2026_survivor_roster: true
+    episode_substrate_survivor_stamped: true
+    hb0_must_produce_named_delisted_bankrupt_acquired_census: true
+    until_then_every_readout_carries_survivorship_disclosure: true
+    cohort_mean_without_disclosure: forbidden
+  epoch_clock_rule:
+    operating_clock_epochs: descriptive_only
+    recognition_outcome_partitions_use: available_at_boundaries
+    epochs_frozen: before_any_outcome_inspection
+  vintage_rider:
+    hb0_per_source_vintage_audit: required
+    vintage_less_leg_pit_class: revision_optimistic_disclosed
+  cancellation_rate_denominator:
+    canonical_per_issuer: single_frozen_with_printed_conversion
+    alternate_convention_sensitivity_rerun: mandatory
+    flip_under_alternate_convention: not_a_pass
+  len:
+    excluded_from_cancellation_rate_cells: true
+    exclusion_scope: cell_level_entire_issuer_excluded_from_cancellation_basis_cells  # [AG10-clarif][MAJ-2 fix]
+    exclusion_reason: no_stated_formula_denominator_unverifiable_plus_era_correlated_press_release_absence  # [AG10, restates C1] was era_correlated_missingness_no_press_release_cancellation_rate
+    exclusion_reason_note: 10k_mda_does_disclose_14_pct_fy2025_missingness_is_press_release_channel_scoped_not_absolute
+    excluded_from_all_6_registered_v0_historical_cells: true  # [AP2] was cells 1-4 only at A4G; AP2 extends to cells 5-6
+    non_cancellation_cell_treatment: roster_member_cancellation_feature_typed_missing_never_imputed  # [AG10-clarif][MAJ-2 fix] AG11 ban applies, not an exclusion; describes a hypothetical non-registered general cell only [AP2]
+    break_flag: millrose_2025_02
+    exclusion_printed: true
+  nvr:
+    treatment: separate_stratum_or_designated_transfer_test
+    pooled_to_raise_n: false
+    inclusion_exclusion_frozen_pre_outcome: true
+    reaffirmed_by: AG13_no_change                  # [AG13]
+    mechanism_basis: strong_majority_option_lot_model_per_nvr_own_fy2025_10k  # corrected from "~100% option"
+  tol_cancellation_denominator:                     # [AG12] settles election E1
+    primary_convention: gross_signed_contracts_in_quarter
+    mandatory_printed_sensitivity: beginning_quarter_backlog
+    flip_under_sensitivity_is_a_pass: false
+  roster_widening: forbidden                        # [AG16]
+  roster_widening_rationale: improves_representativeness_supplies_zero_additional_power
+  state_vector_observability_scoping:               # [AG14] settles election E2 for 3 of 4 D5 states
+    d5_states: [order_softness, completed_inventory_build, incentive_support, pace_recovery]
+    order_softness:
+      observability: cohort_wide
+      basis: net_orders_backlog_cancellation_rate_disclosed_by_all_six_issuers_with_caveats
+      historical_v0_population:                                        # [A4P.1 R2] Sol fourth-gate ruling, 2026-08-22, permanent for v0
+        named_subset_basis: [PHM, KBH]
+        permanent_for_v0: true
+        may_widen_v0_after_registration: false
+        future_dhi_tol_archaeology_may_support: v1_only               # descriptive evidence only pre-registration; never widens v0
+      prospective_v0_eligible_pooled_cohort: [DHI, PHM, KBH, TOL]       # [A4P.1 R2] eligible once current-format disclosures are receipted; not the historical population
+      label_truth_table:                                               # [A4P.1 R2] Sol verbatim rule, 2026-08-22
+        - reconstructable_contributors: [4]
+          label: cohort
+        - reconstructable_contributors: [2, 3]
+          label: named_subset_plus_exact_contributor_list
+        - reconstructable_contributors: [0, 1]
+          label: NOT_RECONSTRUCTABLE
+    completed_inventory_build:
+      observability: named_three_issuer_subset
+      subset: [DHI, LEN, PHM]
+      is_cohort_claim: false
+      is_named_subset_claim: true
+      is_v0_cohort_inferential_target: false   # [AP1] explicitly excluded from the 3 declared phase-family targets
+    incentive_support:
+      observability: descriptive_only
+      may_be_imputed_into_cohort_cell: false
+      single_disclosing_issuer: LEN
+      mapped_to_a_declared_target: false        # [AP1]
+    pace_recovery:
+      observability: descriptive_only
+      may_be_imputed_into_cohort_cell: false
+      single_disclosing_issuer: KBH
+      mapped_to_a_declared_target: false        # [AP1]
+    exact_phase_family_target_to_d5_state_mapping: order_softness_all_3_targets_plus_sync_cell_4  # [AP1] SETTLED, was open_a4_registration_item
+    d5_state_construction: research/imce/IMCE_A4P_ORDER_SOFTNESS_STATE_CONSTRUCTION_V1.md  # [AP1]
+    d5_state_construction_pooled_issuers: [DHI, PHM, KBH, TOL]  # [AP1][AP2] LEN excluded, NVR separate stratum. [A4P.1 R2 clarification] this is the PROSPECTIVE v0 eligible pooled cohort (see order_softness.prospective_v0_eligible_pooled_cohort above), NOT the historical v0 population, which is permanently the named_subset_basis [PHM, KBH] (order_softness.historical_v0_population above)
+  pit_class_enum:                                   # [AG15]
+    closed: true
+    values: [pit_pure, revision_optimistic, mixed]
+    source: config/cycle_pattern/truth_schema.md
+    no_new_tokens_permitted: true
+    hb0_source_vintage_class_is_local_diagnostic_must_crosswalk_down: true
+  rights_safe_macro_legs_only:                      # [AG18]
+    fred_alfred: excluded_categorically
+    fred_clause: q_do_not_ingest_binds_all_use_classes_incl_display_tier
+    pmms:
+      status: held
+      reason: pit_pure_archive_but_redistribution_commercial_exploitation_terms_ambiguity
+    treasury_cmt:
+      status: pit_pure_public_domain_full_archive
+      role: primary_rate_leg_pending_pmms_resolution
+      rights_disposition: GO_LIMITED                              # [A4P.1 R5] Sol fourth-gate ruling, 2026-08-22 — closes the prior wave's escalation item 5
+      rights_disposition_scope: internal_research_persistence_and_use_of_treasury_published_daily_treasury_par_yield_curve_values_with_first_party_treasury_provenance_retrieval_timestamp_and_methodology_source_reference
+      rights_disposition_basis: treasury_is_the_publishing_federal_agency_17_usc_101_105_places_us_government_works_prepared_as_official_duties_outside_us_copyright_protection
+      rights_disposition_excludes: unrelated_external_third_party_content_linked_datasets_raw_underlying_third_party_quotations
+      rights_disposition_authorizes_future_ingestion_design_only: true  # this wave still ingests nothing
+    nar_series:
+      may_be_stored: false
+      reason: nar_terms_bar_storage_in_retrieval_system_not_merely_redistribution
+      series: [existing_home_sales, housing_affordability_index]
+    affordability_leg_construction: house_constructed_from_census_nrs_price_plus_treasury_rate_plus_census_bls_income
+    affordability_leg_never: nar_or_nahb_index_adopted_directly
+    default_pit_class_without_lawful_vintages: revision_optimistic
+
+banks:                                         # [A1][A13]
+  honest_historical_blocks: 3
+  pit_clean_historical_blocks: 0
+  historical_cells: 0
+  status: feasibility_only
+  max_reachable_ladder_rung_on_history: DESCRIPTIVE_FEASIBILITY
+  call_report_ubpr_fry9c_historical_data: not_reconstructable
+  reconstructed_as_of_from_revised_series: forbidden
+  bank_cell_declaration_precondition:
+    prospective_self_archival_lane_required: true
+    lane_fields: [start_date, archive_manifest, hash_pinned_vintage_per_cutoff, observation_date_per_cutoff]
+
+ordinal_sensors:                               # [A16]
+  fields:
+    - samsung_wafer_starts
+    - samsung_asp
+    - skhynix_wafer_starts
+    - skhynix_asp
+  level: directional_only_ordinal
+  forbidden_in_cardinal_cells: true
+  directional_field_entering_cardinal_model: missingness_event_never_imputation
+
+recognition_vector_design_provenance:          # [A4][G8-M10][G8-B3]
+  r_t_frozen_at: imce_00_architecture_freeze_2026_08_20_before_wave_a1
+  constructions_named_a_priori:
+    fixed_anchor_2w_macd: engine_technicals_macd_hist_classic_12_26_9
+    confluence_contract_reference: engine_canon_w2_bull_rsi_macd
+    third_implementation: forbidden
+  g2_unregistered_descriptive_tape:
+    status: quarantined_census_evidence
+    citable_by_truth_statement_display_or_registered_cell: false
+    r_t_fields_changed_after_it_existed: false
+  fallback_disjunction: deleted_as_unexecutable
+
+missingness_law:                               # [A19][A20]
+  missing_never_zero: true
+  not_licensed_separate_from_missing: true
+  not_reconstructable_separate_from_missing: true
+  primary_comparison_population: same_eligible_population_for_baseline_and_challenger
+  complete_case_mechanical_test:
+    hashed_population_manifest: frozen_pre_outcome
+    metrics_reported_on: intersection_population
+    dropped_row_counts_reported_by_reason: true
+  era_correlated_missing_indicator_in_primary_comparison: forbidden
+  era_correlated_missing_indicator_ban_scope: every_era_correlated_metric_not_only_len_cancellation  # [AG11, restates C3]
+  era_correlated_missing_indicator_ban_examples: [len_cancellation_rate, tol_spec_homes_label_fy2023_plus, phm_unsold_split_fy2024_plus, cancellation_formula_disclosure_fy2008_fy2016]
+  disclosure_alone_sufficient: false
+  coverage_degradation_can_demote_or_abstain: true
+  coverage_degradation_imputed_by_llm: false
+
+horizon_law:                                   # [A22][A26]
+  market_primary: 63_trading_days
+  market_diagnostic_5d:
+    exists_automatically: true
+    role: non_claim_diagnostic
+    in_fdr_partition: false
+    verdict_bearing: false
+  market_diagnostic_21d:
+    exists_automatically: true
+    role: non_claim_diagnostic
+    in_fdr_partition: false
+    verdict_bearing: false
+    genuine_21d_claim_requires: own_declared_budgeted_cell
+  horizon_126d:
+    qledger_claim_permitted: false
+    role: off_render_descriptive_only
+  off_horizon_verdicts: forbidden
+
+stop_conditions:                               # [A25]
+  - architecture_not_accepted
+  - episode_anchor_unresolved_for_required_join
+  - rights_unresolved
+  - pit_not_reconstructable
+  - effective_n_below_floor
+  - structural_epoch_not_frozen
+  - criteria_commit_does_not_precede_outcome_access
+  - reachable_status_table_not_recorded            # [A25] new
+  - macro_block_boundary_lacks_dated_source_receipt_and_outcome_run_would_partition_on_it  # [AG17] new
+  - phase_family_state_target_lacks_registered_mapping_to_named_d5_state_with_registered_observability_class  # [AG14][MAJ-5] new — DISCHARGED for the 3 declared phase targets + sync Cell 4 by [AP1]; remains binding for any future target
+  - historical_cell_runner_does_not_assert_exactly_six_registered_cell_ids_or_applies_more_than_one_bh_correction_or_a_seventh_cell_enters_denominator  # [AP5] new, registration stop condition not code
+
+prospective_law:                               # [A24]
+  nightly_is_sole_forward_ledger_advancer: true
+  first_observation_wins_per_cutoff_episode: true
+  historical_backfill_into_prospective_cohort: forbidden
+  corrections: append_and_supersede_never_rewrite_original_packet
+  market_and_mechanism_outcomes_accrue_separately: true
+  live_and_backtest_badges_blend: false
+  come_back_date:
+    computed_from: [accrual_rate, n_floor]
+    published_at_registration: true
+    promotion_clock_estimate: "~2160 - zero historical credit per AP3 100% prospective share + AG1; 2026.6667 + 40 x (10.0y/3 blocks) = 2160.0"  # [AP8 F1] THE promotion-relevant headline - historical blocks credit zero toward promotion
+    non_promotion_diagnostic_b3_total_block_estimate: "~2149 - NON-PROMOTION diagnostic only, illustrates historical-arm order-of-magnitude distance from the 40-block floor; arithmetic: span 2014-01 to 2023-12 = 9.9y over 3 blocks = 3.30y/block, 2026-08 + (40-3)*3.30 = ~2148.8 -> ~2149"  # [AP2, relabeled AP8 F1] was homebuilders_estimate; NEVER cited as a promotion timeline
+    non_promotion_diagnostic_prior_basis_b5: "~2153 (AG5, B=5 general basis) - NON-PROMOTION diagnostic, no longer describes any cell registered by this contract"  # [AP2, relabeled AP8 F1] was homebuilders_estimate_prior_basis_B5; retained for audit trail only
+    recomputation_arithmetic: "promotion clock (zero historical credit, inclusive fencepost): 2026 + 8/12 + 40 x (10.0/3) = 2026.6667 + 133.3333 = 2160.0 -> ~2160"  # [AP8 F1] was the (40-3)x3.30 form, which is now the non_promotion_diagnostic_b3_total_block_estimate field's own label above
+    memory_and_banks: later_still
+  counters:
+    n_blocks_hist: 0
+    n_blocks_prosp: 0
+  preregistered_minimum_prospective_share_before_promotion: 1.0  # = 100% [AP3, AP8 m5 fix - numeric, was the non-numeric token "100_percent"]; was required_value_tbd_at_registration; already implied by AG1
+
+authority_ladder:
+  sequence: [DESCRIPTIVE, REGISTERED, REPLAYED, DISPLAY, PROSPECTIVE_SHADOW, PROMOTE_ELIGIBLE]
+  step_implies_next: false
+  historical_arm_is_promotion_path: false        # [A24]
+  prophet_opportunity_authority_requires: separate_decision_and_consumer_contract
+  position_sizing_requires: additional_independent_gate

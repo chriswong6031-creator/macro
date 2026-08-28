@@ -447,3 +447,258 @@ class TestBoardWidthGuard:
         # No t() call should appear inside an attribute value
         bad = re.search(r'(?:title|style|data-[a-z]+|aria-[a-z]+)="[^"]*\{\{\s*t\(', snippet)
         assert bad is None, f"t() inside attribute found: {bad.group() if bad else ''}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# W0.7 — TAPE-AWARE DUAL-READ: a thin shelf is a data gap OR a red tape, not both
+# ═══════════════════════════════════════════════════════════════════════════════
+
+#: Health instruments as they actually read on a green night (the real 2026-08-19 values).
+_W07_GREEN = {
+    "micro_incomplete": False, "signal_incomplete": False, "reversal_degraded": False,
+    "sessions_behind": 0, "universe_now": 1641, "universe_prev": 1635,
+}
+#: A quiet tape: index barely moved, advancers ≈ decliners.
+_W07_QUIET_TAPE = {"bench_day_return_pct": -0.2, "advancers": 800, "decliners": 700}
+#: The 2026-08-19 tape: CSI300 ETF -2.78%, 22 advancers against 60 decliners.
+_W07_RED_TAPE = {"bench_day_return_pct": -2.78, "advancers": 22, "decliners": 60}
+
+
+class TestShelfDropDualRead:
+    """W0.7 dual-read (2026-08-19): the width guard stamped "Probable data/collector
+    coverage gap" on a day when every health instrument was green and the real cause was
+    a broad selloff — CSI300 ETF -2.78%, 22 advancers against 60 decliners, the eligible
+    drop concentrated in late_or_unfillable (69→7).
+
+    House law (CLAUDE.md § House laws): an INSTRUMENT verdict is not a MARKET verdict.
+    These tests pin BOTH branches against the real builder functions — never a local
+    re-implementation of the logic, so the tests cannot silently drift from the guard.
+    """
+
+    GREEN = _W07_GREEN
+    QUIET_TAPE = _W07_QUIET_TAPE
+    RED_TAPE = _W07_RED_TAPE
+
+    @staticmethod
+    def _classify(**kw):
+        from scripts.build_china_library import classify_shelf_drop
+        return classify_shelf_drop(**kw)
+
+    @staticmethod
+    def _outage(verdict, parts=None, parts_zh=None):
+        from scripts.build_china_library import build_shelf_drop_outage
+        parts = list(parts if parts is not None else ["raw_eligible 141→64 (55% drop)"])
+        parts_zh = list(parts_zh if parts_zh is not None else ["原始合格标的 141→64（下降55%）"])
+        return build_shelf_drop_outage(
+            verdict, parts + verdict["health_parts"], parts_zh + verdict["health_parts_zh"]
+        )
+
+    # ── branch A: the tape explains it ───────────────────────────────────────
+    def test_2026_08_19_selloff_is_not_called_a_collector_gap(self):
+        """THE REGRESSION THIS EXISTS FOR. Green instruments + a -2.78% tape must not
+        accuse the collectors."""
+        v = self._classify(**self.GREEN, **self.RED_TAPE)
+        assert v["cause"] == "tape", f"08-19 must classify as tape, got {v['cause']}"
+        out = self._outage(v)
+        assert "coverage gap" not in out["reason"], out["reason"]
+        assert "缺口" not in out["reason_zh"], out["reason_zh"]
+        assert "thinner, not missing data" in out["reason"]
+        assert "并非数据缺失" in out["reason_zh"]
+
+    def test_tape_branch_keeps_the_banner_and_names_the_tape(self):
+        """The shelf IS thinner — the banner still flies, with an honest cause."""
+        out = self._outage(self._classify(**self.GREEN, **self.RED_TAPE))
+        assert out["flag"] is True, "banner must still render — the shelf is genuinely thinner"
+        assert "CSI 300 -2.8%" in out["reason"]
+        assert "60 names down against 22 up" in out["reason"]
+        assert "沪深300 -2.8%" in out["reason_zh"]
+        # the measured metric phrase is preserved, not replaced
+        assert "raw_eligible 141→64 (55% drop)" in out["reason"]
+
+    def test_tape_branch_overrides_the_default_headline(self):
+        """china.html.j2 defaults to 'data coverage degraded — board incomplete today';
+        on the tape branch that sentence would name a problem that does not exist."""
+        out = self._outage(self._classify(**self.GREEN, **self.RED_TAPE))
+        assert out["headline"] == "broad market decline — the shelf is thinner, not missing data"
+        assert out["headline_zh"] == "大盘普遍下跌 — 精选区变薄，并非数据缺失"
+
+    def test_bench_threshold_alone_is_enough(self):
+        """benchmark ≤ -1.5% with breadth unavailable still reads as a red tape."""
+        v = self._classify(**self.GREEN, bench_day_return_pct=-1.6,
+                           advancers=None, decliners=None)
+        assert v["cause"] == "tape"
+
+    def test_breadth_ratio_alone_is_enough(self):
+        """decliners ≥ 2× advancers reads as a red tape even on a flat index."""
+        v = self._classify(**self.GREEN, bench_day_return_pct=-0.2,
+                           advancers=22, decliners=60)
+        assert v["cause"] == "tape"
+
+    def test_breadth_only_tape_does_not_claim_a_selloff_against_a_flat_index(self):
+        """The lead sentence must not contradict the receipt printed beside it."""
+        out = self._outage(self._classify(**self.GREEN, bench_day_return_pct=-0.2,
+                                          advancers=22, decliners=60))
+        assert "Most names fell today" in out["reason"], out["reason"]
+        assert "selloff" not in out["reason"], out["reason"]
+        assert "今日多数个股下跌" in out["reason_zh"]
+
+    def test_bench_just_above_threshold_is_not_a_red_tape(self):
+        """-1.4% is not a broad selloff; with quiet breadth there is no tape explanation."""
+        v = self._classify(**self.GREEN, bench_day_return_pct=-1.4,
+                           advancers=800, decliners=700)
+        assert v["cause"] == "no_cause_found"
+
+    # ── branch B: a health instrument really does disagree ───────────────────
+    @pytest.mark.parametrize("red", [
+        {"micro_incomplete": True},
+        {"signal_incomplete": True},
+        {"reversal_degraded": True},
+        {"sessions_behind": 2},          # stale prices
+        {"universe_now": 900},           # universe shrank 45%
+    ])
+    def test_red_health_instrument_still_claims_a_coverage_gap(self, red):
+        """A red instrument outranks the tape — even on the 08-19 selloff. This is the
+        alarm the guard exists for and it must not be softened."""
+        v = self._classify(**{**self.GREEN, **red}, **self.RED_TAPE)
+        assert v["cause"] == "data_gap", f"{red} must stay a data_gap, got {v['cause']}"
+        out = self._outage(v)
+        assert "Probable data/collector coverage gap." in out["reason"]
+        assert "可能存在数据或采集覆盖缺口" in out["reason_zh"]
+        assert "headline" not in out, "data_gap keeps the long-standing template default"
+
+    def test_data_gap_wording_is_unchanged_from_before_the_dual_read(self):
+        """Byte-identity guard: the alarm path's copy is load-bearing and must not drift."""
+        v = self._classify(**{**self.GREEN, "micro_incomplete": True}, **self.QUIET_TAPE)
+        out = self._outage(v, ["featured 141→61 (57% drop)"], ["精选标的 141→61（下降57%）"])
+        assert out["reason"] == (
+            "featured 141→61 (57% drop). Probable data/collector coverage gap. "
+            "The featured shelf is incomplete — treat with caution."
+        )
+        assert out["reason_zh"] == (
+            "精选标的 141→61（下降57%）。可能存在数据或采集覆盖缺口，精选区并不完整，请谨慎参考。"
+        )
+
+    def test_stale_prices_and_universe_shrink_are_named_in_the_banner(self):
+        """A new instrument that fires must say so — not just flip the verdict."""
+        out = self._outage(self._classify(**{**self.GREEN, "sessions_behind": 2,
+                                             "universe_now": 900}, **self.QUIET_TAPE))
+        assert "board prices 2 session(s) behind" in out["reason"]
+        assert "tracked universe 1635→900 (45% smaller)" in out["reason"]
+        assert "看板价格落后2个交易日" in out["reason_zh"]
+        assert "跟踪范围 1635→900（缩小45%）" in out["reason_zh"]
+
+    def test_small_universe_wobble_is_not_a_shrink(self):
+        """1641 vs 1635 (the real 08-19 numbers) is growth, not a collector symptom."""
+        v = self._classify(**self.GREEN, **self.RED_TAPE)
+        assert v["checked"]["universe_shrink_pct"] < 0     # grew
+        assert v["cause"] == "tape"
+
+    # ── branch C: neither — claim nothing ────────────────────────────────────
+    def test_green_health_and_quiet_tape_claims_no_cause(self):
+        v = self._classify(**self.GREEN, **self.QUIET_TAPE)
+        assert v["cause"] == "no_cause_found"
+        out = self._outage(v)
+        assert "coverage gap" not in out["reason"] or "no coverage gap found" in out["reason"]
+        assert "no coverage gap found" in out["reason"]
+        assert "未发现覆盖缺口" in out["reason_zh"]
+
+    def test_blind_staleness_is_not_green(self):
+        """compute_board_staleness's fail-soft sentinel carries no `inputs`, so
+        sessions_behind is None. Blind must never be read as an acquittal."""
+        v = self._classify(**{**self.GREEN, "sessions_behind": None}, **self.RED_TAPE)
+        assert v["cause"] == "unverified", "a blind instrument must block the tape branch"
+        out = self._outage(v)
+        assert "Cause not established" in out["reason"]
+        assert "原因未确定" in out["reason_zh"]
+
+    def test_blind_tape_claims_nothing(self):
+        """No benchmark and no breadth → we cannot acquit the collectors either."""
+        v = self._classify(**self.GREEN, bench_day_return_pct=None,
+                           advancers=None, decliners=None)
+        assert v["cause"] == "unverified"
+
+    def test_uncomparable_previous_universe_does_not_block_a_tape_read(self):
+        """A previous Prophet outage shell writes universe: 0, and older artifacts omit
+        the key. Current prices + full same-day coverage already prove the data arrived,
+        so an uncomparable universe is recorded as unchecked, not treated as a collapse."""
+        v = self._classify(**{**self.GREEN, "universe_prev": None}, **self.RED_TAPE)
+        assert v["cause"] == "tape"
+        assert v["checked"]["universe_shrink_pct"] is None
+
+    # ── contract: evidence + copy hygiene ────────────────────────────────────
+    def test_every_cause_carries_evidence_on_the_artifact(self):
+        for kw in ({**self.GREEN, **self.RED_TAPE},
+                   {**self.GREEN, **self.QUIET_TAPE},
+                   {**self.GREEN, "micro_incomplete": True, **self.RED_TAPE}):
+            out = self._outage(self._classify(**kw))
+            assert out["cause"] in {"data_gap", "tape", "no_cause_found", "unverified"}
+            for k in ("sessions_behind", "bench_day_return_pct", "advancers",
+                      "decliners", "tape_red", "health_red"):
+                assert k in out["checked"], f"{k} missing from checked evidence"
+
+    def test_no_falsifier_language_and_no_internal_slugs_in_new_copy(self):
+        """DESIGN_DOCTRINE glance tier: plain words only. Falsifier/refutation language
+        is never front-facing (operator 2026-07-27, #3821); the only machine-shaped
+        tokens permitted are the pre-existing metric names supplied by the caller."""
+        from scripts.build_china_library import _SHELF_DROP_COPY
+        banned = ["falsifier", "refut", "证伪", "invalidated thesis", "tripwire",
+                  "late_or_unfillable", "raw_eligible", "actionable_t1_t3",
+                  "data_outage", "W0.7", "sessions_behind", "_"]
+        for cause, copy in _SHELF_DROP_COPY.items():
+            for field, text in copy.items():
+                for bad in banned:
+                    assert bad not in text.lower(), (
+                        f"{cause}.{field} contains banned glance-tier token {bad!r}: {text}")
+
+    def test_every_cause_is_fully_bilingual(self):
+        """A new cause can never ship half-translated."""
+        from scripts.build_china_library import _SHELF_DROP_COPY
+        for cause, copy in _SHELF_DROP_COPY.items():
+            assert copy.get("tail") and copy.get("tail_zh"), f"{cause} missing a tail"
+            assert bool(copy.get("headline")) == bool(copy.get("headline_zh")), (
+                f"{cause} has a headline in only one language")
+        for cause in ("tape", "no_cause_found", "unverified"):
+            out = self._outage(self._classify(
+                **{**self.GREEN, "sessions_behind": None if cause == "unverified" else 0},
+                **(self.RED_TAPE if cause == "tape" else self.QUIET_TAPE)))
+            assert out["reason"] and out["reason_zh"]
+            assert out["reason"] != out["reason_zh"]
+
+    def test_thresholds_are_named_constants(self):
+        """The numbers are policy, not magic — they must be reviewable in one place."""
+        from scripts import build_china_library as B
+        assert B.CN_TAPE_SELLOFF_BENCH_PCT == -1.5
+        assert B.CN_TAPE_SELLOFF_DEC_ADV_RATIO == 2.0
+        assert B.CN_HEALTH_UNIVERSE_SHRINK_PCT == 10.0
+
+    def test_breadth_row_needs_half_the_universe_to_count(self):
+        """The builder derives adv/dec off the last row of the ALIGNED universe frame.
+        One name carrying a bar dated past the board session would leave that row almost
+        entirely NaN — and a 2-name 'advance/decline' would read as a screaming tape and
+        wrongly acquit a real collector gap. Mirrors the builder's floor."""
+        idx = pd.to_datetime(["2026-08-18", "2026-08-19", "2026-08-20"])
+        # 10 names; only ONE prints on the stray final row.
+        frame = pd.DataFrame(
+            {f"60{i:04d}.SS": [10.0, 9.0, np.nan] for i in range(10)}, index=idx)
+        frame.loc[idx[2], "600000.SS"] = 8.0
+        last = frame.pct_change(fill_method=None).iloc[-1].dropna()
+        assert len(last) == 1
+        assert not (len(last) >= 0.5 * frame.shape[1]), (
+            "a 1-of-10 row must fail the floor and read as blind breadth")
+        # and a normal session passes it
+        full = pd.DataFrame(
+            {f"60{i:04d}.SS": [10.0, 9.0, 8.0] for i in range(10)}, index=idx)
+        last_full = full.pct_change(fill_method=None).iloc[-1].dropna()
+        assert len(last_full) >= 0.5 * full.shape[1]
+        assert int((last_full < 0).sum()) == 10
+
+    def test_guard_calls_the_classifier_at_both_stamp_sites(self):
+        """Both W0.7 stamp blocks must route through the shared classifier: block 2's
+        trigger is a superset of block 1's, so a divergence would let the published
+        banner contradict the one the width guard just built."""
+        src = (ROOT / "scripts" / "build_china_library.py").read_text()
+        assert src.count("classify_shelf_drop(") >= 3, (
+            "expected the definition plus a call at each of the two stamp sites")
+        assert src.count("build_shelf_drop_outage(") >= 3
+        # the old hard-coded accusation must not survive at either stamp site
+        assert "+ \". Probable data/collector coverage gap. \"" not in src

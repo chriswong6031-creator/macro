@@ -110,6 +110,46 @@ def quote_snapshot_error(
         return f"quote snapshot quality check failed: {exc}"
 
 
+def flow_pulse_error(path: Path, *, min_coverage: float) -> str | None:
+    """Reject an age-fresh pulse that carries no usable intraday bars."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        rows = payload.get("tickers") or []
+        requested = int(payload.get("n_tickers") or 0)
+        if payload.get("mode") != "fastpath":
+            return f"flow pulse is not live: mode={payload.get('mode') or 'missing'}"
+        if not isinstance(rows, list) or requested <= 0 or requested != len(rows):
+            return "flow pulse ticker count does not match payload"
+        resolved = sum(
+            1 for row in rows
+            if isinstance(row, dict) and int(row.get("bars_today") or 0) > 0
+        )
+        coverage = resolved / requested
+        if coverage < min_coverage:
+            return (
+                f"flow pulse quality too low: {resolved}/{requested} "
+                f"({coverage:.1%}) have current-session bars"
+            )
+        return None
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return f"flow pulse quality check failed: {exc}"
+
+
+def intraday_flow_symbols(path: Path) -> list[str]:
+    """Return the exact disclosed Intraday Flow board universe."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    leaders = payload.get("leaders") or []
+    symbols = {
+        str(row.get("ticker") or row.get("symbol") or "").strip().upper()
+        for row in leaders
+        if isinstance(row, dict)
+    }
+    symbols.discard("")
+    if not symbols:
+        raise RuntimeError(f"Intraday Flow board has no leader symbols: {path}")
+    return sorted(symbols)
+
+
 class Orchestrator:
     def __init__(
         self,
@@ -289,6 +329,25 @@ class Orchestrator:
         weekday = self.now.weekday() < 5
         hour, minute = self.now.hour, self.now.minute
         if weekday and 11 <= hour <= 22:
+            # GD-3: live provisional Risk Envelope. EVERY fire (not the odd/even
+            # split below) — it is cheap (no network, reads two small JSON files
+            # plus the risk_state.json this same gate already refreshes), and the
+            # chip's own freshness timestamp still benefits from a 60s refresh even
+            # though the dwell/debounce below cannot move that often. debounce_ticks
+            # (scripts/build_live_risk_envelope.py, a CODE constant — no config.yml
+            # key exists) counts DISTINCT risk_state.json observations, not fires:
+            # this module runs every minute but risk_state.json itself only
+            # refreshes on odd minutes (the odd/even split below), so 3 ticks is
+            # ~3 distinct confirmations spread over ~6 minutes of wall-clock at the
+            # current cadence, not ~3.
+
+            self.module(
+                "risk_envelope_live",
+                "scripts.build_live_risk_envelope",
+                [],
+                outputs=self._publish_pairs(("risk_envelope.json",)),
+                timeout=30,
+            )
             if minute % 2 == 0:
                 self.module(
                     "live_overlay",
@@ -353,6 +412,21 @@ class Orchestrator:
         )
         if quote_result.status != "ok" or not snapshot_live.exists():
             return
+        intraday_quote_stage = self.stage_dir / "intraday_quotes.json"
+        self.module(
+            "intraday_quotes",
+            "scripts.build_intraday_flow_quotes",
+            [
+                "--base", str(ROOT / "site" / "flowtracker" / "base.json"),
+                "--quotes", str(snapshot_live),
+                "--out", str(intraday_quote_stage),
+            ],
+            outputs=self._publish_pairs(("intraday_quotes.json",)),
+            timeout=30,
+            validator=lambda path: quote_snapshot_error(
+                path, min_resolved=80, min_coverage=0.90
+            ),
+        )
         for market, filename in (
             ("us", "basket_pulse.json"),
             ("hk", "basket_pulse_hk.json"),
@@ -377,10 +451,15 @@ class Orchestrator:
     def bars(self) -> None:
         """Hourly low-priority bar accrual followed by the site-only flow pulse."""
         intraday_dir = self.data_dir / "intraday"
+        symbols = intraday_flow_symbols(ROOT / "site" / "flowtracker" / "base.json")
         bars = self.module(
             "intraday_bars",
             "scripts.build_polygon_intraday",
-            ["--lookback-days", "5", "--out-dir", str(intraday_dir)],
+            [
+                "--lookback-days", "5",
+                "--symbols", ",".join(symbols),
+                "--out-dir", str(intraday_dir),
+            ],
             timeout=720,
         )
         if bars.status != "ok":
@@ -392,6 +471,7 @@ class Orchestrator:
             env={"MACRO_INTRADAY_DIR": str(intraday_dir)},
             outputs=self._publish_pairs(("flow_pulse.json", "flow_pulse_lastgood.json")),
             timeout=180,
+            validator=lambda path: flow_pulse_error(path, min_coverage=0.80),
         )
 
     def write_status(self, lane: str, started_at: datetime) -> None:

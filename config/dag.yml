@@ -210,21 +210,26 @@ lanes:
           scoped decimal strings and exact cell spans, and fails on missing/mismatched bytes. It does not aggregate
           rows or create instruments, remaining capacity, risk, probability, ranking,
           sizing, entry, or Prophet authority.
-      - id: build_capital_structure_projection
-        module: scripts.build_capital_structure_projection
-        note: >
-          Offline deterministic observed-filing-state projection. It verifies the
-          event compiler's telemetry-last receipt before publishing a canonical JSON
-          artifact and byte-identical public twin. Context-only; unknown terms and
-          issuer-state capabilities remain explicitly unavailable.
       - id: check_capital_structure_health
         module: scripts.check_capital_structure_health
         note: >
           Fail-closed ingestion-truth gate. Distinguishes compiler generation time
-          (telemetry.as_of) from latest retained source freshness. Reds this job
-          when filings were selected but zero durable verified evidence progressed;
-          a proven empty/already-known queue is the only permitted zero-progress
-          non-fail. Collect stays green so the market plane is not frozen.
+          (telemetry.as_of) from the canonical discovered, retained, and compiled
+          filing horizons. Reds this job when filings were selected but zero durable
+          verified evidence progressed; a proven empty/already-known queue is the
+          only permitted zero-progress non-fail. Its generation-bound horizon feeds
+          the following projection without changing that ingestion verdict. Collect
+          stays green so the market plane is not frozen.
+      - id: build_capital_structure_projection
+        module: scripts.build_capital_structure_projection
+        note: >
+          Offline deterministic observed-filing-state projection. It verifies the
+          event compiler's telemetry-last receipt and requires the preceding health
+          artifact to bind the same generation before publishing one canonical JSON
+          payload and byte-identical public twin. Public freshness derives from the
+          discovery→retained→compiled horizon; compiler age remains separate
+          generation telemetry. Context-only; unknown terms and issuer-state
+          capabilities remain explicitly unavailable.
 
   # ── daily.yml / collect_tail ─────────────────────────────────────────────
   # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData
@@ -759,6 +764,14 @@ lanes:
           build_prophet's early band is fragile publication machinery. engine/seasonality/
           program_watch.py reads this token as the decision record; deleting it re-opens the
           daily-order tripwire, which is the intended behaviour if the decision is ever revisited.
+      - id: prophet_board_acceptance
+        module: scripts.prophet_board_acceptance
+        note: >
+          PR-1 Prophet US permanence net (2026-08-27) — post-publish acceptance
+          alarm (never a gate). Runs in daily.yml engine immediately after the
+          Prophet nightly step and before the Prophet checkpoint. continue-on-error
+          in the live workflow; declares the new scripts.prophet_board_acceptance
+          module so dag-conformance does not treat the step as undeclared lane drift.
       - id: build_prophet_stage_shadow
         module: scripts.build_prophet_stage_shadow
         note: >
@@ -903,6 +916,15 @@ lanes:
             - scripts.build_index_changes
             - scripts.build_cycle_pattern_live
             - scripts.build_cycle_pattern_state
+            # IMCE A5B: registered prospective forward capture. DAILY-ONLY —
+            # the sole nightly advancer of
+            # data/cycle_pattern/imce_prospective_observation_v1.jsonl (never
+            # the three-hour company-intelligence workflow, which only
+            # publishes the source event_workspace.v1 objects this step
+            # reads). Grouped after the other cycle_pattern steps, before
+            # build_measurement (which reads this ledger for its compact
+            # accrual/status projection).
+            - scripts.build_cycle_pattern_imce_prospective
             # Stock seasonality calendar clock. DAILY-ONLY on purpose: the window
             # family (2645 windows) and its independent circular year-shift null
             # (B=2000, on the raw AND the market-neutral panel) are the heavy leg,
@@ -953,6 +975,25 @@ lanes:
       # serial-spine steps; build_flow_desk + build_options_screener live in the
       # cl_gex band), so it must sit AFTER the band barrier — the same reasoning
       # that puts build_sector_central here.
+      - id: build_options_intel_brief
+        module: scripts.build_options_intel_brief
+        note: >
+          AD-1 Daily EOD Options Intelligence Brief (WS:ADVANCED-DATA-OPTIONS;
+          contracts/options/OPTIONS_INTEL_BRIEF_V1.md; intel_brief_heuristic/v1.2).
+          Deterministic display-tier research-priority board over the newest lawful
+          settled S->next-session chain pair (source-clock law: OI is next-print;
+          same-day OI unlawful; pending sessions disclosed, never scored). Reads
+          data/polygon_gex/chains + summaries, site/gex/*.json (gex_confirm display
+          context), data/earnings/earnings.parquet, site/prophet/index.json (display
+          echo, zero rank authority), data/options_flow/signing_gate.json (Q_flow
+          absence proof). Writes ONLY site/options_intel_brief.json (atomic, semantic
+          no-op on unchanged receipt). Serial post-band immediately BEFORE
+          build_options_command (its only consumer) for the same cross-phase
+          reasoning; never wired into closing-bell (the directional OI leg cannot
+          lawfully settle at 16:05 ET). Additive, absent-safe, exits 0 on failure so
+          the last committed artifact stands. DISPLAY-ONLY; no Prophet/NW/Sector
+          consumers in AD-1.
+          outputs: [site/options_intel_brief.json]
       - id: build_options_command
         module: scripts.build_options_command
         note: >
@@ -1472,6 +1513,16 @@ lanes:
           Output: site/shadow/bottom_sensors_geometry_audit.json (display-only; empty until
           ~1-3 months of snapshots mature — latency is the price of honesty).
           Runs AFTER build_bottom_sensors. Benchmark: 0.6s (2026-07-09). PR-2 wiring.
+      - id: mature_shadow_book
+        module: scripts.mature_shadow_book
+        note: >
+          non-fatal; frozen stock-score forward audit (experiments audit 2026-08-26 §8
+          item 4, PR #6499 — the script existed unwired since PR #381). Grades the
+          data/shadow/stock_score_book.jsonl snapshots (appended by build_stock_library
+          in build_site) against fully-elapsed 21/63/126-bar forward returns.
+          Output: site/shadow/audit.json (display-only; verdicts stay "building" until
+          the FROZEN prereg §3 floor — research/SHADOW_BOOK_PREREGISTRATION.md).
+          Benchmark: 0.7s (2026-08-26).
       - id: build_thesis_funnel_history
         module: scripts.research.build_thesis_funnel_snapshot
         note: >
@@ -1646,7 +1697,7 @@ lanes:
         module: scripts.build_factor_series
 
   # ── daily.yml / stock_briefs ────────────────────────────────────────────
-  # Prophet US trend-intelligence — the program's four post-board modules, moved out
+  # Prophet US trend-intelligence — the program's post-board modules, moved out
   # of the engine lane 2026-08-06 (see the job's comment in daily.yml). Every input is
   # read from the COMMITTED tree that `engine` and `us_scan_tier` push, so the job
   # needs BOTH; nothing here gates the dashboard deploy (`publish` needs only engine).
@@ -1657,6 +1708,10 @@ lanes:
         module: scripts.emit_prophet_doors
         args: [--nightly]
         note: "Prophet US trend-intelligence W3 — shadow Doors T (theme-relay) + R (re-arm) candidate emitters. Prospective-only accrual to data/prophet_doors/flags.jsonl (nightly sole advancer; caps 25/door with disclosed overflow; dedupe 21 sessions per ticker per door) + status.json disclosures (stale/absent subsector_rotation => Door T emits nothing, disclosed). ZERO authority — no board/plan/rank/gate consumer (tests/test_prophet_doors.py pins the fence); promotion only via research/PROPHET_DOORS_PREREG.md gates."
+      - id: reconcile_us_candidate_episodes
+        module: scripts.reconcile_us_candidate_episodes
+        args: [--nightly]
+        note: "V4-B1 sole durable candidate-episode writer. Runs after Door emission and before all forward graders/W3, refuses durable work without the nightly lane gate, builds one complete immutable generation, and publishes only through atomic HEAD.json replacement. Reads registered inputs without rank/gate/plan/Availability/V3 authority; report and replay modes are read-only."
       - id: grade_prophet_doors
         module: scripts.grade_prophet_doors
         args: [--nightly]
@@ -2097,19 +2152,30 @@ lanes:
       - id: evaluate_cortex_hypotheses
         module: scripts.evaluate_cortex_hypotheses
         note: >
-          W7b PR2 — Generic cortex hypothesis evaluator.
+          W7b PR3 — Generic cortex hypothesis evaluator.
           Runs AFTER spine-index build (needs: engine via cortex job needs chain).
-          For each registered hypothesis with come_back <= today:
+          Also needs build_factor_panel: `feature:` hypotheses resolve their
+          treatment/control split against data/factordata/panel/ (gitignored,
+          built earlier in the same run).
+          For each due hypothesis (status registered OR insufficient-n) with
+          come_back <= today:
             STRICT post-registration filter: as_of > registered_at enforced at entry.
             PATH A (lead_lag/sector_conditional/conditional_regime): spine/qledger join.
             PATH B (entry_quality): walk_forward stop-out harness.
-            Verdict against PRE-COMMITTED gate ONLY (no metric switching).
-            Passed → queued for quarterly cortex FDR batch (promotion requires gauntlet).
+            Declared feature: conditions are APPLIED and a CONTRAST group built;
+              a feature that cannot be resolved yields 'unresolvable-query'
+              rather than silently grading the whole population (W2 repair).
+            Verdict against PRE-COMMITTED gate ONLY (no metric switching): an
+              unsupported metric yields 'uncomputable-metric' and a structurally
+              unpassable threshold yields 'invalid-gate' (W3 repair).
+            Passed → consumed by scripts.quarterly_cortex_fdr (promotion still
+              requires the gauntlet; BH survival is necessary, not sufficient).
           impure: false.
           inputs: [data/neuralweb/machine_registry.jsonl,
                    data/neuralweb/spine_index.parquet,
+                   data/factordata/panel/*/panel.parquet,
                    data/yahoo/*.parquet]
-          outputs: [data/neuralweb/machine_registry.jsonl (status update),
+          outputs: [data/neuralweb/machine_registry.jsonl (superseding row appended),
                     data/neuralweb/cortex/evaluator_run.json,
                     data/neuralweb/governance.jsonl]
       - id: build_neuralweb_health_cortex
@@ -3076,6 +3142,26 @@ lanes:
         module: scripts.build_vector
       - id: build_aibrief
         module: scripts.build_aibrief
+      - id: quarterly_cortex_fdr
+        module: scripts.quarterly_cortex_fdr
+        note: >
+          W1 repair (2026-08-26 experiments audit §3) — the BH-FDR consumer the
+          evaluator has promised since W7b PR2 and that did not exist.
+          Wired into weekly.yml, NOT the nightly that feeds it: daily.yml sits
+          ~250 bytes under the 487,000-byte budget guarding GitHub's silent
+          processing cap (#5416), and a quarter-scoped batch is not worth that
+          headroom.  Quarter-SCOPED grouping on a weekly cadence: idempotent,
+          and appends a governance event only when the BH decision changes, so
+          re-running the same quarter is a no-op.
+          Eligibility fence (all required): evaluator_version >= W7b-PR3, a
+          p_value, gate_informative true, episode_n >= 8.  Ineligible verdicts
+          are listed with reasons, never silently dropped.
+          Promotes NOTHING — no authority, rank, size or gate reads the artifact.
+          impure: false.
+          inputs: [data/neuralweb/machine_registry.jsonl]
+          outputs: [data/neuralweb/cortex/fdr_batches/<quarter>.json,
+                    data/neuralweb/cortex/fdr_latest.json,
+                    data/neuralweb/governance.jsonl]
       - id: inject_data_base
         module: scripts.inject_data_base
         note: >
@@ -3266,14 +3352,15 @@ lanes:
         module: scripts.run_fundamental_forensics_broad_sec
         args: [--mode, incremental]
         note: >
-          FF-1 incremental broad SEC source plane. Polls Submissions for every
-          issuer in data/edgar/fundamentals.parquet, admits exact SEC bytes into
-          the private fundamental_forensics/broad-sec/v1/ prefix, and fetches
-          Company Facts only when relevant 10-K/10-Q (and existing 20-F/40-F)
-          filing state changes. Shares concurrency group filing-forensics-sec
-          with Wave-2. Schedule is incremental only; recovery is explicit
-          workflow_dispatch. A partial poll exits non-zero and does not advance
-          latest-complete. Off the render path; no workbench rebuild.
+          FF-1 incremental broad SEC source plane. Discovers relevant
+          10-K/10-Q (and existing 20-F/40-F) changes from the official EDGAR
+          full-index master ZIP, admits exact SEC bytes for affected issuers
+          into the private fundamental_forensics/broad-sec/v1/ prefix, and
+          fetches Company Facts only when relevant filing state changes.
+          Shares concurrency group filing-forensics-sec with Wave-2. Schedule
+          is incremental only; recovery is explicit workflow_dispatch. A
+          partial poll exits non-zero and does not advance latest-complete.
+          Off the render path; no workbench rebuild.
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.

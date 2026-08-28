@@ -49,6 +49,33 @@ waves:
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo
     depends_on: [W1, W2, W2B]
+  - id: MAS28-W0
+    title: "MAS-28 — canonical PR-linkage validator V1 records freeze"
+    status: done
+    pr: 6317
+    depends_on: [W3]
+  - id: MAS28-W0B
+    title: "MAS-28 — three-repository canonical PR-template authoring cutover"
+    status: done
+    pr: 6135
+    depends_on: [MAS28-W0]
+  - id: MAS28-W0R
+    title: "MAS-28 — R028 per-target evidence-identity reconciliation"
+    status: done
+    depends_on: [MAS28-W0B]
+  - id: MAS28-W1
+    title: "MAS-28 — pure report-only PR-linkage validator implementation"
+    status: done
+    pr: 6383
+    depends_on: [MAS28-W0R]
+    next_action: >
+      None for implementation. The repaired report-only W1 head
+      b0f12b97a7209d87ef6d3088a6e5d75d362ceb31 passed fences 32800454604 and
+      semantic CI 32800454750, then squash-merged as
+      35e83b79ac026345a17d5d2d13774bb74e8a994c on 2026-08-25. The earlier #6328
+      squash carried the rejected defect shape and is historical evidence, not W1
+      acceptance. Enforcement remains REPORT_ONLY. MAS-28 itself remains
+      BUILT_NOT_PROVEN until the separate calibration stop condition is satisfied.
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -59,10 +86,14 @@ decisions:
   - DEC:AGENTOS-HOME-IS-MACRO
   - DEC:AGENTOS-START-NEXT-VS-AGENDA
   - DEC:AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR
+  - DEC:MAS28-PR-LINKAGE-VALIDATOR-V1-REPORT-ONLY
+  - DEC:MAS28-R028-TARGET-IDENTITY-RECONCILIATION
 discoveries:
   - DSC:GOVERNANCE-JSONL-NOT-TRACKED
   - DSC:EXECUTIVE-OS-NO-PROGRAM-ROW
   - DSC:CENSUS-POSTDATES-PHASE1B
+  - DSC:MAS28-AUTHORING-GRAMMAR-DRIFT
+  - DSC:MAS28-R028-EVIDENCE-IDENTITY-COLLAPSE
 landmines:
   - "PROVISIONAL PARENT: project-active-build-control's registry row says it does_not_own 'Durable program truth', which is exactly what this workstream owns. No agent-os row exists (see DSC:EXECUTIVE-OS-NO-PROGRAM-ROW for the same gap). Minting one was reverted deliberately: config/mastermind_programs.yml and its generated docs/MASTERMIND_SYSTEM_MAP.md belong to the semantic-system-mapping workstream, which the commissioning brief marks ALREADY ASSIGNED, and editing the generated map conflicted with main within hours. The row is that owner's to add."
   - "Two execution control planes already exist. Anything that gates or dispatches belongs in Mastermind control_plane/ or the Macro hook layer — see invariant I1."
@@ -77,9 +108,13 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Phase 4 is eligible but not started. Commission it as a separate high-blast-radius,
-  report-only hook wave; keep the readiness envelope graph-only and Mastermind's
-  improvement agenda as the sole ranked queue.
+  MAS-28 W1 implementation is merged and accepted as report-only / BUILT_NOT_PROVEN.
+  The next MAS-28 operation is calibration only: run the representative frozen corpus
+  required by MAS-28, record false positives, false negatives and incomplete observations,
+  and return a recommendation to remain report-only, amend rules, or propose a separate
+  bounded enforcement review. Do not arm a hard gate from W1. The pre-existing Agent OS
+  Phase 4 W4 remains a separate high-blast-radius report-only hook wave and is still todo;
+  this records correction does not commission it.
 ---
 
 ## Context

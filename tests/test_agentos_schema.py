@@ -682,11 +682,11 @@ def test_annotations_start_the_line(store: Path) -> None:
 def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     """Every advertised subcommand must do work or say it cannot — never exit silently.
 
-    This test used to pin `compile-context` as a visible STUB.  Phase 3 landed it, so it
-    now pins the opposite: the subcommand must produce a real bundle, and no stub
-    language may survive anywhere in the CLI.  The shape of the check is deliberately
-    unchanged — a subcommand that silently returns 0 having done nothing is the failure
-    both versions exist to refuse.
+    The expensive part of this contract is breadth, not process isolation.  One real CLI
+    invocation proves argparse/transport wiring; the all-workstream sweep then reuses one
+    parsed Store in-process.  Spawning one Python interpreter per workstream reparsed the
+    entire Agent OS graph ~40 times and made this single contract dominate merge-gate wall
+    time without proving a different behavior.
     """
     source = CLI.read_text(encoding="utf-8")
     assert "not implemented until" not in source, "a stub announcement outlived its stub"
@@ -699,19 +699,56 @@ def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     )
     assert "exactly one" in usage_error.stderr
 
-    # DISCOVERED, never hardcoded.  Pinning one key made the check hostage to that record
-    # surviving under that name: renaming or retiring WS-AGENT-OS would have turned this
-    # into a crash about a missing workstream, which reads as a broken CLI rather than a
-    # stale test — and would have stopped covering every other seeded record.
-    for key in SEED_KEYS:
-        real = subprocess.run(
-            [sys.executable, str(CLI), "compile-context", "--workstream", key,
-             "--now", "2026-08-12T14:00:00Z"],
-            capture_output=True, text=True, cwd=REPO,
-        )
-        assert real.returncode == 0, real.stdout + real.stderr
-        bundle = json.loads(real.stdout)
-        assert bundle["schema"] == "context_bundle.v1"
-        assert any(section["items"] for section in bundle["sections"]), (
-            f"WS:{key} compiled to an empty bundle — a stub in everything but name"
-        )
+    # One true process boundary pins the public CLI. Argparse behavior does not vary by
+    # workstream key, so repeating the process boundary for every record adds cost, not
+    # coverage.
+    representative = SEED_KEYS[0]
+    real = subprocess.run(
+        [sys.executable, str(CLI), "compile-context", "--workstream", representative,
+         "--now", "2026-08-12T14:00:00Z"],
+        capture_output=True, text=True, cwd=REPO,
+    )
+    assert real.returncode == 0, real.stdout + real.stderr
+    real_bundle = json.loads(real.stdout)
+    assert real_bundle["schema"] == "context_bundle.v1"
+    assert any(section["items"] for section in real_bundle["sections"]), (
+        f"WS:{representative} compiled to an empty bundle — a stub in everything but name"
+    )
+
+    # Breadth is still exhaustive. Load/validate the committed graph once, then compile
+    # every seeded workstream through the same production compiler. Git timestamps and
+    # repo SHA have dedicated contracts elsewhere; neutralising those read-only joins here
+    # prevents this breadth proof from becoming a history benchmark.
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("agentos_schema_breadth", CLI)
+    assert spec is not None and spec.loader is not None
+    agentos = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(agentos)
+    parsed_store = agentos.load_store(STORE, agentos._load_programs())
+    hard = [problem for problem in parsed_store.problems if problem.hard]
+    assert not hard, "the committed store must be valid before breadth compilation"
+    now = agentos._parse_moment("2026-08-12T14:00:00Z")
+    assert now is not None
+
+    original_git_dates = agentos.git_dates
+    original_repo_sha = agentos._repo_sha
+    agentos.git_dates = lambda _path: (None, None)
+    agentos._repo_sha = lambda: "test-sha"
+    try:
+        for key in SEED_KEYS:
+            bundle = agentos.compile_bundle(
+                parsed_store,
+                workstream=key,
+                now=now,
+                builds=None,
+                degraded=agentos.Degraded(),
+            )
+            assert bundle["schema"] == "context_bundle.v1"
+            assert bundle["target"]["workstream"] == f"WS:{key}"
+            assert any(section["items"] for section in bundle["sections"]), (
+                f"WS:{key} compiled to an empty bundle — a stub in everything but name"
+            )
+    finally:
+        agentos.git_dates = original_git_dates
+        agentos._repo_sha = original_repo_sha

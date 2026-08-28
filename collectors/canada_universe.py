@@ -79,7 +79,10 @@ class CanadaUniverseAdapter(Adapter):
                     if ln.split(",")[0].strip().strip('"') == "Ticker"), None)
         if hdr is None:
             raise ValueError("XIC holdings: no 'Ticker' header row found")
-        df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), thousands=",")
+        # keep_default_na=False: 'NA' is a live listing (Nano Labs; National Bank of
+        # Canada on TSX). na_values=[""] keeps blank -> NaN so dropna/to_numeric are unchanged.
+        df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), thousands=",",
+                         keep_default_na=False, na_values=[""])
 
         def col(sub: str) -> str | None:
             return next((c for c in df.columns if sub in c.lower()), None)

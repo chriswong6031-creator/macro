@@ -331,6 +331,37 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "min_calendar_days": None,
     },
     {
+        # THE ENTITLED TWIN of the us_standouts board above, and the reason it needs
+        # its own row rather than riding that one: they are written by DIFFERENT code
+        # on the same night. build_site.py's _write_us_payload renders the withheld
+        # remainder of the US board into site/premiumdata/us_stocks.json
+        # (schema tier_payload.v1), the pre-rendered cards the page fetches post-auth
+        # and splices into the very same `.nbgrid` — see docs/TIER_PREVIEW_PATTERN.md
+        # and build_live_quotes.py's DISPLAY_BOARD_PAYLOAD_DIR note. Grading the free
+        # half therefore says NOTHING about the paid half: measured in production
+        # 2026-08-20, us_stocks.html shipped 3 board symbols while this payload carried
+        # 60 more. A freeze here is invisible to every other instrument in this file and
+        # is worse than a freeze on the free board, because the people it fails are the
+        # ones who paid — which is exactly the shape a monitor is for.
+        #
+        # ``us_premium`` is a DISTINCT market id on purpose, following the cn_ledger /
+        # hk_ledger precedent: _load_boards keys ``out[spec["market"]]``, so a second
+        # row reusing "us" would silently overwrite the free board and delete a market
+        # from the registry rather than add one.
+        #
+        # Budget 1 session, matching its twin: the two are baked by the same nightly
+        # from the same selection, so anything the free board can absorb this one can.
+        # No holiday floor — NYSE is the one calendar with no long-closure problem.
+        "market": "us_premium",
+        "label": "US premium payload",
+        "path": "site/premiumdata/us_stocks.json",
+        "stamp_known_absent": False,
+        "field": "as_of",
+        "calendar": "nyse",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,
+    },
+    {
         "market": "cn",
         "label": "China",
         "path": "site/factordata/china_standouts.json",
@@ -376,6 +407,59 @@ MARKET_BOARDS: tuple[dict, ...] = (
         "calendar": "weekday",
         "max_sessions_behind": 3,   # 1 + the +2 weekday-approximation tolerance
         "min_calendar_days": None,
+    },
+    # ── GD-4A.1 ledger-freshness entries ────────────────────────────────────────────
+    # A SEPARATE risk plane from the five boards above: the CN/HK risk-radar forward
+    # ledgers (data/risk_radar_intl/{cn,hk}_forward_log.jsonl) that the settled
+    # asia-close lane advances once per session, independent of daily.yml (which does
+    # not bake asia-close at all — see the MARKET_BOARDS module comment on checks A/B).
+    # A run concluding SUCCESS every night proved nothing about these ledgers: a
+    # gate-classifier bug held both stalled for hours on 2026-08-20 with every asia-close
+    # run still green, and the July-August outage ran a MONTH with no independent
+    # instrument watching either file. ``kind: "ledger"`` routes these through
+    # ``_ledger_expected_session`` / ``sessions_between`` instead of the board path's
+    # ``expected_last_session`` / ``sessions_behind`` — the exchange's own settle time
+    # (09:00Z cn / ~09:30Z hk) is HOURS before the asia-close lane's own ~15:17-15:20Z
+    # write, so grading a ledger on the exchange's settle time would call a healthy,
+    # still-in-progress afternoon "behind".
+    #
+    # DETECTION CONTRACT (Sol adjudication, 2026-08-20 review of PR #6140): "detect a
+    # silent ledger stall within the NEXT expected market session" — NOT the same
+    # session's own 20:00Z look. ``max_sessions_behind: 1`` is what encodes that: a
+    # SUSTAINED stall (session D's row never lands, AND D+1's does not either) first
+    # exceeds budget at D+1's 20:00Z check (behind=2), which is still "within the next
+    # expected session" of the miss. A single-session hiccup that self-heals — D's write
+    # fails once but D+1's lands normally — never exceeds budget 1 at any look and stays
+    # quiet BY DESIGN, mirroring the boards' own phantom-session budgets. Budget 0 was
+    # rejected: it deterministically false-pages on any weekend-anchored State-Council
+    # closure lib/cn_calendar does not encode (the table is deliberately minimal — see
+    # its module docstring; the review traced five dated false pages through 2029,
+    # e.g. Qingming Mon 2026-04-06), on the asia-close lane's own measured late-fire tail
+    # (runs concluding as late as ~19:11Z, cutting into the 20:00Z floor's margin), and on
+    # the ledger's own measured healthy-era misses (advanced only 9 of 12 CN sessions
+    # 2026-06-26→07-16 even while the lane ran green). Budget 1 absorbs all three classes
+    # while still catching a genuine sustained stall within one extra session.
+    {
+        "market": "cn_ledger",
+        "label": "CN Risk Ledger",
+        "path": "data/risk_radar_intl/cn_forward_log.jsonl",
+        "stamp_known_absent": False,
+        "field": "asof",
+        "calendar": "cn",
+        "max_sessions_behind": 1,
+        "min_calendar_days": 11,   # lib.cn_calendar.MAX_LEGIT_CLOSURE_DAYS — mirrors "cn"
+        "kind": "ledger",
+    },
+    {
+        "market": "hk_ledger",
+        "label": "HK Risk Ledger",
+        "path": "data/risk_radar_intl/hk_forward_log.jsonl",
+        "stamp_known_absent": False,
+        "field": "asof",
+        "calendar": "hk",
+        "max_sessions_behind": 1,
+        "min_calendar_days": None,   # mirrors "hk" — HKEX's table is not deliberately minimal
+        "kind": "ledger",
     },
 )
 
@@ -473,9 +557,9 @@ def _market_calendar(name: str):
     return __import__(module, fromlist=["sessions_behind"])
 
 
-def _holiday_in_gap(cal, stamp: date, now: datetime) -> bool:
+def _holiday_in_gap(cal, stamp: date, end: date) -> bool:
     """Does the market's calendar place a scheduled weekday closure between ``stamp`` and
-    the session we expect?
+    ``end`` (the session we expect)?
 
     This is what narrows the mainland's calendar-day floor from "always on" to "only
     inside a closure window".  The floor exists to absorb PHANTOM sessions — weekdays
@@ -484,14 +568,104 @@ def _holiday_in_gap(cal, stamp: date, now: datetime) -> bool:
     exchange is shut.  Outside a holiday window there is nothing for the floor to excuse,
     so the mainland pages at the same 2 sessions as everyone else instead of waiting 12
     calendar days.  Measured against the 2026-08-14 freeze shape: 2026-08-26 -> 2026-08-19.
+
+    ``end`` is caller-supplied rather than derived from ``now`` here so the SAME probe
+    serves both grading rules this module has: a JSON board's ``end`` is the market's own
+    ``expected_last_session(now)``; a ledger's ``end`` is the write-window-floor session
+    from ``_ledger_expected_session`` (see the ``kind: "ledger"`` MARKET_BOARDS entries)
+    — the two are deliberately different instants and neither belongs inside this probe.
     """
-    end = cal.expected_last_session(now)
     day = stamp
     while day < end:
         day += timedelta(days=1)
         if day.weekday() < 5 and day in cal.holidays(day.year):
             return True
     return False
+
+
+#: How late an asia-close ledger write may legitimately still be pending before the
+#: guard requires it.  The lane's advance commit lands ~15:17-15:20Z on a settled
+#: session day (GD-4A receipt: commit baf4cf7c9291 at 15:17:04Z, run window
+#: 13:29->15:20Z); 17:00Z leaves ~1h40m of margin.  Deliberately NOT the market's own
+#: settle time (lib/cn_calendar and lib/hk_calendar flip to "today" at their own close
+#: plus a settle buffer — 09:00Z / ~09:30Z) — that would call a healthy, still-
+#: in-progress afternoon "behind" hours before the asia-close lane even runs.
+_LEDGER_WRITE_WINDOW_FLOOR_UTC = time(17, 0)
+
+
+def _ledger_expected_session(cal, now: datetime) -> date:
+    """The session a risk-forward ledger's newest row should carry, per the write-window
+    floor above.
+
+    Consequences this function exists to guarantee (pinned by
+    tests/test_nightly_liveness.py):
+      * Before the floor (the 08:00Z and 14:00Z liveness looks) the expectation is always
+        the PREVIOUS completed session — a healthy day's write for TODAY may simply not
+        have landed yet, and that must never alarm.
+      * From the floor onward (the 20:00Z look), on a session day the expectation becomes
+        the CURRENT session — a write still missing this late is a stall, not a long bake.
+      * A non-session ``today`` (weekend or a scheduled market holiday) resolves to the
+        prior session regardless of the clock, so it can never manufacture a breach.
+    """
+    now_utc = now if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    now_utc = now_utc.astimezone(timezone.utc)
+    today = now_utc.date()
+    if cal.is_session(today) and now_utc.time() >= _LEDGER_WRITE_WINDOW_FLOOR_UTC:
+        return today
+    return cal.last_session_on_or_before(today - timedelta(days=1))
+
+
+#: How many trailing lines of a risk-forward-ledger JSONL file to scan for the newest
+#: row. Real ledgers run ~10-25 lines total (measured 2026-08-20), so 50 comfortably
+#: covers the whole file today with headroom for years of growth; a bound still exists
+#: so this stays cheap even if a ledger someday grows very large.
+_LEDGER_TAIL_SCAN_LINES = 50
+
+
+def _load_ledger_tail(path: Path) -> "dict | None":
+    """The FRESHEST row near the end of a risk-forward-ledger JSONL file — NOT simply
+    the last line.
+
+    The writer (engine/risk_radar_intl_audit.log_snapshot) appends any row whose asof
+    was previously absent to the END of the file, and a truncated or regressed bench
+    series can append an OLDER asof after a newer one — so "last line" is not reliably
+    "newest row". This scans the trailing ``_LEDGER_TAIL_SCAN_LINES`` lines, parses
+    every one that is a dict carrying a parseable ``asof``, and returns the row with
+    the MAX asof among them (ties keep the later line in file order).
+
+    Missing file, empty file, unreadable bytes (``Path.read_text()`` raises
+    ``UnicodeDecodeError`` — a ``ValueError`` subclass, NOT an ``OSError`` — on a
+    stray non-UTF-8 byte; letting that escape here previously killed the ENTIRE
+    watchdog silently, since it propagates uncaught through ``load_market_boards`` into
+    ``main()`` before checks A/B/C or any board ever run), and a tail with no
+    parseable-``asof`` row at all all resolve to None — the SAME blindness contract
+    ``load_index`` uses for the JSON boards: reported as a named ``::warning``
+    (INDETERMINATE), never a silent green and never a page on data this guard could
+    not actually read (VERDICT DISCIPLINE, module docstring).
+    """
+    try:
+        text = path.read_text()
+    except (OSError, ValueError):
+        return None
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return None
+
+    best_row: "dict | None" = None
+    best_asof: "date | None" = None
+    for line in lines[-_LEDGER_TAIL_SCAN_LINES:]:
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        asof = _parse_date(row.get("asof"))
+        if asof is None:
+            continue
+        if best_asof is None or asof >= best_asof:
+            best_row, best_asof = row, asof
+    return best_row
 
 
 def evaluate_market_boards(
@@ -520,19 +694,25 @@ def evaluate_market_boards(
     facts["boards"] = states
     for spec in MARKET_BOARDS:
         market, label, path = spec["market"], spec["label"], spec["path"]
+        # "board" (a rendered site/factordata/*.json index) or "ledger" (a raw
+        # data/risk_radar_intl/*.jsonl forward log, GD-4A.1). Only the grading rule and
+        # the message wording differ; the blindness/warn/fail plumbing is shared.
+        kind = spec.get("kind", "board")
+        noun = "ledger" if kind == "ledger" else "board"
         state: dict[str, Any] = {"as_of": None, "behind": None}
         states[market] = state
 
         payload = boards.get(market)
-        # isinstance, not `is None`: load_index already maps a non-dict artifact to None,
-        # but this is a PURE function and its blindness contract must hold for every
-        # caller. A board that becomes a JSON array would otherwise raise here — and a
-        # traceback out of a dead-man switch is a page about the wrong thing.
+        # isinstance, not `is None`: load_index/_load_ledger_tail already map an
+        # unreadable artifact to None, but this is a PURE function and its blindness
+        # contract must hold for every caller. A board that becomes a JSON array would
+        # otherwise raise here — and a traceback out of a dead-man switch is a page
+        # about the wrong thing.
         if not isinstance(payload, dict):
             warn.append(
-                f"INDETERMINATE [{label}]: {path} is absent or unreadable — this market "
-                "is UNGRADED, not green. If the path is right, check the lane's "
-                "sparse-checkout list."
+                f"INDETERMINATE [{label}]: {path} is absent or unreadable — this "
+                f"{noun} is UNGRADED, not green. If the path is right, check the "
+                "lane's sparse-checkout list."
             )
             continue
 
@@ -543,9 +723,9 @@ def evaluate_market_boards(
             if spec["stamp_known_absent"]:
                 warn.append(
                     f"INDETERMINATE [{label}]: {path} carries no usable "
-                    f"{spec['field']} ({raw!r}). This board has NEVER carried one — see "
-                    "MARKET_BOARDS — so it is a standing, named blind spot rather than "
-                    "a new fault. It is not graded and must not be read as healthy."
+                    f"{spec['field']} ({raw!r}). This {noun} has NEVER carried one — "
+                    "see MARKET_BOARDS — so it is a standing, named blind spot rather "
+                    "than a new fault. It is not graded and must not be read as healthy."
                 )
             else:
                 # NOT blindness, and this distinction is the whole point. Blindness is
@@ -558,22 +738,47 @@ def evaluate_market_boards(
                 # publishes a null stamp: without this branch, check D would go quiet on
                 # the exact market it was written for and read green forever.
                 fail.append(
-                    f"BOARD PUBLISHED WITHOUT A STAMP [{label}]: {path} is readable but "
-                    f"carries no usable {spec['field']} ({raw!r}). Its producer stopped "
-                    "stating which session the board is for, which silences every "
-                    "freshness instrument for this market — a regression, not blindness."
+                    f"{noun.upper()} PUBLISHED WITHOUT A STAMP [{label}]: {path} is "
+                    f"readable but carries no usable {spec['field']} ({raw!r}). Its "
+                    f"producer stopped stating which session the {noun} is for, which "
+                    "silences every freshness instrument for this market — a "
+                    "regression, not blindness."
                 )
             continue
 
+        # ``expected`` (the session _holiday_in_gap's floor check needs) is handled
+        # DIFFERENTLY by kind, on purpose. Ledger kind needs it up front — its own
+        # ``behind`` computation IS sessions_between(stamp, expected) — so it is
+        # unavoidably eager there. The board path historically computed it LAZILY, only
+        # inside the floor branch below (which only ever runs for "cn", the sole board
+        # with a floor): ``cal.sessions_behind(stamp, now)`` already calls
+        # ``expected_last_session(now)`` internally for its own purposes, so adding a
+        # SECOND, eager top-level call here would not change what a genuinely broken
+        # calendar does (still caught, same except clause) — but it silently doubles
+        # the surface this try covers for every board, not just the one with a floor.
+        # Restored to the original structure (a real regression risk PR #6140's review
+        # flagged, even though its 35-fixture differential found no live difference
+        # today): a calendar exception must not turn a HEALTHY board INDETERMINATE
+        # through a code path the board never used to exercise.
         try:
-            behind = _market_calendar(spec["calendar"]).sessions_behind(stamp, now)
+            cal = _market_calendar(spec["calendar"])
+            if kind == "ledger":
+                # Custom write-window boundary, NOT the market's own settle time — see
+                # _ledger_expected_session for why the two must not be conflated.
+                expected = _ledger_expected_session(cal, now)
+                behind = cal.sessions_between(stamp, expected)
+            else:
+                expected = None  # computed lazily below, only if the floor needs it
+                behind = cal.sessions_behind(stamp, now)
         except Exception as exc:  # noqa: BLE001 — a broken calendar blinds ONE market
             warn.append(
                 f"INDETERMINATE [{label}]: {spec['calendar']} calendar unusable "
-                f"({exc!r}); this market is ungraded"
+                f"({exc!r}); this {noun} is ungraded"
             )
             continue
         state["behind"] = behind
+        if kind == "ledger":
+            state["expected_session"] = expected.isoformat()
 
         budget = spec["max_sessions_behind"]
         if behind <= budget:
@@ -584,15 +789,17 @@ def evaluate_market_boards(
             # The table-independent holiday floor. See MARKET_BOARDS for why the
             # mainland alone carries one and what it costs. It applies only INSIDE a
             # closure window: a broken holiday probe falls back to applying it, because
-            # blindness must never manufacture a page.
+            # blindness must never manufacture a page. Board kind derives its ``end``
+            # HERE, lazily (matching the pre-GD-4A.1 structure) rather than reusing a
+            # top-level ``expected`` — see the comment above the outer try.
             try:
-                in_closure = _holiday_in_gap(
-                    _market_calendar(spec["calendar"]), stamp, now)
+                gap_end = expected if expected is not None else cal.expected_last_session(now)
+                in_closure = _holiday_in_gap(cal, stamp, gap_end)
             except Exception:  # noqa: BLE001 — a broken probe suppresses, never pages
                 in_closure = True
             if in_closure:
                 warn.append(
-                    f"INDETERMINATE [{label}]: board is {behind} sessions behind "
+                    f"INDETERMINATE [{label}]: {noun} is {behind} sessions behind "
                     f"({stamp.isoformat()}), only {(now.date() - stamp).days} calendar "
                     f"days old, and a scheduled exchange closure falls in that gap — "
                     f"inside the {floor}-day longest-legitimate-closure floor, so this "
@@ -600,14 +807,276 @@ def evaluate_market_boards(
                 )
                 continue
 
-        fail.append(
-            f"STALE BOARD [{label}]: {path} still reads {spec['field']}="
-            f"{stamp.isoformat()}, {behind} completed {spec['calendar'].upper()} "
-            f"sessions behind (limit {budget}). The board was re-rendered but did not "
-            "advance — a green lane and a fresh git mtime both look exactly like this."
-        )
+        if kind == "ledger":
+            fail.append(
+                f"LEDGER STALLED [{label}]: {path} newest row asof={stamp.isoformat()}, "
+                f"{behind} completed {spec['calendar'].upper()} session(s) behind the "
+                f"expected session {expected.isoformat()} (write-window floor "
+                "17:00Z). The asia-close lane did not advance this ledger for its "
+                "owed session."
+            )
+        else:
+            fail.append(
+                f"STALE BOARD [{label}]: {path} still reads {spec['field']}="
+                f"{stamp.isoformat()}, {behind} completed {spec['calendar'].upper()} "
+                f"sessions behind (limit {budget}). The board was re-rendered but did "
+                "not advance — a green lane and a fresh git mtime both look exactly "
+                "like this."
+            )
+
+    # ── PAIRED VINTAGE: the free board and its entitled twin must name the SAME
+    # session ────────────────────────────────────────────────────────────────────
+    # Neither row above can catch this alone, and that is exactly why it is asked as
+    # its own question rather than as a tighter budget. Both carry a 1-session budget,
+    # so us_standouts@T together with us_stocks@T-1 leaves BOTH individually "fresh"
+    # while the paying tier is served a strictly OLDER board than the free preview
+    # beside it — on the same page, spliced into the same `.nbgrid`. A vintage split is
+    # invisible to a sessions-behind grader by construction.
+    #
+    # Blindness stays blindness: when either stamp is absent or unparseable the loop
+    # above has ALREADY filed that row's INDETERMINATE (or its published-without-a-stamp
+    # failure), so this stays silent rather than paging twice about one fault.
+    #
+    # Direction matters and only one direction pages. Paid OLDER than free is the
+    # subscriber-facing defect. Paid NEWER is a strange shape but harms nobody — the
+    # free board's own row grades whether IT has fallen behind — so it warns instead of
+    # manufacturing a page, per this module's standing rule against false positives.
+    free_asof = _parse_date((states.get("us") or {}).get("as_of"))
+    paid_asof = _parse_date((states.get("us_premium") or {}).get("as_of"))
+    if free_asof is not None and paid_asof is not None and paid_asof != free_asof:
+        if paid_asof < free_asof:
+            fail.append(
+                "PREMIUM PAYLOAD VINTAGE SPLIT [US premium payload]: "
+                f"site/premiumdata/us_stocks.json reads as_of={paid_asof.isoformat()} "
+                f"while site/factordata/us_standouts.json reads "
+                f"as_of={free_asof.isoformat()} — the entitled half of the US board is a "
+                "strictly OLDER session than the free preview rendered beside it. Both "
+                "are inside their own 1-session budgets, so no other check in this file "
+                "can see this."
+            )
+        else:
+            warn.append(
+                f"INDETERMINATE [US premium payload]: premiumdata "
+                f"as_of={paid_asof.isoformat()} is NEWER than us_standouts "
+                f"as_of={free_asof.isoformat()}. Not a paid-tier freeze — the direction "
+                "that harms a subscriber — so it does not page here; the US row above "
+                "grades whether the free board has fallen behind."
+            )
 
     return fail, warn, facts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# intake identity (shared predicate — DELIBERATELY DUPLICATED, never imported)
+# ─────────────────────────────────────────────────────────────────────────────
+# The SAME ~10-line predicate also lives in scripts/freshness_sentinel.py's
+# `prophet_us` SURFACES entry, scripts/prophet_rescue.py's NO_COHORT verdict, and
+# scripts/prophet_board_acceptance.py. Copied by hand, not factored into one
+# shared helper: this permanence net's entire point is a SECOND, INDEPENDENT
+# failure domain per instrument, and a bug in one shared copy would blind all
+# four watchdogs identically — the exact class of thing #5362 (one file, one bug,
+# every downstream instrument dark) taught this program to distrust.
+def intake_identity_breach(intake: object) -> "str | None":
+    """Breach reason(s) from site/prophet/index.json's ``intake`` block, or None
+    when it is healthy OR simply absent. Same three conditions everywhere this
+    predicate lives: ``lossless`` must be True, ``unaccounted`` must be 0, and a
+    positive ``eligible_after_skips`` must not coexist with ``originated == 0``
+    (the 2026-08-13 mixed-vintage wedge signature).
+
+    An entirely absent/non-dict ``intake`` ABSTAINS (returns None) rather than
+    breaching. Real production ``site/prophet/index.json`` always carries this
+    block, but this predicate is also exercised against older/synthetic index
+    fixtures that predate the field and exist to test unrelated behavior (Check
+    B/C's run-and-store logic) — those must not spuriously start failing the day
+    this check is added. A genuinely broken build that fails to write the intake
+    block at all is still caught: the SAME fixture will almost always also carry
+    a wrong/missing ``source_asof`` or an empty plan cohort, which the sibling
+    checks in this file (and cohort_size/intake_eligible in
+    scripts/prophet_rescue.py) already page on independently.
+    """
+    if not isinstance(intake, dict):
+        return None
+    reasons: list[str] = []
+    if "lossless" in intake and intake.get("lossless") is not True:
+        reasons.append(f"intake.lossless={intake.get('lossless')!r} (must be true)")
+    unaccounted = intake.get("unaccounted")
+    if (
+        isinstance(unaccounted, int)
+        and not isinstance(unaccounted, bool)
+        and unaccounted != 0
+    ):
+        reasons.append(f"intake.unaccounted={unaccounted} (must be 0)")
+    eligible = intake.get("eligible_after_skips")
+    originated = intake.get("originated")
+    if (
+        isinstance(eligible, int) and not isinstance(eligible, bool) and eligible > 0
+        and isinstance(originated, int) and not isinstance(originated, bool)
+        and originated == 0
+    ):
+        reasons.append(
+            f"intake.eligible_after_skips={eligible} but intake.originated=0"
+        )
+    return "; ".join(reasons) if reasons else None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# check E — the VPS sentinel's own heartbeat, graded from the GitHub failure domain
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY. scripts/freshness_sentinel.py is itself a dead-man switch, but it lives
+# entirely OUTSIDE GitHub (a VPS timer) — so nothing in the GitHub failure domain
+# notices if THAT process stops. Check E closes that loop the other way: it reads
+# the one artifact the sentinel writes on every pass (/live/staleness.json, public,
+# no registration wall) and grades the sentinel's OWN clock, the same way the
+# sentinel grades everyone else's. A heartbeat this stale means the VPS-side
+# watchdog has gone quiet — the failure this whole permanence net exists to make
+# loud from a SECOND, independent domain.
+#
+# 3 missed cadences (90 min at the sentinel's 30-minute
+# app/deploy/macro-sentinel.timer), not 1: this check runs on GitHub's own */10
+# schedule sibling and a single missed sentinel pass (a slow VPS wake, a transient
+# network blip) must not page — the same "breach by the second miss" shape every
+# other budget in this family uses.
+SENTINEL_CADENCE_MINUTES = 30.0
+SENTINEL_HEARTBEAT_MAX_MISSED_CADENCES = 3.0
+STALENESS_JSON_URL = "https://www.mastermind-x.com/live/staleness.json"
+
+
+def fetch_staleness_json(timeout: float = 15.0) -> "dict | None":
+    """Check E's one anonymous GET. /live/staleness.json sits in the Caddy public
+    allowlist (freshness_sentinel.py itself serves it with no registration wall).
+    Any transport or parse failure -> None, which the caller reads as
+    INDETERMINATE — a DNS hiccup on a GitHub-hosted runner must never manufacture
+    an outage verdict about a VPS process it cannot otherwise see."""
+    req = urllib.request.Request(
+        STALENESS_JSON_URL, headers={"User-Agent": "macro-nightly-liveness/1.0"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            doc = json.loads(resp.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001 — network/parse failure -> None (blind, not red)
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
+#: Sentinel default for ``evaluate(sentinel_heartbeat=...)``, distinct from a
+#: real ``None``. Every caller that never mentions Check E (virtually every
+#: existing test in this file, which predates PR-1 and exercises checks A-D)
+#: gets this default and Check E contributes NOTHING — not even a warning — to
+#: the report, so a pre-existing test's exact warnings-count assertion is not
+#: retroactively broken by adding a fifth check it never asked about. A real
+#: ``None`` (what ``main()`` passes when ``fetch_staleness_json()`` genuinely
+#: failed) DOES grade as Check E's own indeterminate — the distinction is
+#: "nobody asked" vs "we asked and it was unreadable", and only the second is
+#: this check's business to report.
+_HEARTBEAT_NOT_REQUESTED = object()
+
+
+def evaluate_sentinel_heartbeat(
+    doc: object, now: datetime
+) -> "tuple[list[str], list[str], dict]":
+    """Check E — pure grading of an already-fetched /live/staleness.json.
+
+    ``doc`` absent/unreadable, or carrying no usable clock, is INDETERMINATE
+    (blindness discipline, module docstring): the sentinel may be perfectly
+    healthy and only this runner's GET failed. Only a PARSED, over-budget
+    heartbeat is a fail_reason. Reads ``heartbeat.last_pass_utc`` (the field this
+    program's PR-1 adds to freshness_sentinel.py) and falls back to the report's
+    own top-level ``generated_at`` — present on every pass since long before the
+    heartbeat key existed — so an un-upgraded sentinel build still grades.
+
+    ``doc is _HEARTBEAT_NOT_REQUESTED`` (the caller never asked) contributes
+    NOTHING, not even a warning — see the constant's own comment.
+    """
+    fail: list[str] = []
+    warn: list[str] = []
+    facts: dict[str, Any] = {}
+    if doc is _HEARTBEAT_NOT_REQUESTED:
+        return fail, warn, facts
+    if not isinstance(doc, dict):
+        warn.append(
+            "CHECK E INDETERMINATE: /live/staleness.json unreadable — cannot grade "
+            "the VPS sentinel's own heartbeat"
+        )
+        return fail, warn, facts
+    heartbeat = doc.get("heartbeat")
+    last_pass = heartbeat.get("last_pass_utc") if isinstance(heartbeat, dict) else None
+    if not isinstance(last_pass, str) or not last_pass:
+        last_pass = doc.get("generated_at")
+    stamp = _parse_dt(last_pass) if isinstance(last_pass, str) else None
+    if stamp is None:
+        warn.append(
+            "CHECK E INDETERMINATE: /live/staleness.json carries no usable "
+            "heartbeat.last_pass_utc or generated_at field"
+        )
+        return fail, warn, facts
+    age_min = (now - stamp).total_seconds() / 60.0
+    facts["sentinel_heartbeat_age_minutes"] = round(age_min, 1)
+    budget_min = SENTINEL_CADENCE_MINUTES * SENTINEL_HEARTBEAT_MAX_MISSED_CADENCES
+    if age_min > budget_min:
+        fail.append(
+            f"SENTINEL HEARTBEAT STALE [Check E]: /live/staleness.json last pass "
+            f"{stamp.isoformat()} is {age_min:.0f} min old (budget {budget_min:.0f} "
+            "min = 3 sentinel cadences). The VPS-side dead-man sentinel "
+            "(scripts/freshness_sentinel.py, app/deploy/macro-sentinel.timer) "
+            "appears to have stopped running — its own death is otherwise invisible "
+            "from the GitHub failure domain."
+        )
+    return fail, warn, facts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# lane-latch acceptance exemption — the board-acceptance step must always page
+# ─────────────────────────────────────────────────────────────────────────────
+# scripts/prophet_board_acceptance.py (daily.yml's engine job) prints
+# ``::error title=prophet-board-acceptance::…`` and exits nonzero on a breach, but
+# it runs under ``continue-on-error: true`` (it is an ALARM, never a GATE — see its
+# own module docstring), so a step-level failure there does not by itself flip the
+# run's overall conclusion. When some OTHER failure in the same run already makes
+# the LANE LATCH branch consider downgrading a red run to a quiet warning (source
+# advanced, so "the night's data is live, only a lane is red"), that downgrade must
+# not also swallow an acceptance red riding along in the same run — an internal
+# board-consistency alarm is exactly the kind of thing the latch's own quieting
+# logic was never meant to hide.
+ACCEPTANCE_STEP_MARKER = "prophet-board-acceptance"
+
+
+def fetch_run_jobs(repo: str, token: "str | None", run_id: object, *,
+                    timeout: float = 30.0) -> "list[dict] | None":
+    """Job list for one run — used ONLY to test the lane-latch acceptance
+    exemption, and only ever called for a single run (see its one caller), so it
+    costs at most one extra GitHub read per red wake. Any transport failure -> None
+    (the exemption then does not apply — see ``job_failed_at_acceptance_step``)."""
+    url = (
+        f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100"
+    )
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "macro-nightly-liveness",
+        **({"Authorization": f"Bearer {token}"} if token else {}),
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            payload = json.loads(resp.read())
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError):
+        return None
+    jobs = payload.get("jobs")
+    return jobs if isinstance(jobs, list) else None
+
+
+def job_failed_at_acceptance_step(jobs: "list[dict] | None") -> bool:
+    """Whether any job's step list shows the board-acceptance step concluding
+    ``failure``. Total and fail-CLOSED toward "not proven": an absent/unreadable
+    job list, or a job list with no matching step, answers False — the exemption
+    must be POSITIVELY proven from a real annotation match, never assumed, so a
+    read failure here falls back to the latch's ordinary (pre-existing) behavior
+    rather than silently suppressing a real acceptance red."""
+    for job in jobs or []:
+        for step in (job or {}).get("steps") or []:
+            name = str((step or {}).get("name") or "").lower()
+            if ACCEPTANCE_STEP_MARKER in name and step.get("conclusion") == "failure":
+                return True
+    return False
 
 
 def evaluate(
@@ -617,8 +1086,18 @@ def evaluate(
     *,
     max_sessions_behind: int = MAX_SESSIONS_BEHIND,
     boards: "dict[str, dict | None] | None" = None,
+    sentinel_heartbeat: object = _HEARTBEAT_NOT_REQUESTED,
+    acceptance_failed: bool = False,
 ) -> dict:
-    """Pure verdict over the four checks.  See module docstring for the contract."""
+    """Pure verdict over checks A-E.  See module docstring for the contract.
+
+    ``sentinel_heartbeat`` is the already-fetched /live/staleness.json document
+    for check E (None when the caller never fetched it — that check then reads
+    as INDETERMINATE, same discipline as every other blind read here).
+    ``acceptance_failed`` is a precomputed fact (see
+    ``job_failed_at_acceptance_step``) rather than a live fetch, keeping this
+    function's own no-network/no-clock/no-filesystem contract intact.
+    """
     fail: list[str] = []
     warn: list[str] = []
     facts: dict[str, Any] = {}
@@ -727,6 +1206,16 @@ def evaluate(
     else:
         src = _parse_date(index.get("source_asof"))
         facts["source_asof"] = index.get("source_asof")
+        # Intake identity — the same predicate scripts/freshness_sentinel.py's
+        # prophet_us surface, scripts/prophet_rescue.py's NO_COHORT verdict, and
+        # scripts/prophet_board_acceptance.py each carry independently (see the
+        # comment above intake_identity_breach for why it is duplicated rather
+        # than shared). This can breach even when source_asof itself reads
+        # current — the store can advance while origination silently loses or
+        # miscounts candidates, which sessions_behind alone cannot see.
+        intake_breach = intake_identity_breach(index.get("intake"))
+        if intake_breach:
+            fail.append(f"INTAKE INTEGRITY: site/prophet/index.json {intake_breach}.")
         if src is None:
             warn.append(
                 f"INDETERMINATE: source_asof missing/unparseable "
@@ -736,16 +1225,35 @@ def evaluate(
             behind = sessions_behind(src, now)
             facts["sessions_behind"] = behind
             if no_success_detail is not None and src >= session:
-                # The 2026-08-13 shape: no run succeeded, but the store carries
-                # the owed session. The night's data is LIVE; only a lane is red.
-                warn.append(
-                    f"LANE LATCH: every {WORKFLOW_FILE} run since "
-                    f"{boundary.isoformat()} concluded without success "
-                    f"[{no_success_detail}], but source_asof already reads "
-                    f"{src.isoformat()} — the run-level conclusion is a "
-                    "single-lane latch, not a missing night. Investigate the red "
-                    "lane; do not re-bake."
-                )
+                if acceptance_failed:
+                    # The lane-latch exemption: a run that failed for some other
+                    # reason AND whose own board-acceptance step also failed must
+                    # not be quieted to a warning just because source_asof already
+                    # advanced. scripts/prophet_board_acceptance.py runs under
+                    # continue-on-error (it is an alarm, never a gate — see its
+                    # module docstring), so this is the path that keeps its red
+                    # from being swallowed by the exact "the data is live, only a
+                    # lane is red" reasoning the ordinary latch below exists for.
+                    fail.append(
+                        f"ACCEPTANCE FAILED: a {WORKFLOW_FILE} run since "
+                        f"{boundary.isoformat()} failed at its "
+                        f"{ACCEPTANCE_STEP_MARKER!r} step [{no_success_detail}] "
+                        f"even though source_asof already reads {src.isoformat()}. "
+                        "The lane-latch exemption applies: an internal board-"
+                        "acceptance red is never excused by the store having "
+                        "advanced — investigate the acceptance failure directly."
+                    )
+                else:
+                    # The 2026-08-13 shape: no run succeeded, but the store carries
+                    # the owed session. The night's data is LIVE; only a lane is red.
+                    warn.append(
+                        f"LANE LATCH: every {WORKFLOW_FILE} run since "
+                        f"{boundary.isoformat()} concluded without success "
+                        f"[{no_success_detail}], but source_asof already reads "
+                        f"{src.isoformat()} — the run-level conclusion is a "
+                        "single-lane latch, not a missing night. Investigate the "
+                        "red lane; do not re-bake."
+                    )
                 no_success_detail = None
             if baked and src < session:
                 # The sharp case.  A run for THIS session concluded success, so the
@@ -809,6 +1317,12 @@ def evaluate(
     warn.extend(d_warn)
     facts.update(d_facts)
 
+    # ── E. SENTINEL HEARTBEAT ────────────────────────────────────────────────
+    e_fail, e_warn, e_facts = evaluate_sentinel_heartbeat(sentinel_heartbeat, now)
+    fail.extend(e_fail)
+    warn.extend(e_warn)
+    facts.update(e_facts)
+
     return {
         "ok": not fail,
         "fail_reasons": fail,
@@ -856,8 +1370,17 @@ def load_index(path: Path) -> "dict | None":
 def load_market_boards(root: Path) -> "dict[str, dict | None]":
     """Every MARKET_BOARDS artifact, parsed.  Unreadable -> None (that market goes
     INDETERMINATE); the key is ALWAYS present so a market can never be silently dropped
-    from the registry by a read failure."""
-    return {spec["market"]: load_index(root / spec["path"]) for spec in MARKET_BOARDS}
+    from the registry by a read failure.  ``kind: "ledger"`` entries read the newest row
+    of a JSONL forward log (``_load_ledger_tail``); every other entry reads a whole-file
+    JSON board index (``load_index``), unchanged from before GD-4A.1."""
+    out: "dict[str, dict | None]" = {}
+    for spec in MARKET_BOARDS:
+        path = root / spec["path"]
+        if spec.get("kind") == "ledger":
+            out[spec["market"]] = _load_ledger_tail(path)
+        else:
+            out[spec["market"]] = load_index(path)
+    return out
 
 
 def _notify(report: dict) -> None:
@@ -1097,7 +1620,9 @@ def _selftest() -> int:
                  boards={"us": None, "cn": None, "hk": None,
                          "ca": {"as_of": "2026-08-17"}, "intl": {"as_of": None}})
     _check("D/blind-markets-never-breach", r["ok"], True)
-    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 4, r
+    # 5 board-level blind markets (us, us_premium, cn, hk, intl) + 2 ledger entries
+    # absent from this fixture's ``boards`` dict entirely (cn_ledger, hk_ledger) = 7.
+    assert len([w for w in r["warnings"] if "INDETERMINATE [" in w]) == 7, r
     assert r["facts"]["boards"]["ca"]["behind"] == 0, r
 
     # ...but an artifact we CAN read that publishes no stamp is a producer regression,
@@ -1121,6 +1646,98 @@ def _selftest() -> int:
     _check("D/not-requested-is-silent", r["ok"], True)
     assert "boards" not in r["facts"], r
 
+    # ── GD-4A.1: CN/HK risk-forward-ledger freshness ────────────────────────
+    # 2026-08-20 (Thu) and 2026-08-19 (Wed) are both ordinary CN/HK trading days —
+    # no weekend, no calendar holiday in between. Session D = 08-20, session D-1 = 08-19.
+    # The daily.yml (US/NYSE) backdrop is held constant and healthy across all three
+    # liveness looks on 08-20 (checks A/B/C are not this section's subject) —
+    # expected_fire_after resolves to NYSE session 08-19 at 08:00Z/14:00Z/20:00Z alike,
+    # since NYSE's own settle boundary has not yet passed at any of those UTC hours.
+    led_healthy_runs = [{"created_at": "2026-08-19T22:30:00Z", "status": "completed",
+                          "conclusion": "success"}]
+    led_index = {"source_asof": "2026-08-19"}
+
+    # Healthy day, no alarm at ANY of the three liveness looks. Before the 17:00Z
+    # write-window floor the ledger legitimately still carries D-1's row; at/after
+    # the floor it carries D's.
+    for hour, asof in ((8, "2026-08-19"), (14, "2026-08-19"), (20, "2026-08-20")):
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h,
+                     boards={"cn_ledger": {"asof": asof}, "hk_ledger": {"asof": asof}})
+        _check(f"ledger/healthy-{hour:02d}Z-no-alarm", r["ok"], True)
+        assert r["facts"]["boards"]["cn_ledger"]["behind"] == 0, r
+
+    # Pre-floor hours (08:00Z, 14:00Z) always expect the PREVIOUS session; 20:00Z (past
+    # the floor) expects the CURRENT one. Pin the expected_session fact directly so this
+    # law is provable independent of whether the write happened.
+    for hour, expected in ((8, "2026-08-19"), (14, "2026-08-19"), (20, "2026-08-20")):
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h,
+                     boards={"cn_ledger": {"asof": "2026-08-19"},
+                             "hk_ledger": {"asof": "2026-08-19"}})
+        assert r["facts"]["boards"]["cn_ledger"]["expected_session"] == expected, (
+            hour, r["facts"]["boards"]["cn_ledger"])
+
+    # Detection contract (Sol adjudication on PR #6140's review): "detect a silent
+    # ledger stall within the NEXT expected market session" — budget 1, not 0. A
+    # SUSTAINED stall (D's row never lands AND D+1's does not either) must alarm no
+    # later than D+1's 20:00Z check (behind=2); every look before that stays quiet
+    # (behind<=1), including D's OWN 20:00Z — a single missed session is, by itself,
+    # indistinguishable from the lane's measured late-fire tail and must not page.
+    stall_boards = {"cn_ledger": {"asof": "2026-08-19"}, "hk_ledger": {"asof": "2026-08-19"}}
+    d1_runs = [{"created_at": "2026-08-20T22:30:00Z", "status": "completed",
+                "conclusion": "success"}]
+    d1_index = {"source_asof": "2026-08-20"}
+    for hour in (8, 14, 20):  # all of D quiet — one miss is within budget
+        now_h = datetime(2026, 8, 20, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(led_healthy_runs, led_index, now_h, boards=stall_boards)
+        _check(f"ledger/sustained-stall-quiet-D-{hour:02d}Z", r["ok"], True)
+    for hour in (8, 14):     # D+1 pre-floor: still only 1 behind, quiet
+        now_h = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(d1_runs, d1_index, now_h, boards=stall_boards)
+        _check(f"ledger/sustained-stall-quiet-D1-{hour:02d}Z", r["ok"], True)
+    now_d1_20 = datetime(2026, 8, 21, 20, 0, tzinfo=timezone.utc)
+    r = evaluate(d1_runs, d1_index, now_d1_20, boards=stall_boards)
+    _check("ledger/sustained-stall-alarms-at-D1-20Z", r["ok"], False)
+    stalled = [f for f in r["fail_reasons"] if "LEDGER STALLED" in f]
+    assert len(stalled) == 2, r["fail_reasons"]
+    assert any("[CN Risk Ledger]" in f for f in stalled), stalled
+    assert any("[HK Risk Ledger]" in f for f in stalled), stalled
+
+    # A single-session hiccup that self-heals must NEVER alarm, at any look: D's write
+    # fails once, but D+1's lands normally (stamp advances straight to D+1, per the
+    # "no backfill audit" law — this check only ever grades the newest row).
+    now_d_20 = datetime(2026, 8, 20, 20, 0, tzinfo=timezone.utc)
+    r = evaluate(led_healthy_runs, led_index, now_d_20, boards=stall_boards)
+    _check("ledger/self-heal-quiet-at-D-20Z", r["ok"], True)
+    for hour in (8, 14):
+        now_h = datetime(2026, 8, 21, hour, 0, tzinfo=timezone.utc)
+        r = evaluate(d1_runs, d1_index, now_h, boards=stall_boards)
+        _check(f"ledger/self-heal-quiet-D1-{hour:02d}Z", r["ok"], True)
+    healed_boards = {"cn_ledger": {"asof": "2026-08-21"}, "hk_ledger": {"asof": "2026-08-21"}}
+    r = evaluate(d1_runs, d1_index, now_d1_20, boards=healed_boards)
+    _check("ledger/self-heal-quiet-at-D1-20Z", r["ok"], True)
+    assert r["facts"]["boards"]["cn_ledger"]["behind"] == 0, r
+
+    # Weekend quiet: Saturday resolves to Friday's session at every hour, so a ledger
+    # holding Friday's row never alarms over the weekend.
+    sat = datetime(2026, 8, 22, 20, 0, tzinfo=timezone.utc)
+    r = evaluate([{"created_at": "2026-08-21T22:30:00Z", "status": "completed",
+                   "conclusion": "success"}], {"source_asof": "2026-08-21"}, sat,
+                 boards={"cn_ledger": {"asof": "2026-08-21"},
+                         "hk_ledger": {"asof": "2026-08-21"}})
+    _check("ledger/weekend-quiet", r["ok"], True)
+
+    # Mainland long-closure floor: same Golden Week shape as the board check above, now
+    # applied to the ledger. cn_ledger carries the min_calendar_days=11 floor; hk_ledger
+    # (min_calendar_days=None) has no such floor and would page on the same input.
+    gw_stall = {"cn_ledger": {"asof": "2026-09-28"}, "hk_ledger": {"asof": "2026-09-28"}}
+    r = evaluate(gw_runs, {"source_asof": "2026-10-08"}, gw_now, boards=gw_stall)
+    _check("ledger/mainland-holiday-floor-suppresses-cn-only", r["ok"], False)
+    assert any("longest-legitimate-closure floor" in w and "[CN Risk Ledger]" in w
+               for w in r["warnings"]), r["warnings"]
+    assert any("LEDGER STALLED [HK Risk Ledger]" in f for f in r["fail_reasons"]), r
+
     print("nightly-liveness selftest: " + ("PASS" if ok else "FAIL"), flush=True)
     return 0 if ok else 1
 
@@ -1138,6 +1755,10 @@ def main(argv: "list[str] | None" = None) -> int:
     parser.add_argument(
         "--site-root", type=Path, default=REPO_ROOT,
         help="offline: repo root the MARKET_BOARDS paths resolve against (check D)")
+    parser.add_argument(
+        "--staleness-json", type=Path,
+        help="offline: read the sentinel heartbeat doc from a file instead of "
+             "fetching /live/staleness.json (check E)")
     args = parser.parse_args(argv)
 
     if args.selftest:
@@ -1159,9 +1780,48 @@ def main(argv: "list[str] | None" = None) -> int:
     else:
         runs = fetch_runs(args.repo, os.environ.get("GITHUB_TOKEN"))
 
+    if args.staleness_json:
+        try:
+            heartbeat_doc = json.loads(args.staleness_json.read_text())
+        except (OSError, ValueError):
+            heartbeat_doc = None
+    elif args.runs_json:
+        # Offline mode (--runs-json, the existing convention for tests and the
+        # #5037-class local-repro workflow): must not silently reach the network
+        # for a check nothing asked about. _HEARTBEAT_NOT_REQUESTED means Check E
+        # contributes nothing (not even a warning) — the same "nobody asked"
+        # semantics evaluate()'s own default carries, so every pre-existing
+        # offline caller of main() keeps its exact warnings/fail_reasons shape.
+        heartbeat_doc = _HEARTBEAT_NOT_REQUESTED
+    else:
+        heartbeat_doc = fetch_staleness_json()
+
+    # Lane-latch acceptance exemption (check C / §2c): only worth the extra
+    # GitHub read when a run since the fire boundary actually failed to conclude
+    # with success — the ordinary healthy-night path never pays for it, and this
+    # is capped at exactly one jobs-API call per wake (the newest such run).
+    acceptance_failed = False
+    if runs is not None and not args.runs_json:
+        _, boundary_probe = expected_fire_after(now)
+        red_recent = [
+            r for r in runs
+            if (dt := _parse_dt(r.get("created_at"))) is not None
+            and dt >= boundary_probe
+            and r.get("status") == "completed"
+            and r.get("conclusion") != "success"
+        ]
+        if red_recent:
+            newest_red = max(red_recent, key=lambda r: r.get("created_at") or "")
+            jobs = fetch_run_jobs(
+                args.repo, os.environ.get("GITHUB_TOKEN"), newest_red.get("id")
+            )
+            acceptance_failed = job_failed_at_acceptance_step(jobs)
+
     report = evaluate(runs, load_index(args.index_json), now,
                       max_sessions_behind=args.max_sessions_behind,
-                      boards=load_market_boards(args.site_root))
+                      boards=load_market_boards(args.site_root),
+                      sentinel_heartbeat=heartbeat_doc,
+                      acceptance_failed=acceptance_failed)
 
     for line in report["warnings"]:
         print(f"::warning title=nightly-liveness::{line}", flush=True)

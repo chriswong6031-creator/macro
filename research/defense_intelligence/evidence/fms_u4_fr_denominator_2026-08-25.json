@@ -1,0 +1,2296 @@
+{
+ "_meta": {
+  "what": "U4 boundary-window independent denominator: FR 36(b)(1) Arms Sales Notification notices whose 'Date Report Delivered to Congress' falls in 2026-02-06..2026-02-26 inclusive",
+  "generated_at": "2026-08-25T21:07:13Z",
+  "publication_window_searched": [
+   "2026-02-06",
+   "2026-08-25"
+  ],
+  "docs_scanned": 133
+ },
+ "denominator": {
+  "25-105": [
+   {
+    "transmittal": "25-105",
+    "delivered": "2026-02-06",
+    "purchaser": "Government of Ukraine",
+    "fr_document": "2026-07276",
+    "fr_citation": "91 FR 20144",
+    "fr_publication_date": "2026-04-15",
+    "fr_raw_text_sha256": "0380a24d02824870b7dfab5ffe8ad0be6bf780d9ab284f8e6a8c966dd73be671"
+   }
+  ],
+  "26-23": [
+   {
+    "transmittal": "26-23",
+    "delivered": "2026-02-26",
+    "purchaser": "Government of Jordan",
+    "fr_document": "2026-07278",
+    "fr_citation": "91 FR 20139",
+    "fr_publication_date": "2026-04-15",
+    "fr_raw_text_sha256": "82c815924153b2e498057e76c83caa6ea2078aaf0754759414d519d80ab65a4f"
+   }
+  ]
+ },
+ "anomalies": [
+  {
+   "doc": "C1-2025-22754",
+   "issue": "transmittal/delivered count mismatch",
+   "transmittals": [
+    "24-111"
+   ],
+   "delivered": []
+  },
+  {
+   "doc": "C1-2025-22604",
+   "issue": "transmittal/delivered count mismatch",
+   "transmittals": [
+    "21-15"
+   ],
+   "delivered": []
+  }
+ ],
+ "doc_receipts": [
+  {
+   "document_number": "2026-02393",
+   "citation": "91 FR 5445",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02393.txt",
+   "sha256": "ef14658b6343f6c164e6e50f56ba6acbd250a41e24fa6339af412180d20fb9ce",
+   "bytes": 7263,
+   "transmittals": [
+    "25-91"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2025-11-18"
+   ]
+  },
+  {
+   "document_number": "2026-02394",
+   "citation": "91 FR 5450",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02394.txt",
+   "sha256": "5f94f573dacdba770af22d2e44100f6e270d213b3a31d4cd088f3c4d62a3149e",
+   "bytes": 10260,
+   "transmittals": [
+    "25-110"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of India"
+   ],
+   "delivered_dates": [
+    "2025-11-19"
+   ]
+  },
+  {
+   "document_number": "2026-02395",
+   "citation": "91 FR 5446",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02395.txt",
+   "sha256": "a3b59d4f42682e02b35d5752254813b367ee3862d0b0a5fcaa49936ad3e5909e",
+   "bytes": 7101,
+   "transmittals": [
+    "25-107"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of India"
+   ],
+   "delivered_dates": [
+    "2025-11-19"
+   ]
+  },
+  {
+   "document_number": "2026-02396",
+   "citation": "91 FR 5448",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02396.txt",
+   "sha256": "ab74656df04ff791bca605746cc36b07d5a614aef36d9d8e0faf9b2eed2f303f",
+   "bytes": 5058,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1B"
+   ],
+   "delivered_dates": [
+    "2025-11-20"
+   ]
+  },
+  {
+   "document_number": "2026-02397",
+   "citation": "91 FR 5443",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02397.txt",
+   "sha256": "e7e04bd8176f262ed635daeca89148ad059bc7c6598aaa146b5e5b458b0d93a4",
+   "bytes": 4586,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1D"
+   ],
+   "delivered_dates": [
+    "2025-11-24"
+   ]
+  },
+  {
+   "document_number": "2026-02398",
+   "citation": "91 FR 5441",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02398.txt",
+   "sha256": "eb062e1c255d0b902ae7edb305a339c244e343b68e82c96263d64017ee14574f",
+   "bytes": 8935,
+   "transmittals": [
+    "25-95"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Kingdom"
+   ],
+   "delivered_dates": [
+    "2025-11-24"
+   ]
+  },
+  {
+   "document_number": "2026-02399",
+   "citation": "91 FR 5437",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02399.txt",
+   "sha256": "20e4166e74383d3a988c21aef7aee284cefe31db9a6871fdb77dfb10916adde9",
+   "bytes": 5236,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1J"
+   ],
+   "delivered_dates": [
+    "2025-11-26"
+   ]
+  },
+  {
+   "document_number": "2026-02400",
+   "citation": "91 FR 5453",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02400.txt",
+   "sha256": "50d2e58c39ab147f0e33dae943d0d83ddd24e90d9bce23a220477a74e4eaa109",
+   "bytes": 6892,
+   "transmittals": [
+    "25-84"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Bahrain"
+   ],
+   "delivered_dates": [
+    "2025-12-01"
+   ]
+  },
+  {
+   "document_number": "2026-02401",
+   "citation": "91 FR 5439",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02401.txt",
+   "sha256": "95fbef523aada1530b65b29f226ffa25cbfab234dccc23e67004e9668061fa85",
+   "bytes": 5677,
+   "transmittals": [
+    "25-78"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Kingdom of Saudi Arabia"
+   ],
+   "delivered_dates": [
+    "2025-12-01"
+   ]
+  },
+  {
+   "document_number": "2026-02402",
+   "citation": "91 FR 5452",
+   "publication_date": "2026-02-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/06/2026-02402.txt",
+   "sha256": "92b596362a3061a057d2007eb90b57cccfe3b112f13672d9b2ab5761f943afca",
+   "bytes": 5902,
+   "transmittals": [
+    "25-77"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Kingdom of Saudi Arabia"
+   ],
+   "delivered_dates": [
+    "2025-12-01"
+   ]
+  },
+  {
+   "document_number": "2026-02524",
+   "citation": "91 FR 5737",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02524.txt",
+   "sha256": "481238f203e4edcc4bff45e0c86b4c8b0d22515803787d07df48b7404994137d",
+   "bytes": 13889,
+   "transmittals": [
+    "25-98"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Canada"
+   ],
+   "delivered_dates": [
+    "2025-12-04"
+   ]
+  },
+  {
+   "document_number": "2026-02525",
+   "citation": "91 FR 5736",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02525.txt",
+   "sha256": "6327ef38b34a15980b15c4d63bc4f1899c3e33f9fb008599387249d71411a28c",
+   "bytes": 8382,
+   "transmittals": [
+    "25-111"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "2026-02526",
+   "citation": "91 FR 5734",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02526.txt",
+   "sha256": "8e018404f91c5956df32208340f347f122f5157a28a5e4408312d0974eec56cf",
+   "bytes": 5021,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1P"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "2026-02527",
+   "citation": "91 FR 5742",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02527.txt",
+   "sha256": "a2205fa18c49f76fb6cc154f6cb0ef80a6fcc2bbcdfa69b4323d1002dfa4e5d3",
+   "bytes": 8281,
+   "transmittals": [
+    "26-11"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Italy"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "2026-02528",
+   "citation": "91 FR 5731",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02528.txt",
+   "sha256": "cf159512d6c158ad2b0a9c1dc21bae01bcc397ffe7f437cc0f0b1e7a0ab9a7b7",
+   "bytes": 13449,
+   "transmittals": [
+    "25-75"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Denmark"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "2026-02529",
+   "citation": "91 FR 5749",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02529.txt",
+   "sha256": "b0eefc5d0bbfcbfc3995d7b261f9206f09a0e9839ff7c237f07312aa464f99c4",
+   "bytes": 7603,
+   "transmittals": [
+    "26-5"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Denmark"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "2026-02530",
+   "citation": "91 FR 5740",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02530.txt",
+   "sha256": "0713644d4cf85a8a71b41f42d705cb5e49fd2189baf19608e73be84926027665",
+   "bytes": 7228,
+   "transmittals": [
+    "25-92"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Belgium"
+   ],
+   "delivered_dates": [
+    "2025-12-08"
+   ]
+  },
+  {
+   "document_number": "2026-02531",
+   "citation": "91 FR 5744",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02531.txt",
+   "sha256": "ec460efb8589de7dc9baa90781da120a218eee8c94668c892a674d9070cbe6e7",
+   "bytes": 4901,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1K"
+   ],
+   "delivered_dates": [
+    "2025-12-08"
+   ]
+  },
+  {
+   "document_number": "2026-02532",
+   "citation": "91 FR 5747",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02532.txt",
+   "sha256": "965c643f8767b32b0217ff829f5c9c72fb9405ec3076bdb52d89cde00a12e6c4",
+   "bytes": 6601,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1Q"
+   ],
+   "delivered_dates": [
+    "2025-12-31"
+   ]
+  },
+  {
+   "document_number": "2026-02533",
+   "citation": "91 FR 5746",
+   "publication_date": "2026-02-09",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/09/2026-02533.txt",
+   "sha256": "da8b452dddf45a0c4937a8d86896b5ef4ac21980fb91f1c260eded1dc7325541",
+   "bytes": 5427,
+   "transmittals": [
+    "25-63"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Lebanon"
+   ],
+   "delivered_dates": [
+    "2025-12-05"
+   ]
+  },
+  {
+   "document_number": "C1-2025-22754",
+   "citation": "91 FR 6832",
+   "publication_date": "2026-02-13",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/13/C1-2025-22754.txt",
+   "sha256": "c763cf54b4acc0a694ac806a712ae82eca1a78c74e2bf078e1231362af36e819",
+   "bytes": 933,
+   "transmittals": [
+    "24-111"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [],
+   "delivered_dates": []
+  },
+  {
+   "document_number": "C1-2025-22602",
+   "citation": "91 FR 7267",
+   "publication_date": "2026-02-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/17/C1-2025-22602.txt",
+   "sha256": "cd8df30443129f6c276b802738a575e33bae364cbbd9d88862476d0a05e8f927",
+   "bytes": 906,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "24-0G"
+   ],
+   "delivered_dates": []
+  },
+  {
+   "document_number": "C1-2025-22604",
+   "citation": "91 FR 7266",
+   "publication_date": "2026-02-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/02/17/C1-2025-22604.txt",
+   "sha256": "6ac5defdc33b0e8309e24b95cc880bb68e8fbb06fe6093110b880e1c4ebd39d0",
+   "bytes": 929,
+   "transmittals": [
+    "21-15"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [],
+   "delivered_dates": []
+  },
+  {
+   "document_number": "2026-04421",
+   "citation": "91 FR 11061",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04421.txt",
+   "sha256": "7fa2e03b8f1343f20bd23fdb0ddfe15c707569d967f9f12177985f66d3060251",
+   "bytes": 5727,
+   "transmittals": [
+    "25-57"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2025-07-24"
+   ]
+  },
+  {
+   "document_number": "2026-04422",
+   "citation": "91 FR 11050",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04422.txt",
+   "sha256": "79bbfea07f368d47fbca3d24309a44086e432a9898237682b7b41b9bc227b3b9",
+   "bytes": 5454,
+   "transmittals": [
+    "25-54"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2025-07-24"
+   ]
+  },
+  {
+   "document_number": "2026-04423",
+   "citation": "91 FR 11057",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04423.txt",
+   "sha256": "ea0d00996dbf1546ab917ec3d72c14da84054ee10bae71cdea0eaccbe66b861e",
+   "bytes": 5387,
+   "transmittals": [
+    "25-53"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2025-07-23"
+   ]
+  },
+  {
+   "document_number": "2026-04424",
+   "citation": "91 FR 11055",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04424.txt",
+   "sha256": "87514be42db57752ce38cb7c2ac9ca63c717463e73dcb116328131ded077af8d",
+   "bytes": 9635,
+   "transmittals": [
+    "25-48"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2025-07-23"
+   ]
+  },
+  {
+   "document_number": "2026-04425",
+   "citation": "91 FR 11059",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04425.txt",
+   "sha256": "668664d332755c6a2f8f03bcfd7fd28470c7f47818a294e571c47a1278af2395",
+   "bytes": 9606,
+   "transmittals": [
+    "25-42"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Bulgaria"
+   ],
+   "delivered_dates": [
+    "2025-07-21"
+   ]
+  },
+  {
+   "document_number": "2026-04426",
+   "citation": "91 FR 11066",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04426.txt",
+   "sha256": "5c24b840840ed82b6098e609dd5255baafd974e1eb507f3a9281ff7840aed9fe",
+   "bytes": 7609,
+   "transmittals": [
+    "25-38"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Lebanon"
+   ],
+   "delivered_dates": [
+    "2025-07-11"
+   ]
+  },
+  {
+   "document_number": "2026-04427",
+   "citation": "91 FR 11064",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04427.txt",
+   "sha256": "6cfff612ece2bfa9f1196c4c3b53c528cb72231a868039fc839d86285db1a436",
+   "bytes": 10306,
+   "transmittals": [
+    "25-36"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Norway"
+   ],
+   "delivered_dates": [
+    "2025-07-11"
+   ]
+  },
+  {
+   "document_number": "2026-04428",
+   "citation": "91 FR 11062",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04428.txt",
+   "sha256": "b09260eff5dd89142285fc5d3e3782720dc52cf2036665bce159bcdc3c1db1a9",
+   "bytes": 6231,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-0S"
+   ],
+   "delivered_dates": [
+    "2025-07-10"
+   ]
+  },
+  {
+   "document_number": "2026-04429",
+   "citation": "91 FR 11054",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04429.txt",
+   "sha256": "69e97d2701dfbebe7160e58dd49d093eb3e9c96182a5770512803104af3532dc",
+   "bytes": 4535,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-0O"
+   ],
+   "delivered_dates": [
+    "2025-07-17"
+   ]
+  },
+  {
+   "document_number": "2026-04430",
+   "citation": "91 FR 11051",
+   "publication_date": "2026-03-06",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/06/2026-04430.txt",
+   "sha256": "f750d457378afcfb786f895ee622e166fe2bbe6dc3e3663e0b611fffd230d65b",
+   "bytes": 13770,
+   "transmittals": [
+    "24-93"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Egypt"
+   ],
+   "delivered_dates": [
+    "2025-07-24"
+   ]
+  },
+  {
+   "document_number": "2026-04618",
+   "citation": "91 FR 11531",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04618.txt",
+   "sha256": "41f90db7fd27e2746c7b836d639433c5f8cb51cdff3a8c0f55b7225313348a88",
+   "bytes": 11844,
+   "transmittals": [
+    "26-10"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Japan"
+   ],
+   "delivered_dates": [
+    "2025-12-16"
+   ]
+  },
+  {
+   "document_number": "2026-04619",
+   "citation": "91 FR 11517",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04619.txt",
+   "sha256": "dfbb3df543d4b5471272d26483791197f5bcfe031e70d638fa2d08e0e215d2e6",
+   "bytes": 9208,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0A"
+   ],
+   "delivered_dates": [
+    "2025-12-16"
+   ]
+  },
+  {
+   "document_number": "2026-04620",
+   "citation": "91 FR 11526",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04620.txt",
+   "sha256": "6476f097452a4e7459e3564ca642aa6ce59b5ac5afe87c2d4e22feb50a5f10bd",
+   "bytes": 6352,
+   "transmittals": [
+    "25-106"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Poland"
+   ],
+   "delivered_dates": [
+    "2025-12-29"
+   ]
+  },
+  {
+   "document_number": "2026-04621",
+   "citation": "91 FR 11527",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04621.txt",
+   "sha256": "cf48e9985752f377667ab094d580910ec0e328d0f667be29eedf5e66374f5965",
+   "bytes": 7060,
+   "transmittals": [
+    "25-100"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Spain"
+   ],
+   "delivered_dates": [
+    "2025-12-22"
+   ]
+  },
+  {
+   "document_number": "2026-04622",
+   "citation": "91 FR 11521",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04622.txt",
+   "sha256": "c57888f256536b479d02e93d3b3488363f13c208446e20da3a680f0411f43d9c",
+   "bytes": 8047,
+   "transmittals": [
+    "25-99"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Denmark"
+   ],
+   "delivered_dates": [
+    "2025-12-22"
+   ]
+  },
+  {
+   "document_number": "2026-04623",
+   "citation": "91 FR 11529",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04623.txt",
+   "sha256": "4778d2728cb9b45d9ed10befb72fef7cb33b76b0e79402b8d1cc2858341783bf",
+   "bytes": 6505,
+   "transmittals": [
+    "25-97"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "NATO Support and Procurement Agency"
+   ],
+   "delivered_dates": [
+    "2025-12-18"
+   ]
+  },
+  {
+   "document_number": "2026-04624",
+   "citation": "91 FR 11519",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04624.txt",
+   "sha256": "993f5833d56185d7e27196c8e6ed7c5edf0bc9b3bde4037f1962264b591f5566",
+   "bytes": 6646,
+   "transmittals": [
+    "25-79"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Lebanon"
+   ],
+   "delivered_dates": [
+    "2025-12-16"
+   ]
+  },
+  {
+   "document_number": "2026-04625",
+   "citation": "91 FR 11523",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04625.txt",
+   "sha256": "02f0209e01e3d5d18fc29648c1eb5c93d6ec7159030052ddab6aa1bde57453f8",
+   "bytes": 5465,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1U"
+   ],
+   "delivered_dates": [
+    "2025-12-15"
+   ]
+  },
+  {
+   "document_number": "2026-04626",
+   "citation": "91 FR 11525",
+   "publication_date": "2026-03-10",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/10/2026-04626.txt",
+   "sha256": "2e2317fcaccbb1a6a5b1eec902a36ecc567901bfa97e3349ae31999bde4c5f8f",
+   "bytes": 4647,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1T"
+   ],
+   "delivered_dates": [
+    "2025-12-15"
+   ]
+  },
+  {
+   "document_number": "2026-05138",
+   "citation": "91 FR 12769",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05138.txt",
+   "sha256": "abe0bf8b63e8483540b0a454c12d22f4b5ee08c957903c747145d6874dd8b59f",
+   "bytes": 6839,
+   "transmittals": [
+    "24-121"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Iraq"
+   ],
+   "delivered_dates": [
+    "2026-01-14"
+   ]
+  },
+  {
+   "document_number": "2026-05139",
+   "citation": "91 FR 12779",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05139.txt",
+   "sha256": "85b4078a6a04089b22f3cce01cfa7283f54826b3111a673cdc2d437866351b6b",
+   "bytes": 6779,
+   "transmittals": [
+    "26-8"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-05140",
+   "citation": "91 FR 12767",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05140.txt",
+   "sha256": "ad5953e547fcca10c85e7580b78d2cea13ef26c8c7840aabd8482efa94e5fc78",
+   "bytes": 8690,
+   "transmittals": [
+    "26-3"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Australia"
+   ],
+   "delivered_dates": [
+    "2026-01-23"
+   ]
+  },
+  {
+   "document_number": "2026-05141",
+   "citation": "91 FR 12776",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05141.txt",
+   "sha256": "a8c605d5359462a19ee984c19da39aa6acdaa8297fb135557484651fc85859e6",
+   "bytes": 12380,
+   "transmittals": [
+    "25-104"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Spain"
+   ],
+   "delivered_dates": [
+    "2026-01-29"
+   ]
+  },
+  {
+   "document_number": "2026-05142",
+   "citation": "91 FR 12782",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05142.txt",
+   "sha256": "925aa7e2a3d2553493f580a163350b53c8a6c48789b8a262826d5d36c238d3a8",
+   "bytes": 16687,
+   "transmittals": [
+    "25-94"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-05143",
+   "citation": "91 FR 12771",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05143.txt",
+   "sha256": "082b5353514ca2cb17132c651852bb2ceb0187e13a2471aed02afb63d9713c0f",
+   "bytes": 9798,
+   "transmittals": [
+    "25-87"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-05144",
+   "citation": "91 FR 12766",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05144.txt",
+   "sha256": "eebe3c231d15a2486e2aee36c58faed3f48832ccc347f8631627a2c86a123e07",
+   "bytes": 5963,
+   "transmittals": [
+    "25-86"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-05145",
+   "citation": "91 FR 12780",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05145.txt",
+   "sha256": "845c7d2e49094ab61a48a0539bd8ac3fb4f9a76ed88651ca46723fcd8100f7c8",
+   "bytes": 6131,
+   "transmittals": [
+    "25-65"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Kuwait"
+   ],
+   "delivered_dates": [
+    "2026-01-14"
+   ]
+  },
+  {
+   "document_number": "2026-05146",
+   "citation": "91 FR 12764",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05146.txt",
+   "sha256": "bb528fb8ba5db4f4345da8682b9ce04573e319842200b2de67835579751e832f",
+   "bytes": 6116,
+   "transmittals": [
+    "25-37"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Peru"
+   ],
+   "delivered_dates": [
+    "2026-01-15"
+   ]
+  },
+  {
+   "document_number": "2026-05147",
+   "citation": "91 FR 12773",
+   "publication_date": "2026-03-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/03/17/2026-05147.txt",
+   "sha256": "c495ddd0e103e428b4411a355089170fbb5646d48ded129c067c9c61be5cc52b",
+   "bytes": 13797,
+   "transmittals": [
+    "26-12"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Singapore"
+   ],
+   "delivered_dates": [
+    "2026-01-20"
+   ]
+  },
+  {
+   "document_number": "2026-07234",
+   "citation": "91 FR 19114",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07234.txt",
+   "sha256": "fb820981bb83114d2e0684a96d6577c777d7e807b0751746a5da51efed728b11",
+   "bytes": 5363,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-0I"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07235",
+   "citation": "91 FR 19119",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07235.txt",
+   "sha256": "4982f07b54c1f288d77251dc66e6b48f62f7bd3ddd4b7e018995c426a29489b3",
+   "bytes": 5863,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1N"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07236",
+   "citation": "91 FR 19112",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07236.txt",
+   "sha256": "058ed00d854fb3a1253d53924aa22316c44dc5c5e7d573b710770354d9e241a1",
+   "bytes": 7412,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0R"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07237",
+   "citation": "91 FR 19115",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07237.txt",
+   "sha256": "d64ae8f732bb1dc40537984e24ec7922fee5a2800724570cbeed852997a3ca7c",
+   "bytes": 13961,
+   "transmittals": [
+    "26-27"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Sweden"
+   ],
+   "delivered_dates": [
+    "2026-03-10"
+   ]
+  },
+  {
+   "document_number": "2026-07238",
+   "citation": "91 FR 19117",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07238.txt",
+   "sha256": "0e1918ab182c216faf617b04f7e9d85c6067df1c82f98b2ddf095f9c59d6b91f",
+   "bytes": 6793,
+   "transmittals": [
+    "26-32"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-03-06"
+   ]
+  },
+  {
+   "document_number": "2026-07239",
+   "citation": "91 FR 19113",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07239.txt",
+   "sha256": "accd42c104e8402bba61b70c40a1241289f9b7ea45b79e4e10bbd641b9812d58",
+   "bytes": 9807,
+   "transmittals": [
+    "26-41"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Arab Emirates"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07240",
+   "citation": "91 FR 19118",
+   "publication_date": "2026-04-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/14/2026-07240.txt",
+   "sha256": "0e3dd85d54932276d43f6eadfc6308f583571f4fa918fdcd5a226beacc12abc4",
+   "bytes": 9953,
+   "transmittals": [
+    "26-46"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Arab Emirates"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07242",
+   "citation": "91 FR 20146",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07242.txt",
+   "sha256": "08b5136914f5225f367c8f5166d22e75a4c201b47da3baa1008b3e73fb2dfb08",
+   "bytes": 11490,
+   "transmittals": [
+    "25-70"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Arab Emirates"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-07243",
+   "citation": "91 FR 20149",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07243.txt",
+   "sha256": "d9fd4873cfb1d6e5157dddd36f773a64ade6aba4cb1bb45c5cd42e82e6de23ef",
+   "bytes": 5444,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0O"
+   ],
+   "delivered_dates": [
+    "2026-03-06"
+   ]
+  },
+  {
+   "document_number": "2026-07271",
+   "citation": "91 FR 20141",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07271.txt",
+   "sha256": "1d998066a5a0fc6c057945d1335e70d1278b3a6b384c333a03ab785749b5c1e2",
+   "bytes": 4278,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0C"
+   ],
+   "delivered_dates": [
+    "2026-03-06"
+   ]
+  },
+  {
+   "document_number": "2026-07273",
+   "citation": "91 FR 20149",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07273.txt",
+   "sha256": "aae1f3a6070f310104a060ae655a6966e265dde59007092613e1957b5bb56d04",
+   "bytes": 5955,
+   "transmittals": [
+    "25-103"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Kingdom of Saudi Arabia"
+   ],
+   "delivered_dates": [
+    "2026-02-03"
+   ]
+  },
+  {
+   "document_number": "2026-07274",
+   "citation": "91 FR 20147",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07274.txt",
+   "sha256": "87781437805ed36956042ab0317de533685f6e477f41eb78ca27dc9674b2b237",
+   "bytes": 5628,
+   "transmittals": [
+    "25-90"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Iraq"
+   ],
+   "delivered_dates": [
+    "2026-02-05"
+   ]
+  },
+  {
+   "document_number": "2026-07275",
+   "citation": "91 FR 20142",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07275.txt",
+   "sha256": "1491ef19a8f4cc76b537b56ea214295c67db732785e0d5f05d72d2eccdba94b4",
+   "bytes": 4874,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1S"
+   ],
+   "delivered_dates": [
+    "2026-02-05"
+   ]
+  },
+  {
+   "document_number": "2026-07276",
+   "citation": "91 FR 20144",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07276.txt",
+   "sha256": "0380a24d02824870b7dfab5ffe8ad0be6bf780d9ab284f8e6a8c966dd73be671",
+   "bytes": 4989,
+   "transmittals": [
+    "25-105"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2026-02-06"
+   ]
+  },
+  {
+   "document_number": "2026-07277",
+   "citation": "91 FR 20142",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07277.txt",
+   "sha256": "f38daede2d9fe20330851a9fe6e44747c328e76e3ea05ecd96bb80ee64dc7c75",
+   "bytes": 5228,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0G"
+   ],
+   "delivered_dates": [
+    "2026-02-26"
+   ]
+  },
+  {
+   "document_number": "2026-07278",
+   "citation": "91 FR 20139",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07278.txt",
+   "sha256": "82c815924153b2e498057e76c83caa6ea2078aaf0754759414d519d80ab65a4f",
+   "bytes": 7518,
+   "transmittals": [
+    "26-23"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Jordan"
+   ],
+   "delivered_dates": [
+    "2026-02-26"
+   ]
+  },
+  {
+   "document_number": "2026-07279",
+   "citation": "91 FR 20152",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07279.txt",
+   "sha256": "82cec433bdb5c1a9abb543c5aafbbf0ace992db8fe2da2087d6d31f43bf4b230",
+   "bytes": 8974,
+   "transmittals": [
+    "26-13"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Kingdom of Saudi Arabia"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-07280",
+   "citation": "91 FR 20140",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07280.txt",
+   "sha256": "fa3659b12be2e4e9b3b4ec80fe30ad3538ca1ec514ac0503b9ef19eae4f7363c",
+   "bytes": 8125,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "0M-25"
+   ],
+   "delivered_dates": [
+    "2026-01-30"
+   ]
+  },
+  {
+   "document_number": "2026-07281",
+   "citation": "91 FR 20151",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07281.txt",
+   "sha256": "d9697e230f59df849401f37710e7cf5210a0fa1f20f1722fe71f35156b94b198",
+   "bytes": 7140,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0D"
+   ],
+   "delivered_dates": [
+    "2026-02-27"
+   ]
+  },
+  {
+   "document_number": "2026-07282",
+   "citation": "91 FR 20144",
+   "publication_date": "2026-04-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/04/15/2026-07282.txt",
+   "sha256": "a9e930c0bc9caad5c26bb46c8e72b85a3c48d71299ab29a13c7213bd1f47be95",
+   "bytes": 4814,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0F"
+   ],
+   "delivered_dates": [
+    "2026-03-06"
+   ]
+  },
+  {
+   "document_number": "2026-08999",
+   "citation": "91 FR 24853",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-08999.txt",
+   "sha256": "e3e637926031a337cbc3f7a928b63e1cc58961dbf76fddcd68be9edacff45e72",
+   "bytes": 7221,
+   "transmittals": [
+    "26-29"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2026-03-24"
+   ]
+  },
+  {
+   "document_number": "2026-09000",
+   "citation": "91 FR 24856",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09000.txt",
+   "sha256": "3d87c22819d8aff37f632a8d44028b53f4ff87c25bd993ebda268d359de4b4f8",
+   "bytes": 13106,
+   "transmittals": [
+    "26-18"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Kingdom"
+   ],
+   "delivered_dates": [
+    "2026-03-20"
+   ]
+  },
+  {
+   "document_number": "2026-09001",
+   "citation": "91 FR 24847",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09001.txt",
+   "sha256": "4724565cf5f615e364d415b61b4ba05e0bfd03563d08d741adda149af932abd4",
+   "bytes": 4569,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0B"
+   ],
+   "delivered_dates": [
+    "2026-04-01"
+   ]
+  },
+  {
+   "document_number": "2026-09002",
+   "citation": "91 FR 24855",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09002.txt",
+   "sha256": "b81265d492d6fa6f8d90e06f87fd15e11dd62e2a9238638b02e2c40afaf123a9",
+   "bytes": 8609,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0E"
+   ],
+   "delivered_dates": [
+    "2026-04-01"
+   ]
+  },
+  {
+   "document_number": "2026-09003",
+   "citation": "91 FR 24849",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09003.txt",
+   "sha256": "c57f9491646bc701b145283a34e8c6c2c82749725184f24a1ea47faf38507925",
+   "bytes": 7426,
+   "transmittals": [
+    "26-24"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Singapore"
+   ],
+   "delivered_dates": [
+    "2026-04-01"
+   ]
+  },
+  {
+   "document_number": "2026-09004",
+   "citation": "91 FR 24850",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09004.txt",
+   "sha256": "81631f9b38603193e5f46e0fc3215710a712a8ab96cba2110302ca5ab4d7f564",
+   "bytes": 9862,
+   "transmittals": [
+    "26-34"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Kuwait"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-09005",
+   "citation": "91 FR 24852",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09005.txt",
+   "sha256": "9889301e3450d3b09691766cf659992b0d436015c57276c639734f2be319bfdd",
+   "bytes": 11570,
+   "transmittals": [
+    "26-21"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Belgium"
+   ],
+   "delivered_dates": [
+    "2026-03-24"
+   ]
+  },
+  {
+   "document_number": "2026-09006",
+   "citation": "91 FR 24854",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09006.txt",
+   "sha256": "dc6a116b372aa2ce14ad0d13b1949b94551502000dcdf7033f847fe59e7554a7",
+   "bytes": 7417,
+   "transmittals": [
+    "26-49"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Arab Emirates"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-09008",
+   "citation": "91 FR 24848",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09008.txt",
+   "sha256": "9ffafb8ccb1968eadcc81200d4821b9c4fedd3dccfccbfcc8ae7e1f828d3f44b",
+   "bytes": 6638,
+   "transmittals": [
+    "26-38"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Jordan"
+   ],
+   "delivered_dates": [
+    "2026-03-19"
+   ]
+  },
+  {
+   "document_number": "2026-09109",
+   "citation": "91 FR 24848",
+   "publication_date": "2026-05-07",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/07/2026-09109.txt",
+   "sha256": "d63fbbbbff248ed6794946c7542cde8e7bd3198ea1ab89b2c5a8ee4692c5fea8",
+   "bytes": 7183,
+   "transmittals": [
+    "26-28"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Japan"
+   ],
+   "delivered_dates": [
+    "2026-03-24"
+   ]
+  },
+  {
+   "document_number": "2026-09646",
+   "citation": "91 FR 27311",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09646.txt",
+   "sha256": "935efd265790021fc0dd7e3f5d3754b553981869bbfc1009dbbfe51b5f63d6b0",
+   "bytes": 7209,
+   "transmittals": [
+    "26-60"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Israel"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-09647",
+   "citation": "91 FR 27315",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09647.txt",
+   "sha256": "743806ab5122670841b011f480d347e4ddd1c32e0d9923eb82c8272b614126eb",
+   "bytes": 8956,
+   "transmittals": [
+    "26-40"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Lithuania"
+   ],
+   "delivered_dates": [
+    "2026-04-22"
+   ]
+  },
+  {
+   "document_number": "2026-09648",
+   "citation": "91 FR 27314",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09648.txt",
+   "sha256": "8475b7b7a653080e77c6cc553947cb983c72eebb3333940aa86d31d0e8b27c80",
+   "bytes": 5808,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0M"
+   ],
+   "delivered_dates": [
+    "2026-04-22"
+   ]
+  },
+  {
+   "document_number": "2026-09649",
+   "citation": "91 FR 27316",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09649.txt",
+   "sha256": "34e543bb7a3dbd86680a8372ebf56fd8ad20a0fadb470a73638401b2ebd02b7b",
+   "bytes": 6851,
+   "transmittals": [
+    "26-42"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the Netherlands"
+   ],
+   "delivered_dates": [
+    "2026-04-22"
+   ]
+  },
+  {
+   "document_number": "2026-09650",
+   "citation": "91 FR 27319",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09650.txt",
+   "sha256": "469d33f20bb5b6fbfe00516b41119c35e7dde4ae18a75c8311104d002a1e185f",
+   "bytes": 12923,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0P"
+   ],
+   "delivered_dates": [
+    "2026-04-22"
+   ]
+  },
+  {
+   "document_number": "2026-09651",
+   "citation": "91 FR 27313",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09651.txt",
+   "sha256": "bafe18d72fb7cae5b1e6051eecb72559e2a5cef0b78fe12ee0b37879aeeff437",
+   "bytes": 5522,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "0A-26"
+   ],
+   "delivered_dates": [
+    "2026-04-22"
+   ]
+  },
+  {
+   "document_number": "2026-09652",
+   "citation": "91 FR 27313",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09652.txt",
+   "sha256": "c486225bfd98999097c381a1fa8ccca3038f2721891cea443cf463445a730f2c",
+   "bytes": 7127,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0L"
+   ],
+   "delivered_dates": [
+    "2026-04-20"
+   ]
+  },
+  {
+   "document_number": "2026-09653",
+   "citation": "91 FR 27310",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09653.txt",
+   "sha256": "0cb98c7334a1f175a787d3c5042d474414b8a95729b7792be67a5f8c95310cde",
+   "bytes": 7107,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "0L-25"
+   ],
+   "delivered_dates": [
+    "2026-04-20"
+   ]
+  },
+  {
+   "document_number": "2026-09654",
+   "citation": "91 FR 27312",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09654.txt",
+   "sha256": "ff2d36f9b3aa9a9dfb28fde8868a3b350ce6af5444cffe5f0c37c3090b668c03",
+   "bytes": 5068,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0I"
+   ],
+   "delivered_dates": [
+    "2026-04-20"
+   ]
+  },
+  {
+   "document_number": "2026-09655",
+   "citation": "91 FR 27317",
+   "publication_date": "2026-05-14",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/05/14/2026-09655.txt",
+   "sha256": "2293dd5c10be74ee8e6c284cb866cbf44efd5e4a063cba5c444209a008827bbe",
+   "bytes": 15185,
+   "transmittals": [
+    "26-31"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Germany"
+   ],
+   "delivered_dates": [
+    "2026-04-17"
+   ]
+  },
+  {
+   "document_number": "2026-10920",
+   "citation": "91 FR 32389",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10920.txt",
+   "sha256": "2119dd0f9633ca3810861cf63e8e07e2f7a69da036bf66992df00021d8f9b276",
+   "bytes": 5425,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0Z"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10937",
+   "citation": "91 FR 32390",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10937.txt",
+   "sha256": "2ce734ae8ec6f85ce9ce00f8c693e982cfc36dfffff4406af3057edec36abd42",
+   "bytes": 7400,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-CN"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10944",
+   "citation": "91 FR 32393",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10944.txt",
+   "sha256": "3c1a58f2880b0e13ea09479a49014092ce437f89b639ac53adeeccc587da2a74",
+   "bytes": 8809,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0Q"
+   ],
+   "delivered_dates": [
+    "2026-05-11"
+   ]
+  },
+  {
+   "document_number": "2026-10945",
+   "citation": "91 FR 32394",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10945.txt",
+   "sha256": "75cb99f7fbf095466f30be2eff55dae12743e6306af6623bd4b5911910551766",
+   "bytes": 5561,
+   "transmittals": [
+    "26-44"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Canada"
+   ],
+   "delivered_dates": [
+    "2026-05-05"
+   ]
+  },
+  {
+   "document_number": "2026-10946",
+   "citation": "91 FR 32388",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10946.txt",
+   "sha256": "8eba62d08af10a5548924ed1fe9766120ef2df7b1ac18307965a08ca298f05aa",
+   "bytes": 7880,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-CM"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10948",
+   "citation": "91 FR 32391",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10948.txt",
+   "sha256": "88bfc9d98b628ac935af203fe30ad9d525a0850acd49e41743625a1b31d6bd7c",
+   "bytes": 8558,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-CG"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10949",
+   "citation": "91 FR 32386",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10949.txt",
+   "sha256": "47c9c7216efa3ba8c67ca20228edf6bb65eff44609ecc454fd3ab1f97d76f3f9",
+   "bytes": 6420,
+   "transmittals": [
+    "26-16"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Tunisia"
+   ],
+   "delivered_dates": [
+    "2026-04-23"
+   ]
+  },
+  {
+   "document_number": "2026-10950",
+   "citation": "91 FR 32387",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10950.txt",
+   "sha256": "fce070f635def4295a80679ec497d4e20a44c22e2c4d7b5b69a4f8df053daef5",
+   "bytes": 11427,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-CR"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10953",
+   "citation": "91 FR 32391",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10953.txt",
+   "sha256": "976910f01a16b46336d3edfb14651ee23a79bc38e9f71af8934ddf7dcf6170bd",
+   "bytes": 5825,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-1A"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-10954",
+   "citation": "91 FR 32385",
+   "publication_date": "2026-06-01",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/01/2026-10954.txt",
+   "sha256": "10b786bc441f66390895dd8c18878147a615b420a4b5fe08d1d6c4a94c114d39",
+   "bytes": 6493,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0V"
+   ],
+   "delivered_dates": [
+    "2026-05-01"
+   ]
+  },
+  {
+   "document_number": "2026-11398",
+   "citation": "91 FR 34615",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11398.txt",
+   "sha256": "4abfecbbf4b1707452a2a7603bbe5a19c946076c2f7db28ab81816ef51d5810b",
+   "bytes": 5998,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "0C-26"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-11399",
+   "citation": "91 FR 34609",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11399.txt",
+   "sha256": "a738f8b3930ac84f4f4ace1174abb6e96e0daa458c0eee4c627ffb9df1acaf40",
+   "bytes": 10450,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0J"
+   ],
+   "delivered_dates": [
+    "2026-04-27"
+   ]
+  },
+  {
+   "document_number": "2026-11400",
+   "citation": "91 FR 34614",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11400.txt",
+   "sha256": "eee1f1a22cfb1d806e9cbad2c8ae300ce8786cc20de86363fb205aa0a31fa5e1",
+   "bytes": 5358,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0T"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-11401",
+   "citation": "91 FR 34618",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11401.txt",
+   "sha256": "8cef609cc7bccbc9d7e1e0d844fe9e0f15270fa32f6307e7cb42af477f7fcc28",
+   "bytes": 11604,
+   "transmittals": [
+    "26-43"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-11402",
+   "citation": "91 FR 34617",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11402.txt",
+   "sha256": "4e8f8ecec3e48340fe7573131848b9173d981144828af8c79c5e5e604fc1b66e",
+   "bytes": 7447,
+   "transmittals": [
+    "26-52"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Belgium"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-11403",
+   "citation": "91 FR 34611",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11403.txt",
+   "sha256": "a36c573b2064f849ec647dbb42ea79464b98395445f70f5ef5c9ec9a5abbeec3",
+   "bytes": 7943,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-1C"
+   ],
+   "delivered_dates": [
+    "2026-05-19"
+   ]
+  },
+  {
+   "document_number": "2026-11404",
+   "citation": "91 FR 34616",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11404.txt",
+   "sha256": "e3793ff3c0ab799f1063248e43b635a6113184e36dca59fc68f0f31511f26abd",
+   "bytes": 8100,
+   "transmittals": [
+    "26-30"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2026-05-05"
+   ]
+  },
+  {
+   "document_number": "2026-11405",
+   "citation": "91 FR 34609",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11405.txt",
+   "sha256": "2bac2af9de9bf9fad1f2526742de164c53d8789af168daf67d021250833c3838",
+   "bytes": 4830,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0H"
+   ],
+   "delivered_dates": [
+    "2026-05-08"
+   ]
+  },
+  {
+   "document_number": "2026-11406",
+   "citation": "91 FR 34612",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11406.txt",
+   "sha256": "f939113f33537bb35ac3f8b38130861c195157701467b0d0557e0f23603a0420",
+   "bytes": 10904,
+   "transmittals": [
+    "26-45"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-11407",
+   "citation": "91 FR 34613",
+   "publication_date": "2026-06-08",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/08/2026-11407.txt",
+   "sha256": "61989b23583d52d8011e08b60b80899710fca4f7a47deb7d98f9f86f5aefb23a",
+   "bytes": 7474,
+   "transmittals": [
+    "26-36"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Philippines"
+   ],
+   "delivered_dates": [
+    "2026-05-05"
+   ]
+  },
+  {
+   "document_number": "C1-2026-07235",
+   "citation": "91 FR 35969",
+   "publication_date": "2026-06-15",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/15/C1-2026-07235.txt",
+   "sha256": "1bfa7b4e2b75852fd74d0029f24a1ba684c344ba2efa2a526185d1419e1aba7c",
+   "bytes": 954,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "25-1N"
+   ],
+   "delivered_dates": []
+  },
+  {
+   "document_number": "2026-12121",
+   "citation": "91 FR 36591",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12121.txt",
+   "sha256": "c2d2599ea2d02f3ce59a7d610ddc98c414c4bfb2cba27aed19554036bfb18f63",
+   "bytes": 5080,
+   "transmittals": [
+    "26-26"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of India"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-12122",
+   "citation": "91 FR 36589",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12122.txt",
+   "sha256": "c86fdc37e678da36a704e096f22f6191c21f169ae875ea6018fa795b7161c266",
+   "bytes": 5125,
+   "transmittals": [
+    "26-48"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of India"
+   ],
+   "delivered_dates": [
+    "2026-05-18"
+   ]
+  },
+  {
+   "document_number": "2026-12123",
+   "citation": "91 FR 36580",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12123.txt",
+   "sha256": "6d07277c27dd2a463661073fa65d4c2a451aace2d315956ab26176a3789752f3",
+   "bytes": 5200,
+   "transmittals": [
+    "26-51"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Ukraine"
+   ],
+   "delivered_dates": [
+    "2026-05-21"
+   ]
+  },
+  {
+   "document_number": "2026-12124",
+   "citation": "91 FR 36576",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12124.txt",
+   "sha256": "dde18065deb7cdf58ed18feaa8a1d0a7c694a337f188ecd981c85637255b1522",
+   "bytes": 7982,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0Y"
+   ],
+   "delivered_dates": [
+    "2026-06-02"
+   ]
+  },
+  {
+   "document_number": "2026-12125",
+   "citation": "91 FR 36586",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12125.txt",
+   "sha256": "526d35482d697b024bb958aefaa654209503fe197ad5bee5b30e80087ae0fb29",
+   "bytes": 7524,
+   "transmittals": [
+    "26-47"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of New Zealand"
+   ],
+   "delivered_dates": [
+    "2026-06-04"
+   ]
+  },
+  {
+   "document_number": "2026-12126",
+   "citation": "91 FR 36579",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12126.txt",
+   "sha256": "65958e912f13a49fdccfbb6ec15991709a23528f2867ee3d2d4b06e7b86f561c",
+   "bytes": 7019,
+   "transmittals": [
+    "26-50"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2026-06-04"
+   ]
+  },
+  {
+   "document_number": "2026-12127",
+   "citation": "91 FR 36577",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12127.txt",
+   "sha256": "fc602cdc6c92d72a42c69b9f9c695f5aa994f43083facb85960aa52fea801bd3",
+   "bytes": 7010,
+   "transmittals": [
+    "26-63"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Italy"
+   ],
+   "delivered_dates": [
+    "2026-06-04"
+   ]
+  },
+  {
+   "document_number": "2026-12128",
+   "citation": "91 FR 36591",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12128.txt",
+   "sha256": "402b97e611e5122dc290d8fa1acd03358158649aa59cc25fab761ecc0035590f",
+   "bytes": 7924,
+   "transmittals": [
+    "26-64"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of the United Kingdom"
+   ],
+   "delivered_dates": [
+    "2026-06-05"
+   ]
+  },
+  {
+   "document_number": "2026-12129",
+   "citation": "91 FR 36585",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12129.txt",
+   "sha256": "af136c8bc8de8c35f4dee2a68b489e4d55f24c4899f924b0843fb7e5c7f203af",
+   "bytes": 7439,
+   "transmittals": [
+    "26-73"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Denmark"
+   ],
+   "delivered_dates": [
+    "2026-06-05"
+   ]
+  },
+  {
+   "document_number": "2026-12130",
+   "citation": "91 FR 36590",
+   "publication_date": "2026-06-17",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/06/17/2026-12130.txt",
+   "sha256": "6593c800f64b0f844e6941a38d7b84d312c70f81f0b2495619485e7a1c110206",
+   "bytes": 7217,
+   "transmittals": [
+    "26-72"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Republic of Korea"
+   ],
+   "delivered_dates": [
+    "2026-06-09"
+   ]
+  },
+  {
+   "document_number": "2026-14759",
+   "citation": "91 FR 46116",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14759.txt",
+   "sha256": "2deb3c737153b6fac1d80cdc3aea79de291cd0b1c0f5d2b3bd230b75c6d30b4b",
+   "bytes": 4830,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0U"
+   ],
+   "delivered_dates": [
+    "2026-06-17"
+   ]
+  },
+  {
+   "document_number": "2026-14760",
+   "citation": "91 FR 46112",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14760.txt",
+   "sha256": "8e5dd4f0fb34f1a5830c947b9df49798ec216d60e56dd89a66d464262e95be9f",
+   "bytes": 5463,
+   "excluded": "amendment_or_modification_notice",
+   "bracket_transmittals": [
+    "26-0X"
+   ],
+   "delivered_dates": [
+    "2025-06-23"
+   ]
+  },
+  {
+   "document_number": "2026-14761",
+   "citation": "91 FR 46105",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14761.txt",
+   "sha256": "107ddd1d3c31f4dd3733bd1bf419e6c21fb464206f26cdd01cac6f49dbfaeb5c",
+   "bytes": 18066,
+   "transmittals": [
+    "26-37"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of New Zealand"
+   ],
+   "delivered_dates": [
+    "2026-06-04"
+   ]
+  },
+  {
+   "document_number": "2026-14762",
+   "citation": "91 FR 46079",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14762.txt",
+   "sha256": "23a39b5af396ad7880c700b314d9c5df440efdc9699a0c659a7a98e283572d77",
+   "bytes": 5596,
+   "transmittals": [
+    "26-39"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Vietnam"
+   ],
+   "delivered_dates": [
+    "2026-06-03"
+   ]
+  },
+  {
+   "document_number": "2026-14763",
+   "citation": "91 FR 46109",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14763.txt",
+   "sha256": "fe35ad08bbfb824ccb919a026840a8d082e07b1578955e720eefc475b297a64e",
+   "bytes": 6166,
+   "transmittals": [
+    "26-56"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Kuwait"
+   ],
+   "delivered_dates": [
+    "2026-06-15"
+   ]
+  },
+  {
+   "document_number": "2026-14764",
+   "citation": "91 FR 46115",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14764.txt",
+   "sha256": "4ab433edf758e37533eb59f01e463ceaf8d90c13c5316bc892bcb84c381727a4",
+   "bytes": 12035,
+   "transmittals": [
+    "26-57"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Australia"
+   ],
+   "delivered_dates": [
+    "2026-06-25"
+   ]
+  },
+  {
+   "document_number": "2026-14765",
+   "citation": "91 FR 46112",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14765.txt",
+   "sha256": "6ed6b33d63363f8b425457a63bb484e18557179ca298433fa1d7e4c61f0aba02",
+   "bytes": 17533,
+   "transmittals": [
+    "26-58"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Austria"
+   ],
+   "delivered_dates": [
+    "2026-06-17"
+   ]
+  },
+  {
+   "document_number": "2026-14766",
+   "citation": "91 FR 46105",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14766.txt",
+   "sha256": "58c3ab3fd4a3c85210c67c09c1f82850831dce2e251919e6c5078225167dcbb7",
+   "bytes": 7005,
+   "transmittals": [
+    "26-62"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Brazil"
+   ],
+   "delivered_dates": [
+    "2026-06-11"
+   ]
+  },
+  {
+   "document_number": "2026-14767",
+   "citation": "91 FR 46103",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14767.txt",
+   "sha256": "c71ddc22814f280bcb2f50f5a4f5f0a71dc5f8535f2a28cdd56de7272df61bd3",
+   "bytes": 8073,
+   "transmittals": [
+    "26-67"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Singapore"
+   ],
+   "delivered_dates": [
+    "2026-06-15"
+   ]
+  },
+  {
+   "document_number": "2026-14768",
+   "citation": "91 FR 46080",
+   "publication_date": "2026-07-22",
+   "raw_text_url": "https://www.federalregister.gov/documents/full_text/text/2026/07/22/2026-14768.txt",
+   "sha256": "6460ef5b7f1e48f2716e6696e239691dcd5bc53586c104b580702974771c8142",
+   "bytes": 9571,
+   "transmittals": [
+    "26-74"
+   ],
+   "amendment_brackets": [],
+   "purchasers": [
+    "Government of Kuwait"
+   ],
+   "delivered_dates": [
+    "2026-06-05"
+   ]
+  }
+ ]
+}

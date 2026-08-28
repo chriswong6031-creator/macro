@@ -185,3 +185,60 @@ def test_no_builder_writes_theme_js_raw() -> None:
         raise AssertionError(
             f"Builder(s) found that may copy theme.js without baking:\n{msg}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 6. the mm_brain.js content hash baked into theme.js
+# ---------------------------------------------------------------------------
+# theme.js requests the assistant bundle dynamically, so its ?v= cannot come from
+# scripts.optimize_assets — that pass rewrites HTML references, and this URL only
+# exists at runtime. It is baked here instead, from the SAME sha256[:8] the
+# stamper uses, so the ~3,500 pages carrying a page-authored
+# <script src="../../mm_brain.js?v=…"> and every page that loads it on demand
+# share ONE cache key. Diverge them and a reader crossing between the two kinds of
+# page pays for 232 KB twice — and once mm_brain.js reaches the edge's immutable
+# matcher, the losing URL pins that reader to stale bytes for a year.
+
+MM_BRAIN_VER_TOKEN = "/*__MM_BRAIN_VER__*/''"
+
+
+def test_mm_brain_version_is_the_stamper_hash() -> None:
+    """mm_brain_version() == sha256(mm_brain.js)[:8], the optimize_assets rule."""
+    import hashlib
+
+    expected = hashlib.sha256((TEMPLATES / "mm_brain.js").read_bytes()).hexdigest()[:8]
+    assert site_assets.mm_brain_version(TEMPLATES / "theme.js") == expected
+    assert re.fullmatch(r"[0-9a-f]{8}", expected), "stamp shape drifted from 8 hex"
+
+
+def test_mm_brain_version_token_never_survives_the_bake() -> None:
+    """The deployed theme.js carries a real hash, never the placeholder."""
+    emitted = site_assets.emit_theme_js(TEMPLATES / "theme.js")
+    assert MM_BRAIN_VER_TOKEN not in emitted, (
+        "the mm_brain version placeholder survived into the emitted theme.js — "
+        "the launcher would request an unversioned URL and miss the immutable cache"
+    )
+    assert site_assets.MM_BRAIN_VER_TOKEN == MM_BRAIN_VER_TOKEN, "token drifted"
+    expected = site_assets.mm_brain_version(TEMPLATES / "theme.js")
+    assert f'var MM_BRAIN_VER = "{expected}"' in emitted
+
+
+def test_unbaked_theme_js_is_still_valid_javascript() -> None:
+    """Both placeholders must read as valid JS when the bake never runs.
+
+    A local/custom build serving templates/ raw is a supported mode. A token that
+    is not itself a valid expression would take the ENTIRE shared script down —
+    navigation, theme switch, account UI, everything — rather than degrading the
+    one feature it configures.
+    """
+    src = (TEMPLATES / "theme.js").read_text()
+    assert f"|| {TOKEN};" in src, "the Supabase token is no longer a valid `|| null` tail"
+    assert f"= {MM_BRAIN_VER_TOKEN};" in src, (
+        "the mm_brain version token is no longer a valid empty-string literal"
+    )
+
+
+def test_missing_bundle_degrades_to_an_unversioned_request(tmp_path) -> None:
+    """No sibling mm_brain.js -> empty version, not a crash and not a stale hash."""
+    (tmp_path / "theme.js").write_text("x")
+    assert site_assets.mm_brain_version(tmp_path / "theme.js") == ""

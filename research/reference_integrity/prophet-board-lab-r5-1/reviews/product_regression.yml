@@ -1,0 +1,148 @@
+# Critic receipt (RIG V1 §6, C12 cycle) — independent product_regression review of
+# D-LAB-R5.2 at the frozen SHA. The author did not write this file. Committed verbatim
+# by the adjudicating session from the critic's amended return packet.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-lab-r5-1
+artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+lane: product_regression
+role: product_regression
+verdict: PASS_WITH_CONDITIONS
+
+identity:
+  seat: "C12 product_regression critic — fresh seat"
+  model: opus (reviewer)
+  distinct_from_prior_critics: true
+  note: >
+    No prior critic's context was inherited. The R5.1 first-pass product_regression critic
+    (BLOCK, PR51-1 + 8 minors, against f889d5eb) is a different seat; their receipts are stale
+    against this SHA by construction and were used only as prior-cycle context. This seat
+    authored nothing in the artifact.
+
+rationale_received_after_first_pass: true
+rationale_note: >
+  First pass frozen before any reveal. Rationale then read: DESIGN_NOTES.md at f40ae70a,
+  and proposal.yml / continuity.yml / README.md plus PR #5940's body at branch head
+  e9b6f125afdfe0102415f3a231438bcc2da4cae3.
+
+first_pass:
+  frozen_at: "2026-08-19"
+  verdict: PASS_WITH_CONDITIONS
+quarantine:
+  rationale_received_after_first_pass: true
+  held_during_first_pass: true
+  attestation: >
+    DESIGN_NOTES.md was deleted from the extraction before any read; proposal.yml,
+    continuity.yml and README.md were never extracted; no gh invocation was made during
+    the first pass. Every quarantined file was read only after the coordinator's
+    authorization message.
+  forbidden_files_read_during_first_pass: []
+
+method:
+  static: "index.html, lab.css, lab.js, verify.py, mutation_test.py at the frozen SHA"
+  live: >
+    Headless Chromium 151.0.7922.34 over raw CDP (hand-rolled RFC-6455 client; playwright
+    absent from the environment). Viewports 1440x900, 1000x900, 390x844; chrome=0 and
+    chrome=1; touch via Input.dispatchTouchEvent + any-pointer:coarse.
+  independent_corroboration: >
+    PR51-1's receipts in continuity.yml:321-322 reproduce exactly under a different driver
+    (390: markTop 0, 4 seeds, scrollY 4183). The artifact's receipts are honest.
+
+regression_floor:
+  R51-M1_grid_scope: HOLDS
+  R51-M2_unknown_not_zero: HOLDS     # 4 quadrants + 390
+  R51-M3_symmetric_lead: HOLDS       # agg 3/1/1 of 5 measured == payload
+
+findings:
+  - {id: PR52-1, sev: major, disposition: UPHELD_STRENGTHENED,
+     ref: "lab.js:872-873; DESIGN_NOTES.md:114-117; continuity.yml:343-346; verify.py:351-356; board.css:886-887; index.html:44",
+     title: "chrome=1 pin offset bound against chrome that does not pin; false premise stated 3x; D6c4 cannot fail on it"}
+  - {id: PR52-2, sev: major, disposition: UPHELD,
+     ref: "lab.js:920 vs lab.js:866-875; DESIGN_NOTES.md:141-147; verify.py:369",
+     title: "landRegion ignores the sticky-chrome offset syncMarkOffset computes; undisclosed"}
+  - {id: PR52-3, sev: major, disposition: UPHELD,
+     ref: "lab.js:960-963, 813-847; DESIGN_NOTES.md:642",
+     title: "focus dropped to <body> on LAB->LIVE; arrow-key traversal claimed, half-true; undisclosed"}
+  - {id: PR52-4, sev: major, disposition: UPHELD_STRENGTHENED,
+     ref: "lab.css:709; MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:386-388, :662-663; DESIGN_NOTES.md:617-620; board.js:1300-1309",
+     title: "390 .lab-overlap demotion breaks the ratified caveat exception AND fails the round's own obvious-gesture test under touch"}
+  - {id: PR52-5, sev: withdrawn, disposition: WITHDRAWN,
+     title: "manifest frozen_sha — extraction-vintage false positive; manifest.yml:25 + sha_lineage:29-45 at branch head are correct and exemplary"}
+  - {id: PR52-5b, sev: nit, disposition: NEW,
+     title: "commission hygiene: pinning critics to the artifact SHA for extraction reproducibly staled the packet records"}
+  - {id: PR52-6, sev: minor, disposition: UPHELD,
+     ref: "continuity.yml:420 changed_files omits both tool files; continuity.yml:298",
+     title: ".lab-agg (VTL51-505) shipped with no check and no mutation"}
+  - {id: PR52-7, sev: minor, disposition: UPHELD, ref: "lab.js:355-374; DESIGN_NOTES.md:169",
+     title: ".lab-agg 390 landing drops the exclusion clause"}
+  - {id: PR52-8, sev: minor, disposition: UPHELD, ref: "verify.py:631; DESIGN_NOTES.md:653",
+     title: "D21c passes on any string containing '0'"}
+  - {id: PR52-9, sev: nit, disposition: DOWNGRADED_FROM_MINOR, ref: "verify.py:611",
+     title: "D19f literal source match; the law is actually held by D19c"}
+  - {id: PR52-10, sev: nit, disposition: UPHELD, ref: "lab.css:568",
+     title: "history divider wears the solid LIVE spine idiom; undisclosed"}
+  - {id: PR52-11, sev: withdrawn, disposition: WITHDRAWN,
+     title: "crop filenames — baseline.yml:55-59 shows stable-ID naming is deliberate and load-bearing for receipt retrieval"}
+
+conditions:
+  - "PR52-1: give .harness a parent with travel (or mark a real sticky container data-lab-sticky-chrome); assert barTop not barH in D6c4; correct the claim in lab.js, DESIGN_NOTES and continuity.yml; add a chrome=1 deep-scroll crop."
+  - "PR52-2: scrollTo(bandTop - --lab-mark-top); run D24/D24b at chrome=1."
+  - "PR52-3: restore focus to the re-mounted control inside sc.onload; add a check."
+  - "PR52-4: keep .lab-overlap visible at 390 per the caveat exception, or bind the LENS to click/pointerdown and prove it under pointer:coarse."
+  - "PR52-6: add one verify check and one mutation for .lab-agg."
+  - "editorial: re-stamp baseline.yml:70 and :117-118 in the next packet commit."
+
+rulings:
+  lab0_s65_landing:
+    lawful: true
+    changed_by_rationale: false
+    corroborated_by_rationale: true
+    basis: >
+      §6.5 is a state-and-painting contract, silent on scroll; all four behavioural clauses
+      tested individually and none breached (preLabScrollY restores an integer offset, not
+      painted content; D22's sentinel still proves re-derivation). Lawful also under the
+      standing veto at MASTER_PRODUCT_DESIGN_SYSTEM_V1.md:320-321: deliberate-flip-only,
+      reversible (measured 0 -> 384 -> 0), self-scoping to a no-op at 1440.
+    p_lab_ui_obligation: false
+    disposition: "reference-only choreography"
+    corroboration: >
+      DESIGN_NOTES.md:627-631 grounds the landing wholly in this mockup's measured 390
+      budget (1009/294/550; ladder 295 + selectors 137) and never claims it transfers.
+    if_adopted_requires: ["PR52-2 sticky-chrome offset", "own acceptance check under a real site nav"]
+  baseline_staleness:
+    changed_by_rationale: false
+    verified: "git diff f40ae70ac989 FETCH_HEAD -- .../baseline.yml -> empty; both lines survive at branch head"
+    "baseline.yml:70": {materiality: editorial}
+    "baseline.yml:117-118": {materiality: editorial}
+
+second_pass:
+  amended_at: "2026-08-19"
+  amendments:
+    upheld_strengthened: [PR52-1, PR52-4]
+    upheld: [PR52-2, PR52-3, PR52-6, PR52-7, PR52-8, PR52-10]
+    downgraded: [{id: PR52-9, from: minor, to: nit}]
+    withdrawn: [PR52-5, PR52-11]
+    added: [PR52-5b]
+    rulings_restated: [lab0_s65_landing, baseline_staleness]
+    rulings_changed: []
+  verdict: PASS_WITH_CONDITIONS
+  net: "4 majors, 3 minors, 3 nits. 2 withdrawals and 1 downgrade on revealed evidence; 2 findings strengthened by it."
+
+r53_delta_recheck:
+  artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+  branch_head: c535c8c577849b2a85768326c6fcdd4c17d832b4
+  seat_verdict: "APPROVAL-READY (maps to PASS_WITH_CONDITIONS in the receipt enum; open items are nits only)"
+  resolved_verified_live:
+    - "PR52-1: #harness{display:contents} gives the bar travel — chrome=1 barTop 0 (was -2637/-4572) at 1440+390, markTop==barBottom, bound==barH; D6c4 asserts abs(barTop)<=1, D6c4b/D6c4c split the modes; M27/M25"
+    - "PR52-2: scrollTo(bandTop - off): chrome=1 390 y=388, segTop 84 > barBottom 72, whole=1, reversible to 0; D24/D24b at chrome=1; M33"
+    - "PR52-3: ArrowLeft -> af=live inStamp=true isBody=false y=0 (preventScroll); click path too; D25/M31"
+    - "PR52-4: overlap clause on the 390 glance tier EN+ZH with pills==6 (D27/M32); .lab-split tap opens+holds under coarse pointer, dismissible, dotted affordance, exclusion clause present (D28/D28b/D28c/D28d, M30); board.js empty diff verified independently"
+    - "PR52-6/7/8: D26/D26b(two-sided)/D26c + M28; exclusion clause in the 390 landing; D21c full string equality EN+ZH"
+    - "PR52-10: divider spine solid-above/dashed-below at the midline (lab.css:653-657)"
+  harness_provenance_ruling: >
+    SUFFICES — ~25 load-bearing assertions independently reproduced at the frozen SHA on a
+    different driver; mutation_test.py fails closed on a dirty baseline; the interruption is a
+    host property, disclosed. Limit stated: 162/162 and 34/34 not independently executed
+    (playwright absent). Non-blocking condition: one opportunistic uninterrupted pass post-merge.
+  new_defect_sweep: "CLEAN (LIVE composition unmoved; 12-combination 390 h-scroll sweep silent; LENS hover path uncontested, one .lens-pop ever; .harness-styled-from-lab.css deviation ACCEPTED as the lesser violation vs editing frozen board.css)"
+  open_nits: [PR53-1 board-pill tap does not hold the LENS (descriptive .lab-sub only), PR53-2 lab.css:5-6 scope policy unamended for :849/:851, PR52-5b commission-hygiene process note]
+  rulings_restated_unchanged: [lab0_s65_landing lawful reference-only, baseline_staleness editorial]

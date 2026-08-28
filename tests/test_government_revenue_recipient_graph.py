@@ -460,19 +460,19 @@ def test_canonical_reviewed_graph_is_strict_and_keeps_absent_event_coverage_empt
         _schema("government_recipient_entity_graph.v1.schema.json"),
         format_checker=FormatChecker(),
     ).validate(graph)
-    assert graph["graph_id"] == "recipient-graph:reviewed:2026-08-08:defense19-v1"
-    assert len(graph["evidence"]) == 241
-    assert len(graph["companies"]) == 19
-    assert len(graph["legal_entities"]) == 101
-    assert len(graph["identifiers"]) == 203
-    assert len(graph["ownership_edges"]) == 101
+    assert graph["graph_id"] == "recipient-graph:reviewed:2026-08-19:defense21-v1"
+    assert len(graph["evidence"]) == 249
+    assert len(graph["companies"]) == 20
+    assert len(graph["legal_entities"]) == 107
+    assert len(graph["identifiers"]) == 208
+    assert len(graph["ownership_edges"]) == 107
     assert sorted(company["ticker"] for company in graph["companies"]) == [
-        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
-        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
+        "AVAV", "BA", "BWXT", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS",
+        "LDOS", "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
     ]
     assert Counter(edge["relationship"] for edge in graph["ownership_edges"]) == {
-        "issuer_legal_entity": 19,
-        "wholly_owned": 82,
+        "issuer_legal_entity": 20,
+        "wholly_owned": 87,
     }
     assert graph["blocks"] == graph["conflicts"] == graph["overrides"] == []
     # The graph is analysed at its own knowledge instant: a curated artifact is

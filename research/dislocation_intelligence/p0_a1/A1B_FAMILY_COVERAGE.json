@@ -1,0 +1,93 @@
+{
+  "CYBER_OR_IT_INTERRUPTION": {
+    "incomplete_cells": 0,
+    "pool_sha256": "1597d025edcbe838cfc59889087ed298568d02e74a39c94fff2f00a4ada135bd",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 24415,
+    "selected": 48
+  },
+  "EXTERNAL_HUMAN_INTERRUPTION": {
+    "incomplete_cells": 0,
+    "pool_sha256": "a02ecffeb27ec47a54ae4400c462218ead5a567c2640df69297c5a43bde900e7",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 21504,
+    "selected": 48
+  },
+  "PHYSICAL_MECHANICAL_INTERRUPTION": {
+    "incomplete_cells": 0,
+    "pool_sha256": "78e43bdd5d051579b253ba890b7c8d2ed1f509cf8398f976bc6097748e84dc6d",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 5044,
+    "selected": 48
+  },
+  "RESOLVED_BEFORE_DISCLOSURE_CONTROL": {
+    "incomplete_cells": 0,
+    "pool_sha256": "10af9fe4c301d64763837ada1a56e9ff99a8d9dc362af3fda159e045e4022bdd",
+    "quota": {
+      "development": 8,
+      "form_6k": 8,
+      "form_8k": 16,
+      "modern": 16,
+      "source_target": 24
+    },
+    "raw_unique_filings": 588,
+    "selected": 24
+  },
+  "STRUCTURAL_IMPAIRMENT_CONTROL": {
+    "incomplete_cells": 9,
+    "pool_sha256": "0f9740077d95e946925c317d62b8e8e965c36c2ac125017f3ffc1bdab8b716f3",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 189034,
+    "selected": 48
+  },
+  "TEMPORARY_EXPECTATION_RESET": {
+    "incomplete_cells": 0,
+    "pool_sha256": "51cf275536ee214d2c60f9fc04096b9b97b6f01c55df642cbb4855ec479cf917",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 3013,
+    "selected": 48
+  },
+  "WEATHER_OR_PHYSICAL_DISASTER": {
+    "incomplete_cells": 0,
+    "pool_sha256": "d64747d65a9c84a27a2a0e8a5e22772e46afd6c7911144108902ac2460a2c6b9",
+    "quota": {
+      "development": 16,
+      "form_6k": 16,
+      "form_8k": 32,
+      "modern": 32,
+      "source_target": 48
+    },
+    "raw_unique_filings": 32663,
+    "selected": 48
+  }
+}

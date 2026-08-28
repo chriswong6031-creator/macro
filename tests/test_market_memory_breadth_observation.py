@@ -44,6 +44,19 @@ SNAPSHOT_SCHEMA_PATH = (
     ROOT / "contracts/market_memory/breadth_factors_snapshot.v1.schema.json"
 )
 _FROZEN_FIXTURE_SESSION = "2026-08-07"
+# Both fixture bodies are byte-pinned captures from the SAME nightly commit
+# (448cfacc0957, collection 2026-08-10). Truncating the live ledger is not
+# stable: the nightly revises historical rows (n_members@2026-08-07 read 502
+# at capture time and 504 eleven days later), and the live constituents file
+# moves on every index reconstitution. Numerator and denominator must come
+# from the same era or the coverage bound asserts on a ratio no real run
+# ever produced. Advance both files together, never one.
+_FROZEN_BREADTH_FIXTURE = (
+    ROOT / "tests/fixtures/market_memory/breadth_through_2026-08-07.parquet"
+)
+_FROZEN_CONSTITUENTS_FIXTURE = (
+    ROOT / "tests/fixtures/market_memory/constituents_2026-08-07.parquet"
+)
 
 
 def _git_blob_oid(body: bytes) -> str:
@@ -53,15 +66,12 @@ def _git_blob_oid(body: bytes) -> str:
 
 @functools.lru_cache(maxsize=1)
 def _frozen_breadth_body() -> bytes:
-    """Detach the unit fixture from the append-only repository tip."""
+    """Detach the unit fixture from the nightly-revised repository ledger."""
 
-    frame = pd.read_parquet(
-        ROOT / "data/breadth/breadth.parquet",
-        engine="pyarrow",
-    )
-    frozen = frame.loc[:_FROZEN_FIXTURE_SESSION].copy()
-    assert frozen.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
-    return _parquet_bytes(frozen)
+    body = _FROZEN_BREADTH_FIXTURE.read_bytes()
+    frame = pd.read_parquet(io.BytesIO(body), engine="pyarrow")
+    assert frame.index[-1].date().isoformat() == _FROZEN_FIXTURE_SESSION
+    return body
 
 
 def _inputs(
@@ -76,9 +86,7 @@ def _inputs(
         "breadth_actual_output": _frozen_breadth_body()
         if breadth_body is None
         else breadth_body,
-        "current_constituents": (
-            ROOT / "data/breadth/constituents.parquet"
-        ).read_bytes()
+        "current_constituents": _FROZEN_CONSTITUENTS_FIXTURE.read_bytes()
         if constituents_body is None
         else constituents_body,
         "canary_identity_config": (

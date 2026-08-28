@@ -482,7 +482,8 @@ def test_special_situations_block_happy_path(monkeypatch):
         ]},
         "inquiry": {"n_letters": 3, "letters": [
             {"secCode": "000001", "secName": "平安银行", "title": "关注函",
-             "date": "2026-07-05", "has_reply": False, "kind": "letter"}
+             "date": "2026-07-05", "has_reply": False, "reply_state": "open",
+             "kind": "letter"}
         ]},
         "preannounce": {"n_total": 45},
         "buyback": {"n_active": 12},
@@ -501,6 +502,10 @@ def test_special_situations_block_happy_path(monkeypatch):
     assert result["top_unlock"]["ticker"] == "600000.SS"
     assert result["top_unlock"]["large_flag"] is True
     assert result["newest_letter"]["secCode"] == "000001"
+    # The hub card must carry the three-valued state, not only the boolean: a
+    # consumer reading has_reply alone renders an 'undetermined' letter as an
+    # open regulatory question.
+    assert result["newest_letter"]["reply_state"] == "open"
     assert result["is_context_only"] is True
 
 

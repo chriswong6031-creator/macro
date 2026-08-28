@@ -10,6 +10,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -190,6 +191,114 @@ def test_a_new_file_written_by_the_session_still_blocks(tmp_path):
     assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == [
         "scripts/new_builder.py"
     ]
+
+
+def _dirty_after_shipped_exclusion(repo: Path, baseline: dict) -> list[str]:
+    """The Stop gate's dirty verdict, including the shipped-identical filter."""
+    now = GUARD._fingerprint(repo)
+    dirty = GUARD._changed_since_baseline(baseline, now)
+    shipped = GUARD._shipped_identical_untracked(repo, now, dirty)
+    return [entry for entry in dirty if entry not in shipped]
+
+
+def _repo_with_stale_head(tmp_path: Path) -> Path:
+    """A checkout detached on a HEAD that predates origin/main's hook file.
+
+    Models the 2026-08-20 primary-checkout state: origin/main tracks
+    `.claude/hooks/hook.py`, the working tree sits on an older commit that
+    does not, so a byte-restore of the shipped file shows up as `??`.
+    """
+    repo = _repo(tmp_path)
+    old_head = _git(repo, "rev-parse", "HEAD")
+    hooks = repo / ".claude" / "hooks"
+    hooks.mkdir(parents=True)
+    (hooks / "hook.py").write_text("shipped bytes\n", encoding="utf-8")
+    _git(repo, "add", ".claude/hooks/hook.py")
+    _git(repo, "commit", "-m", "ship hook")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    _git(repo, "checkout", "--detach", old_head)
+    return repo
+
+
+def test_untracked_bytes_identical_to_origin_main_do_not_block(tmp_path):
+    """The documented `git show origin/main:<p> > <p>` repair is not dirt.
+
+    2026-08-20: three hook files byte-restored into the stale primary checkout
+    blocked every session evaluating that tree, though a commit would have
+    added nothing main did not already have.
+    """
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes\n", encoding="utf-8")
+
+    assert GUARD._fingerprint(repo)[".claude/hooks/hook.py"].startswith("??:")
+    assert _dirty_after_shipped_exclusion(repo, baseline) == []
+
+
+def test_untracked_bytes_that_differ_from_origin_main_still_block(tmp_path):
+    """One changed byte is real unshipped work, not a restore."""
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes plus an edit\n", encoding="utf-8")
+
+    assert _dirty_after_shipped_exclusion(repo, baseline) == [".claude/hooks/hook.py"]
+
+
+def test_the_shipped_exclusion_fails_closed_without_an_origin_main_ref(tmp_path):
+    """No origin/main to compare against -> nothing is excused."""
+    repo = _repo_with_stale_head(tmp_path)
+    _git(repo, "update-ref", "-d", "refs/remotes/origin/main")
+    baseline = GUARD._fingerprint(repo)
+
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    hook.write_text("shipped bytes\n", encoding="utf-8")
+
+    assert _dirty_after_shipped_exclusion(repo, baseline) == [".claude/hooks/hook.py"]
+
+
+def test_a_tracked_file_rewritten_to_match_origin_main_still_blocks(tmp_path):
+    """The exclusion is for `??` entries only.
+
+    A tracked file whose working bytes match origin/main is still a diff
+    against HEAD — excusing it would also excuse an un-pulled revert riding
+    in the working tree.
+    """
+    repo = _repo(tmp_path)
+    old_head = _git(repo, "rev-parse", "HEAD")
+    (repo / "kept.txt").write_text("v2 shipped\n", encoding="utf-8")
+    _git(repo, "add", "kept.txt")
+    _git(repo, "commit", "-m", "v2")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    _git(repo, "checkout", "--detach", old_head)
+    baseline = GUARD._fingerprint(repo)
+
+    (repo / "kept.txt").write_text("v2 shipped\n", encoding="utf-8")
+
+    current = GUARD._fingerprint(repo)
+    assert current["kept.txt"].startswith(" M:")
+    assert _dirty_after_shipped_exclusion(repo, baseline) == ["kept.txt"]
+
+
+def test_an_untracked_symlink_is_never_excused_as_shipped(tmp_path):
+    """A symlink's blob is its target string; the followed file must not count."""
+    repo = _repo_with_stale_head(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+
+    target = repo / "target.txt"
+    target.write_text("shipped bytes\n", encoding="utf-8")
+    hook = repo / ".claude" / "hooks" / "hook.py"
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    os.symlink(target, hook)
+
+    dirty = _dirty_after_shipped_exclusion(repo, baseline)
+    assert ".claude/hooks/hook.py" in dirty
 
 
 def test_a_tracked_file_deleted_by_the_session_still_blocks(tmp_path):
@@ -921,6 +1030,18 @@ def _clear_token_cache(monkeypatch):
     monkeypatch.setattr(GUARD, "_TOKEN_CACHE", None, raising=False)
     for key in ("GH_TOKEN", "GITHUB_TOKEN"):
         monkeypatch.delenv(key, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _clear_index_lock_cache():
+    """The worktree gitdir is memoised per root so the second sweep is free.
+
+    One hook process only ever judges one tree; this module reuses a single
+    imported guard across every test, so the memo is dropped between them.
+    """
+    GUARD._INDEX_LOCK_CACHE.clear()
+    yield
+    GUARD._INDEX_LOCK_CACHE.clear()
 
 
 @pytest.fixture(autouse=True)
@@ -3003,6 +3124,72 @@ def _drive_block(path: Path, capsys, code: str, payload: dict) -> bool:
     return capsys.readouterr().out.strip() == ""
 
 
+def _drive_block_keyed(path: Path, capsys, code: str, payload: dict, exit_key: str) -> bool:
+    """`_drive_block` with an exit key; return True if the Stop was allowed."""
+    state = GUARD._load(path)
+    GUARD._block(path, state, payload, code, f"reason for {code}", exit_key=exit_key)
+    return capsys.readouterr().out.strip() == ""
+
+
+def test_a_ratified_ladder_exit_is_remembered_for_the_exact_frozen_state(tmp_path, capsys):
+    """One evidence report per frozen merged head, not one per Stop.
+
+    A `ci_failed` block on a merged head argues about evidence frozen at merge,
+    so once the full ladder ratified an exit (report + external arms) the same
+    state must pass every later Stop without demanding an identical re-report —
+    the 2026-08-19 authority-frozen session filed the same `SHIP LOOP BLOCKED:`
+    report dozens of times."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    assert GUARD._load(path)["ladder_exits"] == [key]
+    # A later NATURAL stop — no report, no stop_hook_active — passes through
+    # silently and bumps no counter.
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    before = GUARD._load(path)["total_blocks"]
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, key) is True
+    assert GUARD._load(path)["total_blocks"] == before
+
+
+def test_a_remembered_exit_never_covers_a_different_frozen_state(tmp_path, capsys):
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    first = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, first) is True
+    # A new merge mints a new key; without a fresh report it must still block.
+    second = f"ci_failed:{'e' * 40}:{'f' * 40}"
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "ci_failed", natural, second) is False
+    assert GUARD._load(path)["ladder_exits"] == [first]
+
+
+def test_an_unratified_block_records_no_ladder_exit(tmp_path, capsys):
+    """Only the moment an escape actually fires may write the memory — a block
+    that was refused (no report yet) must leave nothing behind."""
+    path = _block_state(tmp_path)
+    unreported = {"stop_hook_active": True, "last_assistant_message": "still working"}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", unreported, key) is False
+    assert "ladder_exits" not in GUARD._load(path)
+
+
+def test_a_keyless_block_never_reads_or_writes_the_exit_memory(tmp_path, capsys):
+    """Internal codes and evolving states carry no key; the ladder is unchanged
+    for them even when a remembered exit exists for another state."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = f"ci_failed:{'a' * 40}:{'c' * 40}"
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "ci_failed", reported, key) is True
+    natural = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block(path, capsys, "render_pending", natural) is False
+    assert GUARD._load(path)["ladder_exits"] == [key]
+
+
 def test_external_ping_pong_escapes_on_the_third_cumulative_external_block(tmp_path, capsys):
     """The new cumulative arm. Alternating external codes reset the CONSECUTIVE
     counter every hop, so the old `count >= 2` rule never armed — a session
@@ -4626,3 +4813,683 @@ def test_unrelated_tmp_repo_is_not_a_source_mismatch(monkeypatch, tmp_path, caps
     payload = {"cwd": str(other), "hook_event_name": "Stop"}
     assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is False
     assert capsys.readouterr().out == ""
+
+
+# --------------------------------------------------------------------------
+# A slow `git status` must not become a WEDGED checkout (observed 2026-08-19):
+# 161s wall at 10% CPU on a full worktree, a 90s budget, a SIGKILLed git, and a
+# zero-byte `index.lock` left in the worktree gitdir by the very guard that was
+# only reading the tree.
+# --------------------------------------------------------------------------
+
+
+def _sleeper(marker: Path | None) -> str:
+    """A child that sleeps; with a marker it records the signal that ended it."""
+    if marker is None:
+        return (
+            "import signal, time\n"
+            "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+            "time.sleep(30)\n"
+        )
+    return (
+        "import signal, sys, time\n"
+        "def _bye(signum, _frame):\n"
+        f"    open({str(marker)!r}, 'w').write(str(signum))\n"
+        "    sys.exit(0)\n"
+        "signal.signal(signal.SIGTERM, _bye)\n"
+        "time.sleep(30)\n"
+    )
+
+
+def test_a_timed_out_child_is_asked_to_leave_before_it_is_shot(tmp_path):
+    """SIGKILL is the reason a timed-out status orphaned a lock at all.
+
+    git installs a SIGTERM handler precisely so its lock files are unlinked on
+    the way out; SIGKILL cannot be caught, so the lock outlives its owner and
+    every later git in that tree fails on it. The marker is proof the child was
+    signalled rather than shot — it can only be written from inside a handler.
+    """
+    marker = tmp_path / "signal.txt"
+    # 3s, not 1s: the child has to finish interpreter startup and install its
+    # handler before the budget expires, and a 4-core runner under fleet load is
+    # exactly where a tight budget would turn this into a flake.
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._run(tmp_path, sys.executable, "-c", _sleeper(marker), timeout=3)
+    assert marker.exists(), "the child was shot before it could handle a signal"
+    assert marker.read_text() == str(int(signal.SIGTERM))
+
+
+def test_a_child_that_ignores_sigterm_is_still_killed(monkeypatch, tmp_path):
+    """The grace period is a courtesy, not a hostage clause.
+
+    The child sleeps 30s and ignores SIGTERM, so anything that waits for it to
+    leave voluntarily blows the hook's own wall. Escalation has to be certain.
+    """
+    monkeypatch.setattr(GUARD, "GIT_TERM_GRACE_SECONDS", 1)
+    started = time.monotonic()
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._run(tmp_path, sys.executable, "-c", _sleeper(None), timeout=1)
+    assert time.monotonic() - started < 10
+
+
+def _timeout_always(_root, *args, timeout):
+    raise subprocess.TimeoutExpired(list(args), timeout)
+
+
+def test_a_status_timeout_is_retried_once_on_the_index_the_first_pass_warmed(
+    monkeypatch, tmp_path
+):
+    """161s cold, 13s warm: the first run PAYS FOR the second (2026-08-19).
+
+    Failing on the first timeout threw that warm-up away and filed `guard_error`
+    against a tree that was one cheap re-run from answering.
+    """
+    budgets: list[int] = []
+    swept: list[Path] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        assert args[:2] == ("git", "status")
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return "?? warm.txt\n"
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda root: swept.append(root))
+
+    assert GUARD._status_output(tmp_path) == "?? warm.txt\n"
+    assert budgets == [
+        GUARD.STATUS_TIMEOUT_SECONDS,
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS,
+    ]
+    assert budgets[1] > budgets[0], "the retry must get a LONGER budget, not the same one"
+    assert swept == [tmp_path], "the retry must not trip over our own wreckage"
+
+
+def test_a_status_that_cannot_answer_twice_still_fails_closed(monkeypatch, tmp_path):
+    """The retry buys a second chance to ANSWER, never permission to skip.
+
+    Both timeout paths sweep, because a lock this guard orphaned outlives the
+    process that made it: the second sweep is for the NEXT invocation, which
+    would otherwise inherit a tree this one wedged.
+    """
+    swept: list[Path] = []
+    monkeypatch.setattr(GUARD, "_run_raw", _timeout_always)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda root: swept.append(root))
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        GUARD._fingerprint(tmp_path)
+    assert swept == [tmp_path, tmp_path]
+
+
+def test_an_unanswerable_status_reaches_stop_as_a_block(monkeypatch, tmp_path, capsys):
+    """Fail-closed end to end: an unresolvable dirty check still refuses Stop."""
+    repo = _repo(tmp_path)
+    state_path = GUARD._state_path(repo, {"session_id": "status-timeout"})
+    GUARD._save(
+        state_path,
+        {
+            "root": str(repo),
+            "start_head": _git(repo, "rev-parse", "HEAD"),
+            "baseline": {},
+            "last_blocker": "",
+            "blocker_count": 0,
+            "total_blocks": 0,
+            "external_blocks": 0,
+        },
+    )
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: state_path)
+    monkeypatch.setattr(GUARD, "_run_raw", _timeout_always)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    payload = {"hook_event_name": "Stop", "session_id": "status-timeout"}
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        type("S", (), {"read": staticmethod(lambda: json.dumps(payload))})(),
+    )
+    monkeypatch.setattr(GUARD.json, "load", lambda _stream: payload)
+    GUARD.main()
+
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["decision"] == "block"
+    assert "guard_error" in emitted["reason"]
+
+
+def test_the_whole_pathological_status_path_fits_the_hooks_own_wall():
+    """A budget past the harness's wall is a budget that cannot conclude.
+
+    `.claude/settings.json` owns the wall and the HARNESS enforces it: a hook
+    cancelled mid-flight emits no decision at all, so overrunning it trades a
+    block for a silently skipped Stop evaluation — a fail-OPEN, strictly worse
+    than the block it was trying to file.
+
+    The sum is the WHOLE worst path, not just the two status attempts: the sweeps
+    and every SIGTERM grace are on it too, and leaving them out is how a budget
+    that looks like it fits does not. Pinned here because the numbers live in a
+    different file from the wall and nothing else would notice them drifting.
+    """
+    settings = json.loads(
+        (ROOT / ".claude" / "settings.json").read_text(encoding="utf-8")
+    )
+    walls = [
+        int(hook["timeout"])
+        for entry in settings["hooks"]["Stop"]
+        for hook in entry["hooks"]
+        if "ship_loop_guard.py" in hook.get("command", "")
+    ]
+    assert walls, "the Stop hook must still be the ship loop guard"
+
+    grace = GUARD.GIT_TERM_GRACE_SECONDS
+    probe = GUARD.SWEEP_PROBE_TIMEOUT_SECONDS
+    first_sweep = probe + grace + probe  # resolve the gitdir, then lsof
+    later_sweep = probe  # the gitdir is cached by then, so lsof only
+    # The heal runs AFTER the status is read (never between the attempts — see
+    # `test_the_heal_runs_only_after_the_status_it_could_contaminate`), but it is
+    # on the worst path either way: read the config, test the filesystem, write it.
+    heal = (
+        probe
+        + grace
+        + GUARD.UNTRACKED_CACHE_TEST_TIMEOUT_SECONDS
+        + grace
+        + probe
+        + grace
+    )
+    worst = (
+        GUARD.STATUS_TIMEOUT_SECONDS
+        + grace
+        + first_sweep
+        + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
+        + grace
+        + later_sweep
+        + heal
+    )
+    assert worst <= min(walls), (
+        "the pathological status path must still reach its own guard_error block: "
+        f"{worst}s of a {min(walls)}s wall"
+    )
+    # The costlier shape is the one that SUCCEEDS. A retry answering just under its
+    # budget still owes the whole rest of `_stop` — PR lookup, CI attribution (up to
+    # ~16 REST calls when there is a red to attribute), render coverage, live checks
+    # — and a wall sized flush to `worst` would cancel the hook mid-evaluation there,
+    # which fails OPEN. This is the residual that makes that path survivable, not
+    # slack to be reclaimed by a later budget rise.
+    answered = (
+        GUARD.STATUS_TIMEOUT_SECONDS
+        + grace
+        + first_sweep
+        + GUARD.STATUS_RETRY_TIMEOUT_SECONDS
+        + heal
+    )
+    assert min(walls) - answered >= 60, (
+        "a retry that ANSWERS must leave the rest of the Stop evaluation room to "
+        f"run: {min(walls) - answered}s left of a {min(walls)}s wall"
+    )
+    # MATERIALLY larger, not merely larger. The retry has to finish the part of the
+    # walk the warm-up pass never reached, so a retry sized like the first attempt
+    # is the exact arithmetic that failed twice: 60/70 could not answer a 78s tree,
+    # and 100/150 could not answer the 333s one (2026-08-21). Both attempts sitting
+    # under the cold cost is a pair that can never succeed however often it runs.
+    assert (
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS >= 2 * GUARD.STATUS_TIMEOUT_SECONDS
+    ), "the retry must be able to absorb a cold walk the first attempt could not"
+
+
+# --------------------------------------------------------------------------
+# A tree too slow to READ must be repaired, not merely retried (2026-08-21):
+# 333s cold `status` on 75,427 index entries with `core.untrackedCache` unset,
+# against 1s warm. The retry budget lets that Stop answer; the untracked cache is
+# what stops the next one from having to.
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _reset_untracked_cache_heal(monkeypatch):
+    """The heal is once-per-process; tests must not inherit a sibling's attempt."""
+    monkeypatch.setattr(GUARD, "_UNTRACKED_CACHE_HEAL_TRIED", False)
+
+
+def _heal_capture(calls: list[tuple[str, ...]], codes: dict[str, int]):
+    """A `_capture` stand-in recording the heal's git calls and faking their rc."""
+
+    def fake_capture(_root, args, timeout):
+        calls.append(tuple(args))
+        for key, code in codes.items():
+            if key in args:
+                return subprocess.CompletedProcess(list(args), code, "", "")
+        return subprocess.CompletedProcess(list(args), 0, "", "")
+
+    return fake_capture
+
+
+def test_a_timed_out_status_enables_the_untracked_cache(monkeypatch, tmp_path):
+    """The blown first budget is the evidence that this tree is too slow to read.
+
+    A healthy checkout never reaches that line, so the timeout is a well-targeted
+    trigger: the heal costs nothing on every tree that answers in time.
+    """
+    calls: list[tuple[str, ...]] = []
+    # `--get` returns 1 (unset), the filesystem test passes, the write succeeds.
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+
+    budgets: list[int] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return ""
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._status_output(tmp_path) == ""
+    assert calls == [
+        ("git", "config", "--get", "core.untrackedCache"),
+        ("git", "update-index", "--test-untracked-cache"),
+        ("git", "config", "core.untrackedCache", "true"),
+    ], "the heal must test the filesystem BEFORE it writes the config"
+
+
+def test_a_status_that_answers_first_time_never_pays_for_the_heal(
+    monkeypatch, tmp_path
+):
+    """The trigger is a blown budget, not "every Stop".
+
+    Without this, moving the heal ahead of the first attempt would pass every
+    other test in this block while charging ~6s and an `index.lock` take to every
+    healthy tree in the fleet, on every Stop.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+    monkeypatch.setattr(GUARD, "_run_raw", lambda _root, *args, timeout: "?? a.txt\n")
+
+    assert GUARD._status_output(tmp_path) == "?? a.txt\n"
+    assert calls == [], "a tree that answers in time must not be probed at all"
+
+
+def test_the_heal_runs_only_after_the_status_it_could_contaminate(
+    monkeypatch, tmp_path
+):
+    """Ordering is load-bearing: the mtime test writes INTO the worktree root.
+
+    `--test-untracked-cache` builds `mtime-test-XXXXXX/` in the working directory
+    and a killed one leaves it behind (measured). Run between the two attempts, the
+    retry would report `?? mtime-test-XXXXXX/newfile` and the guard would file a
+    false `uncommitted` block naming a file it created itself. Reading status first
+    means even a failed cleanup cannot contaminate this invocation's answer.
+    """
+    order: list[str] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        order.append("status")
+        if len(order) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return ""
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+    monkeypatch.setattr(
+        GUARD, "_enable_untracked_cache", lambda _root: order.append("heal") or True
+    )
+
+    GUARD._status_output(tmp_path)
+    assert order == ["status", "status", "heal"], (
+        "the heal must not run between the two status attempts"
+    )
+
+
+def _mtime_scratch(root: Path, name: str = "mtime-test-abc123") -> Path:
+    """The scratch tree a killed `--test-untracked-cache` leaves in the worktree."""
+    scratch = root / name
+    (scratch / "new-dir").mkdir(parents=True)
+    (scratch / "newfile").write_text("", encoding="utf-8")
+    (scratch / "new-dir" / "new").write_text("", encoding="utf-8")
+    return scratch
+
+
+def test_a_killed_mtime_test_does_not_leave_dirt_the_guard_would_block_on(
+    monkeypatch, tmp_path
+):
+    """The guard must never file `uncommitted` against a file the guard created."""
+    repo = _repo(tmp_path)
+    scratch = repo / "mtime-test-abc123"
+
+    def fake_capture(_root, args, _timeout):
+        if "--test-untracked-cache" in args:
+            # git creates its scratch tree, then is killed before removing it.
+            _mtime_scratch(repo, scratch.name)
+            raise subprocess.TimeoutExpired(list(args), 20)
+        return subprocess.CompletedProcess(list(args), 1 if "--get" in args else 0, "", "")
+
+    monkeypatch.setattr(GUARD, "_capture", fake_capture)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._enable_untracked_cache(repo) is False
+    assert not scratch.exists(), "a timed-out mtime test must clean up after itself"
+    assert "mtime-test" not in GUARD._status_output(repo)
+
+
+def test_the_scratch_cleanup_refuses_anything_it_did_not_recognise(tmp_path):
+    """It deletes inside somebody's worktree, so every doubt keeps the directory.
+
+    An unexpected `mtime-test-*` is far better reported as dirt than removed on a
+    guess — a wrong delete here is silent data loss in a tree somebody is using.
+    """
+    repo = _repo(tmp_path)
+
+    # Real shape, but already present when the call started: somebody else's.
+    old = _mtime_scratch(repo, "mtime-test-old123")
+    # Right shape, but carries a file git never writes.
+    extra = _mtime_scratch(repo, "mtime-test-xtra12")
+    (extra / "mine.txt").write_text("precious", encoding="utf-8")
+    # Wrong name shape entirely.
+    unrelated = repo / "mtime-test-not-git"
+    unrelated.mkdir()
+    (unrelated / "newfile").write_text("", encoding="utf-8")
+
+    GUARD._remove_mtime_test_scratch(repo, GUARD._mtime_test_scratches(repo))
+    assert old.exists(), "a directory that predates the call is not ours to remove"
+
+    # Now with an empty snapshot: everything above counts as having appeared.
+    GUARD._remove_mtime_test_scratch(repo, set())
+    assert extra.exists(), "an unrecognised entry must keep the whole directory"
+    assert (extra / "mine.txt").read_text(encoding="utf-8") == "precious"
+    assert unrelated.exists(), "only git's own glob shape is ever removed"
+    assert not old.exists(), "the exact shape, newly appeared, IS removed"
+
+
+def test_a_real_killed_mtime_test_is_cleaned_up(tmp_path):
+    """End to end against real git: a SIGTERMed mtime test leaves a real scratch.
+
+    The mocked tests above construct the leftover by hand, so they cannot catch a
+    glob or entry-name that drifts from what git actually writes.
+    """
+    repo = _repo(tmp_path)
+    before = GUARD._mtime_test_scratches(repo)
+    proc = subprocess.Popen(
+        ("git", "update-index", "--test-untracked-cache"),
+        cwd=repo,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    time.sleep(3)  # long enough for the scratch tree to exist
+    proc.terminate()
+    proc.wait(timeout=30)
+    assert list(repo.glob("mtime-test-*")), "git should have left its scratch behind"
+
+    GUARD._remove_mtime_test_scratch(repo, before)
+    assert not list(repo.glob("mtime-test-*"))
+    assert "mtime-test" not in GUARD._status_output(repo)
+
+
+def test_the_untracked_cache_heal_never_overwrites_a_configured_value(
+    monkeypatch, tmp_path
+):
+    """rc 0 means somebody already decided this, in either direction.
+
+    An operator who set `false` did so deliberately, and this hook is a dirty
+    check, not a config manager. Only git's specific "unset" (rc 1) is permission.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 0}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert calls == [("git", "config", "--get", "core.untrackedCache")]
+
+
+@pytest.mark.parametrize("rc", [2, 128])
+def test_an_unreadable_untracked_cache_setting_is_never_interpreted(
+    monkeypatch, tmp_path, rc
+):
+    """Neither 0 nor 1: an erroring `git config` is not evidence the key is unset."""
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": rc}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert calls == [("git", "config", "--get", "core.untrackedCache")]
+
+
+def test_a_filesystem_that_fails_the_mtime_test_never_gets_the_cache(
+    monkeypatch, tmp_path
+):
+    """Enabling it on unreliable mtimes would make `status` LIE — a fail-OPEN.
+
+    The untracked cache trusts directory mtimes to decide a directory is
+    unchanged. Where they are not reliable, git would skip the directory and the
+    session's new untracked files would simply not appear in the dirty check this
+    whole hook exists to make. Saving the test's ~6s would buy a fast wrong answer.
+    """
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(
+        GUARD,
+        "_capture",
+        _heal_capture(calls, {"--get": 1, "--test-untracked-cache": 1}),
+    )
+
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert ("git", "config", "core.untrackedCache", "true") not in calls
+
+
+def test_a_failed_heal_still_leaves_the_retry_its_full_budget(monkeypatch, tmp_path):
+    """The heal is an optimisation; it must never become why the retry is skipped."""
+
+    def exploding_capture(_root, _args, _timeout):
+        raise OSError("git is not on PATH")
+
+    monkeypatch.setattr(GUARD, "_capture", exploding_capture)
+
+    budgets: list[int] = []
+
+    def fake_run_raw(_root, *args, timeout):
+        budgets.append(timeout)
+        if len(budgets) == 1:
+            raise subprocess.TimeoutExpired(list(args), timeout)
+        return "?? warm.txt\n"
+
+    monkeypatch.setattr(GUARD, "_run_raw", fake_run_raw)
+    monkeypatch.setattr(GUARD, "_sweep_stale_index_lock", lambda _root: None)
+
+    assert GUARD._status_output(tmp_path) == "?? warm.txt\n"
+    assert budgets == [
+        GUARD.STATUS_TIMEOUT_SECONDS,
+        GUARD.STATUS_RETRY_TIMEOUT_SECONDS,
+    ]
+
+
+def test_the_untracked_cache_heal_is_attempted_only_once_per_process(
+    monkeypatch, tmp_path
+):
+    """Its answer cannot change mid-run, and re-learning it costs ~6s each time."""
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(GUARD, "_capture", _heal_capture(calls, {"--get": 1}))
+
+    assert GUARD._enable_untracked_cache(tmp_path) is True
+    first = len(calls)
+    assert GUARD._enable_untracked_cache(tmp_path) is False
+    assert len(calls) == first, "the second attempt must not re-run the git calls"
+
+
+def test_the_heal_really_enables_the_untracked_cache_on_a_real_repository(tmp_path):
+    """End to end against real git: the mocks above cannot prove the rc contract.
+
+    Every other test in this block fakes `_capture`, so a wrong subcommand name or
+    a misread exit code would pass all of them. This one pays the real
+    `--test-untracked-cache` (~6s, dominated by its own mtime-granularity sleeps)
+    to pin that the three invocations are the ones git actually implements.
+    """
+    repo = _repo(tmp_path)
+    unset = GUARD._capture(repo, ("git", "config", "--get", "core.untrackedCache"), 30)
+    assert unset.returncode == 1, "git's 'this key is unset' rc is what the heal reads"
+
+    enabled = GUARD._enable_untracked_cache(repo)
+    if not enabled:
+        pytest.skip("this filesystem does not support git's untracked cache")
+    assert (
+        GUARD._run(repo, "git", "config", "--get", "core.untrackedCache", timeout=30)
+        == "true"
+    )
+    # The dirty check must still see everything it saw before the heal.
+    (repo / "fresh.txt").write_text("x", encoding="utf-8")
+    assert "fresh.txt" in GUARD._status_output(repo)
+
+
+def _orphaned_lock(repo: Path) -> Path:
+    """The zero-byte `index.lock` a SIGKILLed git leaves in the worktree gitdir."""
+    lock = Path(GUARD._run(repo, "git", "rev-parse", "--absolute-git-dir")) / "index.lock"
+    lock.write_bytes(b"")
+    return lock
+
+
+@pytest.mark.skipif(
+    shutil.which("lsof") is None, reason="the unheld half of the check needs lsof"
+)
+def test_the_sweep_removes_a_zero_byte_lock_this_guard_orphaned(tmp_path):
+    """The damage is measured in `git add`, not `git status`.
+
+    A stale lock leaves `status` working — it simply declines to write the
+    refreshed index — so the wedge is invisible until the session tries to
+    COMMIT, which is the very next thing the ship loop asks of it.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    (repo / "shipped.txt").write_text("work\n", encoding="utf-8")
+    with pytest.raises(subprocess.CalledProcessError):
+        _git(repo, "add", "shipped.txt")
+
+    assert GUARD._sweep_stale_index_lock(repo) == lock
+    assert not lock.exists()
+    _git(repo, "add", "shipped.txt")
+    assert "A  shipped.txt" in _git(repo, "status", "--porcelain")
+
+
+def test_the_sweep_keeps_a_lock_that_predates_this_process(monkeypatch, tmp_path):
+    """Only OUR killed git's lock is ours to remove.
+
+    Moving the guard's start AHEAD of the lock is how a pre-existing lock looks
+    from inside the sweep — the operator's, a sibling session's, or one from an
+    earlier crash nobody has diagnosed yet.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    monkeypatch.setattr(GUARD, "_GUARD_STARTED_AT", time.time() + 60)
+    assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_keeps_a_lock_a_live_process_still_holds(tmp_path):
+    """Zero-byte AND newer than the guard, so only `lsof` separates this one.
+
+    A git that has just created its lock and not yet written the new index looks
+    exactly like our wreckage on disk. Deleting it is silent index corruption in
+    a tree somebody is using.
+    """
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    with lock.open("w"):
+        assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_keeps_a_lock_git_has_written_an_index_into(tmp_path):
+    repo = _repo(tmp_path)
+    lock = _orphaned_lock(repo)
+    lock.write_bytes(b"DIRC")
+    assert GUARD._sweep_stale_index_lock(repo) is None
+    assert lock.exists()
+
+
+def test_the_sweep_never_reaches_past_a_worktree_into_the_clone(tmp_path):
+    """A linked worktree has its OWN index; the primary's lock is never ours.
+
+    `--git-common-dir` — the question `_git_common_dir` asks for delegation —
+    would point every session in the clone at the primary checkout's lock file.
+    """
+    repo = _repo(tmp_path)
+    linked = tmp_path / "linked"
+    _git(repo, "worktree", "add", "-b", "claude/linked", str(linked))
+
+    resolved = GUARD._worktree_index_lock(linked)
+    assert resolved is not None
+    assert resolved.resolve() == (
+        repo / ".git" / "worktrees" / "linked" / "index.lock"
+    ).resolve()
+    assert resolved.resolve() != (repo / ".git" / "index.lock").resolve()
+
+
+@pytest.mark.parametrize(
+    "returncode, stdout, stderr, held",
+    [
+        (1, "", "", False),  # the ONLY free answer: quiet on every channel
+        (0, "COMMAND  PID  USER  FD  TYPE\ngit  4242  chriswong  4w  REG\n", "", True),
+        (1, "", "lsof: status error on /x/index.lock: Permission denied\n", True),
+        (2, "", "", True),  # an exit code lsof does not document
+    ],
+)
+def test_only_a_silent_lsof_proves_a_lock_is_free(
+    monkeypatch, returncode, stdout, stderr, held
+):
+    """`lsof` exits 1 for "nobody has it" AND for its own errors.
+
+    Reading the exit code alone would let a malformed invocation — a `--` an old
+    build does not take, an unreadable path — certify a LIVE git's lock as free,
+    and the sweep would then delete the index out from under it.
+    """
+    monkeypatch.setattr(
+        GUARD.subprocess,
+        "run",
+        lambda *_a, **_k: subprocess.CompletedProcess((), returncode, stdout, stderr),
+    )
+    assert GUARD._lock_is_held(Path("/nonexistent/index.lock")) is held
+
+
+def test_an_lsof_that_cannot_run_at_all_reads_as_held(monkeypatch):
+    """Linux runners need not ship `lsof`; absence is not evidence of absence."""
+
+    def absent(*_a, **_k):
+        raise FileNotFoundError("lsof")
+
+    monkeypatch.setattr(GUARD.subprocess, "run", absent)
+    assert GUARD._lock_is_held(Path("/nonexistent/index.lock")) is True
+
+
+def test_the_gitdir_probe_is_paid_once_not_once_per_sweep(monkeypatch, tmp_path):
+    """The second sweep runs past a SECOND blown budget, with no room to spare.
+
+    Re-resolving the gitdir there is how the pathological path would overrun the
+    wall `test_the_whole_pathological_status_path_fits_the_hooks_own_wall` pins.
+    """
+    repo = _repo(tmp_path)
+    probes: list[tuple] = []
+    real_run = GUARD._run
+
+    def counting_run(root, *args, **kwargs):
+        if "rev-parse" in args:
+            probes.append(args)
+        return real_run(root, *args, **kwargs)
+
+    monkeypatch.setattr(GUARD, "_run", counting_run)
+    first = GUARD._worktree_index_lock(repo)
+    second = GUARD._worktree_index_lock(repo)
+    assert first == second is not None
+    assert len(probes) == 1, "the gitdir must be resolved once per root, not per sweep"
+
+
+def test_an_unresolvable_gitdir_is_remembered_as_unresolvable(monkeypatch, tmp_path):
+    """Caching the FAILURE matters as much as caching the answer.
+
+    A tree whose git cannot answer is the same tree on the second sweep, and the
+    retry path has no budget to ask again.
+    """
+    calls: list[int] = []
+
+    def refuse(_root, *_args, **_kwargs):
+        calls.append(1)
+        raise RuntimeError("git is unreadable")
+
+    monkeypatch.setattr(GUARD, "_run", refuse)
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert GUARD._worktree_index_lock(tmp_path) is None
+    assert len(calls) == 1
+    assert GUARD._sweep_stale_index_lock(tmp_path) is None

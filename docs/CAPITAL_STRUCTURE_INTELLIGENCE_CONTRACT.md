@@ -510,7 +510,12 @@ Events are immutable versions. Corrections create a new event ID and point backw
 do not edit the original row. Registration relationships live in a separate edge table so a
 later EFFECT or withdrawal cannot mutate an older registration. Each accession compiles
 only from its latest closed bundle version; documents that belonged only to an older bundle
-cannot leak into the replacement bundle.
+cannot leak into the replacement bundle. A revision persists the entire candidate bundle
+at the newly allocated accession-wide `document_version` and must not append only the
+changed members. A previously current member absent from the candidate because it was
+deselected or removed is itself a revision; the removed member is not copied into N+1.
+Every surviving child in that new bundle points at the new complete-submission
+`manifest_id`.
 
 The graph engine can use, in order:
 
@@ -645,14 +650,46 @@ methods exclude LLM-originated truth. These waves cannot:
 The front-end product and Mastermind/Neural Web projection consume a later issuer-context
 artifact. They do not read raw evidence or invent a second calculation path.
 
-## Wave 2A observed-filing-state projection
+## Wave 2A/2B observed-filing-state projection and retrieval capacity
 
-`scripts/build_capital_structure_projection.py` runs immediately after the offline event
-compiler. It verifies the compiler's telemetry-last artifact hashes and append-only source
+The bounded collector derives three operational classes after ordinary
+eligibility and parking: `LIVE_TAIL` is the latest five policy-current completed
+SEC index sessions, `RECOVERY` is a latest-open
+`storage_deferred`, `transient_error`, or `stored_parser_deferred` attempt inside
+the latest 20 completed sessions, and `HISTORICAL_BACKFILL` is the remaining
+eligible debt. W2A introduced 160/20/20 inside the then-unchanged 200 ceiling;
+its natural proof exposed admitted LIVE arrivals above effective capacity. W2B
+qualifies the existing carrier and makes the reservation map the one canonical
+capacity source: `LIVE_TAIL=500`, `RECOVERY=20`, and
+`HISTORICAL_BACKFILL=20`, with the global 540 ceiling derived from their sum.
+Unused slots retain W2A's deterministic spill in class order to the same
+recipient order excluding the donor. Existing lane rotation runs once inside
+each final class allocation. LIVE_TAIL remains newest-session first inside each
+lane, with current-run arrival as the same-session tie-break; recovery and
+historical work retain oldest-first debt service. Work class is scheduling
+metadata on retrieval observations and never enters source,
+evidence, event, or projection identity. The carrier qualification and its
+200-to-540 bounded runtime projection are frozen in
+`research/CAPITAL_STRUCTURE_W2B_CAPACITY_QUALIFICATION_2026-08-23.md`.
+
+`scripts/build_capital_structure_projection.py` runs after the offline event and
+document-term compilers and the generation-bound ingestion-health calculation. It
+verifies the compiler's telemetry-last artifact hashes and append-only source
 receipt before reading any event, edge, or review row. A corrupt, partial, or mismatched
 generation fails closed and cannot replace the last published projection. With an explicit
 `no_source_manifest` or degraded no-artifact receipt, the pure projection contract renders
 `unavailable`; it never renders an empty green state.
+
+Health is the sole calculator of the information horizon. It binds the latest
+policy-admitted discovery filing, eligible-clean retained complete submission, and
+accepted compiled event filing to the compiler generation, counts gaps only across
+persisted completed SEC index sessions, and reports `current`, `lagging`,
+`degraded_capacity`, `degraded_discovery`, or `unavailable` with stable reasons.
+Durable-ingestion `verdict=ok` does not imply `horizon=current`; the #5792
+zero-progress gate remains independently fatal. Public `coverage.freshness` is
+`fresh` only for a generation-bound current horizon. Compiler-clock age remains
+separate as `generation_freshness` / `generation_age_hours` and cannot authorize
+an information-freshness claim.
 
 The projection groups records by canonical SEC issuer ID / CIK rather than ticker, filters
 event versions on canonical Mastermind system availability, and admits relationship edges
@@ -723,7 +760,14 @@ For terms, `source_available_at` records durable source retention while canonica
 `available_at` is the time Mastermind produced that extraction/correction. This makes parser
 corrections point-in-time safe: a later parser upgrade cannot backdate a fact to the original
 SEC filing. The normal nightly compiler processes only new manifests or an older parser
-version; `--rebuild` is the deliberate correction path.
+version. An immutable row is reused only while its exact closed manifest/evidence identity,
+retained-content SHA-256, mirrored filing fields, observation contract, and registered parser
+version still match the canonical source ledger. New evidence, a corrected manifest, a parser
+version change, or any detached dependency forces retained-byte parsing and source validation.
+The nightly does not re-read or reparse unchanged historical roots merely to re-establish those
+already closed dependencies. `--rebuild` remains the deliberate whole-ledger retained-byte audit
+and correction path, and must produce the same semantic rows and byte-identical Parquet output
+as the incremental path over the same inputs when no correction is present.
 
 This lane does **not** create instruments, active or remaining capacity, aggregate offering
 amounts, fully diluted shares, cash runway, overhang, risk, probability, rank, entry, sizing,

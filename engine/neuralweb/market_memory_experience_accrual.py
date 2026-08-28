@@ -42,6 +42,7 @@ from engine.neuralweb import market_memory_trusted as trusted_store
 from lib import nyse_calendar
 
 REGISTRATION_SCHEMA = "market_memory.spy_experience_registration.v1"
+REGISTRATION_SCHEMA_V2 = "market_memory.spy_experience_registration.v2"
 OPPORTUNITY_SCHEMA = "market_memory.spy_experience_opportunity.v1"
 OUTCOME_SCHEMA = "market_memory.spy_experience_outcome_revision.v1"
 POPULATION_SCHEMA = "market_memory.spy_experience_population_receipt.v1"
@@ -718,6 +719,97 @@ def _expected_registration_spec() -> dict[str, Any]:
     }
 
 
+def _expected_registration_spec_v2() -> dict[str, Any]:
+    """Return the frozen v2 registration spec dict.
+
+    Distinct from _expected_registration_spec() which must remain byte-identical
+    for v1.  V2 reads from the sealed REST source (sources-spy-rest-v1),
+    projects technicals-v2, and uses a strict prospective activation policy.
+    """
+    return {
+        "activation_policy": (
+            "first_xnys_regular_open_strictly_after_registration_on_origin_main"
+            "_AND_verified_install"
+        ),
+        "authority": dict(market_memory.AUTHORITY),
+        "calendar": {
+            "calendar_id": (
+                "mmcalendar_a102c5367c17f9c0b4df3af5c2826824fc112935ec76e6d18d55833f53644e0c"
+            ),
+            "market_session": "XNYS_REGULAR",
+            "owner_path": "lib/nyse_calendar.py",
+            "owner_sha256": (
+                "7c9167fd416babb64c3067ae7e6237615011ad79e26d826e57005486496410ce"
+            ),
+        },
+        "cutoff": {
+            "admission_window_seconds": 900,
+            "following_calendar_days": 1,
+            "window_opens_utc_time": "04:30:00Z",
+        },
+        "evidence_policy": {
+            "activation_policy": (
+                "first_xnys_regular_open_strictly_after_registration_on_origin_main"
+                "_AND_verified_install"
+            ),
+            "promotion_eligible": False,
+            "prospective_only": True,
+            "training_eligible": False,
+        },
+        "profile": "market_memory.private.spy_experience_accrual.v2",
+        "source_seal": {
+            "opportunity_per_session": "exactly_one_opportunity_eligible_capture",
+            "seal_window_closes_utc_time": "04:05:00Z",
+            "seal_window_on_day": "D+1",
+            "seal_window_opens_utc_time": "04:00:00Z",
+            "source_family": "sources-spy-rest-v1",
+            "source_id": "massive_rest:SPY:unadjusted_daily",
+            "source_schema": "market_memory.source.spy_rest_unadjusted_daily.v1",
+            "stability_predicate": {
+                "absent_by_04_05_policy": "source_absent_no_capture",
+                "differing_digest_policy": "unstable_no_capture",
+                "digest_uniformity_required": True,
+                "min_span_seconds": 240,
+                "min_successful_observations": 3,
+                "require_observation_after_04_04_00z": True,
+                "require_observation_in_first_60s": True,
+                "rule": "rest_daily_bar_seal_stability.v1",
+                "transient_transport_failure_policy": (
+                    "does_not_invent_bar_coverage_minima_still_required"
+                ),
+            },
+        },
+        "state_inputs": {
+            "source_family": "sources-spy-rest-v1",
+            "technical_profile": (
+                "market_memory.private.spy_rth_price_fullday_activity_daily_aggregate.v2"
+            ),
+            "technical_session_field": "feature_object.session",
+            "trusted_v1_read_only": True,
+        },
+        "store_roots": {
+            "disjoint_from_v1": True,
+            "experience_leaf": "experience-v2",
+            "source_leaf": "sources-spy-rest-v1",
+            "technicals_leaf": "technicals-v2",
+        },
+        "subject": {
+            "currency": "USD",
+            "identity_version": (
+                "mmidentityv_65ec5e55473e953b55fa2d146f40e8b56dfae2e68a3df7423405db1034d16903"
+            ),
+            "instrument_id": (
+                "mmsecurity_6f361f5bad9f06a3b2ff157585d5728f55f77198420959aadd8922d1045c3fea"
+            ),
+            "mic": "ARCX",
+            "subject_id": (
+                "mmsecurity_5fc37e8db34f74314b654c910ea8bacfa7de8b5d2d067f2e5421c9d5745ceb4c"
+            ),
+            "symbol": "SPY",
+        },
+    }
+
+
 def validate_registration(
     value: Mapping[str, Any], *, body: bytes | None = None
 ) -> dict[str, Any]:
@@ -1045,7 +1137,12 @@ def _decision_state_projection(
 
 
 def validate_experience_store_root(root: str | Path) -> Path:
-    """Require the disjoint private ``state/experience-v1`` owner root."""
+    """Require the disjoint private ``state/experience-v1`` owner root.
+
+    B6: v1 only.  v2 accrual uses validate_experience_v2_store_root() in
+    scripts/accrue_market_memory_spy_experience_v2.py — that validator requires
+    the leaf to be experience-v2 and refuses experience-v1 paths.
+    """
 
     unresolved = Path(root).expanduser()
     absolute = Path(os.path.abspath(os.fspath(unresolved)))

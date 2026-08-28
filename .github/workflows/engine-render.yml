@@ -765,6 +765,15 @@ jobs:
               flush=True,
           )
           PY
+      - name: guard — stock dossier integrity (sentinel + identity)
+        # Same release standard as render.yml: the manifest checks above prove the
+        # builder RAN and wrote the shell, never that what it wrote is true. This
+        # lane rebuilds the same estate, so it needs the same semantic gate — a
+        # dossier may be incomplete, but it may never confidently name, describe,
+        # classify or numerically characterise the wrong company.
+        run: |
+          python3 scripts/check_stock_dossier_integrity.py site \
+            --manifest "$RUNNER_TEMP/ticker-pages-manifest.json"
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
         # WITHOUT node, so this guard failed on every render there 07-18; the historical

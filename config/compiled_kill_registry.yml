@@ -41,6 +41,13 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'BTC election/midterm calendar as an allocation, hold, sizing, suppression, or risk-off veto'
+    key: KILL-BTC-MIDTERM-BLACKOUT-AUTHORITY
+    verdict: 'RETIRED — operator overruled the extant 0%-BTC calendar gate on 2026-08-20 after the live 2026 tape contradicted its forced-cash stance. The historical rule and its forward ledger may remain for attribution, but election-cycle history is context-only and may never alter final BTC exposure. The measured BTC engine owns allocation; reactivation requires a new explicit operator ruling'
+    source: 'Chairman ruling 2026-08-20; `DEC:BTC-MIDTERM-BLACKOUT-AUTHORITY-RETIRED`; `DNR:KILL-ELECTION-CYCLE`; `DNR:KILL-LAUNDERED-OVERRIDE-GATES`'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Rotation × cycle-position entry-confluence'
     key: KILL-ROTATION-CYCLE-CONFLUENCE
     verdict: 'DON''T-TEST'

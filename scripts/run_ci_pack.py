@@ -36,11 +36,14 @@ import functools
 import hashlib
 import json
 import os
+import platform
 import re
+import shlex
 import signal
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import threading
 import time
@@ -68,23 +71,89 @@ from scripts.ci_authority_paths import (  # noqa: E402
     AuthorityPathError,
     is_ci_authority_path,
 )
+from scripts.ci_scope_dependencies import (  # noqa: E402
+    planner_path_exists,
+    planner_path_is_file,
+    planner_tracked_path_inventory,
+)
 
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {
+    "gate",
+    "if",
+    "paths",
+    "runs-on",
+    "scope",
+    "steps",
+    "timeout-minutes",
+}
+
+#: Every job must declare which tree moves its verdict. `code`: the verdict is
+#: a function of the pull request's tree only (pure logic, tmp_path fixtures,
+#: committed goldens, config/contracts). `data`: a nightly/wire data commit
+#: alone — no code change — can change the verdict (assertions over live
+#: `data/**`, rendered `site/**`, or any ledger the nightly advances). The
+#: merge gate packs only `gate: code` jobs once the data-health lane exists
+#: (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md);
+#: `gate: data` jobs still run and still red something a human reads — the
+#: field never deletes a receipt.
+GATE_VALUES = ("code", "data")
 ALLOWED_STEP_KEYS = {"name", "proof_id", "run", "uses", "with"}
 
 # Changing any item in this string changes the job execution contract digest.
 # It deliberately describes only the infrastructure shared by all legacy jobs;
 # pack index and matrix position are transport trivia and never enter it.
-RUNNER_CONTRACT = "ci-pack/ubuntu-latest/python-3.12/node-20/v1"
+#
+# v2 (2026-08-25, P0R diagnostic bridge, issue #6351): "ubuntu-latest" was
+# aspirational, not a runtime fact — it named the hosted image, not what a
+# self-hosted diagnostic runner actually is. "linux-x86_64" is a truthful
+# logical claim both hosted (ubuntu-latest is Linux/x86_64) and self-hosted
+# (Homebrew CPython on Linux/x86_64 PC canary hosts) execution can attest to
+# byte-identically, which is the whole point of reconciling their semantic
+# fragments. `attest_execution_profile` below enforces every clause of this
+# string at runtime before any legacy job executes; production ci.yml already
+# pins python-version "3.12.13" and node-version "20" (see ci.yml's ci-pack
+# setup-python comment), so this bump does not change what production already
+# runs — it only makes the contract string match reality and makes a runtime
+# that DISAGREES with it fail closed instead of silently minting evidence.
+RUNNER_CONTRACT = "ci-pack/linux-x86_64/python-3.12.13/node-20/v2"
+
+# Admitted ONLY for (role, event) == ("pr_head", "workflow_dispatch"), and ONLY
+# when `workflow` equals this exact name (issue #6351 P0R diagnostic bridge).
+# SUPPORTED_PLAN_ROLE_EVENTS stays CLOSED — this is a second, narrower, named
+# admission on top of it, not a widening of the set itself. The diagnostic
+# canary dispatches under workflow_dispatch (GitHub gives no `pull_request`
+# transport for a same-repository PR run triggered by hand) but still needs to
+# plan and replay an exact PR candidate's changed-file inventory the same way
+# `ci.yml`'s real `pr_head/pull_request` plan does, so every existing pr_head
+# invariant (exact changed inventory, changed_from == base_sha) still applies
+# unchanged. No other workflow name may use this pair; a merge-gating plan
+# (`workflow == "ci"`) is refused independently by
+# scripts/ci_semantic_proof.py's own narrower pair set and its own
+# `workflow == "ci"` assertion, which this constant does not touch.
+DIAGNOSTIC_CANARY_WORKFLOW = "infrastructure-selfhosted-ci-canary"
+TRUSTED_EXECUTOR_WORKFLOW = "trusted-ci-executor"
+DIAGNOSTIC_PR_WORKFLOWS = frozenset(
+    {DIAGNOSTIC_CANARY_WORKFLOW, TRUSTED_EXECUTOR_WORKFLOW}
+)
 
 # Failure output is streamed live.  These caps cover only the small structured
 # atom collector retained alongside the stream; raw logs never enter evidence.
 FAILURE_CAPTURE_MAX_BYTES = 131_072
 FAILURE_CAPTURE_MAX_ATOMS = 64
 FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
+
+# Retry exactly the transport corruption observed on the sealed PC runner in
+# #6505.  This is deliberately not a generic "network error" bucket: package
+# resolution, certificate validation, authentication, hash, and build failures
+# must remain terminal on their first attempt.  Matching is performed over the
+# live byte stream with only a marker-sized tail retained; raw dependency logs
+# never enter semantic evidence or memory.
+DEPENDENCY_TRANSPORT_RETRY_MARKERS = (
+    b"[SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC]",
+)
 
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
@@ -249,6 +318,28 @@ EXPRESSION_RE = re.compile(r"\$\{\{[^}]+\}\}")
 PIP_INSTALL_RE = re.compile(
     r"^\s*(?:(?:python|python3) -m )?pip install [^\n]+\s*$"
 )
+SHELL_CONTROL_CHARS = frozenset(";&|<>()`")
+
+
+def _is_standalone_pip_install(command: str) -> bool:
+    """Accept one pip invocation, never a compound or substituted shell body."""
+    if not PIP_INSTALL_RE.fullmatch(command):
+        return False
+    try:
+        lexer = shlex.shlex(
+            command,
+            posix=True,
+            punctuation_chars=";&|<>()`",
+        )
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return False
+    return not any(
+        token and all(char in SHELL_CONTROL_CHARS for char in token)
+        for token in tokens
+    )
 # Command-only timings from successful ci run 30173070380.  These few outliers
 # dominate wall time; checkout/setup/install were deliberately excluded because
 # packs share or group that work.  The fallback heuristic handles every other
@@ -269,6 +360,50 @@ PIP_INSTALL_RE = re.compile(
 # express carries an explicit allowance above its 112s share. These are
 # estimates from a measured shape, not a second hosted run — replace them from
 # a green post-split run's step timings when one exists.
+# Which (role, event) pairs may mint or consume a semantic plan.
+#
+# ``role`` carries the SUBSTANCE and is enforced separately below: ``pr_head``
+# requires an exact changed-file inventory and ``changed_from == base_sha``;
+# ``main`` requires one identical tree/head/base SHA and no ``changed_from``.
+# The event is the TRANSPORT, and it is allowlisted rather than ignored so a
+# combination nobody has reasoned about fails closed instead of silently
+# planning something unintended.
+#
+# The two ``main`` triggers below the dispatch were added 2026-08-19 because
+# leaving them out did not fail closed in the useful sense — it left the lane
+# that runs every ``gate: data`` job unable to run ANY of them. ``data-health.yml``
+# (W2 of research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_2026_08_19.md) took the
+# 74 data-gated jobs off the merge gate on the promise that this lane would still
+# grade them AFTER the nightly writes the tree they assert against. It fires on
+# ``workflow_run`` (daily completed) and on a 13:30 UTC ``schedule`` backstop,
+# and both resolve role ``main`` — so both raised ManifestError before a single
+# legacy job ran. Measured: run 32262001614 (schedule, 2026-08-19T14:06Z) died
+# with ``main/schedule is unsupported``, exit 2, in all SIX packs; the
+# ``workflow_run`` run 32246816331 only escaped the same fate because its packs
+# were skipped by the daily-success condition. The single execution that lane
+# achieved all day came from a manual ``workflow_dispatch``, and it graded the
+# universe against ``data/symbol_directory/snapshots/2026-08-10.parquet`` — nine
+# days stale, because the 2026-08-19 snapshot (6f3fd8b3ea1f) was not committed
+# until 12:16Z, after it. The schedule that exists to catch exactly that ordering
+# is the one that could not start.
+#
+# Both events describe the same shape ``main`` already means: a whole-tree run at
+# one checked-out SHA with no diff. Nothing about the substance is relaxed here —
+# the ``role == "main"`` invariants still reject a plan that is not that shape.
+# The set stays CLOSED; ``push`` is deliberately absent (no gating workflow uses
+# it, and ci.yml has no push trigger).
+#
+# ``ci_semantic_proof._identity`` keeps its OWN, narrower pair set on purpose —
+# do not "unify" it with this one. That gate also asserts ``workflow == "ci"``:
+# it judges merge-gate proofs, and a data-health plan is not one. Widening it
+# would let a non-gating lane's plan pose as authority for a merge.
+SUPPORTED_PLAN_ROLE_EVENTS = frozenset({
+    ("pr_head", "pull_request"),
+    ("main", "workflow_dispatch"),
+    ("main", "workflow_run"),
+    ("main", "schedule"),
+})
+
 PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
     "engine-render-guards": 860,
@@ -320,6 +455,10 @@ class LegacyJob:
     # `paths:` then REPLACE inference instead of being unioned under it, and
     # the declaration is coverage-audited fatally at load time.
     exclusive: bool = False
+    # Which tree moves this job's verdict: "code" (the PR's tree only) or
+    # "data" (a nightly/wire data commit alone can flip it). Mandatory in the
+    # manifest; see GATE_VALUES.
+    gate: str = "code"
 
     @property
     def is_scoped(self) -> bool:
@@ -371,6 +510,7 @@ class CommandObservation:
     returncode: int | None
     failure_signature: Mapping[str, Any] | None = None
     detail: str | None = None
+    retryable_dependency_transport: bool = False
 
 
 @dataclass(frozen=True)
@@ -681,6 +821,11 @@ def _is_peer_python_or_unpatterned_glob(pattern: str) -> bool:
     return True
 
 
+def _has_glob(segment: str) -> bool:
+    """Does this path fragment contain a glob metacharacter?"""
+    return any(char in segment for char in "*?")
+
+
 def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
     """Can an edit to something ``pattern`` covers start the gating workflow?
 
@@ -708,10 +853,27 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         # `app/*` is a single-level subset of `app/**`. Any edit it covers
         # also matches that ancestor trigger, so the run starts. Exclusive
         # declarations use this form on purpose (`*` does not cross `/`).
-        if pattern.endswith("/*"):
-            parent = pattern[: -len("/*")]
-            if f"{parent}/**" in triggers:
-                return True
+        #
+        # This covers `app/*.py` too, not just a bare `app/*`. SUFFIX_NARROWED_RE
+        # requires a `**/` before the suffix, so a SINGLE-LEVEL suffix glob
+        # matched neither it nor the bare-`/*` test below and fell through to
+        # False — even though `engine/*.py` is as strictly contained in
+        # `engine/**` as `app/*` is. Measured 2026-08-26: `defense-rail-laws`
+        # derived an `engine/*.py` scope and reported an unstartable gap against
+        # a trigger list that carries `engine/**`, `*` AND `**`. Because
+        # ci-pack is path-scoped, only a PR touching .github/ci/ ever ran the
+        # test that says so, so the gap sat green on every unrelated PR.
+        #
+        # Ancestors are walked for the same containment reason as the subtree
+        # branch below: `a/b/*.py` ⊂ `a/b/**` ⊂ `a/**`. A glob anywhere in the
+        # PARENT is not proven and still fails.
+        head, sep, last = pattern.rpartition("/")
+        if sep and _has_glob(last) and not _has_glob(head):
+            segments = head.split("/")
+            while segments:
+                if "/".join(segments) + "/**" in triggers:
+                    return True
+                segments.pop()
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.
@@ -744,7 +906,7 @@ def _scope_coverage_findings(job_id: str, definition: dict[str, Any],
     findings: list[str] = []
     for reference in sorted(set(SCOPE_REFERENCE_RE.findall(commands))):
         referenced = reference.split("::", 1)[0].rstrip(".,;:'\")")
-        if not Path(referenced).exists():
+        if not planner_path_exists(Path(referenced)):
             continue
         if _matches_any(GLOBAL_INVALIDATORS, referenced):
             continue
@@ -1054,7 +1216,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             for reference in SCOPE_REFERENCE_RE.findall(command):
                 rel = reference.split("::", 1)[0].rstrip(".,;:'\")")
                 path = Path(rel)
-                if not path.is_file():
+                if not planner_path_is_file(path):
                     continue
                 owned.add(rel)
                 named_any = True
@@ -1192,11 +1354,18 @@ def _job_weight(job_id: str, definition: dict[str, Any]) -> int:
     return max(1, len(commands) + text.count("tests/test_") * 2 + len(text) // 800)
 
 
-def load_legacy_jobs(path: Path) -> list[LegacyJob]:
+def load_legacy_jobs(path: Path, *, gate: str | None = None) -> list[LegacyJob]:
     """Load and fail-closed validate every job in the legacy manifest.
 
     PACK_JOB_ID is still ignored when present so small historical test fixtures
     remain valid; the production manifest intentionally contains no pack job.
+
+    ``gate`` (optional, one of ``GATE_VALUES``) filters the returned jobs to
+    that ``LegacyJob.gate`` value. Filtering happens here — the single load
+    choke point — so every caller (plan-only, plan-json execution, and the
+    unpinned fallback) sees an identically filtered manifest before any
+    partition/weight arithmetic runs. ``None`` (the default) returns every
+    job, unchanged from before this parameter existed.
     """
     jobs = _workflow_jobs(path)
 
@@ -1273,7 +1442,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
         ]
         if len(installs) > 1:
             findings.append(f"{prefix} has more than one dependency-install step")
-        elif installs and not PIP_INSTALL_RE.fullmatch(installs[0]):
+        elif installs and not _is_standalone_pip_install(installs[0]):
             findings.append(
                 f"{prefix} dependency install is not a standalone pip command"
             )
@@ -1305,6 +1474,19 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 "any pull request"
             )
 
+        # Absent defaults to "code": an undeclared job STAYS a merge
+        # precondition — nothing can leave the merge gate silently. An invalid
+        # value is fatal. The real manifest is additionally required to declare
+        # the field on every job (tests/test_ci_pack.py), so the default only
+        # serves synthetic fixtures.
+        raw_gate = raw_definition.get("gate", "code")
+        if raw_gate not in GATE_VALUES:
+            findings.append(
+                f"{prefix} gate must be one of {'/'.join(GATE_VALUES)} when "
+                f"present, got {raw_gate!r}"
+            )
+            raw_gate = "code"
+
         job = LegacyJob(
             job_id=str(job_id),
             definition=raw_definition,
@@ -1312,6 +1494,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
             weight=_job_weight(str(job_id), raw_definition),
             paths=scope,
             exclusive=exclusive,
+            gate=str(raw_gate),
         )
         try:
             semantic_step_specs(job)
@@ -1323,7 +1506,51 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
         raise ManifestError("\n".join(findings))
     if not legacy:
         raise ManifestError("workflow contains no legacy jobs")
+    if gate is not None:
+        legacy = [job for job in legacy if job.gate == gate]
     return legacy
+
+
+def inferred_as_if_not_exclusive(manifest_path: Path) -> dict[str, LegacyJob]:
+    """What inference WOULD derive for every job, exclusivity aside.
+
+    Canonical home for a computation that used to live only as a local helper in
+    ``tests/test_ci_pack.py``. Two callers now share this single copy: that test
+    (``test_curated_exclusive_scopes_cover_their_own_import_closure`` and its
+    siblings) and ``scripts/check_contract_delta.py``'s PR-vs-base contract-delta
+    gate. Neither may keep a private re-derivation — see
+    ``curated_exclusive_closure_findings`` below for why that matters.
+    """
+    jobs = [replace(job, exclusive=False) for job in load_legacy_jobs(manifest_path)]
+    inferred, _note = infer_job_scopes(jobs)
+    return {job.job_id: job for job in inferred}
+
+
+def curated_exclusive_closure_findings(manifest_path: Path) -> dict[str, tuple[str, ...]]:
+    """``{job_id: uncovered closure paths}`` for every ``scope: exclusive`` job.
+
+    This IS ``tests/test_ci_pack.py::
+    test_curated_exclusive_scopes_cover_their_own_import_closure``'s check, factored
+    out so that test and ``scripts/check_contract_delta.py`` import one copy instead
+    of drifting apart. ``scope: exclusive`` REPLACES inference, so the declared
+    ``paths:`` are the whole scope; a closure file matched by no declared pattern is
+    a job that silently stops running when its own dependency changes.
+
+    Raises ``ValueError`` if a curated job derives no closure at all (curation
+    cannot be checked) — the same hard-fail posture the test's own ``assert``
+    took before this factoring, preserved so behavior does not change.
+    """
+    would_infer = inferred_as_if_not_exclusive(manifest_path)
+    declared = {job.job_id: job for job in load_legacy_jobs(manifest_path) if job.exclusive}
+    misses: dict[str, tuple[str, ...]] = {}
+    for job_id, job in sorted(declared.items()):
+        closure = [p for p in would_infer[job_id].paths if "*" not in p]
+        if not closure:
+            raise ValueError(f"{job_id} derives no closure — curation cannot be checked")
+        uncovered = tuple(p for p in closure if not _matches_any(job.paths, p))
+        if uncovered:
+            misses[job_id] = uncovered
+    return misses
 
 
 def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[LegacyJob]]:
@@ -1664,10 +1891,16 @@ def build_plan(
     role = role or os.environ.get("CI_SEMANTIC_ROLE") or (
         "pr_head" if event == "pull_request" else "main"
     )
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    # `workflow` is resolved HERE, before the role/event validation below, so
+    # the narrow main-owned diagnostic admission can be evaluated in the same gate instead of
+    # a second, later, easy-to-miss check. Moving this resolution earlier does
+    # not change what any OTHER caller gets: it was unconditional before too.
+    workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
+        role == "pr_head"
+        and event == "workflow_dispatch"
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
+    ):
         raise ManifestError(
             f"semantic plan role/event combination {role}/{event} is unsupported"
         )
@@ -1690,7 +1923,6 @@ def build_plan(
     workflow_run_id = (
         workflow_run_id or os.environ.get("GITHUB_RUN_ID") or "local"
     )
-    workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
     try:
         authority_changed = bool(
             role == "pr_head"
@@ -1770,6 +2002,7 @@ def plan_from_workflow(
     scope_mode: str,
     pack_count: int = 12,
     changed_files_file: str | Path | None = None,
+    tracked_paths_file: str | Path | None = None,
     workflow_run_id: str | None = None,
     workflow_name: str | None = None,
     event: str | None = None,
@@ -1777,24 +2010,40 @@ def plan_from_workflow(
     tested_tree_sha: str | None = None,
     subject_head_sha: str | None = None,
     base_sha: str | None = None,
+    gate: str | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
-    legacy = load_legacy_jobs(workflow)
-    changed = resolve_changed_files(changed_from, explicit_file=changed_files_file)
-    return build_plan(
-        legacy,
-        changed,
-        changed_from=changed_from,
-        scope_mode=scope_mode,
-        pack_count=pack_count,
-        workflow_run_id=workflow_run_id,
-        workflow=workflow_name,
-        event=event,
-        role=role,
-        tested_tree_sha=tested_tree_sha,
-        subject_head_sha=subject_head_sha,
-        base_sha=base_sha,
+    if tracked_paths_file is not None and tested_tree_sha is None:
+        raise RuntimeError(
+            "--tracked-paths-file requires --tested-tree-sha so repository "
+            "existence cannot drift to a different checkout"
+        )
+    inventory = (
+        planner_tracked_path_inventory(
+            Path(tracked_paths_file), tested_tree_sha or ""
+        )
+        if tracked_paths_file is not None
+        else contextlib.nullcontext()
     )
+    with inventory:
+        legacy = load_legacy_jobs(workflow, gate=gate)
+        changed = resolve_changed_files(
+            changed_from, explicit_file=changed_files_file
+        )
+        return build_plan(
+            legacy,
+            changed,
+            changed_from=changed_from,
+            scope_mode=scope_mode,
+            pack_count=pack_count,
+            workflow_run_id=workflow_run_id,
+            workflow=workflow_name,
+            event=event,
+            role=role,
+            tested_tree_sha=tested_tree_sha,
+            subject_head_sha=subject_head_sha,
+            base_sha=base_sha,
+        )
 
 
 def _load_json_object(path: Path, *, max_bytes: int = 5_000_000) -> dict[str, Any]:
@@ -1834,12 +2083,18 @@ def load_authoritative_plan(
     expect_tested_tree_sha: str | None = None,
     expect_subject_head_sha: str | None = None,
     expect_base_sha: str | None = None,
+    gate: str | None = None,
 ) -> CIPackPlan:
     """Load the planner artifact without recomputing scope or partition.
 
     The manifest is still validated and its semantic contracts must byte-for-
     byte agree with the plan.  What is forbidden here is re-deciding selection:
     the planner's selected jobs and pack assignment are the sole authority.
+
+    ``gate`` must match what produced the published plan: it narrows the
+    manifest used for the consistency/semantic checks below to the same set
+    the planner selected from, exactly as ``plan_from_workflow`` does for the
+    unpinned path.
     """
     document = _load_json_object(path)
     if document.get("schema") != PLAN_SCHEMA:
@@ -1929,7 +2184,7 @@ def load_authoritative_plan(
     ):
         raise ManifestError("authoritative plan skipped_jobs is malformed")
 
-    all_jobs = load_legacy_jobs(workflow)
+    all_jobs = load_legacy_jobs(workflow, gate=gate)
     by_id = {job.job_id: job for job in all_jobs}
     manifest_ids = set(by_id)
     if set(eligible) | set(skipped) != manifest_ids:
@@ -1964,10 +2219,16 @@ def load_authoritative_plan(
     if role not in {"pr_head", "main"}:
         raise ManifestError("authoritative plan role must be pr_head or main")
     event = required_text("event")
-    if (role, event) not in {
-        ("pr_head", "pull_request"),
-        ("main", "workflow_dispatch"),
-    }:
+    # `workflow` is read HERE, before the role/event validation below, so the
+    # same narrow main-owned diagnostic admission build_plan() grants can be
+    # evaluated in this reader too, rather than only when the published
+    # `workflow` field is reached later (still needed for the hash payload).
+    workflow = required_text("workflow")
+    if (role, event) not in SUPPORTED_PLAN_ROLE_EVENTS and not (
+        role == "pr_head"
+        and event == "workflow_dispatch"
+        and workflow in DIAGNOSTIC_PR_WORKFLOWS
+    ):
         raise ManifestError(
             f"authoritative plan role/event combination {role}/{event} is unsupported"
         )
@@ -2005,7 +2266,7 @@ def load_authoritative_plan(
 
     payload = plan_hash_payload(
         workflow_run_id=required_text("workflow_run_id"),
-        workflow=required_text("workflow"),
+        workflow=workflow,
         event=event,
         role=role,
         tested_tree_sha=identities["tested_tree_sha"],
@@ -2068,7 +2329,7 @@ def load_authoritative_plan(
             index for index, job_ids in enumerate(pack_jobs) if job_ids
         ),
         workflow_run_id=required_text("workflow_run_id"),
-        workflow=required_text("workflow"),
+        workflow=workflow,
         event=event,
         role=role,
         tested_tree_sha=identities["tested_tree_sha"],
@@ -2328,6 +2589,15 @@ def dependency_command(job: LegacyJob) -> str | None:
     for step in job.definition["steps"]:
         command = str(step.get("run", ""))
         if "pip install" in command:
+            # Manifest validation normally closes this invariant before
+            # execution.  Keep it local as well: retrying an entire mixed shell
+            # body merely because it contains these words would replay unrelated
+            # and potentially non-idempotent work.
+            if not _is_standalone_pip_install(command):
+                raise ManifestError(
+                    f"job {job.job_id!r} dependency install is not a standalone "
+                    "pip command"
+                )
             return command
     return None
 
@@ -2862,11 +3132,29 @@ def _run_job(
     )
 
 
+class _DependencyTransportMarkerDetector:
+    """Recognize an exact retry marker without retaining the dependency log."""
+
+    def __init__(self, markers: Sequence[bytes]):
+        self._markers = tuple(marker for marker in markers if marker)
+        self._tail = b""
+        self.matched = False
+        self._tail_size = max((len(marker) for marker in self._markers), default=1) - 1
+
+    def feed(self, chunk: bytes) -> None:
+        if self.matched or not self._markers:
+            return
+        window = self._tail + bytes(chunk)
+        self.matched = any(marker in window for marker in self._markers)
+        self._tail = window[-self._tail_size :] if self._tail_size else b""
+
+
 def _stream_command(
     command: str,
     *,
     env: Mapping[str, str],
     timeout_seconds: int | float | None,
+    detect_retryable_dependency_transport: bool = False,
 ) -> CommandObservation:
     """Stream a child live while retaining only bounded structured atoms."""
     deadline = (
@@ -2878,6 +3166,11 @@ def _stream_command(
         max_bytes=FAILURE_CAPTURE_MAX_BYTES,
         max_atoms=FAILURE_CAPTURE_MAX_ATOMS,
         max_line_bytes=FAILURE_CAPTURE_MAX_LINE_BYTES,
+    )
+    dependency_transport = _DependencyTransportMarkerDetector(
+        DEPENDENCY_TRANSPORT_RETRY_MARKERS
+        if detect_retryable_dependency_transport
+        else ()
     )
     process = subprocess.Popen(
         ["bash", "-eo", "pipefail", "-c", command],
@@ -2898,6 +3191,7 @@ def _stream_command(
                 chunk = process.stdout.read(4_096)
                 if not chunk:
                     break
+                dependency_transport.feed(chunk)
                 # Normal Actions output remains live.  Decode only for display;
                 # the collector receives the original bounded byte line.
                 print(chunk.decode("utf-8", "replace"), end="", flush=True)
@@ -2983,6 +3277,7 @@ def _stream_command(
             returncode=process.returncode,
             failure_signature=signature,
             detail=f"exited {process.returncode}",
+            retryable_dependency_transport=dependency_transport.matched,
         )
     return CommandObservation(outcome="passed", returncode=0)
 
@@ -3035,23 +3330,52 @@ def _dependency_environment(
     if not runner_temp:
         raise RuntimeError("RUNNER_TEMP is required to isolate legacy dependencies")
     environment = Path(runner_temp).resolve() / "ci-pack-job-env"
-    if environment.exists():
-        shutil.rmtree(environment)
-    subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
-    command_env["PATH"] = (
-        str(environment / "bin") + os.pathsep + command_env.get("PATH", "")
-    )
-    print(f"::group::dependency environment — {install_command}", flush=True)
-    result = subprocess.run(
-        ["bash", "-eo", "pipefail", "-c", install_command],
-        env=command_env,
-    )
-    print("::endgroup::", flush=True)
-    if result.returncode:
-        raise RuntimeError(
-            f"dependency install exited {result.returncode}: {install_command}"
+    inherited_path = command_env.get("PATH", "")
+    retry_used = False
+    for attempt in (1, 2):
+        # A retry never inherits a partly-installed environment.  Recreate the
+        # same bounded path so adjacent jobs still share only a fully successful
+        # dependency set, exactly as the single-attempt contract did.
+        if environment.exists():
+            shutil.rmtree(environment)
+        subprocess.run([sys.executable, "-m", "venv", str(environment)], check=True)
+        command_env["PATH"] = (
+            str(environment / "bin") + os.pathsep + inherited_path
         )
-    return command_env
+        print(
+            f"::group::dependency environment attempt {attempt} — {install_command}",
+            flush=True,
+        )
+        try:
+            result = _stream_command(
+                install_command,
+                env=command_env,
+                timeout_seconds=None,
+                detect_retryable_dependency_transport=True,
+            )
+        finally:
+            print("::endgroup::", flush=True)
+        if result.outcome == "passed":
+            return command_env
+        if attempt == 1 and result.retryable_dependency_transport:
+            retry_used = True
+            print(
+                "::warning title=ci dependency transport retry::"
+                "classified transient TLS record on attempt 1; recreating the "
+                "isolated environment once",
+                flush=True,
+            )
+            continue
+        returncode = result.returncode if result.returncode is not None else result.outcome
+        retry_detail = (
+            " after one classified TLS retry"
+            if attempt == 2 and retry_used
+            else ""
+        )
+        raise RuntimeError(
+            f"dependency install exited {returncode}{retry_detail}: {install_command}"
+        )
+    raise AssertionError("dependency retry loop exhausted without a verdict")
 
 
 def _blocked_job_execution(
@@ -3097,6 +3421,186 @@ def _coerce_job_execution(
 def _write_semantic_fragment(path: Path, fragment: Mapping[str, Any]) -> None:
     """Atomically write the bounded raw fragment consumed by ci-gate."""
     _atomic_write_json(path, fragment)
+
+
+def _timing_observation(
+    logical_job_id: str,
+    phase: str,
+    started_monotonic_ns: int,
+    ended_monotonic_ns: int,
+) -> dict[str, Any]:
+    """Return one process-local observation with no semantic authority."""
+    ended = max(started_monotonic_ns, ended_monotonic_ns)
+    return {
+        "logical_job_id": logical_job_id,
+        "phase": phase,
+        "status": "observed",
+        "started_monotonic_ns": started_monotonic_ns,
+        "ended_monotonic_ns": ended,
+        "duration_ns": ended - started_monotonic_ns,
+    }
+
+
+def _write_timing_observations(
+    path: Path,
+    observations: Sequence[Mapping[str, Any]],
+) -> None:
+    """Publish optional JSONL telemetry without changing the pack verdict."""
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = "".join(
+            json.dumps(observation, sort_keys=True, separators=(",", ":")) + "\n"
+            for observation in observations
+        )
+        temporary.write_text(payload, encoding="utf-8")
+        os.replace(temporary, path)
+    except OSError as exc:
+        print(
+            "::warning title=ci timing telemetry degraded::"
+            f"could not publish logical-job observations ({_bounded_detail(exc)})",
+            flush=True,
+        )
+    finally:
+        with contextlib.suppress(OSError):
+            temporary.unlink()
+
+
+class ExecutionProfileError(RuntimeError):
+    """The runtime executing ``--execute`` disagrees with RUNNER_CONTRACT.
+
+    RUNNER_CONTRACT's ``linux-x86_64/python-3.12.13/node-20`` clause is baked
+    into every job's semantic digest (`semantic_job_digest`), and hosted and
+    self-hosted execution are reconciled bytewise against that digest. A
+    runner whose actual OS/arch/interpreter silently disagrees with the
+    string would let two genuinely different environments compare as one
+    attested contract, so this is a distinct, fail-closed error raised
+    before any legacy job executes — never folded into a generic
+    infrastructure outcome a reader might mistake for a transient flake.
+    """
+
+
+def _selected_python_loader_environment() -> dict[str, str]:
+    """Derive the Linux loader path from the attested interpreter itself.
+
+    ``actions/setup-python`` selects a versioned shared-library build.  Re-execing
+    that interpreter with a deliberately small environment must retain only its
+    own library directory.  The action can expose that directory through a
+    runner-local alias while ``sysconfig`` reports its canonical tool-cache path,
+    so preserve an ambient alias only after proving it resolves to the declared
+    directory inside ``sys.base_prefix`` and contains a declared Python SONAME.
+    """
+    if platform.system() != "Linux":
+        return {}
+    raw_library_dir = sysconfig.get_config_var("LIBDIR")
+    raw_library_names = [
+        sysconfig.get_config_var("LDLIBRARY"),
+        sysconfig.get_config_var("INSTSONAME"),
+    ]
+    library_names = [
+        name for name in raw_library_names if isinstance(name, str) and name
+    ]
+    if not isinstance(raw_library_dir, str) or not raw_library_dir:
+        raise ExecutionProfileError("selected Python does not declare LIBDIR")
+    if not library_names:
+        raise ExecutionProfileError(
+            "selected Python does not declare LDLIBRARY or INSTSONAME"
+        )
+    try:
+        prefix = Path(sys.base_prefix).resolve(strict=True)
+        declared_library_dir = Path(raw_library_dir).resolve(strict=True)
+        declared_library_dir.relative_to(prefix)
+    except (OSError, ValueError) as exc:
+        raise ExecutionProfileError(
+            "selected Python library directory is outside selected interpreter prefix"
+        ) from exc
+
+    candidates: list[Path] = []
+    for entry in os.environ.get("LD_LIBRARY_PATH", "").split(os.pathsep):
+        if not entry:
+            continue
+        candidate = Path(entry)
+        try:
+            if candidate.resolve(strict=True) == declared_library_dir:
+                candidates.append(candidate)
+        except OSError:
+            continue
+    candidates.append(Path(raw_library_dir))
+    for candidate in candidates:
+        if any((candidate / name).is_file() for name in library_names):
+            return {"LD_LIBRARY_PATH": str(candidate)}
+    raise ExecutionProfileError(
+        "selected Python shared library is absent: "
+        f"{declared_library_dir} ({', '.join(library_names)})"
+    )
+
+
+def _node_major_version() -> int | None:
+    """Return node's major version, or None if node is missing/unparseable."""
+    try:
+        result = subprocess.run(
+            ["node", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    match = re.fullmatch(r"v(\d+)\.\d+\.\d+\s*", result.stdout)
+    return int(match.group(1)) if match else None
+
+
+def attest_execution_profile(plan: "CIPackPlan | None") -> None:
+    """Fail closed before any legacy job runs unless this runtime matches
+    the portable Linux execution profile v2 RUNNER_CONTRACT declares.
+
+    Invoked on the ``--execute`` path whenever a run consumes an
+    authoritative plan (``--plan-json``) or mints a semantic fragment
+    (``--emit-semantic-fragment``) — the two cases that publish evidence a
+    reconciler or comparator will trust. Checks, in order: OS family Linux;
+    machine x86_64; interpreter patch exactly 3.12.13; node major exactly
+    20; and, when a plan is present, that the checkout HEAD equals the
+    plan's ``tested_tree_sha`` (already independently enforced earlier in
+    `execute_pack` via ``--expect-tested-tree-sha``; repeated here so the
+    attestation itself is a complete, self-contained claim).
+
+    There is deliberately no env/CLI bypass. A unit test monkeypatches this
+    function itself to exercise the surrounding plumbing, or monkeypatches
+    its module-level primitives (``platform``, `_node_major_version`,
+    `_current_commit_sha`) to exercise the real refusal logic.
+    """
+    system = platform.system()
+    if system != "Linux":
+        raise ExecutionProfileError(
+            f"execution profile requires Linux, runtime reports {system!r}"
+        )
+    machine = platform.machine()
+    if machine != "x86_64":
+        raise ExecutionProfileError(
+            f"execution profile requires x86_64, runtime reports {machine!r}"
+        )
+    python_version = platform.python_version()
+    if python_version != "3.12.13":
+        raise ExecutionProfileError(
+            "execution profile requires Python 3.12.13, runtime reports "
+            f"{python_version!r}"
+        )
+    node_major = _node_major_version()
+    if node_major != 20:
+        raise ExecutionProfileError(
+            f"execution profile requires node 20.x, runtime reports major "
+            f"{node_major!r}"
+        )
+    if plan is not None:
+        observed = _current_commit_sha(_workspace_root())
+        if observed != plan.tested_tree_sha:
+            raise ExecutionProfileError(
+                f"checkout HEAD {observed} does not match attested tested "
+                f"tree {plan.tested_tree_sha}"
+            )
 
 
 def _remaining_seconds(deadline: float) -> float:
@@ -3575,6 +4079,10 @@ def _run_exact_base_replays(
                     for key, value in os.environ.items()
                     if key in safe_parent_names or key.startswith("LC_")
                 }
+                # Re-exec the selected setup-python interpreter without copying
+                # candidate-controlled loader state.  The directory is derived
+                # and containment-checked against sys.base_prefix above.
+                child_env.update(_selected_python_loader_environment())
                 child_home = child_temp / "home"
                 child_home.mkdir(exist_ok=True)
                 child_env.update(
@@ -3705,9 +4213,11 @@ def execute_pack(
     plan: CIPackPlan | None = None,
     pack_index: int = 0,
     emit_semantic_fragment: Path | None = None,
+    emit_timing_observations: Path | None = None,
     enable_base_replay: bool = True,
     base_replay_budget_seconds: int = DEFAULT_BASE_REPLAY_BUDGET_SECONDS,
     changed_files_file: str | Path | None = None,
+    require_attestation: bool = False,
 ) -> int:
     """Execute a pack, account completely, and emit raw bounded evidence."""
     root = _workspace_root()
@@ -3716,6 +4226,7 @@ def execute_pack(
     failures: list[str] = []
     records: list[dict[str, Any]] = []
     pack_infrastructure: list[dict[str, str]] = []
+    timing_observations: list[dict[str, Any]] = []
     current_dependency: object = object()
     dependency_error: str | None = None
     bound_tree_sha = plan.tested_tree_sha if plan is not None else os.environ.get(
@@ -3779,6 +4290,90 @@ def execute_pack(
             )
             print("CI_PACK_FAILED_JOBS=" + json.dumps(failed_ids), flush=True)
             return 1
+    if require_attestation:
+        try:
+            attest_execution_profile(plan)
+        except Exception as exc:  # noqa: BLE001 — emit an explicit blocked pack
+            detail = _bounded_detail(exc)
+            records = [
+                _blocked_job_execution(
+                    job,
+                    infrastructure_outcome="attestation_failed",
+                    detail=detail,
+                ).fragment_dict()
+                for job in jobs
+            ]
+            failures = [
+                f"{job.job_id}: infrastructure attestation_failed ({detail})"
+                for job in jobs
+            ] or [f"ci-pack: attestation_failed ({detail})"]
+            # A distinct annotation FIRST — the whole point of a distinct
+            # fail-closed error is that a reader searching the log for
+            # "attestation" finds it, not just the generic per-job title.
+            print(f"::error title=ci-attestation::{_one_line(detail)}", flush=True)
+            for failure in failures:
+                job_id = failure.split(":", 1)[0]
+                print(f"::error title=legacy-job-{job_id}::{failure}", flush=True)
+            if emit_semantic_fragment is not None:
+                _write_semantic_fragment(
+                    emit_semantic_fragment,
+                    {
+                        "schema": FRAGMENT_SCHEMA,
+                        "workflow_run_id": (
+                            plan.workflow_run_id
+                            if plan is not None
+                            else os.environ.get("GITHUB_RUN_ID", "local")
+                        ),
+                        "workflow": (
+                            plan.workflow
+                            if plan is not None
+                            else os.environ.get("GITHUB_WORKFLOW", "ci")
+                        ),
+                        "event": (
+                            plan.event
+                            if plan is not None
+                            else os.environ.get("GITHUB_EVENT_NAME", "local")
+                        ),
+                        "role": (
+                            plan.role
+                            if plan is not None
+                            else os.environ.get("CI_SEMANTIC_ROLE", "main")
+                        ),
+                        "tested_tree_sha": (
+                            plan.tested_tree_sha
+                            if plan is not None
+                            else (
+                                os.environ.get("CI_TESTED_TREE_SHA")
+                                or os.environ.get(
+                                    "GITHUB_SHA", "unbound-tested-tree"
+                                )
+                            )
+                        ),
+                        "subject_head_sha": (
+                            plan.subject_head_sha
+                            if plan is not None
+                            else os.environ.get("CI_SUBJECT_HEAD_SHA", "")
+                        ),
+                        "base_sha": (
+                            plan.base_sha
+                            if plan is not None
+                            else os.environ.get("CI_BASE_SHA", "")
+                        ),
+                        "plan_sha256": (
+                            plan.plan_sha256 if plan is not None else "replay-only"
+                        ),
+                        "pack_index": pack_index,
+                        "infrastructure": [
+                            {"outcome": "attestation_failed", "detail": detail}
+                        ],
+                        "jobs": records,
+                    },
+                )
+            failed_ids = sorted(
+                failure.split(":", 1)[0] for failure in failures
+            )
+            print("CI_PACK_FAILED_JOBS=" + json.dumps(failed_ids), flush=True)
+            return 1
     try:
         # Adjacent jobs with an identical declared dependency set share that
         # exact environment.  A different set recreates the venv from scratch,
@@ -3792,6 +4387,11 @@ def execute_pack(
             if dependency != current_dependency:
                 current_dependency = dependency
                 dependency_error = None
+                dependency_started = (
+                    time.monotonic_ns()
+                    if emit_timing_observations is not None
+                    else None
+                )
                 try:
                     command_env = _dependency_environment(
                         dependency,
@@ -3799,6 +4399,16 @@ def execute_pack(
                     )
                 except Exception as exc:  # noqa: BLE001 — evidence must survive
                     dependency_error = _bounded_detail(exc)
+                finally:
+                    if dependency_started is not None:
+                        timing_observations.append(
+                            _timing_observation(
+                                job.job_id,
+                                "dependency_install",
+                                dependency_started,
+                                time.monotonic_ns(),
+                            )
+                        )
             if dependency_error is not None:
                 execution = _blocked_job_execution(
                     job,
@@ -3806,6 +4416,11 @@ def execute_pack(
                     detail=dependency_error,
                 )
             else:
+                test_started = (
+                    time.monotonic_ns()
+                    if emit_timing_observations is not None
+                    else None
+                )
                 try:
                     execution = _coerce_job_execution(
                         job,
@@ -3830,6 +4445,16 @@ def execute_pack(
                         ),
                         detail=exc,
                     )
+                finally:
+                    if test_started is not None:
+                        timing_observations.append(
+                            _timing_observation(
+                                job.job_id,
+                                "test",
+                                test_started,
+                                time.monotonic_ns(),
+                            )
+                        )
             failure = execution.failure
             records.append(execution.fragment_dict())
             if failure:
@@ -3921,6 +4546,12 @@ def execute_pack(
         }
         _write_semantic_fragment(emit_semantic_fragment, fragment)
 
+    if emit_timing_observations is not None:
+        _write_timing_observations(
+            emit_timing_observations,
+            timing_observations,
+        )
+
     failed_ids = sorted(
         {failure.split(":", 1)[0] for failure in failures if ":" in failure}
     )
@@ -3938,6 +4569,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--workflow", type=Path, required=True)
     parser.add_argument("--pack-index", type=int, default=0)
     parser.add_argument("--pack-count", type=int, default=2)
+    parser.add_argument(
+        "--gate",
+        choices=GATE_VALUES,
+        default=None,
+        help=(
+            "filter the manifest to jobs declaring this gate value before "
+            "selection/partition; absent runs the whole manifest as before "
+            "this flag existed (research/CI_MERGE_GATE_RELIABILITY_ROOT_CAUSE_"
+            "2026_08_19.md W2)"
+        ),
+    )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument(
@@ -3997,6 +4639,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--tracked-paths-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "planner-only handle containing the exact tested tree's tracked paths; "
+            "preserves repository-existence semantics in a sparse ci-plan checkout"
+        ),
+    )
+    parser.add_argument(
         "--expect-plan-sha",
         default=None,
         help="refuse to execute unless the authoritative plan has this sha256",
@@ -4016,6 +4667,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=None,
         help="write the bounded raw ci.semantic_fragment.v1 pack artifact",
+    )
+    parser.add_argument(
+        "--emit-timing-observations",
+        type=Path,
+        default=None,
+        help=(
+            "write optional process-local logical-job timing JSONL; this file "
+            "is telemetry only and is never read by semantic proof"
+        ),
     )
     parser.add_argument(
         "--base-replay-budget-seconds",
@@ -4056,6 +4716,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--execute and --plan-only are mutually exclusive")
     if args.plan_json is not None and args.plan_only:
         parser.error("--plan-json consumes a plan and cannot pair with --plan-only")
+    if args.tracked_paths_file is not None and not args.plan_only:
+        parser.error("--tracked-paths-file is planner-only and requires --plan-only")
+    if args.tracked_paths_file is not None and not args.tested_tree_sha:
+        parser.error("--tracked-paths-file requires --tested-tree-sha")
     if args.semantic_replay_job and not args.execute:
         parser.error("--semantic-replay-job requires --execute")
     if args.semantic_replay_job and args.emit_semantic_fragment is None:
@@ -4111,7 +4775,13 @@ def main(argv: list[str] | None = None) -> int:
                 [target],
                 pack_index=0,
                 emit_semantic_fragment=args.emit_semantic_fragment,
+                emit_timing_observations=args.emit_timing_observations,
                 enable_base_replay=False,
+                # parse_args already requires --emit-semantic-fragment here,
+                # so this replay always mints evidence and always attests —
+                # cheaply, since it runs on the same already-attested runner
+                # as the pack invocation that spawned it.
+                require_attestation=True,
             )
 
         changed_handle = args.changed_files_file or os.environ.get(
@@ -4126,6 +4796,7 @@ def main(argv: list[str] | None = None) -> int:
                 expect_tested_tree_sha=args.expect_tested_tree_sha,
                 expect_subject_head_sha=args.expect_subject_head_sha,
                 expect_base_sha=args.expect_base_sha,
+                gate=args.gate,
             )
         else:
             plan = plan_from_workflow(
@@ -4134,6 +4805,7 @@ def main(argv: list[str] | None = None) -> int:
                 scope_mode=args.scope_mode,
                 pack_count=args.pack_count,
                 changed_files_file=args.changed_files_file,
+                tracked_paths_file=args.tracked_paths_file,
                 workflow_run_id=args.workflow_run_id,
                 workflow_name=args.workflow_name,
                 event=args.event,
@@ -4141,6 +4813,7 @@ def main(argv: list[str] | None = None) -> int:
                 tested_tree_sha=args.tested_tree_sha,
                 subject_head_sha=args.subject_head_sha,
                 base_sha=args.base_sha,
+                gate=args.gate,
             )
         shadow = args.scope_mode == "shadow" and args.changed_from
         if shadow:
@@ -4233,11 +4906,21 @@ def main(argv: list[str] | None = None) -> int:
             plan=plan,
             pack_index=args.pack_index,
             emit_semantic_fragment=args.emit_semantic_fragment,
+            emit_timing_observations=args.emit_timing_observations,
             enable_base_replay=(
                 args.plan_json is not None and not args.disable_base_replay
             ),
             base_replay_budget_seconds=args.base_replay_budget_seconds,
             changed_files_file=changed_handle,
+            # Attest only when this run consumes an authoritative plan
+            # (--plan-json) or mints a semantic fragment
+            # (--emit-semantic-fragment) — the two cases that publish
+            # evidence downstream. A bare local `--execute` (neither flag)
+            # stays unattested: it mints no semantic evidence, so there is
+            # nothing for a wrong runtime to falsely certify.
+            require_attestation=(
+                args.plan_json is not None or args.emit_semantic_fragment is not None
+            ),
         )
     except Exception as exc:  # noqa: BLE001 — see _emit_planner_fallback
         # LAW: uncertainty WIDENS. On the ci-plan path an unplannable manifest

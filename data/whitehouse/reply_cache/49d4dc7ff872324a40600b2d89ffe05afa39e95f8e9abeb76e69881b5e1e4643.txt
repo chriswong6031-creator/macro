@@ -1,0 +1,91 @@
+{
+  "activate": true,
+  "importance": 78,
+  "banner_days": 3,
+  "tone": "mixed",
+  "banner_title": "Auto reshoring wave accelerates — Detroit & Southern plants win, Mexican/Chinese supply chains lose",
+  "banner_title_zh": "汽车制造业回流加速——底特律及南方工厂受益，墨西哥/中国供应链受损",
+  "summary": "The White House touts a sweeping reshoring wave across the auto sector, with Ford, GM, Stellantis, Toyota, Honda, Mercedes, Hyundai and others shifting production from Mexico and China to U.S. plants in response to tariff policy. The announcement signals durable tariff-driven capital spending that favors U.S. auto manufacturing, industrial real estate, and domestic suppliers while squeezing cross-border supply chains.",
+  "summary_zh": "白宫宣传汽车行业大规模回流潮，福特、通用、Stellantis、丰田、本田、奔驰、现代等车企因关税政策将生产从墨西哥和中国迁回美国工厂。这一信号表明关税驱动的资本开支具有持久性，利好美国汽车制造、工业地产和本土供应商，同时挤压跨境供应链。",
+  "analysis": "The announcement confirms that the tariff regime is no longer just a trade-policy headline — it has become a capital-allocation forcing function. Ford's decision to reshore Lincoln production from China and GM's $4 billion shift of Blazer, Equinox and Envision output from Mexico and China to Tennessee and Kansas are concrete, large-scale commitments. When combined with Stellantis's 50% domestic capacity expansion and Toyota's $3.6 billion Tacoma reshoring to San Antonio, the aggregate investment signals a structural, multi-year reconfiguration of North American auto supply chains rather than a one-off announcement.\n\nThe market transmission runs through several channels. First, capex: billions in new plant investment flow to U.S. construction, industrial equipment, and factory automation. Second, labor: thousands of new U.S. manufacturing jobs support regional economies in the Midwest and Southeast. Third, supply chains: U.S.-based auto parts suppliers and logistics providers gain volume, while Mexican and Chinese component exporters lose share. Fourth, pricing: tariffs and reshoring raise production costs, which likely feeds through to higher vehicle prices — a modest inflationary impulse consistent with the Reflation regime.\n\nThe key uncertainty is timing and execution. These are multi-year commitments. Plant retooling, supplier qualification, and workforce training take 18-36 months. Meanwhile, legacy Mexican and Chinese capacity is not disappearing overnight, and the transition period could create supply gaps or cost overruns. The announcement is a White House press release compiling previously reported investments — its market significance lies in confirming the breadth and durability of the reshoring trend rather than introducing new policy.",
+  "sectors": [
+    {
+      "name": "U.S. Auto Manufacturing",
+      "impact": "tailwind",
+      "rationale": "Billions in domestic plant investment and new models locked into U.S. production."
+    },
+    {
+      "name": "Industrial Real Estate & Construction",
+      "impact": "tailwind",
+      "rationale": "Plant expansions and new facilities across Tennessee, Texas, Kansas, Georgia, Alabama, Ohio, Illinois, Indiana."
+    },
+    {
+      "name": "Auto Parts Suppliers (U.S.-based)",
+      "impact": "tailwind",
+      "rationale": "Reshored assembly drives demand for domestically sourced components to qualify for tariff avoidance."
+    },
+    {
+      "name": "Mexican Auto Supply Chain",
+      "impact": "headwind",
+      "rationale": "Tacoma, Blazer, Equinox, and Civic production leaving Mexico removes volume from maquiladora ecosystem."
+    },
+    {
+      "name": "Chinese Auto Supply Chain",
+      "impact": "headwind",
+      "rationale": "Ford Lincoln and GM Buick Envision production phasing out of China severs U.S.-bound export volumes."
+    },
+    {
+      "name": "Freight & Logistics (cross-border)",
+      "impact": "headwind",
+      "rationale": "Reduced Mexico-U.S. and China-U.S. finished vehicle and component flows cut into cross-border freight demand."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "F",
+      "direction": "benefit",
+      "rationale": "Reshoring Lincoln from China reduces tariff exposure and strengthens the domestic manufacturing footprint."
+    },
+    {
+      "symbol": "GM",
+      "direction": "benefit",
+      "rationale": "$4B investment moves high-volume Blazer and Equinox production to U.S. plants, shielding key models from tariffs."
+    },
+    {
+      "symbol": "STLA",
+      "direction": "benefit",
+      "rationale": "Largest investment in its 100-year U.S. history to expand domestic capacity by 50% across four states."
+    },
+    {
+      "symbol": "TM",
+      "direction": "benefit",
+      "rationale": "$3.6B Tacoma reshoring to San Antonio doubles plant size and anchors U.S. truck production."
+    },
+    {
+      "symbol": "HMC",
+      "direction": "benefit",
+      "rationale": "Next-gen Civic production locked into Indiana at approximately 210,000 units annually."
+    },
+    {
+      "symbol": "MBGYY",
+      "direction": "benefit",
+      "rationale": "$4B Alabama SUV expansion driven by tariff policy strengthens U.S. luxury production base."
+    },
+    {
+      "symbol": "LII",
+      "direction": "benefit",
+      "rationale": "Plant expansions across the South and Midwest drive demand for HVAC systems in industrial facilities."
+    },
+    {
+      "symbol": "EMR",
+      "direction": "benefit",
+      "rationale": "Factory automation and industrial equipment supplier positioned for multi-year domestic capex cycle."
+    },
+    {
+      "symbol": "KSU",
+      "direction": "hurt",
+      "rationale": "Reduced Mexico-U.S. automotive freight flows pressure cross-border rail volumes."
+    }
+  ],
+  "confidence": "medium"
+}

@@ -1,0 +1,85 @@
+# C8 critic receipt — first-ever independent product_regression review of the R4
+# U.S. Prophet Board reference COMPOSITION (condition C8 of the Lab RIG cycle:
+# research/reference_integrity/prophet-board-lab-r5/verdict.yml). The author did not
+# write this file; committed verbatim by the adjudicating session from the critic's
+# amended two-pass packet. Full narrative findings live in the session record; every
+# finding here carries its own file:line/payload receipts.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-r4-composition
+role: product_regression
+verdict: SOUND-WITH-BLOCKERS
+artifact:
+  path: mockups/refs/institutionalize/us_stocks
+  ref: origin/main
+  tree_sha: d540f493a097cb37f3f91e4c7bc81a39b876d069
+  resolved_by: "git rev-parse origin/main:mockups/refs/institutionalize/us_stocks"
+reviewer_identity:
+  seat: fresh
+  prior_contact_with_artifact: none
+  prior_cycles_participated: none
+  authored_any_part_of_artifact: false
+standards_applied:
+  - docs/DESIGN_DOCTRINE.md
+  - research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+  - research/migration_packets/MP-1-prophet-board.md
+  - research/reference_integrity/prophet-board-5514-r4/R4_CLOSURE_LEDGER.md
+quarantine_audit:
+  first_pass_held: true
+  lifted_by: coordinator authorization after first pass frozen
+  sources_read_only_after_lift:
+    - mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md
+  sources_still_unread:
+    - research/reference_integrity/prophet-board-5514-r4/AUTHORITY_INDEPENDENT_VERIFICATION.md
+    - research/reference_integrity/prophet-board-5514-r4/r3_source/
+    - pull-request prose
+rationale_received_after_first_pass: true
+second_pass:
+  amended_at: 2026-08-19
+  verdict: SOUND-WITH-BLOCKERS
+  verdict_changed: false
+  character_changed: true
+  character_note: >-
+    Blocking set shifts from "composition defects" to "stale gate state and
+    packet omissions". The artifact is upheld as sound at its own vintage;
+    what blocks is the gate/payload state that moved underneath it.
+  decisive_receipt: >-
+    board_read did not exist at the reference vintage. site/prophet/index.json
+    at 012fbedc643b (2026-08-13): 0/206 plans carry board_read, no
+    board_read_coverage block, 0/206 carry lifecycle_state. At e8b54f057f58
+    (2026-08-18): 250/250 board_read, coverage {available:225, blocked_data:0},
+    250/250 lifecycle_state. DESIGN_NOTES Q7's ruling could not have weighed a
+    producer that did not exist.
+  amendments:
+    - {id: B1, action: reframed,   from: blocker, to: blocker, note: "reference UPHELD as correct at its vintage; reclassified from reference defect to stale-gate action — re-measure G-D-1 against board_read before commissioning. Evidence: gen_fixture.py:144-160; index.json board_read_coverage.by_field.status={available:225,blocked_data:0}; 95/225 live entry_status=null with 0 board_read values unmapped against STANCE_BY_STATUS; DESIGN_NOTES Q7/Q7b/G-D-1"}
+    - {id: B2, action: upheld,     from: major,   to: major,   note: "'Newer plan' link dead in every state — board.js:495-498 emits href=#id= vs cards' data-id (:553-554); Resolved-partition makes the target absent from the DOM (:195-205; gen_fixture.py:371). MP-1 §10 mandates the capability; no proof handle covers it"}
+    - {id: B3, action: upheld,     from: blocker, to: blocker, note: "narrowed — the stance ramp's dependency on retuning --pv-buy is documented (DESIGN_NOTES:105-108,156-158; board.css:31) but absent from gate structure; the cure is a DS-PR (never a page-scoped fork) which COLLIDES with MP-1 §11's required empty non-US byte-diff; MP-1 §13 lists no such collision. Production: theme.css:80 --pv-buy==#45b873==--up(:72), :185 aliases it; _prophet_card.html.j2:77 routes --pvh-ink through it — DA-002 live in production dark today"}
+    - {id: B4, action: upheld,     from: major,   to: major,   note: "MP-1 §7 mandates #life= fragment vocabulary; the reference reads only location.search (board.js:80) and filters by full navigation (:1270); the hash is written (:1271,:1278) and never read — a packet-authored link renders the unfiltered board; :1270-1271 same-tick search+hash navigation race"}
+    - {id: B5, action: strengthened, from: major, to: major,   note: "index.html:24-27 reconciliation checksum: three wrong numbers, two wrong dates (62+96+0+0+4=162 vs fixture 62+95+0+0+2=159); verify_r4.py R27 proves the stale-arithmetic sweep ran on DESIGN_NOTES and missed index.html"}
+    - {id: B6, action: upheld,     from: major,   to: major,   note: "glance tier prints '+0.45% a trade' bare while exp_lo=-0.61/exp_hi=+1.25 straddles zero (board.js:1046-1051); the honesty paragraph translates only the win-rate straddle (:1082-1089)"}
+    - {id: B7, action: strengthened, from: major, to: major,   note: "the 12-status->5-verb stance projection (gen_fixture.py:88-97) has no owner in MP-1 §8; DESIGN_NOTES Q7 forbids defaulting an unobtainable stance to wait, while §7 asserts reuse of the shipped macro that contains exactly that default (_prophet_card.html.j2:374); §12.3 pins non-US bytes so the fallback change needs a parameter the packet scopes only to the legacy rail"}
+    - {id: B8, action: added,      from: null,    to: blocker, note: "Overtime producer contradiction, surfaced by DESIGN_NOTES Q2 (#5540, recorded UNRESOLVED at 2026-08-13) and re-measured larger: 35 live rows age_days>horizon_days (26 entered/9 ready) while lifecycle_counts.overtime=0; clock_age_days>horizon on 0 rows. NOTE FOR THE ADJUDICATOR: the clock question may already be ruled — see the authority verdict"}
+    - {id: K1, action: upheld,     from: known-issue, to: known-issue, note: "reference LENS is hover/focus-only (board.js:1300-1309) but production's LENS (theme.js:5283+) has a full touch branch and consumes the same data-tip attribute triple — NOT migration-blocking; MP-1 must state the bind-to-production-LENS obligation explicitly"}
+    - {id: K3, action: downgraded, from: known-issue, to: nit, note: "DESIGN_NOTES §0a:122 shows the shop-window trade was faced and correctly declined; residual Featured-aura-on-no-read resolves under either B1 outcome"}
+    - {id: K5, action: split,      from: known-issue, to: known-issue, note: "strip existence WITHDRAWN (Q3 rules only the derivable figure is printed); .pv-mk-new zero producer coverage + no route to the '15 opened' rows UPHELD"}
+    - {id: K10, action: withdrawn, from: known-issue, to: null, note: "DESIGN_NOTES §8 PRC-308 carries the 134/179 figure and reasons per-row printed absence as the doctrine-compliant surface discharge; the aggregate belongs to the gate record"}
+    - {id: K19, action: added,     from: null,    to: known-issue, note: "intake.early_turn_watch is now present-and-empty so watchAbsent() is false: production renders six published cells + a literal 0, while every canonical crop and the 'five published cells' headline photograph the superseded absent-key state; MP-1 §11 must add the watch-present-at-zero forced state"}
+    - {ids: [K2,K4,K6,K7,K8,K9,K11,K12,K13,K14,K15,K16,K17,K18], action: upheld, note: "rationale silent on each; full receipts in the session packet — K2 WCAG 1.4.13 (board.css:834, no Escape, no aria-describedby; production wires it theme.js:5574); K4 fresh-branch stamp date; K6 avoid-from-lifecycle (gen_fixture.py); K7 cellCount audit-instruction falsified (:744-746,:648,:655,:658); K8 empty-state nonzero count (:120 vs :191,:668); K9 ladder-vs-candidates zero disclosure (:250 vs :887); K11 anon specimen rank-4 predicate undisclosed (:774-776); K12 Math.round rank collapse (:591); K13 dormant cand_asof fallback (:171-180); K14 .pv-cau no key handler (:473; production carrier byte-identical); K15 grand_total vs plan_count (:285); K16 no Free-tier state (:1166); K17 index.html:21 documents 4 of 7 harness states; K18 caution-coherence single-key drop (:355-369)"}
+  net: {blocking: 8, known_issue: 15, nit: 1, withdrawn: 2}
+ledger_spot_checks:
+  performed: 12
+  hold: 12
+  qualified: 1
+  qualified_detail: >-
+    DA-002 satisfied at the bytes by a different mechanism than the ledger records:
+    board.css:66 still sets dark --ink-mix-up:100%; the cure is the local --pv-buy
+    redefinition at board.css:48 plus the --pvh-ink reroute at :454.
+harness_coverage_gap: "verify_r4.py has no proof handle for B1, B2, B5, B6, B8, K5, K19; R27 proves the stale-number sweep on DESIGN_NOTES while B5 sits unswept one file away"
+migration_recommendation:
+  gate: C8_PRODUCT_REGRESSION_LEG_COMPLETE_MIGRATION_NOT_CLEARED
+  composition_verdict: "sound enough to become migration law, subject to B2/B4/B5/B6/B7 packet repairs"
+  sequencing:
+    - "1. RULE B1: is board_read.fields.status the actionability axis? Opens or re-closes G-D-1."
+    - "2. RULE B8 (#5540): which clock is authoritative for Overtime. Independent of B1."
+    - "3. AMEND MP-1 for B3 (DS-PR path + §13 collision), B4 (URL contract), B7 (stance projection owner + macro fallback parameter)."
+    - "4. REPAIR B2, B5, B6 in the reference; re-shoot for K19."
+  second_critic_required: true

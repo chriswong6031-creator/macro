@@ -575,7 +575,7 @@ and leaves gitignored runtime state (`.env`, `data/live_flow_state/`,
 | `liveflow-ops-wt` | `com.mastermind.liveflow` | **standalone clone — git-refreshable** |
 | `chainsnap-ops-wt` | `com.mastermind.chainsnapshots` | **standalone shallow clone; code-only, with an authority symlink into `flow-ops-wt`** |
 | `hub-ops-wt` | `com.mastermind.optionshub`, `com.mastermind.levelsgrader`, `com.mastermind.levelsseal` | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
-| `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.thetadata-backfill`, `com.macro.theta-staleness` (+4 readers) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
+| `theta-ops-wt` | `com.macro.theta-terminal`, `com.macro.theta-staleness` (+4 readers); ~~`com.macro.thetadata-backfill`~~ **RETIRED 2026-08-22 (AD-1T1)** — replaced by `com.macro.thetadata-daily` (finite periodic, no `KeepAlive`); `installed_live_status: NOT_INSTALLED` pending Sol acceptance (see `research/THETADATA_OPS_RUNBOOK.md` §3a) | **standalone clone — git-refreshable** (rebuilt 2026-07-30) |
 | `flow-ops-wt` | flow enrich / signing lanes | standalone clone, full history (~75 GB) |
 | `fund-ops-wt` | `com.mastermind.fund` | standalone clone of a *different* repo (`mastermind-terminal`) |
 
@@ -665,20 +665,25 @@ status`.  That is the whole argument for these trees being clones.
   (`~/theta/`), and both processes' `cwd` follows the inode through a rename,
   so a swap does not disturb a running terminal.  It keeps the *old* script on
   its open fd and picks up the new one on its next natural restart.
-- `com.macro.thetadata-backfill` — `exec`s **every 60 s** (it exits 1 on its
-  own pre-close gate until 20:10 UTC, and `ThrottleInterval` re-fires it).  A
-  swap can land in that gap; the cost is one failed exec and a 60 s retry.
-  Keep the two `mv`s back-to-back in a single shell and it is a non-event.
+- ~~`com.macro.thetadata-backfill`~~ **RETIRED 2026-08-22 (AD-1T1)** — used to
+  `exec` every 60 s (KeepAlive + a pre-close gate until 20:10 UTC). Replaced
+  by `com.macro.thetadata-daily`: a FINITE periodic lane (four
+  `StartCalendarInterval` fire points/day, no `KeepAlive`), NOT installed on
+  this host as of this writing (`installed_live_status: NOT_INSTALLED`
+  pending Sol acceptance — see `research/THETADATA_OPS_RUNBOOK.md` §3a). A
+  swap of the new lane's files is a non-event for the same reason the old
+  one was: no exec is in flight most of the day.
 
 Do not carry `backfill.log` forward — that once-per-minute gate line grows it
 past 100 MB, and launchd recreates it on the next spawn.  Leaving it in the
 rollback is the cheap cleanup.
 
-The same TCC constraint applies to the ThetaData EOD backfill agent
-(`com.macro.thetadata-backfill`): its keepalive script must live **outside**
-`~/Documents/` (kept at `/Users/chriswong/theta-ops-wt/scripts/launchd/`),
-because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
-("Operation not permitted" / exit 126).
+The same TCC constraint applies to the ThetaData EOD daily maintainer agent
+(`com.macro.thetadata-daily`, replacing the retired `com.macro.thetadata-backfill`):
+its wrapper script must live **outside** `~/Documents/` (kept at
+`/Users/chriswong/theta-ops-wt/scripts/launchd/`), because macOS TCC denies
+launchd `exec` on scripts under `~/Documents/` ("Operation not permitted" /
+exit 126).
 
 ##### Disk
 

@@ -21,6 +21,17 @@ this pins the behaviour of each).
 
 Node ships on CI + dev Macs; the suite skips loudly when it is absent (mirrors
 tests/test_intraday_flow_ncp_js.py).
+
+GD-3R1 ADDENDUM: this file also carries the pure-Python unit coverage for
+scripts/build_risk_state.py's quote-clock plumbing (`_spliced_frames` /
+`_source_event_time`) and, for the same reason, the engine.live_quotes
+`quote_ts_synthetic` flag (amendment F3) — see the `TestSourceEventTime`,
+`TestSplicedFramesQuoteClocks`, and `TestSyntheticQuoteClockFlag` classes near
+the bottom of this file. Nothing in that coverage needs node; those classes run
+under plain pytest. They live here (rather than in a new file, or in
+tests/test_live_quotes.py) because this is the CI-wired suite that already
+mirrors risk_state.json's shape via its `_us_feed`/`_cn_feed` fixtures — see
+each class's own docstring for the full placement rationale.
 """
 from __future__ import annotations
 
@@ -28,9 +39,14 @@ import json
 import shutil
 import subprocess
 import textwrap
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pandas as pd
 import pytest
+
+from engine import live_overlay
+from scripts import build_risk_state as brs
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -42,6 +58,15 @@ CN_JS = [ROOT / "templates" / "china_risk_state_live.js",
          ROOT / "site" / "china_risk_state_live.js"]
 US_PAGES = pytest.mark.parametrize("js", US_JS, ids=["template", "site"])
 CN_PAGES = pytest.mark.parametrize("js", CN_JS, ids=["template", "site"])
+
+# GD-3 (adjudication #10): the Risk Envelope live overlay is a SECOND US-macro-page
+# consumer of the same feed-behind-the-render floor law, but its DOM shape (the
+# #risk-envelope-band chip/pending/receipt hooks) is unrelated to the
+# ms-word/ms-score headline patcher's, so it gets its own JS list + harness rather
+# than being appended into US_JS/US_PAGES (which would silently break every
+# existing test there — `entry = "patchMacro"` does not exist in this module).
+RE_JS = [ROOT / "templates" / "risk_envelope_live.js", ROOT / "site" / "risk_envelope_live.js"]
+RE_PAGES = pytest.mark.parametrize("js", RE_JS, ids=["template", "site"])
 
 BAKED_SESSION = "2026-07-31"
 BAKED_SCORE = 66          # the chart endpoint AND the gauge, post-reconciliation
@@ -169,6 +194,256 @@ def _harness(js_src: str, feed: dict, page: str) -> dict:
     res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
     assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
     return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+# ── GD-3: the Risk Envelope overlay's own DOM stub + harness (adjudication #10) ──
+# risk_envelope_live.js exposes `applyFeed(d)` (extracted from tick()'s fetch chain
+# specifically so it is drivable this way, same idiom as patchMacro/patchChina
+# above) — reads the band's data-bundle-id/data-settled-session, and paints/hides
+# the #gde-live-chip / #gde-pending-chip / #gde-live-receipt hooks.
+
+RE_BAKED_BUNDLE = "fd9ccdbe47f7f008"
+RE_BAKED_SESSION = "2026-08-19"
+
+
+def _re_harness(js_src: str, feed: dict | None) -> dict:
+    """Run risk_envelope_live.js's `applyFeed` against one feed and report what
+    the DOM ended up holding. `feed=None` simulates a fetch that resolved falsy
+    (network error / non-OK response already reduced to null upstream of
+    applyFeed in the real fetch chain)."""
+    setup = f"""
+    var band = reg("#risk-envelope-band", new El("risk-envelope-band"));
+    band.setAttribute("data-bundle-id", {RE_BAKED_BUNDLE!r});
+    band.setAttribute("data-settled-session", {RE_BAKED_SESSION!r});
+
+    var chip = reg("#gde-live-chip", new El("gde-live-chip"));
+    chip.hidden = true;
+    var chipEn = new El("", "l-en", "");
+    var chipZh = new El("", "l-zh", "");
+    var chipTime = new El("", "gde-live-time", "");
+    chip.querySelector = function (sel) {{
+      if (sel === ".l-en") return chipEn;
+      if (sel === ".l-zh") return chipZh;
+      if (sel === ".gde-live-time") return chipTime;
+      return null;
+    }};
+
+    var pending = reg("#gde-pending-chip", new El("gde-pending-chip"));
+    pending.hidden = true;
+    var pendingEn = new El("", "l-en", "");
+    var pendingZh = new El("", "l-zh", "");
+    pending.querySelector = function (sel) {{
+      if (sel === ".l-en") return pendingEn;
+      if (sel === ".l-zh") return pendingZh;
+      return null;
+    }};
+
+    var receipt = reg("#gde-live-receipt", new El("gde-live-receipt"));
+    receipt.hidden = true;
+    """
+    readback = """
+    out.chip_hidden = !!chip.hidden;
+    out.chip_en = chipEn.textContent;
+    out.chip_zh = chipZh.textContent;
+    out.chip_time = chipTime.textContent;
+    out.pending_hidden = !!pending.hidden;
+    out.pending_en = pendingEn.textContent;
+    out.receipt_hidden = !!receipt.hidden;
+    out.receipt_text = receipt.textContent;
+    """
+    script = "\n".join([
+        DOM_STUB,
+        setup,
+        "var out = {};",
+        f"var FEED = {json.dumps(feed)};",
+        "(function(){",
+        js_src.replace(
+            "})();",
+            "try { applyFeed(FEED); } catch (e) { out.error = String(e); }\n})();",
+        ),
+        "})();",
+        readback,
+        "console.log(JSON.stringify(out));",
+    ])
+    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
+    assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
+    return json.loads(res.stdout.strip().splitlines()[-1])
+
+
+def _re_feed(*, source_session="2026-08-20", bundle_id=RE_BAKED_BUNDLE, precedence="live",
+             live_active=True, built=None, stale_after_min=5,
+             stage="FRAGILE", stable_stage="FRAGILE", pending=None, data_state="FRESH") -> dict:
+    # `active()`'s freshness gate compares against REAL wall-clock Date.now() (it
+    # must, in production), so a fixture built from a fixed historical string would
+    # go stale the moment real time moves past it. Default to "90s ago" computed at
+    # call time instead, well inside the 5min horizon regardless of when the suite
+    # actually runs.
+    if built is None:
+        built = (datetime.now(timezone.utc) - timedelta(seconds=90)).strftime("%Y-%m-%d %H:%M:%S UTC")
+    return {
+        "schema": "mastermind.risk_envelope/v1",
+        "revision": "live_provisional",
+        "precedence": precedence,
+        "source_session": source_session,
+        "bundle_id": "9c4a7e21ab30f581",
+        "built": built,
+        "live_active": live_active,
+        "stale_after_min": stale_after_min,
+        "data_state": data_state,
+        "hazard_summary": {"stage": stage},
+        "overlays": {"settled_bundle_id": bundle_id, "settled_source_session": RE_BAKED_SESSION},
+        "live_transition": {"candidate_stage": stage, "stable_stage": stable_stage, "pending": pending},
+    }
+
+
+@needs_node
+@RE_PAGES
+def test_re_feed_a_session_behind_the_render_never_paints(js):
+    """The SAME feed-behind-the-render floor law as risk_state_live.js, applied to
+    the Risk Envelope overlay: a live read whose own source_session is OLDER than
+    the page's baked settled session (data-settled-session) must never paint."""
+    feed = _re_feed(source_session="2026-08-18")   # older than RE_BAKED_SESSION
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is True
+    assert out["pending_hidden"] is True
+    assert out["receipt_hidden"] is True
+
+
+@needs_node
+@RE_PAGES
+def test_re_feed_on_or_ahead_of_the_render_still_paints(js):
+    """Sanity control for the floor test above: a live session AHEAD of the baked
+    settled session (the normal case) must still paint."""
+    feed = _re_feed(source_session="2026-08-20")   # ahead of RE_BAKED_SESSION
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is False
+    assert out["chip_en"] == "Live · provisional"
+
+
+@needs_node
+@RE_PAGES
+def test_re_unpaint_hides_all_three_hooks_completely(js):
+    """A feed that fails `active()` (mismatched settled_bundle_id here) must hide
+    ALL three hooks — chip, pending, and receipt — never leave one painted while
+    the others clear."""
+    feed = _re_feed()
+    feed["overlays"]["settled_bundle_id"] = "SOME-OTHER-BUNDLE"
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is True
+    assert out["pending_hidden"] is True
+    assert out["receipt_hidden"] is True
+    assert out["receipt_text"] == ""
+
+
+@needs_node
+@RE_PAGES
+def test_re_stage_null_routes_to_degraded_even_when_data_state_is_fresh(js):
+    """Adjudication #8 regression: route on hazard_summary.stage alone. A feed
+    with a null stage but data_state FRESH (the exact shape a laundered empty
+    live block used to produce) must still paint the DEGRADED copy, never the
+    healthy "Live · provisional" chip."""
+    feed = _re_feed(stage=None, stable_stage="FRAGILE", data_state="FRESH")
+    out = _re_harness(js.read_text(encoding="utf-8"), feed)
+    assert not out.get("error"), out.get("error")
+    assert out["chip_hidden"] is False
+    assert out["chip_en"] == "Live · not enough to say"
+    assert out["chip_zh"] == "实时 · 暂无法判断"
+    assert out["pending_hidden"] is True
+
+
+@needs_node
+@RE_PAGES
+def test_re_paint_degraded_paint_restores_chip_copy_and_receipt(js):
+    """Adjudication #4 regression: paint() must NOT assume the DOM still holds its
+    baked "Live · provisional" copy — a prior paintDegraded() call must not leave
+    the chip stuck on degraded text, or the receipt stuck on a stale HEALTHY line,
+    once a subsequent feed is healthy again. Runs three feeds through the SAME
+    long-lived DOM stub in one node process, exactly like a real poll sequence."""
+    healthy = _re_feed(stage="TRANSMITTING",
+                       pending={"stage": "TRANSMITTING", "ticks": 2, "needs": 3})
+    degraded = _re_feed(stage=None, data_state="DEGRADED")
+    healthy_again = _re_feed(stage="FRAGILE", pending=None)
+
+    setup = f"""
+    var band = reg("#risk-envelope-band", new El("risk-envelope-band"));
+    band.setAttribute("data-bundle-id", {RE_BAKED_BUNDLE!r});
+    band.setAttribute("data-settled-session", {RE_BAKED_SESSION!r});
+
+    var chip = reg("#gde-live-chip", new El("gde-live-chip"));
+    chip.hidden = true;
+    var chipEn = new El("", "l-en", "");
+    var chipZh = new El("", "l-zh", "");
+    var chipTime = new El("", "gde-live-time", "");
+    chip.querySelector = function (sel) {{
+      if (sel === ".l-en") return chipEn;
+      if (sel === ".l-zh") return chipZh;
+      if (sel === ".gde-live-time") return chipTime;
+      return null;
+    }};
+
+    var pending = reg("#gde-pending-chip", new El("gde-pending-chip"));
+    pending.hidden = true;
+    var pendingEn = new El("", "l-en", "");
+    var pendingZh = new El("", "l-zh", "");
+    pending.querySelector = function (sel) {{
+      if (sel === ".l-en") return pendingEn;
+      if (sel === ".l-zh") return pendingZh;
+      return null;
+    }};
+
+    var receipt = reg("#gde-live-receipt", new El("gde-live-receipt"));
+    receipt.hidden = true;
+    """
+    readback = """
+    out.chip_en = chipEn.textContent;
+    out.receipt_text = receipt.textContent;
+    """
+    script = "\n".join([
+        DOM_STUB,
+        setup,
+        "var out1 = {}, out2 = {}, out3 = {};",
+        f"var FEED1 = {json.dumps(healthy)};",
+        f"var FEED2 = {json.dumps(degraded)};",
+        f"var FEED3 = {json.dumps(healthy_again)};",
+        "(function(){",
+        js.read_text(encoding="utf-8").replace(
+            "})();",
+            "try {\n"
+            "  applyFeed(FEED1);\n"
+            "  out1.chip_en = chipEn.textContent; out1.receipt_text = receipt.textContent;\n"
+            "  applyFeed(FEED2);\n"
+            "  out2.chip_en = chipEn.textContent; out2.receipt_text = receipt.textContent;\n"
+            "  applyFeed(FEED3);\n"
+            "  out3.chip_en = chipEn.textContent; out3.receipt_text = receipt.textContent;\n"
+            "} catch (e) { out1.error = String(e); }\n"
+            "})();",
+        ),
+        "})();",
+        "console.log(JSON.stringify({one: out1, two: out2, three: out3}));",
+    ])
+    res = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=60)
+    assert res.returncode == 0, f"node failed: {res.stderr[-2000:]}"
+    out = json.loads(res.stdout.strip().splitlines()[-1])
+    assert not out["one"].get("error"), out["one"].get("error")
+
+    assert out["one"]["chip_en"] == "Live · provisional"
+    assert "TRANSMITTING" in out["one"]["receipt_text"]
+
+    assert out["two"]["chip_en"] == "Live · not enough to say", (
+        "paintDegraded must overwrite the chip copy"
+    )
+    assert "TRANSMITTING" not in out["two"]["receipt_text"], (
+        "the degraded receipt must not keep showing the last HEALTHY pending line"
+    )
+
+    assert out["three"]["chip_en"] == "Live · provisional", (
+        "a healthy feed after a degraded one must restore the chip's normal copy, "
+        "not leave it stuck on 'not enough to say'"
+    )
+    assert "TRANSMITTING" not in out["three"]["receipt_text"]
 
 
 # display labels exactly as engine/market_state.py _LABEL emits them
@@ -301,3 +576,234 @@ def test_us_unreadable_feed_session_fails_closed(js):
     assert not out.get("error"), out["error"]
     assert out["score"] == str(BAKED_SCORE)
     assert out["word"] == BAKED_WORD
+
+
+# ══ GD-3R1 — scripts/build_risk_state.py's own quote-clock plumbing ══════════════
+#
+# No suite unit-tests scripts/build_risk_state.py's pure Python helpers directly
+# (tests/test_risk_state.py covers the unrelated engine/risk_state.py; this file
+# is the sibling JS-behavior suite for the SAME risk_state.json artifact that
+# module's `build()` publishes — its `_us_feed`/`_cn_feed` fixtures already mirror
+# that artifact's shape). GD-3R1 adds the real source-market quote clock to that
+# artifact's `live` block (`live.source_event_time` / `live.source_quote_clocks`,
+# scripts/build_risk_state.py's `_spliced_frames` / `_source_event_time`); these
+# classes are the discriminating regression FROZEN SPEC item 5 requires: a
+# spliced quote's own `quote_ts` lands in `live.source_quote_clocks` and the max
+# of those lands in `live.source_event_time`; an unclocked quote is excluded from
+# the max; all-None -> None. Amendments: F3 (synthetic clocks excluded), F5 (naive
+# dropped, never assumed UTC), F6 (a quote clock >120s ahead of `now` excluded
+# from the max, single-glitch-proof).
+
+def _nightly_close(price: float, n: int = 3) -> pd.Series:
+    idx = pd.date_range("2026-08-18", periods=n, freq="D")
+    return pd.Series([price] * n, index=idx)
+
+
+def _live_quote(price: float, quote_ts: str | None, prev_close: float = 100.0,
+                delay_min: float = 0.0, synthetic: bool = False) -> dict:
+    # Real engine.live_quotes.fetch_quotes() quotes always carry `quote_ts`,
+    # `quote_ts_synthetic` (GD-3R1 F3), AND a precomputed `delay_min`
+    # (engine/live_quotes.py's `_delay_min`). `delay_min` is supplied explicitly
+    # so `live_overlay.staleness()` can judge freshness even in the (synthetic,
+    # defensive) case a test wants a spliceable quote whose `quote_ts` is itself
+    # None.
+    return {"price": price, "prev_close": prev_close, "quote_ts": quote_ts,
+            "delay_min": delay_min, "quote_ts_synthetic": synthetic}
+
+
+class TestSourceEventTime:
+
+    def test_max_of_parseable_clocks_wins(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {
+            "SPY": "2026-08-21T09:00:00+00:00",
+            "QQQ": "2026-08-21T09:05:00+00:00",   # newest -> must win
+            "IWM": "2026-08-21T08:50:00+00:00",
+        }
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
+
+    def test_unclocked_quote_is_excluded_from_the_max(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {
+            "SPY": "2026-08-21T09:00:00+00:00",
+            "QQQ": None,   # spliced but carried no quote_ts — must not participate
+        }
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:00:00+00:00"
+
+    def test_all_none_or_empty_is_none(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        assert brs._source_event_time({"SPY": None, "QQQ": None}, now) is None
+        assert brs._source_event_time({}, now) is None
+
+    def test_unparseable_clock_is_excluded_not_fatal(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {"SPY": "not-a-timestamp", "QQQ": "2026-08-21T09:00:00+00:00"}
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:00:00+00:00"
+
+    def test_naive_clock_is_dropped_not_assumed_utc(self):
+        """F5: a naive (tz-less) quote_ts is never coerced to UTC — dropped."""
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:00:00", "QQQ": "2026-08-21T09:05:00+00:00"}
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
+
+    def test_all_naive_is_none(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        assert brs._source_event_time({"SPY": "2026-08-21T09:00:00"}, now) is None
+
+    def test_single_future_glitch_leg_does_not_poison_the_max(self):
+        """F6: one glitched/clock-skewed leg (>120s ahead of `now`) must not win
+        the max, but a legitimate leg elsewhere still wins normally."""
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {
+            "SPY": "2026-08-21T09:05:00+00:00",       # legit, near now
+            "_MOVE": "2027-01-01T00:00:00+00:00",      # glitched far future
+        }
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:05:00+00:00"
+
+    def test_wholesale_future_clocks_yield_none(self):
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        clocks = {"SPY": "2027-01-01T00:00:00+00:00", "QQQ": "2027-01-01T00:05:00+00:00"}
+        assert brs._source_event_time(clocks, now) is None
+
+    def test_clock_within_future_tolerance_still_counts(self):
+        now = datetime(2026, 8, 21, 9, 6, 0, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:07:00+00:00"}   # 60s ahead, within 120s tolerance
+        assert brs._source_event_time(clocks, now) == "2026-08-21T09:07:00+00:00"
+
+    def test_clock_beyond_future_tolerance_is_excluded(self):
+        now = datetime(2026, 8, 21, 9, 6, 0, tzinfo=timezone.utc)
+        clocks = {"SPY": "2026-08-21T09:09:00+00:00"}   # 180s ahead, beyond 120s tolerance
+        assert brs._source_event_time(clocks, now) is None
+
+
+class TestSplicedFramesQuoteClocks:
+
+    def test_spliced_quotes_own_clock_is_captured_per_store(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0), "QQQ": _nightly_close(400.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {
+            "SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00", prev_close=500.0),
+            "QQQ": _live_quote(404.0, "2026-08-21T09:04:10+00:00", prev_close=400.0),
+        }
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert set(spliced) == {"SPY", "QQQ"}
+        # each store's OWN quote_ts lands in quote_clocks — never a builder wall clock
+        assert quote_clocks["SPY"] == "2026-08-21T09:05:30+00:00"
+        assert quote_clocks["QQQ"] == "2026-08-21T09:04:10+00:00"
+        assert quote_clocks["SPY"] != now.isoformat()
+        # and the max of those lands in source_event_time
+        assert brs._source_event_time(quote_clocks, now) == "2026-08-21T09:05:30+00:00"
+
+    def test_a_quote_that_fails_usable_is_never_spliced_and_never_clocked(self, monkeypatch):
+        """A rejected (limit-move-guard) quote must not appear in quote_clocks at
+        all — bounded to exactly the members actually spliced."""
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(5000.0, "2026-08-21T09:05:30+00:00", prev_close=500.0)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" not in spliced
+        assert "SPY" not in quote_clocks
+
+    def test_a_quote_with_no_quote_ts_still_splices_but_carries_a_none_clock(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(505.0, None, prev_close=500.0)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" in spliced
+        assert quote_clocks["SPY"] is None
+        assert brs._source_event_time(quote_clocks, now) is None
+
+    def test_nothing_spliced_yields_empty_quote_clocks(self, monkeypatch):
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: None)
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            {}, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert spliced == {}
+        assert quote_clocks == {}
+        assert brs._source_event_time(quote_clocks, now) is None
+
+    def test_a_synthetic_flagged_quote_is_excluded_from_the_clock_receipt(self, monkeypatch):
+        """F3: a quote whose quote_ts did NOT come from a real market timestamp
+        (quote_ts_synthetic=True) must still SPLICE normally (pricing/staleness
+        unaffected) but its clock must never enter the receipt — mapped to None."""
+        closes = {"SPY": _nightly_close(500.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {"SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00",
+                                     prev_close=500.0, synthetic=True)}
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert "SPY" in spliced          # pricing/splicing unaffected
+        assert live_close["SPY"] == 505.0
+        assert quote_clocks["SPY"] is None    # but excluded from the clock receipt
+        assert brs._source_event_time(quote_clocks, now) is None
+
+    def test_all_synthetic_quotes_yield_none_source_event_time(self, monkeypatch):
+        closes = {"SPY": _nightly_close(500.0), "QQQ": _nightly_close(400.0)}
+        monkeypatch.setattr(live_overlay, "read_close", lambda name: closes.get(name))
+        now = datetime(2026, 8, 21, 9, 6, tzinfo=timezone.utc)
+        quotes = {
+            "SPY": _live_quote(505.0, "2026-08-21T09:05:30+00:00", prev_close=500.0, synthetic=True),
+            "QQQ": _live_quote(404.0, "2026-08-21T09:04:10+00:00", prev_close=400.0, synthetic=True),
+        }
+        spliced, live_close, nightly_close, quote_clocks = brs._spliced_frames(
+            quotes, max_chg=10.0, stale_after=20.0, now=now, session_open=True)
+        assert set(spliced) == {"SPY", "QQQ"}
+        assert quote_clocks == {"SPY": None, "QQQ": None}
+        assert brs._source_event_time(quote_clocks, now) is None
+
+
+# ══ GD-3R1 amendment F3 — engine.live_quotes' quote_ts_synthetic flag ════════════
+#
+# Engine-level coverage for the two fallback-to-wall-clock paths (polygon
+# trade/minute lacking `t`, or day/prev basis; yahoo lacking regularMarketTime)
+# lives HERE rather than in tests/test_live_quotes.py: that file exists
+# (grepped) but carries NO run: step anywhere under .github/ci/ or
+# .github/workflows/ — it is not CI-wired — so a regression added there would be
+# invisible to CI. This file IS CI-wired (.github/ci/legacy-jobs.yml), per the
+# GD-3R1 commission's explicit fallback instruction for exactly this case.
+
+class TestSyntheticQuoteClockFlag:
+
+    def test_polygon_trade_with_real_t_is_not_synthetic(self):
+        from engine import live_quotes as lq
+        now = datetime(2026, 6, 21, 15, 0, tzinfo=timezone.utc)
+        trade_ns = int(datetime(2026, 6, 21, 14, 50, tzinfo=timezone.utc).timestamp() * 1e9)
+        payload = {"tickers": [{"ticker": "AAPL", "lastTrade": {"p": 201.25, "t": trade_ns},
+                                "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload, now=now)["AAPL"]
+        assert q["quote_ts_synthetic"] is False
+
+    def test_polygon_trade_without_t_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"tickers": [{"ticker": "AAPL", "lastTrade": {"p": 201.25},  # no "t"
+                                "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload)["AAPL"]
+        assert q["quote_ts_synthetic"] is True
+
+    def test_polygon_day_basis_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"tickers": [{"ticker": "AAPL", "day": {"c": 200.0}, "prevDay": {"c": 198.0}}]}
+        q = lq.parse_polygon_snapshot(payload)["AAPL"]
+        assert q["quote_ts_synthetic"] is True
+
+    def test_yahoo_with_regular_market_time_is_not_synthetic(self):
+        from engine import live_quotes as lq
+        ts_s = int(datetime(2026, 6, 21, 14, 30, tzinfo=timezone.utc).timestamp())
+        payload = {"spark": {"result": [{"symbol": "0700.HK", "response": [{"meta": {
+            "regularMarketPrice": 412.6, "regularMarketTime": ts_s}}]}]}}
+        q = lq.parse_yahoo_spark(payload)["0700.HK"]
+        assert q["quote_ts_synthetic"] is False
+
+    def test_yahoo_without_regular_market_time_is_synthetic(self):
+        from engine import live_quotes as lq
+        payload = {"spark": {"result": [{"symbol": "0700.HK", "response": [{"meta": {
+            "regularMarketPrice": 412.6}}]}]}}   # no regularMarketTime
+        q = lq.parse_yahoo_spark(payload)["0700.HK"]
+        assert q["quote_ts_synthetic"] is True

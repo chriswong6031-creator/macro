@@ -25,6 +25,12 @@ from .award_events import agency_display_label, canonicalize_agency
 
 SCHEMA_VERSION = "government_procurement_workspace.v2"
 EVENT_CONTRACT = "government_procurement_event.v2"
+# D3 (research/defense_intelligence/DEFENSE_D3_TEMPORAL_CONTRACT_AND_CHANGE_TAPE_SPEC.md)
+# is additive display/context semantics on top of the same v2 event contract --
+# no event field is added or retimed -- so this marker versions the temporal
+# contract and rail-typing law, not the workspace schema itself
+# (DEC:D3-TEMPORAL-V3-IS-ADDITIVE).
+TEMPORAL_CONTRACT = "government_procurement_temporal.v3"
 PRIORITY_FORMULA = "govrev_display_priority.v1"
 MAX_WORKSPACE_EVENTS = 500
 _KIND_ORDER = ("opportunity", "recompete", "award_change")
@@ -378,6 +384,120 @@ def _freshness(value: Any, *, unavailable_reason: str) -> dict[str, Any]:
         result.setdefault("reason", unavailable_reason)
         return result
     return {"status": "unavailable", "reason": unavailable_reason}
+
+
+# D3 typed rail states (§2 of the frozen spec).  A rail's ``failure_state`` is a
+# machine enum the template keys display copy off of -- it must never be
+# recomputed in JS.  ``None`` means live/ok; the two typed values are the only
+# other legal states.  This is deliberately derived from ``status`` alone (plus
+# the opportunity-specific empty-observation rule below) so it can never
+# contradict the ``status`` string the rest of the payload already trusts.
+def _source_failure_state(freshness: dict[str, Any]) -> str | None:
+    status = str(freshness.get("status") or "").strip().lower()
+    if status in ("unavailable", "error", "failed"):
+        return "source_unavailable"
+    return None
+
+
+def _opportunity_failure_state(freshness: dict[str, Any]) -> str | None:
+    generic = _source_failure_state(freshness)
+    if generic is not None:
+        return generic
+    # A rail that has never been observed at all -- zero visible records and
+    # no observation timestamp -- is not a valid "quiet week"; it is a source
+    # that has not spoken yet, and the tape must say so explicitly rather than
+    # rendering an indistinguishable empty state.
+    records_visible = freshness.get("records_visible")
+    observed_at = freshness.get("observed_at")
+    if records_visible == 0 and not observed_at:
+        return "source_unavailable"
+    return None
+
+
+_VALID_BUDGET_FAILURE_STATES = frozenset({"source_unavailable", "projection_missing"})
+
+
+def _budget_rail(value: Any) -> dict[str, Any]:
+    """Build ``freshness.budget`` -- fail closed to PROJECTION_MISSING.
+
+    On current main the DoD Comptroller P-1/R-1 request-graph artifact has
+    never been produced (Wave 8 was fixture-only), so the default (no
+    ``budget_freshness`` supplied by the caller) is exactly the typed failure
+    the frozen spec requires: no state may imply verification is merely
+    in-progress for a projection that has never existed.
+    """
+    if isinstance(value, dict):
+        status = str(value.get("status") or "").strip().lower() or "unavailable"
+        failure_state = value.get("failure_state")
+        if failure_state not in _VALID_BUDGET_FAILURE_STATES:
+            # A caller that supplies a bad/missing failure_state does not get
+            # a silently "live" rail: derive it from status the same way the
+            # sibling rails do, so failure_state None always means live/ok.
+            failure_state = _source_failure_state({"status": status})
+        records_visible = value.get("records_visible")
+        if isinstance(records_visible, bool) or not isinstance(records_visible, (int, float)):
+            records_visible = None
+        else:
+            records_visible = max(0, int(records_visible))
+        observed_at = value.get("observed_at")
+        reason_code = value.get("reason_code")
+        return {
+            "status": status,
+            "failure_state": failure_state,
+            "observed_at": str(observed_at) if observed_at is not None else None,
+            "records_visible": records_visible,
+            "reason_code": str(reason_code) if reason_code is not None else None,
+        }
+    return {
+        "status": "unavailable",
+        "failure_state": "projection_missing",
+        "observed_at": None,
+        "records_visible": 0,
+        "reason_code": "no_request_graph_artifact",
+    }
+
+
+def _fms_rail(value: Any) -> dict[str, Any]:
+    """Build ``freshness.fms`` -- fail closed to PROJECTION_MISSING.
+
+    Mirrors ``_budget_rail`` exactly (D6-B0 freeze
+    ``DEFENSE_D6B_FMS_SOURCE_AND_STAGE_ARCHITECTURE_FREEZE_2026-08-25.md``
+    §14 plane 1: the FMS rail writes into the SAME workspace freshness shape
+    every other optional Government Revenue rail uses). A checkout that has
+    never run the fms-acquire lane (no committed triad/graph) supplies no
+    ``fms_freshness``, so the default below is the typed failure the freeze
+    requires: no state may imply verification is merely in-progress for a
+    projection that has never existed.
+    """
+    if isinstance(value, dict):
+        status = str(value.get("status") or "").strip().lower() or "unavailable"
+        failure_state = value.get("failure_state")
+        if failure_state not in _VALID_BUDGET_FAILURE_STATES:
+            # A caller that supplies a bad/missing failure_state does not get
+            # a silently "live" rail: derive it from status the same way the
+            # sibling rails do, so failure_state None always means live/ok.
+            failure_state = _source_failure_state({"status": status})
+        records_visible = value.get("records_visible")
+        if isinstance(records_visible, bool) or not isinstance(records_visible, (int, float)):
+            records_visible = None
+        else:
+            records_visible = max(0, int(records_visible))
+        observed_at = value.get("observed_at")
+        reason_code = value.get("reason_code")
+        return {
+            "status": status,
+            "failure_state": failure_state,
+            "observed_at": str(observed_at) if observed_at is not None else None,
+            "records_visible": records_visible,
+            "reason_code": str(reason_code) if reason_code is not None else None,
+        }
+    return {
+        "status": "unavailable",
+        "failure_state": "projection_missing",
+        "observed_at": None,
+        "records_visible": 0,
+        "reason_code": "no_fms_case_graph_artifact",
+    }
 
 
 def _mapping_class(event: dict[str, Any]) -> str:
@@ -1090,6 +1210,9 @@ def build_procurement_workspace(
     award_events: Any = None,
     award_event_freshness: dict[str, Any] | None = None,
     vertical_links_by_ticker: dict[str, list[dict[str, Any]]] | None = None,
+    budget_freshness: dict[str, Any] | None = None,
+    fms_freshness: dict[str, Any] | None = None,
+    program_link_by_event_id: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Compose a deterministic v2 opportunity, recompete, and award workspace.
 
@@ -1141,19 +1264,43 @@ def build_procurement_workspace(
     events_available_before_cap = len(merged_events)
     events = merged_events[:MAX_WORKSPACE_EVENTS]
     events_truncated = max(0, events_available_before_cap - len(events))
+    # D5 `program_link` (freeze DEFENSE_D5_PROGRAM_GRAPH_ARCHITECTURE_FREEZE.md
+    # SS4): the workspace award view's single derived field. Emission only --
+    # the derivation itself lives in engine.government_revenue.program_ontology
+    # and is computed by the caller (scripts/build_government_revenue.py),
+    # never here. Attached only to `award_change` events -- the reviewed
+    # program_event_links[] relation admits no other kind.
+    if program_link_by_event_id is not None:
+        for event in events:
+            if event.get("kind") == "award_change":
+                event["program_link"] = program_link_by_event_id.get(
+                    event.get("event_id"),
+                    {
+                        "state": "source_unavailable",
+                        "reason_code": "ontology_unavailable",
+                        "program_id": None,
+                        "program_event_link_id": None,
+                        "ontology_graph_id": None,
+                    },
+                )
     mapped = sum(_mapping_class(event) != "unmapped" for event in events)
     opportunity_freshness = _freshness(
         opportunity_intelligence.get("freshness"),
         unavailable_reason="opportunity freshness was not supplied",
     )
+    opportunity_freshness["failure_state"] = _opportunity_failure_state(opportunity_freshness)
     recompete_freshness = _freshness(
         award_freshness,
         unavailable_reason="award-detail freshness for recompete watches was not supplied",
     )
+    recompete_freshness["failure_state"] = _source_failure_state(recompete_freshness)
     award_event_freshness = _freshness(
         award_event_freshness,
         unavailable_reason="award-event freshness was not supplied",
     )
+    award_event_freshness["failure_state"] = _source_failure_state(award_event_freshness)
+    budget_rail = _budget_rail(budget_freshness)
+    fms_rail = _fms_rail(fms_freshness)
     statuses = {
         str(source.get("status") or "unavailable").lower()
         for source in (opportunity_freshness, recompete_freshness, award_event_freshness)
@@ -1194,6 +1341,7 @@ def build_procurement_workspace(
     return {
         "schema_version": SCHEMA_VERSION,
         "event_contract": EVENT_CONTRACT,
+        "temporal_contract": TEMPORAL_CONTRACT,
         "as_of": as_of,
         "known_at": known_at,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -1203,6 +1351,8 @@ def build_procurement_workspace(
             "opportunities": opportunity_freshness,
             "recompetes": recompete_freshness,
             "award_events": award_event_freshness,
+            "budget": budget_rail,
+            "fms": fms_rail,
             "mappings": {
                 "status": "partial" if mapped < len(events) else "ok",
                 "reviewed_at": None,

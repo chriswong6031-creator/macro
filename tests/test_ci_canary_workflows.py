@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import shutil
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -19,11 +23,177 @@ def triggers(document: dict) -> set[str]:
 
 
 def test_canaries_are_dispatch_only_and_not_merge_authority() -> None:
-    for name in ("selfhosted-ci-canary.yml", "m1-runner-canary.yml"):
+    for name in (
+        "selfhosted-ci-canary.yml",
+        "m1-runner-canary.yml",
+        "merge-control-hosted-canary.yml",
+    ):
         document = workflow(name)
         assert triggers(document) == {"workflow_dispatch"}
         published = {job.get("name", job_id) for job_id, job in document["jobs"].items()}
-        assert not published & {"ci-gate", "fence-pack", "self-mod-fence", "capability-broker", "grader-manifest"}
+        assert not published & {
+            "ci-gate",
+            "fence-pack",
+            "self-mod-fence",
+            "capability-broker",
+            "grader-manifest",
+        }
+
+
+def test_merge_control_hosted_canary_is_read_only_main_pinned_and_non_acting() -> None:
+    document = workflow("merge-control-hosted-canary.yml")
+    production = workflow("merge-on-green.yml")
+    assert document["permissions"] == {"contents": "read"}
+    assert set(document["jobs"]) == {"trust-gate", "hosted-environment"}
+    trust = document["jobs"]["trust-gate"]
+    probe = document["jobs"]["hosted-environment"]
+    assert trust["runs-on"] == "ubuntu-latest"
+    assert probe["runs-on"] == "ubuntu-latest"
+    assert probe["needs"] == "trust-gate"
+    assert "refs/heads/main" in str(trust)
+
+    rendered = str(document)
+    for forbidden in (
+        "self-hosted",
+        "merge-control\"]",
+        "ADMIN_GH_TOKEN",
+        "MERGE_TOKEN",
+        "gh pr merge",
+        "python3 scripts/merge_on_green.py",
+    ):
+        assert forbidden not in rendered
+
+    steps = probe["steps"]
+    exact_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "exact production sparse checkout"
+    )
+    exact = steps[exact_index]
+    assert exact["uses"] == "actions/checkout@v4"
+    options = exact["with"]
+    assert options["filter"] == "blob:none"
+    assert options["persist-credentials"] is False
+    assert options["sparse-checkout-cone-mode"] is False
+    assert set(str(options["sparse-checkout"]).split()) == {
+        "scripts/merge_on_green.py",
+        "scripts/ci_semantic_proof.py",
+        "scripts/ci_authority_paths.py",
+        "scripts/gh_path_filter.py",
+        "scripts/run_ci_pack.py",
+        ".github/workflows",
+    }
+
+    # Canary/production parity is a live contract, not duplicated prose. The canary
+    # is allowed to tighten credential persistence only; the actual materialized
+    # source surface and dependency bootstrap must remain byte-for-byte equivalent.
+    prod_steps = production["jobs"]["sweep"]["steps"]
+    prod_checkout = next(
+        step for step in prod_steps if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert exact["uses"] == prod_checkout["uses"]
+    for key in ("filter", "sparse-checkout", "sparse-checkout-cone-mode"):
+        assert exact["with"][key] == prod_checkout["with"][key]
+    prod_bootstrap = next(step for step in prod_steps if step.get("name") == "install the yaml parser")
+    canary_bootstrap = next(
+        step for step in steps if step.get("name") == "exact production PyYAML bootstrap"
+    )
+    assert canary_bootstrap["run"] == prod_bootstrap["run"]
+    parity = next(
+        step for step in steps if step.get("name") == "assert canary tracks the production environment contract"
+    )
+    assert "merge-on-green.yml" in parity["run"]
+    assert "merge-control-hosted-canary.yml" in parity["run"]
+    assert "production/canary environment contract parity: OK" in parity["run"]
+
+    production_probe_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "prove the production system-Python dependency contract"
+    )
+    production_probe = steps[production_probe_index]
+    command = production_probe["run"]
+    assert 'python3 -c "import yaml"' in command
+    assert "python3 -m py_compile" in command
+    assert "import scripts.merge_on_green as mog" in command
+    assert "mog.main" in command
+
+    broad_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "expand to the hosted control test surface"
+    )
+    broad = steps[broad_index]
+    broad_options = broad["with"]
+    assert broad_options["persist-credentials"] is False
+    assert "/*" in broad_options["sparse-checkout"]
+    assert "!/site/" in broad_options["sparse-checkout"]
+    assert "!/data/" in broad_options["sparse-checkout"]
+
+    tests_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "run existing merge-control and runner-boundary suites"
+    )
+    tests = steps[tests_index]["run"]
+    for suite in (
+        "tests/test_ci_pack.py",
+        "tests/test_merge_on_green.py",
+        "tests/test_runner_policy.py",
+        "tests/test_ci_canary_tools.py",
+        "tests/test_ci_canary_workflows.py",
+    ):
+        assert suite in tests
+
+    # Negative evidence exists before Git is touched, so an early checkout/bootstrap
+    # failure still leaves a receipt. PHASE 1 may advance that record but cannot accept
+    # it; acceptance is reachable only after the real control suites pass. Attempt
+    # identity and the first hosted-step timestamp are part of that negative receipt.
+    initial_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "initialize negative canary receipt"
+    )
+    initial = steps[initial_index]["run"]
+    assert initial_index < exact_index
+    assert '"run_id": os.environ["GITHUB_RUN_ID"]' in initial
+    assert '"run_attempt": os.environ["GITHUB_RUN_ATTEMPT"]' in initial
+    assert '"job_started_at_observed":' in initial
+    assert 'datetime.now(timezone.utc)' in initial
+    assert '"phase1": "pending"' in initial
+    assert '"phase2": "pending"' in initial
+    assert '"production_contract_parity": False' in initial
+    assert '"accepted": False' in initial
+
+    phase1_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "record successful phase-1 environment receipt"
+    )
+    phase1 = steps[phase1_index]["run"]
+    assert production_probe_index < phase1_index < broad_index
+    assert 'receipt["phase1"] = "production_sparse_import_ok"' in phase1
+    assert 'receipt["production_contract_parity"] = True' in phase1
+    assert 'receipt["accepted"] = True' not in phase1
+
+    finalize_index = next(
+        index for index, step in enumerate(steps) if step.get("name") == "finalize successful canary receipt"
+    )
+    finalize = steps[finalize_index]
+    assert tests_index < finalize_index
+    assert 'receipt["phase2"] = "control_tests_ok"' in finalize["run"]
+    assert 'receipt["accepted"] = True' in finalize["run"]
+    upload_index = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and str(step.get("with", {}).get("name", "")).startswith("merge-control-hosted-canary-")
+    )
+    assert finalize_index < upload_index
+    assert steps[upload_index]["if"] == "always()"
+    artifact_name = str(steps[upload_index]["with"]["name"])
+    assert "github.run_id" in artifact_name
+    assert "github.run_attempt" in artifact_name
 
 
 def test_normal_ci_and_fences_remain_hosted() -> None:
@@ -168,6 +338,201 @@ def test_red_pack_results_are_captured_instead_of_aborting_the_receipt_path() ->
         capture = command.index("pack_rc=${PIPESTATUS[0]}")
         assert command.index("set +e") < pack < capture
         assert command.index("set -e", capture) > capture
+
+
+def test_canary_pins_python_3_12_13_everywhere_not_a_floating_version() -> None:
+    """Mutation-lock (#6351 spec E.1): the pre-bridge canary used a floating
+    ``python-version: "3.12"`` on every setup-python step. Every one must now
+    pin the exact patch — gate:code / RUNNER_CONTRACT v2 parity with
+    production's ci-pack setup-python step requires it (ci.yml pins 3.12.13
+    for the same document-term-parser-fingerprint reason).
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    checked = 0
+    for job_id, job in document["jobs"].items():
+        for step in job.get("steps", []) or []:
+            if str(step.get("uses", "")).startswith("actions/setup-python@"):
+                assert step["with"]["python-version"] == "3.12.13", job_id
+                checked += 1
+    assert checked >= 3, "expected setup-python in plan, hosted-control, and selfhosted-pack"
+
+
+def test_canary_planner_and_both_consumers_declare_gate_code() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_run = next(
+        step["run"] for step in document["jobs"]["plan"]["steps"] if step.get("id") == "plan"
+    )
+    assert "--gate code" in plan_run
+    for job_id in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_id]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        assert "--gate code" in command
+
+
+def test_canary_consumers_use_the_published_plan_not_independent_replanning() -> None:
+    """Mutation-lock: the pre-bridge consumer steps re-derived their own plan
+    on every runner via ``--changed-from`` + ``--expect-plan-sha``, which
+    could disagree between runners. Both consumers must load the ONE
+    published ``--plan-json``, mirroring ci.yml's ci-pack step template.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    for job_id in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_id]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        assert "--plan-json" in command
+        assert "--changed-files-file" in command
+        assert "--expect-plan-sha" in command
+        assert "--expect-tested-tree-sha" in command
+        assert "--expect-subject-head-sha" in command
+        assert "--expect-base-sha" in command
+        assert "--emit-semantic-fragment" in command
+        assert "--changed-from" not in command
+
+
+def test_canary_planner_passes_full_explicit_provenance_for_both_branches() -> None:
+    """Mutation-lock: the pre-bridge planner passed ``--changed-from``
+    unconditionally, including for pr_number=0 — an unsupported shape under
+    current law. The pr_number=0 branch must never pass ``--changed-from``.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_run = next(
+        step["run"] for step in document["jobs"]["plan"]["steps"] if step.get("id") == "plan"
+    )
+    assert "--workflow-name infrastructure-selfhosted-ci-canary" in plan_run
+    assert "--event workflow_dispatch" in plan_run
+    assert "--role pr_head" in plan_run
+    assert "--role main" in plan_run
+    assert "--tested-tree-sha" in plan_run
+    assert "--subject-head-sha" in plan_run
+    assert "--base-sha" in plan_run
+    assert '--changed-from "${{ steps.ref.outputs.base_sha }}"' in plan_run
+    pr0_branch = plan_run.split("else", 1)[1]
+    assert "--changed-from" not in pr0_branch
+
+
+def test_canary_hosted_control_is_a_matrix_over_the_same_selected_packs() -> None:
+    """spec item C.5: three hosted controls for three self-hosted packs."""
+    document = workflow("selfhosted-ci-canary.yml")
+    hosted = document["jobs"]["hosted-control"]
+    assert hosted["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    assert hosted["name"] == "diagnostic-hosted-control-pack-${{ matrix.pack }}"
+    upload_names = {
+        step["with"]["name"]
+        for step in hosted["steps"]
+        if step.get("uses") == "actions/upload-artifact@v4"
+    }
+    assert "ci-canary-hosted-${{ matrix.pack }}" in upload_names
+    assert "ci-canary-hosted-fragment-${{ matrix.pack }}" in upload_names
+
+
+def test_canary_compare_runs_for_both_slot_counts_over_the_selected_packs() -> None:
+    """spec item C.6: strict fragment equality covers every selected pack for
+    BOTH slots=1 and slots=3, not only the single-pack slots=1 shape.
+    """
+    document = workflow("selfhosted-ci-canary.yml")
+    compare = document["jobs"]["compare"]
+    assert compare["if"] == "always()"
+    assert compare["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    gate = next(
+        step
+        for step in compare["steps"]
+        if step.get("name") == "require every infrastructure leg to conclude"
+    )
+    assert "SLOTS" in gate["env"]
+    assert 'if [ "$SLOTS" = "1" ]; then' in gate["run"]
+    command = next(
+        step["run"]
+        for step in compare["steps"]
+        if step.get("name")
+        == "compare logical jobs, failures, receipts, and semantic fragments"
+    )
+    assert "--hosted-fragment" in command
+    assert "--selfhosted-fragment" in command
+
+
+def test_canary_compare_uses_trusted_control_artifact_without_repo_checkout() -> None:
+    """Receipt comparison must not rematerialize the multi-gigabyte repository."""
+    document = workflow("selfhosted-ci-canary.yml")
+    plan_steps = document["jobs"]["plan"]["steps"]
+    preserve = next(
+        step["run"]
+        for step in plan_steps
+        if step.get("name") == "preserve trusted control helpers outside the candidate workspace"
+    )
+    assert 'mkdir -p "$RUNNER_TEMP/ci-canary-compare-control/scripts"' in preserve
+    for helper in (
+        "scripts/__init__.py",
+        "scripts/compare_ci_canary_receipts.py",
+        "scripts/ci_semantic_proof.py",
+    ):
+        assert helper in preserve
+
+    control_upload_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    control_upload = plan_steps[control_upload_index]
+    assert control_upload["with"]["path"] == "${{ runner.temp }}/ci-canary-compare-control"
+    assert control_upload["with"]["if-no-files-found"] == "error"
+    candidate_checkout_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "checkout the exact candidate tree on hosted control"
+    )
+    candidate_plan_index = next(
+        index
+        for index, step in enumerate(plan_steps)
+        if step.get("name") == "freeze the current logical plan"
+    )
+    assert control_upload_index < candidate_checkout_index < candidate_plan_index
+
+    compare_steps = document["jobs"]["compare"]["steps"]
+    assert all(step.get("uses") != "actions/checkout@v4" for step in compare_steps)
+    control_download = next(
+        step
+        for step in compare_steps
+        if step.get("uses") == "actions/download-artifact@v4"
+        and step.get("with", {}).get("name") == "ci-canary-compare-control"
+    )
+    assert control_download["with"]["path"] == "${{ runner.temp }}/control"
+
+    command = next(
+        step["run"]
+        for step in compare_steps
+        if step.get("name")
+        == "compare logical jobs, failures, receipts, and semantic fragments"
+    )
+    assert 'python3 "$RUNNER_TEMP/control/scripts/compare_ci_canary_receipts.py"' in command
+    assert "python3 scripts/compare_ci_canary_receipts.py" not in command
+
+
+def test_canary_compare_control_bundle_is_runtime_complete() -> None:
+    """Reproduce the uploaded package layout and prove its entrypoint imports."""
+    with tempfile.TemporaryDirectory() as temp:
+        bundle = Path(temp) / "ci-canary-compare-control" / "scripts"
+        bundle.mkdir(parents=True)
+        for helper in (
+            "__init__.py",
+            "compare_ci_canary_receipts.py",
+            "ci_semantic_proof.py",
+        ):
+            shutil.copy2(ROOT / "scripts" / helper, bundle / helper)
+        completed = subprocess.run(
+            [sys.executable, str(bundle / "compare_ci_canary_receipts.py"), "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    assert completed.returncode == 0, completed.stderr
+    assert "--hosted-fragment" in completed.stdout
 
 
 def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:

@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 OUT = "marketdata/experiments.json"
 SEED = "data/experiments/registry_seed.json"
-_DONE = {"validated", "proven", "gate_open"}  # already concluded — don't re-flag on come-back date
+_DONE = {"validated", "proven", "gate_open", "no_go"}  # already concluded — don't re-flag on come-back date
 _NO_AUTO_READY = {"parked_research"}           # never auto-matures a result on a date
 # Date the seed's hand-authored `state` strings were last grounded by a codebase audit.
 # Used when the seed itself carries no top-level `audited` key. Any state the build could
@@ -160,8 +160,12 @@ def _refresh_track_record(e: dict) -> dict:
     # results are "ready" once the read has GRADED. 'accruing' and 'measuring' are both
     # pre-verdict accrual states ('measuring' = rows matured but the significance gate is
     # not yet callable — engine/subsector_track_record.py); any other verdict (validated /
-    # a printed null / …) is a real result and must flag ready.
-    if verdict and verdict not in ("accruing", "measuring"):
+    # a printed null / …) is a real result and must flag ready — but only until the seed
+    # ACKNOWLEDGES it. A seed whose `status` already records the artifact's verdict has
+    # been read (the audit writes the verdict back); flagging it daily forever pins the
+    # panel (index-leadership sat "ready" for weeks after its 2026-08-26 read). A verdict
+    # that CHANGES after acknowledgment re-flags.
+    if verdict and verdict not in ("accruing", "measuring") and verdict != (e.get("status") or ""):
         out["ready"] = True
     return out
 

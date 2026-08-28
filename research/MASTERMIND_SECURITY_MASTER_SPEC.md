@@ -376,6 +376,24 @@ not asserted as established facts, and the master must not mint either issuer id
 dates are resolved from the exchange. This is the same discipline `config/delisted_symbols.yml:28-36`
 already applies to exits: resolved, never inferred.
 
+> **D2B1 AMENDMENT (2026-08-19, `research/prophet_v4/d2/D2B1_FROZEN_CONTRACT_2026-08-19.md`).**
+> Rules 1–2 above have no in-repo data source at all (no per-security `list_date` table, no
+> country-of-incorporation table) and per this section's own discipline are SKIPPED when
+> unsourced, never guessed — so in practice, today, only rule 3 is ever reached. That left ties
+> UNRESOLVED for same-venue, unsourced-date dual share classes — the exact shape of a US CIK
+> group with two listings on the same MIC (GOOG/GOOGL, both `XNAS`, one CIK `1652044`). A fourth
+> rule closes it:
+>
+> 4. **lexicographically lowest full listing key** (`<CC>-<MIC>-<CODE>[.N]`).
+>
+> `US-XNAS-GOOG` < `US-XNAS-GOOGL` picks GOOG as Alphabet's canonical issuer member; GOOGL's
+> issuer_id is repointed from its own prior mint (`ISS:US-XNAS-GOOGL`) to `ISS:US-XNAS-GOOG` via
+> the one authorized correction era (`scripts/build_security_master.py`, era constant
+> `issuer_semantic_correction_v1`), recorded in `data/reference/issuer_migrations.parquet`.
+> `security_id`/`listing_key` are never touched — this is an issuer-axis correction only. See
+> `data/reference/security_master.parquet`'s new `issuer_state`/`issuer_cik`/
+> `issuer_evidence_snapshot` columns and `lib/dataos/identity.IssuerMaster` for the reader.
+
 ### 3.3 Instrument classes
 
 | Class | Grammar | Regex | Source |

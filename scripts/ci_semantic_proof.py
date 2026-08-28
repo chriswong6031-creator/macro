@@ -802,6 +802,45 @@ def _verify_plan_digest(plan: Mapping[str, Any]) -> None:
         )
 
 
+_ATTRIBUTED_CLASSIFICATIONS = {
+    "inherited_base",
+    "pr_regression",
+    "pr_ci_contract_change",
+    "main_failure",
+}
+
+
+def _step_representation_error(
+    job_id: str, step: Mapping[str, Any], role: str
+) -> str | None:
+    """Mirror the evidence step invariants so one bad unit cannot void a run.
+
+    ``_validate_evidence`` refuses the whole document, and the CLI then replaces
+    it with an empty-``jobs`` planner failure.  Every passing sibling job loses
+    its evidence that way, so no session can mint a descendant PASS for anything
+    in the run.  Detecting the same faults here lets the aggregate keep the jobs
+    it can classify and charge the fault to the one job it concerns.
+    """
+    proof_id = step.get("proof_id")
+    outcome = step.get("outcome")
+    classification = step.get("classification")
+    if outcome not in _STEP_OUTCOMES:
+        return f"invalid outcome for {job_id}/{proof_id}"
+    if classification not in _CLASSIFICATIONS:
+        return f"invalid classification for {job_id}/{proof_id}"
+    if (outcome == "passed") != (classification == "passed"):
+        return f"evidence outcome/classification mismatch for {job_id}/{proof_id}"
+    if classification in _ATTRIBUTED_CLASSIFICATIONS and outcome != "failed":
+        return f"evidence classification requires a failure for {job_id}/{proof_id}"
+    if role == "main" and classification not in {"passed", "main_failure", "unknown"}:
+        return f"main evidence contains a PR-only classification for {job_id}/{proof_id}"
+    if role == "pr_head" and classification == "main_failure":
+        return f"PR evidence contains a main-only classification for {job_id}/{proof_id}"
+    if outcome == "passed" and step.get("failure_signature") is not None:
+        return f"passed semantic proof carries a failure signature for {job_id}/{proof_id}"
+    return None
+
+
 def _blocked_step(expected: Mapping[str, Any], detail: str) -> dict[str, Any]:
     return {
         "proof_id": expected["proof_id"],
@@ -991,7 +1030,20 @@ def reconcile_evidence(
             if raw["outcome"] == "passed":
                 result["classification"] = "passed"
             elif identity["role"] == "main":
-                result["classification"] = "main_failure"
+                # A step can go dark (not_run_prior_failure / timed_out /
+                # infrastructure_blocked) behind an earlier failing step in
+                # the same job without itself having failed. Stamping every
+                # non-passed main outcome as main_failure violated the
+                # validator's outcome=="failed" requirement for that
+                # classification, raising SemanticProofError and voiding the
+                # entire aggregate to an empty jobs list -- which in turn
+                # blocked every session in the fleet from minting a
+                # descendant-PASS witness for any job. Mirror the pr_head
+                # guard below: only a genuinely failed outcome earns
+                # main_failure, everything else is honestly "unknown".
+                result["classification"] = (
+                    "main_failure" if raw["outcome"] == "failed" else "unknown"
+                )
             elif raw["outcome"] == "failed":
                 classification, detail = classify_head_failure(
                     logical_job_id=job_id,
@@ -1032,6 +1084,27 @@ def reconcile_evidence(
             }
         )
 
+    # Confine an unrepresentable unit to its own job.  The fault stays fully
+    # fail-closed there (blocked/unknown step plus a job-level infrastructure
+    # failure), and the jobs the classifier could represent survive instead of
+    # the run collapsing to an empty jobs list.
+    for job in jobs_out:
+        job_id = job["logical_job_id"]
+        faults: list[str] = []
+        for position, step in enumerate(job["steps"]):
+            error = _step_representation_error(job_id, step, identity["role"])
+            if error is None:
+                continue
+            faults.append(error)
+            item = expected.get((job_id, step.get("proof_id")))
+            if item is not None:
+                job["steps"][position] = _blocked_step(item, error)
+        if faults:
+            job["infrastructure"] = {
+                "outcome": "planner_configuration_failure",
+                "detail": _bounded_text("; ".join(faults)),
+            }
+
     semantic_blocking = any(
         step["classification"] not in {"passed", "inherited_base"}
         for job in jobs_out
@@ -1070,6 +1143,10 @@ def reconcile_evidence(
         "infrastructure": infrastructure,
     }
     evidence["evidence_sha256"] = canonical_sha256(evidence)
+    # Never hand back a document the consumers will refuse: an artifact that
+    # fails here becomes the CLI's bounded planner failure, which is the same
+    # fail-closed outcome as today rather than a silently invalid aggregate.
+    _validate_evidence(evidence)
     return evidence
 
 
@@ -1395,6 +1472,118 @@ def find_descendant_pass_witness(
                     )
     return None
 
+
+# How many ancestry-valid main artifacts must be readable before their job
+# inventory is allowed to answer "no main run will ever emit this job".
+# One artifact is a sample, not an inventory: a single truncated or partially
+# uploaded main artifact would otherwise declare every job unclearable at once.
+MIN_INVENTORY_ARTIFACTS = 2
+
+
+@dataclass(frozen=True)
+class MainRoleInventory:
+    """What the main role actually plans, read off main's own artifacts.
+
+    ``job_ids`` is the union of ``logical_job_id`` across the readable
+    main-role artifacts, i.e. the jobs main is ELIGIBLE to report on.  It is
+    deliberately a union rather than an intersection: a job main ran even once
+    in the window can produce a descendant PASS later, so it is clearable.
+    """
+
+    job_ids: frozenset[str]
+    artifacts: int
+    descendant_artifacts: int
+
+
+def main_role_job_inventory(
+    old_merge_sha: str,
+    candidates: Iterable[Mapping[str, Any] | LoadedSemanticEvidence],
+    is_ancestor: Callable[[str, str], bool],
+    *,
+    max_candidates: int = 12,
+) -> MainRoleInventory:
+    """The job set main can report on, from the same bounded artifact window.
+
+    Semantic ELIGIBILITY is role-dependent, and that is the asymmetry this
+    exists to expose.  ``ci.yml`` plans the merge gate with ``--gate code`` and
+    ``data-health.yml`` runs the ``gate: data`` jobs on its own lane, which
+    emits no main-role semantic evidence at all.  A pull-request head planned
+    before that split (2026-08-19, W2) therefore froze blocking units for
+    ``gate: data`` jobs — measured on PR #5936's head run 32223270543,
+    ``house-law-registry`` and ``signal-contract`` — that
+    ``find_descendant_pass_witness`` can never match, because no main artifact
+    will ever carry those ``logical_job_id``s again.  Waiting for one is not
+    slow; it is impossible.
+
+    The ancestry rule is the witness search's own rule, so "eligible" here
+    means eligible on the exact main history that could have healed this merge,
+    never on some unrelated older lane.
+    """
+    job_ids: set[str] = set()
+    artifacts = 0
+    descendant_artifacts = 0
+    for index, item in enumerate(candidates):
+        if index >= max_candidates:
+            break
+        evidence = item.evidence if isinstance(item, LoadedSemanticEvidence) else item
+        if not isinstance(evidence, Mapping):
+            continue
+        try:
+            validated = _validate_evidence(evidence)
+        except SemanticProofError:
+            continue
+        if validated["role"] != "main":
+            continue
+        artifacts += 1
+        if not is_ancestor(old_merge_sha, validated["tested_tree_sha"]):
+            continue
+        descendant_artifacts += 1
+        for job in validated["jobs"]:
+            job_ids.add(job["logical_job_id"])
+    return MainRoleInventory(
+        frozenset(job_ids), artifacts, descendant_artifacts
+    )
+
+
+def unclearable_units(
+    units: Iterable[SemanticUnit],
+    inventory: MainRoleInventory,
+    *,
+    min_descendant_artifacts: int = MIN_INVENTORY_ARTIFACTS,
+) -> tuple[SemanticUnit, ...]:
+    """Units no future main run can ever clear, or nothing at all.
+
+    Fail-closed by construction: with too few readable descendant artifacts, or
+    with an empty inventory, the answer is "unknown", which is spelled as the
+    empty tuple — the unit stays blocking exactly as it did before this
+    function existed.  Only a job main demonstrably plans WITHOUT this job in
+    it can retire a blocking unit.
+    """
+    if inventory.descendant_artifacts < min_descendant_artifacts:
+        return ()
+    if not inventory.job_ids:
+        return ()
+    return tuple(
+        unit for unit in units if unit.logical_job_id not in inventory.job_ids
+    )
+
+
+def format_main_eligibility(
+    unit: SemanticUnit, inventory: MainRoleInventory
+) -> str:
+    """One clause telling a session whether waiting on this unit can help."""
+    if inventory.descendant_artifacts < MIN_INVENTORY_ARTIFACTS:
+        state = "unknown"
+    elif unit.logical_job_id in inventory.job_ids:
+        state = "yes"
+    else:
+        state = "no"
+    return (
+        f"main-eligible={state} "
+        f"({inventory.descendant_artifacts} ancestry-valid main artifact(s) of "
+        f"{inventory.artifacts} read, {len(inventory.job_ids)} job(s) in main's "
+        "eligible inventory)"
+    )
 
 def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)

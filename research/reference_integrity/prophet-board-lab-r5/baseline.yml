@@ -1,0 +1,189 @@
+# Production Baseline Manifest (RIG V1 §4/§5) — design memory for D-LAB-R5.
+#
+# WHAT THE BASELINE IS HERE, because this cycle's shape is unusual:
+#   The Lab does not REPLACE a production surface — no early-entry inspection
+#   surface exists today. What it extends is the U.S. Prophet Board, whose
+#   current best statement is the frozen R4 reference (itself unapproved), and
+#   whose shipped statement is the production template family. So the ledger
+#   below inventories THE BOARD's capabilities: every one of them must survive
+#   the Lab's arrival untouched, and `proposal.yml` dispositions each one.
+#   The Lab's own behaviours are NOT capabilities being preserved — they are
+#   `additions`, and they are listed there so the authority audit sees them.
+schema: mastermind.rig_baseline.v1
+reference_id: prophet-board-lab-r5
+captured_at: "2026-08-18"
+
+production:
+  route: us_stocks.html
+  live_url: https://mastermindx.io/us_stocks.html
+  source_commit: d772fbd6f884
+  source_paths:
+    - templates/dashboard.html.j2          # the board section, ladder, freshness banner
+    - templates/_prophet_card.html.j2      # the shipped .pvcard
+    - templates/_us_board_cards.html.j2    # card context assembly, cautions, zone kind
+    - templates/tier_preview.js            # the anonymous/free tier gate + copy
+    - templates/theme.css                  # tokens, incl. the --pv-* stance family
+    - engine/us_board_rank.py              # the board's ranking + status buckets
+    - engine/prophet_board_read.py         # the G-D join (actionability + enrichment)
+    - scripts/build_stock_library.py       # _compute_board_staleness (freshness producer)
+    - scripts/build_prophet.py             # the plan book publisher
+  shared_surfaces:
+    - stock.html                           # the card's link destination
+  reference_baseline:
+    path: mockups/refs/institutionalize/us_stocks
+    frozen_sha: 168a9be00691
+    status: "NOT APPROVED — no artifact set, no reviews, no verdict were ever minted for the R4 cycle"
+
+evidence:
+  screenshots:
+    # The frozen R4 reference's own committed crop set is the visual baseline the
+    # Lab is judged against. These are real committed files at the R4 SHA.
+    - {path: mockups/refs/institutionalize/us_stocks/crops/01-desktop-dark-en.png,  viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/02-desktop-light-en.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/03-desktop-dark-zh.png,  viewport: desktop, theme: dark,  locale: zh}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/04-desktop-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/05-mobile390-dark-en.png, viewport: mobile, theme: dark,  locale: en}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/06-mobile390-dark-zh.png, viewport: mobile, theme: dark,  locale: zh}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/07-mobile390-light-en.png, viewport: mobile, theme: light, locale: en}
+    - {path: mockups/refs/institutionalize/us_stocks/crops/40-anon-locked-dark-en.png, viewport: desktop, theme: dark, locale: en}
+    # And the R5 candidate's own LIVE-mode captures, which are the proof that the
+    # baseline composition survives the addition (see proposal.yml dispositions).
+    - {path: mockups/refs/prophet_lab/crops/01-live-desktop-dark-en.png,  viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/02-live-desktop-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/04-live-no-operator-dark-en.png, viewport: desktop, theme: dark, locale: en}
+  gaps:
+    - axis: access
+      value: "live production screenshots of us_stocks.html"
+      reason: >
+        Not captured. The live board is behind paid auth and this worktree is sparse
+        (site/ is not on disk), so a faithful production capture was not available to this
+        session. The frozen R4 reference is used as the visual baseline instead, which is
+        what the R3/R4 cycles were judged against; production's CURRENT behaviour was
+        instead re-censused from source with file:line receipts in
+        research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md rather than asserted from memory.
+    - axis: access
+      value: "an existing early-entry inspection surface to compare against"
+      reason: >
+        None exists. The Lab is a new capability, so several user_tasks in proposal.yml
+        have no production counterpart and are recorded as such rather than scored against
+        an invented one.
+    - axis: viewport
+      value: "tablet widths (768-1180)"
+      reason: >
+        Not captured as crops. The layout is exercised there (a --lab-chart/--lab-pro
+        narrowing at 1180 and the stacked re-composition at 980), and the 390 and 1440
+        anchors are captured, but no committed crop sits between them.
+
+user_job: >
+  The Chairman opens the U.S. Prophet page to see every plan being tracked on US stocks and
+  where each one stands today — and, as an operator, to inspect exact early-entry candidates in
+  real time before Prophet has written a plan for them.
+
+core_interactions:
+  - "Scan the board and find what is actionable now."
+  - "Read one setup completely without opening it — what it is, what Prophet thinks, price, chart, priority, lifecycle, zone."
+  - "Filter the board by lifecycle cell from the ladder."
+  - "Open a name's detail surface from its card."
+  - "Reveal the tail of the book in place (Show more / Show all)."
+  - "Switch to the table representation."
+  - "Read the record (Evidence) and the sourced Groups band."
+  - "As an operator: flip to LAB, inspect early candidates, and flip back."
+
+information_hierarchy:
+  - "Page title + purpose + one as-of / freshness state"
+  - "The headline live count and the seven-cell lifecycle ladder (the archetype's identity device)"
+  - "Setups: the plan book as a card grid, sorted by priority"
+  - "Candidates: a separate population in a different form"
+  - "Groups (sourced themes) and Evidence (the track record with its interval)"
+
+design_lineage:
+  rulings:
+    - ref: "LAB-0 / DEC:PROPHET-LAB-B5A-RECUT"
+      evidence: "research/prophet_v4/LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md §1-§7"
+      implication: >
+        The Lab is a read-only projection with zero authority; board definitions and
+        observation classes are frozen; default sort newest-first; C3/C5 excluded from the
+        union board in V1; a fresh page always defaults LIVE; LAB stale/unavailable stays
+        visibly LAB; expert identities are never flattened.
+    - ref: "DNR:KILL-PROPHET-POP-MERGE"
+      evidence: "research/DO_NOT_REBUILD.md"
+      implication: "The Lab never changes the graded-board population and never blends conviction x timing into one ranking."
+    - ref: "DNR:KILL-WASHOUT-TURN"
+      evidence: "research/DO_NOT_REBUILD.md"
+      implication: "lab-g0-c2a-v1 is a display set intersection only — detector_id = null, zero events/episodes/scores minted."
+    - ref: "DNR:KILL-OUTCOME-AUDITION"
+      evidence: "research/DO_NOT_REBUILD.md"
+      implication: "No forward outcome may be read for ranking, and no per-name selection by outcome exists on any Lab surface."
+    - ref: "DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED"
+      evidence: "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md"
+      implication: "One visual card may carry multiple experts[], each preserving exact detector/event identity. Never flattened to a count."
+    - ref: "PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS (PR #5504)"
+      evidence: "research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §6, §5, §10"
+      implication: >
+        The seven lifecycle cell words and their weight-only, hue-free grammar are ruled.
+        The Lab QUOTES them verbatim in its Prophet comparison rather than authoring a
+        second vocabulary for one referent.
+    - ref: "Operator ruling #3821 — falsifier language is never front-facing"
+      evidence: "CLAUDE.md §House laws, Design"
+      implication: "No falsifier/refutation vocabulary anywhere on the Lab; windows/watching language only."
+    - ref: "MP-1 ratified laws"
+      evidence: "research/migration_packets/MP-1-prophet-board.md"
+      implication: "Stocks-mode-only shell; Candidates remain a separate population; non-US parity untouched."
+    - ref: "Reserved-hue law + violet is lock-only"
+      evidence: "research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §1, §5"
+      implication: "The Lab takes --prov (provisional/epistemic tier) and nothing else; no stance ink, no violet, no new token family."
+    - ref: "Design doctrine tiering + word budgets"
+      evidence: "docs/DESIGN_DOCTRINE.md §1, §2 Laws 1-5"
+      implication: "Plain words and a stance at the glance tier; machine identity demoted to LENS receipts."
+  rejected_variants:
+    - "R4/R3: the state=paid population exemption — a reference may not improve its composition by choosing its population (struck under PRC-203/DA-001)."
+    - "R3: the four-dot Bottoming/Turning/Ready/Trend rail — two of its four steps are structurally unreachable."
+    - "R3: regime/breadth/posture chips — a market call with no producer behind it."
+    - "R3: the '+N more' link routing the tail to the table — replaced by in-place expansion (PRC-306)."
+    - "R5, considered and rejected: grouping retrospective seeds below a rule. It changes what the top of the board is, and LAB-0 §3 freezes the default sort as newest-first. One stream forces the class distinction to survive adjacency, which is the case that matters."
+    - "R5, considered and rejected: giving the Lab its own accent hue. The reserved-hue law permits colour only for five meanings; a Lab-specific hue is a sixth, and stance ink on a Lab row would make an observation read as a call."
+  comments:
+    - path: "mockups/refs/institutionalize/us_stocks/board.css:521-522"
+      note: "The spark-recolour law: the whole spark AND its baked zone band take the stance hue, which is how the zh flip comes for free. The Lab must NOT inherit this — it has no stance."
+    - path: "mockups/refs/institutionalize/us_stocks/board.css:533-541"
+      note: "The chartless hero is 74px and PRINTS its absence: an empty rectangle cannot be told from flat price or a broken render."
+    - path: "mockups/refs/institutionalize/us_stocks/board.js:456-470"
+      note: "data-sym is an ATTRIBUTE, not payload — which is why the live quote works for 100% of rows regardless of the enrichment join."
+    - path: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:410-414"
+      note: "The episode chip says 'N of M' because the chip must disambiguate on a card seen ALONE. The same argument licenses the Lab's per-row observation-class chip."
+
+capabilities:
+  # ── the board shell ─────────────────────────────────────────────────────
+  - {id: board.title_and_purpose, user_job: "Know what page this is and what it is for", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1107-1112", importance: core}
+  - {id: board.freshness_state, user_job: "Know whether the ranking is on settled or stale prices before acting", evidence: "mockups/refs/institutionalize/us_stocks/board.js:168-190,1119-1145", importance: core}
+  - {id: board.headline_count, user_job: "See how many live setups there are tonight", evidence: "mockups/refs/institutionalize/us_stocks/board.js:221-240", importance: core}
+  - {id: board.lifecycle_ladder, user_job: "See the whole book partitioned by lifecycle, and filter to one cell", evidence: "mockups/refs/institutionalize/us_stocks/board.js:221-334", importance: core}
+  - {id: board.count_law, user_job: "Trust the integers: every printed quantity reconciles over one universe", evidence: "mockups/refs/institutionalize/us_stocks/board.js:119-128", importance: core}
+  - {id: board.key_absence_disclosure, user_job: "Tell 'not published' apart from 'zero'", evidence: "mockups/refs/institutionalize/us_stocks/board.js:129", importance: core}
+  - {id: board.progressive_expansion, user_job: "Reach every plan row as a card, in place", evidence: "mockups/refs/institutionalize/us_stocks/board.js:851-870", importance: core}
+  - {id: board.table_view, user_job: "Read the book as an alternate tabular representation", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1155-1161", importance: supporting}
+  - {id: board.anonymous_gate, user_job: "As an unentitled reader, see what the paid board provides, withheld by absence", evidence: "mockups/refs/institutionalize/us_stocks/board.js:611-636", importance: core}
+  - {id: board.empty_state, user_job: "Understand a quiet day without mistaking it for a broken page", evidence: "mockups/refs/institutionalize/us_stocks/board.js:190-196", importance: supporting}
+  # ── the card ────────────────────────────────────────────────────────────
+  - {id: card.chart_hero, user_job: "See the recent shape of the name first", evidence: "mockups/refs/institutionalize/us_stocks/board.js:571-580", importance: core}
+  - {id: card.printed_null_chart, user_job: "Tell an unpublished chart apart from a broken one", evidence: "mockups/refs/institutionalize/us_stocks/board.css:533-541", importance: core}
+  - {id: card.live_quote, user_job: "See the current price and today's move", evidence: "mockups/refs/institutionalize/us_stocks/board.js:439-451", importance: core}
+  - {id: card.stance_chip, user_job: "Know what Prophet thinks in one word", evidence: "mockups/refs/institutionalize/us_stocks/board.js:400-417", importance: core}
+  - {id: card.no_read_chip, user_job: "Know when the entry read has NOT published — an absent read, not a cautious one", evidence: "mockups/refs/institutionalize/us_stocks/board.js:400-417", importance: core}
+  - {id: card.identity_link, user_job: "Open the name's detail surface from the card", evidence: "mockups/refs/institutionalize/us_stocks/board.js:387-399", importance: core}
+  - {id: card.priority, user_job: "Scan readiness rank without reading it as a win probability", evidence: "mockups/refs/institutionalize/us_stocks/board.js:588-596", importance: core}
+  - {id: card.trigger_chip, user_job: "See a sourced recent trigger event", evidence: "mockups/refs/institutionalize/us_stocks/board.js:418-438", importance: supporting}
+  - {id: card.marks, user_job: "See Featured / New / entry-construction marks, restrained to three", evidence: "mockups/refs/institutionalize/us_stocks/board.js:452-491", importance: supporting}
+  - {id: card.caution_carrier, user_job: "See counted risk flags at glance, sentences one hover deeper", evidence: "mockups/refs/institutionalize/us_stocks/board.js:355-377", importance: core}
+  - {id: card.lifecycle_mark, user_job: "See where the plan sits in its lifecycle, in ruled weight-only grammar", evidence: "mockups/refs/institutionalize/us_stocks/board.js:492-511", importance: core}
+  - {id: card.zone_footer, user_job: "See which price area matters, treated by stance", evidence: "mockups/refs/institutionalize/us_stocks/board.js:512-533", importance: core}
+  - {id: card.episode_chip, user_job: "Disambiguate a ticker's multiple plan episodes on a card seen alone", evidence: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:404-414", importance: supporting}
+  # ── the other populations and the record ────────────────────────────────
+  - {id: section.candidates, user_job: "Read the screened candidate population as a separate noun and form", evidence: "mockups/refs/institutionalize/us_stocks/board.js:871-945", importance: core}
+  - {id: section.groups, user_job: "See which themes are in favour, from a canonical producer with its as-of", evidence: "mockups/refs/institutionalize/us_stocks/board.js:946-1022", importance: supporting}
+  - {id: section.evidence_record, user_job: "See the track record with its confidence interval, matured vs in-flight", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1023-1102", importance: core}
+  # ── cross-cutting ───────────────────────────────────────────────────────
+  - {id: xc.bilingual, user_job: "Read the whole surface natively in EN or ZH, with 红涨绿跌 direction inks", evidence: "mockups/refs/institutionalize/us_stocks/board.css:99-118", importance: core}
+  - {id: xc.light_dark, user_job: "Use the page in either theme, each designed rather than translated", evidence: "mockups/refs/institutionalize/us_stocks/board.css:69-97", importance: core}
+  - {id: xc.mobile_390, user_job: "Use the board at the 390w design floor with no horizontal scroll", evidence: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:110-112", importance: core}
+  - {id: xc.lens_receipts, user_job: "Reach mechanics, definitions and provenance one hover/focus deeper", evidence: "mockups/refs/institutionalize/us_stocks/board.js:1285-1330", importance: core}

@@ -82,6 +82,31 @@ def test_track_record_hook_ready_only_on_graded_verdict(monkeypatch):
         assert out.get("ready") is expect, (verdict, out)
 
 
+def test_track_record_ready_clears_once_seed_acknowledges_the_verdict(monkeypatch):
+    """Fix 2026-08-26 audit: a terminal verdict used to set ready=True forever, pinning
+    the panel long after the result was read (index-leadership sat 'ready' for weeks
+    after its audit). A seed whose `status` already records the artifact's verdict has
+    acknowledged the read → no flag; a verdict that CHANGES after acknowledgment
+    (validated → no_go) must re-flag."""
+    monkeypatch.setattr(experiments_registry, "_jsonl_dates", lambda rel: (11, 2948))
+    monkeypatch.setattr(
+        experiments_registry, "_read_json",
+        lambda rel: {"verdict": "validated", "horizons": {}})
+    base = {"storage": "data/x/snapshots.jsonl", "track_json": "data/x/track_record.json"}
+    acked = experiments_registry._refresh_track_record({**base, "status": "validated"})
+    assert acked.get("ready") is None, acked
+    changed = experiments_registry._refresh_track_record({**base, "status": "no_go"})
+    assert changed.get("ready") is True, changed
+
+
+def test_panel_done_set_stays_in_step_with_the_engine():
+    """admin/experiments.py re-derives `ready` with its own _DONE set; a status the
+    engine considers concluded but the panel does not re-flags daily forever
+    (2026-08-26 audit: the no_go cortex hypotheses). Pin the two sets together."""
+    from admin import experiments as admin_experiments
+    assert admin_experiments._DONE == experiments_registry._DONE
+
+
 # ---------------------------------------------------------------------------
 # desk-schema ledgers (ai_desk / thematic_desk / demand_chain)
 # ---------------------------------------------------------------------------

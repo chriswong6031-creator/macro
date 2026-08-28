@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "HLI-BULL-20260630",
-  "asof": "2026-08-18",
-  "phase": "invalidated",
-  "detection_phase": "invalidated",
-  "management_confidence": 11.5,
-  "raw_confidence": 8.0,
-  "delta_vs_base": -48.5,
-  "recommended_action": "invalidated",
-  "human_state": "Invalidated",
+  "asof": "2026-08-28",
+  "phase": "pre_trigger",
+  "detection_phase": "pre_trigger",
+  "management_confidence": 29.4,
+  "raw_confidence": 30.4,
+  "delta_vs_base": -30.6,
+  "recommended_action": "wait",
+  "human_state": "Approaching Trigger",
   "components": {
-    "validity": 0.0,
+    "validity": 6.7,
     "progress": 0.0,
-    "pace": 0.0,
-    "retention": 35.3,
-    "overlay": 55.0
+    "pace": 0.1,
+    "retention": 50.0,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.338,
+    "dist_to_stop_r": 0.171,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 64.4,
-    "p1": -0.8921,
-    "p2": -0.4461,
+    "horizon_pct_used": 86.7,
+    "p1": -0.5524,
+    "p2": -0.2762,
     "p3": null,
-    "move_r": -1.338,
+    "move_r": -0.829,
     "mfe_r": 0.0,
     "mae_r": -1.505
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 29,
-  "tau": 0.6444
+  "days_elapsed": 39,
+  "tau": 0.8667
 }

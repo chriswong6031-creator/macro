@@ -36,6 +36,23 @@ clean (skip-worktree), and a session that needs them runs
 tree detect the omission and refuse or skip with that command in the message —
 see scripts/worktree_sparse.py, which is the single detector they all share.
 
+WHERE IT PLANTS (2026-08-20)
+----------------------------
+Under the checkout the SESSION was launched in, not under the main working tree.
+The hook used to derive its destination from ``--git-common-dir``, whose answer
+is identical from every checkout of a clone — so every Claude worktree landed in
+``Macro Dashboard/.claude/worktrees/`` no matter which folder the operator
+opened, including the operator-designated local root the workspace law points
+every session at. Placement now follows ``--show-toplevel``, climbed out of any
+session-worktree root so spawns never nest, with ``MACRO_LOCAL_ROOT`` as the
+explicit override. Only the BYTES move: the clone is one clone, so every
+worktree stays registered in ``Macro Dashboard/.git/worktrees/`` and that folder
+remains undeletable (see CLAUDE.md § Shared workspace).
+
+``scripts/worktree_gc.py`` expands its repo-relative roots under every host
+checkout for the same reason — a tree the sweeper cannot see is a tree it can
+never reclaim.
+
 IDEMPOTENT ON PURPOSE
 ---------------------
 The zsh prototype was wired through `.claude/settings.local.json`, which is
@@ -48,6 +65,7 @@ reported as success.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -57,6 +75,31 @@ from pathlib import Path
 HOOK = "WorktreeCreate"
 SAFE_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 PR_NAME = re.compile(r"^pr-([0-9]+)$")
+
+# ── where the new worktree is PLANTED ────────────────────────────────────────
+# The bytes of a session worktree and the git metadata registering it live in
+# different places, and conflating the two is what planted every Claude worktree
+# in the forbidden directory. `--git-common-dir` answers with the MAIN working
+# tree's `.git` from EVERY checkout of a clone, so `common.parent` is a constant:
+# on this host it can only ever name `Macro Dashboard`, no matter which folder
+# the operator opened. That is the right answer to "which git do I talk to" and
+# the wrong answer to "where do the files go" — and because it is a constant, no
+# session could ever escape it by launching somewhere else.
+#
+# Placement instead follows the checkout the SESSION was launched in, climbed out
+# of any session-worktree root so a spawn plants a sibling rather than nesting.
+# Keep this list in step with `ship_loop_guard.AGENT_WORKTREE_ROOTS`,
+# `config/worktree_gc.json` roots and `.gitignore` —
+# `tests/test_agent_worktree_roots.py` pins all four together.
+SESSION_WORKTREE_ROOTS = (
+    ".claude/worktrees/",
+    ".claire/worktrees/",
+    ".codex/worktrees/",
+    ".codex-worktrees/",
+    ".cursor/worktrees/",
+    ".grok/worktrees/",
+    ".warp/worktrees/",
+)
 
 
 def log(msg: str) -> None:
@@ -104,6 +147,59 @@ def is_registered_worktree(repo_root: Path, dest: Path) -> bool:
 # e.g. a checkout predating it. R8's two named directories are the floor.
 # tests/test_sparse_worktree_profile.py pins this against the config file.
 FALLBACK_EXCLUDE_DIRS = ("data", "site")
+
+
+def climb_out_of_session_root(path: Path) -> Path:
+    """The directory that OWNS the session-worktree root ``path`` sits under.
+
+    Returns ``path`` unchanged when it is not inside one. A session spawned from
+    inside a session worktree must plant its sibling beside it, never within it:
+    a nested `.claude/worktrees/a/.claude/worktrees/b` is invisible to the GC's
+    depth-1 orphan scan and drags `b` along when `a` is swept.
+    """
+    parts = Path(path).parts
+    for root in SESSION_WORKTREE_ROOTS:
+        marker = tuple(root.strip("/").split("/"))
+        span = len(marker)
+        for index in range(len(parts) - span + 1):
+            if parts[index:index + span] == marker:
+                return Path(*parts[:index])
+    return Path(path)
+
+
+def same_repository(candidate: Path, common: Path) -> bool:
+    """True when ``candidate`` is a checkout of the clone that owns ``common``."""
+    try:
+        other = Path(git(candidate, "rev-parse", "--path-format=absolute", "--git-common-dir"))
+    except RuntimeError:
+        return False
+    try:
+        return other.resolve() == Path(common).resolve()
+    except OSError:
+        return False
+
+
+def resolve_host(toplevel: Path, common: Path, primary: Path) -> Path:
+    """The checkout that hosts the new session worktree.
+
+    ``MACRO_LOCAL_ROOT`` is the operator's explicit lever (the same variable the
+    Grok hook honours); otherwise the session's own checkout hosts. Climbing can
+    walk out of the repository entirely — `~/.codex/worktrees/<name>/<checkout>`
+    is owned by a home directory, not by a checkout — so a climb that does not
+    land on a checkout of this clone falls back to the primary.
+    """
+    env = os.environ.get("MACRO_LOCAL_ROOT", "").strip()
+    if env:
+        candidate = Path(env).expanduser()
+        if candidate.is_dir() and same_repository(candidate, common):
+            return candidate.resolve()
+        log(f"ignoring MACRO_LOCAL_ROOT={env!r}: not a checkout of this repository")
+    candidate = climb_out_of_session_root(toplevel)
+    if candidate == Path(toplevel):
+        return Path(toplevel)
+    if candidate.is_dir() and same_repository(candidate, common):
+        return candidate
+    return Path(primary)
 
 
 def load_profile(repo_root: Path) -> dict:
@@ -156,9 +252,14 @@ def main() -> int:
 
     try:
         common = Path(git(Path(cwd), "rev-parse", "--path-format=absolute", "--git-common-dir"))
+        toplevel = Path(git(Path(cwd), "rev-parse", "--path-format=absolute", "--show-toplevel"))
     except RuntimeError:
         return fail("cwd is not inside a git worktree")
-    repo_root = common.parent
+    # `repo_root` is the checkout every git command below runs in AND the folder
+    # the worktree is planted under. Both are satisfied by the session's own
+    # host: `fetch`, `worktree add` and `worktree remove` are repo-global, so any
+    # checkout of the clone serves them identically.
+    repo_root = resolve_host(toplevel, common, common.parent)
     worktree_root = repo_root / ".claude" / "worktrees"
     dest = worktree_root / name
     branch = f"worktree-{name}"
@@ -191,6 +292,7 @@ def main() -> int:
     try:
         profile = load_profile(repo_root)
         sparse = bool(profile.get("enabled", True))
+        log(f"host checkout: {repo_root}")
         log(f"creating {'sparse' if sparse else 'full'} worktree at {dest}")
         git(repo_root, "worktree", "add", "--no-checkout", "-b", branch, str(dest), base)
         created = True

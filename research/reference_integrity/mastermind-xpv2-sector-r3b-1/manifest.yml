@@ -1,0 +1,80 @@
+# RIG artifact manifest (RIG V1 S3) -- XPV2-SC-R3B.1, US Sector Central six-view workspace,
+# SURGICAL CORRECTION cycle over the REVISE'd mastermind-xpv2-sector-r3b reference.
+# Commission: COMMISSION.md in this directory (Sol, 2026-08-22). The R3B product architecture,
+# information hierarchy and visual grammar are FROZEN (commission do-not-reopen list); this
+# cycle fixes exactly the R3B1-01..14 packet the four fresh critics proved defective.
+# The build tree started as a byte-identical copy of the frozen R3B build (untouched copy
+# rebuilt to the same candidate sha256 19553267d3f51659503fc836da6b6bdaa06afc9cdd607aafb1bb
+# 795e46c47dca before any fix landed).
+schema: mastermind.rig_manifest.v1
+reference_id: mastermind-xpv2-sector-r3b-1
+scope: full
+status: revise
+# status: revise set 2026-08-23 by the returning R3B/R3B.1 orchestrator per Sol's final
+# four-critic adjudication + Chairman execution directive: durable seat dispositions
+# PRC=PASS_WITH_CONDITIONS / Mobile=PASS_WITH_CONDITIONS / Data=PASS_WITH_CONDITIONS /
+# Visual-Taste=BLOCK; overall Sol verdict REVISE (verdict.yml). Successor cycle:
+# mastermind-xpv2-sector-r3b-2 (one bounded surgical closure, B2-01..B2-11).
+# status: in_review SET AT FREEZE (2026-08-22) by the R3B.1 orchestrator: all four lanes
+# converged and adjudicated, 29/29 continuity items RESOLVED_BY_CHANGE, fresh 49-file
+# evidence matrix landed, acceptance green (verify 16/16, R3A 59/59, RIG scan exit 0).
+# Awaiting Sol's four NEW fresh critic seats; no approval.yml may be authored by this cycle.
+
+surface:
+  route: sector_central.html
+  registry_row: "macro:sector_central"
+  archetype: intelligence_desk
+
+author:
+  identity: "XPV2-SC-R3B.1 surgical correction -- returning R3B Fable orchestrator with delegated Opus design + Sonnet build/QA lanes (COMMISSION.md, Sol-issued 2026-08-22)"
+  role: designer
+
+lineage:
+  predecessors:
+    - mastermind-xpv2-turn3-r2
+    - mastermind-xpv2-sector-r3b
+  # Ordered oldest -> nearest (RIG S13); the closure obligation runs against the NEAREST,
+  # mastermind-xpv2-sector-r3b, whose verdict.yml (Sol REVISE, 2026-08-22) mints 14
+  # upheld_revise findings + 14 R3B1-* conditions = 28 open items this cycle's continuity.yml
+  # closes. The R3A substrate (mastermind-xpv2-sector-r3) remains authority substrate, not a
+  # RIG predecessor (no manifest.yml), unchanged from the R3B ruling.
+
+reference_files:            # the FROZEN successor reference artifact (stamped at freeze).
+  # frozen_sha names the freeze commit whose tree holds the final candidate bytes
+  # (candidate sha256 fec05b058fbc9dbe29744ad015b7ee9cd9baa5cb85bbbde739daa8b97644cf70);
+  # the stamping commit follows it, same convention as the predecessor cycle. Review
+  # receipts from the four NEW critic seats must bind artifact_sha to this value.
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/MASTERMIND_SECTOR_CENTRAL_R3_CANDIDATE.html
+    frozen_sha: "0667f800764bf210af6c1237ccf0b5f0a71b4af2"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/proposal/BUILD_MANIFEST.json
+    frozen_sha: "0667f800764bf210af6c1237ccf0b5f0a71b4af2"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/build/
+    frozen_sha: "0667f800764bf210af6c1237ccf0b5f0a71b4af2"
+    note: "source directory -- byte-identical copy of the frozen R3B build at cycle start; lanes A (authority hero repair), B (accessibility/token repair), C (verification hardening) modify ONLY what an R3B1-* item requires"
+  - path: mockups/refs/reference_integrity/mastermind-xpv2-sector-r3b-1/evidence/
+    frozen_sha: "0667f800764bf210af6c1237ccf0b5f0a71b4af2"
+    note: "fresh evidence matrix per commission 'Evidence at successor freeze' -- predecessor screenshots are stale for approval once the SHA changes; lands with the frozen successor"
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  continuity: continuity.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  # Supplemental seat receipts (schema roles are the two above; RIG REVIEW_ROLES):
+  #   reviews/mobile_accessibility.md  (PASS_WITH_CONDITIONS, re-run seat, PR #6309)
+  #   reviews/data_authority.md        (PASS_WITH_CONDITIONS, re-run seat, PR #6309)
+  verdict: verdict.yml
+  # approval: FORBIDDEN at this SHA (Sol final adjudication) -- never authored by this cycle.
+  # Historical note superseded 2026-08-23 -- the four final seats delivered; receipts above.
+  # Original comment retained below for lineage:
+  # reviews/: the FOUR NEW fresh critic seats Sol fans out after the successor freeze
+  # (commission "Final review" -- current critics may verify fixes during the build but may
+  # not be the final approval seats). Never authored by this cycle.
+  # verdict/approval: Sol's, post-critics. Never authored by this cycle (commission "Do not
+  # issue approval, self-verdict").
+
+# lightweight: not applicable -- scope: full (the successor carries the full six-view
+# workspace reference forward; the correction is surgical but the artifact is whole).
+# superseded: not applicable -- status: draft, no successor exists.

@@ -8,7 +8,7 @@ conventional — and a convention in a 4,000-line YAML file is not a guard:
 
   * A PR may publish a SUBSET of `ci-pack-0..11`, so "all twelve are green" is no
     longer a question anything downstream can ask.  `ci-gate` is the one name that
-    concludes on every non-closed event, and `scripts/merge_on_green.py` requires an
+    concludes on every proof-producing event, and `scripts/merge_on_green.py` requires an
     AFFIRMATIVE success on the head — absence of red is not a pass (#4779).  Delete
     `ci-gate`, or let its no-work branch rot, and a proven-no-work PR reads
     `unproven` and never merges.  Nothing about that failure is visible in a diff.
@@ -113,14 +113,24 @@ def test_ci_plan_job_exists_and_publishes_bounded_identity_outputs() -> None:
     }
 
 
-def test_ci_plan_is_fenced_against_closed_events() -> None:
-    """A closed PR needs only the workflow-level concurrency side effect.
+def test_closed_lifecycle_events_cannot_enter_semantic_ci_concurrency() -> None:
+    """Out-of-order close delivery must be unable to replace a live proof slot.
 
-    Without the fence a merged-close event would allocate a planning runner whose
-    only product is a check nobody reads, and — worse — `ci-gate` is fenced the same
-    way, so the two conditions must agree or a close publishes half the graph.
+    GitHub replaces the pending member of a concurrency group even when
+    cancel-in-progress is false. The correctness boundary is therefore the trigger:
+    `closed` must not schedule this workflow at all. Open/sync/reopen remain the only
+    PR lifecycle events that can occupy the PR-number group.
     """
-    assert _job("ci-plan")["if"] == "github.event.action != 'closed'"
+    workflow = _workflow()
+    triggers = workflow.get("on") or workflow.get(True)
+    pull_request = triggers["pull_request"]
+    assert pull_request["types"] == ["opened", "synchronize", "reopened"]
+    assert "closed" not in pull_request["types"]
+    assert workflow["concurrency"] == {
+        "group": "ci-${{ github.event.pull_request.number || github.ref }}",
+        "cancel-in-progress": "${{ github.event_name != 'workflow_dispatch' }}",
+    }
+    assert "if" not in _job("ci-plan")
 
 
 def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
@@ -133,6 +143,55 @@ def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
     checkouts = [s for s in _job("ci-plan")["steps"] if str(s.get("uses", "")).startswith("actions/checkout@")]
     assert len(checkouts) == 1, f"ci-plan should check out exactly once, found {len(checkouts)}"
     assert checkouts[0]["with"]["fetch-depth"] == 0
+
+
+def test_ci_plan_sparse_profile_omits_only_the_measured_heavy_trees() -> None:
+    """W3 contains working-tree bytes without narrowing unknown future roots.
+
+    The include-all first row is load-bearing: a newly tracked top-level surface
+    materializes by default and therefore cannot become selection-dark merely
+    because this profile predates it. The four negative rows are the mechanical
+    census result; ci-pack's independent full checkout is pinned elsewhere.
+    """
+    checkout = next(
+        step
+        for step in _job("ci-plan")["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert checkout["with"]["sparse-checkout"].splitlines() == [
+        "/*",
+        "!/data/",
+        "!/site/",
+        "!/mockups/",
+        "!/verify_shots/",
+    ]
+
+
+def test_ci_plan_builds_and_consumes_one_bounded_exact_tree_path_handle() -> None:
+    """Sparse absence never answers repository absence.
+
+    The path population stays in a runner-temp file, not an output or env value;
+    both producer and consumer bind it to the identity step's immutable tree.
+    """
+    job = _job("ci-plan")
+    steps = job["steps"]
+    inventory = _step_running(job, "--write-tracked-paths")
+    plan = _plan_step()
+    handle = "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
+    assert "scripts/ci_scope_dependencies.py" in inventory["run"]
+    assert f'--write-tracked-paths "{handle}"' in inventory["run"]
+    assert (
+        '--tested-tree-sha "${{ steps.identity.outputs.tested_tree_sha }}"'
+        in inventory["run"]
+    )
+    assert f'--tracked-paths-file "{handle}"' in plan["run"]
+    assert steps.index(inventory) < steps.index(plan)
+    assert all(
+        "TRACKED_PATH" not in key
+        for step in steps
+        for key in step.get("env", {})
+    ), "only the bounded file path may cross into the planner command"
 
 
 def test_ci_plan_passes_pack_count_twelve() -> None:
@@ -229,15 +288,15 @@ def test_workflow_dispatch_can_pin_the_exact_observed_main_sha() -> None:
 # ─── ci-pack ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_pack_needs_ci_plan() -> None:
-    """Without the dependency the matrix expression has no producer.
+def test_ci_pack_needs_the_hosted_plan_and_main_owned_trusted_execution() -> None:
+    """The matrix needs its planner and same-repo relays need the trusted result.
 
     `needs.ci-plan.outputs.matrix` evaluates to empty when `ci-plan` is not a
     declared dependency, `fromJSON` then fails at workflow parse time, and the run
-    dies before a single check is published.
+    dies before a single check is published.  The `trusted-ci` dependency is what
+    prevents a same-repository relay from publishing before the PC pack concludes.
     """
-    needs = _job("ci-pack")["needs"]
-    assert needs == "ci-plan" or needs == ["ci-plan"]
+    assert _job("ci-pack")["needs"] == ["ci-plan", "trusted-ci"]
 
 
 def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() -> None:
@@ -257,16 +316,20 @@ def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() ->
 
 
 def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:
-    """The gate must be an explicit `== 'true'`, and the closed fence must survive.
+    """The gate must be an explicit `== 'true'`.
 
     `has_work` is a STRING output: a truthiness test would treat the literal
     `'false'` as true, and dropping the clause entirely would launch every pack the
-    plan proved unnecessary.  Dropping the `!= 'closed'` half instead re-opens the
-    2026-07-28 merged-close cancellation class this workflow already paid for once.
+    plan proved unnecessary. Closed events are excluded at the workflow trigger and
+    must not be smuggled back as an implicit cancellation mechanism.
     """
     condition = _job("ci-pack")["if"]
-    assert "needs.ci-plan.outputs.has_work == 'true'" in condition
-    assert "github.event.action != 'closed'" in condition
+    assert condition == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
 
 
 def test_ci_pack_passes_pack_count_twelve() -> None:
@@ -288,13 +351,14 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
     hiccup into twelve red packs.
     """
     step = _pack_step()
-    assert step["if"] == "needs.ci-plan.outputs.plan_sha != ''"
+    fork_guard = "github.event.pull_request.head.repo.full_name != github.repository"
+    assert step["if"] == f"{fork_guard} && needs.ci-plan.outputs.plan_sha != ''"
     assert step["env"]["EXPECTED_PLAN_SHA"] == "${{ needs.ci-plan.outputs.plan_sha }}"
     assert '--expect-plan-sha "$EXPECTED_PLAN_SHA"' in step["run"]
     fallback = next(
         item for item in _job("ci-pack")["steps"] if item.get("name") == "fail-safe full suite when no authoritative plan was produced"
     )
-    assert fallback["if"] == "needs.ci-plan.outputs.plan_sha == ''"
+    assert fallback["if"] == f"{fork_guard} && needs.ci-plan.outputs.plan_sha == ''"
     assert "--expect-plan-sha" not in fallback["run"]
 
 
@@ -331,27 +395,29 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
 
 
 def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
-    """`ci-gate` is the only check name that concludes on every non-closed event.
+    """`ci-gate` is the only check name that concludes on every workflow event.
 
-    It must depend on BOTH jobs (a `needs` on `ci-plan` alone would let it conclude
-    green while packs were still running) and it must be `always()`, because the
-    situation it exists for — a skipped or failed `ci-pack` — is precisely the one
-    where a default-conditioned job would not run at all and publish nothing.
+    It must depend on ci-plan and ci-pack (a `needs` on `ci-plan` alone would let
+    it conclude green while packs were still running) and it must be `always()`,
+    because the situation it exists for — a skipped or failed `ci-pack` — is
+    precisely the one where a default-conditioned job would not run at all and
+    publish nothing.
+
+    `contract-delta` (2026-08-19) joined the `needs` list for the same reason:
+    its own verdict must be able to fail ci-gate, which GitHub Actions requires
+    a `needs` edge for. It does not change the reasoning above — it is fenced to
+    `pull_request` events on its own `if:` and reads `skipped` as OK (see
+    scripts/check_contract_delta.py and the "enforce contract-delta verdict"
+    step below), so it never turns a proven-no-work or non-PR run red.
     """
     job = _job("ci-gate")
-    assert sorted(job["needs"]) == ["ci-pack", "ci-plan"]
+    assert sorted(job["needs"]) == ["ci-pack", "ci-plan", "contract-delta"]
     assert job["if"].startswith("always()")
 
 
-def test_ci_gate_is_fenced_against_closed_events() -> None:
-    """`always()` alone would publish a RED `ci-gate` on every merged close.
-
-    On a `closed` event `ci-plan` is fenced off and therefore SKIPPED, so
-    `PLAN_RESULT` is `skipped`, the first branch exits 1, and every merged PR in the
-    repository carries a red aggregate — which would block the merge-on-green
-    sweeper fleet-wide.  The fence is load-bearing, not symmetry.
-    """
-    assert _job("ci-gate")["if"] == "always() && github.event.action != 'closed'"
+def test_ci_gate_always_runs_for_every_triggered_event() -> None:
+    """Lifecycle exclusion belongs to the trigger, not job-level dead branches."""
+    assert _job("ci-gate")["if"] == "always()"
     assert _gate_step("reconcile complete semantic evidence")["continue-on-error"] is True
 
 
@@ -561,9 +627,11 @@ def test_ci_pack_downloads_the_list_and_exports_only_its_path() -> None:
         "ci-pack", "actions/download-artifact@", "ci-changed-files"
     )
     assert download["with"]["path"] == "${{ runner.temp }}/ci-changed-files"
-    assert "if" not in download, (
-        "ci-plan uploads unconditionally, so a missing artifact here is a broken "
-        "control plane, not a case to tolerate"
+    assert download["if"] == (
+        "github.event.pull_request.head.repo.full_name != github.repository"
+    ), (
+        "only the hosted fork executor downloads this artifact; same-repository "
+        "packs relay the main-owned trusted fragment instead"
     )
     export = next(
         step for step in steps if "CI_CHANGED_FILES_FILE=" in str(step.get("run", ""))

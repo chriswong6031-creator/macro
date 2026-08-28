@@ -17,6 +17,8 @@
   "xlk:memory->ai_semis": "2026-07-31",
   "xlk:semicap->ai_semis": "2026-08-07",
   "xlk:memory->semicap": "2026-08-07",
-  "xlk:memory->legacy_tech": "2026-08-07"
+  "xlk:memory->legacy_tech": "2026-08-07",
+  "xlk:semicap->memory": "2026-08-25",
+  "xlk:semicap->legacy_tech": "2026-08-25"
  }
 }

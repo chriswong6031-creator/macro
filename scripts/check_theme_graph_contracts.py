@@ -129,6 +129,13 @@ IDENTITY_RESOLUTION_DTYPES: dict[str, str] = {
     "refusal_reason": "str", "source_receipts": "str", "computed_at": "str",
     "engine_version": "str",
 }
+#: V4-D2B3 — node lifecycle lineage side-car (research/prophet_v4/d2/
+#: D2B3_FROZEN_CONTRACT_2026-08-21.md §2 R-D2B3-1).
+LIFECYCLE_DTYPES: dict[str, str] = {
+    "schema": "str", "node_id": "str", "status": "str", "retire_date": "str",
+    "merged_into": "str", "reason": "str", "evidence": "str", "ratified_by": "str",
+    "computed_at": "str", "engine_version": "str",
+}
 
 #: Enum columns scanned in FULL (the sample proves shape, the scan proves values).
 NODE_ENUMS: dict[str, set[str]] = {
@@ -167,6 +174,13 @@ IDENTITY_RESOLUTION_ENUMS: dict[str, set[str]] = {
                          "DEFERRED_IDENTITY_EXCEPTION", "ENTITY_TYPE_CONFLICT",
                          "AMBIGUOUS", "NOT_IN_MASTER"},
     "join_method": {"master_inception_exact", "vendor_alias", "refused"},
+}
+#: V4-D2B3 — node lifecycle enums. status is "the existing [nodes] enum" verbatim
+#: (R-D2B3-1); D2B3 mints only retired rows, but the guard admits the full nodes
+#: vocabulary since a future merge lineage reuses this same table.
+LIFECYCLE_ENUMS: dict[str, set[str]] = {
+    "status": {"candidate", "canonical", "retired", "merged"},
+    "reason": {"identity_break", "entity_type_conflict"},
 }
 
 #: Which node kinds each edge type may connect. The pairing table is the structural
@@ -541,11 +555,19 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
 
     # --- identity epochs are ratified, not minted ---------------------------
     ratified: set[tuple[str, str]] = set()
+    # V4-D2B3 (R-A4/R-A9): every ratified row, keyed the same way, plus its own
+    # ratified_at (None when absent/unparseable — the fail-closed check below turns
+    # that into a breach regardless of whether any lifecycle row ever cites it).
+    breaks_rows: list[dict] = []
+    ratified_at_by_pair: dict[tuple[str, str], str | None] = {}
     if breaks_file.exists():
         doc = yaml.safe_load(breaks_file.read_text(encoding="utf-8")) or {}
-        for r in doc.get("breaks") or []:
-            ratified.add((str(r.get("market", "")).strip().lower(),
-                          str(r.get("symbol", "")).strip().upper(),))
+        breaks_rows = list(doc.get("breaks") or [])
+        for r in breaks_rows:
+            pair = (str(r.get("market", "")).strip().lower(),
+                    str(r.get("symbol", "")).strip().upper())
+            ratified.add(pair)
+            ratified_at_by_pair[pair] = r.get("ratified_at")
     if {"identity_epoch", "node_id"} <= set(nodes.columns):
         for row in nodes.to_dict("records"):
             try:
@@ -564,6 +586,181 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                     f"node {nid!r} claims identity_epoch {epoch} with no ratified row in "
                     f"{breaks_file.name} — an identity break is a curated act, never a "
                     f"builder's decision")
+
+    # --- V4-D2B3 R-A9: every breaks-registry row must carry a parseable ISO ratified_at,
+    # unconditionally — fail-closed regardless of whether any lifecycle row cites it (an
+    # unratified-date break row is itself the breach, not just what it enables). ---------
+    for r in breaks_rows:
+        market = str(r.get("market", "")).strip().lower()
+        symbol = str(r.get("symbol", "")).strip().upper()
+        if not _dated(r.get("ratified_at")):
+            breaches.append(
+                f"breaks row market={market!r} symbol={symbol!r} in {breaks_file.name} "
+                f"carries no parseable ISO ratified_at — fail-closed (R-A9): a break "
+                f"whose own ratification date cannot be read can never satisfy the "
+                f"backdating guard (matrix 7)")
+
+    # --- V4-D2B3: node lifecycle lineage (R-D2B3-1/2, §6 guard) ---------------------
+    # Two invariants run UNCONDITIONALLY (a canonical prior node with a ratified break,
+    # or a retired node with a live membership, is a breach whether or not
+    # node_lifecycle.parquet has been written yet) — the empty-frame fallback below
+    # makes both vacuously true on a pre-correction checkout, never silently exempt.
+    lifecycle_path = store_dir / "node_lifecycle.parquet"
+    lifecycle_latest = pd.DataFrame(columns=list(store.NODE_LIFECYCLE_COLUMNS))
+    if lifecycle_path.exists():
+        try:
+            lifecycle = pd.read_parquet(lifecycle_path)
+        except Exception as exc:  # noqa: BLE001
+            breaches.append(f"node_lifecycle.parquet unreadable: {exc}")
+            lifecycle = None
+        if lifecycle is not None:
+            lc_breaches, lc_notices = _check_columns(
+                lifecycle, store.NODE_LIFECYCLE_COLUMNS, "node_lifecycle")
+            breaches += lc_breaches
+            notices += lc_notices
+            breaches += _check_dtypes(lifecycle, LIFECYCLE_DTYPES, "node_lifecycle")
+            breaches += _check_enums(lifecycle, LIFECYCLE_ENUMS, "node_lifecycle")
+            breaches += _check_schema(lifecycle, "node_lifecycle", "node_lifecycle")
+
+            if {"node_id", "computed_at"} <= set(lifecycle.columns):
+                ordered = lifecycle.sort_values(["node_id", "computed_at"], kind="stable")
+                lifecycle_latest = (ordered.drop_duplicates(subset=["node_id"], keep="last")
+                                           .sort_values("node_id", kind="stable")
+                                           .reset_index(drop=True))
+
+            # Orphan: a lifecycle row for a node the store has no row for.
+            if "node_id" in lifecycle_latest.columns and kinds:
+                orphan_lc = sorted({str(n) for n in lifecycle_latest["node_id"]} - set(kinds))
+                if orphan_lc:
+                    breaches.append(
+                        f"{len(orphan_lc)} node_lifecycle row(s) reference a node that has "
+                        f"no node row (first: {orphan_lc[0]!r}) — a lifecycle act on nothing")
+
+            # V4-D2B3 matrix 7 / R-A4 / R-A9 — epoch-backdating attack: a lifecycle row
+            # (reason=identity_break) whose computed_at predates the break it cites, or
+            # that cites a break row with no ratified_at at all, is rejected.
+            if {"node_id", "reason", "computed_at"} <= set(lifecycle_latest.columns):
+                for row in lifecycle_latest.to_dict("records"):
+                    if str(row.get("reason")) != "identity_break":
+                        continue
+                    nid = str(row.get("node_id"))
+                    parts = nid.split(":")
+                    market = parts[1] if len(parts) > 2 else ""
+                    symbol = parts[2].split("#")[0].upper() if len(parts) > 2 else ""
+                    pair = (market, symbol)
+                    if pair not in ratified_at_by_pair:
+                        breaches.append(
+                            f"node_lifecycle row {nid!r} (reason=identity_break) cites no "
+                            f"matching ratified row in {breaks_file.name} for "
+                            f"market={market!r} symbol={symbol!r}")
+                        continue
+                    r_at = ratified_at_by_pair[pair]
+                    if not _dated(r_at):
+                        breaches.append(
+                            f"node_lifecycle row {nid!r} cites a break row with no "
+                            f"parseable ratified_at — a lifecycle row may not cite an "
+                            f"unratified-date break (R-A9)")
+                        continue
+                    computed_at = str(row.get("computed_at") or "")
+                    if computed_at[:10] < str(r_at)[:10]:
+                        breaches.append(
+                            f"node_lifecycle row {nid!r}: computed_at {computed_at!r} "
+                            f"predates its cited break's ratified_at {r_at!r} — a "
+                            f"retirement may not be backdated ahead of its own "
+                            f"ratification (epoch-backdating attack, matrix 7)")
+
+    # --- V4-D2B3 §6 — break-retirement invariant: a ratified break whose prior node
+    # EXISTS in nodes.parquet must show that node retired in the CURRENT lifecycle view.
+    # Absent prior node passes (ABX shape, generality control) — checked against the RAW
+    # node set, since nodes.parquet is write-once and never loses a fossil row. --------
+    if kinds:
+        retired_ids = ({str(n) for n in lifecycle_latest.loc[
+            lifecycle_latest.get("status", pd.Series(dtype=object)) == "retired", "node_id"]}
+            if "status" in lifecycle_latest.columns else set())
+        for r in breaks_rows:
+            prior = str(r.get("prior_node_retired_as") or "").strip()
+            if not prior or prior not in kinds:
+                continue  # absent prior node — no-op, never a breach (ABX shape)
+            if prior not in retired_ids:
+                breaches.append(
+                    f"ratified break for {prior!r} exists in nodes.parquet with no "
+                    f"'retired' row in the current node_lifecycle view — a canonical "
+                    f"prior node with a ratified break is a breach (break-retirement "
+                    f"invariant, §6)")
+
+    # --- V4-D2B3 §6 — retired-consistency invariant: a node whose latest lifecycle
+    # status is retired must not be the src of any latest-belief MEMBER_OF edge with an
+    # open interval (valid_to null). ----------------------------------------------------
+    if ("status" in lifecycle_latest.columns
+            and {"type", "src", "valid_to", "belief_time"} <= set(edges.columns)):
+        retired_now = {str(n) for n in lifecycle_latest.loc[
+            lifecycle_latest["status"] == "retired", "node_id"]}
+        if retired_now:
+            ordered = edges.sort_values(["edge_id", "belief_time", "computed_at"],
+                                        kind="stable")
+            current_edges = ordered.drop_duplicates(subset=["edge_id"], keep="last")
+            live_member_of = current_edges[
+                (current_edges["type"].astype(str) == "MEMBER_OF")
+                & (current_edges["valid_to"].map(_is_null))]
+            offenders = sorted(
+                {str(s) for s in live_member_of["src"]} & retired_now)
+            if offenders:
+                breaches.append(
+                    f"{len(offenders)} retired node(s) are still the src of an open "
+                    f"latest-belief MEMBER_OF edge (first: {offenders[0]!r}) — a retired "
+                    f"company with a live membership is a breach (retired-consistency "
+                    f"invariant, §6)")
+
+    # --- V4-D2B3 (adjudicated fix, review 2026-08-22 FIX-3) — conflict-retirement
+    # invariant: ANY company-kind node in RAW nodes.parquet whose symbol equals an
+    # etf-kind node's symbol (the same structural evidence the bake suppression uses,
+    # R-A1 — no ticker literal, no registry lookup) must show retired/merged in the
+    # CURRENT lifecycle view. This is deliberately independent of the break-retirement
+    # invariant above (which only knows about REGISTRY-ratified breaks): it makes a
+    # silent revert of the IBIT lifecycle row — or any future entity-kind collision
+    # landing unretired — a guard breach even though nothing in
+    # config/theme_graph_identity_breaks.yml ever mentions it. -----------------------
+    if {"kind", "node_id", "external_ids"} <= set(nodes.columns):
+        def _symbol_from_external_ids(ext: object) -> str | None:
+            if _is_null(ext):
+                return None
+            try:
+                sym = (json.loads(str(ext)) or {}).get("symbol")
+            except Exception:  # noqa: BLE001 — malformed external_ids caught elsewhere
+                return None
+            return str(sym).strip().upper() if sym else None
+
+        etf_symbol_owner: dict[str, str] = {}
+        company_nodes_by_symbol: dict[str, list[str]] = {}
+        for row in nodes.to_dict("records"):
+            sym = _symbol_from_external_ids(row.get("external_ids"))
+            if not sym:
+                continue
+            kind = str(row.get("kind"))
+            nid = str(row.get("node_id"))
+            if kind == "etf":
+                etf_symbol_owner.setdefault(sym, nid)
+            elif kind == "company":
+                company_nodes_by_symbol.setdefault(sym, []).append(nid)
+
+        retired_or_merged: set[str] = set()
+        if "status" in lifecycle_latest.columns:
+            retired_or_merged = {str(n) for n in lifecycle_latest.loc[
+                lifecycle_latest["status"].isin(["retired", "merged"]), "node_id"]}
+
+        unretired_collisions: list[str] = []
+        for sym, etf_node in sorted(etf_symbol_owner.items()):
+            for co_node in company_nodes_by_symbol.get(sym, []):
+                if co_node not in retired_or_merged:
+                    unretired_collisions.append(
+                        f"{co_node} (symbol {sym!r}, collides with {etf_node!r})")
+        if unretired_collisions:
+            breaches.append(
+                f"{len(unretired_collisions)} company node(s) collide with a "
+                f"same-symbol etf node and are NOT retired/merged in the current "
+                f"lifecycle view (first: {unretired_collisions[0]}) — an entity-kind "
+                f"conflict must be retired (conflict-retirement invariant, structural, "
+                f"registry-independent, §6)")
 
     # --- capability side-car (optional; absent is pre-first-run) --------------
     cap_path = store_dir / "capability.parquet"
@@ -660,11 +857,43 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                         f"is present, so every company node must have been resolved (even "
                         f"to a refusal)")
 
-            # (f) F3a — state<->ids biconditional: RESOLVED must carry ALL THREE ids and
-            # no refusal_reason; every other state must carry NONE of the ids and a
+            # V4-D2B1 (FIX 8-amended): issuer_id is now nullable on a RESOLVED row —
+            # the sidecar derivation only copies issuer_id when the MASTER's own
+            # issuer_state for that security is RESOLVED (engine/theme_graph/
+            # identity_resolution.py::load_master_inputs); any other master state
+            # (NO_ISSUER_EVIDENCE, AMBIGUOUS, EVIDENCE_CONFLICT,
+            # DEFERRED_IDENTITY_EXCEPTION, or a security absent from the master
+            # entirely) means the sidecar issuer_id MUST be null, and a non-null one
+            # is a breach. Load security_master's issuer_state ONCE, read-only, so
+            # the biconditional (f) and the master-membership check (g) can both
+            # consult it. Absent/unreadable master degrades gracefully for (f) (falls
+            # back to requiring issuer_id present, the pre-D2B1 law — fail-closed) and
+            # is a breach for (g) exactly as before it was, unchanged.
+            master_path = store_dir.parent / "reference" / "security_master.parquet"
+            issuer_state_by_security: dict[str, str] | None = None
+            if master_path.exists():
+                try:
+                    master_ids_states = pd.read_parquet(
+                        master_path, columns=["security_id", "issuer_state"])
+                    issuer_state_by_security = dict(
+                        zip(master_ids_states["security_id"].astype(str),
+                            master_ids_states["issuer_state"].astype(str)))
+                except Exception:  # noqa: BLE001 — degrade to strict-issuer_id below
+                    issuer_state_by_security = None
+
+            # (f) F3a — state<->ids biconditional, FIX 8-amended for the D2B1 issuer
+            # axis: RESOLVED must carry security_id+listing_key ALWAYS and no
+            # refusal_reason. issuer_id is lawful on a RESOLVED row iff the MASTER's
+            # own issuer_state for that security is RESOLVED — a non-null issuer_id
+            # is a breach for any OTHER master state (the bridge would be smuggling a
+            # legacy/unevidenced/conflicted value in as if it were confirmed), and a
+            # null issuer_id is a breach when the master itself says RESOLVED (the
+            # bridge dropped real evidence). No master to consult (absent/unreadable)
+            # degrades to the strict pre-D2B1 rule — issuer_id must be present —
+            # fail-closed. Every non-RESOLVED state must carry NONE of the ids and a
             # refusal_reason. The derivation code cannot produce a violation, but a
-            # hand-edited or truncated artifact could — this catches artifact corruption
-            # the earlier checks are blind to.
+            # hand-edited or truncated artifact could — this catches artifact
+            # corruption the earlier checks are blind to.
             if {"resolution_state", "issuer_id", "security_id", "listing_key",
                 "refusal_reason", "node_id"} <= set(latest_idr.columns):
                 bad_biconditional: list[str] = []
@@ -672,51 +901,92 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                         latest_idr["node_id"], latest_idr["resolution_state"],
                         latest_idr["issuer_id"], latest_idr["security_id"],
                         latest_idr["listing_key"], latest_idr["refusal_reason"]):
-                    ids_present = (not _is_null(iss) and not _is_null(sec)
-                                   and not _is_null(lk))
                     reason_present = not _is_null(reason)
-                    ok = (ids_present and not reason_present) if str(st) == "RESOLVED" \
-                        else (not ids_present and reason_present)
+                    if str(st) == "RESOLVED":
+                        sec_lk_present = not _is_null(sec) and not _is_null(lk)
+                        issuer_present = not _is_null(iss)
+                        if issuer_state_by_security is not None:
+                            master_state = issuer_state_by_security.get(str(sec))
+                            issuer_ok = (
+                                master_state == "RESOLVED" if issuer_present
+                                else master_state != "RESOLVED"
+                            )
+                        else:
+                            issuer_ok = issuer_present
+                        ok = sec_lk_present and issuer_ok and not reason_present
+                    else:
+                        ids_present = (not _is_null(iss) and not _is_null(sec)
+                                       and not _is_null(lk))
+                        ok = not ids_present and reason_present
                     if not ok:
                         bad_biconditional.append(str(nid))
                 if bad_biconditional:
                     breaches.append(
                         f"{len(bad_biconditional)} identity_resolution row(s) violate the "
                         f"state<->ids biconditional (first: {bad_biconditional[0]!r}) — "
-                        "RESOLVED must carry issuer_id+security_id+listing_key and no "
-                        "refusal_reason; every other state must carry none of the ids and "
-                        "a refusal_reason (F3a, artifact-corruption guard)")
+                        "RESOLVED must carry security_id+listing_key and no refusal_reason "
+                        "(issuer_id lawful iff the master's issuer_state for that security "
+                        "is RESOLVED); every other state must carry "
+                        "none of the ids and a refusal_reason (F3a, artifact-corruption "
+                        "guard, D2B1-amended)")
 
             # (g) F3a — master membership: every RESOLVED security_id must exist in the
             # committed data/reference/security_master.parquet, loaded read-only here.
             # Absent master = skipped, never a breach (sparse checkout / pre-DOS-1.1
             # fixtures carry no data/reference/ at all).
-            master_path = store_dir.parent / "reference" / "security_master.parquet"
             if master_path.exists() and {"resolution_state", "security_id", "node_id"} \
                     <= set(latest_idr.columns):
                 try:
+                    master_ids_frame = pd.read_parquet(master_path)
                     known_security_ids: set[str] | None = set(
-                        pd.read_parquet(master_path, columns=["security_id"])
-                          ["security_id"].astype(str))
+                        master_ids_frame["security_id"].astype(str))
+                    # V4-D2B1-R1 §6.2 — a security-axis-superseded row (a tombstone)
+                    # is a distinct violation class from "absent entirely": the id
+                    # EXISTS in the master, but is no longer a lawful join target for
+                    # any consumer, so a sidecar row pointing at it is caught here,
+                    # not folded into the plain-orphan check above. Missing column
+                    # (pre-D2B1-R1 master) = empty set, never a breach.
+                    superseded_security_ids: set[str] = (
+                        set(
+                            master_ids_frame.loc[
+                                master_ids_frame["security_state"].apply(
+                                    lambda v: not _is_null(v)),
+                                "security_id",
+                            ].astype(str)
+                        )
+                        if "security_state" in master_ids_frame.columns
+                        else set()
+                    )
                 except Exception as exc:  # noqa: BLE001 — unreadable master is a breach
                     breaches.append(
                         "security_master.parquet unreadable for the identity_resolution "
                         f"master-membership check: {exc}")
                     known_security_ids = None
+                    superseded_security_ids = set()
                 if known_security_ids is not None:
                     orphan_security: list[str] = []
+                    superseded_referenced: list[str] = []
                     for nid, st, sec in zip(latest_idr["node_id"],
                                             latest_idr["resolution_state"],
                                             latest_idr["security_id"]):
-                        if str(st) == "RESOLVED" and not _is_null(sec) \
-                                and str(sec) not in known_security_ids:
-                            orphan_security.append(str(nid))
+                        if str(st) == "RESOLVED" and not _is_null(sec):
+                            if str(sec) not in known_security_ids:
+                                orphan_security.append(str(nid))
+                            elif str(sec) in superseded_security_ids:
+                                superseded_referenced.append(str(nid))
                     if orphan_security:
                         breaches.append(
                             f"{len(orphan_security)} RESOLVED identity_resolution row(s) "
                             "reference a security_id absent from the committed security "
                             f"master (first: {orphan_security[0]!r}) — artifact corruption "
                             "(F3a, master-membership guard)")
+                    if superseded_referenced:
+                        breaches.append(
+                            f"{len(superseded_referenced)} identity_resolution row(s) "
+                            "reference a security_id whose committed master row is "
+                            f"security-axis-superseded (first: {superseded_referenced[0]!r}) "
+                            "— every join index must exclude a superseded master row "
+                            "(V4-D2B1-R1 §6.2)")
 
             # (e) census — printed every run, never a breach. Node-sets resolving to the
             # same security_id are the machine-visible duplicates the bridge exists to
@@ -826,6 +1096,38 @@ def _clean_idres_row(*, node_id: str = "co:us:AAA", market_scope: str = "us",
         "refusal_reason": "fixture: no master row", "source_receipts": "{}",
         "computed_at": stamp, "engine_version": store.ENGINE_VERSION,
     }
+
+
+def _write_lifecycle(tmp: Path, rows: list[dict]) -> None:
+    """Write ``node_lifecycle.parquet`` beside an existing fixture store dir (V4-D2B3)."""
+    pd.DataFrame(rows).reindex(columns=list(store.NODE_LIFECYCLE_COLUMNS)).to_parquet(
+        tmp / "node_lifecycle.parquet", index=False)
+
+
+def _clean_lifecycle_row(*, node_id: str = "co:us:AAA", status: str = "retired",
+                         reason: str = "identity_break", evidence: str = "fixture break row",
+                         ratified_by: str = "fixture", retire_date: str = "2024-01-01",
+                         computed_at: str = "2024-01-03T00:00:00Z") -> dict:
+    return {
+        "schema": "gmi.node_lifecycle/v1", "node_id": node_id, "status": status,
+        "retire_date": retire_date, "merged_into": None, "reason": reason,
+        "evidence": evidence, "ratified_by": ratified_by,
+        "computed_at": computed_at, "engine_version": store.ENGINE_VERSION,
+    }
+
+
+def _breaks_yaml(tmp: Path, *, name: str = "breaks_ratified.yml",
+                 ratified_at: str | None = "2024-01-02") -> Path:
+    """A breaks registry with ONE row (co:us:AAA, matching ``_clean_rows``'s node), so
+    the D2B3 guard invariants have something ratified to check against."""
+    p = tmp / name
+    at_line = f"    ratified_at: '{ratified_at}'\n" if ratified_at is not None else ""
+    p.write_text(
+        "breaks:\n  - symbol: AAA\n    market: us\n    break_date: '2024-01-01'\n"
+        "    prior_node_retired_as: co:us:AAA\n    new_epoch: 2\n"
+        "    evidence: fixture\n    ratified_by: fixture\n" + at_line,
+        encoding="utf-8")
+    return p
 
 
 def _fixture(tmp: Path, *, nodes: list[dict], edges: list[dict],
@@ -1054,6 +1356,11 @@ def selftest(tmp_root: Path | None = None) -> int:
     ref.mkdir(parents=True, exist_ok=True)
     pd.DataFrame([{
         "security_id": "SEC:US-XNYS-REAL", "issuer_id": "ISS:US-XNYS-REAL",
+        # FIX 6 (D2B1): carries issuer_state so the amended (f) biconditional branch
+        # actually reads a real master state here rather than degrading to the
+        # no-master fallback (pd.read_parquet(..., columns=["security_id",
+        # "issuer_state"]) would otherwise raise on a fixture missing the column).
+        "issuer_state": "RESOLVED",
         "listing_key": "US-XNYS-REAL", "country": "US", "mic": "XNYS",
         "inception_code": "REAL",
     }]).to_parquet(ref / "security_master.parquet", index=False)
@@ -1061,6 +1368,169 @@ def selftest(tmp_root: Path | None = None) -> int:
     checks.append((any("absent from the committed security master" in x for x in b),
                    f"a RESOLVED security_id absent from the committed security master "
                    f"must breach (F3a, master-membership): {b}"))
+
+    # V4-D2B1-R1 §6.2 — a resolution row whose security_id points at a
+    # security-axis-superseded master row (a tombstone): a DISTINCT violation class
+    # from "absent entirely" above — the id EXISTS in the master, but every consumer
+    # join index must exclude it.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "idres_superseded", nodes=nodes, edges=edges, evidence=ev)
+    corrupt = _clean_idres_row(state="RESOLVED")
+    corrupt.update({
+        "issuer_id": None, "security_id": "SEC:US-XNYS-DUP",
+        "listing_key": "US-XNYS-DUP", "join_method": "master_inception_exact",
+        "refusal_reason": None,
+        "source_receipts": '{"security_id":"SEC:US-XNYS-DUP"}',
+    })
+    _write_idres(d, [corrupt])
+    ref2 = tmp_root / "reference"
+    ref2.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {
+            "security_id": "SEC:US-XNYS-REAL", "issuer_id": "ISS:US-XNYS-REAL",
+            "issuer_state": "RESOLVED",
+            "listing_key": "US-XNYS-REAL", "country": "US", "mic": "XNYS",
+            "inception_code": "REAL", "security_state": None, "superseded_by": None,
+        },
+        {
+            "security_id": "SEC:US-XNYS-DUP", "issuer_id": None,
+            "issuer_state": "NO_ISSUER_EVIDENCE",
+            "listing_key": "US-XNYS-DUP", "country": "US", "mic": "XNYS",
+            "inception_code": "DUP", "security_state": "SUPERSEDED_DUPLICATE_MINT",
+            "superseded_by": "SEC:US-XNYS-REAL",
+        },
+    ]).to_parquet(ref2 / "security_master.parquet", index=False)
+    b, n = audit(d, empty_breaks)
+    checks.append((any("security-axis-superseded" in x for x in b),
+                   f"a resolution row referencing a superseded master row must breach "
+                   f"(V4-D2B1-R1 §6.2): {b}"))
+
+    # --- V4-D2B3: node lifecycle lineage — one fixture per breach class -------------
+    # (i) A fully clean lifecycle-correction store: co:us:AAA retired, its edge
+    # TRUNCATED at the ratified break_date, cited break carries a ratified_at that
+    # precedes the lifecycle row's own computed_at. Must pass with zero breaches — the
+    # happy path, proven independently of every attack fixture below.
+    nodes, edges, ev = _clean_rows()
+    truncated = dict(edges[0])
+    truncated["valid_to"] = "2024-01-01"
+    truncated["belief_time"] = "2024-01-03"
+    d = _fixture(tmp_root / "lifecycle_clean", nodes=nodes, edges=[truncated], evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="lifecycle_clean_breaks.yml")
+    _write_lifecycle(d, [_clean_lifecycle_row()])
+    b, n = audit(d, bfile)
+    checks.append((not b, f"a correctly retired node + truncated edge + ratified break "
+                          f"must pass cleanly: {b}"))
+
+    # (ii) canonical-prior-with-break: the ratified break's prior node EXISTS and is
+    # still canonical (no lifecycle row at all) — a breach (§6 break-retirement).
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_canonical_prior", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="canonical_prior_breaks.yml")
+    b, n = audit(d, bfile)
+    checks.append((any("break-retirement invariant" in x for x in b),
+                   f"a canonical prior node with a ratified break must breach: {b}"))
+
+    # (iii) retired-with-open-member-edge: the node IS retired in the lifecycle view,
+    # but its MEMBER_OF edge is still open (never truncated/annulled) — a breach (§6
+    # retired-consistency).
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_open_edge", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="open_edge_breaks.yml")
+    _write_lifecycle(d, [_clean_lifecycle_row()])
+    b, n = audit(d, bfile)
+    checks.append((any("retired-consistency invariant" in x for x in b),
+                   f"a retired node still src of an open MEMBER_OF edge must breach: {b}"))
+
+    # (iv) invalid reason enum.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_bad_reason", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="bad_reason_breaks.yml")
+    _write_lifecycle(d, [_clean_lifecycle_row(reason="just_because")])
+    b, n = audit(d, bfile)
+    checks.append((any("node_lifecycle.reason" in x for x in b),
+                   f"an out-of-enum lifecycle reason must breach: {b}"))
+
+    # (v) missing evidence — the schema requires a non-empty string.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_no_evidence", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="no_evidence_breaks.yml")
+    _write_lifecycle(d, [_clean_lifecycle_row(evidence=None)])
+    b, n = audit(d, bfile)
+    checks.append((any("node_lifecycle.v1.schema.json" in x for x in b),
+                   f"a lifecycle row with no evidence must breach the schema: {b}"))
+
+    # (vi) missing ratified_at on the breaks row itself — fail-closed regardless of
+    # whether any lifecycle row cites it (R-A9).
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_no_ratified_at", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="no_ratified_at_breaks.yml", ratified_at=None)
+    b, n = audit(d, bfile)
+    checks.append((any("no parseable ISO ratified_at" in x for x in b),
+                   f"a breaks row with no ratified_at must breach, fail-closed, even with "
+                   f"no lifecycle row present (R-A9): {b}"))
+
+    # (vii) backdated computed_at — the lifecycle row's own computed_at predates the
+    # break it cites (matrix 7, the epoch-backdating attack).
+    nodes, edges, ev = _clean_rows()
+    truncated = dict(edges[0])
+    truncated["valid_to"] = "2024-01-01"
+    truncated["belief_time"] = "2024-01-03"
+    d = _fixture(tmp_root / "lifecycle_backdated", nodes=nodes, edges=[truncated], evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="backdated_breaks.yml", ratified_at="2024-06-01")
+    _write_lifecycle(d, [_clean_lifecycle_row(computed_at="2024-01-03T00:00:00Z")])
+    b, n = audit(d, bfile)
+    checks.append((any("predates its cited break's ratified_at" in x for x in b),
+                   f"a lifecycle row computed_at before its break's ratified_at must "
+                   f"breach (epoch-backdating attack, matrix 7): {b}"))
+
+    # (viii) ABX generality control: a ratified break whose prior node is ABSENT from
+    # nodes.parquet is a no-op, never a breach — the break-retirement invariant only
+    # fires when the prior node actually exists.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "lifecycle_absent_prior", nodes=nodes, edges=edges, evidence=ev)
+    bfile = _breaks_yaml(tmp_root, name="absent_prior_breaks.yml")
+    bfile.write_text(
+        "breaks:\n  - symbol: ABX\n    market: us\n    break_date: '2024-01-01'\n"
+        "    prior_node_retired_as: co:us:ABX\n    new_epoch: 2\n"
+        "    evidence: fixture\n    ratified_by: fixture\n"
+        "    ratified_at: '2024-01-02'\n", encoding="utf-8")
+    b, n = audit(d, bfile)
+    checks.append((not any("break-retirement invariant" in x for x in b),
+                   f"a ratified break whose prior node is absent must be a no-op, never "
+                   f"a breach (ABX generality control): {b}"))
+
+    # --- FIX-3 (adjudicated fix, review 2026-08-22) — conflict-retirement invariant,
+    # both directions. Registry-independent: no breaks row involved at all — the
+    # collision is purely a same-symbol company/etf pair in nodes.parquet.
+    #
+    # (ix) unretired collision breaches: co:us:AAA and etf:AAA share symbol AAA;
+    # co:us:AAA carries NO lifecycle row at all.
+    nodes, edges, ev = _clean_rows()
+    nodes[0]["external_ids"] = json.dumps({"symbol": "AAA"})
+    nodes.append({**nodes[0], "node_id": "etf:AAA", "kind": "etf"})
+    d = _fixture(tmp_root / "conflict_retirement_unretired", nodes=nodes, edges=edges,
+                evidence=ev)
+    b, n = audit(d, empty_breaks)
+    checks.append((any("conflict-retirement invariant" in x for x in b),
+                   f"a company/etf symbol collision with no retired lifecycle row must "
+                   f"breach (FIX-3): {b}"))
+
+    # (x) the same collision, but co:us:AAA IS retired — must pass cleanly (this
+    # specific breach class, at least; the fixture's edge is still open, so the
+    # SEPARATE retired-consistency invariant would fire unless the edge is also
+    # closed — closed here to isolate FIX-3 from that unrelated invariant).
+    nodes, edges, ev = _clean_rows()
+    nodes[0]["external_ids"] = json.dumps({"symbol": "AAA"})
+    nodes.append({**nodes[0], "node_id": "etf:AAA", "kind": "etf"})
+    edges[0]["valid_to"] = "2024-01-01"
+    d = _fixture(tmp_root / "conflict_retirement_retired", nodes=nodes, edges=edges,
+                evidence=ev)
+    _write_lifecycle(d, [_clean_lifecycle_row(node_id="co:us:AAA",
+                                              reason="entity_type_conflict")])
+    b, n = audit(d, empty_breaks)
+    checks.append((not any("conflict-retirement invariant" in x for x in b),
+                   f"the same collision, with co:us:AAA retired, must NOT breach FIX-3's "
+                   f"conflict-retirement invariant: {b}"))
 
     bad = [m for ok, m in checks if not ok]
     for m in bad:

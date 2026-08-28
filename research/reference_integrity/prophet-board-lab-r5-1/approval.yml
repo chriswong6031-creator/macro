@@ -1,0 +1,26 @@
+# Approval receipt (RIG V1 §7/§12) — exists ONLY when manifest status is approved.
+# This is what a migration packet's RIG-RECEIPT line and a registry compliant-flip stand on.
+schema: mastermind.rig_approval.v1
+reference_id: prophet-board-lab-r5-1
+approved_at: "2026-08-19"
+verdict: APPROVE_WITH_CONDITIONS
+artifact_sha: dcbea7cd1fe7beb936037fe19dee4f4b893f9eb3
+
+authority:
+  identity: "Fable main loop — Prophet Operator Lab program orchestrator (Chairman commissions 2026-08-18/19), C12 adjudication session; design authority per factory §1; authored zero artifact bytes"
+  role: design_authority
+
+reviewers:
+  - {identity: "C12 product_regression critic — fresh opus reviewer seat, quarantined two-pass + R5.3 live delta re-check (raw-CDP instrumentation); distinct from every prior critic and from the author", role: product_regression}
+  - {identity: "fresh C12 visual/taste seat — quarantined two-run continuation first pass + deferred rationale amendment pass + R5.3 crop-first delta re-check; distinct from the product seat, every prior critic, and the author", role: visual_taste}
+
+author:
+  identity: "commissioned designer spawns (R5 original session; R5.1/R5.2 revision session; R5.3 fix-round session) — none participated in any review pass or in this approval"
+
+conditions:
+  - "C6-LIVE-FORWARD-FAILS-CLOSED (R5 verdict, carried): a row classifies retrospective_seed absent an envelope pass_ts-derived first_observed_at; no measured lead in that case. auth.lab_observation_exists / auth.measured_lead remain warranted:false until the producer exists."
+  - "C7-REBAKE-TAKES-ITS-OWN-SHA (R5 verdict, carried): the post-producer fixture rebake takes a new frozen SHA + a scoped RIG re-check of the observation-class panel and lead slot."
+  - "LANDING-ADOPTION (both C12 seats): the LAB-entry landing is reference-only choreography; P-LAB-UI adoption requires the sticky-chrome scroll offset, its own acceptance check under the real site nav, and its own adjudication against the standing viewport veto (MPDS:320-321)."
+  - "POST-MERGE CLEANUPS (non-gating nits): PR53-1, PR53-2, VTL53-701, one opportunistic uninterrupted 34-mutation harness pass, per-run check coverage recorded in continuity.yml."
+
+overrides: []

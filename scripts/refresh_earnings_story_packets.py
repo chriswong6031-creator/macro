@@ -3,8 +3,8 @@
 This worker is deliberately a transport/compiler bridge, not an author.  It
 hydrates one exact ``earnings_evidence`` root from R2, reuses unchanged packet
 objects from the last ``earnings_story_packets`` root, compiles only new or
-corrected evidence revisions, validates the complete local projection, and
-then advances the packet root with compare-and-swap.
+corrected evidence revisions, validates the bounded transition, and then
+advances the packet root with compare-and-swap.
 
 No CLI option can choose a tier or supply prose.  Promotion is replayed from
 the repository policy and exact evidence receipts, with zero model calls and
@@ -38,6 +38,7 @@ from engine.earnings_narrative.promotion import (
 )
 from engine.earnings_narrative.story_packets import validate_story_packet_manifest
 from engine.earnings_narrative.story_store import (
+    verify_story_packet_delta_store,
     verify_story_packet_store,
     write_story_packet_generation,
 )
@@ -226,29 +227,39 @@ def _download_receipts(
         raise RefreshError(str(errors[0])) from errors[0]
 
 
-def _hydrate_current_story_root(
+def _stage_current_story_root(
     s3: Any,
     bucket: str,
     *,
     root: Path,
     marker: Mapping[str, Any],
     marker_raw: bytes,
-) -> None:
-    """Hydrate only the current packet catalog.
+    prior_body_keys: set[str],
+) -> int:
+    """Stage the verified parent marker and only correction bodies that need it.
 
-    Compilation reuses unchanged packets from the live root.  Hourly
-    verification binds the new generation to that same direct parent.  Walking
-    every historical parent and re-downloading their receipts is what pushed
-    the 6,000-packet projection through the 20-minute job ceiling; the daily
-    ``--audit-remote`` job still replays the full chain.
+    The old hourly path downloaded every packet object in the lifetime catalog
+    before adding at most 500 new calls.  At 6,000 packets that already consumed
+    ~18 minutes; corpus growth therefore recreated the timeout after the first
+    recovery.  Unchanged content-addressed packet bodies need no replay here:
+    their exact index rows + receipts are inherited from the immutable parent.
+    The daily remote audit still performs the complete object/evidence replay.
     """
     _atomic_bytes(root / "manifest.json", marker_raw)
     generation_id = str(marker["generation_id"])
     _atomic_bytes(root / "generations" / generation_id / "manifest.json", marker_raw)
-    current_files = {
-        str(value["object_key"]): value for value in marker["files"].values()
-    }
-    _download_receipts(s3, bucket, prefix=STORY_PREFIX, root=root, receipts=current_files)
+    receipts: dict[str, Mapping[str, Any]] = {}
+    for key in sorted(prior_body_keys):
+        index = marker["packets"].get(key)
+        if not isinstance(index, Mapping):
+            raise RefreshError(f"prior story packet index missing for correction: {key}")
+        receipt = marker["files"].get(index.get("object_key"))
+        if not isinstance(receipt, Mapping):
+            raise RefreshError(f"prior story packet receipt missing for correction: {key}")
+        receipts[str(receipt["object_key"])] = receipt
+    if receipts:
+        _download_receipts(s3, bucket, prefix=STORY_PREFIX, root=root, receipts=receipts)
+    return len(receipts)
 
 
 def _catalog_is_complete(
@@ -273,6 +284,27 @@ def _catalog_is_complete(
         if not isinstance(index, Mapping) or index.get("source_sha256") != event.get("source_sha256"):
             return False
     return True
+
+
+def _correction_keys(
+    evidence: Mapping[str, Any],
+    prior: Mapping[str, Any] | None,
+) -> set[str]:
+    """Existing packet keys whose verified transcript revision changed."""
+    if not isinstance(prior, Mapping):
+        return set()
+    prior_packets = prior.get("packets")
+    if not isinstance(prior_packets, Mapping):
+        return set()
+    out: set[str] = set()
+    for key, event in evidence["events"].items():
+        old = prior_packets.get(key)
+        if (
+            isinstance(old, Mapping)
+            and str(old.get("source_sha256") or "") != str(event.get("source_sha256") or "")
+        ):
+            out.add(str(key))
+    return out
 
 
 def _phase(name: str) -> Callable[[str], None]:
@@ -371,15 +403,31 @@ def refresh(
         )
         return 0
 
+    if prior is not None:
+        prior_policy = prior.get("policy")
+        if not isinstance(prior_policy, Mapping) or prior_policy.get("sha256") != policy_sha:
+            raise RefreshError(
+                "promotion policy changed while a story root exists; bounded hourly projection "
+                "cannot mix policy generations — run a separately reviewed policy migration"
+            )
+    corrections = _correction_keys(evidence, prior)
     if prior is None and (output / "manifest.json").exists():
         raise RefreshError("local story marker exists while the authoritative R2 root is absent")
     if prior is not None:
         assert prior_raw is not None
         hydrate_done = _phase("prior_root_hydration")
-        _hydrate_current_story_root(
-            client, target_bucket, root=output, marker=prior, marker_raw=prior_raw,
+        hydrated_prior_objects = _stage_current_story_root(
+            client,
+            target_bucket,
+            root=output,
+            marker=prior,
+            marker_raw=prior_raw,
+            prior_body_keys=corrections,
         )
-        hydrate_done(f"prior_objects={len(prior['files'])}")
+        hydrate_done(
+            f"catalog_receipts_reused={len(prior['files']) - hydrated_prior_objects} "
+            f"correction_objects={hydrated_prior_objects}"
+        )
 
     _atomic_bytes(evidence_dir / "manifest.json", evidence_raw)
     _atomic_bytes(
@@ -419,7 +467,8 @@ def refresh(
             evidence_root=evidence_dir,
         )[:max_new_events]
         rank_done(f"selected={len(pending)}")
-    fetch_keys = set(prior_packets) | set(pending) if max_new_events is not None else None
+    changed_keys = corrections | set(pending)
+    fetch_keys = changed_keys if max_new_events is not None else None
     needed = _evidence_receipts_needed(
         evidence, prior, policy_sha256=policy_sha, only_keys=fetch_keys,
     )
@@ -434,21 +483,35 @@ def refresh(
             policy=policy,
             prior_manifest=prior,
             max_new_events=max_new_events,
+            prior_body_keys=corrections if prior is not None else None,
         )
     except (ContractError, OSError, ValueError) as exc:
         raise RefreshError(f"story packet compilation refused: {exc}") from exc
-    compile_done(f"packets={len(manifest['packets'])}")
+    compile_done(f"packets={len(manifest['packets'])} delta={len(changed_keys)}")
     verify_done = _phase("verification")
-    health = verify_story_packet_store(
-        output, manifest=manifest, lineage_depth=verify_lineage_depth,
-    )
+    if prior is None:
+        health = verify_story_packet_store(
+            output, manifest=manifest, lineage_depth=verify_lineage_depth,
+        )
+    else:
+        health = verify_story_packet_delta_store(
+            output,
+            manifest,
+            prior_manifest=prior,
+        )
     if health.get("status") != "ready":
         raise RefreshError("story packet store verification failed: " + ", ".join(health.get("warnings") or []))
-    verify_done()
+    verify_done(f"delta_packets={health.get('verified_delta_packet_count', len(manifest['packets']))}")
     tier_counts = {"B": 0, "C": 0}
-    for index in manifest["packets"].values():
+    for key in sorted(changed_keys):
+        index = manifest["packets"].get(key)
+        if not isinstance(index, Mapping):
+            continue
         receipt = manifest["files"][index["object_key"]]
-        packet = json.loads((output / receipt["object_key"]).read_text(encoding="utf-8"))
+        path = output / receipt["object_key"]
+        if not path.exists():
+            continue
+        packet = json.loads(path.read_text(encoding="utf-8"))
         tier = str(packet["promotion"]["tier"])
         tier_counts[tier] = tier_counts.get(tier, 0) + 1
     remaining = len(evidence["events"]) - len(manifest["packets"])
@@ -457,7 +520,8 @@ def refresh(
     newest_packet = max(
         (
             _event_call_date(evidence_dir, evidence["events"][key], evidence["files"])
-            for key in manifest["packets"]
+            for key in changed_keys
+            if key in evidence["events"]
         ),
         default="",
     )
@@ -465,9 +529,10 @@ def refresh(
     print(
         "earnings story packets: verified deterministic projection "
         f"generation={manifest['generation_id']} packets={health['packet_count']} "
-        f"tier_b={tier_counts.get('B', 0)} tier_c={tier_counts.get('C', 0)} "
+        f"delta_tier_b={tier_counts.get('B', 0)} delta_tier_c={tier_counts.get('C', 0)} "
+        f"prior_story_objects_fetched={len(corrections)} "
         f"evidence_objects_fetched={len(needed)} remaining={remaining} "
-        f"complete={remaining == 0} newest_packet={newest_packet} "
+        f"complete={remaining == 0} newest_delta_packet={newest_packet} "
         f"newest_evidence={evidence_newest}"
     )
     if remaining:

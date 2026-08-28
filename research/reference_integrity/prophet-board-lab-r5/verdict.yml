@@ -1,0 +1,196 @@
+# Design-authority verdict packet — D-LAB-R5 cycle, Prophet Operator Lab reference
+# frozen at 6ee8f34480ce. Issued over both independent critic receipts (reviews/),
+# the artifact's own verification harness, the RIG mechanical checker, and the
+# authority's own spot verification (AUTHORITY SPOT VERIFICATION below).
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-lab-r5
+
+authority:
+  identity: "Fable main loop — Prophet Operator Lab program orchestrator (Chairman commission 2026-08-18), D-LAB-R5 adjudication session (design authority per factory §1; not the artifact author — the artifact was produced by a commissioned designer spawn)"
+  role: design_authority
+
+process_attestation:
+  fresh_cycle: >
+    R5 is the first RIG cycle over this artifact (frozen SHA 6ee8f34480ce). Two
+    independent critics reviewed it: product_regression (full-packet review,
+    quarantine NOT achievable — recorded false, honestly) and visual_taste
+    (STRICT quarantine held across a two-run harness continuation — the
+    rationale docs were withheld throughout and were never revealed, so that
+    receipt is first-pass-only with second_pass null). Neither critic authored
+    any artifact byte; neither receipt was edited by the authority.
+  quarantine_deviation: >
+    This cycle does NOT satisfy the §6 two-pass shape mechanically: receipt A
+    attests quarantine false; receipt B held quarantine but has no second pass
+    because the verdict is REVISE and the reveal/amendment step belongs to the
+    revision cycle. This is recorded rather than papered over. The R5.1 cycle
+    must run the proper shape: quarantined first passes frozen before any
+    reveal, then rationale revealed for real amendment passes (receipt A's own
+    condition C12).
+  critic_stop_incidents: >
+    Both critic processes were interrupted by harness stops mid-review. Critic
+    A resumed in place with context intact. Critic B ran as a two-run
+    continuation: run 1's findings 1-20 were checkpointed as interim notes and
+    inherited verbatim by run 2, which completed the in-flight code path,
+    falsified two candidates against the R4 parent, and consolidated. Disclosed
+    in the receipt's reviewer.continuity block.
+
+packet:
+  materially_improved: >
+    Over R4 (the production-before), R5 adds the operator LIVE|LAB capability
+    that did not exist at all: six Lab boards, a five-channel structural
+    seed-versus-live honesty encoding both critics independently verified as
+    unmistakable, a dated continuous-watching divider, a genuinely designed
+    stale state, and an operator gate that is absence rather than disablement.
+    The layering claim "R5 is R4 plus a layer" is enforced by an empty diff on
+    every R4 file and theme.css, so nothing R4 established is re-litigated.
+  materially_worsened: >
+    Three regressions against the parent's own standards, all named as
+    revision requirements: the feed-down state prints literal zeros where R4's
+    count-cell precedent distinguishes empty-not-missing (VTL-402); the Lab
+    stream drops R4's row-count discipline entirely — no 'Showing N of M', no
+    filter-responsive counts, all 29 rows dumped (VTL-407); and the lead chip
+    introduces a self-credit asymmetry with no R4 analogue (VTL-403).
+  disappeared: >
+    In LAB mode: the page subtitle, CANDIDATES, GROUPS, EVIDENCE & RECORD, and
+    the footer band — three of them baseline-listed surviving capabilities,
+    two core (VTL-401, ruled a contract breach against LAB-0 §6.5's grid
+    scope; revision requirement R51-M1). The round trip restores all of them,
+    so the disappearance is per-mode, not per-artifact. Nothing disappears in
+    LIVE mode: the operator-absent crop is byte-equivalent to R4's board.
+  behavior_harder: >
+    Reaching half the boards at 390w is harder than any R4 interaction: three
+    of six selector pills sit inside an unaffordanced scroller (VTL-411, C4),
+    and every Lab control is below the 40px touch floor — inherited from R4's
+    own ~20px controls, but propagated rather than repaired, and the new
+    .lab-sel primary navigation is R5's own sub-floor addition (VTL-410).
+    Distinguishing 'unknown' from 'zero' in the down state is not harder — it
+    is impossible (VTL-402), which is why it is a revision requirement.
+  stronger_claims: >
+    The artifact visually claims a live-forward observation plane and measured
+    Lab-to-Prophet leads that no producer yet emits. Both are filed as
+    warranted:false authority claims in proposal.yml, disclosed five
+    independent ways in the artifact, structurally unreachable for seeds by
+    design, and adjudicated APPROVE_AHEAD_OF_PRODUCER_SCOPED with fail-closed
+    conditions C6/C7. No other claim exceeds production: detector identities,
+    lifecycle words, and counts quote or reconcile to real payloads.
+  intent_vs_convenience: >
+    Deliberate and argued in-source: the achromatic --prov-only Lab treatment,
+    the observation-spine signature, the mode control's zero-vertical-cost
+    LIVE mount, and the refusal to reuse production's behind-the-tape banner
+    for a different producer. Convenience rather than intent: Math.abs on the
+    lead (generator convention standing in for a guard), the down-state's
+    reuse of the empty-state's zero pills, and the EN 'seeds' enum shorthand
+    where the ZH copy found the plain word — all three are findings.
+  production_preferable_for: >
+    Production (R4-less as it is) remains preferable for every non-operator
+    user until the shell migrates: it keeps Candidates/Groups/Evidence visible
+    at all times (no mode can remove them), keeps 'Showing N of M' row
+    discipline, and carries no unproduced live-forward claims. The Lab's
+    LIVE mode is deliberately byte-equivalent to the R4 board, so nothing
+    about LIVE is worse than the reference baseline.
+  strongest_argument_against: >
+    This cycle mints a REVISE, not an approval — the strongest argument
+    against advancing the artifact as-is is exactly the majors: an operator
+    surface whose premise is observational honesty must not print unknowns as
+    zeros, must not render its one self-referential metric one-sidedly, and
+    must not delete core page capabilities on mode entry. Secondarily, the
+    cycle's own process is imperfect (quarantine deviation above), which is
+    why approvable shape is explicitly deferred to R5.1 under C12.
+
+blocking_findings:
+  - id: VTL-401
+    ruling: "REVISION REQUIRED — LAB mode must scope to the principal Prophet grid region; the Candidates, Groups, and Evidence & Record sections and the page chrome must survive the mode (visual separation from the zero-authority stream is encouraged; deletion is not). Receipt: reviews/visual_taste.yml VTL-401."
+  - id: VTL-402
+    ruling: "REVISION REQUIRED — the board pills must render an explicit unknown state (not 0) when the feed is down; 'unknown' and 'genuinely none' must be visually distinct at the pill row, matching the artifact's own real-zero teaching and R4's count-cell precedent. Receipt: reviews/visual_taste.yml VTL-402."
+  - id: VTL-403
+    ruling: "REVISION REQUIRED — symmetric lead treatment: 'No lead — Prophet was first' is a real adverse measurement and must not share the null idiom of the unmeasurable seed case; drop Math.abs (route non-positive leads through their own honest branch); the favourable chip must not be the loudest ink in the row. Receipt: reviews/visual_taste.yml VTL-403."
+
+adjudications:
+  reference_ahead_of_producer: >
+    ACCEPTED SCOPED (critic A 3a, authority concurs): approval, when minted,
+    warrants COMPOSITION AND DISCLOSURE only — never auth.lab_observation_exists
+    or auth.measured_lead, which remain warranted:false until the producer
+    (Radar W4.1 transport + live commissioning) exists. Fail-closed condition
+    C6 binds P-LAB-API (already implemented there as baseline_coverage_verified
+    fail-closed); rebake condition C7 binds the post-producer refresh.
+  r4_composition_not_laundered: >
+    RULED (critic A 3b, authority concurs): this cycle adjudicates R4's ten
+    RESOLVED_BY_CHANGE rows as factual closure claims only (verified via
+    build_ledger.py --check total join + independent re-census receipts). R4's
+    COMPOSITION has never had its own §6 dual-critic pass and neither this
+    verdict nor any R5 approval supplies one. Condition C8 blocks P-MP1-SHELL
+    until R4's composition receives its own critic pass or a design authority
+    records an explicit override naming C8.
+  r3_verdict_amendment: >
+    ACCEPTED (critic A 3c, mechanically verified: 11/11 texts byte-identical
+    against both origin/main and the sha256-pinned r4/r3_source copy; reverting
+    produces 14 checker findings; build_ledger.py --check unaffected). Bounded
+    by condition C9's shape-only amendment guard rails.
+  crops_namespace: >
+    ACCEPTED (critic A 3d): crops live beside the artifact per R4 precedent —
+    the checker resolves them there, and the manifest freezes ONE path, so
+    relocation would make the freeze non-atomic.
+
+overrides: []
+
+verdict: REVISE
+
+conditions:
+  # Revision requirements (must be satisfied by the R5.1 artifact):
+  - id: R51-M1-GRID-SCOPE
+    text: "Fix VTL-401: LAB scopes to the principal Prophet grid region; Candidates/Groups/Evidence & Record and page chrome survive the mode."
+  - id: R51-M2-UNKNOWN-NOT-ZERO
+    text: "Fix VTL-402: feed-down renders explicit unknown pills, never literal 0; unknown vs real-zero visually distinct in every quadrant and at 390."
+  - id: R51-M3-SYMMETRIC-LEAD
+    text: "Fix VTL-403: adverse lead result leaves the null idiom; Math.abs removed with non-positive leads routed to an honest branch; favourable chip de-amplified."
+  # Carried from reviews/product_regression.yml (C1-C12) — binding on the cycles named inside each:
+  - id: C1-REDERIVATION-PROOF
+    text: "D15's 'LAB->LIVE re-derives, never restores' is pinned only by the self-reported C.repaints counter, and mutation M8 breaks that counter rather than the mechanism. Before P-LAB-UI, add (a) a mutation that caches #board.innerHTML on LAB entry and re-inserts it on LIVE, and (b) a check that observes re-derivation independently of the counter (e.g. a sentinel data-attribute planted on a card before LAB that must be absent after LIVE)."
+  - id: C2-LEAD-SIGN-GUARD
+    text: "lab.js:379 uses Math.abs(r.lead) with no sign or zero guard. P-LAB-API/P-LAB-UI must route any non-positive lead through the honest adverse branch, and a verify check must pin it. (Subsumed for the reference by R51-M3; stays binding on API/UI.)"
+  - id: C3-COPY-LAW-COVERAGE
+    text: "verify.py's banned-vocab loop (D12) and 17-slug leak test (D7) run only on the default board in EN. Extend both to ZH and to all six board selections, and add the LIVE view to the banned-vocab scan."
+  - id: C4-390-SELECTOR-AFFORDANCE
+    text: "At 390w three of the six frozen LAB-0 §3 boards sit off-screen inside .lab-sel-wrap's overflow-x:auto scroller with no edge fade or chevron, and D14c/D16 cannot see it. Add a scroll affordance and a check that all six selectors are reachable at 390."
+  - id: C5-RECENSUS-CITATIONS
+    text: "Correct two citations before the re-census is read by the MP-1 wave: (a) --up is at templates/theme.css:72 (dark) and :148 (light), not :80-81/:152-153; (b) commit 444f80d62774 does not touch engine/prophet_bridge.py and plan_clock_date() was introduced by 242aafda0dc7 (#4684) — restate §0's headline to match §2.12's accurate wording."
+  - id: C6-LIVE-FORWARD-FAILS-CLOSED
+    text: "Approval warrants composition and disclosure only; auth.lab_observation_exists and auth.measured_lead remain unwarranted. P-LAB-API must classify a row retrospective_seed whenever the transport does not supply an envelope pass_ts-derived first_observed_at — never inferred, defaulted or reconstructed (LAB-0 §4) — and must expose no measured lead in that case."
+  - id: C7-REBAKE-TAKES-ITS-OWN-SHA
+    text: "A rebake of the Lab fixture against real Radar output after R-LAB-1 takes its own frozen SHA and a lightweight RIG re-check scoped to the observation-class panel and the lead slot, not a full new cycle."
+  - id: C8-R4-COMPOSITION-UNREVIEWED
+    text: "This verdict adjudicates R4's ten RESOLVED_BY_CHANGE rows as factual closure claims only. R4's own COMPOSITION has never had a RIG §6 dual-critic pass and this verdict does not supply one. P-MP1-SHELL may not migrate production onto the R4+R5 reference until R4's composition receives its own critic pass or a design authority records an explicit override naming this condition."
+  - id: C9-PREDECESSOR-AMENDMENT-RULE
+    text: "RIG §13.3 shape-only amendment guard rails, recorded as precedent bounds: an amendment to a closed predecessor verdict must be shape-only, every text byte-identical, must carry an in-file amendment header naming the amending cycle, must never touch a sha256-pinned vendored copy, and must be reported in the successor's README and the session's return."
+  - id: C10-TOKEN-POLICY-SELF-CONSISTENCY
+    text: "lab.css:11 claims 'no hex literal'; lab.css:93 is color: #fff. Route it through a token or amend the stated policy."
+  - id: C11-BILINGUAL-ARIA
+    text: "aria-label on the three Lab groups is English-only in both languages (lab.js:154, 234, 266). Bind them to data-lang like the visible copy."
+  - id: C12-SECOND-CRITIC-QUARANTINE
+    text: "SATISFIED IN PART this cycle: the visual_taste critic ran under strict quarantine (rationale withheld throughout). The R5.1 cycle must complete the proper two-pass shape: both critics' first passes frozen before reveal, then the rationale revealed for genuine amendment passes."
+  # Selected visual_taste minors elevated for R5.1 (the rest remain recorded findings):
+  - id: R51-C13-ERROR-RETRY-AND-ASOF
+    text: "VTL-409: the unavailable state gains a retry affordance and keeps printing the last-known-good pass stamp."
+  - id: R51-C14-COUNT-DISCIPLINE
+    text: "VTL-407: state how many rows are rendered (R4's 'Showing N of M' discipline) and make the split respond to the class filter."
+  - id: R51-C15-GLANCE-VOCAB
+    text: "VTL-405: de-overload 'Live' (mode vs observation class vs filter) and replace the EN 'seeds' enum-shorthand with plain words matching the ZH."
+
+preserved_strengths:
+  - "Five-channel seed/live encoding + the dated continuous-watching divider (both critics, independently)."
+  - "R4-plus-a-layer enforced by empty diff on R4 files and theme.css; achromatic Lab on the reserved --prov slot with no new tokens."
+  - "Designed stale state (exact age, spine cap, de-pulsed chip) that stays visibly LAB."
+  - "Operator gate is absence, not disablement; round trip restores the cold-load page exactly."
+  - "Anti-vacuous verification harness (crash sentinel, no-shared-sole-catcher, refuse-on-failing-baseline)."
+  - "Honest self-argument throughout the packet (warranted:false claims, self-declared uncertainties, adverse-result vocabulary existing at all)."
+
+authority_spot_verification:
+  - "git diff --stat 6ee8f34480ce origin/main -- mockups/refs/institutionalize templates/theme.css -> empty (R4 + theme.css byte-untouched), re-run by the authority."
+  - "lab.js:131 / :237 / :379 quoted lines re-read by the authority at the frozen SHA: the down/empty return-[], the '? 0 :' pill count, and Math.abs(r.lead) are exactly as both receipts state."
+  - "baseline.yml exists at the PR branch head (git ls-tree) — critic B's GAP about its absence was an artifact of extracting only the frozen artifact SHA (the packet files landed in later packet-only commits); the capability list VTL-401 relies on is real."
+  - "PR #5845 / #5897 / main-state claims in the program records were verified against gh at session start (see PR #5924)."
+
+production_migration_blockers_preserved:
+  - "C8 above: R4 composition unreviewed — blocks P-MP1-SHELL absent its own critic pass or an explicit named override."
+  - "DA-002 remains OPEN in production templates/theme.css (:72/:80 dark, :148/:152 light, :185 zh): --pv-buy byte-identical to --up. Any fix is a DS-PR (theme.css is outside MP-1 scope by MP-1's own §9)."
+  - "The R4 closure ledger's 10 blocking findings + G-D + overtime dispositions are re-censused in research/prophet_v4/D_LAB_R5_BLOCKER_RECENSUS.md (subject to C5's citation corrections); PRC-303 and DA-002 verified still OPEN by critic A's spot checks."

@@ -841,6 +841,18 @@ class TestRanLane:
         assert rows[0]["pct_since"] is None
         assert rows[0]["measured_from"] is None
 
+    # Sparse policy R8 — the confirmation anchor these gates measure from is derived
+    # through `signal_quality.confirmation_date(..., market="HK")`, which reads the
+    # COMMITTED `data/hk/_HSI.parquet`; a sparse session worktree omits `data/`.
+    # `confirmation_move()` swallows that FileNotFoundError by design (a missing
+    # reference is its documented disclosed-null case, not a crash the nightly takes),
+    # so no traceback ever names `data/` and the conftest sparse annotator has nothing
+    # to match on — a sparse tree just sees clean assertion failures that read like
+    # engine drift.  Measured 2026-08-19 on origin/main bytes (f69f224c9723):
+    # 13 failed / 187 passed sparse, 200 passed / 0 failed with `data/hk` present.
+    # In a full checkout (CI's `actions/checkout@v4`, the nightly host) all thirteen
+    # still gate exactly as before.  Companion note: tests/test_hk_board_ui.py.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_move_is_measured_from_the_confirmation_close(self):
         """MEASURED 2026-07-31: all 12 displayed HK ran rows overstated, mean +8.09pp.
 
@@ -1074,6 +1086,8 @@ class TestVetoedLane:
             close_of=lambda t: None, cohort=cohort, board_asof=BOARD_ASOF)
         assert len(rows) == 15, "a cohort member is never truncated"
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_non_cohort_tail_is_ordered_by_move(self):
         """Ordered by the CONFIRMATION-anchored move — the number the lane prints.
 
@@ -1095,6 +1109,8 @@ class TestVetoedLane:
         assert rows[0]["pct_since"] > rows[1]["pct_since"]
         assert rows[0]["measured_from"] == rows[1]["measured_from"] > marker
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_null_move_sorts_last_but_is_not_dropped(self):
         dates, closes, labels = _synth_closes()
         marker = labels[-12]
@@ -1109,6 +1125,8 @@ class TestVetoedLane:
         assert rows[1]["pct_since"] is None
         assert rows[1]["anchor"] == hbr.ANCHOR_MARKER, "no series, so no confirmation"
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_zero_move_is_ranked_not_treated_as_null(self):
         """0.0 is a measurement; None is the absence of one.  They must not merge.
 
@@ -1129,6 +1147,8 @@ class TestVetoedLane:
         assert rows[0]["anchor"] == hbr.ANCHOR_CONFIRM
 
     # ---- the anchor itself ------------------------------------------------- #
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_move_is_measured_from_the_confirmation_close(self):
         """The defect this lane shipped: +7.16pp of mean overstatement, measured.
 
@@ -1151,6 +1171,8 @@ class TestVetoedLane:
         assert row["pct_since"] == hbr.cross_read(
             dates, closes, cross_date=row["measured_from"])["pct_since"]
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_a_marker_anchored_move_is_unreachable_not_merely_discouraged(self):
         """Every path that cannot confirm prints null — none falls back to the marker.
 
@@ -1188,6 +1210,8 @@ class TestVetoedLane:
                 f"{name} fell back to the forbidden marker anchor")
 
     # ---- the population behind the truncated rows --------------------------- #
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_rows_carry_the_population_they_were_selected_from(self):
         """The lane ranks by the move and truncates, so the rows ARE the winners.
 
@@ -1219,6 +1243,8 @@ class TestVetoedLane:
             "the fixture must exercise a visible selection effect, or this test "
             "would pass on a lane that printed the displayed median instead")
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_median_denominator_excludes_the_disclosed_nulls(self):
         """`population_measured` is the median's base, and it is printed separately.
 
@@ -1451,6 +1477,8 @@ class TestG1Witnesses:
         for ticker in WITNESSES:
             assert board["verdicts"][ticker]["eligible"] is not True, ticker
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_at_least_five_of_seven_witnesses_are_visible(self, lanes):
         """G1's pin, against the PRODUCTION measurement: 5 of 7 through the lanes.
 
@@ -1477,6 +1505,8 @@ class TestG1Witnesses:
         visible = [t for t, where in seen.items() if where]
         assert len(visible) >= 5, f"only {len(visible)} of 7 visible: {seen}"
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_witness_the_lanes_miss_is_on_the_watch_strip(self, lanes, prod_board):
         """The 6th witness is reachable, just not through a display lane.
 
@@ -1575,6 +1605,8 @@ class TestG1Witnesses:
                 assert row["anchor"] == hbr.ANCHOR_CONFIRM
                 assert row["measured_from"] > row["signal_date"]
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_vetoed_lane_prints_what_the_board_missed(self, lanes):
         """Self-critical by construction: the moves are real and they are shown.
 
@@ -1606,6 +1638,8 @@ class TestG1Witnesses:
         assert max(moves) >= 10.0, (
             f"the 2026-07-31 panel carries double-digit missed moves; max is {max(moves)}")
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_no_vetoed_move_exceeds_its_confirmation_anchored_truth(self, frozen_lanes,
                                                                     board):
         """THE REGRESSION GATE, on the frozen panel: not one row may overstate.
@@ -1648,6 +1682,8 @@ class TestG1Witnesses:
             f"the frozen panel must exercise the overstatement this gate exists to "
             f"catch (mean marker-minus-confirmation excess {statistics.mean(excess):+.2f}pp)")
 
+    # Sparse policy R8 — see the note on the first marked gate in this file.
+    @pytest.mark.needs_full_checkout("data")
     def test_the_population_line_has_something_to_disclose(self, frozen_lanes):
         """The lane truncates on the real panel, and the middle move is far below it.
 

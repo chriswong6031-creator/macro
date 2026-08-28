@@ -1,0 +1,5 @@
+{
+  "schema": "prophet_lab.observation_baseline/v1",
+  "baseline_started_at": "2026-08-18T13:00:00Z",
+  "continuous_through": "2026-08-18T21:00:00Z"
+}

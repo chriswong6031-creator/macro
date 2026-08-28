@@ -13,11 +13,13 @@ from pathlib import Path
 
 import yaml
 
+from scripts.workflow_run_source import resolve_run_source
+
 ROOT = Path(__file__).resolve().parents[1]
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
 PROPHET_STEP = "Prophet nightly (plan refresh + ledger advancement; R2 after checkpoint)"
 CHECKPOINT_STEP = "checkpoint Prophet outputs to main (durable before engine tail)"
-R2_PUBLISH_STEP = "publish checkpointed Prophet index to R2"
+R2_PUBLISH_STEP = "publish Prophet public health receipt to R2 (and enforce index tombstone)"
 ACCEPTED_SOURCE_STEP = "restore accepted Prophet source for downstream derivations"
 STAGE_SHADOW_STEP = (
     "Prophet × Stage forward-shadow (tag actual entries + nightly grade advance)"
@@ -32,7 +34,13 @@ HEATMAP_CAP_STEP = "S&P 500 heatmap real-cap reference (weekly Polygon refresh; 
 
 def _engine_steps() -> list[dict]:
     doc = yaml.safe_load(DAILY.read_text(encoding="utf-8"))
-    return doc["jobs"]["engine"]["steps"]
+    steps = doc["jobs"]["engine"]["steps"]
+    # 512KB-cap diet: some bodies live in scripts/ci/ — resolve the effective
+    # source so these assertions keep reading what the step actually runs.
+    for step in steps:
+        if isinstance(step.get("run"), str):
+            step["run"] = resolve_run_source(step["run"], ROOT)
+    return steps
 
 
 def _step(name: str) -> dict:
@@ -259,15 +267,26 @@ def test_r2_publisher_reconstructs_and_hashes_the_checkpointed_git_blob() -> Non
     )
     assert "hashlib.sha256" in run
     assert 'if [ "$ACTUAL_SHA256" != "$PROPHET_INDEX_SHA256" ]' in run
-    assert "from scripts.build_prophet import R2_INDEX_KEY, _r2_client" in run
-    assert "client.head_object(Bucket=bucket, Key=R2_INDEX_KEY)" in run
+    assert "from scripts.build_prophet import (" in run
+    for name in ("R2_HEALTH_KEY", "_r2_client", "build_public_health_projection", "guarded_put_object"):
+        assert name in run
+    assert "client.head_object(Bucket=bucket, Key=R2_HEALTH_KEY)" in run
     assert 'condition = {"IfNoneMatch": "*"}' in run
     assert 'condition = {"IfMatch": etag}' in run
-    assert "client.put_object(" in run
+    assert "guarded_put_object(" in run
+    assert "client.put_object(" not in run
     assert '"git-checkpoint": checkpoint_sha' in run
     assert '"sha256": expected_sha' in run
     assert 'if status == 412:' in run
     assert 'os.environ.get("R2_BUCKET") or "mastermindx"' in run
+    # DEC:B1-PROPHET-PUBLIC-SPLIT: the full plan book must never reach R2 again,
+    # and the forbidden key is enforced closed by a self-healing tombstone.
+    assert "FORBIDDEN_INDEX_KEY = \"prophet/index.json\"" in run
+    assert "enforce_index_tombstone" in run
+    assert "client.delete_object(Bucket=bucket, Key=FORBIDDEN_INDEX_KEY)" in run
+    assert "Prophet R2 tombstone::" in run
+    assert "removed forbidden public object {FORBIDDEN_INDEX_KEY}" in run
+    assert "R2_INDEX_KEY" not in run
 
 
 def test_r2_publisher_rechecks_all_prophet_authority_paths_before_upload() -> None:
@@ -287,7 +306,7 @@ def test_r2_publisher_rechecks_all_prophet_authority_paths_before_upload() -> No
     second_verify = run.index(
         "if ! verify_prophet_checkpoint_current; then", first_verify + 1
     )
-    upload = run.index("client.put_object(")
+    upload = run.index("guarded_put_object(")
     assert first_verify < materialize < second_verify < upload
 
 

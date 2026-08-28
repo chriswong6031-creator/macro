@@ -21,7 +21,9 @@
     "change_summary",
     "failures",
     "storage",
-    "companyfacts_as_of_policy"
+    "companyfacts_as_of_policy",
+    "index",
+    "recovery"
   ],
   "properties": {
     "schema": {"const": "fundamental_forensics.broad_sec.run.v1"},
@@ -43,7 +45,20 @@
         "store_readback_failure",
         "issuer_manifest_invalid",
         "queue_overflow",
-        "historical_submissions_required"
+        "historical_submissions_required",
+        "edgar_index_unavailable",
+        "edgar_index_too_large",
+        "edgar_index_invalid",
+        "edgar_index_member_missing",
+        "edgar_index_cik_mismatch",
+        "edgar_index_gap",
+        "edgar_index_correction_requires_reconciliation",
+        "edgar_index_event_not_causally_admitted",
+        "recovery_plan_required",
+        "recovery_plan_invalid",
+        "recovery_in_progress",
+        "historical_submissions_conflict",
+        "historical_submissions_budget_exhausted"
       ]
     },
     "poll_started_at": {"type": "string", "minLength": 20},
@@ -85,7 +100,11 @@
         "companyfacts_skipped_unchanged",
         "companyfacts_bytes_fetched",
         "companyfacts_deferred",
-        "recovery_backlog"
+        "recovery_backlog",
+        "selected_recovery_ciks",
+        "submissions_fetched",
+        "historical_submissions_fetched",
+        "historical_submissions_bytes_fetched"
       ],
       "properties": {
         "expected_issuers": {"type": "integer", "minimum": 0},
@@ -95,7 +114,11 @@
         "companyfacts_skipped_unchanged": {"type": "integer", "minimum": 0},
         "companyfacts_bytes_fetched": {"type": "integer", "minimum": 0},
         "companyfacts_deferred": {"type": "integer", "minimum": 0},
-        "recovery_backlog": {"type": "integer", "minimum": 0}
+        "recovery_backlog": {"type": "integer", "minimum": 0},
+        "selected_recovery_ciks": {"type": "integer", "minimum": 0, "maximum": 64},
+        "submissions_fetched": {"type": "integer", "minimum": 0, "maximum": 64},
+        "historical_submissions_fetched": {"type": "integer", "minimum": 0, "maximum": 64},
+        "historical_submissions_bytes_fetched": {"type": "integer", "minimum": 0, "maximum": 33554432}
       }
     },
     "change_summary": {
@@ -150,6 +173,124 @@
         "latest_complete_key": {"type": "string"}
       }
     },
-    "companyfacts_as_of_policy": {"const": "current_observed_snapshot"}
+    "companyfacts_as_of_policy": {"const": "current_observed_snapshot"},
+    "index": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_kind",
+            "index_url",
+            "year",
+            "quarter",
+            "archive_sha256",
+            "archive_bytes",
+            "archive_retrieved_at",
+            "http_etag",
+            "http_last_modified",
+            "member_name",
+            "member_sha256",
+            "member_bytes",
+            "latest_filing_date",
+            "snapshot_sha256",
+            "relevant_set_sha256",
+            "new_events",
+            "unchanged_events",
+            "correction_events",
+            "baseline"
+          ],
+          "properties": {
+            "source_kind": {"const": "sec_edgar_full_master_index"},
+            "index_url": {"type": "string", "minLength": 20},
+            "year": {"type": "integer", "minimum": 1993},
+            "quarter": {"type": "integer", "minimum": 1, "maximum": 4},
+            "archive_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "archive_bytes": {"type": "integer", "minimum": 0},
+            "archive_retrieved_at": {"type": ["string", "null"]},
+            "http_etag": {"type": ["string", "null"]},
+            "http_last_modified": {"type": ["string", "null"]},
+            "member_name": {"const": "master.idx"},
+            "member_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "member_bytes": {"type": "integer", "minimum": 0},
+            "latest_filing_date": {"type": ["string", "null"]},
+            "snapshot_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "relevant_set_sha256": {"type": "string", "minLength": 64, "maxLength": 64},
+            "new_events": {"type": "integer", "minimum": 0},
+            "unchanged_events": {"type": "integer", "minimum": 0},
+            "correction_events": {"type": "integer", "minimum": 0},
+            "baseline": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "recovery": {
+      "anyOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan_sha256",
+            "plan_key",
+            "selection_cutoff_at",
+            "anchor_complete",
+            "index_snapshot_sha256",
+            "relevant_set_sha256",
+            "candidate_row_count",
+            "candidate_cik_count",
+            "candidate_ciks_sha256",
+            "tranche_start_ordinal",
+            "selected_ciks",
+            "selected_ciks_sha256",
+            "selected_count",
+            "submissions_fetched",
+            "historical_submissions_fetched",
+            "completed_this_run",
+            "completed_total",
+            "backlog_count",
+            "cumulative_sec_accepted_at"
+          ],
+          "properties": {
+            "plan_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "plan_key": {"type": "string"},
+            "selection_cutoff_at": {"type": "string", "minLength": 20},
+            "anchor_complete": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["run_id", "run_key", "run_receipt_sha256", "observation_key", "observation_sha256"],
+              "properties": {
+                "run_id": {"type": "string"},
+                "run_key": {"type": "string"},
+                "run_receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                "observation_key": {"type": "string"},
+                "observation_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            },
+            "index_snapshot_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "relevant_set_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "candidate_row_count": {"type": "integer", "minimum": 0},
+            "candidate_cik_count": {"type": "integer", "minimum": 0, "maximum": 4000},
+            "candidate_ciks_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "tranche_start_ordinal": {"type": "integer", "minimum": 0},
+            "selected_ciks": {
+              "type": "array",
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": {"type": "string", "pattern": "^[0-9]{10}$"}
+            },
+            "selected_ciks_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "selected_count": {"type": "integer", "minimum": 0, "maximum": 64},
+            "submissions_fetched": {"type": "integer", "minimum": 0, "maximum": 64},
+            "historical_submissions_fetched": {"type": "integer", "minimum": 0, "maximum": 64},
+            "completed_this_run": {"type": "integer", "minimum": 0, "maximum": 64},
+            "completed_total": {"type": "integer", "minimum": 0, "maximum": 4000},
+            "backlog_count": {"type": "integer", "minimum": 0, "maximum": 4000},
+            "cumulative_sec_accepted_at": {"type": ["string", "null"]}
+          }
+        }
+      ]
+    }
   }
 }

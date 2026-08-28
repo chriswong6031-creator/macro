@@ -66,6 +66,25 @@
           ]
         }
       ]
+    },
+    {
+      "key": "capital-structure",
+      "why": "Overlapping capital_structure jobs can each compile a coherent generation from the source ledger they checked out; git pull --rebase -X theirs then wholesale-replaces origin/main's source_manifest.jsonl and the matching events/terms/projection/health/public twin. A file-level merge of the JSONL would desynchronize that compiled generation. Whole-family withhold keeps Git as the selector (DEC:CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE). retrieval_attempts.parquet is the observation plane and is append-only by attempt_id.",
+      "withhold_paths": [
+        "data/capital_structure",
+        "site/capital-structure-data"
+      ],
+      "members": [
+        {
+          "path": "data/capital_structure/source_manifest.jsonl",
+          "check": "jsonl_prefix"
+        },
+        {
+          "path": "data/capital_structure/retrieval_attempts.parquet",
+          "check": "parquet_rows",
+          "identity": ["attempt_id"]
+        }
+      ]
     }
   ]
 }

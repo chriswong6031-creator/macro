@@ -20,7 +20,14 @@
       "properties": {
         "source_system": {"type": "string", "minLength": 1},
         "source_id": {"type": "string", "minLength": 1},
-        "manifest_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+        "manifest_ids": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "pattern": "^evidence:cs:[a-f0-9]{64}$"},
+          "uniqueItems": true,
+          "description": "Stable post-W1 economic evidence identities. Optional on historical v1 events."
+        }
       }
     },
     "issuer": {"$ref": "#/$defs/issuer"},
@@ -124,7 +131,12 @@
       "properties": {
         "immutable_record": {"const": true},
         "correction_version": {"type": "integer", "minimum": 1},
-        "correction_of": {"type": ["string", "null"]}
+        "correction_of": {"type": ["string", "null"]},
+        "identity_format": {
+          "type": "integer",
+          "const": 2,
+          "description": "Post-W1 event-version identity. Format 2 hashes semantic state + evidence_ids + the correction chain, excluding source.manifest_ids, evidence[].manifest_id, and point_in_time clocks. Omitted on historical format-1 rows, which hash the full body minus event_id."
+        }
       }
     },
     "point_in_time": {

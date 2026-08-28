@@ -261,6 +261,38 @@ def _compute_ticker_stats_v2(
     return rows, cov
 
 
+def _partition_session_rows(
+    rows: list[dict], *, panel_latest: str, tracked_universe: int
+) -> tuple[list[dict], list[dict], dict]:
+    """Split comparable current observations from last-known historical rows.
+
+    A ticker's own newest row remains useful in Browse All, but only a row whose
+    clock equals the authoritative desk session may enter the current gauge,
+    standout board, ranking or machine context.  No forward fill is performed.
+    """
+    current: list[dict] = []
+    stale: list[dict] = []
+    for raw in rows:
+        row = dict(raw)
+        if str(row.get("asof") or "") == panel_latest:
+            row["session_status"] = "current"
+            current.append(row)
+        else:
+            row["session_status"] = "stale"
+            stale.append(row)
+
+    tracked = max(int(tracked_universe), len(current) + len(stale))
+    missing = max(0, tracked - len(current) - len(stale))
+    census = {
+        "tracked_universe": tracked,
+        "current_session_rows": len(current),
+        "stale_rows": len(stale),
+        "missing_rows": missing,
+        "current_session_pct": round(100.0 * len(current) / tracked, 1) if tracked else 0.0,
+    }
+    return current, stale, census
+
+
 def _compute_ticker_stats(
     panel: pd.DataFrame,
     yahoo_vol: dict[str, pd.Series],
@@ -518,6 +550,7 @@ def _emit_pane_json(
     built: str,
     gauge: dict | None = None,
     coverage: dict | None = None,
+    historical_rows: list[dict] | None = None,
     out_path: Path | None = None,
 ) -> Path:
     """Write the interim Terminal Dark Pool pane artifact → site/darkpool_eod.json.
@@ -543,7 +576,11 @@ def _emit_pane_json(
         "n_with_ats": n_with_ats,
         "gauge": gauge or {},                  # dollar-weighted market-wide participation
         "coverage": coverage or {},            # which inputs were actually available
-        "universe": rows_clean,                # full ranked per-ticker list (participation, z, streak, ats_frac, venue, spark20)
+        # Machine-facing current cross-section: every row has the same clock as
+        # top-level ``asof``.  Last-known older observations are kept separately
+        # for explicit historical browsing and never enter current authority.
+        "universe": rows_clean,
+        "historical_rows": historical_rows or [],
         "venues": {                            # weekly ATS venue rollup + WoW
             "week_start": ats_table.get("week_start"),
             "lag_note": ats_lag_note,
@@ -595,10 +632,12 @@ def main() -> int:
     # Load panel
     panel = _load_panel()
     if panel is None:
-        log.error("panel missing — run: python -m scripts.backfill_finra_short_volume")
-        return 0
+        log.error("panel missing — no current Dark Pool publication authority; prior artifacts retained")
+        print("::error title=Dark Pool source unavailable::canonical FINRA panel is missing or unreadable; prior artifacts retained", flush=True)
+        return 1
 
     n_dates = panel["date"].nunique()
+    panel_latest = str(panel["date"].max().date())
     log.info("panel: %d rows, %d dates, %d tickers", len(panel), n_dates, panel["ticker"].nunique())
 
     if n_dates < MIN_DATES:
@@ -641,21 +680,27 @@ def main() -> int:
     )
     ticker_stats = _sort_ticker_stats(ticker_stats)
 
+    current_stats, stale_stats, session_census = _partition_session_rows(
+        ticker_stats,
+        panel_latest=panel_latest,
+        tracked_universe=len(display_universe) or len(tickers),
+    )
+    coverage.update(session_census)
+
     gauge = market_gauge([
         NameMetrics(ticker=r["ticker"], participation=r.get("participation"),
                     participation_z=r.get("participation_z"),
                     offex_dollars=r.get("offex_dollars"))
-        for r in ticker_stats
+        for r in current_stats
     ])
 
-    n_with_oe  = coverage["n_with_participation"]
-    n_with_ats = coverage["n_with_venue"]
+    n_with_oe = sum(r.get("participation") is not None for r in current_stats)
+    n_with_ats = sum(r.get("ats_frac") is not None for r in current_stats)
 
     # ATS venue table (with wow_pp)
     ats_table = _compute_ats_venue_table(ats_latest, ats_prior)
 
     # Data freshness
-    panel_latest   = str(panel["date"].max().date())
     panel_dates    = n_dates
     below_floor    = n_dates < MIN_DATES
     ats_week_label = ats_table.get("week_start")
@@ -689,7 +734,9 @@ def main() -> int:
         return {k: _clean(v) if not isinstance(v, list) else [_clean(x) for x in v]
                 for k, v in r.items()}
 
-    rows_clean = [_clean_row(r) for r in ticker_stats]
+    current_clean = [_clean_row(r) for r in current_stats]
+    stale_clean = [_clean_row(r) for r in stale_stats]
+    rows_clean = current_clean + stale_clean
     # <\/ guard: venue names are external FINRA strings — prevent </script> breakout
     table_json = json.dumps(rows_clean, separators=(",", ":")).replace("</", r"<\/")
 
@@ -706,7 +753,7 @@ def main() -> int:
     try:
         from engine import darkpool_context as _dpc
         dp_ctx = _dpc.build_context_feed(
-            rows_clean,
+            current_clean,
             {"week_start": ats_table.get("week_start"),
              "venues": ats_table.get("venues", []),
              "lag_note": ats_lag_note,
@@ -750,10 +797,10 @@ def main() -> int:
     # never blocks the desk. Upgrades to intraday per-print once a tick feed lands.
     try:
         _emit_pane_json(
-            rows_clean, ats_table,
+            current_clean, ats_table,
             panel_latest=panel_latest, panel_dates=panel_dates, below_floor=below_floor,
             n_with_oe=n_with_oe, n_with_ats=n_with_ats, ats_lag_note=ats_lag_note, built=built,
-            gauge=gauge, coverage=coverage,
+            gauge=gauge, coverage=coverage, historical_rows=stale_clean,
         )
     except Exception as e:  # noqa: BLE001
         log.warning("pane json emit failed (non-fatal): %s", e)

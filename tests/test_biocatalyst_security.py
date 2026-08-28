@@ -26,8 +26,10 @@ import engine.biocatalyst.publication as publication_module
 from engine.biocatalyst.publication import (
     HistoryPublicationEvidence,
     PreparedGeneration,
+    ProductReadBundle,
     PublicationError,
     PublicGenerationPublisher,
+    ValidatedPointerBoundGeneration,
     archive_private_stage,
 )
 from engine.biocatalyst.history import (
@@ -87,6 +89,18 @@ def _generation_paths(publisher: PublicGenerationPublisher) -> tuple[Path, Path,
     pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
     generation = publisher.public_root / "generations" / pointer["generation_id"]
     return pointer_path, generation, pointer
+
+
+def _count_generation_loads(monkeypatch: pytest.MonkeyPatch, sink: list[str]) -> None:
+    orig = PublicGenerationPublisher._materialize_validated_generation
+
+    def wrapped(self: PublicGenerationPublisher, generation_id: str):
+        sink.append(generation_id)
+        return orig(self, generation_id)
+
+    monkeypatch.setattr(
+        PublicGenerationPublisher, "_materialize_validated_generation", wrapped
+    )
 
 
 def _rehash_generation(
@@ -786,3 +800,353 @@ def test_only_explicit_transient_availability_codes_are_partial() -> None:
         assert worker._failure_state(code) == (
             "partial" if code in expected_transient else "quarantined"
         )
+
+
+def test_product_bundle_matches_independent_projection_and_health(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    independent = publisher.read_trial_projection()
+    health = publisher.read_operational_health(now=NOW)
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert independent is not None
+    assert bundle is not None
+    assert isinstance(bundle, ProductReadBundle)
+    assert bundle.projection.generation == independent.generation
+    assert tuple(trial["nct_id"] for trial in bundle.projection.trials) == tuple(
+        trial["nct_id"] for trial in independent.trials
+    )
+    assert bundle.operational_health["generation_id"] == bundle.projection.generation.generation_id
+    assert bundle.operational_health["state"] == health["state"]
+    assert bundle.operational_health["last_success_at"] == health["last_success_at"]
+    assert bundle.operational_health["observed_nct_count"] == health["observed_nct_count"]
+
+
+def test_second_independent_bundle_revalidates_instead_of_trusting_publisher_lifetime(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, publisher = committed_generation
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+
+    first = publisher.read_product_bundle(now=NOW)
+    second = publisher.read_product_bundle(now=NOW)
+
+    assert first is not None and second is not None
+    assert len(loads) == 2
+    assert loads[0] == loads[1] == first.projection.generation.generation_id
+    assert not any(
+        isinstance(value, (ValidatedPointerBoundGeneration, ProductReadBundle))
+        for value in vars(publisher).values()
+    )
+
+
+def test_second_logical_read_rejects_post_success_rehash(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    first = publisher.read_product_bundle(now=NOW)
+    assert first is not None
+    pointer_path, generation, _ = _generation_paths(publisher)
+
+    def mutate(health: dict[str, Any], manifest: dict[str, Any]) -> None:
+        changed = "2026-08-01T16:00:01.000000Z"
+        health["last_attempt_at"] = changed
+        manifest["last_attempt_at"] = changed
+
+    _rehash_generation(pointer_path=pointer_path, generation=generation, mutate=mutate)
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_product_bundle(now=NOW)
+    assert raised.value.code == "GENERATION_HEALTH_BINDING_MISMATCH"
+
+
+def test_rehashed_trial_projection_still_rejected_on_product_bundle(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    pointer_path, generation, _ = _generation_paths(publisher)
+    _rehash_trial_projection(
+        pointer_path=pointer_path,
+        generation=generation,
+        mutate=lambda snapshot: snapshot.__setitem__(
+            "source_snapshot_ref", "ctgov_snapshot_NCT00000001_rebound"
+        ),
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_product_bundle(now=NOW)
+    assert raised.value.code == "TRIAL_PROJECTION_BINDING_MISMATCH"
+
+
+def test_product_bundle_derives_stale_at_read_time_without_rewriting_files(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    health_before = publisher.health_path.read_bytes()
+    published_at = NOW
+    fresh = publisher.read_product_bundle(now=published_at)
+    stale = publisher.read_product_bundle(
+        now=published_at + timedelta(seconds=7200, microseconds=1)
+    )
+
+    assert fresh is not None and stale is not None
+    assert fresh.operational_health["state"] == "fresh"
+    assert stale.operational_health["state"] == "stale"
+    assert stale.operational_health["last_error_code"] == "FRESHNESS_BUDGET_EXCEEDED"
+    assert stale.projection.generation.generation_id == fresh.projection.generation.generation_id
+    assert stale.operational_health["generation_id"] == fresh.projection.generation.generation_id
+    assert publisher.health_path.read_bytes() == health_before
+
+
+def test_root_health_from_another_generation_cannot_join_the_bundle(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    projection_id = publisher.read_committed().generation_id
+    mutable_health = json.loads(publisher.health_path.read_text(encoding="utf-8"))
+    mutable_health["generation_id"] = "ctgov_run_20260801T160000000000Z_abcdef123456"
+    publisher.health_path.write_bytes(canonical_json_bytes(mutable_health) + b"\n")
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert bundle.projection.generation.generation_id == projection_id
+    assert bundle.operational_health["state"] == "unavailable"
+    assert bundle.operational_health["last_error_code"] == "OPERATIONAL_HEALTH_UNAVAILABLE"
+    assert bundle.operational_health.get("generation_id") is None
+    assert bundle.health_unavailable_reason == "HEALTH_PAYLOAD_INVALID"
+    assert "health_unavailable_reason" not in bundle.operational_health
+
+
+def test_pointer_advance_retries_once_against_the_new_generation(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = worker_config(tmp_path)
+    store = MemoryStore()
+    first = worker.run_once(
+        config,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW,
+    )
+    assert first.status == "success"
+    publisher = PublicGenerationPublisher(config.public_root)
+    first_pointer = publisher.pointer_path.read_bytes()
+    first_health = publisher.health_path.read_bytes()
+    first_id = publisher.read_committed().generation_id
+    second = worker.run_once(
+        config,
+        collector_factory=FakeCollectorFactory(
+            source_timestamp="2026-08-01T10:00:00",
+            watermark_after="2026-08-01T17:00:05Z",
+        ),
+        store_factory=lambda _: store,
+        now_fn=lambda: NOW + timedelta(hours=1),
+    )
+    assert second.status == "success"
+    second_id = publisher.read_committed().generation_id
+    assert second_id != first_id
+
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+    seen = {"flipped": False}
+    orig = PublicGenerationPublisher._pointer_matches_validated
+
+    def flip_once(self: PublicGenerationPublisher, validated: ValidatedPointerBoundGeneration) -> bool:
+        if not seen["flipped"]:
+            seen["flipped"] = True
+            self.pointer_path.write_bytes(first_pointer)
+            self.health_path.write_bytes(first_health)
+        return orig(self, validated)
+
+    monkeypatch.setattr(PublicGenerationPublisher, "_pointer_matches_validated", flip_once)
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert bundle.projection.generation.generation_id == first_id
+    assert bundle.operational_health["generation_id"] == first_id
+    assert loads == [second_id, first_id]
+
+
+def test_second_pointer_change_during_bundle_read_fails_closed(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, publisher = committed_generation
+    monkeypatch.setattr(
+        PublicGenerationPublisher,
+        "_pointer_matches_validated",
+        lambda self, validated: False,
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_product_bundle(now=NOW)
+    assert raised.value.code == "PUBLIC_GENERATION_CHANGED"
+
+
+def _count_family_validators(
+    monkeypatch: pytest.MonkeyPatch, sink: dict[str, int]
+) -> None:
+    orig_snapshot = publication_module._validate_trial_snapshot_binding
+    orig_protocol = publication_module._validate_trial_protocol_projection_binding
+    orig_history = publication_module._validate_trial_history_model_binding
+    orig_prospective = publication_module.validate_prospective_public_model
+    orig_tape = publication_module.validate_trial_change_tape_read_model
+
+    def wrap_snapshot(*args: Any, **kwargs: Any):
+        sink["snapshot"] += 1
+        return orig_snapshot(*args, **kwargs)
+
+    def wrap_protocol(*args: Any, **kwargs: Any):
+        sink["protocol"] += 1
+        return orig_protocol(*args, **kwargs)
+
+    def wrap_history(*args: Any, **kwargs: Any):
+        sink["history"] += 1
+        return orig_history(*args, **kwargs)
+
+    def wrap_prospective(*args: Any, **kwargs: Any):
+        sink["prospective"] += 1
+        return orig_prospective(*args, **kwargs)
+
+    def wrap_tape(*args: Any, **kwargs: Any):
+        sink["tape"] += 1
+        return orig_tape(*args, **kwargs)
+
+    monkeypatch.setattr(publication_module, "_validate_trial_snapshot_binding", wrap_snapshot)
+    monkeypatch.setattr(
+        publication_module, "_validate_trial_protocol_projection_binding", wrap_protocol
+    )
+    monkeypatch.setattr(
+        publication_module, "_validate_trial_history_model_binding", wrap_history
+    )
+    monkeypatch.setattr(
+        publication_module, "validate_prospective_public_model", wrap_prospective
+    )
+    monkeypatch.setattr(
+        publication_module, "validate_trial_change_tape_read_model", wrap_tape
+    )
+
+
+def test_unchanged_product_bundle_materializes_once_and_does_not_reopen_artifacts(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _, publisher = committed_generation
+    loads: list[str] = []
+    _count_generation_loads(monkeypatch, loads)
+    opened_during_projection: list[str] = []
+    orig_projection = PublicGenerationPublisher._trial_projection_from_validated
+    orig_read_bytes = Path.read_bytes
+    orig_read_text = Path.read_text
+
+    def wrapped_projection(
+        self: PublicGenerationPublisher, validated: ValidatedPointerBoundGeneration
+    ):
+        _, generation, _ = _generation_paths(self)
+        generation_files = {
+            path.resolve() for path in generation.rglob("*") if path.is_file()
+        }
+
+        def tracked_read_bytes(path_self: Path, *args: Any, **kwargs: Any) -> bytes:
+            if path_self.resolve() in generation_files:
+                opened_during_projection.append(path_self.resolve().as_posix())
+            return orig_read_bytes(path_self, *args, **kwargs)
+
+        def tracked_read_text(path_self: Path, *args: Any, **kwargs: Any) -> str:
+            if path_self.resolve() in generation_files:
+                opened_during_projection.append(path_self.resolve().as_posix())
+            return orig_read_text(path_self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "read_bytes", tracked_read_bytes)
+        monkeypatch.setattr(Path, "read_text", tracked_read_text)
+        try:
+            return orig_projection(self, validated)
+        finally:
+            monkeypatch.setattr(Path, "read_bytes", orig_read_bytes)
+            monkeypatch.setattr(Path, "read_text", orig_read_text)
+
+    monkeypatch.setattr(
+        PublicGenerationPublisher, "_trial_projection_from_validated", wrapped_projection
+    )
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert loads == [bundle.projection.generation.generation_id]
+    assert opened_during_projection == []
+
+
+def test_schema_16_product_bundle_validates_each_family_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Production schema 1.6.0 used to validate each family twice per NCT.
+
+    A 4-NCT generation was 8 validations per family; the request-local
+    materialization keeps that to once per NCT (4, not 8). The owned worker
+    fixture is one NCT, so the contract is observed_nct_count, not 2×.
+    """
+
+    config = worker_config(tmp_path, prospective_enabled=False)
+    result = worker.run_once(
+        config,
+        collector_factory=FakeCollectorFactory(),
+        store_factory=lambda _: MemoryStore(),
+        now_fn=lambda: NOW,
+    )
+    assert result.status == "success"
+    publisher = PublicGenerationPublisher(config.public_root)
+    counts = {
+        "snapshot": 0,
+        "protocol": 0,
+        "history": 0,
+        "prospective": 0,
+        "tape": 0,
+    }
+    _count_family_validators(monkeypatch, counts)
+
+    bundle = publisher.read_product_bundle(now=NOW)
+
+    assert bundle is not None
+    assert bundle.projection.generation.schema_version == "1.6.0"
+    nct_count = bundle.projection.generation.observed_nct_count
+    assert nct_count >= 1
+    assert counts["snapshot"] == nct_count
+    assert counts["protocol"] == nct_count
+    assert counts["history"] == nct_count
+    assert counts["tape"] == nct_count
+    assert counts["prospective"] == 0
+    assert bundle.projection.prospective_models_by_nct["NCT00000001"] == {
+        "available": False,
+        "unavailable_reason": "baseline_not_established",
+    }
+
+
+def test_projection_uses_validated_artifacts_after_post_proof_disk_mutation(
+    committed_generation: tuple[Any, PublicGenerationPublisher],
+) -> None:
+    _, publisher = committed_generation
+    validated = publisher.read_validated_generation()
+    assert validated is not None
+    _, generation, _ = _generation_paths(publisher)
+    snapshot_path = generation / "trial_snapshots" / "NCT00000001.json"
+    original = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    mutated = dict(original)
+    mutated["source_snapshot_ref"] = "ctgov_snapshot_NCT00000001_mutated_after_validate"
+    snapshot_path.write_bytes(canonical_json_bytes(mutated) + b"\n")
+
+    projection = publisher._trial_projection_from_validated(validated)
+
+    assert projection.trials[0]["source_snapshot_ref"] == original["source_snapshot_ref"]
+    assert (
+        projection.trials[0]["source_snapshot_ref"] != mutated["source_snapshot_ref"]
+    )
+
+    with pytest.raises(PublicationError) as raised:
+        publisher.read_product_bundle(now=NOW)
+    assert raised.value.code == "PUBLIC_GENERATION_ARTIFACT_MISMATCH"

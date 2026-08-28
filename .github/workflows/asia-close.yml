@@ -90,7 +90,9 @@ jobs:
           # ~08:25 start; only the 06:00 slot's long holds are dropped, and a later
           # slot always covers.
           MAX_FLOOR_WAIT_S = 45 * 60
-          REAL_RUN_MIN_S = 600        # <10m completed run = a gate skip, not a real attempt
+          REAL_RUN_MIN_S = 600        # <10m wall cannot contain the ~110m asia job — used ONLY
+                                      # as a jobs-lookup saver now, never as proof of a real
+                                      # attempt (see the 2026-08-20 queue-latency incident below)
           MAX_REAL_ATTEMPTS = 2       # first try + one same-day retry, then stop
 
           if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch":
@@ -125,9 +127,37 @@ jobs:
               if alive_older:
                   out(False, f"older run #{alive_older[0]['run_number']} already alive — it owns today")
 
-              real = [r for r in runs if r["id"] != my_id and r["status"] == "completed"
-                      and dur_s(r) >= REAL_RUN_MIN_S]
-              if any(r["conclusion"] == "success" for r in real):
+              # A completed run is a REAL attempt only if its `asia` job actually
+              # EXECUTED — job-level truth from the jobs API, never run-level
+              # duration. The old heuristic (updated_at - run_started_at >= 10m)
+              # counted QUEUE LATENCY as execution: on 2026-08-20 the macstudio
+              # pool was starved ~4h (renders monopolized one of the two labeled
+              # runners), gate-skip runs sat queued 15-58m before their one-minute
+              # gates executed, two of them (runs #287/#288, asia job SKIPPED)
+              # classified as "real successes", and every later fire skipped with
+              # "a real run already succeeded today" — the settled CN/HK builders
+              # could not run all day and the forward ledgers missed their session.
+              # The duration check survives only as a lookup saver: a run shorter
+              # than REAL_RUN_MIN_S cannot contain the ~110m asia job, so its jobs
+              # fetch is skipped. A jobs-API error propagates to the outer
+              # fail-OPEN handler (duplicate idempotent run > dead lane).
+              def asia_conclusion(r):
+                  jreq = urllib.request.Request(r["jobs_url"] + "?per_page=100", headers={
+                      "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                      "Accept": "application/vnd.github+json"})
+                  for j in json.load(urllib.request.urlopen(jreq, timeout=60)).get("jobs", []):
+                      if j.get("name") == "asia":
+                          return j.get("conclusion")
+                  return None
+
+              real = []
+              for r in runs:
+                  if r["id"] == my_id or r["status"] != "completed" or dur_s(r) < REAL_RUN_MIN_S:
+                      continue
+                  concl = asia_conclusion(r)
+                  if concl not in (None, "skipped"):
+                      real.append(concl)
+              if any(c == "success" for c in real):
                   out(False, "a real run already succeeded today")
               if len(real) >= MAX_REAL_ATTEMPTS:
                   print(f"::warning title=asia-close gate::{len(real)} real attempts today, none succeeded — retry budget spent, lane needs eyes")
@@ -324,6 +354,17 @@ jobs:
           CN_LANE: asia   # explicit asia-lane gate: the ONLY lane that may persist the board ledger
                           # (this job runs after the A-share close and commits data/). Render lanes
                           # leave CN_LANE unset/non-asia so china_standout_track.append_board refuses.
+          COLLECT_LANE: nightly   # GD-4A (2026-08-19): arms engine.risk_radar_intl_audit.
+                          # ledger_lane_armed() so THIS settled-close run is the one that
+                          # advances data/risk_radar_intl/cn_forward_log.jsonl (snapshot_and_grade
+                          # + the bounded tuner). Scoped to this step only — build_china is a
+                          # standalone step running exactly one command (python -m
+                          # scripts.build_china) and its only ledger_lane_armed() caller is the
+                          # CN risk-radar audit (verified 2026-08-19: no market_state_audit /
+                          # risk_radar_audit / ignition_audit / opex_risk / event_window /
+                          # top_maturation import in scripts/build_china.py), so arming this
+                          # step's env does not un-gate any other writer. Job-wide arming is
+                          # deliberately avoided — see the line-667 comment below.
         run: |
           set +e
           # Job-start marker for the library rebuild step's skip-if-fresh check below
@@ -520,7 +561,17 @@ jobs:
             COLLECT_LANE=nightly brun rotation_events_cn "china rotation events (build_rotation_events_china)"  scripts.build_rotation_events_china  # RC-R14 display-tier, reads baskets.json in-process
           }
           cl_hk() {
-            brun hk               "build hong kong / hang seng (build_hk)"             scripts.build_hk
+            # GD-4A (2026-08-19): hk_forward_log.jsonl advancer — asia-close IS the HK
+            # risk-radar forward-ledger nightly (only settled-HKEX lane that commits
+            # data/). engine/risk_radar_intl_audit.py's ledger_lane_armed() self-gates on
+            # COLLECT_LANE=nightly, so arm it for THIS module only — the inline
+            # `VAR=val brun ...` form reaches the python child and does NOT leak to later
+            # brun calls (verified; same idiom as CN_SLEEVE_LANE / the ignition arm below).
+            # scripts/build_hk.py's only ledger_lane_armed() caller is the HK risk-radar
+            # audit (verified 2026-08-19: no market_state_audit / risk_radar_audit /
+            # ignition_audit / opex_risk / event_window / top_maturation import in that
+            # module), so this arms exactly the HK risk-radar ledger + its bounded tuner.
+            COLLECT_LANE=nightly brun hk "build hong kong / hang seng (build_hk)"             scripts.build_hk
             # hk_ignition.jsonl advancer: asia-close IS the HK ignition forward-ledger nightly
             # (only fresh-HKEX lane that commits data/). engine/ignition_audit.py writers
             # self-gate on COLLECT_LANE=nightly, so arm it for THIS module only — the inline

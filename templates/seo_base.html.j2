@@ -488,11 +488,21 @@ html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
    document-relative URLs. Nested acquisition pages load them explicitly from
    the known root depth, then set the account idempotency flag so theme.js does
    not request duplicate /products/*.js paths. Defer preserves source order:
-   Supabase -> account -> brain -> theme. #}
+   Supabase -> account -> theme.
+
+   mm_brain.js is deliberately ABSENT. It is 227 KB — the largest script in the
+   estate — and every byte of it was fetched, parsed, and executed on page load
+   purely to mount a launcher pill nobody had clicked yet. theme.js now mounts
+   an accessible stub itself and requests the bundle on first activation,
+   resolving it from _mmSharedAssetRoot so the nested depth is correct (#5976).
+   Re-adding a tag here does not "make the assistant work" — it only makes the
+   loader stand down (it early-returns on window.MMBrain) and restores the
+   eager cost. The three hand-authored product flagships in
+   lib.pages.HAND_AUTHORED_PAGES are the ONE exception: they ship the landing
+   tail and carry no theme.js, so their own tag is the only loader they have. #}
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
 <script src="{{ rel }}supabase.js"></script>
 <script src="{{ rel }}account.js"></script>
-<script src="{{ rel }}mm_brain.js"></script>
 <script src="{{ rel }}theme.js"></script>
 {% include "_public_chrome_js.html.j2" %}
 <script src="{{ rel }}onboard.js" defer></script>

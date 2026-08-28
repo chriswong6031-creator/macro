@@ -13,14 +13,17 @@ claim. This collector is the replacement substrate: point-in-time SH/SZ/BJ
 identity and lifecycle, exact sessions, unadjusted nominal daily quotes, vendor
 daily price limits, suspensions, daily indicators, ST state, and effective names.
 
-It does not authorize TuShare use. TuShare's current
-[service agreement](https://tushare.pro/document/2?doc_id=405) describes the
-ordinary personal authorization as private/noncommercial. Before any network or
-store mutation, the collector requires a separately issued written vendor or
-institutional grant covering API access, bulk local retention, quantitative
-strategy research, commercial use, and private internal derivatives. Until that
-real receipt exists and a scalable cap plan is reviewed, this lane is
-`foundation_only_no_live_entitlement_or_scalable_backfill`.
+**TuShare licensing/compliance: `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`.** The
+controlling agreement and supporting evidence are confidential and outside
+coding/agent scope under NDA/privacy constraints. No coding session or runtime
+gate may request or verify those documents
+(`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`, 2026-08-21, which
+nulls the former written-grant/receipt/trust-allowlist requirement this contract
+previously carried). DEP-EXACT gates only on independently technical exact-plane
+correctness, access operation, canary, range-campaign and completeness
+requirements. Until the live canary runs and the scalable cap plan is reviewed,
+this lane is `foundation_only_range_shards_synthetic_no_live_canary` on that
+technical evidence alone.
 
 The Wave-0 Yahoo-derived 71,692-event artifact remains incompatible with exact
 legal-limit strategy claims: its nominally “raw” prices are split-adjusted and its
@@ -33,13 +36,13 @@ All links are primary TuShare or exchange documentation checked 2026-08-08/09.
 
 | Endpoint/rule | Contract used | Collector consequence |
 |---|---|---|
-| Service agreement | <https://tushare.pro/document/2?doc_id=405> | Written commercial/institutional authorization gate; a token or boolean is not permission. |
+| Endpoint access/quota | vendor account tier | Ordinary access, entitlement and quota observation only. Compliance itself is settled privately (see above) and is never a runtime gate here. |
 | `stock_basic` | <https://tushare.pro/document/2?doc_id=25> | SSE/SZSE/BSE × L/D/P/G; exact exchange/status, CNY, A-market, symbol/code checks; 6,000 cap. |
 | `fund_basic` | <https://tushare.pro/document/2?doc_id=19> | Exchange-fund identities are independent `known_out_of_scope` witnesses, not silently discarded rows. |
 | `bse_mapping` | <https://tushare.pro/document/2?doc_id=375> | Old BJ aliases must map to a canonical `920xxx.BJ` code; 1,000 cap. |
 | `trade_cal` | <https://tushare.pro/document/2?doc_id=26> | Exact exchange/range/day response; SSE and SZSE must have identical open-session sets. |
 | `bak_basic` | <https://tushare.pro/document/2?doc_id=262> | Exact-date historical stock-list witness from 2016; 7,000 cap. Pre-2016 stays an explicit gap. |
-| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request; orphans block. |
+| `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request. A valid row is its own source evidence and lands with or without an external witness; only malformed keys, non-A identities, contradictory lifecycle intervals and unresolved same-day name conflicts block. |
 | `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; on cap the endpoint's requested interval switches to the bounded ticker×date-range campaign (amended 2026-08-13), correctness-tested synthetically and still gated. |
 | `daily_basic` | <https://tushare.pro/document/2?doc_id=32> | Exact date/ticker; 6,000 cap; `limit_status` domain 0–6 and close/limit semantics are audited. |
 | `stk_limit` | <https://tushare.pro/document/2?doc_id=183> | Exact source pre-close/up/down limits; 5,800 cap; non-A rows require independent exclusion or quarantine. |
@@ -50,36 +53,48 @@ All links are primary TuShare or exchange documentation checked 2026-08-08/09.
 
 `pro_bar` is not used. A calculated band is never substituted for `stk_limit`.
 
-## Authorization receipt gate
+## Compliance status and the surviving pre-network gates
 
-`--authorization-receipt` points to a private JSON receipt with exact fields, and
-`--authorization-trust-allowlist` points to a separately controlled hash-pin file:
+**TuShare licensing/compliance: `CHAIRMAN_VERIFIED_PRIVATE / SATISFIED`.** The
+controlling agreement and supporting evidence are confidential and outside
+coding/agent scope under NDA/privacy constraints. No coding session or runtime
+gate may request, upload, inspect, persist, hash, quote, or re-verify those
+documents, and no public-terms reading may reopen the question
+(`DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE`).
 
-- authorization ID, vendor, grantee, grantor, and whether the grant came from the
-  vendor or the institution;
-- issued/expiry dates;
-- an absolute path and SHA-256 for the independently stored written grant; and
-- the seven explicit scope booleans.
+The former `--authorization-receipt` / `--authorization-trust-allowlist` receipt,
+grant-document hash, entitlement chain, and code-reviewed trust-root mechanism is
+**REMOVED from the runtime, not merely bypassed**, and is guarded against return
+by the anti-resurrection tests in `tests/test_china_tushare_spine.py`. Those
+tests fail if the identifiers, the CLI flags, the manifest fields, or equivalent
+renamed constructs reappear.
 
-The allowlist pins the exact receipt hash, grant-document hash, grant class, any
-chain hashes, and a canonical claim hash over issued/expiry dates plus every scope
-boolean. A store-local actor therefore cannot reuse a legitimate hash pin while
-forging broader scope or a later expiry. A direct vendor grant has no institutional chain. An
-institutional grant is accepted only with separately hashed vendor entitlement
-and vendor delegation documents, all pinned by the out-of-band allowlist. The
-allowlist file itself is trusted only when its SHA-256 appears in the immutable,
-code-reviewed hash set; that set is intentionally empty in this foundation commit.
-Runtime arguments and environment variables cannot add a trust root.
+What still gates the collector before any store write or network call, all of it
+technical:
 
-The collector validates the receipt and referenced grant before acquiring the
-writer lock, creating the store, or invoking even an injected query. The grant
-must be effective on collection day and every required scope must be true. The
-private store also retains a sanitized hashes-only copy of the exact pinned
-allowlist so manifest-time verification can re-prove unique membership. The
-manifest copies only receipt/grant/trust/chain hashes, dates, grant class, and
-scope; names and private paths do not propagate. A self-authored receipt
-and local document do not match an independently controlled pin and cannot unlock
-collection.
+- `BULK_HISTORICAL_BACKFILL_READY` — a **technical readiness** gate (live canary
+  parity, sustained throughput, range/completeness correctness), never a
+  licensing gate. It is `False` until a separately reviewed change cites those
+  measurements. Because that gate waits on canary evidence, the canary itself is
+  **not** gated on it: `collect(canary=True)` (lane `mode=canary`) performs real
+  collection while the gate is still `False`, hard-bounded to
+  `CANARY_MAX_REQUESTS` (12) requests over `CANARY_MAX_RANGE_DAYS` (5) calendar
+  days, never with `allow_bulk`, and refusing a documented row cap rather than
+  starting the unproven ticker-range campaign. `mode=backfill` stays refused
+  until the gate is promoted.
+- token hygiene — the token is read only through `collectors.tushare_client` and
+  is never accepted, persisted, hashed, or logged by the spine; artifacts are
+  scanned for configured credential bytes before hashing or receipting.
+- the private-store path validator, the single-writer lock, the bounded request
+  budget and the `--allow-bulk` safety ceiling.
+- exact request/schema binding, cap-probe discard, immutable per-attempt
+  receipts, lossless source-row accounting, PIT/lifecycle reconciliation, and
+  the completeness equation.
+
+Ordinary vendor access, endpoint entitlement and quota behaviour continue to be
+observed and recorded as technical facts (for example a typed
+`vendor_unavailable_or_unlicensed` refusal for an endpoint the account cannot
+reach). That is access observation, not compliance adjudication.
 
 ## Identity, lifecycle, and point-in-time universe
 
@@ -96,8 +111,59 @@ collection.
   2016, stock lifecycle is the best available construction and the manifest
   explicitly refuses to call that an independent daily-universe witness.
 - `bak_basic` corroborates rather than replaces lifecycle eligibility. The shard
-  and coverage universe is the frozen `lifecycle ∪ PIT` set. Any post-2016
-  lifecycle/PIT difference is receipted with samples and blocks completeness.
+  and coverage universe is the frozen `lifecycle ∪ PIT` set. Post-2016
+  lifecycle/PIT differences are receipted with samples; which of them block
+  completeness is governed by the source-union law below.
+- **Historical PIT construction is source-UNION, never current-snapshot
+  intersection** (`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`, Sol 2026-08-26).
+  The current `stock_basic` snapshot is a lifecycle/reference *witness*, not
+  exhaustive historical membership authority: it is a CURRENT snapshot used to
+  classify HISTORICAL sessions, so intersecting against it is a survivorship
+  filter. A well-formed A-share `bak_basic` PIT observation therefore LANDS even
+  when the current snapshot omits it, carrying
+  `current_stock_basic_witness_missing = true`.
+- That observation alone grants **no trading/event authority and no
+  canonical-identity authority**. Authority is graded: a complete same-session
+  positive-volume daily observation *plus* the required exact legal-limit/session
+  evidence proves historical trading even when current `stock_basic` omits the
+  security, and such a security must never be silently removed from the
+  historical exact universe. A PIT-observed row without that evidence stays
+  source-accounted but **non-event-eligible**; `never listed` may not be inferred
+  unless an explicit lifecycle source establishes that stronger state. Data
+  OS/GMI remains the canonical identity owner — no historical CN-Limit identity
+  master exists.
+- PIT-only listing keys **propagate into downstream historical source
+  acquisition, including `name_history`**, so the same survivorship filter is not
+  recreated one stage later.
+- **A valid `namechange` row is its own sufficient source evidence**
+  (`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`, Sol 2026-08-27). It needs no
+  contemporary `stock_basic`, `bak_basic`, PIT or other external witness merely to
+  EXIST in the name-history plane — the PIT witness only reaches back to
+  2016-01-01, so requiring corroboration would restore the current snapshot as
+  sole authority for every earlier row. Every source row instead carries exactly
+  one deterministic disposition: **externally corroborated**, **`NAMECHANGE_ONLY`**,
+  or **explicit conflict/quarantine**.
+- `NAMECHANGE_ONLY` counts as **terminal source completeness** and grants **zero
+  PIT membership, positive-volume trading, exact-event, canonical-identity, rank
+  or score authority**. Name history is a leaf: nothing reads it but its own
+  receipt builder, and a namechange-only ticker must never enter
+  `_all_known_a_tickers` — otherwise a name assertion would bootstrap itself into
+  the universe membership this law denies it.
+- The rule applies **row by row across the frozen epoch**. Pre-2016 is not
+  special-cased and the witness-missing percentage is **not an admission
+  threshold**; the rate is telemetry. Malformed keys, contradictory lifecycle
+  intervals, incomplete responses and unresolved source conflicts stay
+  fail-closed.
+- Completeness of the name-history plane therefore requires **all source rows
+  deterministically reconciled with zero unresolved conflicts — not 100% external
+  corroboration**.
+- Completeness remains fail-closed for malformed or conflicting keys, incomplete
+  source responses, unresolved source contradictions (including a PIT row whose
+  master lifecycle window contradicts the observed trade date), positive-volume
+  rows without required exact legal-band evidence, and any unknown disposition.
+  The current-snapshot omission rate is recorded as **telemetry, never as an
+  exclusion threshold** — a threshold on it would reintroduce the survivorship
+  filter as a tunable.
 
 Reference refresh is generation-atomic. Raw `stock_basic`, `fund_basic`, and BSE
 mapping units land under an immutable staging generation; derived master/alias/
@@ -150,11 +216,34 @@ classification, request, or reference-generation artifacts reopen the unit.
 
 ## Sessions, prices, and event equality
 
-The canonical market clock is not a union of stock prints. It begins at the fixed
-1991-01-01 calendar anchor, requires exact SSE/SZSE calendar-day and open-session
-equality, validates `pretrade_date` adjacency, and assigns one immutable
-`market_session_position`. TuShare does not publish BSE in the documented
-`trade_cal` venue list, so BSE explicitly inherits that consensus from launch.
+The canonical market clock is not a union of stock prints. It begins at a frozen,
+definition-versioned mainland calendar epoch — `mainland-joint-complete-v1`,
+`1992-01-01` — requires exact SSE/SZSE calendar-day and open-session equality,
+validates `pretrade_date` adjacency, and assigns one immutable
+`market_session_position` counted from that epoch. TuShare does not publish BSE in
+the documented `trade_cal` venue list, so BSE explicitly inherits that consensus
+from launch.
+
+The epoch is the earliest year for which `trade_cal` supplies a JOINTLY complete
+SSE+SZSE calendar, established by outcome-blind source census
+(`scripts/research/cn_limit_calendar_epoch_census.py`; receipt
+`research/cn_limit_alpha_sol/DEP_EXACT_CALENDAR_EPOCH_CENSUS_2026-08-26.md`) and
+frozen in source. It is never selected at runtime, so two runs over one store can
+never disagree about which date owns which ordinal; moving it requires a new
+definition string, never an in-place edit, so artifacts minted under different
+definitions stay distinguishable. Compiled sessions carry `calendar_epoch` and
+`calendar_epoch_definition` for exactly that reason.
+
+This supersedes the previous fixed 1991-01-01 anchor. TuShare returns 182 of 365
+days for SZSE 1991 against SSE's 365, which is SOURCE-HISTORY TRUNCATION and not
+evidence that the missing civil dates fell outside the trading system. History
+before the epoch is therefore typed `PRE_EPOCH_SOURCE_UNSUPPORTED`: it is never
+imputed as closed, never assigned a session position, and one venue's history is
+never borrowed as another's. The exact-range binding check that rejected SZSE 1991
+stays as-is — relaxing it would let a truncated response prove its own truncation
+legitimate anywhere in the range. Because the axis is built from every landed
+partition rather than the requested window, the epoch is enforced where the axis
+is compiled, not merely at the collection constant.
 
 `daily.vol` is stored in lots and `positive_volume` is exactly `volume_lots > 0`.
 Zero-volume source rows remain in the substrate. Any traded/listing-session claim
@@ -231,17 +320,16 @@ for endpoint `e` is `H_e + I_e * ceil(S/(C_e-1)) + R_e` for `S` requested sessio
 `I_e` query identities, cap `C_e`, whole-market probes `H_e`, and retries `R_e` —
 bounded, and the basis on which throughput is to be judged.
 
-**The gate is unchanged and this design does not open it.**
-`BULK_HISTORICAL_BACKFILL_READY` remains code-reviewed `False` and
-`CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256` remains empty; network and
+**The technical gate is unchanged and this design does not open it.**
+`BULK_HISTORICAL_BACKFILL_READY` remains code-reviewed `False`; network and
 injected collection still fail before store mutation, and manifest completeness
 still cannot close. The range-shard campaign is verified **synthetically only** —
 every test injects responses, none contacts the vendor. Promotion additionally
-requires a licensed live canary against real quota, which has not been run; the
-manifest states this directly as
-`cap_fallback.licensed_live_canary_complete: false` alongside
+requires a live canary against real quota, which has not been run; the manifest
+states this directly as `cap_fallback.live_canary_complete: false` alongside
 `live_canary_required_for_promotion: true`. Opening the gate is a separate,
-separately reviewed authority change.
+separately reviewed change resting on canary/throughput/correctness evidence —
+never on a licensing artifact.
 
 Unattempted source units precede retries; retries are deterministic. Active-year
 name history uses an end-date-qualified unit so a partial-year success cannot
@@ -254,8 +342,6 @@ The default store is outside Git:
 
 ```text
 ~/.local/share/macro-dashboard/china_tushare_spine/
-  authorization_scope_receipt.json
-  authorization_trust_allowlist.json  # sanitized hashes-only pinned copy
   reference/current_generation.json
   reference/generations/<generation-id>/
     source_bse_mapping.parquet
@@ -297,31 +383,34 @@ bytes are scanned before hashing.
 
 `completeness_manifest.json` closes only when all of the following are true:
 
-1. the written authorization hash/scope/expiry and out-of-band trust/chain pins are
-   valid at collection time;
-2. the immutable operational-backfill code gate has been separately promoted;
+1. the immutable operational-backfill code gate has been separately promoted on
+   canary/throughput/correctness evidence;
 3. the current reference generation, exact calendar, active-year name unit, and
    every required source unit are request-bound and complete;
 4. all per-unit source equations hold, unknown count is zero, name orphan count is
    zero, and any range campaign is terminal with every leaf verified, every day
    receipt bound, and no standing alias conflict (amended 2026-08-13);
 5. every requested post-2016 session has a `bak_basic` witness, lifecycle and PIT
-   sets reconcile exactly, and every requested daily endpoint unit is complete
-   (pre-start endpoints are explicitly N/A);
+   sets reconcile under the source-union law — every lifecycle-eligible security
+   is witnessed in PIT, and no PIT row contradicts its own master lifecycle
+   window; a PIT row absent from the current `stock_basic` witness is a legal
+   union member and is counted as telemetry, not as a mismatch (amended
+   2026-08-26, `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`) — and every requested
+   daily endpoint unit is complete (pre-start endpoints are explicitly N/A);
 6. duplicate-key, dense-key, lifecycle, exact-session, suspension, and daily
    security coverage checks close;
 7. the canonical exact-price event join closes; and
-8. authorization, source, semantic, schema/query-contract, request-count, coverage,
-   lifecycle, data-gap, and ore receipts are present.
+8. source, semantic, schema/query-contract, request-count, coverage, lifecycle,
+   data-gap, and ore receipts are present.
 
 `generated_at` is excluded from `manifest_identity_sha256`, so the same content
 retains a stable identity. Request observations and collection-state changes remain
 part of content identity. Artifacts are private and must not be committed.
 
-## Remaining licensing/data gaps
+## Remaining technical/data gaps
 
-- No real authorization receipt/trust pin, token, endpoint entitlement, throughput,
-  or live sample was exercised in this wave. This is intentionally `NO LIVE`.
+- No token, endpoint entitlement, throughput, or live sample was exercised in this
+  wave. This is intentionally `NO LIVE`.
 - Exact-date×ticker cap recovery is not a viable long-horizon backfill plan. A
   ticker×date-range implementation and measured request/retry budget are required
   before the immutable operational gate may change.
@@ -337,7 +426,7 @@ part of content identity. Artifacts are private and must not be committed.
 
 ## Ore ledger
 
-Constructed: authorization gate; atomic lifecycle/reference generations; BSE 920
+Constructed: atomic lifecycle/reference generations; BSE 920
 aliases; PIT 2016+ universe; exact session positions; lossless source classification;
 request-bound schemas/receipts; bounded ticker×date-range cap campaigns, synthetically
 verified and still operationally gated (amended 2026-08-13);
@@ -347,7 +436,7 @@ and coverage reconciliation; integer-cent exact-source event rows; half-up
 validator; exact equality and vendor-bound checks.
 
 Not tested: live vendor access, adjusted `pro_bar`, pre-2016 exact universe/ST,
-direct BSE calendar, **licensed live cap-trigger parity for the ticker×date-range
+direct BSE calendar, **live cap-trigger parity for the ticker×date-range
 campaign** (the mechanism is verified synthetically only — no test contacts the
 vendor; amended 2026-08-13), vendor retry throughput and paid request cost,
 historical calculated-band parity across rule eras, minute/

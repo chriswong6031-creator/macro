@@ -6,8 +6,10 @@ the online collector and offline compiler can enforce the same identity law.
 """
 from __future__ import annotations
 
+from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime
+import copy
 import hashlib
 import hmac
 import json
@@ -17,6 +19,36 @@ from typing import Any
 
 
 MANIFEST_ID_PREFIX = "manifest:cs:"
+EVIDENCE_ID_PREFIX = "evidence:cs:"
+# Frozen key_format 1: occurrence is ``"submission"`` or
+# ``{parent_content_sha256, byte_start, byte_end}`` from
+# ``document_inner_spans``. Changing that scanner requires key_format 2.
+EVIDENCE_KEY_FORMAT = 1
+_CHILD_OCCURRENCE_KEYS = ("parent_content_sha256", "byte_start", "byte_end")
+_EXCLUDED_EVIDENCE_FIELDS = frozenset({
+    "retrieved_at",
+    "first_seen_at",
+    "attempted_at",
+    "retained_available_at",
+    "file_number",
+    "file_number_provenance",
+    "ticker",
+    "aliases",
+    "parser_version",
+    "parser",
+    "issuer_id",
+    "cik",
+    "document_role",
+    "document_version",
+    "document_name",
+    "filename",
+    "sequence",
+    "object_key",
+    "store_id",
+    "backend",
+    "source_id",
+    "manifest_id",
+})
 _SEC_LINE_FLAGS = re.IGNORECASE | re.MULTILINE
 _SEC_STRUCTURAL_LINE_FLAGS = re.MULTILINE
 _SEC_DOCUMENT_LINE_RE = re.compile(
@@ -95,6 +127,18 @@ class ManifestIdentityError(ValueError):
     """A source manifest or ordered ledger violates immutable identity law."""
 
 
+class EvidenceIdentityError(ValueError):
+    """Occurrence+bytes evidence identity cannot be derived or does not bind."""
+
+
+class ChildOccurrenceUnbound(EvidenceIdentityError):
+    """A new child write lacks parent-content byte coordinates.
+
+    ``legacy:{source_id}`` is a historical read-side projection only. New
+    writes must never use it as a canonical occurrence key.
+    """
+
+
 def _native(value: Any) -> Any:
     """Normalize Arrow/numpy-like containers without importing those packages."""
     if isinstance(value, Mapping):
@@ -139,6 +183,545 @@ def manifest_id_for(record: Mapping[str, Any]) -> str:
     body.pop("manifest_id", None)
     digest = hashlib.sha256(canonical_manifest_bytes(body)).hexdigest()
     return MANIFEST_ID_PREFIX + digest
+
+
+def document_inner_spans(raw: bytes) -> tuple[tuple[int, int], ...]:
+    """Return ``(byte_start, byte_end)`` inner spans for each canonical DOCUMENT.
+
+    key_format 1 frozen rule: inner span is ``[opener.end(), closer.start())``
+    for each ordered non-nested ``<DOCUMENT>`` line opener paired with its
+    ``</DOCUMENT>`` closer. Changing this pairing requires ``key_format: 2``.
+    """
+    if not isinstance(raw, bytes):
+        raise EvidenceIdentityError("complete-submission bytes are required")
+    openers = list(_SEC_DOCUMENT_OPEN_LINE_RE.finditer(raw))
+    open_tokens = list(_SEC_DOCUMENT_OPEN_TOKEN_RE.finditer(raw))
+    closers = list(_SEC_DOCUMENT_CHILD_CLOSE_RE.finditer(raw))
+    close_tokens = list(_SEC_DOCUMENT_CHILD_CLOSE_TOKEN_RE.finditer(raw))
+    if not openers or len(openers) != len(open_tokens):
+        raise EvidenceIdentityError(
+            "complete-submission lacks canonical DOCUMENT opener line(s)"
+        )
+    if len(closers) != len(close_tokens) or len(closers) != len(openers):
+        raise EvidenceIdentityError(
+            "complete-submission must contain one canonical DOCUMENT closer "
+            "for each opener"
+        )
+    events = sorted(
+        [(match.start(), "open", index) for index, match in enumerate(openers)]
+        + [(match.start(), "close", index) for index, match in enumerate(closers)]
+    )
+    depth = 0
+    open_index: int | None = None
+    pairs: list[tuple[int, int]] = []
+    for _position, event, index in events:
+        if event == "open":
+            if depth != 0:
+                raise EvidenceIdentityError(
+                    "SEC DOCUMENT openers/closers are nested or out of order"
+                )
+            depth = 1
+            open_index = index
+        else:
+            if depth != 1 or open_index is None:
+                raise EvidenceIdentityError("SEC DOCUMENT closer precedes its opener")
+            opener = openers[open_index]
+            closer = closers[index]
+            if closer.start() < opener.end():
+                raise EvidenceIdentityError("SEC DOCUMENT inner span is empty or inverted")
+            pairs.append((opener.end(), closer.start()))
+            depth = 0
+            open_index = None
+    if depth != 0:
+        raise EvidenceIdentityError("SEC DOCUMENT opener lacks its ordered closer")
+    return tuple(pairs)
+
+
+def child_occurrence(
+    *,
+    parent_content_sha256: str,
+    byte_start: int,
+    byte_end: int,
+) -> dict[str, Any]:
+    """Return the frozen child occurrence object for key_format 1."""
+    digest = str(parent_content_sha256 or "").lower()
+    if not _is_sha256(digest):
+        raise EvidenceIdentityError("parent_content_sha256 must be lowercase SHA-256")
+    if isinstance(byte_start, bool) or isinstance(byte_end, bool):
+        raise EvidenceIdentityError("child occurrence byte range must be integers")
+    if not isinstance(byte_start, int) or not isinstance(byte_end, int):
+        raise EvidenceIdentityError("child occurrence byte range must be integers")
+    if not 0 <= byte_start < byte_end:
+        raise EvidenceIdentityError("child occurrence byte range is empty or inverted")
+    return {
+        "byte_end": byte_end,
+        "byte_start": byte_start,
+        "parent_content_sha256": digest,
+    }
+
+
+def writable_child_occurrence(
+    *,
+    parent_content_sha256: str | None,
+    byte_start: int | None,
+    byte_end: int | None,
+) -> dict[str, Any]:
+    """Return child occurrence coordinates for a NEW write.
+
+    Refuses unbound coordinates. ``legacy:{source_id}`` is not a substitute.
+    """
+    if (
+        not parent_content_sha256
+        or isinstance(byte_start, bool)
+        or isinstance(byte_end, bool)
+        or not isinstance(byte_start, int)
+        or not isinstance(byte_end, int)
+    ):
+        raise ChildOccurrenceUnbound(
+            "child occurrence unbound: parent-content byte coordinates are "
+            "required for new writes; legacy:{source_id} is read-side only"
+        )
+    return child_occurrence(
+        parent_content_sha256=parent_content_sha256,
+        byte_start=byte_start,
+        byte_end=byte_end,
+    )
+
+
+def normalize_occurrence(occurrence: Any) -> Any:
+    """Canonicalize an occurrence value; refuse interpretation substitutes."""
+    if occurrence == "submission":
+        return "submission"
+    if isinstance(occurrence, str) and occurrence.startswith("legacy:"):
+        if occurrence == "legacy:":
+            raise EvidenceIdentityError("legacy occurrence requires a source_id")
+        return occurrence
+    if isinstance(occurrence, Mapping):
+        extra = set(occurrence) - set(_CHILD_OCCURRENCE_KEYS)
+        missing = [key for key in _CHILD_OCCURRENCE_KEYS if key not in occurrence]
+        if extra:
+            raise EvidenceIdentityError(
+                f"child occurrence contains excluded keys: {sorted(extra)}"
+            )
+        if missing:
+            raise EvidenceIdentityError(
+                f"child occurrence missing {missing}"
+            )
+        return child_occurrence(
+            parent_content_sha256=str(occurrence["parent_content_sha256"]),
+            byte_start=occurrence["byte_start"],
+            byte_end=occurrence["byte_end"],
+        )
+    raise EvidenceIdentityError("occurrence must be submission, child coords, or legacy")
+
+
+def evidence_preimage(
+    *,
+    source_system: str,
+    submission_accession: str,
+    occurrence: Any,
+    content_sha256: str,
+    key_format: int = EVIDENCE_KEY_FORMAT,
+) -> dict[str, Any]:
+    """Return the canonical evidence_id preimage. No clocks. No interpretation."""
+    if key_format != EVIDENCE_KEY_FORMAT:
+        raise EvidenceIdentityError(f"unsupported evidence key_format: {key_format}")
+    system = str(source_system or "").strip()
+    accession = str(submission_accession or "").strip()
+    digest = str(content_sha256 or "").lower()
+    if not system:
+        raise EvidenceIdentityError("source_system is required")
+    if not accession:
+        raise EvidenceIdentityError("submission_accession is required")
+    if not _is_sha256(digest):
+        raise EvidenceIdentityError("content_sha256 must be lowercase SHA-256")
+    return {
+        "content_sha256": digest,
+        "key_format": int(key_format),
+        "occurrence": normalize_occurrence(occurrence),
+        "source_system": system,
+        "submission_accession": accession,
+    }
+
+
+def evidence_id_for(
+    *,
+    source_system: str,
+    submission_accession: str,
+    occurrence: Any,
+    content_sha256: str,
+    key_format: int = EVIDENCE_KEY_FORMAT,
+    **rejected: Any,
+) -> str:
+    """Return ``evidence:cs:<sha256>`` over occurrence + retained bytes only."""
+    if rejected:
+        raise EvidenceIdentityError(
+            "evidence identity refuses interpretation/clock fields: "
+            + ", ".join(sorted(rejected))
+        )
+    preimage = evidence_preimage(
+        source_system=source_system,
+        submission_accession=submission_accession,
+        occurrence=occurrence,
+        content_sha256=content_sha256,
+        key_format=key_format,
+    )
+    digest = hashlib.sha256(canonical_manifest_bytes(preimage)).hexdigest()
+    return EVIDENCE_ID_PREFIX + digest
+
+
+def evidence_occurrence_from_manifest(record: Mapping[str, Any]) -> Any:
+    """Project occurrence from a v1 or v2 manifest row without rewriting it."""
+    explicit = record.get("evidence_occurrence")
+    if explicit is not None:
+        return normalize_occurrence(explicit)
+    document = record.get("document") or {}
+    role = str(document.get("document_role") or "")
+    if role == "complete_submission":
+        return "submission"
+    source_id = str(record.get("source_id") or "")
+    if not source_id:
+        raise EvidenceIdentityError("legacy child occurrence requires source_id")
+    return f"legacy:{source_id}"
+
+
+def evidence_id_from_manifest(record: Mapping[str, Any]) -> str:
+    """Derive evidence_id from a row's own bytes. Does not rewrite the row."""
+    explicit = record.get("evidence_id")
+    filing = record.get("filing") or {}
+    document = record.get("document") or {}
+    derived = evidence_id_for(
+        source_system=str(record.get("source_system") or ""),
+        submission_accession=str(filing.get("accession") or ""),
+        occurrence=evidence_occurrence_from_manifest(record),
+        content_sha256=str(document.get("content_sha256") or ""),
+    )
+    if isinstance(explicit, str) and explicit and not hmac.compare_digest(explicit, derived):
+        raise EvidenceIdentityError(
+            f"stored evidence_id does not match occurrence+bytes: {explicit}"
+        )
+    return derived
+
+
+def interpretation_fingerprint(record: Mapping[str, Any]) -> bytes:
+    """Canonical interpretation body for re-observation vs revision.
+
+    Strips retrieval/publication clocks, derived evidence identity fields,
+    and revision counters. Same occurrence+bytes with a parser/selection/
+    file-number change fingerprints differently and is a real revision.
+    """
+    body = copy.deepcopy(dict(record))
+    body.pop("manifest_id", None)
+    body.pop("first_known_at", None)
+    body.pop("evidence_id", None)
+    body.pop("evidence_key_format", None)
+    body.pop("evidence_occurrence", None)
+    retrieval = body.get("retrieval")
+    if isinstance(retrieval, dict):
+        retrieval.pop("retrieved_at", None)
+        retrieval.pop("first_seen_at", None)
+    document = body.get("document")
+    if isinstance(document, dict):
+        document.pop("document_version", None)
+        document.pop("parent_manifest_id", None)
+    return canonical_manifest_bytes(body)
+
+
+def latest_published_for_evidence(
+    evidence_id: str,
+    published: Sequence[Mapping[str, Any]],
+) -> Mapping[str, Any] | None:
+    """Return the latest published row for ``evidence_id``.
+
+    Uses :func:`evidence_id_from_manifest` so historical v1 rows that lack a
+    stored ``evidence_id`` still match via read-side projection.
+    Ledger prefix order is publication order; the last match wins.
+    """
+    latest: Mapping[str, Any] | None = None
+    for record in published:
+        try:
+            if evidence_id_from_manifest(record) == evidence_id:
+                latest = record
+        except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+            continue
+    return latest
+
+
+def current_manifest_bundle(
+    records: Sequence[Mapping[str, Any]], *, accession: str
+) -> list[dict[str, Any]]:
+    """Select the current closed bundle for one accession.
+
+    Same accession-wide ``document_version`` / current-complete law the
+    event compiler enforces: latest complete version, every current child
+    at that version, exactly one complete, children parent that complete.
+    """
+    by_manifest: dict[str, dict[str, Any]] = {}
+    manifest_bytes: dict[str, bytes] = {}
+    for raw in records:
+        row = dict(_native(raw))
+        manifest_id = str(row.get("manifest_id") or "")
+        encoded = canonical_manifest_bytes(row)
+        if manifest_id in manifest_bytes and manifest_bytes[manifest_id] != encoded:
+            raise ValueError(f"immutable manifest collision for {manifest_id}")
+        manifest_bytes[manifest_id] = encoded
+        by_manifest.setdefault(manifest_id, row)
+
+    for row in by_manifest.values():
+        row_accession = str((row.get("filing") or {}).get("accession") or "")
+        if row_accession != accession:
+            raise ValueError(
+                f"manifest {row.get('manifest_id')} belongs to accession {row_accession!r}"
+            )
+
+    all_rows = list(by_manifest.values())
+    complete_versions = [
+        int((row.get("document") or {}).get("document_version") or 0)
+        for row in all_rows
+        if (row.get("document") or {}).get("document_role") == "complete_submission"
+    ]
+    if not complete_versions:
+        raise ValueError(f"{accession}: bundle has no complete_submission version")
+    bundle_version = max(complete_versions)
+    if any(
+        int((row.get("document") or {}).get("document_version") or 0) > bundle_version
+        for row in all_rows
+    ):
+        raise ValueError(
+            f"{accession}: child document version exceeds latest complete bundle version"
+        )
+    bundle_rows = [
+        row for row in all_rows
+        if int((row.get("document") or {}).get("document_version") or 0) == bundle_version
+    ]
+
+    by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in bundle_rows:
+        by_source[str(row.get("source_id") or "")].append(row)
+
+    current: list[dict[str, Any]] = []
+    for source_id, versions in by_source.items():
+        hashes = {
+            str((row.get("document") or {}).get("content_sha256") or "").lower()
+            for row in versions
+        }
+        if len(hashes) != 1:
+            raise ValueError(
+                f"source_id {source_id!r} has competing document version {bundle_version}"
+            )
+        versions.sort(
+            key=lambda row: (
+                str((row.get("retrieval") or {}).get("retrieved_at") or ""),
+                str(row.get("manifest_id") or ""),
+            )
+        )
+        current.append(versions[-1])
+
+    complete = [
+        row for row in current
+        if (row.get("document") or {}).get("document_role") == "complete_submission"
+    ]
+    if len(complete) != 1:
+        raise ValueError(
+            f"{accession}: bundle requires exactly one current complete_submission; found {len(complete)}"
+        )
+    complete_id = str(complete[0]["manifest_id"])
+    if (complete[0].get("document") or {}).get("parent_manifest_id") is not None:
+        raise ValueError(f"{accession}: complete_submission cannot have a parent_manifest_id")
+    primaries = [
+        row for row in current
+        if (row.get("document") or {}).get("document_role") == "primary"
+    ]
+    if len(primaries) > 1:
+        raise ValueError(f"{accession}: bundle has multiple current primary documents")
+    for row in current:
+        role = (row.get("document") or {}).get("document_role")
+        if role == "complete_submission":
+            continue
+        parent_id = str((row.get("document") or {}).get("parent_manifest_id") or "")
+        if parent_id != complete_id:
+            raise ValueError(
+                f"{accession}: {row.get('manifest_id')} parent must reference {complete_id}"
+            )
+    return sorted(current, key=lambda row: str(row.get("manifest_id") or ""))
+
+
+def _refined_membership_id(
+    record: Mapping[str, Any],
+    *,
+    accession: str,
+    universe: Sequence[Mapping[str, Any]],
+) -> str:
+    eid = evidence_id_from_manifest(record)
+    refined = refine_evidence_ids_for_semantic_compare(
+        [eid], accession=accession, records=universe
+    )
+    return refined[0] if refined else eid
+
+
+def classify_bundle_against_published(
+    candidates: Sequence[Mapping[str, Any]],
+    published: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Adjudicate a retained filing bundle against the published ledger.
+
+    ``re_observed`` only when every candidate occurrence+bytes is already
+    known and interpretation-equivalent, *and* the candidate membership
+    equals the latest published closed bundle for that accession. Added,
+    removed/deselected, newly resolvable, or interpretation-revised
+    membership is a bundle revision: persist the entire candidate bundle
+    at the newly allocated accession-wide version. Do not copy a removed
+    member into that version. ``changed`` / ``removed`` are diagnostic;
+    ``persist`` (and ``append``, an alias) is the durable set.
+    """
+    if not candidates:
+        raise EvidenceIdentityError("bundle classification requires candidates")
+    accessions = {
+        str((record.get("filing") or {}).get("accession") or "")
+        for record in candidates
+    }
+    if len(accessions) != 1 or not next(iter(accessions)):
+        raise EvidenceIdentityError("bundle classification requires one accession")
+    accession = next(iter(accessions))
+
+    changed: list[Mapping[str, Any]] = []
+    unchanged: list[Mapping[str, Any]] = []
+    for candidate in candidates:
+        eid = evidence_id_from_manifest(candidate)
+        prior = latest_published_for_evidence(eid, published)
+        if (
+            prior is not None
+            and interpretation_fingerprint(candidate)
+            == interpretation_fingerprint(prior)
+        ):
+            unchanged.append(candidate)
+        else:
+            changed.append(candidate)
+
+    published_for_accession = [
+        record
+        for record in published
+        if str((record.get("filing") or {}).get("accession") or "") == accession
+    ]
+    removed: list[Mapping[str, Any]] = []
+    if published_for_accession:
+        published_current = current_manifest_bundle(
+            published_for_accession, accession=accession
+        )
+        universe = [*published_for_accession, *list(candidates)]
+        candidate_ids = {
+            _refined_membership_id(row, accession=accession, universe=universe)
+            for row in candidates
+        }
+        for row in published_current:
+            member_id = _refined_membership_id(
+                row, accession=accession, universe=universe
+            )
+            if member_id not in candidate_ids:
+                removed.append(row)
+
+    status = (
+        "re_observed" if not changed and not removed and unchanged else "revision"
+    )
+    persist: list[Mapping[str, Any]] = (
+        [] if status == "re_observed" else list(candidates)
+    )
+    return {
+        "status": status,
+        "changed": changed,
+        "unchanged": unchanged,
+        "removed": removed,
+        "persist": persist,
+        "append": persist,
+    }
+
+
+def refine_evidence_ids_for_semantic_compare(
+    evidence_ids: Sequence[str],
+    *,
+    accession: str,
+    records: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    """Replace historical ``legacy:{source_id}`` ids with later coordinate ids.
+
+    Comparison-only identity refinement for the same accession + ``source_id``
+    + retained bytes. Does not rewrite historical rows. A later coordinate-bound
+    child for those same bytes is not new economic evidence.
+    """
+    if not evidence_ids:
+        return []
+    coord_by_key: dict[tuple[str, str, str], str] = {}
+    legacy_eid_to_coord: dict[str, str] = {}
+    target = str(accession or "")
+    for record in records:
+        filing = record.get("filing") or {}
+        document = record.get("document") or {}
+        row_accession = str(filing.get("accession") or "")
+        if target and row_accession != target:
+            continue
+        source_id = str(record.get("source_id") or "")
+        digest = str(document.get("content_sha256") or "").lower()
+        if not source_id or not digest:
+            continue
+        try:
+            occurrence = evidence_occurrence_from_manifest(record)
+            eid = evidence_id_from_manifest(record)
+        except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+            continue
+        key = (row_accession, source_id, digest)
+        if isinstance(occurrence, str) and occurrence.startswith("legacy:"):
+            if key in coord_by_key:
+                legacy_eid_to_coord[eid] = coord_by_key[key]
+            continue
+        coord_by_key[key] = eid
+    if coord_by_key:
+        for record in records:
+            filing = record.get("filing") or {}
+            document = record.get("document") or {}
+            row_accession = str(filing.get("accession") or "")
+            if target and row_accession != target:
+                continue
+            source_id = str(record.get("source_id") or "")
+            digest = str(document.get("content_sha256") or "").lower()
+            key = (row_accession, source_id, digest)
+            if key not in coord_by_key:
+                continue
+            try:
+                occurrence = evidence_occurrence_from_manifest(record)
+                eid = evidence_id_from_manifest(record)
+            except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+                continue
+            if isinstance(occurrence, str) and occurrence.startswith("legacy:"):
+                legacy_eid_to_coord[eid] = coord_by_key[key]
+    return sorted({legacy_eid_to_coord.get(str(eid), str(eid)) for eid in evidence_ids})
+
+
+def published_first_known_at(
+    evidence_id: str,
+    published_records: Sequence[Mapping[str, Any]],
+    *,
+    candidate_timestamp: str,
+) -> str:
+    """Freeze canonical first_known_at at the first published retention clock.
+
+    The value is the verified-retention timestamp of the first observation
+    of this evidence_id whose generation later became canonical. Git
+    publication is the freeze event, not the timestamp. A later competing
+    observation with an earlier local timestamp cannot move the published
+    boundary backward. Ledger prefix order is publication order.
+    """
+    if not str(candidate_timestamp or "").strip():
+        raise EvidenceIdentityError("candidate first_known_at is required")
+    for record in published_records:
+        try:
+            if evidence_id_from_manifest(record) != evidence_id:
+                continue
+        except (EvidenceIdentityError, ManifestIdentityError, TypeError, ValueError):
+            continue
+        existing = record.get("first_known_at")
+        if isinstance(existing, str) and existing.strip():
+            return existing
+    return candidate_timestamp
 
 
 def validate_manifest_identity(record: Mapping[str, Any]) -> None:

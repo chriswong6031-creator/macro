@@ -686,3 +686,171 @@ def test_client_pool_is_sized_from_workers(monkeypatch):
     monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "y")
     assert _client(32).meta.config.max_pool_connections == _pool_size(32)
     assert _client(16).meta.config.max_pool_connections == _pool_size(16)
+
+
+# ── enumeration must descend through directory symlinks ──────────────────────
+# 2026-08-22 (wave AD-1T0, research/AD1T0_THETADATA_CUTOVER_SPEC_2026-08-22.md §H):
+# publish() built its file list with `base.rglob("*")`, and Path.rglob does NOT
+# follow directory symlinks. The thetadata_eod store on the m1 ops host is exactly
+# that shape — /Users/chriswong/theta-ops-wt/data/thetadata_eod holds
+# _manifest.json + _backfill_state.json as real files and eod/ oi/ greeks/ as
+# symlinks into /Volumes/STORAGE/macro-data/thetadata_eod/ — so the publisher saw
+# 2 files, _uploadable dropped the store manifest, and _data_dir_syncable refused
+# the dir: "only 1 file(s) locally (< 100) — partial checkout, the parquet store is
+# not materialised here" in /tmp/thetadata_r2sync.stderr.log, EVERY night since at
+# least 2026-08-08 (launchd com.macro.thetadata-r2sync). The store never reached R2.
+#
+# The guard was not wrong and is not relaxed by this fix — the floors are untouched.
+# The enumeration was feeding it a false count; a genuine partial checkout has no
+# tier symlinks to follow and is still refused (pinned below).
+
+def _symlinked_store(tmp_path, monkeypatch, s3, d="thetadata_eod",
+                     tiers=("eod",), n_years=140):
+    """The m1 ops-host shape: real JSON at the dataset root, tier dirs SYMLINKED
+    to a store that lives on another volume."""
+    import lib.config as config
+    import scripts.publish_r2 as pr2
+    base = tmp_path / "data" / d
+    base.mkdir(parents=True)
+    volume = tmp_path / "VOLUME" / "macro-data" / d      # stands in for /Volumes/STORAGE
+    for tier in tiers:
+        real = volume / tier / "SPY"
+        real.mkdir(parents=True)
+        for i in range(n_years):
+            (real / f"{2000 + i}.parquet").write_bytes(b"x" * 64)
+        (base / tier).symlink_to(volume / tier)          # the directory symlink
+    (base / "_manifest.json").write_text(json.dumps(
+        {"store": d, "n_roots": 1, "per_root": {"SPY": {"n_years": n_years}},
+         "updated_at": "2026-08-22T05:00:00+00:00"}))
+    (base / "_backfill_state.json").write_text(json.dumps({"done": True}))
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    monkeypatch.setattr(config, "load",
+                        lambda: {"storage": {"site_dir": "site", "data_dir": "data"}})
+    monkeypatch.setattr(pr2, "_client", lambda *a, **k: s3)
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    return pr2, base
+
+
+def test_rglob_is_blind_to_the_symlinked_store(tmp_path):
+    """Pins the DEFECT itself: the old enumeration sees 2 files where 142 exist.
+    If a future Python makes rglob follow directory symlinks this test fails and
+    tells the reader the workaround is no longer load-bearing."""
+    from scripts.publish_r2 import _walk_files
+    base = tmp_path / "store"
+    real = tmp_path / "volume" / "eod" / "SPY"
+    real.mkdir(parents=True)
+    base.mkdir()
+    for i in range(3):
+        (real / f"{2000 + i}.parquet").write_bytes(b"x")
+    (base / "eod").symlink_to(tmp_path / "volume" / "eod")
+    (base / "_manifest.json").write_text("{}")
+    (base / "_backfill_state.json").write_text("{}")
+    assert len([p for p in base.rglob("*") if p.is_file()]) == 2   # the bug
+    assert len(_walk_files(base)) == 5                             # the fix
+
+
+def test_walk_files_keys_stay_logical_under_base(tmp_path):
+    """The R2 key is p.relative_to(base) — the walk must hand back LOGICAL paths,
+    never the /Volumes/… targets, or relative_to raises and every key changes."""
+    from scripts.publish_r2 import _walk_files
+    base = tmp_path / "store"
+    real = tmp_path / "volume" / "eod" / "SPY"
+    real.mkdir(parents=True)
+    base.mkdir()
+    (real / "2020.parquet").write_bytes(b"x")
+    (base / "eod").symlink_to(tmp_path / "volume" / "eod")
+    keys = sorted(p.relative_to(base).as_posix() for p in _walk_files(base))
+    assert keys == ["eod/SPY/2020.parquet"]
+
+
+def test_walk_files_terminates_on_a_symlink_cycle(tmp_path):
+    """followlinks=True without cycle protection recurses forever. A loop must
+    terminate and still yield the real files."""
+    from scripts.publish_r2 import _walk_files
+    base = tmp_path / "store"
+    (base / "eod").mkdir(parents=True)
+    (base / "eod" / "2020.parquet").write_bytes(b"x")
+    (base / "eod" / "loop").symlink_to(base)          # eod/loop -> the root
+    (base / "self").symlink_to(base)                  # root/self -> the root
+    assert [p.relative_to(base).as_posix() for p in _walk_files(base)] == \
+        ["eod/2020.parquet"]
+
+
+def test_walk_files_skips_broken_symlinks(tmp_path):
+    """A dangling link is not uploadable content; it must not reach the delta pass
+    (upload_file would raise on it) or inflate the min-files count."""
+    from scripts.publish_r2 import _walk_files
+    base = tmp_path / "store"
+    base.mkdir()
+    (base / "real.parquet").write_bytes(b"x")
+    (base / "dangling.parquet").symlink_to(tmp_path / "gone.parquet")
+    (base / "dangling_dir").symlink_to(tmp_path / "gone_dir")
+    assert [p.name for p in _walk_files(base)] == ["real.parquet"]
+
+
+def test_walk_files_matches_rglob_when_there_are_no_symlinks(tmp_path):
+    """Site dirs (and CI checkouts) hold no symlinks — the change must be a no-op
+    for them, same files, so only the symlinked-store behaviour moved."""
+    from scripts.publish_r2 import _walk_files
+    base = tmp_path / "site" / "stockdata"
+    (base / "nested").mkdir(parents=True)
+    for n in ("A.json", "B.json"):
+        (base / n).write_text("{}")
+    (base / "nested" / "C.json").write_text("{}")
+    assert sorted(_walk_files(base)) == \
+        sorted(p for p in base.rglob("*") if p.is_file())
+
+
+def test_symlinked_store_publishes_instead_of_being_refused(tmp_path, monkeypatch):
+    """THE regression, end to end through publish(): the m1 lane's exact shape must
+    sync, with keys addressed through the LOGICAL tier path."""
+    s3 = _FakeS3()
+    pr2, base = _symlinked_store(tmp_path, monkeypatch, s3)
+    monkeypatch.setenv("THETADATA_STORE", str(base))
+    assert pr2.publish(["thetadata_eod"]) == 0
+    # 140 parquets behind the symlink + _backfill_state.json; the store's own
+    # _manifest.json still stays off the delta pass (_uploadable).
+    assert len(s3.uploaded) == 141
+    assert "thetadata_eod/eod/SPY/2000.parquet" in s3.uploaded
+    assert "thetadata_eod/_backfill_state.json" in s3.uploaded
+    assert "thetadata_eod/_manifest.json" not in s3.uploaded
+    assert s3.manifest_puts == ["thetadata_eod/_manifest.json"]
+    doc = json.loads(s3.put_bodies[0])
+    assert doc["count"] == 141
+    assert "eod/SPY/2139.parquet" in doc["files"]
+
+
+def test_multi_tier_symlinked_store_publishes_every_tier(tmp_path, monkeypatch):
+    """eod/ oi/ greeks/ are three INDEPENDENT symlinks on the ops host — each one
+    has to be walked, not just the first."""
+    s3 = _FakeS3()
+    pr2, base = _symlinked_store(tmp_path, monkeypatch, s3,
+                                 tiers=("eod", "oi", "greeks"), n_years=40)
+    monkeypatch.setenv("THETADATA_STORE", str(base))
+    assert pr2.publish(["thetadata_eod"]) == 0
+    for tier in ("eod", "oi", "greeks"):
+        assert f"thetadata_eod/{tier}/SPY/2000.parquet" in s3.uploaded
+    assert len(s3.uploaded) == 3 * 40 + 1
+
+
+def test_real_partial_checkout_is_still_refused_after_the_walk_fix(tmp_path, monkeypatch):
+    """The guard's INTENT is untouched. A CI runner checkout holds the two committed
+    JSON stubs and NO tier symlinks to follow, so it must still be refused — syncing
+    it would clobber R2's full-history objects with a 2-file stub."""
+    s3 = _FakeS3()
+    pr2, base = _symlinked_store(tmp_path, monkeypatch, s3, tiers=(), n_years=0)
+    monkeypatch.setenv("THETADATA_STORE", str(base))
+    assert pr2.publish(["thetadata_eod"]) == 0     # skipped, not a failure
+    assert s3.uploaded == []
+    assert s3.manifest_puts == []
+
+
+def test_symlinked_store_under_the_min_files_floor_is_still_refused(tmp_path, monkeypatch):
+    """Following symlinks must not become a bypass: a symlinked tier holding a
+    half-materialised store is still under the floor and still refused."""
+    s3 = _FakeS3()
+    pr2, base = _symlinked_store(tmp_path, monkeypatch, s3, n_years=10)
+    monkeypatch.setenv("THETADATA_STORE", str(base))
+    assert pr2.publish(["thetadata_eod"]) == 0
+    assert s3.uploaded == []
+    assert s3.manifest_puts == []

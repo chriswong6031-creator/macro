@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-19",
+ "as_of": "2026-08-28",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -78,12 +78,16 @@
      "name": "Shopify Inc"
     },
     {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
+    },
+    {
      "ticker": "ADP",
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "ADBE",
-     "name": "Adobe Inc"
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -94,12 +98,12 @@
      "name": "Datadog Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "ADSK",
      "name": "Autodesk Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
@@ -112,10 +116,6 @@
     {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
-    },
-    {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
     }
    ]
   },
@@ -520,12 +520,16 @@
      "name": "Shopify Inc"
     },
     {
+     "ticker": "ADBE",
+     "name": "Adobe Inc"
+    },
+    {
      "ticker": "ADP",
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "ADBE",
-     "name": "Adobe Inc"
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "INTU",
@@ -536,12 +540,12 @@
      "name": "Datadog Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "ADSK",
      "name": "Autodesk Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "WDAY",
@@ -554,10 +558,6 @@
     {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
-    },
-    {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
     },
     {
      "ticker": "CTAS",

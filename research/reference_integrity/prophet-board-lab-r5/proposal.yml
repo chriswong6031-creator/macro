@@ -1,0 +1,292 @@
+# Proposal ledger (RIG V1 §5-§6) — D-LAB-R5.
+#
+# THE SHORT VERSION OF THIS FILE: every baseline capability is RETAIN, because
+# R5 loads the R4 reference unmodified and the LIVE board is repainted by
+# board.js itself. The Lab is entirely in `additions`, and the authority audit
+# below is where the real questions are — two additions make claims production
+# never made, and at this SHA neither is warranted by a running system.
+schema: mastermind.rig_proposal.v1
+reference_id: prophet-board-lab-r5
+
+proposed_artifact:
+  frozen_sha: 6ee8f34480ce3299b4692a3e732c6a5c75d9782a
+  paths:
+    - mockups/refs/prophet_lab/index.html
+    - mockups/refs/prophet_lab/lab.css
+    - mockups/refs/prophet_lab/lab.js
+    - mockups/refs/prophet_lab/lab-data.js
+    - mockups/refs/prophet_lab/DESIGN_NOTES.md
+    - mockups/refs/prophet_lab/tools/gen_lab_fixture.py
+    - mockups/refs/prophet_lab/tools/capture.py
+    - mockups/refs/prophet_lab/tools/verify.py
+    - mockups/refs/prophet_lab/tools/mutation_test.py
+  screenshots:
+    - {path: mockups/refs/prophet_lab/crops/01-live-desktop-dark-en.png,     viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/02-live-desktop-light-zh.png,    viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/03-live-mobile390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/04-live-no-operator-dark-en.png, viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/05-live-no-operator-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/10-lab-desktop-dark-en.png,      viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/11-lab-desktop-light-en.png,     viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/12-lab-desktop-dark-zh.png,      viewport: desktop, theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/13-lab-desktop-light-zh.png,     viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/14-lab-mobile390-dark-en.png,    viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/15-lab-mobile390-light-en.png,   viewport: mobile,  theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/16-lab-mobile390-dark-zh.png,    viewport: mobile,  theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/17-lab-mobile390-light-zh.png,   viewport: mobile,  theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/20-board-earliest-mark.png,      viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/21-board-flush.png,              viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/22-board-turning-up.png,         viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/23-board-all-readings.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/24-board-marked-turning.png,     viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/25-board-all-early.png,          viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/26-board-all-readings-zh.png,    viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/27-board-flush-390-zh.png,       viewport: mobile,  theme: dark,  locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/30-seeds-only-dark-en.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/31-seeds-only-light-zh.png,      viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/32-live-only-dark-en.png,        viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/33-live-only-light-en.png,       viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/prophet_lab/crops/34-seeds-only-390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/40-lab-empty-dark-en.png,        viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/41-lab-empty-light-zh.png,       viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/42-lab-empty-390-dark-en.png,    viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/43-lab-behind-dark-en.png,       viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/44-lab-behind-light-zh.png,      viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/45-lab-behind-390-dark-en.png,   viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/46-lab-down-dark-en.png,         viewport: desktop, theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/47-lab-down-light-zh.png,        viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/prophet_lab/crops/48-lab-down-390-dark-en.png,     viewport: mobile,  theme: dark,  locale: en}
+    - {path: mockups/refs/prophet_lab/crops/50-roundtrip-live-after-lab.png, viewport: desktop, theme: dark,  locale: en}
+
+# ── DISPOSITIONS ────────────────────────────────────────────────────────────
+# Every baseline id, exactly once. All RETAIN, and the reason is mechanical
+# rather than promised: index.html loads board.css / board-data.js / board.js
+# from the R4 directory UNMODIFIED, LIVE is painted by board.js, and LAB→LIVE
+# RE-EXECUTES board.js rather than restoring a snapshot. Two committed proofs:
+#   * crops 04/05 (op=0): with no operator entitlement there is not one Lab node
+#     on the page (verify D3/D3b — #board carries zero `lab-*` elements and the
+#     card count equals a cold load).
+#   * crop 50 (round trip): after LIVE→LAB→LIVE the visible card count is
+#     identical to a cold load, the ladder and status cluster are back, and no
+#     Lab node survives (verify D15/D15b, capture asserts it before shooting).
+dispositions:
+  - {id: board.title_and_purpose,     disposition: RETAIN, target: "unchanged in LIVE; in LAB the purpose line is replaced by the Lab's own, because the plan book's purpose does not describe Lab rows"}
+  - {id: board.freshness_state,       disposition: RETAIN, target: "unchanged in LIVE; in LAB it is REPLACED by the Lab feed's own stamp — printing the plan book's as-of over Lab rows would date the wrong producer"}
+  - {id: board.headline_count,        disposition: RETAIN, target: "unchanged in LIVE; hidden in LAB (it counts the plan book, not observations)"}
+  - {id: board.lifecycle_ladder,      disposition: RETAIN, target: "unchanged in LIVE; hidden in LAB — a plan-book ladder standing over Lab rows is LIVE content under a LAB label (verify D4b)"}
+  - {id: board.count_law,             disposition: RETAIN, target: "untouched — the Lab prints no plan-book quantity at all"}
+  - {id: board.key_absence_disclosure, disposition: RETAIN, target: "untouched, and extended in kind: the Lab prints its own absences (no sighting time, no chart, no measurable lead) rather than padding them"}
+  - {id: board.progressive_expansion, disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: board.table_view,            disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: board.anonymous_gate,        disposition: RETAIN, target: "unchanged; the Lab affordance is absent entirely for an anonymous or unentitled reader (crops 04/05, verify D3)"}
+  - {id: board.empty_state,           disposition: RETAIN, target: "unchanged in LIVE; the Lab has its own empty state in its own voice (crops 40-42)"}
+  - {id: card.chart_hero,             disposition: RETAIN, target: "unchanged in LIVE; the Lab row leads with the same chart-first hero at 72px"}
+  - {id: card.printed_null_chart,     disposition: RETAIN, target: "unchanged in LIVE, and inherited by the Lab row at the same-height/printed-absence law (lab.css .lab-nochart)"}
+  - {id: card.live_quote,             disposition: RETAIN, target: "unchanged in LIVE; the Lab row carries the same unconditional data-sym-keyed slot, em dashes for price AND change when un-hydrated"}
+  - {id: card.stance_chip,            disposition: RETAIN, target: "unchanged in LIVE. Deliberately NOT present on a Lab row: an observation states no stance, and borrowing the ink would make it read as a call (verify D13)"}
+  - {id: card.no_read_chip,           disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.identity_link,          disposition: RETAIN, target: "unchanged in LIVE; the Lab row uses the same stock.html#TICKER convention"}
+  - {id: card.priority,               disposition: RETAIN, target: "unchanged in LIVE. Absent from the Lab by design — the Lab has no ranking authority (LAB-0 §1)"}
+  - {id: card.trigger_chip,           disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.marks,                  disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.caution_carrier,        disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.lifecycle_mark,         disposition: RETAIN, target: "unchanged in LIVE; the Lab QUOTES the same ruled lexicon in its Prophet comparison, weight-only and never hued"}
+  - {id: card.zone_footer,            disposition: RETAIN, target: "unchanged in LIVE"}
+  - {id: card.episode_chip,           disposition: RETAIN, target: "unchanged in LIVE; its 'must disambiguate on a card seen alone' principle is what licenses the Lab's per-row class chip"}
+  - {id: section.candidates,          disposition: RETAIN, target: "unchanged in LIVE; hidden in LAB. The Lab is a THIRD population and keeps the same discipline — different noun, different form, non-adjacent"}
+  - {id: section.groups,              disposition: RETAIN, target: "unchanged in LIVE; hidden in LAB"}
+  - {id: section.evidence_record,     disposition: RETAIN, target: "unchanged in LIVE; hidden in LAB — a Prophet track record standing over Lab rows would read as the Lab's record"}
+  - {id: xc.bilingual,                disposition: RETAIN, target: "extended: every Lab string ships EN + ZH natively, and the zh direction flip still reaches the one directional value on a Lab row (crops 12/13/16/17/26/27/31, verify D17/D17b)"}
+  - {id: xc.light_dark,               disposition: RETAIN, target: "extended: the Lab stream is a real panel so light is a design, not a token swap (crops 11/13/31/41/44/47)"}
+  - {id: xc.mobile_390,               disposition: RETAIN, target: "extended: the spine survives to 390 and the band re-composes; zero horizontal scroll asserted in every Lab state (verify D14c/D16)"}
+  - {id: xc.lens_receipts,            disposition: RETAIN, target: "extended: every machine identity the Lab shows lives on a LENS receipt, and each reading carries its OWN (verify D7/D7b/D7c)"}
+
+# ── ADDITIONS — the Lab. These feed the authority audit below. ──────────────
+additions:
+  - id: add.mode_control
+    what: "An operator-only LIVE | LAB segmented control, mounted inline in the existing status cluster so it costs the production composition no vertical space."
+    evidence: "crops 01-05 (rest) / 10-17 (engaged); verify D1/D1b/D2/D3/D5"
+  - id: add.six_boards
+    what: "The six frozen Lab board selectors, labelled in plain words, with the exact detector/expert identity on each selector's LENS receipt."
+    evidence: "crops 20-27; verify D9/D9b/D9c/D9d"
+  - id: add.observation_spine
+    what: "A newest-first stream on a continuous time spine, with a dated baseline marker where continuous live watching began."
+    evidence: "crops 10-13, 25, 30-34; verify D10/D10b"
+  - id: add.observation_class
+    what: "An unmistakable live-sighting vs retrospective-seed distinction carried structurally — spine style, node fill, time-slot content, chip treatment, ink — not by a badge alone."
+    evidence: "crops 30-34; verify D6/D6b/D6c/D6c2/D6d/D6e/D6f"
+  - id: add.expert_chips
+    what: "One chip per expert, identities never merged, each carrying its own detector/event id on its receipt."
+    evidence: "crops 23/26; verify D8/D8b/D7c"
+  - id: add.prophet_comparison
+    what: "A per-row Prophet comparison band quoting the ruled lifecycle word and the plan-open date, on its own recessed plane."
+    evidence: "crops 10-13; baseline capability card.lifecycle_mark is the source of the vocabulary"
+  - id: add.measured_lead
+    what: "A measured Lab→Prophet lead, shown ONLY on a true live-forward observation. Every other case prints why there is no number."
+    evidence: "crops 10-13 (all three non-measured cases visible); verify D6/D6g"
+  - id: add.lab_states
+    what: "Lab-specific empty / behind / unavailable states, each staying visibly LAB with no LIVE fallback, including a spine gap marker for 'nothing since HH:MM'."
+    evidence: "crops 40-48; verify D14/D14b/D14c"
+  - id: add.authority_disclosure
+    what: "A glance-tier stance and a zero-authority statement, with the all-false authority block on its receipt."
+    evidence: "crops 10-13; verify D11/D11b"
+
+# ── USER-TASK REGRESSION MATRIX (RIG §6) ────────────────────────────────────
+user_tasks:
+  - id: task.scan_the_board
+    task: "Find what is actionable on the US Prophet board right now"
+    critical: true
+    production: "Header + ladder + priority-sorted card grid"
+    proposal: "Identical — board.js paints it, and the mode control adds no row (verify D2)"
+    verdict: EQUIVALENT
+    notes: "Compare crops 01/02 against the R4 crops 01/03; the ladder sits at the same offset."
+  - id: task.read_one_setup
+    task: "Understand one setup completely without opening it"
+    critical: true
+    production: "The shipped .pvcard"
+    proposal: "Unchanged"
+    verdict: EQUIVALENT
+  - id: task.filter_by_lifecycle
+    task: "Filter the book to one lifecycle cell"
+    critical: true
+    production: "Ladder cells write #life="
+    proposal: "Unchanged"
+    verdict: EQUIVALENT
+  - id: task.reach_the_tail
+    task: "Reach every plan row as a card"
+    critical: true
+    production: "In-place expansion (Show more / Show all)"
+    proposal: "Unchanged"
+    verdict: EQUIVALENT
+  - id: task.return_to_live
+    task: "Leave the Lab and get the production board back, intact and current"
+    critical: true
+    production: "n/a — no Lab exists to leave"
+    proposal: "LAB→LIVE destroys the subtree and RE-EXECUTES board.js, so the result is produced by the cold-load code path. Crop 50 and verify D15/D15b/D15c/D15d; the capture raises unless the card count equals a cold load."
+    verdict: EQUIVALENT
+    notes: "Scored EQUIVALENT rather than BETTER: the correct outcome here is 'nothing happened to the board', and that is what is proven."
+  - id: task.anonymous_reader
+    task: "Use the page without an operator entitlement"
+    critical: true
+    production: "The tier gate; no Lab exists"
+    proposal: "Identical, and the Lab affordance is absent rather than disabled — zero `lab-*` nodes inside #board (verify D3/D3b, crops 04/05)"
+    verdict: EQUIVALENT
+  - id: task.inspect_early_candidates
+    task: "See exact early-entry candidates before Prophet has written a plan"
+    critical: true
+    production: "NOT POSSIBLE — no such surface exists"
+    proposal: "Six plain-word boards over the canonical Radar output, newest-first, chart-first rows"
+    verdict: BETTER
+    notes: "A new capability, not an improvement on an existing one. Scored BETTER because the production baseline is 'cannot do this at all', and recorded as such rather than as a spurious speed claim."
+  - id: task.tell_live_from_history
+    task: "Tell a genuinely live sighting apart from a historical seed"
+    critical: true
+    production: "NOT POSSIBLE"
+    proposal: "Five independent carriers (spine style, node, time-slot content, chip treatment, ink) plus a dated baseline marker; a seed can never print a clock time or a measured lead"
+    verdict: BETTER
+    notes: "This is the task the whole reference exists to serve, and the one whose failure mode — a seed read as live evidence — is the most costly."
+  - id: task.compare_to_prophet
+    task: "See how a candidate compares to current Prophet state"
+    critical: true
+    production: "NOT POSSIBLE"
+    proposal: "A per-row Prophet band quoting the ruled lifecycle word, the plan-open date, and the lead (or why there is none)"
+    verdict: BETTER
+  - id: task.know_lab_feed_health
+    task: "Know whether the Lab is showing me current observations"
+    critical: false
+    production: "NOT POSSIBLE"
+    proposal: "A pulsing/resting feed token with the last pass time, a behind band, and a spine gap marker naming the silence"
+    verdict: BETTER
+  - id: task.pick_a_detector_view
+    task: "Look at one detector family at a time"
+    critical: false
+    production: "NOT POSSIBLE"
+    proposal: "Six selectors with counts; plain words at glance, exact identity on the receipt"
+    verdict: BETTER
+
+# ── AUTHORITY DELTA (RIG §7) ────────────────────────────────────────────────
+# Does the proposal claim MORE than production? Two rows say yes, and neither is
+# warranted by a running system at this SHA. They are the reviewers' first question.
+authority_delta:
+  - id: auth.lab_observation_exists
+    production_claim: "Production asserts nothing at all about early-entry candidates."
+    proposal_claim: "The surface asserts that a named detector fired on a named ticker, and — for live-forward rows — the clock time we first saw it."
+    direction: stronger
+    warranted: false
+    evidence: >
+      NOT warranted at this SHA, stated plainly. Radar's live transport (R-LAB-1 / W4.1) has
+      not landed, so no canonical mastermind.entry_event.v1 stream exists and every timing and
+      detector fact in the fixture is synthetic (DESIGN_NOTES §4; marked data-mock-lab in the
+      DOM). The claim becomes warranted only when the Lab reads the canonical Radar output and
+      derives first_observed_at from the live pack envelope pass_ts, per LAB-0 §4/§5. Until
+      then this reference is a claim about COMPOSITION AND DISCLOSURE, not about data. The
+      reviewers should adjudicate whether a reference may be approved ahead of its producer.
+  - id: auth.measured_lead
+    production_claim: "Production asserts no lead over anything."
+    proposal_claim: "'Seen N days before Prophet' on live-forward rows."
+    direction: stronger
+    warranted: false
+    evidence: >
+      Same dependency as above, plus a design constraint that is already binding: a measured
+      lead is structurally impossible on a retrospective seed (LAB-0 §4 forbids reconstructing
+      a missing signal_known_ts), which verify D6 pins and mutation M2 proves bites. So the
+      strong claim is confined by construction to the only class that could ever support it —
+      but the class itself is not yet real.
+  - id: auth.zero_authority
+    production_claim: "The board's cards carry stance, priority and lifecycle — display/narrative authority."
+    proposal_claim: "The Lab explicitly ranks nothing, sizes nothing, originates nothing and mutates nothing, and says so at the glance tier."
+    direction: weaker
+    warranted: true
+    evidence: "LAB-0 §1/§5; the payload's authority block is all-false and verify D11 asserts it; the disclosure sentence is on the surface (D11b)."
+  - id: auth.prophet_state_quotation
+    production_claim: "The seven ruled lifecycle cell words, weight-only and hue-free."
+    proposal_claim: "The same seven words, quoted verbatim in the Lab's Prophet comparison."
+    direction: equal
+    warranted: true
+    evidence: "Quotation, not restatement — one referent, one vocabulary (PROPHET_RULING_J9C_J10 §6). lab.js LEX is the R4 lexicon copied with its provenance noted in place."
+  - id: auth.intersection_board
+    production_claim: "n/a"
+    proposal_claim: "lab-g0-c2a-v1 shows names carrying both marks."
+    direction: equal
+    warranted: true
+    evidence: >
+      Deliberately NOT a new claim: a display set intersection over already-minted events.
+      detector_id = null, zero events/episodes/scores minted, no washout x turn construction
+      created or promoted (DNR:KILL-WASHOUT-TURN). The surface says so on its own receipt and
+      verify D9d asserts the sentence is there.
+
+# ── INFORMATION ECONOMICS (RIG §7) ──────────────────────────────────────────
+information_economics:
+  words_per_card:
+    production: >
+      ~12-15 visible words per Prophet card (axis + stance verb, ticker, name, sector, up to
+      three marks, lifecycle word, zone label and date) — counted off the R4 card anatomy.
+    proposal: >
+      ~20-26 visible words per Lab row (time + basis label, ticker, name, sector, class chip,
+      one to three reading chips, PROPHET eyebrow + lifecycle word + plan-open date + lead
+      clause) — counted off the rendered rows in crop 10.
+  findings:
+    - >
+      The Lab row is WORDIER than a Prophet card, by roughly 8-11 words, and that is a real
+      cost recorded rather than argued away. It is spent on exactly two things a Prophet card
+      never has to carry: the row's own epistemic class ("Seed · history, not a sighting") and
+      the reason a number is absent ("Lead not measurable"). Both are disclosures whose
+      omission is the failure this surface exists to prevent, so the budget was spent there
+      and cut everywhere else.
+    - >
+      Nothing was converted from a chart into prose. The chart stays first and stays the same
+      height as the Prophet card's, and the readings stay chips rather than sentences.
+    - >
+      Two constants repeat per row: the class chip and the PROPHET eyebrow. The class chip is
+      argued for explicitly against doctrine Law 4 in DESIGN_NOTES §2.4, on the R4 episode-chip
+      precedent (a row must be self-describing when seen alone). The eyebrow is the cheapest
+      available way to keep the comparison attributed to a different producer; a reviewer who
+      disagrees should say so.
+    - >
+      The sort-basis sentence is the one line demoted rather than kept at every width: it
+      moves to the count chip's LENS at 390w (a landing, not a deletion).
+  preserved:
+    - "The LIVE board's own word count is untouched — the mode control adds two words ('Operator view') and two labels."
+    - "The Lab answers 'so what do I do' ONCE, in the band, rather than per row: 'Watch — don't chase. Nothing here is a Prophet call.'"
+    - "One as-of on the Lab plane (the feed's last pass), not two — and it is the Lab's own producer, never the plan book's."
+    - "Machine identity is entirely below the glance tier: verify D7 asserts that seventeen slugs and internal class names appear nowhere in the rendered text."

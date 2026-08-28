@@ -13,6 +13,13 @@
 #                       provisional board from R2 to the GATED
 #                       live/us_board_provisional.json. Pure transport — it never
 #                       computes. Needs R2_* in /etc/macro-live.env.
+#   macro-live-breadth  every ~2m across the US session: the live intraday
+#                       market-breadth poller (adv/dec/pa50/pa200/net_nh),
+#                       writing the CANONICAL live/breadth.json this box serves.
+#                       Reads the nightly-baked close caches off disk; a fault
+#                       here can never take the served site down (own artifact
+#                       only, own atomic rename). Was previously unowned by any
+#                       VPS install — only the coarse GH-cron backstop ran it.
 #
 # All browser artifacts are atomically published to /var/lib/macro-live/public,
 # outside /opt/macro and /opt/macro/site.served. Canonical history, forward ledgers,
@@ -93,6 +100,41 @@ if ! grep -q '^MACRO_LIVE_DIR=' /etc/macro-live.env; then
   } >> /etc/macro-live.env
 fi
 
+# R2 credential seeding — the INITIATING FAULT of the 2026-07-30..08-26 US
+# Prophet Live force majeure (27 days dark, exit 0 the whole time): this file
+# documented "Needs R2_* in /etc/macro-live.env" above but never wrote them,
+# and nothing verified the precondition before macro-live-prophet went live.
+# /etc/macro-api.env already carries the same R2_* keys for the API's own R2
+# reads, so they are durably re-seeded here instead of typed twice by an
+# operator. Each key is guarded by ITS OWN presence check in the DESTINATION
+# file (the sentinel style the MACRO_LIVE_DIR block above uses), so this is
+# safe to run repeatedly: a rerun, or an operator who already set one key by
+# hand, never overwrites a value already there, and a box seeded with only
+# some of the four keys self-heals the rest on the next run instead of being
+# stuck half-seeded forever. NEVER logs a secret VALUE — only a count of keys
+# newly copied and, on a gap, which key NAMES are missing — because this
+# script's stdout lands in journalctl, which is not a secret store.
+R2_SEEDED_COUNT=0
+R2_SEED_MISSING=()
+for R2_KEY in R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+  if grep -q "^${R2_KEY}=" /etc/macro-live.env; then
+    continue
+  fi
+  if [ -r /etc/macro-api.env ] && grep -q "^${R2_KEY}=" /etc/macro-api.env; then
+    grep "^${R2_KEY}=" /etc/macro-api.env | tail -n 1 >> /etc/macro-live.env
+    R2_SEEDED_COUNT=$((R2_SEEDED_COUNT + 1))
+  else
+    R2_SEED_MISSING+=("$R2_KEY")
+  fi
+done
+chmod 0600 /etc/macro-live.env
+log "R2 credential seed: ${R2_SEEDED_COUNT} key(s) newly copied from /etc/macro-api.env"
+if [ "${#R2_SEED_MISSING[@]}" -gt 0 ]; then
+  log "WARNING: R2 credentials are INCOMPLETE — macro-live-prophet and macro-live-closepass will read the public mirror and publish NOTHING until this is fixed (this exact gap produced the 2026-07-30..08-26 force-majeure: 27 days dark, exit 0 throughout)."
+  log "WARNING: missing key(s), absent from BOTH /etc/macro-live.env and /etc/macro-api.env: ${R2_SEED_MISSING[*]}"
+  log "WARNING: OPERATOR ACTION REQUIRED — add the missing key(s) to /etc/macro-api.env (preferred; shared with the API's own R2 reads) or directly to /etc/macro-live.env (must stay mode 0600), then re-run this script."
+fi
+
 log "[3/6] systemd services + timers"
 unit_sources=()
 for unit in \
@@ -100,7 +142,8 @@ for unit in \
   macro-live-snapshot.service macro-live-snapshot.timer \
   macro-live-bars.service macro-live-bars.timer \
   macro-live-prophet.service macro-live-prophet.timer \
-  macro-live-closepass.service macro-live-closepass.timer
+  macro-live-closepass.service macro-live-closepass.timer \
+  macro-live-breadth.service macro-live-breadth.timer
 do
   unit_sources+=("$APP_DIR/app/deploy/$unit")
 done
@@ -132,16 +175,18 @@ test -s "$LIVE_DIR/quotes.json"
   "$LIVE_DIR/quotes.json"
 
 log "[5/6] enable replacement timers"
-# macro-live-prophet and macro-live-closepass are armed here too, but neither is part
-# of the fail-safe smoke transaction above: they consume what the three lanes publish
-# and write only their own runtime artifacts, so a fault in either can never take the
+# macro-live-prophet, macro-live-closepass and macro-live-breadth are armed here too,
+# but none of the three is part of the fail-safe smoke transaction above: they consume
+# what the three lanes publish (or, for breadth, the nightly-baked close caches) and
+# write only their own runtime artifacts, so a fault in any of them can never take the
 # served site down.
 systemctl enable --now \
   macro-live-fast.timer \
   macro-live-snapshot.timer \
   macro-live-bars.timer \
   macro-live-prophet.timer \
-  macro-live-closepass.timer >/dev/null
+  macro-live-closepass.timer \
+  macro-live-breadth.timer >/dev/null
 
 log "[6/6] retire legacy cron writer"
 tmp_cron=$(mktemp)
@@ -155,6 +200,6 @@ trap - EXIT
 log "DONE — live plane installed"
 systemctl list-timers \
   macro-live-fast.timer macro-live-snapshot.timer macro-live-bars.timer \
-  macro-live-prophet.timer macro-live-closepass.timer \
+  macro-live-prophet.timer macro-live-closepass.timer macro-live-breadth.timer \
   --no-pager
 log "After production freshness is verified, set GitHub repository variable VPS_LIVE_PRIMARY=true."

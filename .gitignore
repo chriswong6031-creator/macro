@@ -90,6 +90,16 @@ data/russell_breadth/_closes_cache.parquet
 data/china_breadth/_closes_cache.parquet
 data/hk_breadth/_closes_cache.parquet
 data/canada_breadth/_closes_cache.parquet
+
+# qledger control-evidence clock starts are WRITE-ONCE registrar receipts written
+# on the nightly checkout at a real registration (engine/qledger.py C3.1/C3.4,
+# record_control_clock_start). They live on the runner's disk, NEVER in git — a
+# committed clock file is the retrospective-stamping vector that
+# tests/test_qledger_control_policy.py::test_t9_no_clock_file_is_ever_committed
+# forbids. 2026-08-19: the regime-update lane's add-sweep committed
+# demand_chain.json (13750ecd1789) and redded qledger-cluster-honest-ci on every
+# merge-ref fleet-wide; this rule keeps the sweep from ever re-committing one.
+data/qledger/control_evidence_clock_start/
 # TOP ANATOMY W1: the Winner Health trailing panel — ~80 MB of repaired bars,
 # rebuilt from massive_stock_day on every run and keyed on each source file's
 # (mtime, size). Pure derived speed state: deleting it costs one cold rebuild and
@@ -306,6 +316,9 @@ data/thetadata_eod/greeks/
 # Negation: keep the committed state + manifest files tracked even though the data subdirs above are excluded
 !data/thetadata_eod/_backfill_state.json
 !data/thetadata_eod/_manifest.json
+# AD-1T1 §B/F15: the crash-safe advisory writer flock — local coordination
+# state only, never committed and never uploaded to R2 (see publish_r2._uploadable).
+data/thetadata_eod/_writer.lock
 # (NOT R2) — not regenerable without re-scraping; critical H2a phase-0 evidence.
 # data/hk_shorts/ is intentionally NOT listed here; all files are committed.
 # ---- Slice G store decisions (2026-07-03) ------------------------------------
@@ -680,8 +693,9 @@ data/institutional_13f/*
 # wall so an old local render can never be swept into the public Git history.
 /site/premiumdata/earnings/
 
-# Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
-# under these paths; they are checkouts, never content, and must never be committed.
+# Agent worktree roots. Parallel Claude/Codex/Cursor/Grok/Warp sessions create
+# linked git worktrees under these paths; they are checkouts, never content, and
+# must never be committed.
 # `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,
 # which every fresh clone and every new session has to rediscover — and the codex root
 # had no rule at all, so it surfaced as an untracked directory in every session's
@@ -689,13 +703,20 @@ data/institutional_13f/*
 # 2026-08-11: the rule above shipped covering only two of the four roots, so
 # `.claire/worktrees/` (3 checkouts) and `.codex/worktrees/` (55) still surfaced as
 # untracked directories in every session's `git status` — the exact symptom the note
-# above says it was fixing. The same set is duplicated in `config/worktree_gc.json`
-# and `ship_loop_guard.AGENT_WORKTREE_ROOTS`; `tests/test_agent_worktree_roots.py`
-# pins all three in step, so extend them together.
+# above says it was fixing. 2026-08-18: `.cursor/worktrees/` and `.grok/worktrees/`
+# were already session-root markers in scripts/worktree_sparse.py but missing from
+# this triad, the same silent-miss class. 2026-08-22: `.warp/worktrees/` is the
+# Warp/Oz mint root — Warp has no SessionStart event, so sessions mint there via
+# `.warp/hooks/session_start_sparse.py` and the project skill. The same set is
+# duplicated in `config/worktree_gc.json` and `ship_loop_guard.AGENT_WORKTREE_ROOTS`;
+# `tests/test_agent_worktree_roots.py` pins all three in step, so extend them together.
 .claude/worktrees/
 .claire/worktrees/
 .codex/worktrees/
 .codex-worktrees/
+.cursor/worktrees/
+.grok/worktrees/
+.warp/worktrees/
 
 # Private paid-vendor A-share spine. The collector defaults outside the repo;
 # this containment wall prevents an explicitly configured legacy store from
@@ -712,3 +733,15 @@ data/product_experience/evidence/
 # Agent OS CEO-brief check-in marker — a local pointer to "when did I last look",
 # not organizational state.  Machine-local by construction; never committed.
 data/governance/.ceo_brief_last
+
+# qledger write-once control clocks (C3.1) — REGISTRAR-LOCAL state, never
+# committed: a clock a lane can commit is a clock a lane can re-stamp, and
+# tests/test_qledger_control_policy.py::test_t9 reds any tracked entry. The
+# 2026-08-19 nightly's blanket `git add data/` committed demand_chain.json and
+# redded the merge gate fleet-wide; ignoring the directory makes that
+# impossible at the plumbing instead of merely detected.
+data/qledger/control_evidence_clock_start/
+
+# E3-A eval shards. Bounded proof lives in the eval receipt, not the global ledger.
+/data/ai_costs/usage.d/e3a-pr6245-*.jsonl
+/research/earnings_intelligence/e3/gold/provider_health_*.jsonl

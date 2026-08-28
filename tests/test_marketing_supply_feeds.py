@@ -493,10 +493,28 @@ def _write_stage(root: Path, rows: list[dict]) -> None:
 
 
 def _stage_row(ticker: str, *, flag: int, sata: float, asof: str,
-               region: str = "USA", detailed: str = "2A", weeks: int = 6) -> dict:
-    return {"ticker": ticker, "region": region, "stage_flag": flag,
-            "stage_detailed": detailed, "sata_score": sata,
-            "weeks_in_stage": weeks, "as_of_date": asof}
+               region: str = "USA", detailed: str = "2A", weeks: int = 6,
+               stage_date: str | None = None,
+               stage_week_end: str | None = None,
+               stage_current: bool | None = None) -> dict:
+    """A row for the (legacy or Wave-8) stage backfill parquet.
+
+    ``stage_date`` is a PRE-Wave-8 column (already written by
+    engine.stage_analysis.append_stage_snapshot) — it defaults to the row's
+    own ``asof`` session so a plain legacy-shaped fixture falls back to the
+    §4.2 stage_date currentness rung (step 3) rather than the zero-provenance
+    fail-closed rung (step 4). ``stage_week_end`` / ``stage_current`` are the
+    NEW Wave 8 columns and are omitted unless a test passes them explicitly.
+    """
+    row = {"ticker": ticker, "region": region, "stage_flag": flag,
+           "stage_detailed": detailed, "sata_score": sata,
+           "weeks_in_stage": weeks, "as_of_date": asof,
+           "stage_date": asof if stage_date is None else stage_date}
+    if stage_week_end is not None:
+        row["stage_week_end"] = stage_week_end
+    if stage_current is not None:
+        row["stage_current"] = stage_current
+    return row
 
 
 def test_stage2_leaders_ranks_usa_stage_two_by_sata(tmp_path, capsys):
@@ -556,6 +574,111 @@ def test_stage_transitions_says_so_when_only_one_snapshot_exists(tmp_path, capsy
     assert stage_transitions(tmp_path, 10, as_of=TODAY) == []
     line = _assert_one_annotation(capsys, "marketing-supply-stage-transitions")
     assert "needs two" in line
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7b. Wave 8 §4.2 — the four-step per-row currentness gate, fails closed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_stage2_leaders_gates_on_stage_current_column_when_present(tmp_path, capsys):
+    """Rung 1: a `stage_current` column, when present, is the whole story —
+    a row stamped False (or unstamped) is excluded even though its
+    `as_of_date` is the freshest snapshot in the file."""
+    from engine.marketing.attention_source import stage2_leaders
+    fresh = _sessions_ago(1)
+    _write_stage(tmp_path, [
+        _stage_row("CURRENT", flag=2, sata=90.0, asof=fresh, stage_current=True),
+        _stage_row("STALE", flag=2, sata=99.0, asof=fresh, stage_current=False),
+    ])
+    rows = stage2_leaders(tmp_path, 10, as_of=TODAY)
+    assert [r["ticker"] for r in rows] == ["CURRENT"]
+    assert not _annotation_lines(capsys.readouterr().out)
+
+
+def test_stage2_leaders_gates_on_stage_week_end_when_no_stage_current(tmp_path, capsys):
+    """Rung 2: no `stage_current` column, but `stage_week_end` is — only the
+    row(s) sharing the MAX observed week in this snapshot are admitted."""
+    from engine.marketing.attention_source import stage2_leaders
+    fresh = _sessions_ago(1)
+    _write_stage(tmp_path, [
+        _stage_row("NEWWEEK", flag=2, sata=80.0, asof=fresh, stage_week_end="2026-08-14"),
+        _stage_row("OLDWEEK", flag=2, sata=99.0, asof=fresh, stage_week_end="2026-06-26"),
+    ])
+    rows = stage2_leaders(tmp_path, 10, as_of=TODAY)
+    assert [r["ticker"] for r in rows] == ["NEWWEEK"]
+    assert not _annotation_lines(capsys.readouterr().out)
+
+
+def test_stage2_leaders_fails_closed_on_stale_legacy_stage_date(tmp_path):
+    """Rung 3: a legacy row (no stage_current / stage_week_end columns) with a
+    per-row `stage_date` that is itself stale must not ride in on a fresh
+    `as_of_date` build stamp — the row's OWN Stage week is what is old."""
+    from engine.marketing.attention_source import stage2_leaders
+    fresh_build = _sessions_ago(1)
+    _write_stage(tmp_path, [
+        _stage_row("CURRENTROW", flag=2, sata=70.0, asof=fresh_build,
+                   stage_date=_sessions_ago(1)),
+        _stage_row("FROZENROW", flag=2, sata=99.0, asof=fresh_build,
+                   stage_date=_sessions_ago(20)),
+    ])
+    rows = stage2_leaders(tmp_path, 10, as_of=TODAY)
+    assert [r["ticker"] for r in rows] == ["CURRENTROW"]
+
+
+def test_stage2_leaders_fails_closed_with_zero_per_row_provenance(tmp_path, capsys):
+    """Rung 4: none of stage_current / stage_week_end / stage_date exist at
+    all on the parquet -> admit nothing and warn by name (never a silent
+    empty list indistinguishable from 'no Stage-2 names today')."""
+    pd = pytest.importorskip("pandas")
+    pytest.importorskip("pyarrow")
+    from engine.marketing.attention_source import stage2_leaders
+    fresh = _sessions_ago(1)
+    d = tmp_path / "data" / "stage_analysis" / "backfill"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "ticker": "NOPROV", "region": "USA", "stage_flag": 2,
+        "stage_detailed": "2A", "sata_score": 90.0, "weeks_in_stage": 6,
+        "as_of_date": fresh,
+    }]).to_parquet(d / "equitydesk_overview.parquet")
+
+    assert stage2_leaders(tmp_path, 10, as_of=TODAY) == []
+    line = _assert_one_annotation(capsys, "marketing-supply-stage2")
+    assert "no per-row currentness provenance" in line
+
+
+def test_stage_transitions_same_stage_week_collapses_to_one_key(tmp_path, capsys):
+    """Wave 8 §4.2 — two builds that both read the SAME completed Stage week
+    (different `as_of_date` calendar stamps, identical `stage_week_end`) must
+    NOT manufacture a phantom transition. They collapse to one distinct
+    comparison key, which is structurally the 'needs two' empty case."""
+    from engine.marketing.attention_source import stage_transitions
+    day1, day2 = _sessions_ago(2), _sessions_ago(1)
+    _write_stage(tmp_path, [
+        _stage_row("SAME", flag=1, sata=50.0, asof=day1, stage_week_end="2026-08-14"),
+        _stage_row("SAME", flag=2, sata=88.0, asof=day2, stage_week_end="2026-08-14"),
+    ])
+    assert stage_transitions(tmp_path, 10, as_of=TODAY) == []
+    line = _assert_one_annotation(capsys, "marketing-supply-stage-transitions")
+    assert "needs two" in line and "DIFFERENT Stage weeks" in line
+
+
+def test_stage_transitions_different_stage_weeks_fire_a_real_transition(tmp_path, capsys):
+    """Two GENUINELY different Stage weeks (stage_week_end differs) fire a
+    real transition, with the current side additionally gated by
+    stage_current — the containment must not also suppress real news."""
+    from engine.marketing.attention_source import stage_transitions
+    day1, day2 = _sessions_ago(2), _sessions_ago(1)
+    _write_stage(tmp_path, [
+        _stage_row("MOVED", flag=1, sata=50.0, asof=day1,
+                   stage_week_end="2026-08-07", stage_current=False),
+        _stage_row("MOVED", flag=2, sata=88.0, asof=day2,
+                   stage_week_end="2026-08-14", stage_current=True),
+    ])
+    rows = stage_transitions(tmp_path, 10, as_of=TODAY)
+    assert [r["ticker"] for r in rows] == ["MOVED"]
+    assert "stage 1 to 2" in rows[0]["why"]
+    assert rows[0]["asof"] == "2026-08-14"
+    assert not _annotation_lines(capsys.readouterr().out)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

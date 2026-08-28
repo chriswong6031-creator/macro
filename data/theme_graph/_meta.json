@@ -1,25 +1,33 @@
 {
-  "belief_time": "2026-08-18",
+  "belief_time": "2026-08-28",
   "capability_counts": {
     "measurement_candidate": 499,
-    "semantic_only": 142
+    "semantic_only": 144
   },
-  "computed_at": "2026-08-18T10:40:36Z",
+  "company_mint_refusals": [
+    {
+      "conflicting_node": "etf:IBIT",
+      "reason": "etf_conflict",
+      "suite": "baskets",
+      "symbol": "IBIT"
+    }
+  ],
+  "computed_at": "2026-08-28T12:38:59Z",
   "counts": {
-    "capability": 641,
-    "edges": 8292,
+    "capability": 644,
+    "edges": 12172,
     "edges_latest_belief": 8292,
-    "evidence": 11,
+    "evidence": 15,
     "identity_resolution": 2806,
-    "nodes": 3878
+    "node_lifecycle": 2,
+    "nodes": 3881
   },
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "identity_resolution_state_counts": {
-    "DEFERRED_IDENTITY_EXCEPTION": 2,
-    "ENTITY_TYPE_CONFLICT": 1,
-    "NOT_IN_MASTER": 1869,
-    "RESOLVED": 701,
+    "DEFERRED_IDENTITY_EXCEPTION": 1,
+    "NOT_IN_MASTER": 211,
+    "RESOLVED": 2359,
     "UNSUPPORTED_MARKET": 233
   },
   "lane": "nightly",
@@ -45,8 +53,8 @@
       ]
     },
     "ths": {
-      "concept_map_asof": "2026-06-27",
-      "concepts": 373,
+      "concept_map_asof": "2026-08-22",
+      "concepts": 375,
       "expresses_edges": 237,
       "unresolved_concept_names": 0
     }
@@ -111,14 +119,14 @@
     }
   },
   "rows_appended": {
-    "capability": 641,
+    "capability": 643,
     "edges": 0,
     "evidence": 0,
-    "identity_resolution": 2806,
+    "identity_resolution": 2804,
     "nodes": 0
   },
   "skipped_suites": {},
-  "ths_unmapped_concept_count": 312,
+  "ths_unmapped_concept_count": 314,
   "unknown_ths_codes": [],
   "unknown_ths_concepts": []
 }

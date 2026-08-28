@@ -1,32 +1,27 @@
 {
-  "3d970e290020": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Industrials",
-    "score": 63.0
+  "1c7ed29d4c19": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Defensive + Basic Materials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Defensive + Basic Materials",
+    "score": 53.9
   },
-  "70f3a65bb1f8": {
-    "name_en": "Cross-sector cluster \u00b7 Industrials + Basic Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Basic Materials",
-    "score": 52.8
+  "6a6f1ffe74be": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Defensive + Consumer Cyclical",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Defensive + Consumer Cyclical",
+    "score": 61.3
   },
-  "8fc0dcf3b9d7": {
-    "name_en": "Cross-sector cluster (5 names)",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4\uff085\u53ea\uff09",
-    "score": 78.2
+  "910d8deff554": {
+    "name_en": "Cross-sector cluster \u00b7 Basic Materials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Technology",
+    "score": 68.2
   },
-  "9cd9c62a5bfd": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Industrials",
-    "score": 66.0
-  },
-  "eaa9c5d549e3": {
-    "name_en": "Cross-sector cluster \u00b7 Utilities + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Utilities + Industrials",
-    "score": 67.6
-  },
-  "ed9c44a04960": {
+  "af59c45e1d9e": {
     "name_en": "Emerging Industrials cluster",
     "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
-    "score": 45.7
+    "score": 56.3
+  },
+  "cac881533aab": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Communication Services",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Communication Services",
+    "score": 63.5
   }
 }

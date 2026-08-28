@@ -502,6 +502,44 @@ def test_constructor_validates_long_revision_chain_in_one_parent_pass(
     assert revision_reads == len(events)
 
 
+def test_revision_lineage_lookups_use_construction_index_without_rescanning_events() -> None:
+    events = [_fact(accession="0000", body="0" * 64, value="100")]
+    for index in range(1, 40):
+        events.append(
+            _fact(
+                accession=f"{index:04d}",
+                body=f"{index:064x}",
+                value=str(100 + index),
+                event_type=FactEventType.AMENDMENT,
+                revision_of=events[-1].occurrence_id,
+            )
+        )
+    ledger = RawFactLedger(tuple(events))
+    index = ledger._events_by_id
+    assert len(index) == len(events)
+    assert ledger.lineage_depth(events[-1].occurrence_id) == 39
+
+    scans = {"n": 0}
+
+    class Probe(tuple):
+        def __iter__(self):
+            scans["n"] += 1
+            return super().__iter__()
+
+    object.__setattr__(ledger, "events", Probe(ledger.events))
+    assert ledger.by_id(events[-1].occurrence_id) is events[-1]
+    source_ready, system_ready = ledger.lineage_ready_clocks(events[-1].occurrence_id)
+    assert source_ready is not None
+    assert system_ready is not None
+    chain = ledger.revision_chain(events[-1].occurrence_id)
+    assert chain[0] is events[0]
+    assert chain[-1] is events[-1]
+    assert ledger._events_by_id is index
+    assert scans["n"] == 0
+    with pytest.raises(ValueError, match="exceeds max_depth 8"):
+        ledger.revision_chain(events[-1].occurrence_id, max_depth=8)
+
+
 def test_revision_cannot_claim_a_different_economic_identity() -> None:
     original = _fact(accession="0001", value="100")
     wrong_dimension_revision = _fact(

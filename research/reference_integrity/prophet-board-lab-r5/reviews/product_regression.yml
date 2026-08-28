@@ -1,0 +1,175 @@
+# Critic receipt (RIG V1 §6) — independent adversarial review of the D-LAB-R5
+# Prophet Operator Lab reference candidate. The author did not write this file.
+# Committed verbatim by the commissioning session from the critic's return packet.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-lab-r5
+role: product_regression
+artifact_sha: 6ee8f34480ce3299b4692a3e732c6a5c75d9782a
+
+reviewer:
+  identity: "independent RIG critic — opus reviewer spawn (ROUTE: review), commissioned by the D-LAB-R5 adjudicating session; not the artifact author"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (LAB-0 §0-§6, MP-1 ratified laws)
+    - production-before artifact (frozen R4 mockups/refs/institutionalize/us_stocks + origin/main templates)
+    - proposed-after artifact (frozen files at 6ee8f34 + all 49 crops opened as images)
+    - capability ledger (baseline.yml)
+  rationale_received_after_first_pass: false
+  quarantine_note: >
+    RECORDED HONESTLY AND IT BLOCKS. This critic was commissioned with the whole
+    packet as the artifact to attack and read proposal.yml, README.md and
+    DESIGN_NOTES.md in the same pass as the crops, so the strict RIG §6 two-pass
+    ordering was not achievable. The findings below are unaffected — they are
+    independent code, crop and origin/main receipts, not reactions to the
+    rationale — but the attestation is false and is not being falsified to green
+    a gate. Condition C12 names the remedy.
+
+first_pass:
+  frozen_at: "2026-08-19T00:00:00Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: PRC-401
+      severity: major
+      capability: board.progressive_expansion
+      finding: >
+        "LAB->LIVE re-derives, never restores" is pinned only by the self-reported
+        C.repaints counter (verify.py:307 D15d); D15/D15b/D15c (verify.py:294-306)
+        are all satisfied by a restored snapshot, and mutation M8
+        (mutation_test.py:69-72) breaks the counter rather than the mechanism. The
+        mechanism itself is correct — lab.js:510-525 destroys the subtree and
+        re-executes board.js — so this is a proof gap, not an artifact defect.
+    - id: PRC-402
+      severity: minor
+      capability: card.live_quote
+      finding: >
+        lab.js:378-382 renders the measured lead through Math.abs() with no sign
+        or zero guard, so a negative lead would print "Seen N days before Prophet"
+        and lead==0 prints "Seen 0 days before Prophet". Unreachable in the
+        committed fixture (all six live leads are null/null/null/1/2/3), but this
+        reference is the spec P-LAB-API/UI implements.
+    - id: PRC-403
+      severity: minor
+      capability: xc.bilingual
+      finding: >
+        The banned-vocab loop (verify.py:248-252) and the 17-slug glance-tier leak
+        test (verify.py:177-184) read one EN capture of the default board only;
+        ZH copy, the five non-default boards and the LIVE view are unscanned. No
+        actual leak found by inspection — this is coverage, not a defect.
+    - id: VTC-401
+      severity: minor
+      capability: xc.mobile_390
+      finding: >
+        At 390w three of the six frozen LAB-0 §3 boards are off-screen inside
+        lab.css:133 .lab-sel-wrap{overflow-x:auto} with no edge fade or chevron
+        (crops/14-lab-mobile390-dark-en.png clips "Turning up" mid-phrase), and
+        D14c/D16 are structurally blind to it because they measure
+        documentElement.scrollWidth, which the inner scroller keeps clean.
+    - id: DA-401
+      severity: minor
+      finding: >
+        Two re-census attributions are imprecise while their substance verifies:
+        --up sits at templates/theme.css:72/:148, not the cited :80-81/:152-153
+        (D_LAB_R5_BLOCKER_RECENSUS.md:160-163, continuity.yml:171-173); and commit
+        444f80d62774 does not touch engine/prophet_bridge.py, where plan_clock_date
+        was introduced by 242aafda0dc7 (#4684), contra the §0 headline at :31-33.
+    - id: VTC-402
+      severity: minor
+      finding: >
+        lab.css:11 states the token policy as "no hex literal"; lab.css:93 is
+        color: #fff. Sole hex in the file; the rest of the token discipline
+        verifies clean (no stance ink; --up/--down confined to .nb-chg at :275-276).
+    - id: DA-402
+      severity: minor
+      finding: >
+        crops/25-board-all-early.png is sha256-identical to
+        crops/10-lab-desktop-dark-en.png (and their --full twins likewise) because
+        lab-all-early-v1 is the default selection, so "36 views / 49 files" is 46
+        unique files and the 20-27 selector range carries one non-independent shot.
+        All six boards remain photographed. crops/50 being identical to crops/01 is
+        by contrast legitimate and load-bearing (capture.py:180-195 asserts the
+        round trip before shooting).
+    - id: VTC-403
+      severity: minor
+      capability: xc.bilingual
+      finding: >
+        aria-label on the three Lab groups is English-only under data-lang=zh
+        (lab.js:154 "Board mode", :234 "Lab boards", :266 "Observation class")
+        while all visible copy is fully bilingual.
+  strengths:
+    - >
+      The seed-vs-live distinction is genuinely unmistakable at a glance and
+      genuinely structural, not a badge: compare crops/10-lab-desktop-dark-en.png
+      (solid spine, filled node, "09:52 ET / first seen / Aug 14", solid-border
+      "Live sighting", "Seen 1 day before Prophet") against
+      crops/30-seeds-only-dark-en.png (dashed spine, hollow node, "Aug 7 / signal
+      date / not a sighting", dashed-border "Seed · history, not a sighting",
+      "Lead not measurable", desaturated chart ink). The dated baseline marker
+      ("Aug 8 — Continuous live watching began here") is drawn where the stream
+      actually crosses it, so it reads as data rather than caption. And the
+      partition is sound by construction, not by fixture luck: LAB-0 §4 makes a
+      seed's date <= baseline <= a live row's first sighting, so newest-first
+      sorting can never place a live row below the marker.
+    - >
+      "R5 is R4 plus a layer" is enforced, not asserted:
+      git diff --stat origin/main FETCH_HEAD -- mockups/refs/institutionalize
+      templates/theme.css is EMPTY, and index.html:40,48,50 load the R4
+      board.css/board-data.js/board.js unmodified. MP-1's no-theme.css-change law
+      holds; the achromatic-Lab claim holds on one existing token (--prov, via
+      --lab-acc at lab.css:37) with zero new palette and zero stance ink.
+    - >
+      The degraded states genuinely stay LAB with no LIVE fallback, in the Lab's
+      own voice rather than borrowed production copy: crops/43-lab-behind-dark-en.png
+      carries FEED BEHIND, a warning band naming the exact silence ("11:36 ET,
+      3h 28m ago"), and a spine gap marker "nothing since 11:36 ET" — three
+      independent carriers, and mutation M11 proves the silent-fallback defect
+      LAB-0 §6.5 names by name is actually caught.
+    - >
+      The operator gate is absence, not disablement: crops/04-live-no-operator-dark-en.png
+      is the R4 board with no LIVE|LAB control anywhere, and D3 requires zero
+      lab-* nodes inside #board while D3b pins the card count to the cold load.
+    - >
+      The packet argues against itself where it would be easy not to: it records
+      the Lab row as 8-11 words WORDIER than a Prophet card rather than arguing it
+      away, scores task.return_to_live EQUIVALENT rather than BETTER because
+      "nothing happened to the board" is the correct outcome, files its own two
+      authority claims as warranted:false, names R4's unreviewed state as a
+      laundering risk, corrects the R4 note's own --ink-up mechanism error, and
+      leaves six of twelve re-census items with explicit uncertainty rather than
+      resolving them by assertion.
+    - >
+      mutation_test.py is a real anti-vacuity harness, not decoration: a
+      non-matching mutation is a hard error rather than a skip (:136-140), an
+      already-failing baseline refuses to measure (:125-130), two mutations may not
+      share a sole catcher (:161-169), and the crash-reports-no-failures hole the
+      notes describe is genuinely closed by the __CRASH__ sentinel (:106-118, 145-149).
+
+second_pass:
+  amended_at: "2026-08-19T00:00:00Z"
+  amendments:
+    - {finding: PRC-401, action: upheld,
+       note: "The rationale (DESIGN_NOTES §1.5) asserts the law but supplies no proof beyond the counter; §7 discloses only the listener-accumulation side effect, not the proof gap. Upheld as a condition, not a block, because the mechanism was independently verified at lab.js:510-525."}
+    - {finding: PRC-402, action: upheld,
+       note: "Not addressed anywhere in the rationale; the fixture's avoidance of the case is luck of the generator, not a guard."}
+    - {finding: PRC-403, action: upheld, note: "Coverage gap, unaddressed."}
+    - {finding: VTC-401, action: downgraded,
+       note: "DESIGN_NOTES §2.10 does disclose 'Selector chips scroll inside their own container', so the scroller is deliberate. Downgraded from a composition defect to an affordance condition (C4): six frozen boards are a product contract and three of them are currently undiscoverable at the design floor."}
+    - {finding: DA-401, action: upheld,
+       note: "§2.12 states the #5540 relationship correctly; the §0 headline does not. Substance of both items independently verified against origin/main."}
+    - {finding: VTC-402, action: upheld, note: "Self-contradiction stands."}
+    - {finding: DA-402, action: downgraded,
+       note: "capture.py:63 shows 25 is a deliberate named board view that happens to equal the default; no coverage is lost. Recorded rather than blocking."}
+    - {finding: VTC-403, action: upheld, note: "Unaddressed."}
+  verdict: PASS_WITH_CONDITIONS
+  deviations_adjudicated:
+    - {deviation: "r3 verdict.yml bare-string -> {id,text} rewrite", ruling: ACCEPT,
+       basis: "11/11 texts byte-identical against both origin/main r3 and the sha256-pinned r4/r3_source copy af6953df241c9df881aa5877f5f68280b565fa4aca21a17c3501172cf9b27b60; order and all other keys unchanged; reverting it produces 14 checker findings (11 condition-without-id + 3 continuity-renamed-without-linkage) and the checker's own message prescribes this exact remedy; build_ledger.py --check still passes 41/41/12. Bounded by condition C9."}
+    - {deviation: "crops beside the artifact rather than a separate RIG namespace", ruling: ACCEPT,
+       basis: "R4 precedent is the checker's own resolution path — baseline evidence at mockups/refs/institutionalize/us_stocks/crops/ resolves and L7 namespace closure passes; and manifest.yml:23-25 freezes ONE path, so relocating the crops outside it would make the freeze non-atomic."}
+  authority_adjudications:
+    - {claim: auth.lab_observation_exists, ruling: APPROVE_AHEAD_OF_PRODUCER_SCOPED,
+       basis: "Approval warrants composition and disclosure only. The strong claim is structurally unreachable by the design (lab.js:377-405 gates every number on cls==live_forward; lab.js:287-289 forbids a seed a clock time), disclosure is fivefold and specific, and RIG's finding class is 'blocking until adjudicated', not prohibitive. Conditioned by C6 and C7."}
+    - {claim: auth.measured_lead, ruling: APPROVE_AHEAD_OF_PRODUCER_SCOPED,
+       basis: "Same, plus the LAB-0 §4 impossibility is already binding and proven to bite (verify D6, mutation M2). Conditioned by C2, C6, C7."}

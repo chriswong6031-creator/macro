@@ -5,10 +5,12 @@ name: ci
 # that gates the Pages deploy in pages.yml.
 on:
   pull_request:
-    # The closed event starts a zero-runner replacement in the same concurrency
-    # group, cancelling a long CI pack when its PR merges or closes. Without it,
-    # auto-merged PRs kept both hosted runners busy for up to another hour.
-    types: [opened, synchronize, reopened, closed]
+    # Only proof-producing lifecycle events belong in semantic CI. A delayed
+    # `closed` event is not a causally ordered cancellation message: GitHub may
+    # deliver it after a later `reopened` event, and same-group pending runs are
+    # replaced regardless of cancel-in-progress. Abandoned-PR cleanup is a
+    # separate capability; it must never share this proof slot implicitly.
+    types: [opened, synchronize, reopened]
     branches: [main]
     paths:
       # Start on every repository path. The selector, not this event filter, owns
@@ -375,6 +377,20 @@ on:
       - "engine/stock_desk.py"
       - "tests/test_stock_desk.py"
       - "engine/alert_triage.py"
+      # Alert Command Center TIME CONTRACT (Wave 7, 2026-08-20). The board's three clocks
+      # — event / observation / system-recorded — and its America/New_York board day live
+      # in engine/alert_time.py; its suite is the guard. Both need explicit entries: the
+      # module is new, and tests/test_alert_triage.py sat in the unrun grandfather list
+      # (config/unrun_test_baseline.json) since 2026-08-09, so the suite that pins this
+      # page's ranking honesty ran nowhere. A guard the guarded change cannot trigger is
+      # not a guard (#3488), so the producer whose event-time defect started this wave is
+      # listed too.
+      - "engine/alert_time.py"
+      - "engine/subsector_rotation_alerts.py"
+      - "engine/rotation_events.py"
+      - "tests/test_alert_time_contract.py"
+      - "tests/test_alert_triage.py"
+      - "tests/test_alert_coverage_recurrence.py"
       - "engine/altdata_signals.py"
       - "scripts/check_badge_passport.py"
       - "tests/test_spine.py"
@@ -753,6 +769,8 @@ on:
       - "engine/neuralweb/market_memory.py"
       - "engine/neuralweb/market_memory_pit.py"
       - "engine/neuralweb/market_memory_sources.py"
+      - "engine/neuralweb/market_memory_source_kernel.py"
+      - "engine/neuralweb/market_memory_sources_spy.py"
       - "engine/neuralweb/market_memory_identity.py"
       - "engine/neuralweb/market_memory_identity_observation.py"
       - "engine/neuralweb/market_memory_identity_store.py"
@@ -820,13 +838,18 @@ on:
       - "config/market_memory_technical_price_basis.v1.json"
       - "config/market_memory_option_oi_source.v1.json"
       - "config/market_memory_spy_experience_registration.v1.json"
+      - "config/market_memory_spy_experience_registration.v2.json"
       - "scripts/collect_release_target_vintages.py"
       - "scripts/collect_release_cpi_official_truth.py"
       - "scripts/build_release_cpi_truth_parity.py"
       - "scripts/capture_market_memory_context.py"
       - "scripts/initialize_market_memory_w1a.py"
       - "scripts/ingest_market_memory_sources.py"
+      - "scripts/ingest_market_memory_sources_spy.py"
+      - "scripts/capture_market_memory_technicals_v2.py"
+      - "scripts/accrue_market_memory_spy_experience_v2.py"
       - "scripts/project_market_memory_context.py"
+      - "scripts/audit_options_market_memory_context.py"
       - "scripts/ingest_market_memory_identity.py"
       - "scripts/capture_market_memory_breadth.py"
       - "scripts/capture_market_memory_technicals.py"
@@ -838,8 +861,16 @@ on:
       - "data/regime/latest.json"
       - "app/deploy/macro-market-memory-source.service"
       - "app/deploy/macro-market-memory-source.timer"
+      - "app/deploy/macro-market-memory-source-spy-rest.service"
+      - "app/deploy/macro-market-memory-source-spy-rest.timer"
+      - "app/deploy/macro-market-memory-technicals-v2.service"
+      - "app/deploy/macro-market-memory-technicals-v2.timer"
+      - "app/deploy/macro-market-memory-experience-v2.service"
+      - "app/deploy/macro-market-memory-experience-v2.timer"
       - "app/deploy/macro-market-memory-context.service"
       - "app/deploy/macro-market-memory-context.timer"
+      - "app/deploy/macro-market-memory-options-context-audit.service"
+      - "app/deploy/macro-market-memory-options-context-audit.timer"
       - "app/deploy/macro-market-memory-identity.service"
       - "app/deploy/macro-market-memory-identity.timer"
       - "app/deploy/macro-market-memory-breadth.service"
@@ -848,6 +879,7 @@ on:
       - "app/deploy/macro-market-memory-technicals.timer"
       - "app/deploy/macro-market-memory-experience.service"
       - "app/deploy/macro-market-memory-experience.timer"
+      - "app/deploy/market-memory-spy-rest-prereqs.sh"
       - "app/deploy/market-memory-options-prereqs.sh"
       - "app/deploy/market-memory-options-unit-boundary.sh"
       - "app/deploy/market-memory-options-runtime-fence.sh"
@@ -865,6 +897,7 @@ on:
       - "tests/test_market_memory_pit.py"
       - "tests/test_market_memory_sources.py"
       - "tests/test_market_memory_source_deploy.py"
+      - "tests/test_market_memory_m0d_v2.py"
       - "tests/test_market_memory_identity.py"
       - "tests/test_market_memory_identity_observation.py"
       - "tests/test_market_memory_identity_store.py"
@@ -1033,6 +1066,13 @@ on:
       - "tests/test_government_revenue_ui.py"
       - "tests/test_government_revenue_dossier_ui.py"
       - "tests/test_government_revenue_briefcase_ui.py"
+      # D3 temporal contract suite (wired by the same PR that added it).
+      - "tests/test_government_revenue_temporal_contract.py"
+      # D4 Company Financial Truth Bridge suite (wired by the same PR that added
+      # it). Its subject files (templates/government-revenue-dossiers.js,
+      # templates/government_revenue.html.j2) already ride "templates/**" above;
+      # this line is the suite itself, per the contract-delta law.
+      - "tests/test_government_revenue_company_bridge.py"
       # The prophet↔govrev context bridge, wired into unrun-government-revenue by
       # the same PR that added this line. It was named by nothing in .github/ at
       # all, so it was inert AND untriggerable — the strictly-dark shape.
@@ -1684,6 +1724,8 @@ on:
       - "tests/test_ask_brain.py"
       - "tests/test_company_intelligence_neural_reader.py"
       - "tests/test_company_intelligence_event_workspace.py"
+      - "tests/test_company_intelligence_qa_reconstruction.py"
+      - "tests/test_company_intelligence_qa_exchange.py"
       - "tests/test_world_state.py"
       # PR-C health builder tests (weekend-aware staleness, cadence exclusion, staleness_from).
       - "tests/test_neuralweb_health.py"
@@ -1819,6 +1861,18 @@ on:
       - "scripts/check_cycle_pattern_authority.py"
       - "config/cycle_pattern/**"
       - "tests/test_check_cycle_pattern_authority.py"
+      # CPI-H1 consumer-authority heal (2026-08-21): the registry-vocabulary half
+      # of cycle-pattern-authority (scan_registry_vocabulary(), additive to the
+      # literal-path scan above) reads these directly. Named explicitly here for
+      # provenance; the job's own scope is auto-inferred (already correctly
+      # includes these — verified via run_ci_pack.py --changed-from) and this job
+      # deliberately stays unscoped in .github/ci/legacy-jobs.yml because its
+      # literal-path scan is a full-tree guard (see that file's own house-law
+      # comment on when NOT to declare a curated `paths:`).
+      - "data/cycle_pattern/truths.jsonl"
+      - "engine/cycle_pattern/consumer_authority.py"
+      - "engine/cycle_pattern/truths.py"
+      - "tests/test_cpi_h1_consumer_authority.py"
       # House-law registry meta-guard: any change to the registry, the meta-guard
       # script, the generated docs, or the test suite must re-prove the registry
       # is complete and consistent.
@@ -2071,6 +2125,19 @@ on:
       - "tests/test_prophet_live_pack.py"
       - "tests/test_prophet_live_evaluator.py"
       - "tests/test_prophet_live_reconcile.py"
+      # SILENT-FREEZE guard (2026-08 incident). The lane froze for 27 days because
+      # the producer, the status surface and the external dead-man each reported
+      # success independently. The guard therefore spans all three owners, so an
+      # edit to ANY of them must retrigger it — a guard that does not run on the
+      # file it guards fires on somebody else's PR instead (the #3488 failure mode).
+      - "tests/test_prophet_live_silent_freeze.py"
+      - "scripts/check_vps_live_health.py"
+      - "app/main.py"
+      # PIT RECOVERY of the spool the 2026-08 outage never published. These rows
+      # enter forward.parquet, so the guard must retrigger on the producer, the
+      # pending reader and the ledger writer alike.
+      - "scripts/prophet_live_journal_recovery.py"
+      - "tests/test_prophet_live_journal_recovery.py"
       - "tests/fixtures/prophet_live/import_probe.py"
       # PROPHET LIVE VPS lane (§4.2a/§4.4a). The unit files, the reconciler that
       # installs them and the provisioner that arms them are the subjects of
@@ -3676,6 +3743,7 @@ on:
       - "app/company_intelligence.py"
       - "app/earnings.py"
       - "tests/test_company_intelligence_api.py"
+      - "tests/test_company_intelligence_dossier_js.py"
       - "site/assets/js/company-intelligence-dossier.js"
       - "templates/ticker.html.j2"
       - "engine/earnings_narrative/public_wire.py"
@@ -4045,6 +4113,16 @@ on:
       # import-derived auditor reports subjects=[] and would call it untriggerable.
       - "tests/test_prophet_rescue.py"
       - "scripts/prophet_rescue.py"
+      # PR-1 Prophet US permanence net (2026-08-27), same unrun-dark-guards family:
+      # the new post-publish acceptance alarm (imported via importlib from
+      # daily.yml's engine job, the same path-literal shape as the rescue lane
+      # above) and the cross-cutting suite that pins the shared intake-identity
+      # predicate across freshness_sentinel/check_nightly_liveness/prophet_rescue/
+      # this script, the lane-latch acceptance exemption, and the heartbeat
+      # write/grade round trip (see check_surface_freshness.py's own pair above
+      # for the precedent this follows).
+      - "scripts/prophet_board_acceptance.py"
+      - "tests/test_prophet_surface_net.py"
       # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
       # test_public_render_fastlane pins the heavy/public render split and the
       # rendered pricing copy; it was named by no lane and rotted red when #3856
@@ -4185,6 +4263,24 @@ on:
       - "tests/test_dataos_security_master.py"
       - "scripts/build_security_master.py"
       - "data/reference/**"
+      # Job: dislocation-p0-a1-blind-harvest (.github/ci/legacy-jobs.yml).
+      # Two-halves: every source-only suite AND the primitives they import.
+      - "tests/test_dislocation_p0_a1_blind_harvest.py"
+      - "tests/test_dislocation_p0_a1r_*.py"
+      - "tests/test_dislocation_p0_source_*.py"
+      - "tests/test_dislocation_p0_s1f*.py"
+      - "scripts/research/dislocation_p0_a1_harvest.py"
+      - "scripts/research/dislocation_p0_a1_lib.py"
+      - "scripts/research/dislocation_p0_a1r*.py"
+      - "scripts/research/dislocation_p0_source_*.py"
+      - "scripts/research/dislocation_p0_s1f*.py"
+      - "collectors/edgar_forensics.py"
+      - "collectors/sec_document_spine.py"
+      - "engine/fundamental_forensics/models.py"
+      - "engine/fundamental_forensics/sec_document_spine.py"
+      - "lib/__init__.py"
+      - "lib/config.py"
+      - "research/dislocation_intelligence/**"
   workflow_dispatch:
     inputs:
       expected_sha:
@@ -4203,17 +4299,11 @@ concurrency:
   # — how that dedup survives WITHOUT killing a running proof is the 2026-08-09
   # block below.
   #
-  # A MERGED close is fenced into its own group (2026-07-28). The operator and
-  # sessions routinely squash-merge 0-8 minutes after opening while a pack run
-  # takes ~35, and the `closed` event landing in the live group cancelled the
-  # PR's own in-flight proof run — the merged head then carried `cancelled`
-  # packs FOREVER (PR #3867: merged at +3 min, both packs died, no verdict
-  # possible), which is how unproven merges stack up on main and every
-  # ship-loop session pins on the next full-CI dispatch. Measured 2026-07-28:
-  # 100 ci.yml runs in 8h, 6 successes, 67 cancelled/skipped. A close WITHOUT
-  # merge keeps the old behaviour — its packs are obsolete and cancelling them
-  # is pure savings; only a merge's evidence is worth finishing.
-  group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
+  # Proof-producing PR events share the candidate's PR-number slot, so a newer
+  # synchronize/reopen can replace obsolete proof for that candidate. `closed`
+  # is absent from the trigger above and therefore cannot occupy, replace, or
+  # cancel this slot when lifecycle delivery is out of order.
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09, after the flat `true`
   # livelocked main's proof path fleet-wide (12 merge-blocked + 56 cap-deferred
   # pull requests; sweep run 31311549150 reported "0 main commit(s) classified …
@@ -4230,9 +4320,9 @@ concurrency:
   # the next proof dies too. The recovery lever WAS the disease.
   #
   # The fix keeps both behaviours because they belong to different events:
-  #   pull_request  -> true.  A newer push obsoletes the older packs; cancelling
-  #                    them is pure savings, and the merged-close fence above
-  #                    (2026-07-28, PR #3867) still decides which close cancels.
+  #   pull_request  -> true.  A newer proof-producing event obsoletes the older
+  #                    packs; cancelling them is pure savings. Closed events do
+  #                    not trigger this workflow and never enter the group.
   #   workflow_dispatch -> false.  A dispatch is an ORDER FOR EVIDENCE. Evidence
   #                    that is 44 minutes old is nearly evidence; discarding it
   #                    for an identical run that starts from zero is never right.
@@ -4263,9 +4353,6 @@ jobs:
   # weighting, runner fleet, dependency caching, and existing scope selection are
   # deliberately unchanged here.
   ci-plan:
-    # Same closed-event fence as `ci-pack` below: a closed PR needs only the
-    # workflow-level concurrency side effect above.
-    if: github.event.action != 'closed'
     name: ci-plan
     runs-on: ubuntu-latest
     # Planning loads one manifest and diffs one base; 30 minutes is a hang bound,
@@ -4313,6 +4400,18 @@ jobs:
           # shallow-checkout.
           filter: blob:none
           fetch-depth: 0
+          # W3 working-tree containment. The planner's mechanical census reads
+          # source/config/test bytes outside these four generated-heavy trees;
+          # omitted tracked-path existence is supplied separately by the exact
+          # tested-tree inventory below. Unknown/new top-level trees remain
+          # included, so profile drift widens cost rather than narrowing proof.
+          sparse-checkout: |
+            /*
+            !/data/
+            !/site/
+            !/mockups/
+            !/verify_shots/
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           # PINNED to an exact patch release, not the floating "3.12".
@@ -4391,6 +4490,11 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
           "$RUNNER_TEMP/ci-plan-runner/bin/pip" install pyyaml
+      - name: bind exact tested-tree path inventory
+        run: >-
+          "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/ci_scope_dependencies.py
+          --write-tracked-paths "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
+          --tested-tree-sha "${{ steps.identity.outputs.tested_tree_sha }}"
       # Same `env`-built, UNQUOTED shell-argument idiom as the pack step below, and
       # for the same two reasons: a folded `>-` scalar tolerates no `#` and no
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
@@ -4422,11 +4526,13 @@ jobs:
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
+          --gate code
           --pack-count 12
           --plan-only
           --github-output "$GITHUB_OUTPUT"
           --emit-plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json"
           --emit-changed-files "$RUNNER_TEMP/ci-changed-files/changed-files.json"
+          --tracked-paths-file "$RUNNER_TEMP/ci-tracked-paths/tracked-paths.v1"
           --workflow-run-id "$GITHUB_RUN_ID"
           --workflow-name ci
           --event "$GITHUB_EVENT_NAME"
@@ -4466,11 +4572,21 @@ jobs:
           path: ${{ runner.temp }}/ci-semantic-plan/ci-plan.json
           if-no-files-found: error
           retention-days: 14
-  ci-pack:
+  # P3B-B: the expensive same-repository PR execution is defined by protected
+  # main, not by candidate-authored workflow bytes. This call accepts no identity
+  # inputs or inherited secrets; the called workflow independently admits the
+  # exact PR merge ref, derives the immutable candidate/base/plan, and caps the
+  # isolated PC pool at three slots. Forks never enter this job.
+  trusted-ci:
+    name: trusted-ci
     needs: ci-plan
-    # A closed PR needs only the workflow-level concurrency side effect above.
-    # Skipping here cancels the obsolete pack without allocating a replacement.
-    #
+    if: needs.ci-plan.outputs.has_work == 'true' && github.event.pull_request.head.repo.full_name == github.repository
+    uses: mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@main
+    permissions:
+      contents: read
+      pull-requests: read
+  ci-pack:
+    needs: [ci-plan, trusted-ci]
     # The `has_work` clause is the Wave B addition, and it is safe only because
     # `has_work: false` is an AFFIRMATIVE planner proof that no legacy job is
     # selected. Every uncertainty widens instead: a planner exception, an unknown
@@ -4480,7 +4596,11 @@ jobs:
     # sweeper requires an affirmative pass, since absence of red is not a pass
     # (#4779), so a PR whose only packs were skipped would otherwise read unproven
     # and never merge.
-    if: github.event.action != 'closed' && needs.ci-plan.outputs.has_work == 'true'
+    if: >-
+      always() && needs.ci-plan.result == 'success' &&
+      needs.ci-plan.outputs.has_work == 'true' &&
+      (github.event.pull_request.head.repo.full_name != github.repository ||
+      needs.trusted-ci.result == 'success')
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
     # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
@@ -4616,6 +4736,7 @@ jobs:
             fi
           fi
       - uses: actions/checkout@v4
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           ref: ${{ github.sha }}
           # Packs consume ci-plan's changed-file list and only need the current
@@ -4632,6 +4753,7 @@ jobs:
           filter: blob:none
           fetch-depth: 1
       - uses: actions/setup-python@v5
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           # PINNED to an exact patch release, not the floating "3.12".
           #
@@ -4663,14 +4785,16 @@ jobs:
           # SHA-256), THEN bump here. tests/test_ci_pack.py enforces that order.
           python-version: "3.12.13"
       - uses: actions/setup-node@v4
+        if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           node-version: "20"
       - name: install isolated pack runner
+        if: github.event.pull_request.head.repo.full_name != github.repository
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
       - name: download the authoritative semantic plan
-        if: needs.ci-plan.outputs.plan_sha != ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha != ''
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
@@ -4691,17 +4815,19 @@ jobs:
       # inside the hashed plan payload, so it would recompute a different plan
       # sha and `--expect-plan-sha` refuses below.
       - name: download the planner's changed-file list
+        if: github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/download-artifact@v4
         with:
           name: ci-changed-files
           path: ${{ runner.temp }}/ci-changed-files
       - name: publish the changed-file handle
+        if: github.event.pull_request.head.repo.full_name != github.repository
         run: echo "CI_CHANGED_FILES_FILE=$RUNNER_TEMP/ci-changed-files/changed-files.json" >> "$GITHUB_ENV"
       # Pack index is transport only. Each runner consumes the one hashed plan,
       # verifies the exact tree/head/base identities, and emits raw semantic facts.
       # Causality is computed later by ci-gate; a pack never labels itself inherited.
       - name: validate and run legacy CI pack
-        if: needs.ci-plan.outputs.plan_sha != ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha != ''
         id: execute_semantic_pack
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
@@ -4716,6 +4842,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
+            --gate code \
             --plan-json "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json" \
             --changed-files-file "$CI_CHANGED_FILES_FILE" \
             --expect-plan-sha "$EXPECTED_PLAN_SHA" \
@@ -4731,16 +4858,58 @@ jobs:
       # semantic authority because no exact plan exists, so ci-gate will block
       # even if these compatibility packs happen to pass.
       - name: fail-safe full suite when no authoritative plan was produced
-        if: needs.ci-plan.outputs.plan_sha == ''
+        if: github.event.pull_request.head.repo.full_name != github.repository && needs.ci-plan.outputs.plan_sha == ''
         env:
           CI_BASE_REF: ${{ github.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
+          --gate code
           --pack-index ${{ matrix.pack }}
           --pack-count 12
           --execute
+      # The called main workflow already ran this exact pack on the PC pool. These
+      # two hosted steps are deliberately tiny: they preserve the existing
+      # ci-pack-N check and artifact contract while refusing any mismatch between
+      # the hosted authoritative plan and the independently main-derived plan.
+      - name: relay the trusted pack fragment under the existing check contract
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: trusted-ci-fragment-${{ matrix.pack }}
+          path: ${{ runner.temp }}/trusted-ci-fragment
+      - name: bind trusted execution to the hosted authoritative plan
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          HOSTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
+          TRUSTED_PLAN_SHA: ${{ needs.trusted-ci.outputs.plan_sha }}
+          TRUSTED_FRAGMENT: ${{ runner.temp }}/trusted-ci-fragment/trusted-fragment.json
+          RELAY_FRAGMENT: ${{ runner.temp }}/ci-semantic-fragments/pack-${{ matrix.pack }}.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" "$TRUSTED_PLAN_SHA" <<'PY'
+          import json
+          import shutil
+          import sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1])
+          destination = Path(sys.argv[2])
+          hosted_plan_sha = sys.argv[3]
+          trusted_plan_sha = sys.argv[4]
+          if not hosted_plan_sha or hosted_plan_sha != trusted_plan_sha:
+              raise SystemExit(
+                  "hosted/trusted plan mismatch: "
+                  f"hosted={hosted_plan_sha!r} trusted={trusted_plan_sha!r}"
+              )
+          fragment = json.loads(source.read_text(encoding="utf-8"))
+          if fragment.get("plan_sha256") != hosted_plan_sha:
+              raise SystemExit("trusted fragment is not bound to the authoritative plan")
+          destination.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(source, destination)
+          PY
       - name: publish this pack's raw semantic fragment
         if: always() && needs.ci-plan.outputs.plan_sha != ''
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -4750,6 +4919,83 @@ jobs:
           if-no-files-found: warn
           overwrite: true
           retention-days: 14
+  # DIFFERENTIAL merge-train contract gate (2026-08-19). ci-pack's own path
+  # scoping is exactly the blind spot this job exists to cover: a curated
+  # `scope: exclusive` job's import closure, or the set of pytest suites no
+  # workflow wires, are both CI-CONTRACT facts that a normal path-scoped pack
+  # never re-derives unless the edit happens to land inside that job's own
+  # declared paths (tests/test_ci_pack.py, scripts/audit_unrun_tests.py). Two
+  # PRs (#5872, #5932) each widened a curated job's import closure without
+  # widening its declared paths; neither PR's pack ran
+  # test_curated_exclusive_scopes_cover_their_own_import_closure, both merged
+  # green, and main went red 5+ hours later with 21 armed PRs baseline-blocked
+  # behind it (research the incident under WS/PROPHET or grep press-wire for
+  # 2026-08-19 ~12:00Z). This job re-derives both finding classes on every PR,
+  # unconditionally of path scope, and reds ONLY when the PR's own tree
+  # introduces a finding that the PR's base did not already carry.
+  #
+  # DIFFERENTIAL, NEVER ABSOLUTE, on purpose — see
+  # scripts/check_contract_delta.py's module docstring for the full argument.
+  # An absolute validator would re-jam the fleet at PR level the moment main
+  # itself carries an inherited finding (main law: "Validator in an ALWAYS-ON
+  # job = fleet control plane"), which is exactly the failure mode ci-gate's
+  # own base-inherited-red carve-outs exist to avoid for every OTHER check.
+  contract-delta:
+    # PR events only. A push/workflow_dispatch main-proof run has no
+    # `pull_request.base.sha` to diff against and must never be asked to run
+    # this job — see ci-gate's handling of this job's `result` below, which
+    # treats `skipped` as OK precisely because non-PR events skip it here.
+    if: github.event_name == 'pull_request'
+    name: contract-delta
+    runs-on: ubuntu-latest
+    # 25 -> 45 (2026-08-19). PR #6013's contract-delta job was CANCELLED at
+    # exactly 25 minutes — checkout/setup/fetch all green, only the gate step
+    # itself killed mid-run — because scripts/check_contract_delta.py's two
+    # whole-repo censuses (head + base) ran serially and this hosted 2-core
+    # runner is slower than the machine they were timed on. The script itself
+    # now overlaps those two censuses (concurrent head/base, see its module
+    # docstring), which is the real fix; this is belt-and-suspenders margin.
+    # Safe to keep generous: this job is off the critical path entirely — the
+    # ci-pack matrix it runs alongside already takes ~30 min.
+    timeout-minutes: 45
+    steps:
+      # Checkout recipe copied verbatim from integration-baseline.yml's
+      # `baseline` job (2026-08-13 diet) — same reasoning applies here: this
+      # job parses .github/ci/legacy-jobs.yml, walks workflow definitions, and
+      # runs static/manifest analysis only. It opens nothing under site/ or
+      # data/. Non-cone with negation, deliberately: it states the EXCLUSION,
+      # so a new top-level directory is included by default and cannot
+      # silently fall out of this job's view the way a cone allowlist would.
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          fetch-depth: 1
+          sparse-checkout: |
+            /*
+            !/site/
+            !/data/
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          # PINNED to the same exact patch release as ci-plan/ci-pack above —
+          # see their comment for why a floating "3.12" is unsafe on this
+          # hosted pool (2026-08-19, ci-pack-8 red on two unrelated PR heads
+          # when the tool cache silently moved 3.12.13 -> 3.12.14).
+          python-version: "3.12.13"
+      - name: install control-plane dependencies
+        # Static/manifest analysis only, same posture as integration-baseline.yml —
+        # neither scripts/run_ci_pack.py's inference nor
+        # scripts/audit_unrun_tests.py's census imports the product data stack.
+        run: pip install pytest pyyaml
+      - name: fetch the PR's base commit
+        # check_contract_delta.py materializes the base tree itself (a detached
+        # `git worktree add`), which needs the base commit's object present
+        # locally — the fetch-depth: 1 checkout above only guarantees the head.
+        run: git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+      - name: differential contract-delta gate
+        run: >-
+          python scripts/check_contract_delta.py
+          --base ${{ github.event.pull_request.base.sha }}
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan
   # selected pack N, and the whole matrix is skipped on a proven no-work PR. That
@@ -4757,20 +5003,14 @@ jobs:
   # the merge-on-green sweeper (scripts/merge_on_green.py) requires an affirmative
   # success on the head — absence of red is not a pass (#4779) — so a head whose
   # packs were all skipped would read `unproven` and never merge. `ci-gate` is the
-  # one name that publishes a real conclusion on every non-closed event, and it is
+  # one name that publishes a real conclusion on every workflow event, and it is
   # the name to point any future branch-protection rule at.
   ci-gate:
     # `always()` is what makes this job publish even when `ci-pack` was skipped or
     # failed — WITHOUT it the aggregate would vanish exactly when it is needed.
-    #
-    # `&& github.event.action != 'closed'` is not decoration and must not be
-    # dropped: `always()` alone would run this job on every merged-close event too,
-    # where `ci-plan` is fenced off and therefore SKIPPED, so PLAN_RESULT would be
-    # `skipped`, the first branch below would exit 1, and every merged PR in the
-    # repository would publish a red `ci-gate` — blocking the sweeper fleet-wide.
-    if: always() && github.event.action != 'closed'
+    if: always()
     name: ci-gate
-    needs: [ci-plan, ci-pack]
+    needs: [ci-plan, ci-pack, contract-delta]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -4890,3 +5130,20 @@ jobs:
             exit 1
           fi
           echo "::notice title=ci-gate::complete semantic proof is clear"
+      # `contract-delta` is `if: github.event_name == 'pull_request'` (see its own
+      # job above), so a push/workflow_dispatch main-proof run always sees
+      # `skipped` here — that must NOT fail ci-gate, or every main baseline would
+      # go red the moment this job was added. Matches PLAN_RESULT's own idiom
+      # above: read the upstream job's `needs.<job>.result` into an env var and
+      # branch on it in a plain shell step, rather than folding it into the
+      # semantic-proof reconciler, which has no notion of this job at all.
+      - name: enforce contract-delta verdict
+        if: always()
+        env:
+          CONTRACT_DELTA_RESULT: ${{ needs.contract-delta.result }}
+        run: |
+          if [ "$CONTRACT_DELTA_RESULT" = "failure" ]; then
+            echo "::error title=ci-gate::contract-delta found a NEW CI-contract defect this PR introduces ($CONTRACT_DELTA_RESULT) — see the contract-delta job's own log for the job/suite and the exact fix"
+            exit 1
+          fi
+          echo "::notice title=ci-gate::contract-delta clear (result=$CONTRACT_DELTA_RESULT)"

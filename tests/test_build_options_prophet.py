@@ -18,8 +18,25 @@ import yaml
 from scripts import build_prophet_marks as prophet_marks
 from scripts import build_prophet_option_shadow_lifecycle as option_lifecycle
 from scripts import mirror_flow_idx
+from scripts import prophet_canonical_git
 from scripts.build_options_prophet import SCHEMA, build_from_disk, build_payload
 from scripts.mirror_flow_idx import OPTIONS_PROPHET_R2_KEY
+
+
+def _canonical_git_blob(
+    source_path: str,
+    body: bytes,
+    *,
+    source_commit: str = "c" * 40,
+) -> prophet_canonical_git.CanonicalGitBlob:
+    return prophet_canonical_git.CanonicalGitBlob(
+        source_repository=prophet_canonical_git.CANONICAL_REPOSITORY_SSH,
+        source_ref=prophet_canonical_git.CANONICAL_SOURCE_REF,
+        source_commit=source_commit,
+        source_path=source_path,
+        blob_oid="b" * 40,
+        body=body,
+    )
 
 
 def _flow_payload() -> dict:
@@ -1148,8 +1165,58 @@ def test_prophet_marks_runner_uses_the_checkout_that_owns_it():
 
     plist_path = repo / "ops/launchd/com.mastermind.prophetmarks.plist"
     plist_text = plist_path.read_text(encoding="utf-8")
+    payload = plistlib.loads(plist_path.read_bytes())
+    runtime_root = "/Users/chriswong/prophet-marks-runtime"
+    pinned_env = "/Users/chriswong/flow-ops-wt/.env"
+
     assert "/Users/chriswong/Documents/Cluade/Macro Dashboard" not in plist_text
-    assert plist_text.count("<string>/Users/chriswong/flow-ops-wt</string>") == 2
+    assert payload["ProgramArguments"] == [
+        f"{runtime_root}/ops/launchd/run_with_env.sh",
+        pinned_env,
+        "/usr/bin/env",
+        f"PYTHONPATH={runtime_root}",
+        "/bin/sh",
+        f"{runtime_root}/ops/launchd/run_prophet_marks_loop.sh",
+    ]
+    assert payload["WorkingDirectory"] == runtime_root
+    assert "EnvironmentVariables" not in payload
+    assert all(
+        not argument.startswith("/Users/chriswong/flow-ops-wt/")
+        for index, argument in enumerate(payload["ProgramArguments"])
+        if index != 1
+    )
+
+
+def test_prophet_marks_runtime_pythonpath_wins_after_sourcing_pinned_env(tmp_path):
+    """A stale env-file import path cannot override the disposable runtime."""
+    repo = Path(__file__).resolve().parents[1]
+    wrapper = repo / "ops/launchd/run_with_env.sh"
+    env_file = tmp_path / "marks.env"
+    env_file.write_text(
+        "PYTHONPATH=/Users/chriswong/flow-ops-wt\n",
+        encoding="utf-8",
+    )
+    runtime_root = "/Users/chriswong/prophet-marks-runtime"
+
+    completed = subprocess.run(
+        [
+            "/bin/sh",
+            str(wrapper),
+            str(env_file),
+            "/usr/bin/env",
+            f"PYTHONPATH={runtime_root}",
+            "/bin/sh",
+            "-c",
+            'printf "%s" "$PYTHONPATH"',
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert completed.stdout == runtime_root
+    assert completed.stderr == ""
 
 
 def test_prophet_marks_launchd_cadence_is_host_timezone_neutral():
@@ -1249,8 +1316,448 @@ esac
     assert "outside 09:25–16:05 ET window" in at_close.stdout
 
 
-def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatch):
-    """A stale operations checkout cannot keep an obsolete contract alive."""
+def test_prophet_canonical_git_requires_external_owner_only_machine_key(
+    monkeypatch,
+    tmp_path,
+):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    home = tmp_path / "home"
+    private_key_root = home / ".ssh"
+    private_key_root.mkdir(parents=True, mode=0o700)
+    key = private_key_root / "machine-key"
+    key.write_text("fixture-key-material", encoding="utf-8")
+    key.chmod(0o644)
+    monkeypatch.setattr(prophet_canonical_git, "_REPO", repo)
+    monkeypatch.setattr(prophet_canonical_git, "_process_home", lambda: home)
+    monkeypatch.setenv(prophet_canonical_git.CANONICAL_GIT_KEY_ENV, str(key))
+
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="process-owned and owner-only",
+    ):
+        prophet_canonical_git._deploy_key()
+
+    key.chmod(0o600)
+    assert prophet_canonical_git._deploy_key() == key.resolve()
+
+    os.link(key, repo / "machine-key-alias")
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="filesystem aliases",
+    ):
+        prophet_canonical_git._deploy_key()
+
+    in_repo_key = repo / "machine-key"
+    in_repo_key.write_text("fixture-key-material", encoding="utf-8")
+    in_repo_key.chmod(0o600)
+    monkeypatch.setenv(
+        prophet_canonical_git.CANONICAL_GIT_KEY_ENV,
+        str(in_repo_key),
+    )
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="dedicated private key root",
+    ):
+        prophet_canonical_git._deploy_key()
+
+
+def test_prophet_canonical_git_environment_disables_ambient_auth_and_config(
+    monkeypatch,
+    tmp_path,
+):
+    home = tmp_path / "home"
+    key = home / ".ssh" / "machine key"
+    key.parent.mkdir(parents=True, mode=0o700)
+    key.write_text("fixture-key-material", encoding="utf-8")
+    key.chmod(0o600)
+    monkeypatch.setattr(prophet_canonical_git, "_process_home", lambda: home)
+    monkeypatch.setenv("SSH_AUTH_SOCK", "/tmp/human-agent.sock")
+    monkeypatch.setenv("GIT_CONFIG_COUNT", "99")
+
+    environment = prophet_canonical_git._git_environment(key)
+
+    assert set(environment) == {
+        "PATH",
+        "HOME",
+        "LANG",
+        "LC_ALL",
+        "GIT_CONFIG_GLOBAL",
+        "GIT_CONFIG_SYSTEM",
+        "GIT_CONFIG_NOSYSTEM",
+        "GIT_TERMINAL_PROMPT",
+        "GCM_INTERACTIVE",
+        "GIT_SSH_COMMAND",
+        "GIT_SSH_VARIANT",
+        "GIT_NO_LAZY_FETCH",
+    }
+    assert environment["GIT_TERMINAL_PROMPT"] == "0"
+    assert environment["GIT_CONFIG_GLOBAL"] == "/dev/null"
+    assert environment["GIT_CONFIG_SYSTEM"] == "/dev/null"
+    assert "SSH_AUTH_SOCK" not in environment
+    assert "GIT_CONFIG_COUNT" not in environment
+    ssh_command = environment["GIT_SSH_COMMAND"]
+    assert ssh_command.startswith("/usr/bin/ssh -F /dev/null -i ")
+    assert "-o BatchMode=yes" in ssh_command
+    assert "-o IdentitiesOnly=yes" in ssh_command
+    assert "-o IdentityAgent=none" in ssh_command
+    assert "-o StrictHostKeyChecking=accept-new" in ssh_command
+
+
+def test_prophet_canonical_git_fetches_literal_ref_and_returns_exact_blob(
+    monkeypatch,
+    tmp_path,
+):
+    body = b'{"schema":"prophet.index/v1","plans":[]}\n'
+    commit = "a" * 40
+    blob_oid = "b" * 40
+    calls: list[tuple[list[str], dict[str, str]]] = []
+    key = tmp_path / "key"
+
+    monkeypatch.setattr(prophet_canonical_git, "_deploy_key", lambda: key)
+
+    def fake_run_git(arguments, *, environment, timeout, accepted_returncodes=frozenset({0})):
+        del timeout, accepted_returncodes
+        calls.append((arguments, environment))
+        if arguments[0] == "config":
+            return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"")
+        if arguments[:3] == ["-c", "core.hooksPath=/dev/null", "fetch"]:
+            return subprocess.CompletedProcess(arguments, 0, stdout=b"", stderr=b"")
+        if arguments[:2] == ["rev-parse", "--verify"]:
+            value = commit if arguments[2].endswith("^{commit}") else blob_oid
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                stdout=(value + "\n").encode("ascii"),
+                stderr=b"",
+            )
+        if arguments[:2] == ["cat-file", "-t"]:
+            return subprocess.CompletedProcess(arguments, 0, stdout=b"blob\n", stderr=b"")
+        if arguments[:2] == ["cat-file", "-s"]:
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                stdout=f"{len(body)}\n".encode("ascii"),
+                stderr=b"",
+            )
+        if arguments[0] == "show":
+            return subprocess.CompletedProcess(arguments, 0, stdout=body, stderr=b"")
+        raise AssertionError(arguments)
+
+    monkeypatch.setattr(prophet_canonical_git, "_run_git", fake_run_git)
+    blob = prophet_canonical_git.read_canonical_blob("site/prophet/index.json")
+
+    assert blob.source_commit == commit
+    assert blob.source_path == "site/prophet/index.json"
+    assert blob.blob_oid == blob_oid
+    assert blob.body == body
+    assert blob.byte_count == len(body)
+    assert blob.digest == hashlib.sha256(body).hexdigest()
+    fetch = next(
+        arguments
+        for arguments, _environment in calls
+        if "fetch" in arguments
+    )
+    assert fetch == [
+        "-c",
+        "core.hooksPath=/dev/null",
+        "fetch",
+        "--no-tags",
+        "--no-recurse-submodules",
+        "--force",
+        "git@github.com:mastermindx-market-intelligence/macro.git",
+        "+refs/heads/main:refs/prophet-b1/canonical-main",
+    ]
+    assert all("origin" not in arguments for arguments, _environment in calls)
+    immutable_spec = f"{commit}:site/prophet/index.json"
+    assert ["show", immutable_spec] in [arguments for arguments, _environment in calls]
+
+
+def test_prophet_canonical_git_refuses_url_rewrite_oversize_and_unallowlisted_path(
+    monkeypatch,
+    tmp_path,
+):
+    key = tmp_path / "key"
+    monkeypatch.setattr(prophet_canonical_git, "_deploy_key", lambda: key)
+    environment = prophet_canonical_git._git_environment(key)
+    monkeypatch.setattr(
+        prophet_canonical_git,
+        "_run_git",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            [],
+            0,
+            stdout=b"url.ssh://git@github.com/.insteadOf\n",
+            stderr=b"private-config-detail",
+        ),
+    )
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="URL rewrites",
+    ) as rewritten:
+        prophet_canonical_git._refuse_local_url_rewrites(environment)
+    assert "private-config-detail" not in str(rewritten.value)
+
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="not allowlisted",
+    ):
+        prophet_canonical_git.read_canonical_blob("site/premiumdata/private.json")
+
+    calls: list[list[str]] = []
+
+    def oversize_run(arguments, *, environment, timeout, accepted_returncodes=frozenset({0})):
+        del environment, timeout, accepted_returncodes
+        calls.append(arguments)
+        if arguments[0] == "config":
+            return subprocess.CompletedProcess(arguments, 1, stdout=b"", stderr=b"")
+        if arguments[:3] == ["-c", "core.hooksPath=/dev/null", "fetch"]:
+            return subprocess.CompletedProcess(arguments, 0, stdout=b"", stderr=b"")
+        if arguments[:2] == ["rev-parse", "--verify"]:
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                stdout=("a" * 40 + "\n").encode("ascii"),
+                stderr=b"",
+            )
+        if arguments[:2] == ["cat-file", "-t"]:
+            return subprocess.CompletedProcess(arguments, 0, stdout=b"blob\n", stderr=b"")
+        if arguments[:2] == ["cat-file", "-s"]:
+            return subprocess.CompletedProcess(
+                arguments,
+                0,
+                stdout=f"{prophet_canonical_git.MAX_BLOB_BYTES + 1}\n".encode("ascii"),
+                stderr=b"",
+            )
+        raise AssertionError(arguments)
+
+    monkeypatch.setattr(prophet_canonical_git, "_run_git", oversize_run)
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="blob size is unsafe",
+    ):
+        prophet_canonical_git.read_canonical_blob("data/prophet/ledger.jsonl")
+    assert not any(arguments[0] == "show" for arguments in calls)
+
+
+def test_prophet_canonical_git_refuses_linked_worktree_url_rewrite(
+    monkeypatch,
+    tmp_path,
+):
+    repository = tmp_path / "repository"
+    linked = tmp_path / "linked"
+    repository.mkdir()
+    subprocess.run(
+        ["/usr/bin/git", "init", "--initial-branch=main"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.name", "Prophet Test"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.email", "prophet-test@example.invalid"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    tracked = repository / "tracked.txt"
+    tracked.write_text("fixture\n", encoding="utf-8")
+    subprocess.run(
+        ["/usr/bin/git", "add", "tracked.txt"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "commit", "-m", "fixture"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "extensions.worktreeConfig", "true"],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "worktree", "add", "-b", "linked", str(linked)],
+        cwd=repository,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        [
+            "/usr/bin/git",
+            "config",
+            "--worktree",
+            "url.ssh://attacker.invalid/.insteadOf",
+            "git@github.com:",
+        ],
+        cwd=linked,
+        check=True,
+        capture_output=True,
+    )
+
+    monkeypatch.setattr(prophet_canonical_git, "_REPO", linked)
+    environment = prophet_canonical_git._git_environment(tmp_path / "key")
+    with pytest.raises(
+        prophet_canonical_git.CanonicalGitError,
+        match="URL rewrites",
+    ):
+        prophet_canonical_git._refuse_local_url_rewrites(environment)
+
+    home = tmp_path / "home"
+    (home / ".ssh").mkdir(parents=True, mode=0o700)
+    monkeypatch.setattr(prophet_canonical_git, "_process_home", lambda: home)
+    for repository_key in (
+        repository / "sibling-worktree-key",
+        repository / ".git" / "common-directory-key",
+    ):
+        repository_key.write_text("fixture-key-material", encoding="utf-8")
+        repository_key.chmod(0o600)
+        monkeypatch.setenv(
+            prophet_canonical_git.CANONICAL_GIT_KEY_ENV,
+            str(repository_key),
+        )
+        with pytest.raises(
+            prophet_canonical_git.CanonicalGitError,
+            match="dedicated private key root",
+        ):
+            prophet_canonical_git._deploy_key()
+
+
+def test_prophet_canonical_git_fetch_disables_repository_hooks(
+    monkeypatch,
+    tmp_path,
+):
+    source = tmp_path / "source"
+    sink = tmp_path / "sink"
+    hooks = tmp_path / "hooks"
+    source.mkdir()
+    sink.mkdir()
+    hooks.mkdir()
+    subprocess.run(
+        ["/usr/bin/git", "init", "--initial-branch=main"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.name", "Prophet Test"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.email", "prophet-test@example.invalid"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+    )
+    (source / "tracked.txt").write_text("fixture\n", encoding="utf-8")
+    subprocess.run(
+        ["/usr/bin/git", "add", "tracked.txt"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "commit", "-m", "fixture"],
+        cwd=source,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "init", "--initial-branch=main"],
+        cwd=sink,
+        check=True,
+        capture_output=True,
+    )
+    hook = hooks / "reference-transaction"
+    hook.write_text("#!/bin/sh\nexit 97\n", encoding="utf-8")
+    hook.chmod(0o700)
+    subprocess.run(
+        ["/usr/bin/git", "config", "core.hooksPath", str(hooks)],
+        cwd=sink,
+        check=True,
+        capture_output=True,
+    )
+
+    monkeypatch.setattr(prophet_canonical_git, "_REPO", sink)
+    environment = prophet_canonical_git._git_environment(tmp_path / "unused-key")
+    prophet_canonical_git._run_git(
+        [
+            "-c",
+            "core.hooksPath=/dev/null",
+            "fetch",
+            "--no-tags",
+            "--no-recurse-submodules",
+            "--force",
+            str(source),
+            "+refs/heads/main:refs/prophet-b1/canonical-main",
+        ],
+        environment=environment,
+        timeout=30,
+    )
+    fetched = subprocess.run(
+        [
+            "/usr/bin/git",
+            "rev-parse",
+            "--verify",
+            "refs/prophet-b1/canonical-main^{commit}",
+        ],
+        cwd=sink,
+        check=True,
+        capture_output=True,
+    )
+    assert len(fetched.stdout.strip()) in {40, 64}
+
+
+def test_prophet_canonical_git_never_surfaces_subprocess_stderr(monkeypatch):
+    monkeypatch.setattr(
+        prophet_canonical_git.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess(
+            [],
+            128,
+            stdout=b"",
+            stderr=b"TOP-SECRET-SSH-DIAGNOSTIC",
+        ),
+    )
+    with pytest.raises(prophet_canonical_git.CanonicalGitError) as failure:
+        prophet_canonical_git._run_git(
+            ["fetch"],
+            environment={},
+            timeout=1,
+        )
+    assert "TOP-SECRET" not in str(failure.value)
+
+
+def test_prophet_marks_canonical_loader_calls_shared_reader_once(monkeypatch):
+    body = b'{"schema":"prophet.index/v1","plans":[]}\n'
+    calls: list[str] = []
+    monkeypatch.setattr(
+        prophet_canonical_git,
+        "read_canonical_blob",
+        lambda path: calls.append(path) or _canonical_git_blob(path, body),
+    )
+
+    assert prophet_marks._load_index_canonical_git() == {
+        "schema": "prophet.index/v1",
+        "plans": [],
+    }
+    assert calls == ["site/prophet/index.json"]
+
+
+def test_prophet_marks_publish_uses_canonical_git_and_tombstones_empty(monkeypatch):
+    """A stale operations checkout cannot keep an obsolete contract alive
+    (DEC:B1-PROPHET-PUBLIC-SPLIT: publish mode reads the canonical accepted
+    bytes via git, never a public R2 URL)."""
     published: list[tuple[dict, dict]] = []
     index = {
         "schema": "prophet.index/v1",
@@ -1260,7 +1767,7 @@ def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatc
     }
 
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: index)
+    monkeypatch.setattr(prophet_marks, "_load_index_canonical_git", lambda: index)
     monkeypatch.setattr(
         prophet_marks,
         "_load_index_local",
@@ -1288,12 +1795,13 @@ def test_prophet_marks_publish_uses_canonical_r2_and_tombstones_empty(monkeypatc
     assert published[0][1]["evidence_rows"] == []
 
 
-def test_prophet_marks_publish_refuses_local_fallback_when_r2_index_is_unavailable(
+def test_prophet_marks_publish_refuses_local_fallback_when_canonical_git_index_is_unavailable(
     monkeypatch,
 ):
-    """Missing canonical state must not resurrect a stale local plan set."""
+    """Missing canonical state must not resurrect a stale local plan set, and
+    must not fall through to any public URL either."""
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
-    monkeypatch.setattr(prophet_marks, "_load_index_r2", lambda: None)
+    monkeypatch.setattr(prophet_marks, "_load_index_canonical_git", lambda: None)
     monkeypatch.setattr(
         prophet_marks,
         "_load_index_local",
@@ -1313,7 +1821,7 @@ def test_prophet_marks_publish_failure_is_a_build_failure(monkeypatch):
     monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
     monkeypatch.setattr(
         prophet_marks,
-        "_load_index_r2",
+        "_load_index_canonical_git",
         lambda: {
             "schema": "prophet.index/v1",
             "asof": "2026-08-11",
@@ -1324,6 +1832,35 @@ def test_prophet_marks_publish_failure_is_a_build_failure(monkeypatch):
     monkeypatch.setattr(prophet_marks, "_publish_r2", lambda *_args, **_kwargs: None)
 
     assert prophet_marks.build_marks(publish=True) is None
+
+
+def test_prophet_marks_debug_mode_never_reads_canonical_git_or_any_public_url(
+    monkeypatch,
+):
+    """publish=False (debug) reads ONLY the local checkout's generated index —
+    no git call, no R2/public-URL fallback of any kind (DEC:B1-PROPHET-PUBLIC-
+    SPLIT deleted the debug-mode R2 fallback leg entirely)."""
+    monkeypatch.setattr(prophet_marks, "_is_rth_now", lambda: True)
+    monkeypatch.setattr(
+        prophet_marks,
+        "_load_index_canonical_git",
+        lambda: (_ for _ in ()).throw(AssertionError("git must not be read in debug mode")),
+    )
+    monkeypatch.setattr(
+        prophet_marks,
+        "_load_index_local",
+        lambda: {
+            "schema": "prophet.index/v1",
+            "asof": "2026-08-11",
+            "recorded_at": "2026-08-11",
+            "plans": [],
+        },
+    )
+
+    payload = prophet_marks.build_marks(publish=False, dry_run=True)
+
+    assert payload is not None
+    assert payload["marks"] == {}
 
 
 def _option_mark_plan(
@@ -2921,15 +3458,12 @@ def test_option_shadow_sync_installs_exact_current_main_receipt_before_activatio
     _lifecycle_append_close(source_ledger, plan_id="ALREADY-CLOSED")
     source_body = source_ledger.read_bytes()
     source_commit = "c" * 40
+    canonical_reads: list[str] = []
     monkeypatch.setattr(
-        option_lifecycle,
-        "_resolve_current_main_commit",
-        lambda: source_commit,
-    )
-    monkeypatch.setattr(
-        option_lifecycle,
-        "_download_current_main_ledger",
-        lambda commit: source_body if commit == source_commit else b"",
+        prophet_canonical_git,
+        "read_canonical_blob",
+        lambda path: canonical_reads.append(path)
+        or _canonical_git_blob(path, source_body, source_commit=source_commit),
     )
 
     synced = option_lifecycle.sync_canonical_ledger(
@@ -2950,6 +3484,7 @@ def test_option_shadow_sync_installs_exact_current_main_receipt_before_activatio
     assert receipt["source_commit"] == source_commit
     assert receipt["source_path"] == "data/prophet/ledger.jsonl"
     assert receipt["source_ref"] == "refs/heads/main"
+    assert canonical_reads == ["data/prophet/ledger.jsonl"]
 
     mark_root = tmp_path / "private-marks"
     _lifecycle_emit_mark(
@@ -2977,15 +3512,17 @@ def test_option_shadow_sync_refuses_current_main_ledger_rewrite_without_replacin
     _lifecycle_append_close(source_ledger, plan_id="ALREADY-CLOSED")
     original_body = source_ledger.read_bytes()
     source_commit = "d" * 40
+    canonical_blob = [
+        _canonical_git_blob(
+            "data/prophet/ledger.jsonl",
+            original_body,
+            source_commit=source_commit,
+        )
+    ]
     monkeypatch.setattr(
-        option_lifecycle,
-        "_resolve_current_main_commit",
-        lambda: source_commit,
-    )
-    monkeypatch.setattr(
-        option_lifecycle,
-        "_download_current_main_ledger",
-        lambda _commit: original_body,
+        prophet_canonical_git,
+        "read_canonical_blob",
+        lambda _path: canonical_blob[0],
     )
     option_lifecycle.sync_canonical_ledger(lifecycle_root=lifecycle_root)
 
@@ -3007,15 +3544,10 @@ def test_option_shadow_sync_refuses_current_main_ledger_rewrite_without_replacin
 
     rewritten = original_body.replace(b'"outcome": "T1_HIT"', b'"outcome": "EXPIRED"')
     assert rewritten != original_body
-    monkeypatch.setattr(
-        option_lifecycle,
-        "_resolve_current_main_commit",
-        lambda: "e" * 40,
-    )
-    monkeypatch.setattr(
-        option_lifecycle,
-        "_download_current_main_ledger",
-        lambda _commit: rewritten,
+    canonical_blob[0] = _canonical_git_blob(
+        "data/prophet/ledger.jsonl",
+        rewritten,
+        source_commit="e" * 40,
     )
     with pytest.raises(ValueError, match="no longer extends"):
         option_lifecycle.sync_canonical_ledger(lifecycle_root=lifecycle_root)

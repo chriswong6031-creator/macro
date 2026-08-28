@@ -1491,11 +1491,23 @@ class TestLadderOnTheCommittedLedgers:
     class it was built for actually resolves."""
 
     def test_the_asts_class_now_resolves_and_names_its_rung(self):
+        """Re-pinned 2026-08-19 (main-red-repair): the rung moved, honestly.
+
+        `data/baskets/ohlcv/ASTS.parquet` stops at 2026-08-17 while the cache
+        panel's ceiling (`min_last`) has advanced to 2026-08-18 — the same
+        "a rung that hits but ends before the ceiling is a MISS, so the walk
+        continues" mechanism `resolve_close`'s own docstring documents for
+        ARWR/FN/HL/TR. Measured directly (`resolve_close("ASTS", ...).tried`
+        == ``['baskets_ohlcv', 'yahoo']``): baskets_ohlcv is tried and found,
+        but rejected as stale against the ceiling, and yahoo (through
+        2026-08-18) wins. This is the ladder doing exactly what it is built
+        to do, not a regression — so the pin moves to match, asserting the
+        one honest rung rather than loosening to "any adjusted rung"."""
         closes = ppm.load_closes(ROOT)
         assert "ASTS" not in closes.columns, (
             "ASTS must be absent from the caches or this proves nothing")
         series, source = ppm.close_resolver(ROOT, closes)("ASTS")
-        assert series is not None and source == ppm.SOURCE_BASKET_OHLCV
+        assert series is not None and source == ppm.SOURCE_YAHOO
         assert len(series) > 250
 
     def test_most_cached_names_now_resolve_on_an_adjusted_rung(self):

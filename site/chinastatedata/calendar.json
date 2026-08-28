@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-18",
-  "generated_at_utc": "2026-08-18T10:25:29.276274+00:00",
+  "asof": "2026-08-26",
+  "generated_at_utc": "2026-08-27T23:41:06.198865+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-18",
+      "date": "2026-08-26",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -14,42 +14,6 @@
       "impact": "high",
       "source_class": "feed",
       "source": "china_earnings.calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-18",
-      "window_end": null,
-      "etype": "HK_UNEMP",
-      "label_en": "HK unemployment",
-      "label_zh": "香港失业率",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-20",
-      "window_end": null,
-      "etype": "LPR",
-      "label_en": "LPR fix (loan prime rate)",
-      "label_zh": "LPR 报价（贷款市场报价利率）",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "rule",
-      "source": "engine.china_event_calendar",
-      "approx": false
-    },
-    {
-      "date": "2026-08-20",
-      "window_end": null,
-      "etype": "HK_CPI",
-      "label_en": "HK CPI (composite)",
-      "label_zh": "香港 CPI（综合）",
-      "region": "hk",
-      "impact": "high",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
       "approx": false
     },
     {
@@ -363,6 +327,42 @@
       "source_class": "rule",
       "source": "engine.hk_event_calendar",
       "approx": false
+    },
+    {
+      "date": "2026-10-05",
+      "window_end": null,
+      "etype": "CAIXIN_S",
+      "label_en": "Caixin Services PMI",
+      "label_zh": "财新服务业 PMI",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-07",
+      "window_end": null,
+      "etype": "FXRES",
+      "label_en": "FX reserves (SAFE)",
+      "label_zh": "外汇储备（外管局）",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-07",
+      "window_end": null,
+      "etype": "TRADE",
+      "label_en": "Customs trade (exports/imports)",
+      "label_zh": "海关进出口数据",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
     }
   ],
   "data_gaps": [

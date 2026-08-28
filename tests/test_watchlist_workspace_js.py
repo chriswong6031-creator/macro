@@ -156,15 +156,23 @@ def test_percent_mode_normalises_to_100_and_does_not_claim_it_was_told():
 
 
 @needs_node
-def test_a_partially_sized_book_is_flagged_as_assumed_not_silently_filled():
-    """Filling a missing size with the average is a reasonable default and a lie if it
-    is not disclosed — `assumed` is what drives the "No sizes given" meta line."""
+def test_a_partially_sized_book_abstains_rather_than_average_filling():
+    """A1A (§12, defect 'hidden weighting completion'): filling a missing size with the
+    AVERAGE of the sized rows and blending it into the same distribution as the real
+    ones is exactly the fabrication the weighting law forbids — some sized / some
+    unsized must ABSTAIN, never silently average-fill. This is the mutation-red pin for
+    'restore average-filling missing sizes': reintroducing the old `avg =
+    tot/sizedCount; filled = rows.map(r => r.size||avg)` block turns it red (`assumed`
+    stays true but `abstain` disappears and every item carries a fabricated `money`)."""
     out = _wl(
         "var p = WL.parseBook('AAPL 60, MSFT 20, NVDA');"
         "OUT(WL.weightsOf(p, 'pct'));"
     )
     assert out["assumed"] is True
-    assert sum(i["money"] for i in out["items"]) == pytest.approx(100, abs=1e-6)
+    assert out["abstain"] is True
+    # no fabricated distribution — every row's money is explicitly unknown, never a
+    # number quietly derived from the two rows that DID carry a size
+    assert all(i["money"] is None for i in out["items"])
 
 
 @needs_node
@@ -587,16 +595,20 @@ def test_book_filter_regression_an_empty_model_never_resets_a_persisted_book():
     """DEFECT 2. `refresh()` fell back to All whenever the active book had no members —
     including on first paint, before positions had loaded, and it PERSISTED that reset,
     so the visitor's choice never came back. "We don't know yet" and "that book is gone"
-    have to be different answers."""
+    have to be different answers.
+
+    A1A retired `refresh(watchSyms, rows, priceOf)` for `refresh(rows, priceOf)` — the
+    strip is Portfolio-only now (§11) — so this pins the same regression against
+    Portfolio ROWS directly rather than a watchlist ∪ rows union."""
     out = _run(
         # the module reads the persisted book AT REQUIRE TIME, so the seed must precede it
         "localStorage.setItem('mdash.book.v1', 'hk');\n"
         "var MB = require(%s);\n"
-        "MB.refresh([], null, null);\n"                       # first paint: nothing loaded
+        "MB.refresh(null, null);\n"                            # first paint: nothing loaded
         "var afterEmpty = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
-        "MB.refresh(['NVDA'], [{ticker:'0700.HK'},{ticker:'NVDA'}], function(){return 1;});\n"
+        "MB.refresh([{ticker:'0700.HK'},{ticker:'NVDA'}], function(){return 1;});\n"
         "var afterLoad = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
-        "MB.refresh(['NVDA'], [{ticker:'NVDA'}], function(){return 1;});\n"   # hk genuinely gone
+        "MB.refresh([{ticker:'NVDA'}], function(){return 1;});\n"   # hk genuinely gone
         "var afterGone = { book: MB.getBook(), stored: localStorage.getItem('mdash.book.v1') };\n"
         "OUT({afterEmpty: afterEmpty, afterLoad: afterLoad, afterGone: afterGone});"
         % json.dumps(str(MARKET_BOOKS))
@@ -683,7 +695,12 @@ def test_portfolio_no_longer_carries_the_retired_fx_seeding_workaround():
     import re
 
     src = PORTFOLIO.read_text()
-    body = src[src.index("function pushFxWeights"):src.index("function pushFxWeights") + 1800]
+    start = src.index("function pushFxWeights")
+    # bounded by the NEXT top-level function declaration rather than a fixed-width
+    # window — A1A's S3 abstain-branch fix (review 2026-08-20) grew this function well
+    # past the old 1800-char slice, which silently truncated before reaching the very
+    # call this test exists to find.
+    body = src[start:src.index("\n  function ", start + 10)]
     # the comment that RECORDS the retirement names the retired call; a scan that cannot
     # tell code from prose would fail on its own documentation
     code = re.sub(r"/\*.*?\*/", "", body, flags=re.S)
@@ -693,6 +710,178 @@ def test_portfolio_no_longer_carries_the_retired_fx_seeding_workaround():
         "dead code and the regression it fixes is untested in production"
     )
     assert "FX.setAutoWeights(" in code
+
+
+@needs_node
+def test_leaving_watchlists_mode_retracts_the_watchlist_from_portfolio_risk():
+    """Market OS freeze §13 — no Watchlist name in Portfolio risk — driven as the ROUND
+    TRIP the reader actually performs, not as a call-site assertion.
+
+    Visit Watchlists mode, then click Portfolio with nothing in the book. Holdings
+    correctly said "No positions yet" while the Risk Center's Concentration tab went on
+    reading "One name, ETH-USD, carries 40% of this book's risk" off names the reader does
+    not own. A fresh load straight into Portfolio mode looked perfect, which is what kept
+    this hidden: the leak needs a prior Watchlists render to have filled `LAST`.
+
+    Neither end of the chain was at fault. watchlist.js stopped feeding the blob to FX on
+    the Portfolio click (the test above), portfolio.js correctly reported an empty book
+    (`setAutoWeights(null)`), and watchlist_risk.js recomputes purely from what it is
+    handed. In between, `render()` fell back to `LAST` — the WATCHLIST — whenever there
+    was no auto book, so the empty-book report REPUBLISHED the watchlist as "this book".
+
+    The assertion is the composed Concentration tab, so it pins what the reader sees
+    rather than the seam's shape: the watchlist read is proven to exist first (otherwise
+    an empty string later proves nothing), and is then required to be gone.
+
+    MUTATION CHECK: restore `var universe = autoMode ? Object.keys(AUTO_W) : tickers;` in
+    factor_exposure.js and pfConc names ETH-USD again."""
+    model = {
+        "factors": [{"key": "mkt", "label": "Market", "tier": "high"},
+                    {"key": "growth", "label": "Growth / Tech", "tier": "high"}],
+        "factor_cov": {"mkt": {"mkt": 0.03, "growth": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.02}},
+        "betas": {
+            "ETH-USD": {"mkt": 1.6, "growth": 1.4, "idio_vol": 0.80, "name": "Ethereum"},
+            "AAPL": {"mkt": 1.0, "growth": 0.5, "idio_vol": 0.25, "name": "Apple"},
+            "NVDA": {"mkt": 1.3, "growth": 0.9, "idio_vol": 0.40, "name": "NVIDIA"},
+        },
+    }
+    out = _run(
+        """
+        var __mode = 'watchlists';               // html[data-ws-mode], owned by setMode()
+        var __panel = { style: {}, innerHTML: '',
+          querySelectorAll: function () { return []; }, querySelector: function () { return null; } };
+        document.documentElement.getAttribute = function (k) {
+          if (k === 'data-ws-mode') return __mode;
+          if (k === 'data-lang') return 'en';
+          return null;
+        };
+        document.getElementById = function (id) { return id === 'fx_panel' ? __panel : null; };
+        global.fetch = function () {
+          return Promise.resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+        };
+        window.MB = { modeledOnly: function (s) { return s; }, isModeled: function () { return true; },
+                      getBook: function () { return 'all'; },
+                      presentBooks: function () { return ['us']; } };
+        require(%s);                              // risk_core.js -> window.RiskCore
+        var WRISK = require(%s);                  // watchlist_risk.js -> the tab builders
+        require(%s);                              // factor_exposure.js -> window.FX
+
+        function lastWeights() {
+          for (var i = __events.length - 1; i >= 0; i--) {
+            if (__events[i].type === 'fx-weights') return __events[i].detail;
+          }
+          return null;
+        }
+        /* The Concentration tab exactly as the page composes it: recomputeBook's modeled
+           filter + RiskCore read, publishBook's thin gate (rcTabs null -> watchlist.js
+           paints RC_THIN), then the tab builder. */
+        function concTab(w) {
+          if (!w) return null;
+          var wIn = {};
+          WRISK.modeledUniverse(w.universe).forEach(function (t) {
+            var v = w.wmap[t];
+            wIn[t] = (typeof v === 'number' && isFinite(v) && v > 0) ? v : 1;
+          });
+          var RR = window.RiskCore.read(MODEL, wIn);
+          if (!RR.calm.ok) return '';
+          var cov = RR.calm.coverage || window.RiskCore.coverage(MODEL, wIn);
+          return WRISK.concentrationHTML(RR.calm, cov);
+        }
+
+        // 1) Watchlists mode: watchlist.js feeds the watched names to FX
+        window.FX.update(['ETH-USD', 'AAPL', 'NVDA']);
+        setTimeout(function () {
+          var wl = lastWeights();
+          var wlConc = concTab(wl);
+          // 2) the reader clicks Portfolio — setMode() flips the attribute...
+          __mode = 'portfolio';
+          // 3) ...and portfolio.js reports an empty book (0 modeled open rows)
+          window.FX.setAutoWeights(null);
+          setTimeout(function () {
+            var pf = lastWeights();
+            OUT({
+              wlUniverse: wl ? wl.universe.slice().sort() : [],
+              wlConc: wlConc || '',
+              pfUniverse: pf ? pf.universe.slice() : null,
+              pfMode: pf && pf.mode,
+              pfConc: concTab(pf),
+              panelShown: __panel.style.display
+            });
+          }, 30);
+        }, 30);
+        """ % (json.dumps(str(ROOT / "templates" / "risk_core.js")),
+               json.dumps(str(ROOT / "templates" / "watchlist_risk.js")),
+               json.dumps(str(ROOT / "templates" / "factor_exposure.js"))),
+        {"MODEL": model},
+    )
+    # precondition: Watchlists mode really does publish the watchlist and really does
+    # produce a concentration read. Without this, the empty read below proves nothing.
+    assert out["wlUniverse"] == ["AAPL", "ETH-USD", "NVDA"], out
+    assert "ETH-USD" in out["wlConc"], (
+        "the fixture never produced a watchlist-derived Concentration read, so the "
+        "assertion below cannot tell a fix from an inert test"
+    )
+    # the retraction: an empty book is PUBLISHED, not merely left unsaid
+    assert out["pfUniverse"] == [], out
+    # and the tab the reader lands on is the thin state, not stale watchlist percentages
+    assert out["pfConc"] == "", out
+    assert "ETH-USD" not in (out["pfConc"] or ""), out
+    assert out["panelShown"] == "none", out
+
+
+@needs_node
+def test_an_emptied_portfolio_retracts_its_own_risk_read_too():
+    """The same defect with the watchlist out of the picture: `setAutoWeights` bailed on
+    `!LAST.length && !autoNames`, and "nothing anywhere" is exactly when a book already on
+    screen must be RETRACTED. With an empty watchlist (`LAST` empty), deleting down to one
+    position announced nothing at all, so the Risk Center kept describing the book the
+    reader had just dismantled.
+
+    MUTATION CHECK: restore that early return and `retracted` is false — the second
+    announcement never happens and the AAPL/NVDA read stands."""
+    model = {
+        "factors": [{"key": "mkt", "label": "Market", "tier": "high"},
+                    {"key": "growth", "label": "Growth / Tech", "tier": "high"}],
+        "factor_cov": {"mkt": {"mkt": 0.03, "growth": 0.0},
+                       "growth": {"mkt": 0.0, "growth": 0.02}},
+        "betas": {"AAPL": {"mkt": 1.0, "growth": 0.5, "idio_vol": 0.25},
+                  "NVDA": {"mkt": 1.3, "growth": 0.9, "idio_vol": 0.40}},
+    }
+    out = _run(
+        """
+        var __panel = { style: {}, innerHTML: '',
+          querySelectorAll: function () { return []; }, querySelector: function () { return null; } };
+        document.documentElement.getAttribute = function (k) {
+          return k === 'data-ws-mode' ? 'portfolio' : (k === 'data-lang' ? 'en' : null);
+        };
+        document.getElementById = function (id) { return id === 'fx_panel' ? __panel : null; };
+        global.fetch = function () {
+          return Promise.resolve({ ok: true, json: function () { return Promise.resolve(MODEL); } });
+        };
+        require(%s);
+        // THE CASE: the watchlist is empty, so FX.update is never called — `LAST` stays [].
+        window.FX.setAutoWeights({ AAPL: 15000, NVDA: 20000 });
+        setTimeout(function () {
+          var n = __events.length;
+          // the reader deletes a position: one modeled row left, so portfolio.js sends null
+          window.FX.setAutoWeights(null);
+          setTimeout(function () {
+            var after = __events.slice(n).filter(function (e) { return e.type === 'fx-weights'; });
+            OUT({ retracted: after.length > 0,
+                  universe: after.length ? after[after.length - 1].detail.universe : null,
+                  panelShown: __panel.style.display });
+          }, 30);
+        }, 30);
+        """ % json.dumps(str(ROOT / "templates" / "factor_exposure.js")),
+        {"MODEL": model},
+    )
+    assert out["retracted"], (
+        "the emptied book was never announced — the Risk Center keeps describing a book "
+        "the reader no longer has"
+    )
+    assert out["universe"] == [], out
+    assert out["panelShown"] == "none", out
 
 
 def test_seam_segment_cap_is_bounded_and_the_denominators_are_not():
@@ -1840,6 +2029,95 @@ def test_portfolio_mode_does_not_feed_the_watchlist_blob_to_fx():
     assert out["pf"] == 1, out
 
 
+@needs_node
+def test_setmode_into_portfolio_clears_a_watchlists_derived_risk_payload_first():
+    """Sol A1A blocker 1 (Risk Center residue), root-caused by the parallel debugger:
+    window.FX's universe + this file's own retained RISK payload form a latch nobody
+    invalidates at the mode boundary — a RISK payload set while in Watchlists mode
+    (e.g. a Concentration read keyed to the WATCHLIST'S names) survived a switch into
+    Portfolio and renderRiskCenter() happily repainted it there, even with 0 Portfolio
+    positions. FROZEN FIX: setMode() resets RISK to the same empty default literal
+    setRisk()/the module init use, BEFORE calling render() — so a Watchlists-mode
+    payload can never be the one renderRiskCenter() paints once the reader has
+    switched into Portfolio.
+
+    Behavioral (not source-pinned): this drives the REAL setMode()/setRisk()/
+    renderRiskCenter() chain end to end and reads the painted `#rc_body` DOM, the same
+    shape test_portfolio_mode_does_not_feed_the_watchlist_blob_to_fx above already
+    uses for this exact defect family — a full DOM shim with real innerHTML capture
+    is not impractical here, so no structural-only fallback was needed.
+
+    MUTATION CHECK: delete the `if (enteringPortfolio) { RISK = {...}; }` reset block
+    from setMode() (portfolio.js's `templates/watchlist.js`) and this reds — the
+    'WATCHLIST_RESIDUE_MARKER' string, published to RISK.concHTML/rcTabs.conc while
+    in Watchlists mode, then leaks straight into rc_body after the switch.
+
+    LAW 3 mechanical accommodation (A1A round-3, F6 adversarial-review finding):
+    setRisk() now rejects any payload without provenance matching the CURRENT
+    scope+generation (fail-closed). Without a `prov` field this call would be
+    rejected BEFORE ever reaching `RISK =`, which would make the assertions
+    below pass vacuously (the enteringPortfolio reset this test exists to pin
+    would no longer be the thing preventing the residue). Stamping
+    `prov: window.WS.prov()`, read live at the moment of the call — exactly
+    what a real producer does — makes the call land in RISK exactly as it did
+    before LAW 3 existed, so the mutation above is red-able again."""
+    out = _run(
+        """
+        var nodes = {};
+        function node(id) {
+          if (!nodes[id]) nodes[id] = {
+            id: id, innerHTML: '', textContent: '', style: {}, className: '',
+            _attrs: {},
+            classList: { contains: function () { return false; }, toggle: function () {},
+                         add: function () {}, remove: function () {} },
+            setAttribute: function (k, v) { this._attrs[k] = v; },
+            getAttribute: function (k) { return this._attrs[k] != null ? this._attrs[k] : null; },
+            querySelector: function () { return null; },
+            querySelectorAll: function () { return []; },
+            addEventListener: function () {}
+          };
+          return nodes[id];
+        }
+        document.getElementById = function (id) { return node(id); };
+        // rc_tabs.querySelectorAll needs to return an array so renderRiskCenter's
+        // aria-selected loop is a no-op rather than a throw
+        node('rc_tabs').querySelectorAll = function () { return []; };
+        window.SD = {};          // wsState() -> 'signed' (the gated shell only boots signed-in)
+        window.RiskCore = {};    // renderRiskCenter()'s anon-lockshell gate: present -> real path
+        window.PF = { count: function () { return 0; }, render: function () {} };
+        var WLT = require(%s);
+
+        // start in Watchlists mode and publish a RISK payload keyed to the WATCHLIST'S
+        // names — exactly what watchlist_risk.js would compute while mode==='watchlists'
+        WLT.setMode('watchlists', false);
+        window.WS.setRisk({
+          shares: null,
+          concHTML: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>',
+          rcTabs: { conc: '<p>WATCHLIST_RESIDUE_MARKER 21%%</p>' },
+          labHTML: '', seamItems: null, coverage: null, headline: null,
+          prov: window.WS.prov()
+        });
+        var duringWatchlists = node('rc_body').innerHTML;   // setRisk() does not paint
+                                                             // while mode !== 'portfolio'
+
+        // switch into Portfolio (0 positions) — the RISK payload above must never
+        // survive to be painted here
+        WLT.setMode('portfolio', false);
+        var afterSwitch = node('rc_body').innerHTML;
+
+        OUT({ duringWatchlists: duringWatchlists, afterSwitch: afterSwitch, mode: window.WS.mode() });
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["mode"] == "portfolio"
+    # sanity: setRisk() genuinely did NOT paint while still in Watchlists mode (a
+    # broken seed would make the assertion below pass for the wrong reason)
+    assert out["duringWatchlists"] == ""
+    assert "WATCHLIST_RESIDUE_MARKER" not in out["afterSwitch"]
+    # the honest thin-book placeholder painted instead — never a blank panel either
+    assert "Concentration" in out["afterSwitch"]
+    assert "Add at least two positions" in out["afterSwitch"]
+
+
 def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition():
     """PR #5575 structural half: elevated is named once and read by all three sites.
 
@@ -1864,3 +2142,296 @@ def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition(
     assert stack.count("isElevatedGrade(") == 2, (
         "rules 1 and 3 are the two elevated-grade stack rules and both must read the "
         "shared definition; found %d call(s)" % stack.count("isElevatedGrade("))
+
+
+# ---------------------------------------------------------------------------
+# Serving-layer wiring: a script tag in watchlist.html.j2 is a PROMISE that the
+# asset actually loads for the page's audience. portfolio_state.js shipped in
+# #6098 referenced by the page but absent from app/deploy/Caddyfile's explicit
+# anonymous matchers, so production served it as regwall 401 — the page would
+# have silently run its PS-absent fallback for every anonymous visitor forever
+# (found in post-merge live verification, repaired in the follow-up PR that
+# added this test). Every ?v=-stamped script on the page must be either present
+# in EVERY Caddyfile matcher that names /watchlist.js (the funnel-shell set) or
+# named here as deliberately account-gated.
+# ---------------------------------------------------------------------------
+def test_every_watchlist_page_script_is_served_or_deliberately_gated():
+    import re
+
+    root = Path(__file__).resolve().parents[1]
+    j2 = (root / "templates" / "watchlist.html.j2").read_text(encoding="utf-8")
+    caddy = (root / "app" / "deploy" / "Caddyfile").read_text(encoding="utf-8")
+
+    # Deliberately account-gated page scripts (regwall 401 for anonymous BY
+    # DESIGN — the signed-in shell reloads once to pick them up). Adding a
+    # script here is an authority decision, not a convenience.
+    GATED = {"stockdata.js", "factor_exposure.js", "risk_core.js", "watchlist_risk.js"}
+
+    stamped = set(re.findall(r'<script src="([a-z_0-9]+\.js)\?v=\d+"', j2))
+    assert "watchlist.js" in stamped, "sentinel: the page must reference its own shell"
+
+    shell_lines = [ln for ln in caddy.splitlines() if "/watchlist.js" in ln]
+    assert len(shell_lines) >= 4, (
+        "expected the four Caddyfile matchers naming /watchlist.js "
+        f"(anonymous-open x2, public path, versioned cache); found {len(shell_lines)}"
+    )
+
+    missing = {}
+    for script in sorted(stamped - GATED):
+        absent = [i for i, ln in enumerate(shell_lines) if f"/{script}" not in ln]
+        if absent:
+            missing[script] = absent
+    assert not missing, (
+        "watchlist.html.j2 references scripts the Caddyfile does not serve "
+        "anonymously in every shell matcher (regwall will 401 them): "
+        f"{missing} — add each to every matcher naming /watchlist.js in "
+        "app/deploy/Caddyfile, or add it to GATED above if the 401 is intended."
+    )
+
+
+@needs_node
+def test_entering_watchlists_mode_releases_auto_weights_back_to_manual():
+    """Harness non-vacuity follow-on (Sol post-review, found via the browser
+    after-proof re-run): portfolio.js's own render passes push AUTO_W (even the
+    honest-empty {} F2 requires) regardless of which tab is active, so entering
+    Watchlists mode used to inherit whatever AUTO_W state the Portfolio last left
+    behind — factor_exposure.js's `autoMode = AUTO_W !== null` stayed locked into
+    'auto' with nothing in it, silently blanking the Watchlists tab's own panel.
+
+    MUTATION CHECK: delete the `window.FX.setAutoWeights(null);` call from
+    render()'s `mode === 'watchlists'` branch and this reds — fxCalls would never
+    see a `null` push when switching into Watchlists mode."""
+    out = _run(
+        """
+        var fxCalls = [];
+        var nodes = {};
+        function node(id) {
+          if (!nodes[id]) nodes[id] = {
+            id: id, innerHTML: '', textContent: '', style: {}, className: '',
+            classList: { contains: function () { return false; }, toggle: function () {},
+                         add: function () {}, remove: function () {} },
+            setAttribute: function () {}, getAttribute: function () { return null; },
+            querySelector: function () { return null; },
+            querySelectorAll: function () { return []; },
+            addEventListener: function () {}
+          };
+          return nodes[id];
+        }
+        document.getElementById = function (id) { return node(id); };
+        window.SD = {};
+        window.FX = {
+          setAutoWeights: function (w) { fxCalls.push(w); },
+          update: function () {}
+        };
+        window.MB = { refresh: function () {}, modeledOnly: function (s) { return s; },
+                      marketOf: function () { return 'us'; }, inActive: function () { return true; } };
+        window.PF = { count: function () { return 0; }, render: function () {} };
+        var WLT = require(%s);
+        window.WL.replace({v:1, updated:'2026-08-20T00:00:00.000Z',
+          items:[{t:'AAPL', added:'2026-08-20T00:00:00.000Z', note:''}],
+          order:['AAPL'], settings:{}});
+        fxCalls = [];
+        WLT.setMode('watchlists', false);
+        OUT({ fxCalls: fxCalls, mode: window.WS.mode() });
+        """ % json.dumps(str(WATCHLIST))
+    )
+    assert out["mode"] == "watchlists"
+    assert None in out["fxCalls"], out["fxCalls"]
+
+# ===========================================================================
+# 12. the ANONYMOUS Risk Center — the lock shell, and the CSS that is the
+#     other half of the two early returns in render()
+# ===========================================================================
+#
+# Reported 2026-08-20 as a defect: "render() returns before calling renderRiskCenter()
+# for anonymous visitors, so anon users get an EMPTY Risk Center body instead of the
+# lock shell; the lock-shell branch is unreachable for the audience it was written
+# for." The OBSERVATION behind that report is real and reproducible — reading
+# `#rc_body.innerHTML` in the console of a signed-out production page does return ''.
+# The CONCLUSION is not. In both states that skip renderRiskCenter() the panel is
+# display:none, and in the one anonymous state where the panel IS on screen
+# (`anon-analyzed`, portfolio mode) renderAnonBook() calls renderRiskCenter() and the
+# lock shell paints. Verified live 2026-08-20 on www.mastermind-x.com/watchlist.html,
+# signed out, RiskCore/SD absent (the gated scripts 401 by design):
+#
+#   anon-empty      -> #ws_sec_rc computed display 'none', not in the layout, rc_body ''
+#   after a paste   -> data-ws-state="anon-analyzed", display 'block', VISIBLE,
+#                      rc_body 551 chars carrying .lockshell + "Risk reads come with
+#                      a free account"
+#
+# So the shell is not dead and the JS needed no repair. What was missing is the PIN:
+# the correctness of those early returns lives in a DIFFERENT FILE from the returns
+# themselves. Delete one rule from templates/watchlist.html.j2 and the reported bug
+# becomes real — an empty, VISIBLE Risk Center on the anonymous funnel surface, which
+# is exactly the "empty box on the anonymous shell" regression labFallback() was
+# written to end. These tests pin both halves together, so the pairing cannot be
+# broken from either side, and so the next reader is not left re-deriving it from a
+# console that shows only one of the two facts.
+
+# The base SHIM answers every getElementById with null, which is correct for the pure
+# logic above: render() returns at hasUI() and nothing paints. These tests need the
+# opposite — the smallest real element registry that lets render() reach the panel.
+RC_IDS = [
+    "ws_modes",                    # isWorkspace(): the W2 workspace, not the legacy grid
+    "rc_body", "rc_tabs", "rc_lab",
+    "ws_entry_in", "ws_entry_err",  # runEntry(): the anonymous funnel's front door
+    "wl_starters",                 # renderStarters(): so the anon-empty branch does real work
+]
+
+DOM_PATCH = """
+var __REG = {};
+function __mk(id) {
+  return {
+    id: id, innerHTML: '', textContent: '', value: '', style: {}, _a: {},
+    getAttribute: function (k) { return this._a[k] === undefined ? null : this._a[k]; },
+    setAttribute: function (k, v) { this._a[k] = v; },
+    querySelector: function () { return null; },
+    querySelectorAll: function () { return []; },
+    addEventListener: function () {}, appendChild: function () {},
+    closest: function () { return null; },
+    classList: { add: function () {}, remove: function () {}, toggle: function () {} }
+  };
+}
+__IDS.forEach(function (id) { __REG[id] = __mk(id); });
+var __ROOT = {};
+document.documentElement.setAttribute = function (k, v) { __ROOT[k] = v; };
+document.documentElement.getAttribute = function (k) {
+  return k === 'data-lang' ? 'en' : (__ROOT[k] === undefined ? null : __ROOT[k]);
+};
+document.getElementById = function (id) { return __REG[id] || null; };
+function EL(id) { return __REG[id]; }
+function ROOT_ATTR(k) { return __ROOT[k] === undefined ? null : __ROOT[k]; }
+"""
+
+
+def _wl_dom(js_body: str, ids: list[str] | None = None) -> dict:
+    """`_wl` with a DOM the workspace can paint into, so render() reaches the Risk
+    Center instead of returning at hasUI(). Anonymous by construction: neither
+    window.SD nor window.RiskCore is defined, which is what the 401'd gated scripts
+    leave behind on the real page.
+
+    The module surface binds as `WLM`, NOT as `WL`. `node -e` evaluates at global
+    scope, so a top-level `var WL = require(...)` writes global.WL — and this shim
+    aliases window to global, so that assignment CLOBBERS the browser export the file
+    installed as `window.WL`, taking `render` with it. `_wl` above can afford that
+    because it only ever touches the module surface; these tests need both."""
+    return _run(
+        "var __IDS = %s;\n" % json.dumps(ids or RC_IDS)
+        + DOM_PATCH
+        + "var WLM = require(%s);\n" % json.dumps(str(WATCHLIST))
+        + js_body
+    )
+
+
+def _decl_block(css: str, selector: str) -> str:
+    """The `{...}` body of the rule whose selector LIST contains `selector`. Selectors
+    in a group are comma-separated with no braces between them, so the first `{` after
+    the selector opens that group's own block."""
+    i = css.index(selector)
+    lo = css.index("{", i)
+    return css[lo + 1:css.index("}", lo)]
+
+
+@needs_node
+def test_the_anonymous_risk_center_paints_the_lock_shell_not_an_empty_body():
+    """`anon-analyzed` is the ONE anonymous state where #ws_sec_rc is on screen, and
+    it is the state the lock shell was written for. renderAnonBook() -> 
+    renderRiskCenter() -> the `!window.RiskCore || !window.SD` branch must leave the
+    free-account shell in the body, and renderLab() must leave the Scenario Lab
+    fallback in #rc_lab rather than the empty box that fallback exists to end.
+
+    MUTATION CHECK: drop the `renderRiskCenter()` call from either exit of
+    renderAnonBook() and rc_body comes back ''."""
+    out = _wl_dom(
+        "EL('ws_entry_in').value = 'AAPL 40, MSFT 35, NVDA 25';\n"
+        "WLM.runEntry();\n"
+        "OUT({state: ROOT_ATTR('data-ws-state'),\n"
+        "     body: EL('rc_body').innerHTML,\n"
+        "     lab: EL('rc_lab').innerHTML});"
+    )
+    assert out["state"] == "anon-analyzed"
+    assert "lockshell" in out["body"], (
+        "the anonymous Risk Center painted no lock shell — an anonymous visitor with a "
+        f"pasted book sees an EMPTY but VISIBLE panel. body={out['body']!r}"
+    )
+    assert "rc_cta" in out["body"], "the lock shell lost its free-account CTA"
+    assert "lab-say" in out["lab"], (
+        "#rc_lab is empty on the anonymous shell — that is the #5463-class empty box "
+        f"labFallback() was written to prevent. lab={out['lab']!r}"
+    )
+
+
+@needs_node
+def test_the_lock_shell_survives_a_mode_switch_away_and_back():
+    """The reported repro switched modes and watched rc_body. Watchlists mode returns
+    before renderRiskCenter(), which is safe ONLY because the whole
+    `data-ws-mode="portfolio"` container is hidden there (pinned below) — and coming
+    back to Portfolio must repaint the shell rather than leave the panel blank."""
+    out = _wl_dom(
+        "EL('ws_entry_in').value = 'AAPL 40, MSFT 35, NVDA 25';\n"
+        "WLM.runEntry();\n"
+        "var painted = EL('rc_body').innerHTML;\n"
+        "WLM.setMode('watchlists', false); window.WL.render();\n"
+        "EL('rc_body').innerHTML = '';\n"
+        "WLM.setMode('portfolio', false); window.WL.render();\n"
+        "OUT({painted: painted, back: EL('rc_body').innerHTML});"
+    )
+    assert "lockshell" in out["painted"]
+    assert "lockshell" in out["back"], (
+        "returning to Portfolio mode left the Risk Center empty — the panel is visible "
+        f"in this state, so this is a blank box on the funnel. back={out['back']!r}"
+    )
+
+
+@needs_node
+def test_anon_empty_skips_the_panel_and_the_page_is_what_hides_it():
+    """The cross-file pairing, asserted in ONE place because neither half is safe
+    alone. render() returns at the `anon-empty` branch without painting the Risk
+    Center; that is honest ONLY while templates/watchlist.html.j2 hides #ws_sec_rc in
+    that state. If this test ever fails on the CSS half, the fix is NOT to delete the
+    assertion — it is that anonymous visitors are now being shown an empty panel.
+
+    MUTATION CHECK: remove the `html[data-ws-state="anon-empty"] #ws_sec_rc` selector
+    from the page and this fails while every JS test above still passes — which is
+    precisely the blind spot that produced the 2026-08-20 report."""
+    out = _wl_dom(
+        "window.WL.render();\n"
+        "OUT({state: ROOT_ATTR('data-ws-state'), body: EL('rc_body').innerHTML});"
+    )
+    # half 1 — the JS really does leave the body untouched here
+    assert out["state"] == "anon-empty"
+    assert out["body"] == ""
+
+    # half 2 — ...and the page really does keep that body off the screen
+    css = TEMPLATE.read_text(encoding="utf-8")
+    sel = 'html[data-ws-state="anon-empty"] #ws_sec_rc'
+    assert sel in css, (
+        "templates/watchlist.html.j2 no longer hides the Risk Center for "
+        "anon-empty, but render() still skips renderRiskCenter() in that state — "
+        "anonymous visitors now get an empty, visible Risk Center. Either restore the "
+        f"rule or make the anon-empty path paint the lock shell. missing: {sel}"
+    )
+    assert "display:none" in _decl_block(css, sel).replace(" ", ""), (
+        f"{sel} is present but no longer resolves to display:none"
+    )
+
+
+def test_the_watchlists_mode_return_is_safe_because_the_panel_is_portfolio_only():
+    """render() returns before renderRiskCenter() in watchlists mode. That is safe
+    only because #ws_sec_rc is nested inside the `data-ws-mode="portfolio"` container,
+    which the page hides whenever the active mode is not portfolio. Move the section
+    out of that container and the early return starts serving a blank panel."""
+    import re as _re
+
+    html = TEMPLATE.read_text(encoding="utf-8")
+    i = html.index('id="ws_sec_rc"')
+    owners = _re.findall(r'<div data-ws-mode="(\w+)"', html[:i])
+    assert owners and owners[-1] == "portfolio", (
+        "#ws_sec_rc is no longer inside the portfolio mode container, so watchlists "
+        f"mode would show it unpainted. enclosing mode containers seen: {owners}"
+    )
+    flat = " ".join(html.split())
+    assert "main.ws > [data-ws-mode] { display:none; }" in flat, (
+        "the mode containers are no longer hidden by default — watchlists mode would "
+        "render the Portfolio column, Risk Center included, with nothing painted in it"
+    )
