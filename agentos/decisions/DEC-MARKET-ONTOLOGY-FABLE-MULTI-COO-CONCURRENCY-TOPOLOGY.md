@@ -1,71 +1,84 @@
 ---
 key: MARKET-ONTOLOGY-FABLE-MULTI-COO-CONCURRENCY-TOPOLOGY
 question: >
-  Is Market Ontology remainder execution satisfied by one sustained Fable principal
-  builder who personally serializes the F00-F13 lanes, or should independent feature
-  families be owned by multiple concurrent Fable COO lane leads under one program
-  architecture and coverage-control layer?
+  How should the frozen F00-F13 Market Ontology lanes execute concurrently after
+  current Fable root/seat source law established one logical Fable COO responsibility
+  for a root program rather than multiple durable Fable seats?
 answer: >
-  The default execution topology is multi-COO. Use one F00 Fable program-control /
-  integration lead plus independent Fable COO lane leads for architecture-sensitive
-  F01-F13 domains that can run concurrently after fresh collision census. Each lane
-  lead owns a durable domain backlog across multiple bounded one-capability PRs and may
-  fan further into Claude/Codex/GLM/Grok/mechanical workers for concrete subwaves.
-  The F00 lead is a coverage accountant, dependency/collision coordinator and final
-  integrator; it is not a mandatory serial approval hop between every lane PR. Sol is
-  likewise not a per-PR router. Where available Fable capacity is lower than the full
-  lane count, preserve concurrent domain ownership and use frontier workers beneath
-  the highest-ambiguity Fable leads rather than collapsing all work back into one
-  sequential Fable conversation.
+  Preserve the existing F00-F13 lane identities, operation keys, owner boundaries and
+  concurrency intent, but supersede the old seat-level reading of "multi-COO." F00 is
+  the one logical Fable COO/root program-control responsibility for this program.
+  F01-F13 are independent durable domain lane identities and commissions, not thirteen
+  durable Fable COO seats. When real governed capacity exists, concurrent work may run
+  through already-authorized distinct logical roles, disjoint Executive child
+  Jobs/Attempts/workers under the F00/root responsibility once that routing is
+  production-proven, or bounded temporary manual workers whose transport does not
+  create organizational seat identity. Every modifying child still binds to one
+  current carrier and must pass fresh owner/dependency/collision checks. F00 remains a
+  coverage accountant, dependency/collision coordinator and integrator; it is not a
+  routine serial approval hop.
 rationale: >
-  Chairman 2026-08-26 explicitly rejected the observed one-master-plan / one-COO /
-  Sol-back-and-forth execution loop as operational failure. The program contains
-  independent product, data, research, workflow, tenancy, options, macro, policy,
-  portfolio and capital-markets families with disjoint owner surfaces that do not
-  need to queue behind one operator. A single canonical architecture is compatible
-  with many concurrent COO owners when each modification binds to one bounded carrier
-  and collisions/dependencies are reconciled before writes.
+  Chairman intent still rejects the observed one-provider-conversation / one-operator
+  serial bottleneck. The newer accepted Operator Continuity Fable Root/Seat amendment
+  resolves the identity model without revoking that concurrency objective: Fable is
+  one logical COO responsibility above provider-native conversations and ordinary
+  Executive Jobs/Attempts. Therefore concurrency must come from governed subordinate
+  execution beneath the same root responsibility, not by multiplying durable Fable
+  seats or treating Claude accounts/Slack users as organizational identities. This
+  preserves the original F00-F13 decomposition while eliminating the identity-plane
+  contradiction.
 alternatives:
-  - option: One Fable personally executes F00-F13 sequentially.
+  - option: One Fable provider conversation personally executes F00-F13 sequentially.
     why_not: >
-      Rejected by Chairman intent; recreates the bottleneck this ruling exists to remove.
+      Rejected by Chairman intent and the complete-parity operating model; it recreates
+      the serial bottleneck the F00-F13 decomposition exists to remove.
+  - option: Treat F01-F13 as thirteen independent durable Fable COO seats.
+    why_not: >
+      Superseded by current protected Fable Root/Seat source law. Provider realms,
+      Claude accounts, Slack users and worker sessions are runtime placement/transport,
+      not separate organizational Fable identities.
   - option: Sol directly commissions every feature worker.
     why_not: >
       Rejected. Sol owns architecture, adjudication and final acceptance, not routine
       operator dispatch and micro-sequencing.
-  - option: All work goes directly to low-context frontier workers without Fable lane ownership.
+  - option: Collapse or rename the frozen F01-F13 operations to match the new seat law.
     why_not: >
-      Rejected for architecture-sensitive sustained domains. Frontier workers are
-      appropriate bounded executors beneath a COO lane lead, not substitutes for
-      cross-PR domain ownership and synthesis.
+      Rejected. The lane identities remain useful durable decomposition and are not
+      themselves Fable seat identities; changing them would create needless carrier
+      churn and violate the no-duplicate/no-recommission boundary.
 evidence:
-  - "Chairman instruction 2026-08-26: fan out to many Fable COO operators; stop one COO ↔ Sol micromanagement."
+  - "Chairman instruction 2026-08-26: preserve concurrent execution and stop one COO ↔ Sol micromanagement."
+  - "Protected Mastermind@97f85ce5b84030faf4d291f988a1c642fb15e80a: docs/superpowers/specs/2026-08-27-operator-continuity-fable-root-seat-amendment.md"
+  - "Protected Mastermind #185 current-state amendment: supersede the phrase 'separate Fable COOs'; one logical Fable COO responsibility/seat, with parallel subordinate execution only through existing law."
   - agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md
   - research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md
-  - agentos/decisions/DEC-CHINA-ALPHA-FABLE-COO-AUTONOMOUS-EXECUTION.md
+  - agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md
 affects:
   - "F00-F13 Market Ontology parity lanes"
   - "MAS-141 through MAS-154"
   - "MARKET-ONTOLOGY-2026-08-26-fable-coo-complete-parity-program.md"
 confidence: high
 reversibility: easy
-decided_by: chairman
-decided_at: 2026-08-26
+decided_by: sol
+decided_at: 2026-08-28
 ---
 
-# Default operator topology
+# Current operator topology
+
+The decision key is retained for durable identity/backward compatibility. Its historical
+"multi-COO" wording no longer means multiple durable Fable seats.
 
 ```text
 Sol / CEO
   └─ architecture + authority + rights + collision exceptions + milestone/final acceptance
 
-F00 Fable Program Control
-  ├─ 88-baseline + current-delta coverage accounting
+F00 / one logical Fable COO root responsibility
+  ├─ 88-baseline + retained-P1 + living-delta coverage accounting
   ├─ dependency/collision map
   ├─ milestone synthesis
   └─ NO routine serial approval requirement
 
-Concurrent Fable COO lane leads
+Concurrent F01-F13 durable lane responsibilities
   ├─ F01 Macro / Markets / Briefings
   ├─ F02 Policy / Geopolitics / Geospatial
   ├─ F03 Options / Catalyst Expression
@@ -80,29 +93,36 @@ Concurrent Fable COO lane leads
   ├─ F12 Team / Tenant / API / Platform
   └─ F13 Operations / Learning / Reliability
 
-Each lane lead
-  └─ multiple bounded frontier/mechanical workers + one independently useful carrier per capability vertical
+Each active lane
+  └─ bounded governed worker/child execution + one independently useful carrier per capability vertical
 ```
 
 ## Concurrency rules
 
-- A lane may open its next bounded capability carrier without waiting for unrelated
-  lanes or a Sol round-trip when its owner/dependency/collision census is clean.
-- Multiple PRs may execute simultaneously across disjoint canonical owners. Do not
-  put multiple modifying operations on one carrier merely for convenience.
-- A lane lead owns cross-PR continuity, current source law, experience coherence,
-  production proof and continuation handoffs for that domain.
-- F00 continuously reconciles the capability/delta ledger and prevents omissions,
-  duplicate owners and cross-lane collisions; it does not rewrite specialist truth.
-- Sol review is mandatory at the executive gates already frozen by the program and
-  at milestone/final acceptance, not after each reversible implementation step.
-- K2-C and K3-D retain their already-bound separate carriers and may run in parallel;
-  this topology must not recommission or absorb them.
+- F01-F13 keep their existing unique operation keys and durable handoffs. They are
+  organizational lane/work identities, not a new Fable seat registry.
+- A lane may progress without unrelated lanes or a Sol round-trip only when an actual
+  governed receiver/execution path exists and its owner/dependency/collision census is
+  clean. Slack delivery or membership is not that proof.
+- Multiple modifications may execute simultaneously across disjoint canonical owners,
+  but each modifying child keeps one stable operation/carrier until reconciliation.
+- Under production-proven Executive routing, subordinate concurrency uses ordinary
+  accepted Jobs/Attempts/workers beneath the logical F00/Fable root responsibility.
+- Before that path is proven, a bounded manual worker can be used only when the receiver
+  is known active and current transport law is satisfied; the manual transport does not
+  create another durable Fable COO identity.
+- F00 continuously reconciles complete-parity coverage and prevents omissions, duplicate
+  owners and cross-lane collisions; it does not rewrite specialist truth or become a
+  serial approval queue.
+- Sol review remains mandatory only at the executive gates frozen by the program and at
+  milestone/final acceptance, not after every reversible implementation step.
+- K2-C and K3-D retain their already-bound separate operation/carrier law and are not
+  F04/F10 substitutes. K5 remains blocked until both are separately Sol-accepted.
 
 ## Capacity fallback
 
-If fewer Fable seats are simultaneously available than lanes, do **not** revert to a
-single serial mega-session. Keep separate durable lane ownership and prioritize Fable
-for the highest-ambiguity/cross-owner domains while bounded frontier operators execute
-well-specified subwaves. As capacity becomes available, additional Fable lane leads
-can claim the remaining domain packets without changing the canonical program.
+If governed subordinate capacity is lower than the number of runnable lanes, do not
+invent more Fable seats and do not collapse the frozen lane identities. Prioritize the
+highest-value collision-free bounded work, route well-specified subwaves through lawful
+available workers under the F00/root responsibility, and leave unclaimed lanes explicitly
+unclaimed until real capacity/receiver evidence exists.
