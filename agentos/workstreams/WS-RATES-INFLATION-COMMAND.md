@@ -27,6 +27,7 @@ owns_paths:
   - data/rates_command/**
   - data/options_surface/**
   - data/transmission/**
+  - site/macro.html
 depends_on: []
 waves:
   - id: F0
