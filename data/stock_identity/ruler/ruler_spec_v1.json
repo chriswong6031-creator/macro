@@ -1,0 +1,41 @@
+{
+  "schema": "stock_identity.ruler_spec.v1",
+  "version": "v1",
+  "geometry": {
+    "atr_basis": "wilder_atr14_at_prior_confirmed_close",
+    "p_pre_sessions": 5,
+    "useful_zone_window_sessions": 15,
+    "useful_zone_delta_atr": 0.75,
+    "false_start_atr_threshold": 3.75,
+    "episode_type_anchor": {
+      "reset_decline": "durable_low",
+      "reclaim": "recapture_bar",
+      "failed_breakdown": "breakdown_low"
+    },
+    "grain_classes": ["daily", "weekly"],
+    "geometry_source": {
+      "p_pre_sessions": "si_constants_v1.json values.P_pre (frozen W1 constant)",
+      "useful_zone_window_sessions": "si_constants_v1.json values.w (frozen W1 constant)",
+      "useful_zone_delta_atr": "si_constants_v1.json values.delta (frozen W1 constant)",
+      "false_start_atr_threshold": "si_constants_v1.json values.theta_fs (frozen W1 constant)",
+      "atr_basis": "engine.stock_identity.episodes.ATR_BASIS (frozen W1 constant)",
+      "episode_type_anchor": "engine.stock_identity.episodes anchor-per-type mapping (masterplan §7.3, review finding 25)",
+      "grain_classes": "derived mechanically from observed W2 event grain strings (engine.stock_identity.ruler.grain_class); not itself a partition-computed statistic"
+    }
+  },
+  "graded_composites": ["c_loc_r", "c_loc_d"],
+  "pr3": {
+    "status": "pending_sealed_calibration",
+    "recall_floor": null,
+    "lambda_fs": null,
+    "receipt": null,
+    "note": "The PR-3 ruler-composite constant family (lambda_fs, recall floor, any declared composite constants) is set exactly once by Task 3C from SI-SEALED-CAL-P1 under rule-before-value discipline. Until that one-time act runs, this block carries the explicit pending sentinel above -- never a guessed number. Fixture-only constants used to test the metric/composite MATH on synthetic data live only in test code and are never written here."
+  },
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}
