@@ -158,6 +158,9 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
         "n_no_coverage_rows": (
             int(unconditional["no_coverage"].sum()) if "no_coverage" in unconditional.columns else 0
         ),
+        # MINORS: the same provisional-basis tag the support frame's own
+        # calendar_block_basis column carries, surfaced in the build summary too.
+        "calendar_block_basis": "calendar_quarter_provisional",
     }
 
     if spec.pr3_pending:
