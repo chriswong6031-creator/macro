@@ -100,6 +100,7 @@ artifacts:
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W1_EVIDENCE_CENSUS_HANDOFF_2026-08-27.md
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W2_DATA_CLOCK_HANDOFF_2026-08-27.md
   - agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27.md
+  - agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27-w0-current-procedure.md
 next_action: >
   Complete exact-head W0 validation and Sol review on draft PR #6570. Only after
   merge may W1 Evidence Census and W2-0 Data/Clock Archaeology start on separate
