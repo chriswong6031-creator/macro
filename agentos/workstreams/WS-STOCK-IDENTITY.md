@@ -74,7 +74,7 @@ waves:
   - id: W4A
     title: Identity epoch detector v1 — synthetic/stationary calibration + knowable-from clock
     status: todo
-    depends_on: [W3A, W3B, W3S]
+    depends_on: [W3A, W3B]
   - id: W4B
     title: PIT/final epoch dual projection — PIT only for graded fit
     status: todo

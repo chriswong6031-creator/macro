@@ -72,15 +72,13 @@ The file body itself records the exact actual return date/time, operation key, P
 
 ## 4. Precedence
 
-For W3 execution, read in this order:
+For W3 execution, read in this order (Sol ruling 2026-08-28 — identical to freeze §2.0):
 
-1. current Chairman/Sol instruction;
-2. current protected Skillpack;
-3. current `WS:STOCK-IDENTITY`, `DEC:SI-METHOD-LAW-CHANNELS`, `DEC:SI-FABLE-COO-AUTONOMOUS-EXECUTION` and the accepted DNR registry law (`research/DO_NOT_REBUILD.md`, `DNR:KILL-OUTCOME-AUDITION` foremost);
-4. `research/stock_identity/STOCK_IDENTITY_COMPLETE_MASTERPLAN_2026-08-28.md`;
-5. `research/stock_identity/W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md`;
-6. `docs/superpowers/plans/2026-08-28-stock-identity-w3-measurement-release.md`;
-7. **this R1 amendment** for the four clarified interfaces/path above;
-8. original Stock Identity masterplan/W1/W2 registrations and current owner source law.
+1. current live Chairman/Sol ruling;
+2. current protected Skillpack + mandatory universal source laws;
+3. applicable accepted DNR/DEC law (`DNR:KILL-OUTCOME-AUDITION`, `DEC:SI-METHOD-LAW-CHANNELS`, `DEC:SI-FABLE-COO-AUTONOMOUS-EXECUTION`, `research/DO_NOT_REBUILD.md`);
+4. `research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md` + its ratified §16 rulings as the baseline scientific constitution, together with the W1/W2 registrations;
+5. later accepted Stock Identity amendments/freezes/masterplans (`W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md`, `STOCK_IDENTITY_COMPLETE_MASTERPLAN_2026-08-28.md`) only for clauses they explicitly amend/supersede;
+6. derivative implementation plans/handoffs/interface clarifications (`2026-08-28-stock-identity-w3-measurement-release.md`, this R1 amendment, current owner source law).
 
-If a newer accepted source conflicts materially with this amendment, stop the affected lane and return to Sol rather than inventing another type/path.
+Binding fail-closed clause: a later derivative's silence/omission never repeals a ratified original control. A later document wins only where it explicitly identifies the clause it changes and has lawful Sol/Chairman authority to do so. Any conflict or omission touching preregistered scientific law stops the lane and returns to Sol rather than inventing another type/path.

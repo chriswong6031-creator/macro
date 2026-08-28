@@ -34,7 +34,7 @@ The program terminates in exactly one of three company-level outcomes:
 
 - `DNR:KILL-OUTCOME-AUDITION` remains total under every ruler. No own-name best-of-menu expert selection, hidden ticker keyed model, grid audition, or disguised equivalent.
 - The first-arc personalization channels are only A/B/C from `DEC:SI-METHOD-LAW-CHANNELS`: global structure map, behavioral-neighbor pooling, bounded empirical-Bayes residual.
-- Channel A is capacity-bounded per the original §2.3 controls: its effective parameter count `p_eff` is declared before any fit and must satisfy `p_eff <= N_names/10`, with the functional form frozen at W3 (additive/monotone in a declared feature subset unless a richer form is separately preregistered) and the budget enforced on every training fold before any fit.
+- Channel A is capacity-bounded per the original §2.3 controls: its effective parameter count `p_eff` is declared before any fit and must satisfy `p_eff <= floor(N_train_names / 10)` exact per training fold, with the functional form frozen at W3 (additive/monotone in a declared feature subset unless a richer form is separately preregistered) and the budget enforced on every training fold before any fit.
 - Ticker is identity continuity, not predictive freedom.
 - Sector/archetype may be a diagnostic/baseline, never the routing/grouping key.
 - Live Entry Radar owns prospective expert events. Stock Identity consumes canonical `mastermind.entry_event.v1`; it never writes or forks that store.
@@ -79,7 +79,7 @@ The program terminates in exactly one of three company-level outcomes:
 
 ### M1 / W3A — Expert-independent localization ruler
 
-Build executable ruler components and the two frozen composites without opening confirmatory fit conclusions. Outputs are deterministic, spec-hashed, authority-false, and accompanied by unconditional flooding/attribution blocks and grain/null controls. W3A also performs the one-time sealed-calibration constant-setting for the PR-3 family (`lambda_fs`, recall floor, composite constants) under rule-before-value discipline with TrialLedger-registered diagnostic grids and a logged fit-read look budget, and freezes the Channel-A model constitution (declared feature subset, additive/monotone form, exact `p_eff` counting rule, per-fold `p_eff <= N_names/10` enforcement) without fitting anything.
+Build executable ruler components and the two frozen composites without opening confirmatory fit conclusions. Outputs are deterministic, spec-hashed, authority-false, and accompanied by unconditional flooding/attribution blocks and grain/null controls. W3A also performs the one-time sealed-calibration constant-setting for the PR-3 family (`lambda_fs`, recall floor, composite constants) under rule-before-value discipline with TrialLedger-registered diagnostic grids and a logged fit-read look budget — fed by the Sol-authorized bounded calibration-fire substrate (same W2 replay machinery over the drawn `SI-SEALED-CAL-P1` roster only, calibration-purpose-only, authority-false; metric primitives and replay/family/spec hashes committed before any constant value is computed) — and freezes the Channel-A model constitution (declared feature subset, additive/monotone form, exact `p_eff` counting rule, per-fold `p_eff <= floor(N_train_names / 10)` enforcement) without fitting anything.
 
 ### M2 / W3S — Terminated-instrument survivorship control
 

@@ -29,6 +29,19 @@ The moat is the combination of PIT security identity, long-run path fingerprints
 
 ## 2. Binding no-rebuild / authority law
 
+### 2.0 Precedence and non-repeal law (Sol ruling 2026-08-28)
+
+Every Stock Identity execution read follows this order:
+
+1. current live Chairman/Sol ruling;
+2. current protected Skillpack + mandatory universal source laws;
+3. applicable accepted DNR/DEC law (`DNR:KILL-OUTCOME-AUDITION`, `DEC:SI-METHOD-LAW-CHANNELS`, etc.);
+4. `research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md` + its ratified §16 rulings as the baseline scientific constitution;
+5. later accepted Stock Identity amendments/freezes/masterplans (this document included) only for clauses they explicitly amend/supersede;
+6. derivative implementation plans/handoffs/interface clarifications.
+
+Binding fail-closed clause: a later derivative's silence/omission never repeals a ratified original control. A later document wins only where it explicitly identifies the clause it changes and has lawful Sol/Chairman authority to do so. Any conflict or omission touching preregistered scientific law stops the lane and returns to Sol.
+
 These are immutable unless Sol/Chairman explicitly supersede them in a new decision:
 
 - **`DNR:KILL-OUTCOME-AUDITION` remains total.** A name may never choose an expert because that expert ranked best on that name's own historical outcomes, under the localization ruler or any other ruler.
@@ -82,11 +95,13 @@ Two and only two primary composites are graded:
 
 `lambda_fs`, recall floor and any declared composite constants are set exactly once from `SI-SEALED-CAL-P1`, recorded with spec hashes, and never retuned after confirmatory outcome exposure. The one-time setting act follows the W1 rule-before-value discipline: the per-constant selection rule is declared in code/doc BEFORE any value is computed from partition data, exemplars and the untouched blind arm contribute nothing, declared ±20% diagnostic sensitivity grids are registered in the TrialLedger before execution, and the later fit-read look budget is logged at the same registration.
 
+**Calibration-fire substrate act (Sol ruling 2026-08-28, bounded):** because these constants are fire-derived while W2's receipted event substrate covers only the 22 design-touched pilot names, W3A includes ONE bounded calibration-fire substrate act under closed law: reuse the SAME W2 replay machinery and registered W2 family registry/spec hashes (no second replay framework, no new expert family, no Class-P backfill, no new producer semantics, no parameter sweep, no fit/rank output); the input roster is the drawn-name component of `SI-SEALED-CAL-P1` only, taken mechanically from the frozen partition manifest (pilot/exemplars and the blind arm are total exclusions; the permitted non-drawn pre-boundary pool is NOT used for this first PR-3 family); the W1 calibration clock is honored exactly (frozen partition semantics, recent-history guard `asof − 126 trading days`); the full registered drawn roster is attempted — a valid zero-fire name is a zero-fire observation, and a name with unavailable/unlawful required price/identity input is never silently dropped or substituted (typed blocker to Sol before any constant is set); the replay output is calibration-purpose-only, authority-false, and cannot feed Q1/W5 population definition, expert ranking, W3B estimability inclusion, Prophet, or any fit table; W2 pilot artifacts stay immutable; large calibration event/history material follows the existing R2/store-host storage law with only bounded manifests/hashes/receipts committed. Ordering law: metric/composite primitives are frozen and tested on synthetic fixtures first, then the calibration replay manifest/spec hashes are frozen, then the substrate executes, then the one-time constant-setting act runs — production `lambda_fs`/`recall_floor` values may not be computed before the metric implementation, rule text and replay/family/spec hashes are committed, and any post-value change to those rules/implementations voids the constant-setting run. This act exists only because the ratified original requires PR-3 ruler constants to be set on the sealed calibration partition; it is not authorization to widen historical replay generally.
+
 ### 4.1b Channel-A model constitution (capacity budget — original §2.3 control (i), restored)
 
 "Low per-name degrees of freedom" remains an obligation, not an assertion. All three original Channel-A controls bind, and W3 owns freezing the first:
 
-- **(i) capacity budget:** the map's effective parameter count `p_eff` is declared before fitting and must satisfy `p_eff <= N_names/10` (N_names = post-exclusion training-fold name count); the functional form is fixed at the W3/PR-3 stage — additive/monotone in a declared feature subset unless a richer form is separately preregistered. The declared feature subset, the allowed form, the exact `p_eff` counting rule, and the per-training-fold enforcement contract are frozen in a W3-owned Channel-A model-constitution registration artifact before any fit exists. W3 does not fit Q1; it freezes the legal model class.
+- **(i) capacity budget:** the map's effective parameter count `p_eff` is declared before fitting and must satisfy, exactly and per training fold, `p_eff <= floor(N_train_names / 10)` where `N_train_names` is that fold's post-exclusion training name count; the functional form is fixed at the W3/PR-3 stage — additive/monotone in a declared feature subset unless a richer form is separately preregistered. The declared feature subset, the allowed form, the exact `p_eff` counting rule, and the per-training-fold enforcement contract are frozen in a W3-owned Channel-A model-constitution registration artifact before any fit exists. W3 does not fit Q1; it freezes the legal model class.
 - **(ii) name-disjoint OOS** and **(iii) name-permutation null** remain as already frozen in §4.3/§4.4.
 
 W5Q may not evaluate Q1 through any map that violates the frozen constitution; the capacity budget is checked on every training fold before any fit and a violation aborts the read rather than shrinking silently.
@@ -119,7 +134,7 @@ Before Q1, the power simulator evaluates the post-exclusion grading pool. If pow
 
 The frozen §14.1 consequence matrix remains binding:
 
-- Q1 fails both baselines -> expert-routing thesis stops; a `KILL-…` row naming the Channel-A construction is appended to `research/DO_NOT_REBUILD.md` §1–2 with compiled blocklists regenerated in the same PR. Descriptive identity/fingerprint/epoch work may remain display-tier with zero routing authority, and PTT-W4 per-class gate profiles stay closed (the original masterplan's "W4"; distinct from this freeze's SI-W4A/SI-W4B identity-epoch waves, which are measurement infrastructure and are neither licensed nor unlicensed by this row).
+- Q1 fails both baselines -> expert-routing thesis stops; a `KILL-…` row naming the Channel-A construction is appended to `research/DO_NOT_REBUILD.md` §1–2 with compiled blocklists regenerated in the same PR. Descriptive identity/fingerprint/epoch work may remain display-tier with zero routing authority. "W4 stays closed" refers to PTT-W4 per-class gate-profile AUTHORITY (the original masterplan's "W4"), not to this freeze's SI-W4A/SI-W4B epoch-detector predecessor: SI-W4A/B may exist as zero-authority descriptive infrastructure before W5, a Q1 kill cannot use it to reopen routing/pooling, and any new post-kill predictive/routing use requires a fresh Sol act.
 - Beats global/reference base but not sector-label map -> Channel A closes; only explicitly allowed bounded descriptive/shrinkage work may continue. B requires a new registered question.
 - Pilot+blind aggregate passes but blind fails -> exemplar-scoped only; no pooling/product routing; widening the untouched blind arm by the registered procedure is the only regrade path.
 - Blind passes -> GO to W6 operationalization.
@@ -142,7 +157,7 @@ The program is persistent; implementation carriers are bounded. One independentl
 
 **Mission:** make the frozen localization ruler executable and deterministic without publishing expert-fit conclusions.
 
-Deliver C-LOC-R/C-LOC-D component math, attribution/unconditional blocks, grain matching, null generators, spec hashing, sealed-calibration constant-setting once (rule-before-value per §4.1, declared ±20% diagnostic grids registered in the TrialLedger before execution, fit-read look budget logged), the §4.1b Channel-A model-constitution registration (declared feature subset, additive/monotone form, exact `p_eff` counting rule, `p_eff <= N_names/10` enforced per training fold — no fitting), synthetic/truncation invariance, and TrialLedger registration for any sweep. No blind fit table, no per-name expert choice, no Prophet paths.
+Deliver C-LOC-R/C-LOC-D component math, attribution/unconditional blocks, grain matching, null generators, spec hashing, sealed-calibration constant-setting once (rule-before-value per §4.1, declared ±20% diagnostic grids registered in the TrialLedger before execution, fit-read look budget logged), the §4.1b Channel-A model-constitution registration (declared feature subset, additive/monotone form, exact `p_eff` counting rule, `p_eff <= floor(N_train_names / 10)` enforced per training fold — no fitting), synthetic/truncation invariance, and TrialLedger registration for any sweep. No blind fit table, no per-name expert choice, no Prophet paths.
 
 **Exit:** deterministic fixtures + real pilot smoke reproduce metric identities; constants/inputs are sealed and hash-pinned; authority false.
 
