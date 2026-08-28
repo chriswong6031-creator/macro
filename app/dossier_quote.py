@@ -131,20 +131,24 @@ _NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirects)
 
 
 def _assert_loopback(base: str) -> None:
-    """Refuse a non-loopback hub at import time.
+    """Refuse a non-loopback hub.
 
     The hub is a same-box peer holding a vendor credential.  Pointing this at a
     remote host would turn a bounded projection into an egress path that
     republishes an unknown third party as our price.
+
+    Called per REQUEST, deliberately not at import.  As a module-level check it
+    did close the hole, but a mistyped env var then raised during
+    ``app.main`` import and took the ENTIRE macro-api down with it — billing,
+    auth, paywall, every unrelated route — measured, not theorised.  A dossier
+    price must not be able to do that.  Per-request, the same misconfiguration
+    disables exactly this route, as a 503, and nothing else.
     """
     host = (urllib.parse.urlsplit(base).hostname or "").lower()
     if host not in ("127.0.0.1", "::1", "localhost"):
-        raise RuntimeError(
+        raise ValueError(
             f"DOSSIER_QUOTE_HUB_URL must be loopback; refusing host {host!r}"
         )
-
-
-_assert_loopback(_HUB_BASE)
 
 
 # ── time (injected so freshness is testable without sleeping) ───────────────
@@ -215,6 +219,7 @@ def _read_hub_quotes(symbol: str) -> Mapping[str, Any]:
     Never retries: a dossier page that missed one tick keeps its baked value,
     which is a better outcome than queueing work behind a wedged upstream.
     """
+    _assert_loopback(_HUB_BASE)
     url = f"{_HUB_BASE}/quotes?syms={urllib.parse.quote(symbol, safe='')}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
     # _NO_REDIRECT_OPENER, not urlopen: urlopen FOLLOWS redirects, so a hub

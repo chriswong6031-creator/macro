@@ -353,8 +353,23 @@ def test_a_percent_that_contradicts_the_price_pair_is_replaced(client, monkeypat
 def test_the_hub_base_must_be_loopback() -> None:
     """A remote hub would turn a bounded projection into an egress path."""
     dossier_quote_api._assert_loopback("http://127.0.0.1:3100")
-    with pytest.raises(RuntimeError):
-        dossier_quote_api._assert_loopback("http://evil.example.com:3100")
+    dossier_quote_api._assert_loopback("http://localhost:3100")
+    for remote in ("http://evil.example.com:3100", "http://10.0.0.5:3100", "http://[::2]:3100"):
+        with pytest.raises(ValueError):
+            dossier_quote_api._assert_loopback(remote)
+
+
+def test_a_misconfigured_hub_disables_only_this_route(monkeypatch, client) -> None:
+    """A bad env var must not be able to take the whole API down.
+
+    As an import-time assertion this raised during `app.main` import and killed
+    every unrelated route — billing, auth, paywall — over a dossier price.
+    Per-request it is a 503 here and nothing anywhere else.
+    """
+    monkeypatch.setattr(dossier_quote_api, "_HUB_BASE", "http://evil.example.com")
+    assert client.get("/api/dossier-quote/NVDA").status_code == 503
+    # an unrelated route on the same app is untouched
+    assert client.get("/api/company-intelligence/NVDA").status_code != 500
 
 
 def test_a_redirecting_hub_is_refused_not_followed() -> None:
