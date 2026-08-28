@@ -1,20 +1,20 @@
 {
   "date": "2026-08-28",
-  "regime": "mixed / no clear trend",
-  "breadth": 0.31,
+  "regime": "risk-on trends",
+  "breadth": 0.38,
   "favored": [
     "equity_us",
     "equity_sm",
     "credit_hy",
-    "equity_intl",
-    "equity_em"
+    "copper",
+    "equity_intl"
   ],
   "correlation": "converging",
   "asof": "2026-08-28",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
-    "regime": "mixed / no clear trend",
+    "regime": "risk-on trends",
     "correlation": {
       "verdict": "converging",
       "absorption_pctile": 0.54,
@@ -135,7 +135,7 @@
       ],
       "spark_asof": "2026-08-28"
     },
-    "breadth": 0.31,
+    "breadth": 0.38,
     "trend_top": [
       {
         "asset": "equity_us",
@@ -153,6 +153,11 @@
         "z": 1.0
       },
       {
+        "asset": "copper",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
         "asset": "equity_intl",
         "trend": "up",
         "z": 1.0
@@ -161,16 +166,11 @@
         "asset": "equity_em",
         "trend": "up",
         "z": 1.0
-      },
-      {
-        "asset": "gold",
-        "trend": "mixed",
-        "z": 0.33
       }
     ],
     "trend_summary": {
       "n": 13,
-      "n_up": 5,
+      "n_up": 6,
       "n_down": 1
     },
     "intermarket": [
@@ -178,23 +178,23 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 52.0
+        "pctile": 50.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 66.568,
+        "ratio": 65.338,
         "trend": "mid",
-        "pctile": 26.0
+        "pctile": 25.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.018,
         "trend": "mid",
-        "pctile": 31.0
+        "pctile": 30.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.166,
+        "ratio": 0.167,
         "trend": "mid",
         "pctile": 34.0
       }
@@ -306,7 +306,7 @@
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-26"
+      "asof": "2026-08-27"
     },
     "dollar": {
       "usd_dir": "weakening",
@@ -330,7 +330,7 @@
       "fx_stress": {
         "dominant": null,
         "top_key": "carry_unwind",
-        "top_val": 11.7
+        "top_val": 11.8
       }
     },
     "shadow": {

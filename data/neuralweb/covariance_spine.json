@@ -37,7 +37,7 @@
     "lobes": {
       "effective_independent_lobes": 1.0,
       "n_lobes_measurable": 1,
-      "n_lobes_total": 32,
+      "n_lobes_total": 31,
       "null_reference": {
         "null_median": 1.0,
         "null_p90": 1.0,
@@ -55,7 +55,6 @@
         ],
         "unmeasurable": {
           "altdata": 11,
-          "altdata_conv": 1,
           "basket_turn.v1": 3,
           "ca_board": 9,
           "china_news": 3,
@@ -98,7 +97,6 @@
     ],
     "unmeasurable": {
       "altdata": 11,
-      "altdata_conv": 1,
       "basket_turn.v1": 3,
       "ca_board": 9,
       "china_news": 3,

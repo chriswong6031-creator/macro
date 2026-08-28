@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-08-28 07:25 UTC",
+  "generated_at": "2026-08-28 12:59 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -110,8 +110,8 @@
   "current_ungated_alloc": 1.0,
   "current_gated_alloc": 1.0,
   "cum_gap_pct": 0.0,
-  "gated_equity_final": 0.951384,
-  "raw_equity_final": 0.951384,
+  "gated_equity_final": 0.952017,
+  "raw_equity_final": 0.952017,
   "weekly_series": [
     {
       "date": "2026-01-04",
@@ -285,8 +285,8 @@
     },
     {
       "date": "2026-08-30",
-      "gated_equity": 0.951384,
-      "raw_equity": 0.951384
+      "gated_equity": 0.952017,
+      "raw_equity": 0.952017
     }
   ],
   "prior_cycles": {

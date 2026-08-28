@@ -1,6 +1,6 @@
 {
   "asof": "2026-08-27",
-  "ts": "2026-08-28T07:17:27.070607+00:00",
+  "ts": "2026-08-28T12:56:31.212426+00:00",
   "authority": "DISPLAY-ONLY \u2014 re-orders display surfaces; feeds no gate, size, score, or calibrated key.",
   "instruments": [
     {
@@ -333,37 +333,6 @@
       "asof": "2026-08-27"
     },
     {
-      "key": "b-robotics_automation",
-      "id": "b-robotics_automation",
-      "kind": "basket",
-      "ticker": "BOTZ",
-      "basket_id": "b-robotics_automation",
-      "name": "Robotics & Automation",
-      "rotation_score": 2.9,
-      "rank": 12,
-      "rotation_rank": 12,
-      "components": {
-        "mom20": 3.7,
-        "fast_rs": -0.45,
-        "mom5_raw": 0.08,
-        "mom10_raw": -1.24,
-        "governor": 5,
-        "ob_penalty": 5.34,
-        "macd_demotion": 0.0
-      },
-      "state_used": "TURN SIGNALED",
-      "ob_etf": 0.0,
-      "ob_ew": 0.305,
-      "ob": 0.305,
-      "macd_x1w": false,
-      "macd_x2w": false,
-      "stale_flags": [
-        "etf_missing(BOTZ)",
-        "ob_etf_null"
-      ],
-      "asof": "2026-08-27"
-    },
-    {
       "key": "b-ai_software",
       "id": "b-ai_software",
       "kind": "basket",
@@ -371,8 +340,8 @@
       "basket_id": "b-ai_software",
       "name": "AI Software & Platforms",
       "rotation_score": 2.7,
-      "rank": 13,
-      "rotation_rank": 13,
+      "rank": 12,
+      "rotation_rank": 12,
       "components": {
         "mom20": 10.33,
         "fast_rs": 1.2,
@@ -399,8 +368,8 @@
       "basket_id": "b-cybersecurity",
       "name": "Cybersecurity",
       "rotation_score": 2.3,
-      "rank": 14,
-      "rotation_rank": 14,
+      "rank": 13,
+      "rotation_rank": 13,
       "components": {
         "mom20": 17.59,
         "fast_rs": 2.88,
@@ -418,6 +387,37 @@
       "macd_x2w": false,
       "stale_flags": [
         "etf_missing(CIBR)",
+        "ob_etf_null"
+      ],
+      "asof": "2026-08-27"
+    },
+    {
+      "key": "b-robotics_automation",
+      "id": "b-robotics_automation",
+      "kind": "basket",
+      "ticker": "BOTZ",
+      "basket_id": "b-robotics_automation",
+      "name": "Robotics & Automation",
+      "rotation_score": 2.2,
+      "rank": 14,
+      "rotation_rank": 14,
+      "components": {
+        "mom20": 3.34,
+        "fast_rs": -0.79,
+        "mom5_raw": -0.26,
+        "mom10_raw": -1.58,
+        "governor": 5,
+        "ob_penalty": 5.34,
+        "macd_demotion": 0.0
+      },
+      "state_used": "TURN SIGNALED",
+      "ob_etf": 0.0,
+      "ob_ew": 0.305,
+      "ob": 0.305,
+      "macd_x1w": false,
+      "macd_x2w": false,
+      "stale_flags": [
+        "etf_missing(BOTZ)",
         "ob_etf_null"
       ],
       "asof": "2026-08-27"
@@ -1331,10 +1331,10 @@
       "rank": 46,
       "rotation_rank": 46,
       "components": {
-        "mom20": -2.73,
-        "fast_rs": -1.87,
-        "mom5_raw": -1.57,
-        "mom10_raw": -2.32,
+        "mom20": -2.75,
+        "fast_rs": -1.9,
+        "mom5_raw": -1.6,
+        "mom10_raw": -2.34,
         "governor": -4,
         "ob_penalty": 2.69,
         "macd_demotion": 12.0
@@ -1355,14 +1355,14 @@
       "ticker": "XLI",
       "basket_id": "b-reshoring",
       "name": "Reshoring & Industrial Capex",
-      "rotation_score": -25.4,
+      "rotation_score": -25.6,
       "rank": 47,
       "rotation_rank": 47,
       "components": {
-        "mom20": -2.57,
-        "fast_rs": -2.07,
-        "mom5_raw": -1.55,
-        "mom10_raw": -2.85,
+        "mom20": -2.68,
+        "fast_rs": -2.18,
+        "mom5_raw": -1.66,
+        "mom10_raw": -2.95,
         "governor": -4,
         "ob_penalty": 4.72,
         "macd_demotion": 12.0

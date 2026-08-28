@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
   "as_of": "2026-08-28",
-  "generated_at": "2026-08-28T08:02:59Z",
+  "generated_at": "2026-08-28T13:37:00Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-28T08:02:59Z",
-  "inputs_hash": "sha256:0e4c4a77e7b69c88c2f3fd57e9ab95da50f48ebb2db8654f992e06b3caf7eaff",
+  "produced_at": "2026-08-28T13:37:00Z",
+  "inputs_hash": "sha256:e504e1945ee6d29155c2ee63146ea925547447ebdf77a80a3e9472cda4bfc5e2",
   "tier": "display"
 }

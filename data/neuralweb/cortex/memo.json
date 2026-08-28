@@ -1,32 +1,34 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-28T09:49:02+00:00",
-  "summary": "Context only. The current surface is risk-on (display score 77) with a calm, receding risk radar: measured 21-day >=5% pullback frequency is 13.0% versus a 17.8% base rate, while credit, growth, and internals scares have de-escalated. This is tempered by a regime-label mismatch: confirmed Q2/Reflation is transitioning toward raw Q3 signs (growth -0.27, inflation +0.36), liquidity is contracting in an orderly drain, real yields remain restrictive, and no fresh market-confirmation chips or liquidity catalyst are present. Factor evidence is immature: only 11 panel dates, the history floor is unmet, Pair G is dormant, no factor-attention outcomes have been graded, and the survivorship-biased composite is not tradeable. No hypothesis was staked because the inspected evidence did not support a sufficiently clean new pre-registered claim without over-interpreting display-tier context.",
+  "as_of": "2026-08-28T14:31:38+00:00",
+  "summary": "Context-only committee read: the headline tape is risk-on and the risk radar is calm/receding, but this is not a clean all-clear. The confirmed US regime remains Q2 Reflation at low confidence (0.218) even though its current axes read raw Q3: growth -0.267 and inflation +0.36, with only 1 of 7 confirmation sessions complete. Liquidity is contracting in an orderly, non-stressed drain; credit is healthy and tight; volatility is normalizing; breadth remains broadly intact above the 200-day measure, although the latest session had more decliners than advancers. No market-recovery confirmation chip is fresh, so the recovery context should not be described as confirmed. Factor intelligence is immature: only 10 panel dates, no Pair G records, no factor-attention grading history, no scorecard survivors, and the composite is non-tradeable. This memo annotates existing evidence only and originates no signal, ranking, trade, or probability.",
   "what_fired": [
-    "Risk radar de-escalation is eligible: h21 pullback frequency fell from 16% at the recent peak to 13%, below the 17.8% base rate.",
-    "The confluence graph reports a tension involving roughly 30 ticker-level demand-versus-supply divergences in the intelligence briefing.",
-    "The US regime label is unsupported by its current axes and is counting toward Q3 confirmation (1 of 7 sessions).",
-    "Two operator-attention records were written in the shadow queue: persistent briefing divergences, and review of the overdue US-equities-underweight thesis whose credit-stress premise conflicts with tight HY spreads and calm radar conditions."
+    "World-state display verdict: RISK_ON, score 77, as of 2026-08-27.",
+    "Risk radar calm and receding: measured 21-day >=5% pullback rate 13.0% versus 17.8% base rate; this is below-base context, not an edge.",
+    "Raw regime axes no longer support confirmed Q2; Q3 transition count is 1 of 7 sessions.",
+    "Confluence contradiction: DHI and KDP buy-lane context versus five-day-rising OTM-put skew, as of 2026-08-19.",
+    "Briefing-divergence tension: 31 ticker-level demand-versus-supply divergences, including IBM, VSAT, RKLB, and NET.",
+    "Factor Pair G did not fire: ledger absent because the panel has fewer than 60 distinct dates."
   ],
-  "contradictions_review": "Two current graph contradictions were reviewed. First, demand/tape versus briefing direction shows broad ticker-level opposition; it remains a tension, not a signal. Second, rising five-day OTM-put skew contradicts buy-lane context for DHI and KDP, but this can only de-escalate and the bullish skew-deceleration prior is explicitly unsupported. Pair G produced no records because the factor panel has fewer than 60 distinct dates. The master-brain US-equities-underweight thesis (mb-2026-06-29-1) is past its 2026-08-10 check date and conflicts with HY OAS at 2.67%, healthy credit, and a calm/receding radar; this was surfaced for operator review, not resolved or reversed. Several other open theses are also past check-by dates, indicating ledger-maintenance risk, but were not separately flagged absent a direct current graph contradiction.",
+  "contradictions_review": "Two current graph contradictions were found. First, the briefing contains 31 directional demand-versus-supply divergences; this is a broad tension, not a directional conclusion. Second, DHI and KDP have rising put-skew context against existing buy-lane membership; the legal use is de-escalation only. Separately, the regime label is internally stale relative to its axes: confirmed Q2 versus raw Q3. The factor contradiction ledger is dormant, so absence means insufficient history rather than agreement. Review of the master-brain ledger found many open theses past their check_by dates. Several semiconductor underweight theses deserve explicit review against current mixed evidence: SMH is above its 200-day trend and up 2.27% over 20 days, but down 10.95% over 60 days, semiconductor migration breadth is weak, and the AI-semiconductor thematic falsifier has fired. That is conflicted context, not validation of either side. The open growth-over-value underweight thesis also needs review because IWF/IWD is +2.76% over 20 days while real yields remain restrictive; its dated falsifier must be evaluated rather than informally extended.",
   "decaying_families": [
-    "Radar directional claims: despite very large effective samples and high reported reliability, signed excess is negative at 5d and 21d across pooled/Q2 rows and all rows remain unarmed.",
-    "US board in Q2: signed excess is negative at 5d and 10d; pooled out-of-sample performance loses, so the engine remains unarmed.",
-    "Alt-data: pooled out-of-sample results lose; 21d and 63d signed excess are negative, so the family remains unarmed.",
-    "Policy and policy-intent: negative signed excess across inspected horizons, with Q2 samples especially sparse.",
-    "AI, stock, and thematic desks at 63d: negative signed excess in Q2 and pooled samples; all remain unarmed.",
-    "Factor composite: negative-IC legs include investment, low-vol, low-beta, and composite; panel history is insufficient and the composite is non-tradeable."
+    "Radar claims: kernel estimates are negative across 5-, 21-, and 63-day signed-excess horizons in Q2/all-regime rows; no radar kernel row is armed.",
+    "Policy family: negative signed-excess estimates at 5-, 21-, and 63-day horizons; all rows remain unarmed or underpowered.",
+    "Thematic-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous one-contributor held-out comparison.",
+    "Stock-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous held-out comparison.",
+    "Altdata: positive five-day estimates decay to negative 21- and 63-day estimates; pooled implementation remains unarmed after losing out of sample.",
+    "US-board Q2: negative signed-excess estimates at five and ten days; pooled implementation remains unarmed. Board and track-record rows using unsigned MFE proxies must not be read as directional alpha."
   ],
   "deserves_operator": [
-    "Briefing-divergences tension: attention remains warranted only if at least 20 divergences persist; falsified if the count is below 10 for three consecutive daily builds. Shadow claim e05775b3d95eb2f0.",
-    "Overdue US-equities-underweight thesis mb-2026-06-29-1: current tight credit and calm radar conflict with its stress premise. Attention is falsified if HY OAS widens to >=2.90% or radar leaves calm within 10 sessions; otherwise continued OAS <2.70% warrants thesis review. Shadow claim 0e910d7e10433848.",
-    "Regime transition hygiene: confirmed Q2 is unsupported by current axes and raw signs read Q3, but only 1 of 7 confirmation sessions has elapsed. Treat as uncertainty, not a new regime claim.",
-    "Data-quality limits: options-flow history is immature with unrecoverable missing live snapshots; factor history has only 11 dates; several sources failed; China market state is stale; these gaps constrain confidence.",
-    "Open-thesis ledger hygiene: multiple theses remain marked open beyond their check-by dates, including semiconductors, Bitcoin, China equities, Treasuries, high-yield credit, and US equities. They require scoring or retirement by the authorized process."
+    "US regime-label mismatch: confirmed Q2 versus raw Q3, with a pre-committed seven-session resolution criterion.",
+    "DHI and KDP options contradiction: clear only when buy-lane membership or rising-skew condition ceases on refreshed data.",
+    "Overdue master-brain thesis hygiene: close, score, or explicitly re-register every thesis past its check_by date.",
+    "Semiconductor underweight theses: current evidence is conflicted and several evaluation deadlines have passed; apply their registered falsifiers rather than carrying the narrative forward.",
+    "Factor coverage caveat: Pair G and attention authority have no usable grading history; zero records are insufficient coverage, not evidence of no contradictions."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-27",
+    "as_of": "2026-08-28",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -38,8 +40,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 12,
-      "total_rows": 20
+      "ungradeable": 18,
+      "total_rows": 26
     },
     "is_context_only": true
   },
@@ -61,22 +63,6 @@
     "degradation_reason": null,
     "model_used": "claude-opus-4-8",
     "provider_attempts": [
-      {
-        "provider": "oauth",
-        "model": "claude-opus-4-8",
-        "attempted": true,
-        "ok": false,
-        "error_type": "auth",
-        "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeUwJZhXYwyT7G2UgXJyp'}"
-      },
-      {
-        "provider": "codex",
-        "model": "gpt-5.6-sol",
-        "attempted": true,
-        "ok": true,
-        "error_type": null,
-        "error_message": null
-      },
       {
         "provider": "codex",
         "model": "gpt-5.6-sol",
@@ -118,10 +104,10 @@
         "error_message": null
       }
     ],
-    "tool_call_batches": 5,
+    "tool_call_batches": 4,
     "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-28T08:00:22Z"
+    "context_as_of": "2026-08-28T13:34:04Z"
   }
 }
