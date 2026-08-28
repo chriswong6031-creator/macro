@@ -10,15 +10,23 @@ catalog.  It is used here only as a recent-tail repair source.  A Tencent tail m
 an existing Yahoo/store series only when overlapping closes are on the same adjustment
 basis.  It never creates a second store and never fabricates sessions for suspended
 names: if Tencent has no newer traded date, the frame is left unchanged.
+
+Tencent's daily ``amount``/sixth kline field is volume in Chinese board lots (手), while
+Yahoo and the canonical Macro stock stores use shares.  The parser normalizes lots x100
+before a repaired row can enter the store.  The endpoint can also expose the current
+session before it is final; repairs are capped at the last completed Shanghai session
+(16:05 local safety boundary) so an intraday partial candle cannot become daily truth.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import logging
 import time
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -33,6 +41,8 @@ _TENCENT_URLS = (
 )
 _PROBE_PREFERENCE = ("600519.SS", "000001.SZ", "600036.SS", "000858.SZ")
 _DEFAULT_COUNT = 90
+_SHANGHAI = ZoneInfo("Asia/Shanghai")
+_FINALIZATION_TIME = dt.time(16, 5)
 
 
 def tencent_code(ticker: str) -> str | None:
@@ -57,12 +67,15 @@ def frame_from_payload(ticker: str, payload: dict) -> pd.DataFrame | None:
     for x in raw:
         if not isinstance(x, list) or len(x) < 6:
             continue
-        dt = pd.to_datetime(x[0], errors="coerce")
-        if pd.isna(dt):
+        trade_dt = pd.to_datetime(x[0], errors="coerce")
+        if pd.isna(trade_dt):
             continue
         try:
-            # Tencent row order: date, open, close, high, low, volume.
-            rows.append((dt, float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5])))
+            # Tencent row order: date, open, close, high, low, volume-in-lots (手).
+            # Canonical Macro/Yahoo volume is shares; one A-share board lot = 100 shares.
+            rows.append(
+                (trade_dt, float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]) * 100.0)
+            )
         except (TypeError, ValueError):
             continue
     if not rows:
@@ -73,6 +86,31 @@ def frame_from_payload(ticker: str, payload: dict) -> pd.DataFrame | None:
     df = _drop_non_trading_placeholders(df)
     df = _drop_invalid_ohlc(df)
     return df.astype("float64") if not df.empty else None
+
+
+def completed_session_cutoff(now: dt.datetime | None = None) -> pd.Timestamp:
+    """Latest calendar date a Tencent daily row is allowed to represent.
+
+    Before 16:05 Asia/Shanghai, today's daily bar is considered provisional and is
+    excluded.  On weekends/holidays this is harmless: the provider has no row for the
+    non-trading date, so the latest real session naturally remains earlier.
+    """
+    local = now or dt.datetime.now(_SHANGHAI)
+    if local.tzinfo is None:
+        local = local.replace(tzinfo=_SHANGHAI)
+    else:
+        local = local.astimezone(_SHANGHAI)
+    day = local.date()
+    if local.timetz().replace(tzinfo=None) < _FINALIZATION_TIME:
+        day -= dt.timedelta(days=1)
+    return pd.Timestamp(day)
+
+
+def keep_completed_sessions(df: pd.DataFrame, now: dt.datetime | None = None) -> pd.DataFrame:
+    """Drop a current/provisional Shanghai daily row from a Tencent frame."""
+    cutoff = completed_session_cutoff(now)
+    idx = pd.to_datetime(df.index).tz_localize(None).normalize()
+    return df.loc[idx <= cutoff]
 
 
 def fetch_tencent(ticker: str, count: int = _DEFAULT_COUNT, retries: int = 2,
@@ -94,7 +132,9 @@ def fetch_tencent(ticker: str, count: int = _DEFAULT_COUNT, retries: int = 2,
                     continue
                 frame = frame_from_payload(ticker, payload)
                 if frame is not None and not frame.empty:
-                    return frame
+                    frame = keep_completed_sessions(frame)
+                    if not frame.empty:
+                        return frame
             except Exception as exc:  # noqa: BLE001 - the second host/retry is the fallback
                 last_exc = exc
         if attempt + 1 < max(1, int(retries)):
@@ -126,7 +166,7 @@ def _compatible_overlap(base: pd.DataFrame, fresh: pd.DataFrame, tol: float) -> 
 
 
 def _probe_tencent_latest(tickers: list[str], cfg: dict) -> tuple[pd.Timestamp | None, dict[str, pd.DataFrame]]:
-    """Find the latest traded A-share session from several liquid sentinels."""
+    """Find the latest completed A-share session from several liquid sentinels."""
     ordered: list[str] = []
     wanted = set(tickers)
     for t in _PROBE_PREFERENCE:
@@ -147,7 +187,7 @@ def _probe_tencent_latest(tickers: list[str], cfg: dict) -> tuple[pd.Timestamp |
         cache[t] = df
         d = pd.Timestamp(df.index.max()).tz_localize(None).normalize()
         latest = d if latest is None else max(latest, d)
-        # Two live sentinels agreeing on a latest date are enough; keep probes bounded.
+        # Two liquid sentinels agreeing on a date are enough; keep probes bounded.
         if sum(pd.Timestamp(x.index.max()).tz_localize(None).normalize() == latest for x in cache.values()) >= 2:
             break
     return latest, cache
@@ -158,11 +198,11 @@ def heal_adjusted_tails(frames: dict[str, pd.DataFrame], tickers: list[str], gro
     """Repair Yahoo omissions/stale tails without changing the canonical store owner.
 
     ``frames`` is the primary yfinance result for this run.  Tencent is consulted only
-    for names that are absent from that result or lag the latest session seen on liquid
-    Tencent sentinels.  A repair must either agree with the primary frame on overlap or,
-    when the primary frame is absent, pass the store's existing adjustment-basis guard.
-    Only dates newer than the primary frame are appended; the caller's normal
-    ``store.upsert(overwrite_overlap=True)`` remains the sole persistence path.
+    for names that are absent from that result or lag the latest completed session seen
+    on liquid Tencent sentinels.  A repair must either agree with the primary frame on
+    overlap or, when the primary frame is absent, pass the store's existing adjustment-
+    basis guard.  Only dates newer than the primary frame are appended; the caller's
+    normal ``store.upsert(overwrite_overlap=True)`` remains the sole persistence path.
     """
     if not tickers:
         return frames
