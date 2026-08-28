@@ -5313,3 +5313,122 @@ class TestNbboMicrostructureMeasurement:
         assert micro["ask_size_median"] == pytest.approx(25.0)
         # Every print sits strictly between its own bid and ask.
         assert micro["inside_share"] == pytest.approx(1.0)
+
+
+class TestEventMicrostructureAttachment:
+    """The measured block rides along on the existing event; it never
+    participates in identity or selection."""
+
+    @staticmethod
+    def _tape_with_one_quote_gap() -> pd.DataFrame:
+        """One contract: a large at-ask print with a usable NBBO, plus a second
+        source-valid print whose quote is missing entirely."""
+        return _df([
+            _make_nbbo_trade(  # 4.0 * 700 * 100 = $280,000, at ask
+                price=4.0, bid=2.0, ask=4.0, size=700, sequence=1,
+                trade_ts="2026-07-02T14:30:00.100",
+                quote_ts="2026-07-02T14:30:00.000",
+            ),
+            _make_nbbo_trade(  # 6.0 * 100 * 100 = $60,000, no NBBO at all
+                price=6.0, bid=None, ask=None, size=100, sequence=2,
+                trade_ts="2026-07-02T14:30:01.100",
+                quote_ts="2026-07-02T14:30:01.000",
+            ),
+        ])
+
+    def test_event_microstructure_uses_pre_sign_source_rows_without_changing_event_floor(self):
+        # SPY is not an ETF anchor here, so the $250k single-name floor applies.
+        result = _run(
+            self._tape_with_one_quote_gap(),
+            etf_floor=0, name_floor=250_000, etf_anchors=["QQQ"],
+        )
+        assert len(result["events"]) == 1
+        event = result["events"][0]
+
+        # Selection is unchanged: it still runs on the signable frame, so the
+        # quote-less print contributes nothing to the notability premium.
+        assert event["selection_rule"] == "premium_floor/v1"
+        assert event["selection_root_class"] == "single_name"
+        assert event["selection_floor_usd"] == 250_000
+        assert event["premium"] == pytest.approx(280_000)
+
+        micro = event["microstructure"]
+        assert micro["schema"] == MICRO_SCHEMA
+        assert micro["source_print_count"] == 2
+        assert micro["nbbo_valid_print_count"] == 1
+        # The denominator saw BOTH prints. Measuring after _sign_batch would have
+        # dropped the quote-less row and reported a false 100% coverage.
+        assert micro["source_premium_usd"] == pytest.approx(340_000.0)
+        assert micro["nbbo_covered_premium_usd"] == pytest.approx(280_000.0)
+        assert micro["nbbo_premium_coverage"] == pytest.approx(280_000 / 340_000, abs=1e-6)
+        assert micro["nbbo_premium_coverage"] < 1.0
+        assert micro["nbbo_print_coverage"] == pytest.approx(0.5)
+
+    def test_event_id_is_unchanged_by_microstructure_attachment(self):
+        result = _run(
+            self._tape_with_one_quote_gap(),
+            etf_floor=0, name_floor=250_000, etf_anchors=["QQQ"],
+        )
+        event = result["events"][0]
+        # seq_max is taken over the signable rows, exactly as before this wave.
+        expected = lf._event_id(SESSION_DATE, "SPY", "2026-07-05", 550.0, "C", 1)
+        assert event["id"] == expected
+        assert "microstructure" in event
+        # Identity is a function of the frozen tuple alone.
+        assert lf._event_id(SESSION_DATE, "SPY", "2026-07-05", 550.0, "C", 1) == expected
+
+    def test_existing_side_and_signing_source_remain_soft_and_unchanged(self):
+        result = _run(
+            self._tape_with_one_quote_gap(),
+            etf_floor=0, name_floor=250_000, etf_anchors=["QQQ"],
+        )
+        event = result["events"][0]
+        assert event["side"] in ("~buy", "~sell", "mixed")
+        assert event["signing_source"] == "tape"
+        # The measured block is not promoted into direction: a 100%-at-ask
+        # measurement still leaves `side` on the existing soft vocabulary.
+        assert event["microstructure"]["at_ask_share"] == pytest.approx(1.0)
+        assert not str(event["side"]).startswith("buy")
+
+
+class TestVolGtOiRatio:
+    """`vol_gt_oi_ratio` is a native descriptive event-time fact — the same
+    cumulative day volume and the same exact matched prior OI the existing
+    boolean already uses.  It is not a positioning signal and takes no authority."""
+
+    def _oi_frame(self, exp="2026-07-05", strike=550.0, right="C", oi=100) -> pd.DataFrame:
+        return pd.DataFrame([{
+            "expiration": exp, "strike": strike, "right": right, "open_interest": oi
+        }])
+
+    def test_vol_gt_oi_ratio_uses_cumulative_day_volume_and_exact_prior_oi(self):
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 150})
+        result = _run(calls, oi_prev=self._oi_frame(oi=100), etf_floor=0, name_floor=0)
+        event = result["events"][0]
+        assert event["vol_gt_oi"] is True
+        assert event["vol_gt_oi_ratio"] == pytest.approx(1.5)
+
+    def test_vol_gt_oi_ratio_null_when_oi_missing(self):
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 150})
+        result = _run(calls, oi_prev=None, etf_floor=0, name_floor=0)
+        event = result["events"][0]
+        assert event["vol_gt_oi"] is None
+        assert event["vol_gt_oi_ratio"] is None
+
+    def test_vol_gt_oi_ratio_null_when_prior_oi_zero(self):
+        """Zero prior OI cannot produce a ratio; the boolean keeps its own
+        existing meaning."""
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 150})
+        result = _run(calls, oi_prev=self._oi_frame(oi=0), etf_floor=0, name_floor=0)
+        event = result["events"][0]
+        assert event["vol_gt_oi"] is True
+        assert event["vol_gt_oi_ratio"] is None
+
+    def test_vol_gt_oi_ratio_does_not_change_vol_gt_oi_boolean(self):
+        calls = _calls({"price": 2.60, "bid": 2.40, "ask": 2.60, "size": 50})
+        result = _run(calls, oi_prev=self._oi_frame(oi=100), etf_floor=0, name_floor=0)
+        event = result["events"][0]
+        assert event["vol_gt_oi"] is False
+        assert event["vol_gt_oi_ratio"] == pytest.approx(0.5)
+        # Provenance for the OI leg stays exactly where it was.
+        assert "oi_vintage" in event

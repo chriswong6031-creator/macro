@@ -582,6 +582,10 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
 
     # FIX 1 — vol_gt_oi: use cumulative day-volume from state, not per-batch size
     vol_gt_oi_val = None
+    # OA-1T — the same comparison expressed as a ratio.  Null unless the matched
+    # prior OI is finite and strictly positive; a zero/absent OI has no ratio and
+    # must never be reported as 0 or as "infinite pressure".
+    vol_gt_oi_ratio_val = None
     if oi_prev is not None and not oi_prev.empty:
         try:
             exp_norm = pd.to_datetime(exp_str, errors="coerce").strftime("%Y-%m-%d")
@@ -605,6 +609,8 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
                     # fallback: use the per-batch coalesced size
                     cum_vol = float(row.get("size", 0))
                 vol_gt_oi_val = bool(cum_vol > oi_val)
+                if np.isfinite(oi_val) and oi_val > 0 and np.isfinite(cum_vol):
+                    vol_gt_oi_ratio_val = float(cum_vol / oi_val)
         except Exception as e:  # noqa: BLE001
             log.debug("live_flow: vol_gt_oi check failed: %s", e)
 
@@ -613,6 +619,7 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
         "dte_bucket": dte_bucket_val,
         "mny_bucket": mny_bucket_val,
         "vol_gt_oi": vol_gt_oi_val,
+        "vol_gt_oi_ratio": vol_gt_oi_ratio_val,
         "zerodte": zerodte,
     }
 
@@ -879,6 +886,11 @@ def process_batch(
                     ):
                         seen_sequences[k] = sequence
 
+    # Measure trade-vs-NBBO here, on the source-valid, sequence-deduped frame and
+    # BEFORE _sign_batch drops quote-unusable rows.  Measuring after it would hide
+    # every print that has no usable NBBO and report a false 100% coverage.
+    microstructure_by_contract = _coalesce_nbbo_microstructure(combined)
+
     combined = _sign_batch(combined)
     if combined.empty:
         return {
@@ -1016,6 +1028,18 @@ def process_batch(
         if ev_id in emitted_ids:
             continue
 
+        # The measurement is keyed on the exact contract, not on the event id, so
+        # it cannot participate in identity.  A miss here means the pre-sign frame
+        # and the coalesced frame disagree about what contract this is, which is an
+        # internal identity defect — fail closed rather than publish a plausible
+        # empty block.
+        measurement_key = (exp_str, strike, right)
+        microstructure = microstructure_by_contract.get(measurement_key)
+        if microstructure is None:
+            raise ValueError(
+                f"measured microstructure missing for emitted event {ev_id}"
+            )
+
         contract_key = (root, exp_str, strike, right)
         n_cycles = notability_hist.get(contract_key, 0) + 1
         notability_hist[contract_key] = n_cycles
@@ -1060,6 +1084,9 @@ def process_batch(
             "selection_floor_usd": selection_floor_usd,
             "selection_root_class": selection_root_class,
             "vol_gt_oi":       enrich["vol_gt_oi"],
+            # Additive: the same comparison as a ratio. Null when prior OI is
+            # absent or not strictly positive — never 0, never "infinite".
+            "vol_gt_oi_ratio": enrich["vol_gt_oi_ratio"],
             # Exact source vintage when the poller found a prior EOD chain.  Null is
             # intentional: never infer a date merely because vol_gt_oi is null.
             "oi_vintage":      oi_vintage,
@@ -1068,6 +1095,10 @@ def process_batch(
             "signing_source":  "tape",
             # Additive: sweep-like heuristic label (>=3 prints, >=2 exchanges, <=2s span)
             "swept":           is_swept,
+            # Additive, zero-authority measurement block (OA-1T).  Execution
+            # location and coverage measured against the licensed NBBO; never a
+            # direction, a rank, a gate or a probability.
+            "microstructure":  microstructure,
         }
         new_events.append(event)
         emitted_ids.add(ev_id)
