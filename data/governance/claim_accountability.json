@@ -1,11 +1,11 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-08-27T22:58:11.361522+00:00",
+  "generated_at": "2026-08-28T04:26:51.432673+00:00",
   "global": {
-    "n_claims": 68306,
-    "n_grades": 89282,
-    "n_with_falsifier": 670,
-    "falsifier_coverage": 0.009809,
+    "n_claims": 68426,
+    "n_grades": 92063,
+    "n_with_falsifier": 674,
+    "falsifier_coverage": 0.00985,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
   },
   "by_desk": {
@@ -17,15 +17,15 @@
       "n_hit_gradeable": 1303,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 1212,
-        "graded_5d_share": 0.930161,
+        "graded_5d_count": 1220,
+        "graded_5d_share": 0.936301,
         "matured_21d_count": 859,
-        "matured_63d_count": 78,
+        "matured_63d_count": 79,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 94,
-        "next_bar_count": 2055,
+        "next_bar_count": 2064,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -191,15 +191,15 @@
       "n_hit_gradeable": 4,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 0,
-        "graded_5d_share": 0.0,
+        "graded_5d_count": 1,
+        "graded_5d_share": 0.25,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 0,
+        "next_bar_count": 1,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -213,22 +213,22 @@
       }
     },
     "intel_hub": {
-      "n_claims": 3330,
-      "falsifier_coverage": 0.024024,
-      "n_with_falsifier": 80,
-      "hit_gradeable_share": 0.95015,
-      "n_hit_gradeable": 3164,
+      "n_claims": 3450,
+      "falsifier_coverage": 0.024348,
+      "n_with_falsifier": 84,
+      "hit_gradeable_share": 0.950725,
+      "n_hit_gradeable": 3280,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 2632,
-        "graded_5d_share": 0.79039,
-        "matured_21d_count": 901,
+        "graded_5d_count": 2742,
+        "graded_5d_share": 0.794783,
+        "matured_21d_count": 934,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 3533,
+        "next_bar_count": 3676,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -307,15 +307,15 @@
       "n_hit_gradeable": 30,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 45,
-        "graded_5d_share": 1.153846,
-        "matured_21d_count": 34,
+        "graded_5d_count": 47,
+        "graded_5d_share": 1.205128,
+        "matured_21d_count": 35,
         "matured_63d_count": 2,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 7,
-        "next_bar_count": 77,
+        "next_bar_count": 80,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -336,15 +336,15 @@
       "n_hit_gradeable": 11291,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 10255,
-        "graded_5d_share": 0.884052,
-        "matured_21d_count": 8622,
-        "matured_63d_count": 448,
+        "graded_5d_count": 10449,
+        "graded_5d_share": 0.900776,
+        "matured_21d_count": 8813,
+        "matured_63d_count": 612,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 987,
-        "next_bar_count": 18338,
+        "next_bar_count": 18887,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -365,15 +365,15 @@
       "n_hit_gradeable": 0,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 19726,
-        "graded_5d_share": 0.900237,
-        "matured_21d_count": 7330,
+        "graded_5d_count": 20420,
+        "graded_5d_share": 0.931909,
+        "matured_21d_count": 7690,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 8,
-        "next_bar_count": 27048,
+        "next_bar_count": 28102,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -394,15 +394,15 @@
       "n_hit_gradeable": 0,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 19726,
-        "graded_5d_share": 0.900237,
-        "matured_21d_count": 7330,
+        "graded_5d_count": 20420,
+        "graded_5d_share": 0.931909,
+        "matured_21d_count": 7690,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 8,
-        "next_bar_count": 27048,
+        "next_bar_count": 28102,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -457,12 +457,12 @@
         "graded_5d_count": 169,
         "graded_5d_share": 1.0,
         "matured_21d_count": 169,
-        "matured_63d_count": 78,
+        "matured_63d_count": 79,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 94,
-        "next_bar_count": 322,
+        "next_bar_count": 323,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -483,15 +483,15 @@
       "n_hit_gradeable": 330,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 326,
-        "graded_5d_share": 0.987879,
+        "graded_5d_count": 328,
+        "graded_5d_share": 0.993939,
         "matured_21d_count": 260,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 586,
+        "next_bar_count": 588,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -541,15 +541,15 @@
       "n_hit_gradeable": 219,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 203,
-        "graded_5d_share": 0.926941,
+        "graded_5d_count": 208,
+        "graded_5d_share": 0.949772,
         "matured_21d_count": 58,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 261,
+        "next_bar_count": 266,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -570,15 +570,15 @@
       "n_hit_gradeable": 411,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 339,
-        "graded_5d_share": 0.824818,
+        "graded_5d_count": 340,
+        "graded_5d_share": 0.827251,
         "matured_21d_count": 266,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 605,
+        "next_bar_count": 606,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -744,15 +744,15 @@
       "n_hit_gradeable": 4,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 0,
-        "graded_5d_share": 0.0,
+        "graded_5d_count": 1,
+        "graded_5d_share": 0.25,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 0,
+        "next_bar_count": 1,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -766,22 +766,22 @@
       }
     },
     "intel_hub": {
-      "n_claims": 3330,
-      "falsifier_coverage": 0.024024,
-      "n_with_falsifier": 80,
-      "hit_gradeable_share": 0.95015,
-      "n_hit_gradeable": 3164,
+      "n_claims": 3450,
+      "falsifier_coverage": 0.024348,
+      "n_with_falsifier": 84,
+      "hit_gradeable_share": 0.950725,
+      "n_hit_gradeable": 3280,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 2632,
-        "graded_5d_share": 0.79039,
-        "matured_21d_count": 901,
+        "graded_5d_count": 2742,
+        "graded_5d_share": 0.794783,
+        "matured_21d_count": 934,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 0,
-        "next_bar_count": 3533,
+        "next_bar_count": 3676,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -889,15 +889,15 @@
       "n_hit_gradeable": 30,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 45,
-        "graded_5d_share": 1.153846,
-        "matured_21d_count": 34,
+        "graded_5d_count": 47,
+        "graded_5d_share": 1.205128,
+        "matured_21d_count": 35,
         "matured_63d_count": 2,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 7,
-        "next_bar_count": 77,
+        "next_bar_count": 80,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -918,15 +918,15 @@
       "n_hit_gradeable": 11291,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 10255,
-        "graded_5d_share": 0.884052,
-        "matured_21d_count": 8622,
-        "matured_63d_count": 448,
+        "graded_5d_count": 10449,
+        "graded_5d_share": 0.900776,
+        "matured_21d_count": 8813,
+        "matured_63d_count": 612,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 987,
-        "next_bar_count": 18338,
+        "next_bar_count": 18887,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -947,15 +947,15 @@
       "n_hit_gradeable": 0,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 19726,
-        "graded_5d_share": 0.900237,
-        "matured_21d_count": 7330,
+        "graded_5d_count": 20420,
+        "graded_5d_share": 0.931909,
+        "matured_21d_count": 7690,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 8,
-        "next_bar_count": 27048,
+        "next_bar_count": 28102,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -976,15 +976,15 @@
       "n_hit_gradeable": 0,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 19726,
-        "graded_5d_share": 0.900237,
-        "matured_21d_count": 7330,
+        "graded_5d_count": 20420,
+        "graded_5d_share": 0.931909,
+        "matured_21d_count": 7690,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
       "fill_convention_split": {
         "asof_legacy_count": 8,
-        "next_bar_count": 27048,
+        "next_bar_count": 28102,
         "note": "#1180 discontinuity \u2014 asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
       },
       "source_ontology_fill": {
@@ -1028,7 +1028,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-08-27T22:55:57.964362+00:00",
+    "generated_at": "2026-08-28T04:24:47.218055+00:00",
     "grade_horizons": [
       5,
       21,
@@ -1040,6 +1040,7 @@
       "china_special_sits",
       "cn_importance_v0",
       "cn_importance_v0_pit",
+      "demand_chain",
       "intel_hub",
       "narrative",
       "policy",
