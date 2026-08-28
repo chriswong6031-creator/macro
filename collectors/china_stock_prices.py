@@ -12,8 +12,10 @@ Yahoo remains the canonical primary/deep-history source.  Tencent is a recent-ta
 repair source only: after the primary pull, missing or market-stale names are checked
 against Tencent qfq daily bars and may be extended only when the overlapping adjusted
 close basis agrees.  Persistence still flows through this adapter's one existing
-``china_stocks`` store; no second data plane is created.  See
-``research/signal_engine/MULTICOUNTRY_DATA.md`` and
+``china_stocks`` store; no second data plane is created.  Both source planes are capped
+at the last completed Shanghai session before persistence, so an operator-triggered
+repair while the market is open cannot turn an intraday partial row into daily truth.
+See ``research/signal_engine/MULTICOUNTRY_DATA.md`` and
 ``research/china_native_data/SOURCE_CATALOG_MARKET.md``.
 """
 from __future__ import annotations
@@ -24,7 +26,7 @@ import pandas as pd
 
 from collectors._stock_ohlc import fetch_ohlc, universe_columns
 from collectors.base import Adapter
-from collectors.china_stock_tencent import heal_adjusted_tails
+from collectors.china_stock_tencent import heal_adjusted_tails, keep_completed_sessions
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -55,6 +57,18 @@ class ChinaStockPriceAdapter(Adapter):
             primary_error = exc
             frames = {}
             log.warning("china_stocks: primary Yahoo plane returned zero frames; trying Tencent repair")
+
+        # Scheduled asia-close already runs after settlement, but incident/operator repairs
+        # can run while Shanghai is open. Apply the same final-session law to the primary
+        # plane as the Tencent repair plane; empty-after-cap frames are treated as primary
+        # misses and can be repaired/fail honestly below.
+        frames = {
+            ticker: completed
+            for ticker, frame in frames.items()
+            if frame is not None and not frame.empty
+            for completed in [keep_completed_sessions(frame)]
+            if completed is not None and not completed.empty
+        }
 
         frames = heal_adjusted_tails(frames, uni, self.group, self.cfg)
         if not frames:
