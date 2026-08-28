@@ -62,6 +62,7 @@ except ImportError:  # pragma: no cover — PyYAML is a standing repo dependency
     raise
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
 # The two permitted schema literals this module understands. It never mints a
 # third. See the ABSOLUTE PROHIBITION in the module docstring.

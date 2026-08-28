@@ -69,6 +69,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
 BASELINE_PATH_REL = "config/runtime_style_injection_allowlist.json"
 BASELINE_SCHEMA = "mastermind.runtime_style_allowlist.v1"
 SCAN_ROOTS = ("templates", "site")
