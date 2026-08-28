@@ -3139,6 +3139,16 @@ checks:
         Existence and identity only. A committed screenshot of a genuinely ugly
         light plane passes CI — refusing that verdict to a machine is the point,
         and the design review is where it is caught.
+      - >-
+        Known false positive, fail-closed by choice: adding a line INSIDE a
+        pre-existing multi-line CSS comment is treated as material and will
+        demand an evidence matrix. The `/*` opener is unchanged context outside
+        the hunk, so from the diff alone the added line is indistinguishable
+        from a real declaration, and this gate errs toward demanding evidence
+        rather than skipping silently. Adding a whole comment BLOCK is handled
+        correctly — the state machine sees the opener and close together. If you
+        hit this, add the comment in the same hunk as its `/*`, or attach the
+        receipt.
     owner_program: theme-parity-ratchet
     notes: >
       Amendment 1 (A1) is binding here: this must NOT become a second evidence
