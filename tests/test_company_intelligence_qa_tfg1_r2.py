@@ -332,3 +332,173 @@ def test_reconstruction_module_has_no_network_fuzzy_or_model_inference():
     )
     hits = [w for w in banned if re.search(rf"\b{re.escape(w)}\b", source)]
     assert not hits, f"{hits} reached the deterministic compiler"
+
+
+# --------------------------------------------------------------------------
+# Respondent role — same-revision roster/title evidence only
+# --------------------------------------------------------------------------
+
+def _roster_call(*, declaration: str, manager: str, manager_role: str = "") -> list[dict]:
+    """A call whose management speaker carries `manager_role` as segment role.
+
+    With `manager_role=""` the only possible role support is the same-revision
+    declaration, which is the SCCO/COF shape: 121 of 131 SCCO segments and 120 of 133
+    COF segments carry a blank role.
+    """
+    return [
+        _seg("Operator", "Operator", declaration),
+        _seg("Operator", "Operator",
+             "Our first question comes from the line of Joe Osha with Guggenheim."),
+        _seg("Analyst", "Joe Osha", "Thanks. How should we think about the backlog?"),
+        _seg(manager_role, manager, "Backlog converts over about three quarters."),
+    ]
+
+
+def test_roleless_management_resolves_from_same_revision_roster():
+    """COF shape: 'Mr. Andrew Young, Capital One's Chief Financial Officer.'"""
+    segs = _roster_call(
+        declaration=(
+            "Good evening. With me this evening are Mr. Richard Fairbank, Capital One's "
+            "Chairman and Chief Executive Officer, and Mr. Andrew Young, Capital One's "
+            "Chief Financial Officer. Rich and Andrew will walk you through the results."
+        ),
+        manager="Andrew Young",
+    )
+    out = _run(segs)
+    assert out["status"] == "ok", out
+    respondent = out["exchanges"][0]["respondents"][0]
+    assert respondent["name"] == "Andrew Young"
+    assert respondent["role"] == "Capital One's Chief Financial Officer"
+    assert respondent["identity_state"] == "source_supported"
+    evidence = respondent["identity_evidence"]
+    assert evidence["schema"] == "qa_respondent_identity_evidence.v1"
+    assert evidence["method"] == "transcript_roster"
+    assert evidence["role_source_spans"], "extended respondent carries no role source span"
+
+
+def test_roster_alias_prefix_binds_to_the_full_speaker_name():
+    """SCCO shape: the roster says 'Mr. Raul Jacob'; the speaker is 'Raul Jacob Ruisanchez'."""
+    segs = _roster_call(
+        declaration=(
+            "Good morning. With us this morning, we have Southern Copper Corporation's "
+            "Mr. Raul Jacob, Vice President of Finance, Treasurer, and CFO, who will "
+            "discuss the results of the company."
+        ),
+        manager="Raul Jacob Ruisanchez",
+    )
+    out = _run(segs)
+    assert out["status"] == "ok", out
+    respondent = out["exchanges"][0]["respondents"][0]
+    assert respondent["name"] == "Raul Jacob Ruisanchez"
+    assert respondent["role"] == "Vice President of Finance, Treasurer, and CFO"
+
+
+def test_roster_title_is_published_whole_and_not_generically_relabelled():
+    """The source title phrase may not be truncated or swapped for a generic label."""
+    segs = _roster_call(
+        declaration=(
+            "With us today is Mr. Raul Jacob, Vice President of Finance, Treasurer, and "
+            "CFO, who will discuss the results."
+        ),
+        manager="Raul Jacob",
+    )
+    out = _run(segs)
+    assert out["status"] == "ok", out
+    role = out["exchanges"][0]["respondents"][0]["role"]
+    assert role == "Vice President of Finance, Treasurer, and CFO"
+    assert role not in {"CFO", "Management", "Chief Financial Officer"}
+
+
+def test_missing_role_support_refuses():
+    """GOOGL shape: every segment role blank and no in-transcript title declaration.
+
+    Two distinct states share the "refuse, publish nothing" outcome the frozen
+    amendment requires, and they are NOT interchangeable:
+
+      * a speaker already established as management (carries a role, or is roster
+        supported) whose identity is then insufficient -> management_identity_insufficient;
+      * a roleless speaker with no same-revision declaration at all, who cannot be
+        established as management in the first place -> unexpected_non_housekeeping_speaker.
+
+    This fixture is the second state. Asserting the first here would have meant
+    reclassifying a genuine unexpected third party as management, which the existing
+    compiler suite pins against on purpose.
+    """
+    segs = _roster_call(
+        declaration="Good morning and welcome to the second quarter earnings call.",
+        manager="Sundar Pichai",
+    )
+    out = _run(segs)
+    assert out["status"] == "failed"
+    assert out["failure"]["code"] == "unexpected_non_housekeeping_speaker", out["failure"]
+    assert not out["exchanges"], "a refused call must publish nothing"
+
+
+def test_segment_role_conflicting_with_roster_evidence_refuses():
+    """ARRY/CTRE shape: explicit same-revision role conflict fails closed.
+
+    The compiler may not prefer one source over the other.
+    """
+    segs = _roster_call(
+        declaration=(
+            "With us today is Mr. Pat Okonkwo, the company's Chief Financial Officer, "
+            "who will discuss the results."
+        ),
+        manager="Pat Okonkwo",
+        manager_role="CEO",
+    )
+    out = _run(segs)
+    assert out["status"] == "failed"
+    assert out["failure"]["code"] == "management_identity_conflict", out["failure"]
+
+
+@pytest.mark.parametrize(
+    "segment_role,declared",
+    [
+        ("CEO", "Chief Executive Officer"),
+        ("CFO", "Chief Financial Officer"),
+        ("COO", "Chief Operating Officer"),
+    ],
+)
+def test_closed_role_aliases_are_compatible(segment_role, declared):
+    segs = _roster_call(
+        declaration=f"With us today is Mr. Pat Okonkwo, {declared}, who will discuss the results.",
+        manager="Pat Okonkwo",
+        manager_role=segment_role,
+    )
+    out = _run(segs)
+    assert out["status"] == "ok", out
+    assert out["exchanges"][0]["respondents"][0]["role"] == segment_role
+
+
+def test_cio_is_not_a_closed_alias():
+    """The alias table is closed at CEO/CFO/COO. CIO must not be minted as an alias."""
+    segs = _roster_call(
+        declaration="With us today is Mr. Pat Okonkwo, Chief Information Officer, who will discuss the results.",
+        manager="Pat Okonkwo",
+        manager_role="CIO",
+    )
+    out = _run(segs)
+    assert out["status"] == "failed"
+    assert out["failure"]["code"] == "management_identity_conflict", out["failure"]
+
+
+def test_extended_respondent_role_spans_byte_replay_against_the_same_revision():
+    segs = _roster_call(
+        declaration=(
+            "With me this evening is Mr. Andrew Young, Capital One's Chief Financial "
+            "Officer. He will walk you through the results."
+        ),
+        manager="Andrew Young",
+    )
+    out = _run(segs)
+    assert out["status"] == "ok", out
+    spans = out["exchanges"][0]["respondents"][0]["identity_evidence"]["role_source_spans"]
+    assert spans
+    # reconstruct_qa emits the raw span shape; qa_exchange is the layer that wraps it
+    # into a full source_span.v1 with schema/receipt/rights_profile. What must hold
+    # here is that the bytes replay exactly against the same revision's segment.
+    for span in spans:
+        source = segs[span["segment_index"]]["text"].encode("utf-8")
+        sliced = source[span["start_byte"]:span["end_byte"]]
+        assert hashlib.sha256(sliced).hexdigest() == span["text_sha256"]

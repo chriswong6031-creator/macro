@@ -89,6 +89,29 @@ _R2_FULL_NAME_RE = re.compile(
 )
 
 
+# Same-revision participant/title declaration. Honorific optional (COF declares
+# "Jeff Norris, Senior Vice President of Finance" bare), but the title must carry a
+# real office word so ordinary "<Name>, <clause>" prose cannot mint a role.
+_ROSTER_NAME = r"(?-i:[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*(?:\s+[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*){1,3})"
+_ROSTER_DECL_RE = re.compile(
+    r"\b(?:(?:Mr|Ms|Mrs|Dr)\.?\s+)?(?P<name>" + _ROSTER_NAME + r")\s*,\s*"
+    r"(?P<title>[^.]{3,160}?)"
+    r"(?=,\s*who\b|,\s*and\s+(?:Mr|Ms|Mrs|Dr)\b|\s+and\s+also\b|\.|$)",
+    re.IGNORECASE,
+)
+_ROSTER_OFFICE_RE = re.compile(
+    r"\b(?:chief|officer|president|treasurer|chairman|chairwoman|ceo|cfo|coo)\b",
+    re.IGNORECASE,
+)
+# Closed role-comparison alias table. CEO/CFO/COO only -- no CIO, no open-ended
+# abbreviation derivation.
+_ROLE_ALIASES = {
+    "ceo": "chief executive officer",
+    "cfo": "chief financial officer",
+    "coo": "chief operating officer",
+}
+
+
 _FAILURE_CODES = frozenset({
     "transcript_sha_invalid",
     "empty_segments",
@@ -101,6 +124,7 @@ _FAILURE_CODES = frozenset({
     "analyst_speaker_missing",
     "unexpected_non_housekeeping_speaker",
     "management_identity_insufficient",
+    "management_identity_conflict",
     "span_replay_failed",
     "question_answer_overlap",
     "orphan_or_duplicate_answer_span",
@@ -157,6 +181,7 @@ def reconstruct_qa(
         return _fail(base, "duplicate_or_unordered_boundaries", "qualifying boundaries are not strictly increasing")
     base["qualifying_boundaries"] = list(boundaries)
 
+    roster = _roster_declarations(segs)
     exchanges: list[dict[str, Any]] = []
     housekeeping_count = 0
     for ordinal, start in enumerate(boundaries):
@@ -169,6 +194,7 @@ def reconstruct_qa(
             ordinal=ordinal,
             start=start,
             end=end,
+            roster=roster,
         )
         if built.get("status") != "ok":
             return _fail(
@@ -239,12 +265,19 @@ def _is_non_management_role(seg: Mapping[str, Any]) -> bool:
     return _role_key(seg) in _NON_MANAGEMENT_ROLES
 
 
-def _is_management(seg: Mapping[str, Any], questioner_name: str = "") -> bool:
+def _is_management(
+    seg: Mapping[str, Any],
+    questioner_name: str = "",
+    roster: Mapping[str, Mapping[str, Any]] | None = None,
+) -> bool:
     if _is_housekeeping(seg) or _is_verified_questioner(seg, questioner_name):
         return False
     if _is_non_management_role(seg):
         return False
-    return bool(_role_key(seg))
+    if _role_key(seg):
+        return True
+    # Roleless speaker is management only when the same revision declares their office.
+    return bool(roster) and _roster_support(roster, _speaker_name(seg)) is not None
 
 
 def _norm_person(name: str) -> str:
@@ -264,8 +297,8 @@ def _return_spans(text: str) -> list[tuple[int, int]]:
     return spans
 
 
-def _handoff_name(text: object) -> tuple[int, str] | None:
-    """Position and name of the questioner named by a question-bearing handoff."""
+def _handoff_hits(text: object) -> list[tuple[int, str]]:
+    """Every question-bearing named handoff in a segment, ordered by position."""
     body = " ".join(str(text or "").split())
     blocked = _return_spans(body)
     hits: list[tuple[int, str]] = []
@@ -275,12 +308,16 @@ def _handoff_name(text: object) -> tuple[int, str] | None:
             if any(lo <= pos <= hi for lo, hi in blocked):
                 continue
             name = match.group("name").strip(" ,.")
-            if name:
+            if name and (pos, name) not in hits:
                 hits.append((pos, name))
-    if not hits:
-        return None
     hits.sort()
-    return hits[-1]
+    return hits
+
+
+def _handoff_name(text: object) -> tuple[int, str] | None:
+    """Position and name of the questioner named by a question-bearing handoff."""
+    hits = _handoff_hits(text)
+    return hits[-1] if hits else None
 
 
 def _next_source_turn(segments: Sequence[Mapping[str, Any]], index: int) -> int | None:
@@ -329,15 +366,24 @@ def _parse_affiliation_after(after: str) -> tuple[str, str]:
 
 def _parse_operator_identity(text: str) -> dict[str, Any] | None:
     source = " ".join(str(text).split())
-    hit = _handoff_name(source)
-    if hit is None:
+    hits = _handoff_hits(source)
+    if not hits:
         return None
-    position, name = hit
-    affiliation, state = _parse_affiliation_after(source[position + len(name):])
-    if state == "source_supported" and affiliation:
+    name = hits[-1][1]
+    # Conflicting same-revision affiliations for the SAME person stay unresolved: an
+    # intro that names one questioner with two different desks supports neither.
+    affiliations: set[str] = set()
+    for i, (position, hit_name) in enumerate(hits):
+        if _norm_person(hit_name) != _norm_person(name):
+            continue
+        stop = hits[i + 1][0] if i + 1 < len(hits) else len(source)
+        affiliation, state = _parse_affiliation_after(source[position + len(hit_name):stop])
+        if state == "source_supported" and affiliation:
+            affiliations.add(affiliation)
+    if len(affiliations) == 1:
         return {
             "name": name,
-            "affiliation": affiliation,
+            "affiliation": next(iter(affiliations)),
             "affiliation_state": "source_supported",
         }
     return {"name": name, "affiliation": "", "affiliation_state": "unresolved"}
@@ -374,6 +420,76 @@ def _is_explicit_full_name_proxy(speaker: str, principal: str, utterance: str) -
     return claimed == full or claimed == full.split(" ")[0]
 
 
+def _roster_declarations(
+    segments: Sequence[Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Same-revision name -> declared office title, with replayable source spans.
+
+    A name declared twice with materially different titles is dropped rather than
+    guessed at, which leaves the respondent unsupported and refuses fail-closed.
+    """
+    found: dict[str, dict[str, Any]] = {}
+    for index, seg in enumerate(segments):
+        body = " ".join(_text(seg).split())
+        for match in _ROSTER_DECL_RE.finditer(body):
+            title = match.group("title").strip().strip(" ,;")
+            if not title or not _ROSTER_OFFICE_RE.search(title):
+                continue
+            key = _norm_person(match.group("name"))
+            if not key:
+                continue
+            entry = found.setdefault(key, {"titles": {}, "span_indexes": []})
+            entry["titles"].setdefault(title, None)
+            if index not in entry["span_indexes"]:
+                entry["span_indexes"].append(index)
+    resolved: dict[str, dict[str, Any]] = {}
+    for key, entry in found.items():
+        titles = list(entry["titles"])
+        if len(titles) != 1:
+            continue  # ambiguous same-revision declaration: no support, fail closed
+        resolved[key] = {"role": titles[0], "span_indexes": entry["span_indexes"]}
+    return resolved
+
+
+def _roster_support(
+    roster: Mapping[str, Mapping[str, Any]], speaker: str
+) -> Mapping[str, Any] | None:
+    """Exact name, or a unique source-native alias that prefixes the speaker's name.
+
+    SCCO declares "Mr. Raul Jacob" while the answering speaker is
+    "Raul Jacob Ruisanchez"; the prefix must be unique across declarations so an
+    alias can never bind to two different people.
+    """
+    key = _norm_person(speaker)
+    if not key:
+        return None
+    if key in roster:
+        return roster[key]
+    tokens = key.split(" ")
+    hits = [
+        entry
+        for declared, entry in roster.items()
+        if declared.split(" ") == tokens[: len(declared.split(" "))]
+        and len(declared.split(" ")) < len(tokens)
+    ]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _roles_compatible(segment_role: str, declared_title: str) -> bool:
+    """Closed-alias comparison. Absent either side, there is nothing to conflict."""
+    role = " ".join(str(segment_role or "").split()).casefold()
+    title = " ".join(str(declared_title or "").split()).casefold()
+    if not role or not title:
+        return True
+    forms = {role}
+    if role in _ROLE_ALIASES:
+        forms.add(_ROLE_ALIASES[role])
+    for abbreviation, expanded in _ROLE_ALIASES.items():
+        if role == expanded:
+            forms.add(abbreviation)
+    return any(re.search(rf"\b{re.escape(form)}\b", title) for form in forms)
+
+
 def _whole_segment_span(seg: Mapping[str, Any], index: int) -> dict[str, Any] | None:
     text = _text(seg)
     encoded = text.encode("utf-8")
@@ -405,7 +521,9 @@ def _reconstruct_exchange(
     ordinal: int,
     start: int,
     end: int,
+    roster: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    roster = roster or {}
     intro = segments[start]
     parsed = _parse_operator_identity(_text(intro))
     if parsed is None:
@@ -425,7 +543,7 @@ def _reconstruct_exchange(
         if _is_verified_questioner(seg, parsed["name"]):
             first_analyst_idx = idx
             break
-        if _is_management(seg, parsed["name"]):
+        if _is_management(seg, parsed["name"], roster):
             continue
         first_analyst_idx = idx
         break
@@ -483,13 +601,34 @@ def _reconstruct_exchange(
             kind = "housekeeping"
         elif _is_verified_questioner(seg, questioner_name):
             kind = "question"
-        elif _is_management(seg, questioner_name):
-            if not _speaker_name(seg) or not _role_key(seg):
+        elif _is_management(seg, questioner_name, roster):
+            if not _speaker_name(seg):
                 return {
                     "status": "failed",
                     "failure": {
                         "code": "management_identity_insufficient",
-                        "message": f"management segment {idx} missing speaker or role",
+                        "message": f"management segment {idx} missing speaker",
+                    },
+                }
+            support = _roster_support(roster, _speaker_name(seg))
+            declared = str(support["role"]) if support else ""
+            if not _roles_compatible(_role_key(seg), declared):
+                return {
+                    "status": "failed",
+                    "failure": {
+                        "code": "management_identity_conflict",
+                        "message": (
+                            f"segment {idx} role {str(seg.get('role') or '')!r} conflicts "
+                            f"with same-revision declaration {declared!r}"
+                        ),
+                    },
+                }
+            if not _role_key(seg) and not declared:
+                return {
+                    "status": "failed",
+                    "failure": {
+                        "code": "management_identity_insufficient",
+                        "message": f"management segment {idx} has no same-revision role support",
                     },
                 }
             kind = "answer"
@@ -571,7 +710,7 @@ def _reconstruct_exchange(
             },
         }
 
-    respondents = _answer_turns(segments, start, end, kinds, answer_spans)
+    respondents = _answer_turns(segments, start, end, kinds, answer_spans, roster)
     owned: list[int] = []
     for turn in respondents:
         owned.extend(turn["span_indexes"])
@@ -622,6 +761,7 @@ def _answer_turns(
     end: int,
     kinds: Mapping[int, str],
     answer_spans: Sequence[Mapping[str, Any]],
+    roster: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """One respondent per management answer-turn, split on speaker/analyst/housekeeping."""
     index_by_seg = {span["segment_index"]: i for i, span in enumerate(answer_spans)}
@@ -642,6 +782,27 @@ def _answer_turns(
         seg = segments[idx]
         name = _speaker_name(seg)
         role = str(seg.get("role") or "")
+        evidence: dict[str, Any] | None = None
+        if not role:
+            support = _roster_support(roster or {}, name)
+            if support:
+                # Extended respondent: role is carried by same-revision roster/title
+                # text rather than by this segment's own role metadata. The source
+                # title phrase is published whole, never relabelled to fit a consumer.
+                role = str(support["role"])
+                spans = [
+                    span
+                    for span in (
+                        _whole_segment_span(segments[i], i) for i in support["span_indexes"]
+                    )
+                    if span is not None
+                ]
+                if spans:
+                    evidence = {
+                        "schema": "qa_respondent_identity_evidence.v1",
+                        "method": "transcript_roster",
+                        "role_source_spans": spans,
+                    }
         span_i = index_by_seg[idx]
         if current is None or current["name"] != name:
             close()
@@ -651,6 +812,8 @@ def _answer_turns(
                 "identity_state": "source_supported",
                 "span_indexes": [span_i],
             }
+            if evidence is not None:
+                current["identity_evidence"] = evidence
         else:
             current["span_indexes"].append(span_i)
     close()
