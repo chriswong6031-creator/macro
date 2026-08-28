@@ -24,6 +24,7 @@ from pathlib import Path
 
 import pytest
 
+from engine.company_intelligence import qa_exchange
 from engine.company_intelligence.qa_reconstruction import reconstruct_qa
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -502,3 +503,95 @@ def test_extended_respondent_role_spans_byte_replay_against_the_same_revision():
         source = segs[span["segment_index"]]["text"].encode("utf-8")
         sliced = source[span["start_byte"]:span["end_byte"]]
         assert hashlib.sha256(sliced).hexdigest() == span["text_sha256"]
+
+
+# --------------------------------------------------------------------------
+# Extended respondent must survive canonicalization, not be silently stripped
+# --------------------------------------------------------------------------
+
+def _canonical(segs):
+    return qa_exchange.canonical_qa_exchanges(
+        list(_run(segs)["exchanges"]),
+        event_id=EVENT_ID,
+        document_id=DOCUMENT_ID,
+        document_sha256=SHA,
+        segments=segs,
+    )
+
+
+def test_roster_evidence_survives_canonicalization():
+    """The silent-stripping regression this pins is worse than a hard failure.
+
+    `_canonical_respondent` rebuilt a fixed four-key dict, so a roster-derived role
+    published fine while its `identity_evidence` vanished — leaving a role with no
+    replayable support, which is exactly what the frozen amendment forbids. Nothing
+    raised, so it would have shipped.
+    """
+    segs = _roster_call(
+        declaration=(
+            "With me this evening is Mr. Andrew Young, Capital One's Chief Financial "
+            "Officer. He will walk you through the results."
+        ),
+        manager="Andrew Young",
+    )
+    exchanges = _canonical(segs)
+    assert exchanges
+    respondent = exchanges[0]["respondents"][0]
+    assert set(respondent) == set(qa_exchange.RESPONDENT_EXTENDED_KEYS)
+    evidence = respondent["identity_evidence"]
+    assert evidence["schema"] == "qa_respondent_identity_evidence.v1"
+    assert evidence["method"] == "transcript_roster"
+    for span in evidence["role_source_spans"]:
+        assert span["schema"] == "source_span.v1"
+        assert span["receipt_state"] == "byte_replayed"
+        assert span["document_id"] == DOCUMENT_ID
+    qa_exchange.validate_qa_exchanges(
+        exchanges, event_id=EVENT_ID, document_id=DOCUMENT_ID, document_sha256=SHA
+    )
+
+
+def test_legacy_four_key_respondent_is_unchanged():
+    """Backward safety: a respondent whose own segment carries the role stays legacy."""
+    segs = _roster_call(
+        declaration="Good morning and welcome to the second quarter earnings call.",
+        manager="Dana Reed",
+        manager_role="CFO",
+    )
+    exchanges = _canonical(segs)
+    assert exchanges
+    respondent = exchanges[0]["respondents"][0]
+    assert set(respondent) == set(qa_exchange.RESPONDENT_KEYS)
+    assert "identity_evidence" not in respondent
+
+
+def test_arbitrary_extra_respondent_key_is_still_rejected():
+    """The contract is two closed shapes, not "four keys plus anything"."""
+    segs = _roster_call(
+        declaration="Good morning and welcome to the second quarter earnings call.",
+        manager="Dana Reed",
+        manager_role="CFO",
+    )
+    exchanges = _canonical(segs)
+    exchanges[0]["respondents"][0]["nickname"] = "Dan"
+    with pytest.raises(qa_exchange.WorkspaceError):
+        qa_exchange.validate_qa_exchanges(
+            exchanges, event_id=EVENT_ID, document_id=DOCUMENT_ID, document_sha256=SHA
+        )
+
+
+def test_roster_evidence_from_another_revision_is_rejected():
+    """Role spans must replay against the SAME revision as the parent exchange."""
+    segs = _roster_call(
+        declaration=(
+            "With me this evening is Mr. Andrew Young, Capital One's Chief Financial "
+            "Officer. He will walk you through the results."
+        ),
+        manager="Andrew Young",
+    )
+    exchanges = _canonical(segs)
+    spans = exchanges[0]["respondents"][0]["identity_evidence"]["role_source_spans"]
+    spans[0]["receipt"]["source_sha256"] = "c" * 64
+    with pytest.raises(qa_exchange.WorkspaceError):
+        qa_exchange.validate_qa_exchanges(
+            exchanges, event_id=EVENT_ID, document_id=DOCUMENT_ID, document_sha256=SHA
+        )

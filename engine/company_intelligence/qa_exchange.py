@@ -54,6 +54,14 @@ EXCHANGE_KEYS = (
 )
 QUESTIONER_KEYS = ("name", "affiliation", "name_state", "affiliation_state")
 RESPONDENT_KEYS = ("name", "role", "identity_state", "span_indexes")
+# Frozen dual-variant contract (TFG0_QA_RESPONDENT_IDENTITY_EVIDENCE_AMENDMENT_2026-08-27):
+# a respondent is EXACTLY the legacy four keys, or exactly those plus identity_evidence
+# when the role is carried by same-revision roster/title text instead of the answer
+# segment's own role. The parent stays qa_exchange.v1 -- this is not a v2.
+RESPONDENT_EXTENDED_KEYS = RESPONDENT_KEYS + ("identity_evidence",)
+RESPONDENT_EVIDENCE_KEYS = ("schema", "method", "role_source_spans")
+RESPONDENT_EVIDENCE_SCHEMA = "qa_respondent_identity_evidence.v1"
+RESPONDENT_EVIDENCE_METHOD = "transcript_roster"
 NAME_STATE_SOURCE_SUPPORTED = "source_supported"
 AFFILIATION_STATES = frozenset({"source_supported", "unresolved"})
 IDENTITY_STATE_SOURCE_SUPPORTED = "source_supported"
@@ -194,7 +202,13 @@ def canonical_qa_exchange(
     if not question_spans or not answer_spans:
         raise WorkspaceError("qa_exchange is missing question or answer spans")
     respondents = [
-        _canonical_respondent(row, answer_span_count=len(answer_spans))
+        _canonical_respondent(
+            row,
+            answer_span_count=len(answer_spans),
+            segments=segments,
+            document_id=document_id,
+            document_sha256=document_sha256,
+        )
         for row in list(reconstructed.get("respondents") or [])
     ]
     _assert_answer_ownership(respondents, len(answer_spans))
@@ -283,7 +297,15 @@ def validate_qa_exchange(
     parsed = []
     for row in respondents:
         mapped = _mapping(row, "respondent")
-        _exact_keys(mapped, RESPONDENT_KEYS, "respondent")
+        if "identity_evidence" in mapped:
+            _exact_keys(mapped, RESPONDENT_EXTENDED_KEYS, "respondent")
+            _assert_respondent_evidence(
+                mapped.get("identity_evidence"),
+                document_id=document_id,
+                document_sha256=document_sha256,
+            )
+        else:
+            _exact_keys(mapped, RESPONDENT_KEYS, "respondent")
         _assert_respondent_identity(mapped)
         parsed.append(mapped)
     _assert_answer_ownership(parsed, len(answer_spans))
@@ -415,7 +437,14 @@ def _canonical_questioner(raw: Mapping[str, Any]) -> dict[str, Any]:
     return questioner
 
 
-def _canonical_respondent(raw: Mapping[str, Any], *, answer_span_count: int) -> dict[str, Any]:
+def _canonical_respondent(
+    raw: Mapping[str, Any],
+    *,
+    answer_span_count: int,
+    segments: Sequence[Mapping[str, Any]] | None = None,
+    document_id: str = "",
+    document_sha256: str = "",
+) -> dict[str, Any]:
     indexes = [int(value) for value in list(raw.get("span_indexes") or [])]
     if not indexes or indexes != sorted(set(indexes)):
         raise WorkspaceError("respondent span_indexes must be unique and ordered")
@@ -427,8 +456,66 @@ def _canonical_respondent(raw: Mapping[str, Any], *, answer_span_count: int) -> 
         "identity_state": str(raw.get("identity_state") or ""),
         "span_indexes": indexes,
     }
+    evidence = raw.get("identity_evidence")
+    if evidence is not None:
+        respondent["identity_evidence"] = _canonical_respondent_evidence(
+            evidence,
+            segments=segments or [],
+            document_id=document_id,
+            document_sha256=document_sha256,
+        )
     _assert_respondent_identity(respondent)
     return respondent
+
+
+def _canonical_respondent_evidence(
+    raw: object,
+    *,
+    segments: Sequence[Mapping[str, Any]],
+    document_id: str,
+    document_sha256: str,
+) -> dict[str, Any]:
+    """Canonicalise the nested roster evidence, replaying every role span."""
+    item = _mapping(raw, "respondent.identity_evidence")
+    _exact_keys(item, RESPONDENT_EVIDENCE_KEYS, "respondent.identity_evidence")
+    spans = [
+        _canonical_span(
+            span,
+            segments=segments,
+            document_id=document_id,
+            document_sha256=document_sha256,
+        )
+        for span in list(item.get("role_source_spans") or [])
+    ]
+    if not spans:
+        raise WorkspaceError("respondent identity_evidence needs a role source span")
+    evidence = {
+        "schema": str(item.get("schema") or ""),
+        "method": str(item.get("method") or ""),
+        "role_source_spans": spans,
+    }
+    _assert_respondent_evidence(
+        evidence, document_id=document_id, document_sha256=document_sha256
+    )
+    return evidence
+
+
+def _assert_respondent_evidence(
+    raw: object, *, document_id: str, document_sha256: str
+) -> None:
+    item = _mapping(raw, "respondent.identity_evidence")
+    _exact_keys(item, RESPONDENT_EVIDENCE_KEYS, "respondent.identity_evidence")
+    if item.get("schema") != RESPONDENT_EVIDENCE_SCHEMA:
+        raise WorkspaceError("respondent identity_evidence schema mismatch")
+    if item.get("method") != RESPONDENT_EVIDENCE_METHOD:
+        raise WorkspaceError("respondent identity_evidence method is not transcript_roster")
+    spans = item.get("role_source_spans")
+    if not isinstance(spans, list) or not spans:
+        raise WorkspaceError("respondent identity_evidence needs a role source span")
+    for span in spans:
+        _validate_canonical_span(
+            span, document_id=document_id, document_sha256=document_sha256
+        )
 
 
 def _assert_questioner_identity(questioner: Mapping[str, Any]) -> None:
