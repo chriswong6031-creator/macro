@@ -7,8 +7,9 @@ validates its complete typed document, and atomically installs one read-only
 artifact for Mastermind.  It owns no timer, credentials, cache, routing, or
 execution authority of its own.
 
-Failures are fail-closed and leave the last-good artifact untouched.  Messages
-contain stable reason codes only; child stderr is never forwarded.
+Pre-commit failures are fail-closed and leave the last-good artifact untouched;
+post-commit durability ambiguity is reported separately. Messages contain
+stable reason codes only; child stderr is never forwarded.
 """
 from __future__ import annotations
 
@@ -36,18 +37,23 @@ from scripts import build_project_active_build_map as project_map
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SOURCE_DIRECTORY = Path("/var/lib/mastermind-control-room-sources")
 OUTPUT_PATH = SOURCE_DIRECTORY / "project-active-builds.json"
-SERVICE_GROUP = "mastermind-control-room"
+SERVICE_GROUP = "caddy"
 DIRECTORY_MODE = 0o750
 FILE_MODE = 0o640
 COLLECT_TIMEOUT_SECONDS = 90.0
 STDOUT_LIMIT_BYTES = 4 * 1024 * 1024
 STDERR_LIMIT_BYTES = 16 * 1024
 SOURCE_MAX_AGE_SECONDS = 300
-SOURCE_FUTURE_TOLERANCE_SECONDS = 60
+SOURCE_FUTURE_TOLERANCE_SECONDS = 0
+COLLECTION_MIN_INTERVAL_SECONDS = 9 * 60
 
 
 class PublishError(RuntimeError):
     """A sanitized, stable fail-closed publication reason."""
+
+    def __init__(self, code: str):
+        self.code = code
+        super().__init__(code)
 
 
 @dataclass(frozen=True)
@@ -66,14 +72,21 @@ def builder_command(repo_root: Path, python_executable: str) -> list[str]:
 
 
 def _terminate_and_reap(process: subprocess.Popen[bytes]) -> None:
+    group_kill_failed = False
+    # The direct child may already have exited while one of its descendants
+    # still owns a captured pipe.  The process group remains ours and must be
+    # killed regardless of the direct child's poll state.
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    except (PermissionError, OSError):
+        group_kill_failed = True
     if process.poll() is None:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except (ProcessLookupError, PermissionError, OSError):
-            try:
-                process.kill()
-            except ProcessLookupError:
-                pass
+            process.kill()
+        except ProcessLookupError:
+            pass
     try:
         process.wait(timeout=2)
     except subprocess.TimeoutExpired:
@@ -81,7 +94,12 @@ def _terminate_and_reap(process: subprocess.Popen[bytes]) -> None:
             process.kill()
         except ProcessLookupError:
             pass
-        process.wait()
+        try:
+            process.wait(timeout=2)
+        except subprocess.TimeoutExpired as exc:
+            raise PublishError("COLLECT_REAP_FAILED") from exc
+    if group_kill_failed:
+        raise PublishError("COLLECT_REAP_FAILED")
 
 
 def run_bounded(
@@ -157,8 +175,14 @@ def run_bounded(
         raise PublishError("COLLECT_TIMEOUT") from exc
     finally:
         selector.close()
-        process.stdout.close()
-        process.stderr.close()
+        try:
+            process.stdout.close()
+        except OSError:
+            pass
+        try:
+            process.stderr.close()
+        except OSError:
+            pass
         if process.poll() is None:
             _terminate_and_reap(process)
 
@@ -176,8 +200,8 @@ def _reject_nonfinite(_value: str) -> Any:
     raise PublishError("DOCUMENT_NONFINITE_NUMBER")
 
 
-def validate_document(raw: bytes, *, now: datetime | None = None) -> bytes:
-    """Validate and return canonical JSON bytes for the exact source contract."""
+def _decode_document(raw: bytes) -> tuple[dict[str, Any], datetime]:
+    """Decode the exact canonical contract and its aware UTC source clock."""
     if not raw or len(raw) > STDOUT_LIMIT_BYTES:
         raise PublishError("DOCUMENT_SIZE")
     try:
@@ -212,6 +236,12 @@ def validate_document(raw: bytes, *, now: datetime | None = None) -> bytes:
         raise PublishError("SOURCE_CLOCK") from exc
     if stamp.tzinfo is None or stamp.utcoffset() != timedelta(0):
         raise PublishError("SOURCE_CLOCK")
+    return document, stamp
+
+
+def validate_document(raw: bytes, *, now: datetime | None = None) -> bytes:
+    """Validate and return canonical JSON bytes for the exact source contract."""
+    document, stamp = _decode_document(raw)
 
     observed = now or datetime.now(timezone.utc)
     if observed.tzinfo is None or observed.utcoffset() != timedelta(0):
@@ -231,14 +261,24 @@ def _open_safe_directory(path: Path, *, expected_uid: int, expected_gid: int) ->
         descriptor = os.open(path, flags)
     except OSError as exc:
         raise PublishError("DIRECTORY_UNSAFE") from exc
-    metadata = os.fstat(descriptor)
+    try:
+        metadata = os.fstat(descriptor)
+    except OSError as exc:
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
+        raise PublishError("DIRECTORY_UNSAFE") from exc
     if (
         not stat.S_ISDIR(metadata.st_mode)
         or stat.S_IMODE(metadata.st_mode) != DIRECTORY_MODE
         or metadata.st_uid != expected_uid
         or metadata.st_gid != expected_gid
     ):
-        os.close(descriptor)
+        try:
+            os.close(descriptor)
+        except OSError:
+            pass
         raise PublishError("DIRECTORY_UNSAFE")
     return descriptor
 
@@ -275,6 +315,91 @@ def _write_all(descriptor: int, content: bytes) -> None:
         view = view[written:]
 
 
+def collection_due(
+    target: Path,
+    *,
+    expected_uid: int,
+    expected_gid: int,
+    now: datetime | None = None,
+) -> bool:
+    """Use the admitted artifact source clock to bound GitHub collection cadence."""
+    directory_fd = _open_safe_directory(
+        target.parent, expected_uid=expected_uid, expected_gid=expected_gid
+    )
+    artifact_fd: int | None = None
+    raw: bytes | None = None
+    operation_error: PublishError | None = None
+    close_error = False
+    try:
+        flags = os.O_RDONLY | os.O_CLOEXEC
+        flags |= getattr(os, "O_NOFOLLOW", 0)
+        try:
+            artifact_fd = os.open(target.name, flags, dir_fd=directory_fd)
+        except FileNotFoundError:
+            artifact_fd = None
+        except OSError as exc:
+            raise PublishError("TARGET_UNSAFE") from exc
+
+        if artifact_fd is not None:
+            try:
+                metadata = os.fstat(artifact_fd)
+            except OSError as exc:
+                raise PublishError("TARGET_UNSAFE") from exc
+            if (
+                not stat.S_ISREG(metadata.st_mode)
+                or stat.S_IMODE(metadata.st_mode) != FILE_MODE
+                or metadata.st_nlink != 1
+                or metadata.st_uid != expected_uid
+                or metadata.st_gid != expected_gid
+            ):
+                raise PublishError("TARGET_UNSAFE")
+            chunks: list[bytes] = []
+            size = 0
+            while size <= STDOUT_LIMIT_BYTES:
+                try:
+                    chunk = os.read(
+                        artifact_fd,
+                        min(65536, STDOUT_LIMIT_BYTES + 1 - size),
+                    )
+                except OSError as exc:
+                    raise PublishError("ARTIFACT_READ_FAILED") from exc
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                size += len(chunk)
+            raw = b"".join(chunks)
+    except PublishError as exc:
+        operation_error = exc
+    finally:
+        if artifact_fd is not None:
+            try:
+                os.close(artifact_fd)
+            except OSError:
+                close_error = True
+        try:
+            os.close(directory_fd)
+        except OSError:
+            close_error = True
+
+    if close_error:
+        raise PublishError("ARTIFACT_READ_FAILED")
+    if operation_error is not None:
+        raise operation_error
+    if raw is None:
+        return True
+    try:
+        _document, stamp = _decode_document(raw)
+    except PublishError:
+        return True
+    observed = now or datetime.now(timezone.utc)
+    if observed.tzinfo is None or observed.utcoffset() != timedelta(0):
+        raise PublishError("LOCAL_CLOCK")
+    age = (observed - stamp).total_seconds()
+    if age < 0:
+        return True
+    return age >= COLLECTION_MIN_INTERVAL_SECONDS
+
+
 def publish_document(
     target: Path,
     content: bytes,
@@ -288,6 +413,9 @@ def publish_document(
     )
     temporary_name = f".{target.name}.tmp-{secrets.token_hex(12)}"
     temporary_created = False
+    committed = False
+    operation_error: PublishError | None = None
+    cleanup_error: OSError | None = None
     try:
         _validate_target(
             directory_fd,
@@ -302,15 +430,20 @@ def publish_document(
             temporary_created = True
         except OSError as exc:
             raise PublishError("TEMPORARY_CREATE_FAILED") from exc
+        temporary_error: OSError | None = None
         try:
             _write_all(temporary_fd, content)
             os.fchown(temporary_fd, expected_uid, expected_gid)
             os.fchmod(temporary_fd, FILE_MODE)
             os.fsync(temporary_fd)
         except OSError as exc:
-            raise PublishError("TEMPORARY_WRITE_FAILED") from exc
-        finally:
+            temporary_error = exc
+        try:
             os.close(temporary_fd)
+        except OSError as exc:
+            temporary_error = temporary_error or exc
+        if temporary_error is not None:
+            raise PublishError("TEMPORARY_WRITE_FAILED") from temporary_error
 
         # Recheck immediately before rename so a swapped/hard-linked destination
         # cannot be silently replaced after the initial admission check.
@@ -327,23 +460,49 @@ def publish_document(
                 src_dir_fd=directory_fd,
                 dst_dir_fd=directory_fd,
             )
-            temporary_created = False
-            os.fsync(directory_fd)
         except OSError as exc:
             raise PublishError("ATOMIC_REPLACE_FAILED") from exc
-        _validate_target(
-            directory_fd,
-            target.name,
-            expected_uid=expected_uid,
-            expected_gid=expected_gid,
+        temporary_created = False
+        committed = True
+        try:
+            os.fsync(directory_fd)
+            _validate_target(
+                directory_fd,
+                target.name,
+                expected_uid=expected_uid,
+                expected_gid=expected_gid,
+            )
+        except (OSError, PublishError) as exc:
+            raise PublishError("PUBLISH_EFFECT_UNKNOWN") from exc
+    except PublishError as exc:
+        operation_error = exc
+    except OSError as exc:
+        operation_error = PublishError(
+            "PUBLISH_EFFECT_UNKNOWN" if committed else "PUBLISH_INTERNAL_FAILED"
         )
+        operation_error.__cause__ = exc
     finally:
         if temporary_created:
             try:
                 os.unlink(temporary_name, dir_fd=directory_fd)
             except FileNotFoundError:
                 pass
-        os.close(directory_fd)
+            except OSError as exc:
+                cleanup_error = exc
+        try:
+            os.close(directory_fd)
+        except OSError as exc:
+            cleanup_error = cleanup_error or exc
+
+    if cleanup_error is not None:
+        if committed or (
+            operation_error is not None
+            and operation_error.code == "PUBLISH_EFFECT_UNKNOWN"
+        ):
+            raise PublishError("PUBLISH_EFFECT_UNKNOWN") from cleanup_error
+        raise PublishError("TEMPORARY_CLEANUP_FAILED") from cleanup_error
+    if operation_error is not None:
+        raise operation_error
 
 
 def collect_document(repo_root: Path = REPO_ROOT) -> bytes:
@@ -368,6 +527,13 @@ def main() -> int:
         print("control-room-source: SERVICE_GROUP_UNAVAILABLE", file=sys.stderr)
         return 2
     try:
+        if not collection_due(
+            OUTPUT_PATH,
+            expected_uid=0,
+            expected_gid=service_gid,
+        ):
+            print("control-room-source: FRESH_NOOP")
+            return 0
         content = collect_document()
         publish_document(
             OUTPUT_PATH,
@@ -377,7 +543,7 @@ def main() -> int:
         )
     except PublishError as exc:
         print(f"control-room-source: {exc}", file=sys.stderr)
-        return 1
+        return 3 if exc.code == "PUBLISH_EFFECT_UNKNOWN" else 1
     print("control-room-source: PUBLISHED")
     return 0
 
