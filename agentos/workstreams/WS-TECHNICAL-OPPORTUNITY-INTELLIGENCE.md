@@ -39,9 +39,9 @@ waves:
     status: awaiting_ci
     pr: 6570
     next_action: >
-      Adjudicate exact-head Agent OS validation and PR CI on #6570, then complete Sol
-      records-only acceptance. Do not commission W1, W2-0, runtime, or signal work before
-      W0 is accepted and merged.
+      Adjudicate exact-head Agent OS validation and PR CI on #6570 under the current
+      protected Skillpack, then complete Sol records-only acceptance. Do not commission
+      W1, W2-0, runtime, or signal work before W0 is accepted and merged.
   - id: W1
     title: Public-method and local-estate Technical Evidence Census
     status: todo
@@ -86,6 +86,7 @@ landmines:
   - "Entitlement or a successful API call is not proof of historical point-in-time availability, corrections, rights, or universe coverage."
   - "Downside breakdown research starts with zero directional-short authority."
   - "Weekly/Daily/4H is the first proving slice, not the final horizon estate; future cold starts must preserve Monthly structural context, Radar-owned true intraday context, and point-in-time sector/theme/basket expansion."
+  - "A branch, PR, queue, transport delivery, or worker ACK is not evidence of live execution; W1 and W2-0 use one carrier each, typed returns, and reciprocal continuation watching under the current procedure amendment."
 do_not_redo:
   - "Do not build a universal technical score or average Forming/Armed with Triggered/Confirmed."
   - "Do not redo per-name in-sample outcome audition (DNR:KILL-OUTCOME-AUDITION)."
@@ -95,13 +96,15 @@ do_not_redo:
   - "Do not begin Compression Release outcome testing until W1 and W2-0 are both accepted."
 artifacts:
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-27.md
+  - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W0_PROCEDURE_AND_CONTINUATION_AMENDMENT_2026-08-27.md
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W1_EVIDENCE_CENSUS_HANDOFF_2026-08-27.md
   - research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_W2_DATA_CLOCK_HANDOFF_2026-08-27.md
   - agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27.md
 next_action: >
   Complete exact-head W0 validation and Sol review on draft PR #6570. Only after
   merge may W1 Evidence Census and W2-0 Data/Clock Archaeology start on separate
-  disjoint carriers; both must return before W3 preregistration or outcome testing.
+  disjoint carriers under operation keys TOI-W1-EVIDENCE-CENSUS-V1 and
+  TOI-W2-0-DATA-CLOCK-V1; both must return before W3 preregistration or outcome testing.
 ---
 
 ## Boundary note
