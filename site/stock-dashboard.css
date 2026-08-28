@@ -1,0 +1,720 @@
+/* Stock Dashboard governed presentation — TP-1 Canada theme-parity extraction
+   (theme-parity-tp1-canada-20260828-sol-001).
+   research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md §4-5.
+
+   This file owns every presentation rule the Canada V3.8 composer
+   (site/canada-stock-v36.js) used to author itself as a runtime <style> tag
+   (the deleted injectCss()). It is a paired plain-copy asset — byte-identical
+   to site/stock-dashboard.css (scripts/check_template_site_sync.py) — loaded
+   by templates/dashboard-icons.js's ensureStockDashCss() seam BEFORE the
+   composer script is injected, so the composer never mounts unstyled.
+
+   Scope: everything lives under .mx-stockdash (the shared stock-dashboard
+   mount family) and .mx-stockdash--ca (the Canada variant). The composer
+   keeps its existing .ca-v36-* child class names this wave (V3.8 semantic
+   naming is unchanged) — only the STYLE OWNERSHIP moved.
+
+   Token notes:
+   - --r-ctl / --r-btn / --r-card / --r-panel / --r-pill are the DS-PR-0
+     radius scale, not yet landed at :root (confirmed in templates/theme.css
+     around its .skel/.mx-ladder comments). Every border-radius below uses
+     the same var(--r-<family>, <canonical-px>) fallback idiom theme.css
+     itself already uses for .skel/.aib-card/.mx-ladder — the fallback is
+     the SCALE's own canonical stop (research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md
+     §2.2: r-ctl 8, r-btn 10, r-card 12, r-panel 14, r-pill 999), never the
+     pre-scale hand-authored pixel. Dark geometry therefore repaints by at
+     most a couple of px per surface — a sanctioned migration-time snap, not
+     a new decision — while the semantic token name is bound for when the
+     scale lands at :root. See DARK DELTA item 5 below for the full mapping.
+   - Elevation: var(--card-shadow) for flat panel/control surfaces.
+     var(--popover-shadow)/var(--card-shadow) are the LIGHT overrides for the
+     modal card and the segmented selected button; DARK keeps its own
+     pre-extraction hand-authored geometry for those two surfaces instead,
+     because the shared tokens alone under-elevate them on the dark plane —
+     see DARK DELTA items 2-3 below.
+   - Scrims/glows that were previously raw colour-function literals are
+     recomposed with color-mix(in srgb, var(--bg|--text) N%, transparent),
+     the same idiom templates/theme.css's own .af-scrim uses — see DARK
+     DELTA item 4 below for what changed.
+   - Action lane/stance identity reads the Prophet stance token family
+     (var(--ink-pv-<tone>, var(--pv-<tone>))) for buy/wait/avoid, applied to
+     both the stance chips and the Act-Now lane headers — never a
+     market-direction literal. "Near" is the one exception: theme.css
+     derives --pv-near FROM --pv-buy (a mix toward --muted), so painting a
+     Near lane in --ink-pv-near reads as a paler Buy rather than a fourth
+     independent hue — see DARK DELTA item 1 below. The Canada quote
+     .nb-chg.up/.down convention (var(--ok)/var(--act), Western
+     green-up/red-down even under ZH) is untouched.
+
+   DARK DELTA — every rule below this list is the pre-extraction dark
+   rendering, unchanged. These seven items are the only intentional dark
+   changes this wave makes, each a restoration, a sanctioned migration
+   snap, or a declared token-family alignment, never an undisclosed one:
+     1. Near-lane header and Near stance chip repainted from the stance
+        family (var(--ink-pv-near, var(--pv-near))) to the same
+        informational ink every other "look, don't act yet" affordance on
+        this estate already uses (var(--ink-link, var(--link)) — links, the
+        "View all" control). The Task-3 extraction had instead bound Near to
+        the stance family, which — because --pv-near derives from --pv-buy —
+        collapsed Buy-vs-Near into two visually near-identical shades
+        (measured pre-repair: their CIELAB separation fell from a wide
+        double-digit gap to single digits on both planes). Restoring the
+        link ink is what the pre-extraction runtime-injected CSS actually
+        shipped; this is a repair, not a new hue choice.
+     2. Modal card shadow: restored to a deep, widely-blurred, growth-offset
+        geometry with its base colour token-derived from --bg (sub-perceptual
+        difference from the prior hand-authored near-black literal). The
+        extraction had substituted var(--popover-shadow) here, a shadow
+        roughly a fifth the size — the dialog read nearly flat.
+     3. Segmented-control selected-button shadow: restored to a tight, low,
+        --bg-derived geometry (sub-perceptual vs. the prior literal) rather
+        than var(--card-shadow), which likewise under-elevates it on dark.
+     4. Modal/lane scrim base colour: token-derived from --bg rather than a
+        hand-authored near-black literal — sub-perceptual, no visible change.
+     5. border-radius snaps to the DS-PR-0 scale's canonical fallback (Token
+        notes above): stance chip moves from 6 to 8, the segmented track
+        moves from 9 to 10 (and its family moves from --r-ctl to --r-btn,
+        preserving track>button nesting), the segmented buttons move from 7
+        to 8, the Act-Now lane card moves from 11 to 12, the section panel
+        moves from 13 to 14, the modal card moves from 15 to 14, the modal
+        close control moves from 9 to 8, and the LIVE dot's own fallback
+        moves from an ad hoc 50% to the scale's 999px pill stop (same
+        rendered circle on a square box). Each move is at most a couple of
+        px and is the sanctioned migration-time repaint the scale's rollout
+        always implied.
+     6. Buy lane header / Buy stance chip ink moved from the direction
+        family (var(--ink-up, var(--up))) to the Prophet stance family
+        (var(--ink-pv-buy, var(--pv-buy))) — a measured dark shift
+        (CIELAB dE76 about 10 on the lane rail). Intentional: an action
+        stance is not a market move, so it must not ride the direction
+        tokens that flip under zh; the Prophet cards on this same page
+        already print BUY in the stance family, and the lanes now agree
+        with them.
+     7. Avoid lane header / Avoid stance chip ink moved likewise from
+        var(--ink-down, var(--down)) to var(--ink-pv-avoid,
+        var(--pv-avoid)) — measured dark dE76 about 8. Same rationale as
+        item 6; all four lane hues remain mutually distinct (minimum
+        pairwise dE76 above 60 on both planes).
+   The modal family's sibling combinator (.mx-stockdash--ca ~ .ca-v36-modal)
+   is a separate regression repair, documented at that rule below — it is
+   not a dark-only change (both themes were affected) so it is not counted
+   above. */
+
+.mx-stockdash {
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif);
+}
+.mx-stockdash *,
+.mx-stockdash *::before,
+.mx-stockdash *::after { box-sizing: border-box; }
+
+/* ---- Canada shell / head / Board+LIVE chips ------------------------------ */
+
+body.page-canada.ca-v36-mounted { background: var(--bg); color: var(--text); }
+body.page-canada.ca-v36-mounted > .panel { display: none !important; }
+
+.mx-stockdash--ca {
+  width: min(1480px, calc(100% - 32px));
+  margin: 22px auto 44px;
+  font-size: 16.2px;
+  line-height: 1.48;
+}
+.mx-stockdash--ca button,
+.mx-stockdash--ca input,
+.mx-stockdash--ca select { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
+
+.mx-stockdash--ca .ca-v36-head { display: flex; align-items: center; gap: 12px; min-height: 66px; margin-bottom: 14px; }
+.mx-stockdash--ca .ca-v36-head h1 { margin: 0; font-size: 31.5px; line-height: 1.05; font-weight: 650; letter-spacing: -.03em; }
+.mx-stockdash--ca .ca-v36-head-spacer { flex: 1; }
+
+.mx-stockdash--ca .ca-v36-chip,
+.mx-stockdash--ca .ca-v36-live {
+  height: 37px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.mx-stockdash--ca .ca-v36-live-dot {
+  width: 7px; height: 7px; border-radius: var(--r-pill, 999px);
+  background: var(--ok); box-shadow: 0 0 9px color-mix(in srgb, var(--ok) 55%, transparent);
+}
+.mx-stockdash--ca .ca-v36-live b { color: var(--ok); }
+
+/* Fresh-signals cue (owner .pv-mk-new markers) in the Prophet header. */
+.mx-stockdash--ca .ca-v36-fresh { color: var(--muted); font-size: 12.2px; white-space: nowrap; }
+
+.mx-stockdash--ca .ca-v36-lead-basis {
+  height: 26px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 650; white-space: nowrap;
+}
+
+/* ---- Section shells ------------------------------------------------------ */
+
+.mx-stockdash--ca .ca-v36-panel {
+  margin-bottom: 14px; border: 1px solid var(--line); border-radius: var(--r-panel, 14px);
+  background: var(--panel); box-shadow: var(--card-shadow); overflow: hidden;
+}
+.mx-stockdash--ca .ca-v36-sec-hd { min-height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-sec-hd h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.012em; }
+.mx-stockdash--ca .ca-v36-sec-spacer { flex: 1; }
+.mx-stockdash--ca .ca-v36-link { color: var(--ink-link, var(--link)); font-size: 13px; font-weight: 600; text-decoration: none; }
+.mx-stockdash--ca .ca-v36-link:hover { text-decoration: underline; }
+
+/* ---- What to Act On Now: segmented control / lanes / rows / counts / routes / empty / View-all --- */
+
+.mx-stockdash--ca .ca-v36-an-body { padding: 10px 12px 11px; }
+
+.mx-stockdash--ca .ca-v36-an-seg { display: none; gap: 6px; margin-bottom: 10px; }
+.mx-stockdash--ca .ca-v36-an-seg button {
+  flex: 1; min-width: 0; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 0 7px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
+.mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+  color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
+}
+
+.mx-stockdash--ca .ca-v36-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.mx-stockdash--ca .ca-v36-an-lane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); background: var(--panel2); overflow: hidden; }
+
+.mx-stockdash--ca .ca-v36-an-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
+  border-bottom: 1px solid var(--line); border-top: 2px solid currentColor;
+  font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .02em;
+}
+.mx-stockdash--ca .ca-v36-an-hd.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+/* Near is informational ("look, don't act yet"), not a fourth stance hue —
+   theme.css derives --pv-near FROM --pv-buy, so painting Near in the stance
+   family reads as a paler Buy. Bound to the same link ink every other
+   "look, don't act yet" affordance on this estate uses. See the DARK DELTA
+   note above (item 1). */
+.mx-stockdash--ca .ca-v36-an-hd.near { color: var(--ink-link, var(--link)); }
+.mx-stockdash--ca .ca-v36-an-hd.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--ca .ca-v36-an-hd.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+.mx-stockdash--ca .ca-v36-an-hd b { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; }
+
+.mx-stockdash--ca .ca-v36-an-row-w { display: flex; align-items: stretch; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca .ca-v36-an-hd + .ca-v36-an-row-w { border-top: 0; }
+
+.mx-stockdash--ca .ca-v36-an-row {
+  flex: 1; display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 32px; padding: 5px 10px; border: 0; background: transparent; color: inherit;
+  font-size: 12.6px; font-weight: 650; text-align: left; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-row:hover:not(:disabled),
+.mx-stockdash--ca .ca-v36-an-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-an-row:disabled { cursor: default; }
+.mx-stockdash--ca .ca-v36-an-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-an-n { flex: none; color: var(--muted); font-size: 10.6px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.mx-stockdash--ca .ca-v36-an-go {
+  flex: none; display: inline-flex; align-items: center; padding: 0 9px;
+  border-left: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  color: var(--muted); font-size: 12px; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-an-go:hover { color: var(--text); background: color-mix(in srgb, var(--link) 6%, transparent); }
+
+.mx-stockdash--ca .ca-v36-an-empty { padding: 12px 10px; color: var(--muted); font-size: 12px; text-align: center; }
+
+.mx-stockdash--ca .ca-v36-an-more {
+  display: block; width: 100%; padding: 7px 10px; border: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-more:hover { color: var(--text); }
+
+.mx-stockdash--ca .ca-v36-empty-go {
+  display: inline-block; margin-top: 10px; color: var(--ink-link, var(--link));
+  font-size: 12px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-empty-go:hover { text-decoration: underline; }
+
+/* ---- Leadership & Rotation: rows / rank / name / leaders / stance / count / basis --- */
+
+.mx-stockdash--ca .ca-v36-lead-cols { display: block; }
+.mx-stockdash--ca .ca-v36-lead-col-h {
+  display: flex; justify-content: space-between; padding: 11px 14px 10px;
+  color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+}
+
+.mx-stockdash--ca .ca-v36-lead-row {
+  position: relative; width: 100%; min-height: 58px; display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 34px; align-items: center; gap: 9px; padding: 10px 14px;
+  border: 0; border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: transparent; color: inherit; text-align: left; cursor: pointer; overflow: hidden;
+  transition: .15s ease;
+}
+.mx-stockdash--ca .ca-v36-lead-row:after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: var(--breadth, 8%); height: 1px;
+  background: color-mix(in srgb, var(--link) 44%, transparent); opacity: .5;
+}
+.mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled),
+.mx-stockdash--ca .ca-v36-lead-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-lead-row:disabled { cursor: default; }
+.mx-stockdash--ca .ca-v36-rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; }
+.mx-stockdash--ca .ca-v36-lead-name { display: block; font-size: 14.7px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-leaders { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.7px; text-align: right; }
+
+.mx-stockdash--ca .ca-v36-stance {
+  height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid currentColor; border-radius: var(--r-ctl, 8px);
+  font-size: 10px; font-weight: 750; text-transform: uppercase; white-space: nowrap;
+}
+.mx-stockdash--ca .ca-v36-stance.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+/* Near: same repair as the lane header above (DARK DELTA item 1) — the link
+   ink, not the stance family. */
+.mx-stockdash--ca .ca-v36-stance.near { color: var(--ink-link, var(--link)); }
+.mx-stockdash--ca .ca-v36-stance.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--ca .ca-v36-stance.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+
+.mx-stockdash--ca .ca-v36-expand-wrap {
+  display: flex; justify-content: center; padding: 9px 12px 11px; border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel2) 32%, transparent);
+}
+.mx-stockdash--ca .ca-v36-expand {
+  height: 35px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 12.5px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-expand:hover { border-color: color-mix(in srgb, var(--text) 30%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Prophet controls / grid / card typography ---------------------------- */
+
+.mx-stockdash--ca .ca-v36-controls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mx-stockdash--ca .ca-v36-seg { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-btn, 10px); background: var(--panel2); }
+.mx-stockdash--ca .ca-v36-seg button {
+  height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-ctl, 8px);
+  background: transparent; color: var(--muted); font-size: 13.1px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-seg button[aria-selected=true] {
+  background: var(--panel); border-color: var(--line); color: var(--text);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--bg) 12%, transparent);
+}
+.mx-stockdash--ca .ca-v36-result { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-filter {
+  display: none; height: 32px; align-items: center; padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--link) 35%, var(--line)); border-radius: var(--r-pill, 999px);
+  background: color-mix(in srgb, var(--link) 7%, transparent); color: var(--text); font-size: 12px; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-filter.is-on { display: inline-flex; }
+
+/* ---- Hidden overrides (card.hidden = !show defeats author display rules) --- */
+
+.mx-stockdash--ca .ca-v36-card-grid[hidden] { display: none !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden] { display: none !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; padding: 14px;
+}
+.mx-stockdash--ca .ca-v36-card-grid .pvcard {
+  min-width: 0; height: 100%; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.mx-stockdash--ca .ca-v36-card-grid .pvcard:hover { transform: translateY(-2px); }
+
+/* .sm-hidden rescue: legacy "show more" hidden state must not survive the move. */
+.mx-stockdash--ca .ca-v36-card-grid .sm-hidden { display: flex !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .pv-chart svg { height: 82px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-bd { padding: 14px 14px 12px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 16.7px !important; font-weight: 700 !important; letter-spacing: -.012em !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-nm { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 12.5px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-ind { font-size: 11.1px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-edge { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-edn { font-size: 16px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 15.8px !important; font-weight: 750 !important; }
+.mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 13.4px !important; font-weight: 750 !important; }
+
+/* Canada quote colors: Western green-up/red-down, unchanged even under ZH. */
+.mx-stockdash--ca .nb-chg.up,
+.mx-stockdash--ca .ca-v36-table .nb-chg.up { color: var(--ok) !important; }
+.mx-stockdash--ca .nb-chg.down,
+.mx-stockdash--ca .ca-v36-table .nb-chg.down { color: var(--act) !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .pv-chip { font-size: 10.8px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-life-w,
+.mx-stockdash--ca .ca-v36-card-grid .pv-stl { font-size: 11.1px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-zn { min-height: 42px !important; font-size: 11.6px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-znr,
+.mx-stockdash--ca .ca-v36-card-grid .pv-znm { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 11.8px !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
+  border-color: color-mix(in srgb, var(--link) 20%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 8%, transparent),
+    0 0 24px -16px color-mix(in srgb, var(--link) 42%, transparent),
+    0 8px 24px -20px color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.mx-stockdash--ca .ca-v36-empty { grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.mx-stockdash--ca .ca-v36-empty-switch {
+  display: block; margin: 10px auto 0; height: 31px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 11.8px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-empty-switch:hover { border-color: color-mix(in srgb, var(--text) 30%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Table / live quote presentation --------------------------------------- */
+
+.mx-stockdash--ca .ca-v36-table { padding: 12px 14px 15px; }
+.mx-stockdash--ca .ca-v36-table[hidden] { display: none !important; }
+.mx-stockdash--ca .ca-v36-table #stocktable-wrap { display: block !important; }
+.mx-stockdash--ca .ca-v36-table .stf-row,
+.mx-stockdash--ca .ca-v36-table .stf-controls { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; }
+.mx-stockdash--ca .ca-v36-table :is(input, select, button) { min-height: 38px; font-size: 12.8px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 13.3px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table th { font-size: 11px !important; padding: 11px 10px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table td { padding: 11px 10px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table td:nth-child(2) b { font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif) !important; font-size: 13.8px; }
+.mx-stockdash--ca .ca-v36-table-live { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
+.mx-stockdash--ca .ca-v36-table-live .nb-px { font-size: 14.8px; font-weight: 700; }
+.mx-stockdash--ca .ca-v36-table-live .nb-chg { font-size: 12.7px; font-weight: 750; }
+.mx-stockdash--ca .ca-v36-table tr.ca-v36-hidden { display: none !important; }
+
+/* ---- Research Tools --------------------------------------------------------- */
+
+.mx-stockdash--ca .ca-v36-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 11px 14px; }
+.mx-stockdash--ca .ca-v36-tools b { font-size: 12.8px; margin-right: 2px; }
+.mx-stockdash--ca .ca-v36-tool {
+  height: 37px; display: inline-flex; align-items: center; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 12.1px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-tool:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Evidence & Record ------------------------------------------------------ */
+
+.mx-stockdash--ca .ca-v36-evidence-body { display: flex; justify-content: center; padding: 13px 14px 15px; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
+.mx-stockdash--ca .ca-v36-evidence-body .trk { margin: 0; padding: 9px 12px; font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif); }
+
+/* ---- Modal (Expand leadership) ----------------------------------------------
+   SIBLING, not descendant — and that is load-bearing, not style. The composer
+   mounts the leadership modal with `document.body.appendChild(modal)`, so it is
+   a following SIBLING of the .mx-stockdash--ca <main>, never a child of it
+   (verified in-browser: body children are [… 2:MAIN.mx-stockdash--ca …
+   25:DIV#ca-v36-modal]). The Task-3 extraction scoped this family as
+   `.mx-stockdash--ca .ca-v36-modal…`, which matches nothing: the pre-extraction
+   injectCss() wrote these selectors BARE, and the scoping pass did not account
+   for the one subtree that lives outside the mount. Measured on this branch
+   before the fix, in BOTH themes: the modal computed position:static,
+   display:block, background:none — i.e. the whole family was dead, the "Expand
+   leadership" dialog never overlaid, and its 16 rows rendered as a stray block
+   at the foot of the page. `.mx-stockdash--ca ~ .ca-v36-modal` keeps the
+   governed namespace root (architecture §4.2 — no bare page-global selectors)
+   while actually matching the shipped DOM. This restores the ACCEPTED V3.8
+   production rendering; it is not a new dark decision. */
+
+.mx-stockdash--ca ~ .ca-v36-modal {
+  position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
+  padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
+}
+.mx-stockdash--ca ~ .ca-v36-modal.is-open { display: flex; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
+  width: min(1180px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 36px));
+  display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-panel, 14px);
+  background: var(--panel); overflow: hidden;
+  box-shadow: 0 30px 90px color-mix(in srgb, var(--bg) 50%, transparent);
+}
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x {
+  margin-left: auto; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 21px; cursor: pointer;
+}
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-body { overflow: auto; padding: 14px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
+
+/* ============================================================================
+   LIGHT ART DIRECTION — "institutional research workspace"
+   TP-1 Task 4. research/…CONVERGENCE_ARCHITECTURE.md §3.1-3.2, §5.2;
+   research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §12; docs/DESIGN_DOCTRINE.md §5 (8).
+
+   Dark and light are TWO ART DIRECTIONS of ONE semantic system. Everything
+   above this line is the shared semantic layer — information architecture,
+   component semantics, spacing/type scale, state meanings, interaction, the
+   stance-token family, ordering and density. Nothing below changes any of
+   that. What changes is the MATERIAL MECHANISM, because the mechanism that
+   builds depth in a dark command center is not the mechanism that builds
+   depth on a light page:
+
+     dark  = luminance steps + restrained bloom. A lane, a card and a control
+             separate from their container because they are LIGHTER than it.
+     light = structure. Nothing is lighter than white, so depth is earned with
+             surface, hairline, whitespace and a controlled shadow instead.
+
+   Mechanisms that intentionally DIFFER between the two themes here:
+
+   1. Act-Now lane separation. Dark keeps four raised --panel2 lane cards with
+      a gap: the luminance step reads as one instrument because the lanes are
+      visibly the same material. Repeating that in light stacks grey cards on
+      white material — the "grey-in-grey", "four mini dashboards" defect the
+      Chairman's 2026-08-27 review named. Light therefore DISSOLVES the lane
+      box entirely: gap collapses to 0, the lane fill and border are removed,
+      and the four lanes become four hairline-divided COLUMNS of the one white
+      module. Stance identity moves onto the header band (2px semantic rail +
+      ~4% stance tint), so the module's top edge reads as one segmented rail —
+      the light plane's signature moment.
+   2. Prophet card gallery ground. In dark a card is lighter than the panel and
+      separates for free. In light the card and the panel are both white, which
+      is the "white-card-on-white disappearance" §5.2 forbids, and the shipped
+      fallback (a --panel2 grey card) is grey-on-white. Light instead RECESSES
+      the gallery to canvas grade (var(--bg) — the page canvas re-entering, not
+      a third grey) and lifts every card to white --panel + --card-shadow. One
+      elevation step, canvas -> panel -> raised element, exactly §3.2.
+   3. Top Picks emphasis. Dark uses a low-alpha bloom; light uses a RING — a
+      1px --link-mix ring plus the canonical --card-shadow. A bloom on white
+      becomes a pastel stain (§12).
+   4. Hover elevation. Dark lifts by luminance; light lifts by shadow + border
+      definition (§3.1).
+   5. Selected state. Light needs a real one: white raised button in a DEEPENED
+      neutral track for segmented controls, and a --link rail + low-alpha tint
+      for a selected row. Borders alone collapse perceptually on white (§5.2).
+   6. Nested panes. Dark can tint a modal pane --panel2 and still read as one
+      card; light keeps panes white and moves the tint to the caption band, so
+      the modal is white material rather than a muddy grey sheet.
+
+   Theme selector: html[data-theme="light"] alone is correct and complete for
+   this estate. theme.js ALWAYS stamps data-theme explicitly, and a visitor
+   with no stored preference renders DARK with no attribute at all (see the
+   ":root block IS the dark plane" note in templates/theme.css) — there is no
+   prefers-color-scheme path to mirror.
+
+   Every rule below is scoped html[data-theme=light], so the dark plane's
+   rendering is byte-for-byte unchanged by this section.
+   ========================================================================== */
+
+/* ---- Light: page + module hierarchy -----------------------------------------
+   White --panel modules on the cooler --bg canvas, --line hairlines, one
+   --card-shadow elevation. Stated explicitly (not merely inherited) so the
+   light contract is legible in source and a later base-rule edit cannot
+   silently flatten it. The page is never fully white: the canvas stays
+   perceptibly deeper than the modules it carries. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-panel {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: What To Act On Now — ONE instrument, FOUR semantic lanes --------
+   The lane box is dissolved (see mechanism 1 above). Rows already separate
+   with hairlines, so nothing here becomes a raised box: identity is carried by
+   the header rail + tint, structure by the column dividers, and the outer
+   module owns the only material. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lanes { gap: 0; }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane {
+  background: transparent; border: 0; border-radius: 0;
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane + .ca-v36-an-lane {
+  border-left: 1px solid var(--line);
+}
+
+/* Lane header: the narrow 2px semantic rail is the base rule's
+   `border-top: 2px solid currentColor`; light adds only a ~4% wash of the SAME
+   stance token underneath it. Low enough to stay a tint rather than a
+   highlighter smear (§12), strong enough to key the column. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.buy {
+  background: color-mix(in srgb, var(--ink-pv-buy, var(--pv-buy)) 4%, transparent);
+}
+/* Near rebinds to the link ink (see the dark rule above), so its tint
+   follows suit — the same 4% wash, of the link token instead of the stance
+   family. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.near {
+  background: color-mix(in srgb, var(--ink-link, var(--link)) 4%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.wait {
+  background: color-mix(in srgb, var(--ink-pv-wait, var(--pv-wait)) 4%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.avoid {
+  background: color-mix(in srgb, var(--ink-pv-avoid, var(--pv-avoid)) 4%, transparent);
+}
+
+/* Selected row: --link rail + the existing low-alpha tint. Rail is an inset
+   shadow, not a border, so selecting a row never reflows the grid. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-row.is-active {
+  box-shadow: inset 2px 0 0 var(--link);
+}
+
+/* Dashed hairlines are a dark-plane idiom; on white they read as dotted noise.
+   Light uses quiet solid rules for the same two separators. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-go {
+  border-left-style: solid;
+  border-left-color: color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+/* "View all" is a quiet footer control: no fill, no box, hairline above, and
+   wayfinding hue only on hover. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-more {
+  border-top-style: solid;
+  border-top-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-more:hover {
+  color: var(--ink-link, var(--link));
+}
+
+/* ---- Light: Prophet gallery — white instrument cards on a cool tray --------- */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .pvcard {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .pvcard:hover {
+  border-color: color-mix(in srgb, var(--text) 22%, var(--line));
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+/* Top Picks: ring, never glow. --link ring + the canonical card elevation, so
+   the pick is marked by its EDGE while its material stays identical to every
+   other card — emphasis without a second card style. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--link) 30%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 22%, transparent),
+    var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick:hover {
+  border-color: color-mix(in srgb, var(--link) 46%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 30%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--link) 26%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-empty-switch {
+  background: var(--panel); box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: segmented controls — a real selected state ----------------------
+   The track is deepened one step BELOW --panel2 so the white selected button
+   has a well to sit in; --panel2 alone against a white module leaves selected
+   and unselected collapsing into each other (§5.2). Selected = white + line +
+   card shadow, i.e. a raised control, not merely a differently-bordered one. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-seg,
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button {
+  background: color-mix(in srgb, var(--text) 6%, var(--panel2));
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-seg button[aria-selected=true],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-filter {
+  border-color: color-mix(in srgb, var(--link) 45%, var(--line));
+  background: color-mix(in srgb, var(--link) 8%, transparent);
+  color: var(--ink-link, var(--link));
+}
+
+/* ---- Light: Leadership & Rotation — one ranked institutional list -----------
+   A ranked list, not a stack of grey buttons: a canvas-grade column-header
+   band, hairline row separators, and rank / action stance kept on separate
+   visual axes (muted tabular rank at the left edge, stance chip in stance ink
+   at the right). Selected state gets the 3px --link rail + low-alpha tint. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-col-h { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row.is-active {
+  box-shadow: inset 3px 0 0 var(--link);
+}
+/* Breadth measure reads as an instrument on light, not a stray underline: a
+   full-width 1px hairline TRACK (companion ::before — the measure itself is
+   narrower than the row, so it cannot carry a full-width second layer) plus
+   the measure bar at full opacity and double weight. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row:before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: var(--line);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row:after {
+  height: 2px;
+  background: color-mix(in srgb, var(--link) 55%, transparent);
+  opacity: 1;
+}
+/* Stance chip earns material presence on white from a wash of its OWN stance
+   ink (currentColor is the stance token set by .ca-v36-stance.<tone> above),
+   the house chip idiom — an outline-only chip reads thin on a white row. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-stance {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-expand-wrap { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-expand {
+  background: var(--panel); box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: modal — cool scrim, white material, no nested grey boxes -------- */
+
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
+  background: var(--panel);
+  box-shadow: var(--popover-shadow);
+}
+/* The pane stays white and keeps only its structural hairline; the tint moves
+   to the caption band, which is the same canvas-grade header device the
+   Leadership list uses — one table grammar in both places. */
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { background: var(--panel); }
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x:hover {
+  border-color: color-mix(in srgb, var(--text) 30%, var(--line));
+}
+
+/* ---- Responsive: 1200 / 900 / 680 -------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Light lanes are hairline-divided columns, so the divider grammar has to
+     re-key when the lane grid folds to two columns: no rule at a row's left
+     edge, and a rule ABOVE the second row instead. */
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane:nth-child(2n+1) { border-left: 0; }
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 900px) {
+  .mx-stockdash--ca .ca-v36-head { flex-wrap: wrap; }
+  .mx-stockdash--ca .ca-v36-head-spacer { display: none; }
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .mx-stockdash--ca { width: min(100% - 20px, 680px); margin-top: 12px; font-size: 15.8px; }
+  .mx-stockdash--ca .ca-v36-head { gap: 8px; }
+  .mx-stockdash--ca .ca-v36-head h1 { width: 100%; font-size: 27.5px; }
+  .mx-stockdash--ca .ca-v36-fresh { white-space: normal; }
+  .mx-stockdash--ca .ca-v36-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
+  .mx-stockdash--ca .ca-v36-sec-hd h2 { font-size: 17px; }
+  .mx-stockdash--ca .ca-v36-controls { width: 100%; }
+  /* Mobile Act-Now grammar: one segmented lane selector, one lane body at a
+     time, no stacked giant lane cards, no horizontal overflow. */
+  .mx-stockdash--ca .ca-v36-an-seg { display: flex; }
+  .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: 1fr; }
+  .mx-stockdash--ca .ca-v36-an-lane { display: none; }
+  .mx-stockdash--ca .ca-v36-an-lane.is-current { display: block; }
+  /* One lane at a time: a column/row divider would be a rule against nothing.
+     A plain `.ca-v36-an-lane` reset is specificity-dead here — the desktop
+     divider rules it needs to beat (`+ .ca-v36-an-lane` above, `:nth-child`
+     inside the 1200px block) each carry one MORE class-level selector, so a
+     bare-class reset can never win regardless of source order. Repeat their
+     exact selectors instead: equal specificity, later in source, wins. */
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane + .ca-v36-an-lane { border-left: 0; }
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane:nth-child(n+3) { border-top: 0; }
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+  .mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-size: 16.3px !important; }
+  .mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-size: 15.5px !important; }
+  .mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-size: 13.1px !important; }
+  .mx-stockdash--ca ~ .ca-v36-modal { padding: 8px; }
+  .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
+  .mx-stockdash--ca .ca-v36-evidence-body { padding: 11px 10px 13px; }
+}
