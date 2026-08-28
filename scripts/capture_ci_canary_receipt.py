@@ -171,7 +171,7 @@ def _read_timing_observations(
             raise ValueError("logical-job timing observations exceed the row bound")
         try:
             observation = json.loads(raw)
-        except json.JSONDecodeError as exc:
+        except (json.JSONDecodeError, RecursionError) as exc:
             raise ValueError("logical-job timing observations are malformed JSON") from exc
         if not isinstance(observation, dict) or set(observation) != TIMING_OBSERVATION_KEYS:
             raise ValueError("logical-job timing observation has unsupported fields")
@@ -437,18 +437,21 @@ def main() -> int:
     args.output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     print("CI_CANARY_RECEIPT=" + json.dumps(receipt, sort_keys=True), flush=True)
     if args.timing_output is not None:
-        write_execution_timing(
-            args.timing_output,
-            execution_timing_records(
-                plan=plan,
-                pack_index=args.pack,
-                runner_kind=args.runner_kind,
-                runner_name=args.runner_name,
-                runner_profile=args.runner_profile,
-                timing_observations=args.timing_observations,
-                phase_monotonic=args.phase_monotonic,
-            ),
-        )
+        try:
+            write_execution_timing(
+                args.timing_output,
+                execution_timing_records(
+                    plan=plan,
+                    pack_index=args.pack,
+                    runner_kind=args.runner_kind,
+                    runner_name=args.runner_name,
+                    runner_profile=args.runner_profile,
+                    timing_observations=args.timing_observations,
+                    phase_monotonic=args.phase_monotonic,
+                ),
+            )
+        except Exception as exc:  # telemetry must not alter the written receipt
+            _timing_warning(f"could not generate execution timing: {exc}")
     return 0
 
 

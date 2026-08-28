@@ -6,6 +6,7 @@ import json
 import os
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -613,7 +614,7 @@ def _assert_invalid_raw_timing_is_non_authoritative(
     degraded_receipt = tmp_path / "degraded-receipt.json"
     timing_path = tmp_path / "execution-timing.jsonl"
     common = [
-        "python3",
+        sys.executable,
         str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
         "--log", str(log_path),
         "--plan", str(plan_path),
@@ -692,6 +693,15 @@ def test_oversized_raw_timing_observations_degrade_without_receipt_or_verdict_im
     _assert_invalid_raw_timing_is_non_authoritative(
         tmp_path,
         b"x" * (4 * 1024 * 1024 + 1),
+    )
+
+
+def test_deeply_nested_raw_timing_json_degrades_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        b"[" * 10_000 + b"0" + b"]" * 10_000 + b"\n",
     )
 
 
@@ -803,9 +813,13 @@ def test_trusted_executor_publishes_timing_without_gate_authority() -> None:
         for step in steps
         if step.get("name") == "publish non-authoritative execution timing"
     )
-    combined_runs = "\n".join(
-        str(step.get("run", "")) for step in steps if isinstance(step, dict)
-    )
+    marker_lines = [
+        line.strip()
+        for step in steps
+        if isinstance(step, dict)
+        for line in str(step.get("run", "")).splitlines()
+        if "time.monotonic_ns()" in line
+    ]
     for marker in (
         "job_start",
         "checkout_start",
@@ -816,16 +830,31 @@ def test_trusted_executor_publishes_timing_without_gate_authority() -> None:
         "pack_execution_end",
         "job_end",
     ):
-        assert marker in combined_runs
+        assert any(marker in line for line in marker_lines)
+    assert all(line.endswith("|| true") for line in marker_lines)
     assert "--emit-timing-observations" in execute["run"]
     assert "--timing-observations" in receipt["run"]
     assert "--phase-monotonic" in receipt["run"]
     assert "--timing-output" in receipt["run"]
+    assert timing_upload["if"] == "always()"
     assert timing_upload["continue-on-error"] is True
+    assert timing_upload["timeout-minutes"] == 5
     assert timing_upload["with"]["if-no-files-found"] == "warn"
     assert timing_upload["with"]["name"] == (
         "trusted-ci-execution-timing-${{ matrix.pack }}"
     )
+    required_artifact_indices = [
+        index
+        for index, step in enumerate(steps)
+        if step.get("with", {}).get("name")
+        in {
+            "trusted-ci-receipt-${{ matrix.pack }}",
+            "trusted-ci-fragment-${{ matrix.pack }}",
+        }
+    ]
+    timing_index = steps.index(timing_upload)
+    assert len(required_artifact_indices) == 2
+    assert all(index < timing_index for index in required_artifact_indices)
 
     ci = yaml.safe_load(
         (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")

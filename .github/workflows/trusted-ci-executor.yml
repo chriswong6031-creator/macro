@@ -461,15 +461,6 @@ jobs:
             --phase-monotonic "$RUNNER_TEMP/ci-phase-monotonic.txt" \
             --timing-output "$RUNNER_TEMP/trusted-${{ matrix.pack }}-execution-timing.jsonl" \
             --output "$RUNNER_TEMP/trusted-${{ matrix.pack }}.json"
-      - name: publish non-authoritative execution timing
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: trusted-ci-execution-timing-${{ matrix.pack }}
-          path: ${{ runner.temp }}/trusted-${{ matrix.pack }}-execution-timing.jsonl
-          if-no-files-found: warn
-          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: trusted-ci-receipt-${{ matrix.pack }}
@@ -481,6 +472,16 @@ jobs:
           name: trusted-ci-fragment-${{ matrix.pack }}
           path: ${{ runner.temp }}/ci-semantic-fragments/trusted-fragment.json
           if-no-files-found: error
+          retention-days: 14
+      - name: publish non-authoritative execution timing
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-execution-timing-${{ matrix.pack }}
+          path: ${{ runner.temp }}/trusted-${{ matrix.pack }}-execution-timing.jsonl
+          if-no-files-found: warn
           retention-days: 14
       - name: surface a red pack after preserving evidence
         run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
