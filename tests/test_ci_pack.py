@@ -3795,12 +3795,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     5,600 and 10 packs): weights are 5,420 / 5,173 / 5,175, and a fallback-
     tier regression is still ~1,550 weight-seconds above them, so the bound
     this file exists to hold is untouched.
+
+    JOB COUNTS RE-BASED to 131/127/122 (wave 8, 2026-08-28, TP-1 repair edge
+    theme-parity-tp1-canada-20260828-sol-001). Measured on main a8075391fa89,
+    diffing selected-job NAME sets per probe against the wave-7 green
+    baseline manifest (48bfd3c97e8a):
+
+        templates/index.html          130 jobs / 5,560 weight (was ceiling 129)
+          entrants: regwall-boundary (declared — wave 7's own funded entrant),
+                    design-governance (fallback, w16),
+                    board-shadow-substrate (fallback, w7)
+        scripts/build_free_content.py 126 jobs / 5,313 weight (was ceiling 125)
+          entrants: design-governance, board-shadow-substrate,
+                    reference-integrity (all fallback)
+        engine/prophet/plan_book.py   121 jobs / 5,299 weight (AT ceiling —
+          the zero-headroom defect again)
+          entrants: board-shadow-substrate, reference-integrity
+
+    Every unfunded entrant is a DELIBERATELY-UNSCOPED always-on gate, i.e.
+    the ``reference-integrity`` class wave 6 already adjudicated ("ratcheting
+    the ceiling is the correct-risk response, not curation"):
+    ``design-governance`` is TP-0's forward-only design ratchet (#6579) —
+    a diff gate over user-facing templates/site whose entire purpose is to
+    run on exactly the PRs these probes model, so its match on
+    templates/index.html is its subject, not smear; ``board-shadow-substrate``
+    documents itself "Left UNSCOPED … always-on is correct for this job, not
+    lazy" (its K6 kill is a repo-wide string walk inference cannot narrow);
+    ``reference-integrity``'s breadth was adjudicated in wave 6 and its
+    growth onto build_free_content.py is the same mockups/research/registry
+    namespace closure firing as designed. Curating any of the three
+    ``scope: exclusive`` would lie about coverage or degenerate back to
+    fallback breadth — the dataos-identity-seams rejection, verbatim. The
+    non-smear finding is affirmative: TP-1's own manifest edit (adding
+    tests/test_stock_dashboard_css.py to the render-guard step, merge
+    e2091032ad1f) adds ZERO probe matches — the selected-name-set delta
+    across that merge is empty on all three probes, so the earned Canada CSS
+    coverage rides a job that already owned-matched its subjects and costs
+    these ceilings nothing.
+
+    Ceilings are set at measurement + 1 per the wave-3 rule (131/127/122),
+    re-funding the headroom promise on all three axes — plan_book.py sat AT
+    its ceiling again, the exact silent-main-red mechanism the wave-7 note
+    describes. WEIGHT and PACK ceilings stay unmoved (5,800 / 5,600 / 5,600
+    and 10 packs): measured weights are 5,560 / 5,313 / 5,299 and a
+    fallback-tier regression is still ~1,550 weight-seconds above them.
+    The companion test below pins all three always-on gates so the OPPOSITE
+    regression — a future curation silently narrowing a deliberate whole-tree
+    gate off its subject — reds loudly instead of shipping a false green.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
-        ("scripts/build_free_content.py", 125, 5_600),
-        ("engine/prophet/plan_book.py", 121, 5_600),
+        ("templates/index.html", 131, 5_800),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 122, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
@@ -3811,6 +3858,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
         # runner cut. Twelve packs per shape was the pre-curation measurement.
         packs = max(1, min(12, -(-weight // PACK.PACK_TARGET_SECONDS)))
         assert packs <= 10, (probe, packs, weight, reason)
+
+
+def test_deliberately_unscoped_gates_stay_always_on() -> None:
+    """The wave-8 entrants are always-on BY DESIGN — pin both directions.
+
+    Each of these gates carries a header comment documenting deliberate
+    unscoped breadth (a repo-wide walk, a diff ratchet over user-facing
+    trees, a namespace-closure gate). Two regressions would be silent
+    without this pin: (a) someone declares ``scope: exclusive``/``paths:``
+    on one of them to buy back a probe ceiling — the job stops running on
+    the PRs that are its actual subject, a false green the wave-2/wave-6
+    notes reject by name; (b) inference drift stops selecting one of them
+    on an ordinary user-facing PR. Both now red here, with the probe named.
+    """
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+    scoped_jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    # Measured membership at wave 8 (main a8075391fa89): each gate pinned on
+    # the probes that are its SUBJECT. design-governance is a user-facing
+    # diff ratchet, so it rides the template and site-builder probes but has
+    # no claim on engine internals; the other two walk trees that include
+    # engine/**, so they ride all three.
+    expected = {
+        "design-governance": ("templates/index.html",
+                              "scripts/build_free_content.py"),
+        "board-shadow-substrate": ("templates/index.html",
+                                   "scripts/build_free_content.py",
+                                   "engine/prophet/plan_book.py"),
+        "reference-integrity": ("templates/index.html",
+                                "scripts/build_free_content.py",
+                                "engine/prophet/plan_book.py"),
+    }
+    problems: list[str] = []
+    for job_id in expected:
+        job = jobs.get(job_id)
+        if job is None:
+            problems.append(f"{job_id}: missing from manifest")
+            continue
+        if job.exclusive:
+            problems.append(
+                f"{job_id}: gained scope:exclusive — deliberate always-on "
+                "breadth curated away; see the wave-8 note")
+    selected_names = {}
+    for probe in ("templates/index.html", "scripts/build_free_content.py",
+                  "engine/prophet/plan_book.py"):
+        sel, _ = PACK.select_jobs(scoped_jobs, [probe])
+        selected_names[probe] = {job.job_id for job in sel}
+    for job_id, probes in expected.items():
+        if job_id not in jobs:
+            continue
+        for probe in probes:
+            if job_id not in selected_names[probe]:
+                problems.append(f"{job_id}: no longer selected for {probe}")
+    assert not problems, problems
 
 
 def test_inline_js_owns_the_rendered_tree_it_lints() -> None:
