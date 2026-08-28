@@ -17,7 +17,7 @@
   },
   "heat": {
     "funding": "Balanced",
-    "open_interest": "Leverage normal",
+    "open_interest": "Leverage light",
     "volatility": "Volatility normal",
     "altseason": "Mixed participation"
   },

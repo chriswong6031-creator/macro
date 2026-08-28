@@ -1,10 +1,10 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-26",
-  "generated_at": "2026-08-28T06:18:09.583659+00:00",
+  "as_of": "2026-08-27",
+  "generated_at": "2026-08-28T11:58:53.433607+00:00",
   "is_context_only": true,
-  "n_snapshots": 486,
-  "n_days": 16,
+  "n_snapshots": 507,
+  "n_days": 17,
   "horizons": {
     "5": {
       "n_matured": 396,
@@ -31,12 +31,12 @@
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 264,
+      "n_matured": 282,
       "by_stage": {
         "running": {
-          "n": 235,
-          "mean_fwd_rel": 0.001,
-          "hit_rate": 0.502
+          "n": 250,
+          "mean_fwd_rel": -0.0026,
+          "hit_rate": 0.492
         },
         "coiling": {
           "n": 13,
@@ -44,13 +44,13 @@
           "hit_rate": 0.308
         },
         "coiling_primed": {
-          "n": 16,
-          "mean_fwd_rel": 0.0517,
-          "hit_rate": 0.875
+          "n": 19,
+          "mean_fwd_rel": 0.0447,
+          "hit_rate": 0.842
         }
       },
-      "running_ic": 0.0908,
-      "running_ic_t_hac": 1.871,
+      "running_ic": 0.018,
+      "running_ic_t_hac": 0.414,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },

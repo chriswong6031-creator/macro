@@ -1,18 +1,18 @@
 {
   "schema": "market_structure_context.v1",
   "asof": "2026-08-27",
-  "built_at": "2026-08-28T05:34:08.793115+00:00",
+  "built_at": "2026-08-28T11:13:17.939185+00:00",
   "is_context_only": true,
   "display_only": true,
   "gamma": {
     "regime": "long",
-    "net_gex_bn": 53.772074,
-    "net_gex_pctile": 76.9,
-    "gamma_flip": 7661.670575,
-    "spot": 7730.9902,
-    "dist_to_flip_pct": 0.9,
-    "days_in_regime": 3,
-    "days_in_regime_observed": 3,
+    "net_gex_bn": 54.942372,
+    "net_gex_pctile": 77.5,
+    "gamma_flip": 7648.811798,
+    "spot": 7730.99,
+    "dist_to_flip_pct": 1.06,
+    "days_in_regime": 4,
+    "days_in_regime_observed": 4,
     "series_start": "2026-06-15",
     "history": [
       {
@@ -287,10 +287,17 @@
         "regime": "long",
         "flip": 7661.670575,
         "spot": 7730.9902
+      },
+      {
+        "date": "2026-08-28",
+        "net_gex_bn": 54.942372,
+        "regime": "long",
+        "flip": 7648.811798,
+        "spot": 7730.99
       }
     ],
     "coverage": {
-      "last_obs": "2026-08-27",
+      "last_obs": "2026-08-28",
       "expected_last_session": "2026-08-27",
       "sessions_behind": 0,
       "window_sessions": 20,
@@ -6385,7 +6392,7 @@
     "band_1sigma_hi": 7806.14,
     "band_2sigma_lo": 7410.82,
     "band_2sigma_hi": 7937.92,
-    "gamma_flip": 7661.670575,
+    "gamma_flip": 7648.811798,
     "implied_weekly_pct": 1.72,
     "source": "spx_iv30_scaled_5d"
   },

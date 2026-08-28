@@ -2814,3 +2814,4 @@
 {"date":"2026-08-28","ticker":"DAL","departed":true,"left_desk":"2026-08-28","last_rank":22,"last_score":36}
 {"date":"2026-08-28","ticker":"HPE","departed":true,"left_desk":"2026-08-28","last_rank":30,"last_score":33}
 {"date":"2026-08-28","ticker":"NU","departed":true,"left_desk":"2026-08-28","last_rank":30,"last_score":32}
+{"date":"2026-08-28","ticker":"DDOG","rank":null,"score":17,"lean":1,"broken":true}

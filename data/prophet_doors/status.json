@@ -1,15 +1,15 @@
 {
-  "appended": 0,
-  "asof": "2026-08-26",
+  "appended": 2,
+  "asof": "2026-08-27",
   "candidates": {
-    "R": 1,
-    "T": 4,
-    "W": 34
+    "R": 2,
+    "T": 3,
+    "W": 33
   },
   "deduped": {
-    "R": 1,
-    "T": 4,
-    "W": 34
+    "R": 0,
+    "T": 3,
+    "W": 33
   },
   "dry_run": false,
   "feature_source": {
@@ -19,15 +19,15 @@
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": false,
+      "consulted": true,
       "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
       "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 0,
-      "tickers_read": 0
+      "tickers_ok": 2,
+      "tickers_read": 2
     },
     "keys": [
       "relay_count_3d",
@@ -48,7 +48,13 @@
       "consulted": false
     },
     "turnover": {
-      "consulted": false
+      "consulted": true,
+      "last_session": "2026-08-27",
+      "n_tickers": 1544,
+      "ok": true,
+      "reason": null,
+      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
+      "window_max": 60
     }
   },
   "feature_source_w": {
@@ -76,7 +82,10 @@
     ]
   },
   "flag_tickers": {
-    "R": [],
+    "R": [
+      "WOR",
+      "LTC"
+    ],
     "T": [],
     "W": []
   },
@@ -86,41 +95,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-27 14:38:55",
-  "runtime_s": 114.0,
+  "run_utc": "2026-08-28 10:37:29",
+  "runtime_s": 133.2,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": -1,
-    "asof": "2026-08-27",
-    "n_members": 173,
+    "asof": "2026-08-28",
+    "n_members": 139,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 4.636,
+        "emerging_score": 3.884,
         "rank": 1,
         "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 2.35,
+        "emerging_score": 2.074,
         "rank": 2,
+        "theme": "Cybersecurity"
+      },
+      {
+        "emerging_score": 1.845,
+        "rank": 3,
         "theme": "Crypto & Blockchain"
       },
       {
-        "emerging_score": 1.544,
-        "rank": 3,
-        "theme": "Electric Vehicles"
-      },
-      {
-        "emerging_score": 1.464,
+        "emerging_score": 1.404,
         "rank": 4,
-        "theme": "Agriculture & FoodTech"
+        "theme": "Quantum Computing"
       },
       {
-        "emerging_score": 1.425,
+        "emerging_score": 1.375,
         "rank": 5,
-        "theme": "FinTech"
+        "theme": "Electric Vehicles"
       }
     ]
   },
@@ -129,16 +138,16 @@
       "2B",
       "3B"
     ],
-    "aligned": 34,
-    "asof_max": "2026-08-26",
+    "aligned": 33,
+    "asof_max": "2026-08-27",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-26",
+    "asof_run": "2026-08-27",
     "evaluated": 712,
     "fresh": 35,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.0,
+    "runtime_s": 25.8,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 97,
