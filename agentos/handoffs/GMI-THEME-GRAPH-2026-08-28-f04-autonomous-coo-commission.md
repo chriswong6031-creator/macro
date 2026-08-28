@@ -57,7 +57,7 @@ danger_areas:
 **RECEIVER_MODE:** `OPEN_PICKUP` until Chairman assigns the exact Fable receiver.  
 **Recommended route:** Fable + Claude Code principal lane.  
 **Repository:** `mastermindx-market-intelligence/macro`  
-**Current protected procedure pin:** `mastermindx-market-intelligence/Mastermind@e023f9b4df388814286d42462af0e86a64eea563`, Skillpack v1.0.1.  
+**Current protected procedure pin:** `mastermindx-market-intelligence/Mastermind@e80e9aea894c758ae7a95720ab56c9cbc868b1ba`, Skillpack v1.0.1.  
 **Master plan:** `docs/superpowers/plans/2026-08-28-gmi-theme-f04-end-to-end-completion.md`.
 
 This packet **continues the existing canonical F04 operation** from merged MarketOntology #6504. It does not create a new parent operation. Until the Chairman assigns one exact receiver, no session may self-claim merely by finding this packet. Once the Chairman directly assigns a Fable session to this operation, that live assignment is the receiver-assignment edge: do not wait for a second Chairman or Slack assignment.

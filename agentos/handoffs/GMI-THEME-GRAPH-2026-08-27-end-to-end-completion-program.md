@@ -108,7 +108,7 @@ danger_areas:
 
 Read, in order:
 
-1. current protected Skillpack at `e023f9b4df388814286d42462af0e86a64eea563`;
+1. current protected Skillpack at `e80e9aea894c758ae7a95720ab56c9cbc868b1ba`;
 2. `research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md`;
 3. `DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING`;
 4. current `WS:GMI-THEME-GRAPH`;
