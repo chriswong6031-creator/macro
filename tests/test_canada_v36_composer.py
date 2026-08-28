@@ -4,14 +4,17 @@ The composer (site/canada-stock-v36.js, entitled-only, no template pair) hides
 grid cards and the grid container with the HTML ``hidden`` attribute
 (``card.hidden = !show``).  The UA sheet's ``[hidden]{display:none}`` loses to
 ANY author display rule, and both hidden targets carry one: the page stylesheet
-sets ``.pvcard{display:flex}`` and the composer's own style sets
-``.ca-v36-card-grid{display:grid}``.  Production consequence (found in the
+sets ``.pvcard{display:flex}`` and the (now governed) stock-dashboard stylesheet
+sets ``.ca-v36-card-grid{display:grid}``.  Production consequence (found in the
 2026-08-25 entitled acceptance matrix): the Top Picks segment, the leadership
 filter's grid hiding, and the grid/table view switch were all visually inert —
 state, counters, aria and the empty-state message updated while every card
 stayed painted.  The repair scopes explicit ``[hidden]`` overrides into the
-composer's injected style; these tests pin that the overrides ship and that
-the hide mechanism they cover is still the one the composer uses.
+governed stylesheet (tests/test_stock_dashboard_css.py); this file pins that
+the hide mechanism THOSE overrides depend on is still the one the composer
+uses, and that the composer itself owns no runtime CSS at all (TP-1: theme
+parity moved every presentation rule out of injectCss() into
+templates/stock-dashboard.css + site/stock-dashboard.css).
 """
 
 import re
@@ -21,13 +24,6 @@ import pytest
 
 COMPOSER = Path(__file__).resolve().parents[1] / "site" / "canada-stock-v36.js"
 
-REQUIRED_HIDDEN_OVERRIDES = [
-    # container: grid pane must actually vanish when the Table view is active
-    ".ca-v36-card-grid[hidden]{display:none!important}",
-    # cards: Top Picks segment + leadership filter hide via card.hidden
-    ".ca-v36-card-grid .pvcard[hidden]{display:none!important}",
-]
-
 
 def _composer_text() -> str:
     if not COMPOSER.exists():
@@ -35,14 +31,80 @@ def _composer_text() -> str:
     return COMPOSER.read_text(encoding="utf-8")
 
 
-def test_hidden_attribute_overrides_ship_in_composer_style():
+# ---------------------------------------------------------------------------
+# TP-1 (theme-parity-tp1-canada-20260828-sol-001) — extraction contracts.
+# research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md §4-5.
+# ---------------------------------------------------------------------------
+
+FORBIDDEN_RUNTIME_CSS_TOKENS = (
+    'createElement("style")',
+    "style.textContent",
+    "css.textContent",
+    "function injectCss",
+)
+
+
+def test_composer_never_authors_runtime_css():
+    """No substantive product styling may be authored as an opaque runtime
+    stylesheet system inside the composer (theme-parity ratchet law, house
+    CLAUDE.md 'Theme art direction — required'). Presentation now lives
+    entirely in the governed templates/stock-dashboard.css pair."""
     text = _composer_text()
-    for rule in REQUIRED_HIDDEN_OVERRIDES:
-        assert rule in text, (
-            f"composer style lost the {rule!r} override; the hidden attribute "
-            "is defeated by author display rules (.pvcard{display:flex} / "
-            ".ca-v36-card-grid{display:grid}) and the Top Picks segment, "
-            "leadership filter and grid/table switch go visually inert"
+    for token in FORBIDDEN_RUNTIME_CSS_TOKENS:
+        assert token not in text, (
+            f"composer still authors runtime CSS via {token!r}; this must be "
+            "deleted — presentation belongs in the governed "
+            "templates/stock-dashboard.css pair, not composer JS strings"
+        )
+
+
+def test_composer_mounts_canonical_stockdash_classes():
+    """The composer's mount point carries both the shared stock-dashboard
+    family class and the Canada variant modifier, so the governed stylesheet
+    (scoped under .mx-stockdash / .mx-stockdash--ca) actually applies."""
+    text = _composer_text()
+    assert "mx-stockdash" in text
+    assert "mx-stockdash--ca" in text
+
+
+def test_canada_loader_gates_composer_on_shared_stylesheet_seam():
+    """TP-1 Task 2: the Canada loader must call one shared, idempotent
+    ensureStockDashCss() seam before it injects the composer script, and
+    that seam's link.onload must be what starts the composer while
+    link.onerror leaves the legacy page untouched (fail-soft: an entitled
+    visitor who hits a stylesheet 404 must never be left on a half-styled
+    composer mount)."""
+    loader_path = Path(__file__).resolve().parents[1] / "templates" / "dashboard-icons.js"
+    site_loader_path = loader_path.parents[1] / "site" / "dashboard-icons.js"
+    for path in [loader_path, site_loader_path]:
+        if not path.exists():
+            continue  # sparse checkout omits site/; templates/ always present
+        text = path.read_text(encoding="utf-8")
+        assert text.count("function ensureStockDashCss(") == 1, (
+            f"{path.name}: expected exactly one shared ensureStockDashCss() "
+            "seam definition, not a per-composer copy"
+        )
+        loader_start = text.find("__mmCanadaStockV36Loader")
+        assert loader_start != -1, f"{path.name}: Canada loader guard flag missing"
+        hk_start = text.find("__mmHKStockV36Loader")
+        canada_block = text[loader_start:hk_start] if hk_start != -1 else text[loader_start:]
+        assert "ensureStockDashCss(" in canada_block, (
+            f"{path.name}: the Canada composer's bounded retry no longer "
+            "gates script injection on ensureStockDashCss()"
+        )
+        seam = re.search(r"function ensureStockDashCss\b.*?\n  \}", text, re.S)
+        assert seam, f"{path.name}: could not locate the ensureStockDashCss() body"
+        seam_body = seam.group(0)
+        assert "link.onload" in seam_body and "onReady" in seam_body, (
+            f"{path.name}: ensureStockDashCss() must start the composer via "
+            "link.onload calling onReady()"
+        )
+        onerror = re.search(r"link\.onerror\s*=\s*function\s*\([^)]*\)\s*\{.*?\};", seam_body, re.S)
+        assert onerror, f"{path.name}: ensureStockDashCss() lost its onerror handler"
+        assert "onReady(" not in onerror.group(0), (
+            f"{path.name}: link.onerror must NOT call onReady() — a "
+            "stylesheet load failure must fail soft (legacy page stays "
+            "visible), never start the composer half-styled"
         )
 
 
@@ -469,27 +531,6 @@ def test_act_now_presentation_controls_never_touch_population_or_filter():
         "the default-lane election guard is an OR — a chosen-but-empty lane "
         "would be silently overridden on every render"
     )
-
-
-def test_mobile_segment_grammar_one_lane_at_a_time():
-    """V3.8 §5.5: at ~390px one segmented lane selector + ONE lane body at a
-    time — never four stacked lane cards."""
-    text = _composer_text()
-    assert re.search(r"\.ca-v36-an-seg\{display:none", text), (
-        "the Act-Now segment bar lost its desktop display:none base rule"
-    )
-    mq = re.search(r"@media\(max-width:680px\)\{.*?\}\"", text, re.S)
-    assert mq, "could not locate the 680px media query block"
-    for rule in [
-        ".ca-v36-an-seg{display:flex}",
-        ".ca-v36-an-lanes{grid-template-columns:1fr}",
-        ".ca-v36-an-lane{display:none}",
-        ".ca-v36-an-lane.is-current{display:block}",
-    ]:
-        assert rule in mq.group(0), (
-            f"680px media query lost {rule!r} — the mobile one-lane grammar "
-            "is broken"
-        )
 
 
 def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
