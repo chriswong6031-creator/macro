@@ -59,7 +59,8 @@
 <link rel="stylesheet" href="../theme.css?v=f41f9a21">
 <script defer src="../theme.js?v=0956049c"></script>
 <script defer src="../assets/js/company-intelligence-dossier.js?v=20260820a"></script>
-<link rel="stylesheet" href="../assets/css/c3c31af8.css?v=c3c31af8">
+<script defer src="../assets/js/dossier-live-quote.js?v=20260827a"></script>
+<link rel="stylesheet" href="../assets/css/b24d0283.css?v=b24d0283">
 <link rel="preload" as="style" href="../product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="../navigation-refresh.css?v=c299c324">
 </head>
@@ -313,7 +314,8 @@
 <div class="strip" id="v6strip" aria-hidden="true">
   <span class="stk">PECO</span>
   <span class="sname mut sm">Phillips Edison &amp; Company</span>
-  <span class="stp num">$<span class="nb-px" data-sym="PECO" data-mkt="us">39.68</span></span>
+  
+  <span class="stp num">$<span class="dq-px" data-dq-sym="PECO">39.68</span></span>
   <span class="schip"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
   <nav id="v6jumps">
     <a href="#company-update"><span class="l-en">Company</span><span class="l-zh">公司动态</span></a>
@@ -362,17 +364,18 @@
       
     </div>
     <div class="px-block hi hi2">
-      <div class="px-big num">$<span class="nb-px" data-sym="PECO" data-mkt="us">39.68</span></div>
+      <div class="px-big num">$<span class="dq-px" data-dq-sym="PECO">39.68</span></div>
       
-      <div class="px-chg neg">
-        <span class="pill6 num">-$0.23 · -0.58%</span>
-        <span class="live-dot"></span>
+      
+      <div class="px-chg neg" data-dq-chg>
+        <span class="pill6 num"><span data-dq-abs>-$0.23</span> · <span data-dq-pct>-0.58%</span></span>
       </div>
       
       
       <div class="wk52">
         <div class="lbls"><span><span class="l-en">52w low</span><span class="l-zh">52周低</span> <b class="num">$32.23</b></span><span><span class="l-en">high</span><span class="l-zh">高</span> <b class="num">$44.39</b></span></div>
-        <div class="track"><div class="fill" style="width:61.3%;"></div><div class="dotp" style="left:61.3%;"></div></div>
+        
+        <div class="track" data-dq-range data-dq-lo="32.2285" data-dq-hi="44.3851"><div class="fill" data-dq-fill style="width:61.3%;"></div><div class="dotp" data-dq-dot style="left:61.3%;"></div></div>
       </div>
       
     </div>
@@ -384,7 +387,7 @@
     <span class="stance-line"><span class="l-en">Daily low forming, but the bigger trend is still bearish. Small size only; stop below 39.27.</span><span class="l-zh">日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 39.27 下方。</span></span>
     
     
-    <span class="livestamp"><span class="live-dot"></span><span class="l-en">Live</span><span class="l-zh">实时</span></span>
+    <span class="livestamp dq-stamp" data-dq-stamp data-dq-state="baked"><span class="live-dot"></span><span class="l-en">As of 2026-08-28</span><span class="l-zh">截至 2026-08-28</span></span>
   </div>
   
 </header>
@@ -1058,7 +1061,7 @@
 
 <footer class="site-footer6">
   <p><span class="l-en">Research context only — not investment advice. Past patterns do not guarantee future results.</span><span class="l-zh">仅供研究参考，不构成投资建议。历史规律不代表未来表现。</span></p>
-  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-28 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-27 22:11 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
+  <p><span class="l-en">Data through</span><span class="l-zh">数据截至</span> 2026-08-28 · <span class="l-en">regenerated nightly</span><span class="l-zh">每晚更新</span> · <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-28 03:50 UTC · <a href="index.html"><span class="l-en">All coverage</span><span class="l-zh">所有股票</span></a> · <a href="../stock.html"><span class="l-en">Analyzer</span><span class="l-zh">分析器</span></a></p>
 </footer>
 
 </div><!-- /page-wrap -->

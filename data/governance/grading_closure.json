@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-27T22:58:09.972799+00:00",
+  "generated_at": "2026-08-28T04:26:50.225269+00:00",
   "n_ledgers": 34,
-  "n_closed": 25,
-  "n_grader_starved": 9,
+  "n_closed": 26,
+  "n_grader_starved": 8,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -14,9 +14,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 68306,
-      "n_graded": 89282,
-      "last_graded_at": "2026-08-27T22:55:53.827402+00:00",
+      "n_logged": 68426,
+      "n_graded": 92063,
+      "last_graded_at": "2026-08-28T04:24:42.960961+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -28,9 +28,9 @@
       "graders": [
         "scripts/grade_qledger.py"
       ],
-      "n_logged": 89282,
-      "n_graded": 89282,
-      "last_graded_at": "2026-08-27T22:55:53.827402+00:00",
+      "n_logged": 92063,
+      "n_graded": 92063,
+      "last_graded_at": "2026-08-28T04:24:42.960961+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -42,8 +42,8 @@
       "graders": [
         "engine/board_ledger.py"
       ],
-      "n_logged": 572,
-      "n_graded": 291,
+      "n_logged": 597,
+      "n_graded": 306,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "CLOSED"
@@ -98,8 +98,8 @@
       "graders": [
         "engine/china_standout_track.py"
       ],
-      "n_logged": 2308,
-      "n_graded": 960,
+      "n_logged": 2423,
+      "n_graded": 1020,
       "last_graded_at": null,
       "tune_step": "N",
       "verdict": "CLOSED"
@@ -156,10 +156,10 @@
         "scripts/grade_breadth_divergence.py"
       ],
       "n_logged": 402,
-      "n_graded": 0,
+      "n_graded": 91,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "GRADER-STARVED"
+      "verdict": "CLOSED"
     },
     {
       "key": "risk_radar_forward_log",
@@ -408,8 +408,8 @@
         "scripts/grade_policy_calendar.py"
       ],
       "n_logged": 607,
-      "n_graded": 506,
-      "last_graded_at": "2026-08-26",
+      "n_graded": 508,
+      "last_graded_at": "2026-08-27",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
