@@ -422,11 +422,17 @@ def _coalesce_nbbo_microstructure(
             (trade_et - quote_et).dt.total_seconds() * 1000.0
         ).to_numpy(dtype="float64", na_value=np.nan)
 
+    # The covered set must be a SUBSET of the source set, or coverage can exceed
+    # 1.0: a row whose premium overflows to infinity leaves the source
+    # denominator, so it has to leave the covered numerator too.
+    source_ok = np.isfinite(premium)
+
     # A print carries measured execution-location evidence only when its own
     # quote is real, two-sided and causally prior.  Locked/crossed (ask <= bid)
     # and future quotes are uncovered — never zero, never neutral.
     nbbo_valid = (
-        np.isfinite(price) & (price > 0)
+        source_ok
+        & np.isfinite(price) & (price > 0)
         & np.isfinite(size) & (size > 0)
         & np.isfinite(bid) & (bid > 0)
         & np.isfinite(ask) & (ask > bid)
@@ -445,7 +451,6 @@ def _coalesce_nbbo_microstructure(
     with np.errstate(invalid="ignore", divide="ignore"):
         spread_pct = np.where(nbbo_valid, (ask - bid) / ((ask + bid) / 2.0), np.nan)
 
-    source_ok = np.isfinite(premium)
     keys = list(zip(exp_key.tolist(), strike_key.tolist(), right_key.tolist()))
 
     grouped: dict[tuple[str, float, str], list[int]] = {}
@@ -475,17 +480,23 @@ def _coalesce_nbbo_microstructure(
             selected = idx[mask[idx]]
             return float(premium[selected].sum()) / covered_premium
 
-        at_ask_share = _share(at_ask)
-        at_bid_share = _share(at_bid)
-        inside_share = _share(inside)
-        outside_share = _share(outside)
+        # Round the edge shares FIRST, then derive aggression from the published
+        # values. The frozen law states `aggression_share = at_ask_share +
+        # at_bid_share`; rounding each of the three independently would break
+        # that identity in the 6th decimal and hand a downstream consumer an
+        # arithmetic contradiction.
+        at_ask_share = _micro_round(_share(at_ask), _MICRO_RATIO_DECIMALS)
+        at_bid_share = _micro_round(_share(at_bid), _MICRO_RATIO_DECIMALS)
+        inside_share = _micro_round(_share(inside), _MICRO_RATIO_DECIMALS)
+        outside_share = _micro_round(_share(outside), _MICRO_RATIO_DECIMALS)
+        edges_known = at_ask_share is not None and at_bid_share is not None
         aggression_share = (
-            None if at_ask_share is None or at_bid_share is None
-            else at_ask_share + at_bid_share
+            round(at_ask_share + at_bid_share, _MICRO_RATIO_DECIMALS)
+            if edges_known else None
         )
         aggression_balance = (
-            None if at_ask_share is None or at_bid_share is None
-            else at_ask_share - at_bid_share
+            round(at_ask_share - at_bid_share, _MICRO_RATIO_DECIMALS)
+            if edges_known else None
         )
 
         measured[key] = {
@@ -504,14 +515,12 @@ def _coalesce_nbbo_microstructure(
                 _micro_round(covered_premium / source_premium, _MICRO_RATIO_DECIMALS)
                 if source_premium > 0 else None
             ),
-            "at_ask_share": _micro_round(at_ask_share, _MICRO_RATIO_DECIMALS),
-            "at_bid_share": _micro_round(at_bid_share, _MICRO_RATIO_DECIMALS),
-            "inside_share": _micro_round(inside_share, _MICRO_RATIO_DECIMALS),
-            "outside_share": _micro_round(outside_share, _MICRO_RATIO_DECIMALS),
-            "aggression_share": _micro_round(aggression_share, _MICRO_RATIO_DECIMALS),
-            "aggression_balance": _micro_round(
-                aggression_balance, _MICRO_RATIO_DECIMALS,
-            ),
+            "at_ask_share": at_ask_share,
+            "at_bid_share": at_bid_share,
+            "inside_share": inside_share,
+            "outside_share": outside_share,
+            "aggression_share": aggression_share,
+            "aggression_balance": aggression_balance,
             "spread_median_usd": _micro_round(
                 _median_or_none(spread_usd[cov]), _MICRO_SUMMARY_DECIMALS,
             ),

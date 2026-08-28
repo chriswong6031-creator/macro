@@ -1055,3 +1055,25 @@ class TestMeasuredMicrostructureLedgerColumns:
         df = pd.read_parquet(ledger_path)
         assert len(df) == 1
         assert float(df.iloc[0]["at_ask_share"]) == pytest.approx(0.60)
+
+    def test_non_finite_measured_values_never_reach_the_ledger(self):
+        """`_coerce_float` filters NaN but not Infinity. The live producer can
+        never emit one (the event stage serializes with allow_nan=False), but a
+        corrupt or foreign archive blob can — and this flattener is the last gate
+        before the ML ledger."""
+        from collectors.flow_signals import _events_from_blob
+
+        hostile = json.loads(json.dumps(MICRO_BLOCK))
+        hostile["at_ask_share"] = float("inf")
+        hostile["spread_median_pct"] = float("-inf")
+        row = _events_from_blob(
+            _make_feed_blob([
+                _measured_event("evtInf", microstructure=hostile, vol_gt_oi_ratio=float("inf")),
+            ])
+        )[0]
+
+        assert row["at_ask_share"] is None
+        assert row["spread_median_pct"] is None
+        assert row["vol_gt_oi_ratio"] is None
+        # Finite siblings in the same block are unaffected.
+        assert row["at_bid_share"] == pytest.approx(0.2)

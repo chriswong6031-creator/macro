@@ -276,6 +276,22 @@ def _infer_session_date_from_archive_key(key: str) -> str | None:
 MICROSTRUCTURE_SCHEMA = "options.trade_nbbo_microstructure/v1"
 
 
+def _finite_float(v: Any) -> float | None:
+    """`_coerce_float` filters NaN but not Infinity.
+
+    The live producer cannot emit one — the event stage serialises with
+    ``allow_nan=False`` — but a corrupt or foreign archive blob can, and this
+    flattener is the last gate before the ML ledger. An infinite measurement is
+    unmeasured, not enormous.
+    """
+    value = _coerce_float(v)
+    if value is None:
+        return None
+    import math
+
+    return value if math.isfinite(value) else None
+
+
 def _measured_microstructure_cols(ev: dict) -> dict[str, Any]:
     """Flatten the event's additive measured block into ledger columns.
 
@@ -292,28 +308,28 @@ def _measured_microstructure_cols(ev: dict) -> dict[str, Any]:
     )
     return {
         # Top level on the event, not inside the block, so it stands on its own.
-        "vol_gt_oi_ratio": _coerce_float(ev.get("vol_gt_oi_ratio")),
+        "vol_gt_oi_ratio": _finite_float(ev.get("vol_gt_oi_ratio")),
         "microstructure_schema": MICROSTRUCTURE_SCHEMA if trusted else None,
         "source_print_count": _coerce_int(trusted.get("source_print_count")),
         "nbbo_valid_print_count": _coerce_int(trusted.get("nbbo_valid_print_count")),
-        "source_premium_usd": _coerce_float(trusted.get("source_premium_usd")),
-        "nbbo_covered_premium_usd": _coerce_float(
+        "source_premium_usd": _finite_float(trusted.get("source_premium_usd")),
+        "nbbo_covered_premium_usd": _finite_float(
             trusted.get("nbbo_covered_premium_usd"),
         ),
-        "nbbo_print_coverage": _coerce_float(trusted.get("nbbo_print_coverage")),
-        "nbbo_premium_coverage": _coerce_float(trusted.get("nbbo_premium_coverage")),
-        "at_ask_share": _coerce_float(trusted.get("at_ask_share")),
-        "at_bid_share": _coerce_float(trusted.get("at_bid_share")),
-        "inside_share": _coerce_float(trusted.get("inside_share")),
-        "outside_share": _coerce_float(trusted.get("outside_share")),
-        "aggression_share": _coerce_float(trusted.get("aggression_share")),
-        "aggression_balance": _coerce_float(trusted.get("aggression_balance")),
-        "spread_median_usd": _coerce_float(trusted.get("spread_median_usd")),
-        "spread_median_pct": _coerce_float(trusted.get("spread_median_pct")),
-        "quote_age_median_ms": _coerce_float(trusted.get("quote_age_median_ms")),
-        "quote_age_max_ms": _coerce_float(trusted.get("quote_age_max_ms")),
-        "bid_size_median": _coerce_float(trusted.get("bid_size_median")),
-        "ask_size_median": _coerce_float(trusted.get("ask_size_median")),
+        "nbbo_print_coverage": _finite_float(trusted.get("nbbo_print_coverage")),
+        "nbbo_premium_coverage": _finite_float(trusted.get("nbbo_premium_coverage")),
+        "at_ask_share": _finite_float(trusted.get("at_ask_share")),
+        "at_bid_share": _finite_float(trusted.get("at_bid_share")),
+        "inside_share": _finite_float(trusted.get("inside_share")),
+        "outside_share": _finite_float(trusted.get("outside_share")),
+        "aggression_share": _finite_float(trusted.get("aggression_share")),
+        "aggression_balance": _finite_float(trusted.get("aggression_balance")),
+        "spread_median_usd": _finite_float(trusted.get("spread_median_usd")),
+        "spread_median_pct": _finite_float(trusted.get("spread_median_pct")),
+        "quote_age_median_ms": _finite_float(trusted.get("quote_age_median_ms")),
+        "quote_age_max_ms": _finite_float(trusted.get("quote_age_max_ms")),
+        "bid_size_median": _finite_float(trusted.get("bid_size_median")),
+        "ask_size_median": _finite_float(trusted.get("ask_size_median")),
     }
 
 

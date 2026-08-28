@@ -5518,3 +5518,40 @@ class TestMicrostructureStrictJsonSafety:
         assert micro["source_print_count"] == 6
         assert micro["nbbo_valid_print_count"] == 5
         assert micro["nbbo_premium_coverage"] < 1.0
+
+    def test_coverage_can_never_exceed_one_when_premium_overflows(self):
+        """The covered set must be a SUBSET of the source set. A row whose
+        premium overflows to infinity leaves the source denominator, so it must
+        leave the covered numerator too — otherwise coverage exceeds 1.0."""
+        rows = [
+            _make_nbbo_trade(  # premium overflows float64
+                price=1e300, size=10_000_000_000, bid=5e299, ask=2e300, sequence=1,
+            ),
+            _make_nbbo_trade(price=1.0, bid=0.9, ask=1.1, size=1, sequence=2),
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        assert micro["nbbo_valid_print_count"] <= micro["source_print_count"]
+        assert micro["nbbo_print_coverage"] is None or micro["nbbo_print_coverage"] <= 1.0
+        assert (
+            micro["nbbo_premium_coverage"] is None
+            or micro["nbbo_premium_coverage"] <= 1.0
+        )
+
+    def test_published_aggression_equals_the_sum_of_published_edge_shares(self):
+        """The frozen law states `aggression_share = at_ask_share + at_bid_share`.
+        Rounding each independently would break that identity at the 6th decimal,
+        so aggression is derived from the published shares."""
+        rows = [
+            _make_nbbo_trade(price=9.11, size=170, bid=9.09, ask=9.10, sequence=1),
+            _make_nbbo_trade(price=10.64, size=58, bid=10.59, ask=10.64, sequence=2),
+            _make_nbbo_trade(price=19.73, size=44, bid=19.71, ask=19.73, sequence=3),
+            _make_nbbo_trade(price=5.68, size=139, bid=5.68, ask=5.69, sequence=4),
+            _make_nbbo_trade(price=15.29, size=208, bid=15.24, ask=15.34, sequence=5),
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        edge_sum = round(micro["at_ask_share"] + micro["at_bid_share"], 6)
+        edge_diff = round(micro["at_ask_share"] - micro["at_bid_share"], 6)
+        assert micro["aggression_share"] == edge_sum
+        assert micro["aggression_balance"] == edge_diff
