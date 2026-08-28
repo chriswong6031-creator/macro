@@ -347,15 +347,19 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     # triple we hand the browser (227.98, from 227.98, up 8.74%) could not be
     # reconciled by anyone reading it.
     #
-    # Absent, unusable, or implying a non-positive anchor (-100% and below), we
-    # fall through to the ordinary derivation rather than divide.
+    # Absent, unusable, or implying a non-positive anchor, we fall through to the
+    # ordinary derivation rather than divide.  `ratio > 0` is the single guard
+    # and it carries both jobs: at exactly -100% the ratio is 0 and the division
+    # would raise, and below -100% it is negative, which would hand back an
+    # anchor that is not a price.  It is deliberately the ONLY check.  A second,
+    # overlapping guard on the quotient reads as extra safety but is unreachable
+    # behind this one, so no test can prove it is still there — and an assertion
+    # nothing can falsify is not a safeguard, it is decoration.
     prev_session_pct = _finite_number(row.get("prevSessionChg"))
     if prev_session_pct is not None:
         ratio = 1.0 + prev_session_pct / 100.0
         if ratio > 0:
-            reconstructed = price / ratio
-            if math.isfinite(reconstructed) and reconstructed > 0:
-                prev_close = reconstructed
+            prev_close = price / ratio
 
     # `chg` upstream is a PERCENT despite the name; the dollar move is derived
     # from prevClose.  Those are two DIFFERENT sources — the hub selects its own
