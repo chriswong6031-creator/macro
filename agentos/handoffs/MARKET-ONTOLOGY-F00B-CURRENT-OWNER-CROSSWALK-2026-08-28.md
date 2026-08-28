@@ -23,8 +23,9 @@ changed:
   - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F00B_CURRENT_CAPABILITY_CROSSWALK_2026-08-28.csv
     what: >
       New 130-row overlay crosswalk (88 baseline + 42 delta), zero UNKNOWN/UNOWNED
-      rows, house capability-state and disposition vocabularies, explicit UNVERIFIED
-      flags inline (25 rows) instead of silent claims. Historical ledgers untouched.
+      rows, every owner cell WS:/lane-bound, house capability-state and disposition
+      vocabularies, explicit UNVERIFIED flags inline (27 rows) instead of silent
+      claims. Historical ledgers untouched.
   - path: research/market_intelligence_productization/MARKET_ONTOLOGY_F00B_CROSSWALK_SUMMARY_2026-08-28.md
     what: >
       Companion synthesis: state/disposition counts, per-lane matrix, biggest
@@ -36,21 +37,28 @@ changed:
 verified:
   - claim: "Every row's current_owner is a lawful responsibility owner; implementation absence lives only in state/evidence (Sol REQUEST_REPAIR item 2)."
     command: "python3 regex sweep of current_owner for none/unassigned/unresolved/unowned/not-built/neither/not-established patterns after rewriting 23 rows to workstream/lane responsibility owners"
-    result: "PASS — zero offending owner cells; missing implementations remain NOT_BUILT/SPEC_ONLY in capability_state with evidence."
+    result: "PASS — zero offending owner cells, and (second-audit standard) all 130 owner cells carry an explicit WS:/lane responsibility binding; missing implementations remain NOT_BUILT/SPEC_ONLY in capability_state with evidence."
   - claim: "Crosswalk covers exactly the frozen scope with zero unowned/unknown rows and only house vocabulary."
     command: "python3 csv audit: 130 rows; id set == MO-PAID-001..088 ∪ MO-DELTA-001..042; no dup/missing/extra; no empty adjudication cells; states ⊆ house 8-state vocab; dispositions ⊆ 6-value vocab"
-    result: "PASS — final recount from the repaired CSV: NOT_BUILT 59, PARTIAL 49, SPEC_ONLY 11, BUILT_NOT_PROVEN 6, PROVEN_LIVE 5; dispositions BUILD_NEW 50, UPGRADE_EXISTING 41, PROJECTION_OVER_EXISTING 20, RESEARCH_CONTEXT_ONLY 15, PROVEN_EXISTING 4. CSV, summary, handoff and RESULT recomputed together per Sol REQUEST_REPAIR item 3."
+    result: "PASS — final recount from the repaired CSV: NOT_BUILT 59, PARTIAL 49, SPEC_ONLY 11, BUILT_NOT_PROVEN 6, PROVEN_LIVE 5; dispositions BUILD_NEW 50, UPGRADE_EXISTING 42, PROJECTION_OVER_EXISTING 20, RESEARCH_CONTEXT_ONLY 15, PROVEN_EXISTING 3. CSV, summary, handoff and RESULT recomputed together per Sol REQUEST_REPAIR item 3 (post second-audit corrections)."
   - claim: "Carrier protocol satisfied on the exact Slack thread before work began."
     command: "Slack thread C0BSBM78V1N/1787906810.553069: ACK 1787907937.258169, WATCH_ARMED 1787908079.822839, START 1787908093.153319; Skillpack SHA verified via git rev-parse in Mastermind checkout"
     result: "PASS — Skillpack e023f9b4df388814286d42462af0e86a64eea563 v1.0.1 loaded (INDEX + vocabulary + dialogue/routing law); amendment 1787907339.753029 read pre-START and applied."
-  - claim: "Census evidence was gathered read-only per lane by routed workers and spot-audited independently."
-    command: "9 ROUTE:census scout workers (F01..F13 clusters) + 1 ROUTE:review opus auditor over 13 rows (one per family)"
+  - claim: "Census evidence was gathered read-only per lane by routed workers and spot-audited independently — twice (pre-RESULT and post-REQUEST_REPAIR)."
+    command: "9 ROUTE:census scout workers (F01..F13 clusters) + 2 ROUTE:review opus audits, each over 13 rows (one per family; different rows where sensible), the second also sweeping all 130 owner cells, recomputing counts, and checking #6611/#6610 fidelity"
     result: >
-      PASS — 9/13 audited rows survived attack; 4 corrections applied before commit
-      (MO-PAID-054 PROVEN_LIVE→PARTIAL; MO-PAID-045/020 stale #6529 unclaimed status
-      superseded; MO-PAID-071 citation fix) plus the auditor's out-of-scope
-      MO-PAID-072 flag resolved. Audit added live production receipts
-      (aibrief.html, options.html, /api/billing/config pk_live, /api/brain 200s).
+      PASS — audit 1: 9/13 rows survived; 4 corrections applied pre-commit
+      (MO-PAID-054 PROVEN_LIVE→PARTIAL; stale #6529 unclaimed status superseded on
+      045/020; MO-PAID-071 citation) plus out-of-scope MO-PAID-072 flag resolved;
+      added live production receipts (aibrief.html, options.html,
+      /api/billing/config pk_live, /api/brain 200s). Audit 2 (repaired head):
+      11/13 rows survived; applied its corrections — MO-PAID-074 authority ceiling
+      rewritten to the Prophet conditional-fusion truth (three F5 signs;
+      gex_confirm_verdict dropped-on-presence 0.46) and disposition
+      PROVEN_EXISTING→UPGRADE_EXISTING; owner standard tightened to explicit
+      WS:/lane binding on all 130 rows (75 prefixed + 6 rewritten); UNVERIFIED
+      register corrected 25→27; competitor-authority refusal made explicit on
+      MO-PAID-024/042 and MO-DELTA-005 ceilings.
 unverified:
   - claim: "MAS-170 Linear projection text matches the carrier's stated F00B intent."
     what_would_verify: "Authenticated Linear MCP read of MAS-170 (unavailable this session — connector unauthenticated)."
@@ -63,7 +71,7 @@ unresolved:
   - "P-001..P-006 (preservation audit, OPEN PR #6610, unaccepted) are pre-mapped in the summary as PENDING_SOURCE_ACCEPTANCE; reconcile at accepted tier when/if #6610 lands."
   - "MAS-170 Linear projection unread (connector unauthenticated); carrier text treated as the governing intent."
   - "REJECTED_BY_DESIGN candidates await explicit Sol rulings (MO-PAID-048/050 absent license, MO-DELTA-040, authority semantics of MO-PAID-024/MO-DELTA-006)."
-  - "25 rows carry inline UNVERIFIED flags (options producer wiring, display freshness receipts, off-repo data contracts, Supabase-side deletion, non-US legal sources, commodity-family coverage)."
+  - "27 rows carry inline UNVERIFIED flags (options producer wiring, display freshness receipts, off-repo data contracts, Supabase-side deletion, non-US legal sources, commodity-family coverage)."
   - "Pre-existing agentos validate errors in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md are owned by open heal PR #6605, not this carrier."
 next_actions:
   - "Sol adjudicates the proposed next fanout set (summary §Proposed next fanout): F11 Thesis-object vertical, F12 tenancy foundation, F07 consensus-source ruling, F09/F02 consolidated rights docket, F01/F13 cheap projections, existing-carrier accelerations."

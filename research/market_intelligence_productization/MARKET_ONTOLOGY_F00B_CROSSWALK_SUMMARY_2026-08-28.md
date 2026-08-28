@@ -17,8 +17,9 @@ carrier, and recommended next disposition. This is an OVERLAY artifact — the
 historical baseline ledgers are not rewritten.
 
 Row data: `MARKET_ONTOLOGY_F00B_CURRENT_CAPABILITY_CROSSWALK_2026-08-28.csv` (130 rows,
-zero UNKNOWN/UNOWNED, zero empty adjudication cells; 25 rows carry explicit
-UNVERIFIED flags inside their evidence/rights/notes rather than silent claims).
+zero UNKNOWN/UNOWNED, zero empty cells outside the optional notes column; 27
+rows carry an explicit UNVERIFIED flag somewhere in the row rather than a
+silent claim).
 
 Capability states use the house vocabulary at PROVEN tier: docs/spec/merged infra
 are not production proof; a sibling program counts only at its proven capability tier.
@@ -40,8 +41,9 @@ F00A (exact P1 admission), F00C (zero-loss granular reconciliation), and F00D
 **Owner resolution law (Sol repair 2026-08-28):** every row's `current_owner` is
 a lawful responsibility owner (workstream/lane + canonical owner route). Absence
 of an implementation is recorded only in `capability_state`/`evidence`/`notes`,
-never in the owner field. Verified: zero owner cells carry
-none/unassigned/unresolved/unowned language.
+never in the owner field. Verified (second audit + systematic pass): all 130
+owner cells carry an explicit `WS:`/lane responsibility binding, and zero owner
+cells carry none/unassigned/unresolved/unowned language.
 
 ## Counts
 
@@ -49,8 +51,8 @@ Capability state (130 rows, post-audit): **NOT_BUILT 59 · PARTIAL 49 · SPEC_ON
 BUILT_NOT_PROVEN 6 · PROVEN_LIVE 5** (BROKEN 0, DARK_OR_DISCONNECTED 0,
 REJECTED_BY_DESIGN 0 — rejection candidates are recorded in notes pending Sol rulings).
 
-Disposition: **BUILD_NEW 50 · UPGRADE_EXISTING 41 · PROJECTION_OVER_EXISTING 20 ·
-RESEARCH_CONTEXT_ONLY 15 · PROVEN_EXISTING 4** (REJECTED_BY_DESIGN 0 as final
+Disposition: **BUILD_NEW 50 · UPGRADE_EXISTING 42 · PROJECTION_OVER_EXISTING 20 ·
+RESEARCH_CONTEXT_ONLY 15 · PROVEN_EXISTING 3** (REJECTED_BY_DESIGN 0 as final
 disposition; candidates flagged in notes: MO-PAID-048/050 absent a license,
 MO-DELTA-040, and the authority-tier semantics of MO-PAID-024/MO-DELTA-006).
 
@@ -207,7 +209,7 @@ If #6610 lands before the next RESULT, reconcile these at their accepted tier.
 
 ## UNVERIFIED register (bounded, explicit)
 
-25 rows carry inline UNVERIFIED flags; the load-bearing ones: MAS-170 Linear intent
+27 rows carry inline UNVERIFIED flags; the load-bearing ones: MAS-170 Linear intent
 (unauthenticated MCP); options producer wiring for vol/term/expected-move
 (ThetaData vs legacy polygon_gex path); live-artifact freshness receipts for
 display surfaces (sparse tree omits site/ and data/ by design); existence of any
@@ -229,7 +231,7 @@ beyond oil; charting-app subdirectories beyond api/terminal/supabase.
    gates ~10 rows across F09/F02.
 5. **F01/F13 cheap projections**: premarket AM Edition, reference
    indicators/glossary over site_semantics, notification-preferences wiring —
-   low-risk UPGRADE_EXISTING batch.
+   low-risk UPGRADE_EXISTING / PROJECTION_OVER_EXISTING batch.
 6. **Existing-carrier accelerations** (no new programs): K3-D repair (#6514), Options
    C0 (#6604), GMI fold (#6522) — each unblocks multiple crosswalk rows on acceptance.
 
@@ -246,5 +248,11 @@ program start now bound to its carrier, no longer unclaimed), MO-PAID-071
 citation fixed; plus the auditor's out-of-scope flag on MO-PAID-072 resolved
 (display receipt live, producer path kept UNVERIFIED). The audit added live
 production receipts for aibrief.html, options.html, /api/billing/config
-(pk_live), and /api/brain. Sparse-worktree limits (site/, data/ absent) are
+(pk_live), and /api/brain. A second independent audit on the repaired head
+(post Sol REQUEST_REPAIR) passed 11/13 rows and its corrections were applied:
+MO-PAID-074 ceiling rewritten to the Prophet conditional-fusion truth and
+disposition downgraded to UPGRADE_EXISTING, the WS:/lane owner-binding standard
+enforced on all 130 rows, the UNVERIFIED register corrected to 27, and the
+competitor-authority refusal made explicit on the MO-PAID-024/042 and
+MO-DELTA-005 ceilings. Sparse-worktree limits (site/, data/ absent) are
 recorded as UNVERIFIED receipts rather than silently upgraded or downgraded states.
