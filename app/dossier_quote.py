@@ -103,6 +103,12 @@ _CLOSED_STALE_MAX_AGE_SECONDS = 5 * 24 * 3600.0
 # realtime", which is the truthful answer.
 _REALTIME_BASES = frozenset({"REALTIME", "LIVE"})
 
+# Session tags that would mean ``last`` is NOT a regular-session print.  Note
+# what is absent: "closed".  A closed regular session still has a settled
+# regular-session close, and that close is exactly what an overnight dossier
+# should show.
+_EXTENDED_SESSION_TAGS = frozenset({"pre", "premarket", "pre-market", "post", "after", "afterhours", "after-hours", "extended", "overnight"})
+
 # How far the hub's own percent may sit from the one implied by
 # last/prevClose before we stop trusting it.  Generous enough for float noise
 # and rounding, tight enough that a different session's percent never passes.
@@ -298,15 +304,23 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     entirely — rendering an after-hours print as the day move would invert the
     sign the reader acts on (measured 2026-08-27: regular +8.74%, ext -0.76%).
     """
-    # The hub tags a row with the session its print came FROM.  Read it: it is
-    # the only positive evidence that ``last`` is a regular-session print, and
-    # without it an extended-hours print reaching ``last`` would be published as
-    # the regular price with a regular percent beside it.  Absent is tolerated
-    # (older rows omit it); a tag naming a NON-regular session is refused.
+    # ``regularSession`` reports the STATE of the regular session — "rth" while
+    # it is open, "closed" once it is not.  It does NOT mean "the session this
+    # print came from", which is how it was first read here, and reading it that
+    # way refused every good row overnight: measured in production 2026-08-28,
+    # NVDA carried last=227.98 / prevClose=209.66 (the correct settled close for
+    # 2026-08-27) with regularSession "closed", and this raised, so every US
+    # dossier 503'd all night and fell back to its baked price.
+    #
+    # Only an explicitly EXTENDED tag is refusable, and even that is defence in
+    # depth: upstream already keeps extended prints out of ``last`` entirely
+    # (its ext feed rejects RTH-tagged prints, and non-RTH aggregates are routed
+    # to the ext namespace before the primary fields are touched), which is why
+    # the extended print lives in extPrice/extChg rather than here.
     print_session = row.get("regularSession")
-    if isinstance(print_session, str) and print_session.strip().lower() not in ("rth", "regular", ""):
+    if isinstance(print_session, str) and print_session.strip().lower() in _EXTENDED_SESSION_TAGS:
         raise ValueError(
-            f"quote hub row is not a regular-session print: {print_session!r}"
+            f"quote hub row is an extended-session print: {print_session!r}"
         )
 
     price = _finite_number(row.get("last"))
