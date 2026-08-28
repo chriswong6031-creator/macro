@@ -1,50 +1,49 @@
 ---
 key: PERSONAL-PRO-INGRESS-PRINCIPAL-GAP
 claim: >
-  As of 2026-08-27, the accepted PR #159 login-Keychain verifier bridge has been
-  exercised on the Chairman Mac against the live disposable fixture credential
-  from a clean protected Mastermind checkout at
-  `e4e44867ace335ac9208a3990a10c163e199492d`. It returned the allowlisted
-  `METADATA_SCOPE_MISMATCH` refusal. Chairman then inspected only the non-secret
-  Slack Bot Token Scopes and reported 19 installed bot scopes. Both frozen
-  required scopes, `groups:history` and `chat:write`, are present; the token has
-  17 additional bot scopes and is therefore over-privileged. Current protected
-  Mastermind has since advanced to
-  `be68ec881460aa60d7d77cdb69f7c1cae81f6310` via records-only PR #168. PR #168's
-  S0 predecessor snapshot does not override this later live runtime receipt;
-  its own law preserves existing component security rules. C1 remains
-  independently nonterminal on the existing PR #155 carrier.
+  As of 2026-08-27, the accepted PR #159 login-Keychain verifier bridge is
+  production-exercised on the Chairman Mac and repeatedly reaches Slack but
+  returns the allowlisted `METADATA_SCOPE_MISMATCH` refusal. The latest native
+  admin evidence materially refines the earlier scope census: the Slack app
+  configuration now requests exactly `chat:write` + `groups:history`, but
+  Installed App -> Authorizations still shows one older broad authorization for
+  `MMX S0 Fixture`, dated Aug 23, 2026. That authorization exposes a native
+  Revoke control. Therefore the current defect is not the fixed verifier and is
+  not evidence that the reduced configuration failed to save; the old broad
+  installed authorization remains present. C1 remains independently
+  nonterminal on its existing PR #155 carrier.
 falsifier: >
-  Remediate only the existing disposable fixture's OAuth grant under a new
-  bounded Sol-authorized fixture-qualification ceremony. Keep the app/fixture
-  identity and frozen minimum authority; do not weaken the verifier, create
-  S0-R2, create a replacement fixture, or send another source probe. Slack's
-  current first-party OAuth law says scope grants are additive and an existing
-  access token cannot be downgraded: removing requested scopes from app config
-  does not strip them from the already-issued token. Therefore the current
-  over-granted token must be revoked/uninstalled through a credential-safe human
-  admin boundary and the same fixture app freshly authorized with only the
-  frozen bot scopes before the Keychain credential can be replaced and the
-  verifier requalified. C1 still requires its existing PR #155 return plus
-  MAS-109 production proof.
+  Revoke the sole Aug 23 installed authorization for the existing disposable
+  fixture app, then freshly install the same app `A0BS2DMVDC4` under the already
+  reduced two-scope bot configuration. If a newly issued bot credential is
+  produced, place it only into the fixed login-Keychain item through a
+  Chairman-native secret-safe boundary. Then stop for Sol before any verifier
+  rerun. Do not weaken the verifier, edit scopes again, create S0-R2, create a
+  replacement fixture, or send another source probe. Slack first-party OAuth
+  law states that scopes on an existing token are additive and cannot be
+  downgraded without revocation/uninstall. C1 still requires its existing PR
+  #155 return plus MAS-109 production proof.
 so_what: >
-  `LIVE_KEYCHAIN_VERIFIER_RECEIPT_REQUIRED` is closed. The active gate is
-  `LIVE_FIXTURE_OVERGRANTED_TOKEN_REMEDIATION`: 19 observed bot scopes versus 2
-  allowed, with 17 excess grants. S0-R1 is not PASS and the 20-row framed-carrier
-  kill gate has not yet run to a terminal result. MAS-112 remains nonterminal;
-  B2/C2 remain held; zero Executive mutation has occurred.
+  The previous `LIVE_FIXTURE_OVERGRANTED_TOKEN_REMEDIATION` diagnosis is refined
+  to `OLD_BROAD_AUTHORIZATION_STILL_PRESENT`. The requested bot-scope
+  configuration is correct, but the Aug 23 authorization has not been replaced.
+  S0-R1 is not PASS and the 20-row framed-carrier kill gate has not yet run to a
+  terminal result. MAS-112 remains In Progress; B2/C2 remain held; zero
+  Executive mutation has occurred.
 kind: runtime
 verified_at: 2026-08-27
 verified_by: >
-  Chairman-native verifier receipt
+  Chairman-native verifier receipts returning
   `{"error":"METADATA_SCOPE_MISMATCH","schema":"mastermind.slack_agent_dialogue.metadata_verification.v1","status":"ERROR"}`;
-  Chairman non-secret Slack admin scope census; Mastermind PR #159 / merge
-  `7d160ff47df1bca0ac6312141e6e1134bbce6539`; current protected Mastermind PR
-  #168 / merge `be68ec881460aa60d7d77cdb69f7c1cae81f6310`; Slack first-party OAuth docs
+  Chairman-native Slack developer configuration showing exactly `chat:write` +
+  `groups:history`; Chairman-native Installed App -> Authorizations evidence
+  showing the sole broad `MMX S0 Fixture` authorization from Aug 23, 2026 and
+  its Revoke control; Mastermind PR #159 / merge
+  `7d160ff47df1bca0ac6312141e6e1134bbce6539`; Slack first-party OAuth docs
   `https://docs.slack.dev/authentication/installing-with-oauth/` and
-  `https://docs.slack.dev/app-management/distribution/`; live Slack channel
-  census confirming bot `U0BST4WG996` in `C0BRUL9F2V7`; Linear MAS-112 corrected
-  from false-green Done to In Progress.
+  `https://docs.slack.dev/app-management/distribution/`; Linear MAS-112 current
+  reconciliation comments; current Macro records ancestry through PR #6511 /
+  merge `88a4e23df4b8a20aef1e7170a42c0dd6d49fd1ff`.
 scope:
   - crypto-intelligence
   - executive-os
@@ -67,98 +66,81 @@ team `T0BRD2AQXQV`, bot user `U0BST4WG996`, bot scopes exactly
 `groups:history` + `chat:write`. The helper is intentionally fail-closed and
 never emits arbitrary observed scope-header text on mismatch.
 
-The Chairman ran that helper from a clean protected Mastermind checkout at
-`e4e44867ace335ac9208a3990a10c163e199492d`. It returned:
+The Chairman has exercised that helper from clean protected Mastermind
+checkouts. It repeatedly returned:
 
 ```json
 {"error":"METADATA_SCOPE_MISMATCH","schema":"mastermind.slack_agent_dialogue.metadata_verification.v1","status":"ERROR"}
 ```
 
-Because the verifier validates Slack response shape and team/bot identity before
-exact scope equality, this narrowed the live defect to the OAuth grant rather
-than a generic Keychain/auth failure. Slack channel census independently showed
-fixture bot `U0BST4WG996` still present in private channel `C0BRUL9F2V7`.
+The first reconciliation correctly established that the currently effective
+OAuth grant was broader than the verifier contract. The subsequent native admin
+inspection provides a more precise current diagnosis and supersedes only the
+older assumption about what the 19-scope screenshot represented.
 
-### Exact non-secret scope census
+### Configuration is now correct
 
-The Chairman then inspected the fixture's Slack **Bot Token Scopes** without
-exposing any credential. The observed set contains 19 scopes:
+The current Slack developer configuration for the same historical disposable
+app `A0BS2DMVDC4` requests exactly two **Bot Token Scopes**:
 
-- `app_mentions:read`
-- `assistant:write`
-- `bookmarks:read`
-- `bookmarks:write`
-- `calls:read`
-- `calls:write`
-- `canvases:read`
-- `canvases:write`
-- `channels:history`
-- `channels:join`
-- `channels:manage`
-- `channels:read`
-- `channels:write.topic`
 - `chat:write`
-- `files:read`
-- `files:write`
 - `groups:history`
-- `groups:read`
-- `groups:write`
 
-Required and present: `chat:write`, `groups:history`.
+Do not modify this requested bot-scope set again. App-level Socket Mode authority
+such as `connections:write`, where required by the frozen fixture law, is a
+separate app-token capability and is not part of this bot-token equality check.
 
-Excess and forbidden for this disposable fixture: the other 17 scopes. This is
-not a missing-scope problem; it is an over-granted-token problem.
+### Installed authorization is still old and broad
 
-App-level Socket Mode authority such as `connections:write`, where required by
-the frozen fixture law, is a separate app-token scope and is not part of this
-Bot Token Scope equality check.
+Slack Installed App -> Authorizations still shows exactly one authorized member
+entry for `MMX S0 Fixture`, dated **Aug 23, 2026**, with the older broad
+permission set. The same native page exposes a **Revoke** control for that
+authorization.
+
+This corrects the prior records phrasing that treated the 19-scope screenshot as
+direct telemetry for the newly configured token. The 19-scope view established
+that the app had a broad authority history; the latest evidence establishes the
+more important current fact: the old Aug 23 installed authorization itself is
+still present even though the app's requested configuration has been reduced to
+the exact two scopes.
+
+The second verifier mismatch after the attempted reinstall is therefore
+consistent with Slack continuing to use that unreplaced authorization. It does
+not justify weakening the verifier or changing the requested scopes.
 
 ### Provider-law consequence
 
-Slack's current first-party OAuth documentation states that installations are
-additive: later authorization can add scopes but an already-issued access token
-cannot be downgraded. Slack's app lifecycle documentation likewise states that
-removing scopes from app configuration does not remove those grants from
-existing tokens; those tokens retain the removed scopes until revoked/uninstalled.
+Slack's current first-party OAuth documentation states that authorization scopes
+on an existing token are additive and cannot be downgraded. Slack's app
+lifecycle documentation likewise states that removing scopes from app
+configuration does not remove those grants from already-issued tokens; those
+tokens retain the removed scopes until revoked/uninstalled.
 
-Therefore **do not** repair this by changing the verifier to accept the broad
-scope set, and do not assume deleting 17 rows then pressing Reinstall will make
-the existing token least-privilege.
+Therefore the smallest lawful remediation is now narrower and explicit:
 
-The smallest lawful remediation is a separate bounded fixture-qualification
-ceremony under the **same disposable fixture app identity**:
+1. keep requested **Bot Token Scopes** exactly `groups:history` and `chat:write`;
+2. on Installed App -> Authorizations, revoke the sole Aug 23, 2026 authorization
+   for the existing `MMX S0 Fixture` app;
+3. freshly install/authorize that same app `A0BS2DMVDC4` under the already
+   reduced two-scope configuration;
+4. if the revoke/reinstall removes bot `U0BST4WG996` from private fixture channel
+   `C0BRUL9F2V7`, re-invite only that existing fixture bot to that channel;
+5. if Slack issues a fresh bot credential, replace only the fixed login-Keychain
+   item's password through a Chairman-native secret-safe boundary; never paste
+   the credential into chat, Slack, Linear, GitHub, shell argv, logs or repo
+   files;
+6. then stop for Sol before any metadata-verifier rerun;
+7. only after current protected Mastermind/Skillpack plus app/bot/channel
+   identity are rechecked may Sol authorize one fresh metadata requalification;
+8. only an allowlisted PASS may release the remainder of the existing MAS-112
+   three-seat / 20-row S0-R1 experiment.
 
-1. configure requested **Bot Token Scopes** to exactly `groups:history` and
-   `chat:write`;
-2. preserve only separately-required app-level Socket Mode authority under the
-   existing fixture law;
-3. revoke/uninstall the currently over-granted installation/token through a
-   credential-safe Chairman Slack-admin boundary;
-4. freshly authorize/install the same fixture app with the reduced grant;
-5. if uninstall removed the bot from `C0BRUL9F2V7`, re-invite only that fixture
-   bot to that private test channel;
-6. replace the fixed login-Keychain item's password with the newly issued bot
-   token through a human/native secret-safe boundary; never paste the token into
-   chat, Slack, Linear, GitHub, shell argv, logs or repo files;
-7. only after current protected Mastermind/Skillpack and app/bot/channel identity
-   are rechecked may Sol authorize one new metadata-verifier requalification;
-8. only a PASS may release the remainder of the existing MAS-112 three-seat / 20-row
-   S0-R1 experiment.
+This is remediation of the same authorized fixture, not S0-R2 and not a
+replacement fixture. Do not send another Slack source-message probe while this
+preflight gate is open.
 
-This is fixture remediation, not S0-R2 and not a replacement fixture. The failed
-PR #159 verifier operation remains closed; do not blind-rerun it before the grant
-has actually changed.
-
-Current protected Mastermind advanced after the verifier run to PR #168 / merge
-`be68ec881460aa60d7d77cdb69f7c1cae81f6310`. PR #168's records-only ledger called
-S0-R1 an accepted predecessor based on prior Linear/Git history, but its own
-supersession law preserves component source/security laws. This later native
-receipt and admin census therefore correct current capability state without
-rewriting the historical #168 snapshot: S0 is nonterminal until the exact-scope
-fixture is requalified.
-
-Linear MAS-112 has been repaired from false-green Done to In Progress and records
-the verifier refusal. B2/C2 remain held.
+Linear MAS-112 remains In Progress and contains the native verifier/admin
+reconciliation. B2/C2 remain held.
 
 ## C1 current delta
 
