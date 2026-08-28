@@ -81,7 +81,9 @@ Per-lane state matrix:
    expected move (PROVEN_LIVE), OI concentration + dealer-gamma display estate
    (display-tier, DNR-bounded), vol/skew/term surfaces (PARTIAL), ThetaData T1 spine
    (PROVEN_LIVE per AD-1T1), measured trade+NBBO microstructure (BUILT_NOT_PROVEN on
-   HOLD carriers #6585/#6576). The #6604 C0 masterplan owns consolidation.
+   the OPEN HOLD implementation carrier #6585, pending natural RTH proof; plan
+   carrier #6576 is MERGED as records only, OA-1T-MACRO still todo/NOT STARTED).
+   The #6604 C0 masterplan owns consolidation.
 2. **Mastermind chat (F11)** — `engine/neuralweb/brain_gateway.py` + `/api/brain/*`
    is production-live as a general Live-Market-Packet assistant (audit receipts:
    `/api/brain/me` 200, grounded `/api/brain/chat` reply); the Workspace-Chat
@@ -152,10 +154,13 @@ Per-lane state matrix:
 | Carrier | State | Owns |
 |---|---|---|
 | #6604 Options Intelligence C0 masterplan | OPEN HOLD-FOR-SOL | F03 consolidation; Structure Builder/catalyst-workflow commissioning |
-| #6585 / #6576 OA1T ThetaData microstructure | OPEN HOLD-FOR-SOL | F03 flow/trade-interpretation substrate (BUILT_NOT_PROVEN) |
+| #6585 OA1T implementation | OPEN HOLD-FOR-SOL | F03 flow/trade-interpretation substrate (BUILT_NOT_PROVEN pending natural RTH proof) |
+| #6576 OA1T plan | MERGED `b0205e58` | Plan/records carrier only — OA-1T-MACRO remains todo/NOT STARTED |
 | #6529 Stock Identity W3-final | OPEN (unclaimed) | F10 analog-lab substrate (episodes W1/W2 done, W3+ unbuilt) |
 | #6522 GMI Theme Graph finish-and-fold | OPEN | F04 theme/transmission substrate (D2C→W3C sequence) |
-| #6582 / #6598 Eval OS freeze + E1 qledger | OPEN | F10/F13 measurement law |
+| #6582 Eval OS architecture freeze | OPEN | F10/F13 measurement law |
+| #6598 Eval OS E1 qledger anchoring | MERGED `7cd9748` | E1 anchoring landed (evidence tier only) |
+| #6607 qledger persistence repair | MERGED `18e0f5b8` | stock_briefs producer persistence (evidence tier only) |
 | #6528 Market Memory recharter | OPEN DRAFT | F13-adjacent memory governance |
 | #6514 K3-D economic propagation | OPEN HOLD-FOR-SOL | F04/F05 causal layer; blocks K5 |
 | K2-C #6533 | MERGED, NOT Sol-accepted | F09 institutional ownership; post-merge repair is an explicit adjudication point |

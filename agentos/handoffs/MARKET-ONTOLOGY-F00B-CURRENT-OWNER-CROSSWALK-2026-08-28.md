@@ -78,7 +78,7 @@ next_actions:
   - "F00 folds this overlay into its coverage accounting; delta ledger stays living — recheck public surfaces at next milestone."
   - "REJECTED_BY_DESIGN candidates need explicit Sol rulings: MO-PAID-048/050 (absent license), MO-DELTA-040, authority semantics of MO-PAID-024/MO-DELTA-006."
 do_not_redo:
-  - "Do not re-run this census from scratch; refresh only rows whose sibling carriers move (#6604, #6585/#6576, #6529, #6522, #6582/#6598, #6514, #6596, #6543)."
+  - "Do not re-run this census from scratch; refresh only rows whose sibling carriers move (#6604, #6585 impl [#6576 plan already merged records-only], #6529, #6522, #6582 [#6598/#6607 already merged at evidence tier], #6514, #6596, #6543)."
   - "Do not mint a second analysis lifecycle or RMS engine — amendment reconciliation scoped both inside MO-PAID-046/047/053 as projections over falsifier_tripwires + macro_thesis patterns."
   - "Do not inherit competitor Opportunity authority semantics (direction/confidence/priced%) absent calibrated K5/Eval-OS promotion."
   - "Do not import/reconstruct the retained 1,556-row P1 corpus — F00A exact-byte import remains a separate open gate."
