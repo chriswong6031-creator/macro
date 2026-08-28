@@ -47,6 +47,7 @@
     },
     "site/plotly-2.32.0.min.js": {
       "create_style": 1,
+      "insert_rule": 1,
       "style_markup": 1
     },
     "site/radar_panel.js": {
@@ -125,6 +126,7 @@
     },
     "templates/plotly-2.32.0.min.js": {
       "create_style": 1,
+      "insert_rule": 1,
       "style_markup": 1
     },
     "templates/release_publications_live.js": {
@@ -163,6 +165,6 @@
       "create_style": 1
     }
   },
-  "generated_from": "84d6831275cc8f964a7877f5e6f212c5ee4637cf",
+  "generated_from": "07fc155aeacda5566f53139d530eb1cab1ec01aa",
   "schema": "mastermind.runtime_style_allowlist.v1"
 }

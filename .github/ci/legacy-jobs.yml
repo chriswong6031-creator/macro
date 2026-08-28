@@ -4879,7 +4879,7 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
           if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
-            echo "no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — changed-line gate skipped; the ratchet and selftests above still ran"
+            echo "::warning title=design-governance::no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — the forward-only design ratchet was SKIPPED and this job is green WITHOUT it; the runtime-style ratchet and all three selftests above still ran"
             exit 0
           fi
           git diff --unified=0 "$mb" HEAD -- templates > /tmp/design.diff
@@ -4888,7 +4888,7 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
           if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
-            echo "no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — evidence gate skipped; the ratchet and selftests above still ran"
+            echo "::warning title=design-governance::no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — the visual-evidence gate was SKIPPED and this job is green WITHOUT it; the runtime-style ratchet and all three selftests above still ran"
             exit 0
           fi
           git diff --unified=0 "$mb" HEAD -- templates site > /tmp/ui.diff

@@ -182,7 +182,10 @@ def test_main_exits_one_on_new_offender_file(tmp_path, monkeypatch, capsys):
     assert "new_offender" in out.lower() or "new_offender" in out
 
 
-def test_main_emits_bare_notice_annotation_for_stale_budget(tmp_path, monkeypatch, capsys):
+def test_main_hard_fails_on_stale_budget(tmp_path, monkeypatch, capsys):
+    """R2 (binding deviation from the plan's ::notice wording): a stale
+    allowance is a HARD FAILURE, not an ignorable notice — the ratchet only
+    ever tightens, and a notice nobody must act on cannot deliver that."""
     root = _make_tree(tmp_path)
     # Allowance is higher than actual (2 allowed, 2 actual is exact — bump baseline
     # to 3 so it is stale).
@@ -190,12 +193,36 @@ def test_main_emits_bare_notice_annotation_for_stale_budget(tmp_path, monkeypatc
     monkeypatch.setattr(RSI, "ROOT", root)
     rc = RSI.main([])
     out = capsys.readouterr().out
-    assert rc == 0
+    assert rc == 1
     # Must be a bare, unprefixed GitHub annotation line so CI actually renders it
-    # (a logger prefix, e.g. "WARNING ::notice", makes GitHub silently drop it).
-    lines = [l for l in out.splitlines() if "::notice" in l]
-    assert lines, f"expected a ::notice line in output, got: {out!r}"
-    assert lines[0].startswith("::notice")
+    # (a logger prefix, e.g. "WARNING ::error", makes GitHub silently drop it).
+    lines = [l for l in out.splitlines() if "::error" in l and "stale-budget" in l]
+    assert lines, f"expected an ::error stale-budget line in output, got: {out!r}"
+    assert lines[0].startswith("::error")
+    # The message must be actionable: name the file, the pinned allowance, the
+    # actual count, and the exact remedy command.
+    assert "site/theme.js" in lines[0]
+    assert "create_style" in lines[0]
+    assert "allowance is 3" in lines[0]
+    assert "actual is 2" in lines[0]
+    assert "--emit-baseline --generated-from" in lines[0]
+
+
+def test_main_hard_fails_when_a_file_disappears_while_still_baselined(
+        tmp_path, monkeypatch, capsys):
+    """R2: a file that drops out of the tree entirely (actual 0 for every
+    pattern) while its baseline entry survives must ALSO hard fail, not just
+    the case where the file still exists at a lower count."""
+    root = _make_tree(tmp_path)  # no injection at all in site/gone.js — it never exists
+    _write_baseline(root, {
+        "site/theme.js": {"create_style": 2},
+        "site/gone.js": {"create_style": 5},
+    })
+    monkeypatch.setattr(RSI, "ROOT", root)
+    rc = RSI.main([])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert any("site/gone.js" in ln and ln.startswith("::error") for ln in out.splitlines())
 
 
 def test_main_emit_baseline_requires_generated_from(tmp_path, monkeypatch, capsys):

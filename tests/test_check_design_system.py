@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -345,6 +346,65 @@ def test_parse_added_line_numbers_basic_hunk() -> None:
     assert DS.parse_added_line_numbers(diff) == {"templates/legacy.css": {2}}
 
 
+def test_parse_added_line_numbers_strips_the_trailing_tab_on_a_spaced_path() -> None:
+    r"""Git appends a literal TAB after the path when the path contains a space.
+
+    Regression guard (R1). Before the fix the dict key was
+    ``templates/panel v2.css\t``, so ``added_lines.get(finding.path)`` missed
+    and a brand-new raw colour in that file exited 0 while the identical file
+    named without a space exited 1 — a silent false negative in a HARD gate,
+    reachable by renaming a stylesheet. The tab is written literally here
+    because that is what git emits; this file may not shell out to git (the
+    CLOSURE LEGIBILITY contract binds the test as well as the script).
+    """
+    diff = (
+        "diff --git a/templates/panel v2.css b/templates/panel v2.css\n"
+        "--- a/templates/panel v2.css\t\n"
+        "+++ b/templates/panel v2.css\t\n"
+        "@@ -1,0 +2,1 @@\n"
+        "+.new{color:#ff0044}\n"
+    )
+    assert DS.parse_added_line_numbers(diff) == {"templates/panel v2.css": {2}}
+
+
+def test_parse_added_line_numbers_unquotes_a_c_quoted_non_ascii_path() -> None:
+    r"""Git C-quotes any path carrying a non-ASCII byte: ``"templates/pa\303\251nel.css"``.
+
+    Regression guard (R1). The octal escapes are raw BYTES of one UTF-8
+    sequence, so they must accumulate and decode once — decoding escape by
+    escape yields mojibake and the key never matches a finding's path.
+    """
+    diff = (
+        'diff --git "a/templates/pa\\303\\251nel.css" "b/templates/pa\\303\\251nel.css"\n'
+        '--- "a/templates/pa\\303\\251nel.css"\n'
+        '+++ "b/templates/pa\\303\\251nel.css"\n'
+        "@@ -1,0 +2,1 @@\n"
+        "+.new{color:#ff0044}\n"
+    )
+    assert DS.parse_added_line_numbers(diff) == {"templates/paénel.css": {2}}
+
+
+def test_enforce_added_blocks_a_new_colour_in_a_spaced_path(tmp_path: Path, capsys) -> None:
+    """End-to-end R1: the spaced path must reach the BLOCKING set, not just parse."""
+    write_template(tmp_path, "panel v2.css", ".legacy{color:#123456}\n.new{color:#ff0044}\n")
+    diff = (
+        "diff --git a/templates/panel v2.css b/templates/panel v2.css\n"
+        "--- a/templates/panel v2.css\t\n"
+        "+++ b/templates/panel v2.css\t\n"
+        "@@ -1,0 +2,1 @@\n"
+        "+.new{color:#ff0044}\n"
+    )
+    diff_path = tmp_path / "d.diff"
+    diff_path.write_text(diff, encoding="utf-8")
+    rc = DS.main(["--mode", "enforce-added", "--root", str(tmp_path),
+                  "--diff-file", str(diff_path)])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "panel v2.css:2" in out
+    # line 1 carries an identical legacy literal and must NOT block
+    assert "panel v2.css:1" not in out
+
+
 def test_parse_added_line_numbers_skips_no_newline_marker() -> None:
     r"""`\ No newline at end of file` is not a real line; counting it desyncs
     every subsequent line number in the hunk (C2, binding correction)."""
@@ -431,11 +491,84 @@ def test_parse_added_line_numbers_multiple_files_in_one_diff() -> None:
         "templates/a.css": {1}, "templates/b.css": {1}}
 
 
+# --- R1: diff-header path normalization, verified against a REAL `git diff` -
+#
+# A hand-written diff cannot reproduce git's own escaping (the appended TAB
+# for a path with a space; the C-style/octal quoting for a non-ASCII byte),
+# so a hand-written fixture would let this bug back in.
+
+def _git(cwd: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t.test",
+         "-c", "commit.gpgsign=false", *args],
+        cwd=cwd, check=True, capture_output=True,
+    )
+
+
+def _real_diff(repo: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "diff", *args], cwd=repo, check=True, capture_output=True, text=True,
+    ).stdout
+
+
+def test_parse_added_line_numbers_real_git_diff_path_with_a_space(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "panel v2.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#222}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    assert "\t" in diff.splitlines()[3]  # sanity: git really appended the tab
+    assert DS.parse_added_line_numbers(diff) == {"templates/panel v2.css": {2}}
+
+
+def test_parse_added_line_numbers_real_git_diff_non_ascii_quoted_path(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "panél.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#222}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    assert diff.splitlines()[3].startswith('+++ "b/')  # sanity: git really quoted it
+    assert DS.parse_added_line_numbers(diff) == {"templates/panél.css": {2}}
+
+
+def test_parse_added_line_numbers_real_git_diff_space_and_non_ascii_combined(
+        tmp_path: Path) -> None:
+    """Both shapes at once: quoted AND carrying the trailing tab — order of
+    operations matters (strip the tab first, THEN unquote)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "pan él two.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#222}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    header = diff.splitlines()[3]
+    assert header.startswith('+++ "b/') and "\t" in header  # sanity: both shapes present
+    assert DS.parse_added_line_numbers(diff) == {"templates/pan él two.css": {2}}
+
+
+def test_normalize_diff_header_path_dev_null_passes_through() -> None:
+    assert DS._normalize_diff_header_path("/dev/null") == "/dev/null"
+
+
 def test_added_blocking_findings_only_counts_findings_on_added_lines() -> None:
     findings = [
         DS.Finding("color-literal", "templates/legacy.css", 1, "old"),
         DS.Finding("color-literal", "templates/legacy.css", 2, "new"),
-        DS.Finding("emoji", "templates/legacy.css", 2, "new emoji"),
+        DS.Finding("emoji", "templates/legacy.css", 2, "emoji U+1F319"),  # pictographic: blocks
         DS.Finding("card-class", "templates/legacy.css", 2, "not blocking-tier"),
     ]
     added_lines = {"templates/legacy.css": {2}}
@@ -513,6 +646,85 @@ def test_enforce_added_blocks_a_newly_added_emoji(tmp_path: Path, capsys) -> Non
     assert code == 1
 
 
+# --- R3: emoji-as-UI blocking is NARROWER than the rule-8 census regex -------
+#
+# EMOJI_RE (rule 8, --mode report) intentionally over-matches: measured across
+# templates/**, 1,597 hits in 145 files, most of them ordinary typography
+# (checkmarks, warning triangles, stars) or country-flag regional indicators
+# used as market/locale identifiers in data structures (stock-logos.js,
+# intl.html.j2, the nav). Blocking those in enforce-added would red ordinary
+# roadmapped work. EMOJI_BLOCKING_RE narrows enforce-added blocking to the
+# pictographic planes only (emoji-as-icon), which the design doctrine bans.
+
+def _added_emoji_diff(tmp_path: Path, char: str) -> Path:
+    write_template(tmp_path, "page.html.j2", f"<p>{char} hi</p>\n")
+    diff_path = tmp_path / "design.diff"
+    diff_path.write_text(
+        "diff --git a/templates/page.html.j2 b/templates/page.html.j2\n"
+        "--- a/templates/page.html.j2\n"
+        "+++ b/templates/page.html.j2\n"
+        "@@ -0,0 +1,1 @@\n"
+        f"+<p>{char} hi</p>\n",
+        encoding="utf-8")
+    return diff_path
+
+
+@pytest.mark.parametrize("char", ["✓", "⚠"])  # checkmark, warning triangle
+def test_enforce_added_does_not_block_typography_glyphs(tmp_path: Path, capsys, char: str) -> None:
+    diff_path = _added_emoji_diff(tmp_path, char)
+    code = DS.main(["--mode", "enforce-added", "--root", str(tmp_path),
+                    "--diff-file", str(diff_path)])
+    capsys.readouterr()
+    assert code == 0
+
+
+def test_enforce_added_does_not_block_a_country_flag(tmp_path: Path, capsys) -> None:
+    """A regional-indicator flag (e.g. \U0001F1FA\U0001F1F8) is a locale/data
+    identifier, not emoji-as-UI decoration — adding a market must not red."""
+    diff_path = _added_emoji_diff(tmp_path, "\U0001F1FA\U0001F1F8")
+    code = DS.main(["--mode", "enforce-added", "--root", str(tmp_path),
+                    "--diff-file", str(diff_path)])
+    capsys.readouterr()
+    assert code == 0
+
+
+@pytest.mark.parametrize("char", ["\U0001F319", "\U0001F4CA"])  # crescent moon, bar chart
+def test_enforce_added_blocks_a_pictographic_emoji(tmp_path: Path, capsys, char: str) -> None:
+    diff_path = _added_emoji_diff(tmp_path, char)
+    code = DS.main(["--mode", "enforce-added", "--root", str(tmp_path),
+                    "--diff-file", str(diff_path)])
+    capsys.readouterr()
+    assert code == 1
+
+
+def test_report_mode_still_reports_typography_and_flags_via_wide_emoji_re(
+        tmp_path: Path, capsys) -> None:
+    """--mode report census output is UNCHANGED by R3 — EMOJI_RE (rule 8) still
+    matches typography and country flags; only enforce-added narrows."""
+    write_template(tmp_path, "page.html.j2",
+                   "<p>✓ ⚠ \U0001F1FA\U0001F1F8</p>\n")
+    code = DS.main(["--mode", "report", "--root", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert out.count("emoji") >= 3  # one finding per codepoint, per scan_text
+
+
+def test_emoji_blocking_re_excludes_typography_and_regional_indicators() -> None:
+    assert DS.EMOJI_BLOCKING_RE.search("✓") is None
+    assert DS.EMOJI_BLOCKING_RE.search("⚠") is None
+    assert DS.EMOJI_BLOCKING_RE.search("\U0001F1FA") is None
+    assert DS.EMOJI_BLOCKING_RE.search("\U0001F1F8") is None
+    assert DS.EMOJI_BLOCKING_RE.search("\U0001F319") is not None
+    assert DS.EMOJI_BLOCKING_RE.search("\U0001F4CA") is not None
+
+
+def test_emoji_re_report_regex_is_unaffected_by_the_narrow_blocking_pattern() -> None:
+    """EMOJI_RE (rule 8 / --mode report) must still match everything it always
+    did — R3 adds a SEPARATE narrower pattern, it never edits EMOJI_RE."""
+    for char in ("✓", "⚠", "\U0001F1FA", "\U0001F1F8", "\U0001F319"):
+        assert DS.EMOJI_RE.search(char) is not None
+
+
 def test_enforce_added_blocks_a_newly_added_parallel_token_root(
         tmp_path: Path, capsys) -> None:
     write_template(tmp_path, "page.css", ":root{--brand-2:var(--ink-1)}\n")
@@ -550,6 +762,29 @@ def test_enforce_added_without_diff_file_blocks_nothing_but_warns(
     assert code == 0
     assert any(ln.startswith("::warning") and "no --diff-file" in ln
                for ln in out.splitlines())
+
+
+# --- R6: an unreadable --diff-file fails CLOSED, never a silent pass --------
+
+def test_read_diff_reraises_oserror_for_an_unreadable_path(tmp_path: Path) -> None:
+    missing = tmp_path / "does-not-exist.diff"
+    with pytest.raises(OSError):
+        DS._read_diff(str(missing))
+
+
+def test_enforce_added_with_an_unreadable_diff_file_fails_closed(
+        tmp_path: Path, capsys) -> None:
+    """A caller-supplied --diff-file that cannot be read is a CHECKOUT fault,
+    not evidence that nothing was added — must NOT silently exit 0."""
+    write_template(tmp_path, "dirty.css", ".x{color:#ff0044}\n")
+    missing = tmp_path / "does-not-exist.diff"
+    code = DS.main(["--mode", "enforce-added", "--root", str(tmp_path),
+                    "--diff-file", str(missing)])
+    out = capsys.readouterr().out
+    assert code == 1
+    errors = [ln for ln in out.splitlines() if ln.startswith("::error")]
+    assert errors, f"expected a bare ::error annotation, got: {out!r}"
+    assert any(str(missing) in ln for ln in errors)
 
 
 # --- enforce-added reporting must stay concise, never dump the estate census --

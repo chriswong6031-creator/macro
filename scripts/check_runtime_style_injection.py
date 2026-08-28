@@ -8,7 +8,7 @@ no subprocess call — see that module's docstring). A page composer under
 parallel, ungoverned presentation layer entirely inside runtime JS strings
 (`el.style.textContent = "..."`, `document.createElement('style')`,
 `<style>...</style>` markup baked into a template literal, or a raw
-`sheet.insertRule(...)`). That is the enforcement escape hatch this guard
+`document.styleSheets[0].insertRule(...)`). That is the enforcement escape hatch this guard
 closes. It is a SEPARATE script, on purpose: widening check_design_system.py
 to cover `site/` too would break its one-root/no-subprocess closure law.
 
@@ -22,10 +22,14 @@ cannot silently grow:
     brand-new opaque runtime stylesheet);
   * a file whose actual count EXCEEDS its pinned per-pattern allowance is a
     hard fail (more debt added to an already-known offender);
-  * a file whose actual count is LOWER than its pinned allowance emits a
-    GitHub `::notice` requiring the SAME PR to shrink the stale allowance —
-    the ratchet only ever tightens, it never quietly keeps slack around for a
-    future re-injection.
+  * a file whose actual count is LOWER than its pinned allowance — including a
+    file that dropped OUT of injection entirely while its baseline entry
+    survives — is ALSO a hard fail (R2, binding deviation from the original
+    TP-0 plan wording, which called for an ignorable `::notice`): the ratchet
+    only ever tightens, and an ignorable notice cannot deliver that — nothing
+    stops the SAME stale allowance from being quietly re-inflated by a later
+    PR with no finding at all. The fix is always the same PR: regenerate the
+    baseline with `--emit-baseline --generated-from <sha>`.
 
 `theme.js` (both `templates/` and `site/`) is the canonical theme owner the
 architecture explicitly permits and is, by a wide margin, the single biggest
@@ -40,8 +44,9 @@ behavior, not a false positive.
 Usage:
     python3 scripts/check_runtime_style_injection.py
         # scan the committed tree against the committed baseline; exit 1 on
-        # any new/absent/over-budget file, exit 0 otherwise (stale-budget
-        # notices do not fail the build by themselves)
+        # any new/absent/over-budget file OR any stale (over-allowed) budget —
+        # R2: the ratchet only ever tightens, so stale allowances fail the
+        # build too, not just notice it
     python3 scripts/check_runtime_style_injection.py --emit-baseline \\
         --generated-from "$(git rev-parse HEAD)" > config/runtime_style_injection_allowlist.json
         # regenerate the baseline from the CURRENT tree. --generated-from is
@@ -51,8 +56,9 @@ Usage:
         # exercise the gate against planted fixtures; exit 0 on success
 
 Exit codes: 0 = clean (or --emit-baseline / --selftest succeeded) · 1 =
-new/absent/over-budget injection found, or the baseline file could not be
-read · 2 = --emit-baseline invoked without --generated-from.
+new/absent/over-budget injection found, a stale allowance found, or the
+baseline file could not be read · 2 = --emit-baseline invoked without
+--generated-from.
 """
 from __future__ import annotations
 
@@ -74,7 +80,12 @@ SCAN_ROOTS = ("templates", "site")
 PATTERNS: dict[str, re.Pattern[str]] = {
     "create_style": re.compile(r"createElement\(\s*['\"]style['\"]\s*\)"),
     "style_text": re.compile(r"(?:style|css)\.textContent\s*="),
-    "insert_rule": re.compile(r"\.sheet\.insertRule\s*\("),
+    # R8: broadened from `\.sheet\.insertRule\s*\(`, which matched nothing
+    # real — the canonical idiom is `document.styleSheets[0].insertRule(...)`,
+    # never a literal `.sheet.insertRule(`. `\.insertRule\s*\(` catches that
+    # (and any other `<anything>.insertRule(` shape) without requiring the
+    # literal token `sheet` immediately before it.
+    "insert_rule": re.compile(r"\.insertRule\s*\("),
     "style_markup": re.compile(r"<style(?:\s|>)", re.IGNORECASE),
 }
 
@@ -121,12 +132,14 @@ def evaluate(
         allowance of 0, so a brand-new pattern type on an already-known file
         is caught the same way a brand-new file is.
       * `stale` — (relpath, pattern, actual, allowed) tuples where actual <
-        allowed. Never blocks by itself; the caller turns each into a
-        `::notice` requiring the same PR to shrink the allowance. A file
-        whose baseline entry survives but whose actual count for a pattern
-        dropped to 0 (or that stopped injecting altogether) is stale for
-        every pattern that used to be nonzero, precisely because the ratchet
-        must never leave quiet headroom for a future re-injection.
+        allowed. This function does not itself decide the exit code (kept
+        separate from `violations` so a caller can tell the two shapes apart
+        in its own message); `main()` (R2) treats a non-empty `stale` exactly
+        like a non-empty `violations` — a HARD failure, not an ignorable
+        notice, because the ratchet must never leave quiet headroom for a
+        future re-injection. A file whose baseline entry survives but whose
+        actual count for a pattern dropped to 0 (or that stopped injecting
+        altogether) is stale for every pattern that used to be nonzero.
     """
     violations: list[str] = []
     stale: list[tuple[str, str, int, int]] = []
@@ -309,8 +322,9 @@ def selftest() -> int:
 
         print(
             "selftest PASS: new-injecting-file reds, over-budget reds, exact-budget passes, "
-            "under-budget emits a stale-budget notice, and --emit-baseline reproduces the "
-            "current tree's counts under the caller-supplied sha."
+            "under-budget is classified stale (R2: main() hard-fails a stale budget, not an "
+            "ignorable notice), and --emit-baseline reproduces the current tree's counts "
+            "under the caller-supplied sha."
         )
         return 0
     finally:
@@ -366,12 +380,19 @@ def main(argv: list[str] | None = None) -> int:
     discovered = discover_counts(root)
     violations, stale = evaluate(discovered, baseline.get("files", {}))
 
+    # R2 (binding deviation from the TP-0 plan's "::notice" wording — see the
+    # module docstring): a stale allowance is a HARD FAILURE, not an ignorable
+    # notice. "may only stay flat/shrink" cannot be delivered by a finding
+    # nobody is forced to act on — an ignorable notice lets a PR clean a file
+    # to zero, leave the allowance inflated, and a LATER PR silently re-inject
+    # up to that stale allowance with no finding at all.
     for relpath, name, actual, allowed in stale:
         print(
-            f"::notice title=runtime-style-injection-stale-budget::{relpath}: {name} allowance "
-            f"is {allowed} but actual is {actual} — shrink (or remove) this pinned allowance in "
-            f"{BASELINE_PATH_REL} in the SAME PR. TP-0 only freezes existing runtime-style "
-            f"injection debt; it must not accumulate quiet headroom for a future re-injection.",
+            f"::error title=runtime-style-injection-stale-budget::{relpath}: {name} pinned "
+            f"allowance is {allowed} but actual is {actual} — the ratchet may only stay flat "
+            f"or shrink, so a stale allowance is a hard failure, not a notice. Remedy in THIS "
+            f"PR: BASE_SHA=$(git rev-parse HEAD) && python3 scripts/check_runtime_style_injection.py "
+            f"--emit-baseline --generated-from \"$BASE_SHA\" > {BASELINE_PATH_REL}",
             flush=True,
         )
 
@@ -383,6 +404,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         for v in violations:
             print(f"  {v}")
+
+    if violations or stale:
         return 1
 
     n_scanned = sum(1 for _ in iter_js_files(root))

@@ -86,6 +86,9 @@ BLOCKING_RULES = ("color-literal", "font-family-literal", "radius-literal",
 # exists to catch on a line nobody had touched until this PR.  `BLOCKING_RULES`
 # stays a plain tuple (other code reads it as one); `frozenset(...)` of it here
 # is just this constant's own type, not a mutation of the original (C3).
+# R3: "emoji" membership here still means the RULE, not every glyph rule 8
+# reports — `added_blocking_findings` narrows an `emoji` finding further, to
+# `EMOJI_BLOCKING_RE` only, before it is allowed to actually block.
 ADDED_BLOCKING_RULES = frozenset(BLOCKING_RULES) | {"emoji", "parallel-token-root"}
 
 # Rule 6 seed.  DELIBERATELY SMALL: this is the vocabulary the Tier-1 glance
@@ -147,9 +150,45 @@ def is_derived_value(value: str) -> bool:
 
 # Emoji: the pictographic planes plus the standalone dingbats that render as
 # colour glyphs.  Ranges, not a list, so a new vendor emoji cannot slip through.
+# This is the RULE 8 REPORTING regex (`--mode report` census) — left exactly as
+# it is (R3): it deliberately over-matches typography (✓ ★ ⚠) and country
+# flags, because a census wants to SEE the whole estate, warn-tier.
 EMOJI_RE = re.compile(
     "[" "\U0001F300-\U0001FAFF" "\U00002600-\U000027BF" "\U0001F000-\U0001F2FF"
     "\U0000FE0F" "\U0001F900-\U0001F9FF" "]")
+
+# R3: the NARROW pattern used ONLY to decide whether an `emoji` finding is
+# allowed to BLOCK in `--mode enforce-added`. `EMOJI_RE` above is wrong for
+# that job — measured across templates/**: 1,597 hits in 145 files, the vast
+# majority ordinary typography (⚠×188, ✓×147, ★×82, ⚠×72, ✕×59, ✗×47, all in
+# the Misc Symbols + Dingbats block `\U00002600-\U000027BF`) or country-flag
+# regional indicators (`\U0001F1E6-\U0001F1FF`, 290 codepoints / ~145 flags in
+# templates/stock-logos.js, intl.html.j2, chat.html, _navlinks.html.j2 — market
+# identifiers in data structures, not emoji-as-UI decoration; adding a market
+# is ordinary roadmapped work this gate must never block). Only the
+# pictographic planes are emoji-as-icon, which the design doctrine bans and
+# the architecture authorizes blocking on a newly ADDED line — `\U0001F900-
+# \U0001F9FF` is already a subset of `\U0001F300-\U0001FAFF` but is spelled out
+# to match the frozen ruling literally.
+EMOJI_BLOCKING_RE = re.compile("[" "\U0001F300-\U0001FAFF" "\U0001F900-\U0001F9FF" "]")
+
+# Extracts the codepoint check_design_system.py's own `emoji` Finding.detail
+# carries (`f"emoji U+{ord(...):04X}"` below) so `added_blocking_findings` can
+# test it against `EMOJI_BLOCKING_RE` without a second scan of the source line.
+_EMOJI_DETAIL_CODEPOINT_RE = re.compile(r"U\+([0-9A-Fa-f]{4,6})")
+
+
+def _emoji_finding_is_narrowly_blocking(finding: "Finding") -> bool:
+    """True only when an `emoji` Finding's own glyph is in `EMOJI_BLOCKING_RE`.
+
+    Typography (✓ ⚠ ★) and country flags fire rule 8 (`EMOJI_RE`, unchanged,
+    still reported) but must never block `--mode enforce-added` — see
+    `EMOJI_BLOCKING_RE` above.
+    """
+    match = _EMOJI_DETAIL_CODEPOINT_RE.search(finding.detail)
+    if not match:
+        return False
+    return bool(EMOJI_BLOCKING_RE.match(chr(int(match.group(1), 16))))
 
 # A radius is compliant only when it reads a radius token.
 RADIUS_TOKEN_RE = re.compile(r"var\(\s*--r-[A-Za-z0-9_-]+")
@@ -372,6 +411,76 @@ def blocking_findings(findings: Iterable[Finding], governed: set[str],
 
 HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
 
+# C-style backslash escapes git uses inside a quoted diff path (RFC-ish, see
+# `quote.c`'s `sq_quote_buf`/`quote_c_style`). Octal (`\NNN`) escapes are
+# handled separately below since they encode raw BYTES of a UTF-8 sequence,
+# not one escape per character.
+_GIT_QUOTE_ESCAPES: dict[str, int] = {
+    "n": 0x0A, "t": 0x09, "a": 0x07, "b": 0x08, "f": 0x0C, "r": 0x0D, "v": 0x0B,
+    "\\": 0x5C, '"': 0x22,
+}
+
+
+def _unquote_git_diff_path(quoted: str) -> str:
+    """Decode a C-style-quoted git diff path: surrounding double quotes, the
+    escapes in ``_GIT_QUOTE_ESCAPES``, and octal byte escapes (``\\NNN``) for
+    non-ASCII bytes (e.g. ``\\303\\251`` for ``é``). Octal escapes are raw
+    BYTES of a multi-byte UTF-8 sequence, so they accumulate into one byte
+    buffer and are decoded as UTF-8 once at the end, never escape-by-escape.
+    """
+    if len(quoted) < 2 or quoted[0] != '"' or quoted[-1] != '"':
+        return quoted
+    body = quoted[1:-1]
+    out = bytearray()
+    i, n = 0, len(body)
+    while i < n:
+        ch = body[i]
+        if ch == "\\" and i + 1 < n:
+            nxt = body[i + 1]
+            if nxt in "01234567":
+                j = i + 1
+                digits = ""
+                while j < n and body[j] in "01234567" and len(digits) < 3:
+                    digits += body[j]
+                    j += 1
+                out.append(int(digits, 8) & 0xFF)
+                i = j
+                continue
+            mapped = _GIT_QUOTE_ESCAPES.get(nxt)
+            if mapped is not None:
+                out.append(mapped)
+                i += 2
+                continue
+            # Unknown escape: keep the backslash and the character literally.
+            out.extend(ch.encode("utf-8"))
+            i += 1
+            continue
+        out.extend(ch.encode("utf-8"))
+        i += 1
+    return out.decode("utf-8", errors="replace")
+
+
+def _normalize_diff_header_path(candidate: str) -> str:
+    """Normalize the text after a ``+++ ``/``--- `` diff header marker (R1).
+
+    Git appends a literal TAB after the path when the path contains a space
+    (``+++ b/templates/panel v2.css<TAB>``) — strip everything from the first
+    TAB onward FIRST, because a quoted-AND-spaced path carries both the quotes
+    and the trailing tab. Then, if what remains is wrapped in double quotes
+    (git quotes any path with a space, control char, or non-ASCII byte —
+    ``"templates/pa\\303\\251nel.css"``), unquote it. Finally strip a leading
+    ``a/``/``b/`` prefix. ``/dev/null`` (pure addition/deletion) passes through
+    unchanged — callers treat that literal as "no path".
+    """
+    tab = candidate.find("\t")
+    if tab != -1:
+        candidate = candidate[:tab]
+    if len(candidate) >= 2 and candidate[0] == '"' and candidate[-1] == '"':
+        candidate = _unquote_git_diff_path(candidate)
+    if candidate[:2] in ("a/", "b/"):
+        candidate = candidate[2:]
+    return candidate
+
 
 def parse_added_line_numbers(diff_text: str) -> dict[str, set[int]]:
     """Which NEW-file line numbers a unified diff ADDED, keyed by new-side path.
@@ -387,6 +496,13 @@ def parse_added_line_numbers(diff_text: str) -> dict[str, set[int]]:
       ever appears between a file's ``diff --git`` line and its first ``@@``
       hunk; once a hunk has started, an ``in_hunk`` flag keeps a
       header-shaped content line from being misread as a header.
+
+    A third shape (R1, binding): git escapes the ``+++ b/<path>`` header when
+    the path is unusual — a literal TAB appended for a path containing a
+    space, or the whole path double-quoted with C-style/octal escapes for a
+    path containing a non-ASCII or control byte.  ``_normalize_diff_header_path``
+    strips the tab, unquotes, and strips the ``a/``/``b/`` prefix, in that
+    order, before the path is used as a dict key.
     """
     out: dict[str, set[int]] = {}
     path: Optional[str] = None
@@ -402,9 +518,14 @@ def parse_added_line_numbers(diff_text: str) -> dict[str, set[int]]:
         if not in_hunk and raw.startswith("--- "):
             continue
         if not in_hunk and raw.startswith("+++ "):
-            candidate = raw[4:]
-            path = candidate[2:] if candidate[:2] in ("a/", "b/") else candidate
-            out.setdefault(path, set())
+            candidate = _normalize_diff_header_path(raw[4:])
+            if candidate == "/dev/null":
+                # Pure deletion — behaves exactly as before: no path is
+                # tracked, and a deletion hunk carries no "+" lines anyway.
+                path = None
+            else:
+                path = candidate
+                out.setdefault(path, set())
             continue
         match = HUNK_RE.match(raw)
         if match:
@@ -425,10 +546,22 @@ def parse_added_line_numbers(diff_text: str) -> dict[str, set[int]]:
 
 def added_blocking_findings(findings: Iterable[Finding],
                             added_lines: dict[str, set[int]]) -> list[Finding]:
-    """Findings whose rule is forward-blocking AND whose line was just added."""
-    return [finding for finding in findings
-            if finding.rule in ADDED_BLOCKING_RULES
-            and finding.line in added_lines.get(finding.path, set())]
+    """Findings whose rule is forward-blocking AND whose line was just added.
+
+    R3: an `emoji` finding on an added line blocks only when its OWN glyph is
+    in the narrow `EMOJI_BLOCKING_RE` set — typography (✓ ⚠ ★) and country
+    flags reported by rule 8's wide `EMOJI_RE` must never block a build.
+    """
+    out: list[Finding] = []
+    for finding in findings:
+        if finding.rule not in ADDED_BLOCKING_RULES:
+            continue
+        if finding.line not in added_lines.get(finding.path, set()):
+            continue
+        if finding.rule == "emoji" and not _emoji_finding_is_narrowly_blocking(finding):
+            continue
+        out.append(finding)
+    return out
 
 
 # --- reporting --------------------------------------------------------------
@@ -610,15 +743,19 @@ def _read_diff(path: Optional[str]) -> str:
     caller's own `git diff` produced this text; this module only parses it.
     Absence (`None`) is not fatal — it means no line was ever "added", so
     `main()` fails open with a loud warning rather than crashing.
+
+    A caller-SUPPLIED path that cannot be read is a DIFFERENT case (R6): that
+    is a checkout/infrastructure fault (a typo'd path, a file the runner never
+    produced), not "nothing was added" — silently returning "" would make
+    `main()` read it as a clean diff and exit 0 with no annotation at all.
+    This re-raises `OSError` rather than swallowing it; `main()` catches it
+    and fails CLOSED with a loud `::error` and a non-zero exit instead.
     """
     if path is None:
         return ""
     if path == "-":
         return sys.stdin.read()
-    try:
-        return Path(path).read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return ""
+    return Path(path).read_text(encoding="utf-8", errors="replace")
 
 
 def main(argv: Optional[list[str]] = None) -> int:
@@ -672,7 +809,17 @@ def main(argv: Optional[list[str]] = None) -> int:
                      "enforce-added ran with no --diff-file: no line counts as "
                      "added, so nothing can block. Pass --diff-file (or '-' for "
                      "stdin) with the PR's own unified diff.")
-        added_lines = parse_added_line_numbers(_read_diff(args.diff_file))
+        try:
+            diff_text = _read_diff(args.diff_file)
+        except OSError as exc:
+            # R6: fail CLOSED — an unreadable --diff-file is a checkout fault,
+            # never silent evidence that nothing was added.
+            annotate("error",
+                     f"enforce-added could not read --diff-file {args.diff_file!r}: "
+                     f"{exc}. Failing closed rather than treating an unreadable "
+                     f"diff as an empty one.")
+            return 1
+        added_lines = parse_added_line_numbers(diff_text)
         added_blocking = added_blocking_findings(findings, added_lines)
         report_added(findings, added_blocking)
         return 1 if added_blocking else 0

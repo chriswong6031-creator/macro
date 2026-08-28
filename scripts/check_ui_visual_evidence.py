@@ -89,10 +89,18 @@ REQUIRED_THEMES: tuple[str, ...] = ("dark", "light")
 #   2. an added inline <style in a template
 #   3. an added runtime-style-injection signature in a user-facing .js file
 STYLE_TAG_RE = re.compile(r"<style(?:\s|>)", re.IGNORECASE)
+# Duplicates scripts/check_runtime_style_injection.py's own PATTERNS (own copy
+# — this module owns no other file's constants, matching its self-contained
+# convention). tests/test_check_ui_visual_evidence.py pins the two in
+# agreement so a future change to the owner fails loudly instead of silently
+# degrading this gate's material-change detection.
 RUNTIME_STYLE_SIGNATURES: tuple[re.Pattern[str], ...] = (
     re.compile(r"createElement\(\s*['\"]style['\"]\s*\)"),
     re.compile(r"(?:style|css)\.textContent\s*="),
-    re.compile(r"\.sheet\.insertRule\s*\("),
+    # R8: broadened from `\.sheet\.insertRule\s*\(` — the canonical idiom is
+    # `document.styleSheets[0].insertRule(...)`, never a literal
+    # `.sheet.insertRule(`.
+    re.compile(r"\.insertRule\s*\("),
     STYLE_TAG_RE,
 )
 
@@ -101,6 +109,76 @@ RUNTIME_STYLE_SIGNATURES: tuple[re.Pattern[str], ...] = (
 # unified diff parsing (self-contained — this module owns no other file's
 # parser; see the frozen build spec C2 correction this mirrors)
 # ---------------------------------------------------------------------------
+
+
+# C-style backslash escapes git uses inside a quoted diff path (see
+# `quote.c`'s `quote_c_style`). Octal (`\NNN`) escapes are handled separately
+# below since they encode raw BYTES of a UTF-8 sequence, not one escape per
+# character. This module owns its own copy — see the module docstring's
+# "self-contained" note; it does not import check_design_system.py's copy.
+_GIT_QUOTE_ESCAPES: dict[str, int] = {
+    "n": 0x0A, "t": 0x09, "a": 0x07, "b": 0x08, "f": 0x0C, "r": 0x0D, "v": 0x0B,
+    "\\": 0x5C, '"': 0x22,
+}
+
+
+def _unquote_git_diff_path(quoted: str) -> str:
+    """Decode a C-style-quoted git diff path: surrounding double quotes, the
+    escapes in ``_GIT_QUOTE_ESCAPES``, and octal byte escapes (``\\NNN``) for
+    non-ASCII bytes (e.g. ``\\303\\251`` for ``é``). Octal escapes are raw
+    BYTES of a multi-byte UTF-8 sequence, so they accumulate into one byte
+    buffer and are decoded as UTF-8 once at the end, never escape-by-escape.
+    """
+    if len(quoted) < 2 or quoted[0] != '"' or quoted[-1] != '"':
+        return quoted
+    body = quoted[1:-1]
+    out = bytearray()
+    i, n = 0, len(body)
+    while i < n:
+        ch = body[i]
+        if ch == "\\" and i + 1 < n:
+            nxt = body[i + 1]
+            if nxt in "01234567":
+                j = i + 1
+                digits = ""
+                while j < n and body[j] in "01234567" and len(digits) < 3:
+                    digits += body[j]
+                    j += 1
+                out.append(int(digits, 8) & 0xFF)
+                i = j
+                continue
+            mapped = _GIT_QUOTE_ESCAPES.get(nxt)
+            if mapped is not None:
+                out.append(mapped)
+                i += 2
+                continue
+            out.extend(ch.encode("utf-8"))
+            i += 1
+            continue
+        out.extend(ch.encode("utf-8"))
+        i += 1
+    return out.decode("utf-8", errors="replace")
+
+
+def _normalize_diff_header_path(candidate: str) -> str:
+    """Normalize the text after a ``+++ `` diff header marker (R1).
+
+    Git appends a literal TAB after the path when the path contains a space
+    — strip everything from the first TAB onward FIRST, because a
+    quoted-AND-spaced path carries both the quotes and the trailing tab. Then,
+    if what remains is wrapped in double quotes (git quotes any path with a
+    space, control char, or non-ASCII byte), unquote it. Finally strip a
+    leading ``a/``/``b/`` prefix. ``/dev/null`` passes through unchanged —
+    the caller treats that literal as "no path" (pure deletion).
+    """
+    tab = candidate.find("\t")
+    if tab != -1:
+        candidate = candidate[:tab]
+    if len(candidate) >= 2 and candidate[0] == '"' and candidate[-1] == '"':
+        candidate = _unquote_git_diff_path(candidate)
+    if candidate[:2] in ("a/", "b/"):
+        candidate = candidate[2:]
+    return candidate
 
 
 def parse_added_lines(diff_text: str) -> dict[str, list[str]]:
@@ -112,6 +190,13 @@ def parse_added_lines(diff_text: str) -> dict[str, list[str]]:
     header or added content). Treats only a ``+++ `` line (with the trailing
     space, distinguishing the file header from a content line that happens to
     start with literal ``+++``) as introducing a new current path.
+
+    The header text is run through ``_normalize_diff_header_path`` (R1) before
+    use: git appends a literal TAB when the path contains a space, and quotes
+    (with C-style/octal escapes) a path with a non-ASCII or control byte —
+    naively testing ``header.startswith("b/")`` misses both (the tab rides
+    along in the first case; the leading quote character defeats the test
+    entirely in the second, silently setting ``path = None`` on a real path).
     """
 
     out: dict[str, list[str]] = {}
@@ -120,12 +205,12 @@ def parse_added_lines(diff_text: str) -> dict[str, list[str]]:
         if raw.startswith("\\"):
             continue
         if raw.startswith("+++ "):
-            header = raw[len("+++ "):]
-            if header.startswith("b/"):
-                path = header[2:]
-                out.setdefault(path, [])
+            header = _normalize_diff_header_path(raw[len("+++ "):])
+            if header == "/dev/null":
+                path = None  # pure deletion
             else:
-                path = None  # e.g. "+++ /dev/null" (pure deletion)
+                path = header
+                out.setdefault(path, [])
             continue
         if raw.startswith("--- ") or raw.startswith("diff --git "):
             continue
@@ -152,48 +237,82 @@ def material_paths(added_lines: dict[str, list[str]]) -> set[str]:
     return material
 
 
-#: A ``/* ... */`` span. Used to decide whether an added CSS line carries any
-#: real declaration, or is only a comment.
-_CSS_COMMENT_SPAN = re.compile(r"/\*.*?\*/", re.DOTALL)
-
-
-def _css_line_has_substance(line: str) -> bool:
-    """True when an added CSS line carries something that can change pixels.
+def _css_added_lines_have_substance(lines: list[str]) -> bool:
+    """True when a file's ADDED CSS lines, walked IN ORDER, carry something
+    that can change pixels (R4: a per-file state machine, not a line-local
+    heuristic).
 
     This gate FAILS CLOSED on a material change, so "any added line in a
     templates CSS file is material" would demand a full eight-cell dual-theme
     evidence matrix for adding a comment or a blank line — a fleet-wide block on
     ordinary work, and the fastest way to get the whole guard disabled. A
     comment or blank line cannot change a rendered pixel, so it is not material.
+
+    A LINE-LOCAL heuristic gets two shapes wrong, both against files that span
+    multiple added lines:
+      * ``* { margin: 0 }`` / ``*, *::before { box-sizing: border-box }`` — a
+        universal-selector rule is real CSS, not a comment continuation, just
+        because it happens to start with ``*`` (FALSE NEGATIVE: a global reset
+        is exactly a pixel-changing change that must not be waved through).
+      * a genuine ``/* ... */`` block comment split across several added
+        lines — e.g. an unprefixed continuation line with no leading ``*`` at
+        all — is comment on every line, not just the ones that look like it
+        (FALSE POSITIVE: judging each line in isolation counts the comment's
+        prose as CSS substance the moment it does not start with ``*``).
+
+    So this walks ``lines`` in order carrying one ``in_comment`` flag: while
+    inside a comment, everything up to the next ``*/`` is comment and only
+    what follows it (on that same line) is live text; while outside, complete
+    ``/* ... */`` spans are stripped and an unterminated ``/*`` opens the
+    comment and truncates the rest of that line. There is no
+    ``startswith("*")`` special case at all — the state machine's own
+    open/close tracking is what makes ``* { margin: 0 }`` register as
+    substance and a true continuation line (opened by a ``/*`` earlier in the
+    SAME added-lines list) register as comment. A stray, locally-unopened
+    ``*``/``*/`` line (the diff shows only a mid-comment fragment because the
+    real opener is unchanged context outside this hunk) is therefore read as
+    live text — genuinely ambiguous without seeing the whole file, and this
+    gate resolves ambiguity toward MATERIAL, its documented fail-closed
+    direction, never toward silently skipping evidence.
     """
-    stripped = line.strip()
-    if not stripped:
-        return False
-
-    # Complete ``/* ... */`` spans on this line are comment, never substance.
-    text = _CSS_COMMENT_SPAN.sub(" ", stripped)
-
-    # An unterminated ``/*`` opens a block comment: everything after it on this
-    # line is comment text.
-    if "/*" in text:
-        text = text.split("/*", 1)[0]
-
-    if "*/" in text:
-        # The line closes a block comment; only what FOLLOWS the close is real.
-        text = text.split("*/", 1)[1]
-    elif stripped.startswith("*"):
-        # A continuation line inside an open block comment, with no close here.
-        # Its prose is not substance — checking only `startswith` and then
-        # stripping punctuation would count the comment's words as CSS.
-        return False
-
-    return bool(text.strip())
+    in_comment = False
+    for raw_line in lines:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        text_parts: list[str] = []
+        pos = 0
+        n = len(stripped)
+        while pos < n:
+            if in_comment:
+                end = stripped.find("*/", pos)
+                if end == -1:
+                    pos = n  # rest of the line is still comment
+                else:
+                    in_comment = False
+                    pos = end + 2
+                continue
+            start = stripped.find("/*", pos)
+            if start == -1:
+                text_parts.append(stripped[pos:])
+                pos = n
+            else:
+                text_parts.append(stripped[pos:start])
+                end = stripped.find("*/", start + 2)
+                if end == -1:
+                    in_comment = True
+                    pos = n  # unterminated: truncate the rest of this line
+                else:
+                    pos = end + 2
+        if "".join(text_parts).strip():
+            return True
+    return False
 
 
 def _is_material_css(path: str, lines: list[str]) -> bool:
     if not (path.startswith("templates/") and path.endswith(".css")):
         return False
-    return any(_css_line_has_substance(line) for line in lines)
+    return _css_added_lines_have_substance(lines)
 
 
 def _is_material_inline_style(path: str, lines: list[str]) -> bool:
@@ -219,6 +338,35 @@ class ReceiptRecord(NamedTuple):
     path: Path
     data: dict[str, Any] | None
     error: str | None
+
+
+def _sparse_refusal(repo_root: Path) -> str | None:
+    """The remedy line when this checkout cannot see ``mockups/`` at all (R9).
+
+    Own copy — this module owns no other file's helper, matching the
+    self-contained-diff-parsing convention above — but the same shape as
+    ``scripts/check_runtime_style_injection.py``'s own ``_sparse_refusal``. In
+    a sparse session worktree (policy R8) ``mockups/`` can be entirely
+    omitted; without this check, ``discover_receipts`` would silently find
+    ZERO receipts and every material change would report "no committed
+    EVIDENCE.yml receipt owning it" — a FALSE RED over a tree this checkout
+    was never asked to answer for, not a genuine missing-evidence finding.
+
+    ``mockups/evidence/`` itself not existing in git YET is a separate,
+    expected, normal state (a subdirectory that has simply never been
+    created) — ``discover_receipts`` already handles that without crashing.
+    This function only fires when ``mockups`` (the whole top-level tracked
+    directory) is sparse-omitted, never on that narrower, expected absence.
+    """
+    try:
+        from scripts.worktree_sparse import missing_dirs, remedy_line
+    except Exception:  # noqa: BLE001 — never let the detector break the guard
+        return None
+    try:
+        absent = [d for d in missing_dirs(repo_root) if d == "mockups"]
+    except Exception:  # noqa: BLE001
+        return None
+    return remedy_line(absent) if absent else None
 
 
 def discover_receipts(repo_root: Path) -> list[ReceiptRecord]:
@@ -436,6 +584,14 @@ def evaluate(diff_text: str, repo_root: Path) -> list[str]:
     material = material_paths(added)
     if not material:
         return []
+
+    # R9: refuse rather than false-red when this checkout cannot see
+    # mockups/ at all (a sparse worktree). Scoped to the material-change
+    # branch only — a non-material diff never touches mockups/ anyway, so a
+    # sparse checkout must not refuse work that would have passed regardless.
+    refusal = _sparse_refusal(repo_root)
+    if refusal:
+        return [f"ui-visual-evidence guard REFUSED: {refusal}"]
 
     records = discover_receipts(repo_root)
     findings: list[str] = []
@@ -655,7 +811,10 @@ def main(argv: list[str] | None = None, *, stdin_text: str | None = None) -> int
     if args.diff_file == "-":
         diff_text = stdin_text if stdin_text is not None else sys.stdin.read()
     else:
-        diff_text = Path(args.diff_file).read_text(encoding="utf-8")
+        # R5: errors="replace", matching check_design_system.py's own diff
+        # read — a single Latin-1 (or otherwise non-UTF-8) byte in the diff
+        # must produce a finding, never an uncaught UnicodeDecodeError.
+        diff_text = Path(args.diff_file).read_text(encoding="utf-8", errors="replace")
 
     findings = evaluate(diff_text, Path(args.repo_root))
     if findings:

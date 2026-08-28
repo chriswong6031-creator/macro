@@ -17,6 +17,7 @@ FAILED row carries only `{"captured": False, "reason": ...}` and nothing else.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -209,19 +210,80 @@ def _css_only(added_line: str) -> set[str]:
 # an eight-cell dual-theme evidence matrix. Regression guard: an earlier
 # implementation accepted the added lines and never inspected them, so adding a
 # CSS comment demanded a full evidence packet.
+#
+# NOTE (R4): " * continuation inside a block comment" and a lone "*/" used to
+# live in this list under the OLD line-local `startswith("*")` heuristic. R4
+# deletes that heuristic entirely in favor of a per-file state machine that
+# tracks an actual `/*`...`*/` open/close across the added lines IN ORDER — a
+# single added line with no `/*` opener anywhere in the SAME diff is genuinely
+# ambiguous (the real opener may be unchanged context outside this hunk), and
+# this gate resolves that ambiguity toward MATERIAL, its documented
+# fail-closed direction. See
+# test_material_paths_ambiguous_single_line_comment_fragments_fail_closed
+# below for the (now correct) outcome on those two lines.
 @pytest.mark.parametrize(
     "line",
     [
         "/* TODO: extract lane tokens in TP-1 */",
         "",
         "   ",
-        " * continuation inside a block comment",
         "/* opening a block comment",
-        "*/",
     ],
 )
 def test_material_paths_ignores_comment_or_blank_css_lines(line):
     assert _css_only(line) == set()
+
+
+def _css_multi(added_lines: list[str], path: str = "templates/stock-dashboard.css") -> set[str]:
+    """material_paths() for a diff adding MULTIPLE lines, IN ORDER, to one
+    templates CSS file — exercises the R4 state machine across lines."""
+    hunk = "\n".join(f"+{ln}" for ln in added_lines)
+    diff = (
+        f"diff --git a/{path} b/{path}\n"
+        f"--- a/{path}\n"
+        f"+++ b/{path}\n"
+        f"@@ -1,0 +2,{len(added_lines)} @@\n"
+        f"{hunk}\n"
+    )
+    return guard.material_paths(guard.parse_added_lines(diff))
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "* { margin: 0 }",
+        "*, *::before { box-sizing: border-box }",
+    ],
+)
+def test_material_paths_universal_selector_is_not_a_comment_continuation(line):
+    """R4 false-negative fix: a universal-selector rule is real CSS — a
+    global reset is exactly a pixel-changing change — not a comment
+    continuation just because it happens to start with `*`."""
+    assert _css_multi([line]) == {"templates/stock-dashboard.css"}
+
+
+def test_material_paths_multiline_block_comment_stays_ignored_across_lines():
+    """R4 false-positive fix: a genuine multi-line block comment, with a
+    continuation line carrying no leading `*` at all, must stay non-material
+    across the WHOLE span — the state machine tracks the open comment across
+    added lines instead of judging each line in isolation."""
+    lines = [
+        "/* TP-1 audit note:",
+        "   the canada composer owns its own palette",
+        "*/",
+    ]
+    assert _css_multi(lines) == set()
+
+
+def test_material_paths_ambiguous_single_line_comment_fragments_fail_closed():
+    """A lone `*/` or `*`-prefixed line, with no `/*` opener anywhere in the
+    SAME diff (the real opener would be unchanged context outside this hunk),
+    is genuinely ambiguous without seeing the whole file. R4 deletes the old
+    `startswith("*")` special case, so this now resolves toward MATERIAL —
+    the gate's documented fail-closed direction — rather than silently
+    skipping the evidence requirement."""
+    assert _css_only(" * continuation inside a block comment") == {"templates/stock-dashboard.css"}
+    assert _css_only("*/") == {"templates/stock-dashboard.css"}
 
 
 @pytest.mark.parametrize(
@@ -429,3 +491,184 @@ def test_selftest_literal_substring_present_in_source():
     # "selftest" to trust a selftest:true registry entry.
     source = Path(guard.__file__).read_text(encoding="utf-8")
     assert "selftest" in source
+
+
+# ---------------------------------------------------------------------------
+# R1: diff-header path normalization, verified against a REAL `git diff` —
+# a hand-written diff cannot reproduce git's own escaping.
+# ---------------------------------------------------------------------------
+
+
+def _git(cwd: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", "-c", "user.name=t", "-c", "user.email=t@t.test",
+         "-c", "commit.gpgsign=false", *args],
+        cwd=cwd, check=True, capture_output=True,
+    )
+
+
+def _real_diff(repo: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "diff", *args], cwd=repo, check=True, capture_output=True, text=True,
+    ).stdout
+
+
+def test_parse_added_lines_real_git_diff_path_with_a_space(tmp_path):
+    """Git appends a literal TAB after a `+++ b/<path>` header when the path
+    contains a space. Verified against a REAL `git diff` — a hand-written
+    fixture cannot reproduce the tab, so it would let this bug back in."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "panel v2.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#ff0044}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    assert "\t" in diff.splitlines()[3]  # sanity: git really appended the tab
+    added = guard.parse_added_lines(diff)
+    assert added == {"templates/panel v2.css": [".y{color:#ff0044}"]}
+
+
+def test_parse_added_lines_real_git_diff_non_ascii_quoted_path(tmp_path):
+    """Git double-quotes (with octal byte escapes) a path containing a
+    non-ASCII byte. Verified against a REAL `git diff` — the naive
+    `header.startswith("b/")` test this replaces is defeated outright by the
+    leading quote character, silently setting path=None on a real path."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "panél.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#ff0044}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    assert diff.splitlines()[3].startswith('+++ "b/')  # sanity: git really quoted it
+    added = guard.parse_added_lines(diff)
+    assert added == {"templates/panél.css": [".y{color:#ff0044}"]}
+
+
+def test_parse_added_lines_real_git_diff_space_and_non_ascii_combined(tmp_path):
+    """A path with BOTH a space and a non-ASCII byte is quoted AND carries the
+    trailing tab — order of operations matters (strip the tab first, THEN
+    unquote), or the tab rides into the quoted string and defeats unquoting."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    target = repo / "templates" / "pan él two.css"
+    target.parent.mkdir(parents=True)
+    target.write_text(".x{color:#111}\n", encoding="utf-8")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "init")
+    target.write_text(".x{color:#111}\n.y{color:#ff0044}\n", encoding="utf-8")
+    diff = _real_diff(repo, "--unified=0", "--", "templates")
+    header = diff.splitlines()[3]
+    assert header.startswith('+++ "b/') and "\t" in header  # sanity: both shapes present
+    added = guard.parse_added_lines(diff)
+    assert added == {"templates/pan él two.css": [".y{color:#ff0044}"]}
+
+
+# ---------------------------------------------------------------------------
+# R5: a non-UTF-8 byte in --diff-file must produce a finding, never crash.
+# ---------------------------------------------------------------------------
+
+
+def test_diff_file_with_a_non_utf8_byte_does_not_crash(tmp_path, capsys):
+    """errors='replace' on the --diff-file read, matching
+    check_design_system.py's own diff read."""
+    diff_path = tmp_path / "design.diff"
+    raw = (
+        b"diff --git a/templates/stock-dashboard.css b/templates/stock-dashboard.css\n"
+        b"--- a/templates/stock-dashboard.css\n"
+        b"+++ b/templates/stock-dashboard.css\n"
+        b"@@ -1,0 +2,1 @@\n"
+        b"+.new-panel { color: r\xe9d; }\n"
+    )
+    diff_path.write_bytes(raw)
+    rc = guard.main(["--diff-file", str(diff_path), "--repo-root", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "templates/stock-dashboard.css" in out
+
+
+# ---------------------------------------------------------------------------
+# R9: refuse rather than false-red when mockups/ is sparse-omitted.
+# ---------------------------------------------------------------------------
+
+
+def test_material_change_with_mockups_sparse_omitted_refuses(tmp_path, monkeypatch, capsys):
+    """Mirrors check_runtime_style_injection.py's own sparse refusal: a
+    checkout where `mockups/` is entirely sparse-omitted must REFUSE rather
+    than silently report every material change as missing evidence."""
+    import scripts.worktree_sparse as ws
+    monkeypatch.setattr(ws, "missing_dirs", lambda root: ["mockups"])
+    rc = guard.main(["--diff-file", "-", "--repo-root", str(tmp_path)],
+                     stdin_text=css_diff())
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "REFUSED" in out
+    assert "mockups" in out
+    assert "worktree_sparse.py full" in out
+
+
+def test_non_material_change_is_unaffected_by_mockups_sparse_omission(
+        tmp_path, monkeypatch, capsys):
+    """The refusal is scoped to the material-change branch — a non-material
+    diff never touches mockups/ anyway and must pass on a sparse checkout."""
+    import scripts.worktree_sparse as ws
+    monkeypatch.setattr(ws, "missing_dirs", lambda root: ["mockups"])
+    rc = guard.main(["--diff-file", "-", "--repo-root", str(tmp_path)],
+                     stdin_text=non_material_diff())
+    assert rc == 0
+
+
+def test_mockups_evidence_subdir_absence_is_not_a_sparse_refusal(tmp_path, capsys):
+    """R9's refusal must never fire on the ordinary, expected absence of
+    mockups/evidence/ alone (that subdirectory not existing in git yet — the
+    real repo state as of TP-0) — only on the whole `mockups/` top-level
+    tracked directory being sparse-omitted. tmp_path is not a git checkout at
+    all, so missing_dirs() answers [] here regardless."""
+    receipts_root = tmp_path / "mockups" / "refs"
+    receipts_root.mkdir(parents=True)
+    manifest = make_manifest()
+    write_manifest(tmp_path, "mockups/refs/tp1/manifest.json", manifest)
+    write_receipt(
+        tmp_path, "mockups/refs/tp1/EVIDENCE.yml",
+        changed_paths=["templates/stock-dashboard.css"],
+        manifest="mockups/refs/tp1/manifest.json",
+    )
+    rc = guard.main(["--diff-file", "-", "--repo-root", str(tmp_path)],
+                     stdin_text=css_diff())
+    assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# Duplicated-constant pin: a silent desync here silently degrades this gate's
+# material-change / viewport-identity detection with no failing test to catch
+# it. Assert agreement so a future change to either OWNER fails loudly here.
+# ---------------------------------------------------------------------------
+
+
+def test_hardcoded_constants_agree_with_their_owners():
+    import scripts.capture_page_evidence as cpe
+    import scripts.check_runtime_style_injection as rsi
+
+    # VIEWPORT_WIDTHS duplicates capture_page_evidence.VIEWPORTS's widths for
+    # the two viewports this gate requires (desktop, mobile).
+    for viewport, width in guard.VIEWPORT_WIDTHS.items():
+        assert viewport in cpe.VIEWPORTS, (
+            f"{viewport!r} is missing from capture_page_evidence.VIEWPORTS")
+        assert cpe.VIEWPORTS[viewport][0] == width, (
+            f"{viewport!r}: check_ui_visual_evidence.VIEWPORT_WIDTHS={width} but "
+            f"capture_page_evidence.VIEWPORTS width={cpe.VIEWPORTS[viewport][0]}")
+
+    # RUNTIME_STYLE_SIGNATURES duplicates check_runtime_style_injection.PATTERNS
+    # (a tuple of compiled patterns here vs a name-keyed dict there — compare
+    # by regex source, not container shape).
+    guard_patterns = {p.pattern for p in guard.RUNTIME_STYLE_SIGNATURES}
+    owner_patterns = {p.pattern for p in rsi.PATTERNS.values()}
+    assert guard_patterns == owner_patterns
