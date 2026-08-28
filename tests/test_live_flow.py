@@ -5105,3 +5105,211 @@ class TestProspectiveOptionsMarketMemoryCapture:
         assert env["MARKET_MEMORY_OPTIONS_CONTEXT_SSH_KEY"].endswith(
             "/.ssh/market_memory_options_context_capture"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 38. OA-1T — measured trade+NBBO microstructure (direct execution location)
+# ─────────────────────────────────────────────────────────────────────────────
+
+MICRO_SCHEMA = "options.trade_nbbo_microstructure/v1"
+MICRO_KEY = ("2026-07-05", 550.0, "C")
+
+
+def _make_nbbo_trade(
+    root="SPY", right="C", expiration="2026-07-05", strike=550.0,
+    price=2.50, size=10, bid=2.40, ask=2.60,
+    trade_ts="2026-07-02T14:30:00.100", quote_ts="2026-07-02T14:30:00.000",
+    sequence=1001, bid_size=40, ask_size=45,
+) -> dict:
+    """Sibling of ``_make_trade`` that also exposes the NBBO columns the measured
+    microstructure helper reads: an independently settable quote clock and the
+    vendor bid/ask sizes.  ``_make_trade`` pins ``quote_timestamp`` to the trade
+    clock, which cannot express a stale or future quote.
+    """
+    row = _make_trade(
+        root=root, right=right, expiration=expiration, strike=strike,
+        price=price, size=size, bid=bid, ask=ask,
+        trade_ts=trade_ts, sequence=sequence,
+    )
+    row["quote_timestamp"] = quote_ts
+    row["bid_size"] = bid_size
+    row["ask_size"] = ask_size
+    return row
+
+
+class TestNbboMicrostructureMeasurement:
+    """Execution location is measured directly against the NBBO, never inferred
+    from the soft tick/quote ``sign``."""
+
+    def test_nbbo_microstructure_uses_direct_execution_location_not_sign_fallback(self):
+        # One contract, equal size, three causal quotes. The mid print is the
+        # discriminator: the existing quote-rule/tick fallback may hand it a
+        # sign, but the measurement must still call it INSIDE.
+        rows = [
+            _make_nbbo_trade(  # at ask: 4 * 1 * 100 = 400
+                price=4.0, bid=2.0, ask=4.0, size=1, sequence=1,
+                trade_ts="2026-07-02T14:30:00.100",
+                quote_ts="2026-07-02T14:30:00.000",
+            ),
+            _make_nbbo_trade(  # at bid: 2 * 1 * 100 = 200
+                price=2.0, bid=2.0, ask=4.0, size=1, sequence=2,
+                trade_ts="2026-07-02T14:30:01.100",
+                quote_ts="2026-07-02T14:30:01.000",
+            ),
+            _make_nbbo_trade(  # inside/mid: 3 * 1 * 100 = 300
+                price=3.0, bid=2.0, ask=4.0, size=1, sequence=3,
+                trade_ts="2026-07-02T14:30:02.100",
+                quote_ts="2026-07-02T14:30:02.000",
+            ),
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        assert micro["schema"] == MICRO_SCHEMA
+        assert micro["source_print_count"] == 3
+        assert micro["nbbo_valid_print_count"] == 3
+        assert micro["source_premium_usd"] == pytest.approx(900.0)
+        assert micro["nbbo_covered_premium_usd"] == pytest.approx(900.0)
+        assert micro["nbbo_print_coverage"] == pytest.approx(1.0)
+        assert micro["nbbo_premium_coverage"] == pytest.approx(1.0)
+
+        assert micro["at_ask_share"] == pytest.approx(400 / 900, abs=1e-6)
+        assert micro["at_bid_share"] == pytest.approx(200 / 900, abs=1e-6)
+        assert micro["inside_share"] == pytest.approx(300 / 900, abs=1e-6)
+        assert micro["outside_share"] == 0.0
+        assert micro["aggression_share"] == pytest.approx(600 / 900, abs=1e-6)
+        assert micro["aggression_balance"] == pytest.approx(200 / 900, abs=1e-6)
+
+        # The four categories are mutually exclusive and collectively exhaustive
+        # over covered premium.
+        assert (
+            micro["at_ask_share"] + micro["at_bid_share"]
+            + micro["inside_share"] + micro["outside_share"]
+        ) == pytest.approx(1.0, abs=4e-6)
+
+    def test_nbbo_microstructure_classifies_outside_without_calling_it_aggression(self):
+        rows = [
+            _make_nbbo_trade(  # above the ask
+                price=5.0, bid=2.0, ask=4.0, size=1, sequence=1,
+                trade_ts="2026-07-02T14:30:00.100",
+                quote_ts="2026-07-02T14:30:00.000",
+            ),
+            _make_nbbo_trade(  # below the bid
+                price=1.0, bid=2.0, ask=4.0, size=1, sequence=2,
+                trade_ts="2026-07-02T14:30:01.100",
+                quote_ts="2026-07-02T14:30:01.000",
+            ),
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        assert micro["outside_share"] == pytest.approx(1.0)
+        assert micro["at_ask_share"] == 0.0
+        assert micro["at_bid_share"] == 0.0
+        assert micro["inside_share"] == 0.0
+        # Trading through the quote is not evidence of edge aggression.
+        assert micro["aggression_share"] == 0.0
+        assert micro["aggression_balance"] == 0.0
+
+    def test_nbbo_microstructure_coverage_denominator_includes_source_valid_quote_gaps(self):
+        """Source premium counts every source-valid print; covered premium counts
+        only prints with a usable contemporaneous NBBO."""
+        covered = _make_nbbo_trade(
+            price=4.0, bid=2.0, ask=4.0, size=1, sequence=1,
+            trade_ts="2026-07-02T14:30:00.100",
+            quote_ts="2026-07-02T14:30:00.000",
+        )
+        gap = _make_nbbo_trade(
+            price=6.0, bid=None, ask=None, size=1, sequence=2,
+            trade_ts="2026-07-02T14:30:01.100",
+            quote_ts="2026-07-02T14:30:01.000",
+        )
+        micro = lf._coalesce_nbbo_microstructure(_df([covered, gap]))[MICRO_KEY]
+
+        assert micro["source_print_count"] == 2
+        assert micro["nbbo_valid_print_count"] == 1
+        assert micro["source_premium_usd"] == pytest.approx(1000.0)
+        assert micro["nbbo_covered_premium_usd"] == pytest.approx(400.0)
+        assert micro["nbbo_print_coverage"] == pytest.approx(0.5)
+        assert micro["nbbo_premium_coverage"] == pytest.approx(0.4)
+        # Shares use the covered denominator, never total source premium.
+        assert micro["at_ask_share"] == pytest.approx(1.0)
+
+    def test_nbbo_microstructure_future_quote_is_uncovered(self):
+        """A quote stamped after its trade cannot have prevailed at execution."""
+        rows = [_make_nbbo_trade(
+            price=4.0, bid=2.0, ask=4.0, size=1, sequence=1,
+            trade_ts="2026-07-02T14:30:00.000",
+            quote_ts="2026-07-02T14:30:00.100",
+        )]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        assert micro["source_print_count"] == 1
+        assert micro["nbbo_valid_print_count"] == 0
+        assert micro["source_premium_usd"] == pytest.approx(400.0)
+        assert micro["nbbo_covered_premium_usd"] == 0.0
+        assert micro["nbbo_print_coverage"] == 0.0
+        assert micro["nbbo_premium_coverage"] == 0.0
+        # Null, never zero and never neutral: no covered premium supports a share.
+        assert micro["at_ask_share"] is None
+        assert micro["at_bid_share"] is None
+        assert micro["inside_share"] is None
+        assert micro["outside_share"] is None
+        assert micro["aggression_share"] is None
+        assert micro["aggression_balance"] is None
+        assert micro["spread_median_usd"] is None
+        assert micro["quote_age_median_ms"] is None
+
+    def test_nbbo_microstructure_locked_and_crossed_quotes_are_uncovered(self):
+        """``ask <= bid`` carries no execution-location evidence."""
+        good = _make_nbbo_trade(
+            price=4.0, bid=2.0, ask=4.0, size=1, sequence=1,
+            trade_ts="2026-07-02T14:30:00.100",
+            quote_ts="2026-07-02T14:30:00.000",
+        )
+        locked = _make_nbbo_trade(
+            price=2.0, bid=2.0, ask=2.0, size=1, sequence=2,
+            trade_ts="2026-07-02T14:30:01.100",
+            quote_ts="2026-07-02T14:30:01.000",
+        )
+        crossed = _make_nbbo_trade(
+            price=2.5, bid=3.0, ask=2.0, size=1, sequence=3,
+            trade_ts="2026-07-02T14:30:02.100",
+            quote_ts="2026-07-02T14:30:02.000",
+        )
+        micro = lf._coalesce_nbbo_microstructure(_df([good, locked, crossed]))[MICRO_KEY]
+
+        assert micro["source_print_count"] == 3
+        assert micro["nbbo_valid_print_count"] == 1
+        assert micro["nbbo_covered_premium_usd"] == pytest.approx(400.0)
+        assert micro["at_ask_share"] == pytest.approx(1.0)
+
+    def test_nbbo_microstructure_preserves_quote_age_spread_and_sizes(self):
+        rows = [
+            _make_nbbo_trade(  # age 100ms, spread 0.10 on mid 2.05
+                price=2.05, bid=2.00, ask=2.10, size=1, sequence=1,
+                trade_ts="2026-07-02T14:30:00.100",
+                quote_ts="2026-07-02T14:30:00.000",
+                bid_size=10, ask_size=15,
+            ),
+            _make_nbbo_trade(  # age 200ms, spread 0.20 on mid 3.10
+                price=3.10, bid=3.00, ask=3.20, size=1, sequence=2,
+                trade_ts="2026-07-02T14:30:01.200",
+                quote_ts="2026-07-02T14:30:01.000",
+                bid_size=20, ask_size=25,
+            ),
+            _make_nbbo_trade(  # age 300ms, spread 0.60 on mid 4.30
+                price=4.30, bid=4.00, ask=4.60, size=1, sequence=3,
+                trade_ts="2026-07-02T14:30:02.300",
+                quote_ts="2026-07-02T14:30:02.000",
+                bid_size=30, ask_size=35,
+            ),
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        assert micro["quote_age_median_ms"] == pytest.approx(200.0)
+        assert micro["quote_age_max_ms"] == pytest.approx(300.0)
+        assert micro["spread_median_usd"] == pytest.approx(0.20)
+        assert micro["spread_median_pct"] == pytest.approx(0.20 / 3.10, abs=1e-6)
+        assert micro["bid_size_median"] == pytest.approx(20.0)
+        assert micro["ask_size_median"] == pytest.approx(25.0)
+        # Every print sits strictly between its own bid and ask.
+        assert micro["inside_share"] == pytest.approx(1.0)
