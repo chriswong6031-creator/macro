@@ -294,12 +294,31 @@ waves:
       implementation head was frozen, and holdout_bodies_inspected remained 0 throughout.
   - id: E3-FMT-TFG-1-R2
     title: Deterministic transcript-format hardening — R2 successor
-    status: todo
+    status: in_progress
     depends_on: [E3-FMT-TFG-1-V1]
     artifacts:
       - research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md
+      - engine/company_intelligence/qa_reconstruction.py
+      - tests/test_company_intelligence_qa_tfg1_r2.py
+      - agentos/handoffs/EARNINGS-EVENT-INTELLIGENCE-COMPILER-2026-08-28-tfg1-r2-blocked.md
     next_action: >
-      NOT_BUILT. Distinct logical operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1;
+      BUILT_NOT_FROZEN, BLOCKED ON SOL. PR #6591 is DRAFT / HOLD-FOR-SOL on branch
+      claude/tfg1-r2-transcript-format-hardening. The structural half is complete and green:
+      113/113 structural separators with 16/16 separator sets exactly matching gold, 97 direct +
+      6 proxy + 10 unresolved identities, 7/7 non-clean calls refusing, AAPL unchanged at exactly
+      7 exchanges / 26 answer turns / 68 replay spans, 91 focused tests passing. GOOGL now recovers
+      all nine real question handoffs and rejects the false segment-0 boundary the cue rule
+      produced, while still refusing and publishing nothing.
+      STOPPED before implementation freeze on two gold-vs-source disagreements at the respondent-role
+      layer, filed as a DECISION_REQUEST on Slack carrier C0BSBM78V1N thread 1787887767.050999 and
+      recorded as DSC:E3FMT-R2-GOLD-UNDERCOUNTS-ROLE-CONFLICTS-AND-OVERCOUNTS-CLEAN: the gold declares
+      2 explicit management role conflicts where the source carries 5, and its 9-call source-clean set
+      includes 2 calls (ARQQ, FANG) whose management the revision never gives an office, making the
+      9/9 gate unsatisfiable. A worker may NOT amend the gold; only Sol can. The eight holdout
+      revisions remain SEALED (holdout_bodies_inspected: 0) and must stay sealed until every
+      development gate is green and an exact implementation head is frozen — the holdout's
+      QNA_SOURCE_CLEAN definition is itself part of what the ruling must settle.
+      Prior scope, unchanged: distinct logical operation tfg1-r2-deterministic-transcript-format-hardening-20260827-v1;
       sole packet is TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md. May not
       begin until the v1 closeout PR #6555 is Sol-accepted and landed. Grades against the ratified R2
       gold: 113 separators / 97 direct / 6 proxy / 103 supported / 10 unresolved / 9 source-clean /
