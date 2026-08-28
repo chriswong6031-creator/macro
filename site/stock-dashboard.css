@@ -47,9 +47,9 @@
      green-up/red-down even under ZH) is untouched.
 
    DARK DELTA — every rule below this list is the pre-extraction dark
-   rendering, unchanged. These five items are the only intentional dark
-   changes this repair wave makes, each a restoration or a sanctioned
-   migration snap, never a new design decision:
+   rendering, unchanged. These seven items are the only intentional dark
+   changes this wave makes, each a restoration, a sanctioned migration
+   snap, or a declared token-family alignment, never an undisclosed one:
      1. Near-lane header and Near stance chip repainted from the stance
         family (var(--ink-pv-near, var(--pv-near))) to the same
         informational ink every other "look, don't act yet" affordance on
@@ -82,6 +82,19 @@
         rendered circle on a square box). Each move is at most a couple of
         px and is the sanctioned migration-time repaint the scale's rollout
         always implied.
+     6. Buy lane header / Buy stance chip ink moved from the direction
+        family (var(--ink-up, var(--up))) to the Prophet stance family
+        (var(--ink-pv-buy, var(--pv-buy))) — a measured dark shift
+        (CIELAB dE76 about 10 on the lane rail). Intentional: an action
+        stance is not a market move, so it must not ride the direction
+        tokens that flip under zh; the Prophet cards on this same page
+        already print BUY in the stance family, and the lanes now agree
+        with them.
+     7. Avoid lane header / Avoid stance chip ink moved likewise from
+        var(--ink-down, var(--down)) to var(--ink-pv-avoid,
+        var(--pv-avoid)) — measured dark dE76 about 8. Same rationale as
+        item 6; all four lane hues remain mutually distinct (minimum
+        pairwise dE76 above 60 on both planes).
    The modal family's sibling combinator (.mx-stockdash--ca ~ .ca-v36-modal)
    is a separate regression repair, documented at that rule below — it is
    not a dark-only change (both themes were affected) so it is not counted

@@ -208,7 +208,15 @@
    (?v=20260828, house practice — matches the sibling script refs in this
    same file) because this asset is authored inside JS, not HTML, and
    scripts/optimize_assets.py only walks HTML files; it can never see or
-   re-stamp a href written here. */
+   re-stamp a href written here.
+   KNOWN LIMIT (single-caller only, fine today): if two callers ever share
+   this seam (TP-2/HK), caller B can queue a load listener on caller A's
+   in-flight <link>; if that link then errors, the retry path REMOVES it
+   and B's listener dies with the detached node — B never retries. Today
+   the Canada loader is the only caller (guarded by
+   __mmCanadaStockV36Loader) so the shape is unreachable; before HK joins
+   this seam, replace the direct addEventListener branch with a shared
+   pending-callback queue drained by onload/onerror. */
 function ensureStockDashCss(onReady) {
   var id = "mx-stockdash-css";
   function attemptLoad(attempt) {
