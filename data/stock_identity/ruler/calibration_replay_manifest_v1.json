@@ -1,0 +1,80 @@
+{
+  "schema": "stock_identity.w3_calibration_replay_manifest.v1",
+  "version": "v1",
+  "partition_name": "SI-SEALED-CAL-P1",
+  "partition_manifest_path": "data/stock_identity/partition/partition_manifest_v1.json",
+  "roster": {
+    "source": "calibration_partition.members, taken mechanically from the frozen partition manifest, sorted for determinism (draw_order is preserved unread in the partition manifest itself; this manifest hashes the SORTED member set, not the draw order, since draw order carries no lawful role in this act)",
+    "n_drawn": 759,
+    "roster_sha256": "2609c8ac83a54aef8a3d2a28077535783cf94f17054a40ad92043cdc1e2bad2e",
+    "disjoint_from_pilot": true,
+    "disjoint_from_blind_arm": true,
+    "pilot_and_blind_excluded_note": "verified mechanically at manifest-freeze time: zero overlap between calibration_partition.members and (pilot.members union {B}) and blind_arm.members"
+  },
+  "w2_family_registry_reuse": {
+    "reused_module": "scripts.stock_identity_replay_pilot",
+    "entry_points": {
+      "stage_registry": "scripts.stock_identity_replay_pilot.stage_registry",
+      "fire_fns": "scripts.stock_identity_replay_pilot._fire_fns",
+      "spec_hashes": "scripts.stock_identity_replay_pilot._spec_hashes",
+      "ledgers": "scripts.stock_identity_replay_pilot._ledgers",
+      "load": "scripts.stock_identity_replay_pilot._load"
+    },
+    "family_groups": [
+      "grey_dot", "confirmed_buy", "tiers", "washout_turn", "reclaim_waiver",
+      "bottom_watch", "starter", "sea", "naive"
+    ],
+    "no_new_producer_family": true,
+    "no_second_replay_framework": true,
+    "no_class_p_backfill": true,
+    "no_parameter_sweep": true,
+    "spec_hashes_at_manifest_freeze": {
+      "bottom_watch_terminal": "6d695fd6ff559c0ebe3dbef533b1a6c6a13e234a7332e1e1f385758d4ed9191f",
+      "confirmed_buy": "5955814f23592e821b6721e1d17ee63a908fdea270587bc559750712907c175b",
+      "grey_dot_macro": "20caf156c75a12414ed1f5f408b97e3e42c8be2526e23d99cae624872e65b962",
+      "grey_dot_terminal": "76f819f29a135af5c92a97c12362ca2ebed1664278b635d9d83fd49fa71310fa",
+      "low20d_bounce": "100e8abdb44f2647ed4ea775bd8875e0bcb6b3c05b905d283f4aa0a8ff871ef1",
+      "rebuy": "5955814f23592e821b6721e1d17ee63a908fdea270587bc559750712907c175b",
+      "reclaim_waiver": "790a4666b34b296304c17d3a9f5749a70190aced1cecf3317bff99479c19f432",
+      "rsi30_cross": "73b329f21d9f52e897156dd5d68cd51ac14e7bc950e8b4688ccba81d42314757",
+      "sea_event_classes": "5d85f5e81478dd18c37652ae0c7b8ef6ea0f2df258fdfd57ad4fc6f1e77f3b2c",
+      "starter_signature": "e0d638942302c16025589be01951c92b2eb63a5989be7615079f91ec1b3159b9",
+      "stoch2w_cross": "a5498d39fa0c29888a625944f8eedaaf8ffe9d95a09e255d74a4b32013037491",
+      "tier_cascade_t1": "8a4d479940ca407a016d09b72a6b150e31195b6f0950a8e1daa5d266a90536f1",
+      "tier_cascade_t2": "e1c79851878346a7572df0b3f86c0d32b9a19d208f4bc587a482f351cc1589c7",
+      "tier_cascade_t3": "b428cb16a7cad955126cb071aca589492b7c79946cc04b1f87461aeaaac78ed8",
+      "tier_cascade_t4": "db05c85fb834150b20732a17fb27827ebd0c35e396875a75efc82958f97c928a",
+      "weekly_washout_turn": "5e51cf83ec1cd563e179f2dd17f2590aeac8ef59f9fe10adbaced7839dccf8de"
+    }
+  },
+  "clock": {
+    "asof": "2026-08-13",
+    "asof_source": "partition_manifest_v1.json .asof (frozen W1 sealed-calibration clock, reused verbatim)",
+    "recent_history_guard_sessions": 126,
+    "recent_history_guard_rule": "constant-setting receipts read calibration data only through asof - 126 trading days (freeze §4.1 'the W1 calibration clock is honored exactly'; W1's own si_constants_v1.json recent_history_guard reused verbatim as the governing rule text, applied here to the PR-3 constant-setting read rather than re-derived)",
+    "recent_history_guard_enforcement": "engine-level: engine.stock_identity.ruler.build_support_coverage / compute_fire_metrics/compute_composites are fed ONLY bars/episodes/attribution truncated to the guard cutoff by scripts/stock_identity_calibrate_w3.py before any PR-3 value is computed; assert_recent_history_guard raises if a caller passes an un-truncated frame across the boundary"
+  },
+  "storage": {
+    "large_artifact_location": "scratch (STOCK_IDENTITY_CALIBRATION_SCRATCH env var; falls back to a scratchpad path), per the existing R2/store-host storage law -- NOT committed to the repository",
+    "committed_artifacts": [
+      "data/stock_identity/ruler/calibration_replay_manifest_v1.json (this file, pre-run)",
+      "research/stock_identity/W3_RULER_REGISTRATION.md §3 (post-run receipt: rule hashes, roster hash, replay/family/spec hashes, computed values, timestamps)",
+      "data/stock_identity/ruler/ruler_spec_v1.json (post-run: PR-3 constant values + receipt block)"
+    ],
+    "w2_pilot_artifacts_immutable": "data/stock_identity/expert_events/pilot_events_v0.parquet and siblings are never read or written by this act"
+  },
+  "exclusions": {
+    "pilot_cohort_excluded": true,
+    "blind_arm_excluded": true,
+    "non_drawn_pre_boundary_pool_excluded": true,
+    "exclusion_note": "the permitted non-drawn pre-boundary pool is NOT used for this first PR-3 constant family (freeze §4.1)"
+  },
+  "calibration_substrate": true,
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}
