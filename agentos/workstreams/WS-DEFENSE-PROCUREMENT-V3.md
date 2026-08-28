@@ -7,7 +7,7 @@ objective: >
   D0R = current-state truth, driver taxonomy, historical casebook method,
   source/rights/PIT registry, graph/contract freeze, golden universe, real-data
   experience architecture, and exact D1-D4 handoffs exist; no production mutation.
-status: parked
+status: awaiting_review
 program: government-revenue-foresight
 repos: [macro, terminal, mastermind]
 owner: coo-fable
@@ -371,6 +371,43 @@ waves:
       SAMM C5.7 sha b98a113875f4). Stop after the FMS vertical is
       production-proven and return to Sol. D6-C+ and D7+ remain
       UNAUTHORIZED. D5 unchanged (BUILT_NOT_PROVEN).
+  - id: D6-C0
+    title: Remaining-rail rebaseline and architecture freeze — capability ledger, official-union rail selection, one recommended vertical
+    status: in_progress
+    depends_on: [D6-B]
+    claim: claude/defense-procurement-v3-d6c0-rebaseline (Fable COO session, first child wave of defense-procurement-v3-program-control-20260827-sol-coo-001, claimed 2026-08-27)
+    next_action: >
+      HOLD-FOR-SOL. Records/research only; no runtime, product, data, or
+      source mutation occurred. Carrier freezes
+      research/defense_intelligence/DEFENSE_D6C0_REBASELINE_AND_ARCHITECTURE_FREEZE_2026-08-27.md
+      against Macro main 4ac1c60e408f and Skillpack Mastermind@b901dee0
+      (docs/sol_skills byte-identical to the dispatch pin d508e30c).
+      Capability ledger: SBIR/STTR DARK_OR_DISCONNECTED (built, registered in
+      synapse.yml/dag.yml/collect.py/append_only_artifacts.json/legacy-jobs.yml
+      since PR #5012 on 2026-08-09, yet zero committed artifacts, zero product
+      consumers, zero contract schema files against five contract names in
+      code); DoD/service contract announcements REJECTED_BY_DESIGN as
+      population authority per the D0R registry; GAO protest, DOT&E/IG and
+      DLA/DIBBS NOT_BUILT; DIU/AFWERX/OTA SPEC_ONLY. Recommendation is ONE
+      vertical — complete SBIR/STTR to PROVEN_LIVE — chosen because it is the
+      only remaining rail with a documented open machine-readable population
+      authority, which the binding D6-B official-union law requires; the
+      higher-value adverse-event rails would rest on WAF-protected web as
+      population, which that law forbids. Its lower investor value is stated
+      in the freeze rather than argued away, and three named conditions would
+      flip the recommendation to GAO. Gate 0 of any authorized SBIR wave is to
+      reproduce the SBIR.gov response FROM THE RUNNER using the header
+      discipline in collectors/fms_notifications_live.py:503-507; if the
+      source refuses under documented terms the lawful outcome is to record
+      SBIR REJECTED_BY_DESIGN with evidence and return to Sol, never a blind
+      retry or failover. Any user-facing consumer must be sized against the
+      302,890 B live-lane peak of site/government_revenue.html (214 bytes
+      under the 303,104 fence), not the ~25.9 KB visible at HEAD, and the
+      fence must not be bumped. Collision census clean: zero of 37 open PRs
+      touch any owns_paths entry, verified twice against origin/main with the
+      instrument positive-controlled. No implementation rail is
+      self-authorized; D7 is not started; D5 remains BUILT_NOT_PROVEN and
+      untouched. Awaiting Sol ruling on the recommended vertical.
 landmines:
   - "Live page is government_revenue.html (underscore). government-revenue.html 404s."
   - "Access (site_full / 401 locked) is independent of epistemics (display/context_only). Do not conflate them."

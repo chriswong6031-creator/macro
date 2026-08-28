@@ -41,6 +41,7 @@
 <link rel="stylesheet" href="../theme.css">
 <script defer src="../theme.js"></script>
 <script defer src="../assets/js/company-intelligence-dossier.js?v=20260820a"></script>
+<script defer src="../assets/js/dossier-live-quote.js?v=20260827a"></script>
 <style>
 /* ══ dossier v6 ═══════════════════════════════════════════════════════════
    One voice: Inter (--font-ui) everywhere; numbers are tabular Inter, never
@@ -147,6 +148,19 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .livestamp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--ink-ok, var(--ok));white-space:nowrap;}
 [data-lang="zh"] .livestamp{letter-spacing:0;text-transform:none;}
+/* Quote-state stamp. The pip and its label are painted from the QUOTE's own
+   measured freshness, never from the build date — a nightly page used to print
+   a pulsing green "Live" beside a price that was a day old. The green pulse is
+   therefore reserved for `live`: a measured realtime row inside an open
+   regular session. Every weaker state is a still, muted pip, so "current"
+   can never be implied by decoration alone. */
+.dq-stamp[data-dq-state]{color:var(--muted);}
+.dq-stamp[data-dq-state] .live-dot{background:var(--muted);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="delayed"]{color:var(--warn);}
+.dq-stamp[data-dq-state="delayed"] .live-dot{background:var(--warn);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="live"]{color:var(--ink-ok,var(--ok));}
+.dq-stamp[data-dq-state="live"] .live-dot{background:var(--ok);
+  box-shadow:0 0 7px 1px color-mix(in srgb,var(--ok) 60%,transparent);animation:v6lp 2.6s ease-in-out infinite;}
 .wk52{margin-top:16px;}
 .wk52 .lbls{display:flex;justify-content:space-between;gap:14px;font-size:10.5px;color:var(--muted);margin-bottom:5px;}
 .wk52 .lbls b{color:var(--text);font-weight:650;}
@@ -843,7 +857,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
 <div class="strip" id="v6strip" aria-hidden="true">
   <span class="stk">{{ ticker }}</span>
   <span class="sname mut sm">{{ name }}</span>
-  {% if hero and hero.price %}<span class="stp num">$<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ hero.price }}</span></span>{% endif %}
+  {# dq-px, NOT nb-px: the dossier price is owned by dossier-live-quote.js and
+     must not also be a target of the shared live.js poller. Two owners writing
+     one node is a race whose loser is whichever fetch returns second. #}
+  {% if hero and hero.price %}<span class="stp num">$<span class="dq-px" data-dq-sym="{{ ticker }}">{{ hero.price }}</span></span>{% endif %}
   {% if hero %}<span class="schip">{{ t(hero.stance_en, hero.stance_zh) }}</span>{% endif %}
   <nav id="v6jumps">
     <a href="#company-update">{{ t('Company', '公司动态') }}</a>
@@ -896,21 +913,26 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="px-block hi hi2">
       <div class="px-big num">
         {%- if hero and hero.price -%}
-        $<span class="nb-px" data-sym="{{ ticker }}" data-mkt="us">{{ hero.price }}</span>
+        $<span class="dq-px" data-dq-sym="{{ ticker }}">{{ hero.price }}</span>
         {%- else -%}—{%- endif -%}
       </div>
+      {# The day move repaints WITH the price from one quote. It used to be
+         static HTML beside a live-looking price, so a repaint could leave a
+         current price next to yesterday's move — the two must move together
+         or not at all. The pip that used to sit here was decorative (it keyed
+         off the BUILD's date); freshness is now stated once, on the stamp. #}
       {% if hero and hero.chg %}
-      <div class="px-chg {{ 'pos' if hero.chg.pos else 'neg' }}">
-        <span class="pill6 num">{{ hero.chg.abs }} · {{ hero.chg.pct }}</span>
-        {% if not stale %}<span class="live-dot"></span>{% endif %}
+      <div class="px-chg {{ 'pos' if hero.chg.pos else 'neg' }}" data-dq-chg>
+        <span class="pill6 num"><span data-dq-abs>{{ hero.chg.abs }}</span> · <span data-dq-pct>{{ hero.chg.pct }}</span></span>
       </div>
-      {% elif not stale %}
-      <div class="px-chg pos"><span class="live-dot"></span></div>
       {% endif %}
       {% if hero and hero.range52 %}
       <div class="wk52">
         <div class="lbls"><span>{{ t('52w low', '52周低') }} <b class="num">{{ hero.range52.lo }}</b></span><span>{{ t('high', '高') }} <b class="num">{{ hero.range52.hi }}</b></span></div>
-        <div class="track"><div class="fill" style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" style="left:{{ hero.range52.pos_pct }}%;"></div></div>
+        {# The bar repaints with the price. Left baked it would place the NEW
+           price at the OLD point on the scale — the one element whose whole job
+           is "where in the range are we", answering it wrong. #}
+        <div class="track" data-dq-range{% if hero.range52.lo_raw is not none %} data-dq-lo="{{ hero.range52.lo_raw }}" data-dq-hi="{{ hero.range52.hi_raw }}"{% endif %}><div class="fill" data-dq-fill style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" data-dq-dot style="left:{{ hero.range52.pos_pct }}%;"></div></div>
       </div>
       {% endif %}
     </div>
@@ -932,7 +954,12 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <a class="ss-hchip ss-t-{{ security_state.degradation.tone }}" href="#security-state">{{ t(security_state.degradation.en, security_state.degradation.zh) }}</a>
     {%- endif %}
     {% if stale %}<span class="asof wrn">{{ t('May be stale', '可能过期') }} · {{ freshness }}</span>
-    {% else %}<span class="livestamp"><span class="live-dot"></span>{{ t('Live', '实时') }}</span>{% endif %}
+    {# This said "Live" unconditionally, decided by the BUILD's own date: a page
+       rendered last night printed a pulsing green "Live" next to a baked price
+       that was a full session old. It now ships in the honest `baked` state —
+       naming the date of the bytes actually served — and is upgraded ONLY by a
+       measured quote, by dossier-live-quote.js. With JS off it stays truthful. #}
+    {% else %}<span class="livestamp dq-stamp" data-dq-stamp data-dq-state="baked"><span class="live-dot"></span>{{ t('As of ' ~ freshness, '截至 ' ~ freshness) }}</span>{% endif %}
   </div>
   {% endif %}
 </header>

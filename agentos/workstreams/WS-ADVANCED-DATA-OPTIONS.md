@@ -185,12 +185,12 @@ do_not_redo:
   - >-
     Sparse selector / W1A is RESEARCH-ONLY. Do not resurrect before the AD-9 ruling.
 next_action: >
-  Execute wave AD-1T1 (full-universe incremental T1 cadence, Sol handoff
-  2026-08-22): benchmark one-day vendor throughput; extend the existing
-  one-session writer into the daily incremental maintainer; retire whole-year
-  DAILY refresh; return the bounded PR to Sol UNMERGED. AD-1 stays
-  BUILT_NOT_PROVEN until AD-1T2 restores the product workflow. Do not start
-  AD-1T2 or AD-2.
+  AD-1T1 is PROVEN_LIVE and must not be reopened or rerun merely to show activity.
+  The exact next product dependency is AD-1T2: restore the store-bearing M1 to the
+  theta-m1 product workflow and production-prove AD-1 end to end, including the
+  consumer/availability path needed by downstream Options Alpha PIT composition.
+  AD-2 remains CLOSED until AD-1 production acceptance. Broken R2 sync is not an
+  AD-1T2 prerequisite unless new evidence proves it necessary.
 artifacts:
   - research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
   - research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
