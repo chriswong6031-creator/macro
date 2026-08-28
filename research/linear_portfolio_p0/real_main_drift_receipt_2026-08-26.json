@@ -1,0 +1,246 @@
+{
+  "schema": "linear_portfolio_plan_real_main_receipt.v1",
+  "authority": "evidence_only_not_canonical",
+  "capability": "MAS-65 Linear Projector P0 deterministic report-only desired-state compiler",
+  "workstream": "WS:AGENT-OS",
+  "linear_issue": "MAS-65",
+  "repository": "mastermindx-market-intelligence/macro",
+  "pull_request": 6182,
+  "skillpack": {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "commit_sha": "e4e44867ace335ac9208a3990a10c163e199492d",
+    "skillpack_version": "1.0.0",
+    "bootstrap_major": 1,
+    "role": "finalization_procedure_pin_not_projector_input"
+  },
+  "proof_identity": {
+    "compiler_subject_head_sha": "db9123181b2d042e1ae53477d066a308284ad73c",
+    "tested_base_main_sha": "8cf08e5d19bbe28590fd62b3be0847ad3e7a637d",
+    "tested_synthetic_merge_sha": "1b92c2be161013e79356245b57efba2ffddf7107",
+    "semantic_ci_run_id": 32922618935,
+    "fences_run_id": 32922618881,
+    "semantic_plan_sha256": "7670c7101c47e8606155899d72190277de94a99d8277f9010b3a1cc61ae73156",
+    "changed_file_count": 6,
+    "changed_files_sha256": "1a26d9b533995aa2"
+  },
+  "stage1_machine_receipt": {
+    "schema": "linear_portfolio_plan_ci_receipt.v1",
+    "source_revision": "1b92c2be161013e79356245b57efba2ffddf7107",
+    "semantic_hash_without_linear_snapshot": "83e8f657f4f860f71019af63efec5dc87c77a98bc45feff25993f92661c4990a",
+    "semantic_hash_with_linear_snapshot": "5e540cf03415c3205a2bf371fc0e3b62b268590a46346f20280760b1bab7d3da",
+    "active_keys": [
+      "WS:ACCOUNT-IDENTITY-HARDENING",
+      "WS:ADVANCED-DATA-OPTIONS",
+      "WS:AGENT-OS",
+      "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "WS:BPC-JV-RECON",
+      "WS:BREATHING-PLATFORM",
+      "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+      "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "WS:CHAIRMAN-CONTROL-ROOM",
+      "WS:CHINA-ALPHA-INTELLIGENCE",
+      "WS:CI-MERGE-CONTROL-PLANE",
+      "WS:CN-LIMIT-ALPHA",
+      "WS:CN-SOE-DEMAND",
+      "WS:COMMERCIAL-PATH-ALERTING",
+      "WS:CRYPTO-INTELLIGENCE",
+      "WS:CUSTOMER-DATA-BACKUP",
+      "WS:CYCLE-PATTERN-ISSUER-MECHANISM",
+      "WS:DEFENSE-PROCUREMENT-V3",
+      "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER",
+      "WS:EVAL-OS-MEASUREMENT-LAW",
+      "WS:EVAL-OS-OUTPUT-HEALTH",
+      "WS:EXECUTIVE-CAPACITY-FABRIC",
+      "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+      "WS:FUNDAMENTAL-FORENSICS",
+      "WS:GMI-THEME-GRAPH",
+      "WS:GREY-DEER-RISK-INTELLIGENCE",
+      "WS:INTRADAY-FLOW-P0-RECOVERY",
+      "WS:LIVE-ENTRY-RADAR",
+      "WS:MACRO-CONTEXT-INDEX",
+      "WS:MARKET-MEMORY-W2C",
+      "WS:MARKET-OS",
+      "WS:MASSIVE-STOCK-DAY-R2-COHERENCE",
+      "WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2",
+      "WS:PROPHET-CONDITIONAL-FUSION",
+      "WS:PROPHET-HK-CA-REVAMP",
+      "WS:PROPHET-US-AVAILABILITY",
+      "WS:PROPHET-US-ENTRY-TIMING",
+      "WS:PROPHET-US-V4-RECOVERY",
+      "WS:RUNNER-FLEET-RESILIENCE",
+      "WS:STOCK-IDENTITY",
+      "WS:WATCHLIST-PORTFOLIO-CEO"
+    ],
+    "review_candidate_keys": [],
+    "excluded_keys": [
+      "WS:BIOCATALYST-CORE-PRODUCT",
+      "WS:BIOCATALYST-RECOVERY-V2",
+      "WS:CN-COMMERCIAL-SUPPLY-DILIGENCE",
+      "WS:DEEPVUE-INTELLIGENCE-WORKSPACE",
+      "WS:EARNINGS-INTELLIGENCE-OS",
+      "WS:EVAL-OS-T1-ENGINE-REGISTRY",
+      "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2",
+      "WS:TUSHARE-ENTITLEMENT"
+    ],
+    "warning_counts_without_linear_snapshot": {
+      "generated_state_disagrees_with_direct_record": 5,
+      "github_snapshot_unavailable": 1,
+      "linear_snapshot_unavailable": 1
+    },
+    "warning_counts_with_linear_snapshot": {
+      "generated_state_disagrees_with_direct_record": 5,
+      "github_snapshot_unavailable": 1,
+      "project_lifecycle_drift": 2,
+      "project_name_drift": 41,
+      "project_status_drift": 4
+    },
+    "linear_drift_keys": {
+      "generated_state_disagrees_with_direct_record": [
+        "WS:BIOCATALYST-CORE-PRODUCT",
+        "WS:CRYPTO-INTELLIGENCE",
+        "WS:EVAL-OS-T1-ENGINE-REGISTRY",
+        "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2",
+        "WS:INTRADAY-FLOW-P0-RECOVERY"
+      ],
+      "project_lifecycle_drift": [
+        "WS:BIOCATALYST-CORE-PRODUCT",
+        "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2"
+      ],
+      "project_name_drift": [
+        "WS:ACCOUNT-IDENTITY-HARDENING",
+        "WS:ADVANCED-DATA-OPTIONS",
+        "WS:AGENT-OS",
+        "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+        "WS:BPC-JV-RECON",
+        "WS:BREATHING-PLATFORM",
+        "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+        "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+        "WS:CHAIRMAN-CONTROL-ROOM",
+        "WS:CHINA-ALPHA-INTELLIGENCE",
+        "WS:CI-MERGE-CONTROL-PLANE",
+        "WS:CN-LIMIT-ALPHA",
+        "WS:CN-SOE-DEMAND",
+        "WS:COMMERCIAL-PATH-ALERTING",
+        "WS:CRYPTO-INTELLIGENCE",
+        "WS:CUSTOMER-DATA-BACKUP",
+        "WS:CYCLE-PATTERN-ISSUER-MECHANISM",
+        "WS:DEFENSE-PROCUREMENT-V3",
+        "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER",
+        "WS:EVAL-OS-MEASUREMENT-LAW",
+        "WS:EVAL-OS-OUTPUT-HEALTH",
+        "WS:EXECUTIVE-CAPACITY-FABRIC",
+        "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+        "WS:FUNDAMENTAL-FORENSICS",
+        "WS:GMI-THEME-GRAPH",
+        "WS:GREY-DEER-RISK-INTELLIGENCE",
+        "WS:INTRADAY-FLOW-P0-RECOVERY",
+        "WS:LIVE-ENTRY-RADAR",
+        "WS:MACRO-CONTEXT-INDEX",
+        "WS:MARKET-MEMORY-W2C",
+        "WS:MARKET-OS",
+        "WS:MASSIVE-STOCK-DAY-R2-COHERENCE",
+        "WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2",
+        "WS:PROPHET-CONDITIONAL-FUSION",
+        "WS:PROPHET-HK-CA-REVAMP",
+        "WS:PROPHET-US-AVAILABILITY",
+        "WS:PROPHET-US-ENTRY-TIMING",
+        "WS:PROPHET-US-V4-RECOVERY",
+        "WS:RUNNER-FLEET-RESILIENCE",
+        "WS:STOCK-IDENTITY",
+        "WS:WATCHLIST-PORTFOLIO-CEO"
+      ],
+      "project_status_drift": [
+        "WS:ACCOUNT-IDENTITY-HARDENING",
+        "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+        "WS:CRYPTO-INTELLIGENCE",
+        "WS:CUSTOMER-DATA-BACKUP"
+      ]
+    },
+    "linear_snapshot_path": "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
+    "linear_snapshot_projects": 46,
+    "linear_snapshot_authority": "witness_only_not_canonical",
+    "record_counts": {
+      "decisions": 232,
+      "discoveries": 181,
+      "handoffs": 275,
+      "workstreams": 49
+    },
+    "validator_warning_count": 27
+  },
+  "linear_witness": {
+    "path": "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
+    "schema": "linear_portfolio_snapshot.v1",
+    "authority": "witness_only_not_canonical",
+    "project_count": 46,
+    "freshness_boundary": "Stage-1 exact tested revision only; later workspace changes are not backfilled into this immutable receipt."
+  },
+  "agent_os_census": {
+    "record_counts": {
+      "workstreams": 49,
+      "decisions": 232,
+      "discoveries": 181,
+      "handoffs": 275
+    },
+    "total_records": 737,
+    "validator_warning_count": 27,
+    "validator_error_count": 0
+  },
+  "hosted_proof": {
+    "semantic_ci": {
+      "run_id": 32922618935,
+      "tested_tree_sha": "1b92c2be161013e79356245b57efba2ffddf7107",
+      "tested_base_sha": "8cf08e5d19bbe28590fd62b3be0847ad3e7a637d",
+      "subject_head_sha": "db9123181b2d042e1ae53477d066a308284ad73c",
+      "ci_plan": "success",
+      "contract_delta": "success",
+      "packs_success": 12,
+      "packs_total": 12,
+      "ci_gate": "success"
+    },
+    "fences": {
+      "run_id": 32922618881,
+      "result": "success"
+    },
+    "projector_owner_logical_job": "self-mod-fence in .github/ci/legacy-jobs.yml",
+    "agent_os_compile_suite": {
+      "result": "success",
+      "tests_passed": 151,
+      "emitted_receipt_schema": "linear_portfolio_plan_ci_receipt.v1",
+      "semantic_hash_without_linear_snapshot": "83e8f657f4f860f71019af63efec5dc87c77a98bc45feff25993f92661c4990a",
+      "semantic_hash_with_linear_snapshot": "5e540cf03415c3205a2bf371fc0e3b62b268590a46346f20280760b1bab7d3da"
+    }
+  },
+  "post_proof_current_main_context": {
+    "main_sha_checked": "b246810c8caa046cd52f82f8dad1e9fedf9e2f8b",
+    "commits_ahead_of_tested_base": 292,
+    "agentos_parser_blob_at_tested_base": "be19e2e22169aca383416eaa7b55cb99a9f5dbb0",
+    "agentos_parser_blob_at_current_main": "be19e2e22169aca383416eaa7b55cb99a9f5dbb0",
+    "main_compile_test_blob_at_tested_base": "4e63377792e6d482e753127305006b92579ff580",
+    "main_compile_test_blob_at_current_main": "4e63377792e6d482e753127305006b92579ff580",
+    "ci_manifest_changed": true,
+    "p0_only_paths_present_on_current_main": [],
+    "ruling": "The Stage-1 receipt remains an immutable proof of its exact tested revision. Ordinary later Agent OS business-state movement is expected projector input drift and is not relabeled into this receipt. Current CI topology changed, so the evidence-head PR merge tree must pass fresh current-base fences/semantic CI before acceptance."
+  },
+  "manual_adjudication": {
+    "drift_authority": "All drift and snapshot warnings are report outputs only; none authorizes a Linear mutation.",
+    "acceptance_scope": "This receipt supports only P0 deterministic local report generation and exact-revision drift evidence. It does not accept P1 app credentials, Linear apply, scheduling, issue/gate projection, Executive mutation, or Slack integration.",
+    "receipt_freshness": "Do not rewrite this receipt merely because later workstream state changes. A later run is a new observation with its own exact source revision."
+  },
+  "runtime_authority": {
+    "deterministic_only": true,
+    "network_calls_in_compiler": 0,
+    "linear_mutations_in_p0": 0,
+    "github_mutations_by_compiler": 0,
+    "slack_mutations_by_compiler": 0,
+    "issue_creation_instructions": false,
+    "executive_authority": false
+  },
+  "cold_start_command": "python3 scripts/linear_portfolio_plan.py --root agentos --generated-state data/governance/agent_os_state.json --linear-snapshot research/linear_portfolio_p0/linear_snapshot_2026-08-25.json --json-output /tmp/linear_portfolio_plan.json --report-output /tmp/linear_portfolio_plan.md --receipt-output /tmp/linear_portfolio_plan_receipt.json",
+  "receipt_finalization_law": {
+    "this_file_is_projector_input": false,
+    "stage1_hashes_are_exact_revision_evidence": true,
+    "expected_final_merge_tree_behavior": "Fresh current-base CI may emit different portfolio hashes because current canonical workstream state evolved after Stage-1. That is expected input drift, not an implementation-proof failure.",
+    "required_final_check": "After committing this evidence file, one final exact-head PR proof against the then-current main must be green under the current CI/proof contract. Any attributable parser/projector/test failure blocks acceptance.",
+    "non_recursive_proof_record": "Final post-receipt workflow IDs and current-merge-tree output belong in the PR/Linear/Agent OS closeout rather than being written back into this immutable Stage-1 receipt and creating proof recursion."
+  }
+}
