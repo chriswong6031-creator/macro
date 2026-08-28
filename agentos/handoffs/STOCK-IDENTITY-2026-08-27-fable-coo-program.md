@@ -64,7 +64,7 @@ unverified:
   - claim: Prospective Stock Identity routing adds durable value
     what_would_verify: "W7 real forward accrual on frozen definitions reaches preregistered maturity/sample floors, then W8 Sol review."
   - claim: Fable has picked up this program
-    what_would_verify: "A concrete principal-builder session or canonical Executive Job/Attempt claims stable operation key SI-FABLE-COO-PROGRAM-20260827 and records its pickup SHA plus first bounded child carrier. Slack delivery alone does not qualify."
+    what_would_verify: "A concrete principal-builder session or canonical Executive Job/Attempt claims stable operation key SI-FABLE-COO-PROGRAM-20260828 and records its pickup SHA plus first bounded child carrier. Slack delivery alone does not qualify."
 unresolved:
   - "AUTONOMY TRANSPORT: this packet can be made durable, but current ChatGPT has no production-proven Fable/Executive dispatch receiver. Do not mark the program or W3 in_progress until a real claim exists."
   - "SURVIVORSHIP: W3S is a hard predecessor to W5P/Q1. If no lawful adjusted terminated-instrument plane can be established, confirmatory routing stays blocked rather than silently survivor-only."
@@ -72,7 +72,7 @@ unresolved:
   - "DEPENDENCE: the old universe-wide v0 cluster component is degenerate and cannot be inferential effective N; W3B must replace it for fit accounting."
   - "PRODUCT OWNER: W6C must choose existing machine/operator owner seams after fresh collision archaeology; this freeze deliberately does not claim a current site/app path owned elsewhere."
 next_actions:
-  - "Fable pickup gate: claim stable operation key SI-FABLE-COO-PROGRAM-20260827 in a real principal-builder/Executive carrier; record current Skillpack SHA, current Macro main, current open PR/path collisions and the carrier ID."
+  - "Fable pickup gate: claim stable operation key SI-FABLE-COO-PROGRAM-20260828 in a real principal-builder/Executive carrier; record current Skillpack SHA, current Macro main, current open PR/path collisions and the carrier ID."
   - "First execution frontier after claim: SI-W3A-RULER-V1 and SI-W3S-DEAD-CONTROL-V1 may start in parallel only if changed-path collision checks are clean. SI-W3B-ESTIMABILITY-V1 may stage census mechanics but may not publish fit and must bind to W3A's metric schema."
   - "SI-W3A: executable expert-independent localization ruler, two frozen composites, unconditional attribution/flooding block, grain/null controls, sealed-calibration one-time constants, TrialLedger discipline; no blind fit."
   - "SI-W3S: inventory/reuse current adjusted-history owners first; build only the minimum registered terminated-instrument control substrate if no canonical owner already satisfies it; no second data platform."

@@ -78,9 +78,18 @@ The ruler remains expert-independent and path-anchored. It measures episode loca
 Two and only two primary composites are graded:
 
 - `C-LOC-R = recall@tier * zone_precision - lambda_fs * false_start_rate`
-- `C-LOC-D = rank-normalized median ATR distance to anchor`, gated by recall floor and penalized for false starts.
+- `C-LOC-D = rank-normalized median ATR distance to anchor of in-zone fires (sign: closer = better)`, gated by the recall floor and penalized by `false_start_rate` at the same `lambda_fs`.
 
-`lambda_fs`, recall floor and any declared composite constants are set exactly once from `SI-SEALED-CAL-P1`, recorded with spec hashes, and never retuned after confirmatory outcome exposure.
+`lambda_fs`, recall floor and any declared composite constants are set exactly once from `SI-SEALED-CAL-P1`, recorded with spec hashes, and never retuned after confirmatory outcome exposure. The one-time setting act follows the W1 rule-before-value discipline: the per-constant selection rule is declared in code/doc BEFORE any value is computed from partition data, exemplars and the untouched blind arm contribute nothing, declared ±20% diagnostic sensitivity grids are registered in the TrialLedger before execution, and the later fit-read look budget is logged at the same registration.
+
+### 4.1b Channel-A model constitution (capacity budget — original §2.3 control (i), restored)
+
+"Low per-name degrees of freedom" remains an obligation, not an assertion. All three original Channel-A controls bind, and W3 owns freezing the first:
+
+- **(i) capacity budget:** the map's effective parameter count `p_eff` is declared before fitting and must satisfy `p_eff <= N_names/10` (N_names = post-exclusion training-fold name count); the functional form is fixed at the W3/PR-3 stage — additive/monotone in a declared feature subset unless a richer form is separately preregistered. The declared feature subset, the allowed form, the exact `p_eff` counting rule, and the per-training-fold enforcement contract are frozen in a W3-owned Channel-A model-constitution registration artifact before any fit exists. W3 does not fit Q1; it freezes the legal model class.
+- **(ii) name-disjoint OOS** and **(iii) name-permutation null** remain as already frozen in §4.3/§4.4.
+
+W5Q may not evaluate Q1 through any map that violates the frozen constitution; the capacity budget is checked on every training fold before any fit and a violation aborts the read rather than shrinking silently.
 
 ### 4.2 Grain, dependence and N
 
@@ -97,7 +106,7 @@ Two and only two primary composites are graded:
 4. Equal-proximity comparison.
 5. Name-permutation null for Channel A.
 6. Grain/cadence null.
-7. Dead-instrument survivorship control once the registered terminated-instrument substrate exists.
+7. Dead-instrument survivorship control once the registered terminated-instrument substrate exists. Its sampling frame starts from `config/delisted_symbols.yml` with `terminated_reason` recorded. Absence of a lawful cohort blocks W5P/Q1 (`BLOCKED_NO_LAWFUL_DATA`); an available cohort MUST enter the W5 survivorship control/report. Control-cohort performance does not independently pass or fail Q1 unless a future separately preregistered criterion says so — the §14.1 consequence matrix is unchanged by this control.
 
 ### 4.4 Primary questions and stopping law
 
@@ -110,7 +119,7 @@ Before Q1, the power simulator evaluates the post-exclusion grading pool. If pow
 
 The frozen §14.1 consequence matrix remains binding:
 
-- Q1 fails both baselines -> expert-routing thesis stops; append a kill/DNR record. Descriptive identity/fingerprint/epoch work may remain with zero routing authority.
+- Q1 fails both baselines -> expert-routing thesis stops; a `KILL-…` row naming the Channel-A construction is appended to `research/DO_NOT_REBUILD.md` §1–2 with compiled blocklists regenerated in the same PR. Descriptive identity/fingerprint/epoch work may remain display-tier with zero routing authority, and PTT-W4 per-class gate profiles stay closed (the original masterplan's "W4"; distinct from this freeze's SI-W4A/SI-W4B identity-epoch waves, which are measurement infrastructure and are neither licensed nor unlicensed by this row).
 - Beats global/reference base but not sector-label map -> Channel A closes; only explicitly allowed bounded descriptive/shrinkage work may continue. B requires a new registered question.
 - Pilot+blind aggregate passes but blind fails -> exemplar-scoped only; no pooling/product routing; widening the untouched blind arm by the registered procedure is the only regrade path.
 - Blind passes -> GO to W6 operationalization.
@@ -133,7 +142,7 @@ The program is persistent; implementation carriers are bounded. One independentl
 
 **Mission:** make the frozen localization ruler executable and deterministic without publishing expert-fit conclusions.
 
-Deliver C-LOC-R/C-LOC-D component math, attribution/unconditional blocks, grain matching, null generators, spec hashing, sealed-calibration constant-setting once, synthetic/truncation invariance, and TrialLedger registration for any sweep. No blind fit table, no per-name expert choice, no Prophet paths.
+Deliver C-LOC-R/C-LOC-D component math, attribution/unconditional blocks, grain matching, null generators, spec hashing, sealed-calibration constant-setting once (rule-before-value per §4.1, declared ±20% diagnostic grids registered in the TrialLedger before execution, fit-read look budget logged), the §4.1b Channel-A model-constitution registration (declared feature subset, additive/monotone form, exact `p_eff` counting rule, `p_eff <= N_names/10` enforced per training fold — no fitting), synthetic/truncation invariance, and TrialLedger registration for any sweep. No blind fit table, no per-name expert choice, no Prophet paths.
 
 **Exit:** deterministic fixtures + real pilot smoke reproduce metric identities; constants/inputs are sealed and hash-pinned; authority false.
 
@@ -141,7 +150,7 @@ Deliver C-LOC-R/C-LOC-D component math, attribution/unconditional blocks, grain 
 
 **Mission:** determine which ticker×epoch×episode×expert questions can honestly be estimated before any confirmatory fit is opened.
 
-Deliver episode/fire occupancy, calendar-cluster/effective-N diagnostics, concentration, attribution/flooding, feature/plane availability, grain coverage, `UNESTIMABLE` reasons, and the power-simulator input table. Refine dependence accounting without turning clusters into predictive features.
+Deliver episode/fire occupancy, calendar-cluster/effective-N diagnostics, concentration, attribution/flooding, feature/plane availability, grain coverage, `UNESTIMABLE` reasons, and the power-simulator input table. Refine dependence accounting without turning clusters into predictive features. The census input is a typed outcome-independent support/coverage frame — identifiers, clocks/blocks, family/grain, attribution presence, feature/price coverage, censored/availability state — never realized localization or composite quality: cell inclusion/estimability may not depend on how well any expert scored, and a regression must fail if any realized-fit column can alter inclusion.
 
 **Exit:** every candidate grading cell has explicit estimable/unestimable state and no fit score is shown.
 
@@ -149,7 +158,7 @@ Deliver episode/fire occupancy, calendar-cluster/effective-N diagnostics, concen
 
 **Mission:** close the W2 hard survivorship blocker on a separately preregistered source act.
 
-First inventory current canonical data owners before acquiring anything. Reuse an existing adjusted historical plane if it now satisfies the contract. If none does, add only the minimum registered source adapter/snapshot required for >=5 terminated U.S. instruments; record instrument identity, terminal reason/date, known-at clocks, adjustment/corporate-action semantics, rights/source hash, corrections and coverage. Never create a second market-data platform.
+The sampling frame starts from `config/delisted_symbols.yml` with `terminated_reason` recorded. First inventory current canonical data owners before acquiring anything. Reuse an existing adjusted historical plane if it now satisfies the contract. If none does, add only the minimum registered source adapter/snapshot required for >=5 terminated U.S. instruments; record instrument identity, terminal reason/date, known-at clocks, adjustment/corporate-action semantics, rights/source hash, corrections and coverage. Never create a second market-data platform.
 
 **Exit:** >=5 terminated instruments pass the same fingerprint/episode math and are included as a control cohort; or the wave returns `BLOCKED_NO_LAWFUL_DATA`, which blocks W5 Q1 rather than substituting survivor-only evidence.
 
@@ -185,7 +194,7 @@ Use W3B estimability/dependence plus W3S survivorship controls. Final blind size
 
 **Mission:** execute the frozen Q1-Q3 and descriptive Q4 once, without rescue tuning.
 
-Use name-disjoint OOS, sealed calibration exclusion, PIT epochs, both composites, all mandatory nulls, honest N, block bootstrap, blind arm, survivorship cohort and frozen family specs. Print missing/unavailable/structural-zero separately.
+Use name-disjoint OOS, sealed calibration exclusion, PIT epochs, both composites, all mandatory nulls, honest N, block bootstrap, blind arm, survivorship cohort, frozen family specs and the frozen §4.1b Channel-A model constitution (capacity budget checked on every training fold before any fit; the fit-read look budget registered at W3 is spent here). Print missing/unavailable/structural-zero separately.
 
 **Exit:** exact immutable fit-read artifacts, all authority false, plus machine-readable consequence input. No implementation decision is inferred from visual appeal.
 

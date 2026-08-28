@@ -76,9 +76,11 @@ For W3 execution, read in this order:
 
 1. current Chairman/Sol instruction;
 2. current protected Skillpack;
-3. `research/stock_identity/STOCK_IDENTITY_COMPLETE_MASTERPLAN_2026-08-28.md`;
-4. `docs/superpowers/plans/2026-08-28-stock-identity-w3-measurement-release.md`;
-5. **this R1 amendment** for the four clarified interfaces/path above;
-6. original Stock Identity masterplan/W1/W2 registrations and current owner source law.
+3. current `WS:STOCK-IDENTITY`, `DEC:SI-METHOD-LAW-CHANNELS`, `DEC:SI-FABLE-COO-AUTONOMOUS-EXECUTION` and the accepted DNR registry law (`research/DO_NOT_REBUILD.md`, `DNR:KILL-OUTCOME-AUDITION` foremost);
+4. `research/stock_identity/STOCK_IDENTITY_COMPLETE_MASTERPLAN_2026-08-28.md`;
+5. `research/stock_identity/W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md`;
+6. `docs/superpowers/plans/2026-08-28-stock-identity-w3-measurement-release.md`;
+7. **this R1 amendment** for the four clarified interfaces/path above;
+8. original Stock Identity masterplan/W1/W2 registrations and current owner source law.
 
 If a newer accepted source conflicts materially with this amendment, stop the affected lane and return to Sol rather than inventing another type/path.

@@ -74,7 +74,7 @@ waves:
   - id: W4A
     title: Identity epoch detector v1 — synthetic/stationary calibration + knowable-from clock
     status: todo
-    depends_on: [W3A]
+    depends_on: [W3A, W3B, W3S]
   - id: W4B
     title: PIT/final epoch dual projection — PIT only for graded fit
     status: todo
@@ -128,7 +128,7 @@ landmines:
   - "The old universe-wide v0 cluster component is degenerate and never inferential effective N; W3B owns dependence/calendar-cluster accounting."
   - "N=42 episode segmentation missed its prior stability floor; it remains a frozen segmentation constant/diagnostic input, not Channel-A predictive authority."
   - "Current app/API search finds no real Stock Identity consumer. W6C must prove a real machine + operator path, not call research artifacts integrated."
-  - "Autonomy V1 current law: generic #agent-dispatch has no production Fable/worker receiver. Slack delivery is not pickup; W3 stays todo until a real Fable/Executive carrier claims SI-FABLE-COO-PROGRAM-20260827 and a bounded child."
+  - "Autonomy V1 current law: canonical Turn-Watcher remains records-only/unproven; Slack delivery is not pickup and watcher presence is not lifecycle truth. The program operation key is SI-FABLE-COO-PROGRAM-20260828 (it supersedes the pre-dispatch -20260827 draft key); W3 implementation stays todo until Sol posts CONTINUE W3 on the program thread after accepting the reconciled #6529 carrier."
 do_not_redo:
   - "Do not re-test per-name outcome audition under any ruler/model/family label."
   - "Do not silently build a parallel replay harness — W2's bounded historical replay is already justified against R1; prospective truth comes from Radar owner seams."
@@ -145,15 +145,20 @@ artifacts:
   - research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md
   - research/stock_identity/W2_EXPERT_REPLAY_REGISTRATION.md
   - research/stock_identity/W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md
+  - research/stock_identity/STOCK_IDENTITY_COMPLETE_MASTERPLAN_2026-08-28.md
+  - docs/superpowers/plans/2026-08-28-stock-identity-w3-measurement-release.md
+  - docs/superpowers/plans/2026-08-28-stock-identity-w3-measurement-release-r1.md
   - data/stock_identity/amendments/w1a1_gold_wrong_issuer.json
   - agentos/handoffs/STOCK-IDENTITY-2026-08-27-fable-coo-program.md
+  - agentos/handoffs/STOCK-IDENTITY-2026-08-28-PROGRAM-START.md
 next_action: >
-  DURABLE COMMISSION CREATED BUT UNCLAIMED. One sustained Fable COO/principal-builder
-  must claim stable operation key SI-FABLE-COO-PROGRAM-20260827 in a real active
-  session or canonical Executive Job/Attempt and record pickup current-main/current-
-  Skillpack/collision receipts. First bounded frontier after claim: SI-W3A-RULER-V1
-  plus SI-W3S-DEAD-CONTROL-V1 may run in parallel only on proven-disjoint carriers;
-  SI-W3B-ESTIMABILITY-V1 binds to W3A's metric schema and may publish no fit result.
+  PROGRAM CLAIMED 2026-08-28: one sustained Fable COO holds operation key
+  SI-FABLE-COO-PROGRAM-20260828 on the shared Slack program thread. Current rule:
+  the first bounded operation is records reconciliation/acceptance of the SAME
+  PR #6529 carrier; W3A and W3S open as separate child carriers ONLY after Sol
+  posts CONTINUE W3 on that thread, and only after fresh current-main/changed-path
+  collision checks; SI-W3B-ESTIMABILITY-V1 binds to W3A's metric schema and may
+  publish no fit result.
 ---
 
 ## Context
@@ -167,3 +172,8 @@ The complete current execution/evidence path is frozen in
 `research/stock_identity/W3_FINAL_ARCHITECTURE_FREEZE_2026-08-27.md`. W5R and W8 are
 nondelegable Sol scientific/authority adjudication gates. A null or kill is a successful
 completion when it closes the thesis at the frozen bar.
+
+Fable COO persistence is an organizational role held across bounded carriers and
+bounded sessions — durable state lives in these records, not in any one session or
+branch. It is not permission for a mega-session or mega-branch; every child wave
+claims a fresh bounded carrier per fleet law.

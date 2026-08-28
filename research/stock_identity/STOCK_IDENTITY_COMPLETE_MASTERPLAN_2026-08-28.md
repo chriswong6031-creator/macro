@@ -34,6 +34,7 @@ The program terminates in exactly one of three company-level outcomes:
 
 - `DNR:KILL-OUTCOME-AUDITION` remains total under every ruler. No own-name best-of-menu expert selection, hidden ticker keyed model, grid audition, or disguised equivalent.
 - The first-arc personalization channels are only A/B/C from `DEC:SI-METHOD-LAW-CHANNELS`: global structure map, behavioral-neighbor pooling, bounded empirical-Bayes residual.
+- Channel A is capacity-bounded per the original §2.3 controls: its effective parameter count `p_eff` is declared before any fit and must satisfy `p_eff <= N_names/10`, with the functional form frozen at W3 (additive/monotone in a declared feature subset unless a richer form is separately preregistered) and the budget enforced on every training fold before any fit.
 - Ticker is identity continuity, not predictive freedom.
 - Sector/archetype may be a diagnostic/baseline, never the routing/grouping key.
 - Live Entry Radar owns prospective expert events. Stock Identity consumes canonical `mastermind.entry_event.v1`; it never writes or forks that store.
@@ -78,15 +79,15 @@ The program terminates in exactly one of three company-level outcomes:
 
 ### M1 / W3A — Expert-independent localization ruler
 
-Build executable ruler components and the two frozen composites without opening confirmatory fit conclusions. Outputs are deterministic, spec-hashed, authority-false, and accompanied by unconditional flooding/attribution blocks and grain/null controls.
+Build executable ruler components and the two frozen composites without opening confirmatory fit conclusions. Outputs are deterministic, spec-hashed, authority-false, and accompanied by unconditional flooding/attribution blocks and grain/null controls. W3A also performs the one-time sealed-calibration constant-setting for the PR-3 family (`lambda_fs`, recall floor, composite constants) under rule-before-value discipline with TrialLedger-registered diagnostic grids and a logged fit-read look budget, and freezes the Channel-A model constitution (declared feature subset, additive/monotone form, exact `p_eff` counting rule, per-fold `p_eff <= N_names/10` enforcement) without fitting anything.
 
 ### M2 / W3S — Terminated-instrument survivorship control
 
-Inventory existing canonical adjusted-history owners first. Produce at least five identity-resolved terminated U.S. instruments with full adjusted OHLCV and terminal/source/correction/rights receipts, or return `BLOCKED_NO_LAWFUL_DATA`. Survivor-only substitution is prohibited.
+The sampling frame starts from `config/delisted_symbols.yml` with `terminated_reason` recorded. Inventory existing canonical adjusted-history owners first. Produce at least five identity-resolved terminated U.S. instruments with full adjusted OHLCV and terminal/source/correction/rights receipts, or return `BLOCKED_NO_LAWFUL_DATA`. Survivor-only substitution is prohibited. An available cohort enters the W5 survivorship control/report; its performance does not independently pass or fail Q1 absent a future separately preregistered criterion.
 
 ### M3 / W3B — Estimability and dependence census
 
-Before any fit table, produce per-cell episodes, fires, distinct calendar clusters, concentration, attribution/flooding, grain/feature/source coverage, explicit `UNESTIMABLE` reasons and the exact power-simulator input population. W3B binds W3A's metric schema.
+Before any fit table, produce per-cell episodes, fires, distinct calendar clusters, concentration, attribution/flooding, grain/feature/source coverage, explicit `UNESTIMABLE` reasons and the exact power-simulator input population. W3B binds W3A's metric schema but consumes only a typed outcome-independent support/coverage frame — cell inclusion/estimability may never depend on realized localization or composite quality, and a regression must fail if any realized-fit column can alter inclusion.
 
 **W3 Measurement Release gate:** Sol accepts W3A + W3B + W3S status. W5 remains held.
 
@@ -150,7 +151,7 @@ At maturity, Sol reviews historical + prospective evidence + real consumer proof
 
 ## 5. Operator routing law
 
-This program uses one sustained Fable COO because it is architecture-sensitive, long-lived and statistically adversarial.
+This program uses one sustained Fable COO because it is architecture-sensitive, long-lived and statistically adversarial. COO persistence is an organizational role held across bounded carriers and bounded sessions — durable state lives in the program records, not in any one session — and is not permission for a mega-session or mega-branch.
 
 Fable routes child work by difficulty:
 

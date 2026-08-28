@@ -22,6 +22,8 @@
 - `data/massive_stock_day` remains prohibited for behavioral math.
 - Sealed W1 calibration/blind manifests and W1-A1 GOLD/Barrick receipts remain byte/logically unchanged.
 - No `engine/entry_signal.py`, `engine/signal_gate.py`, `engine/confluence_tiers.py`, `engine/signal_quality.py`, `engine/prophet_*.py`, `engine/stock_personality.py`, `engine/oracle/personality_context.py`, `scripts/build_stock_library.py`, or `engine/entry_radar/**` modification in W3.
+- Channel A carries the original §2.3 capacity budget: effective parameter count `p_eff` is declared before any fit and must satisfy `p_eff <= N_names/10`; the functional form is additive/monotone in a declared feature subset unless a richer form is separately preregistered. W3 freezes this model constitution (Task 3B); no W3 task fits the map or opens Q1.
+- The PR-3 ruler-composite constant family (`lambda_fs`, recall floor, declared composite constants) is NOT already frozen. It is set exactly once in Task 1B from `SI-SEALED-CAL-P1` under rule-before-value discipline (selection rule declared in code/doc BEFORE any value is computed from partition data), with exemplars and the untouched blind arm contributing nothing, declared ±20% diagnostic grids registered in the TrialLedger before execution, and the later fit-read look budget logged.
 - W3 completion is a measurement release, not Q1, SIF, Prophet integration, or production trading authority.
 
 ---
@@ -39,7 +41,8 @@
   - `RulerSpec.from_json(path: Path) -> RulerSpec`
   - `RulerSpec.spec_hash() -> str`
   - `validate_ruler_inputs(events: pd.DataFrame, attribution: pd.DataFrame, episodes: pd.DataFrame) -> None`
-  - closed metric column names: `lead_lag`, `price_dist`, `atr_dist`, `mae_after`, `capture`, `false_start`, `flooding`, `recall_at_tier`, `zone_precision`, `relative_order`, `consistency`, `fires_per_name_year`, `episode_attribution_rate`
+  - closed per-fire/per-cell metric column names (owned by `compute_fire_metrics` and its aggregations): `lead_lag`, `price_dist`, `atr_dist`, `mae_after`, `capture`, `false_start` (per-fire flag), `false_start_rate` (aggregate consumed by the composites), `flooding`, `recall_at_tier`, `zone_precision`, `relative_order`, `consistency`
+  - closed unconditional-block column names (owned by `compute_unconditional_block`): `fires_per_name_year`, `episode_attribution_rate`
   - closed composite names: `c_loc_r`, `c_loc_d`
 
 - [ ] **Step 1: Write the failing contract tests**
@@ -72,7 +75,7 @@ Expected: import/file failure because `ruler.py` / `ruler_spec_v1.json` do not e
 
 - [ ] **Step 3: Add the minimal typed ruler spec**
 
-Implement `RulerSpec` as an immutable dataclass containing the already-frozen W1/W3 constants only: attribution pre-window, useful-zone session/ATR bounds, false-start ATR threshold, recall floor, `lambda_fs`, ATR basis, grain labels, episode-type anchor mapping, and the exact two graded composites.
+Implement `RulerSpec` as an immutable dataclass containing only receipted constants: the previously frozen W1 geometry constants (attribution pre-window, useful-zone session/ATR bounds, false-start ATR threshold, ATR basis, grain labels, episode-type anchor mapping) plus the PR-3 ruler-composite family (`recall floor`, `lambda_fs`, any declared composite constants), which does not exist yet and is written exactly once by Task 1B. Until Task 1B runs, the PR-3 fields carry the explicit sentinel `{"status": "pending_sealed_calibration"}` — never a guessed number.
 
 Canonical hash implementation:
 
@@ -84,7 +87,7 @@ def spec_hash(self) -> str:
 
 - [ ] **Step 4: Encode the frozen JSON spec and registration receipt**
 
-`ruler_spec_v1.json` must contain explicit numeric constants sourced only from the one-time sealed calibration receipt or previously frozen W1 constants, plus `authority` all false and `graded_composites: ["c_loc_r", "c_loc_d"]`. `W3_RULER_REGISTRATION.md` records the source/hash of every constant and states that the blind arm was not opened.
+`ruler_spec_v1.json` must contain explicit numeric constants sourced only from the Task 1B one-time sealed-calibration receipt or previously frozen W1 constants (with the pending sentinel for PR-3 fields before Task 1B), plus `authority` all false and `graded_composites: ["c_loc_r", "c_loc_d"]`. `W3_RULER_REGISTRATION.md` records the source/hash of every constant and states that the blind arm was not opened.
 
 - [ ] **Step 5: Run the contract tests**
 
@@ -101,6 +104,50 @@ Expected: contract tests pass; later metric tests may still be absent.
 ```bash
 git add engine/stock_identity/ruler.py tests/test_stock_identity_ruler.py data/stock_identity/ruler/ruler_spec_v1.json research/stock_identity/W3_RULER_REGISTRATION.md
 git commit -m "stock-identity W3A: freeze localization ruler contract"
+```
+
+---
+
+### Task 1B: One-time sealed-calibration constant-setting for the PR-3 ruler family
+
+**Files:**
+- Create: `scripts/stock_identity_calibrate_w3.py`
+- Create: `tests/test_stock_identity_w3_calibration.py`
+- Modify: `data/stock_identity/ruler/ruler_spec_v1.json`
+- Modify: `research/stock_identity/W3_RULER_REGISTRATION.md`
+
+**Interfaces:**
+- Produces the one-time PR-3 constant receipt: `recall_floor`, `lambda_fs`, and any declared composite constants, each with its written selection rule, rule hash, input partition hash, and computed value.
+
+- [ ] **Step 1: Declare every per-constant selection rule before any value exists**
+
+Following the W1 `scripts/stock_identity_calibrate.py` rule-before-value law: each PR-3 constant gets an explicit written selection rule in `scripts/stock_identity_calibrate_w3.py` and `W3_RULER_REGISTRATION.md`, and the sha256 of the rule text is recorded in the registration BEFORE the script is ever run against partition data. A test asserts the registration carries the rule hash and that the JSON spec still holds the pending sentinel at this step.
+
+- [ ] **Step 2: Register the declared diagnostic grids and the fit-read look budget**
+
+Register the exact declared ±20% diagnostic sensitivity grids in the TrialLedger via `engine/trial_ledger.py` BEFORE execution, and log the W5 fit-read look budget in the same registration. Diagnostic grids are never used to re-pick a constant.
+
+- [ ] **Step 3: Run the calibration once on lawful material only**
+
+Input material is exactly the `SI-SEALED-CAL-P1` partition object per the W1 registration (drawn-name history; the recent-history guard honored). Pilot/exemplar and blind names contribute nothing. Tests assert the input name set is disjoint from the pilot cohort and the blind-arm manifest.
+
+- [ ] **Step 4: Write constants exactly once with receipts**
+
+The script replaces the pending sentinels in `ruler_spec_v1.json` with computed values, records value + rule hash + partition hash + timestamp in `W3_RULER_REGISTRATION.md`, and re-pins the final `spec_hash`. A second invocation must refuse (one-time law) — tested. No constant may thereafter change without voiding the affected preregistrations.
+
+- [ ] **Step 5: Run the calibration test suite**
+
+```bash
+python3 -m pytest tests/test_stock_identity_w3_calibration.py -q
+```
+
+Expected: rule-hash-before-value receipts asserted; no pending sentinel remains; blind/pilot exclusion proven; re-run refusal proven.
+
+- [ ] **Step 6: Commit Task 1B**
+
+```bash
+git add scripts/stock_identity_calibrate_w3.py tests/test_stock_identity_w3_calibration.py data/stock_identity/ruler/ruler_spec_v1.json research/stock_identity/W3_RULER_REGISTRATION.md
+git commit -m "stock-identity W3A: one-time sealed-calibration ruler constants"
 ```
 
 ---
@@ -183,7 +230,7 @@ Expected: pass.
 python3 scripts/stock_identity_build_ruler.py --pilot --output-dir /tmp/si-w3a-ruler-smoke
 ```
 
-Expected: metric/unconditional artifacts for the design-touched pilot only, explicit censored counts, no blind-name table, no `best`/`rank` output.
+Expected: metric/unconditional artifacts for the design-touched pilot only, explicit censored counts, no blind-name table, no `best`/`rank` output. The script additionally emits `support_coverage_v1.parquet` — the outcome-independent support/coverage frame for W3B (identifiers, clocks/blocks, family/grain, attribution presence, feature/price coverage, censored/availability state; NO realized metric or composite columns) — which is the ONLY ruler-side artifact Task 4 may consume.
 
 - [ ] **Step 8: Commit Task 2**
 
@@ -261,6 +308,47 @@ git commit -m "stock-identity W3A: add composites and localization nulls"
 
 ---
 
+### Task 3B: Freeze the Channel-A model constitution (prereg only — no fitting)
+
+**Files:**
+- Create: `research/stock_identity/W3_CHANNEL_A_MODEL_CONSTITUTION.md`
+- Create: `data/stock_identity/ruler/channel_a_constitution_v1.json`
+- Create: `engine/stock_identity/model_constitution.py`
+- Create: `tests/test_stock_identity_model_constitution.py`
+
+**Interfaces:**
+
+```python
+def load_constitution(path: Path) -> "ChannelAConstitution": ...
+def count_p_eff(constitution: "ChannelAConstitution") -> int: ...
+def assert_capacity(p_eff: int, n_names: int) -> None:  # raises CapacityViolation when p_eff > n_names // 10
+    ...
+```
+
+- [ ] **Step 1: Write the failing constitution tests**
+
+Assert: the JSON declares an explicit feature subset that is a subset of the actual W1 fingerprint columns; the functional form is `additive_monotone` (a richer form is admissible only via a `separately_preregistered_form_ref` field pointing at a real registration document — absent here); `count_p_eff` implements the exact declared counting rule deterministically; `assert_capacity` raises on `p_eff > n_names // 10` and passes at the boundary; the module imports no fitting/estimation library and no fit entry point exists.
+
+- [ ] **Step 2: Run red**
+
+```bash
+python3 -m pytest tests/test_stock_identity_model_constitution.py -q
+```
+
+- [ ] **Step 3: Author the constitution artifact**
+
+`W3_CHANNEL_A_MODEL_CONSTITUTION.md` freezes, per original masterplan §2.3 control (i): the declared fingerprint feature subset (named columns), the allowed additive/monotone functional form, the exact `p_eff` counting rule (formula stated, including per-feature shape terms), `p_eff <= N_names/10` with `N_names` defined as the post-exclusion training-fold name count, and the enforcement contract: W5Q evaluates `assert_capacity` on every training fold BEFORE any fit and a violation aborts the read. The JSON mirror is spec-hashed; authority all false. W3 fits nothing.
+
+- [ ] **Step 4: Run green and commit Task 3B**
+
+```bash
+python3 -m pytest tests/test_stock_identity_model_constitution.py -q
+git add research/stock_identity/W3_CHANNEL_A_MODEL_CONSTITUTION.md data/stock_identity/ruler/channel_a_constitution_v1.json engine/stock_identity/model_constitution.py tests/test_stock_identity_model_constitution.py
+git commit -m "stock-identity W3A: freeze Channel-A model constitution (capacity budget)"
+```
+
+---
+
 ### Task 4: Build the W3B estimability/dependence census
 
 **Files:**
@@ -273,15 +361,20 @@ git commit -m "stock-identity W3A: add composites and localization nulls"
 **Interfaces:**
 
 ```python
+def validate_support_frame(support: pd.DataFrame) -> None:  # raises OutcomeLeakage on any forbidden column
+    ...
+
 def build_estimability_census(
     episodes: pd.DataFrame,
     events: pd.DataFrame,
     attribution: pd.DataFrame,
-    ruler_metrics: pd.DataFrame,
+    support: pd.DataFrame,
     feature_coverage: pd.DataFrame,
     floors: "EstimabilityFloors",
 ) -> pd.DataFrame: ...
 ```
+
+`support` is the typed outcome-independent support/coverage frame emitted by the Task 2 ruler build (`support_coverage_v1.parquet`). Its closed column contract is exactly: `episode_id`, `event_id`, `ticker`, `known_ts`, `calendar_block`, `family`, `grain`, `attributed` (bool presence, not quality), `price_coverage`, `feature_coverage`, `price_plane_id`, `availability_state` (censored/not-yet-available/structural-absence/etc.). `validate_support_frame` (called first inside `build_estimability_census`) raises `OutcomeLeakage` if the frame carries ANY realized-fit column — `c_loc_r`, `c_loc_d`, `lead_lag`, `price_dist`, `atr_dist`, `mae_after`, `capture`, `recall_at_tier`, `zone_precision`, `false_start`, `false_start_rate`, `relative_order`, `consistency`, or any column not in the closed contract. Cell inclusion/estimability may never depend on how well any expert scored.
 
 Required outputs per candidate cell include `episode_n`, `calendar_cluster_n`, `largest3_cluster_share`, `fire_n`, `fires_per_name_year`, `episode_attribution_rate`, `grain_coverage`, `feature_coverage`, `price_plane_id`, `estimability_state`, and `unestimable_reason`.
 
@@ -292,6 +385,10 @@ Create a fixture with 100 episode rows concentrated in two calendar clusters. As
 - [ ] **Step 2: Add failing missingness taxonomy tests**
 
 Assert structural expert absence, no fires despite coverage, missing feature plane, censored episode, and insufficient clusters map to distinct reason codes rather than one generic null.
+
+- [ ] **Step 2B: Add the failing outcome-leakage regression**
+
+Assert `build_estimability_census` raises `OutcomeLeakage` when the support frame carries any realized-fit column (parameterized over the full forbidden list above), and that census output on a lawful support frame is byte-identical when the fixture's underlying expert quality is permuted — inclusion/estimability provably cannot respond to realized localization quality.
 
 - [ ] **Step 3: Run red**
 
@@ -310,10 +407,10 @@ Closed states: `ESTIMABLE`, `UNESTIMABLE`, `NO_COVERAGE`, `STRUCTURAL_ABSENCE`, 
 - [ ] **Step 6: Run real pilot census**
 
 ```bash
-python3 scripts/stock_identity_build_estimability.py --pilot --ruler-dir /tmp/si-w3a-ruler-smoke --output-dir /tmp/si-w3b-census
+python3 scripts/stock_identity_build_estimability.py --pilot --support-path /tmp/si-w3a-ruler-smoke/support_coverage_v1.parquet --output-dir /tmp/si-w3b-census
 ```
 
-Expected: every candidate cell has honest episode/calendar-cluster N and a closed estimability state; no fit/composite ranking table is emitted.
+Expected: every candidate cell has honest episode/calendar-cluster N and a closed estimability state; no fit/composite ranking table is emitted. The script consumes ONLY the outcome-independent support artifact — never the metric/composite/null files that share the ruler output directory.
 
 - [ ] **Step 7: Commit Task 4**
 
@@ -336,14 +433,17 @@ git commit -m "stock-identity W3B: add estimability and dependence census"
 **Interfaces:**
 
 ```python
+def load_delisted_sampling_frame(repo_root: Path) -> pd.DataFrame: ...
 def inventory_existing_adjusted_history_owners(repo_root: Path) -> list["HistoryOwnerCandidate"]: ...
 def validate_terminated_instrument(candidate: "HistoryOwnerCandidate") -> "DeadInstrumentReceipt": ...
 def build_dead_control_manifest(receipts: Sequence["DeadInstrumentReceipt"]) -> dict: ...
 ```
 
+The sampling frame starts from `config/delisted_symbols.yml` with `terminated_reason` recorded, per the original masterplan's dead-names clause: `load_delisted_sampling_frame` reads that file and is the sole source of candidate terminated identities; the owner inventory then determines which canonical adjusted-history plane can supply each tape. Consequence law is fixed and no new statistical kill threshold is invented: fewer than 5 lawful instruments => `BLOCKED_NO_LAWFUL_DATA` and W5P/Q1 stay blocked; >=5 => the cohort MUST enter the W5 survivorship control/report, and its performance does not independently pass or fail Q1 unless a future separately preregistered criterion says so.
+
 - [ ] **Step 1: Write the source-owner inventory test**
 
-The inventory function must enumerate current canonical/registered adjusted-history owners before any network/source adapter code is allowed. The test fails if an implementation imports a new collector/provider module without a recorded owner verdict in the registration document.
+The inventory function must enumerate current canonical/registered adjusted-history owners before any network/source adapter code is allowed. The test fails if an implementation imports a new collector/provider module without a recorded owner verdict in the registration document. A companion test asserts the candidate identity set comes exactly from `load_delisted_sampling_frame` over `config/delisted_symbols.yml` (with `terminated_reason` present per row) and that no candidate is minted from any other list.
 
 - [ ] **Step 2: Write terminated-identity/hygiene tests**
 
@@ -405,7 +505,7 @@ Use the current Macro CI registry semantics at pickup; do not add a duplicate Gi
 - [ ] **Step 2: Run the complete local Stock Identity suite**
 
 ```bash
-python3 -m pytest tests/test_stock_identity_ruler.py tests/test_stock_identity_ruler_nulls.py tests/test_stock_identity_estimability.py tests/test_stock_identity_dead_control.py -q
+python3 -m pytest tests/test_stock_identity_ruler.py tests/test_stock_identity_w3_calibration.py tests/test_stock_identity_ruler_nulls.py tests/test_stock_identity_model_constitution.py tests/test_stock_identity_estimability.py tests/test_stock_identity_dead_control.py -q
 ```
 
 Then run every pre-existing Stock Identity W1/W2 test file selected by current CI planning.
@@ -446,7 +546,9 @@ Sol applies `REVIEW_RETURN.md` against exact head. Only a Sol `CONTINUE` after a
 
 ## Plan self-review
 
-- Spec coverage: W3A deterministic ruler, frozen composites, unconditional block, grain/null controls, W3B honest-N/estimability, W3S survivorship, protected paths, real smoke, hosted CI and milestone return are all assigned explicit tasks.
+- Spec coverage: W3A deterministic ruler, one-time sealed-calibration constant-setting with rule-before-value and look budget (Task 1B), frozen composites, unconditional block, grain/null controls, the Channel-A model constitution / capacity budget (Task 3B), W3B honest-N/estimability on an outcome-independent support frame, W3S survivorship from the `config/delisted_symbols.yml` frame, protected paths, real smoke, hosted CI and milestone return are all assigned explicit tasks.
+- The W3B census provably cannot read realized localization/composite quality; the W5 population is outcome-independent.
+- The W3S consequence matrix is unchanged: the control can block or enter the W5 report, never independently kill Q1.
 - No Q1 outcome opening occurs in this plan.
 - No W4 epoch implementation is smuggled into W3.
 - No downstream consumer path is preclaimed.
