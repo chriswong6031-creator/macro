@@ -105,16 +105,20 @@ _OLD_OWNER = re.escape("chriswong6031-creator")
 # ---------------------------------------------------------------------------
 _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
     "raw_githubusercontent": re.compile(
-        rf"raw\.githubusercontent\.com/{_OWNER_ALT}/{_REPO}\b"
+        rf"raw\.githubusercontent\.com/{_OWNER_ALT}/{_REPO}\b",
+        re.IGNORECASE,
     ),
     "github_pages_mirror": re.compile(
-        rf"{_OWNER_ALT}\.github\.io/{_REPO}\b"
+        rf"{_OWNER_ALT}\.github\.io/{_REPO}\b",
+        re.IGNORECASE,
     ),
     "jsdelivr_gh": re.compile(
-        rf"cdn\.jsdelivr\.net/gh/{_OWNER_ALT}/{_REPO}\b"
+        rf"cdn\.jsdelivr\.net/gh/{_OWNER_ALT}/{_REPO}\b",
+        re.IGNORECASE,
     ),
     "api_contents_read": re.compile(
-        rf"api\.github\.com/repos/{_OWNER_ALT}/{_REPO}/(?:contents|git/blobs|git/trees)\b"
+        rf"api\.github\.com/repos/{_OWNER_ALT}/{_REPO}/(?:contents|git/blobs|git/trees)\b",
+        re.IGNORECASE,
     ),
     # Bare repo-root URL only — see docstring. No further path segment allowed.
     "clone_fetch_target": re.compile(
@@ -122,7 +126,8 @@ _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
         rf"(?![\w-])"          # not "macro-something" / "macrofoo"
         rf"(?:\.git)?"
         rf"/?"
-        rf"(?=[\"'\s]|$)"      # nothing but a quote/whitespace/EOF follows
+        rf"(?=[\"'\s]|$)",     # nothing but a quote/whitespace/EOF follows
+        re.IGNORECASE,
     ),
     # github.com serves BYTES on four sub-paths, so a repo-root-only rule (shape
     # 4) leaves them open: `/archive/...` is the whole tree as a tarball/zip,
@@ -133,7 +138,8 @@ _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
     # /tree/, and a plain /blob/ with no raw query.
     "anonymous_download_path": re.compile(
         rf"https://github\.com/{_OWNER_ALT}/{_REPO}/"
-        rf"(?:archive/|raw/|releases/download/|blob/[^\"'\s]*[?&]raw=)"
+        rf"(?:archive/|raw/|releases/download/|blob/[^\"'\s]*[?&]raw=)",
+        re.IGNORECASE,
     ),
     # Transport only: reject the retired personal owner when the string is an
     # executable/config Git remote, while keeping its PR/commit citations and
@@ -141,7 +147,8 @@ _SHAPE_PATTERNS: dict[str, re.Pattern[str]] = {
     "wrong_owner_transport": re.compile(
         rf"(?:git@github\.com:{_OLD_OWNER}/{_REPO}(?:\.git)?/?|"
         rf"ssh://git@github\.com/{_OLD_OWNER}/{_REPO}(?:\.git)?/?)"
-        rf"(?=[\"'\s]|$)"
+        rf"(?=[\"'\s]|$)",
+        re.IGNORECASE,
     ),
 }
 
@@ -156,7 +163,8 @@ _ANY_BANNED_PREFIX = re.compile(
         pattern.pattern
         for shape, pattern in _SHAPE_PATTERNS.items()
         if shape != "wrong_owner_transport"
-    )
+    ),
+    re.IGNORECASE,
 )
 
 _GIT_FETCH_VERBS = {"clone", "fetch", "ls-remote"}
@@ -180,6 +188,13 @@ EXCLUDE_ROOT_PREFIXES = (
     "verify_shots/",
     "tests/",
     ".git/",
+)
+
+SESSION_WORKTREE_ROOT_PREFIXES = (
+    ".claude/worktrees/",
+    ".claire/worktrees/",
+    ".codex/worktrees/",
+    ".codex-worktrees/",
 )
 
 
@@ -365,15 +380,10 @@ def find_anonymous_macro_dependencies(text: str, path: str) -> list[Finding]:
 def _is_excluded(rel_posix: str) -> bool:
     if rel_posix.endswith(".md"):
         return True
-    # Session worktree roots belong to OTHER sessions: their contents are a
-    # different revision of this repo, so scanning them makes this guard fail on
-    # code the current tree does not contain. `part == "worktrees"` alone is not
-    # enough — the documented fleet roots are `.claude/worktrees/`,
-    # `.claire/worktrees/`, `.codex/worktrees/` AND `.codex-worktrees/`, and that
-    # last one is a SINGLE component that no equality test catches. Match any
-    # component containing "worktrees" so every current and future spelling is
-    # covered (CLAUDE.md "Worktree GC"; `tests/test_agent_worktree_roots.py`).
-    if any("worktrees" in part for part in rel_posix.split("/")):
+    # Only the four documented repo-root session directories are foreign
+    # revisions. An ordinary tracked directory whose name happens to contain
+    # "worktrees" remains in scope and must not become an evasion surface.
+    if rel_posix.startswith(SESSION_WORKTREE_ROOT_PREFIXES):
         return True
     return any(rel_posix.startswith(prefix) for prefix in EXCLUDE_ROOT_PREFIXES)
 

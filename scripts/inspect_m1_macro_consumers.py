@@ -12,6 +12,7 @@ from pathlib import Path
 import plistlib
 import re
 import selectors
+import signal
 import socket
 import stat
 import subprocess
@@ -106,9 +107,12 @@ def _close_pipe(pipe: object) -> None:
 
 def _terminate_bounded_child(process: subprocess.Popen[bytes]) -> None:
     try:
-        process.kill()
-    except ProcessLookupError:
-        pass
+        os.killpg(process.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
     try:
         process.wait(timeout=1.0)
     except subprocess.TimeoutExpired:
@@ -136,6 +140,7 @@ def _run_bounded_readonly(
         stderr=subprocess.PIPE,
         shell=False,
         close_fds=True,
+        start_new_session=True,
     )
     if process.stdout is None or process.stderr is None:
         _terminate_bounded_child(process)
@@ -324,7 +329,9 @@ def parse_plist(path: Path) -> dict[str, object]:
         isinstance(item, str) for item in argv
     ):
         raise InspectionError("PLIST_INVALID")
-    if cwd is not None and not isinstance(cwd, str):
+    if cwd is not None and (
+        not isinstance(cwd, str) or not Path(cwd).is_absolute()
+    ):
         raise InspectionError("PLIST_INVALID")
     if not isinstance(env, dict) or not all(isinstance(name, str) for name in env):
         raise InspectionError("PLIST_INVALID")
@@ -409,16 +416,23 @@ def service_definition(
 def _remote_owner_repo(url: str) -> tuple[str | None, str | None, bool]:
     """Return owner, repository, and HTTPS transport without retaining secrets."""
     https_transport = False
-    if url.startswith("git@github.com:"):
-        location = url.removeprefix("git@github.com:")
-    elif url.startswith("ssh://git@github.com/"):
-        location = url.removeprefix("ssh://git@github.com/")
+    lowered = url.casefold()
+    scp_prefix = "git@github.com:"
+    ssh_prefix = "ssh://git@github.com/"
+    if lowered.startswith(scp_prefix):
+        location = url[len(scp_prefix):]
+    elif lowered.startswith(ssh_prefix):
+        location = url[len(ssh_prefix):]
     else:
         try:
             parsed = urlsplit(url)
         except ValueError:
             return (None, None, False)
-        if parsed.scheme not in {"http", "https"} or parsed.hostname != "github.com":
+        if (
+            parsed.scheme.casefold() not in {"http", "https"}
+            or parsed.hostname is None
+            or parsed.hostname.casefold() != "github.com"
+        ):
             return (None, None, False)
         https_transport = True
         location = parsed.path.lstrip("/")
@@ -427,9 +441,9 @@ def _remote_owner_repo(url: str) -> tuple[str | None, str | None, bool]:
     if len(parts) != 2:
         return (None, None, https_transport)
     owner, repo = parts
-    if repo.endswith(".git"):
+    if repo.casefold().endswith(".git"):
         repo = repo[:-4]
-    return (owner, repo, https_transport)
+    return (owner.casefold(), repo.casefold(), https_transport)
 
 
 def classify_remote(url: str) -> tuple[bool, bool, bool]:
@@ -624,7 +638,10 @@ def _nonempty_string_list(value: object) -> tuple[str, ...] | None:
         return None
     if not all(isinstance(item, str) and item.strip() for item in value):
         return None
-    return tuple(value)
+    typed = tuple(value)
+    if len(set(typed)) != len(typed):
+        return None
+    return typed
 
 
 def _allowed_domain(domain: str, *, uid: int = os.getuid()) -> bool:
@@ -675,6 +692,7 @@ def parse_scope_manifest(path: Path) -> ScopeManifest:
                 isinstance(item, str) and Path(item).is_absolute()
                 for item in evidence_values
             )
+            or len(set(evidence_values)) != len(evidence_values)
         ):
             raise InspectionError("SCOPE_MANIFEST_INVALID")
         seen.add(service_id)
@@ -999,8 +1017,13 @@ def render_table(report: CensusReport) -> str:
     return "\n".join(rows)
 
 
+class _InspectionArgumentParser(argparse.ArgumentParser):
+    def error(self, _message: str) -> None:
+        raise InspectionError("ARGUMENTS_INVALID")
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
+    parser = _InspectionArgumentParser(
         description=(
             "Inspect one explicit M1 Macro consumer scope without changing "
             "services, repositories, credentials, or files."
@@ -1013,12 +1036,10 @@ def main(argv: list[str] | None = None) -> int:
         help="absolute path to an ephemeral macro.m1_consumer_scope.v1 manifest",
     )
     parser.add_argument("--format", choices=("json", "table"), default="json")
-    args = parser.parse_args(argv)
-
-    if not args.scope_manifest.is_absolute():
-        print("INSPECTION_FAILED:SCOPE_MANIFEST_INVALID", file=sys.stderr)
-        return 65
     try:
+        args = parser.parse_args(argv)
+        if not args.scope_manifest.is_absolute():
+            raise InspectionError("SCOPE_MANIFEST_INVALID")
         scope = parse_scope_manifest(args.scope_manifest)
         report = build_report(
             scope,

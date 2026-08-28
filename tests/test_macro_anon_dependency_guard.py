@@ -87,6 +87,27 @@ def test_alias_owner_is_also_flagged() -> None:
 
 
 @pytest.mark.parametrize(
+    "snippet, shape",
+    (
+        (
+            'URL = "https://raw.githubusercontent.com/MastermindX-Market-Intelligence/Macro/main/x.json"\n',
+            "raw_githubusercontent",
+        ),
+        (
+            'REMOTE = "git@github.com:ChrisWong6031-Creator/Macro.git"\n',
+            "wrong_owner_transport",
+        ),
+    ),
+)
+def test_github_identity_matching_is_case_insensitive(
+    snippet: str,
+    shape: str,
+) -> None:
+    findings = find_anonymous_macro_dependencies(snippet, "scripts/synthetic.py")
+    assert shape in _shapes(findings)
+
+
+@pytest.mark.parametrize(
     "snippet",
     [
         'REMOTE = "git@github.com:chriswong6031-creator/macro.git"\n',
@@ -378,6 +399,20 @@ def test_scope_exclusion_is_not_vacuous(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert _walk(tmp_path, {}), "detector found nothing on a non-excluded path"
+
+
+def test_scope_does_not_exclude_ordinary_paths_named_like_worktrees(
+    tmp_path: Path,
+) -> None:
+    p = tmp_path / "scripts" / "worktrees-tools" / "download.py"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(
+        f'URL = "https://raw.githubusercontent.com/{OWNER}/macro/main/x.json"\n',
+        encoding="utf-8",
+    )
+
+    findings = _walk(tmp_path, {})
+    assert _shapes(findings) == {"raw_githubusercontent"}
 
 
 # ---------------------------------------------------------------------------

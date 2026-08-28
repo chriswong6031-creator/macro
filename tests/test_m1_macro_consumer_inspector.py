@@ -138,6 +138,33 @@ def test_service_definition_uses_absolute_script_parent_without_working_director
     assert Path("/opt/macro/bin") in candidates
 
 
+@pytest.mark.parametrize(
+    "working_directory",
+    (
+        "relative/checkout",
+        "https://user:secret-marker@github.com/example/repo",
+    ),
+)
+def test_service_definition_rejects_non_absolute_working_directory_before_rendering(
+    tmp_path: Path,
+    working_directory: str,
+) -> None:
+    plist_path = tmp_path / "unsafe-working-directory.plist"
+    plist_path.write_bytes(
+        plistlib.dumps(
+            {
+                "Label": "com.macro.unsafe-working-directory",
+                "ProgramArguments": ["/opt/macro/run"],
+                "WorkingDirectory": working_directory,
+            }
+        )
+    )
+
+    with pytest.raises(census.InspectionError, match="PLIST_INVALID") as exc:
+        census.service_definition(plist_path)
+    assert "secret-marker" not in str(exc.value)
+
+
 def test_service_definition_accepts_only_absolute_standard_stream_paths(
     tmp_path: Path,
 ) -> None:
@@ -187,6 +214,14 @@ def test_service_definition_rejects_malformed_plist(tmp_path: Path) -> None:
         (
             "https://github.com/chriswong6031-creator/macro.git",
             (False, True, True),
+        ),
+        (
+            "https://github.com/MastermindX-Market-Intelligence/Macro.git",
+            (True, False, True),
+        ),
+        (
+            "git@github.com:ChrisWong6031-Creator/Macro.git",
+            (False, True, False),
         ),
         (
             "git@github.com:mastermindx-market-intelligence/other.git",
@@ -356,6 +391,12 @@ def test_scope_manifest_binds_exact_bytes_and_report_order(tmp_path: Path) -> No
         lambda payload: payload["services"][0].update(plist_path="relative.plist"),
         lambda payload: payload.pop("scheduler_surfaces_checked"),
         lambda payload: payload.pop("recent_job_sources_checked"),
+        lambda payload: payload.update(
+            scheduler_surfaces_checked=["launchd-current-user"] * 2
+        ),
+        lambda payload: payload.update(
+            recent_job_sources_checked=["declared-launchd-streams"] * 2
+        ),
         lambda payload: payload["services"][0].update(
             recent_evidence_paths=["relative.log"]
         ),
@@ -386,6 +427,31 @@ def test_scope_manifest_rejects_incomplete_or_ambiguous_input(
     mutator(payload)
     manifest_path = tmp_path / "invalid-scope.json"
     manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(census.InspectionError, match="SCOPE_MANIFEST_INVALID"):
+        census.parse_scope_manifest(manifest_path)
+
+
+def test_scope_manifest_rejects_duplicate_recent_evidence_paths(
+    tmp_path: Path,
+) -> None:
+    plist_path = tmp_path / "service.plist"
+    plist_path.write_bytes(
+        plistlib.dumps({"Label": "com.macro.test", "ProgramArguments": ["/bin/true"]})
+    )
+    evidence_path = tmp_path / "service.log"
+    manifest_path = tmp_path / "invalid-scope.json"
+    _write_scope(
+        manifest_path,
+        [
+            {
+                "service_id": "com.macro.test",
+                "domain": f"gui/{os.getuid()}",
+                "plist_path": str(plist_path),
+                "recent_evidence_paths": [str(evidence_path), str(evidence_path)],
+            }
+        ],
+    )
 
     with pytest.raises(census.InspectionError, match="SCOPE_MANIFEST_INVALID"):
         census.parse_scope_manifest(manifest_path)
@@ -651,6 +717,38 @@ def test_streaming_runner_kills_and_reaps_timed_out_child(monkeypatch) -> None:
     assert observed["process"].poll() is not None
 
 
+def test_streaming_runner_terminates_descendant_process_group(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(census, "_COMMAND_TIMEOUT_SECONDS", 0.2)
+    pid_path = tmp_path / "descendant.pid"
+    code = (
+        "import pathlib,subprocess,time;"
+        "child=subprocess.Popen(['/bin/sleep','30']);"
+        f"pathlib.Path({str(pid_path)!r}).write_text(str(child.pid));"
+        "time.sleep(30)"
+    )
+
+    with pytest.raises(census.InspectionError, match="COMMAND_TIMEOUT"):
+        census._run_bounded_readonly(
+            (sys.executable, "-c", code),
+            cwd=None,
+            env={"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C"},
+        )
+
+    descendant_pid = int(pid_path.read_text(encoding="utf-8"))
+    deadline = time.monotonic() + 2.0
+    while time.monotonic() < deadline:
+        try:
+            os.kill(descendant_pid, 0)
+        except ProcessLookupError:
+            break
+        time.sleep(0.02)
+    else:
+        pytest.fail(f"descendant process {descendant_pid} survived bounded termination")
+
+
 def test_main_emits_bounded_json_and_exit_semantics(
     tmp_path: Path,
     monkeypatch,
@@ -694,6 +792,13 @@ def test_main_emits_bounded_json_and_exit_semantics(
     failure = capsys.readouterr()
     assert failure.out == ""
     assert failure.err.strip() == "INSPECTION_FAILED:SCOPE_MANIFEST_INVALID"
+
+
+def test_main_maps_missing_required_input_to_sanitized_exit_65(capsys) -> None:
+    assert census.main([]) == 65
+    failure = capsys.readouterr()
+    assert failure.out == ""
+    assert failure.err.strip() == "INSPECTION_FAILED:ARGUMENTS_INVALID"
 
 
 def test_inspector_source_contains_no_mutating_launchctl_or_git_argv() -> None:
