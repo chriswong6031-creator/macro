@@ -59,14 +59,15 @@ affects:
   - "MARKET-ONTOLOGY-2026-08-26-fable-coo-complete-parity-program.md"
 confidence: high
 reversibility: easy
-decided_by: sol
-decided_at: 2026-08-28
+decided_by: chairman
+decided_at: 2026-08-26
 ---
 
 # Current operator topology
 
-The decision key is retained for durable identity/backward compatibility. Its historical
-"multi-COO" wording no longer means multiple durable Fable seats.
+The decision key and Chairman decision provenance are retained for durable identity. Current
+protected root/seat law supersedes only the historical seat-level reading of "multi-COO";
+it does not revoke the Chairman's concurrency outcome.
 
 ```text
 Sol / CEO
