@@ -23,15 +23,20 @@ ambiguity: specified
 waves:
   - id: P0
     title: Bounded dossier quote projection + honest freshness stamp
-    status: awaiting_ci
+    status: in_progress
     pr: 6572
+    next_action: >
+      PR #6572 merged as 033f929087a03d2931d47e1f2ea0e4f39a9cf3bb, but P0 is not done.
+      Obtain the required open-US-session production proof and settle the shared
+      HUB_REALTIME_QUOTES entitlement ruling before marking this wave complete.
   - id: P1
     title: Not commissioned — Sol owns scoping; see DEC/handoff before starting
     status: todo
 next_action: >
   Sol/Chairman ruling on HUB_REALTIME_QUOTES (see next_actions[0]) — it is a
   shared entitlement switch, not the quote-freshness lever the P0 commission
-  took it for, so P0 deliberately left it unset.
+  took it for, so P0 deliberately left it unset. Then re-verify the dossier on a
+  real open US session before closing P0; P1 remains uncommissioned.
 next_actions:
   - >
     RULING NEEDED (Sol/Chairman): the P0 commission authorized setting
