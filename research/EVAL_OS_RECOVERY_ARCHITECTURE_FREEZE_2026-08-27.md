@@ -3,7 +3,7 @@
 **Status:** CEO architecture freeze / records-only  
 **Chairman intent:** end-to-end CEO ownership of Intelligence Evaluation OS until measurement, health, promotion law and evidence clocks are complete and proven in real use.  
 **Recovered:** 2026-08-27 America/New_York / 2026-08-28 UTC  
-**Protected Sol Skillpack:** `mastermindx-market-intelligence/Mastermind@d508e30c865bd2425bb551650b71381b7eb6d4f8` (`mastermind.sol_skillpack.v1`, v1.0.0, bootstrap-major 1)  
+**Protected Sol Skillpack (final revalidation):** `mastermindx-market-intelligence/Mastermind@7fbc37cdd47d7ee5bb77f07aef1d00db4f858cfa` (`mastermind.sol_skillpack.v1`, v1.0.0, bootstrap-major 1)  
 **Macro freeze base:** `d84468e41f40f8dfb2404b2f51be557aade8f0ec`
 
 This record supersedes stale *next actions* in the 2026-08-14 Eval OS workstream/handoff records. It does not erase their evidence or change historical rulings. It creates no runtime, score, monitor, registry, promotion authority or generated state.
