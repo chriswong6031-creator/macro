@@ -278,13 +278,6 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
     0 0 24px -16px color-mix(in srgb, var(--link) 42%, transparent),
     0 8px 24px -20px color-mix(in srgb, var(--bg) 55%, transparent);
 }
-html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
-  background: var(--panel);
-  border-color: color-mix(in srgb, var(--link) 18%, var(--line));
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--link) 7%, transparent),
-    0 10px 26px -22px color-mix(in srgb, var(--link) 30%, transparent);
-}
 
 .mx-stockdash--ca .ca-v36-empty { grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--muted); font-size: 13px; }
 .mx-stockdash--ca .ca-v36-empty-switch {
@@ -327,41 +320,281 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
 .mx-stockdash--ca .ca-v36-evidence-body { display: flex; justify-content: center; padding: 13px 14px 15px; font-family: var(--font-ui); }
 .mx-stockdash--ca .ca-v36-evidence-body .trk { margin: 0; padding: 9px 12px; font-family: var(--font-ui); }
 
-/* ---- Modal (Expand leadership) ---------------------------------------------- */
+/* ---- Modal (Expand leadership) ----------------------------------------------
+   SIBLING, not descendant — and that is load-bearing, not style. The composer
+   mounts the leadership modal with `document.body.appendChild(modal)`, so it is
+   a following SIBLING of the .mx-stockdash--ca <main>, never a child of it
+   (verified in-browser: body children are [… 2:MAIN.mx-stockdash--ca …
+   25:DIV#ca-v36-modal]). The Task-3 extraction scoped this family as
+   `.mx-stockdash--ca .ca-v36-modal…`, which matches nothing: the pre-extraction
+   injectCss() wrote these selectors BARE, and the scoping pass did not account
+   for the one subtree that lives outside the mount. Measured on this branch
+   before the fix, in BOTH themes: the modal computed position:static,
+   display:block, background:none — i.e. the whole family was dead, the "Expand
+   leadership" dialog never overlaid, and its 16 rows rendered as a stray block
+   at the foot of the page. `.mx-stockdash--ca ~ .ca-v36-modal` keeps the
+   governed namespace root (architecture §4.2 — no bare page-global selectors)
+   while actually matching the shipped DOM. This restores the ACCEPTED V3.8
+   production rendering; it is not a new dark decision. */
 
-.mx-stockdash--ca .ca-v36-modal {
+.mx-stockdash--ca ~ .ca-v36-modal {
   position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
   padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
 }
-.mx-stockdash--ca .ca-v36-modal.is-open { display: flex; }
-.mx-stockdash--ca .ca-v36-modal-card {
+.mx-stockdash--ca ~ .ca-v36-modal.is-open { display: flex; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
   width: min(1180px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 36px));
   display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-panel, 15px);
   background: var(--panel); box-shadow: var(--popover-shadow); overflow: hidden;
 }
-html[data-theme=light] .mx-stockdash--ca .ca-v36-modal { background: color-mix(in srgb, var(--text) 22%, transparent); }
-.mx-stockdash--ca .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
-.mx-stockdash--ca .ca-v36-modal-x {
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x {
   margin-left: auto; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r-ctl, 9px);
   background: var(--panel2); color: var(--text); font-size: 21px; cursor: pointer;
 }
-.mx-stockdash--ca .ca-v36-modal-body { overflow: auto; padding: 14px; }
-.mx-stockdash--ca .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
-.mx-stockdash--ca .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
-.mx-stockdash--ca .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
-.mx-stockdash--ca .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
-.mx-stockdash--ca .ca-v36-modal-table tbody tr { cursor: pointer; }
-.mx-stockdash--ca .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
-.mx-stockdash--ca .ca-v36-modal-table .num,
-.mx-stockdash--ca .ca-v36-modal-table .leaders { color: var(--muted); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-body { overflow: auto; padding: 14px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
+
+/* ============================================================================
+   LIGHT ART DIRECTION — "institutional research workspace"
+   TP-1 Task 4. research/…CONVERGENCE_ARCHITECTURE.md §3.1-3.2, §5.2;
+   research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md §12; docs/DESIGN_DOCTRINE.md §5 (8).
+
+   Dark and light are TWO ART DIRECTIONS of ONE semantic system. Everything
+   above this line is the shared semantic layer — information architecture,
+   component semantics, spacing/type scale, state meanings, interaction, the
+   stance-token family, ordering and density. Nothing below changes any of
+   that. What changes is the MATERIAL MECHANISM, because the mechanism that
+   builds depth in a dark command center is not the mechanism that builds
+   depth on a light page:
+
+     dark  = luminance steps + restrained bloom. A lane, a card and a control
+             separate from their container because they are LIGHTER than it.
+     light = structure. Nothing is lighter than white, so depth is earned with
+             surface, hairline, whitespace and a controlled shadow instead.
+
+   Mechanisms that intentionally DIFFER between the two themes here:
+
+   1. Act-Now lane separation. Dark keeps four raised --panel2 lane cards with
+      a gap: the luminance step reads as one instrument because the lanes are
+      visibly the same material. Repeating that in light stacks grey cards on
+      white material — the "grey-in-grey", "four mini dashboards" defect the
+      Chairman's 2026-08-27 review named. Light therefore DISSOLVES the lane
+      box entirely: gap collapses to 0, the lane fill and border are removed,
+      and the four lanes become four hairline-divided COLUMNS of the one white
+      module. Stance identity moves onto the header band (2px semantic rail +
+      ~4% stance tint), so the module's top edge reads as one segmented rail —
+      the light plane's signature moment.
+   2. Prophet card gallery ground. In dark a card is lighter than the panel and
+      separates for free. In light the card and the panel are both white, which
+      is the "white-card-on-white disappearance" §5.2 forbids, and the shipped
+      fallback (a --panel2 grey card) is grey-on-white. Light instead RECESSES
+      the gallery to canvas grade (var(--bg) — the page canvas re-entering, not
+      a third grey) and lifts every card to white --panel + --card-shadow. One
+      elevation step, canvas -> panel -> raised element, exactly §3.2.
+   3. Top Picks emphasis. Dark uses a low-alpha bloom; light uses a RING — a
+      1px --link-mix ring plus the canonical --card-shadow. A bloom on white
+      becomes a pastel stain (§12).
+   4. Hover elevation. Dark lifts by luminance; light lifts by shadow + border
+      definition (§3.1).
+   5. Selected state. Light needs a real one: white raised button in a DEEPENED
+      neutral track for segmented controls, and a --link rail + low-alpha tint
+      for a selected row. Borders alone collapse perceptually on white (§5.2).
+   6. Nested panes. Dark can tint a modal pane --panel2 and still read as one
+      card; light keeps panes white and moves the tint to the caption band, so
+      the modal is white material rather than a muddy grey sheet.
+
+   Theme selector: html[data-theme="light"] alone is correct and complete for
+   this estate. theme.js ALWAYS stamps data-theme explicitly, and a visitor
+   with no stored preference renders DARK with no attribute at all (see the
+   ":root block IS the dark plane" note in templates/theme.css) — there is no
+   prefers-color-scheme path to mirror.
+
+   Every rule below is scoped html[data-theme=light], so the dark plane's
+   rendering is byte-for-byte unchanged by this section.
+   ========================================================================== */
+
+/* ---- Light: page + module hierarchy -----------------------------------------
+   White --panel modules on the cooler --bg canvas, --line hairlines, one
+   --card-shadow elevation. Stated explicitly (not merely inherited) so the
+   light contract is legible in source and a later base-rule edit cannot
+   silently flatten it. The page is never fully white: the canvas stays
+   perceptibly deeper than the modules it carries. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-panel {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: What To Act On Now — ONE instrument, FOUR semantic lanes --------
+   The lane box is dissolved (see mechanism 1 above). Rows already separate
+   with hairlines, so nothing here becomes a raised box: identity is carried by
+   the header rail + tint, structure by the column dividers, and the outer
+   module owns the only material. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lanes { gap: 0; }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane {
+  background: transparent; border: 0; border-radius: 0;
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane + .ca-v36-an-lane {
+  border-left: 1px solid var(--line);
+}
+
+/* Lane header: the narrow 2px semantic rail is the base rule's
+   `border-top: 2px solid currentColor`; light adds only a ~4% wash of the SAME
+   stance token underneath it. Low enough to stay a tint rather than a
+   highlighter smear (§12), strong enough to key the column. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.buy {
+  background: color-mix(in srgb, var(--ink-pv-buy, var(--pv-buy)) 4%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.near {
+  background: color-mix(in srgb, var(--ink-pv-near, var(--pv-near)) 4%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.wait {
+  background: color-mix(in srgb, var(--ink-pv-wait, var(--pv-wait)) 4%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.avoid {
+  background: color-mix(in srgb, var(--ink-pv-avoid, var(--pv-avoid)) 4%, transparent);
+}
+
+/* Selected row: --link rail + the existing low-alpha tint. Rail is an inset
+   shadow, not a border, so selecting a row never reflows the grid. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-row.is-active {
+  box-shadow: inset 2px 0 0 var(--link);
+}
+
+/* Dashed hairlines are a dark-plane idiom; on white they read as dotted noise.
+   Light uses quiet solid rules for the same two separators. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-go {
+  border-left-style: solid;
+  border-left-color: color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+/* "View all" is a quiet footer control: no fill, no box, hairline above, and
+   wayfinding hue only on hover. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-more {
+  border-top-style: solid;
+  border-top-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-more:hover {
+  color: var(--ink-link, var(--link));
+}
+
+/* ---- Light: Prophet gallery — white instrument cards on a cool tray --------- */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .pvcard {
+  background: var(--panel);
+  border-color: var(--line);
+  box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .pvcard:hover {
+  border-color: color-mix(in srgb, var(--text) 22%, var(--line));
+  box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+/* Top Picks: ring, never glow. --link ring + the canonical card elevation, so
+   the pick is marked by its EDGE while its material stays identical to every
+   other card — emphasis without a second card style. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--link) 30%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 22%, transparent),
+    var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick:hover {
+  border-color: color-mix(in srgb, var(--link) 46%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 30%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--link) 26%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-empty-switch {
+  background: var(--panel); box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: segmented controls — a real selected state ----------------------
+   The track is deepened one step BELOW --panel2 so the white selected button
+   has a well to sit in; --panel2 alone against a white module leaves selected
+   and unselected collapsing into each other (§5.2). Selected = white + line +
+   card shadow, i.e. a raised control, not merely a differently-bordered one. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-seg,
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button {
+  background: color-mix(in srgb, var(--text) 6%, var(--panel2));
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-seg button[aria-selected=true],
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: var(--card-shadow);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-filter {
+  border-color: color-mix(in srgb, var(--link) 45%, var(--line));
+  background: color-mix(in srgb, var(--link) 8%, transparent);
+  color: var(--ink-link, var(--link));
+}
+
+/* ---- Light: Leadership & Rotation — one ranked institutional list -----------
+   A ranked list, not a stack of grey buttons: a canvas-grade column-header
+   band, hairline row separators, and rank / action stance kept on separate
+   visual axes (muted tabular rank at the left edge, stance chip in stance ink
+   at the right). Selected state gets the 3px --link rail + low-alpha tint. */
+
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-col-h { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row.is-active {
+  box-shadow: inset 3px 0 0 var(--link);
+}
+/* Stance chip earns material presence on white from a wash of its OWN stance
+   ink (currentColor is the stance token set by .ca-v36-stance.<tone> above),
+   the house chip idiom — an outline-only chip reads thin on a white row. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-stance {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-expand-wrap { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca .ca-v36-expand {
+  background: var(--panel); box-shadow: var(--card-shadow);
+}
+
+/* ---- Light: modal — cool scrim, white material, no nested grey boxes -------- */
+
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal {
+  background: color-mix(in srgb, var(--text) 22%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
+  background: var(--panel);
+  box-shadow: var(--popover-shadow);
+}
+/* The pane stays white and keeps only its structural hairline; the tint moves
+   to the caption band, which is the same canvas-grade header device the
+   Leadership list uses — one table grammar in both places. */
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane { background: var(--panel); }
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { background: var(--bg); }
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x:hover {
+  border-color: color-mix(in srgb, var(--text) 30%, var(--line));
+}
 
 /* ---- Responsive: 1200 / 900 / 680 -------------------------------------------- */
 
 @media (max-width: 1200px) {
   .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Light lanes are hairline-divided columns, so the divider grammar has to
+     re-key when the lane grid folds to two columns: no rule at a row's left
+     edge, and a rule ABOVE the second row instead. */
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane:nth-child(2n+1) { border-left: 0; }
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane:nth-child(n+3) { border-top: 1px solid var(--line); }
 }
 @media (max-width: 900px) {
   .mx-stockdash--ca .ca-v36-head { flex-wrap: wrap; }
@@ -382,11 +615,13 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-modal { background: color-mix(i
   .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: 1fr; }
   .mx-stockdash--ca .ca-v36-an-lane { display: none; }
   .mx-stockdash--ca .ca-v36-an-lane.is-current { display: block; }
+  /* One lane at a time: a column/row divider would be a rule against nothing. */
+  html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane { border-left: 0; border-top: 0; }
   .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
   .mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-size: 16.3px !important; }
   .mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-size: 15.5px !important; }
   .mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-size: 13.1px !important; }
-  .mx-stockdash--ca .ca-v36-modal { padding: 8px; }
-  .mx-stockdash--ca .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
+  .mx-stockdash--ca ~ .ca-v36-modal { padding: 8px; }
+  .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
   .mx-stockdash--ca .ca-v36-evidence-body { padding: 11px 10px 13px; }
 }
