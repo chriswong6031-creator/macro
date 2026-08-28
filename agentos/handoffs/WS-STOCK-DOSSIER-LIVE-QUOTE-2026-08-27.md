@@ -126,6 +126,30 @@ unresolved:
     site/stocks/*.html <meta name="description"> and og:description bake
     "Price: $209.66"; nothing repaints them, so a share card can contradict the
     page. Pre-existing, not introduced here, not in scope.
+  - >
+    ACCEPTED RESIDUAL — on a STALE-build page there is no quote stamp at all.
+    templates/ticker.html.j2 puts `data-dq-stamp` only in the not-stale branch,
+    while the price nodes are unconditional, so a stale build repaints to a
+    current price under a header still reading "May be stale · <build date>".
+    Deliberately NOT fixed: that chip is about the page DATA (stance,
+    technicals) going old, which stays true even when the price is current, and
+    overwriting it would hide a real warning. Adding a second chip is a UI
+    change to a rare branch I could not visually verify. The ambiguity is mild
+    and in the safe direction; a successor with a stale-build page in hand
+    should show BOTH claims rather than letting one overwrite the other.
+  - >
+    ACCEPTED RESIDUAL — clock-skew asymmetry. `_freshness_of` rejects a stamp
+    more than _LIVE_MAX_AGE_SECONDS in the FUTURE, so +119s reads `live` and
+    +121s reads `stale` (which the client paints "Not updating") on an
+    otherwise healthy feed. Both directions are untested. A tolerance band has
+    to sit somewhere; this one errs toward refusing rather than claiming.
+  - >
+    ACCEPTED RESIDUAL — `_HUB_TIMEOUT_SECONDS` bounds each socket operation,
+    not the whole read, so a peer trickling bytes could hold a worker thread
+    (the route is a sync `def` on Starlette's thread pool). Mitigated by the
+    loopback assertion and the redirect refusal — the only peer that can do
+    this is our own hub on 127.0.0.1 — but an overall deadline would close it
+    properly.
 next_actions:
   - >
     Obtain the Sol/Chairman ruling on HUB_REALTIME_QUOTES, then flip it just
