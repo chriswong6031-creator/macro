@@ -11,20 +11,20 @@
   "human_state": "T1 Hit \u2014 Holding",
   "components": {
     "validity": 100.0,
-    "progress": 55.3,
-    "pace": 42.7,
-    "retention": 50.5,
-    "overlay": 67.0
+    "progress": 55.4,
+    "pace": 43.0,
+    "retention": 50.8,
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.916,
-    "dist_to_t1_r": 0.584,
-    "dist_to_t2_r": 2.084,
+    "dist_to_stop_r": 1.922,
+    "dist_to_t1_r": 0.578,
+    "dist_to_t2_r": 2.078,
     "horizon_pct_used": 104.4,
-    "p1": 0.6107,
-    "p2": 0.3053,
+    "p1": 0.6146,
+    "p2": 0.3073,
     "p3": null,
-    "move_r": 0.916,
+    "move_r": 0.922,
     "mfe_r": 1.813,
     "mae_r": -0.456
   },

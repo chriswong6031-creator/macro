@@ -1490,6 +1490,94 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
     assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
 
 
+def test_execution_timing_observations_do_not_change_semantic_fragment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Timing is useful evidence, never an input to semantic proof authority."""
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
+    job = PACK.LegacyJob("demo", definition, 0, 1, ("engine/**",))
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(PACK, "_dependency_environment", lambda *_args, **_kwargs: {})
+
+    def fake_run(current, **_kwargs):
+        specs = PACK.semantic_step_specs(current)
+        return PACK.JobExecution(
+            logical_job_id=current.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(current),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=None,
+        )
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    without_timing = tmp_path / "without-timing.json"
+    with_timing = tmp_path / "with-timing.json"
+    observations = tmp_path / "timing-observations.jsonl"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    unwritable_observations = blocked_parent / "timing-observations.jsonl"
+    with_unwritable_timing = tmp_path / "with-unwritable-timing.json"
+
+    assert PACK.execute_pack([job], emit_semantic_fragment=without_timing) == 0
+    ticks = iter((1_000, 1_100, 1_200, 1_500, 1_600, 1_700, 1_800, 2_100))
+    monkeypatch.setattr(PACK.time, "monotonic_ns", lambda: next(ticks))
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_timing,
+            emit_timing_observations=observations,
+        )
+        == 0
+    )
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_unwritable_timing,
+            emit_timing_observations=unwritable_observations,
+        )
+        == 0
+    )
+
+    assert with_timing.read_bytes() == without_timing.read_bytes()
+    assert with_unwritable_timing.read_bytes() == without_timing.read_bytes()
+    assert not unwritable_observations.exists()
+    assert "::warning title=ci timing telemetry degraded::" in capsys.readouterr().out
+    assert [
+        json.loads(line)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    ] == [
+        {
+            "duration_ns": 100,
+            "ended_monotonic_ns": 1_100,
+            "logical_job_id": "demo",
+            "phase": "dependency_install",
+            "started_monotonic_ns": 1_000,
+            "status": "observed",
+        },
+        {
+            "duration_ns": 300,
+            "ended_monotonic_ns": 1_500,
+            "logical_job_id": "demo",
+            "phase": "test",
+            "started_monotonic_ns": 1_200,
+            "status": "observed",
+        },
+    ]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 

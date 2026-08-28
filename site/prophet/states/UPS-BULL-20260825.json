@@ -11,21 +11,21 @@
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 17.7,
+    "progress": 18.4,
     "pace": 100.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.249,
-    "dist_to_t1_r": 1.251,
-    "dist_to_t2_r": 2.751,
+    "dist_to_stop_r": 1.263,
+    "dist_to_t1_r": 1.237,
+    "dist_to_t2_r": 2.737,
     "horizon_pct_used": 4.4,
-    "p1": 0.1661,
-    "p2": 0.0831,
+    "p1": 0.1752,
+    "p2": 0.0876,
     "p3": null,
-    "move_r": 0.249,
-    "mfe_r": 0.249,
+    "move_r": 0.263,
+    "mfe_r": 0.263,
     "mae_r": 0.0
   },
   "rr_ratio": 1.5,
@@ -39,9 +39,9 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 0.5500015258789119,
+  "_mfe": 0.5800003051757869,
   "_mae": 0.0,
-  "_max_p1": 0.1661334881528758,
+  "_max_p1": 0.1751949209133648,
   "_first_trigger_ts": "2026-08-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
