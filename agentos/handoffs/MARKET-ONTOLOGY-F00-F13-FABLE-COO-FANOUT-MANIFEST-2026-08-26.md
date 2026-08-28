@@ -26,7 +26,7 @@ verified:
     command: "Current canonical #6504 records and this manifest."
     result: "PASS."
   - claim: "Current source law has one logical Fable COO responsibility above provider sessions/workers."
-    command: "Protected Mastermind@97f85ce5b84030faf4d291f988a1c642fb15e80a root/seat architecture + #185 current-state amendment."
+    command: "Current protected Mastermind@e2092cb6235519ac7f50fb3aa50ec1c1a6f627c0 root/seat architecture + #185 current-state amendment; #186 is unrelated records-only Linear credential source law."
     result: >
       PASS — do not multiply organizational Fable identities from Claude accounts,
       Slack users or provider sessions; parallel execution is subordinate to the one
