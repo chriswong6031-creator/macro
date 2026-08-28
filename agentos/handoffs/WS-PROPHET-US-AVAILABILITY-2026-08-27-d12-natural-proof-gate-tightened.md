@@ -102,17 +102,21 @@ do_not_redo:
   - "Do NOT promote D12 from a pack-only receipt. The next natural live session still owes evaluator, publication, non-empty-state, and health proof."
   - "Do NOT create another D12 implementation carrier or restore the temporary red workflow; #6554 and #6565 are the canonical merged effects."
   - "Do NOT manufacture a poisoned close store or replay a Class-D session to force the negative case."
-next_actions: >
-  1) PRIMARY EXTERNAL GATE: wait only for the ordinary EDT Build-B schedule carrier
-     (daily 30 22 * * *). When GitHub creates it, bind the exact run id/head and inspect
-     the actual build_prophet_live_pack step/log. Reject pre-#6554 or ambiguous evidence.
-  2) If the pack receipt is lawful, record the arming half as proven but keep overall D12
-     BUILT_NOT_PROVEN until the next natural NYSE session.
-  3) In that session require evaluator consumption without global stale_pack darkness,
-     advancing served/R2 publication, states non-empty, healthy pack basis, and no #6569
-     fresh-empty breach. Only then may Sol consider D12 PROVEN_LIVE.
-  4) Keep the unrelated credential-attribution audit and 2026-07-30 partial-tail
-     investigation separate from this acceptance carrier.
+next_actions:
+  - >
+      PRIMARY EXTERNAL GATE: wait only for the ordinary EDT Build-B schedule carrier
+      (daily 30 22 * * *). When GitHub creates it, bind the exact run id/head and inspect
+      the actual build_prophet_live_pack step/log. Reject pre-#6554 or ambiguous evidence.
+  - >
+      If the pack receipt is lawful, record the arming half as proven but keep overall D12
+      BUILT_NOT_PROVEN until the next natural NYSE session.
+  - >
+      In that session require evaluator consumption without global stale_pack darkness,
+      advancing served/R2 publication, states non-empty, healthy pack basis, and no #6569
+      fresh-empty breach. Only then may Sol consider D12 PROVEN_LIVE.
+  - >
+      Keep the unrelated credential-attribution audit and 2026-07-30 partial-tail
+      investigation separate from this acceptance carrier.
 ---
 
 # D12 natural-proof gate — 2026-08-27 continuation
