@@ -3,33 +3,33 @@ key: MARKET-ONTOLOGY-FABLE-MULTI-COO-CONCURRENCY-TOPOLOGY
 question: >
   How should the frozen F00-F13 Market Ontology lanes execute concurrently after
   current Fable root/seat source law established one logical Fable COO responsibility
-  for a root program rather than multiple durable Fable seats?
+  for a root program rather than multiple durable Fable seats, and current worker-
+  avenue law separated organizational lane identity from quota-bearing provider accounts?
 answer: >
   Preserve the existing F00-F13 lane identities, operation keys, owner boundaries and
   concurrency intent, but supersede the old seat-level reading of "multi-COO." F00 is
   the one logical Fable COO/root program-control responsibility for this program.
   F01-F13 are independent durable domain lane identities and commissions, not thirteen
-  durable Fable COO seats. When real governed capacity exists, concurrent work may run
-  through already-authorized distinct logical roles, disjoint Executive child
+  durable Fable COO seats and not provider-account identities. When real governed
+  capacity exists, concurrent work may run through disjoint Executive child
   Jobs/Attempts/workers under the F00/root responsibility once that routing is
-  production-proven, or bounded temporary manual workers whose transport does not
-  create organizational seat identity. Every bounded child mission routes to the
-  least-scarce capable worker under current protected routing law; a Fable route owes
-  an explicit WHY FABLE, otherwise the routing record owes WHY NOT FABLE. Every
-  modifying child still binds to one current carrier and must pass fresh
-  owner/dependency/collision checks. F00 remains a coverage accountant,
-  dependency/collision coordinator and integrator; it is not a routine serial approval
-  hop.
+  production-proven, or through bounded temporary manual workers whose transport does
+  not create organizational identity. For manual Slack routing, Sol selects one current
+  preferred avenue from the protected worker-avenue vocabulary and the Chairman binds
+  the concrete quota-bearing account/session unless that binding is explicitly
+  delegated. Every bounded child still uses the least-scarce capable avenue, binds to
+  one current carrier, and passes fresh owner/dependency/collision checks. F00 remains
+  coverage accountant, dependency/collision coordinator and integrator; it is not a
+  routine serial approval hop.
 rationale: >
-  Chairman intent still rejects the observed one-provider-conversation / one-operator
-  serial bottleneck. The newer accepted Operator Continuity Fable Root/Seat amendment
-  resolves the identity model without revoking that concurrency objective: Fable is
-  one logical COO responsibility above provider-native conversations and ordinary
-  Executive Jobs/Attempts. Therefore concurrency must come from governed subordinate
-  execution beneath the same root responsibility, not by multiplying durable Fable
-  seats or treating Claude accounts/Slack users as organizational identities. This
-  preserves the original F00-F13 decomposition while eliminating the identity-plane
-  contradiction.
+  Chairman intent rejects the observed one-provider-conversation / one-operator serial
+  bottleneck. Current Operator Continuity and worker-avenue law resolves the identity
+  and capacity model without revoking concurrency: one logical COO/root responsibility
+  survives provider/session rollover, while quota-bearing accounts are runtime
+  resources chosen separately from organizational lane identity. Concurrency therefore
+  comes from governed subordinate execution beneath the same root responsibility, not
+  by multiplying durable Fable seats, pinning lanes to Claude account numbers, or
+  treating Slack users as organizational identities.
 alternatives:
   - option: One Fable provider conversation personally executes F00-F13 sequentially.
     why_not: >
@@ -40,20 +40,27 @@ alternatives:
       Superseded by current protected Fable Root/Seat source law. Provider realms,
       Claude accounts, Slack users and worker sessions are runtime placement/transport,
       not separate organizational Fable identities.
-  - option: Sol directly commissions every feature worker.
+  - option: Bind each durable lane permanently to a numbered provider account.
+    why_not: >
+      Rejected by current worker-avenue law. Provider quota/capacity is runtime state;
+      manual Sol routing recommends an avenue and the Chairman selects the concrete
+      account/session unless binding is explicitly delegated.
+  - option: Sol directly commissions every feature worker and manually relays every return.
     why_not: >
       Rejected. Sol owns architecture, adjudication and final acceptance, not routine
-      operator dispatch and micro-sequencing.
-  - option: Collapse or rename the frozen F01-F13 operations to match the new seat law.
+      micro-routing. Current watcher action law requires already-authorized continuation
+      loops to re-enter Sol and act directly instead of using the Chairman as message shuttle.
+  - option: Collapse or rename the frozen F01-F13 operations to match the new routing law.
     why_not: >
       Rejected. The lane identities remain useful durable decomposition and are not
-      themselves Fable seat identities; changing them would create needless carrier
-      churn and violate the no-duplicate/no-recommission boundary.
+      themselves provider/Fable seat identities; changing them would create needless
+      carrier churn and violate the no-duplicate/no-recommission boundary.
 evidence:
   - "Chairman instruction 2026-08-26: preserve concurrent execution and stop one COO ↔ Sol micromanagement."
-  - "Current protected Mastermind@e023f9b4df388814286d42462af0e86a64eea563 / mastermind.sol_skillpack.v1 v1.0.1: the accepted Fable Root/Seat amendment remains controlling and the current-state convergence amendment still supersedes the phrase 'separate Fable COOs'."
-  - "Current protected routing law: Fable is not the default child executor; bounded child missions route to the least-scarce capable worker with explicit WHY FABLE or WHY NOT FABLE reasoning."
-  - "Protected #178 is merged at the current pin but remains BUILT_NOT_PROVEN / PRODUCTION_INERT; it does not make Agent Relay/Wake/provider mutation, Executive routing, or watcher lifecycle authority live."
+  - "Current protected Mastermind@bdcb00132692b7e2dc40d35a2d2e226f81efe2f4 / mastermind.sol_skillpack.v1 v1.0.1: current Fable Root/Seat, WORKER_AVENUE_ROUTING and WATCHER_ACTION_LOOP laws govern manual delegation and continuation."
+  - "Current protected routing law: bounded work uses the least-scarce capable avenue; Fable remains principal/escalation capacity rather than the default child executor."
+  - "Current protected manual routing law: Sol recommends PREFERRED_AVENUE; Chairman selects the concrete quota-bearing account/session unless explicitly delegated."
+  - "Protected Worker Presence implementation remains non-authoritative until production-proven; temporary reciprocal watchers remain transport/attention only."
   - agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md
   - research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md
   - agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md
@@ -70,15 +77,15 @@ decided_at: 2026-08-26
 # Current operator topology
 
 The decision key and Chairman decision provenance are retained for durable identity. Current
-protected root/seat law supersedes only the historical seat-level reading of "multi-COO";
-it does not revoke the Chairman's concurrency outcome.
+protected root/seat + worker-avenue law supersedes only the historical seat/account reading of
+"multi-COO"; it does not revoke the Chairman's concurrency outcome.
 
 ```text
 Sol / CEO
   └─ architecture + authority + rights + collision exceptions + milestone/final acceptance
 
 F00 / one logical Fable COO root responsibility
-  ├─ 88-baseline + retained-P1 + living-delta coverage accounting
+  ├─ complete-parity coverage accounting
   ├─ dependency/collision map
   ├─ milestone synthesis
   └─ NO routine serial approval requirement
@@ -99,43 +106,43 @@ Concurrent F01-F13 durable lane responsibilities
   └─ F13 Operations / Learning / Reliability
 
 Each active lane
-  └─ bounded governed worker/child execution + one independently useful carrier per capability vertical
+  └─ bounded governed worker execution + one independently useful carrier per capability vertical
 ```
 
 ## Concurrency rules
 
 - F01-F13 keep their existing unique operation keys and durable handoffs. They are
-  organizational lane/work identities, not a new Fable seat registry.
+  organizational lane/work identities, not a seat/account registry.
 - A lane may progress without unrelated lanes or a Sol round-trip only when an actual
   governed receiver/execution path exists and its owner/dependency/collision census is
-  clean. Slack delivery or membership is not that proof.
+  clean. Slack delivery, membership or provider login is not execution proof.
 - Multiple modifications may execute simultaneously across disjoint canonical owners,
   but each modifying child keeps one stable operation/carrier until reconciliation.
 - Under production-proven Executive routing, subordinate concurrency uses ordinary
-  accepted Jobs/Attempts/workers beneath the logical F00/Fable root responsibility.
-- Before that path is proven, a bounded manual worker can be used only when the receiver
-  is known active and current transport law is satisfied; the manual transport does not
-  create another durable Fable COO identity.
-- Every bounded child mission uses the least-scarce capable worker under current
-  protected routing law. Fable is reserved for work that genuinely benefits from its
-  scarce continuity/reasoning surface and therefore carries `WHY FABLE`; other routes
-  carry `WHY NOT FABLE`.
-- Reciprocal continuation watchers are temporary attention/transport only. Even with
-  protected #178 merged, current Worker Presence remains `BUILT_NOT_PROVEN /
-  PRODUCTION_INERT`; a watcher owns no Job/Attempt/Worker/Event state, execution, retry,
-  completion or authority.
+  accepted Jobs/Attempts/workers beneath the logical F00/root responsibility.
+- For current manual Slack routing, Sol recommends one `PREFERRED_AVENUE`; the Chairman
+  selects the concrete quota-bearing account/session unless that authority was explicitly
+  delegated. Provider/account changes do not rename or replace the durable Fxx lane.
+- Bounded work uses the least-scarce capable avenue. Fable is reserved for principal-level
+  ambiguity, architecture-sensitive integration and sustained continuity; architecture-
+  frozen work should normally route through lower-scarcity avenues.
+- Reciprocal continuation watchers are temporary attention/transport only. A watcher owns
+  no Job/Attempt/Worker/Event state, execution, retry, completion or authority. When a
+  watcher detects an already-authorized return, current protected action-loop law requires
+  Sol to re-pin, adjudicate and post the lawful same-carrier edge before reporting rather
+  than stopping at a notification.
 - F00 continuously reconciles complete-parity coverage and prevents omissions, duplicate
   owners and cross-lane collisions; it does not rewrite specialist truth or become a
   serial approval queue.
-- Sol review remains mandatory only at the executive gates frozen by the program and at
+- Sol review remains mandatory at the executive gates frozen by the program and at
   milestone/final acceptance, not after every reversible implementation step.
 - K2-C and K3-D retain their already-bound separate operation/carrier law and are not
-  F04/F10 substitutes. K5 remains blocked until both are separately Sol-accepted.
+  F04/F10 substitutes. K5 remains separately gated by their accepted outcomes.
 
 ## Capacity fallback
 
-If governed subordinate capacity is lower than the number of runnable lanes, do not
-invent more Fable seats and do not collapse the frozen lane identities. Prioritize the
-highest-value collision-free bounded work, route well-specified subwaves through the
-least-scarce lawful available workers under the F00/root responsibility, and leave
-unclaimed lanes explicitly unclaimed until real capacity/receiver evidence exists.
+If governed subordinate capacity is lower than the number of runnable lanes, do not invent
+more Fable seats, pin lanes to accounts, or collapse the frozen lane identities. Prioritize
+highest-value collision-free bounded work, choose the least-scarce capable avenue, have the
+Chairman bind the concrete account/session for manual Slack work, and leave other lanes
+explicitly unclaimed until real capacity/receiver evidence exists.
