@@ -24,7 +24,7 @@ so_what: >
   the 2026-08-20 warm-loop receipt as a substitute for the canonical W5/Evaluation OS path.
   Repair must extend `scripts/reconcile_entry_radar.py` and its existing spool/qledger owners;
   no second forward store, qledger, R2 client, nightly writer or scheduler is authorized.
-kind: gap
+kind: runtime
 confidence: verified
 verified_at: 2026-08-28
 verified_by: "GitHub read of data/entry_radar/ledger_state.json on Macro main 2299cbafe42568ef3b088911fc80d6373e5e270d"

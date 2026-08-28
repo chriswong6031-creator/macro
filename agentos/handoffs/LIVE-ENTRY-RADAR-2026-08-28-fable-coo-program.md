@@ -1,8 +1,8 @@
 ---
 workstream: WS:LIVE-ENTRY-RADAR
 session: sol-live-entry-radar-completion-20260828
-model: gpt-5.6-sol
-ended_because: commission
+model: sol
+ended_because: complete
 
 mission: >
   Chairman-approved sustained Fable COO program ownership for completing Live Entry Radar
