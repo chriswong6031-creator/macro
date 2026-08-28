@@ -43,9 +43,19 @@ answer: >
   recorded durably in WS:ADVANCED-DATA-OPTIONS, with AD-1T2 the exact next
   AD product child after C0 lands (Runner-Fleet/M1 checks an unwaived
   action-time gate); R4 = BREATHING-PLATFORM validate red RESOLVED BY OWNER
-  (#6605 merged bca7221a2d00), historical, no new child. Every independent
-  child gets a fresh operation key, fresh Slack thread, and fresh reciprocal
-  watcher setup; Slack delivery alone is never ACK/START.
+  (#6605 merged bca7221a2d00), historical, no new child. SOL RULED AGAIN
+  2026-08-28 (RULING/CONTINUE on the BLOCKED return, ts 1787943642.701729):
+  D1 = A0 SATISFIED — the Chairman written-spec approval receipt existed on
+  #6573 (issuecomment-5446772413, verified via GitHub API) and R1's
+  no-receipt finding is corrected; not an adoption by itself. D2 = the #6576
+  merge (b0205e58f973) STANDS as the accepted plan carrier — plan/records
+  only, not an implementation START, A1 satisfied, and no authority to erase
+  #6585's out-of-order history. D3 = the OA workstream conflict weave
+  AUTHORIZED and executed on the C0 carrier; #6585 remains PARK /
+  CONDITIONAL-ADOPT ONLY gated on A2–A6 plus a future explicit Sol adoption
+  ruling. Every independent child gets a fresh operation key, fresh Slack
+  thread, and fresh reciprocal watcher setup; Slack delivery alone is never
+  ACK/START.
 rationale: >
   Four active workstreams, three research masterplans with divergent wave
   vocabularies, and three live carriers were advancing without a shared
@@ -101,6 +111,7 @@ evidence:
   - "python3 scripts/agentos.py validate on base afe173f6f46c: 7 pre-existing errors, all in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md"
   - "Sol C0 dispatch thread C0BSBM78V1N/1787900289.577559 messages 1-4 (collision ledger, dependency freeze, scope/stop contract, Sol WATCH_ARMED)"
   - "Sol REQUEST_REPAIR/CONTINUE ruling: same thread, reply ts 1787917578.265239 (R1 park/conditional-adopt; R2 ratified + registry widening authorized; R3 AD-1T1 accepted; R4 resolved by owner via #6605 merge bca7221a2d0020d15d220ffa814b753d1a7a6561)"
+  - "Sol RULING/CONTINUE on the BLOCKED return: same thread, reply ts 1787943642.701729 (D1 A0 satisfied via macro#6573 issuecomment-5446772413, receipt verified by gh api; D2 #6576 merge b0205e58f973 stands, A1 satisfied; D3 OA weave authorized)"
 affects:
   - WS:ADVANCED-DATA-OPTIONS
   - WS:INTRADAY-FLOW-P0-RECOVERY

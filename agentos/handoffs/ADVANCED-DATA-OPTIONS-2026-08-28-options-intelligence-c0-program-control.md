@@ -46,15 +46,15 @@ changed:
       registry edit, foreign validate-red repair), and review_by 2026-09-11.
   - path: agentos/workstreams/WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md
     what: >
-      Truth repair: OA-0 stays in_progress with pr 6573 recorded (carrier
-      merged; the merged DEC's Chairman written-spec gate has no approval
-      receipt, so the wave cannot close — masterplan §10-A0); the three
-      replaced gate texts are paraphrased in-row and reproduced VERBATIM in
-      the body, with their prohibitions restated as still binding; OA-1T-MACRO
-      row records #6576/#6585 reality, no-lawful-START, SOL STOP, MAS-175,
-      diff-content-unreviewed, and the §10 A0-A6 recommendation; footer
-      next_action -> A0 receipt then Sol ruling then child C3; DEC +
-      masterplan + this handoff linked.
+      Sol-D3-authorized conflict weave (after #6576 merged first and
+      invalidated the C0-first sequencing): main's #6576 plan-frozen/merged
+      base with OA-0 done + the D1 Chairman approval receipt
+      (macro#6573 issuecomment-5446772413) cited in-row; #6585's out-of-order
+      history (no lawful START, SOL STOP, MAS-175) preserved and composed
+      into OA-1T-MACRO with the R1 park re-gated on A2-A6; the three
+      pre-#6576 gate texts still reproduced VERBATIM in the body with a D1
+      status note (discharged by receipt — status changed, history not);
+      C0 DEC + masterplan + this handoff linked.
   - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
     what: >
       Truth repair: AD-1T0 next_action's open "Sol decision on a spine-cadence
@@ -100,13 +100,12 @@ unverified:
   - claim: "Terminal IV plane (ingest/collect_options.py) runtime state and rights posture"
     what_would_verify: "child C5 census: launchd/cron presence, output freshness, yfinance/CBOE terms review"
 unresolved:
-  - "Chairman written-spec gate (DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE): still no approval receipt; Sol ruling R1 (ts 1787917578.265239) confirmed A0 UNSATISFIED and non-inferable — #6585 stays PARK / CONDITIONAL-ADOPT ONLY until a real receipt/waiver/override plus A6 line-level review and a future Sol adoption ruling"
-  - "Sol FINAL acceptance/STOP of the repaired C0 carrier (this repair pass encodes rulings R1-R4 from ts 1787917578.265239; RESULT re-posted after exact-head CI green)"
+  - "Sol TERMINAL acceptance/STOP of the C0 carrier (all rulings through ts 1787943642.701729 encoded: R1-R4, then D1 A0-satisfied receipt macro#6573 issuecomment-5446772413, D2 #6576-merge-stands, D3 weave executed)"
   - "Children C1 (AD-1T2 — dispatch after C0 lands, entrance gate satisfied per R3), C2 (PR-4 dossier), C4 (context-audit v2 charter), C5 (IV plane) await Sol dispatch with fresh keys/threads/watchers"
 next_actions:
-  - "Await Sol final acceptance/STOP on the repaired carrier (thread C0BSBM78V1N/1787900289.577559); watcher stays armed"
-  - "After the C0 merge: dispatch C1 (AD-1T2, per R3 the exact next AD product child), C2, C4, C5 per masterplan §12, each with fresh operation key + thread + reciprocal watcher; #6576 rebases its WS-OPTIONS-ALPHA edit (masterplan §8-2)"
-  - "C3 (OA-1T carrier sequencing) executes ONLY after A0 gains a real receipt and Sol issues a future adoption ruling — R1 parked it explicitly"
+  - "Await Sol terminal acceptance/STOP on the woven carrier (thread C0BSBM78V1N/1787900289.577559); watcher stays armed"
+  - "After the C0 merge: dispatch C1 (AD-1T2, per R3 the exact next AD product child), C2, C4, C5 per masterplan §12, each with fresh operation key + thread + reciprocal watcher"
+  - "C3 (OA-1T carrier sequencing) executes ONLY after a future explicit Sol adoption ruling; remaining gates A2-A6 (A0/A1 satisfied per D1/D2) — A6 line-level diff review first, a FAIL voids the recommendation"
 do_not_redo:
   - "Do not re-run the three C0 censuses (owners / specs / PR+code reality) - their receipts are in masterplan §3/§8 and this handoff; re-census only on new evidence"
   - "Do not mint a replacement implementation carrier for OA-1T-MACRO - forbidden by the Sol C0 ledger; #6585 adjudication is §10"
