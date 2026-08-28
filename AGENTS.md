@@ -636,6 +636,22 @@ information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
 
+**Hold notes do not end the Stop loop — go quiet through the ladder, not through
+repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
+above but is not terminal to the guard: the Stop hook blocks again seconds later,
+and a session that answers every block with another note types near-identical
+hold notes in a tight billed loop for hours (about one hundred such turns measured
+on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
+under an armed watcher; the cost is context × turns and the notes carry zero
+information after the first). When a long external wait is owned by an armed
+watcher or cron and the guard keeps blocking, check the escape-ladder threshold
+(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
+literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
+the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
+no per-Stop hold notes, no tailing your own watcher's output file between ticks.
+Real events (watcher exit, cron fire, task notification, operator message)
+re-invoke the session; that is the only lawful cadence for a parked wait.
+
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 

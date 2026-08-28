@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
   "as_of": "2026-08-28",
-  "generated_at": "2026-08-28T07:49:35.823839+00:00",
+  "generated_at": "2026-08-28T13:23:11.423623+00:00",
   "is_context_only": true,
-  "n_snapshots": 193292,
+  "n_snapshots": 193323,
   "horizons": {
     "5": {
       "n_matured": 105059,
@@ -216,9 +216,9 @@
         "mean_ic": -0.0244,
         "ic_vol": 0.1074,
         "ic_ir": -0.227,
-        "ic_ir_ann": -1.473,
+        "ic_ir_ann": -1.474,
         "t_hac": -0.847,
-        "p_hac": 0.397,
+        "p_hac": 0.3969,
         "hit": 0.5,
         "n": 38,
         "hac_lags": 21,

@@ -75,7 +75,7 @@
   <url><loc>https://www.mastermind-x.com/tools/calculators/stop-loss-take-profit.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/calculators/trade-profit.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/tools/spreadsheets/trading-journal.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mastermind-x.com/stocks/index.html</loc><lastmod>2026-08-27</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.mastermind-x.com/stocks/index.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/MMM.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/ON.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/OMC.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
@@ -1550,7 +1550,6 @@
   <url><loc>https://www.mastermind-x.com/stocks/TIPT.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/PAR.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/GYRE.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
-  <url><loc>https://www.mastermind-x.com/stocks/STTK.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/HYLN.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/AROW.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/PRAA.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
@@ -1623,6 +1622,7 @@
   <url><loc>https://www.mastermind-x.com/stocks/FTK.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/BZH.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/ABUS.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/stocks/THFF.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/ARI.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/CAC.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/DAKT.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
@@ -1945,6 +1945,7 @@
   <url><loc>https://www.mastermind-x.com/stocks/SVV.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/CLVT.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/DSGR.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.mastermind-x.com/stocks/FCEL.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/LILAK.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/KMTS.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>
   <url><loc>https://www.mastermind-x.com/stocks/TBLA.html</loc><lastmod>2026-08-28</lastmod><changefreq>daily</changefreq><priority>0.6</priority></url>

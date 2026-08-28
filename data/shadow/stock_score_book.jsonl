@@ -4332,3 +4332,5 @@
 {"date": "2026-08-27", "ticker": "WEN", "score": 21.0, "percentile": 0.5811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-08-27", "ticker": "WYNN", "score": 0.0, "percentile": 0.0811965811965812, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
 {"date": "2026-08-27", "ticker": "CPRT", "score": 27.0, "percentile": 0.6282051282051282, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "SNDR", "score": 8.0, "percentile": 0.32051282051282054, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}
+{"date": "2026-08-27", "ticker": "MOS", "score": 4.0, "percentile": 0.21794871794871795, "regime": "mixed", "horizons": [21, 63, 126], "pct_basis": "xs_rank"}

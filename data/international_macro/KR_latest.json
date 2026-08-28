@@ -8,7 +8,7 @@
   "scope_en": "Republic of Korea national economy; KOSPI is market context.",
   "scope_zh": "大韩民国全国经济；KOSPI仅作市场背景。",
   "asof": "2026-08-28",
-  "built": "2026-08-28 07:25 UTC",
+  "built": "2026-08-28 12:59 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -183,13 +183,13 @@
     "index_label": "KOSPI",
     "currency_label": "USD/KRW",
     "equity": {
-      "price": 6830.81,
-      "off_52w_high": -25.1,
+      "price": 6788.88,
+      "off_52w_high": -25.5,
       "above_50d": false,
       "above_200d": true,
-      "realvol": 78.2,
-      "rsi": 51.0,
-      "ext_z": -1.37,
+      "realvol": 78.4,
+      "rsi": 50.0,
+      "ext_z": -1.41,
       "ext_grade": "steady",
       "drawdown_risk": 70.0,
       "drawdown_band": "elevated",
@@ -210,11 +210,11 @@
     "h21": 0.289,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 30.8,
+      "intensity": 30.6,
       "peak": 64.9,
       "peak_days_ago": 25,
-      "off_peak": 34.1,
-      "velocity": -6.9,
+      "off_peak": 34.3,
+      "velocity": -7.1,
       "phase": "calm",
       "reached_risk": false,
       "state_now": "calm",
@@ -245,16 +245,16 @@
         24.4,
         27.0,
         31.0,
-        30.8
+        30.6
       ],
-      "spark_pts": "3.0,3.0 6.9,9.2 10.8,17.0 14.7,14.7 18.7,5.9 22.6,8.2 26.5,9.8 30.4,8.4 34.3,11.4 38.2,14.2 42.1,10.6 46.0,12.5 50.0,15.0 53.9,13.9 57.8,9.2 61.7,11.6 65.6,16.7 69.5,17.5 73.4,16.3 77.3,22.1 81.3,23.0 85.2,21.7 89.1,19.7 93.0,19.8",
+      "spark_pts": "3.0,3.0 6.9,9.2 10.8,17.0 14.7,14.7 18.7,5.9 22.6,8.2 26.5,9.8 30.4,8.4 34.3,11.4 38.2,14.2 42.1,10.6 46.0,12.5 50.0,15.0 53.9,13.9 57.8,9.2 61.7,11.6 65.6,16.7 69.5,17.5 73.4,16.3 77.3,22.1 81.3,23.0 85.2,21.7 89.1,19.7 93.0,19.9",
       "spark_peak": {
         "x": 3.0,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 19.8
+        "y": 19.9
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,7 +266,7 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 85.6,
+        "score": 85.1,
         "band": "elevated",
         "firing_legs": [
           {
@@ -276,7 +276,7 @@
           },
           {
             "leg": "ext_idx",
-            "pctile": 0.822,
+            "pctile": 0.811,
             "confirmed": false
           }
         ]
@@ -379,8 +379,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -25.1,
-      "value": "-25.10%",
+      "raw": -25.5,
+      "value": "-25.50%",
       "unit": "%",
       "asof": null
     },
@@ -388,8 +388,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 78.2,
-      "value": "78.20%",
+      "raw": 78.4,
+      "value": "78.40%",
       "unit": "%",
       "asof": null
     }
