@@ -23929,16 +23929,16 @@
   "budget_s": 480.0,
   "cap": 400,
   "census": {
-   "already_stored": 5510,
+   "already_stored": 5536,
    "bucket_1_current": 0,
-   "bucket_2_recent": 1650,
+   "bucket_2_recent": 1624,
    "bucket_3_rest": 0,
    "hub_current_surface": 40,
    "hub_universe": 55,
    "ledger_tickers": 7911,
-   "missing": 2536,
+   "missing": 2510,
    "parked": 0,
-   "queue": 1650,
+   "queue": 1624,
    "union_needed": 7912,
    "unsupported_sample": [
     "()",
@@ -23957,8 +23957,8 @@
    "unsupported_symbols": 886
   },
   "dry_run": false,
-  "elapsed_s": 56.1,
-  "no_data": 330,
+  "elapsed_s": 54.2,
+  "no_data": 355,
   "parked": 0,
   "period": "max",
   "planned": 400,
@@ -23971,10 +23971,10 @@
   "refreshable": 0,
   "refreshed": 0,
   "remaining": 1624,
-  "schema_rejected": 44,
-  "short_history": 3,
-  "started_utc": "2026-08-28T04:44:55+00:00",
-  "written": 26
+  "schema_rejected": 45,
+  "short_history": 0,
+  "started_utc": "2026-08-28T10:15:02+00:00",
+  "written": 0
  },
  "parked": {},
  "pending": {
@@ -25944,944 +25944,944 @@
    "last_attempt": "2026-08-28T04:45:49+00:00"
   },
   "DNG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DNG'",
-   "last_attempt": "2026-08-14T02:05:48+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DOM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DOM'",
-   "last_attempt": "2026-08-14T02:05:48+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DONE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DONE'",
-   "last_attempt": "2026-08-14T02:05:48+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DR'",
-   "last_attempt": "2026-08-14T02:05:51+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DRE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DRE'",
-   "last_attempt": "2026-08-14T02:05:51+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DRMAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:01+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DSX-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DSX-WT'",
-   "last_attempt": "2026-08-14T02:05:55+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DSX.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DSX-WS'",
-   "last_attempt": "2026-08-14T02:05:55+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DSXPB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DSXPB'",
-   "last_attempt": "2026-08-14T02:05:55+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DTC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DTC'",
-   "last_attempt": "2026-08-14T02:05:55+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DTOL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DTOL'",
-   "last_attempt": "2026-08-14T02:05:55+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DUI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DUI'",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DUKEOFS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DUKEOFS'",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DUNIY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DUNIY'",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DURLAX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DURLAX'",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DVAX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DVAX'",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DVRNF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: non-positive close (min -2.384)",
-   "last_attempt": "2026-08-14T02:05:58+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "DXS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'DXS'",
-   "last_attempt": "2026-08-14T02:06:02+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "EAM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EAM'",
-   "last_attempt": "2026-08-14T02:06:02+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "EAPI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EAPI'",
-   "last_attempt": "2026-08-14T02:06:02+00:00"
+   "last_attempt": "2026-08-28T10:15:05+00:00"
   },
   "EASOR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EASOR'",
-   "last_attempt": "2026-08-14T02:06:02+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EBR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EBR'",
-   "last_attempt": "2026-08-14T02:06:05+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ECDA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ECDA'",
-   "last_attempt": "2026-08-14T02:06:05+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ECM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ECM'",
-   "last_attempt": "2026-08-14T02:06:05+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ECOM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ECOM'",
-   "last_attempt": "2026-08-14T02:06:05+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ECXWW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:05+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EEG1T": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EEG1T'",
-   "last_attempt": "2026-08-14T02:06:09+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EEI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EEI'",
-   "last_attempt": "2026-08-14T02:06:09+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EEX": {
-   "attempts": 1,
-   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:09+00:00"
+   "attempts": 2,
+   "error": "[backfill] no data returned for vendor symbol 'EEX'",
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EEZY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EEZY'",
-   "last_attempt": "2026-08-14T02:06:09+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EG7": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EG7'",
-   "last_attempt": "2026-08-14T02:06:09+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EHAB": {
-   "attempts": 1,
-   "error": "[backfill] no data returned for vendor symbol 'EHAB'",
-   "last_attempt": "2026-08-14T02:06:12+00:00"
+   "attempts": 2,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EIFF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EIFF'",
-   "last_attempt": "2026-08-14T02:06:12+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EKSO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EKSO'",
-   "last_attempt": "2026-08-14T02:06:12+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ELIC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ELIC'",
-   "last_attempt": "2026-08-14T02:06:15+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ELK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ELK'",
-   "last_attempt": "2026-08-14T02:06:15+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ELSYY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ELSYY'",
-   "last_attempt": "2026-08-14T02:06:15+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "ELUX-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ELUX-B'",
-   "last_attempt": "2026-08-14T02:06:15+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EMAMILTD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EMAMILTD'",
-   "last_attempt": "2026-08-14T02:06:18+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EMAN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EMAN'",
-   "last_attempt": "2026-08-14T02:06:18+00:00"
+   "last_attempt": "2026-08-28T10:15:08+00:00"
   },
   "EMBRAC-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EMBRAC-B'",
-   "last_attempt": "2026-08-14T02:06:18+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EMGS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EMGS'",
-   "last_attempt": "2026-08-14T02:06:18+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENG'",
-   "last_attempt": "2026-08-14T02:06:19+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENGI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENGI'",
-   "last_attempt": "2026-08-14T02:06:19+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENGNW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:19+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENI'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENPX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENQ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENQ'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENRDW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENRDW'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENRG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENSCW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENSCW'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENVMY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENVMY'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ENX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ENX'",
-   "last_attempt": "2026-08-14T02:06:21+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EOLE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EOLE'",
-   "last_attempt": "2026-08-14T02:06:22+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EONR-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EONR-WT'",
-   "last_attempt": "2026-08-14T02:06:22+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EOSER": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EOSER'",
-   "last_attempt": "2026-08-14T02:06:25+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EPIS-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EPIS-B'",
-   "last_attempt": "2026-08-14T02:06:25+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "EPPC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EPPC'",
-   "last_attempt": "2026-08-14T02:06:25+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ERA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ERA'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ERCROS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ERCROS'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:10+00:00"
   },
   "ERE-UN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ERE-UN'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ERNAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ERNAW'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ERRFY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ERRFY'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESCORTS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESCORTS'",
-   "last_attempt": "2026-08-14T02:06:28+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESGR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESGR'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESLAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESLAW'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESPR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESSITY-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESSITY-B'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESSO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESSO'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESTR3": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESTR3'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ESYS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ESYS'",
-   "last_attempt": "2026-08-14T02:06:31+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ETPI": {
-   "attempts": 1,
-   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:34+00:00"
+   "attempts": 2,
+   "error": "[backfill] no data returned for vendor symbol 'ETPI'",
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "ETSS-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ETSS-WT'",
-   "last_attempt": "2026-08-14T02:06:34+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EUDAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:34+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EUR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EUR'",
-   "last_attempt": "2026-08-14T02:06:34+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EVGOW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:34+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EVK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EVK'",
-   "last_attempt": "2026-08-14T02:06:39+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EVLVW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-14T02:06:39+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EVOK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EVOK'",
-   "last_attempt": "2026-08-14T02:06:39+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EWCZ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EWCZ'",
-   "last_attempt": "2026-08-14T02:06:39+00:00"
+   "last_attempt": "2026-08-28T10:15:13+00:00"
   },
   "EWIT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EWIT'",
-   "last_attempt": "2026-08-14T02:06:39+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "EXTX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EXTX'",
-   "last_attempt": "2026-08-14T02:06:43+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "EZL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'EZL'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "F-PD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'F-PD'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FACWW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FACWW'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FAIRCHEN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FAIRCHEN'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FAME": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FAME'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FARM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FARM'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FARN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FARN'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FARON": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FARON'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FASA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FASA'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FAT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FAT'",
-   "last_attempt": "2026-08-14T02:06:47+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FBRTPE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FBRTPE'",
-   "last_attempt": "2026-08-14T02:06:51+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FBU": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FBU'",
-   "last_attempt": "2026-08-14T02:06:51+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FCO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FCO'",
-   "last_attempt": "2026-08-18T04:20:11+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FCR-UN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FCR-UN'",
-   "last_attempt": "2026-08-18T04:20:11+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FEC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FEC'",
-   "last_attempt": "2026-08-18T04:20:12+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FEG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FEG'",
-   "last_attempt": "2026-08-18T04:20:12+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FEN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FEN'",
-   "last_attempt": "2026-08-18T04:20:12+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FERR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FERR'",
-   "last_attempt": "2026-08-18T04:20:14+00:00"
+   "last_attempt": "2026-08-28T10:15:15+00:00"
   },
   "FFAIW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:14+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FFIC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FFIC'",
-   "last_attempt": "2026-08-18T04:20:14+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FFIE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FFIE'",
-   "last_attempt": "2026-08-18T04:20:14+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FFWM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FFWM'",
-   "last_attempt": "2026-08-18T04:20:15+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FGMCR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FGMCR'",
-   "last_attempt": "2026-08-18T04:20:15+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FGR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FGR'",
-   "last_attempt": "2026-08-18T04:20:15+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FGRS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FGRS'",
-   "last_attempt": "2026-08-18T04:20:18+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FIH": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FIH'",
-   "last_attempt": "2026-08-18T04:20:18+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FILA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FILA'",
-   "last_attempt": "2026-08-18T04:20:18+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FIPP": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FIPP'",
-   "last_attempt": "2026-08-18T04:20:18+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FITBP": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FITBP'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FITBPA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FITBPA'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FITBPI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FITBPI'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FITBPK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FITBPK'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FITBPM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FITBPM'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FLDDW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FLER": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FLER'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FLK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FLK'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FLT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FLT'",
-   "last_attempt": "2026-08-18T04:20:24+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FLYX-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FLYX-WT'",
-   "last_attempt": "2026-08-18T04:20:27+00:00"
+   "last_attempt": "2026-08-28T10:15:18+00:00"
   },
   "FMSTW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:27+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FNAC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FNAC'",
-   "last_attempt": "2026-08-18T04:20:27+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FNT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FNT'",
-   "last_attempt": "2026-08-18T04:20:30+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FONR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FONR'",
-   "last_attempt": "2026-08-18T04:20:30+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FOOD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FOOD'",
-   "last_attempt": "2026-08-18T04:20:30+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FORA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FORA'",
-   "last_attempt": "2026-08-18T04:20:30+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FORTIS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FORTIS'",
-   "last_attempt": "2026-08-18T04:20:30+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FOXOW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FOXOW'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FOXXW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FPAISA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FPAISA'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FPB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FPB'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FPC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FPC'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FPD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FPD'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FRACTAL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FRACTAL'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FRAS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FRAS'",
-   "last_attempt": "2026-08-18T04:20:33+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FRNT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FRNT'",
-   "last_attempt": "2026-08-18T04:20:36+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FRS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FRS'",
-   "last_attempt": "2026-08-18T04:20:36+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FSHPR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FSHPR'",
-   "last_attempt": "2026-08-18T04:20:39+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FTAIN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FTAIN'",
-   "last_attempt": "2026-08-18T04:20:39+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FTHAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FTHAW'",
-   "last_attempt": "2026-08-18T04:20:39+00:00"
+   "last_attempt": "2026-08-28T10:15:21+00:00"
   },
   "FTW-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FTW-WT'",
-   "last_attempt": "2026-08-18T04:20:43+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "FUFUW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:43+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "FUM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FUM'",
-   "last_attempt": "2026-08-18T04:20:43+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "FVGPY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'FVGPY'",
-   "last_attempt": "2026-08-18T04:20:43+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GABI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GABI'",
-   "last_attempt": "2026-08-18T04:20:46+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GABRIEL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GABRIEL'",
-   "last_attempt": "2026-08-18T04:20:46+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GAERF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: non-positive close (min -0.0039556)",
-   "last_attempt": "2026-08-18T04:20:46+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GAIL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GAIL'",
-   "last_attempt": "2026-08-18T04:20:46+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GALAXYAGR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GALAXYAGR'",
-   "last_attempt": "2026-08-18T04:20:46+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GAMA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GAMA'",
-   "last_attempt": "2026-08-18T04:20:49+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GARFIBRES": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GARFIBRES'",
-   "last_attempt": "2026-08-18T04:20:49+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GATEWAY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GATEWAY'",
-   "last_attempt": "2026-08-18T04:20:49+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GBIO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GBIO'",
-   "last_attempt": "2026-08-18T04:20:49+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GCGRW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GCGRW'",
-   "last_attempt": "2026-08-18T04:20:49+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GCI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GCI'",
-   "last_attempt": "2026-08-18T04:20:52+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GCTS.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GCTS-WS'",
-   "last_attempt": "2026-08-18T04:20:52+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GDEVW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-27T04:37:00+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GEMS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GEMS'",
-   "last_attempt": "2026-08-18T04:20:52+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GENUS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GENUS'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GEPIL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GEPIL'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:23+00:00"
   },
   "GFC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GFC'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GFCHY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GFCHY'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GFRWF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GFRWF'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GFSTELLS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GFSTELLS'",
-   "last_attempt": "2026-08-18T04:20:55+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GFUZW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GFUZW'",
-   "last_attempt": "2026-08-18T04:20:58+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GGLBP": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GGLBP'",
-   "last_attempt": "2026-08-18T04:20:58+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GGROW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:58+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GIBOW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:20:58+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GIG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GIG'",
-   "last_attempt": "2026-08-18T04:20:58+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GIPRW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GIWWR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GIWWR'",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLASF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLDD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GLDD'",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLED-RI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GLED-RI'",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLEN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GLEN'",
-   "last_attempt": "2026-08-18T04:21:01+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLNDW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GLNDW'",
-   "last_attempt": "2026-08-18T04:21:04+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GLPL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GLPL'",
-   "last_attempt": "2026-08-18T04:21:04+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GME-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GME-WT'",
-   "last_attempt": "2026-08-18T04:21:06+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GME.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GME-WS'",
-   "last_attempt": "2026-08-18T04:21:06+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GMEXICOB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GMEXICOB'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:26+00:00"
   },
   "GMIN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GMIN'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GN'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GNI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GNI'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GNLPA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GNLPA'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GNLPB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GNLPB'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GNLPD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GNLPD'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GNLPE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GNLPE'",
-   "last_attempt": "2026-08-18T04:21:07+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GOCO": {
-   "attempts": 1,
-   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-18T04:21:10+00:00"
+   "attempts": 2,
+   "error": "[backfill] no data returned for vendor symbol 'GOCO'",
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GOCOQ": {
    "attempts": 1,
@@ -26889,1064 +26889,1064 @@
    "last_attempt": "2026-08-18T04:21:10+00:00"
   },
   "GOLL4": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GOLL4'",
-   "last_attempt": "2026-08-18T04:21:10+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GPATW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:05+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GPIL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GPIL'",
-   "last_attempt": "2026-08-19T05:07:05+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GPS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GPS'",
-   "last_attempt": "2026-08-19T05:07:05+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRAF-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRAF-WT'",
-   "last_attempt": "2026-08-19T05:07:05+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRFXY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:08+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRL'",
-   "last_attempt": "2026-08-19T05:07:08+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRMLW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRMLW'",
-   "last_attempt": "2026-08-19T05:07:08+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GROY-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GROY-WT'",
-   "last_attempt": "2026-08-19T05:07:09+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRUB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRUB'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRV": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRV'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GRZ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GRZ'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:28+00:00"
   },
   "GSMT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GSPA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GSPA'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GSPC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GSPC'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GSPD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GSPD'",
-   "last_attempt": "2026-08-19T05:07:11+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GTWO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GTWO'",
-   "last_attempt": "2026-08-19T05:07:15+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GUACW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GUACW'",
-   "last_attempt": "2026-08-19T05:07:15+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GUARD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GUARD'",
-   "last_attempt": "2026-08-19T05:07:15+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GUJGASLTD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GUJGASLTD'",
-   "last_attempt": "2026-08-19T05:07:15+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GVS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GVS'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GWH-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GWH-WT'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GWHWW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GWHWW'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GXI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GXI'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "GXX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'GXX'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "H13": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'H13'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HAB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HAB'",
-   "last_attempt": "2026-08-19T05:07:18+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HAKI-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HAKI-B'",
-   "last_attempt": "2026-08-19T05:07:22+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HBC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HBC'",
-   "last_attempt": "2026-08-19T05:07:22+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HBFG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HBFG'",
-   "last_attempt": "2026-08-19T05:07:22+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HCACR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HCACR'",
-   "last_attempt": "2026-08-19T05:07:25+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HCBN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:25+00:00"
+   "last_attempt": "2026-08-28T10:15:31+00:00"
   },
   "HCG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HCG'",
-   "last_attempt": "2026-08-19T05:07:25+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HDRNW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HDRNW'",
-   "last_attempt": "2026-08-19T05:07:25+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HEC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HEC'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HEG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HEG'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HET": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HET'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HEX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HEX'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HEXA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HEXA'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HEXA-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HEXA-B'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HGH": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HGH'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HGIT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HGIT'",
-   "last_attempt": "2026-08-19T05:07:28+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HHR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HHR'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HI'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HIL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HIL'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HILS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HILS'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HINDFOODS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HINDFOODS'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HINDZINC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HINDZINC'",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HLCO": {
-   "attempts": 1,
-   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:32+00:00"
+   "attempts": 2,
+   "error": "[backfill] no data returned for vendor symbol 'HLCO'",
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HLLY-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HLLY-WT'",
-   "last_attempt": "2026-08-19T05:07:35+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HLPB": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HLPB'",
-   "last_attempt": "2026-08-19T05:07:35+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HLS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HLS'",
-   "last_attempt": "2026-08-19T05:07:35+00:00"
+   "last_attempt": "2026-08-28T10:15:33+00:00"
   },
   "HNNAZ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:35+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HO'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HOME": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HOME'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HOOK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HOOK'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HOT-UN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HOT-UN'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HOTEL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HOTEL'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HOTH": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HOTH'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HPEPC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HPEPC'",
-   "last_attempt": "2026-08-19T05:07:39+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HPUR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HPUR'",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HR-UN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HR-UN'",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HRGV": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HRGV'",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HRS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HRS'",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSBA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HSBA'",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSCSW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:42+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSPT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HSPT'",
-   "last_attempt": "2026-08-19T05:07:46+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSPTU": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HSPTU'",
-   "last_attempt": "2026-08-19T05:07:46+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSPWF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HSPWF'",
-   "last_attempt": "2026-08-19T05:07:46+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HSTO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HSTO'",
-   "last_attempt": "2026-08-19T05:07:46+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HTBK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HTBK'",
-   "last_attempt": "2026-08-19T05:07:46+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HTZWW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:49+00:00"
+   "last_attempt": "2026-08-28T10:15:36+00:00"
   },
   "HUBCZ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:49+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "HUMAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:07:49+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "HVIIR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HVIIR'",
-   "last_attempt": "2026-08-19T05:07:49+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "HVPE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HVPE'",
-   "last_attempt": "2026-08-19T05:07:49+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "HYPRO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'HYPRO'",
-   "last_attempt": "2026-08-19T05:07:53+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IAC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IAC'",
-   "last_attempt": "2026-08-19T05:07:53+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IAUX-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IAUX-WT'",
-   "last_attempt": "2026-08-19T05:07:53+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IBE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IBE'",
-   "last_attempt": "2026-08-19T05:07:53+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "ICI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ICI'",
-   "last_attempt": "2026-08-19T05:07:56+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "ICO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ICO'",
-   "last_attempt": "2026-08-19T05:07:56+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "ICRA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ICRA'",
-   "last_attempt": "2026-08-19T05:07:56+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "ID8": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ID8'",
-   "last_attempt": "2026-08-19T05:07:56+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IDHC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IDHC'",
-   "last_attempt": "2026-08-19T05:07:56+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IDNTT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IDNTT'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IDOX": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IDOX'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IEM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IEM'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IFHLY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IFL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IFL'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IFR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IFR'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IFT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IFT'",
-   "last_attempt": "2026-08-19T05:08:00+00:00"
+   "last_attempt": "2026-08-28T10:15:39+00:00"
   },
   "IGESL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IGESL'",
-   "last_attempt": "2026-08-19T05:08:03+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "IGG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IGG'",
-   "last_attempt": "2026-08-19T05:08:03+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "IGTAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IGTAW'",
-   "last_attempt": "2026-08-19T05:08:03+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "IIG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IIG'",
-   "last_attempt": "2026-08-19T05:08:03+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "IJM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IJM'",
-   "last_attempt": "2026-08-19T05:08:07+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "ILLRW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ILLRW'",
-   "last_attempt": "2026-08-19T05:08:07+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "IMAQW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IMAQW'",
-   "last_attempt": "2026-08-19T05:08:07+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDCT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDCT'",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDGL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDGL'",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDGLYCO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDGLYCO'",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDIAGL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDIAGL'",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDIGO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDIGO'",
-   "last_attempt": "2026-08-19T22:48:10+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INDOTHAI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INDOTHAI'",
-   "last_attempt": "2026-08-19T22:48:13+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INFQ-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INFQ-WT'",
-   "last_attempt": "2026-08-19T22:48:13+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INFQ.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INFQ-WS'",
-   "last_attempt": "2026-08-19T22:48:13+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INIK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INIK'",
-   "last_attempt": "2026-08-19T22:48:13+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INLZ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INLZ'",
-   "last_attempt": "2026-08-19T22:48:13+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INPST": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INPST'",
-   "last_attempt": "2026-08-19T22:48:17+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INST": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INST'",
-   "last_attempt": "2026-08-19T22:48:17+00:00"
+   "last_attempt": "2026-08-28T10:15:41+00:00"
   },
   "INTEGO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INTEGO'",
-   "last_attempt": "2026-08-19T22:48:17+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "INTRUM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INTRUM'",
-   "last_attempt": "2026-08-19T22:48:17+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "INVLW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'INVLW'",
-   "last_attempt": "2026-08-19T22:48:17+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IOBT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IOBT'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IONQ-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IONQ-WT'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IONQ.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IONQ-WS'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IPCXR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IPCXR'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IPEXR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IPEXR'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IPF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IPF'",
-   "last_attempt": "2026-08-19T22:48:20+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IPN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IPN'",
-   "last_attempt": "2026-08-19T22:48:23+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IPSAY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IPSAY'",
-   "last_attempt": "2026-08-19T22:48:23+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IQMXW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IQMXW'",
-   "last_attempt": "2026-08-19T22:48:23+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IRAB-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IRAB-WT'",
-   "last_attempt": "2026-08-19T22:48:23+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IRBT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IRBT'",
-   "last_attempt": "2026-08-19T22:48:23+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IRLAB-A": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IRLAB-A'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "IRSSY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IRSSY'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "ISADY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISADY'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "ISAT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISAT'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "ISC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISC'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "ISIG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISIG'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:44+00:00"
   },
   "ISLWF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISLWF'",
-   "last_attempt": "2026-08-19T22:48:26+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ISORF": {
-   "attempts": 1,
-   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "attempts": 2,
+   "error": "[backfill] no data returned for vendor symbol 'ISORF'",
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ISV": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ISV'",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ITD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ITD'",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ITHEY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ITHEY'",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ITRK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ITRK'",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "ITRM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'ITRM'",
-   "last_attempt": "2026-08-19T22:48:31+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "IUDAF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IUDAF'",
-   "last_attempt": "2026-08-19T22:48:35+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "IVDAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:35+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "IVG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IVG'",
-   "last_attempt": "2026-08-19T22:48:35+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "IXI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IXI'",
-   "last_attempt": "2026-08-19T22:48:38+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "IYKOTHITE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'IYKOTHITE'",
-   "last_attempt": "2026-08-19T22:48:39+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JACS-RI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JACS-RI'",
-   "last_attempt": "2026-08-19T22:48:39+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JBHL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JBHL'",
-   "last_attempt": "2026-08-19T22:48:42+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JDEP": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JDEP'",
-   "last_attempt": "2026-08-19T22:48:42+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JEGI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JEGI'",
-   "last_attempt": "2026-08-19T22:48:42+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JENA-RI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JENA-RI'",
-   "last_attempt": "2026-08-19T22:48:45+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JFC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JFC'",
-   "last_attempt": "2026-08-19T22:48:45+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JHG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:45+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JMAT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JMAT'",
-   "last_attempt": "2026-08-19T22:48:45+00:00"
+   "last_attempt": "2026-08-28T10:15:46+00:00"
   },
   "JMG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JMG'",
-   "last_attempt": "2026-08-19T22:48:45+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JOBY-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JOBY-WT'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JOBY.WS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JOBY-WS'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPEIF": {
-   "attempts": 1,
-   "error": "[backfill] no data returned for vendor symbol 'JPEIF'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "attempts": 2,
+   "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPC'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPD'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPJ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPJ'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPK": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPK'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPL'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JPMPM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JPMPM'",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JSPRW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:49+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JSWENERGY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JSWENERGY'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JTC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JTC'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JUBLFOOD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JUBLFOOD'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JWN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JWN'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "JYEU": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'JYEU'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "K2LT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'K2LT'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "KALPATARU": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KALPATARU'",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "KALV": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:48:54+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "KCC": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KCC'",
-   "last_attempt": "2026-08-19T22:48:58+00:00"
+   "last_attempt": "2026-08-28T10:15:49+00:00"
   },
   "KCN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KCN'",
-   "last_attempt": "2026-08-19T22:48:58+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KCO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KCO'",
-   "last_attempt": "2026-08-19T22:48:58+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KCOGN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KCOGN'",
-   "last_attempt": "2026-08-19T22:48:58+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KER": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KER'",
-   "last_attempt": "2026-08-19T22:49:01+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KESKO": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KESKO'",
-   "last_attempt": "2026-08-19T22:49:01+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KESORAM": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KESORAM'",
-   "last_attempt": "2026-08-19T22:49:01+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KETL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KETL'",
-   "last_attempt": "2026-08-19T22:49:01+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KEYYW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KEYYW'",
-   "last_attempt": "2026-08-19T22:49:01+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KGCRF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KGCRF'",
-   "last_attempt": "2026-08-19T22:49:02+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KIDZW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:02+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KITTW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:07+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KKRPD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KKRPD'",
-   "last_attempt": "2026-08-19T22:49:07+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KLARA-B": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KLARA-B'",
-   "last_attempt": "2026-08-19T22:49:07+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KMD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KMD'",
-   "last_attempt": "2026-08-19T22:49:07+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KMSUGAR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KMSUGAR'",
-   "last_attempt": "2026-08-19T22:49:11+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KOG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KOG'",
-   "last_attempt": "2026-08-19T22:49:11+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KORE": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:11+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KORGW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KORGW'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KPLTW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KPLTW'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KPN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KPN'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:52+00:00"
   },
   "KRYCY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KRYCY'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KSI": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KSI'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KSN": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KSN'",
-   "last_attempt": "2026-08-19T22:49:14+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KTTAW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KVACW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KVIKA": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KVIKA'",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KW'",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KWALITY": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KWALITY'",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KWIL": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KWIL'",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KWMWW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:17+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KYIVW": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] schema gate: 1 row(s) \u2014 a one-bar stub, not a series",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KYS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KYS'",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KZG": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KZG'",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "KZR": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'KZR'",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "L38": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'L38'",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LABS": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'LABS'",
-   "last_attempt": "2026-08-19T22:49:21+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LANV-WT": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'LANV-WT'",
-   "last_attempt": "2026-08-20T01:28:59+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LANWF": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'LANWF'",
-   "last_attempt": "2026-08-20T01:28:59+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LAZRQ": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'LAZRQ'",
-   "last_attempt": "2026-08-20T01:28:59+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LBRD": {
-   "attempts": 1,
+   "attempts": 2,
    "error": "[backfill] no data returned for vendor symbol 'LBRD'",
-   "last_attempt": "2026-08-20T01:28:59+00:00"
+   "last_attempt": "2026-08-28T10:15:54+00:00"
   },
   "LBUYD": {
    "attempts": 1,
@@ -32105,5 +32105,5 @@
   }
  },
  "schema": "yahoo_backfill_state/1",
- "updated_utc": "2026-08-28T04:45:50+00:00"
+ "updated_utc": "2026-08-28T10:15:55+00:00"
 }
