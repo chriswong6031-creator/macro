@@ -48,11 +48,13 @@ EPISODES_PATH = DATA / "episodes" / "pilot_episode_catalog_v0.parquet"
 SPEC_PATH = DATA / "ruler" / "ruler_spec_v1.json"
 FINGERPRINT_PATH = DATA / "fingerprints" / "pilot_fingerprint_v0.parquet"
 PARTITION_MANIFEST_PATH = DATA / "partition" / "partition_manifest_v1.json"
+CALIBRATION_REPLAY_MANIFEST_PATH = DATA / "ruler" / "calibration_replay_manifest_v1.json"
 
-#: Deterministic seed for the random-fire null, recorded here and in the W3
+#: Deterministic seeds for the two seeded nulls, recorded here and in the W3
 #: registration artifact (plan Task 3 Step 4 "seeds are deterministic and
 #: recorded"). Never re-drawn per invocation.
 RANDOM_NULL_SEED = 20260828
+GRAIN_CADENCE_NULL_SEED = 20260829
 EQUAL_PROXIMITY_TOLERANCE_ATR = 0.5
 
 
@@ -106,6 +108,20 @@ def _write_parquet(df: pd.DataFrame, path: Path) -> None:
     df.to_parquet(path)
 
 
+def _family_universe() -> list[str]:
+    """The W2 family registry's family_key set, read from the already-committed
+    calibration replay manifest (``w2_family_registry_reuse.spec_hashes_at_manifest_freeze``
+    keys ARE the real family_key strings, frozen at manifest-freeze time) rather
+    than re-invoking the live, heavy ``stage_registry()`` machinery here — this
+    script only needs the family NAME set, not a fresh registry build (freeze
+    review finding M10)."""
+    if not CALIBRATION_REPLAY_MANIFEST_PATH.exists():
+        return []
+    manifest = json.loads(CALIBRATION_REPLAY_MANIFEST_PATH.read_text(encoding="utf-8"))
+    hashes = manifest.get("w2_family_registry_reuse", {}).get("spec_hashes_at_manifest_freeze", {})
+    return sorted(hashes.keys())
+
+
 def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
     events, attribution, episodes = _load_pilot_inputs()
     symbols = sorted(set(episodes["symbol"].astype(str)) | set(events["symbol"].astype(str)))
@@ -113,7 +129,9 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
     spec = RulerSpec.from_json(SPEC_PATH)
 
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    unconditional = compute_unconditional_block(events, attribution, episodes)
+    families = _family_universe()
+    universe = [(fam, sym) for fam in families for sym in symbols] if families else None
+    unconditional = compute_unconditional_block(events, attribution, episodes, universe=universe)
     support = build_support_coverage(events, attribution, episodes, bars, _feature_symbols())
     cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
 
@@ -136,6 +154,10 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
         "authority": dict(spec.authority),
         "no_blind_name_table": True,
         "no_rank_or_best_output": True,
+        "n_families_in_universe": len(families),
+        "n_no_coverage_rows": (
+            int(unconditional["no_coverage"].sum()) if "no_coverage" in unconditional.columns else 0
+        ),
     }
 
     if spec.pr3_pending:
@@ -154,22 +176,33 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
             ]
 
     if include_nulls:
-        random_null_events = random_fire_null(events, episodes, seed=RANDOM_NULL_SEED, spec=spec)
-        grain_null_events = grain_cadence_null(events, episodes, spec)
-        random_null_attribution = attribution  # attribution recompute is a future wave's job;
-        # the null CONTROLS here operate at the event-sequence level (plan Task 3 Step 2), which
-        # is sufficient to test count/dwell and cadence invariance without re-running attribution.
-        proximity = equal_proximity_control(fire_metrics, EQUAL_PROXIMITY_TOLERANCE_ATR)
+        # attribution recompute is a future wave's job; the event-sequence-level
+        # null CONTROLS here (plan Task 3 Step 2) are sufficient to test
+        # count/placement and cadence invariance without re-running attribution.
+        random_null_events = random_fire_null(events, bars, seed=RANDOM_NULL_SEED)
+        grain_null_events = grain_cadence_null(events, bars, seed=GRAIN_CADENCE_NULL_SEED)
+        proximity, proximity_truncated = equal_proximity_control(fire_metrics, EQUAL_PROXIMITY_TOLERANCE_ATR)
 
         _write_parquet(random_null_events, output_dir / "null_random_fire_events_v1.parquet")
         _write_parquet(grain_null_events, output_dir / "null_grain_cadence_events_v1.parquet")
         _write_parquet(proximity, output_dir / "equal_proximity_control_v1.parquet")
+        # parquet-side summary alongside the pairs artifact (freeze review M2/M3 —
+        # any truncation must be emitted, not silently dropped; zero is expected).
+        (output_dir / "equal_proximity_summary_v1.json").write_text(
+            json.dumps(
+                {"n_pairs": int(len(proximity)), "equal_proximity_pairs_truncated": proximity_truncated},
+                indent=2, sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
         manifest["nulls"] = {
             "random_fire_seed": RANDOM_NULL_SEED,
             "random_fire_rows": int(len(random_null_events)),
+            "grain_cadence_seed": GRAIN_CADENCE_NULL_SEED,
             "grain_cadence_rows": int(len(grain_null_events)),
             "equal_proximity_tolerance_atr": EQUAL_PROXIMITY_TOLERANCE_ATR,
             "equal_proximity_pairs": int(len(proximity)),
+            "equal_proximity_pairs_truncated": proximity_truncated,
         }
 
     (output_dir / "manifest.json").write_text(

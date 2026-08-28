@@ -9,6 +9,13 @@ BEFORE any value is computed from partition data. Declared ±20% diagnostic
 sensitivity grids are registered in the TrialLedger before execution; they are
 NEVER used to re-pick a constant. This script is a ONE-TIME act: a second
 invocation refuses (the shipped spec no longer carries the pending sentinel).
+
+Before computing anything, this script verifies the substrate's own provenance
+covers the FULL drawn roster (never a partial one) and re-checks the
+recent-history guard against the substrate's own provenance fields (freeze
+review findings B1/B3) — a substrate directory built by a sampled/estimate-only
+run, or one whose bars leaked past the calibration clock's cutoff, is refused
+with a typed error rather than silently computed over.
 """
 from __future__ import annotations
 
@@ -52,10 +59,33 @@ REGISTRATION_PATH = REPO_ROOT / "research" / "stock_identity" / "W3_RULER_REGIST
 
 TRIAL_FAMILY = "stock_identity_w3_ruler_calibration"
 
+
+class PartialSubstrateError(RuntimeError):
+    """Raised when the calibration substrate's provenance does not prove
+    coverage of the FULL drawn roster (freeze review finding B1) — refuses
+    BEFORE computing anything from partition data, rather than silently
+    computing a constant off a partial roster."""
+
+
+#: B4 disclosure (adversarial review, REPAIR-BEFORE-SEAL): this repair does NOT
+#: change either rule's FORM — that decision belongs to Sol, not this packet.
+#: What changes is disclosure: the review previewed pilot/partial-derived values
+#: for these exact rule forms (lambda_fs=1.5, recall_floor=0.0 — design-tier
+#: material, SI-SEALED-CAL-P1 unread) BEFORE this repair landed. Those previews
+#: are VOID: they were never computed under receipted rule text against the real
+#: substrate, and neither rule form may be treated as accepted until Sol rules on
+#: it. Both declarations below carry this status explicitly, and it is echoed
+#: into every receipt/report this script emits. See
+#: W3_RULER_REGISTRATION.md §"Rule-review disclosure".
+RULE_REVIEW_STATUS = "declared_pending_sol_rule_review"
+
 #: --- rule-before-value: the exact selection rule for each PR-3 constant, declared
 #: as frozen text BEFORE any value exists. Hashing this string is what proves the
 #: rule predates the value (the hash is recorded in the registration in Step 2,
-#: before Step 4/5 ever run against partition data).
+#: before Step 4/5 ever run against partition data). UNCHANGED by this repair
+#: (status: declared_pending_sol_rule_review, RULE_REVIEW_STATUS above) — the
+#: rule TEXT stays byte-identical so its previously-recorded hash in
+#: W3_RULER_REGISTRATION.md §3.1 stays valid; only its review status changed.
 RECALL_FLOOR_RULE = (
     "recall_floor = the 25th percentile (P25) of the cell-level recall_at_tier "
     "distribution, computed over every (family_key, episode_type, grain) cell in "
@@ -103,7 +133,8 @@ def rule_hash(rule_text: str) -> str:
 
 def register_rules_and_grid(ledger: TrialLedger, *, info_cutoff: str) -> dict[str, Any]:
     """Step 2 + Step 3: record rule hashes and register the diagnostic grid + the
-    fit-read look budget, all BEFORE Step 4/5 touch partition data."""
+    fit-read look budget, all BEFORE Step 4/5 touch partition data. NEVER called
+    in ``--dry-run`` mode (dry-run must not write to the shared TrialLedger)."""
     n_new = ledger.log_grid(
         DIAGNOSTIC_GRID, family=TRIAL_FAMILY, info_cutoff=info_cutoff,
         source="w3_pr3_diagnostic_grid",
@@ -119,7 +150,36 @@ def register_rules_and_grid(ledger: TrialLedger, *, info_cutoff: str) -> dict[st
         "diagnostic_grid_new_trials": n_new,
         "diagnostic_grid_effective_n": ledger.effective_n(TRIAL_FAMILY),
         "fit_read_look_budget": FIT_READ_LOOK_BUDGET,
+        "rule_review_status": RULE_REVIEW_STATUS,
     }
+
+
+def assert_full_roster_coverage(
+    provenance: dict[str, Any], roster: list[str], manifest: dict[str, Any],
+) -> None:
+    """B1: before computing anything, verify the substrate's own provenance
+    covers the FULL drawn roster — both that its recorded roster hash equals the
+    replay manifest's ``roster_sha256`` AND that ``n_names_attempted`` equals the
+    drawn roster's size. Either mismatch refuses with a typed error rather than
+    silently computing a constant from a partial roster (e.g. one written by a
+    ``--sample`` run of ``stock_identity_calibration_replay.py``)."""
+    expected_hash = manifest["roster"]["roster_sha256"]
+    recorded_hash = provenance.get("roster_sha256")
+    if recorded_hash != expected_hash:
+        raise PartialSubstrateError(
+            f"substrate provenance roster_sha256={recorded_hash!r} does not match "
+            f"the replay manifest's roster_sha256={expected_hash!r} — refuse to "
+            "compute any PR-3 value from a substrate that cannot be proven to "
+            "cover the drawn roster this manifest declares"
+        )
+    n_attempted = provenance.get("n_names_attempted")
+    if n_attempted != len(roster):
+        raise PartialSubstrateError(
+            f"substrate provenance n_names_attempted={n_attempted!r} != drawn "
+            f"roster size {len(roster)} — refuse to compute any PR-3 value from a "
+            "PARTIAL roster; the calibration-fire substrate act is bounded to the "
+            "FULL drawn roster only (freeze §4.1), never a sample or estimate"
+        )
 
 
 def compute_recall_floor(cells: pd.DataFrame) -> float:
@@ -208,36 +268,41 @@ def seal_ruler_spec(
     return RulerSpec.from_json(SPEC_PATH)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--substrate-dir", required=True, type=Path,
-                    help="output-dir the calibration replay act wrote to (scratch)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="compute and print the constants WITHOUT sealing ruler_spec_v1.json")
-    args = ap.parse_args()
+def build_dry_run_report(
+    *, roster: list[str], events: pd.DataFrame, episodes: pd.DataFrame,
+    cells: pd.DataFrame, cutoff: pd.Timestamp,
+) -> dict[str, Any]:
+    """The dry-run report body (freeze review finding B1) — structure only, EVERY
+    derived PR-3 constant value is masked to a fixed non-numeric placeholder
+    string. This is a pure function so the masking property is directly
+    unit-testable without needing to fake the whole manifest/partition/replay
+    wiring: no caller of this function may pass a real ``recall_floor``/
+    ``lambda_fs`` value in — there is no parameter for one."""
+    return {
+        "schema": "stock_identity.w3_calibration_dry_run_report.v1",
+        "status": "DRY_RUN_OK",
+        "roster_n": len(roster),
+        "n_events": int(len(events)),
+        "n_episodes": int(len(episodes)),
+        "n_cells": int(len(cells)),
+        "recall_floor_rule_hash": rule_hash(RECALL_FLOOR_RULE),
+        "lambda_fs_rule_hash": rule_hash(LAMBDA_FS_RULE),
+        "rule_review_status": RULE_REVIEW_STATUS,
+        "recall_floor_value": "MASKED_DRY_RUN",
+        "lambda_fs_value": "MASKED_DRY_RUN",
+        "recent_history_guard_cutoff": str(cutoff.date()),
+        "note": "dry-run validates wiring/inputs/structure only; derived PR-3 "
+                "constant values are never printed, logged, or written in this "
+                "mode -- the only place a real value may ever appear is the real "
+                "seal's receipt. No write to data/trial_ledger.jsonl or "
+                "ruler_spec_v1.json occurs in dry-run mode.",
+    }
 
-    manifest = json.loads(REPLAY_MANIFEST_PATH.read_text(encoding="utf-8"))
-    roster = drawn_roster(manifest)
-    assert_disjoint_from_pilot_and_blind(roster)
 
-    events_path = args.substrate_dir / "calibration_events_v1.parquet"
-    attribution_path = args.substrate_dir / "calibration_attribution_v1.parquet"
-    episodes_path = args.substrate_dir / "calibration_episodes_v1.parquet"
-    if not events_path.exists() or not episodes_path.exists():
-        raise SystemExit(f"missing substrate artifacts under {args.substrate_dir} — run "
-                          "stock_identity_calibration_replay.py first")
-
-    events = pd.read_parquet(events_path)
-    attribution = pd.read_parquet(attribution_path) if attribution_path.exists() else pd.DataFrame()
-    episodes = pd.read_parquet(episodes_path)
-    for df, name in ((events, "events"), (attribution, "attribution"), (episodes, "episodes")):
-        if not df.empty and "calibration_substrate" in df.columns:
-            if not bool(df["calibration_substrate"].all()):
-                raise ValueError(f"{name}: not every row is stamped calibration_substrate=True")
-
+def _load_substrate_bars(episodes: pd.DataFrame, asof: pd.Timestamp) -> dict[str, pd.DataFrame]:
     from engine.stock_identity.plane import load_symbol
+
     plane_by_symbol = _partition_manifest()["universe"]["plane_by_symbol"]
-    asof = pd.Timestamp(_partition_manifest()["asof"])
     bars_by_symbol: dict[str, pd.DataFrame] = {}
     for sym in sorted(set(episodes["symbol"].astype(str)) if not episodes.empty else []):
         plane_id = plane_by_symbol.get(sym)
@@ -247,13 +312,98 @@ def main() -> int:
             bars_by_symbol[sym] = load_symbol(sym, plane_id, REPO_ROOT).loc[:asof]
         except (FileNotFoundError, ValueError):
             continue
+    return bars_by_symbol
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--substrate-dir", required=True, type=Path,
+                    help="output-dir the calibration replay act wrote to (scratch)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="validate wiring/inputs/structure WITHOUT printing, logging, or "
+                         "writing any derived PR-3 constant value, and WITHOUT writing to "
+                         "data/trial_ledger.jsonl or ruler_spec_v1.json")
+    args = ap.parse_args()
+
+    manifest = json.loads(REPLAY_MANIFEST_PATH.read_text(encoding="utf-8"))
+    roster = drawn_roster(manifest)
+    assert_disjoint_from_pilot_and_blind(roster)
+
+    events_path = args.substrate_dir / "calibration_events_v1.parquet"
+    attribution_path = args.substrate_dir / "calibration_attribution_v1.parquet"
+    episodes_path = args.substrate_dir / "calibration_episodes_v1.parquet"
+    provenance_path = args.substrate_dir / "provenance_receipt.json"
+    if not events_path.exists() or not episodes_path.exists():
+        raise SystemExit(f"missing substrate artifacts under {args.substrate_dir} — run "
+                          "stock_identity_calibration_replay.py first")
+    if not provenance_path.exists():
+        raise PartialSubstrateError(
+            f"missing provenance_receipt.json under {args.substrate_dir} — refuse to "
+            "compute any PR-3 value without provenance proving the substrate's coverage"
+        )
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+
+    # B1: before computing anything.
+    assert_full_roster_coverage(provenance, roster, manifest)
+
+    events = pd.read_parquet(events_path)
+    attribution = pd.read_parquet(attribution_path) if attribution_path.exists() else pd.DataFrame()
+    episodes = pd.read_parquet(episodes_path)
+    for df, name in ((events, "events"), (attribution, "attribution"), (episodes, "episodes")):
+        if not df.empty and "calibration_substrate" in df.columns:
+            if not bool(df["calibration_substrate"].all()):
+                raise ValueError(f"{name}: not every row is stamped calibration_substrate=True")
+
+    asof = pd.Timestamp(_partition_manifest()["asof"])
+    bars_by_symbol = _load_substrate_bars(episodes, asof)
 
     calendar = pd.DatetimeIndex(sorted({d for df in bars_by_symbol.values() for d in df.index}))
     cutoff = recent_history_cutoff(asof, calendar, guard_sessions=126)
     bars_by_symbol = truncate_to_guard(bars_by_symbol, cutoff)
-    assert_recent_history_guard(bars_by_symbol, cutoff)
+
+    # B3: the second barrier — checked against the substrate's OWN provenance
+    # fields (never a freshly self-truncated bars copy). The independently
+    # recomputed cutoff (from this run's own asof/calendar) must agree with what
+    # the substrate act itself recorded, and the substrate's actual events/
+    # episodes (as loaded, not re-derived) must obey that cutoff.
+    recorded_cutoff_str = provenance.get("recent_history_guard_cutoff")
+    if not recorded_cutoff_str:
+        raise RecentHistoryGuardViolation(
+            "substrate provenance carries no recent_history_guard_cutoff — refuse "
+            "to compute any PR-3 value without provenance proving the guard held"
+        )
+    recorded_cutoff = pd.Timestamp(recorded_cutoff_str)
+    if recorded_cutoff != cutoff:
+        raise RecentHistoryGuardViolation(
+            f"recomputed recent-history cutoff {cutoff.date()} does not match the "
+            f"substrate provenance's recorded cutoff {recorded_cutoff.date()} — "
+            "refuse to compute any PR-3 value from a substrate whose guard clock "
+            "cannot be independently reproduced"
+        )
+    assert_recent_history_guard(events, episodes, cutoff)
 
     base_spec = RulerSpec.from_json(SPEC_PATH)
+
+    if args.dry_run:
+        # Structural validation only. The full pipeline (including the PR-3
+        # rule computation) runs so a real wiring/input defect still surfaces as
+        # an exception here, but no derived constant value is ever printed,
+        # logged, or written — the only place a real value may appear is the
+        # real seal's receipt (Step 5, non-dry-run). No write to the shared
+        # data/trial_ledger.jsonl occurs in dry-run mode (register_rules_and_grid
+        # is never called below).
+        # The returned values are deliberately UNUSED beyond isinstance() below —
+        # build_dry_run_report has no parameter through which a real value could
+        # reach the printed report.
+        recall_floor, lambda_fs, cells = compute_constants_from_substrate(
+            events, attribution, episodes, bars_by_symbol, base_spec,
+        )
+        assert isinstance(recall_floor, float) and isinstance(lambda_fs, float)  # proves computation succeeded
+        report = build_dry_run_report(
+            roster=roster, events=events, episodes=episodes, cells=cells, cutoff=cutoff,
+        )
+        print(json.dumps(report, indent=2, sort_keys=True, default=str), flush=True)
+        return 0
 
     ledger = TrialLedger(family=TRIAL_FAMILY)
     registration_receipt = register_rules_and_grid(ledger, info_cutoff=str(asof.date()))
@@ -268,12 +418,14 @@ def main() -> int:
             "value": recall_floor,
             "rule": RECALL_FLOOR_RULE,
             "rule_hash": registration_receipt["recall_floor_rule_hash"],
+            "status": RULE_REVIEW_STATUS,
             "diagnostic_variants_pm20pct": diagnostic_variants(recall_floor),
         },
         "lambda_fs": {
             "value": lambda_fs,
             "rule": LAMBDA_FS_RULE,
             "rule_hash": registration_receipt["lambda_fs_rule_hash"],
+            "status": RULE_REVIEW_STATUS,
             "diagnostic_variants_pm20pct": diagnostic_variants(lambda_fs),
         },
         "roster_sha256": manifest["roster"]["roster_sha256"],
@@ -286,9 +438,6 @@ def main() -> int:
     }
 
     print(json.dumps(receipt, indent=2, sort_keys=True, default=str), flush=True)
-
-    if args.dry_run:
-        return 0
 
     sealed = seal_ruler_spec(recall_floor, lambda_fs, receipt=receipt)
     print(json.dumps({"sealed_spec_hash": sealed.spec_hash()}, indent=2), flush=True)

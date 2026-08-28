@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +63,12 @@ PROVENANCE_SCHEMA = "stock_identity.w3_calibration_provenance.v1"
 
 class RecentHistoryGuardViolation(ValueError):
     """Raised when a bar frame carries a date beyond the recent-history guard cutoff."""
+
+
+class SampledSubstrateWriteRefused(RuntimeError):
+    """Raised when ``--sample`` is passed without ``--estimate-only`` (freeze
+    review finding B1): a sampled run may write timing output only, never a
+    substrate directory, never a provenance receipt with status OK."""
 
 
 @dataclass
@@ -128,10 +135,13 @@ def recent_history_cutoff(asof: pd.Timestamp, calendar: pd.DatetimeIndex, guard_
     return cal[-(guard_sessions + 1)]
 
 
-def assert_recent_history_guard(bars_by_symbol: dict[str, pd.DataFrame], cutoff: pd.Timestamp) -> None:
-    """Raise iff any symbol's bars carry a date after ``cutoff``. Defense-in-depth
-    check called immediately before any PR-3 value is computed — the guard is
-    enforced by TRUNCATION upstream, and this call proves the truncation held."""
+def assert_bars_within_guard(bars_by_symbol: dict[str, pd.DataFrame], cutoff: pd.Timestamp) -> None:
+    """Raise iff any symbol's INPUT bars carry a date after ``cutoff``. This is the
+    bars-side, defense-in-depth check — it proves the truncation that fed event/
+    episode generation actually held. It is deliberately NOT the real guard: a
+    caller could satisfy this trivially by truncating its own bars and asserting
+    against that same truncated copy. :func:`assert_recent_history_guard` below
+    is the real guard, checked against the substrate's own OUTPUTS."""
     for sym, df in bars_by_symbol.items():
         if df is None or df.empty:
             continue
@@ -140,6 +150,35 @@ def assert_recent_history_guard(bars_by_symbol: dict[str, pd.DataFrame], cutoff:
                 f"{sym}: bars extend to {df.index.max()}, beyond the recent-history "
                 f"guard cutoff {cutoff} — the constant-setting input is contaminated"
             )
+
+
+def assert_recent_history_guard(
+    events: pd.DataFrame, episodes: pd.DataFrame, cutoff: pd.Timestamp,
+) -> None:
+    """The REAL recent-history guard (freeze review finding B3): raises iff the
+    calibration-fire substrate's own OUTPUTS carry a date beyond ``cutoff`` — the
+    max fire ``signal_known_ts`` in ``events``, or the max episode ``end_date``/
+    ``start_date`` in ``episodes``. This is checked against what the substrate
+    actually produced, never against a caller's own freshly-truncated input bars
+    (which would trivially always pass and prove nothing about the real output).
+    """
+    if events is not None and not events.empty and "signal_known_ts" in events.columns:
+        max_known = pd.to_datetime(events["signal_known_ts"]).max()
+        if pd.notna(max_known) and max_known > cutoff:
+            raise RecentHistoryGuardViolation(
+                f"events: max signal_known_ts {max_known} exceeds the recent-history "
+                f"guard cutoff {cutoff} — the constant-setting substrate is contaminated"
+            )
+    if episodes is not None and not episodes.empty:
+        for col in ("end_date", "start_date"):
+            if col not in episodes.columns:
+                continue
+            max_date = pd.to_datetime(episodes[col], errors="coerce").max()
+            if pd.notna(max_date) and max_date > cutoff:
+                raise RecentHistoryGuardViolation(
+                    f"episodes: max {col} {max_date} exceeds the recent-history guard "
+                    f"cutoff {cutoff} — the constant-setting substrate is contaminated"
+                )
 
 
 def truncate_to_guard(bars_by_symbol: dict[str, pd.DataFrame], cutoff: pd.Timestamp) -> dict[str, pd.DataFrame]:
@@ -158,7 +197,18 @@ def _episode_constants() -> ep_mod.EpisodeConstants:
 def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) -> SubstrateResult:
     """Execute the calibration-fire substrate over the drawn roster (or ``sample``,
     a bounded subset used ONLY for the runtime-estimate gate — never for a real
-    constant-setting read)."""
+    constant-setting read; the CLI in :func:`main` refuses a real write for a
+    sampled run, freeze review finding B1).
+
+    Recent-history guard (freeze review finding B3): events, episodes AND bars
+    are all truncated to ``recent_history_cutoff(asof)`` BEFORE any of them is
+    written or returned — an episode whose resolution would depend on
+    post-cutoff data is CENSORED at the cutoff rather than resolved, because
+    ``ep_mod.build_catalog`` only ever sees bars through the cutoff. The guard is
+    then re-checked against the substrate's own OUTPUTS
+    (:func:`assert_recent_history_guard`), not merely against the truncated
+    inputs that fed them.
+    """
     roster = drawn_roster(manifest)
     assert_disjoint_from_pilot_and_blind(roster)
     names = sample if sample is not None else roster
@@ -176,9 +226,8 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
     replayed: list[str] = []
     zero_fire: list[str] = []
     unavailable: list[dict[str, Any]] = []
-    all_rows: list[dict[str, Any]] = []
-    all_catalogs: list[pd.DataFrame] = []
-    bars_by_symbol: dict[str, pd.DataFrame] = {}
+    raw_bars: dict[str, pd.DataFrame] = {}
+    plane_id_by_symbol: dict[str, str] = {}
 
     for sym in names:
         plane_id = plane_by_symbol.get(sym)
@@ -193,8 +242,25 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         if df is None or df.empty:
             unavailable.append({"symbol": sym, "reason": "empty bar frame"})
             continue
+        raw_bars[sym] = df
+        plane_id_by_symbol[sym] = plane_id
 
-        bars_by_symbol[sym] = df
+    # B3: compute + enforce the recent-history cutoff HERE, on the combined
+    # calendar of the raw (asof-bounded, pre-cutoff) bars, and truncate every
+    # downstream input to it before anything derived from it is generated.
+    cutoff: pd.Timestamp | None = None
+    bars_by_symbol: dict[str, pd.DataFrame] = {}
+    if raw_bars:
+        full_calendar = pd.DatetimeIndex(sorted({d for df in raw_bars.values() for d in df.index}))
+        cutoff = recent_history_cutoff(asof, full_calendar, guard_sessions=126)
+        bars_by_symbol = truncate_to_guard(raw_bars, cutoff)
+        assert_bars_within_guard(bars_by_symbol, cutoff)
+
+    all_rows: list[dict[str, Any]] = []
+    all_catalogs: list[pd.DataFrame] = []
+
+    for sym, df in bars_by_symbol.items():
+        plane_id = plane_id_by_symbol[sym]
         fns = pilot_replay._fire_fns(sym, plane_id, hashes, registry, ledgers)
         sym_rows = 0
         for group in pilot_replay.FAMILY_GROUPS:
@@ -202,6 +268,9 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
             sym_rows += len(rows)
             all_rows.extend(rows)
 
+        # df is already truncated to the cutoff, so build_catalog can only ever
+        # see through-cutoff bars: an episode whose resolution would need
+        # post-cutoff data comes back CENSORED at the cutoff, never resolved.
         cat = ep_mod.build_catalog(df, symbol=sym, plane_id=plane_id, const=const)
         if not cat.empty:
             all_catalogs.append(cat)
@@ -220,6 +289,45 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         episodes_df = episodes_df.copy()
         episodes_df["calibration_substrate"] = True
 
+    n_events_guard_dropped = 0
+    n_episodes_guard_censored = 0
+    if cutoff is not None:
+        # Defense-in-depth OUTPUT-level enforcement (freeze review finding B3): a
+        # reused W2 fire/catalog function can draw on state beyond the truncated
+        # bars frame it was handed (e.g. a persisted ledger), so truncating the
+        # INPUT bars alone does not provably bound every output date. Any event
+        # that still landed beyond the cutoff is dropped here — it may never
+        # reach the substrate, written or unwritten. Any episode whose end_date
+        # still landed beyond the cutoff is re-classified CENSORED AT THE CUTOFF
+        # (never "resolved") rather than dropped, since its start/type/tier are
+        # still legitimate pre-cutoff observations.
+        if not events.empty and "signal_known_ts" in events.columns:
+            before = len(events)
+            events = events.loc[
+                pd.to_datetime(events["signal_known_ts"]) <= cutoff
+            ].reset_index(drop=True)
+            n_events_guard_dropped = before - len(events)
+
+        if not episodes_df.empty and "start_date" in episodes_df.columns:
+            episodes_df = episodes_df.loc[
+                pd.to_datetime(episodes_df["start_date"]) <= cutoff
+            ].reset_index(drop=True)
+            if "end_date" in episodes_df.columns:
+                beyond_cutoff = pd.to_datetime(episodes_df["end_date"], errors="coerce") > cutoff
+                n_episodes_guard_censored = int(beyond_cutoff.sum())
+                if n_episodes_guard_censored:
+                    episodes_df.loc[beyond_cutoff, "end_date"] = pd.NaT
+                    if "censored" in episodes_df.columns:
+                        episodes_df.loc[beyond_cutoff, "censored"] = True
+                    if "resolution" in episodes_df.columns:
+                        episodes_df.loc[beyond_cutoff, "resolution"] = "censored"
+                    if "anchor_date" in episodes_df.columns:
+                        episodes_df.loc[beyond_cutoff, "anchor_date"] = pd.NaT
+                    if "anchor_price" in episodes_df.columns:
+                        episodes_df.loc[beyond_cutoff, "anchor_price"] = np.nan
+                    if "terminated_reason" in episodes_df.columns:
+                        episodes_df.loc[beyond_cutoff, "terminated_reason"] = "recent_history_guard_cutoff"
+
     p_pre = int(json.loads(CONSTANTS_PATH.read_text(encoding="utf-8"))["values"]["P_pre"])
     cal = pd.DatetimeIndex(sorted({d for df in bars_by_symbol.values() for d in df.index}))
     attribution = (
@@ -231,6 +339,12 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         attribution["calibration_substrate"] = True
 
     wall = time.time() - t0
+
+    # B3: the REAL guard, on the substrate's own OUTPUTS -- proves the
+    # truncation above actually held all the way through event/episode
+    # generation, never merely that the input bars were pre-truncated.
+    if cutoff is not None:
+        assert_recent_history_guard(events, episodes_df, cutoff)
 
     provenance = {
         "schema": PROVENANCE_SCHEMA,
@@ -253,6 +367,18 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         "n_events": int(len(events)),
         "n_episodes": int(len(episodes_df)),
         "authority": authority_block(),
+        # B1: the receipted roster this substrate covers, checked by the
+        # constant-setting act (scripts/stock_identity_calibrate_w3.py) BEFORE it
+        # computes anything, against BOTH the manifest's roster hash and
+        # n_names_attempted == len(drawn roster).
+        "roster_sha256": manifest["roster"]["roster_sha256"],
+        # B3: recorded so a downstream reader (the calibrate_w3.py second
+        # barrier) can check the substrate's own outputs against the SAME cutoff
+        # this run enforced, rather than re-deriving and re-trusting its own copy.
+        "recent_history_guard_cutoff": str(cutoff.date()) if cutoff is not None else None,
+        "recent_history_guard_sessions": 126,
+        "n_events_dropped_by_recent_history_guard": n_events_guard_dropped,
+        "n_episodes_censored_by_recent_history_guard": n_episodes_guard_censored,
     }
 
     return SubstrateResult(
@@ -295,6 +421,23 @@ def main() -> int:
                          "WITHOUT writing a substrate receipt (never used for a real constant-setting read)")
     ap.add_argument("--output-dir", type=Path, default=SCRATCH)
     args = ap.parse_args()
+
+    # B1: --sample without --estimate-only would replay a PARTIAL roster and then
+    # fall straight into the real-write path below, writing a substrate directory
+    # and a status-OK provenance receipt for less than the full drawn roster —
+    # exactly the "partial seal + constant shopping" defect this law exists to
+    # close. A sampled run may write TIMING output only (--estimate-only), never
+    # a substrate directory, never a provenance receipt with status OK.
+    if args.sample is not None and not args.estimate_only:
+        raise SampledSubstrateWriteRefused(
+            "REFUSED: --sample without --estimate-only. The calibration-fire "
+            "substrate act is bounded to the FULL drawn roster ONLY (freeze §4.1 "
+            "rule-before-value discipline; SI-SEALED-CAL-P1 stays sealed for "
+            "anything less than the complete roster). A sampled run may write "
+            "TIMING output only via --estimate-only, which writes no substrate "
+            "directory and no provenance receipt — it never falls through to the "
+            "real-write path."
+        )
 
     manifest = _load_manifest(args.manifest)
     roster = drawn_roster(manifest)

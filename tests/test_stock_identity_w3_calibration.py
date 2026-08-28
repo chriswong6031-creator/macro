@@ -34,6 +34,7 @@ import ast
 import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -252,19 +253,77 @@ def test_recent_history_cutoff_raises_on_insufficient_history():
         calib_replay.recent_history_cutoff(bars.index[-1], bars.index)
 
 
-def test_assert_recent_history_guard_raises_on_violation():
+def test_assert_bars_within_guard_raises_on_violation():
+    """Bars-side, defense-in-depth check (freeze review finding B3) — the
+    function formerly named ``assert_recent_history_guard``."""
     bars = _synthetic_bars(n=400)
     cutoff = bars.index[-127]
     with pytest.raises(calib_replay.RecentHistoryGuardViolation):
-        calib_replay.assert_recent_history_guard({"AAA": bars}, cutoff)
+        calib_replay.assert_bars_within_guard({"AAA": bars}, cutoff)
 
 
-def test_assert_recent_history_guard_passes_when_truncated():
+def test_assert_bars_within_guard_passes_when_truncated():
     bars = _synthetic_bars(n=400)
     cutoff = bars.index[-127]
     truncated = calib_replay.truncate_to_guard({"AAA": bars}, cutoff)
-    calib_replay.assert_recent_history_guard(truncated, cutoff)  # must not raise
+    calib_replay.assert_bars_within_guard(truncated, cutoff)  # must not raise
     assert truncated["AAA"].index.max() <= cutoff
+
+
+# ---------------------------------------------------------------------------
+# B3: the REAL guard runs on the substrate's own OUTPUTS (events/episodes), not
+# merely on self-truncated input bars.
+# ---------------------------------------------------------------------------
+def test_assert_recent_history_guard_raises_on_event_beyond_cutoff():
+    bars = _synthetic_bars(n=400)
+    cutoff = bars.index[-127]
+    events = pd.DataFrame({
+        "event_id": ["E1"], "family_key": ["fam.x"], "symbol": ["AAA"],
+        "signal_known_ts": [bars.index[-1]],  # WELL beyond cutoff
+    })
+    with pytest.raises(calib_replay.RecentHistoryGuardViolation):
+        calib_replay.assert_recent_history_guard(events, pd.DataFrame(), cutoff)
+
+
+def test_assert_recent_history_guard_raises_on_episode_end_date_beyond_cutoff():
+    bars = _synthetic_bars(n=400)
+    cutoff = bars.index[-127]
+    episodes = pd.DataFrame({
+        "symbol": ["AAA"], "start_date": [bars.index[-200]], "end_date": [bars.index[-1]],
+    })
+    with pytest.raises(calib_replay.RecentHistoryGuardViolation):
+        calib_replay.assert_recent_history_guard(pd.DataFrame(), episodes, cutoff)
+
+
+def test_assert_recent_history_guard_passes_when_outputs_respect_cutoff():
+    bars = _synthetic_bars(n=400)
+    cutoff = bars.index[-127]
+    events = pd.DataFrame({
+        "event_id": ["E1"], "family_key": ["fam.x"], "symbol": ["AAA"],
+        "signal_known_ts": [bars.index[-200]],
+    })
+    episodes = pd.DataFrame({
+        "symbol": ["AAA"], "start_date": [bars.index[-250]], "end_date": [bars.index[-200]],
+    })
+    calib_replay.assert_recent_history_guard(events, episodes, cutoff)  # must not raise
+
+
+def test_run_substrate_drops_or_censors_outputs_beyond_the_recent_history_cutoff(
+    synthetic_partition, fake_w2_machinery,
+):
+    """Even if a reused W2 fire function ignores the truncated bars it was handed
+    and fires beyond the cutoff (the real-data case this test names), the
+    substrate's own OUTPUT must never carry a date beyond the cutoff — proved
+    here by forcing the fake fire function's date arbitrarily far in the future
+    relative to a short, tight bars window."""
+    replay_manifest, roster = synthetic_partition
+    result = calib_replay.run_substrate(replay_manifest, sample=["SYN_A", "SYN_B"])
+    cutoff = pd.Timestamp(result.provenance["recent_history_guard_cutoff"])
+    if not result.events.empty:
+        assert (pd.to_datetime(result.events["signal_known_ts"]) <= cutoff).all()
+    if result.episodes is not None and not result.episodes.empty and "end_date" in result.episodes.columns:
+        ends = pd.to_datetime(result.episodes["end_date"], errors="coerce").dropna()
+        assert (ends <= cutoff).all()
 
 
 # ---------------------------------------------------------------------------
@@ -327,9 +386,15 @@ def fake_w2_machinery(monkeypatch):
     """Fakes the pilot_replay entry points run_substrate calls, at the exact call
     sites (module/function identities are still asserted from the REAL module —
     only the heavy per-symbol work is faked)."""
-    bars_cache = {"SYN_A": _episode_bars("2019-01-01", 350),
-                  "SYN_B": _episode_bars("2019-01-01", 350),
-                  "SYN_ZERO": _episode_bars("2019-01-01", 350)}
+    # n=550 (not the default 350): long enough that the recent-history guard's
+    # 126-session cutoff (asof=2021-06-01, well beyond this whole bars span)
+    # lands safely AFTER the durable-low date (2019-11-18) baked into
+    # _episode_bars's fixed 130-flat/100-decline layout, so the reset_decline
+    # episode below still resolves under B3's real truncation instead of coming
+    # back censored.
+    bars_cache = {"SYN_A": _episode_bars("2019-01-01", 550),
+                  "SYN_B": _episode_bars("2019-01-01", 550),
+                  "SYN_ZERO": _episode_bars("2019-01-01", 550)}
 
     def fake_load(sym, plane_id, asof):
         if sym == "SYN_MISSING":
@@ -514,3 +579,264 @@ def test_compute_constants_from_substrate_end_to_end_synthetic(synthetic_partiti
     assert isinstance(recall_floor, float)
     assert isinstance(lambda_fs, float)
     assert not cells.empty
+
+
+# ---------------------------------------------------------------------------
+# B1: --sample without --estimate-only refuses (never falls through to a real,
+# partial-roster write)
+# ---------------------------------------------------------------------------
+def test_sample_without_estimate_only_refuses(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibration_replay.py",
+        "--manifest", str(tmp_path / "does_not_exist.json"),
+        "--sample", "5",
+    ])
+    with pytest.raises(calib_replay.SampledSubstrateWriteRefused):
+        calib_replay.main()
+
+
+def test_sample_with_estimate_only_does_not_hit_the_refusal_gate(monkeypatch, tmp_path):
+    """Proves the refusal is specifically about --sample WITHOUT --estimate-only
+    -- a nonexistent manifest still fails, but with a DIFFERENT exception, proving
+    the refusal check itself did not fire."""
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibration_replay.py",
+        "--manifest", str(tmp_path / "does_not_exist.json"),
+        "--sample", "5", "--estimate-only",
+    ])
+    with pytest.raises(FileNotFoundError):
+        calib_replay.main()
+
+
+def test_no_sample_without_estimate_only_does_not_hit_the_refusal_gate(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibration_replay.py",
+        "--manifest", str(tmp_path / "does_not_exist.json"),
+    ])
+    with pytest.raises(FileNotFoundError):
+        calib_replay.main()
+
+
+# ---------------------------------------------------------------------------
+# B1: partial-substrate refusal by the constant-setting act itself
+# ---------------------------------------------------------------------------
+def test_assert_full_roster_coverage_refuses_on_roster_hash_mismatch():
+    manifest = {"roster": {"roster_sha256": "cafebabe"}}
+    provenance = {"roster_sha256": "deadbeef", "n_names_attempted": 3}
+    with pytest.raises(calib_w3.PartialSubstrateError):
+        calib_w3.assert_full_roster_coverage(provenance, ["A", "B", "C"], manifest)
+
+
+def test_assert_full_roster_coverage_refuses_on_partial_n_attempted():
+    manifest = {"roster": {"roster_sha256": "cafebabe"}}
+    provenance = {"roster_sha256": "cafebabe", "n_names_attempted": 2}
+    with pytest.raises(calib_w3.PartialSubstrateError):
+        calib_w3.assert_full_roster_coverage(provenance, ["A", "B", "C"], manifest)
+
+
+def test_assert_full_roster_coverage_passes_on_full_match():
+    manifest = {"roster": {"roster_sha256": "cafebabe"}}
+    provenance = {"roster_sha256": "cafebabe", "n_names_attempted": 3}
+    calib_w3.assert_full_roster_coverage(provenance, ["A", "B", "C"], manifest)  # must not raise
+
+
+def test_main_refuses_when_substrate_provenance_missing(tmp_path):
+    """main() checks provenance coverage BEFORE reading any parquet — a
+    substrate-dir with the parquet files but no provenance_receipt.json (which
+    a --sample write would never legitimately produce anyway, per B1's CLI
+    refusal, but this proves the setter's OWN independent check) refuses."""
+    substrate_dir = tmp_path / "substrate_no_provenance"
+    substrate_dir.mkdir()
+    import pandas as pd
+    pd.DataFrame({
+        "event_id": ["E1"], "family_key": ["fam.x"], "symbol": ["A"],
+        "signal_known_ts": [pd.Timestamp("2020-01-01")],
+    }).to_parquet(substrate_dir / "calibration_events_v1.parquet")
+    pd.DataFrame({"symbol": ["A"]}).to_parquet(substrate_dir / "calibration_episodes_v1.parquet")
+
+    monkeypatch_argv = [
+        "stock_identity_calibrate_w3.py", "--substrate-dir", str(substrate_dir),
+    ]
+    old_argv = sys.argv
+    sys.argv = monkeypatch_argv
+    try:
+        with pytest.raises(calib_w3.PartialSubstrateError):
+            calib_w3.main()
+    finally:
+        sys.argv = old_argv
+
+
+# ---------------------------------------------------------------------------
+# B1: dry-run masks every derived PR-3 constant value
+# ---------------------------------------------------------------------------
+def test_build_dry_run_report_masks_constant_values():
+    report = calib_w3.build_dry_run_report(
+        roster=["A", "B"],
+        events=pd.DataFrame({"signal_known_ts": [pd.Timestamp("2020-01-01")]}),
+        episodes=pd.DataFrame({"symbol": ["A"]}),
+        cells=pd.DataFrame({"x": [1]}),
+        cutoff=pd.Timestamp("2020-06-01"),
+    )
+    assert report["recall_floor_value"] == "MASKED_DRY_RUN"
+    assert report["lambda_fs_value"] == "MASKED_DRY_RUN"
+    assert isinstance(report["recall_floor_value"], str)
+    assert isinstance(report["lambda_fs_value"], str)
+    # no key in the report ever holds a bare float -- every numeric field is a
+    # COUNT (roster_n/n_events/n_episodes/n_cells), never a computed constant
+    numeric_keys = {k for k, v in report.items() if isinstance(v, (int, float)) and not isinstance(v, bool)}
+    assert numeric_keys <= {"roster_n", "n_events", "n_episodes", "n_cells"}
+
+
+def test_main_source_never_puts_bare_recall_floor_or_lambda_fs_into_the_dry_run_report():
+    """Named regression pinning the exact defect this repair closes: the OLD
+    implementation printed the full receipt (containing the real numeric
+    values) unconditionally, BEFORE checking ``args.dry_run``. Source-level
+    check: the dry-run branch must build its report via build_dry_run_report
+    (which has no parameter a real value could flow through), never inline a
+    dict literal referencing the local recall_floor/lambda_fs values."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    start = src.index("if args.dry_run:")
+    end = src.index("ledger = TrialLedger(")
+    branch = src[start:end]
+    assert "build_dry_run_report(" in branch
+    assert '"recall_floor_value": recall_floor' not in branch
+    assert '"lambda_fs_value": lambda_fs' not in branch
+
+
+def test_register_rules_and_grid_is_never_called_in_the_dry_run_branch():
+    """M9/B1: dry-run must not write to the shared data/trial_ledger.jsonl."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    start = src.index("if args.dry_run:")
+    end = src.index("ledger = TrialLedger(")
+    branch = src[start:end]
+    assert "register_rules_and_grid(" not in branch
+    assert "TrialLedger(" not in branch
+    assert "seal_ruler_spec(" not in branch
+
+
+# ---------------------------------------------------------------------------
+# B4: rule-review disclosure
+# ---------------------------------------------------------------------------
+def test_rule_review_status_is_declared_pending_sol_rule_review():
+    assert calib_w3.RULE_REVIEW_STATUS == "declared_pending_sol_rule_review"
+
+
+def test_rule_hashes_unchanged_by_the_status_marking():
+    """The B4 disclosure adds a STATUS marker without changing either rule's
+    literal text -- the previously-recorded hashes in
+    W3_RULER_REGISTRATION.md §3.1 must stay valid."""
+    assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
+        "7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb"
+    )
+    assert calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE) == (
+        "110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e"
+    )
+
+
+def test_register_rules_and_grid_echoes_rule_review_status(tmp_path):
+    ledger = TrialLedger(path=tmp_path / "trial_ledger.jsonl", family=calib_w3.TRIAL_FAMILY)
+    receipt = calib_w3.register_rules_and_grid(ledger, info_cutoff="2026-08-13")
+    assert receipt["rule_review_status"] == "declared_pending_sol_rule_review"
+
+
+def test_sealed_receipt_carries_rule_review_status(throwaway_spec):
+    """The real (non-dry-run) receipt's per-constant blocks must carry the
+    disclosure status too -- a reader of a sealed receipt must be able to see
+    that the rule form was pending Sol review at seal time without cross-
+    referencing source."""
+    receipt = {
+        "recall_floor": {"value": 0.35, "status": calib_w3.RULE_REVIEW_STATUS},
+        "lambda_fs": {"value": 0.75, "status": calib_w3.RULE_REVIEW_STATUS},
+    }
+    sealed = calib_w3.seal_ruler_spec(0.35, 0.75, receipt=receipt)
+    payload = json.loads(throwaway_spec.read_text(encoding="utf-8"))
+    assert payload["pr3"]["receipt"]["recall_floor"]["status"] == "declared_pending_sol_rule_review"
+    assert payload["pr3"]["receipt"]["lambda_fs"]["status"] == "declared_pending_sol_rule_review"
+
+
+# ---------------------------------------------------------------------------
+# B1: a real, wired dry-run leaves the tracked tree byte-clean and writes
+# nothing to data/trial_ledger.jsonl
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
+    # A small, fully-available roster (no SYN_MISSING) so run_substrate with the
+    # FULL roster (sample=None) never produces an unavailable-name blocker --
+    # B1's assert_full_roster_coverage refuses on anything less than the full
+    # drawn roster, so this fixture must actually cover it.
+    roster = ["SYN_A", "SYN_B"]
+    payload = json.dumps(sorted(roster), sort_keys=True, separators=(",", ":")).encode("utf-8")
+    roster_sha256 = hashlib.sha256(payload).hexdigest()
+    partition = {
+        "asof": "2021-06-01",
+        "pilot": {"members": ["PILOT_X"]},
+        "blind_arm": {"members": ["BLIND_Y"]},
+        "calibration_partition": {"members": roster},
+        "universe": {"plane_by_symbol": {s: "stock_identity_ohlcv_v1" for s in roster}},
+    }
+    monkeypatch.setattr(calib_replay, "_partition_manifest", lambda: partition)
+    monkeypatch.setattr(calib_w3, "_partition_manifest", lambda: partition)
+
+    replay_manifest = {"roster": {"roster_sha256": roster_sha256, "n_drawn": len(roster)}}
+    manifest_path = tmp_path / "calibration_replay_manifest_v1.json"
+    manifest_path.write_text(json.dumps(replay_manifest), encoding="utf-8")
+    monkeypatch.setattr(calib_w3, "REPLAY_MANIFEST_PATH", manifest_path)
+
+    def fake_load_symbol(sym, plane_id, root):
+        return fake_w2_machinery[sym]
+    monkeypatch.setattr("engine.stock_identity.plane.load_symbol", fake_load_symbol)
+
+    # the FULL drawn roster (not a sample) -- assert_full_roster_coverage (B1)
+    # would otherwise correctly refuse a partial-roster substrate here too.
+    result = calib_replay.run_substrate(replay_manifest, sample=None)
+    assert not result.unavailable
+    substrate_dir = tmp_path / "substrate"
+    calib_replay.write_substrate(result, substrate_dir)
+    return substrate_dir
+
+
+def test_dry_run_leaves_tracked_tree_byte_clean_and_writes_no_ledger_entry(
+    monkeypatch, tmp_path, dry_run_substrate,
+):
+    import subprocess
+
+    ledger_path = ROOT / "data" / "trial_ledger.jsonl"
+    ledger_before = ledger_path.read_bytes() if ledger_path.exists() else None
+    git_before = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout
+
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibrate_w3.py",
+        "--substrate-dir", str(dry_run_substrate), "--dry-run",
+    ])
+    rc = calib_w3.main()
+    assert rc == 0
+
+    git_after = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, capture_output=True, text=True, check=True,
+    ).stdout
+    assert git_after == git_before
+
+    ledger_after = ledger_path.read_bytes() if ledger_path.exists() else None
+    assert ledger_after == ledger_before
+
+    # the throwaway spec (standing in for ruler_spec_v1.json, from the
+    # dry_run_substrate fixture's throwaway_spec dependency) is untouched too --
+    # dry-run must never call seal_ruler_spec.
+    from engine.stock_identity.ruler import RulerSpec
+    assert RulerSpec.from_json(calib_w3.SPEC_PATH).pr3_pending is True
+
+
+def test_dry_run_output_report_has_no_numeric_constant_values(monkeypatch, capsys, dry_run_substrate):
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibrate_w3.py",
+        "--substrate-dir", str(dry_run_substrate), "--dry-run",
+    ])
+    rc = calib_w3.main()
+    assert rc == 0
+    out = capsys.readouterr().out
+    report = json.loads(out)
+    assert report["status"] == "DRY_RUN_OK"
+    assert report["recall_floor_value"] == "MASKED_DRY_RUN"
+    assert report["lambda_fs_value"] == "MASKED_DRY_RUN"
