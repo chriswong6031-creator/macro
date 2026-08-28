@@ -20,18 +20,28 @@ changed:
     what: >
       Preserves all frozen F01-F13 operation keys and domain ownership while reconciling
       allocation semantics to one logical Fable COO/root responsibility plus governed
-      subordinate execution capacity.
+      subordinate execution capacity and current least-scarce-worker routing law.
 verified:
   - claim: "Thirteen distinct domain handoffs exist with unique frozen operation keys."
     command: "Current canonical #6504 records and this manifest."
     result: "PASS."
   - claim: "Current source law has one logical Fable COO responsibility above provider sessions/workers."
-    command: "Current protected Mastermind@e2092cb6235519ac7f50fb3aa50ec1c1a6f627c0 root/seat architecture + #185 current-state amendment; #186 is unrelated records-only Linear credential source law."
+    command: "Current protected Mastermind@e023f9b4df388814286d42462af0e86a64eea563 / mastermind.sol_skillpack.v1 v1.0.1 root/seat architecture + current-state convergence amendment."
     result: >
       PASS — do not multiply organizational Fable identities from Claude accounts,
       Slack users or provider sessions; parallel execution is subordinate to the one
       logical root responsibility under existing Job/Attempt/worker law or bounded
       transport-only manual commissions.
+  - claim: "Current worker-routing law does not make Fable the default child executor."
+    command: "Protected EXECUTIVE_WORKER_ROUTING_CHAIRMAN_ADDENDUM.md at Mastermind@e023f9b4df388814286d42462af0e86a64eea563."
+    result: >
+      PASS — route each bounded child mission to the least-scarce capable worker; a
+      Fable route owes WHY FABLE and other routes owe WHY NOT FABLE.
+  - claim: "Merged Worker Presence #178 does not make reciprocal watchers or Agent Relay production authority."
+    command: "Protected Mastermind@e023f9b4df388814286d42462af0e86a64eea563 commit state and current dialogue law."
+    result: >
+      PASS — WP-1 is BUILT_NOT_PROVEN / PRODUCTION_INERT. Temporary watchers remain
+      attention/transport only and own no Job/Attempt/Worker/Event lifecycle or authority.
 unverified:
   - claim: "Real governed subordinate execution capacity is available now for any unclaimed F01-F13 lane."
     what_would_verify: >
@@ -45,6 +55,9 @@ next_actions:
     F00 allocates only the existing frozen F01-F13 identities when real governed
     subordinate capacity exists; never mint substitute lane/program identities merely
     to express runtime placement.
+  - >
+    Every bounded child chooses the least-scarce capable worker under current routing
+    law and records WHY FABLE or WHY NOT FABLE without changing the frozen lane identity.
   - >
     Every first modifying child refreshes current protected Skillpack, owner/source law,
     Macro main/open carriers and path collisions before write.
@@ -65,7 +78,7 @@ danger_areas:
 **Shared semantic owner:** `WS:ALPHA-INTELLIGENCE-INTEGRATION`  
 **Current operator identity law:** one logical Fable COO/root responsibility above provider-native sessions and subordinate workers.
 
-F00 is program-control/coverage/dependency integration and remains the existing active manual organizational carrier. F01-F13 are independent durable domain lane identities/commissions; they do **not** create thirteen durable Fable COO seats. Actual implementation remains one useful bounded carrier per child wave. When lawful capacity exists, concurrency comes from accepted distinct roles, ordinary Executive child Jobs/Attempts/workers beneath the root responsibility once routing is production-proven, or bounded known-active manual workers under current transport law.
+F00 is program-control/coverage/dependency integration and remains the existing active manual organizational carrier. F01-F13 are independent durable domain lane identities/commissions; they do **not** create thirteen durable Fable COO seats. Actual implementation remains one useful bounded carrier per child wave. When lawful capacity exists, concurrency comes from accepted distinct roles, ordinary Executive child Jobs/Attempts/workers beneath the root responsibility once routing is production-proven, or bounded known-active manual workers under current transport law. Child routing is capability- and scarcity-aware: Fable is not the default executor, and each bounded child records `WHY FABLE` or `WHY NOT FABLE` while retaining its frozen lane identity.
 
 | Lane | Linear | Operation key | Durable handoff | Primary owner |
 |---|---|---|---|---|
@@ -88,10 +101,10 @@ F00 is program-control/coverage/dependency integration and remains the existing 
 1. The first **actual governed receiver/worker claim** for an exact frozen lane identity is lane-claim evidence; record pickup SHA/current authority and collision census. A historical Slack delivery or account membership is not a claim.
 2. F00 records lane state but does not create a second execution lifecycle. GitHub/Agent OS remain durable work truth; Executive OS owns runtime Jobs/Attempts/Workers when that path is genuinely used.
 3. A lane may have bounded child workers/PRs concurrently with other lanes; two modifications that touch the same canonical owner/path must reconcile before writes.
-4. If governed capacity is limited, keep these separate lane identities and route well-specified child waves through lawful available workers under the one logical F00/Fable root responsibility. Do not merge lane identities and do not manufacture additional durable Fable seats to simplify staffing.
+4. If governed capacity is limited, keep these separate lane identities and route well-specified child waves through the least-scarce lawful available workers under the one logical F00/Fable root responsibility. Fable is not the default child executor; record `WHY FABLE` when its scarce reasoning/continuity surface is necessary and `WHY NOT FABLE` otherwise. Do not merge lane identities and do not manufacture additional durable Fable seats to simplify staffing.
 5. K2-C (`alpha-k2c-institutional-adapter-20260826-sol-001`) and K3-D (`alpha-k3d-economic-propagation-20260826-sol-001`) are separate already-landed operations from PR #6498 and are not F04/F10 substitutes.
 6. No lane becomes `EXECUTING` from Slack delivery, Linear Todo/In Progress, branch creation, provider-session existence or this manifest. Only canonical runtime evidence owns execution state.
-7. Any eligible manual Slack handoff to a known-active receiver must satisfy then-current initial-envelope ACK/full-thread/no-work-before-both and reciprocal continuation-watch law. A temporary watcher is transport/attention only and never Job/Attempt/Worker/Event truth.
+7. Any eligible manual Slack handoff to a known-active receiver must satisfy then-current initial-envelope ACK/full-thread/no-work-before-both and reciprocal continuation-watch law. A temporary watcher is transport/attention only and never Job/Attempt/Worker/Event truth. Merged protected WP-1 #178 does not change that boundary while it remains `BUILT_NOT_PROVEN / PRODUCTION_INERT`.
 
 ## F00 closure accounting
 
