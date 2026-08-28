@@ -25,9 +25,12 @@ the two agree about who a person is.  See the section at the bottom of this file
 """
 from __future__ import annotations
 
+import base64
 import hashlib
+import hmac
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -206,8 +209,32 @@ def _cache_get(key: str) -> _Identity | None:
     return _Identity(None, "", None, "invalid")
 
 
-def _cache_put(key: str, uid: str | None, email: str, record: dict[str, Any] | None) -> None:
+def _positive_token_ttl(token: str, configured_ttl: float) -> float:
+    """Clamp a reusable positive identity to the JWT's own wall-clock expiry."""
+    try:
+        payload_part = token.split(".")[1]
+        payload_part += "=" * (-len(payload_part) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(payload_part.encode("ascii")))
+        expires_at = float(payload["exp"])
+        if not math.isfinite(expires_at):
+            return 0.0
+    except (IndexError, KeyError, TypeError, ValueError, json.JSONDecodeError, UnicodeError):
+        return 0.0
+    return max(0.0, min(configured_ttl, expires_at - time.time()))
+
+
+def _cache_put(
+    key: str,
+    token: str,
+    uid: str | None,
+    email: str,
+    record: dict[str, Any] | None,
+) -> None:
     ttl = _seconds("PAYWALL_AUTH_CACHE_SECONDS", 45.0, 1.0, 60.0)
+    if uid:
+        ttl = _positive_token_ttl(token, ttl)
+        if ttl <= 0.0:
+            return
     now = time.monotonic()
     with _AUTH_LOCK:
         if len(_AUTH_CACHE) > 5000:
@@ -272,7 +299,7 @@ def _resolve_identity(token: str) -> _Identity:
         return hit
     ident = _fetch_supabase_user(token)
     if ident.status in {"ok", "invalid"}:
-        _cache_put(key, ident.uid, ident.email, ident.record)
+        _cache_put(key, token, ident.uid, ident.email, ident.record)
     return ident
 
 
@@ -424,6 +451,32 @@ def _locked(request: Request, path: str, tier: str = "essential") -> Response:
         status_code=403,
         headers=_headers("deny"),
     )
+
+
+@router.api_route("/api/control-room/auth-check", methods=["GET", "HEAD"])
+def control_room_auth_check(request: Request) -> Response:
+    """Bodyless Caddy subrequest admitting only the configured operator UUID."""
+    raw_operator = os.environ.get("SUPABASE_OPERATOR_USER_ID", "")
+    try:
+        operator = str(uuid.UUID(raw_operator))
+    except (ValueError, TypeError, AttributeError):
+        return Response(status_code=503)
+    if operator != raw_operator:
+        return Response(status_code=503)
+
+    from app.main import _mm_supabase_access_token  # noqa: PLC0415
+
+    token = _mm_supabase_access_token(request)
+    if not token:
+        return Response(status_code=401)
+    identity = _resolve_identity(token)
+    if identity.status in {"outage", "busy"}:
+        return Response(status_code=502)
+    if identity.status != "ok" or not identity.uid:
+        return Response(status_code=401)
+    if not hmac.compare_digest(identity.uid, operator):
+        return Response(status_code=403)
+    return Response(status_code=204)
 
 
 @router.get("/api/paywall/check")

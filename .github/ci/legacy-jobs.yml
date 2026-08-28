@@ -8501,6 +8501,28 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # CCR-R0 (2026-08-28) belongs in this existing pre-launch security lane:
+      # authenticated operator identity, a fixed admin iframe, Caddy's real
+      # adapted handler order, and the bounded atomic GitHub-source publisher.
+      # The Python dependency closure is already present above. Pin and verify
+      # the same stock Caddy release deployed on the VPS so the adapted-order
+      # assertion cannot silently depend on runner-image contents.
+      - name: Control Room operator, embed, edge and source-publisher boundaries
+        run: |
+          CADDY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$CADDY_DIR"' EXIT
+          curl --fail --silent --show-error --location \
+            --output "$CADDY_DIR/caddy.tar.gz" \
+            https://github.com/caddyserver/caddy/releases/download/v2.11.4/caddy_2.11.4_linux_amd64.tar.gz
+          printf '%s  %s\n' \
+            527fbf917c39189a1e3b31d34fa955601680b2d5c8055d2a87b8b9588dec7bb9 \
+            "$CADDY_DIR/caddy.tar.gz" | sha256sum --check --status
+          tar -xzf "$CADDY_DIR/caddy.tar.gz" -C "$CADDY_DIR" caddy
+          CADDY_BIN="$CADDY_DIR/caddy" python -m pytest \
+            tests/test_admin_control_room.py \
+            tests/test_control_room_auth.py \
+            tests/test_control_room_caddy.py \
+            tests/test_publish_control_room_active_builds.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
