@@ -1,5 +1,5 @@
 schema: runner_policy.v2
-phase: p3b-a-call-capable
+phase: p3b-b-production-route
 repository_visibility: public
 ordinary_pr_ci: github-hosted
 
@@ -16,7 +16,7 @@ runtime_runner_group:
     - mastermindx-market-intelligence/macro/.github/workflows/trusted-ci-executor.yml@refs/heads/main
 
 scenario_routes:
-  same_repo_ordinary_pr: github-hosted
+  same_repo_ordinary_pr: pc-ci-via-main-executor
   fork_pr: github-hosted
   trusted_dispatch_canary: pc-ci-canary
   trusted_executor_dispatch: pc-ci
@@ -27,7 +27,7 @@ trusted_executor_route:
   group: macro-home-canary
   labels: [ci-linux]
   call_enabled: true
-  production_enabled: false
+  production_enabled: true
 
 protected_hosted_routes:
   - workflow: .github/workflows/ci.yml
@@ -190,9 +190,9 @@ label_registry:
     status: live
     carried_by: [pc-ci-1, pc-ci-2, pc-ci-3]
     note: >
-      P2-accepted three-slot PC CI pool. P3B-A admits exact main-called
-      same-repository PR execution, but production ci.yml routing remains disabled
-      until the separate P3B-B carrier.
+      P2-accepted three-slot PC CI pool. P3B-B routes exact same-repository PR
+      execution through the protected-main trusted executor; fork/untrusted PR
+      execution, planning, anchors and the semantic gate remain GitHub-hosted.
   ci-linux-canary:
     status: live
     carried_by: [pc-ci-1]

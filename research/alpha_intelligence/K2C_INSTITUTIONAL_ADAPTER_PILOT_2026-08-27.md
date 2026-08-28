@@ -211,4 +211,174 @@ this carrier at `51ffcc242801` (RED-first per finding; combined focused gate
 
 ## 7. Proof receipts
 
-*(appended after execution — empty at design freeze)*
+Real production owner-reads through the dispatch-only proof lane on main
+(merge 0758de6b9a7e), 2026-08-27. Full receipts are the runs' 90-day artifacts;
+the load-bearing fields are frozen here verbatim.
+
+**Positive two-period case** — run 33058216623: Custos Family Office, LLC
+(filer CIK 0001904423) × ABBVIE INC (CUSIP 00287Y109), report periods
+2026-03-31 → 2026-06-30, both filings accepted 2026-08-19 (PIT-lawful at the
+dispatch cutoff). Compiled `PILOT_COMPILED` /
+`MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT`; q 1238 → 1279 shares — equal to the
+EDGAR-published infotable rows, read from manifest-bound catalog rows with
+digest-verified raw-receipt cross-checks:
+
+```json
+{
+ "adapter_version": "1.0.0",
+ "compiled_observation_state": "MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT",
+ "measure": {
+  "q_now": 1279,
+  "q_prev": 1238,
+  "unit": "shares"
+ },
+ "periods": {
+  "current": {
+   "filing": {
+    "accepted_at": "2026-08-19T17:09:13Z",
+    "accession": "0001904423-26-000004",
+    "is_amendment": false,
+    "retained_at": "2026-08-19T18:02:53.852469Z",
+    "table_entry_total": 71
+   },
+   "generation_id": "i13fgen_9ae95a9de85cc0ed426b09cd7db443210c8cdc5d9178aaad5859c3f8a57527cd",
+   "k1_reference_ids": {
+    "catalog": "efr_0e60168b2aa12bede5e11a38a9ff343cb368845a4293248a3e6699f7b8f4dbca",
+    "raw": "efr_f4a7cff6fff4cd6c31c2078dec2875fe71e81a876bbfcf0a6404fc376862fe02"
+   },
+   "pointer": {
+    "current_generation_id": "i13fgen_9ae95a9de85cc0ed426b09cd7db443210c8cdc5d9178aaad5859c3f8a57527cd",
+    "pointer_updated": false,
+    "state": "read",
+    "superseded": false
+   },
+   "raw_receipt": {
+    "accepted_at": "2026-08-19T17:09:13Z",
+    "accession": "0001904423-26-000004",
+    "receipt_id": "i13fraw_5b8961b9942e2e4fd28b92051a73d503697f457b288d1f3ed3d4566c6730a0ca",
+    "retained_at": "2026-08-19T18:02:53.852469Z"
+   },
+   "row": {
+    "cusip": "00287Y109",
+    "infotable_sk": 4611686018427387905,
+    "investment_discretion": "SOLE",
+    "row_hash": "1de9a8cbb05a28c23c5b82cdf4112776b4412dc0e8bdcb8185d5ceafad67cd68",
+    "ssh_prn_amt": "1279"
+   }
+  },
+  "previous": {
+   "filing": {
+    "accepted_at": "2026-08-19T17:20:59Z",
+    "accession": "0001904423-26-000005",
+    "is_amendment": false,
+    "retained_at": "2026-08-19T18:02:31.412337Z",
+    "table_entry_total": 67
+   },
+   "generation_id": "i13fgen_5af282ec5c2b29ed990f9dd8bd03e7e7ff88d54ebdb79467a3aec7b7451ce6d1",
+   "k1_reference_ids": {
+    "catalog": "efr_c4d69e15f42d576cde771a12645723b061b07ccbdbf14bb0ae560b61b5eba589",
+    "raw": "efr_475da9d22aca2db7fe1d26c5f900dddf33cdc418c9c05fa474c852c5ec945a1c"
+   },
+   "pointer": {
+    "current_generation_id": "i13fgen_5af282ec5c2b29ed990f9dd8bd03e7e7ff88d54ebdb79467a3aec7b7451ce6d1",
+    "pointer_updated": false,
+    "state": "read",
+    "superseded": false
+   },
+   "raw_receipt": {
+    "accepted_at": "2026-08-19T17:20:59Z",
+    "accession": "0001904423-26-000005",
+    "receipt_id": "i13fraw_56465d4fc5eec6e82aabc86a8884e5784414f669077933af00365f6849742bc1",
+    "retained_at": "2026-08-19T18:02:31.412337Z"
+   },
+   "row": {
+    "cusip": "00287Y109",
+    "infotable_sk": 4611686018427387905,
+    "investment_discretion": "SOLE",
+    "row_hash": "6948742510726735b9dddaabeae571d47570c5866f69acf9aa1b699fa0f09815",
+    "ssh_prn_amt": "1238"
+   }
+  }
+ },
+ "receipt_id": "i13fpilot_5c2e14896d2afcbc43585bdec2c41e64e845455e2d68e467c1ace1a12ac64b39",
+ "refusal": null,
+ "request": {
+  "cusip": "00287Y109",
+  "cutoff": "2026-08-27T09:22:23.700168Z",
+  "filer_cik": "0001904423",
+  "generation_id_now": null,
+  "generation_id_prev": null,
+  "report_period_now": "2026-06-30",
+  "report_period_prev": "2026-03-31"
+ },
+ "schema": "institutional_intelligence.owner_read_receipt/v1",
+ "security": null,
+ "state": "PILOT_COMPILED"
+}
+```
+
+**Negative case (real store, owner-shaped)** — run 33058222640: same
+filer/periods, grammar-valid absent CUSIP 594918105 → typed
+`security_not_in_filing` (no numeric zero, no compiled block):
+
+```json
+{
+ "adapter_version": "1.0.0",
+ "compiled_observation_state": null,
+ "measure": null,
+ "receipt_id": "i13fpilot_407903ca550c408f9f54ce5dc6722253fbf230b50e5887ed4f8550ca16e5d425",
+ "refusal": {
+  "detail": "cusip 594918105 is not present as a non-derivative row in accession 0001904423-26-000005",
+  "reason": "security_not_in_filing"
+ },
+ "request": {
+  "cusip": "594918105",
+  "cutoff": "2026-08-27T09:25:20.811787Z",
+  "filer_cik": "0001904423",
+  "generation_id_now": null,
+  "generation_id_prev": null,
+  "report_period_now": "2026-06-30",
+  "report_period_prev": "2026-03-31"
+ },
+ "schema": "institutional_intelligence.owner_read_receipt/v1",
+ "security": null,
+ "state": "security_not_in_filing"
+}
+```
+
+**Additional real refusal** — run 33056388159: Meeder Advisory Services
+(CIK 0001792167, the K2-B frozen-fixture filer) × 67066G104 refused typed
+`filing_not_found` for report_period 2026-03-31: the production catalog plane
+began capture 2026-08-09, so Meeder's May-accepted Q1 filing was never retained
+— a correct fail-closed answer, and the receipt that redirected subject
+selection to a filer whose BOTH period filings are lawfully in the store:
+
+```json
+{
+ "adapter_version": "1.0.0",
+ "compiled_observation_state": null,
+ "measure": null,
+ "receipt_id": "i13fpilot_38a1aca37af512b68232ab5f1a44468c96c6afced7ca19a0a6125a43a03e804f",
+ "refusal": {
+  "detail": "no 13F filing found for filer 0001792167 in report_period 2026-03-31",
+  "reason": "filing_not_found"
+ },
+ "request": {
+  "cusip": "67066G104",
+  "cutoff": "2026-08-27T08:58:43.616846Z",
+  "filer_cik": "0001792167",
+  "generation_id_now": null,
+  "generation_id_prev": null,
+  "report_period_now": "2026-06-30",
+  "report_period_prev": "2026-03-31"
+ },
+ "schema": "institutional_intelligence.owner_read_receipt/v1",
+ "security": null,
+ "state": "filing_not_found"
+}
+```
+
+Capability state: the owner→K1→K2-B→K2-C read path is **production-proven**
+(real two-period positive + two real typed refusals). K2 closure remains Sol's
+call on the operation return.
+

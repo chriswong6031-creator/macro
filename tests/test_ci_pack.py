@@ -1490,6 +1490,94 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
     assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
 
 
+def test_execution_timing_observations_do_not_change_semantic_fragment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Timing is useful evidence, never an input to semantic proof authority."""
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
+    job = PACK.LegacyJob("demo", definition, 0, 1, ("engine/**",))
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(PACK, "_dependency_environment", lambda *_args, **_kwargs: {})
+
+    def fake_run(current, **_kwargs):
+        specs = PACK.semantic_step_specs(current)
+        return PACK.JobExecution(
+            logical_job_id=current.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(current),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=None,
+        )
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    without_timing = tmp_path / "without-timing.json"
+    with_timing = tmp_path / "with-timing.json"
+    observations = tmp_path / "timing-observations.jsonl"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    unwritable_observations = blocked_parent / "timing-observations.jsonl"
+    with_unwritable_timing = tmp_path / "with-unwritable-timing.json"
+
+    assert PACK.execute_pack([job], emit_semantic_fragment=without_timing) == 0
+    ticks = iter((1_000, 1_100, 1_200, 1_500, 1_600, 1_700, 1_800, 2_100))
+    monkeypatch.setattr(PACK.time, "monotonic_ns", lambda: next(ticks))
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_timing,
+            emit_timing_observations=observations,
+        )
+        == 0
+    )
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_unwritable_timing,
+            emit_timing_observations=unwritable_observations,
+        )
+        == 0
+    )
+
+    assert with_timing.read_bytes() == without_timing.read_bytes()
+    assert with_unwritable_timing.read_bytes() == without_timing.read_bytes()
+    assert not unwritable_observations.exists()
+    assert "::warning title=ci timing telemetry degraded::" in capsys.readouterr().out
+    assert [
+        json.loads(line)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    ] == [
+        {
+            "duration_ns": 100,
+            "ended_monotonic_ns": 1_100,
+            "logical_job_id": "demo",
+            "phase": "dependency_install",
+            "started_monotonic_ns": 1_000,
+            "status": "observed",
+        },
+        {
+            "duration_ns": 300,
+            "ended_monotonic_ns": 1_500,
+            "logical_job_id": "demo",
+            "phase": "test",
+            "started_monotonic_ns": 1_200,
+            "status": "observed",
+        },
+    ]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 
@@ -2785,7 +2873,7 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_anchors_or_fork_packs() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
@@ -2803,14 +2891,24 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # scripts/check_contract_delta.py's module docstring). Adding it here is
     # the same class of change as ci-plan/ci-gate joining originally; it does
     # not reopen the 86-VM fan-out this test exists to prevent.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
+    # `trusted-ci` (P3B-B) is one protected-main reusable call, not another
+    # planner, pack fan-out or scheduler. Its PC jobs are defined only by the
+    # called main workflow; the caller's ci-pack matrix remains the stable hosted
+    # anchor set and retains the full implementation only for forks.
+    assert set(workflow["jobs"]) <= {
+        "ci-plan",
+        "trusted-ci",
+        "ci-pack",
+        "contract-delta",
+        "ci-gate",
+    }
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
-    # agree with the --pack-count handed to the runner or some packs' jobs
-    # would execute nowhere.
+    # SHAPE is the contract: a small ordered matrix of stable hosted anchors
+    # (or full hosted fork packs), never one job per legacy suite (86 VMs), and
+    # the matrix must agree with the --pack-count handed to the runner or some
+    # packs' jobs would execute nowhere.
     #
     # Wave B made the matrix the PLANNER's, so the list of indices is no longer
     # in this file — `--pack-count 12` below is now the only place the twelve-way
@@ -2858,7 +2956,12 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    assert pack["if"] == "needs.ci-plan.outputs.has_work == 'true'"
+    assert pack["if"] == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )

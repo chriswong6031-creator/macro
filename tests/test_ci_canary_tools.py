@@ -6,9 +6,14 @@ import json
 import os
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
+import yaml
+
+from scripts import ci_semantic_proof as SEMANTIC
+from scripts import run_ci_pack as RUN_PACK
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -335,6 +340,530 @@ def test_capture_receipt_tolerates_a_missing_fragment_reference(tmp_path: Path) 
     assert receipt["fragment_plan_sha256"] is None
 
 
+def test_capture_enriches_non_authoritative_execution_timing(
+    tmp_path: Path,
+) -> None:
+    tested = "a" * 40
+    head = tested
+    base = tested
+    plan = RUN_PACK.plan_from_workflow(
+        ROOT / ".github" / "ci" / "legacy-jobs.yml",
+        changed_from=None,
+        scope_mode="active",
+        pack_count=12,
+        changed_files_file=None,
+        workflow_run_id="123",
+        workflow_name="ci",
+        event="workflow_dispatch",
+        role="main",
+        tested_tree_sha=tested,
+        subject_head_sha=head,
+        base_sha=base,
+        gate="code",
+    )
+    pack_index = next(
+        index for index, jobs in enumerate(plan.pack_jobs) if len(jobs) > 1
+    )
+    selected = list(plan.pack_jobs[pack_index])
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan.to_dict()), encoding="utf-8")
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    observations_path = tmp_path / "observations.jsonl"
+    observations_path.write_text(
+        json.dumps(
+            {
+                "logical_job_id": selected[0],
+                "phase": "dependency_install",
+                "status": "observed",
+                "started_monotonic_ns": 100,
+                "ended_monotonic_ns": 130,
+                "duration_ns": 30,
+            }
+        )
+        + "\n"
+        + json.dumps(
+            {
+                "logical_job_id": selected[0],
+                "phase": "test",
+                "status": "observed",
+                "started_monotonic_ns": 140,
+                "ended_monotonic_ns": 200,
+                "duration_ns": 60,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    phase_path = tmp_path / "phase-monotonic.txt"
+    phase_path.write_text(
+        "job_start 10\n"
+        "checkout_start 20\n"
+        "checkout_end 30\n"
+        "executor_setup_start 31\n"
+        "executor_setup_end 40\n"
+        "pack_execution_start 41\n"
+        "pack_execution_end 70\n"
+        "job_end 80\n",
+        encoding="utf-8",
+    )
+    receipt_path = tmp_path / "receipt.json"
+    timing_path = tmp_path / "execution-timing.jsonl"
+    env = {
+        **os.environ,
+        "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
+        "GITHUB_RUN_ATTEMPT": "2",
+    }
+    result = subprocess.run(
+        [
+            "python3",
+            str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+            "--log", str(log_path),
+            "--plan", str(plan_path),
+            "--pack", str(pack_index),
+            "--exit-code", "0",
+            "--tested-sha", tested,
+            "--base-sha", base,
+            "--runner-kind", "selfhosted",
+            "--runner-name", "pc-ci-1",
+            "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+            "--timing-observations", str(observations_path),
+            "--phase-monotonic", str(phase_path),
+            "--timing-output", str(timing_path),
+            "--output", str(receipt_path),
+        ],
+        env=env,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    rows = [
+        json.loads(line)
+        for line in timing_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert rows
+    expected_identity = {
+        "schema": "ci.execution_timing.v1",
+        "repository": "mastermindx-market-intelligence/macro",
+        "workflow_run_id": "123",
+        "workflow_run_attempt": 2,
+        "subject_head_sha": head,
+        "base_sha": base,
+        "tested_tree_sha": tested,
+        "plan_sha256": plan.plan_sha256,
+        "pack_index": pack_index,
+        "runner_kind": "selfhosted",
+        "runner_name": "pc-ci-1",
+        "runner_profile": RUN_PACK.RUNNER_CONTRACT,
+    }
+    assert all(
+        {key: row[key] for key in expected_identity} == expected_identity
+        for row in rows
+    )
+    by_phase = {(row["logical_job_id"], row["phase"]): row for row in rows}
+    assert by_phase[(None, "queue")]["status"] == "missing"
+    assert by_phase[(None, "checkout")]["duration_ns"] == 10
+    assert by_phase[(None, "executor_setup")]["duration_ns"] == 9
+    assert by_phase[(None, "pack_execution")]["duration_ns"] == 29
+    assert by_phase[(None, "pack_completion")]["duration_ns"] == 70
+    assert by_phase[(selected[0], "dependency_install")]["duration_ns"] == 30
+    assert by_phase[(selected[0], "test")]["duration_ns"] == 60
+    assert all(
+        by_phase[(job_id, phase)]["status"] in {"observed", "missing"}
+        for job_id in selected
+        for phase in ("dependency_install", "test")
+    )
+
+    with pytest.raises(SEMANTIC.SemanticProofError, match="plan schema"):
+        SEMANTIC._expected_plan(rows[0])
+    with pytest.raises(SEMANTIC.SemanticProofError, match="fragment schema"):
+        SEMANTIC.reconcile_evidence(plan.to_dict(), [rows[0]])
+    with pytest.raises(SEMANTIC.SemanticProofError, match="evidence schema"):
+        SEMANTIC._validate_evidence(rows[0])
+
+
+def test_malformed_timing_degrades_without_changing_the_receipt(
+    tmp_path: Path,
+) -> None:
+    tested = "a" * 40
+    plan = {
+        "workflow_run_id": "123",
+        "tested_tree_sha": tested,
+        "subject_head_sha": tested,
+        "base_sha": tested,
+        "plan_sha256": "d" * 64,
+        "packs": [{"index": 0, "jobs": ["demo"]}],
+    }
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    empty_observations = tmp_path / "empty-observations.jsonl"
+    empty_observations.write_text("", encoding="utf-8")
+    reversed_phase = tmp_path / "reversed-phase-monotonic.txt"
+    reversed_phase.write_text(
+        "job_start 80\n"
+        "checkout_start 30\n"
+        "checkout_end 20\n"
+        "executor_setup_start 40\n"
+        "executor_setup_end 31\n"
+        "pack_execution_start 70\n"
+        "pack_execution_end 41\n"
+        "job_end 10\n",
+        encoding="utf-8",
+    )
+    baseline_receipt = tmp_path / "baseline-receipt.json"
+    degraded_receipt = tmp_path / "degraded-receipt.json"
+    timing_path = tmp_path / "execution-timing.jsonl"
+    common = [
+        "python3",
+        str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+        "--log", str(log_path),
+        "--plan", str(plan_path),
+        "--pack", "0",
+        "--exit-code", "0",
+        "--tested-sha", tested,
+        "--base-sha", tested,
+        "--runner-kind", "selfhosted",
+        "--runner-name", "pc-ci-1",
+        "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+    ]
+    baseline = subprocess.run(
+        [*common, "--output", str(baseline_receipt)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    degraded = subprocess.run(
+        [
+            *common,
+            "--timing-observations", str(empty_observations),
+            "--phase-monotonic", str(reversed_phase),
+            "--timing-output", str(timing_path),
+            "--output", str(degraded_receipt),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+    assert degraded.returncode == 0, degraded.stdout + degraded.stderr
+    assert degraded_receipt.read_bytes() == baseline_receipt.read_bytes()
+    assert "::warning title=ci timing telemetry degraded::" in degraded.stdout
+    rows = [
+        json.loads(line)
+        for line in timing_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert rows
+    assert all(row["status"] == "missing" for row in rows)
+    assert {(row["logical_job_id"], row["phase"]) for row in rows} == {
+        (None, "queue"),
+        (None, "checkout"),
+        (None, "executor_setup"),
+        (None, "pack_execution"),
+        (None, "pack_completion"),
+        ("demo", "dependency_install"),
+        ("demo", "test"),
+    }
+
+
+def _assert_invalid_raw_timing_is_non_authoritative(
+    tmp_path: Path,
+    raw_observations: bytes,
+) -> None:
+    """Run the receipt CLI against a malformed raw timing sidecar.
+
+    A timing-input rejection must leave the already-established canary receipt
+    and its passed pack verdict byte-for-byte untouched, while still producing
+    a complete missing-row sidecar when the final timing destination works.
+    """
+    tested = "a" * 40
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "workflow_run_id": "123",
+                "tested_tree_sha": tested,
+                "subject_head_sha": tested,
+                "base_sha": tested,
+                "plan_sha256": "d" * 64,
+                "packs": [{"index": 0, "jobs": ["demo"]}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    observations_path = tmp_path / "observations.jsonl"
+    observations_path.write_bytes(raw_observations)
+    phase_path = tmp_path / "phase-monotonic.txt"
+    phase_path.write_text(
+        "job_start 10\n"
+        "checkout_start 20\n"
+        "checkout_end 30\n"
+        "executor_setup_start 31\n"
+        "executor_setup_end 40\n"
+        "pack_execution_start 41\n"
+        "pack_execution_end 70\n"
+        "job_end 80\n",
+        encoding="utf-8",
+    )
+    baseline_receipt = tmp_path / "baseline-receipt.json"
+    degraded_receipt = tmp_path / "degraded-receipt.json"
+    timing_path = tmp_path / "execution-timing.jsonl"
+    common = [
+        sys.executable,
+        str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+        "--log", str(log_path),
+        "--plan", str(plan_path),
+        "--pack", "0",
+        "--exit-code", "0",
+        "--tested-sha", tested,
+        "--base-sha", tested,
+        "--runner-kind", "selfhosted",
+        "--runner-name", "pc-ci-1",
+        "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+    ]
+    baseline = subprocess.run(
+        [*common, "--output", str(baseline_receipt)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    degraded = subprocess.run(
+        [
+            *common,
+            "--timing-observations", str(observations_path),
+            "--phase-monotonic", str(phase_path),
+            "--timing-output", str(timing_path),
+            "--output", str(degraded_receipt),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+    assert degraded.returncode == 0, degraded.stdout + degraded.stderr
+    assert degraded_receipt.read_bytes() == baseline_receipt.read_bytes()
+    assert json.loads(degraded_receipt.read_text(encoding="utf-8"))["result"] == "passed"
+    assert "::warning title=ci timing telemetry degraded::" in degraded.stdout
+    rows = [
+        json.loads(line)
+        for line in timing_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert {(row["logical_job_id"], row["phase"]) for row in rows} == {
+        (None, "queue"),
+        (None, "checkout"),
+        (None, "executor_setup"),
+        (None, "pack_execution"),
+        (None, "pack_completion"),
+        ("demo", "dependency_install"),
+        ("demo", "test"),
+    }
+    by_phase = {(row["logical_job_id"], row["phase"]): row for row in rows}
+    assert all(
+        by_phase[("demo", phase)]["status"] == "missing"
+        for phase in ("dependency_install", "test")
+    )
+
+
+def test_duplicate_raw_timing_observations_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    observation = {
+        "logical_job_id": "demo",
+        "phase": "test",
+        "status": "observed",
+        "started_monotonic_ns": 100,
+        "ended_monotonic_ns": 130,
+        "duration_ns": 30,
+    }
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        (json.dumps(observation) + "\n" + json.dumps(observation) + "\n").encode(),
+    )
+
+
+def test_oversized_raw_timing_observations_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        b"x" * (4 * 1024 * 1024 + 1),
+    )
+
+
+def test_deeply_nested_raw_timing_json_degrades_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        b"[" * 10_000 + b"0" + b"]" * 10_000 + b"\n",
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("logical_job_id", []), ("phase", {})],
+    ids=("non-hashable-logical-job-id", "non-hashable-phase"),
+)
+def test_non_hashable_raw_timing_fields_degrade_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+    field: str,
+    value: object,
+) -> None:
+    observation = {
+        "logical_job_id": "demo",
+        "phase": "test",
+        "status": "observed",
+        "started_monotonic_ns": 100,
+        "ended_monotonic_ns": 130,
+        "duration_ns": 30,
+    }
+    observation[field] = value
+    _assert_invalid_raw_timing_is_non_authoritative(
+        tmp_path,
+        (json.dumps(observation) + "\n").encode(),
+    )
+
+
+def test_unwritable_final_timing_output_degrades_without_receipt_or_verdict_impact(
+    tmp_path: Path,
+) -> None:
+    tested = "a" * 40
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(
+        json.dumps(
+            {
+                "workflow_run_id": "123",
+                "tested_tree_sha": tested,
+                "subject_head_sha": tested,
+                "base_sha": tested,
+                "plan_sha256": "d" * 64,
+                "packs": [{"index": 0, "jobs": ["demo"]}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "pack.log"
+    log_path.write_text("CI_PACK_FAILED_JOBS=[]\n", encoding="utf-8")
+    baseline_receipt = tmp_path / "baseline-receipt.json"
+    degraded_receipt = tmp_path / "degraded-receipt.json"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    common = [
+        "python3",
+        str(ROOT / "scripts" / "capture_ci_canary_receipt.py"),
+        "--log", str(log_path),
+        "--plan", str(plan_path),
+        "--pack", "0",
+        "--exit-code", "0",
+        "--tested-sha", tested,
+        "--base-sha", tested,
+        "--runner-kind", "selfhosted",
+        "--runner-name", "pc-ci-1",
+        "--runner-profile", RUN_PACK.RUNNER_CONTRACT,
+    ]
+    baseline = subprocess.run(
+        [*common, "--output", str(baseline_receipt)],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    degraded = subprocess.run(
+        [
+            *common,
+            "--timing-output", str(blocked_parent / "execution-timing.jsonl"),
+            "--output", str(degraded_receipt),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+    assert baseline.returncode == 0, baseline.stdout + baseline.stderr
+    assert degraded.returncode == 0, degraded.stdout + degraded.stderr
+    assert degraded_receipt.read_bytes() == baseline_receipt.read_bytes()
+    assert json.loads(degraded_receipt.read_text(encoding="utf-8"))["result"] == "passed"
+    assert "::warning title=ci timing telemetry degraded::" in degraded.stdout
+
+
+def test_trusted_executor_publishes_timing_without_gate_authority() -> None:
+    executor = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "trusted-ci-executor.yml").read_text(
+            encoding="utf-8"
+        )
+    )
+    steps = executor["jobs"]["trusted-pack"]["steps"]
+    execute = next(
+        step
+        for step in steps
+        if step.get("name") == "execute the frozen logical pack and retain its actual result"
+    )
+    receipt = next(
+        step
+        for step in steps
+        if step.get("name") == "write trusted self-hosted receipt"
+    )
+    timing_upload = next(
+        step
+        for step in steps
+        if step.get("name") == "publish non-authoritative execution timing"
+    )
+    marker_lines = [
+        line.strip()
+        for step in steps
+        if isinstance(step, dict)
+        for line in str(step.get("run", "")).splitlines()
+        if "time.monotonic_ns()" in line
+    ]
+    for marker in (
+        "job_start",
+        "checkout_start",
+        "checkout_end",
+        "executor_setup_start",
+        "executor_setup_end",
+        "pack_execution_start",
+        "pack_execution_end",
+        "job_end",
+    ):
+        assert any(marker in line for line in marker_lines)
+    assert all(line.endswith("|| true") for line in marker_lines)
+    assert "--emit-timing-observations" in execute["run"]
+    assert "--timing-observations" in receipt["run"]
+    assert "--phase-monotonic" in receipt["run"]
+    assert "--timing-output" in receipt["run"]
+    assert timing_upload["if"] == "always()"
+    assert timing_upload["continue-on-error"] is True
+    assert timing_upload["timeout-minutes"] == 5
+    assert timing_upload["with"]["if-no-files-found"] == "warn"
+    assert timing_upload["with"]["name"] == (
+        "trusted-ci-execution-timing-${{ matrix.pack }}"
+    )
+    required_artifact_indices = [
+        index
+        for index, step in enumerate(steps)
+        if step.get("with", {}).get("name")
+        in {
+            "trusted-ci-receipt-${{ matrix.pack }}",
+            "trusted-ci-fragment-${{ matrix.pack }}",
+        }
+    ]
+    timing_index = steps.index(timing_upload)
+    assert len(required_artifact_indices) == 2
+    assert all(index < timing_index for index in required_artifact_indices)
+
+    ci = yaml.safe_load(
+        (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    )
+    gate = json.dumps(ci["jobs"]["ci-gate"], sort_keys=True)
+    assert "execution-timing" not in gate
+    assert "timing-observations" not in gate
+
+
 def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> None:
     tested = "a" * 40
     parent = "b" * 40
@@ -348,6 +877,7 @@ def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> N
     assert result["tested_ref"] == tested
     assert result["tested_sha"] == tested
     assert result["base_sha"] == parent
+    assert result["head_ref"] == "main"
     assert result["contamination_sha"] == parent
 
 
@@ -371,6 +901,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": stale_api_base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -380,6 +911,8 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": tested_base,
@@ -394,6 +927,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     assert result["tested_sha"] == merge
     assert result["base_sha"] == tested_base
     assert result["head_sha"] == head
+    assert result["head_ref"] == "codex/ci-p3bb-production-route-6351"
     assert result["contamination_sha"] == tested_base
 
 
@@ -409,6 +943,7 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -418,6 +953,8 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": base,
@@ -498,6 +1035,82 @@ def test_host_admission_accepts_only_the_main_dispatch_trusted_executor_pack() -
         assert not ADMISSION.decision(mutated)[0]
 
 
+def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack(
+    tmp_path: Path,
+) -> None:
+    pr_number = "6505"
+    event_path = tmp_path / "event.json"
+    event_path.write_text(
+        json.dumps(
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    allowed = {
+        "MASTERMIND_CI_PROFILE": "pc-ci",
+        "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_REF": f"refs/pull/{pr_number}/merge",
+        "GITHUB_WORKFLOW_REF": (
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            f"ci.yml@refs/pull/{pr_number}/merge"
+        ),
+        "GITHUB_JOB": "trusted-pack",
+        "GITHUB_EVENT_PATH": str(event_path),
+    }
+    assert ADMISSION.decision(allowed)[0]
+    for key, value in (
+        ("GITHUB_EVENT_NAME", "workflow_dispatch"),
+        ("GITHUB_REF", "refs/pull/6506/merge"),
+        (
+            "GITHUB_WORKFLOW_REF",
+            "mastermindx-market-intelligence/macro/.github/workflows/rogue.yml@refs/pull/6505/merge",
+        ),
+        ("GITHUB_JOB", "rogue-pack"),
+        ("GITHUB_EVENT_PATH", str(tmp_path / "missing-event.json")),
+    ):
+        assert not ADMISSION.decision({**allowed, key: value})[0]
+
+    for name, payload in (
+        (
+            "fork.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {"repo": {"full_name": "attacker/fork"}},
+                }
+            },
+        ),
+        (
+            "release-base.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "release"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            },
+        ),
+    ):
+        mutated_event = tmp_path / name
+        mutated_event.write_text(json.dumps(payload), encoding="utf-8")
+        assert not ADMISSION.decision(
+            {**allowed, "GITHUB_EVENT_PATH": str(mutated_event)}
+        )[0]
+
+
 def test_cache_update_disables_automatic_maintenance() -> None:
     script = (ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_cache_update.sh").read_text(
         encoding="utf-8"
@@ -541,6 +1154,7 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
         ROOT / "ops" / "runner-host" / "common" / "runner_admission_hook.js"
     ).read_text(encoding="utf-8")
     assert 'spawnSync("/usr/bin/python3", ["-I", script]' in hook
+    assert '"GITHUB_EVENT_PATH"' in hook
     assert "process.env.PATH" not in hook
     assert "process.env.MASTERMIND_CI_PROFILE" not in hook
 

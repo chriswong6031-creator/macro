@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-27",
+ "as_of": "2026-08-28",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -78,20 +78,20 @@
      "name": "Shopify Inc"
     },
     {
-     "ticker": "ADP",
-     "name": "Automatic Data Processing Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
     },
     {
-     "ticker": "INTU",
-     "name": "Intuit Inc"
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
     },
     {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "INTU",
+     "name": "Intuit Inc"
     },
     {
      "ticker": "DDOG",
@@ -214,11 +214,11 @@
    "sector": "Internet & Platforms",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {
@@ -520,20 +520,20 @@
      "name": "Shopify Inc"
     },
     {
-     "ticker": "ADP",
-     "name": "Automatic Data Processing Inc"
-    },
-    {
      "ticker": "ADBE",
      "name": "Adobe Inc"
     },
     {
-     "ticker": "INTU",
-     "name": "Intuit Inc"
+     "ticker": "ADP",
+     "name": "Automatic Data Processing Inc"
     },
     {
      "ticker": "CDNS",
      "name": "Cadence Design Systems Inc"
+    },
+    {
+     "ticker": "INTU",
+     "name": "Intuit Inc"
     },
     {
      "ticker": "DDOG",
@@ -610,11 +610,11 @@
    "name_zh": "互联网与平台",
    "members": [
     {
-     "ticker": "GOOG",
+     "ticker": "GOOGL",
      "name": "Alphabet Inc"
     },
     {
-     "ticker": "GOOGL",
+     "ticker": "GOOG",
      "name": "Alphabet Inc"
     },
     {

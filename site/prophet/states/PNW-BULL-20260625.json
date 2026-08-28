@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PNW-BULL-20260625",
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 44.0,
-  "raw_confidence": 43.5,
-  "delta_vs_base": -16.0,
+  "management_confidence": 40.6,
+  "raw_confidence": 38.7,
+  "delta_vs_base": -19.4,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 64.2,
+    "validity": 51.2,
     "progress": 0.0,
-    "pace": 52.8,
+    "pace": 46.9,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.72,
+    "dist_to_stop_r": 0.609,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 31.1,
-    "p1": -0.1866,
-    "p2": -0.0933,
+    "horizon_pct_used": 33.3,
+    "p1": -0.2609,
+    "p2": -0.1305,
     "p3": null,
-    "move_r": -0.28,
+    "move_r": -0.391,
     "mfe_r": 0.003,
     "mae_r": -0.465
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-13",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 14,
-  "tau": 0.3111
+  "days_elapsed": 15,
+  "tau": 0.3333
 }

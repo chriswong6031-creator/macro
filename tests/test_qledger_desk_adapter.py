@@ -21,7 +21,7 @@ out of scope for this file).
 from __future__ import annotations
 
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -289,8 +289,16 @@ def test_live_registration_writes_open_claims_and_is_idempotent(tmp_path):
 
 
 def test_live_registration_never_writes_a_retrospective_claim(tmp_path):
-    rows = [_stock_desk_row(ticker="CARR", lean="constructive", asof=STALE_ASOF)]
-    stats = qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY)
+    # demand_chain (not stock_desk/thematic_desk): those two families are
+    # ANCHOR-AT-REGISTRATION (Eval OS E1, see below) — their claim `asof` is
+    # always `today`, so a stale `state_asof` can no longer make a
+    # register_prospective-level row retrospective for them BY DESIGN. This
+    # test exercises the still-live retrospective path through demand_chain,
+    # whose anchor is unchanged; the gate function itself
+    # (`outcome_not_yet_determined`) is pinned directly against a stale
+    # stock_desk claim by `test_stale_asof_is_refused_as_retrospective` above.
+    rows = [_demand_chain_row(ticker="NVDA", lean="outperform", asof=STALE_ASOF)]
+    stats = qda.register_prospective(rows, family="demand_chain", root=tmp_path, today=TODAY)
     assert stats["n_retrospective_skipped"] == 1
     assert stats["n_candidates"] == 0
     assert stats["n_accepted"] == 0
@@ -298,6 +306,154 @@ def test_live_registration_never_writes_a_retrospective_claim(tmp_path):
     # in the store at all — not even a status=rejected row. register_batch is
     # never even called for it.
     assert q.load_claims(tmp_path) == []
+
+
+# --------------------------------------------------------------------------- #
+# ANCHOR-AT-REGISTRATION (Eval OS E1) — stock_desk/thematic_desk NEVER
+# registered a claim in production: their rows always carry a `state_asof`
+# that is a completed prior session, so the fill session resolved from that
+# date is never strictly after the registration date and every row was
+# refused `retrospective_at_registration`, forever (real receipt: daily.yml
+# 98535585326, 2026-08-27T14:38Z — "6 row(s) seen, 0 registered this run").
+# Anchoring the claim's `asof` at the registration date itself (rather than
+# the row's own state date) makes the SAME row genuinely forward under the
+# UNCHANGED gate. `_STOCK_STATE_ASOF` is deliberately 2 sessions before TODAY
+# — well past the 1-session boundary `test_asof_equal_to_fill_session_is_
+# still_retrospective` pins, so every test below is proven ONLY by the
+# anchor, never by an asof that happened to already clear the gate.
+# --------------------------------------------------------------------------- #
+_STOCK_STATE_ASOF = nc.session_n_back(TODAY, 2).isoformat()
+
+
+def test_anchor_at_registration_stock_desk_claim_is_dated_at_today_not_state_asof(tmp_path):
+    """T1. A production-shaped stock_desk row (directional lean, state_asof 2
+    completed sessions stale) registers ACCEPTED once anchored at the
+    registration date, with the row's own state date preserved as provenance.
+
+    MUTATION CONTROL: this is the test the mission asks to fail against the
+    unmodified adapter — with no anchor, `outcome_not_yet_determined` refuses
+    this exact row (fill session resolves from the stale state_asof, which
+    has already printed by TODAY) and `q.load_claims(tmp_path)` stays empty,
+    failing on `stats["n_accepted"] == 1` below.
+    """
+    rows = [_stock_desk_row(ticker="CARR", lean="cautious", asof=_STOCK_STATE_ASOF)]
+    stats = qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY,
+                                     dry_run=False)
+    assert stats["n_retrospective_skipped"] == 0
+    assert stats["n_accepted"] == 1
+    claims = q.load_claims(tmp_path)
+    assert len(claims) == 1
+    stored = claims[0]
+    assert stored["asof"] == TODAY.isoformat()             # anchored at REGISTRATION, not state
+    assert stored["state_asof_source"] == _STOCK_STATE_ASOF  # the stale state date, kept as provenance
+    assert stored["status"] == q.STATUS_OPEN
+
+
+def test_anchor_is_family_gated_demand_chain_same_shape_stays_retrospective(tmp_path):
+    """T2. The identical row shape through `demand_chain` (no anchor flag) is
+    still refused — proves the override is gated per-family, not a global
+    relaxation of the forward-only gate, and that demand_chain's own behavior
+    is completely untouched by this change."""
+    rows = [_demand_chain_row(ticker="NVDA", lean="outperform", asof=_STOCK_STATE_ASOF)]
+    stats = qda.register_prospective(rows, family="demand_chain", root=tmp_path, today=TODAY)
+    assert stats["n_retrospective_skipped"] == 1
+    assert stats["n_accepted"] == 0
+    assert q.load_claims(tmp_path) == []
+
+
+def test_anchor_at_registration_claim_joins_prospective_cohort_both_reference_dates(tmp_path, monkeypatch):
+    """T3. The anchored claim must join the prospective cohort under BOTH
+    reference dates `_cohort_prospective` is ever called with: the
+    REGISTRAR's `today` and the GATE's `date(claim['timestamp'])`. If either
+    reference refused it, the claim would register but never accrue
+    control-clock or promotion-cohort membership — a claim that is stored but
+    functionally inert.
+
+    The wall clock is frozen to TODAY itself (mirroring `test_demand_chain_
+    control_clock_uses_registration_today_not_wall_clock`'s technique below)
+    so the claim's real registration `timestamp` lands on the SAME calendar
+    day this fixture's `today` names, rather than whatever day the suite
+    happens to run on — the gate-side reference date must be deterministic
+    for this assertion to be meaningful.
+    """
+    class _WallClockOnToday(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            stamp = datetime(2026, 8, 14, 15, 0, 0, tzinfo=timezone.utc)
+            return stamp if tz is not None else stamp.replace(tzinfo=None)
+
+    monkeypatch.setattr(q, "datetime", _WallClockOnToday)
+    rows = [_stock_desk_row(ticker="CARR", lean="cautious", asof=_STOCK_STATE_ASOF)]
+    qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY)
+    stored = q.load_claims(tmp_path)[0]
+    assert q._cohort_prospective(stored, TODAY) is True
+    ts_date = datetime.fromisoformat(str(stored["timestamp"])).astimezone(timezone.utc).date()
+    assert ts_date == TODAY
+    assert q._cohort_prospective(stored, ts_date) is True
+
+
+def test_anchor_at_registration_stock_desk_starts_control_clock_at_claim_timestamp(tmp_path):
+    """T4. stock_desk is `matched_control_required` (P0d C2.3). A row whose
+    sector resolves to a valid GICS name — mirroring the demand_chain
+    control-leg tests' resolver shape further down this file — must, once
+    anchored and accepted, start the C3.1 control-evidence clock, stamped
+    with the triggering claim's OWN registration `timestamp` (never a second,
+    slightly-later `now()` — see `_start_control_clocks_for`'s note)."""
+    rows = [_stock_desk_row(ticker="CARR", lean="cautious", asof=_STOCK_STATE_ASOF)]
+    qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY,
+                             sector_of=lambda ticker: "Industrials", git_sha="abc123")
+    stored = q.load_claims(tmp_path)[0]
+    clock = q.read_control_clock_start("stock_desk", root=tmp_path)
+    assert clock is not None
+    assert clock["first_controlled_prospective_registration_utc"] == stored["timestamp"]
+
+
+def test_anchor_at_registration_thematic_desk_registers_but_starts_no_control_clock(tmp_path):
+    """T5. thematic_desk is `benchmark_only` (C1.4): a US row registers
+    accepted, anchored at today exactly like stock_desk, but — whatever its
+    control leg looks like — it must NEVER start a control-evidence clock."""
+    rows = [_thematic_desk_row(subject_ticker="XLK", lean="overweight",
+                               asof=_STOCK_STATE_ASOF, market="us")]
+    stats = qda.register_prospective(rows, family="thematic_desk", root=tmp_path, today=TODAY)
+    assert stats["n_accepted"] == 1
+    stored = q.load_claims(tmp_path)[0]
+    assert stored["asof"] == TODAY.isoformat()
+    assert q.read_control_clock_start("thematic_desk", root=tmp_path) is None
+
+
+def test_anchor_at_registration_mints_the_general_evidence_clock_at_registration_instant(tmp_path):
+    """T6. The family-wide evidence clock (`qledger_evidence_clock`, distinct
+    from the control clock) mints on this first acceptance too, and its
+    stamp is a REGISTRATION-TIME instant — not the claim's `asof` date, which
+    a naive implementation could confuse it for now that `asof` equals
+    `today`."""
+    assert qclock.read_start("stock_desk", root=tmp_path) is None
+    rows = [_stock_desk_row(ticker="CARR", lean="cautious", asof=_STOCK_STATE_ASOF)]
+    qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY,
+                             git_sha="cafef00d")
+    rec = qclock.read_start("stock_desk", root=tmp_path)
+    assert rec is not None
+    stamp_raw = rec["first_prospective_registration_utc"]
+    parsed = datetime.fromisoformat(stamp_raw)      # must parse as a full ISO instant
+    assert parsed.tzinfo is not None                # an INSTANT, never a bare calendar date
+    assert stamp_raw != TODAY.isoformat()            # not the claim's asof date string
+
+
+def test_translate_row_asof_override_none_is_byte_identical_to_no_override():
+    """T7. `asof_override=None` (the default) must be a complete no-op: the
+    claim's `asof` still comes from the row's own state date, and `extra`
+    carries ONLY `source_id` — no `state_asof_source` key appears at all.
+    Proves the override never changes demand_chain's (or any unflagged
+    family's) existing translation path."""
+    row = _demand_chain_row()
+    implicit = qda.translate_row(row, family="demand_chain", direction=1,
+                                 timestamp_quality="CRAWL_BOUNDED")
+    explicit_none = qda.translate_row(row, family="demand_chain", direction=1,
+                                      timestamp_quality="CRAWL_BOUNDED", asof_override=None)
+    assert implicit == explicit_none                 # byte-identical either way
+    assert implicit["asof"] == row["state_asof"]
+    assert "state_asof_source" not in implicit
+    assert implicit["source_id"] == row["id"]
 
 
 # --------------------------------------------------------------------------- #
@@ -354,9 +510,12 @@ def test_dry_run_never_starts_the_evidence_clock(tmp_path):
 
 
 def test_retrospective_only_batch_never_starts_the_evidence_clock(tmp_path):
-    rows = [_stock_desk_row(ticker="CARR", lean="constructive", asof=STALE_ASOF)]
-    qda.register_prospective(rows, family="stock_desk", root=tmp_path, today=TODAY)
-    assert qclock.read_start("stock_desk", root=tmp_path) is None
+    # demand_chain, same reasoning as test_live_registration_never_writes_a_
+    # retrospective_claim above: stock_desk is now ANCHOR-AT-REGISTRATION, so
+    # a stale state_asof can no longer make it retrospective at this level.
+    rows = [_demand_chain_row(ticker="NVDA", lean="outperform", asof=STALE_ASOF)]
+    qda.register_prospective(rows, family="demand_chain", root=tmp_path, today=TODAY)
+    assert qclock.read_start("demand_chain", root=tmp_path) is None
 
 
 # --------------------------------------------------------------------------- #

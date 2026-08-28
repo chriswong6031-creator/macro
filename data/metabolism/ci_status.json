@@ -1,37 +1,37 @@
 {
-  "ts": "2026-08-26T23:47:58+00:00",
-  "main_sha": "851e660cce363778d20b66dcf816a76cea9dffc2",
+  "ts": "2026-08-28T18:59:10+00:00",
+  "main_sha": "72ea300477d0873ef2272863512ddecda6c2a485",
   "red_required": [
     {
-      "name": "trusted-executor-hosted-plan",
-      "conclusion": "failure",
+      "name": "sweep",
+      "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33024021850/job/98361014709"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167778649/job/98837214367"
     },
     {
       "name": "engine-render-guards",
-      "conclusion": "cancelled",
+      "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33008580093/job/98308642263"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263186"
     },
     {
       "name": "tier-gate",
-      "conclusion": "cancelled",
+      "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33008580093/job/98308641892"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263181"
     },
     {
       "name": "font-ui-defined",
       "conclusion": "cancelled",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33008580093/job/98308641683"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263049"
     }
   ],
   "green": false,
-  "consecutive_failures": 67,
+  "consecutive_failures": 70,
   "sensed_shas": [
-    "851e660cce363778d20b66dcf816a76cea9dffc2",
-    "20f61cca8edaddb2f21f60e6275d9ceacb7ce04d"
+    "72ea300477d0873ef2272863512ddecda6c2a485",
+    "ed202fbcadce2ca9d0ed85abb3b1178318825653"
   ],
   "heartbeat_degraded": false
 }
