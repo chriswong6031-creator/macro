@@ -5432,3 +5432,89 @@ class TestVolGtOiRatio:
         assert event["vol_gt_oi_ratio"] == pytest.approx(0.5)
         # Provenance for the OI leg stays exactly where it was.
         assert "oi_vintage" in event
+
+
+class TestMicrostructureStrictJsonSafety:
+    """The event stage serialises with ``json.dumps(..., allow_nan=False)``
+    (scripts/live_flow_poller.py). One NaN, Infinity or numpy scalar in this
+    block refuses the ENTIRE batch, so hostile source rows must degrade to null
+    rather than to a non-finite number."""
+
+    HOSTILE = {
+        "no_nbbo_at_all": dict(bid=None, ask=None),
+        "zero_size": dict(size=0),
+        "unparseable_clocks": dict(trade_ts="not-a-time", quote_ts="also-not"),
+        "infinite_price": dict(price=float("inf")),
+        "negative_vendor_sizes": dict(bid_size=-5, ask_size=-7),
+        "locked_quote": dict(bid=2.5, ask=2.5),
+        "crossed_quote": dict(bid=3.0, ask=2.0),
+        "future_quote": dict(
+            trade_ts="2026-07-02T14:30:00.000",
+            quote_ts="2026-07-02T14:30:00.500",
+        ),
+    }
+
+    @pytest.mark.parametrize("label", sorted(HOSTILE))
+    def test_hostile_source_rows_still_emit_strict_finite_json(self, label):
+        import json
+
+        frame = _df([_make_nbbo_trade(**self.HOSTILE[label])])
+        for block in lf._coalesce_nbbo_microstructure(frame).values():
+            json.dumps(block, allow_nan=False)  # must not raise
+            for field, value in block.items():
+                if value is None or isinstance(value, str):
+                    continue
+                assert isinstance(value, (int, float)) and not isinstance(value, bool), (
+                    f"{field} is {type(value).__name__}, not a JSON-native number"
+                )
+                assert np.isfinite(value), f"{field} is non-finite: {value!r}"
+
+    def test_pandas_nullable_integer_sizes_do_not_leak_pd_na(self):
+        """`bulk_trade_quote` returns size/bid_size/ask_size as nullable Int64,
+        so `pd.NA` reaches this module and must never survive into the block."""
+        import json
+
+        frame = _df([_make_nbbo_trade(sequence=1), _make_nbbo_trade(sequence=2)])
+        for col in ("size", "bid_size", "ask_size"):
+            frame[col] = pd.array([pd.NA, pd.NA], dtype="Int64")
+
+        for block in lf._coalesce_nbbo_microstructure(frame).values():
+            json.dumps(block, allow_nan=False)
+            assert block["bid_size_median"] is None
+            assert block["ask_size_median"] is None
+
+    def test_missing_vendor_columns_degrade_to_uncovered_not_crash(self):
+        """A frame with no bid/ask, no quote clock, or no vendor sizes is
+        uncovered — it is not an exception and not a zero."""
+        for dropped in (["bid", "ask"], ["quote_timestamp"], ["bid_size", "ask_size"]):
+            frame = _df([_make_nbbo_trade()]).drop(columns=dropped)
+            measured = lf._coalesce_nbbo_microstructure(frame)
+            for block in measured.values():
+                if dropped == ["bid_size", "ask_size"]:
+                    assert block["bid_size_median"] is None
+                else:
+                    assert block["nbbo_valid_print_count"] == 0
+                    assert block["at_ask_share"] is None
+
+    def test_four_shares_are_exhaustive_within_the_published_rounding(self):
+        """Each share is rounded to 6 decimals independently, so their sum can
+        differ from 1.0 by up to ~2e-6. A consumer must not assert exact
+        equality — this pins the real bound instead of pretending it is exact."""
+        rows = [
+            _make_nbbo_trade(price=2.6, size=1, sequence=1),                     # at ask
+            _make_nbbo_trade(price=2.4, size=2, sequence=2),                     # at bid
+            _make_nbbo_trade(price=2.5, size=3, sequence=3),                     # inside
+            _make_nbbo_trade(price=9.9, size=4, sequence=4),                     # above ask
+            _make_nbbo_trade(price=0.1, size=5, sequence=5),                     # below bid
+            _make_nbbo_trade(price=2.5, size=6, sequence=6, bid=None, ask=None),  # uncovered
+        ]
+        micro = lf._coalesce_nbbo_microstructure(_df(rows))[MICRO_KEY]
+
+        total = (
+            micro["at_ask_share"] + micro["at_bid_share"]
+            + micro["inside_share"] + micro["outside_share"]
+        )
+        assert abs(total - 1.0) <= 4 * 5e-7
+        assert micro["source_print_count"] == 6
+        assert micro["nbbo_valid_print_count"] == 5
+        assert micro["nbbo_premium_coverage"] < 1.0
