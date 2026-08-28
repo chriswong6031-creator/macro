@@ -8,19 +8,19 @@
 
 **Tech Stack:** YAML semantic registry, Python system-map generator/tests, Agent OS Markdown/frontmatter validation.
 
-**Spec:** `docs/superpowers/specs/2026-08-28-single-name-intelligence-os-design.md`, `docs/superpowers/specs/2026-08-28-sni1-reference-twin-design.md`, and binding amendment `docs/superpowers/specs/2026-08-28-sni1-identity-authority-amendment.md`.
+**Spec:** `docs/superpowers/specs/2026-08-28-single-name-intelligence-os-design.md`, `docs/superpowers/specs/2026-08-28-sni1-reference-twin-design.md`, and binding `docs/superpowers/specs/2026-08-28-sni1-identity-authority-amendment.md`.
 
 ## Global Constraints
 
-- Execute only after PR #6613 is merged on current `main`; do not make this registration the vehicle that lands the parent SNI-1 architecture.
+- Execute only after PR #6613 is merged on current `main`.
 - Program key is exactly `single-name-intelligence`.
-- Data OS remains canonical issuer/security/listing identity authority; SNI owns no identity master.
-- Earnings/Company Event, Fundamental Forensics, Capital Structure, Stock Identity/Market Timing, China System, Options Intelligence, Factor/Regime owners, Neural Web, Terminal market data/charting, qledger/Evaluation OS all retain their existing semantic ownership.
-- `single-name-intelligence` owns derived reference-twin composition, single-name experience architecture, SNI-specific residual/response/forecast research definitions, and forecast-memory projection only.
-- No product surface is claimed live by this registration; `product_surfaces` stays empty until a real SNI consumer ships.
-- Decision boundary is `context_only`; this registration grants no rank, gate, size, signal, escalation, portfolio, execution, or trade authority.
+- Data OS remains canonical issuer/security/listing identity authority.
+- Existing Earnings, Fundamental Forensics, Capital Structure, Stock Identity/Market Timing, China System, Options, Factor/Regime, Neural Web, Terminal market-data/charting, qledger/Evaluation OS, Prophet and Portfolio owners retain their boundaries.
+- SNI owns derived reference-twin composition, single-name experience architecture, SNI-specific residual/response/forecast research definitions, and forecast-memory projection only.
+- No product surface is claimed live by registration; `product_surfaces: []` until a real SNI consumer ships.
+- Decision boundary is `context_only`; registration grants no rank, gate, size, signal, escalation, portfolio, execution, or trade authority.
 - `docs/MASTERMIND_SYSTEM_MAP.md` is generated, never hand-edited.
-- The Agent OS workstream must validate against the newly registered program key; do not create it under an approximate existing program.
+- The Agent OS workstream must validate against the new canonical program key; do not map it under an approximate existing program.
 
 ---
 
@@ -31,13 +31,9 @@
 - Modify: `tests/test_mastermind_system_map.py`
 - Regenerate: `docs/MASTERMIND_SYSTEM_MAP.md`
 
-**Interfaces:**
-- Consumes: existing `mastermind_programs.v1` schema and relationship vocabulary.
-- Produces: canonical program key `single-name-intelligence` accepted by the semantic-system validator and available to Agent OS workstreams.
+- [ ] **Step 1: Write the failing semantic test**
 
-- [ ] **Step 1: Write the failing census/semantics test**
-
-In `tests/test_mastermind_system_map.py`, update the program-count assertion from 60 to 61 and add a focused contract test:
+In `tests/test_mastermind_system_map.py`, change the current program census from 60 to 61 and add:
 
 ```python
 def test_single_name_intelligence_program_has_narrow_composition_boundary(model):
@@ -60,8 +56,8 @@ def test_single_name_intelligence_program_has_narrow_composition_boundary(model)
         "factor-intelligence",
     } <= consumes
 
-    does_not_own = " ".join(program["does_not_own"]).lower()
-    for forbidden_owner in (
+    boundary = " ".join(program["does_not_own"]).lower()
+    for required_boundary in (
         "identity",
         "earnings",
         "capital",
@@ -69,10 +65,10 @@ def test_single_name_intelligence_program_has_narrow_composition_boundary(model)
         "portfolio",
         "trade",
     ):
-        assert forbidden_owner in does_not_own
+        assert required_boundary in boundary
 ```
 
-Also replace the census comment above the count with:
+Update the census comment to:
 
 ```python
 # 60 -> 61: SNI semantic registration adds the cross-owner
@@ -80,9 +76,7 @@ Also replace the census comment above the count with:
 assert len(registry["programs"]) == 61
 ```
 
-- [ ] **Step 2: Run the focused test and confirm it fails for the missing program**
-
-Run:
+- [ ] **Step 2: Prove red**
 
 ```bash
 python3 -m pytest tests/test_mastermind_system_map.py::test_single_name_intelligence_program_has_narrow_composition_boundary -q
@@ -90,9 +84,7 @@ python3 -m pytest tests/test_mastermind_system_map.py::test_single_name_intellig
 
 Expected: FAIL with `KeyError: 'single-name-intelligence'`.
 
-- [ ] **Step 3: Add the exact registry entry**
-
-Add this program block under `programs:` in `config/mastermind_programs.yml` without modifying any existing program's ownership:
+- [ ] **Step 3: Add this exact program block under `programs:`**
 
 ```yaml
   single-name-intelligence:
@@ -161,27 +153,25 @@ Add this program block under `programs:` in `config/mastermind_programs.yml` wit
         size, portfolio and trade authority must be earned and granted by their existing owners.
 ```
 
-- [ ] **Step 4: Regenerate the semantic map**
+Do not edit any existing program to make the new relationship graph easier to validate.
 
-Run:
+- [ ] **Step 4: Regenerate the semantic map**
 
 ```bash
 python3 scripts/build_mastermind_system_map.py
 ```
 
-Expected: exit 0 and `docs/MASTERMIND_SYSTEM_MAP.md` changes only as the deterministic projection of the new registry program.
+Expected: exit 0; `docs/MASTERMIND_SYSTEM_MAP.md` changes only as deterministic projection of the registry addition.
 
-- [ ] **Step 5: Run semantic-map validation**
-
-Run:
+- [ ] **Step 5: Run semantic-map tests**
 
 ```bash
 python3 -m pytest tests/test_mastermind_system_map.py -q
 ```
 
-Expected: all tests PASS, including the census count of 61 and the new SNI boundary test.
+Expected: PASS, including program count 61 and the new ownership-boundary test.
 
-- [ ] **Step 6: Commit the semantic registration**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add config/mastermind_programs.yml tests/test_mastermind_system_map.py docs/MASTERMIND_SYSTEM_MAP.md
@@ -190,19 +180,15 @@ git commit -m "records(sni): register single-name intelligence program"
 
 ---
 
-### Task 2: Create the durable Agent OS workstream and close the registry gate
+### Task 2: Create the durable workstream and close the prior program gate
 
 **Files:**
 - Create: `agentos/workstreams/WS-SINGLE-NAME-INTELLIGENCE-OS.md`
 - Modify: `research/single_name_intelligence/SNI1_PROGRAM_REGISTRY_GATE_2026-08-28.md`
 
-**Interfaces:**
-- Consumes: `program: single-name-intelligence` from Task 1 and `DEC:SNI-IDENTITY-AUTHORITY-CHAIN` from SNI-1.
-- Produces: canonical cross-session SNI workstream identity and an exact SNI-1A next action.
+- [ ] **Step 1: Create `WS:SINGLE-NAME-INTELLIGENCE-OS`**
 
-- [ ] **Step 1: Create the workstream with the exact frozen sequence**
-
-Create `agentos/workstreams/WS-SINGLE-NAME-INTELLIGENCE-OS.md` with this frontmatter:
+Use this exact frontmatter:
 
 ```yaml
 ---
@@ -234,12 +220,10 @@ waves:
   - id: SNI-0
     title: Program architecture and no-rebuild freeze
     status: done
-    next_action: Preserve the merged program thesis and architecture boundaries.
   - id: SNI-1
     title: Alibaba/Tencent reference-twin contract and source qualification
     status: done
     depends_on: [SNI-0]
-    next_action: Preserve PR #6613 and its binding identity-authority amendment as the implementation source.
   - id: SNI-1A
     title: Pure identity/counter relationship contract
     status: todo
@@ -314,41 +298,40 @@ next_action: >
 ---
 ```
 
-Add a short body explaining that SNI-1A is the current frontier and that later waves are named sequence, not commissions.
+The body must state that SNI-1A is the active frontier and later waves are sequence, not commissions.
 
-- [ ] **Step 2: Mark the old registry gate as satisfied without deleting its history**
+- [ ] **Step 2: Close the old registry gate without erasing history**
 
-In `research/single_name_intelligence/SNI1_PROGRAM_REGISTRY_GATE_2026-08-28.md`, change the state line to:
+Change the state line in `research/single_name_intelligence/SNI1_PROGRAM_REGISTRY_GATE_2026-08-28.md` to:
 
 ```text
 **State:** SATISFIED — `single-name-intelligence` registered; see `WS:SINGLE-NAME-INTELLIGENCE-OS`
 ```
 
-Append a `## Resolution` section stating the accepted program key, registry commit/PR reference, and that no authority or runtime was created by registration.
+Append `## Resolution` with the actual registry PR/commit, the accepted program key, and a sentence that registration created no runtime or decision authority.
 
-- [ ] **Step 3: Run Agent OS validation**
-
-Run:
+- [ ] **Step 3: Run Agent OS validator**
 
 ```bash
 python3 scripts/agentos.py validate
 ```
 
-Expected: exit 0; no unknown `program: single-name-intelligence`, no dangling `DEC:`/`DSC:` reference, no malformed wave dependency.
+Expected: exit 0; no unknown program or dangling `DEC:`/`DSC:` citation.
 
-- [ ] **Step 4: Run the semantic and Agent OS focused suite together**
-
-Run:
+- [ ] **Step 4: Run exact existing Agent OS test modules**
 
 ```bash
-python3 -m pytest tests/test_mastermind_system_map.py tests/test_agentos.py -q
+python3 -m pytest \
+  tests/test_mastermind_system_map.py \
+  tests/test_agentos_compile.py \
+  tests/test_agentos_schema.py \
+  tests/test_agentos_status.py \
+  -q
 ```
 
-If `tests/test_agentos.py` is not the repository's current Agent OS test filename, use the existing Agent OS test module(s) returned by `git ls-files 'tests/test_agentos*.py'`; do not create a duplicate test harness.
+Expected: PASS.
 
-Expected: all selected tests PASS.
-
-- [ ] **Step 5: Commit the workstream/gate closure**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add agentos/workstreams/WS-SINGLE-NAME-INTELLIGENCE-OS.md research/single_name_intelligence/SNI1_PROGRAM_REGISTRY_GATE_2026-08-28.md
@@ -357,22 +340,29 @@ git commit -m "records(sni): establish durable single-name workstream"
 
 ---
 
-## Plan self-review
-
-- The plan modifies the existing semantic registry rather than introducing another program map.
-- The new program does not absorb Data OS, Earnings, Capital Structure, Stock Identity, China/HK, Options, graph, quote, qledger/Evaluation OS, Prophet or Portfolio ownership.
-- Product surfaces remain empty until a real consumer exists.
-- The workstream cannot validate until the program key exists, preserving the intended gate ordering.
-- SNI-1A remains a separate code PR and is not bundled into this records-only registration carrier.
-- No placeholder implementation requirement remains in this plan.
-
-## Completion evidence
-
-This registration carrier is complete only when the exact PR head has:
+## Final Exact-Head Verification
 
 ```bash
-python3 -m pytest tests/test_mastermind_system_map.py -q
+python3 -m pytest \
+  tests/test_mastermind_system_map.py \
+  tests/test_agentos_compile.py \
+  tests/test_agentos_schema.py \
+  tests/test_agentos_status.py \
+  -q
 python3 scripts/agentos.py validate
 ```
 
-both exiting 0, hosted CI green on that exact head, and `config/mastermind_programs.yml`, generated `docs/MASTERMIND_SYSTEM_MAP.md`, and `WS:SINGLE-NAME-INTELLIGENCE-OS` all agree on the same program key and authority boundary.
+Then require hosted CI on the exact head. Green CI proves only the registration records are internally valid; it does not prove an SNI reference twin or product exists.
+
+## Plan self-review
+
+- Extends the existing semantic registry and Agent OS only; no parallel registry is introduced.
+- Does not absorb Data OS, Earnings, Capital Structure, Stock Identity, China/HK, Options, graph, quote, qledger/Evaluation OS, Prophet or Portfolio ownership.
+- Product surfaces remain empty until a real consumer exists.
+- Workstream validation depends on the registered program key, preserving gate order.
+- SNI-1A remains a separate code PR.
+- All commands reference current repository files; no conditional or placeholder test path remains.
+
+## Completion Evidence
+
+The records-only registration is complete when exact-head local validation above and hosted CI are green and `config/mastermind_programs.yml`, generated `docs/MASTERMIND_SYSTEM_MAP.md`, `WS:SINGLE-NAME-INTELLIGENCE-OS`, and the closed SNI-1 program gate all name the same program and authority boundary.
