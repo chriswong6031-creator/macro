@@ -1,8 +1,8 @@
 # Market Ontology Final Preservation Audit
 
-**Operation:** `marketontology-final-preservation-census-20260828-terra-001`  
-**Date:** 2026-08-28  
-**Parent:** `WS:MARKET-OS` / Market Ontology complete-parity F00  
+**Operation:** `marketontology-final-preservation-census-20260828-terra-001`
+**Date:** 2026-08-28
+**Parent:** `WS:MARKET-OS` / Market Ontology complete-parity F00
 **Scope:** archive-first evidence preservation and adversarial current-public reconciliation only. This is not a build, adoption, authority, or access-expansion decision.
 
 ## 1. Formal result
@@ -68,7 +68,7 @@ The operation compared three separate inventories without collapsing their meani
 | Historical public P1 | 1,556 capability rows plus 460 quality findings; bytes absent | completeness reserve; still the import blocker |
 | Authenticated paid baseline | 88 rows in `MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_LEDGER_2026-08-26.csv` | advertised-capability baseline |
 | Earlier current-public delta | 42 rows in `MARKET_ONTOLOGY_CURRENT_PUBLIC_DELTA_LEDGER_2026-08-26.csv` | current name/depth reconciliation input |
-| This final preservation pass | 12 recorded observations; 6 material preservation candidates | adversarial delta and evidence receipt |
+| This final preservation pass | 15 recorded observations; 6 material preservation candidates | adversarial delta and evidence receipt |
 
 The new records are additive evidence. They do **not** rewrite the 88-row ledger,
 the 42-row delta ledger, the F00/F01-F13 manifest, or any existing disposition.

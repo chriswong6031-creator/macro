@@ -1,7 +1,7 @@
 # Independent Preservation Review Packet — Market Ontology
 
 **Review target:** the preservation artifacts created by
-`marketontology-final-preservation-census-20260828-terra-001` only.  
+`marketontology-final-preservation-census-20260828-terra-001` only.
 **Required reviewer posture:** do not try to prove that earlier work was good. Try
 to find a meaningful product state that it failed to preserve.
 
