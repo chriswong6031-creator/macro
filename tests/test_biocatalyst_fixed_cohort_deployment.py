@@ -437,9 +437,40 @@ def test_loader_refuses_a_manifest_that_is_not_root_owned(lane, cohort_a):
 
 
 @pytest.mark.parametrize("mode", [0o666, 0o622, 0o606, 0o4444, 0o2444])
-def test_loader_refuses_a_group_or_world_writable_manifest(lane, cohort_a, mode):
+def test_loader_refuses_a_group_or_world_writable_manifest(
+    lane, cohort_a, mode, monkeypatch
+):
     lane.activate(cohort_a)
-    lane.active.chmod(mode)
+    if mode & (stat.S_ISUID | stat.S_ISGID):
+        real_fstat = os.fstat
+        active_stat = lane.active.stat()
+
+        def unsafe_mode_fstat(fd):
+            info = real_fstat(fd)
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_dev != active_stat.st_dev
+                or info.st_ino != active_stat.st_ino
+            ):
+                return info
+            return SimpleNamespace(
+                st_dev=info.st_dev,
+                st_ino=info.st_ino,
+                st_mode=(info.st_mode & ~0o7777) | mode,
+                st_nlink=info.st_nlink,
+                st_uid=info.st_uid,
+                st_gid=info.st_gid,
+                st_size=info.st_size,
+                st_mtime_ns=info.st_mtime_ns,
+                st_ctime_ns=info.st_ctime_ns,
+            )
+
+        # The sealed PC services deliberately set RestrictSUIDSGID=true, so
+        # constructing a real set-ID fixture returns EPERM there.  Inject only
+        # the descriptor metadata the loader consumes; do not weaken the host.
+        monkeypatch.setattr(runtime.os, "fstat", unsafe_mode_fstat)
+    else:
+        lane.active.chmod(mode)
 
     with pytest.raises(FixedCohortRuntimeError) as excinfo:
         read_trusted_file(lane.active, **lane.trust())

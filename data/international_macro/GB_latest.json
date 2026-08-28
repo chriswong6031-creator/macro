@@ -7,8 +7,8 @@
   "flag": "🇬🇧",
   "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
   "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
-  "asof": "2026-08-24",
-  "built": "2026-08-26 05:35 UTC",
+  "asof": "2026-08-26",
+  "built": "2026-08-27 09:39 UTC",
   "regime": {
     "quad": "Q2",
     "name": "Reflation",
@@ -16,7 +16,7 @@
     "inflation_score": 0.0,
     "confidence": 0.167,
     "liquidity": "unknown",
-    "recession_score": 2.0,
+    "recession_score": 1.0,
     "recession_band": "low",
     "data_limited": true
   },
@@ -41,7 +41,7 @@
       "base": 50.0,
       "growth": -7.33,
       "inflation": -0.0,
-      "recession": -0.36,
+      "recession": -0.18,
       "liquidity": 0.0,
       "risk_state": 0.0
     },
@@ -50,8 +50,6 @@
   },
   "history": {
     "values": [
-      51,
-      51,
       51,
       51,
       51,
@@ -109,11 +107,11 @@
       42,
       42,
       42,
+      42,
+      43,
       42
     ],
     "dates": [
-      "2026-06-02",
-      "2026-06-03",
       "2026-06-04",
       "2026-06-05",
       "2026-06-08",
@@ -171,25 +169,27 @@
       "2026-08-19",
       "2026-08-20",
       "2026-08-21",
-      "2026-08-24"
+      "2026-08-24",
+      "2026-08-25",
+      "2026-08-26"
     ],
-    "points": "0.00,49.00 1.69,49.00 3.39,49.00 5.08,49.00 6.78,49.00 8.47,49.00 10.17,49.00 11.86,49.00 13.56,42.00 15.25,48.00 16.95,48.00 18.64,48.00 20.34,49.00 22.03,49.00 23.73,48.00 25.42,48.00 27.12,48.00 28.81,48.00 30.51,48.00 32.20,48.00 33.90,48.00 35.59,48.00 37.29,43.00 38.98,38.00 40.68,43.00 42.37,43.00 44.07,44.00 45.76,44.00 47.46,53.00 49.15,48.00 50.85,48.00 52.54,48.00 54.24,39.00 55.93,48.00 57.63,53.00 59.32,53.00 61.02,43.00 62.71,52.00 64.41,43.00 66.10,47.00 67.80,46.00 69.49,42.00 71.19,42.00 72.88,42.00 74.58,42.00 76.27,42.00 77.97,37.00 79.66,37.00 81.36,46.00 83.05,46.00 84.75,46.00 86.44,46.00 88.14,47.00 89.83,36.00 91.53,44.00 93.22,44.00 94.92,58.00 96.61,58.00 98.31,58.00 100.00,58.00",
+    "points": "0.00,49.00 1.69,49.00 3.39,49.00 5.08,49.00 6.78,49.00 8.47,49.00 10.17,42.00 11.86,48.00 13.56,48.00 15.25,48.00 16.95,49.00 18.64,49.00 20.34,48.00 22.03,48.00 23.73,48.00 25.42,48.00 27.12,48.00 28.81,48.00 30.51,48.00 32.20,48.00 33.90,43.00 35.59,38.00 37.29,43.00 38.98,43.00 40.68,44.00 42.37,44.00 44.07,53.00 45.76,48.00 47.46,48.00 49.15,48.00 50.85,39.00 52.54,48.00 54.24,53.00 55.93,53.00 57.63,43.00 59.32,52.00 61.02,43.00 62.71,47.00 64.41,46.00 66.10,42.00 67.80,42.00 69.49,42.00 71.19,42.00 72.88,42.00 74.58,37.00 76.27,37.00 77.97,46.00 79.66,46.00 81.36,46.00 83.05,46.00 84.75,47.00 86.44,36.00 88.14,44.00 89.83,44.00 91.53,58.00 93.22,58.00 94.92,58.00 96.61,58.00 98.31,57.00 100.00,58.00",
     "min": 42,
     "max": 64,
-    "start": "2026-06-02",
-    "end": "2026-08-24"
+    "start": "2026-06-04",
+    "end": "2026-08-26"
   },
   "market": {
     "index_label": "FTSE 100 / FTSE 250",
     "currency_label": "GBP/USD",
     "equity": {
-      "price": 10854.3,
-      "off_52w_high": -0.5,
+      "price": 10878.1,
+      "off_52w_high": -0.3,
       "above_50d": true,
       "above_200d": true,
-      "realvol": 5.4,
-      "rsi": 61.0,
-      "ext_z": -0.76,
+      "realvol": 4.5,
+      "rsi": 62.0,
+      "ext_z": -0.71,
       "ext_grade": "intrend",
       "drawdown_risk": 1.0,
       "drawdown_band": "low",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 12,
+    "top_score": 9,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.186,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 12.5,
+      "intensity": 8.8,
       "peak": 80.7,
-      "peak_days_ago": 18,
-      "off_peak": 68.2,
-      "velocity": -36.5,
+      "peak_days_ago": 20,
+      "off_peak": 71.8,
+      "velocity": -16.0,
       "phase": "receding",
       "reached_risk": true,
       "state_now": "calm",
@@ -222,8 +222,6 @@
       "odds_peak": 0.186,
       "odds_delta": 0.0,
       "spark": [
-        56.7,
-        56.9,
         72.4,
         73.2,
         80.4,
@@ -245,16 +243,18 @@
         24.8,
         14.5,
         14.7,
-        12.5
+        12.5,
+        8.3,
+        8.8
       ],
-      "spark_pts": "3.0,10.0 6.9,10.0 10.8,5.4 14.7,5.2 18.7,3.1 22.6,3.0 26.5,5.1 30.4,5.1 34.3,6.3 38.2,5.8 42.1,10.6 46.0,10.4 50.0,9.0 53.9,8.2 57.8,15.0 61.7,14.4 65.6,14.8 69.5,11.7 73.4,12.3 77.3,16.3 81.3,19.4 85.2,22.4 89.1,22.4 93.0,23.0",
+      "spark_pts": "3.0,5.3 6.9,5.1 10.8,3.1 14.7,3.0 18.7,5.0 22.6,5.0 26.5,6.1 30.4,5.6 34.3,10.2 38.2,10.0 42.1,8.7 46.0,7.9 50.0,14.3 53.9,13.7 57.8,14.1 61.7,11.1 65.6,11.8 69.5,15.5 73.4,18.4 77.3,21.3 81.3,21.2 85.2,21.8 89.1,23.0 93.0,22.9",
       "spark_peak": {
-        "x": 22.6,
+        "x": 14.7,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 23.0
+        "y": 22.9
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,17 +266,17 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 73.5,
+        "score": 72.1,
         "band": "caution",
         "firing_legs": [
           {
-            "leg": "ext_etf",
-            "pctile": 0.747,
+            "leg": "ext_idx",
+            "pctile": 0.729,
             "confirmed": false
           },
           {
-            "leg": "ext_idx",
-            "pctile": 0.722,
+            "leg": "ext_etf",
+            "pctile": 0.713,
             "confirmed": false
           }
         ]
@@ -286,7 +286,7 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 37.3,
+        "score": 35.7,
         "band": "calm",
         "firing_legs": []
       },
@@ -295,7 +295,7 @@
         "tier": "A",
         "label_en": "Sterling depreciation / outflows",
         "label_zh": "英镑贬值／资金外流",
-        "score": 9.5,
+        "score": 7.7,
         "band": "calm",
         "firing_legs": []
       }
@@ -361,8 +361,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.3654,
-      "value": "1.37",
+      "raw": 1.3647,
+      "value": "1.36",
       "unit": "",
       "asof": null
     },
@@ -370,8 +370,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 1.69,
-      "value": "1.69%",
+      "raw": 3.37,
+      "value": "3.37%",
       "unit": "%",
       "asof": null
     },
@@ -379,8 +379,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -0.5,
-      "value": "-0.50%",
+      "raw": -0.3,
+      "value": "-0.30%",
       "unit": "%",
       "asof": null
     },
@@ -388,8 +388,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 5.4,
-      "value": "5.40%",
+      "raw": 4.5,
+      "value": "4.50%",
       "unit": "%",
       "asof": null
     }
@@ -479,7 +479,7 @@
       "title_zh": "英镑",
       "why_en": "Imported inflation and cross-border confidence signal.",
       "why_zh": "输入性通胀与跨境信心信号。",
-      "value": "1.37",
+      "value": "1.36",
       "available": true,
       "metric": "fx",
       "source_key": "boe",
@@ -543,7 +543,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 543,
+      "age_days": 544,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -551,7 +551,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 237,
+      "age_days": 238,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -559,7 +559,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-04",
-      "age_days": 147,
+      "age_days": 148,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -567,7 +567,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 86,
+      "age_days": 87,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

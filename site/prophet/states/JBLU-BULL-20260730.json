@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "JBLU-BULL-20260730",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 28.5,
-  "raw_confidence": 28.9,
-  "delta_vs_base": -31.5,
+  "management_confidence": 27.9,
+  "raw_confidence": 27.1,
+  "delta_vs_base": -32.1,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 44.8,
+    "validity": 40.2,
     "progress": 0.0,
-    "pace": 7.2,
+    "pace": 5.7,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.552,
+    "dist_to_stop_r": 0.509,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 55.6,
-    "p1": -0.2987,
-    "p2": -0.1494,
+    "horizon_pct_used": 60.0,
+    "p1": -0.327,
+    "p2": -0.1635,
     "p3": null,
-    "move_r": -0.448,
+    "move_r": -0.491,
     "mfe_r": 0.156,
     "mae_r": -0.608
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 25,
-  "tau": 0.5556
+  "days_elapsed": 27,
+  "tau": 0.6
 }

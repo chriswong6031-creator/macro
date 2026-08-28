@@ -1,8 +1,8 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-26 05:37 UTC",
-  "asof": "2026-08-25",
+  "built": "2026-08-27 09:41 UTC",
+  "asof": "2026-08-26",
   "stale_after_min": 1440,
   "cards": [
     {
@@ -11,7 +11,7 @@
       "cagr": 7.9,
       "sharpe": 1.13,
       "maxdd": -17.3,
-      "asof": "2026-08-25",
+      "asof": "2026-08-26",
       "gross_now": 0.56,
       "alloc": [
         {
@@ -49,10 +49,10 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.43,
+      "cagr": 11.44,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-08-25",
+      "asof": "2026-08-26",
       "gross_now": 1.04,
       "alloc": [
         {
@@ -77,7 +77,7 @@
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 17.1
+          "weight": 17.2
         },
         {
           "asset": "BTC-USD",
@@ -90,10 +90,10 @@
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.23,
-      "sharpe": 0.99,
+      "cagr": 17.25,
+      "sharpe": 1.0,
       "maxdd": -34.9,
-      "asof": "2026-08-25",
+      "asof": "2026-08-26",
       "gross_now": 2.13,
       "alloc": [
         {
@@ -118,7 +118,7 @@
           "asset": "QQQ",
           "label_en": "Nasdaq 100",
           "label_zh": "\u7eb3\u6307100",
-          "weight": 28.5
+          "weight": 28.6
         },
         {
           "asset": "BTC-USD",

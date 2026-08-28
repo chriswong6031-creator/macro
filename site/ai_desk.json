@@ -1,10 +1,11 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-08-25T05:11:15.830555+00:00",
-  "state_asof": "2026-08-24",
-  "model": "deepseek-v4-pro",
-  "regime_context": null,
+  "generated_at": "2026-08-27T09:44:46.607118+00:00",
+  "state_asof": "2026-08-26",
+  "model": "gpt-5.6-sol",
+  "served_by": "codex",
+  "regime_context": "The flow detector is display-only with no validated forward edge: every sector is non-directional, cohesion gates are low-tier and non-cohering, and the most visible strength or cooling states remain descriptive. VIX is not elevated, fear is not rebuilding, and the relief snap is dormant, so there is no defensible volatility call either.",
   "theses": [],
   "source_verdicts": {
     "flow": "display_only",
@@ -12,17 +13,17 @@
   },
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-08-24",
-    "scored_total": 47,
-    "open": 12,
+    "as_of": "2026-08-27",
+    "scored_total": 48,
+    "open": 11,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
-      "n": 47,
-      "hits": 44,
+      "n": 48,
+      "hits": 45,
       "misses": 3,
-      "hit_rate": 0.936,
-      "dir_accuracy": 0.66
+      "hit_rate": 0.938,
+      "dir_accuracy": 0.667
     },
     "by_conviction": {
       "high": {
@@ -40,20 +41,20 @@
         "dir_accuracy": null
       },
       "low": {
-        "n": 47,
-        "hits": 44,
+        "n": 48,
+        "hits": 45,
         "misses": 3,
-        "hit_rate": 0.936,
-        "dir_accuracy": 0.66
+        "hit_rate": 0.938,
+        "dir_accuracy": 0.667
       }
     },
     "by_kind": {
       "rel_return": {
-        "n": 44,
-        "hits": 44,
+        "n": 45,
+        "hits": 45,
         "misses": 0,
         "hit_rate": 1.0,
-        "dir_accuracy": 0.659
+        "dir_accuracy": 0.667
       },
       "level": {
         "n": 3,
@@ -65,15 +66,24 @@
     },
     "by_regime": {
       "Goldilocks": {
-        "n": 40,
-        "hits": 39,
+        "n": 41,
+        "hits": 40,
         "misses": 1,
-        "hit_rate": 0.975,
-        "dir_accuracy": 0.625
+        "hit_rate": 0.976,
+        "dir_accuracy": 0.634
       }
     },
-    "calibration_note": "47 scored, hit-rate 0.936 (directional accuracy 0.66). Chance alone would land a hit-rate near 0.8932 (directional accuracy near 0.4906) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+    "calibration_note": "48 scored, hit-rate 0.938 (directional accuracy 0.667). Chance alone would land a hit-rate near 0.8908 (directional accuracy near 0.4892) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
     "recent": [
+      {
+        "id": "2026-07-14-3",
+        "subject": "Utilities",
+        "lean": "avoid",
+        "conviction": "low",
+        "outcome": "hit",
+        "realized": -0.0751,
+        "check_by": "2026-08-25"
+      },
       {
         "id": "2026-07-13-3",
         "subject": "Real Estate",
@@ -154,33 +164,151 @@
         "outcome": "hit",
         "realized": -0.0158,
         "check_by": "2026-08-12"
-      },
-      {
-        "id": "2026-07-15-2",
-        "subject": "Consumer Discretionary",
-        "lean": "avoid",
-        "conviction": "low",
-        "outcome": "hit",
-        "realized": -0.0158,
-        "check_by": "2026-08-12"
       }
     ],
-    "calibration_note_zh": "\u5df2\u8bc4\u5206 47 \u6761\uff0c\u547d\u4e2d\u7387 0.936\uff08\u65b9\u5411\u51c6\u786e\u7387 0.66\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8932 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4906\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
+    "calibration_note_zh": "\u5df2\u8bc4\u5206 48 \u6761\uff0c\u547d\u4e2d\u7387 0.938\uff08\u65b9\u5411\u51c6\u786e\u7387 0.667\uff09\u3002\u540c\u6837\u6761\u4ef6\u4e0b\uff0c\u65e0\u6280\u80fd\u5224\u65ad\u51ed\u673a\u4f1a\u5373\u53ef\u8fbe\u5230\u7ea6 0.8908 \u7684\u547d\u4e2d\u7387\uff08\u65b9\u5411\u51c6\u786e\u7387\u7ea6 0.4892\uff09\u2014\u2014\u4e0a\u8ff0\u6570\u5b57\u5e94\u4e0e\u8be5\u57fa\u7ebf\u6bd4\u8f83\uff0c\u800c\u975e 0.5\u3002"
   },
   "passport": {
     "state": "measured",
     "earned": true,
-    "label_en": "measured \u00b7 n=46",
-    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=46",
-    "n": 46,
-    "hit_rate": 0.3261,
+    "label_en": "measured \u00b7 n=48",
+    "label_zh": "\u5df2\u9a8c\u8bc1 \u00b7 n=48",
+    "n": 48,
+    "hit_rate": 0.3125,
     "detail": "",
     "last_validated": null,
     "expected_max_age_days": null,
     "tooltip_en": "Earned from a matured forward track record (spine-graded)."
   },
   "confidence": "low",
-  "degraded_reason": "llm_error",
+  "degraded_reason": null,
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, CHECKABLE judgement with a check-by date, not a trade recommendation or a position size.",
-  "panel": {}
+  "panel": {
+    "opportunity": {
+      "stance": "This display-only lens supports no durable directional lean: sector flow has no validated forward edge, all sector directional flags are false, and the coincident relief snap is dormant. Current concentration is most notable around Information Technology and Materials-linked baskets, while Health Care, Financials, and Consumer Staples are cooling, but these are focus areas rather than return forecasts.",
+      "candidates": [
+        {
+          "subject": "Information Technology",
+          "lean": "none",
+          "rationale": "Confirmed high relative strength is supported by emerging AI Infrastructure and AI Semiconductors concentration, but low read quality and a failed cohesion gate preclude direction.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Materials",
+          "lean": "none",
+          "rationale": "Gold and silver miners show broad emerging concentration, but Materials itself is quiet with narrow basket leadership and declining cohesion.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Health Care",
+          "lean": "none",
+          "rationale": "Extreme relative strength is cooling with sharply weaker cohesion and narrow leadership led disproportionately by Moderna, so the move is not a durable sector theme from this lens.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "The read would change if sector-level concentration became persistent and broad with a cohering gate under an elevated-VIX regime; none of those directional conditions is present now."
+    },
+    "skeptic": {
+      "stance": "This display-only lens has no validated directional edge: every sector is non-directional with a low-tier, non-cohering gate, while calm VIX and a dormant relief snap add no fear signal. The apparent leaders look priced-in or fragile rather than predictive, especially where relative strength is extreme and cohesion is falling.",
+      "candidates": [
+        {
+          "subject": "Health Care",
+          "lean": "avoid",
+          "rationale": "Near-maximum relative strength is paired with cooling, sharply falling cohesion, and narrow leadership, making the apparent theme a single-name-heavy mean-reversion trap.",
+          "strength": "strong"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "avoid",
+          "rationale": "Confirmed high relative strength lacks sector cohesion or directional validation, so the move is already visible but not forecastable from this lens.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Energy",
+          "lean": "avoid",
+          "rationale": "Strong relative performance is accompanied by declining cohesion and no directional gate, leaving a priced-in concentration rather than a durable signal.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Financials",
+          "lean": "avoid",
+          "rationale": "High relative strength is cooling as acceleration, broadening, and cohesion weaken, so extrapolating the broad cluster would mistake coincidence for forward edge.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Materials",
+          "lean": "avoid",
+          "rationale": "The Industrials-Materials correlation is coincident, while Materials leadership is narrow and cohesion is deteriorating, so it does not establish a tradable theme.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "VIX",
+          "lean": "fade-fear",
+          "rationale": "VIX is low-percentile, the relief snap is dormant, and fear is not rebuilding, so any fear call from these detectors lacks confirmation.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "This skeptical read would break if stress rises and sector cohesion turns persistently positive, because the lens's limited evidence is concentrated in high-VIX dispersion-recovery regimes."
+    },
+    "base_rate": {
+      "stance": "This setup unconditionally resolves to no directional sector call: the flow lens is display-only with rank-IC ~0, all sectors are non-directional with low confidence, and the coincident relief snap is dormant. The prior on actionable edge is therefore weak despite current concentration and cooling labels.",
+      "candidates": [
+        {
+          "subject": "Energy",
+          "lean": "none",
+          "rationale": "Confirmed relative strength is descriptive only because cohesion is not cohering and directional confidence is low.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "none",
+          "rationale": "High relative strength and confirmed status do not establish forward edge under the display-only guardrail.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Health Care",
+          "lean": "none",
+          "rationale": "Cooling, narrow leadership, and falling cohesion describe current concentration but do not validate an underweight call.",
+          "strength": "weak"
+        },
+        {
+          "subject": "VIX",
+          "lean": "none",
+          "rationale": "VIX is not elevated and the coincident relief-snap detector is dormant, so there is no fear call from this lens.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "A transition to an elevated stress regime accompanied by newly validated directional evidence would invalidate this no-edge read."
+    },
+    "structural": {
+      "stance": "Information Technology is the clearest structural leader: confirmed sector strength, broad low-HHI leadership, and corroborating co-movement across AI infrastructure, semiconductors, hardware, and equipment; Energy is the secondary broad leader. Materials\u2019 correlation with Industrials does not yet establish a durable supply-chain spread because Materials leadership is narrow, while Health Care\u2019s extreme relative-strength reading is a narrow single-name mirage.",
+      "candidates": [
+        {
+          "subject": "Information Technology",
+          "lean": "none",
+          "rationale": "Broad low-HHI sector leadership is reinforced across multiple related technology baskets, but this display-only lens has no validated directional edge.",
+          "strength": "strong"
+        },
+        {
+          "subject": "Energy",
+          "lean": "none",
+          "rationale": "Confirmed relative strength and broad low-HHI leadership make Energy structurally credible, though related energy baskets are cooling.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Health Care",
+          "lean": "none",
+          "rationale": "The extreme relative-strength reading is undermined by narrow breadth and outsized single-name leadership.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Materials",
+          "lean": "none",
+          "rationale": "Strong correlation with Industrials and mining-basket activity suggest co-movement, but narrow sector breadth prevents calling it a genuine broad theme.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "The read breaks if technology\u2019s cross-basket breadth contracts and leadership concentration rises, leaving the apparent theme dependent on a few names."
+    }
+  }
 }

@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "all_pass": false,
   "holdout_start": "2024-01-01",
   "label": "fwd(3d) +-5%",
@@ -13,8 +13,8 @@
       "floor": 1.5,
       "min_holdout_n": 30,
       "lift_full": 1.071,
-      "lift_holdout": 1.826,
-      "perm_p": 0.4388,
+      "lift_holdout": 1.83,
+      "perm_p": 0.4298,
       "n_fires_full": 121,
       "n_fires_holdout": 60
     },
@@ -25,9 +25,9 @@
       "label": "SOPR profit-take spike",
       "floor": 1.3,
       "min_holdout_n": 30,
-      "lift_full": 1.054,
-      "lift_holdout": 1.178,
-      "perm_p": 0.4198,
+      "lift_full": 1.055,
+      "lift_holdout": 1.181,
+      "perm_p": 0.4253,
       "n_fires_full": 158,
       "n_fires_holdout": 31
     },
@@ -38,9 +38,9 @@
       "label": "SOPR capitulation (wash-out)",
       "floor": 1.3,
       "min_holdout_n": 30,
-      "lift_full": 1.709,
-      "lift_holdout": 1.686,
-      "perm_p": 0.003,
+      "lift_full": 1.71,
+      "lift_holdout": 1.69,
+      "perm_p": 0.0025,
       "n_fires_full": 141,
       "n_fires_holdout": 14
     }

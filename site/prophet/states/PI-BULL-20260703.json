@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PI-BULL-20260703",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 41.9,
@@ -11,26 +11,26 @@
   "human_state": "Window Elapsed \u2014 Awaiting Close",
   "components": {
     "validity": 100.0,
-    "progress": 24.8,
-    "pace": 28.7,
-    "retention": 56.0,
-    "overlay": 67.0
+    "progress": 18.6,
+    "pace": 26.0,
+    "retention": 38.1,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.391,
-    "dist_to_t1_r": 1.109,
-    "dist_to_t2_r": 2.609,
-    "horizon_pct_used": 102.2,
-    "p1": 0.2607,
-    "p2": 0.1303,
+    "dist_to_stop_r": 1.266,
+    "dist_to_t1_r": 1.234,
+    "dist_to_t2_r": 2.734,
+    "horizon_pct_used": 106.7,
+    "p1": 0.1774,
+    "p2": 0.0887,
     "p3": null,
-    "move_r": 0.391,
+    "move_r": 0.266,
     "mfe_r": 0.698,
     "mae_r": -0.302
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Window Elapsed \u2014 Awaiting Close",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-30",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 46,
-  "tau": 1.0222
+  "days_elapsed": 48,
+  "tau": 1.0667
 }

@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UGI-BULL-20260818",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 66.1,
-  "raw_confidence": 66.8,
-  "delta_vs_base": 6.1,
+  "management_confidence": 65.8,
+  "raw_confidence": 65.7,
+  "delta_vs_base": 5.8,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 99.2,
-    "progress": 0.0,
-    "pace": 90.0,
+    "validity": 100.0,
+    "progress": 1.4,
+    "pace": 81.6,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 58.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.994,
-    "dist_to_t1_r": 1.5,
-    "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 15.6,
-    "p1": -0.0038,
-    "p2": -0.0019,
+    "dist_to_stop_r": 1.009,
+    "dist_to_t1_r": 1.491,
+    "dist_to_t2_r": 2.991,
+    "horizon_pct_used": 20.0,
+    "p1": 0.0057,
+    "p2": 0.0028,
     "p3": null,
-    "move_r": -0.006,
+    "move_r": 0.009,
     "mfe_r": 0.023,
     "mae_r": -0.114
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 7,
-  "tau": 0.1556
+  "days_elapsed": 9,
+  "tau": 0.2
 }

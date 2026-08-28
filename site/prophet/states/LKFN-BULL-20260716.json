@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LKFN-BULL-20260716",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 31.8,
-  "raw_confidence": 30.5,
-  "delta_vs_base": -28.2,
+  "management_confidence": 30.8,
+  "raw_confidence": 30.3,
+  "delta_vs_base": -29.2,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 59.6,
+    "validity": 58.4,
     "progress": 0.0,
-    "pace": 0.1,
+    "pace": 0.0,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 64.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.681,
+    "dist_to_stop_r": 0.671,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 86.7,
-    "p1": -0.2124,
-    "p2": -0.1062,
+    "horizon_pct_used": 91.1,
+    "p1": -0.2193,
+    "p2": -0.1096,
     "p3": null,
-    "move_r": -0.319,
+    "move_r": -0.329,
     "mfe_r": 0.105,
-    "mae_r": -0.319
+    "mae_r": -0.329
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Falling Behind Schedule",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.0200007629394534,
-  "_mae": -3.110000305175781,
+  "_mae": -3.2099987792968747,
   "_max_p1": 0.06967218326089165,
   "_first_trigger_ts": "2026-07-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 39,
-  "tau": 0.8667
+  "days_elapsed": 41,
+  "tau": 0.9111
 }

@@ -1,32 +1,32 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-24",
-  "generated_at": "2026-08-26T04:34:48.855031+00:00",
+  "as_of": "2026-08-25",
+  "generated_at": "2026-08-27T08:30:12.447232+00:00",
   "is_context_only": true,
-  "n_snapshots": 442,
-  "n_days": 14,
+  "n_snapshots": 470,
+  "n_days": 15,
   "horizons": {
     "5": {
-      "n_matured": 336,
+      "n_matured": 367,
       "by_stage": {
         "running": {
-          "n": 296,
-          "mean_fwd_rel": -0.0014,
-          "hit_rate": 0.534
+          "n": 324,
+          "mean_fwd_rel": -0.0011,
+          "hit_rate": 0.522
         },
         "coiling": {
-          "n": 18,
-          "mean_fwd_rel": 0.0049,
-          "hit_rate": 0.722
+          "n": 20,
+          "mean_fwd_rel": 0.0098,
+          "hit_rate": 0.75
         },
         "coiling_primed": {
-          "n": 22,
-          "mean_fwd_rel": 0.0262,
-          "hit_rate": 0.955
+          "n": 23,
+          "mean_fwd_rel": 0.0243,
+          "hit_rate": 0.913
         }
       },
-      "running_ic": 0.1301,
-      "running_ic_t_hac": 3.303,
+      "running_ic": 0.1442,
+      "running_ic_t_hac": 4.849,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
@@ -35,12 +35,12 @@
       "by_stage": {
         "running": {
           "n": 235,
-          "mean_fwd_rel": 0.0011,
-          "hit_rate": 0.506
+          "mean_fwd_rel": 0.001,
+          "hit_rate": 0.502
         },
         "coiling": {
           "n": 13,
-          "mean_fwd_rel": -0.0123,
+          "mean_fwd_rel": -0.0121,
           "hit_rate": 0.308
         },
         "coiling_primed": {
@@ -49,27 +49,27 @@
           "hit_rate": 0.875
         }
       },
-      "running_ic": 0.0761,
-      "running_ic_t_hac": 1.775,
+      "running_ic": 0.0946,
+      "running_ic_t_hac": 2.051,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 97,
+      "n_matured": 140,
       "by_stage": {
         "running": {
-          "n": 88,
-          "mean_fwd_rel": 0.0045,
-          "hit_rate": 0.614
+          "n": 130,
+          "mean_fwd_rel": 0.0041,
+          "hit_rate": 0.592
         },
         "coiling": {
           "n": 8,
-          "mean_fwd_rel": -0.0214,
+          "mean_fwd_rel": -0.0218,
           "hit_rate": 0.625
         },
         "coiling_primed": {
-          "n": 1,
-          "mean_fwd_rel": -0.0195,
+          "n": 2,
+          "mean_fwd_rel": -0.027,
           "hit_rate": 0.0
         }
       },
@@ -88,10 +88,10 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.1301,
+  "peak_ic": 0.1442,
   "proven": {
     "5": true,
-    "10": false,
+    "10": true,
     "21": false,
     "63": false
   },
@@ -100,67 +100,67 @@
   "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
-      "date": "2026-08-03",
+      "date": "2026-08-04",
       "id": "russell:airlines",
       "name": "Airlines",
       "stage": "running",
-      "fwd_rel": -0.192,
+      "fwd_rel": -0.1959,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "russell:information-technology-services",
-      "name": "Information Technology Services",
+      "date": "2026-08-04",
+      "id": "russell:computer-hardware",
+      "name": "Computer Hardware",
       "stage": "running",
-      "fwd_rel": -0.1391,
+      "fwd_rel": -0.0958,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "baskets:ai-neoclouds",
-      "name": "AI Neoclouds & HPC Hosting",
+      "date": "2026-08-04",
+      "id": "russell:electronic-components",
+      "name": "Electronic Components",
       "stage": "running",
-      "fwd_rel": -0.1348,
+      "fwd_rel": -0.0863,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "subsectors:travel-services",
-      "name": "Travel Services",
+      "date": "2026-08-04",
+      "id": "subsectors:electronic-components",
+      "name": "Electronic Components",
       "stage": "running",
-      "fwd_rel": -0.0556,
+      "fwd_rel": -0.0794,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "subsectors:aerospace-defense",
-      "name": "Aerospace & Defense",
+      "date": "2026-08-04",
+      "id": "russell:metal-fabrication",
+      "name": "Metal Fabrication",
       "stage": "running",
-      "fwd_rel": -0.0531,
+      "fwd_rel": -0.077,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "russell:asset-management",
-      "name": "Asset Management",
+      "date": "2026-08-04",
+      "id": "baskets:defense",
+      "name": "Defense & Aerospace",
       "stage": "running",
-      "fwd_rel": -0.0379,
+      "fwd_rel": -0.0687,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "baskets:regional-banks",
-      "name": "Regional Banks",
+      "date": "2026-08-04",
+      "id": "russell:packaged-foods",
+      "name": "Packaged Foods",
       "stage": "running",
-      "fwd_rel": -0.0312,
+      "fwd_rel": -0.065,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-03",
-      "id": "subsectors:scientific-technical-instruments",
-      "name": "Scientific & Technical Instruments",
+      "date": "2026-08-04",
+      "id": "baskets:industrial-distribution",
+      "name": "Industrial Distribution & Capital Goods",
       "stage": "running",
-      "fwd_rel": -0.02,
+      "fwd_rel": -0.0524,
       "horizon_d": 21
     }
   ],

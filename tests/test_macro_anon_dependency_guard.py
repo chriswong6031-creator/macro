@@ -643,7 +643,20 @@ def test_machine_git_blocks_external_diff_that_hides_a_staged_change(tmp_path: P
         ["git", "-C", str(repo), "diff", "--cached", "--quiet", "--", "artifact.json"],
         check=False,
     )
-    assert poisoned.returncode == 0, "mutation must demonstrate the staged-diff bypass"
+    assert poisoned.returncode in {0, 1}
+    if poisoned.returncode == 1:
+        # Git 2.43 (Ubuntu 24.04, including the sealed PC runners) records
+        # diff.trustExitCode but does not yet let that setting override the
+        # --quiet staged-diff result.  The configuration is still forbidden:
+        # upgrading Git must not silently turn an accepted repository into the
+        # demonstrated return-0 bypass used by newer clients.
+        configured = subprocess.run(
+            ["git", "-C", str(repo), "config", "--local", "--get", "diff.trustExitCode"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        assert configured.stdout.strip() == "true"
 
     with pytest.raises(macro_machine_git.MachineGitError, match="canonical sparse-clone schema"):
         macro_machine_git._refuse_unsafe_local_configuration(repo, environment)

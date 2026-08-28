@@ -1,9 +1,9 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-08-25",
-  "n_events_logged": 413,
-  "n_events_graded": 265,
+  "asof": "2026-08-27",
+  "n_events_logged": 428,
+  "n_events_graded": 267,
   "classes": [
     {
       "event_type": "activist_campaign",
@@ -86,12 +86,12 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 92,
-      "n_graded": 56,
+      "n": 96,
+      "n_graded": 57,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": 0.010039504960317459,
-      "avg_rel_21d": 0.0063992499999999996,
+      "avg_rel_5d": 0.010655740350877192,
+      "avg_rel_21d": 0.007674856756756757,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "context_only"
@@ -99,12 +99,12 @@
     {
       "event_type": "equity_offering",
       "direction": "bearish",
-      "n": 16,
+      "n": 17,
       "n_graded": 9,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 0.6,
-      "avg_rel_5d": 0.029253759259259257,
-      "avg_rel_21d": 0.052160899999999996,
+      "avg_rel_5d": 0.0293330037037037,
+      "avg_rel_21d": 0.052176160000000006,
       "wilson_low_5d": 0.120582,
       "wilson_high_5d": 0.645803,
       "verdict": "insufficient"
@@ -128,9 +128,9 @@
       "n": 27,
       "n_graded": 12,
       "hit_5d": 0.8333333333333334,
-      "hit_21d": 0.5,
+      "hit_21d": 0.5714285714285714,
       "avg_rel_5d": 0.024257249999999998,
-      "avg_rel_21d": -0.014664500000000002,
+      "avg_rel_21d": 0.005314428571428569,
       "wilson_low_5d": 0.551964,
       "wilson_high_5d": 0.953036,
       "verdict": "insufficient"
@@ -138,20 +138,20 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 124,
+      "n": 130,
       "n_graded": 118,
-      "hit_5d": 0.4576271186440678,
-      "hit_21d": 0.3548387096774194,
-      "avg_rel_5d": 0.005031197740112994,
-      "avg_rel_21d": 0.029220840501792113,
-      "wilson_low_5d": 0.37049,
-      "wilson_high_5d": 0.547437,
+      "hit_5d": 0.4661016949152542,
+      "hit_21d": 0.35106382978723405,
+      "avg_rel_5d": 0.004711110169491525,
+      "avg_rel_21d": 0.02891412943262411,
+      "wilson_low_5d": 0.378586,
+      "wilson_high_5d": 0.555755,
       "verdict": "context_only"
     },
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 25,
+      "n": 27,
       "n_graded": 5,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -169,7 +169,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": -0.01871011111111111,
-      "avg_rel_21d": -0.003619333333333334,
+      "avg_rel_21d": 0.005207142857142856,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -177,7 +177,7 @@
     {
       "event_type": "mna_confirmed",
       "direction": "bullish",
-      "n": 12,
+      "n": 13,
       "n_graded": 8,
       "hit_5d": 0.625,
       "hit_21d": 0.3333333333333333,
@@ -203,12 +203,12 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 47,
-      "n_graded": 13,
+      "n": 48,
+      "n_graded": 14,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": -0.01298851862026862,
-      "avg_rel_21d": 0.03483594246031746,
+      "avg_rel_5d": -0.011849070861678005,
+      "avg_rel_21d": 0.02600869329805996,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -260,7 +260,7 @@
       "hit_5d": 0.0,
       "hit_21d": 0.0,
       "avg_rel_5d": 0.0061984,
-      "avg_rel_21d": 0.032612,
+      "avg_rel_21d": 0.0278505,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -280,7 +280,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 848,
+    "n_sampled": 865,
     "n_graded": 0,
     "classes": []
   }

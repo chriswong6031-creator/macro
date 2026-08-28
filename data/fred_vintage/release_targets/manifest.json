@@ -1,6 +1,6 @@
 {
-  "collected_at": "2026-08-26T06:05:24+00:00",
-  "completed_at": "2026-08-26T06:06:23+00:00",
+  "collected_at": "2026-08-27T10:14:04+00:00",
+  "completed_at": "2026-08-27T10:15:06+00:00",
   "dry_run": false,
   "integrity_profile": "release_target_artifact_sha256_bytes.v1",
   "publication_status": "complete",
@@ -41,25 +41,25 @@
       "status": "written"
     },
     "PCEPI": {
-      "artifact_bytes": 154560,
-      "artifact_sha256": "0fd9db80c2fc912f89706e37c3f3e404eb98d6990aa4071a26f4abda87cd653d",
+      "artifact_bytes": 202276,
+      "artifact_sha256": "af950e37821d5896b29ddce153dfee9ea0a7222330f1567c162dbe154c2041e9",
       "path": "data/fred_vintage/release_targets/PCEPI_all_vintages.parquet",
-      "period_max": "2026-06-01",
+      "period_max": "2026-07-01",
       "period_min": "1959-01-01",
-      "periods": 810,
-      "release_dates": 314,
-      "rows": 204161,
+      "periods": 811,
+      "release_dates": 315,
+      "rows": 204972,
       "status": "written"
     },
     "PCEPILFE": {
-      "artifact_bytes": 155481,
-      "artifact_sha256": "c448002ff728e960d13ea332ae231cee73eec857b32b3b011c088287226f5d3b",
+      "artifact_bytes": 203226,
+      "artifact_sha256": "6279621a8855e404f2efcfa25512b5c105d731177882379475f1ce862ecbec40",
       "path": "data/fred_vintage/release_targets/PCEPILFE_all_vintages.parquet",
-      "period_max": "2026-06-01",
+      "period_max": "2026-07-01",
       "period_min": "1959-01-01",
-      "periods": 810,
-      "release_dates": 314,
-      "rows": 204161,
+      "periods": 811,
+      "release_dates": 315,
+      "rows": 204972,
       "status": "written"
     },
     "PPIFES": {

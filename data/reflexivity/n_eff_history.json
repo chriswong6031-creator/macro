@@ -1,7 +1,7 @@
 {
   "schema": "reflexivity_n_eff_history.v1",
-  "as_of": "2026-08-25",
-  "generated_utc": "2026-08-26T04:35:45Z",
+  "as_of": "2026-08-26",
+  "generated_utc": "2026-08-27T08:31:11Z",
   "note": "Rolling N_eff history for the reflexivity overlay. Single-writer: scripts/build_reflexivity_overlay.py (RUL-P10). Accrual substrate for Codex BOOK-1 'N_eff by regime' (~2027 verdict).",
   "history": [
     {
@@ -216,6 +216,14 @@
       "as_of": "2026-08-25",
       "n_eff_by_lane": {
         "entry_open": 1.0,
+        "setting_up": 1.0
+      },
+      "same_thesis_group_count": 0
+    },
+    {
+      "as_of": "2026-08-26",
+      "n_eff_by_lane": {
+        "entry_open": 4.0,
         "setting_up": 1.0
       },
       "same_thesis_group_count": 0

@@ -11,10 +11,17 @@ prices, no state machine is re-run, and no armed pack is reconstructed -- which 
 because no historical pack bytes survive (R2 versioning is off and ListObjectVersions
 is unimplemented), so a replay would have had to MINT a cohort production never armed.
 
-WHY THE JOURNAL IS A SOUND SOURCE. Each pass logs its own event count and then its
-event lines. Those two are independent statements by the same process, so they check
-each other: across the whole outage, 672 passes and 672 exact matches, zero mismatched,
-zero orphaned event lines. A truncated log could not produce that.
+WHY THE COMMITTED JOURNAL IS A SOUND ROW SOURCE. The committed recovery corpus is
+content-addressed by ``_recovery_receipt.json``. Within that exact corpus, every
+captured pass logs its own event count and then its event lines: 588 pass records —
+exactly 84 in each of the seven Class-R sessions — declare 25,958 events and carry
+25,958 EVENT lines, with zero mismatched passes and zero orphaned lines. The production
+timer is ``:03/5`` and the sole ET window is ``09:25`` through ``16:15 + 10m`` grace,
+which admits exactly 84 ticks in an EDT session (13:28Z through 20:23Z). Together the
+per-session census and per-pass count equality close both whole-pass and intra-pass
+completeness for this committed corpus. Earlier #6484 prose said 672 passes; that
+number is not reproducible from the committed gzip and is superseded for source-
+integrity claims.
 
 WHAT THE JOURNAL CANNOT GIVE, and is therefore left NULL rather than guessed:
 
@@ -27,7 +34,7 @@ WHAT THE JOURNAL CANNOT GIVE, and is therefore left NULL rather than guessed:
               fixes that name's whole session (``entered`` is carried forward by
               ``prev.get("entered")``). Names that only ever emitted ``forming`` or
               ``confirming_into_close`` are genuinely undetermined and stay null.
-              Measured on this incident: 168 of 333 names determined, 0 contradictions.
+              Measured on the committed corpus: 141 of 294 name-sessions determined (118 board, 23 cross), 153 genuinely undetermined, 0 contradictions.
 
 Emitting a reconstructed ``entered`` for the rest would be a provenance claim this
 evidence cannot back (commission §14, §16 -- absence means no claim, never a default).

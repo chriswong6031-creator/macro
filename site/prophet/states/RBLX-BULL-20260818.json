@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "RBLX-BULL-20260818",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 20.2,
@@ -13,20 +13,20 @@
     "validity": 0.0,
     "progress": 60.0,
     "pace": 0.0,
-    "retention": 8.7,
-    "overlay": 67.0
+    "retention": 0.0,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.621,
-    "dist_to_t1_r": 1.121,
-    "dist_to_t2_r": 2.621,
-    "horizon_pct_used": 15.6,
-    "p1": 0.2524,
-    "p2": 0.1262,
+    "dist_to_stop_r": -1.029,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 20.0,
+    "p1": -0.0191,
+    "p2": -0.0096,
     "p3": null,
-    "move_r": 0.379,
+    "move_r": -0.029,
     "mfe_r": 4.352,
-    "mae_r": 0.0
+    "mae_r": -0.029
   },
   "rr_ratio": null,
   "rr_grade": null,
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 16.67000015258789,
-  "_mae": 0.0,
+  "_mae": -0.10999862670898608,
   "_max_p1": 2.9016536383965006,
   "_first_trigger_ts": "2026-08-18",
   "_first_t1_ts": "2026-08-18",
   "_first_t2_ts": "2026-08-18",
-  "days_elapsed": 7,
-  "tau": 0.1556
+  "days_elapsed": 9,
+  "tau": 0.2
 }

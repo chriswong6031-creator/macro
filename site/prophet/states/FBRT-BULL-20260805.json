@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FBRT-BULL-20260805",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 80.1,
-  "raw_confidence": 82.1,
-  "delta_vs_base": 20.1,
+  "management_confidence": 80.6,
+  "raw_confidence": 81.1,
+  "delta_vs_base": 20.6,
   "recommended_action": "hold",
   "human_state": "Advancing Cleanly",
   "components": {
     "validity": 100.0,
-    "progress": 61.6,
+    "progress": 59.5,
     "pace": 100.0,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 2.314,
-    "dist_to_t1_r": 0.186,
-    "dist_to_t2_r": 1.686,
-    "horizon_pct_used": 33.3,
-    "p1": 0.8758,
-    "p2": 0.4379,
+    "dist_to_stop_r": 2.255,
+    "dist_to_t1_r": 0.245,
+    "dist_to_t2_r": 1.745,
+    "horizon_pct_used": 37.8,
+    "p1": 0.8366,
+    "p2": 0.4183,
     "p3": null,
-    "move_r": 1.314,
+    "move_r": 1.255,
     "mfe_r": 1.314,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 15,
-  "tau": 0.3333
+  "days_elapsed": 17,
+  "tau": 0.3778
 }

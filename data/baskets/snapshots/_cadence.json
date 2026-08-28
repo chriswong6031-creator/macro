@@ -2,7 +2,7 @@
   "schema": "basket_membership_cadence.v1",
   "suite": "baskets",
   "writer": "scripts.build_baskets",
-  "checked_at": "2026-08-26T05:09:57Z",
+  "checked_at": "2026-08-27T09:15:01Z",
   "membership_sha": "ee2695df99eef3f6092a8a3b605d79b7d73172b0b172a16949c14f04fd874aa6",
   "last_snapshot_date": "2026-08-18"
 }

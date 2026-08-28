@@ -24,7 +24,7 @@
 {"date": "2026-08-04", "score": 39.4, "band": "low", "vix_ref": 16.5, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": -0.5, "vix_jump_mult": 1.12, "hit": false}
 {"date": "2026-08-05", "score": 39.2, "band": "low", "vix_ref": 15.8, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": -0.3, "vix_jump_mult": 1.02, "hit": false}
 {"date": "2026-08-07", "score": 38.1, "band": "low", "vix_ref": 14.8, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": -1.38, "vix_jump_mult": 1.09, "hit": false}
-{"date": "2026-08-12", "score": 31.9, "band": "low", "vix_ref": 14.6, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
+{"date": "2026-08-12", "score": 31.9, "band": "low", "vix_ref": 14.6, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": -1.28, "vix_jump_mult": 1.12, "hit": false}
 {"date": "2026-08-13", "score": 32.3, "band": "low", "vix_ref": 14.6, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
 {"date": "2026-08-17", "score": 34.4, "band": "low", "vix_ref": 15.2, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
 {"date": "2026-08-18", "score": 38.2, "band": "low", "vix_ref": 15.8, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
@@ -33,3 +33,4 @@
 {"date": "2026-08-21", "score": 30.3, "band": "low", "vix_ref": 15.1, "n_factors": 8, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
 {"date": "2026-08-24", "score": 28.5, "band": "low", "vix_ref": 15.9, "n_factors": 7, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
 {"date": "2026-08-25", "score": 29.9, "band": "low", "vix_ref": 15.4, "n_factors": 7, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}
+{"date": "2026-08-26", "score": 29.0, "band": "low", "vix_ref": 15.2, "n_factors": 7, "horizon_d": 10, "spy_mae_pct": null, "vix_jump_mult": null, "hit": null}

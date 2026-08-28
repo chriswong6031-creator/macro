@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "IREN-BULL-20260810",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 50.3,
-  "raw_confidence": 49.8,
-  "delta_vs_base": -9.7,
+  "management_confidence": 46.6,
+  "raw_confidence": 42.1,
+  "delta_vs_base": -13.4,
   "recommended_action": "hold",
-  "human_state": "Needs Follow-Through",
+  "human_state": "Stalling",
   "components": {
-    "validity": 79.5,
+    "validity": 59.7,
     "progress": 0.0,
-    "pace": 64.7,
+    "pace": 52.8,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.844,
+    "dist_to_stop_r": 0.683,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 26.7,
-    "p1": -0.1041,
-    "p2": -0.0521,
+    "horizon_pct_used": 31.1,
+    "p1": -0.2115,
+    "p2": -0.1057,
     "p3": null,
-    "move_r": -0.156,
+    "move_r": -0.317,
     "mfe_r": 0.009,
-    "mae_r": -0.303
+    "mae_r": -0.317
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.14000152587890824,
-  "_mae": -4.949998626708982,
+  "_mae": -5.1799981689453105,
   "_max_p1": 0.005715514426573107,
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 12,
-  "tau": 0.2667
+  "days_elapsed": 14,
+  "tau": 0.3111
 }

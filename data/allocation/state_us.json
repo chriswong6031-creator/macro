@@ -23,7 +23,6 @@
     "quantum_computing",
     "regional_banks",
     "reshoring",
-    "retail",
     "robotics_automation",
     "semicap_equipment",
     "silver_miners",
@@ -42,9 +41,9 @@
   ],
   "held": [
     "memory_storage",
-    "gold_miners",
+    "silver_miners",
     "ai_infra",
-    "big_pharma"
+    "cybersecurity"
   ],
   "leader": "memory_storage",
   "names": {

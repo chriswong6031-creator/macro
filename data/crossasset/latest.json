@@ -1,16 +1,16 @@
 {
-  "date": "2026-08-25",
+  "date": "2026-08-27",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
     "equity_us",
     "equity_sm",
     "credit_hy",
-    "copper",
-    "equity_intl"
+    "equity_intl",
+    "equity_em"
   ],
   "correlation": "converging",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
@@ -153,11 +153,6 @@
         "z": 1.0
       },
       {
-        "asset": "copper",
-        "trend": "up",
-        "z": 1.0
-      },
-      {
         "asset": "equity_intl",
         "trend": "up",
         "z": 1.0
@@ -166,37 +161,42 @@
         "asset": "equity_em",
         "trend": "up",
         "z": 1.0
+      },
+      {
+        "asset": "gold",
+        "trend": "mixed",
+        "z": 0.33
       }
     ],
     "trend_summary": {
       "n": 13,
-      "n_up": 6,
-      "n_down": 2
+      "n_up": 5,
+      "n_down": 1
     },
     "intermarket": [
       {
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 46.0
+        "pctile": 49.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 68.477,
+        "ratio": 67.632,
         "trend": "mid",
-        "pctile": 31.0
+        "pctile": 29.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.017,
         "trend": "mid",
-        "pctile": 24.0
+        "pctile": 27.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.162,
+        "ratio": 0.163,
         "trend": "mid",
-        "pctile": 26.0
+        "pctile": 29.0
       }
     ],
     "carry": {
@@ -205,7 +205,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.98,
+          "value": 0.93,
           "unit": "%",
           "state": "positive carry"
         },
@@ -268,7 +268,7 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.262,
-          "t": 3.972,
+          "t": 3.973,
           "q": 0.005
         },
         {
@@ -296,17 +296,17 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-08-24",
+      "asof": "2026-08-25",
       "state": "calm",
-      "score": 43.0,
-      "spread_bp": 2.0
+      "score": 47.0,
+      "spread_bp": 3.0
     },
     "confirm": {
       "verdict": "confirm",
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-24"
+      "asof": "2026-08-25"
     },
     "dollar": {
       "usd_dir": "weakening",
@@ -329,8 +329,8 @@
       "unstable_n": 0,
       "fx_stress": {
         "dominant": null,
-        "top_key": "reflation_risk_on",
-        "top_val": 55.3
+        "top_key": "carry_unwind",
+        "top_val": 12.0
       }
     },
     "shadow": {

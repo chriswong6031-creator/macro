@@ -68,11 +68,8 @@ jobs:
             echo "::error title=trusted-executor-repository::executor is repository-bound"
             exit 1
           }
-          trusted_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
-          test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {
-            echo "::error title=trusted-executor-definition::called workflow must be the exact main-owned executor"
-            exit 1
-          }
+          direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
@@ -83,11 +80,15 @@ jobs:
 
           case "$EVENT_NAME" in
             workflow_dispatch)
+              test "$CALLED_WORKFLOW_REF" = "$direct_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::direct workflow must be the exact main-owned executor"
+                exit 1
+              }
               test "$TRUSTED_REF" = refs/heads/main || {
                 echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
                 exit 1
               }
-              test "$CALLER_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+              test "$CALLER_WORKFLOW_REF" = "$direct_workflow_ref" || {
                 echo "::error title=trusted-executor-caller::dispatch must invoke the main-owned executor directly"
                 exit 1
               }
@@ -96,6 +97,10 @@ jobs:
               semantic_workflow=trusted-ci-executor
               ;;
             pull_request)
+              test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::called workflow must use the main branch definition"
+                exit 1
+              }
               test -z "$DISPATCH_PR_NUMBER" || {
                 echo "::error title=trusted-executor-input::a reusable call may not supply candidate identity"
                 exit 1
@@ -155,6 +160,7 @@ jobs:
       tested_sha: ${{ steps.ref.outputs.tested_sha }}
       base_sha: ${{ steps.ref.outputs.base_sha }}
       head_sha: ${{ steps.ref.outputs.head_sha }}
+      head_ref: ${{ steps.ref.outputs.head_ref }}
       control_sha: ${{ steps.control.outputs.sha }}
     steps:
       - name: checkout main-owned executor control code
@@ -164,6 +170,19 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 2
+          sparse-checkout: |
+            scripts/__init__.py
+            scripts/run_ci_pack.py
+            scripts/ci_semantic_proof.py
+            scripts/ci_authority_paths.py
+            scripts/ci_scope_dependencies.py
+            scripts/audit_unrun_tests.py
+            scripts/workflow_run_source.py
+            scripts/resolve_ci_canary_ref.py
+            scripts/select_ci_canary_packs.py
+            scripts/monitor_ci_host_resources.py
+            scripts/capture_ci_canary_receipt.py
+          sparse-checkout-cone-mode: false
       - id: control
         name: freeze the main-owned control SHA
         shell: bash
@@ -209,6 +228,16 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 0
+          # Preserve ci-plan's established semantic working-tree profile: omit
+          # only the generated-heavy trees, keep unknown new top-level trees,
+          # and bind omitted-path existence to the exact Git tree below.
+          sparse-checkout: |
+            /*
+            !/data/
+            !/site/
+            !/mockups/
+            !/verify_shots/
+          sparse-checkout-cone-mode: false
       - name: prove the planner is on the frozen candidate
         run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
       - uses: actions/setup-python@v5
@@ -218,6 +247,14 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/trusted-ci-plan-runner"
           "$RUNNER_TEMP/trusted-ci-plan-runner/bin/pip" install pyyaml
+      - name: bind exact tested-tree path inventory
+        env:
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
+        run: >-
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python"
+          "$RUNNER_TEMP/trusted-ci-control/scripts/ci_scope_dependencies.py"
+          --write-tracked-paths "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1"
+          --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}"
       - id: plan
         name: freeze one authoritative logical plan
         env:
@@ -235,6 +272,7 @@ jobs:
             --github-output "$GITHUB_OUTPUT" \
             --emit-plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --emit-changed-files "$RUNNER_TEMP/trusted-ci-plan/changed-files.json" \
+            --tracked-paths-file "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1" \
             --workflow-run-id "$GITHUB_RUN_ID" \
             --workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}" \
             --event "${{ github.event_name }}" \
@@ -282,7 +320,9 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: mark self-hosted job start
-        run: date +%s.%N > "$RUNNER_TEMP/job-start"
+        run: |
+          date +%s.%N > "$RUNNER_TEMP/job-start"
+          python3 -c 'import time; print("job_start", time.monotonic_ns())' > "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
       - name: refuse unsafe resources before shared cache use
         run: /usr/local/libexec/mastermind-ci-resource-guard --path "$GITHUB_WORKSPACE"
       - name: download the frozen main-owned control bundle
@@ -294,6 +334,7 @@ jobs:
         run: |
           du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-before"
           date +%s.%N > "$RUNNER_TEMP/checkout-start"
+          python3 -c 'import time; print("checkout_start", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
       - name: prewarm exact base from the read-only shared cache
         shell: bash
         run: |
@@ -331,6 +372,8 @@ jobs:
           checkout_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/checkout-start")" -v end="$checkout_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/checkout-seconds"
           date +%s.%N > "$RUNNER_TEMP/dependency-start"
+          python3 -c 'import time; print("checkout_end", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
+          python3 -c 'import time; print("executor_setup_start", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12.13"
@@ -348,13 +391,17 @@ jobs:
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ needs.plan.outputs.head_ref }}
           MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |
           set -uo pipefail
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
+          python3 -c 'import time; print("executor_setup_end", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
           test_start=$(date +%s.%N)
+          python3 -c 'import time; print("pack_execution_start", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
           mkdir -p "$RUNNER_TEMP/ci-semantic-fragments"
           python3 "$RUNNER_TEMP/trusted-ci-control/scripts/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
@@ -372,17 +419,20 @@ jobs:
             --pack-index "${{ matrix.pack }}" \
             --pack-count 12 \
             --emit-semantic-fragment "$RUNNER_TEMP/ci-semantic-fragments/trusted-fragment.json" \
+            --emit-timing-observations "$RUNNER_TEMP/ci-timing-observations.jsonl" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
           set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
+          python3 -c 'import time; print("pack_execution_end", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
           kill "$monitor_pid" 2>/dev/null || true
           wait "$monitor_pid" 2>/dev/null || true
           echo "$pack_rc" > "$RUNNER_TEMP/pack.rc"
       - name: write trusted self-hosted receipt
         run: |
           wall_end=$(date +%s.%N)
+          python3 -c 'import time; print("job_end", time.monotonic_ns())' >> "$RUNNER_TEMP/ci-phase-monotonic.txt" || true
           awk -v start="$(cat "$RUNNER_TEMP/job-start")" -v end="$wall_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/wall-seconds"
           cat "$RUNNER_TEMP/prewarm.log" "$RUNNER_TEMP/pack.log" > "$RUNNER_TEMP/combined.log"
           du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-after"
@@ -396,6 +446,7 @@ jobs:
             --base-sha "${{ needs.plan.outputs.base_sha }}" \
             --runner-kind selfhosted \
             --runner-name "${RUNNER_NAME:-unknown}" \
+            --runner-profile "${MASTERMIND_CI_PROFILE:-unknown}" \
             --trace2 "$RUNNER_TEMP/git-trace2.json" \
             --metrics "$RUNNER_TEMP/resources.jsonl" \
             --checkout-seconds "$RUNNER_TEMP/checkout-seconds" \
@@ -406,6 +457,9 @@ jobs:
             --cache-after "$RUNNER_TEMP/cache-after" \
             --workspace-object-bytes "$object_bytes" \
             --fragment "$RUNNER_TEMP/ci-semantic-fragments/trusted-fragment.json" \
+            --timing-observations "$RUNNER_TEMP/ci-timing-observations.jsonl" \
+            --phase-monotonic "$RUNNER_TEMP/ci-phase-monotonic.txt" \
+            --timing-output "$RUNNER_TEMP/trusted-${{ matrix.pack }}-execution-timing.jsonl" \
             --output "$RUNNER_TEMP/trusted-${{ matrix.pack }}.json"
       - uses: actions/upload-artifact@v4
         with:
@@ -418,6 +472,16 @@ jobs:
           name: trusted-ci-fragment-${{ matrix.pack }}
           path: ${{ runner.temp }}/ci-semantic-fragments/trusted-fragment.json
           if-no-files-found: error
+          retention-days: 14
+      - name: publish non-authoritative execution timing
+        if: always()
+        continue-on-error: true
+        timeout-minutes: 5
+        uses: actions/upload-artifact@v4
+        with:
+          name: trusted-ci-execution-timing-${{ matrix.pack }}
+          path: ${{ runner.temp }}/trusted-${{ matrix.pack }}-execution-timing.jsonl
+          if-no-files-found: warn
           retention-days: 14
       - name: surface a red pack after preserving evidence
         run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0

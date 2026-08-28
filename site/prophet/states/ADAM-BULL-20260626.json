@@ -1,32 +1,32 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ADAM-BULL-20260626",
-  "asof": "2026-08-25",
+  "asof": "2026-08-27",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 49.8,
-  "raw_confidence": 47.3,
-  "delta_vs_base": -10.2,
+  "management_confidence": 47.2,
+  "raw_confidence": 44.1,
+  "delta_vs_base": -12.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 100.0,
-    "progress": 1.2,
-    "pace": 30.3,
+    "validity": 97.8,
+    "progress": 0.0,
+    "pace": 20.3,
     "retention": 50.0,
-    "overlay": 64.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.007,
-    "dist_to_t1_r": 1.493,
-    "dist_to_t2_r": 2.993,
-    "horizon_pct_used": 40.0,
-    "p1": 0.0044,
-    "p2": 0.0022,
+    "dist_to_stop_r": 0.983,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 44.4,
+    "p1": -0.011,
+    "p2": -0.0055,
     "p3": null,
-    "move_r": 0.007,
+    "move_r": -0.017,
     "mfe_r": 0.119,
-    "mae_r": -0.01
+    "mae_r": -0.017
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.36000030517578097,
-  "_mae": -0.03000003814697294,
+  "_mae": -0.04999954223632841,
   "_max_p1": 0.07947026604321877,
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

@@ -66,3 +66,73 @@ def test_extract_drops_only_zero_volume_flat_non_trading_rows():
     ]
     assert extracted.loc["2026-08-21", "volume"] == 10_000.0
     assert pd.isna(extracted.loc["2026-08-24", "volume"])
+
+
+def test_extract_drops_a_stitched_resumption_bar_whose_close_leaves_the_range():
+    """002155.SZ 2026-08-27: Yahoo froze o/h/l on the pre-halt session and pasted the
+    resumption close, giving a close 6.4% ABOVE the bar's own high. Not a session."""
+    idx = pd.to_datetime(["2026-08-19", "2026-08-27"])
+    source = pd.DataFrame(
+        {
+            "Open": [24.34, 24.48],
+            "Close": [24.56, 27.02],   # 27.02 > High 25.39 -> impossible
+            "High": [25.39, 25.39],
+            "Low": [24.20, 24.20],
+            "Volume": [47_735_572.0, 13_422_588.0],
+        },
+        index=idx,
+    )
+
+    extracted = so._extract(source, "002155.SZ", "china_stocks")
+
+    assert extracted is not None
+    assert extracted.index.strftime("%Y-%m-%d").tolist() == ["2026-08-19"]
+
+
+def test_extract_keeps_a_locked_limit_up_bar():
+    """The TRUE resumption bar is o=h=l=c at the +10% limit (Eastmoney: 27.02 on
+    13,479,900 shares). Flat but genuinely traded — positive volume keeps it."""
+    idx = pd.to_datetime(["2026-08-27"])
+    source = pd.DataFrame(
+        {"Open": [27.02], "Close": [27.02], "High": [27.02], "Low": [27.02],
+         "Volume": [13_479_900.0]},
+        index=idx,
+    )
+
+    extracted = so._extract(source, "002155.SZ", "china_stocks")
+
+    assert extracted is not None
+    assert extracted.loc["2026-08-27", "close"] == 27.02
+
+
+def test_extract_keeps_a_bar_whose_only_defect_is_a_provisional_open():
+    """Yahoo's intraday open settles after the close; 574/1,861 CN names carried an
+    out-of-band open for 2026-08-26 and self-corrected. Dropping those loses real
+    sessions, so the guard reads CLOSE and never ``open``."""
+    idx = pd.to_datetime(["2026-08-26"])
+    source = pd.DataFrame(
+        {"Open": [11.38], "Close": [11.73], "High": [11.75], "Low": [11.52],
+         "Volume": [117_778_778.0]},   # Open 11.38 < Low 11.52, close in band
+        index=idx,
+    )
+
+    extracted = so._extract(source, "000001.SZ", "china_stocks")
+
+    assert extracted is not None
+    assert extracted.loc["2026-08-26", "open"] == 11.38
+
+
+def test_extract_keeps_a_row_whose_range_is_unknown():
+    """Fail-open like the placeholder guard: a NaN high/low is not evidence of a
+    stitched bar, so the row is left alone rather than guessed away."""
+    idx = pd.to_datetime(["2026-08-27"])
+    source = pd.DataFrame(
+        {"Open": [24.48], "Close": [27.02], "High": [float("nan")],
+         "Low": [float("nan")], "Volume": [13_422_588.0]},
+        index=idx,
+    )
+
+    extracted = so._extract(source, "002155.SZ", "china_stocks")
+
+    assert extracted is not None
+    assert extracted.loc["2026-08-27", "close"] == 27.02

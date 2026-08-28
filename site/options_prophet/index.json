@@ -1,17 +1,17 @@
 {
   "schema": "options.prophet_shadow/v1",
-  "as_of": "2026-08-25",
-  "built_at": "2026-08-26T04:35:45.463641Z",
+  "as_of": "2026-08-26",
+  "built_at": "2026-08-27T08:31:11.139316Z",
   "decision_at": null,
-  "available_at": "2026-08-26T04:35:45.463641Z",
+  "available_at": "2026-08-27T08:31:11.139316Z",
   "pit_provenance": {
     "clock": "UTC",
     "decision_at_required_for_issued_portfolio": true,
     "decision_at_status": "not_available_in_current_pick_lab_contract",
     "available_at_status": "exact_projection_publication_time",
     "source_available_at": {
-      "flow_leaders": "2026-08-26T04:34:50.341553Z",
-      "pick_lab": "2026-08-26T04:35:45.191682Z"
+      "flow_leaders": "2026-08-27T08:30:14.066096Z",
+      "pick_lab": "2026-08-27T08:31:10.833805Z"
     },
     "promotion_ready": false,
     "reason": "An issued position requires exact decision_at and available_at on every fire. Current Pick Lab fires expose exact artifact availability when present but not an exact decision clock."
@@ -74,7 +74,7 @@
           },
           "coverage": {
             "schema": "options_entry_coverage.v1",
-            "as_of": "2026-08-26",
+            "as_of": "2026-08-27",
             "n_rows": 419,
             "n_features": 31,
             "absent_stores": [],
@@ -498,7 +498,7 @@
     "pick_lab": {
       "path": "site/labdata/pick_lab.json",
       "schema": "implicit",
-      "as_of": "2026-08-25",
+      "as_of": "2026-08-26",
       "available": true,
       "error": null
     },
@@ -512,14 +512,14 @@
     "options_entry_gate": {
       "path": "data/options_entry/gate.json",
       "schema": "options_entry.gate.v3",
-      "as_of": "2026-08-25 05:19 UTC",
+      "as_of": "2026-08-26 05:47 UTC",
       "available": true,
       "error": null
     },
     "options_entry_coverage": {
       "path": "data/options_entry/coverage.json",
       "schema": "options_entry_coverage.v1",
-      "as_of": "2026-08-26",
+      "as_of": "2026-08-27",
       "available": true,
       "error": null
     },
