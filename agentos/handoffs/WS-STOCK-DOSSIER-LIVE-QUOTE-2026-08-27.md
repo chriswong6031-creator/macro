@@ -58,33 +58,80 @@ changed:
       row, including the fields we deliberately drop, so the debrand and allowlist
       assertions are not self-referential.
 verified:
+  - claim: >
+      End-to-end against the REAL running hub: NVDA -> 200 {price 227.98,
+      prev_close 209.66, change_abs 18.32, change_pct 8.7379566917867, freshness
+      "delayed", session "post"}; AAPL -> 200 (not NVDA-specific); unknown symbol
+      -> 404; path traversal -> 404; every response Cache-Control private,no-store
+      and free of vendor strings.
+    command: >
+      ssh -i ~/.ssh/macro_dashboard_deploy_v2 root@146.190.142.17 'curl -s
+      "http://127.0.0.1:3100/quotes?syms=NVDA"' then the route driven over an SSH
+      tunnel with DOSSIER_QUOTE_HUB_URL pointed at it via fastapi TestClient
+  - claim: >
+      Browser, on the actually-served page: before 209.66 / "-$3.39 · -1.59%" /
+      green pulsing "LIVE"; after 227.98 / "+$18.32 · +8.74%" / grey static
+      "After hours · 2026-08-27". Discrimination proven both ways — a fresh
+      realtime row in an open regular session DOES produce a green pulsing
+      "Live", while stale / wrong-ticker / null-price payloads leave the numbers
+      untouched. 375px: no horizontal overflow. zh renders 盘后 · 2026-08-27.
+    command: >
+      preview_start site-static (python3 -m http.server 8931 --directory site);
+      navigate http://localhost:8931/stocks/NVDA.html; template transform + real
+      client module applied in-page with the route stubbed by the real payload
+  - claim: >
+      38 focused tests pass; the existing dossier guards still pass; static
+      guards clean.
+    command: >
+      python3 -m pytest tests/test_dossier_quote_api.py
+      tests/test_dossier_live_quote_surface.py
+      tests/test_check_stock_dossier_integrity.py
+      tests/test_company_intelligence_dossier_js.py -q
+  - claim: >
+      Template compiles and renders the exact markup the client binds to, with
+      nb-px absent from the output — so what render.yml emits matches the
+      contract.
+    command: >
+      python3 -c "from jinja2 import Environment, FileSystemLoader; ..." rendering
+      templates/ticker.html.j2 with a minimal hero context
+  - claim: >
+      Deploy path: app/*.py is inside the macro-api restart regex
+      (app/deploy/update.sh:1234); templates/ticker.html.j2 is in render.yml's
+      scope whitelist (line 544 -> scope `macro`); /api/* is excluded from both
+      the regwall and paywall matchers, so the route is public.
+    command: >
+      grep -n "app/.*\.py" app/deploy/update.sh; grep -n "ticker.html.j2"
+      .github/workflows/render.yml; grep -n "not path /api" app/deploy/Caddyfile
+unverified:
   - >
-    End-to-end against the REAL running hub over an SSH tunnel: NVDA -> 200
-    {price 227.98, prev_close 209.66, change_abs 18.32, change_pct 8.7379566917867,
-    freshness "delayed", session "post"}; AAPL -> 200 (proves it is not
-    NVDA-specific); unknown symbol -> 404; path traversal -> 404; every response
-    Cache-Control private,no-store and free of vendor strings.
+    The realtime verdict itself. The US regular session was closed throughout, so
+    the `live` branch is proven by unit test, by mutation, and in a browser
+    against a synthetic realtime payload — but never against a genuinely realtime
+    production feed. This is the BUILT_NOT_PROVEN_NATURAL_TIME_GATE the
+    commission anticipated.
   - >
-    Browser, on the actually-served page: before 209.66 / "-$3.39 · -1.59%" /
-    green pulsing "LIVE"; after 227.98 / "+$18.32 · +8.74%" / grey static
-    "After hours · 2026-08-27". Discrimination proven both ways — a fresh
-    realtime row in an open regular session DOES produce a green pulsing "Live",
-    while stale / wrong-ticker / null-price payloads all leave the numbers
-    untouched. 375px: no horizontal overflow. zh renders 盘后 · 2026-08-27.
-    No console errors from the module.
+    Whether production currently emits a `chg` that disagrees with
+    (last-prevClose)/prevClose. The consistency guard added after review makes the
+    mismatch unshippable either way, but the mismatch was never observed live.
+unresolved:
   - >
-    `python3 -m pytest tests/test_dossier_quote_api.py
-    tests/test_dossier_live_quote_surface.py -q` -> 35 passed. Existing dossier
-    guards (test_check_stock_dossier_integrity, test_company_intelligence_dossier_js)
-    -> 52 passed. check_site_asset_refs OK; check_template_site_sync OK (94 pairs);
-    check_design_system exit 0.
+    HUB_REALTIME_QUOTES is a shared entitlement switch, not the quote-freshness
+    lever the commission took it for. Needs a Sol/Chairman ruling before it is
+    set. Detail in the "Exact remaining gate" section below.
   - >
-    Deploy path: `app/.*\.py` is inside the macro-api restart regex
-    (app/deploy/update.sh:1234), and templates/ticker.html.j2 is in render.yml's
-    scope whitelist (line 544 -> scope `macro`), so the API restarts and the
-    dossier pages regenerate. /api/* is excluded from both the regwall and
-    paywall matchers in app/deploy/Caddyfile, so the route is reachable for
-    logged-out readers.
+    templates/intelligence_hub.html.j2:400 carries the same class of decorative
+    "Live" claim (driven by the build, not a quote). Different surface, outside
+    the frozen P0 scope, deliberately not touched.
+  - >
+    site/stocks/*.html <meta name="description"> and og:description bake
+    "Price: $209.66"; nothing repaints them, so a share card can contradict the
+    page. Pre-existing, not introduced here, not in scope.
+next_actions:
+  - >
+    Obtain the Sol/Chairman ruling on HUB_REALTIME_QUOTES, then flip it just
+    before a US regular-session open where the realtime verdict is measurable.
+  - >
+    Re-verify the dossier during an open RTH to close the natural time gate.
 do_not_redo:
   - >
     Do NOT read the Quote Hub contract from the charting-app checkout on the

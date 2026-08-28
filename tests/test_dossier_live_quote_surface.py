@@ -81,7 +81,7 @@ def test_client_requires_both_realtime_feed_and_open_regular_session(client_text
 
 
 def test_client_keeps_baked_values_when_the_server_disowns_the_quote(client_text: str) -> None:
-    assert "if (q.freshness === 'stale') {" in client_text
+    assert "if (q.freshness === 'stale') { lapse(); return; }" in client_text
 
 
 def test_a_lapsed_feed_stops_claiming_live(client_text: str) -> None:
@@ -91,17 +91,35 @@ def test_a_lapsed_feed_stops_claiming_live(client_text: str) -> None:
     price — but the currency CLAIM beside them has expired, and holding it is
     the original defect in a different costume.
     """
-    stale_branch = client_text[client_text.index("if (q.freshness === 'stale') {"):]
-    stale_branch = stale_branch[: stale_branch.index("return;")]
-    # Assert the EXACT guard, not a substring of it. `painted && stamp` is
-    # still contained in `false && painted && stamp`, so the loose form passed
-    # against a mutation that disabled this branch outright — the demotion
-    # never ran and a lapsed feed kept its green "Live" indefinitely.
-    assert "if (painted && stamp) {" in stale_branch
-    assert not re.search(r"\b(false|0)\s*&&", stale_branch), "branch is short-circuited off"
-    assert "'closed'" in stale_branch
-    assert "LABELS.lapsed" in stale_branch
+    body = client_text[client_text.index("function lapse()"):]
+    body = body[: body.index("function paint(")]
+    assert "if (!painted || !stamp) return;" in body
+    assert "stamp.setAttribute('data-dq-state', 'closed');" in body
+    assert "LABELS.lapsed[0], LABELS.lapsed[1]" in body
+    assert not re.search(r"\b(false|0)\s*&&", body), "lapse() is short-circuited off"
     assert re.search(r"lapsed: \['[^']+', '[^']+'\]", client_text)
+
+
+def test_every_way_a_quote_can_stop_arriving_demotes_the_claim(client_text: str) -> None:
+    """The blocker this pins: only a 200-marked-stale used to demote.
+
+    A 503 (hub down), a 429 (throttled), a dropped connection and the abort
+    timeout all produced `q === null` or a thrown fetch, so paint() never ran
+    and the stamp kept whatever it last said — a pulsing green "Live" on a
+    frozen price, indefinitely. The hub going down is the EXPECTED fault; a hub
+    that stays up and self-reports stale is the rare one, and it was the only
+    one handled.
+    """
+    # non-200 -> null -> lapse, and a thrown fetch -> lapse
+    assert "if (q) { paint(q); } else { lapse(); }" in client_text
+    catch_body = client_text[client_text.index(".catch(function ()"):]
+    catch_body = catch_body[: catch_body.index("\n")]
+    assert "lapse();" in catch_body, f"thrown fetch does not demote: {catch_body}"
+    # the watchdog releases inflight AND demotes, with or without AbortController
+    watchdog = client_text[client_text.index("var killer = setTimeout("):]
+    watchdog = watchdog[: watchdog.index("function done()")]
+    assert "inflight = false;" in watchdog
+    assert "lapse();" in watchdog
 
 
 def test_client_never_paints_a_quote_for_another_ticker(client_text: str) -> None:
@@ -112,12 +130,45 @@ def test_client_writes_price_and_move_together_or_not_at_all(client_text: str) -
     """The guards must precede the first write, or a partial paint is possible."""
     first_write = client_text.index("priceNodes[i].textContent")
     for guard in (
-        "if (!q || q.ticker !== ticker) return;",
-        "if (q.freshness === 'stale') {",
-        "if (!isFiniteNumber(q.price) || q.price <= 0) return;",
-        "if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) return;",
+        "if (!q || q.ticker !== ticker) { lapse(); return; }",
+        "if (q.freshness === 'stale') { lapse(); return; }",
+        "if (!isFiniteNumber(q.price) || q.price <= 0) { lapse(); return; }",
+        "if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) { lapse(); return; }",
     ):
         assert client_text.index(guard) < first_write, f"guard runs after the paint: {guard}"
+    # Ordering alone is not enough: the writes themselves must be unconditional
+    # once the guards pass. Disabling just the absNode write left a CURRENT
+    # price beside the BAKED dollar move and a LIVE percent — three numbers from
+    # two different moments — and every ordering assertion still passed.
+    for write in (
+        "if (absNode) absNode.textContent = fmtAbs(q.change_abs);",
+        "if (pctNode) pctNode.textContent = fmtPct(q.change_pct);",
+    ):
+        assert write in client_text, f"move write missing or altered: {write}"
+
+
+def test_the_live_reading_is_not_reachable_unconditionally(client_text: str) -> None:
+    """`readingOf` must not be able to return live before its own condition.
+
+    Inserting an unconditional `return {state:'live'}` as the first statement —
+    leaving the asserted condition intact below it — made every session and
+    every freshness print "Live", and the substring assertions all still passed.
+    """
+    body = client_text[client_text.index("function readingOf(q) {"):]
+    body = body[: body.index("function lapse()")]
+    first_stmt = body[body.index("{") + 1:].lstrip()
+    assert first_stmt.startswith("if (q.freshness === 'live' && q.session === 'regular')"), (
+        "the first statement of readingOf must be the live CONDITION, not a return"
+    )
+    # exactly one live-state return, and it lives inside that conditional
+    assert body.count("state: 'live'") == 1
+
+
+def test_the_52_week_bar_repaints_with_the_price(client_text: str) -> None:
+    """A bar left baked places the NEW price at the OLD point on the scale."""
+    assert "data-dq-lo" in client_text and "data-dq-hi" in client_text
+    assert "fillEl.style.width" in client_text
+    assert "dotEl.style.left" in client_text
 
 
 def test_client_sets_both_languages_for_every_state(client_text: str) -> None:

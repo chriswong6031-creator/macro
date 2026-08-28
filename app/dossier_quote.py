@@ -93,11 +93,20 @@ _STALE_MAX_AGE_SECONDS = 900.0
 # should be repainting from.
 _CLOSED_STALE_MAX_AGE_SECONDS = 5 * 24 * 3600.0
 
-# Substrings that disqualify a basis from being called realtime.  This is a
-# fail-closed screen, not an enumeration of every basis the hub can emit: an
-# unrecognised basis is only ever accepted as realtime when the hub's own
-# ``live`` boolean independently agrees.
-_NON_REALTIME_BASIS_MARKERS = ("delay", "eod", "close", "snapshot", "stale")
+# The bases that MAY be called realtime, verified against the deployed hub
+# (/opt/terminal/hub: snapshot.js stamps "REALTIME"; the crypto legs stamp
+# "LIVE").  This is an ALLOWLIST on purpose.  It was first written as a
+# denylist of delayed-looking substrings, which is fail-OPEN: `basis:"15M"` and
+# `basis:"IEX_ONLY"` both sailed through it and read as live, and any basis the
+# hub grows tomorrow would too.  An honesty screen cannot be blind to
+# vocabulary it has not met — an unrecognised basis is now "not proven
+# realtime", which is the truthful answer.
+_REALTIME_BASES = frozenset({"REALTIME", "LIVE"})
+
+# How far the hub's own percent may sit from the one implied by
+# last/prevClose before we stop trusting it.  Generous enough for float noise
+# and rounding, tight enough that a different session's percent never passes.
+_PCT_CONSISTENCY_EPSILON = 0.05
 
 _RATE_LIMIT_REQUESTS = 120
 _PEER_RATE_LIMIT_REQUESTS = 1_200
@@ -107,6 +116,35 @@ _TRUSTED_PEER_HEADER = "x-mm-peer"
 
 _rate_limit_lock = threading.Lock()
 _rate_limit_buckets: dict[str, deque[float]] = {}
+
+
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect rather than following it off the loopback."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: D102
+        raise urllib.error.HTTPError(
+            req.full_url, code, "quote hub attempted a redirect", headers, fp,
+        )
+
+
+_NO_REDIRECT_OPENER = urllib.request.build_opener(_NoRedirects)
+
+
+def _assert_loopback(base: str) -> None:
+    """Refuse a non-loopback hub at import time.
+
+    The hub is a same-box peer holding a vendor credential.  Pointing this at a
+    remote host would turn a bounded projection into an egress path that
+    republishes an unknown third party as our price.
+    """
+    host = (urllib.parse.urlsplit(base).hostname or "").lower()
+    if host not in ("127.0.0.1", "::1", "localhost"):
+        raise RuntimeError(
+            f"DOSSIER_QUOTE_HUB_URL must be loopback; refusing host {host!r}"
+        )
+
+
+_assert_loopback(_HUB_BASE)
 
 
 # ── time (injected so freshness is testable without sleeping) ───────────────
@@ -179,7 +217,14 @@ def _read_hub_quotes(symbol: str) -> Mapping[str, Any]:
     """
     url = f"{_HUB_BASE}/quotes?syms={urllib.parse.quote(symbol, safe='')}"
     req = urllib.request.Request(url, headers={"Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=_HUB_TIMEOUT_SECONDS) as resp:
+    # _NO_REDIRECT_OPENER, not urlopen: urlopen FOLLOWS redirects, so a hub
+    # answering `302 Location: http://elsewhere/` would make this app fetch a
+    # third party and republish their numbers as the price — and a payload with
+    # live:true + basis:"REALTIME" is all it takes to mint the green pip. The
+    # loopback assertion on _HUB_BASE closes the same hole from the config side;
+    # together they make the module docstring's "localhost only" claim true
+    # rather than merely default.
+    with _NO_REDIRECT_OPENER.open(req, timeout=_HUB_TIMEOUT_SECONDS) as resp:
         raw = resp.read(_HUB_MAX_BYTES + 1)
     if len(raw) > _HUB_MAX_BYTES:
         raise ValueError("quote hub response exceeded the bounded read size")
@@ -200,10 +245,10 @@ def _finite_number(value: Any) -> float | None:
 
 
 def _is_realtime_basis(basis: Any) -> bool:
-    if not isinstance(basis, str) or not basis.strip():
+    """True only for a basis we have actually verified means realtime."""
+    if not isinstance(basis, str):
         return False  # absent basis is never evidence of realtime
-    lowered = basis.strip().lower()
-    return not any(marker in lowered for marker in _NON_REALTIME_BASIS_MARKERS)
+    return basis.strip().upper() in _REALTIME_BASES
 
 
 def _session_of(row: Mapping[str, Any]) -> str:
@@ -248,6 +293,17 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     entirely — rendering an after-hours print as the day move would invert the
     sign the reader acts on (measured 2026-08-27: regular +8.74%, ext -0.76%).
     """
+    # The hub tags a row with the session its print came FROM.  Read it: it is
+    # the only positive evidence that ``last`` is a regular-session print, and
+    # without it an extended-hours print reaching ``last`` would be published as
+    # the regular price with a regular percent beside it.  Absent is tolerated
+    # (older rows omit it); a tag naming a NON-regular session is refused.
+    print_session = row.get("regularSession")
+    if isinstance(print_session, str) and print_session.strip().lower() not in ("rth", "regular", ""):
+        raise ValueError(
+            f"quote hub row is not a regular-session print: {print_session!r}"
+        )
+
     price = _finite_number(row.get("last"))
     if price is None:
         price = _finite_number(row.get("close"))
@@ -255,11 +311,19 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     if price is None or price <= 0 or prev_close is None or prev_close <= 0:
         raise ValueError("quote hub row carried no usable regular-session price")
 
-    # `chg` upstream is a PERCENT despite the name; the dollar move is derived.
-    change_pct = _finite_number(row.get("chg"))
-    if change_pct is None:
-        change_pct = (price - prev_close) / prev_close * 100.0
+    # `chg` upstream is a PERCENT despite the name; the dollar move is derived
+    # from prevClose.  Those are two DIFFERENT sources — the hub selects its own
+    # anchor at runtime (it publishes `anchor_source` to say so) — so they can
+    # disagree, and a disagreement renders as a correct dollar move beside a
+    # percent from another session: "+$18.32 · -0.76%", green, both wrong
+    # together.  Cross-check them and, if they part company, derive BOTH from
+    # the price pair we can actually see.  One internally consistent pair beats
+    # a more authoritative number that contradicts its neighbour.
     change_abs = price - prev_close
+    derived_pct = change_abs / prev_close * 100.0
+    change_pct = _finite_number(row.get("chg"))
+    if change_pct is None or abs(change_pct - derived_pct) > _PCT_CONSISTENCY_EPSILON:
+        change_pct = derived_pct
 
     # Upstream can hand back the LAST COMPLETED session's move rather than
     # today's before an RTH open (its ``usePreviousSession`` path).  We cannot
@@ -303,13 +367,17 @@ def dossier_quote(ticker: str, request: Request, response: Response) -> dict[str
     a stale-but-plausible price, so the browser can keep its baked value and
     say so honestly instead of silently repainting a wrong number.
     """
+    # Validate BEFORE booking a slot.  The peer bucket is shared by everyone
+    # behind one edge node, so letting a stream of garbage tickers consume it
+    # would let one caller 429 real readers without ever naming a real symbol.
+    # The check is a regex; it cannot itself be the expensive path.
+    normalized = _normalized_ticker_or_422(ticker)
     if not _allow_request(request):
         raise HTTPException(
             status_code=429,
             detail="Too many quote requests. Please retry shortly.",
             headers={"Retry-After": str(int(_RATE_LIMIT_WINDOW_SECONDS))},
         )
-    normalized = _normalized_ticker_or_422(ticker)
     response.headers["Cache-Control"] = "private, no-store"
 
     try:
@@ -327,8 +395,11 @@ def dossier_quote(ticker: str, request: Request, response: Response) -> dict[str
         )
     # A row must identify itself as the symbol we asked for.  Without this a
     # hub-side aliasing bug would paint one company's price onto another's page.
+    # The identity must be PRESENT, not merely non-contradictory: guarding on
+    # `isinstance(row_sym, str) and ...` meant a row with no `sym` at all
+    # skipped the check entirely and published whatever price it carried.
     row_sym = row.get("sym")
-    if isinstance(row_sym, str) and row_sym.strip().upper() != normalized:
+    if not isinstance(row_sym, str) or row_sym.strip().upper() != normalized:
         raise HTTPException(
             status_code=404, detail=f"No live quote is published for {normalized}.",
         )

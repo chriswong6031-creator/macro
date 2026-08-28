@@ -46,6 +46,9 @@
   var absNode = document.querySelector('[data-dq-abs]');
   var pctNode = document.querySelector('[data-dq-pct]');
   var stamp = document.querySelector('[data-dq-stamp]');
+  var rangeEl = document.querySelector('[data-dq-range]');
+  var fillEl = document.querySelector('[data-dq-fill]');
+  var dotEl = document.querySelector('[data-dq-dot]');
 
   var POLL_MS = 15000;      // comfortably inside the hub's own snapshot cadence
   var TIMEOUT_MS = 6000;
@@ -109,24 +112,27 @@
     return { state: 'closed', label: LABELS.closed };
   }
 
+  // Currency has lapsed: keep the numbers, drop the claim. Called for EVERY
+  // way a quote can stop arriving — a 200 the server marks stale, a 503, a
+  // 429, a dropped connection, an abort — because from the reader's chair
+  // those are one situation: the price on screen is no longer being confirmed.
+  // Only the 200-stale branch used to demote, so a hub outage (the EXPECTED
+  // fault; a hub that stays up and self-reports stale is the rare one) left a
+  // pulsing green "Live" on a frozen price indefinitely. Open NVDA at 15:00,
+  // hub dies at 15:05, look again at 16:30 and the page still says Live.
+  function lapse() {
+    if (!painted || !stamp) return;   // never painted => the baked stamp is already honest
+    stamp.setAttribute('data-dq-state', 'closed');
+    setBilingual(stamp, LABELS.lapsed[0], LABELS.lapsed[1]);
+  }
+
   function paint(q) {
     // Fail closed on anything we cannot fully render. A partial paint is worse
     // than no paint: it desynchronises the price from the move.
-    if (!q || q.ticker !== ticker) return;
-    if (q.freshness === 'stale') {
-      // Keep the numbers — the last measured quote still beats a day-old baked
-      // one — but never keep a currency claim we can no longer support. A tab
-      // left open while the feed dies used to hold a pulsing green "Live"
-      // indefinitely, which is this project's original defect wearing a
-      // different hat.
-      if (painted && stamp) {
-        stamp.setAttribute('data-dq-state', 'closed');
-        setBilingual(stamp, LABELS.lapsed[0], LABELS.lapsed[1]);
-      }
-      return;
-    }
-    if (!isFiniteNumber(q.price) || q.price <= 0) return;
-    if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) return;
+    if (!q || q.ticker !== ticker) { lapse(); return; }
+    if (q.freshness === 'stale') { lapse(); return; }
+    if (!isFiniteNumber(q.price) || q.price <= 0) { lapse(); return; }
+    if (!isFiniteNumber(q.change_abs) || !isFiniteNumber(q.change_pct)) { lapse(); return; }
 
     var i;
     painted = true;
@@ -138,6 +144,20 @@
       var up = q.change_abs >= 0;
       chgRow.classList.toggle('pos', up);
       chgRow.classList.toggle('neg', !up);
+    }
+
+    // The 52-week bar moves with the price or the block contradicts itself.
+    // Bounds are the BAKED 52w window; a live price outside it clamps to the
+    // end rather than overflowing the track — the bar stops being precise at
+    // that point, but it is never pointing at the wrong place.
+    if (rangeEl && fillEl && dotEl) {
+      var lo = parseFloat(rangeEl.getAttribute('data-dq-lo'));
+      var hi = parseFloat(rangeEl.getAttribute('data-dq-hi'));
+      if (isFiniteNumber(lo) && isFiniteNumber(hi) && hi > lo) {
+        var pos = Math.max(0, Math.min(100, (q.price - lo) / (hi - lo) * 100));
+        fillEl.style.width = pos.toFixed(1) + '%';
+        dotEl.style.left = pos.toFixed(1) + '%';
+      }
     }
 
     if (stamp) {
@@ -161,7 +181,29 @@
     inflight = true;
 
     var ctrl = window.AbortController ? new AbortController() : null;
-    var killer = ctrl ? setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS) : null;
+    var settled = false;
+
+    // The watchdog runs with OR without AbortController. Where abort exists it
+    // cuts the request; where it does not, it still releases `inflight` and
+    // demotes the claim — otherwise a hung fetch never settles, `inflight`
+    // stays true, every later tick no-ops, and the stamp is frozen on whatever
+    // it last said. A silently dead poller wearing a green "Live" is the same
+    // lie as a dead feed wearing one.
+    var killer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      if (ctrl) { try { ctrl.abort(); } catch (e) { /* already gone */ } }
+      inflight = false;
+      lapse();
+    }, TIMEOUT_MS);
+
+    function done() {
+      if (settled) return true;
+      settled = true;
+      clearTimeout(killer);
+      inflight = false;
+      return false;
+    }
 
     fetch('/api/dossier-quote/' + encodeURIComponent(ticker), {
       signal: ctrl ? ctrl.signal : undefined,
@@ -169,12 +211,11 @@
       headers: { Accept: 'application/json' }
     })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (q) { if (q) paint(q); })
-      .catch(function () { /* keep the baked values; say nothing false */ })
-      .then(function () {
-        if (killer) clearTimeout(killer);
-        inflight = false;
-      });
+      // A non-200 (503 hub down, 429 throttled) and a thrown fetch (offline,
+      // abort) are the same fact to a reader: this price is no longer being
+      // confirmed. Both demote the claim and keep the numbers.
+      .then(function (q) { if (done()) return; if (q) { paint(q); } else { lapse(); } })
+      .catch(function () { if (done()) return; lapse(); });
   }
 
   // Always attempt an immediate read, then ensure the interval exists. The

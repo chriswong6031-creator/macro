@@ -929,7 +929,10 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
       {% if hero and hero.range52 %}
       <div class="wk52">
         <div class="lbls"><span>{{ t('52w low', '52周低') }} <b class="num">{{ hero.range52.lo }}</b></span><span>{{ t('high', '高') }} <b class="num">{{ hero.range52.hi }}</b></span></div>
-        <div class="track"><div class="fill" style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" style="left:{{ hero.range52.pos_pct }}%;"></div></div>
+        {# The bar repaints with the price. Left baked it would place the NEW
+           price at the OLD point on the scale — the one element whose whole job
+           is "where in the range are we", answering it wrong. #}
+        <div class="track" data-dq-range{% if hero.range52.lo_raw is not none %} data-dq-lo="{{ hero.range52.lo_raw }}" data-dq-hi="{{ hero.range52.hi_raw }}"{% endif %}><div class="fill" data-dq-fill style="width:{{ hero.range52.pos_pct }}%;"></div><div class="dotp" data-dq-dot style="left:{{ hero.range52.pos_pct }}%;"></div></div>
       </div>
       {% endif %}
     </div>

@@ -20,6 +20,8 @@ The tests below pin the three properties that keep it impossible:
 """
 from __future__ import annotations
 
+import urllib.request
+
 import pytest
 
 pytest.importorskip("httpx", reason="FastAPI TestClient needs httpx")
@@ -277,9 +279,94 @@ def test_unknown_symbol_is_a_stable_404(client, monkeypatch) -> None:
 
 
 def test_hub_row_for_a_different_symbol_is_never_accepted(client, monkeypatch) -> None:
-    """A mismatched row must not be painted onto the requested ticker."""
-    _patch_hub(monkeypatch, HUB_NVDA_DELAYED, now=1787871758 + 5)
-    assert client.get("/api/dossier-quote/AMD").status_code in (404, 503)
+    """A row that names a DIFFERENT symbol must not be painted onto this page.
+
+    Keyed under the requested ticker on purpose.  Asking for /AMD against a
+    payload keyed only "NVDA" proves nothing about this guard — the 404 comes
+    from the missing key long before the identity check runs, so the check
+    could be deleted outright and that test would still pass.
+    """
+    _patch_hub(monkeypatch, {"NVDA": dict(HUB_NVDA_DELAYED["NVDA"], sym="AMD")}, now=1787871758 + 5)
+    assert client.get("/api/dossier-quote/NVDA").status_code == 404
+
+
+def test_a_row_that_does_not_identify_itself_is_refused(client, monkeypatch) -> None:
+    """Identity must be PRESENT, not merely non-contradictory.
+
+    Guarding on `isinstance(row_sym, str) and ...` let a row with no `sym` skip
+    the check entirely and publish whatever price it carried.
+    """
+    anonymous = dict(HUB_NVDA_DELAYED["NVDA"])
+    anonymous.pop("sym")
+    _patch_hub(monkeypatch, {"NVDA": anonymous}, now=1787871758 + 5)
+    assert client.get("/api/dossier-quote/NVDA").status_code == 404
+
+
+def test_a_non_regular_session_print_is_refused(client, monkeypatch) -> None:
+    """`regularSession` is the hub's positive evidence that `last` is an RTH print."""
+    _patch_hub(monkeypatch, _hub_row(regularSession="post"), now=1787871758 + 5)
+    assert client.get("/api/dossier-quote/NVDA").status_code == 503
+
+
+def test_the_live_bound_is_the_documented_one_not_the_stale_bound(client, monkeypatch) -> None:
+    """Pins _LIVE_MAX_AGE_SECONDS itself, which is a documented decision.
+
+    Relaxing 120s to the 900s staleness bound used to pass the whole suite, so
+    the headline claim — "deliberately tighter than upstream's generous 15-minute
+    per-name bound" — was enforced by nothing.  300s is inside 900 and outside
+    120: it must read `delayed`.
+    """
+    _patch_hub(
+        monkeypatch,
+        _hub_row(live=True, basis="REALTIME", marketSession="regular"),
+        now=1787871758 + 300,
+    )
+    assert client.get("/api/dossier-quote/NVDA").json()["freshness"] == "delayed"
+
+
+@pytest.mark.parametrize("basis", ["15M", "IEX_ONLY", "SOMETHING_NEW", ""])
+def test_an_unrecognised_basis_is_not_proven_realtime(client, monkeypatch, basis) -> None:
+    """The screen is an allowlist.  A denylist of delayed-looking words is
+    fail-OPEN: `15M` and `IEX_ONLY` contain none of them and both read live."""
+    _patch_hub(
+        monkeypatch,
+        _hub_row(live=True, basis=basis, marketSession="regular"),
+        now=1787871758 + 5,
+    )
+    assert client.get("/api/dossier-quote/NVDA").json()["freshness"] == "delayed"
+
+
+def test_a_percent_that_contradicts_the_price_pair_is_replaced(client, monkeypatch) -> None:
+    """Upstream's percent and our derived dollar move are two DIFFERENT sources.
+
+    The hub picks its anchor at runtime.  When they disagree the page renders a
+    correct dollar move beside a percent from another session — "+$18.32 ·
+    -0.76%", green, both wrong together.  One internally consistent pair beats a
+    more authoritative number that contradicts its neighbour.
+    """
+    _patch_hub(monkeypatch, _hub_row(chg=-0.7588384946047855), now=1787871758 + 5)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["change_abs"] == pytest.approx(18.32, abs=1e-6)
+    assert body["change_pct"] == pytest.approx(8.7379566917867, abs=1e-6)
+
+
+def test_the_hub_base_must_be_loopback() -> None:
+    """A remote hub would turn a bounded projection into an egress path."""
+    dossier_quote_api._assert_loopback("http://127.0.0.1:3100")
+    with pytest.raises(RuntimeError):
+        dossier_quote_api._assert_loopback("http://evil.example.com:3100")
+
+
+def test_a_redirecting_hub_is_refused_not_followed() -> None:
+    """`urlopen` follows redirects; a 302 would republish a third party's price."""
+    import urllib.error
+
+    handler = dossier_quote_api._NoRedirects()
+    with pytest.raises(urllib.error.HTTPError):
+        handler.redirect_request(
+            urllib.request.Request("http://127.0.0.1:3100/quotes"),
+            None, 302, "Found", {}, "http://elsewhere.example/",
+        )
 
 
 def test_rate_limit_refuses_a_flood(client, monkeypatch) -> None:
