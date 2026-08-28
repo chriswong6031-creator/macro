@@ -152,8 +152,48 @@ def material_paths(added_lines: dict[str, list[str]]) -> set[str]:
     return material
 
 
+#: A ``/* ... */`` span. Used to decide whether an added CSS line carries any
+#: real declaration, or is only a comment.
+_CSS_COMMENT_SPAN = re.compile(r"/\*.*?\*/", re.DOTALL)
+
+
+def _css_line_has_substance(line: str) -> bool:
+    """True when an added CSS line carries something that can change pixels.
+
+    This gate FAILS CLOSED on a material change, so "any added line in a
+    templates CSS file is material" would demand a full eight-cell dual-theme
+    evidence matrix for adding a comment or a blank line — a fleet-wide block on
+    ordinary work, and the fastest way to get the whole guard disabled. A
+    comment or blank line cannot change a rendered pixel, so it is not material.
+    """
+    stripped = line.strip()
+    if not stripped:
+        return False
+
+    # Complete ``/* ... */`` spans on this line are comment, never substance.
+    text = _CSS_COMMENT_SPAN.sub(" ", stripped)
+
+    # An unterminated ``/*`` opens a block comment: everything after it on this
+    # line is comment text.
+    if "/*" in text:
+        text = text.split("/*", 1)[0]
+
+    if "*/" in text:
+        # The line closes a block comment; only what FOLLOWS the close is real.
+        text = text.split("*/", 1)[1]
+    elif stripped.startswith("*"):
+        # A continuation line inside an open block comment, with no close here.
+        # Its prose is not substance — checking only `startswith` and then
+        # stripping punctuation would count the comment's words as CSS.
+        return False
+
+    return bool(text.strip())
+
+
 def _is_material_css(path: str, lines: list[str]) -> bool:
-    return path.startswith("templates/") and path.endswith(".css")
+    if not (path.startswith("templates/") and path.endswith(".css")):
+        return False
+    return any(_css_line_has_substance(line) for line in lines)
 
 
 def _is_material_inline_style(path: str, lines: list[str]) -> bool:

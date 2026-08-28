@@ -191,6 +191,54 @@ def test_material_paths_ignores_non_material_python_change():
     assert material == set()
 
 
+def _css_only(added_line: str) -> set[str]:
+    """material_paths() for a diff adding exactly one line to a templates CSS file."""
+    diff = (
+        "diff --git a/templates/stock-dashboard.css b/templates/stock-dashboard.css\n"
+        "--- a/templates/stock-dashboard.css\n"
+        "+++ b/templates/stock-dashboard.css\n"
+        "@@ -1,0 +2,1 @@\n"
+        f"+{added_line}\n"
+    )
+    return guard.material_paths(guard.parse_added_lines(diff))
+
+
+# This gate FAILS CLOSED, so an over-broad "material" verdict is a fleet-wide
+# block on ordinary PRs — the fastest way to get the whole guard disabled. A
+# comment or a blank line cannot change a rendered pixel and must never demand
+# an eight-cell dual-theme evidence matrix. Regression guard: an earlier
+# implementation accepted the added lines and never inspected them, so adding a
+# CSS comment demanded a full evidence packet.
+@pytest.mark.parametrize(
+    "line",
+    [
+        "/* TODO: extract lane tokens in TP-1 */",
+        "",
+        "   ",
+        " * continuation inside a block comment",
+        "/* opening a block comment",
+        "*/",
+    ],
+)
+def test_material_paths_ignores_comment_or_blank_css_lines(line):
+    assert _css_only(line) == set()
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        ".mx-stockdash__lane{background:var(--panel-2)}",
+        "  color: var(--ink-1);",
+        "@media (max-width: 640px) {",
+        "}",
+        "*/ .x{color:var(--ink-1)}",
+        ".y{color:red} /* trailing note */",
+    ],
+)
+def test_material_paths_still_detects_real_css_substance(line):
+    assert _css_only(line) == {"templates/stock-dashboard.css"}
+
+
 # ---------------------------------------------------------------------------
 # CLI-level required cases
 # ---------------------------------------------------------------------------
