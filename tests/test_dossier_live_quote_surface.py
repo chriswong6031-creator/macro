@@ -93,7 +93,12 @@ def test_a_lapsed_feed_stops_claiming_live(client_text: str) -> None:
     """
     stale_branch = client_text[client_text.index("if (q.freshness === 'stale') {"):]
     stale_branch = stale_branch[: stale_branch.index("return;")]
-    assert "painted && stamp" in stale_branch
+    # Assert the EXACT guard, not a substring of it. `painted && stamp` is
+    # still contained in `false && painted && stamp`, so the loose form passed
+    # against a mutation that disabled this branch outright — the demotion
+    # never ran and a lapsed feed kept its green "Live" indefinitely.
+    assert "if (painted && stamp) {" in stale_branch
+    assert not re.search(r"\b(false|0)\s*&&", stale_branch), "branch is short-circuited off"
     assert "'closed'" in stale_branch
     assert "LABELS.lapsed" in stale_branch
     assert re.search(r"lapsed: \['[^']+', '[^']+'\]", client_text)
