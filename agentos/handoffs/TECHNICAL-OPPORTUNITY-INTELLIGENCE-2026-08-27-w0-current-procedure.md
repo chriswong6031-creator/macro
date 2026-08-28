@@ -27,9 +27,9 @@ changed:
       rule that delivery/ACK/queue/branch state does not prove execution.
   - path: agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md
     what: >
-      Added the continuation amendment to durable artifacts, named the W1/W2-0 operation
-      keys, and recorded the transport/liveness landmine without changing wave scope or
-      starting either downstream wave.
+      Added the continuation amendment and this handoff to durable artifacts, named the
+      W1/W2-0 operation keys, and recorded the transport/liveness landmine without
+      changing wave scope or starting either downstream wave.
   - path: agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-2026-08-27-w0-current-procedure.md
     what: >
       Preserved the current procedure pin, same-carrier CI diagnosis, exact repairs,
@@ -57,10 +57,11 @@ verified:
   - claim: >
       The repair stayed on the original logical carrier and did not start W1 or W2-0.
     command: >
-      `git log --oneline 1f741b72fbf979a2ff36d809ca235874712e7024..822d685768dbf0fdfcf56c82b5d5d8cc13b0ca40`
+      `git log --oneline 1f741b72fbf979a2ff36d809ca235874712e7024..dd5fc17ad885dc1d5062410f731da4d285fce98f`
     result: >
-      Only the runnable-falsifier repair and records-only continuation-procedure
-      amendment landed on branch sol/technical-opportunity-intelligence-w0-20260827.
+      Only the runnable-falsifier repair, records-only continuation-procedure amendment,
+      current-procedure handoff, and workstream artifact indexing landed on branch
+      sol/technical-opportunity-intelligence-w0-20260827.
 unverified:
   - claim: Exact-head Agent OS validation and all required PR checks are green.
     what_would_verify: >
