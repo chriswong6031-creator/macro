@@ -721,15 +721,19 @@ def test_rule_review_status_is_declared_pending_sol_rule_review():
     assert calib_w3.RULE_REVIEW_STATUS == "declared_pending_sol_rule_review"
 
 
-def test_rule_hashes_unchanged_by_the_status_marking():
-    """The B4 disclosure adds a STATUS marker without changing either rule's
-    literal text -- the previously-recorded hashes in
-    W3_RULER_REGISTRATION.md §3.1 must stay valid."""
-    assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
-        "7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb"
-    )
+def test_rule_hashes_match_the_currently_committed_registration_values():
+    """LAMBDA_FS_RULE's text is untouched by this repair (its population wording
+    already matched the implementation), so its hash is unchanged. RECALL_FLOOR_RULE's
+    population-wording clause WAS corrected (MINORS: align rule-text population
+    wording with implementation) to name the actual n_episodes>0 predicate the
+    code has always applied -- a textual accuracy fix, not a rule-form change
+    (no computed value existed to void) -- so its hash necessarily changed and is
+    re-recorded in W3_RULER_REGISTRATION.md §3.1 alongside this pin."""
     assert calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE) == (
         "110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e"
+    )
+    assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
+        "671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69"
     )
 
 

@@ -83,16 +83,30 @@ RULE_REVIEW_STATUS = "declared_pending_sol_rule_review"
 #: as frozen text BEFORE any value exists. Hashing this string is what proves the
 #: rule predates the value (the hash is recorded in the registration in Step 2,
 #: before Step 4/5 ever run against partition data). UNCHANGED by this repair
-#: (status: declared_pending_sol_rule_review, RULE_REVIEW_STATUS above) — the
-#: rule TEXT stays byte-identical so its previously-recorded hash in
-#: W3_RULER_REGISTRATION.md §3.1 stays valid; only its review status changed.
+#: (status: declared_pending_sol_rule_review, RULE_REVIEW_STATUS above). The
+#: SELECTION MATH (P25 of recall_at_tier, rounded to 0.05) is unchanged by this
+#: repair. The population-wording clause below WAS corrected (MINORS finding:
+#: "align rule-text population wording with implementation") to name the exact
+#: predicate ``compute_recall_floor`` has always applied
+#: (``cells["n_episodes"] > 0`` — a cell with at least one FIRE, per
+#: ``aggregate_cell_metrics``' own fired-episode count) rather than the prior
+#: prose's inaccurate "tier-eligible episode" description (that population is a
+#: DIFFERENT, unrelated quantity — B2's fix to recall_at_tier's own denominator).
+#: This is a textual accuracy fix, not a rule-form change: no computed value
+#: exists yet to void, and the corrected text describes the SAME code path that
+#: has run unchanged throughout. Its hash necessarily changed and is re-recorded
+#: in W3_RULER_REGISTRATION.md §3.1.
 RECALL_FLOOR_RULE = (
     "recall_floor = the 25th percentile (P25) of the cell-level recall_at_tier "
     "distribution, computed over every (family_key, episode_type, grain) cell in "
-    "the calibration-fire substrate that has at least one tier-eligible (tier<=2) "
-    "episode, rounded to the nearest 0.05. A cell below this floor is judged too "
-    "rarely localized for C-LOC-D to be graded. The rule references only the "
-    "POPULATION of measured cells and never any expert's own outcome rank "
+    "the calibration-fire substrate for which n_episodes > 0 (aggregate_cell_metrics' "
+    "own count of that cell's distinct FIRED episodes -- i.e. a cell with at least "
+    "one fire; this is the population filter compute_recall_floor has always "
+    "applied via cells['n_episodes'] > 0, and is a DIFFERENT quantity from the "
+    "tier-eligible-episode set recall_at_tier's own denominator is computed over), "
+    "rounded to the nearest 0.05. A cell below this floor is judged too rarely "
+    "localized for C-LOC-D to be graded. The rule references only the POPULATION "
+    "of measured cells and never any expert's own outcome rank "
     "(DNR:KILL-OUTCOME-AUDITION)."
 )
 
