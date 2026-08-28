@@ -302,9 +302,34 @@ def test_a_row_that_does_not_identify_itself_is_refused(client, monkeypatch) -> 
     assert client.get("/api/dossier-quote/NVDA").status_code == 404
 
 
-def test_a_non_regular_session_print_is_refused(client, monkeypatch) -> None:
-    """`regularSession` is the hub's positive evidence that `last` is an RTH print."""
-    _patch_hub(monkeypatch, _hub_row(regularSession="post"), now=1787871758 + 5)
+def test_a_closed_regular_session_still_serves_its_settled_close(client, monkeypatch) -> None:
+    """`regularSession: "closed"` is the OVERNIGHT state, not a bad row.
+
+    A verbatim production row from 2026-08-28 04:09Z.  `regularSession` reports
+    whether the regular session is open, not which session the print came from;
+    reading it the second way refused every good row after the bell and 503'd
+    every US dossier all night.  The close it carries is exactly what an
+    overnight dossier should show.
+    """
+    overnight = _hub_row(
+        regularSession="closed", marketSession="overnight",
+        ts=1787890171, close=None,
+    )
+    _patch_hub(monkeypatch, overnight, now=1787890171 + 60)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["price"] == pytest.approx(227.98)
+    assert body["prev_close"] == pytest.approx(209.66)
+    assert body["change_pct"] == pytest.approx(8.7379566917867, abs=1e-6)
+    assert body["freshness"] == "delayed"
+    assert body["session"] == "closed"
+
+
+@pytest.mark.parametrize("tag", ["pre", "post", "after-hours", "extended"])
+def test_an_explicitly_extended_print_is_still_refused(client, monkeypatch, tag) -> None:
+    """The narrow guard that remains: an extended tag must never become the
+    regular price. Defence in depth — upstream already keeps those out of
+    `last` — but it costs nothing and the sign inversion it prevents is real."""
+    _patch_hub(monkeypatch, _hub_row(regularSession=tag), now=1787871758 + 5)
     assert client.get("/api/dossier-quote/NVDA").status_code == 503
 
 
