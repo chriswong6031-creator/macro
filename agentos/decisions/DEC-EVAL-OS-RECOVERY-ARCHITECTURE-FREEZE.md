@@ -79,12 +79,8 @@ affects:
   - data/prophet/ledger.jsonl
   - engine/neuralweb/eval
 confidence: high
-reversibility: hard
-supersedes:
-  - "WS:EVAL-OS-MEASUREMENT-LAW stale W4 next-action merge list"
-  - "WS:EVAL-OS-MEASUREMENT-LAW stale W5 unresolved-control-ruling blocker"
-  - "WS:EVAL-OS-OUTPUT-HEALTH stale old-branch/PR next action"
-  - "Any inference that unmentioned original T0-T12 items became complete merely because newer neighboring programs landed"
+reversibility: costly
+supersedes: []
 decided_by: ceo-sol
 decided_at: 2026-08-27
 ---
