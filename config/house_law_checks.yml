@@ -2992,6 +2992,18 @@ checks:
         `parallel-token-root` is naive about nesting: it fires on a `:root` block
         declaring custom properties outside theme.css even when the values are
         pure token derivations. Scoped (non-`:root`) derived properties stay legal.
+      - >-
+        The `emoji` rule BLOCKS on a narrower set than it REPORTS. Rule 8's
+        census regex covers Misc Symbols and Dingbats (U+2600-27BF), where the
+        estate already carries ~1,597 typographic glyphs across 145 template
+        files — `⚠`×188, `✓`×147, `★`×82, `✕`×59. Blocking on those would red an
+        added table row containing a checkmark, so enforce-added blocks only on
+        pictographic planes and regional indicators. `✓`/`★`/`⚠` are typography;
+        the architecture authorizes blocking new emoji-as-UI, not new text
+        symbols. Consequence to know: a pictographic glyph IS still blocking, so
+        editing an added line carrying the `🌙` theme-toggle icon in
+        templates/theme.js will red — correctly, per the doctrine's ban on
+        emoji-as-icon, but it will surprise whoever hits it first.
     owner_program: theme-parity-ratchet
     notes: >
       Shares its check_script with design.system_ratchet on purpose — one script,
@@ -3013,12 +3025,14 @@ checks:
       invisible to every design gate. That is the enforcement escape hatch the
       theme-parity program exists to close. This guard counts four injection
       signatures (createElement('style'), style/css .textContent assignment,
-      .sheet.insertRule(, and inline <style markup) per user-facing .js under
+      .insertRule(, and inline <style markup) per user-facing .js under
       templates/ and site/, against a frozen per-file baseline. A new injecting
       file absent from the baseline reds; any count above its pinned allowance
-      reds. A count BELOW its allowance emits a ::notice requiring the same PR to
-      shrink the stale budget, so the ratchet can only stay flat or tighten and
-      never silently re-inflate after a cleanup.
+      reds. A count BELOW its allowance ALSO reds, demanding the same PR shrink
+      the stale budget — that third case is what makes this a ratchet rather
+      than a high-water mark. An advisory notice would leave freed headroom
+      lying around for a later PR to silently re-inflate into, which is exactly
+      the regression the fence exists to prevent.
     source_ref:
       - scripts/check_runtime_style_injection.py
       - tests/test_check_runtime_style_injection.py
@@ -3046,6 +3060,21 @@ checks:
         three-line focus-ring injection from a 40KB material system, and a
         determined builder can evade the exact patterns. It is a ratchet against
         casual growth, not a proof of absence.
+      - >-
+        Specific uncovered shapes, named rather than implied: constructable
+        stylesheets (`new CSSStyleSheet()` / `adoptedStyleSheets` /
+        `replaceSync`) are not matched at all, nor is `el.style.cssText=`,
+        `setAttribute('style', ...)`, or a `.textContent =` assignment whose
+        receiver variable is not literally named `style` or `css`. A future wave
+        that adopts constructable stylesheets must extend PATTERNS in the same
+        PR or this fence silently stops covering the estate's real mechanism.
+      - >-
+        A self-raised budget passes: a PR may add a new injecting file and
+        regenerate the baseline in the same commit, and the only friction is a
+        reviewer reading the JSON diff. That visibility IS the control — the
+        allowlist diff is deliberately human-legible — but it is review-tier,
+        not machine-tier. `generated_from` is recorded, never validated against
+        the PR head.
       - >-
         Vendored minified libraries (plotly-2.32.0.min.js) are counted and frozen
         like anything else. A vendor upgrade changes the count and requires a
