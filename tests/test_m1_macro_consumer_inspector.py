@@ -269,6 +269,30 @@ def test_inspect_checkout_is_local_read_only_and_counts_dirty_files(
     )
 
 
+@pytest.mark.parametrize(
+    "remote",
+    (
+        "git@GitHub.com:MastermindX-Market-Intelligence/Macro.git",
+        "SSH://git@GitHub.com/MastermindX-Market-Intelligence/Macro.git",
+    ),
+)
+def test_inspect_checkout_marks_case_variant_ssh_without_identity_as_ambient(
+    tmp_path: Path,
+    remote: str,
+) -> None:
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    _git(repo, "remote", "add", "origin", remote)
+
+    evidence = census.inspect_checkout(repo)
+
+    assert evidence is not None
+    assert evidence.remote_states == ("canonical_ssh",)
+    assert evidence.git_identity.canonical_repo is True
+    assert evidence.git_identity.explicit_machine_identity is False
+    assert evidence.git_identity.ambient_fallback_possible is True
+
+
 def test_inspect_checkout_neutralizes_hostile_fsmonitor(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     _init_repo(repo)

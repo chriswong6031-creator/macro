@@ -589,7 +589,8 @@ def inspect_checkout(
     classifications = [classify_remote(url) for url in raw_remotes]
     explicit_identity = any(_explicit_identity(command) for command in ssh_commands)
     has_ssh_remote = any(
-        url.startswith("git@github.com:") or url.startswith("ssh://")
+        url.casefold().startswith("git@github.com:")
+        or url.casefold().startswith("ssh://")
         for url in raw_remotes
     )
     states = tuple(sorted({_remote_state(url) for url in raw_remotes})) or ("unknown",)
