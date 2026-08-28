@@ -620,3 +620,123 @@ def test_an_unresolvable_run_fails_open(monkeypatch):
     workflow a run belongs to, the guard must not brick the harness."""
     monkeypatch.setenv("GH_SHIM_EXIT", "1")
     assert not _denied(f"gh run cancel {KILL_RECEIPT}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shape 7 — re-reading the same status faster than it can change (2026-08-27)
+#
+# The second time an operator had to say it, and the first time a background
+# watcher was ALREADY armed while the session polled anyway. These pin the
+# semantics that make the rule safe to enforce: it delays a repeat, it never
+# blocks a session, and it never touches a mutation.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture()
+def _poll_state(tmp_path, monkeypatch):
+    """Isolate the cooldown ledger.
+
+    Via the ENV, not `monkeypatch.setattr`: `_run` executes the hook as a
+    SUBPROCESS, so patching the imported module object would leave the real
+    shared ledger in play and make these tests order-dependent on any other
+    session polling the same PR.
+    """
+    monkeypatch.setenv("MACRO_GH_POLL_STATE_DIR", str(tmp_path / "cooldown"))
+    monkeypatch.setattr(GUARD, "POLL_STATE_DIR", str(tmp_path / "cooldown"))
+    return tmp_path
+
+
+def _nudged(cmd: str) -> str:
+    """The additionalContext a repeat read attaches, or "" when silent."""
+    d = _run(cmd)
+    return (d or {}).get("additionalContext") or ""
+
+
+def test_first_read_of_a_status_shape_always_passes(_poll_state):
+    """The guard governs HOW you watch, never WHETHER: the first look is free."""
+    assert not _denied("gh pr checks 6555 --json name,bucket")
+
+
+def test_immediate_reread_of_the_same_shape_is_flagged_but_allowed(_poll_state):
+    """The measured 2026-08-27 burn: one poll per Stop-hook cycle, ~25 in a row,
+    against a 30-45 minute run that cannot have changed.
+
+    Flagged, never denied — the CI-observation invariant below is the older and
+    stronger rule, so this shape informs the session and lets the call through.
+    """
+    assert _nudged("gh pr checks 6555 --json name,bucket") == ""
+    second = _nudged("gh pr checks 6555 --json name,bucket")
+    assert "REDUNDANT POLL" in second
+    assert not _denied("gh pr checks 6555 --json name,bucket")
+
+
+def test_the_nudge_says_it_is_advice_and_names_the_countermeasure(_poll_state):
+    """Advice that reads as a block invites evasion, and advice that only scolds
+    changes nothing. It must say the call went through, and say what to do."""
+    _run("gh pr checks 6555")
+    note = _nudged("gh pr checks 6555")
+    assert "ADVICE, not a block" in note
+    assert "going through" in note
+    assert "watcher" in note
+    # the specific trap that defeated the prose version
+    assert "Stop hook" in note
+
+
+def test_a_different_run_or_pr_is_a_different_shape(_poll_state):
+    """Polling one PR must never blind a session to another one."""
+    assert not _denied("gh pr checks 6555")
+    assert not _denied("gh pr checks 6554")
+    assert not _denied("gh api repos/o/r/actions/runs/33129766342")
+
+
+def test_the_window_self_clears(_poll_state, monkeypatch):
+    """Time-based only: nothing a session does can leave it permanently unable
+    to read its own PR."""
+    assert not _denied("gh pr checks 6555")
+    real = GUARD.time.time
+    monkeypatch.setattr(GUARD.time, "time", lambda: real() + GUARD.POLL_COOLDOWN_S + 1)
+    assert not _denied("gh pr checks 6555")
+
+
+@pytest.mark.parametrize("cmd", [
+    "gh pr edit 6555 --add-label merge-on-green",
+    "gh pr merge 6555 --squash",
+    "gh pr comment 6555 --body hi",
+    "gh pr create --title x --body y",
+])
+def test_mutations_are_never_polls(_poll_state, cmd):
+    """Repeating a mutation is a different mistake with a different remedy; this
+    shape must not silently rate-limit the ship loop's own write path."""
+    assert not _denied(cmd)
+    assert not _denied(cmd)
+
+
+def test_unwritable_state_fails_open(_poll_state, monkeypatch):
+    """Every rule in this guard fails open. A cooldown ledger that cannot be
+    written is not evidence that a poll just happened."""
+    monkeypatch.setattr(GUARD, "POLL_STATE_DIR", "/proc/nonexistent/cannot-create")
+    assert not _denied("gh pr checks 6555")
+    assert not _denied("gh pr checks 6555")
+
+
+def test_a_command_denied_by_another_shape_does_not_start_the_cooldown(_poll_state):
+    """Shape 7 runs LAST. If it recorded first, a denial would start a cooldown
+    for a read that never reached GitHub, and the session would then be told to
+    wait for a poll it never got to make."""
+    hot = "gh run watch 123"                     # shape 1 denies this
+    assert _denied(hot)
+    # a denied command is not a poll, so an unrelated first read stays silent
+    assert _nudged("gh pr checks 6555") == ""
+
+
+def test_a_heredoc_that_merely_mentions_polling_is_not_a_poll(_poll_state):
+    """The trap this file was built around, one shape later: a heredoc body is
+    DATA. Shape 1 once blocked its own introducing commit; shape 7 flagged the
+    very edit that documents it, because main() passed the RAW command."""
+    doc = (
+        "python3 - <<'PY'\n"
+        "text = 'one `gh pr checks <n>` per Stop-hook cycle while a 30-45 minute run finishes'\n"
+        "PY"
+    )
+    assert _nudged(doc) == ""
+    assert _nudged(doc) == ""
