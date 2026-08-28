@@ -97,3 +97,4 @@
 {"date":"2026-08-28","key":"cybersecurityappsecurity","name":"App Security","theme":"Cybersecurity","state":"turn_down","since":"2026-08-20","score":0.067,"n_members":8,"breadth":0.125,"dd_from_peak":0.0,"up_from_trough":95.31}
 {"date":"2026-08-28","key":"cybersecuritythreatops","name":"ThreatOps","theme":"Cybersecurity","state":"turn_down","since":"2026-08-20","score":0.065,"n_members":6,"breadth":0.167,"dd_from_peak":0.0,"up_from_trough":106.23}
 {"date":"2026-08-28","key":"automationdprinting","name":"3D Printing","theme":"Industrial Automation","state":"turn_down","since":"2026-08-21","score":0.02,"n_members":8,"breadth":0.125,"dd_from_peak":0.0,"up_from_trough":44.3}
+{"date":"2026-08-28","key":"biometricsidentity","name":"Identity","theme":"Biometrics","state":"turn_up","since":"2026-08-28","score":0.801,"n_members":9,"breadth":0.889,"dd_from_peak":-11.71,"up_from_trough":4.96}

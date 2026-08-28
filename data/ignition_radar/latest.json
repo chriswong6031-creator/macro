@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-08-27",
+  "as_of": "2026-08-28",
   "data_session": "2026-08-27",
   "state": "off",
   "k_count": 0,
@@ -55,8 +55,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=54.1% (was 68.3% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=54.1%\uff0810\u65e5\u524d68.3%\uff09",
+      "detail_en": "pct_above_50=54.2% (was 68.3% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=54.2%\uff0810\u65e5\u524d68.3%\uff09",
       "source": "breadth"
     },
     {
@@ -301,7 +301,7 @@
     "n_qualifying": 30,
     "null": false,
     "floor": "state in igniting/running (pre-registered ALERT_STATES); empty when nothing clears \u2014 honest null",
-    "as_of": "2026-08-27"
+    "as_of": "2026-08-28"
   },
   "narrow_top": {
     "basket_id": "SMH",
@@ -315,5 +315,5 @@
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",
-  "_timing_s": 2.71
+  "_timing_s": 2.76
 }

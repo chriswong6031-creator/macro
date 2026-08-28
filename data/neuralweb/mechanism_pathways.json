@@ -47,8 +47,8 @@
             "zh": "加密流动性涌入 — BTC/ETH领涨"
           },
           "direction": 1,
-          "value": 1.13,
-          "z_or_percentile": 1.86,
+          "value": 1.33,
+          "z_or_percentile": 2.25,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
@@ -63,12 +63,12 @@
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "bitcoin",
           "observation": {
-            "en": "bitcoin (+1.3σ)",
-            "zh": "比特币 (+1.3σ)"
+            "en": "bitcoin (+1.6σ)",
+            "zh": "比特币 (+1.6σ)"
           },
           "direction": "positive",
-          "value": 1.3,
-          "z_or_percentile": 1.3,
+          "value": 1.6,
+          "z_or_percentile": 1.6,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -83,12 +83,12 @@
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ether",
           "observation": {
-            "en": "ether (+0.9σ)",
-            "zh": "以太坊 (+0.9σ)"
+            "en": "ether (+1.0σ)",
+            "zh": "以太坊 (+1.0σ)"
           },
           "direction": "positive",
-          "value": 0.9,
-          "z_or_percentile": 0.9,
+          "value": 1.0,
+          "z_or_percentile": 1.0,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "required_leg",
@@ -179,7 +179,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.61,
+          "value": 0.59,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -312,7 +312,7 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.4,
+          "value": 0.36,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
