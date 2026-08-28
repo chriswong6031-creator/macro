@@ -672,3 +672,55 @@ def test_hardcoded_constants_agree_with_their_owners():
     guard_patterns = {p.pattern for p in guard.RUNTIME_STYLE_SIGNATURES}
     owner_patterns = {p.pattern for p in rsi.PATTERNS.values()}
     assert guard_patterns == owner_patterns
+
+
+# ---------------------------------------------------------------------------
+# CI wiring pin: an unresolvable comparison base must FAIL, never report green.
+#
+# Sol REQUEST_CHANGES 2026-08-27 on head 0ded150fe4e3. Both diff-scoped steps
+# treated a failed `git merge-base` as `::warning` + `exit 0`, so the two
+# forward-only gates could be skipped while design-governance went green. The
+# warning text even said so ("this job is green WITHOUT it") — a gate that
+# announces it did not run is not a degraded pass, it is an absent gate, which
+# is the exact defect class TP-0 exists to prevent (the #1195 shallow-cut
+# family). Discriminating: this fails if either path is mutated back to exit 0.
+# ---------------------------------------------------------------------------
+
+
+def _design_governance_steps():
+    import yaml
+
+    manifest = guard.REPO_ROOT / ".github" / "ci" / "legacy-jobs.yml"
+    jobs = yaml.safe_load(manifest.read_text(encoding="utf-8"))["jobs"]
+    assert "design-governance" in jobs, (
+        "the design-governance job is gone from .github/ci/legacy-jobs.yml; "
+        "TP-0's three guards would then be wired to nothing")
+    return jobs["design-governance"]["steps"]
+
+
+def test_diff_scoped_steps_fail_closed_without_a_comparison_base():
+    base_dependent = [
+        s for s in _design_governance_steps()
+        if "merge-base" in (s.get("run") or "")
+    ]
+    # Both TP-0 diff-scoped gates depend on the base: the forward-only design
+    # ratchet and the visual-evidence gate. Deleting one to satisfy the
+    # per-step assertions below fails here instead.
+    assert len(base_dependent) == 2, (
+        "expected exactly 2 base-dependent design-governance steps "
+        f"(forward-only ratchet + visual evidence), found {len(base_dependent)}")
+
+    for step in base_dependent:
+        run = step["run"]
+        name = step.get("name", "<unnamed>")
+        assert "exit 0" not in run, (
+            f"design-governance step {name!r} exits 0 when the canonical "
+            "comparison base cannot be resolved. That reports GREEN for a gate "
+            "that never ran — the fail-open Sol blocked on 2026-08-27. "
+            "Use ::error + a nonzero exit.")
+        assert "exit 1" in run, (
+            f"design-governance step {name!r} has no failing exit path for an "
+            "unresolvable comparison base")
+        assert "::error" in run, (
+            f"design-governance step {name!r} must annotate the missing base "
+            "with ::error so an absent gate is visible in the run summary")

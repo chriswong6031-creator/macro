@@ -4877,19 +4877,25 @@ jobs:
         run: python3 scripts/check_runtime_style_injection.py
       - name: forward-only design ratchet (new forbidden decisions on changed lines)
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
+          if ! git fetch origin ${{ github.base_ref || 'main' }}; then
+            echo "::error title=design-governance::could not fetch origin/${{ github.base_ref || 'main' }}; the forward-only design ratchet has NO canonical comparison base and cannot run. Failing closed — an unresolvable base is an absent gate, not a degraded pass."
+            exit 1
+          fi
           if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
-            echo "::warning title=design-governance::no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — the forward-only design ratchet was SKIPPED and this job is green WITHOUT it; the runtime-style ratchet and all three selftests above still ran"
-            exit 0
+            echo "::error title=design-governance::no merge base with ${{ github.base_ref || 'main' }}; the forward-only design ratchet has NO canonical comparison base and cannot run. Failing closed — an unresolvable base is an absent gate, not a degraded pass."
+            exit 1
           fi
           git diff --unified=0 "$mb" HEAD -- templates > /tmp/design.diff
           python3 scripts/check_design_system.py --mode enforce-added --diff-file /tmp/design.diff
       - name: visual evidence required for a material UI change
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
+          if ! git fetch origin ${{ github.base_ref || 'main' }}; then
+            echo "::error title=design-governance::could not fetch origin/${{ github.base_ref || 'main' }}; the visual-evidence gate has NO canonical comparison base and cannot run. Failing closed — an unresolvable base is an absent gate, not a degraded pass."
+            exit 1
+          fi
           if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
-            echo "::warning title=design-governance::no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — the visual-evidence gate was SKIPPED and this job is green WITHOUT it; the runtime-style ratchet and all three selftests above still ran"
-            exit 0
+            echo "::error title=design-governance::no merge base with ${{ github.base_ref || 'main' }}; the visual-evidence gate has NO canonical comparison base and cannot run. Failing closed — an unresolvable base is an absent gate, not a degraded pass."
+            exit 1
           fi
           git diff --unified=0 "$mb" HEAD -- templates site > /tmp/ui.diff
           python3 scripts/check_ui_visual_evidence.py --diff-file /tmp/ui.diff
