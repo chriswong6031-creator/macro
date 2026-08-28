@@ -33,6 +33,13 @@ changed:
       EDT/EST cron pair. The EDT firing is 30 22 * * *. The workflow explicitly allows a
       real firing to sit queued for hours and still proceed; proof must come from that
       ordinary scheduled carrier, not workflow_dispatch.
+  - path: ".github/workflows/nightly-liveness.yml / scripts/check_nightly_liveness.py"
+    what: >
+      The independent GitHub-hosted watchdog produced a positive 2026-08-27 receipt that
+      no Build-B run had been created after the fire boundary yet. That receipt is now
+      part of the D12 external-gate evidence, not a reason to create a manual substitute.
+      Its own delayed 20:00Z scheduling means the early page is not by itself proof of a
+      scheduler incident; the watchdog's documented first deliberate post-bake look is 08:00Z.
 verified:
   - claim: "Current protected Sol procedure is compatible and pinned before this record effect."
     command: >
@@ -57,15 +64,25 @@ verified:
       At 19:12Z prophet_live was graded fresh while n_states=0; the evaluator was refusing
       a D12-poisoned pack as stale_pack and publishing fresh empty passes. #6569 now breaches
       persistent in-window empty states and armed packs ahead of the canonical session calendar.
-  - claim: "No lawful post-#6554 natural Build-B receipt exists yet in GitHub Actions."
+  - claim: "The independent nightly watchdog positively observed no Build-B run after the 2026-08-27 fire boundary."
     command: >
-      Read the current daily.yml schedule and GitHub scheduled-run history through the
-      latest available window after the 2026-08-27 22:30Z EDT anchor.
+      Read GitHub Actions nightly-liveness run #38 / run 33126181894 and job 98704781286 logs.
     result: >
-      No new daily 30 22 * * * run is present yet. The latest visible 30 22 run is
-      33036497832, created 2026-08-27T03:29:08Z at head fab40e11940cfcc1594d34450cede06bfd5b9eb0,
-      which predates #6554 and is not an acceptance carrier. The natural scheduler is the
-      external gate; no manual dispatch is substituted.
+      At 2026-08-27T23:25:01Z the watchdog emitted NO RUN: daily.yml created no run since
+      2026-08-27T22:00:00Z, with runs_since=0, source_asof=2026-08-26 and behind=1 for the
+      2026-08-27 session. It also independently emitted INTAKE INTEGRITY because
+      site/prophet/index.json carried intake.eligible_after_skips=25 and intake.originated=0.
+      Those are positive production observations; they do not authorize a manual nightly.
+  - claim: "The watchdog page can be early relative to its own documented first post-bake adjudication."
+    command: >
+      Read .github/workflows/nightly-liveness.yml and scripts/check_nightly_liveness.py at current main.
+    result: >
+      The watchdog schedules 00:00/08:00/14:00/20:00Z and documents 08:00Z as the first
+      look comfortably past the 22:30Z bake. Run 33126181894 was created at 23:24:45Z,
+      consistent with a delayed 20:00Z watchdog firing that crossed the 22:00Z FIRE_BOUNDARY.
+      Its runs_since=0 fact is valid, but that one early page alone does not prove the nightly
+      scheduler is broken; the D12 gate remains external until the ordinary carrier appears or
+      the designed liveness window positively fails.
   - claim: "The temporary D12 red workflow is gone from current main."
     command: >
       Read current main and request .github/workflows/prophet-d12-price-red.yml.
@@ -91,9 +108,12 @@ danger_areas:
   - "Do not replace delayed natural Build-B admission with workflow_dispatch. The ordinary scheduled run identity and its actual build_prophet_live_pack step are part of the evidence contract."
   - "Do not manually dispatch prophet-live.yml while the VPS timer is primary; that bypasses the single-writer production ownership boundary and can create two writers on live/prophet_live.json."
   - "The #6569 sentinel fences are detection evidence, not producer acceptance by themselves. An ahead-of-calendar/fresh-empty fence going green does not prove that #6554's producer path executed naturally."
+  - "Nightly-liveness run 33126181894 is a real NO-RUN observation but appears to be the 20:00Z watchdog slot delayed across the 22:00Z fire boundary. Treat the factual absence as evidence; do not widen D12 into a watchdog timing repair or call a scheduler incident from that early page alone."
+  - "The same liveness receipt observed intake.eligible_after_skips=25 with intake.originated=0. That is a separate Prophet production-integrity signal; do not silently reinterpret it as D12 causality or repair it inside this carrier."
   - "Current GitHub main may advance on unrelated work while this external gate waits. Reconcile exact run/head and material Prophet source paths before interpreting any later nightly as the D12 acceptance carrier."
 unresolved:
   - "D12 production acceptance remains BUILT_NOT_PROVEN. The producer implementation and cleanup are merged; natural arming proof and subsequent live-consumer proof are still owed."
+  - "As of nightly-liveness run 33126181894 at 2026-08-27T23:25Z, no ordinary Build-B run had been created after the 22:00Z fire boundary. The external gate remains unresolved."
   - "The historical source/operator of the D12 contamination remains unreproduced/unattributed; do not manufacture a contaminated production store merely to make that provenance easier to demonstrate."
   - "The 2026-08-26T07:43:28Z R2 credential seeding remains separately unattributed and is not a D12 acceptance gate."
 do_not_redo:
@@ -108,6 +128,10 @@ next_actions:
       (daily 30 22 * * *). When GitHub creates it, bind the exact run id/head and inspect
       the actual build_prophet_live_pack step/log. Reject pre-#6554 or ambiguous evidence.
   - >
+      If no natural Build-B is created by the watchdog's documented post-bake liveness
+      window, treat the nightly scheduler/liveness problem as a separate production incident;
+      do not manufacture D12 evidence or fold that repair into this carrier.
+  - >
       If the pack receipt is lawful, record the arming half as proven but keep overall D12
       BUILT_NOT_PROVEN until the next natural NYSE session.
   - >
@@ -115,8 +139,8 @@ next_actions:
       advancing served/R2 publication, states non-empty, healthy pack basis, and no #6569
       fresh-empty breach. Only then may Sol consider D12 PROVEN_LIVE.
   - >
-      Keep the unrelated credential-attribution audit and 2026-07-30 partial-tail
-      investigation separate from this acceptance carrier.
+      Keep the unrelated intake-integrity, credential-attribution, watchdog-timing, and
+      2026-07-30 partial-tail investigations separate from this acceptance carrier.
 ---
 
 # D12 natural-proof gate — 2026-08-27 continuation
