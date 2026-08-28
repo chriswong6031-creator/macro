@@ -13,35 +13,47 @@ status: active
 program: qualitative-intelligence
 repos:
   - macro
-owner: Eval-OS session (COO Fable lane)
+owner: Eval-OS program (CEO Sol; Fable COO execution lanes)
 class: build
 blast_radius: reversible
 ambiguity: scoped
+decisions:
+  - "DEC:EVAL-OS-RECOVERY-ARCHITECTURE-FREEZE"
 waves:
   - id: W1
     title: Architecture + metric validity
     status: done
-    next_action: "None — PR #5471 merged (five docs + engine/qledger_validity.py V1/V2/V3 + guard + 16 tests)."
+    next_action: "None — PR #5471 merged. The separate fleet-wide strict-hardening residue remains a later completion wave because the current CLI is still WARN-tier by default."
   - id: W2
     title: Horizon-clock contract + market ruler
     status: done
-    next_action: "None — PRs #5559 then #5563 merged. #5563 fixed #5559's own shape_is_decisive defect."
+    next_action: "None — PRs #5559 then #5563 merged. #5563 fixed #5559's shape_is_decisive defect."
   - id: W3
-    title: Promotion legality
+    title: Promotion legality substrate
     status: done
-    next_action: "None — #5519 (no pooled signed excess), #5573 (direction-correct control_only), #5572 (own-ruler grading <=63) merged."
+    next_action: "None — #5519, #5573, #5572 and later clock-legality repairs landed. Unified final-path adversarial acceptance remains a separate continuation wave, not a reopening of these merges."
   - id: W4
     title: Append-only law + forward-only accrual
     status: in_progress
-    next_action: "Merge #5534, #5577 and the P0c-2 PR, then confirm the first nightly writes the evidence-clock files."
+    next_action: >
+      #5534/#5577/#5584 are already merged. Recover why stock_desk and thematic_desk have not
+      minted their first real general evidence-clock files, preserve demand_chain's real start,
+      start stock_desk's matched-control clock only from a valid future controlled claim, and
+      verify demand_chain's current runner-local control clock without backdating or creating a
+      second clock store.
   - id: W5
     title: Control-leg decision
-    status: todo
-    next_action: "Await the CEO ruling in research/EVAL_OS_SITREP_2026-08-14.md §11; see DSC:NO-QLEDGER-CLAIM-EVER-CARRIED-A-CONTROL-LEG. (Wave status is `todo`, not `blocked` — the wave enum has no blocked state; the blocker is recorded in the workstream's own status and in the sitrep.)"
+    status: done
+    next_action: >
+      None — P0d/#5609 resolved the CEO policy: benchmark is universal baseline; matched control
+      is required only where governed policy names a defensible counterfactual. stock_desk and
+      demand_chain are matched-control-required; thematic_desk is benchmark-only. #5665/#5672
+      repaired demand-chain wiring/replay semantics.
 next_action: >
-  Merge #5534, #5577 and the P0c-2 PR; then confirm the first nightly writes
-  data/qledger/evidence_clock_start/<family>.json for stock_desk, thematic_desk and
-  demand_chain, and record those three timestamps as the real evidence-clock start.
+  Execute Eval OS E1 from research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md:
+  obtain real forward clock starts for stock_desk and thematic_desk from an actual scheduled
+  producer run, verify current demand_chain runner-local control-clock truth, and return the
+  exact trigger rows/timestamps plus the next real grading receipt. No retrospective rows.
 owns_paths:
   - engine/qledger.py
   - engine/qledger_validity.py
@@ -51,27 +63,35 @@ owns_paths:
 discoveries:
   - DSC:NO-QLEDGER-CLAIM-EVER-CARRIED-A-CONTROL-LEG
 landmines:
-  - "engine/source_registry.py keeps its OWN _add_trading_days NYSE walker and grades narrative_source_call through its own exit. 'ONE resolver' is true only for claims that grade through qledger."
-  - "source_registry's family hit_rate and scripts/report_importance_duel.py::_slice_stats both pool grade rows across clock bases. Single-basis TODAY (no explicit-clock grade row exists yet); the fuse is the first night new claims mature."
-  - "A legacy-only family is promotable on the default path pre-P0c-2. _authority_clock_basis returns the sole basis when len(bases)==1, and for every live family today that basis IS CLOCK_LEGACY."
+  - "engine/source_registry.py keeps its OWN _add_trading_days NYSE walker and grades narrative_source_call through its own exit. 'ONE resolver' is true only for claims that grade through qledger; do not overstate qledger scope."
+  - "Current production track_record now contains explicit and legacy bases and refuses pooling; future consumers must preserve this rather than reconstructing family statistics from raw mixed rows."
+  - "data/qledger/control_evidence_clock_start/ is intentionally runner-local/untracked after #5970. A missing Git file is not proof a live clock is absent; production host/runtime truth must be read without inventing another canonical copy."
+  - "Only demand_chain currently has a tracked general evidence_clock_start receipt; stock_desk/thematic_desk are not proven to have started prospective accrual."
 do_not_redo:
-  - "Do NOT re-propose 'the horizon fix is a one-line in_scope_horizons change'. That was the 2026-08-12 diagnosis and it was wrong about the cause; the defect was the missing unit declaration. Superseded sitrep: PR #5512 (closed)."
-  - "Do NOT register retrospective claims for stock_desk/thematic_desk/demand_chain. Branch claude/eval-os-t9-adoption tried it and was refused by 3/3 adversarial reviewers: rows were anchored and priced 1-4 completed sessions in the past."
-  - "Do NOT add a `backfilled` provenance flag as a compromise. Nothing reads it (blocker B3); a mixed store with a decorative flag is worse than a small honest one."
-  - "Do NOT extend GRADE_HORIZONS above 63 (LH-U6). P0b adds the OWN ruler only when <=63; >63 stays on the [5,21,63] ladder."
-  - "Do NOT re-derive a claim's market from ticker shape alone, or from provenance alone. Five rounds each failed that way; the rule is hard-fact-wins / inference-must-agree / silent-shape-lets-provenance-decide."
+  - "Do NOT re-propose 'the horizon fix is a one-line in_scope_horizons change'. The defect was missing unit declaration."
+  - "Do NOT register retrospective claims for stock_desk/thematic_desk/demand_chain. The prior T9 adoption attempt was refused by 3/3 adversarial reviewers because rows were anchored/priced after the fact."
+  - "Do NOT add a decorative `backfilled` provenance flag. A mixed store with a flag no authority reader enforces is worse than a small honest one."
+  - "Do NOT extend GRADE_HORIZONS above 63 (LH-U6). >63 declared rulers remain check-by clocks, not own-horizon grades, until a separate explicit ruling."
+  - "Do NOT re-derive a claim's market from ticker shape alone or provenance alone. Hard fact wins; inference must agree; provenance may decide only where shape is silent."
+  - "Do NOT track/commit runner-local matched-control clock files merely to make them visible. #5970 intentionally removed that duplicate-state hazard."
 artifacts:
+  - research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md
   - research/EVAL_OS_SITREP_2026-08-14.md
   - research/EVAL_OS_P0A_HORIZON_CLOCK.md
   - research/PREREG_P0C1_DIRECTION_CORRECT_CONTROL_HITS.md
+  - research/PREREG_P0D_MATCHED_CONTROL_CONTRACT.md
 ---
 
-## Scope note
+## Reconciliation — 2026-08-27
 
-This workstream owns the **measurement law** — what a number means and whether it may be
-published — not the engines that produce claims. Registering a new desk is in scope only
-insofar as it must be forward-only and must declare a real ruler.
+The 2026-08-14 W4/W5 next actions were stale. #5534 (append-only), #5577 (forward-only desk
+registration) and #5584 (legacy-clock authority firewall) are merged. P0d/#5609 plus
+#5665/#5672 resolved the control-policy question. Real production evidence later showed that
+`demand_chain` started its general prospective clock at `2026-08-19T08:10:37.995754+00:00` and
+its matched-control clock at `2026-08-19T08:10:37.332100+00:00` with control `XLU`, while the
+tracked general clock estate still has no `stock_desk` or `thematic_desk` start. Therefore W4
+remains genuinely in progress for **natural-time accrual**, not for old PR merges; W5 is done.
 
-T1 (the 378-engine derived registry) is a **sibling** task, parked with its own cold-start
-handoff at `research/EVAL_OS_T1_CONTINUATION_HANDOFF_2026-08-12.md`. It was deliberately
-not restarted in this wave.
+This workstream owns measurement law, not a new promotion authority and not the engines that
+produce claims. T1 remains the single derived engine-registry sibling and is already done under
+its own bounded completion law.

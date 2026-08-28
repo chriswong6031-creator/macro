@@ -278,6 +278,29 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
   animation: fadeInUp var(--dur) var(--ease);
 }
 
+.control-room-frame-shell {
+  width: 100%;
+  min-height: calc(100vh - 96px);
+}
+
+.control-room-frame {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 96px);
+  min-height: 640px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+}
+
+@media (max-width: 900px) {
+  .control-room-frame-shell,
+  .control-room-frame {
+    min-height: calc(100vh - 132px);
+    height: calc(100vh - 132px);
+  }
+}
+
 /* Responsive collapse */
 @media (max-width: 900px) {
   .app-shell {

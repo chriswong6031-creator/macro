@@ -5799,6 +5799,14 @@ jobs:
           # committed or the track record can never accumulate past-due leans. (Same gitignore/
           # force-add trap as the per-market stock libraries.)
           git add data/stock_desk 2>/dev/null || true
+          # Eval OS E1: stock_desk's qledger registration (P3 anchor-at-registration,
+          # #6598) writes claims.jsonl + evidence_clock_start/stock_desk.json under
+          # data/qledger IN THIS JOB — the only lane that runs this producer. Without
+          # this add, an accepted claim and the write-once evidence clock live only in
+          # the runner checkout and the next job's clean checkout destroys them.
+          # data/qledger's one committed-file fence (the CONTROL clock, #5970) is a
+          # .gitignore rule, so a plain add here can never re-commit it.
+          git add data/qledger 2>/dev/null || true
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)

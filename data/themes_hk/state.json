@@ -1,7 +1,17 @@
 {
   "_debounce": {
     "label": {
+      "hk_biotech": {
+        "bucket": "2026-08-27",
+        "count": 1,
+        "from": "neutral"
+      },
       "hk_china_tech": {
+        "bucket": "2026-08-27",
+        "count": 1,
+        "from": "neutral"
+      },
+      "hk_industrials": {
         "bucket": "2026-08-27",
         "count": 1,
         "from": "neutral"
@@ -19,15 +29,15 @@
     "name_zh": "\u94f6\u884c",
     "rank": 4,
     "reco": "avoid",
-    "score": 65
+    "score": 66
   },
   "hk_biotech": {
-    "label": "neutral",
+    "label": "emerging",
     "name": "Biotech, Pharma & CXO",
     "name_zh": "\u751f\u7269\u533b\u836f\u4e0eCXO",
     "rank": 3,
-    "reco": "hold",
-    "score": 67
+    "reco": "enter",
+    "score": 68
   },
   "hk_china_tech": {
     "label": "emerging",
@@ -35,7 +45,7 @@
     "name_zh": "\u4e2d\u8d44\u79d1\u6280\u4e0e\u4e92\u8054\u7f51",
     "rank": 12,
     "reco": "hold",
-    "score": 49
+    "score": 50
   },
   "hk_conglo": {
     "label": "dominant",
@@ -83,14 +93,14 @@
     "name_zh": "\u6fb3\u95e8\u535a\u5f69",
     "rank": 17,
     "reco": "avoid",
-    "score": 25
+    "score": 26
   },
   "hk_industrials": {
-    "label": "neutral",
+    "label": "emerging",
     "name": "Industrials & Infrastructure",
     "name_zh": "\u5de5\u4e1a\u4e0e\u57fa\u5efa",
     "rank": 11,
-    "reco": "hold",
+    "reco": "enter",
     "score": 51
   },
   "hk_insurers": {
@@ -99,7 +109,7 @@
     "name_zh": "\u4fdd\u9669",
     "rank": 10,
     "reco": "hold",
-    "score": 54
+    "score": 55
   },
   "hk_materials": {
     "label": "emerging",
