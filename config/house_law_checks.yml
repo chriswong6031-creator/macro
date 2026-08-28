@@ -2950,6 +2950,179 @@ checks:
       clean fixture passes, and that the traversal itself works; a self-check
       derived from what it checks cannot fail, so the fixtures are canned in a
       tempdir rather than read from the live estate.
+  - law_id: ui.design_system_forward_ratchet
+    summary: >
+      design.system_ratchet measures the estate but cannot block it: ~19k
+      inherited findings in templates/ mean a whole-estate gate is a gate
+      somebody disables in week one. This law is the forward-only half. In
+      `--mode enforce-added` the checker parses the PR's own unified diff and
+      blocks ONLY on findings whose line number was ADDED by that diff, so a
+      newly introduced raw colour, font stack, non-token radius, literal-valued
+      custom property, emoji-as-UI, or parallel token root fails closed while
+      the identical decision sitting on an unchanged line one row above stays
+      green. Pre-existing debt reports and cannot grow. The blocking set is the
+      four mechanical rules plus `emoji` and the new `parallel-token-root` rule,
+      which fires on a `:root` custom-property family declared anywhere except
+      templates/theme.css — theme.css is the sole token authority, and a second
+      root is how a page mints a private palette the design system cannot see.
+    source_ref:
+      - scripts/check_design_system.py
+      - tests/test_check_design_system.py
+      - research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md
+      - docs/superpowers/plans/2026-08-27-tp0-theme-parity-governance-v2.md
+    severity: hard
+    check_script: scripts/check_design_system.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: design-governance
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Changed-line only by construction: moving an existing violation to a new
+        line makes it newly blocking, and editing a line adjacent to old debt
+        does not. That asymmetry is the intended forward-only bargain, not a bug.
+      - >-
+        Needs a real merge base. On a shallow checkout `git merge-base` fails and
+        the wired step exits 0 with an explicit message rather than guarding
+        nothing silently — the fetch-depth 0 in the job is load-bearing.
+      - >-
+        `parallel-token-root` is naive about nesting: it fires on a `:root` block
+        declaring custom properties outside theme.css even when the values are
+        pure token derivations. Scoped (non-`:root`) derived properties stay legal.
+    owner_program: theme-parity-ratchet
+    notes: >
+      Shares its check_script with design.system_ratchet on purpose — one script,
+      two laws, because `--mode report` (estate census, warn) and `--mode
+      enforce-added` (changed lines, hard) are genuinely different contracts and
+      collapsing them would hide which one is blocking. CLOSURE LEGIBILITY still
+      holds and was re-verified for this change: the module names exactly one scan
+      root, `templates`, and makes no subprocess call, so run_ci_pack.py's path
+      inference is unchanged. The diff is handed in via `--diff-file` (`-` reads
+      stdin); the checker never shells out to git. Runtime JS is deliberately NOT
+      in scope here — widening this script to site/ would add a second path
+      literal and break that closure — so it gets its own guard,
+      ui.runtime_style_injection.
+  - law_id: ui.runtime_style_injection
+    summary: >
+      The design-system checker scans templates/ only, so a builder could obey
+      the design system there while authoring the real material system as a
+      multi-kilobyte runtime CSS string inside page/composer JavaScript —
+      invisible to every design gate. That is the enforcement escape hatch the
+      theme-parity program exists to close. This guard counts four injection
+      signatures (createElement('style'), style/css .textContent assignment,
+      .sheet.insertRule(, and inline <style markup) per user-facing .js under
+      templates/ and site/, against a frozen per-file baseline. A new injecting
+      file absent from the baseline reds; any count above its pinned allowance
+      reds. A count BELOW its allowance emits a ::notice requiring the same PR to
+      shrink the stale budget, so the ratchet can only stay flat or tighten and
+      never silently re-inflate after a cleanup.
+    source_ref:
+      - scripts/check_runtime_style_injection.py
+      - tests/test_check_runtime_style_injection.py
+      - config/runtime_style_injection_allowlist.json
+      - research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md
+    severity: hard
+    check_script: scripts/check_runtime_style_injection.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: design-governance
+        lane: pr_ci
+    selftest: true
+    allowlist: config/runtime_style_injection_allowlist.json
+    ratchet:
+      date: "2026-12-01"
+      action: >-
+        The Canada and HK composer budgets (site/canada-stock-v36.js and
+        site/hk-stock-v36.js, 2 hits each at baseline) go to ZERO in TP-1/TP-2 as
+        their CSS is extracted to templates/stock-dashboard.css. If those entries
+        still carry a non-zero allowance by this date, the extraction wave stalled
+        — review rather than renewing the budget.
+    known_limits:
+      - >-
+        Textual signature count, not semantic analysis: it cannot tell a
+        three-line focus-ring injection from a 40KB material system, and a
+        determined builder can evade the exact patterns. It is a ratchet against
+        casual growth, not a proof of absence.
+      - >-
+        Vendored minified libraries (plotly-2.32.0.min.js) are counted and frozen
+        like anything else. A vendor upgrade changes the count and requires a
+        visible baseline update. That is intended — a vendor exemption class would
+        be the same bypass in another costume.
+      - >-
+        theme.js is the sanctioned shared theme owner and the largest single
+        budget (site/theme.js 12, templates/theme.js 10). Those are legitimate,
+        not debt to drive to zero.
+    owner_program: theme-parity-ratchet
+    notes: >
+      Baseline generated only via `--emit-baseline --generated-from "$(git
+      rev-parse HEAD)"`; the script refuses to guess a sha, and no count was ever
+      hand-written. Measured at 84d6831: 189 .js scanned, 46 injecting, 91 hits
+      (create_style 66, style_markup 14, style_text 11, insert_rule 0). The guard
+      REFUSES on a sparse checkout missing site/ rather than reporting a vacuous
+      pass over a tree it cannot see — the same failure shape as
+      check_template_site_sync.py, and the reason a sparse worktree must opt in
+      before regenerating the baseline.
+  - law_id: ui.visual_evidence_manifest
+    summary: >
+      "The light page opens and functions" has been accepted as equivalent to
+      "light mode was deliberately designed", which is how a premium dark surface
+      shipped with a degraded light plane. This guard makes a material visual
+      change owe committed evidence a reviewer can actually look at: a receipt
+      (mastermind.page_evidence_receipt.v1, exactly three keys — schema,
+      changed_paths, manifest) maps the PR's changed presentation paths to an
+      EXISTING mastermind.p0_evidence.v2 manifest, which must contain the eight
+      rest cells (desktop/mobile x en/zh x dark/light), each captured, with the
+      applied theme and locale matching what was requested and the referenced PNG
+      present. CI checks existence and state identity ONLY — a human/Opus reviewer
+      owns hierarchy, material depth, semantic colour and taste.
+    source_ref:
+      - scripts/check_ui_visual_evidence.py
+      - tests/test_check_ui_visual_evidence.py
+      - scripts/capture_page_evidence.py
+      - docs/product_experience/PAGE_EVIDENCE_HARNESS.md
+      - research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_IMPLEMENTATION_AMENDMENT_1.md
+    severity: hard
+    check_script: scripts/check_ui_visual_evidence.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: design-governance
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Material-change detection is deliberately narrow and mechanical (added
+        lines in a templates CSS file, an added inline <style in a template, an
+        added runtime-style signature in user-facing JS). It will miss a visual
+        regression delivered purely through markup reordering, and that is the
+        correct trade: this gate fails closed, so a loose detector becomes a
+        fleet-wide block on ordinary PRs.
+      - >-
+        It validates every page in the manifest a receipt references. The
+        convention is therefore a migration-scoped manifest; pointing a receipt at
+        a large multi-page estate manifest would demand eight rest cells for every
+        page in it.
+      - >-
+        Existence and identity only. A committed screenshot of a genuinely ugly
+        light plane passes CI — refusing that verdict to a machine is the point,
+        and the design review is where it is caught.
+    owner_program: theme-parity-ratchet
+    notes: >
+      Amendment 1 (A1) is binding here: this must NOT become a second evidence
+      plane. The canonical producer stays scripts/capture_page_evidence.py and the
+      canonical schema stays mastermind.p0_evidence.v2 — the receipt only MAPS to
+      it and is forbidden extra keys, so it cannot grow into a parallel manifest.
+      The viewport identity is asserted on `viewport_width` (1440 desktop / 390
+      mobile), NOT the PNG's pixel `width`: capture_page_evidence.py emits both,
+      and a full-page capture's pixel width need not equal the requested viewport,
+      so the plan's original `width` assertion would have checked the wrong
+      quantity. All manifest reads are defensive — a failed-capture row carries
+      only captured:false plus a reason, so direct indexing would crash the guard
+      instead of reporting the gap.
   - law_id: data.append_only_assertions
     summary: >
       A historical assertion over an append-only store must not become false

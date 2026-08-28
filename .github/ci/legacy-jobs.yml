@@ -4830,6 +4830,70 @@ jobs:
       - name: design-system ratchet R0 (report-only drift census over templates/)
         run: python3 scripts/check_design_system.py --mode report
 
+  design-governance:
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    gate: code
+    # TP-0 theme-parity governance (research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md).
+    # Three forward-only gates so NEW user-facing presentation debt fails closed
+    # without reddening the ~19k inherited findings in templates/:
+    #   ui.design_system_forward_ratchet — new forbidden decisions on CHANGED LINES
+    #   ui.runtime_style_injection       — ratcheted budget, may only stay flat/shrink
+    #   ui.visual_evidence_manifest      — material UI change owes dual-theme evidence
+    #
+    # gate: code, deliberately. gate:data jobs are excluded from the merge-gate
+    # packs, which would make this a non-blocking "hard gate". The verdict here is
+    # a function of the PR tree only: hand-authored templates/**, the composer JS
+    # (site/canada-stock-v36.js and site/hk-stock-v36.js have no templates/ twin,
+    # so they are NOT render-lane output), the committed allowlist, and committed
+    # receipts. No nightly data commit moves it.
+    #
+    # Deliberately UNSCOPED (no `paths:`): a scoping bug on a governance gate fails
+    # silently open, which is the exact class of defect this job exists to prevent.
+    # All three guards are stdlib/PyYAML and run in seconds.
+    #
+    # fetch-depth 0 + explicit base fetch is load-bearing: the two changed-line
+    # gates need `git merge-base`, and on a shallow checkout there is no base ref,
+    # so they would degrade to guarding nothing while the job went green (the
+    # #1195 shallow-cut incident class).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: design governance unit suites
+        run: python3 -m pytest tests/test_check_design_system.py tests/test_check_runtime_style_injection.py tests/test_check_ui_visual_evidence.py -q
+      - name: design-system ratchet selftest (each rule fires on its own fixture)
+        run: python3 scripts/check_design_system.py --self-check
+      - name: runtime-style injection guard selftest (gate fires on planted injection)
+        run: python3 scripts/check_runtime_style_injection.py --selftest
+      - name: visual-evidence guard selftest (gate fires on missing/wrong evidence)
+        run: python3 scripts/check_ui_visual_evidence.py --selftest
+      - name: runtime-style injection ratchet (budgets may only stay flat or shrink)
+        run: python3 scripts/check_runtime_style_injection.py
+      - name: forward-only design ratchet (new forbidden decisions on changed lines)
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
+            echo "no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — changed-line gate skipped; the ratchet and selftests above still ran"
+            exit 0
+          fi
+          git diff --unified=0 "$mb" HEAD -- templates > /tmp/design.diff
+          python3 scripts/check_design_system.py --mode enforce-added --diff-file /tmp/design.diff
+      - name: visual evidence required for a material UI change
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          if ! mb=$(git merge-base "origin/${{ github.base_ref || 'main' }}" HEAD); then
+            echo "no merge base with ${{ github.base_ref || 'main' }} (base moved under a fast merge) — evidence gate skipped; the ratchet and selftests above still ran"
+            exit 0
+          fi
+          git diff --unified=0 "$mb" HEAD -- templates site > /tmp/ui.diff
+          python3 scripts/check_ui_visual_evidence.py --diff-file /tmp/ui.diff
+
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
     gate: data
