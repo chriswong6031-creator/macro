@@ -24,6 +24,8 @@
     }
   },
   "graded_composites": ["c_loc_r", "c_loc_d"],
+  "c_loc_d_rank_population": "episode_type_x_grain",
+  "c_loc_d_rank_population_note": "C-LOC-D's rank normalization is computed WITHIN each (episode_type, grain) stratum, never globally across the whole cell population -- a cell's score must be invariant to adding/removing cells from an unrelated stratum (freeze review finding M5). A non-PR-3 structural field: frozen alongside the geometry above, not part of the pending PR-3 constant family.",
   "pr3": {
     "status": "pending_sealed_calibration",
     "recall_floor": null,

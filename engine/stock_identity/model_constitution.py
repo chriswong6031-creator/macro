@@ -96,21 +96,39 @@ def count_p_eff(constitution: ChannelAConstitution) -> int:
     """The declared effective parameter count: the sum of the per-feature shape-term
     counts named in ``p_eff_terms`` (one entry per declared feature; an additive
     monotone term contributes 1, a richer declared shape contributes more) — a
-    pure, deterministic sum, never a fitted quantity."""
+    pure, deterministic sum, never a fitted quantity.
+
+    Raises ``ValueError`` if ``p_eff_terms`` names a feature outside
+    ``feature_subset`` or omits a declared feature — a drifted terms map would
+    otherwise silently under/over-count capacity without ever raising.
+    """
+    declared = set(constitution.feature_subset)
+    counted = set(constitution.p_eff_terms.keys())
+    if counted != declared:
+        raise ValueError(
+            f"p_eff_terms keys {sorted(counted)!r} != declared feature_subset "
+            f"{sorted(declared)!r} — every declared feature must have exactly one "
+            "p_eff_terms entry and no undeclared feature may appear"
+        )
     return int(sum(constitution.p_eff_terms.values()))
 
 
-def assert_capacity(p_eff: int, n_train_names: int) -> None:
-    """Raise :class:`CapacityViolation` iff ``p_eff > floor(n_train_names / 10)``.
+def assert_capacity(p_eff: int, n_train_names: int, constitution: ChannelAConstitution) -> None:
+    """Raise :class:`CapacityViolation` iff
+    ``p_eff > floor(n_train_names / constitution.capacity_denominator)``.
 
     Exact floor law (freeze §4.1b (i)): the boundary itself is legal
-    (``p_eff == floor(N/10)`` passes), only strictly exceeding it raises.
+    (``p_eff == floor(N/denominator)`` passes), only strictly exceeding it raises.
+    The denominator is read from the declared constitution (not the module-level
+    default) so a differently-preregistered denominator is honored rather than
+    silently overridden.
     """
     if n_train_names < 0:
         raise ValueError("n_train_names must be >= 0")
-    cap = n_train_names // CAPACITY_DENOMINATOR
+    denominator = int(constitution.capacity_denominator)
+    cap = n_train_names // denominator
     if p_eff > cap:
         raise CapacityViolation(
-            f"p_eff={p_eff} exceeds floor(N_train_names/{CAPACITY_DENOMINATOR})={cap} "
+            f"p_eff={p_eff} exceeds floor(N_train_names/{denominator})={cap} "
             f"(N_train_names={n_train_names})"
         )

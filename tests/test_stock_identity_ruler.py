@@ -36,6 +36,7 @@ from engine.stock_identity.ruler import (
     FORBIDDEN_OUTPUT_TOKENS,
     PendingSealedCalibrationError,
     RulerSpec,
+    aggregate_cell_metrics,
     build_support_coverage,
     compute_composites,
     compute_fire_metrics,
@@ -86,6 +87,14 @@ def _fixture_spec(**overrides) -> RulerSpec:
 def test_ruler_spec_has_only_two_graded_composites():
     spec = RulerSpec.from_json(SPEC_PATH)
     assert spec.graded_composites == ("c_loc_r", "c_loc_d")
+
+
+def test_shipped_spec_freezes_c_loc_d_rank_population_as_episode_type_x_grain():
+    """M5: the rank-normalization stratum is frozen in the shipped spec, not left
+    implicit in code alone (this is a non-PR-3 structural field — it must be
+    present even while pr3 stays pending)."""
+    payload = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    assert payload["c_loc_d_rank_population"] == "episode_type_x_grain"
 
 
 def test_ruler_spec_hash_is_stable():
@@ -298,6 +307,11 @@ def test_out_of_episode_fire_is_retained_for_unconditional_block_only():
 
 
 def test_unconditional_block_reports_explicit_no_coverage_for_zero_total():
+    """M10: a (family, symbol) pair in the caller's universe with NO events at all
+    must appear as an EXPLICIT row (total_fires=0, fires_per_name_year=0.0,
+    episode_attribution_rate=NaN, no_coverage=True) — never silently omitted. The
+    prior implementation asserted the pair was simply absent (``out.empty``),
+    which certified the silent-omission defect rather than catching it."""
     events = pd.DataFrame([_event_row("Z1", symbol="ZZZ")])
     events = events.iloc[0:0]  # zero rows for family/symbol pair under test
     attribution = pd.DataFrame(columns=[
@@ -306,8 +320,38 @@ def test_unconditional_block_reports_explicit_no_coverage_for_zero_total():
         "episode_resolution", "episode_censored", "attributed", "p_pre_sessions",
     ])
     episodes = pd.DataFrame(columns=["symbol", "episode_type", "tier", "start_date", "end_date"])
+    out = compute_unconditional_block(events, attribution, episodes, universe=[("fam.x", "ZZZ")])
+    assert len(out) == 1
+    row = out.iloc[0]
+    assert row["family_key"] == "fam.x"
+    assert row["symbol"] == "ZZZ"
+    assert row["total_fires"] == 0
+    assert row["attributed_fires"] == 0
+    assert row["fires_per_name_year"] == pytest.approx(0.0)
+    assert pd.isna(row["episode_attribution_rate"])
+    assert bool(row["no_coverage"]) is True
+
+
+def test_unconditional_block_universe_none_falls_back_to_observed_pairs_only():
+    """Legacy call shape (no ``universe``) still works and never fabricates
+    no_coverage rows for pairs it never heard of."""
+    events, attribution, episodes, bars = _three_episode_fixture()
     out = compute_unconditional_block(events, attribution, episodes)
-    assert out.empty
+    assert not out["no_coverage"].any()
+
+
+def test_unconditional_block_universe_covers_observed_and_uncovered_pairs():
+    events, attribution, episodes, bars = _three_episode_fixture()
+    out = compute_unconditional_block(
+        events, attribution, episodes, universe=[("fam.x", "AAA"), ("fam.x", "BBB")]
+    )
+    aaa = out.loc[out["symbol"] == "AAA"].iloc[0]
+    bbb = out.loc[out["symbol"] == "BBB"].iloc[0]
+    assert bool(aaa["no_coverage"]) is False
+    assert aaa["total_fires"] == 4
+    assert bool(bbb["no_coverage"]) is True
+    assert bbb["total_fires"] == 0
+    assert pd.isna(bbb["episode_attribution_rate"])
 
 
 def test_no_ranking_or_authority_columns_in_fire_metrics_output():
@@ -362,8 +406,30 @@ def test_support_coverage_frame_has_no_realized_metric_columns():
     assert pd.isna(outside["episode_id"])
     # the censored episode's fire is retained and flagged
     censored_row = out.loc[out["event_id"] == "E_CENSORED"].iloc[0]
-    assert censored_row["availability_state"] == "censored"
+    assert censored_row["availability_state"] == "CENSORED"
     assert bool(censored_row["attributed"]) is True
+
+
+def test_availability_state_values_are_taxonomy_tokens_or_resolved():
+    """MINORS: every availability_state value is drawn from the closed freeze §7
+    taxonomy, except the one deliberate non-problem state ``"resolved"``."""
+    from engine.stock_identity.ruler import AVAILABILITY_TAXONOMY_TOKENS
+
+    events, attribution, episodes, bars = _three_episode_fixture()
+    out = build_support_coverage(events, attribution, episodes, bars, feature_symbols={"AAA"})
+    allowed = set(AVAILABILITY_TAXONOMY_TOKENS) | {"resolved"}
+    assert set(out["availability_state"]) <= allowed
+    # E_OUTSIDE fires but attributes to nothing -> a real, measured non-attribution
+    outside = out.loc[out["event_id"] == "E_OUTSIDE"].iloc[0]
+    assert outside["availability_state"] == "MEASURED_ZERO"
+    # missing-bars (no bars frame at all for the symbol) -> NO_COVERAGE
+    no_bars_events = pd.DataFrame([_event_row("E_NOBARS", symbol="NOBARS")])
+    no_bars_attribution = pd.DataFrame([_attribution_row(
+        "E_NOBARS", "NOBARS", None, None, None, None, None, None, None, False, "2020-02-10",
+    )])
+    no_bars_episodes = pd.DataFrame(columns=list(episodes.columns))
+    out2 = build_support_coverage(no_bars_events, no_bars_attribution, no_bars_episodes, {}, feature_symbols=set())
+    assert out2.iloc[0]["availability_state"] == "NO_COVERAGE"
 
 
 # ---------------------------------------------------------------------------
@@ -404,3 +470,235 @@ def test_compute_composites_output_columns_closed_to_two_graded():
     out = compute_composites(row, spec)
     assert set(spec.graded_composites) <= set(out.columns)
     assert "c_loc_r" in out.columns and "c_loc_d" in out.columns
+
+
+# ---------------------------------------------------------------------------
+# M1: NaN recall_at_tier fails the recall-floor gate (fail-closed)
+# ---------------------------------------------------------------------------
+def test_c_loc_d_gated_nan_on_undefined_recall_at_tier():
+    spec = _fixture_spec(recall_floor=0.4)
+    row = pd.DataFrame([
+        {"recall_at_tier": np.nan, "zone_precision": 0.8, "false_start_rate": 0.1,
+         "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline", "grain": "daily"},
+        {"recall_at_tier": 0.9, "zone_precision": 0.8, "false_start_rate": 0.1,
+         "atr_dist_median_in_zone": 0.2, "episode_type": "reset_decline", "grain": "daily"},
+    ])
+    out = compute_composites(row, spec)
+    assert pd.isna(out.loc[0, "c_loc_d"])
+    assert out.loc[0, "c_loc_d_gate_reason"] == "recall_at_tier_nan"
+    assert pd.notna(out.loc[1, "c_loc_d"])
+    assert pd.isna(out.loc[1, "c_loc_d_gate_reason"])
+
+
+def test_c_loc_d_gate_reason_distinguishes_below_floor_from_nan():
+    spec = _fixture_spec(recall_floor=0.4)
+    row = pd.DataFrame([
+        {"recall_at_tier": 0.1, "zone_precision": 0.8, "false_start_rate": 0.1,
+         "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline", "grain": "daily"},
+    ])
+    out = compute_composites(row, spec)
+    assert out.loc[0, "c_loc_d_gate_reason"] == "below_recall_floor"
+
+
+# ---------------------------------------------------------------------------
+# M5: C-LOC-D rank population is stratified by (episode_type, grain)
+# ---------------------------------------------------------------------------
+def test_c_loc_d_ranks_within_episode_type_grain_stratum_only():
+    spec = _fixture_spec(recall_floor=0.0)
+    stratum_a = pd.DataFrame([
+        {"recall_at_tier": 0.9, "zone_precision": 0.9, "false_start_rate": 0.0,
+         "atr_dist_median_in_zone": 0.1, "episode_type": "reset_decline", "grain": "daily"},
+        {"recall_at_tier": 0.9, "zone_precision": 0.9, "false_start_rate": 0.0,
+         "atr_dist_median_in_zone": 0.5, "episode_type": "reset_decline", "grain": "daily"},
+    ])
+    out_a_alone = compute_composites(stratum_a, spec)
+
+    stratum_b = pd.DataFrame([
+        {"recall_at_tier": 0.9, "zone_precision": 0.9, "false_start_rate": 0.0,
+         "atr_dist_median_in_zone": 0.01, "episode_type": "reclaim", "grain": "weekly"},
+        {"recall_at_tier": 0.9, "zone_precision": 0.9, "false_start_rate": 0.0,
+         "atr_dist_median_in_zone": 0.02, "episode_type": "reclaim", "grain": "weekly"},
+    ])
+    combined = pd.concat([stratum_a, stratum_b], ignore_index=True)
+    out_combined = compute_composites(combined, spec)
+
+    # stratum_a's own two rows' c_loc_d must be unaffected by stratum_b's presence,
+    # even though stratum_b's atr_dist_median_in_zone values are all much smaller
+    # (which WOULD change a global rank).
+    a_rows = out_combined.loc[out_combined["episode_type"] == "reset_decline"].reset_index(drop=True)
+    assert a_rows["c_loc_d"].tolist() == pytest.approx(out_a_alone["c_loc_d"].tolist())
+
+
+# ---------------------------------------------------------------------------
+# B2 + M7: aggregate_cell_metrics recall denominator / flooding normalization
+# ---------------------------------------------------------------------------
+def _two_symbol_recall_fixture():
+    """AAA fires and recalls; BBB has a tier-eligible episode of the SAME type but
+    receives no fire at all from fam.x — a coverage gap the OLD fire-conditional
+    denominator could never see."""
+    events_aaa, attribution_aaa, episodes_aaa, bars = _three_episode_fixture()
+    bbb_episode = _episode_row(
+        symbol="BBB", episode_type="reset_decline", tier=1,
+        start_date="2020-01-06", anchor_date="2020-03-02", end_date="2020-03-09",
+        resolution="durable_low", censored=False,
+        reference_price=100.0, anchor_price=80.0, a0_leg=2.0, a0_anchor=2.0,
+    )
+    episodes = pd.concat([episodes_aaa, pd.DataFrame([bbb_episode])], ignore_index=True)
+    # fam.x also fires (and attributes) on BBB in a DIFFERENT episode_type so BBB
+    # is in fam.x's symbol-coverage universe, but never fires into BBB's
+    # reset_decline episode above.
+    bbb_reclaim = _episode_row(
+        symbol="BBB", episode_type="reclaim", tier=2,
+        start_date="2020-04-01", anchor_date="2020-05-01", end_date="2020-06-01",
+        resolution="held", censored=False,
+        reference_price=90.0, anchor_price=95.0, a0_leg=1.5, a0_anchor=1.5,
+    )
+    episodes = pd.concat([episodes, pd.DataFrame([bbb_reclaim])], ignore_index=True)
+    bbb_event = _event_row("E_BBB_RECLAIM", symbol="BBB", known_ts="2020-05-05")
+    bbb_attr = _attribution_row(
+        "E_BBB_RECLAIM", "BBB", 3, "reclaim", 2, bbb_reclaim["start_date"], bbb_reclaim["end_date"],
+        "held", False, True, "2020-05-05",
+    )
+    events = pd.concat([events_aaa, pd.DataFrame([bbb_event])], ignore_index=True)
+    attribution = pd.concat([attribution_aaa, pd.DataFrame([bbb_attr])], ignore_index=True)
+    bars = dict(bars)
+    bars["BBB"] = _bars("BBB", "2019-06-01", 400)
+    return events, attribution, episodes, bars
+
+
+def test_recall_denominator_counts_eligible_episodes_regardless_of_fire():
+    events, attribution, episodes, bars = _two_symbol_recall_fixture()
+    spec = _fixture_spec()
+    fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
+    cell = cells.loc[
+        (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+    ].iloc[0]
+    # AAA's reset_decline episode fired in-zone; BBB's reset_decline episode of
+    # the SAME type never fired at all but is tier-eligible and BBB is in fam.x's
+    # coverage (it fired a reclaim on BBB) -> denominator must include BOTH.
+    assert cell["recall_at_tier"] == pytest.approx(0.5)
+
+
+def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
+    """Named regression: the prior implementation counted only fired episodes in
+    the denominator, so it would have reported recall_at_tier == 1.0 for the same
+    fixture — this test fails under that old behavior."""
+    events, attribution, episodes, bars = _two_symbol_recall_fixture()
+    spec = _fixture_spec()
+    fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
+    cell = cells.loc[
+        (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+    ].iloc[0]
+    assert cell["recall_at_tier"] != pytest.approx(1.0)
+
+
+def test_flooding_is_invariant_to_cell_size_at_equal_density():
+    """Two cells with the same fires-per-eligible-episode-session density but
+    different absolute sizes must report the SAME flooding value (M7). Each
+    family fires on its OWN symbol so the two families' eligible-episode
+    universes are genuinely disjoint (episodes carry no family_key of their
+    own — coverage is keyed by which symbols a family fired on)."""
+    small = pd.DataFrame([
+        {"event_id": f"S{i}", "family_key": "fam.small", "symbol": "SMALLSYM",
+         "episode_id": f"SMALLSYM::reset_decline::2020-0{(i % 3) + 1}-01",
+         "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+         "signal_known_ts": pd.Timestamp("2020-01-10") + pd.Timedelta(days=i),
+         "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+         "mae_basis": "low", "capture": 0.5, "false_start": False}
+        for i in range(4)
+    ])
+    large = pd.DataFrame([
+        {"event_id": f"L{i}", "family_key": "fam.large", "symbol": "LARGESYM",
+         "episode_id": f"LARGESYM::reset_decline::2020-0{(i % 6) + 1}-01",
+         "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+         "signal_known_ts": pd.Timestamp("2020-01-10") + pd.Timedelta(days=i),
+         "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+         "mae_basis": "low", "capture": 0.5, "false_start": False}
+        for i in range(8)
+    ])
+    fm = pd.concat([small, large], ignore_index=True)
+    # small: 3 eligible episodes, 4 fires -> density 4/3. large: 6 eligible
+    # episodes, 8 fires -> density 8/6 == 4/3. Equal density, different size.
+    small_eps = pd.DataFrame([
+        _episode_row(symbol="SMALLSYM", episode_type="reset_decline", start_date=f"2020-0{k}-01")
+        for k in range(1, 4)
+    ])
+    large_eps = pd.DataFrame([
+        _episode_row(symbol="LARGESYM", episode_type="reset_decline", start_date=f"2020-0{k}-01")
+        for k in range(1, 7)
+    ])
+    all_eps = pd.concat([small_eps, large_eps], ignore_index=True)
+    spec = _fixture_spec()
+
+    cells = aggregate_cell_metrics(fm, all_eps, spec)
+    small_cell = cells.loc[cells["family_key"] == "fam.small"].iloc[0]
+    large_cell = cells.loc[cells["family_key"] == "fam.large"].iloc[0]
+    assert small_cell["flooding"] == pytest.approx(large_cell["flooding"])
+    assert small_cell["flooding"] == pytest.approx((4 / 3) / spec.useful_zone_window_sessions)
+
+
+# ---------------------------------------------------------------------------
+# M6: mae_after is strictly forward-from-fire and records its basis
+# ---------------------------------------------------------------------------
+def test_mae_after_never_uses_pre_fire_bars_for_a_lagging_fire():
+    idx = pd.bdate_range("2020-01-01", periods=60)
+    close = np.full(60, 100.0)
+    # a severe dip strictly BEFORE the fire's known_ts -- must NEVER affect mae_after
+    close[10:15] = 50.0
+    # a moderate dip strictly AFTER known_ts -- the only bars mae_after may see
+    close[35:40] = 90.0
+    bars = pd.DataFrame(
+        {"open": close, "high": close + 1.0, "low": close - 1.0, "close": close,
+         "volume": np.full(60, 1_000_000.0)},
+        index=idx,
+    )
+    known_ts = idx[30]
+    anchor_date = idx[5]  # anchor sits WELL before known_ts -> a lagging fire
+    episode = _episode_row(
+        symbol="LAG", episode_type="reset_decline", tier=1,
+        start_date=idx[0].isoformat(), anchor_date=anchor_date.isoformat(),
+        end_date=idx[45].isoformat(), resolution="durable_low", censored=False,
+        reference_price=100.0, anchor_price=100.0, a0_leg=2.0, a0_anchor=2.0,
+    )
+    episodes = pd.DataFrame([episode])
+    events = pd.DataFrame([_event_row("E_LAG", symbol="LAG", known_ts=known_ts.isoformat())])
+    attribution = pd.DataFrame([_attribution_row(
+        "E_LAG", "LAG", 0, "reset_decline", 1, episode["start_date"], episode["end_date"],
+        "durable_low", False, True, known_ts.isoformat(),
+    )])
+    spec = _fixture_spec()  # useful_zone_window_sessions == 15
+    out = compute_fire_metrics(events, attribution, episodes, {"LAG": bars}, spec)
+    row = out.iloc[0]
+    assert row["mae_basis"] == "low"
+    # forward window is idx[31:46] -> catches the 35:40 dip (low=89), never the
+    # pre-fire 10:15 dip (low=49, which would give mae_after=25.5 if the bug
+    # were still present).
+    assert row["mae_after"] == pytest.approx((100.0 - 89.0) / 2.0)
+
+
+def test_mae_after_falls_back_to_close_when_low_column_absent():
+    idx = pd.bdate_range("2020-01-01", periods=30)
+    close = np.full(30, 100.0)
+    close[15:18] = 92.0
+    bars = pd.DataFrame({"open": close, "high": close, "close": close,
+                          "volume": np.full(30, 1_000_000.0)}, index=idx)
+    known_ts = idx[10]
+    episode = _episode_row(
+        symbol="NOLOW", episode_type="reset_decline", tier=1,
+        start_date=idx[0].isoformat(), anchor_date=idx[2].isoformat(),
+        end_date=idx[25].isoformat(), resolution="durable_low", censored=False,
+        reference_price=100.0, anchor_price=100.0, a0_leg=2.0, a0_anchor=2.0,
+    )
+    episodes = pd.DataFrame([episode])
+    events = pd.DataFrame([_event_row("E_NL", symbol="NOLOW", known_ts=known_ts.isoformat())])
+    attribution = pd.DataFrame([_attribution_row(
+        "E_NL", "NOLOW", 0, "reset_decline", 1, episode["start_date"], episode["end_date"],
+        "durable_low", False, True, known_ts.isoformat(),
+    )])
+    spec = _fixture_spec()
+    out = compute_fire_metrics(events, attribution, episodes, {"NOLOW": bars}, spec)
+    row = out.iloc[0]
+    assert row["mae_basis"] == "close"
+    assert row["mae_after"] == pytest.approx((100.0 - 92.0) / 2.0)

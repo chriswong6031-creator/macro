@@ -86,17 +86,35 @@ FORBIDDEN_OUTPUT_TOKENS: tuple[str, ...] = (
     "best_expert", "expert_rank", "winner", "route", "prophet_score",
 )
 
-#: Closed per-fire metric column names (plan Task 1 interface).
+#: Closed per-fire metric column names (plan Task 1 interface). ``mae_basis``
+#: records whether the strictly-forward adverse-excursion window used ``low``
+#: (long-side convention) or fell back to ``close`` (freeze review finding M6).
 FIRE_METRIC_COLUMNS: tuple[str, ...] = (
     "event_id", "family_key", "symbol", "episode_id", "episode_type",
     "episode_tier", "grain", "signal_known_ts",
-    "lead_lag", "price_dist", "atr_dist", "mae_after", "capture", "false_start",
+    "lead_lag", "price_dist", "atr_dist", "mae_after", "mae_basis", "capture",
+    "false_start",
 )
 
-#: Closed unconditional-block column names (plan Task 1 interface).
+#: Closed unconditional-block column names (plan Task 1 interface). ``no_coverage``
+#: flags an explicit zero-total (family, symbol) row emitted for every member of
+#: the roster/family universe with no events at all (freeze review finding M10) —
+#: distinct from a real, measured zero-fire outcome.
 UNCONDITIONAL_BLOCK_COLUMNS: tuple[str, ...] = (
     "family_key", "symbol", "total_fires", "attributed_fires",
-    "fires_per_name_year", "episode_attribution_rate",
+    "fires_per_name_year", "episode_attribution_rate", "no_coverage",
+)
+
+#: The closed availability-state taxonomy (freeze §7 "Failure / correction
+#: semantics"). ``build_support_coverage`` draws every absence/coverage-problem
+#: value in its ``availability_state`` column from exactly this set; ``"resolved"``
+#: is the one non-problem state (a fire genuinely attributed to a resolved,
+#: non-censored episode) and is deliberately NOT drawn from this taxonomy, since
+#: the taxonomy enumerates failure/absence semantics, not successful outcomes.
+AVAILABILITY_TAXONOMY_TOKENS: tuple[str, ...] = (
+    "MEASURED_ZERO", "STRUCTURAL_ABSENCE", "NO_COVERAGE", "NOT_YET_AVAILABLE",
+    "STALE", "SOURCE_FAILED", "IDENTITY_UNRESOLVED", "UNESTIMABLE",
+    "EPOCH_UNSTABLE", "CENSORED", "ABSTAIN",
 )
 
 #: Closed cell-aggregate column names — the "aggregations" owned by
@@ -124,9 +142,9 @@ _REQUIRED_EPISODE_COLUMNS: tuple[str, ...] = (
 #: ONLY ruler-side artifact Task 4's census may consume (plan Task 2 Step 7 / Task 4
 #: Interfaces). Deliberately carries NO realized metric or composite column.
 SUPPORT_COVERAGE_COLUMNS: tuple[str, ...] = (
-    "episode_id", "event_id", "ticker", "known_ts", "calendar_block", "family",
-    "grain", "attributed", "price_coverage", "feature_coverage", "price_plane_id",
-    "availability_state",
+    "episode_id", "event_id", "ticker", "known_ts", "calendar_block",
+    "calendar_block_basis", "family", "grain", "attributed", "price_coverage",
+    "feature_coverage", "price_plane_id", "availability_state",
 )
 
 
@@ -354,6 +372,7 @@ def compute_fire_metrics(
         price_dist = np.nan
         atr_dist = np.nan
         mae_after = np.nan
+        mae_basis: str | None = None
         capture = np.nan
         false_start: bool | None = None
 
@@ -381,12 +400,24 @@ def compute_fire_metrics(
                         denom = float(reference_price) - float(anchor_price)
                         if denom != 0:
                             capture = float((float(reference_price) - price_at_fire) / denom)
-                    if a0_ok and pd.notna(atr_dist):
-                        lo, hi = (known_ts, anchor_ts) if known_ts <= anchor_ts else (anchor_ts, known_ts)
-                        window = bars.loc[(bidx >= lo) & (bidx <= hi), "close"]
-                        if not window.empty:
-                            dists = (window.astype(float) - float(anchor_price)).abs() / float(a0_anchor)
-                            mae_after = float(max(0.0, float(dists.max()) - abs(atr_dist)))
+                    if a0_ok:
+                        # Strictly-forward-from-fire window (freeze review finding M6):
+                        # (known_ts, known_ts + useful_zone_window_sessions] in trading
+                        # sessions of THIS symbol's own bars — never a pre-fire bar, and
+                        # never anchored off anchor_ts (a lagging fire's anchor can sit
+                        # BEFORE known_ts, which previously leaked pre-fire bars in).
+                        pos_known = _session_pos(bidx, known_ts)
+                        start_pos = pos_known + 1
+                        end_pos = min(start_pos + spec.useful_zone_window_sessions, len(bidx))
+                        if start_pos < len(bidx) and start_pos < end_pos:
+                            fwd = bars.iloc[start_pos:end_pos]
+                            if "low" in fwd.columns and fwd["low"].notna().any():
+                                worst = float(fwd["low"].min())
+                                mae_basis = "low"
+                            else:
+                                worst = float(fwd["close"].min())
+                                mae_basis = "close"
+                            mae_after = float(max(0.0, (price_at_fire - worst) / float(a0_anchor)))
 
         rows.append({
             "event_id": r.event_id,
@@ -401,6 +432,7 @@ def compute_fire_metrics(
             "price_dist": price_dist,
             "atr_dist": atr_dist,
             "mae_after": mae_after,
+            "mae_basis": mae_basis,
             "capture": capture,
             "false_start": false_start,
         })
@@ -431,25 +463,40 @@ def _symbol_span_years(episode_rows: pd.DataFrame) -> dict[str, float]:
 
 
 def compute_unconditional_block(
-    events: pd.DataFrame, attribution: pd.DataFrame, episode_rows: pd.DataFrame
+    events: pd.DataFrame,
+    attribution: pd.DataFrame,
+    episode_rows: pd.DataFrame,
+    universe: Sequence[tuple[Any, Any]] | None = None,
 ) -> pd.DataFrame:
     """Every expert/ticker row: total fires, attributed fires, fires/name/year and
     ``episode_attribution_rate`` — preserving zero-total as explicit no-coverage
-    (``NaN``) rather than division to zero (plan Task 2 Step 4)."""
+    (``NaN`` rate, ``no_coverage=True``) rather than division to zero or a silently
+    absent row (plan Task 2 Step 4; freeze review finding M10).
+
+    ``universe`` is the full roster/family universe to report over — every
+    ``(family_key, symbol)`` pair the caller expects coverage for (families from
+    the W2 family registry; symbols from the caller's cohort). A pair present in
+    ``universe`` but absent from ``events`` gets an explicit
+    ``total_fires=0, fires_per_name_year=0.0, episode_attribution_rate=NaN,
+    no_coverage=True`` row instead of being silently omitted. When ``universe`` is
+    ``None`` the function falls back to reporting only pairs observed in ``events``
+    (legacy behavior, still with ``no_coverage=False`` on every emitted row).
+    """
     required = ("event_id", "family_key", "symbol")
     if events is None:
         raise ValueError("events: input is None")
     missing = [c for c in required if c not in events.columns]
     if missing:
         raise ValueError(f"events: missing required column(s) {missing}")
-    if events.empty:
-        return _empty_unconditional_block()
 
-    total = (
-        events.groupby(["family_key", "symbol"], as_index=False)["event_id"]
-        .nunique()
-        .rename(columns={"event_id": "total_fires"})
-    )
+    if events.empty:
+        total = pd.DataFrame(columns=["family_key", "symbol", "total_fires"])
+    else:
+        total = (
+            events.groupby(["family_key", "symbol"], as_index=False)["event_id"]
+            .nunique()
+            .rename(columns={"event_id": "total_fires"})
+        )
 
     if attribution is not None and not attribution.empty:
         per_event = attribution.groupby(
@@ -463,15 +510,27 @@ def compute_unconditional_block(
     else:
         attributed = pd.DataFrame(columns=["family_key", "symbol", "attributed_fires"])
 
-    out = total.merge(attributed, on=["family_key", "symbol"], how="left")
+    if universe is not None:
+        universe_df = pd.DataFrame(list(universe), columns=["family_key", "symbol"]).drop_duplicates()
+        out = universe_df.merge(total, on=["family_key", "symbol"], how="left")
+    else:
+        out = total.copy()
+
+    if out.empty:
+        return _empty_unconditional_block()
+
+    out = out.merge(attributed, on=["family_key", "symbol"], how="left")
+    out["no_coverage"] = out["total_fires"].isna()
     out["attributed_fires"] = out["attributed_fires"].fillna(0).astype(int)
-    out["total_fires"] = out["total_fires"].astype(int)
+    out["total_fires"] = out["total_fires"].fillna(0).astype(int)
 
     span_years = _symbol_span_years(episode_rows)
     out["fires_per_name_year"] = out.apply(
         lambda r: (
-            r["total_fires"] / span_years[r["symbol"]]
-            if span_years.get(r["symbol"]) else np.nan
+            0.0 if r["no_coverage"] else (
+                r["total_fires"] / span_years[r["symbol"]]
+                if span_years.get(r["symbol"]) else np.nan
+            )
         ),
         axis=1,
     )
@@ -496,16 +555,26 @@ def aggregate_cell_metrics(
 ) -> pd.DataFrame:
     """Per-cell aggregates consumed by :func:`compute_composites`.
 
-    ``recall_at_tier`` — of the cell's tier-eligible episodes (tier <= 2, the
-    "useful" episodes per ``episodes.py`` tier floors), the fraction that
-    received at least one in-zone fire (``|atr_dist| <= useful_zone_delta_atr``).
-    ``zone_precision`` — of the cell's fires with a defined ``atr_dist``, the
-    fraction that landed in-zone. ``false_start_rate`` — mean of the per-fire
-    ``false_start`` flag over resolved (non-``None``) fires. ``flooding`` — fires
-    per useful-zone session, a density read on noise. ``relative_order`` — over
-    same-episode fire pairs, the fraction where the temporally later fire sits
-    closer to anchor. ``consistency`` — ``1 - CV(|atr_dist|)`` within the cell,
-    clipped to ``[0, 1]``.
+    ``recall_at_tier`` — of EVERY tier-eligible episode (tier <= 2, the "useful"
+    episodes per ``episodes.py`` tier floors) in the ``episodes`` catalog that
+    belongs to the cell's ``episode_type`` and lies within the cell's family's own
+    symbol coverage (every symbol that family has fired on anywhere, regardless of
+    grain/episode_type) — REGARDLESS of whether that episode ever received a fire
+    — the fraction that received at least one in-zone fire
+    (``|atr_dist| <= useful_zone_delta_atr``) from this cell. A cell whose eligible
+    episodes never fired at all still reports a defined ``0.0``, never ``NaN``
+    (freeze review finding B2 — the prior implementation counted only episodes
+    that already had a fire recorded, inflating recall for cells with silent
+    coverage gaps). ``zone_precision`` — of the cell's fires with a defined
+    ``atr_dist``, the fraction that landed in-zone. ``false_start_rate`` — mean of
+    the per-fire ``false_start`` flag over resolved (non-``None``) fires.
+    ``flooding`` — fires per eligible-episode useful-zone session
+    (``n_fires / (n_eligible * useful_zone_window_sessions)``), a size-invariant
+    density read on noise (freeze review finding M7 — previously not normalized
+    by the eligible-episode population, so cells with more coverage always read
+    "noisier" at equal density). ``relative_order`` — over same-episode fire
+    pairs, the fraction where the temporally later fire sits closer to anchor.
+    ``consistency`` — ``1 - CV(|atr_dist|)`` within the cell, clipped to ``[0, 1]``.
     """
     if fire_metrics is None or fire_metrics.empty:
         return pd.DataFrame({c: pd.Series(dtype="object") for c in CELL_METRIC_COLUMNS})
@@ -513,9 +582,27 @@ def aggregate_cell_metrics(
     fm = fire_metrics.copy()
     fm["_in_zone"] = fm["atr_dist"].abs() <= spec.useful_zone_delta_atr
 
+    # Each family's own symbol coverage universe (every symbol it fired on
+    # anywhere), used to bound the eligible-episode population for B2/M7 below —
+    # never the outcome-rank of any name (DNR:KILL-OUTCOME-AUDITION).
+    family_symbol_universe: dict[Any, set[str]] = {
+        fam: set(sub_fam["symbol"].astype(str)) for fam, sub_fam in fm.groupby("family_key")
+    }
+
+    eps = episodes if episodes is not None else pd.DataFrame()
+    eps_tier_eligible = pd.DataFrame()
+    if not eps.empty and {"symbol", "episode_type", "tier", "start_date"} <= set(eps.columns):
+        eps_tier_eligible = eps.loc[eps["tier"].fillna(3) <= 2].copy()
+        if not eps_tier_eligible.empty:
+            eps_tier_eligible["_episode_id"] = eps_tier_eligible.apply(
+                lambda r: episode_identifier(r["symbol"], r["episode_type"], r["start_date"]), axis=1
+            )
+
     rows: list[dict[str, Any]] = []
     for key, sub in fm.groupby(list(group_cols), dropna=False):
         key = key if isinstance(key, tuple) else (key,)
+        family_key = key[0] if len(key) > 0 else None
+        episode_type = key[1] if len(key) > 1 else None
         n_fires = int(len(sub))
         n_episodes = int(sub["episode_id"].nunique())
 
@@ -527,14 +614,27 @@ def aggregate_cell_metrics(
         fs = sub["false_start"].dropna()
         false_start_rate = float(fs.mean()) if len(fs) else np.nan
 
-        eligible_eps = sub[sub["episode_tier"].fillna(3) <= 2]
-        n_eligible = int(eligible_eps["episode_id"].nunique())
-        n_recalled = int(
-            eligible_eps.loc[eligible_eps["_in_zone"] == True, "episode_id"].nunique()  # noqa: E712
+        covered_symbols = family_symbol_universe.get(family_key, set())
+        eligible_ids: set[str] = set()
+        if not eps_tier_eligible.empty:
+            elig_rows = eps_tier_eligible.loc[
+                (eps_tier_eligible["episode_type"] == episode_type)
+                & (eps_tier_eligible["symbol"].astype(str).isin(covered_symbols))
+            ]
+            eligible_ids = set(elig_rows["_episode_id"])
+        n_eligible = len(eligible_ids)
+
+        recalled_ids = set(
+            sub.loc[sub["_in_zone"] == True, "episode_id"]  # noqa: E712
         )
+        n_recalled = len(eligible_ids & recalled_ids)
         recall_at_tier = (n_recalled / n_eligible) if n_eligible > 0 else np.nan
 
-        flooding = (n_fires / spec.useful_zone_window_sessions) if spec.useful_zone_window_sessions else np.nan
+        flooding = (
+            (n_fires / (n_eligible * spec.useful_zone_window_sessions))
+            if (n_eligible > 0 and spec.useful_zone_window_sessions)
+            else np.nan
+        )
 
         rel_hits = 0
         rel_total = 0
@@ -600,15 +700,35 @@ def compute_composites(metrics: pd.DataFrame, spec: RulerSpec) -> pd.DataFrame:
     out = metrics.copy()
     out["c_loc_r"] = out["recall_at_tier"] * out["zone_precision"] - spec.lambda_fs * out["false_start_rate"]
 
-    if "atr_dist_median_in_zone" in out.columns:
+    # M5: rank-normalize WITHIN each (episode_type, grain) stratum — a cell's
+    # C-LOC-D must never move because unrelated strata's cells were added/removed
+    # (frozen population choice: ruler_spec_v1.json.c_loc_d_rank_population ==
+    # "episode_type_x_grain"; see W3_RULER_REGISTRATION.md).
+    if "atr_dist_median_in_zone" in out.columns and {"episode_type", "grain"} <= set(out.columns):
+        closer_is_better = -out["atr_dist_median_in_zone"]
+        ranked = closer_is_better.groupby(
+            [out["episode_type"], out["grain"]]
+        ).rank(pct=True, na_option="keep")
+    elif "atr_dist_median_in_zone" in out.columns:
         closer_is_better = -out["atr_dist_median_in_zone"]
         ranked = closer_is_better.rank(pct=True, na_option="keep")
     else:
         ranked = pd.Series(np.nan, index=out.index)
     c_loc_d = ranked - spec.lambda_fs * out["false_start_rate"]
+
+    # M1: a NaN recall_at_tier must FAIL the recall-floor gate (fail-closed) — the
+    # prior `.fillna(False)` treated an undefined recall as "not below floor" and
+    # let a cell with no measurable recall still receive a graded c_loc_d.
+    recall_is_nan = out["recall_at_tier"].isna()
     below_floor = out["recall_at_tier"] < spec.recall_floor
-    c_loc_d = c_loc_d.mask(below_floor.fillna(False))
+    gated = below_floor.fillna(False) | recall_is_nan
+    c_loc_d = c_loc_d.mask(gated)
     out["c_loc_d"] = c_loc_d
+
+    gate_reason = pd.Series(None, index=out.index, dtype="object")
+    gate_reason = gate_reason.mask(recall_is_nan, "recall_at_tier_nan")
+    gate_reason = gate_reason.mask(below_floor.fillna(False) & ~recall_is_nan, "below_recall_floor")
+    out["c_loc_d_gate_reason"] = gate_reason
     return out
 
 
@@ -663,25 +783,36 @@ def build_support_coverage(
 
         attributed = bool(r.attributed)
         eid = None
-        availability_state = "unattributed"
+        # MEASURED_ZERO: a real, measured fire that simply did not attribute to any
+        # episode window — bars/data were available, the outcome is a genuine zero,
+        # never a missing-data state (freeze §7 taxonomy; MINORS finding).
+        availability_state = "MEASURED_ZERO"
         if attributed:
             eps = eps_lookup.get(symbol)
             idx = int(r.episode_index) if r.episode_index is not None and pd.notna(r.episode_index) else None
             if eps is not None and idx is not None and 0 <= idx < len(eps):
                 erow = eps.iloc[idx]
                 eid = _episode_id(symbol, erow["episode_type"], erow["start_date"])
-                availability_state = "censored" if bool(erow.get("censored")) else "resolved"
+                # "resolved" is the one non-problem state and is deliberately NOT
+                # drawn from AVAILABILITY_TAXONOMY_TOKENS (see that constant's
+                # docstring); CENSORED is a real taxonomy token.
+                availability_state = "CENSORED" if bool(erow.get("censored")) else "resolved"
 
         bars = bars_by_symbol.get(symbol) if bars_by_symbol else None
         has_bars = bars is not None and not bars.empty
         price_coverage = 0.0
         if has_bars:
             price_coverage = 1.0 if (bars.index.min() <= known_ts <= bars.index.max()) else 0.0
-        if not has_bars and availability_state == "unattributed":
-            availability_state = "structural_absence"
+        if not has_bars and availability_state == "MEASURED_ZERO":
+            # missing-bars -> NO_COVERAGE (freeze §7 taxonomy; MINORS finding).
+            availability_state = "NO_COVERAGE"
 
         feature_coverage = 1.0 if symbol in feature_syms else 0.0
         calendar_block = f"{known_ts.year}Q{((known_ts.month - 1) // 3) + 1}"
+        # Provisional: Task 4 owns the real P90-episode-duration block-length law
+        # (freeze §4.2) and may recompute calendar_block from known_ts. This basis
+        # tag makes that provisionality machine-readable rather than only prose.
+        calendar_block_basis = "calendar_quarter_provisional"
 
         rows.append({
             "episode_id": eid,
@@ -689,6 +820,7 @@ def build_support_coverage(
             "ticker": symbol,
             "known_ts": known_ts,
             "calendar_block": calendar_block,
+            "calendar_block_basis": calendar_block_basis,
             "family": r.family_key,
             "grain": grain,
             "attributed": attributed,

@@ -67,23 +67,57 @@ def test_count_p_eff_is_deterministic():
 
 
 def test_assert_capacity_passes_exactly_at_boundary():
+    constitution = load_constitution(CONSTITUTION_PATH)
     p_eff = 5
     n_train_names = 50  # floor(50/10) == 5
-    assert_capacity(p_eff, n_train_names)  # must not raise
+    assert_capacity(p_eff, n_train_names, constitution)  # must not raise
 
 
 def test_assert_capacity_raises_one_over_boundary():
+    constitution = load_constitution(CONSTITUTION_PATH)
     p_eff = 6
     n_train_names = 50  # floor(50/10) == 5; 6 > 5
     with pytest.raises(CapacityViolation):
-        assert_capacity(p_eff, n_train_names)
+        assert_capacity(p_eff, n_train_names, constitution)
 
 
 def test_assert_capacity_uses_exact_floor_law():
+    constitution = load_constitution(CONSTITUTION_PATH)
     # floor(59/10) == 5, so p_eff=5 is still legal even though 59/10 == 5.9
-    assert_capacity(5, 59)
+    assert_capacity(5, 59, constitution)
     with pytest.raises(CapacityViolation):
-        assert_capacity(6, 59)
+        assert_capacity(6, 59, constitution)
+
+
+def test_assert_capacity_reads_denominator_from_constitution_not_module_default():
+    """A constitution declaring a non-default denominator must actually govern the
+    boundary — assert_capacity must read constitution.capacity_denominator, never
+    silently fall back to the module-level CAPACITY_DENOMINATOR constant."""
+    from dataclasses import replace
+    constitution = load_constitution(CONSTITUTION_PATH)
+    narrow = replace(constitution, capacity_denominator=5)  # floor(50/5) == 10
+    assert_capacity(10, 50, narrow)  # legal under denominator=5, illegal under 10
+    with pytest.raises(CapacityViolation):
+        assert_capacity(11, 50, narrow)
+
+
+def test_count_p_eff_raises_on_terms_feature_mismatch():
+    """A p_eff_terms map that drifts from the declared feature_subset (extra or
+    missing feature) must raise rather than silently mis-count capacity."""
+    from dataclasses import replace
+    constitution = load_constitution(CONSTITUTION_PATH)
+    missing_one = replace(
+        constitution,
+        p_eff_terms={k: v for i, (k, v) in enumerate(constitution.p_eff_terms.items()) if i > 0},
+    )
+    with pytest.raises(ValueError):
+        count_p_eff(missing_one)
+
+    extra = dict(constitution.p_eff_terms)
+    extra["undeclared_feature"] = 1
+    with_extra = replace(constitution, p_eff_terms=extra)
+    with pytest.raises(ValueError):
+        count_p_eff(with_extra)
 
 
 def test_module_imports_no_fitting_library():
