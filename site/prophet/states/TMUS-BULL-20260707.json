@@ -10,23 +10,23 @@
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 76.1,
+    "validity": 65.0,
     "progress": 0.0,
     "pace": 52.8,
     "retention": 50.0,
     "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.817,
+    "dist_to_stop_r": 0.727,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
     "horizon_pct_used": 31.1,
-    "p1": -0.1221,
-    "p2": -0.061,
+    "p1": -0.182,
+    "p2": -0.091,
     "p3": null,
-    "move_r": -0.183,
+    "move_r": -0.273,
     "mfe_r": 0.0,
-    "mae_r": -0.183
+    "mae_r": -0.273
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,7 +40,7 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -3.789999389648443,
+  "_mae": -5.650000000000006,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
