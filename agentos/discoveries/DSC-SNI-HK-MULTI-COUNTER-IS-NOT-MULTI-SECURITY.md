@@ -20,9 +20,11 @@ so_what: >
 kind: architecture
 verified_at: 2026-08-28
 verified_by: >
-  Repository inspection of engine/company_intelligence/identity.py and
-  engine/hk_adr_bridge.py; Alibaba official investor FAQ; Tencent 2026 Q2 HKEX result and
-  2026-08-27 next-day disclosure return naming stock codes 700/80700.
+  https://github.com/mastermindx-market-intelligence/macro/blob/0863c549f728c718bbe82cc883e89843c0eb710a/engine/company_intelligence/identity.py ;
+  https://github.com/mastermindx-market-intelligence/macro/blob/0863c549f728c718bbe82cc883e89843c0eb710a/engine/hk_adr_bridge.py ;
+  https://www.alibabagroup.com/en-US/faqs-investor-information ;
+  https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/2026081200296.pdf ;
+  https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0827/2026082700758.pdf
 scope:
   - macro
   - terminal
