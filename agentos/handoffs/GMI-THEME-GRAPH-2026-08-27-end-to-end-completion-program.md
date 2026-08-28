@@ -2,7 +2,7 @@
 workstream: "WS:GMI-THEME-GRAPH"
 session: sol/gmi-theme-graph-finish-fold-20260828
 model: sol
-ended_because: continuation_ready
+ended_because: complete
 mission: >
   Convert the legacy GMI Theme Graph remainder into one current finish-and-fold program:
   finish the unique GMI PIT/ontology/ThemeState/cohort substrate, fold legacy transmission
@@ -108,7 +108,7 @@ danger_areas:
 
 Read, in order:
 
-1. current protected Skillpack at `038d1271b98e88b24e039c1ce4127d6503945845`;
+1. current protected Skillpack at `e023f9b4df388814286d42462af0e86a64eea563`;
 2. `research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md`;
 3. `DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING`;
 4. current `WS:GMI-THEME-GRAPH`;

@@ -2,7 +2,7 @@
 workstream: "WS:ALPHA-INTELLIGENCE-INTEGRATION"
 session: sol/gmi-f04-autonomous-coo-commission-20260828
 model: sol
-ended_because: ready_for_pickup
+ended_because: complete
 mission: >
   Hand sustained F04 COO ownership of the Theme/Ontology/Transmission domain to one
   Chairman-assigned Fable principal who finishes the unique GMI substrate/state/cohort
@@ -57,7 +57,7 @@ danger_areas:
 **RECEIVER_MODE:** `OPEN_PICKUP` until Chairman assigns the exact Fable receiver.  
 **Recommended route:** Fable + Claude Code principal lane.  
 **Repository:** `mastermindx-market-intelligence/macro`  
-**Current protected procedure pin:** `mastermindx-market-intelligence/Mastermind@038d1271b98e88b24e039c1ce4127d6503945845`, Skillpack v1.0.1.  
+**Current protected procedure pin:** `mastermindx-market-intelligence/Mastermind@e023f9b4df388814286d42462af0e86a64eea563`, Skillpack v1.0.1.  
 **Master plan:** `docs/superpowers/plans/2026-08-28-gmi-theme-f04-end-to-end-completion.md`.
 
 This packet **continues the existing canonical F04 operation** from merged MarketOntology #6504. It does not create a new parent operation. Until the Chairman assigns one exact receiver, no session may self-claim merely by finding this packet. Once the Chairman directly assigns a Fable session to this operation, that live assignment is the receiver-assignment edge: do not wait for a second Chairman or Slack assignment.
