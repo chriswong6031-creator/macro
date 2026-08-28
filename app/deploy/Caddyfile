@@ -793,13 +793,13 @@ bot.mastermind-x.com {
 # projection-only Mastermind service, whose sole origin is a restricted Unix
 # socket. Browser credentials and caller-supplied identity headers stop here.
 control.mastermind-x.com {
-	@health path /healthz
-	respond @health 404
-
-	@mutation not method GET HEAD
-	respond @mutation 405
-
 	route {
+		@health path /healthz
+		respond @health 404
+
+		@mutation not method GET HEAD
+		respond @mutation 405
+
 		reverse_proxy 127.0.0.1:8000 {
 			method GET
 			rewrite /api/control-room/auth-check
