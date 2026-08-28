@@ -8,7 +8,7 @@ objective: >
   Done for a wave = its slice is merged after Sol review, deployed, and
   proven with a real entitled production journey; done for the workstream is
   open-ended product expansion adjudicated wave by wave.
-status: active
+status: parked
 program: biocatalyst
 repos: [macro]
 owner: coo-fable
@@ -47,19 +47,22 @@ waves:
       and adjudicated before any successor source/cohort transition.
   - id: P1-AVAIL-1
     title: P1-1 availability regression diagnosis (MAS-172, Chairman report)
-    status: in_progress
+    status: done
     next_action: >
-      Read-only diagnosis complete 2026-08-28: no origin-side defect exists;
-      every plane short of the entitled browser proven healthy
-      (research/BIOCATALYST_P1_AVAIL_1_AVAILABILITY_AUDIT_2026-08-28.md).
-      Only real incident: transient Supabase-upstream /api/me 502 window
-      22:56-22:59Z Aug 27, self-healed. Chairman's failing attempts never
-      reached the origin, so the failing layer is the Chairman-side access
-      path or the entitled browser layer. Awaiting Sol ruling on the
-      evidence-bounded acceptance (claude-in-chrome disconnected; no
-      credential sign-in permitted) and/or Chairman-side vantage data on
-      Slack thread C0BSBM78V1N/1787879112.101029. No repair performed —
-      nothing repairable found; no production mutation.
+      CLOSED 2026-08-28 pending Sol's terminal acceptance on the thread.
+      Root cause: the Chairman's browser was signed out (designed locked
+      state = the reported "down"); no origin-side defect existed; nothing
+      was repaired because nothing was broken. One transient
+      Supabase-upstream /api/me 502 window (22:56-22:59Z Aug 27) self-healed.
+      After the Chairman signed back in, the full step-(9) entitled matrix
+      PASSED on the real production path (200/400/401 contracts, current-hour
+      fresh 4/4 generation, exact 3+1+0+4=8 arithmetic, 6 lineage entries
+      EN/ZH, geometry clean at 2055/1280 EN+ZH and mobile 500x844 real-window
+      with the exact-390 deviation recorded, zero console errors, zero
+      4xx/5xx/524, exact accepted asset stamps). Receipts:
+      research/BIOCATALYST_P1_AVAIL_1_AVAILABILITY_AUDIT_2026-08-28.md (PR
+      #6594, merge 2299cbafe425) and
+      research/BIOCATALYST_P1_AVAIL_1_ENTITLED_REACCEPTANCE_2026-08-28.md.
 decisions:
   - "DEC:BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR"
   - "DEC:BIOCATALYST-PDUFA-TRUTH-IS-CORPORATE-DISCLOSURE-PLANE"
@@ -134,17 +137,17 @@ do_not_redo:
     parity, production-scale proof, source-soak acceptance, or authority to
     start P1-2. The broader parity ledger remains PARTIAL.
 artifacts:
+  - research/BIOCATALYST_P1_AVAIL_1_ENTITLED_REACCEPTANCE_2026-08-28.md
   - research/BIOCATALYST_P1_AVAIL_1_AVAILABILITY_AUDIT_2026-08-28.md
   - research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
   - research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md
   - research/BIOCATALYST_P1_1_PRODUCTION_ACCEPTANCE_2026-08-22.md
   - research/BIOCATALYST_P1_1R_PRODUCTION_ACCEPTANCE_2026-08-23.md
 next_action: >
-  ACTIVE for bounded wave P1-AVAIL-1 only (MAS-172 availability regression,
-  Fable COO dispatch 2026-08-27, Slack C0BSBM78V1N/1787879112.101029): diagnosis
-  delivered 2026-08-28, no origin-side defect found, awaiting Sol ruling on the
-  evidence-bounded acceptance. No other CORE-PRODUCT wave is commissioned; P1-2
-  still requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
+  Wave P1-AVAIL-1 (MAS-172) is done: root cause = signed-out Chairman browser,
+  no product defect, entitled matrix re-proven PASS 2026-08-28; parked again
+  once Sol posts terminal acceptance. No other CORE-PRODUCT wave is
+  commissioned; P1-2 still requires a separate explicit Sol ruling. The 2026-08-26T02:00Z
   source/launch-soak boundary remains owned by its source-governance path:
   window end grants no expansion authority; exact evidence must be frozen and
   adjudicated before any successor source/cohort transition.
