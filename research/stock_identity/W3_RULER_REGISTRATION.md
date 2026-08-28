@@ -97,28 +97,64 @@ constant family was set halfway — the stop is clean.
 
 **Declared rules (Step 2 — the hash exists and is recorded here BEFORE any value is
 computed from partition data). Both rule declarations carry
-`status: declared_pending_sol_rule_review` as of the §4 repair pass — see §4.4:**
+`status: declared_pending_sol_rule_review` as of the §4 repair pass — see §4.4.
+Both hashes were re-pinned a SECOND time by the §6 delta-review repair pass below
+(RULE-TEXT ITEMS) — every prior hash for each constant is retained here as history;
+none was ever computed against real partition data, so no value was voided by
+either re-pin:**
 
-* `recall_floor` — rule hash `671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69`
+* `recall_floor` — rule hash `c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969`
   (`scripts.stock_identity_calibrate_w3.rule_hash(RECALL_FLOOR_RULE)`; see the module
   constant for the exact literal rule text — P25 of the cell-level `recall_at_tier`
-  distribution over cells with `n_episodes > 0` (at least one fire), rounded to the
-  nearest 0.05). **This hash changed from the Task 3C value
-  `7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb`** — the §4 repair
-  pass corrected the rule text's population-wording clause (it previously said
-  "tier-eligible episode", which is a different quantity from the `n_episodes > 0`
-  predicate the code has always applied) to name the actual predicate
-  `compute_recall_floor` filters on. This is a textual accuracy fix, not a rule-form
-  change: the SELECTION MATH is byte-identical, and no value had been computed under
-  the old text to void.
-* `lambda_fs` — rule hash `110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e`
+  distribution over cells satisfying BOTH `n_episodes > 0` (at least one fire) AND a
+  DEFINED `recall_at_tier` value (`.dropna()`), rounded to the nearest 0.05).
+  **Hash history:** Task 3C original
+  `7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb` ->
+  §4 repair `671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69`
+  (corrected the population-wording clause from the inaccurate "tier-eligible
+  episode" to the actual `n_episodes > 0` predicate) ->
+  §6 delta-review repair `c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969`
+  (named the SECOND conjunct, `.dropna()`, the code has always applied alongside
+  `n_episodes > 0` — a cell can satisfy the count filter yet still carry a NaN
+  `recall_at_tier`). All three transitions are textual accuracy fixes, not
+  rule-form changes: the SELECTION MATH is byte-identical across all three, and no
+  value had been computed under any prior text to void.
+* `lambda_fs` — rule hash `a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a`
   (`rule_hash(LAMBDA_FS_RULE)`; inverse P75 of the cell-level `false_start_rate`
-  distribution over fired cells, rounded to the nearest 0.25). Unchanged by the §4
-  repair pass — its population wording ("at least one fire") already matched the
-  implementation.
+  distribution over cells satisfying BOTH `n_fires > 0` (at least one fire) AND a
+  DEFINED `false_start_rate` value (`.dropna()`), rounded to the nearest 0.25).
+  **Hash history:** original/§4-repair
+  `110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e` (unchanged by
+  §4 — its population wording, "at least one fire", already matched the
+  implementation) -> §6 delta-review repair
+  `a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a` (named the
+  SECOND conjunct, `.dropna()`, the code has always applied — a cell can satisfy
+  `n_fires > 0` yet still carry a NaN `false_start_rate` if every one of its fires
+  lacks a resolved `false_start` flag, e.g. no anchor). A textual accuracy fix, not
+  a rule-form change: the SELECTION MATH is byte-identical, and no value had been
+  computed under the old text to void.
 
-Both hashes are deterministic and reproducible from the committed rule text:
+All current hashes are deterministic and reproducible from the committed rule text:
 `python3 -c "import scripts.stock_identity_calibrate_w3 as m; print(m.rule_hash(m.RECALL_FLOOR_RULE)); print(m.rule_hash(m.LAMBDA_FS_RULE))"`.
+
+**B2/B2-residual disclosure (added by the §6 delta-review repair pass):** neither
+rule-text re-pin above changes the rule FORM (P25 of `recall_at_tier` /
+inverse-P75 of `false_start_rate`), but the QUANTITY `recall_at_tier` itself was
+redefined twice by fixes to `aggregate_cell_metrics`, both under this same
+unchanged rule form: **B2** (§4.3 below) changed `recall_at_tier`'s denominator
+from "only episodes that already had a recorded fire" to "every tier-eligible
+episode in the family's own symbol coverage, regardless of whether it ever
+fired"; **B2-residual** (§6.1 below) then corrected HOW that coverage universe
+itself is built (from `events`, not `fire_metrics`), which can only ever grow
+the coverage set (never shrink it) relative to the B2-only fix. Every
+`recall_floor` value ever computed against real partition data under
+`RECALL_FLOOR_RULE`'s literal text is therefore taken over a DIFFERENTLY-DEFINED
+`recall_at_tier` population than the rule's own P25-selection prose alone would
+suggest to a reader unaware of these two implementation fixes — the rule form is
+unchanged, but its input quantity's own definition moved underneath it twice.
+This is disclosed here so Sol's eventual rule-form review evaluates the rule
+against what it actually measures now, not against an earlier, narrower
+`recall_at_tier` definition.
 
 **Diagnostic grid + fit-read look budget (Step 3):** declared and unit-tested
 (`DIAGNOSTIC_GRID` = 6 entries, `{recall_floor, lambda_fs} × {base, minus20, plus20}`;
@@ -322,3 +358,267 @@ same-family pair that must be excluded without displacing a legitimate
 cross-family pair. Substrate work/registry files stay under the manifest's own
 declared storage locations (scratch env var / this repo's `data`/`research`
 trees) — never another session's scratchpad.
+
+## 6. Delta-review repair pass — second pass, SI-W3A-RULER-V1 (adversarial delta review)
+
+A second Opus adversarial delta review of the §4 repair pass closed most of the
+prior findings but returned one seal-gating residual (B2-residual), two LAW
+REGRESSIONS in the null transforms (M4-regression, M11-regression) relative to
+the freeze's own §4.3 requirements, plus bounded minors and rule-text items.
+This section records what was fixed. **No composite value was computed and
+`ruler_spec_v1.json`'s PR-3 fields remain `pending_sealed_calibration`
+throughout — the same stop condition as §3.2/§4 above.**
+
+### 6.1 B2-residual — `family_symbol_universe` sourced from EVENTS, not fire_metrics
+
+`aggregate_cell_metrics` (`engine/stock_identity/ruler.py`) gains a required
+`events` parameter. `family_symbol_universe` — the per-family symbol coverage
+set that bounds `recall_at_tier`'s eligible-episode population (B2, §4.3
+above) — is now built from `events.groupby("family_key")` (every symbol a
+family fired an event on, attributed or not), never from `fire_metrics`
+(attributed-only, per the §4 repair). A `fire_metrics`-derived universe
+silently excludes a symbol where a family FIRED but nothing ever attributed,
+since such a fire never produces a `fire_metrics` row at all — exactly the
+same shape of denominator under-count B2 itself closed, one layer up. Callers
+(`scripts/stock_identity_build_ruler.py`,
+`scripts/stock_identity_calibrate_w3.py::compute_constants_from_substrate`)
+and every test call site were updated to pass `events`. Discriminating test:
+`tests/test_stock_identity_ruler.py::test_family_symbol_universe_uses_events_not_fire_metrics_b2_residual`
+— a symbol where a family fired but nothing attributed enters the recall
+denominator only under the fix (fails under the old fire_metrics-derived
+universe, per the test's own docstring). This same fixture shape was already
+latent in the pre-existing
+`test_recall_denominator_counts_eligible_episodes_regardless_of_fire` fixture
+(its BBB reclaim attribution never resolves to a `fire_metrics` row due to an
+`episode_index` quirk in the fixture itself, which the B2-residual fix now
+correctly counts) — that test's expected `recall_at_tier` moved from `0.5` to
+`1/3` accordingly, with its comment corrected to explain why.
+
+### 6.2 M4-regression — `grain_cadence_null` restores cadence phase and stamp lag
+
+The §4 repair's `grain_cadence_null` drew an UNCONSTRAINED offset `K` in
+`[63, 252]` sessions and set BOTH `signal_ts` and `signal_known_ts` to the same
+shifted value — which (a) can scatter a weekly-grain group's weekday PHASE
+across any weekday (an unconstrained `K` is not a multiple of the weekly
+period), and (b) collapses every event's own stamp lag
+(`signal_known_ts - signal_ts`) to exactly zero, regardless of what it was
+before. Both are freeze-law regressions relative to §4.2 ("Grain/timeframe is
+always stratified") and the general PIT stamp-lag discipline this repo
+enforces elsewhere. Fixed: `K` is now drawn as a multiple of the group's own
+DOMINANT grain period in trading sessions
+(`engine.stock_identity.ruler_nulls.GRAIN_PERIOD_SESSIONS`: `1D`->1, `3D`->3,
+`W`->5, `2W`->10; any other observed grain label, e.g. the pilot cohort's
+`2B`/`3B`/`1D-state-over-2D/3D-buckets`, defaults to period 1 — no phase
+constraint), the shift is applied to `signal_ts`, and
+`signal_known_ts = new_signal_ts + (orig_known_ts - orig_signal_ts)` is
+reconstructed per event, preserving each event's own stamp lag exactly as a
+timedelta. **Known limitation, disclosed rather than silently redesigned
+around:** the grouping stays per `(family_key, symbol)` (the frozen shape); a
+group that mixes multiple grains for the same symbol (observed in the real
+pilot cohort's `sea_event_classes` family — 15 of 285 `(family_key, symbol)`
+groups mix 2-3 distinct grains, e.g. `2B`/`3B`/`W`) applies the DOMINANT
+grain's period to every fire in the group, so a MINORITY grain sharing that
+group does not get its own phase preserved. Extending to a finer
+`(family_key, symbol, grain)` grouping would be a larger, separately-decided
+change and was not made here. Discriminating tests
+(`tests/test_stock_identity_ruler_nulls.py`):
+`test_grain_cadence_null_offset_is_a_multiple_of_the_grain_period`,
+`test_grain_cadence_null_preserves_weekly_grain_weekday_distribution`,
+`test_grain_cadence_null_preserves_stamp_lag_exactly`.
+
+### 6.3 M11-regression — `random_fire_null` restores count/dwell matching (freeze §4.3 item 1)
+
+The §4 repair's `random_fire_null` drew each fire's new session INDEPENDENTLY
+and uniformly from the symbol's own trading calendar — count-matched, but it
+destroys the inter-fire gap MULTISET (dwell/burstiness structure) entirely,
+which is a weaker and differently-shaped null than freeze §4.3 item 1's literal
+"Count/dwell-matched random fire placement" requirement. Fixed: per
+`(family_key, symbol)` group, the ordered session-gap sequence between
+consecutive fires (sorted by `signal_ts`) is PERMUTED with the seeded RNG, then
+re-anchored at a seeded random start session drawn uniformly from every
+position at which the whole permuted sequence still fits within the symbol's
+trading-calendar coverage (wrapping forbidden). Because the sequence's total
+span (`sum(gaps)`) is invariant under permutation and the real placement
+already fit, a feasible anchor always exists — the freeze's "if impossible,
+keep the real anchor" fallback is implemented as a defensive no-op guard, never
+exercised in practice. Each event's own stamp lag is preserved exactly, via the
+same `new_signal_ts + (orig_known_ts - orig_signal_ts)` reconstruction as M4.
+Discriminating/restored tests (`tests/test_stock_identity_ruler_nulls.py`):
+`test_random_fire_null_preserves_the_inter_fire_gap_multiset` (the restored
+dwell-preservation "gap multiset preserved" test), `test_random_fire_null_preserves_stamp_lag_exactly`;
+the separation assertion
+(`test_grain_cadence_and_random_nulls_separate_from_real_placement`) and the
+not-a-single-block-translation check
+(`test_random_fire_null_does_not_degenerate_to_a_single_block_translation`)
+are both kept, passing under the new implementation.
+
+### 6.4 M5-residual — `c_loc_d_rank_population` is read, hashed, and enforced
+
+`ruler_spec_v1.json` already shipped the non-PR-3 structural field
+`c_loc_d_rank_population: "episode_type_x_grain"` (§4.3 above, M5), but
+`RulerSpec.from_json` never parsed it, so it was absent from
+`to_canonical_dict()` and therefore invisible to `spec_hash()` — a change to
+this field would not have re-pinned the spec hash. Fixed: `RulerSpec` gains a
+required `c_loc_d_rank_population: str` field, read by `from_json` (required
+key, fails fast if the shipped file ever omits it) and carried in
+`to_canonical_dict()`. **This changes `RulerSpec.spec_hash()` for the shipped
+spec** (the field's VALUE is unchanged; the canonical-dict STRUCTURE gained a
+key) — the new pilot-smoke spec hash is recorded in §6.7 below. Separately,
+`compute_composites`'s silent global-rank fallback (the `elif` branch that
+ran a GLOBAL rank across the whole cell population whenever `episode_type`/
+`grain` columns were absent, defeating the exact stratification invariant M5
+exists to guarantee) is REMOVED; a missing stratum column now raises the new
+typed `MissingRankStratumColumnsError` instead. An unsupported
+`c_loc_d_rank_population` value (anything other than the one currently-defined
+`"episode_type_x_grain"`) raises a plain `ValueError`. Tests:
+`test_ruler_spec_reads_c_loc_d_rank_population_from_json`,
+`test_c_loc_d_rank_population_is_carried_in_canonical_dict`,
+`test_c_loc_d_rank_population_change_changes_the_spec_hash`,
+`test_compute_composites_raises_on_missing_stratum_columns`,
+`test_compute_composites_raises_on_unsupported_rank_population`.
+
+### 6.5 M3-minor — `equal_proximity_control` groups by (episode, grain)
+
+`grain` is added to the equal-proximity group key: fires are now paired only
+within the SAME episode AND the SAME grain (`groupby(["episode_id", "grain"],
+dropna=False)`), never across grains — a daily-cadence fire and a
+weekly-cadence fire at a similar ATR distance are measured over different
+windows, so pairing them was never a genuine "similarly-placed" comparison.
+`grain` is now a required input column (missing -> empty result, same
+contract as the pre-existing `episode_id` requirement); every pre-existing
+test fixture in `tests/test_stock_identity_ruler_nulls.py` was updated to
+carry a `grain` column. Discriminating test:
+`test_equal_proximity_control_never_pairs_across_grains_m3_minor`.
+
+### 6.6 B3-minors, M8-minors, M10-minor
+
+* **B3-minor (1), guard-drop visibility:** `scripts/stock_identity_calibration_replay.py`'s
+  `main()` now surfaces `n_events_dropped_by_recent_history_guard` and
+  `n_episodes_censored_by_recent_history_guard` in the run's own stdout OK
+  payload (previously visible only in `provenance_receipt.json`) and emits a
+  line-start `::warning title=si-w3a-substrate-guard::...` GitHub annotation
+  (bare `print`, never through a logger — house law) when either count is
+  nonzero.
+* **B3-minor (2), cutoff harmonization:** `scripts/stock_identity_calibrate_w3.py`'s
+  second barrier previously recomputed the recent-history cutoff from
+  `_load_substrate_bars(episodes, asof)` — bars for only the symbols present in
+  the substrate's OWN `episodes` frame, a narrower and potentially DIFFERENT
+  symbol set than `run_substrate` used to compute the cutoff it actually
+  recorded in provenance. Two different symbol sets can disagree on the
+  126th-trading-session-back date purely from calendar composition, which
+  would falsely accuse a genuinely-correct substrate of a guard violation it
+  never committed. Fixed: the second barrier now compares the substrate
+  provenance's recorded `recent_history_guard_cutoff` against the SINGLE
+  frozen W1 source of truth — `data/stock_identity/constants/si_constants_v1.json`'s
+  `calibration_history_cutoff` (`2026-02-11`, computed once at partition-build
+  time by `scripts/stock_identity_build_atlas.py`'s
+  `CALIBRATION_LOOKBACK_SESSIONS`-sessions-before-`asof` rule on the canonical
+  market calendar) — via the new `frozen_calibration_history_cutoff()`
+  function, reading a monkeypatchable `CALIBRATION_CONSTANTS_PATH` module
+  constant. `scripts.stock_identity_calibration_replay.recent_history_cutoff`
+  is no longer called from `stock_identity_calibrate_w3.py` at all. Tests:
+  `test_frozen_calibration_history_cutoff_reads_the_real_committed_constant`,
+  `test_main_refuses_when_recorded_cutoff_disagrees_with_frozen_constant`,
+  `test_main_never_recomputes_cutoff_from_episodes_only_symbol_set`.
+* **M8-minor (1), receipt-hash rename:** the printed receipt-inclusive spec
+  hash (previously `sealed_spec_hash`) is renamed `sealed_spec_receipt_hash`
+  and an assertion + comment now clarify its relationship to the receipt's own
+  `spec_hash_after_seal` field: `sealed.spec_hash()` is the RECEIPT-INCLUSIVE
+  hash of the spec exactly as written to disk (`pr3.receipt` embedded), while
+  `spec_hash_after_seal` is the RECEIPT-EXCLUSIVE core hash
+  (`pr3_receipt` projected to `None` by `core_spec_hash`, since a value cannot
+  legally hash itself) — the two are asserted to differ.
+* **M8-minor (2), registration-append recovery:** if
+  `append_seal_receipt_to_registration` fails AFTER `seal_ruler_spec` already
+  succeeded, `main()` now prints a line-start `::warning
+  title=si-w3a-registration-append-failed::...` recovery message stating the
+  durable receipt already lives in `ruler_spec_v1.json`'s `pr3.receipt` and
+  that the registration line can be reconstructed from it via
+  `format_seal_receipt_markdown(receipt)` — and explicitly does NOT attempt to
+  unseal — before re-raising the original failure. Test:
+  `test_registration_append_failure_prints_recovery_message_and_reraises`.
+* **M10-minor:** `compute_unconditional_block` now raises the new typed
+  `UnconditionalBlockUniverseError` if any OBSERVED `(family_key, symbol)`
+  pair (present in `events`) is absent from a caller-supplied `universe` —
+  the prior `universe_df.merge(total, how="left")` silently DROPPED such a
+  pair from the output instead of surfacing the caller's incomplete universe
+  declaration. Test:
+  `test_unconditional_block_raises_when_universe_omits_an_observed_pair`.
+* Also fixed: the dry-run branch's proof that
+  `compute_constants_from_substrate` actually succeeded was a bare
+  `assert isinstance(...)`, which `python -O` strips entirely — replaced with
+  an explicit `if`/`raise TypeError`. Test:
+  `test_dry_run_computation_proof_is_not_a_bare_assert`.
+
+### 6.7 Rule-text items (doc + hash only, rule FORMS unchanged)
+
+`RECALL_FLOOR_RULE` and `LAMBDA_FS_RULE` (`scripts/stock_identity_calibrate_w3.py`)
+were each re-pinned a second time to name BOTH conjuncts their respective
+`compute_*` functions have always applied — the count filter (`n_episodes > 0`
+/ `n_fires > 0`) AND a `.dropna()` on the ranked column itself, which is a
+genuine second filter (a cell can satisfy the count filter yet still carry a
+NaN ranked value). Full hash history and the B2/B2-residual
+differently-defined-quantity disclosure are recorded in §1.2/§3.1 above — this
+subsection exists only to name the finding category (RULE-TEXT ITEMS) for the
+delta review's own bookkeeping.
+
+### 6.8 Interface deviations from plan text (for Task 4's author)
+
+Four functions' actual signatures deviate from the plan text's original
+description — recorded here so Task 4's author (or anyone else reading the
+plan document alongside this registration) is not misled by the plan's prose
+alone:
+
+* `random_fire_null(events, bars_by_symbol, seed) -> pd.DataFrame` — the plan
+  describes this as "independent per-fire random placement"; the actual
+  (post-§6.3) implementation is count/dwell-matched (gap-permutation +
+  re-anchor), per freeze §4.3 item 1's literal text, not independent placement.
+* `grain_cadence_null(events, bars_by_symbol, seed) -> pd.DataFrame` — the plan
+  describes a fixed `[63, 252]`-session offset; the actual (post-§6.2)
+  implementation constrains that offset to a multiple of the group's dominant
+  grain period, and reconstructs `signal_known_ts` from `signal_ts` plus the
+  original per-event stamp lag rather than shifting `signal_known_ts` directly.
+* `equal_proximity_control(metrics, tolerance_atr) -> tuple[pd.DataFrame, int]`
+  — the plan describes pairing within the same episode only; the actual
+  (post-§6.5) implementation additionally requires the same `grain`, and
+  `grain` is now a required input column.
+* `aggregate_cell_metrics(fire_metrics, episodes, spec, events, *, group_cols=...) -> pd.DataFrame`
+  — the plan's original three-parameter signature
+  (`fire_metrics, episodes, spec`) gains a required fourth positional
+  parameter, `events` (post-§6.1), used to build `family_symbol_universe` from
+  the full events frame rather than from `fire_metrics` alone. Every caller
+  (`scripts/stock_identity_build_ruler.py`,
+  `scripts/stock_identity_calibrate_w3.py`) was updated to pass it.
+
+### 6.9 Pilot smoke re-run and spec hash
+
+`python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir <dir>`
+re-run after this repair pass, PR-3 still `pending_sealed_calibration`:
+
+* **New `spec_hash`: `43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb`**
+  — changed from the §4-repair-pass value because `c_loc_d_rank_population` is
+  now carried in `RulerSpec.to_canonical_dict()` (§6.4); the field's VALUE
+  (`"episode_type_x_grain"`) is unchanged, only the canonical-dict structure
+  gained a key that the hash function has always covered.
+* 50 cell rows; `recall_at_tier` defined on 34/50 cells (mean 0.0724, median
+  0.0236, P25 0.0011, max 0.3881); `false_start_rate` defined on all 50 cells
+  (mean 0.4271, median 0.5048, P75 0.6482, max 0.8199). All 50 cells satisfy
+  `n_episodes > 0` and `n_fires > 0`. This distribution (post-B2-residual, so
+  the recall denominator is now built from the full events-derived symbol
+  coverage) is handed to Sol alongside the rule-form review as the actual
+  population `RECALL_FLOOR_RULE`/`LAMBDA_FS_RULE` would draw P25/inverse-P75
+  from, per §1.2's disclosure above.
+* Null-phase/stamp-lag preservation verified directly against this run's own
+  parquet outputs: both `null_grain_cadence_events_v1.parquet` and
+  `null_random_fire_events_v1.parquet` reproduce the real events'
+  `signal_known_ts - signal_ts` lag EXACTLY, row for row (9,371 of 31,119 real
+  events carry a nonzero lag; both nulls preserve every one of them).
+  `equal_proximity_pairs = 4820` under the new (episode, grain)-grouped
+  contract, `equal_proximity_pairs_truncated = 0`.
+* This build packet does not execute the real 759-name calibration-fire
+  substrate act (out of scope per the commissioning packet), so the two B3-minor
+  guard-drop counters (`n_events_dropped_by_recent_history_guard`,
+  `n_episodes_censored_by_recent_history_guard`) cannot be observed from a live
+  run here; their surfacing/annotation behavior is proven on synthetic
+  fixtures in `tests/test_stock_identity_w3_calibration.py` (e.g.
+  `test_run_substrate_drops_or_censors_outputs_beyond_the_recent_history_cutoff`).

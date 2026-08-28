@@ -2,23 +2,36 @@
 
 Three of the freeze's seven mandatory nulls/controls are ruler-side and built here:
 
-1. **Independent per-fire random placement** (:func:`random_fire_null`) — every
-   expert keeps its exact fire COUNT; each fire's session is drawn independently
-   and uniformly from the symbol's own trading calendar (freeze review finding
-   M11 — a single block-translation offset preserved every inter-fire gap
-   exactly, which is a weaker null than independent placement).
+1. **Count/dwell-matched random fire placement** (:func:`random_fire_null`,
+   freeze §4.3 item 1) — every expert keeps its exact fire COUNT *and* its
+   inter-fire gap MULTISET (dwell pattern): per ``(family_key, symbol)`` the
+   ordered session-gap sequence between consecutive fires is permuted (seeded)
+   and re-anchored at a seeded random start session within the symbol's own
+   trading-calendar coverage (M11-regression — an EARLIER repair placed each
+   fire independently and uniformly, which is count-matched but destroys the
+   dwell/burstiness structure entirely; that is a *weaker*, differently-shaped
+   null than the freeze's own "count/dwell-matched" requirement, not a stronger
+   one).
 2. **Grain/cadence null** (:func:`grain_cadence_null`) — a deterministic, seeded,
-   trading-session-space circular shift: one offset ``K`` in ``[63, 252]``
-   sessions is drawn per ``(family_key, symbol)`` and every fire in that group is
-   moved ``K`` sessions forward on the symbol's own trading calendar, wrapping
-   within its coverage (freeze review finding M4 — a uniform ±1/±7 CALENDAR-day
-   shift never actually broke episode correspondence at pilot scale and could
-   land on non-trading days).
+   trading-session-space circular shift that preserves cadence PHASE: one
+   multiple ``K`` of the group's own grain period, drawn from the declared
+   ``[63, 252]``-session range, is applied per ``(family_key, symbol)`` to every
+   fire's ``signal_ts`` on the symbol's own trading calendar, wrapping within
+   coverage (M4-regression — an EARLIER repair drew an unconstrained offset and
+   collapsed ``signal_known_ts``/``signal_ts`` to the SAME shifted value, which
+   breaks a weekly-grain group's weekday phase and destroys each event's own
+   stamp lag; both are restored here: shifting ``signal_ts`` by a
+   period-constrained ``K`` and reconstructing
+   ``signal_known_ts = new_signal_ts + (orig_known_ts - orig_signal_ts)`` per
+   event).
 3. **Equal-proximity comparison** (:func:`equal_proximity_control`) — pairs
-   cross-family fires within the SAME episode (same anchor) whose ATR-distance
+   cross-family fires within the SAME episode AND SAME grain whose ATR-distance
    gap is within a declared tolerance (freeze review finding M2/M3 — the prior
    implementation paired fires globally across symbols/episodes/grains, which is
-   not a "similarly-placed" comparison at all).
+   not a "similarly-placed" comparison at all; M3-minor then added grain to the
+   group key — a daily-cadence fire and a weekly-cadence fire landing at a
+   similar ATR distance are not a "similarly-placed" comparison either, since
+   their measurement windows differ).
 
 No function here inspects per-name outcome rank to choose a parameter, expert or
 neighborhood (``DNR:KILL-OUTCOME-AUDITION``); each null is a pure, seeded (where
@@ -34,6 +47,7 @@ import pandas as pd
 
 __all__ = [
     "PROXIMITY_PAIR_COLUMNS",
+    "GRAIN_PERIOD_SESSIONS",
     "random_fire_null",
     "grain_cadence_null",
     "equal_proximity_control",
@@ -49,6 +63,29 @@ PROXIMITY_PAIR_COLUMNS: tuple[str, ...] = (
 GRAIN_CADENCE_NULL_MIN_SESSIONS = 63
 GRAIN_CADENCE_NULL_MAX_SESSIONS = 252
 
+#: Trading-session period implied by a W2 grain label (M4-regression) — the
+#: closed set of grain strings W2's nine family groups actually emit
+#: (`research/stock_identity/W3_RULER_REGISTRATION.md` §1.1: ``1D``, ``3D``,
+#: ``2W``, ``W``, ``1D-state-over-2D/3D-buckets``). The grain/cadence null's
+#: offset ``K`` must be a multiple of this period so the shift preserves cadence
+#: PHASE (e.g. a weekly-grain group's weekday distribution), not merely
+#: magnitude — an unconstrained offset can land a weekly fire on any weekday.
+GRAIN_PERIOD_SESSIONS: dict[str, int] = {
+    "1D": 1,
+    "3D": 3,
+    "W": 5,
+    "2W": 10,
+}
+
+
+def _grain_period_sessions(grain: Any) -> int:
+    """The session period for ``grain``, or ``1`` (no phase constraint) for any
+    label outside :data:`GRAIN_PERIOD_SESSIONS` — e.g. the composite
+    ``1D-state-over-2D/3D-buckets`` family label, which carries no single clean
+    weekly/biweekly phase to preserve."""
+    g = str(grain or "").strip().upper()
+    return GRAIN_PERIOD_SESSIONS.get(g, 1)
+
 
 def _symbol_calendar(bars_by_symbol: Mapping[str, pd.DataFrame] | None, symbol: str) -> pd.DatetimeIndex:
     if not bars_by_symbol:
@@ -59,25 +96,55 @@ def _symbol_calendar(bars_by_symbol: Mapping[str, pd.DataFrame] | None, symbol: 
     return pd.DatetimeIndex(sorted(df.index.unique()))
 
 
+def _ensure_signal_ts_and_known_ts(out: pd.DataFrame) -> pd.DataFrame:
+    """Normalize ``signal_ts``/``signal_known_ts`` to datetime, defaulting a
+    missing ``signal_ts`` to ``signal_known_ts`` (no lag) so both nulls below can
+    always compute a stamp lag, even against a caller that only carries
+    ``signal_known_ts``."""
+    out["signal_known_ts"] = pd.to_datetime(out["signal_known_ts"])
+    if "signal_ts" not in out.columns:
+        out["signal_ts"] = out["signal_known_ts"]
+    out["signal_ts"] = pd.to_datetime(out["signal_ts"])
+    return out
+
+
 def random_fire_null(
     events: pd.DataFrame, bars_by_symbol: Mapping[str, pd.DataFrame], seed: int,
 ) -> pd.DataFrame:
-    """Independent per-fire random placement (freeze review finding M11).
+    """Count/dwell-matched random fire placement (freeze §4.3 item 1;
+    M11-regression fix).
 
-    For each ``(family_key, symbol)`` group the fire COUNT is preserved exactly;
-    each fire's new session is drawn independently and uniformly from that
-    symbol's own trading calendar (seeded, deterministic) — never a single
-    scalar offset applied to the whole block. Every draw lands on an actual
-    trading session (never a non-session date) by construction, since it is
-    drawn FROM the calendar itself.
+    For each ``(family_key, symbol)`` group: sort the group's fires by
+    ``signal_ts``, convert each to its session-index position on the symbol's
+    own trading calendar, and take the ordered sequence of inter-fire gaps (in
+    trading sessions) between consecutive fires. That gap sequence is a
+    MULTISET the null must preserve exactly (dwell-matched) while breaking
+    correspondence to the real dates — so it is PERMUTED with the seeded RNG,
+    then the permuted sequence is re-anchored at a seeded random start session
+    drawn uniformly from every position at which the whole shifted sequence
+    still fits within the calendar's coverage (wrapping forbidden). Because the
+    total span of a gap sequence — ``sum(gaps)`` — is invariant under
+    permutation, the real placement's own start position always lies in that
+    feasible set (the real placement already fit), so a feasible anchor always
+    exists; no rejection-sampling loop is needed, and the freeze's "if
+    impossible, keep the real anchor" fallback is applied only as a defensive
+    no-op guard against that invariant somehow not holding. Each event's own
+    stamp lag (``signal_known_ts - signal_ts``) is preserved exactly as a
+    timedelta, identically to :func:`grain_cadence_null`. Every placed
+    ``signal_ts`` lands on an actual trading session by construction, since it
+    is drawn FROM the calendar itself.
+
+    The EARLIER repair (freeze review finding M11, prior pass) placed each fire
+    independently and uniformly — count-matched, but it destroys the multiset
+    of inter-fire gaps entirely, which is a *different and weaker* null than
+    freeze §4.3 item 1's literal "count/dwell-matched" requirement.
     """
     if events is None or events.empty:
         return events.copy() if events is not None else events
 
     out = events.copy()
-    out["signal_known_ts"] = pd.to_datetime(out["signal_known_ts"])
-    if "signal_ts" in out.columns:
-        out["signal_ts"] = pd.to_datetime(out["signal_ts"])
+    out = _ensure_signal_ts_and_known_ts(out)
+    stamp_lag = out["signal_known_ts"] - out["signal_ts"]
     rng = np.random.default_rng(seed)
 
     for (fam, sym), idx in out.groupby(["family_key", "symbol"]).groups.items():
@@ -86,11 +153,33 @@ def random_fire_null(
         sub = out.loc[idx]
         if n == 0:
             continue
-        draws = rng.integers(0, n, size=len(sub))
-        new_ts = calendar[draws]
-        out.loc[sub.index, "signal_known_ts"] = new_ts
-        if "signal_ts" in out.columns:
-            out.loc[sub.index, "signal_ts"] = new_ts
+
+        sub_sorted = sub.sort_values("signal_ts")
+        sorted_index = sub_sorted.index
+        positions = calendar.searchsorted(sub_sorted["signal_ts"].to_numpy(), side="left")
+        positions = np.clip(positions, 0, n - 1).astype(np.int64)
+
+        gaps = np.diff(positions)
+        permuted_gaps = rng.permutation(gaps) if len(gaps) else gaps
+        span = int(positions[-1] - positions[0]) if len(positions) else 0
+
+        max_start = n - 1 - span
+        if max_start < 0:
+            # Defensive fallback only (freeze: "if impossible, keep the real
+            # anchor and note it") — span is invariant under permutation and the
+            # real placement already fit, so this should be unreachable.
+            start = int(positions[0])
+        else:
+            start = int(rng.integers(0, max_start + 1))
+
+        new_positions = start + np.concatenate([[0], np.cumsum(permuted_gaps)]).astype(np.int64)
+        new_positions = np.clip(new_positions, 0, n - 1)
+        new_signal_ts = calendar[new_positions]
+
+        out.loc[sorted_index, "signal_ts"] = new_signal_ts
+        out.loc[sorted_index, "signal_known_ts"] = (
+            pd.DatetimeIndex(new_signal_ts) + stamp_lag.loc[sorted_index].to_numpy()
+        )
 
     return out
 
@@ -98,25 +187,38 @@ def random_fire_null(
 def grain_cadence_null(
     events: pd.DataFrame, bars_by_symbol: Mapping[str, pd.DataFrame], seed: int,
 ) -> pd.DataFrame:
-    """Trading-session-space circular shift (freeze review finding M4).
+    """Trading-session-space circular shift, phase- and stamp-lag-preserving
+    (freeze review finding M4; M4-regression fix).
 
-    Per ``(family_key, symbol)`` group, one deterministic seeded offset ``K`` in
-    ``[63, 252]`` TRADING sessions is drawn and every fire in the group is moved
-    ``K`` sessions forward on that symbol's own trading calendar, wrapping within
-    its coverage. This preserves the group's cadence exactly in circular
-    session-index space (a uniform rotation preserves every pairwise circular
-    distance) while breaking correspondence to the specific episode anchors —
-    the null's purpose. Every placed fire lands on an actual trading session by
-    construction (it is drawn FROM the calendar), so no null fire can ever fall
-    on a non-session date.
+    Per ``(family_key, symbol)`` group, one deterministic seeded offset ``K`` —
+    constrained to a MULTIPLE of the group's own DOMINANT grain period in
+    trading sessions (mode over the group's own ``grain`` values;
+    :func:`_grain_period_sessions`; ``1D``->1, ``3D``->3, ``W``->5, ``2W``->10)
+    — is drawn from the declared ``[63, 252]``-session range and every fire's
+    ``signal_ts`` in the group is moved ``K`` sessions forward on that symbol's
+    own trading calendar, wrapping within its coverage. The period constraint
+    means the shift preserves the group's cadence PHASE (e.g. a weekly-grain
+    group's weekday distribution is unchanged), not merely its circular
+    session-gap magnitude. KNOWN LIMITATION: this is a per-(family_key, symbol)
+    grouping (the frozen shape), so a group that mixes multiple grains for the
+    same symbol (observed in the real pilot cohort's ``sea_event_classes``
+    family) applies the DOMINANT grain's period to every fire in the group —
+    a minority grain sharing that group does not get its own phase preserved.
+    ``signal_known_ts`` is then reconstructed per event as
+    ``new_signal_ts + (orig_known_ts - orig_signal_ts)`` — each event's own
+    stamp lag is preserved EXACTLY as a timedelta, never collapsed to zero by
+    setting both columns to the same shifted value (the M4-regression this fix
+    closes). Every placed ``signal_ts`` lands on an actual trading session by
+    construction (it is drawn FROM the calendar), so no null fire's
+    ``signal_ts`` can ever fall on a non-session date; breaking correspondence
+    to the specific episode anchors is the null's purpose.
     """
     if events is None or events.empty:
         return events.copy() if events is not None else events
 
     out = events.copy()
-    out["signal_known_ts"] = pd.to_datetime(out["signal_known_ts"])
-    if "signal_ts" in out.columns:
-        out["signal_ts"] = pd.to_datetime(out["signal_ts"])
+    out = _ensure_signal_ts_and_known_ts(out)
+    stamp_lag = out["signal_known_ts"] - out["signal_ts"]
     rng = np.random.default_rng(seed)
 
     for (fam, sym), idx in out.groupby(["family_key", "symbol"]).groups.items():
@@ -125,44 +227,83 @@ def grain_cadence_null(
         sub = out.loc[idx]
         if n == 0:
             continue
-        k = int(rng.integers(GRAIN_CADENCE_NULL_MIN_SESSIONS, GRAIN_CADENCE_NULL_MAX_SESSIONS + 1))
-        positions = calendar.searchsorted(sub["signal_known_ts"].to_numpy(), side="left")
+
+        # The GROUP's dominant grain (mode, not merely the first row -- a
+        # deterministic and representative choice) decides the period. A
+        # (family_key, symbol) group that mixes multiple grains (observed in
+        # the real pilot cohort's `sea_event_classes` family) applies the
+        # dominant grain's period to every fire in the group, per the frozen
+        # per-(family_key, symbol) grouping -- a minority grain sharing that
+        # group does not get its OWN phase preserved (documented limitation,
+        # not silently redesigned into a finer (family_key, symbol, grain)
+        # grouping, which would be a larger, separately-decided change).
+        grain_val = (
+            sub["grain"].mode().iloc[0]
+            if "grain" in sub.columns and sub["grain"].notna().any()
+            else None
+        )
+        period = max(1, min(_grain_period_sessions(grain_val), n))
+        lo = -(-GRAIN_CADENCE_NULL_MIN_SESSIONS // period)  # ceil division
+        hi = GRAIN_CADENCE_NULL_MAX_SESSIONS // period
+        if hi < lo:
+            hi = lo
+        m = int(rng.integers(lo, hi + 1))
+        k = m * period
+
+        positions = calendar.searchsorted(sub["signal_ts"].to_numpy(), side="left")
         positions = np.clip(positions, 0, n - 1)
         new_positions = (positions + k) % n
-        new_ts = calendar[new_positions]
-        out.loc[sub.index, "signal_known_ts"] = new_ts
-        if "signal_ts" in out.columns:
-            out.loc[sub.index, "signal_ts"] = new_ts
+        new_signal_ts = calendar[new_positions]
+
+        out.loc[sub.index, "signal_ts"] = new_signal_ts
+        out.loc[sub.index, "signal_known_ts"] = (
+            pd.DatetimeIndex(new_signal_ts) + stamp_lag.loc[sub.index].to_numpy()
+        )
 
     return out
 
 
 def equal_proximity_control(metrics: pd.DataFrame, tolerance_atr: float) -> tuple[pd.DataFrame, int]:
-    """Pair cross-family fires that fired into the SAME episode (freeze review
-    finding M2/M3) whose ``atr_dist`` (distance to anchor, ATR units) differ by
-    no more than ``tolerance_atr``. Never pairs two fires from the same
-    ``family_key`` (that would not be a cross-expert comparison), never emits a
-    pair whose gap exceeds the declared tolerance, and never pairs fires from
-    DIFFERENT episodes/symbols/grains — a "similarly-placed" comparison is only
-    meaningful anchored to the same episode.
+    """Pair cross-family fires that fired into the SAME episode AND SAME grain
+    (freeze review finding M2/M3; M3-minor added grain to the group key) whose
+    ``atr_dist`` (distance to anchor, ATR units) differ by no more than
+    ``tolerance_atr``. Never pairs two fires from the same ``family_key`` (that
+    would not be a cross-expert comparison), never emits a pair whose gap
+    exceeds the declared tolerance, and never pairs fires from DIFFERENT
+    episodes/symbols/grains — a "similarly-placed" comparison is only
+    meaningful anchored to the same episode AND the same cadence (a
+    daily-cadence fire and a weekly-cadence fire at a similar ATR distance are
+    measured over different windows, so pairing them is not a genuine
+    similarly-placed comparison either).
 
-    Per-episode fire counts are small (a handful at most), so no scan cap is
-    needed once pairing is grouped by episode — every candidate pair within a
-    group is examined. Returns ``(pairs, truncated_count)``; ``truncated_count``
-    is always ``0`` under this grouped design (kept as an explicit return value,
-    per the freeze review, rather than silently omitted) — a future defensive
-    per-episode cap would report a nonzero value here instead of dropping pairs
-    silently.
+    A row with no ``grain`` value (``NaN``/missing) is treated as its own group
+    (pandas ``groupby`` with ``dropna=False``) rather than silently coalesced
+    with any other grain, so an ungraded/unknown grain never masquerades as a
+    match.
+
+    Per-episode-and-grain fire counts are small (a handful at most), so no scan
+    cap is needed once pairing is grouped by (episode, grain) — every candidate
+    pair within a group is examined. Returns ``(pairs, truncated_count)``;
+    ``truncated_count`` is always ``0`` under this grouped design (kept as an
+    explicit return value, per the freeze review, rather than silently omitted)
+    — a future defensive per-group cap would report a nonzero value here
+    instead of dropping pairs silently.
     """
     empty = pd.DataFrame({c: pd.Series(dtype="object") for c in PROXIMITY_PAIR_COLUMNS})
-    if metrics is None or metrics.empty or "atr_dist" not in metrics.columns or "episode_id" not in metrics.columns:
+    if (
+        metrics is None or metrics.empty
+        or "atr_dist" not in metrics.columns or "episode_id" not in metrics.columns
+        or "grain" not in metrics.columns
+    ):
         return empty, 0
     if tolerance_atr < 0:
         raise ValueError("tolerance_atr must be >= 0")
 
     rows: list[dict[str, Any]] = []
     truncated = 0
-    for episode_id, group in metrics.dropna(subset=["atr_dist"]).groupby("episode_id"):
+    for (episode_id, grain), group in metrics.dropna(subset=["atr_dist"]).groupby(
+        ["episode_id", "grain"], dropna=False
+    ):
         g = group.sort_values("atr_dist").reset_index(drop=True)
         n = len(g)
         atr = g["atr_dist"].to_numpy(dtype=float)

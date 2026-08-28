@@ -133,7 +133,7 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
     universe = [(fam, sym) for fam in families for sym in symbols] if families else None
     unconditional = compute_unconditional_block(events, attribution, episodes, universe=universe)
     support = build_support_coverage(events, attribution, episodes, bars, _feature_symbols())
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     _write_parquet(fire_metrics, output_dir / "fire_metrics_v1.parquet")

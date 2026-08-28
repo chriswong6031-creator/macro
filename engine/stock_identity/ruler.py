@@ -62,6 +62,8 @@ __all__ = [
     "GRAIN_CLASSES",
     "SUPPORT_COVERAGE_COLUMNS",
     "PendingSealedCalibrationError",
+    "MissingRankStratumColumnsError",
+    "UnconditionalBlockUniverseError",
     "RulerSpec",
     "grain_class",
     "episode_identifier",
@@ -153,6 +155,25 @@ class PendingSealedCalibrationError(RuntimeError):
     constants still carry the ``pending_sealed_calibration`` sentinel."""
 
 
+class MissingRankStratumColumnsError(RuntimeError):
+    """Raised by :func:`compute_composites` when ``spec.c_loc_d_rank_population``
+    requires stratum columns (``episode_type``/``grain``) that the cell-metrics
+    frame does not carry (M5-residual). The prior implementation silently fell
+    back to a GLOBAL rank across the whole cell population in this case, which
+    lets a cell's ``c_loc_d`` move whenever cells from an unrelated stratum are
+    added or removed — exactly the invariant the stratified rank exists to
+    guarantee. This function never substitutes that weaker computation; it
+    refuses instead."""
+
+
+class UnconditionalBlockUniverseError(ValueError):
+    """Raised by :func:`compute_unconditional_block` when the caller-supplied
+    ``universe`` omits an observed ``(family_key, symbol)`` pair (M10-minor).
+    The prior implementation's ``universe_df.merge(total, how="left")`` silently
+    DROPPED any such pair from the output — an incomplete universe declaration
+    must surface as an error, never a quiet omission."""
+
+
 # ---------------------------------------------------------------------------
 # RulerSpec
 # ---------------------------------------------------------------------------
@@ -167,6 +188,13 @@ class RulerSpec:
       ``false_start_atr_threshold``, ``episode_type_anchor``, ``grain_classes``) —
       sourced from ``si_constants_v1.json`` / ``episodes.py`` and never re-derived
       here.
+    * **A non-PR-3 structural field** (``c_loc_d_rank_population``) — frozen
+      alongside the geometry above (M5-residual), never part of the pending PR-3
+      constant family. Read by :func:`compute_composites` to decide the stratum
+      C-LOC-D's rank normalization is computed WITHIN; the only currently-defined
+      value is ``"episode_type_x_grain"``. Because it is carried in
+      :meth:`to_canonical_dict`, it is covered by :meth:`spec_hash` — changing it
+      changes the spec hash, exactly like any other frozen structural field.
     * **The PR-3 ruler-composite constant family** (``recall_floor``,
       ``lambda_fs``) — ``None`` with ``pr3_status == PR3_PENDING_SENTINEL`` until
       Task 3C's one-time sealed-calibration act sets them exactly once.
@@ -182,6 +210,7 @@ class RulerSpec:
     episode_type_anchor: Mapping[str, str]
     grain_classes: tuple[str, ...]
     graded_composites: tuple[str, ...]
+    c_loc_d_rank_population: str
     recall_floor: float | None
     lambda_fs: float | None
     pr3_status: str
@@ -204,6 +233,7 @@ class RulerSpec:
             "episode_type_anchor": dict(self.episode_type_anchor),
             "grain_classes": list(self.grain_classes),
             "graded_composites": list(self.graded_composites),
+            "c_loc_d_rank_population": self.c_loc_d_rank_population,
             "recall_floor": self.recall_floor,
             "lambda_fs": self.lambda_fs,
             "pr3_status": self.pr3_status,
@@ -233,6 +263,7 @@ class RulerSpec:
             episode_type_anchor=dict(geometry["episode_type_anchor"]),
             grain_classes=tuple(geometry["grain_classes"]),
             graded_composites=tuple(payload["graded_composites"]),
+            c_loc_d_rank_population=payload["c_loc_d_rank_population"],
             recall_floor=pr3.get("recall_floor"),
             lambda_fs=pr3.get("lambda_fs"),
             pr3_status=pr3["status"],
@@ -480,7 +511,11 @@ def compute_unconditional_block(
     ``total_fires=0, fires_per_name_year=0.0, episode_attribution_rate=NaN,
     no_coverage=True`` row instead of being silently omitted. When ``universe`` is
     ``None`` the function falls back to reporting only pairs observed in ``events``
-    (legacy behavior, still with ``no_coverage=False`` on every emitted row).
+    (legacy behavior, still with ``no_coverage=False`` on every emitted row). The
+    reverse direction (M10-minor) is also enforced: an observed
+    ``(family_key, symbol)`` pair present in ``events`` but absent from a
+    caller-supplied ``universe`` raises :class:`UnconditionalBlockUniverseError`
+    rather than being silently dropped from the output.
     """
     required = ("event_id", "family_key", "symbol")
     if events is None:
@@ -512,6 +547,26 @@ def compute_unconditional_block(
 
     if universe is not None:
         universe_df = pd.DataFrame(list(universe), columns=["family_key", "symbol"]).drop_duplicates()
+        # M10-minor: a `universe_df.merge(total, how="left")` keys off universe_df,
+        # so any observed (family_key, symbol) pair in `total` that the caller's
+        # universe omits is silently DROPPED from the output rather than surfaced —
+        # refuse before merging instead.
+        if not total.empty:
+            observed_pairs = set(
+                map(tuple, total[["family_key", "symbol"]].itertuples(index=False, name=None))
+            )
+            universe_pairs = set(
+                map(tuple, universe_df.itertuples(index=False, name=None))
+            )
+            missing = observed_pairs - universe_pairs
+            if missing:
+                preview = sorted(missing)[:10]
+                raise UnconditionalBlockUniverseError(
+                    f"{len(missing)} observed (family_key, symbol) pair(s) are absent "
+                    f"from the supplied universe and would be silently dropped: "
+                    f"{preview}{'...' if len(missing) > 10 else ''} — the caller's "
+                    "universe declaration is incomplete"
+                )
         out = universe_df.merge(total, on=["family_key", "symbol"], how="left")
     else:
         out = total.copy()
@@ -550,6 +605,7 @@ def aggregate_cell_metrics(
     fire_metrics: pd.DataFrame,
     episodes: pd.DataFrame,
     spec: RulerSpec,
+    events: pd.DataFrame,
     *,
     group_cols: Sequence[str] = ("family_key", "episode_type", "grain"),
 ) -> pd.DataFrame:
@@ -558,17 +614,23 @@ def aggregate_cell_metrics(
     ``recall_at_tier`` — of EVERY tier-eligible episode (tier <= 2, the "useful"
     episodes per ``episodes.py`` tier floors) in the ``episodes`` catalog that
     belongs to the cell's ``episode_type`` and lies within the cell's family's own
-    symbol coverage (every symbol that family has fired on anywhere, regardless of
-    grain/episode_type) — REGARDLESS of whether that episode ever received a fire
-    — the fraction that received at least one in-zone fire
-    (``|atr_dist| <= useful_zone_delta_atr``) from this cell. A cell whose eligible
-    episodes never fired at all still reports a defined ``0.0``, never ``NaN``
-    (freeze review finding B2 — the prior implementation counted only episodes
-    that already had a fire recorded, inflating recall for cells with silent
-    coverage gaps). ``zone_precision`` — of the cell's fires with a defined
-    ``atr_dist``, the fraction that landed in-zone. ``false_start_rate`` — mean of
-    the per-fire ``false_start`` flag over resolved (non-``None``) fires.
-    ``flooding`` — fires per eligible-episode useful-zone session
+    symbol coverage (every symbol that family FIRED an event on anywhere in
+    ``events`` — attributed or not, regardless of grain/episode_type) —
+    REGARDLESS of whether that episode ever received a fire — the fraction that
+    received at least one in-zone fire (``|atr_dist| <= useful_zone_delta_atr``)
+    from this cell. A cell whose eligible episodes never fired at all still
+    reports a defined ``0.0``, never ``NaN`` (freeze review finding B2 — the
+    prior implementation counted only episodes that already had a fire recorded,
+    inflating recall for cells with silent coverage gaps). The family's symbol
+    coverage universe is built from ``events`` (EVERY fire, attributed or not),
+    never from ``fire_metrics`` (freeze review finding B2-residual — a
+    fire_metrics-derived universe silently excludes a symbol where the family
+    fired but nothing ever attributed, since such a fire never produces a
+    fire_metrics row at all, which under-counts the recall denominator exactly
+    like the original B2 defect). ``zone_precision`` — of the cell's fires with a
+    defined ``atr_dist``, the fraction that landed in-zone. ``false_start_rate``
+    — mean of the per-fire ``false_start`` flag over resolved (non-``None``)
+    fires. ``flooding`` — fires per eligible-episode useful-zone session
     (``n_fires / (n_eligible * useful_zone_window_sessions)``), a size-invariant
     density read on noise (freeze review finding M7 — previously not normalized
     by the eligible-episode population, so cells with more coverage always read
@@ -582,12 +644,17 @@ def aggregate_cell_metrics(
     fm = fire_metrics.copy()
     fm["_in_zone"] = fm["atr_dist"].abs() <= spec.useful_zone_delta_atr
 
-    # Each family's own symbol coverage universe (every symbol it fired on
-    # anywhere), used to bound the eligible-episode population for B2/M7 below —
-    # never the outcome-rank of any name (DNR:KILL-OUTCOME-AUDITION).
-    family_symbol_universe: dict[Any, set[str]] = {
-        fam: set(sub_fam["symbol"].astype(str)) for fam, sub_fam in fm.groupby("family_key")
-    }
+    # Each family's own symbol coverage universe — every symbol that family FIRED
+    # an event on anywhere (attributed or not), used to bound the eligible-episode
+    # population for B2/M7 below — sourced from EVENTS (never fire_metrics, which
+    # is attributed-only and would silently drop a symbol a family fired on but
+    # never attributed into; B2-residual) and never the outcome-rank of any name
+    # (DNR:KILL-OUTCOME-AUDITION).
+    family_symbol_universe: dict[Any, set[str]] = {}
+    if events is not None and not events.empty:
+        family_symbol_universe = {
+            fam: set(sub_ev["symbol"].astype(str)) for fam, sub_ev in events.groupby("family_key")
+        }
 
     eps = episodes if episodes is not None else pd.DataFrame()
     eps_tier_eligible = pd.DataFrame()
@@ -700,18 +767,36 @@ def compute_composites(metrics: pd.DataFrame, spec: RulerSpec) -> pd.DataFrame:
     out = metrics.copy()
     out["c_loc_r"] = out["recall_at_tier"] * out["zone_precision"] - spec.lambda_fs * out["false_start_rate"]
 
-    # M5: rank-normalize WITHIN each (episode_type, grain) stratum — a cell's
-    # C-LOC-D must never move because unrelated strata's cells were added/removed
-    # (frozen population choice: ruler_spec_v1.json.c_loc_d_rank_population ==
-    # "episode_type_x_grain"; see W3_RULER_REGISTRATION.md).
-    if "atr_dist_median_in_zone" in out.columns and {"episode_type", "grain"} <= set(out.columns):
+    # M5/M5-residual: rank-normalize WITHIN the stratum spec.c_loc_d_rank_population
+    # declares — a cell's C-LOC-D must never move because unrelated strata's cells
+    # were added/removed (frozen population choice, read from the spec itself —
+    # ruler_spec_v1.json.c_loc_d_rank_population == "episode_type_x_grain"; see
+    # W3_RULER_REGISTRATION.md). A missing stratum column REFUSES rather than
+    # silently falling back to a GLOBAL rank across the whole population (the
+    # prior implementation's `elif` branch) — that fallback is exactly the
+    # invariant-breaking computation the stratified rank exists to prevent.
+    if "atr_dist_median_in_zone" in out.columns:
         closer_is_better = -out["atr_dist_median_in_zone"]
-        ranked = closer_is_better.groupby(
-            [out["episode_type"], out["grain"]]
-        ).rank(pct=True, na_option="keep")
-    elif "atr_dist_median_in_zone" in out.columns:
-        closer_is_better = -out["atr_dist_median_in_zone"]
-        ranked = closer_is_better.rank(pct=True, na_option="keep")
+        if spec.c_loc_d_rank_population == "episode_type_x_grain":
+            if not {"episode_type", "grain"} <= set(out.columns):
+                raise MissingRankStratumColumnsError(
+                    "compute_composites: c_loc_d_rank_population="
+                    f"{spec.c_loc_d_rank_population!r} requires 'episode_type' and "
+                    "'grain' columns in the cell-metrics frame to rank WITHIN each "
+                    "stratum (freeze review finding M5) — refusing rather than "
+                    "silently falling back to a GLOBAL rank across the whole "
+                    "population, which would let a cell's c_loc_d move whenever "
+                    "cells from an unrelated stratum are added or removed."
+                )
+            ranked = closer_is_better.groupby(
+                [out["episode_type"], out["grain"]]
+            ).rank(pct=True, na_option="keep")
+        else:
+            raise ValueError(
+                "compute_composites: unsupported c_loc_d_rank_population "
+                f"{spec.c_loc_d_rank_population!r} (only 'episode_type_x_grain' is "
+                "currently defined)"
+            )
     else:
         ranked = pd.Series(np.nan, index=out.index)
     c_loc_d = ranked - spec.lambda_fs * out["false_start_rate"]

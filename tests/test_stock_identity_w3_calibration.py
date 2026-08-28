@@ -835,18 +835,18 @@ def test_rule_review_status_is_declared_pending_sol_rule_review():
 
 
 def test_rule_hashes_match_the_currently_committed_registration_values():
-    """LAMBDA_FS_RULE's text is untouched by this repair (its population wording
-    already matched the implementation), so its hash is unchanged. RECALL_FLOOR_RULE's
-    population-wording clause WAS corrected (MINORS: align rule-text population
-    wording with implementation) to name the actual n_episodes>0 predicate the
-    code has always applied -- a textual accuracy fix, not a rule-form change
-    (no computed value existed to void) -- so its hash necessarily changed and is
-    re-recorded in W3_RULER_REGISTRATION.md §3.1 alongside this pin."""
+    """RULE-TEXT ITEMS (delta-review repair pass): BOTH rule texts now name the
+    SECOND conjunct each function has always applied (a '.dropna()' on the
+    ranked column, distinct from the count filter alone) -- a textual accuracy
+    fix, not a rule-form change (no computed value existed to void), so both
+    hashes necessarily changed again and are re-recorded in
+    W3_RULER_REGISTRATION.md §3.1 (with every prior hash retained alongside,
+    same disclosure pattern as the earlier single re-pin)."""
     assert calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE) == (
-        "110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e"
+        "a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a"
     )
     assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
-        "671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69"
+        "c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969"
     )
 
 
@@ -909,6 +909,19 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
     assert not result.unavailable
     substrate_dir = tmp_path / "substrate"
     calib_replay.write_substrate(result, substrate_dir)
+
+    # B3-minor: the second barrier now checks the substrate's recorded cutoff
+    # against a FROZEN constants file (never a recomputation) -- point it at a
+    # fake si_constants_v1.json carrying exactly the cutoff THIS synthetic
+    # substrate actually recorded, so the harmonized check passes for this
+    # fully-synthetic partition/asof.
+    fake_constants_path = tmp_path / "si_constants_v1.json"
+    fake_constants_path.write_text(
+        json.dumps({"calibration_history_cutoff": result.provenance["recent_history_guard_cutoff"]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(calib_w3, "CALIBRATION_CONSTANTS_PATH", fake_constants_path)
+
     return substrate_dir
 
 
@@ -979,3 +992,118 @@ def test_dry_run_output_report_has_no_numeric_constant_values(monkeypatch, capsy
     assert report["status"] == "DRY_RUN_OK"
     assert report["recall_floor_value"] == "MASKED_DRY_RUN"
     assert report["lambda_fs_value"] == "MASKED_DRY_RUN"
+
+
+# ---------------------------------------------------------------------------
+# B3-minor: the second barrier compares against the frozen W1
+# calibration_history_cutoff constant, never a recomputation from whatever
+# (possibly narrower) symbol set this script happens to have bars loaded for.
+# ---------------------------------------------------------------------------
+def test_frozen_calibration_history_cutoff_reads_the_real_committed_constant():
+    """Sanity check against the real, committed si_constants_v1.json (no
+    monkeypatch) -- pins that the frozen source of truth is actually wired to
+    the committed W1 file, not merely to a test double."""
+    cutoff = calib_w3.frozen_calibration_history_cutoff()
+    assert cutoff == pd.Timestamp("2026-02-11")
+
+
+def test_main_refuses_when_recorded_cutoff_disagrees_with_frozen_constant(
+    monkeypatch, dry_run_substrate,
+):
+    """B3-minor discriminating test: the substrate's own recorded cutoff must
+    agree with the frozen W1 calibration_history_cutoff constant -- a real
+    disagreement (here, a deliberately wrong frozen constant) must still be
+    caught, exactly as a disagreement with a recomputed cutoff used to be."""
+    wrong_constants_path = dry_run_substrate.parent / "si_constants_wrong.json"
+    wrong_constants_path.write_text(
+        json.dumps({"calibration_history_cutoff": "1999-01-01"}), encoding="utf-8",
+    )
+    monkeypatch.setattr(calib_w3, "CALIBRATION_CONSTANTS_PATH", wrong_constants_path)
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibrate_w3.py",
+        "--substrate-dir", str(dry_run_substrate), "--dry-run",
+    ])
+    with pytest.raises(calib_replay.RecentHistoryGuardViolation):
+        calib_w3.main()
+
+
+def test_main_never_recomputes_cutoff_from_episodes_only_symbol_set():
+    """Named regression: the second barrier must not call
+    scripts.stock_identity_calibration_replay.recent_history_cutoff (the prior
+    implementation's symbol-set-dependent recomputation) anywhere in its own
+    source -- the harmonized check reads only frozen_calibration_history_cutoff
+    (si_constants_v1.json)."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    assert "recent_history_cutoff(" not in src
+    assert "frozen_calibration_history_cutoff()" in src
+
+
+# ---------------------------------------------------------------------------
+# M8-minor: the receipt-inclusive hash is named/asserted distinctly from the
+# receipt-exclusive spec_hash_after_seal
+# ---------------------------------------------------------------------------
+def test_main_prints_sealed_spec_receipt_hash_not_sealed_spec_hash():
+    """Named regression pinning the M8-minor rename: the OLD field name
+    'sealed_spec_hash' must never appear in source, and the new name must."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    assert '"sealed_spec_hash"' not in src
+    assert '"sealed_spec_receipt_hash"' in src
+
+
+def test_registration_append_failure_prints_recovery_message_and_reraises(
+    monkeypatch, tmp_path, dry_run_substrate, throwaway_spec,
+):
+    """M8-minor, end-to-end: on a registration-append failure AFTER a
+    successful seal, the real (non-dry-run) main() must (1) leave the seal
+    durably committed to the throwaway ruler_spec_v1.json (never attempt to
+    unseal), (2) print a recovery message naming that durable receipt, and (3)
+    still propagate the append failure to the caller."""
+    from engine.trial_ledger import TrialLedger as RealTrialLedger
+
+    monkeypatch.setattr(
+        calib_w3, "TrialLedger",
+        lambda family: RealTrialLedger(path=tmp_path / "throwaway_trial_ledger.jsonl", family=family),
+    )
+
+    def _boom(receipt):
+        raise OSError("simulated disk failure")
+
+    monkeypatch.setattr(calib_w3, "append_seal_receipt_to_registration", _boom)
+    monkeypatch.setattr(sys, "argv", [
+        "stock_identity_calibrate_w3.py",
+        "--substrate-dir", str(dry_run_substrate),
+    ])
+
+    import io
+    import contextlib
+
+    captured = io.StringIO()
+    with contextlib.redirect_stdout(captured):
+        with pytest.raises(OSError):
+            calib_w3.main()
+
+    stdout = captured.getvalue()
+    assert "::warning" in stdout
+    assert "ruler_spec_v1.json" in stdout
+    assert "pr3.receipt" in stdout
+    assert "do NOT attempt to unseal" in stdout
+
+    from engine.stock_identity.ruler import RulerSpec
+    assert RulerSpec.from_json(calib_w3.SPEC_PATH).pr3_pending is False
+
+
+# ---------------------------------------------------------------------------
+# DOC ITEM: the dry-run computation-succeeded proof is an explicit raise, not a
+# bare `assert` (which python -O strips)
+# ---------------------------------------------------------------------------
+def test_dry_run_computation_proof_is_not_a_bare_assert():
+    """Named regression: a bare `assert isinstance(...)` is stripped entirely
+    under `python -O`, silently removing the proof that the dry-run computation
+    actually succeeded. The dry-run branch must use an explicit
+    if/raise instead."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    start = src.index("if args.dry_run:")
+    end = src.index("ledger = TrialLedger(")
+    branch = src[start:end]
+    assert "assert isinstance(recall_floor, float)" not in branch
+    assert "raise TypeError(" in branch

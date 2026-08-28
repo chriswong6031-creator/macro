@@ -48,7 +48,6 @@ from scripts.stock_identity_calibration_replay import (  # noqa: E402
     assert_disjoint_from_pilot_and_blind,
     assert_recent_history_guard,
     drawn_roster,
-    recent_history_cutoff,
     truncate_to_guard,
 )
 
@@ -57,6 +56,10 @@ RULER_DIR = DATA / "ruler"
 SPEC_PATH = RULER_DIR / "ruler_spec_v1.json"
 REPLAY_MANIFEST_PATH = RULER_DIR / "calibration_replay_manifest_v1.json"
 REGISTRATION_PATH = REPO_ROOT / "research" / "stock_identity" / "W3_RULER_REGISTRATION.md"
+#: B3-minor: the single frozen source of truth for the recent-history guard
+#: cutoff. Monkeypatchable (like SPEC_PATH/REPLAY_MANIFEST_PATH above) for tests
+#: that build a fully synthetic partition/asof.
+CALIBRATION_CONSTANTS_PATH = DATA / "constants" / "si_constants_v1.json"
 
 TRIAL_FAMILY = "stock_identity_w3_ruler_calibration"
 
@@ -83,43 +86,59 @@ RULE_REVIEW_STATUS = "declared_pending_sol_rule_review"
 #: --- rule-before-value: the exact selection rule for each PR-3 constant, declared
 #: as frozen text BEFORE any value exists. Hashing this string is what proves the
 #: rule predates the value (the hash is recorded in the registration in Step 2,
-#: before Step 4/5 ever run against partition data). UNCHANGED by this repair
-#: (status: declared_pending_sol_rule_review, RULE_REVIEW_STATUS above). The
-#: SELECTION MATH (P25 of recall_at_tier, rounded to 0.05) is unchanged by this
-#: repair. The population-wording clause below WAS corrected (MINORS finding:
-#: "align rule-text population wording with implementation") to name the exact
-#: predicate ``compute_recall_floor`` has always applied
-#: (``cells["n_episodes"] > 0`` — a cell with at least one FIRE, per
-#: ``aggregate_cell_metrics``' own fired-episode count) rather than the prior
-#: prose's inaccurate "tier-eligible episode" description (that population is a
-#: DIFFERENT, unrelated quantity — B2's fix to recall_at_tier's own denominator).
-#: This is a textual accuracy fix, not a rule-form change: no computed value
-#: exists yet to void, and the corrected text describes the SAME code path that
-#: has run unchanged throughout. Its hash necessarily changed and is re-recorded
-#: in W3_RULER_REGISTRATION.md §3.1.
+#: before Step 4/5 ever run against partition data). UNCHANGED by the RULE FORM —
+#: only the disclosed TEXT changes here (status: declared_pending_sol_rule_review,
+#: RULE_REVIEW_STATUS above). The SELECTION MATH (P25 of recall_at_tier / inverse
+#: P75 of false_start_rate, each rounded to its own grid) is unchanged by either
+#: repair pass. The §4 repair pass corrected the population-wording clause once
+#: (MINORS finding: "align rule-text population wording with implementation") to
+#: name the ``n_episodes > 0`` / ``n_fires > 0`` predicate each function has
+#: always applied, rather than the prior prose's inaccurate "tier-eligible
+#: episode" description (a DIFFERENT, unrelated quantity — B2's fix to
+#: recall_at_tier's own denominator). The delta-review repair pass below
+#: corrects it a SECOND time (RULE-TEXT ITEMS finding) to name BOTH conjuncts
+#: each function has always applied: the count filter above AND the implicit
+#: ``.dropna()`` on the ranked column itself (a cell can satisfy the count
+#: filter yet still carry a NaN ``recall_at_tier``/``false_start_rate``, so the
+#: dropna is a genuine SECOND filter, not a restatement of the first). Both are
+#: textual accuracy fixes, not rule-form changes: no computed value exists yet
+#: to void, and the corrected text describes the SAME code path that has run
+#: unchanged throughout both passes. Each hash necessarily changed again and is
+#: re-recorded in W3_RULER_REGISTRATION.md §3.1 with the prior hash retained
+#: alongside it (same disclosure pattern as the first re-pin).
 RECALL_FLOOR_RULE = (
     "recall_floor = the 25th percentile (P25) of the cell-level recall_at_tier "
     "distribution, computed over every (family_key, episode_type, grain) cell in "
-    "the calibration-fire substrate for which n_episodes > 0 (aggregate_cell_metrics' "
-    "own count of that cell's distinct FIRED episodes -- i.e. a cell with at least "
-    "one fire; this is the population filter compute_recall_floor has always "
-    "applied via cells['n_episodes'] > 0, and is a DIFFERENT quantity from the "
-    "tier-eligible-episode set recall_at_tier's own denominator is computed over), "
-    "rounded to the nearest 0.05. A cell below this floor is judged too rarely "
-    "localized for C-LOC-D to be graded. The rule references only the POPULATION "
-    "of measured cells and never any expert's own outcome rank "
-    "(DNR:KILL-OUTCOME-AUDITION)."
+    "the calibration-fire substrate satisfying BOTH conjuncts compute_recall_floor "
+    "has always applied: (1) n_episodes > 0 (aggregate_cell_metrics' own count of "
+    "that cell's distinct FIRED episodes -- i.e. a cell with at least one fire; "
+    "this is a DIFFERENT quantity from the tier-eligible-episode set "
+    "recall_at_tier's own denominator is computed over), AND (2) a DEFINED "
+    "(non-NaN) recall_at_tier value (compute_recall_floor's own pandas "
+    "'.dropna()' on the recall_at_tier column -- a cell can satisfy (1) yet "
+    "still carry a NaN recall_at_tier if none of its family's episodes in that "
+    "episode_type/coverage are tier-eligible, so this is a genuine second "
+    "filter, never a restatement of (1)), rounded to the nearest 0.05. A cell "
+    "below this floor is judged too rarely localized for C-LOC-D to be graded. "
+    "The rule references only the POPULATION of measured cells and never any "
+    "expert's own outcome rank (DNR:KILL-OUTCOME-AUDITION)."
 )
 
 LAMBDA_FS_RULE = (
     "lambda_fs = 1 / max(P75(false_start_rate), 0.01), rounded to the nearest 0.25, "
     "where P75(false_start_rate) is the 75th percentile of the cell-level "
     "false_start_rate distribution computed over every (family_key, episode_type, "
-    "grain) cell in the calibration-fire substrate with at least one fire. The "
-    "penalty scale is calibrated so a cell at the empirical P75 false-start rate "
-    "loses approximately one full composite point. The rule references only the "
-    "POPULATION distribution of false_start_rate and never any expert's own "
-    "outcome rank (DNR:KILL-OUTCOME-AUDITION)."
+    "grain) cell in the calibration-fire substrate satisfying BOTH conjuncts "
+    "compute_lambda_fs has always applied: (1) n_fires > 0 (at least one fire), "
+    "AND (2) a DEFINED (non-NaN) false_start_rate value (compute_lambda_fs's own "
+    "pandas '.dropna()' on the false_start_rate column -- a cell can satisfy (1) "
+    "yet still carry a NaN false_start_rate if every one of its fires lacks a "
+    "resolved false_start flag, e.g. no anchor, so this is a genuine second "
+    "filter, never a restatement of (1)). The penalty scale is calibrated so a "
+    "cell at the empirical P75 false-start rate loses approximately one full "
+    "composite point. The rule references only the POPULATION distribution of "
+    "false_start_rate and never any expert's own outcome rank "
+    "(DNR:KILL-OUTCOME-AUDITION)."
 )
 
 #: The declared ±20% diagnostic sensitivity grid (Step 3) — registered in the
@@ -231,6 +250,7 @@ def _fixture_spec_for_computation(atr_basis, p_pre, w, delta, theta_fs, anchor_m
         p_pre_sessions=p_pre, useful_zone_window_sessions=w, useful_zone_delta_atr=delta,
         false_start_atr_threshold=theta_fs, episode_type_anchor=anchor_map,
         grain_classes=GRAIN_CLASSES, graded_composites=("c_loc_r", "c_loc_d"),
+        c_loc_d_rank_population="episode_type_x_grain",
         recall_floor=None, lambda_fs=None, pr3_status="internal_calibration_pass",
         pr3_receipt=None,
         authority={"can_rank": False, "can_size": False, "can_gate": False,
@@ -251,7 +271,7 @@ def compute_constants_from_substrate(
         base_spec.episode_type_anchor,
     )
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars_by_symbol, calc_spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, calc_spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, calc_spec, events)
     recall_floor = compute_recall_floor(cells)
     lambda_fs = compute_lambda_fs(cells)
     return recall_floor, lambda_fs, cells
@@ -418,6 +438,23 @@ def build_dry_run_report(
     }
 
 
+def frozen_calibration_history_cutoff() -> pd.Timestamp:
+    """B3-minor: the single frozen source of truth for the W3A recent-history
+    guard cutoff — ``si_constants_v1.json``'s ``calibration_history_cutoff``,
+    computed ONCE at partition-build time
+    (``scripts/stock_identity_build_atlas.py``:
+    ``CALIBRATION_LOOKBACK_SESSIONS`` (126) sessions before ``asof``, on the
+    canonical market calendar built there — never re-derived here from whatever
+    narrower symbol set (e.g. only symbols that produced an episode, as the
+    prior second-barrier implementation did via ``_load_substrate_bars``) a
+    later reader happens to have bars loaded for. Two different symbol sets can
+    silently disagree on the 126th-trading-session-back date purely from
+    calendar composition, which would falsely accuse a genuinely-correct
+    substrate of a guard violation it never committed."""
+    values = json.loads(CALIBRATION_CONSTANTS_PATH.read_text(encoding="utf-8"))
+    return pd.Timestamp(values["calibration_history_cutoff"])
+
+
 def _load_substrate_bars(episodes: pd.DataFrame, asof: pd.Timestamp) -> dict[str, pd.DataFrame]:
     from engine.stock_identity.plane import load_symbol
 
@@ -473,18 +510,13 @@ def main() -> int:
             if not bool(df["calibration_substrate"].all()):
                 raise ValueError(f"{name}: not every row is stamped calibration_substrate=True")
 
-    asof = pd.Timestamp(_partition_manifest()["asof"])
-    bars_by_symbol = _load_substrate_bars(episodes, asof)
-
-    calendar = pd.DatetimeIndex(sorted({d for df in bars_by_symbol.values() for d in df.index}))
-    cutoff = recent_history_cutoff(asof, calendar, guard_sessions=126)
-    bars_by_symbol = truncate_to_guard(bars_by_symbol, cutoff)
-
-    # B3: the second barrier — checked against the substrate's OWN provenance
-    # fields (never a freshly self-truncated bars copy). The independently
-    # recomputed cutoff (from this run's own asof/calendar) must agree with what
-    # the substrate act itself recorded, and the substrate's actual events/
-    # episodes (as loaded, not re-derived) must obey that cutoff.
+    # B3-minor: the second barrier — checked against the substrate's OWN
+    # provenance fields (never a freshly self-truncated bars copy) AND against
+    # the single frozen W1 source of truth (si_constants_v1.json's
+    # calibration_history_cutoff), never recomputed from whatever narrower
+    # symbol set this script happens to have bars loaded for (that used to be
+    # only the symbols present in `episodes`, which can silently disagree with
+    # the substrate's own recorded cutoff purely from calendar composition).
     recorded_cutoff_str = provenance.get("recent_history_guard_cutoff")
     if not recorded_cutoff_str:
         raise RecentHistoryGuardViolation(
@@ -492,13 +524,21 @@ def main() -> int:
             "to compute any PR-3 value without provenance proving the guard held"
         )
     recorded_cutoff = pd.Timestamp(recorded_cutoff_str)
-    if recorded_cutoff != cutoff:
+    frozen_cutoff = frozen_calibration_history_cutoff()
+    if recorded_cutoff != frozen_cutoff:
         raise RecentHistoryGuardViolation(
-            f"recomputed recent-history cutoff {cutoff.date()} does not match the "
-            f"substrate provenance's recorded cutoff {recorded_cutoff.date()} — "
-            "refuse to compute any PR-3 value from a substrate whose guard clock "
-            "cannot be independently reproduced"
+            f"substrate provenance's recorded recent_history_guard_cutoff "
+            f"{recorded_cutoff.date()} does not match the frozen W1 "
+            f"calibration_history_cutoff constant {frozen_cutoff.date()} "
+            f"({CALIBRATION_CONSTANTS_PATH.name}) — refuse to compute any PR-3 "
+            "value from a substrate whose guard clock disagrees with the single "
+            "frozen source of truth"
         )
+    cutoff = frozen_cutoff
+
+    asof = pd.Timestamp(_partition_manifest()["asof"])
+    bars_by_symbol = _load_substrate_bars(episodes, asof)
+    bars_by_symbol = truncate_to_guard(bars_by_symbol, cutoff)
     assert_recent_history_guard(events, episodes, cutoff)
 
     base_spec = RulerSpec.from_json(SPEC_PATH)
@@ -517,7 +557,15 @@ def main() -> int:
         recall_floor, lambda_fs, cells = compute_constants_from_substrate(
             events, attribution, episodes, bars_by_symbol, base_spec,
         )
-        assert isinstance(recall_floor, float) and isinstance(lambda_fs, float)  # proves computation succeeded
+        # Explicit raise, not a bare `assert` (which python -O strips) — this is
+        # the proof that the dry-run computation actually succeeded, not an
+        # optional debugging aid.
+        if not (isinstance(recall_floor, float) and isinstance(lambda_fs, float)):
+            raise TypeError(
+                "compute_constants_from_substrate must return (float, float, "
+                f"DataFrame) — got recall_floor={type(recall_floor).__name__!r}, "
+                f"lambda_fs={type(lambda_fs).__name__!r}"
+            )
         report = build_dry_run_report(
             roster=roster, events=events, episodes=episodes, cells=cells, cutoff=cutoff,
         )
@@ -544,8 +592,41 @@ def main() -> int:
     print(json.dumps(receipt, indent=2, sort_keys=True, default=str), flush=True)
 
     sealed = seal_ruler_spec(recall_floor, lambda_fs, receipt=receipt)
-    append_seal_receipt_to_registration(receipt)
-    print(json.dumps({"sealed_spec_hash": sealed.spec_hash()}, indent=2), flush=True)
+    try:
+        append_seal_receipt_to_registration(receipt)
+    except Exception as exc:
+        # M8-minor recovery path: the seal ALREADY committed durably to
+        # ruler_spec_v1.json's pr3.receipt before this append was attempted —
+        # never attempt to unseal on an append failure. The human-readable
+        # registration line is fully reconstructible from that durable receipt
+        # at any later time via format_seal_receipt_markdown(receipt).
+        print(
+            "::warning title=si-w3a-registration-append-failed::the seal already "
+            "committed durably to ruler_spec_v1.json's pr3.receipt, but appending "
+            f"the registration line to {REGISTRATION_PATH.name} failed "
+            f"({type(exc).__name__}: {exc}) — do NOT attempt to unseal; the "
+            "registration line can be reconstructed at any time from "
+            "ruler_spec_v1.json's pr3.receipt via "
+            "format_seal_receipt_markdown(receipt)",
+            flush=True,
+        )
+        raise
+
+    # M8-minor: `sealed.spec_hash()` is the RECEIPT-INCLUSIVE hash of the spec
+    # exactly as written to disk (pr3.receipt embedded in the hashed payload) —
+    # distinct from the receipt's own `spec_hash_after_seal` field, which is the
+    # RECEIPT-EXCLUSIVE core hash (pr3_receipt projected to None by
+    # core_spec_hash, since the receipt cannot legally hash itself). Named
+    # `sealed_spec_receipt_hash` (not `sealed_spec_hash`) so a reader never
+    # confuses the two; the assertion below pins that they are, in fact,
+    # different hashes of different payloads.
+    sealed_spec_receipt_hash = sealed.spec_hash()
+    assert sealed_spec_receipt_hash != receipt["spec_hash_after_seal"], (
+        "the receipt-INCLUSIVE spec hash must differ from the receipt-EXCLUSIVE "
+        "spec_hash_after_seal — equality here would mean pr3.receipt is somehow "
+        "not actually part of the spec as written to disk"
+    )
+    print(json.dumps({"sealed_spec_receipt_hash": sealed_spec_receipt_hash}, indent=2), flush=True)
     return 0
 
 

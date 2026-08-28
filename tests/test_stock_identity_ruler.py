@@ -34,8 +34,10 @@ from engine.stock_identity.ruler import (
     SUPPORT_COVERAGE_COLUMNS,
     UNCONDITIONAL_BLOCK_COLUMNS,
     FORBIDDEN_OUTPUT_TOKENS,
+    MissingRankStratumColumnsError,
     PendingSealedCalibrationError,
     RulerSpec,
+    UnconditionalBlockUniverseError,
     aggregate_cell_metrics,
     build_support_coverage,
     compute_composites,
@@ -68,6 +70,7 @@ def _fixture_spec(**overrides) -> RulerSpec:
         },
         grain_classes=("daily", "weekly"),
         graded_composites=("c_loc_r", "c_loc_d"),
+        c_loc_d_rank_population="episode_type_x_grain",
         recall_floor=0.3,
         lambda_fs=0.5,
         pr3_status="fixture_only",
@@ -95,6 +98,28 @@ def test_shipped_spec_freezes_c_loc_d_rank_population_as_episode_type_x_grain():
     present even while pr3 stays pending)."""
     payload = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
     assert payload["c_loc_d_rank_population"] == "episode_type_x_grain"
+
+
+def test_ruler_spec_reads_c_loc_d_rank_population_from_json():
+    """M5-residual: the field must actually be READ by RulerSpec.from_json (the
+    prior implementation left it present in the JSON but never parsed it), so
+    RulerSpec.c_loc_d_rank_population reflects the shipped file's value."""
+    spec = RulerSpec.from_json(SPEC_PATH)
+    assert spec.c_loc_d_rank_population == "episode_type_x_grain"
+
+
+def test_c_loc_d_rank_population_is_carried_in_canonical_dict():
+    spec = _fixture_spec()
+    assert spec.to_canonical_dict()["c_loc_d_rank_population"] == "episode_type_x_grain"
+
+
+def test_c_loc_d_rank_population_change_changes_the_spec_hash():
+    """M5-residual: because the field is now carried in to_canonical_dict(), it
+    must be covered by spec_hash() — a spec differing ONLY in this field must
+    hash differently."""
+    a = _fixture_spec(c_loc_d_rank_population="episode_type_x_grain")
+    b = _fixture_spec(c_loc_d_rank_population="something_else")
+    assert a.spec_hash() != b.spec_hash()
 
 
 def test_ruler_spec_hash_is_stable():
@@ -446,9 +471,9 @@ def test_c_loc_d_refuses_rows_below_recall_floor():
     spec = _fixture_spec(recall_floor=0.4)
     row = pd.DataFrame([
         {"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
-         "atr_dist_median_in_zone": 0.3},
+         "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline", "grain": "daily"},
         {"recall_at_tier": 0.1, "zone_precision": 0.8, "false_start_rate": 0.1,
-         "atr_dist_median_in_zone": 0.2},
+         "atr_dist_median_in_zone": 0.2, "episode_type": "reset_decline", "grain": "daily"},
     ])
     out = compute_composites(row, spec)
     assert pd.notna(out.loc[0, "c_loc_d"])
@@ -466,10 +491,32 @@ def test_compute_composites_refuses_while_pr3_is_pending():
 def test_compute_composites_output_columns_closed_to_two_graded():
     spec = _fixture_spec()
     row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
-                          "atr_dist_median_in_zone": 0.3}])
+                          "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline",
+                          "grain": "daily"}])
     out = compute_composites(row, spec)
     assert set(spec.graded_composites) <= set(out.columns)
     assert "c_loc_r" in out.columns and "c_loc_d" in out.columns
+
+
+# ---------------------------------------------------------------------------
+# M5-residual: missing stratum columns REFUSE rather than silently falling back
+# to a global rank
+# ---------------------------------------------------------------------------
+def test_compute_composites_raises_on_missing_stratum_columns():
+    spec = _fixture_spec()
+    row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
+                          "atr_dist_median_in_zone": 0.3}])  # no episode_type/grain
+    with pytest.raises(MissingRankStratumColumnsError):
+        compute_composites(row, spec)
+
+
+def test_compute_composites_raises_on_unsupported_rank_population():
+    spec = _fixture_spec(c_loc_d_rank_population="some_other_stratum")
+    row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
+                          "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline",
+                          "grain": "daily"}])
+    with pytest.raises(ValueError):
+        compute_composites(row, spec)
 
 
 # ---------------------------------------------------------------------------
@@ -570,14 +617,22 @@ def test_recall_denominator_counts_eligible_episodes_regardless_of_fire():
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
     cell = cells.loc[
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
-    # AAA's reset_decline episode fired in-zone; BBB's reset_decline episode of
-    # the SAME type never fired at all but is tier-eligible and BBB is in fam.x's
-    # coverage (it fired a reclaim on BBB) -> denominator must include BOTH.
-    assert cell["recall_at_tier"] == pytest.approx(0.5)
+    # AAA's resolved reset_decline episode fired in-zone; AAA's OWN censored
+    # reset_decline episode and BBB's reset_decline episode of the SAME type
+    # never fired at all but are both tier-eligible, and BBB is in fam.x's
+    # coverage via its EVENTS (it fired a reclaim event on BBB -- B2-residual:
+    # this fixture's BBB reclaim attribution never actually resolves to a
+    # fire_metrics row due to an episode_index quirk in the fixture itself,
+    # which is exactly the "fired but never attributed" shape B2-residual
+    # exists to still count) -> denominator = 3 eligible episodes (AAA's two +
+    # BBB's one), only AAA's resolved one is recalled -> 1/3, never the 1/2 a
+    # fire_metrics-derived universe would have silently under-counted to by
+    # missing BBB.
+    assert cell["recall_at_tier"] == pytest.approx(1 / 3)
 
 
 def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
@@ -587,11 +642,87 @@ def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec)
+    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
     cell = cells.loc[
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
     assert cell["recall_at_tier"] != pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# B2-residual: family_symbol_universe is built from EVENTS (all fires,
+# attributed or not), never from fire_metrics (attributed-only)
+# ---------------------------------------------------------------------------
+def test_family_symbol_universe_uses_events_not_fire_metrics_b2_residual():
+    """Discriminating test for B2-residual: a symbol where a family FIRED but
+    NOTHING attributed must still enter that family's recall denominator via its
+    tier-eligible episodes. Old code (family_symbol_universe from fire_metrics,
+    which is attributed-only) would never see CCC at all here, since CCC never
+    produced a fire_metrics row — this test fails under that old behavior."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+        _episode_row(symbol="CCC", episode_type="reset_decline", start_date="2020-02-01"),
+    ])
+    # fam.x fired on CCC too, but that fire never attributed to any episode -- it
+    # has no row in fire_metrics (fm) above, only in events.
+    events = pd.DataFrame([
+        {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+         "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
+        {"event_id": "E2", "family_key": "fam.x", "symbol": "CCC",
+         "signal_known_ts": pd.Timestamp("2019-01-01"), "grain": "1D"},
+    ])
+    spec = _fixture_spec()
+    cells = aggregate_cell_metrics(fm, episodes, spec, events)
+    cell = cells.loc[
+        (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+    ].iloc[0]
+    # CCC's reset_decline episode enters the denominator (2 eligible episodes)
+    # even though CCC never contributed a fire_metrics row -- only AAA's episode
+    # is recalled -> 1/2, never 1/1 (the OLD fire_metrics-only universe result).
+    assert cell["recall_at_tier"] == pytest.approx(0.5)
+
+
+def test_family_symbol_universe_empty_when_events_is_empty():
+    """No events -> no family symbol coverage at all -> recall_at_tier is
+    undefined (NaN), never a fabricated value or a raise: with an empty
+    coverage universe there is no eligible-episode population to divide by."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    spec = _fixture_spec()
+    empty_events = pd.DataFrame(columns=["event_id", "family_key", "symbol", "signal_known_ts", "grain"])
+    cells = aggregate_cell_metrics(fm, episodes, spec, empty_events)
+    cell = cells.loc[
+        (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+    ].iloc[0]
+    assert pd.isna(cell["recall_at_tier"])
+
+
+# ---------------------------------------------------------------------------
+# M10-minor: compute_unconditional_block raises rather than silently dropping an
+# observed pair absent from a caller-supplied universe
+# ---------------------------------------------------------------------------
+def test_unconditional_block_raises_when_universe_omits_an_observed_pair():
+    events, attribution, episodes, bars = _three_episode_fixture()
+    with pytest.raises(UnconditionalBlockUniverseError):
+        # events/attribution observe (fam.x, AAA); universe omits it entirely.
+        compute_unconditional_block(events, attribution, episodes, universe=[("fam.other", "ZZZ")])
 
 
 def test_flooding_is_invariant_to_cell_size_at_equal_density():
@@ -631,8 +762,12 @@ def test_flooding_is_invariant_to_cell_size_at_equal_density():
     ])
     all_eps = pd.concat([small_eps, large_eps], ignore_index=True)
     spec = _fixture_spec()
+    events = pd.DataFrame({
+        "event_id": fm["event_id"], "family_key": fm["family_key"], "symbol": fm["symbol"],
+        "signal_known_ts": fm["signal_known_ts"], "grain": fm["grain"],
+    })
 
-    cells = aggregate_cell_metrics(fm, all_eps, spec)
+    cells = aggregate_cell_metrics(fm, all_eps, spec, events)
     small_cell = cells.loc[cells["family_key"] == "fam.small"].iloc[0]
     large_cell = cells.loc[cells["family_key"] == "fam.large"].iloc[0]
     assert small_cell["flooding"] == pytest.approx(large_cell["flooding"])

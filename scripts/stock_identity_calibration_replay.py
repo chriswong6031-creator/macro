@@ -483,6 +483,23 @@ def main() -> int:
         return 3
 
     write_substrate(result, args.output_dir)
+
+    # B3-minor: surface the guard-drop counters in the run's own stdout OK
+    # payload (they already lived in provenance_receipt.json, but a reader of
+    # the run's own console output had no visibility into them) and emit a
+    # line-start GitHub annotation when either is nonzero — bare `print` at line
+    # start, never through a logger (house law: a prefixing logger format makes
+    # GitHub silently drop the annotation).
+    n_events_dropped = result.provenance.get("n_events_dropped_by_recent_history_guard", 0)
+    n_episodes_censored = result.provenance.get("n_episodes_censored_by_recent_history_guard", 0)
+    if n_events_dropped or n_episodes_censored:
+        print(
+            f"::warning title=si-w3a-substrate-guard::recent-history guard dropped "
+            f"{n_events_dropped} event(s) and censored {n_episodes_censored} "
+            "episode(s) at the calibration cutoff",
+            flush=True,
+        )
+
     print(json.dumps({
         "schema": "stock_identity.w3_calibration_replay_result.v1",
         "status": "OK",
@@ -491,6 +508,8 @@ def main() -> int:
         "n_zero_fire": len(result.zero_fire),
         "n_events": int(len(result.events)) if result.events is not None else 0,
         "wall_seconds": result.wall_seconds,
+        "n_events_dropped_by_recent_history_guard": n_events_dropped,
+        "n_episodes_censored_by_recent_history_guard": n_episodes_censored,
     }, indent=2, sort_keys=True), flush=True)
     return 0
 
