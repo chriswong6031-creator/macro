@@ -348,6 +348,7 @@ def test_main_dispatch_freezes_parent_as_the_changed_from_base(monkeypatch) -> N
     assert result["tested_ref"] == tested
     assert result["tested_sha"] == tested
     assert result["base_sha"] == parent
+    assert result["head_ref"] == "main"
     assert result["contamination_sha"] == parent
 
 
@@ -371,6 +372,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": stale_api_base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -380,6 +382,8 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": tested_base,
@@ -394,6 +398,7 @@ def test_pr_dispatch_uses_the_fetched_merge_parent_when_api_base_is_stale(
     assert result["tested_sha"] == merge
     assert result["base_sha"] == tested_base
     assert result["head_sha"] == head
+    assert result["head_ref"] == "codex/ci-p3bb-production-route-6351"
     assert result["contamination_sha"] == tested_base
 
 
@@ -409,6 +414,7 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
             "merge_commit_sha": merge,
             "base": {"ref": "main", "sha": base},
             "head": {
+                "ref": "codex/ci-p3bb-production-route-6351",
                 "sha": head,
                 "repo": {"full_name": "mastermindx-market-intelligence/macro"},
             },
@@ -418,6 +424,8 @@ def test_pr_dispatch_requires_fetched_merge_sha_and_head_to_match_api(monkeypatc
     def fake_git(*args: str) -> str:
         if args[0] == "fetch":
             return ""
+        if args[0] == "check-ref-format":
+            return args[2]
         revisions = {
             "refs/ci-canary/pull/7/merge^{commit}": merge,
             f"{merge}^1": base,
@@ -498,6 +506,82 @@ def test_host_admission_accepts_only_the_main_dispatch_trusted_executor_pack() -
         assert not ADMISSION.decision(mutated)[0]
 
 
+def test_host_admission_accepts_only_main_gated_same_repo_pr_executor_pack(
+    tmp_path: Path,
+) -> None:
+    pr_number = "6505"
+    event_path = tmp_path / "event.json"
+    event_path.write_text(
+        json.dumps(
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    allowed = {
+        "MASTERMIND_CI_PROFILE": "pc-ci",
+        "GITHUB_REPOSITORY": "mastermindx-market-intelligence/macro",
+        "GITHUB_EVENT_NAME": "pull_request",
+        "GITHUB_REF": f"refs/pull/{pr_number}/merge",
+        "GITHUB_WORKFLOW_REF": (
+            "mastermindx-market-intelligence/macro/.github/workflows/"
+            f"ci.yml@refs/pull/{pr_number}/merge"
+        ),
+        "GITHUB_JOB": "trusted-pack",
+        "GITHUB_EVENT_PATH": str(event_path),
+    }
+    assert ADMISSION.decision(allowed)[0]
+    for key, value in (
+        ("GITHUB_EVENT_NAME", "workflow_dispatch"),
+        ("GITHUB_REF", "refs/pull/6506/merge"),
+        (
+            "GITHUB_WORKFLOW_REF",
+            "mastermindx-market-intelligence/macro/.github/workflows/rogue.yml@refs/pull/6505/merge",
+        ),
+        ("GITHUB_JOB", "rogue-pack"),
+        ("GITHUB_EVENT_PATH", str(tmp_path / "missing-event.json")),
+    ):
+        assert not ADMISSION.decision({**allowed, key: value})[0]
+
+    for name, payload in (
+        (
+            "fork.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "main"},
+                    "head": {"repo": {"full_name": "attacker/fork"}},
+                }
+            },
+        ),
+        (
+            "release-base.json",
+            {
+                "pull_request": {
+                    "base": {"ref": "release"},
+                    "head": {
+                        "repo": {
+                            "full_name": "mastermindx-market-intelligence/macro"
+                        }
+                    },
+                }
+            },
+        ),
+    ):
+        mutated_event = tmp_path / name
+        mutated_event.write_text(json.dumps(payload), encoding="utf-8")
+        assert not ADMISSION.decision(
+            {**allowed, "GITHUB_EVENT_PATH": str(mutated_event)}
+        )[0]
+
+
 def test_cache_update_disables_automatic_maintenance() -> None:
     script = (ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_cache_update.sh").read_text(
         encoding="utf-8"
@@ -541,6 +625,7 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
         ROOT / "ops" / "runner-host" / "common" / "runner_admission_hook.js"
     ).read_text(encoding="utf-8")
     assert 'spawnSync("/usr/bin/python3", ["-I", script]' in hook
+    assert '"GITHUB_EVENT_PATH"' in hook
     assert "process.env.PATH" not in hook
     assert "process.env.MASTERMIND_CI_PROFILE" not in hook
 

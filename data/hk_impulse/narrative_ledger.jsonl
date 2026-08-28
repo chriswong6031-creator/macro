@@ -159,3 +159,8 @@
 {"date": "2026-08-26", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": 0.325, "tone_pctile": 42.4, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-08-26", "ticker": "1810.HK", "slug": "xiaomi", "name_en": "Xiaomi", "attention_shock_z": 0.736, "tone_pctile": 31.8, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-08-26", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": -0.373, "tone_pctile": 98.8, "narrative_state": "tone_positive_shift", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-27", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": -0.588, "tone_pctile": 9.4, "narrative_state": "tone_negative_shift", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-27", "ticker": "0700.HK", "slug": "tencent", "name_en": "Tencent", "attention_shock_z": 2.53, "tone_pctile": null, "narrative_state": "attention_spike", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-27", "ticker": "9888.HK", "slug": "baidu", "name_en": "Baidu", "attention_shock_z": 0.991, "tone_pctile": 56.5, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-27", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.485, "tone_pctile": 10.6, "narrative_state": "tone_negative_shift", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-27", "ticker": "0981.HK", "slug": "smic", "name_en": "SMIC", "attention_shock_z": 0.489, "tone_pctile": 38.8, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}

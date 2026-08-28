@@ -2710,6 +2710,7 @@ jobs:
         run: >
           python -m pytest
           tests/test_prophet_live_pack.py
+          tests/test_prophet_live_pack_d12.py
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
@@ -3684,7 +3685,7 @@ jobs:
       - name: merge-gate reliability report contract
         run: python -m pytest tests/test_ci_gate_reliability_report.py -q
       - name: transitional self-hosted runner policy and canary contracts
-        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py -q
+        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_trusted_ci_executor_workflow.py tests/test_trusted_ci_production_route.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
@@ -5107,7 +5108,11 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py tests/test_warp_session_start_sparse.py tests/test_worktree_gc.py tests/test_worktree_placement.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          BRANCH="${{ github.head_ref }}"
+          # CI_HEAD_REF is the validated API identity published by the upgraded
+          # main-owned executor. GITHUB_HEAD_REF is the GitHub PR-event identity
+          # retained solely for the one-head bootstrap where the PR must still be
+          # proven by the pre-upgrade executor loaded from main.
+          BRANCH="${CI_HEAD_REF:-${GITHUB_HEAD_REF:-}}"
           TRAILERS=""
           FILES=""
           PARSE_RC=0
@@ -9662,6 +9667,15 @@ jobs:
       # extended in the step directly above.
       - name: W-L1 board-state surface (#5148)
         run: python -m pytest tests/test_wl1_board_state_surface.py -q
+      # US board freshness truth (PR-2, US Prophet permanence program, 2026-08-26).
+      # Rides this lane rather than a new job: it renders the same dashboard.html.j2
+      # organs every step above renders, needs no dependency this lane does not already
+      # install (jinja2 + pandas/plotly for the shared _env harness), and sits beside
+      # the W-L1 board-state surface it is a sibling of — board STATE above, board
+      # VINTAGE here.  Appended last so a board-state regression is still the first
+      # failure a reader sees.
+      - name: US board freshness truth — vintage stamp, card date, delayed banner
+        run: python -m pytest tests/test_us_board_freshness_truth.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -11759,7 +11773,15 @@ jobs:
         #   test_deploy_bootstrap_private.py   — no curl|bash raw bootstrap survives
         #   test_macro_anon_dependency_guard.py — the anonymous-Macro regression fence
         #   test_caddy_hub_boundary.py         — no public proxy path reaches /api/hub/*
-        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_caddy_hub_boundary.py -q
+        #
+        # test_prophet_surface_net.py (PR-1, Prophet US permanence net, 2026-08-27)
+        # rides here too, same reason: it pins the shared intake-identity predicate
+        # across all four watchdogs in this family (freshness_sentinel,
+        # check_nightly_liveness, prophet_rescue, the new prophet_board_acceptance),
+        # the lane-latch acceptance exemption, and the heartbeat write/grade round
+        # trip — unrun, the whole permanence net is decoration same as the invariants
+        # above.
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_caddy_hub_boundary.py tests/test_prophet_surface_net.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed

@@ -845,6 +845,18 @@
       "at": "2026-08-26T23:34:16.911528+00:00",
       "activated": false,
       "importance": 2
+    },
+    "https://www.whitehouse.gov/?p=49170": {
+      "id": "wh-2026-08-27-never-surrender-karoline-leavitts-historic-tenure-as-white-house-press-secretary",
+      "at": "2026-08-27T20:30:46.806302+00:00",
+      "activated": false,
+      "importance": 2
+    },
+    "https://www.whitehouse.gov/?p=49168": {
+      "id": "wh-2026-08-27-honoring-the-american-history-of-the-great-lakes-and-renaming-lake-ontario-as-la",
+      "at": "2026-08-27T20:31:11.050079+00:00",
+      "activated": false,
+      "importance": 8
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

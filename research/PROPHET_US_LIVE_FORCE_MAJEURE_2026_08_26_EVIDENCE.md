@@ -346,21 +346,40 @@ Journal evidence of contamination is unambiguous — tips landed on **Saturdays*
 So the mechanism is proven and the *source* of the ahead-dated bars is not
 identifiable from a clean pack. Naming a culprit today would be a guess.
 
-**Proposed repair (NOT built — needs an owner and a ruling).** `as_of_date`
-should refuse a tip that is not a completed NYSE session rather than propagate one
-series' MAX, using the calendar already imported by
-`live_states.last_completed_session`. This preserves the docstring's intent (a
-stale store still reports honestly stale) while making an impossible date
-unrepresentable. It is pinnable without a live reproduction:
+**D12 repair implemented — BUILT_NOT_PROVEN (2026-08-27).** Operation
+`prophet-us-d12-pack-tip-hardening-20260827-sol-001` confirmed the proposed direction
+but found one important correction: capping only `as_of_date` is insufficient.
+`armed_pack.session_lag()` intentionally returns zero when a name's last bar is at or
+ahead of the selected tip, so a contaminated name could still enter the signal gate
+even if the published stamp were repaired. The US pack owner now obtains the canonical
+`last_completed_session(now)` bound, quarantines any series whose FINAL index is a
+non-NYSE session, later than that bound, or malformed/NaT, and only then selects the
+raw pack tip and submits valid names to the gate. It never trims and reuses a bad
+series. Rejected names publish `skip=invalid_series_tip` as an explicit stale/non-
+verdict. Shared `engine/prophet_live/armed_pack.py` is unchanged, preserving CN calendar
+semantics and honest stale-store behavior.
 
-> feed `as_of_date` a series set in which one series' last bar is a Saturday and
-> assert the returned tip is the last **session**, not the Saturday.
+TDD/proof receipts:
 
-Deliberately not done in this program: it edits the nightly pack path, this
-session could not reproduce the trigger, and PR #6464 has already told Sol the
-defect needs an owner. PR #6464 makes it *visible* (`pack_ok` on `/api/status`,
-graded by the dead-man) so the next occurrence pages instead of silently darkening
-a session.
+- binding owner-bound RED `33068839608`: **5 failed / 2 passed** before the US
+  admission helpers existed; the two passes pinned the existing completion clock and
+  shared calendar-neutral `as_of_date` behavior;
+- committed-head GREEN `33069264975`: **8/8**;
+- mutation run `33069337428`: deleting only `not is_session(day)` made the
+  Saturday-before-bound case select `2026-08-01` instead of `2026-07-31`; mutation
+  killed;
+- cross-market run `33069685528`: **81/81** existing US + CN armed-pack tests;
+- hostile NaT RED `33069928015`: **1 failed / 8 passed** with a real
+  `TypeError: Cannot compare NaT with datetime.date object`;
+- one-line fail-closed repair committed as
+  `e2d612e4bd3b2dbddff4b25103c09aac3dc7434d`; apply run `33069998807` held **9/9**
+  before commit.
+
+This is not yet production acceptance. After merge/deploy, the first **natural** US
+pack/evaluator cycle must prove the canonical completion bound and pack stamp, explicit
+invalid-tip degradation if any exists, no global `stale_pack` darkness, and external
+`pack_ok=True`. Do not seed a bad production row merely to exercise the negative case,
+and do not manually dispatch `prophet-live.yml` while the VPS timer is primary.
 
 ---
 

@@ -1369,7 +1369,10 @@ def test_the_hosted_lane_is_github_hosted_and_cannot_be_queue_killed():
     assert spec["concurrency"]["cancel-in-progress"] is False, (
         "a responder a sibling wake can kill mid-dispatch is not a responder"
     )
-    assert {c["cron"] for c in triggers["schedule"]} == {"40 23 * * *", "40 0-13 * * *"}
+    # PR-1 (Prophet US permanence net, 2026-08-27): FULL 24h hourly coverage at
+    # :40, closing the 13:40Z->23:40Z hole the prior two-line schedule
+    # ("40 23 * * *" + "40 0-13 * * *") left open every day.
+    assert {c["cron"] for c in triggers["schedule"]} == {"40 * * * *"}
     assert "workflow_dispatch" in triggers
     run_steps = [s["run"] for s in job["steps"] if "run" in s]
     assert len(run_steps) == 1 and "scripts/prophet_rescue.py" in run_steps[0]

@@ -97,12 +97,16 @@ danger_areas:
   - "live/prophet_live.json has exactly two lawful writers (evaluator + close-pass mirror CAS). Nothing in this wave adds a third; keep it that way."
   - "Manual workflow_dispatch of prophet-live.yml BYPASSES the VPS_LIVE_PRIMARY gate. Never dispatch it while the VPS timer can still publish — that is two writers on one object."
   - "Persistent=false on macro-live-prophet.timer is load-bearing and now test-pinned; a reboot must not replay stale live moments."
-  - "The pack builder's as_of is the tip of the loaded close series (build_prophet_live_pack.py:167). It is VISIBLE now (pack_ok) but NOT repaired — it will recur."
+  - "D12 is BUILT_NOT_PROVEN on operation prophet-us-d12-pack-tip-hardening-20260827-sol-001: the US pack owner quarantines non-session, not-yet-completed, and malformed last bars before BOTH pack-tip selection and gate submission. Shared armed_pack/CN semantics are unchanged. Do not call this PROVEN_LIVE until the first natural post-merge US pack + evaluator/dead-man proof."
 next_actions: >
-  1) PRIMARY NEXT: assign D12 to one bounded owner and repair the armed-pack `as_of`
-     tip law so a non-session/same-day contaminated close cannot darken a whole future
-     session. Return to Sol with exact mutation proof and live-path evidence; do not
-     couple that repair to the recovered forward ledger.
+  1) PRIMARY NEXT: after the D12 carrier merges and reaches the natural production
+     pack path, hold the first US pack + live-evaluator proof. Require completed_through
+     = the canonical last completed NYSE session; pack as_of must be a real completed
+     session at or before that bound; any invalid_series_tip names must be explicit
+     non-verdicts; the evaluator must consume the pack without global stale_pack
+     darkness; and the external dead-man must report pack_ok=True. Do NOT manufacture a
+     contaminated production store merely to force the negative case, and do NOT
+     manually dispatch prophet-live.yml while the VPS timer is primary.
   2) INDEPENDENT OPERATOR AUDIT: attribute the 2026-08-26T07:43:28Z R2 credential
      seeding and record the carrier/operator provenance without rotating or rewriting
      working credentials merely to make the record tidy.
@@ -112,11 +116,11 @@ next_actions: >
      sessions.
 unverified:
   - "The 15m pass_ts / 25m quote thresholds held green across a live session but have not been observed against an early-close or DST-boundary session."
-  - "D12 remains unreproduced: the 2026-08-26 pack was clean (0 names ahead of as_of), so the mis-stamp mechanism is proven from code + journal but its upstream trigger is not identified."
+  - "The historical D12 contamination SOURCE remains unreproduced/unattributed: the 2026-08-26 pack was clean. The repair itself is discriminator-proven against Saturday, future-session, and NaT hostile inputs; no contaminated production store was manufactured for proof."
   - "153 of 294 recovered name-sessions carry entered=null. They only ever emitted forming/confirming_into_close, which occur on BOTH state-machine branches. Any analysis splitting crosses from board rows must treat that null bucket as unknown, not as cross."
 unresolved:
   - "Who seeded /etc/macro-live.env at 2026-08-26T07:43:28Z. It happened ~3 minutes before this session's first VPS connection, from this operator machine, with no PR or Agent OS record. Needs operator acknowledgement."
-  - "D12 ownership: the armed pack's as_of inherits the close-series tip (build_prophet_live_pack.py:167). Visible now via pack_ok; unrepaired and will recur."
+  - "D12 production acceptance: ownership and implementation are resolved on operation prophet-us-d12-pack-tip-hardening-20260827-sol-001, but capability state remains BUILT_NOT_PROVEN until the first natural post-merge pack/evaluator/dead-man proof described in next_actions."
   - "The 2026-07-30 tail after 17:20:56Z (~13:21-16:15 ET) is a partial lost session not classified R or D."
 ---
 

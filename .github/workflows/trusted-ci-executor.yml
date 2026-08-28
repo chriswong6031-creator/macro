@@ -68,11 +68,8 @@ jobs:
             echo "::error title=trusted-executor-repository::executor is repository-bound"
             exit 1
           }
-          trusted_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
-          test "$CALLED_WORKFLOW_REF" = "$trusted_workflow_ref" || {
-            echo "::error title=trusted-executor-definition::called workflow must be the exact main-owned executor"
-            exit 1
-          }
+          direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
@@ -83,11 +80,15 @@ jobs:
 
           case "$EVENT_NAME" in
             workflow_dispatch)
+              test "$CALLED_WORKFLOW_REF" = "$direct_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::direct workflow must be the exact main-owned executor"
+                exit 1
+              }
               test "$TRUSTED_REF" = refs/heads/main || {
                 echo "::error title=trusted-executor-ref::dispatch must use the main workflow definition"
                 exit 1
               }
-              test "$CALLER_WORKFLOW_REF" = "$trusted_workflow_ref" || {
+              test "$CALLER_WORKFLOW_REF" = "$direct_workflow_ref" || {
                 echo "::error title=trusted-executor-caller::dispatch must invoke the main-owned executor directly"
                 exit 1
               }
@@ -96,6 +97,10 @@ jobs:
               semantic_workflow=trusted-ci-executor
               ;;
             pull_request)
+              test "$CALLED_WORKFLOW_REF" = "$called_workflow_ref" || {
+                echo "::error title=trusted-executor-definition::called workflow must use the main branch definition"
+                exit 1
+              }
               test -z "$DISPATCH_PR_NUMBER" || {
                 echo "::error title=trusted-executor-input::a reusable call may not supply candidate identity"
                 exit 1
@@ -155,6 +160,7 @@ jobs:
       tested_sha: ${{ steps.ref.outputs.tested_sha }}
       base_sha: ${{ steps.ref.outputs.base_sha }}
       head_sha: ${{ steps.ref.outputs.head_sha }}
+      head_ref: ${{ steps.ref.outputs.head_ref }}
       control_sha: ${{ steps.control.outputs.sha }}
     steps:
       - name: checkout main-owned executor control code
@@ -164,6 +170,19 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 2
+          sparse-checkout: |
+            scripts/__init__.py
+            scripts/run_ci_pack.py
+            scripts/ci_semantic_proof.py
+            scripts/ci_authority_paths.py
+            scripts/ci_scope_dependencies.py
+            scripts/audit_unrun_tests.py
+            scripts/workflow_run_source.py
+            scripts/resolve_ci_canary_ref.py
+            scripts/select_ci_canary_packs.py
+            scripts/monitor_ci_host_resources.py
+            scripts/capture_ci_canary_receipt.py
+          sparse-checkout-cone-mode: false
       - id: control
         name: freeze the main-owned control SHA
         shell: bash
@@ -209,6 +228,16 @@ jobs:
           persist-credentials: false
           filter: blob:none
           fetch-depth: 0
+          # Preserve ci-plan's established semantic working-tree profile: omit
+          # only the generated-heavy trees, keep unknown new top-level trees,
+          # and bind omitted-path existence to the exact Git tree below.
+          sparse-checkout: |
+            /*
+            !/data/
+            !/site/
+            !/mockups/
+            !/verify_shots/
+          sparse-checkout-cone-mode: false
       - name: prove the planner is on the frozen candidate
         run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
       - uses: actions/setup-python@v5
@@ -218,6 +247,14 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/trusted-ci-plan-runner"
           "$RUNNER_TEMP/trusted-ci-plan-runner/bin/pip" install pyyaml
+      - name: bind exact tested-tree path inventory
+        env:
+          MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
+        run: >-
+          "$RUNNER_TEMP/trusted-ci-plan-runner/bin/python"
+          "$RUNNER_TEMP/trusted-ci-control/scripts/ci_scope_dependencies.py"
+          --write-tracked-paths "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1"
+          --tested-tree-sha "${{ steps.ref.outputs.tested_sha }}"
       - id: plan
         name: freeze one authoritative logical plan
         env:
@@ -235,6 +272,7 @@ jobs:
             --github-output "$GITHUB_OUTPUT" \
             --emit-plan-json "$RUNNER_TEMP/trusted-ci-plan/plan.json" \
             --emit-changed-files "$RUNNER_TEMP/trusted-ci-plan/changed-files.json" \
+            --tracked-paths-file "$RUNNER_TEMP/trusted-ci-tracked-paths/tracked-paths.v1" \
             --workflow-run-id "$GITHUB_RUN_ID" \
             --workflow-name "${{ needs.trust-gate.outputs.semantic_workflow }}" \
             --event "${{ github.event_name }}" \
@@ -348,6 +386,8 @@ jobs:
       - name: execute the frozen logical pack and retain its actual result
         env:
           CI_CHANGED_FILES_FILE: ${{ runner.temp }}/trusted-ci-plan/changed-files.json
+          CI_BASE_REF: ${{ github.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ needs.plan.outputs.head_ref }}
           MASTERMIND_TRUSTED_CI_REPO_ROOT: ${{ github.workspace }}
         shell: bash
         run: |

@@ -1,10 +1,10 @@
 {
   "schema": "altdata_track_record.v1",
-  "as_of": "2026-08-27",
+  "as_of": "2026-08-28",
   "scored_total": 100,
-  "open": 443,
+  "open": 442,
   "unscored_soft": 0,
-  "expired": 5,
+  "expired": 6,
   "overall": {
     "n": 100,
     "hits": 68,

@@ -866,6 +866,219 @@ def evaluate_market_boards(
     return fail, warn, facts
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# intake identity (shared predicate — DELIBERATELY DUPLICATED, never imported)
+# ─────────────────────────────────────────────────────────────────────────────
+# The SAME ~10-line predicate also lives in scripts/freshness_sentinel.py's
+# `prophet_us` SURFACES entry, scripts/prophet_rescue.py's NO_COHORT verdict, and
+# scripts/prophet_board_acceptance.py. Copied by hand, not factored into one
+# shared helper: this permanence net's entire point is a SECOND, INDEPENDENT
+# failure domain per instrument, and a bug in one shared copy would blind all
+# four watchdogs identically — the exact class of thing #5362 (one file, one bug,
+# every downstream instrument dark) taught this program to distrust.
+def intake_identity_breach(intake: object) -> "str | None":
+    """Breach reason(s) from site/prophet/index.json's ``intake`` block, or None
+    when it is healthy OR simply absent. Same three conditions everywhere this
+    predicate lives: ``lossless`` must be True, ``unaccounted`` must be 0, and a
+    positive ``eligible_after_skips`` must not coexist with ``originated == 0``
+    (the 2026-08-13 mixed-vintage wedge signature).
+
+    An entirely absent/non-dict ``intake`` ABSTAINS (returns None) rather than
+    breaching. Real production ``site/prophet/index.json`` always carries this
+    block, but this predicate is also exercised against older/synthetic index
+    fixtures that predate the field and exist to test unrelated behavior (Check
+    B/C's run-and-store logic) — those must not spuriously start failing the day
+    this check is added. A genuinely broken build that fails to write the intake
+    block at all is still caught: the SAME fixture will almost always also carry
+    a wrong/missing ``source_asof`` or an empty plan cohort, which the sibling
+    checks in this file (and cohort_size/intake_eligible in
+    scripts/prophet_rescue.py) already page on independently.
+    """
+    if not isinstance(intake, dict):
+        return None
+    reasons: list[str] = []
+    if "lossless" in intake and intake.get("lossless") is not True:
+        reasons.append(f"intake.lossless={intake.get('lossless')!r} (must be true)")
+    unaccounted = intake.get("unaccounted")
+    if (
+        isinstance(unaccounted, int)
+        and not isinstance(unaccounted, bool)
+        and unaccounted != 0
+    ):
+        reasons.append(f"intake.unaccounted={unaccounted} (must be 0)")
+    eligible = intake.get("eligible_after_skips")
+    originated = intake.get("originated")
+    if (
+        isinstance(eligible, int) and not isinstance(eligible, bool) and eligible > 0
+        and isinstance(originated, int) and not isinstance(originated, bool)
+        and originated == 0
+    ):
+        reasons.append(
+            f"intake.eligible_after_skips={eligible} but intake.originated=0"
+        )
+    return "; ".join(reasons) if reasons else None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# check E — the VPS sentinel's own heartbeat, graded from the GitHub failure domain
+# ─────────────────────────────────────────────────────────────────────────────
+# WHY. scripts/freshness_sentinel.py is itself a dead-man switch, but it lives
+# entirely OUTSIDE GitHub (a VPS timer) — so nothing in the GitHub failure domain
+# notices if THAT process stops. Check E closes that loop the other way: it reads
+# the one artifact the sentinel writes on every pass (/live/staleness.json, public,
+# no registration wall) and grades the sentinel's OWN clock, the same way the
+# sentinel grades everyone else's. A heartbeat this stale means the VPS-side
+# watchdog has gone quiet — the failure this whole permanence net exists to make
+# loud from a SECOND, independent domain.
+#
+# 3 missed cadences (90 min at the sentinel's 30-minute
+# app/deploy/macro-sentinel.timer), not 1: this check runs on GitHub's own */10
+# schedule sibling and a single missed sentinel pass (a slow VPS wake, a transient
+# network blip) must not page — the same "breach by the second miss" shape every
+# other budget in this family uses.
+SENTINEL_CADENCE_MINUTES = 30.0
+SENTINEL_HEARTBEAT_MAX_MISSED_CADENCES = 3.0
+STALENESS_JSON_URL = "https://www.mastermind-x.com/live/staleness.json"
+
+
+def fetch_staleness_json(timeout: float = 15.0) -> "dict | None":
+    """Check E's one anonymous GET. /live/staleness.json sits in the Caddy public
+    allowlist (freshness_sentinel.py itself serves it with no registration wall).
+    Any transport or parse failure -> None, which the caller reads as
+    INDETERMINATE — a DNS hiccup on a GitHub-hosted runner must never manufacture
+    an outage verdict about a VPS process it cannot otherwise see."""
+    req = urllib.request.Request(
+        STALENESS_JSON_URL, headers={"User-Agent": "macro-nightly-liveness/1.0"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            doc = json.loads(resp.read().decode("utf-8"))
+    except Exception:  # noqa: BLE001 — network/parse failure -> None (blind, not red)
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
+#: Sentinel default for ``evaluate(sentinel_heartbeat=...)``, distinct from a
+#: real ``None``. Every caller that never mentions Check E (virtually every
+#: existing test in this file, which predates PR-1 and exercises checks A-D)
+#: gets this default and Check E contributes NOTHING — not even a warning — to
+#: the report, so a pre-existing test's exact warnings-count assertion is not
+#: retroactively broken by adding a fifth check it never asked about. A real
+#: ``None`` (what ``main()`` passes when ``fetch_staleness_json()`` genuinely
+#: failed) DOES grade as Check E's own indeterminate — the distinction is
+#: "nobody asked" vs "we asked and it was unreadable", and only the second is
+#: this check's business to report.
+_HEARTBEAT_NOT_REQUESTED = object()
+
+
+def evaluate_sentinel_heartbeat(
+    doc: object, now: datetime
+) -> "tuple[list[str], list[str], dict]":
+    """Check E — pure grading of an already-fetched /live/staleness.json.
+
+    ``doc`` absent/unreadable, or carrying no usable clock, is INDETERMINATE
+    (blindness discipline, module docstring): the sentinel may be perfectly
+    healthy and only this runner's GET failed. Only a PARSED, over-budget
+    heartbeat is a fail_reason. Reads ``heartbeat.last_pass_utc`` (the field this
+    program's PR-1 adds to freshness_sentinel.py) and falls back to the report's
+    own top-level ``generated_at`` — present on every pass since long before the
+    heartbeat key existed — so an un-upgraded sentinel build still grades.
+
+    ``doc is _HEARTBEAT_NOT_REQUESTED`` (the caller never asked) contributes
+    NOTHING, not even a warning — see the constant's own comment.
+    """
+    fail: list[str] = []
+    warn: list[str] = []
+    facts: dict[str, Any] = {}
+    if doc is _HEARTBEAT_NOT_REQUESTED:
+        return fail, warn, facts
+    if not isinstance(doc, dict):
+        warn.append(
+            "CHECK E INDETERMINATE: /live/staleness.json unreadable — cannot grade "
+            "the VPS sentinel's own heartbeat"
+        )
+        return fail, warn, facts
+    heartbeat = doc.get("heartbeat")
+    last_pass = heartbeat.get("last_pass_utc") if isinstance(heartbeat, dict) else None
+    if not isinstance(last_pass, str) or not last_pass:
+        last_pass = doc.get("generated_at")
+    stamp = _parse_dt(last_pass) if isinstance(last_pass, str) else None
+    if stamp is None:
+        warn.append(
+            "CHECK E INDETERMINATE: /live/staleness.json carries no usable "
+            "heartbeat.last_pass_utc or generated_at field"
+        )
+        return fail, warn, facts
+    age_min = (now - stamp).total_seconds() / 60.0
+    facts["sentinel_heartbeat_age_minutes"] = round(age_min, 1)
+    budget_min = SENTINEL_CADENCE_MINUTES * SENTINEL_HEARTBEAT_MAX_MISSED_CADENCES
+    if age_min > budget_min:
+        fail.append(
+            f"SENTINEL HEARTBEAT STALE [Check E]: /live/staleness.json last pass "
+            f"{stamp.isoformat()} is {age_min:.0f} min old (budget {budget_min:.0f} "
+            "min = 3 sentinel cadences). The VPS-side dead-man sentinel "
+            "(scripts/freshness_sentinel.py, app/deploy/macro-sentinel.timer) "
+            "appears to have stopped running — its own death is otherwise invisible "
+            "from the GitHub failure domain."
+        )
+    return fail, warn, facts
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# lane-latch acceptance exemption — the board-acceptance step must always page
+# ─────────────────────────────────────────────────────────────────────────────
+# scripts/prophet_board_acceptance.py (daily.yml's engine job) prints
+# ``::error title=prophet-board-acceptance::…`` and exits nonzero on a breach, but
+# it runs under ``continue-on-error: true`` (it is an ALARM, never a GATE — see its
+# own module docstring), so a step-level failure there does not by itself flip the
+# run's overall conclusion. When some OTHER failure in the same run already makes
+# the LANE LATCH branch consider downgrading a red run to a quiet warning (source
+# advanced, so "the night's data is live, only a lane is red"), that downgrade must
+# not also swallow an acceptance red riding along in the same run — an internal
+# board-consistency alarm is exactly the kind of thing the latch's own quieting
+# logic was never meant to hide.
+ACCEPTANCE_STEP_MARKER = "prophet-board-acceptance"
+
+
+def fetch_run_jobs(repo: str, token: "str | None", run_id: object, *,
+                    timeout: float = 30.0) -> "list[dict] | None":
+    """Job list for one run — used ONLY to test the lane-latch acceptance
+    exemption, and only ever called for a single run (see its one caller), so it
+    costs at most one extra GitHub read per red wake. Any transport failure -> None
+    (the exemption then does not apply — see ``job_failed_at_acceptance_step``)."""
+    url = (
+        f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs?per_page=100"
+    )
+    req = urllib.request.Request(url, headers={
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "macro-nightly-liveness",
+        **({"Authorization": f"Bearer {token}"} if token else {}),
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+            payload = json.loads(resp.read())
+    except (urllib.error.URLError, TimeoutError, ValueError, OSError):
+        return None
+    jobs = payload.get("jobs")
+    return jobs if isinstance(jobs, list) else None
+
+
+def job_failed_at_acceptance_step(jobs: "list[dict] | None") -> bool:
+    """Whether any job's step list shows the board-acceptance step concluding
+    ``failure``. Total and fail-CLOSED toward "not proven": an absent/unreadable
+    job list, or a job list with no matching step, answers False — the exemption
+    must be POSITIVELY proven from a real annotation match, never assumed, so a
+    read failure here falls back to the latch's ordinary (pre-existing) behavior
+    rather than silently suppressing a real acceptance red."""
+    for job in jobs or []:
+        for step in (job or {}).get("steps") or []:
+            name = str((step or {}).get("name") or "").lower()
+            if ACCEPTANCE_STEP_MARKER in name and step.get("conclusion") == "failure":
+                return True
+    return False
+
+
 def evaluate(
     runs: "list[dict] | None",
     index: "dict | None",
@@ -873,8 +1086,18 @@ def evaluate(
     *,
     max_sessions_behind: int = MAX_SESSIONS_BEHIND,
     boards: "dict[str, dict | None] | None" = None,
+    sentinel_heartbeat: object = _HEARTBEAT_NOT_REQUESTED,
+    acceptance_failed: bool = False,
 ) -> dict:
-    """Pure verdict over the four checks.  See module docstring for the contract."""
+    """Pure verdict over checks A-E.  See module docstring for the contract.
+
+    ``sentinel_heartbeat`` is the already-fetched /live/staleness.json document
+    for check E (None when the caller never fetched it — that check then reads
+    as INDETERMINATE, same discipline as every other blind read here).
+    ``acceptance_failed`` is a precomputed fact (see
+    ``job_failed_at_acceptance_step``) rather than a live fetch, keeping this
+    function's own no-network/no-clock/no-filesystem contract intact.
+    """
     fail: list[str] = []
     warn: list[str] = []
     facts: dict[str, Any] = {}
@@ -983,6 +1206,16 @@ def evaluate(
     else:
         src = _parse_date(index.get("source_asof"))
         facts["source_asof"] = index.get("source_asof")
+        # Intake identity — the same predicate scripts/freshness_sentinel.py's
+        # prophet_us surface, scripts/prophet_rescue.py's NO_COHORT verdict, and
+        # scripts/prophet_board_acceptance.py each carry independently (see the
+        # comment above intake_identity_breach for why it is duplicated rather
+        # than shared). This can breach even when source_asof itself reads
+        # current — the store can advance while origination silently loses or
+        # miscounts candidates, which sessions_behind alone cannot see.
+        intake_breach = intake_identity_breach(index.get("intake"))
+        if intake_breach:
+            fail.append(f"INTAKE INTEGRITY: site/prophet/index.json {intake_breach}.")
         if src is None:
             warn.append(
                 f"INDETERMINATE: source_asof missing/unparseable "
@@ -992,16 +1225,35 @@ def evaluate(
             behind = sessions_behind(src, now)
             facts["sessions_behind"] = behind
             if no_success_detail is not None and src >= session:
-                # The 2026-08-13 shape: no run succeeded, but the store carries
-                # the owed session. The night's data is LIVE; only a lane is red.
-                warn.append(
-                    f"LANE LATCH: every {WORKFLOW_FILE} run since "
-                    f"{boundary.isoformat()} concluded without success "
-                    f"[{no_success_detail}], but source_asof already reads "
-                    f"{src.isoformat()} — the run-level conclusion is a "
-                    "single-lane latch, not a missing night. Investigate the red "
-                    "lane; do not re-bake."
-                )
+                if acceptance_failed:
+                    # The lane-latch exemption: a run that failed for some other
+                    # reason AND whose own board-acceptance step also failed must
+                    # not be quieted to a warning just because source_asof already
+                    # advanced. scripts/prophet_board_acceptance.py runs under
+                    # continue-on-error (it is an alarm, never a gate — see its
+                    # module docstring), so this is the path that keeps its red
+                    # from being swallowed by the exact "the data is live, only a
+                    # lane is red" reasoning the ordinary latch below exists for.
+                    fail.append(
+                        f"ACCEPTANCE FAILED: a {WORKFLOW_FILE} run since "
+                        f"{boundary.isoformat()} failed at its "
+                        f"{ACCEPTANCE_STEP_MARKER!r} step [{no_success_detail}] "
+                        f"even though source_asof already reads {src.isoformat()}. "
+                        "The lane-latch exemption applies: an internal board-"
+                        "acceptance red is never excused by the store having "
+                        "advanced — investigate the acceptance failure directly."
+                    )
+                else:
+                    # The 2026-08-13 shape: no run succeeded, but the store carries
+                    # the owed session. The night's data is LIVE; only a lane is red.
+                    warn.append(
+                        f"LANE LATCH: every {WORKFLOW_FILE} run since "
+                        f"{boundary.isoformat()} concluded without success "
+                        f"[{no_success_detail}], but source_asof already reads "
+                        f"{src.isoformat()} — the run-level conclusion is a "
+                        "single-lane latch, not a missing night. Investigate the "
+                        "red lane; do not re-bake."
+                    )
                 no_success_detail = None
             if baked and src < session:
                 # The sharp case.  A run for THIS session concluded success, so the
@@ -1064,6 +1316,12 @@ def evaluate(
     fail.extend(d_fail)
     warn.extend(d_warn)
     facts.update(d_facts)
+
+    # ── E. SENTINEL HEARTBEAT ────────────────────────────────────────────────
+    e_fail, e_warn, e_facts = evaluate_sentinel_heartbeat(sentinel_heartbeat, now)
+    fail.extend(e_fail)
+    warn.extend(e_warn)
+    facts.update(e_facts)
 
     return {
         "ok": not fail,
@@ -1497,6 +1755,10 @@ def main(argv: "list[str] | None" = None) -> int:
     parser.add_argument(
         "--site-root", type=Path, default=REPO_ROOT,
         help="offline: repo root the MARKET_BOARDS paths resolve against (check D)")
+    parser.add_argument(
+        "--staleness-json", type=Path,
+        help="offline: read the sentinel heartbeat doc from a file instead of "
+             "fetching /live/staleness.json (check E)")
     args = parser.parse_args(argv)
 
     if args.selftest:
@@ -1518,9 +1780,48 @@ def main(argv: "list[str] | None" = None) -> int:
     else:
         runs = fetch_runs(args.repo, os.environ.get("GITHUB_TOKEN"))
 
+    if args.staleness_json:
+        try:
+            heartbeat_doc = json.loads(args.staleness_json.read_text())
+        except (OSError, ValueError):
+            heartbeat_doc = None
+    elif args.runs_json:
+        # Offline mode (--runs-json, the existing convention for tests and the
+        # #5037-class local-repro workflow): must not silently reach the network
+        # for a check nothing asked about. _HEARTBEAT_NOT_REQUESTED means Check E
+        # contributes nothing (not even a warning) — the same "nobody asked"
+        # semantics evaluate()'s own default carries, so every pre-existing
+        # offline caller of main() keeps its exact warnings/fail_reasons shape.
+        heartbeat_doc = _HEARTBEAT_NOT_REQUESTED
+    else:
+        heartbeat_doc = fetch_staleness_json()
+
+    # Lane-latch acceptance exemption (check C / §2c): only worth the extra
+    # GitHub read when a run since the fire boundary actually failed to conclude
+    # with success — the ordinary healthy-night path never pays for it, and this
+    # is capped at exactly one jobs-API call per wake (the newest such run).
+    acceptance_failed = False
+    if runs is not None and not args.runs_json:
+        _, boundary_probe = expected_fire_after(now)
+        red_recent = [
+            r for r in runs
+            if (dt := _parse_dt(r.get("created_at"))) is not None
+            and dt >= boundary_probe
+            and r.get("status") == "completed"
+            and r.get("conclusion") != "success"
+        ]
+        if red_recent:
+            newest_red = max(red_recent, key=lambda r: r.get("created_at") or "")
+            jobs = fetch_run_jobs(
+                args.repo, os.environ.get("GITHUB_TOKEN"), newest_red.get("id")
+            )
+            acceptance_failed = job_failed_at_acceptance_step(jobs)
+
     report = evaluate(runs, load_index(args.index_json), now,
                       max_sessions_behind=args.max_sessions_behind,
-                      boards=load_market_boards(args.site_root))
+                      boards=load_market_boards(args.site_root),
+                      sentinel_heartbeat=heartbeat_doc,
+                      acceptance_failed=acceptance_failed)
 
     for line in report["warnings"]:
         print(f"::warning title=nightly-liveness::{line}", flush=True)

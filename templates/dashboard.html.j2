@@ -2393,13 +2393,61 @@
   <div class="panel span12" id="stocks-header">
     {% set _stk_hdr_su = us_standouts if (us_standouts is defined and us_standouts) else none %}
     {% set _stk_hdr_delayed = (_stk_hdr_su.get('staleness') or {}).get('delayed') if _stk_hdr_su else false %}
+    {#- ── THE BOARD'S ONE VINTAGE STAMP (2026-08-26, PR-2 of the US permanence program).
+        This chip used to read "Fresh 2026-08-25": a self-assessment plus an UNLABELLED
+        date. A bare date answers no question on its own, so the reader had to guess what
+        it was the date OF — and the nearest competing date on the page (the per-card
+        zone-row chip, now removed in _us_board_cards.html.j2) was a board-wide 3-session
+        signal-bucket constant four days older. On 2026-08-26 the older one was read as
+        the board's freshness and the board was declared five days stale while `as_of` had
+        in fact advanced every night.
+
+        The fix is to make the ONE authoritative stamp say what it is (DESIGN_DOCTRINE
+        Law 3 — a number on Tier 1 arrives with its interpretation; Law 4 — one as-of
+        stamp per panel). "Data through <as_of>" is the whole answer to "how fresh is
+        this?", and it needs no arithmetic to read.
+
+        The bare word "Fresh" is deliberately gone: the green dot already carries the
+        healthy state non-verbally, and a labelled date is a fact the reader can check
+        rather than a claim they must trust. The alarm side keeps its word — a delayed
+        board still says "Delayed" in text, because colour must never be the only carrier
+        of a warning.
+
+        ISO, not a prettified "Aug 25": this is the stamp a reader compares against
+        today's date, and it is the one the CN twin (china.html.j2 #stocks-header) also
+        prints, so the shared header family stays consistent.
+
+        The signal-bucket clock is NOT deleted, it is demoted to this chip's Tier-2 LENS
+        hover, which is where a board-level constant belongs. It is derived defensively:
+        the clause renders only when the whole board agrees on ONE signal date, so if a
+        future artifact ever makes signal.asof per-card, the sentence silently stops
+        rather than generalising one row's value to all of them. -#}
+    {%- set _sig_ns = namespace(vals=[]) -%}
+    {%- if _stk_hdr_su -%}
+      {%- for _r in ((_stk_hdr_su.get('buy') or []) + (_stk_hdr_su.get('watch') or [])) -%}
+        {%- set _v = (_r.get('signal') or {}).get('asof') -%}
+        {%- if _v and _v not in _sig_ns.vals %}{% set _sig_ns.vals = _sig_ns.vals + [_v] %}{% endif -%}
+      {%- endfor -%}
+    {%- endif -%}
+    {%- set _sig_asof = _sig_ns.vals[0] if (_sig_ns.vals | length) == 1 else none -%}
+    {%- set _vint_tip_en = 'The date is the last session this board has data for. Prices, buy zones and the ranking are rebuilt from scratch every session, so they are all as of this date.'
+         ~ (' Entry signals are re-scored on their own slower cycle; the current set dates from ' ~ _sig_asof ~ ', which is why a card can carry a signal older than the board.' if _sig_asof else '')
+         ~ (' A delayed board keeps showing its last good data rather than nothing — check a live quote before you act.' if _stk_hdr_delayed else '') -%}
+    {%- set _vint_tip_zh = '此日期是本榜单最后一个有数据的交易日。价格、买区和排序每个交易日都会完全重算，因此都截至该日期。'
+         ~ ('入场信号按各自较慢的周期重新评分，当前这一批的日期是 ' ~ _sig_asof ~ '，所以卡片上的信号可能比榜单更早。' if _sig_asof else '')
+         ~ ('数据延迟时，榜单会继续显示最后一批有效数据，而不是留空——操作前请先看一下实时报价。' if _stk_hdr_delayed else '') -%}
     <div class="stk-headline">
       <h1>{{ t('US Stocks', '美国股票') }}</h1>
       <div class="stk-head-meta">
-        <span class="stk-status{{ ' is-delayed' if _stk_hdr_delayed else '' }}">
+        <span class="stk-status{{ ' is-delayed' if _stk_hdr_delayed else '' }}"
+              {%- if _stk_hdr_su and _stk_hdr_su.get('as_of') %} data-tip-en="{{ _vint_tip_en|e }}" data-tip-zh="{{ _vint_tip_zh|e }}"{% endif %}>
           <span class="stk-fresh-dot" aria-hidden="true"></span>
+          {%- if _stk_hdr_su and _stk_hdr_su.get('as_of') %}
+          <span class="l-en">{{ 'Delayed · data through' if _stk_hdr_delayed else 'Data through' }}</span><span class="l-zh">{{ '已延迟 · 数据截至' if _stk_hdr_delayed else '数据截至' }}</span>
+          <strong>{{ _stk_hdr_su.as_of }}</strong>
+          {%- else %}
           <span class="l-en">{{ 'Delayed' if _stk_hdr_delayed else 'Fresh' }}</span><span class="l-zh">{{ '延迟' if _stk_hdr_delayed else '新鲜' }}</span>
-          {% if _stk_hdr_su and _stk_hdr_su.get('as_of') %}<strong>{{ _stk_hdr_su.as_of }}</strong>{% endif %}
+          {%- endif %}
         </span>
         <span class="stk-status"><span class="l-en">Regime</span><span class="l-zh">周期</span> <strong>{{ td(latest.quad_name) }}</strong></span>
         {% if pb and pb.dial %}<span class="stk-status"><span class="l-en">Posture</span><span class="l-zh">姿态</span> <strong>{{ td(pb.dial.posture) }}</strong></span>{% endif %}
@@ -15891,8 +15939,18 @@ html[data-theme="light"] :is(
     {#- publish-together fence: the per-card `Adjusted` mark and the receipt line it is a
         receipt FOR ship as one thing or not at all (spec §7 invariants). -#}
     {% set _bs_adj = (_bs.get('note') == 'confirmed') if _bs else false %}
+    {#- `data-board-asof` is the board's vintage in machine-readable form, on the board
+        container itself, so a monitor can grade the RENDERED page rather than inferring
+        freshness from the artifact it hoped the page was built from (2026-08-26, PR-2 of
+        the US permanence program). It is the same value the header chip prints in words,
+        read from the same key — one clock, two readers. `data-board-delayed` carries the
+        engine's own verdict alongside it so a monitor never has to re-derive "is this
+        late?" with client-side calendar arithmetic and mistake a weekend for an outage.
+        Both are absent when the board has no artifact, which is itself the honest signal. -#}
     <div class="panel span12 notable" id="us-standouts"
          data-prophet-src="{{ 'candidates' if _su else 'plans' }}"
+         {%- if _su and _su.get('as_of') %} data-board-asof="{{ _su.as_of|e }}"{% endif %}
+         {%- if _su and _su.get('staleness') %} data-board-delayed="{{ '1' if _su.staleness.get('delayed') else '0' }}"{% endif %}
          {%- if _bs and _bs.get('rel') %} data-boardstate="{{ _bs.rel }}"{% endif %}>
       <div class="pb-hdrow" style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <h2 style="margin:0">{{ t('Prophet Stock Signals', 'Prophet 选股') }}</h2>
