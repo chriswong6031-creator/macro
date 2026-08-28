@@ -1,0 +1,30 @@
+schema: mastermind.rig_approval.v1
+reference_id: entry-radar-w8
+approved_at: "2026-08-17"
+verdict: APPROVE_WITH_CONDITIONS
+artifact_sha: a8c763dc3dea094fb7c3201e5c3953b921b45464
+
+authority:
+  identity: "cursor-grok-w8-commission-5737"
+  role: design_authority
+
+reviewers:
+  - {identity: "opus-reviewer-w8-reattest-5737-A", role: product_regression}
+  - {identity: "opus-designer-w8-reattest-5737-B", role: visual_taste}
+
+author:
+  identity: "cursor-cloud-w8-entry-radar-9f9d"
+
+conditions:
+  - id: W9-COND-1
+    text: "Do not inherit 2.2px overlay-rail headroom at 1024; re-measure on the production font stack."
+  - id: W9-COND-2
+    text: "Production must run live P11 where Playwright exists; a skip is not a pass."
+  - id: W9-COND-3
+    text: "Do not emit the overlay Lifecycle axis span; omit it in production."
+  - id: W9-COND-4
+    text: "Choose one owner for the lifecycle glance word (overlay chip vs body line)."
+  - id: W9-COND-5
+    text: "Amber is not single-meaning; do not tell W9 VTC-304 was inherited."
+
+overrides: []
