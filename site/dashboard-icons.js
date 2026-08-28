@@ -192,13 +192,49 @@
   }
 }());
 
+/* Shared fail-soft stylesheet loader for the mx-stockdash composer family
+   (TP-1 theme-parity extraction, theme-parity-tp1-canada-20260828-sol-001).
+   Idempotent: a second caller either fires onReady immediately (stylesheet
+   already loaded) or queues behind the in-flight <link>'s own load event —
+   never a second <link> tag. A stylesheet load failure fails SOFT: onReady
+   is never called, so the composer that gates its injection on it never
+   mounts and the legacy page stays visible and functional. No cache stamp
+   is hand-authored here; the repository's existing asset-stamp/optimizer
+   process re-stamps this href after the asset exists. */
+function ensureStockDashCss(onReady) {
+  var id = "mx-stockdash-css";
+  var existing = document.getElementById(id);
+  if (existing && existing.getAttribute("data-ready") === "1") {
+    onReady();
+    return;
+  }
+  if (existing) {
+    existing.addEventListener("load", onReady, { once: true });
+    return;
+  }
+  var link = document.createElement("link");
+  link.id = id;
+  link.rel = "stylesheet";
+  link.href = "stock-dashboard.css";
+  link.onload = function () {
+    link.setAttribute("data-ready", "1");
+    onReady();
+  };
+  link.onerror = function () {
+    /* Fail soft: legacy page remains visible; composer is not injected. */
+  };
+  document.head.appendChild(link);
+}
+
 /* Canada Stock Dashboard V3.6 progressive composer. Strict no-op elsewhere.
    The asset is entitled-only (401 anonymous, served no-store), and the gate
    consults the auth backend per request — a transient 401/503 there used to
    strand an ENTITLED visitor on the legacy page until a manual reload
    (observed twice in the 2026-08-25 production acceptance). Bounded backoff
    retries cover that window; anonymous visitors still fail every attempt
-   quietly and keep the designed legacy fallback. */
+   quietly and keep the designed legacy fallback. TP-1: script injection is
+   now gated on ensureStockDashCss() so the composer never mounts unstyled —
+   the shared governed stylesheet must be ready first. */
 (function () {
   "use strict";
   if (!/(^|\/)canada_stocks\.html$/.test(location.pathname)) return;
@@ -216,7 +252,7 @@
     };
     (document.head || document.documentElement).appendChild(script);
   }
-  inject();
+  ensureStockDashCss(inject);
 }());
 
 /* HK Stock Dashboard V3.7 follower composer. Strict no-op elsewhere. Same

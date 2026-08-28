@@ -92,7 +92,7 @@ def test_canada_loader_gates_composer_on_shared_stylesheet_seam():
             f"{path.name}: the Canada composer's bounded retry no longer "
             "gates script injection on ensureStockDashCss()"
         )
-        seam = re.search(r"function ensureStockDashCss\b.*?\n  \}", text, re.S)
+        seam = re.search(r"function ensureStockDashCss\b.*?\n\}", text, re.S)
         assert seam, f"{path.name}: could not locate the ensureStockDashCss() body"
         seam_body = seam.group(0)
         assert "link.onload" in seam_body and "onReady" in seam_body, (
