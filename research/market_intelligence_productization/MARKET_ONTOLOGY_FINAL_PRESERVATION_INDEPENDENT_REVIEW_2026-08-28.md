@@ -44,8 +44,24 @@ public read-only state actually inspected.
 The remediation does not change the archive result: exact-byte recovery remains a
 prerequisite to any `SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS: YES` conclusion.
 
-## Follow-up acceptance requirement
+## Follow-up independent acceptance
 
-Re-run the independent artifact review against the remediation commit before merge.
-The reviewer must confirm that the packet now preserves known unknowns rather than
-turning advertised persistence into observed evidence.
+**Remediation reviewed head:** `60cceb7f5f59058aff21e1ad991433442d355fe3`
+
+```text
+STATUS: PASS
+RESULT: Zero new material preservation omissions found in the remediation packet.
+GAPS: None within the remediated artifact scope.
+SAFE_TO_LOSE_ACCESS: NO
+FIT_TO_MERGE: YES
+```
+
+The independent reviewer confirmed that every observation now distinguishes visible
+structure, offered action, action result/authentication boundary, transition contract,
+actual persistence status, and entitlement status. It found no remaining conversion of
+advertised persistence into observed evidence. Authenticated behavior, user-created
+persistence, live refresh, API responses, and entitlement outcomes remain explicit
+lawful future test gaps, rather than inferred evidence.
+
+The pass does not alter the archive gate: the exact-byte V5 CSV and JSON twin are
+still absent, so `SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS` remains `NO`.
