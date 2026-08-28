@@ -18,10 +18,12 @@ ambiguity: scoped
 waves:
   - id: R0
     title: Durable home and architecture freeze
-    status: in_progress
+    status: awaiting_ci
+    pr: 6596
     next_action: >
-      Land the records/research-only R0 carrier after exact-head validation and Sol
-      review. R0 creates no Executive Job and proves no Fable execution.
+      Sol reviews exact PR #6596 head after required hosted validation; only accepted
+      merge may make R0 durable on main. R0 creates no Executive Job and proves no
+      Fable execution.
   - id: R1
     title: P0 authority and imported-state identity
     status: todo
@@ -124,10 +126,11 @@ artifacts:
   - docs/superpowers/specs/2026-08-28-cross-repo-contract-governance-design.md
   - docs/superpowers/plans/2026-08-28-cross-repo-contract-governance-r0.md
   - research/CROSS_REPO_CONTRACT_GOVERNANCE_CURRENT_STATE_2026-08-28.md
+  - research/CROSS_REPO_CONTRACT_GOVERNANCE_R0_CARRIER_RECEIPT_2026-08-28.md
   - agentos/decisions/DEC-CROSS-REPO-CONTRACT-GOVERNANCE-FEDERATED-NO-RUNTIME.md
   - agentos/handoffs/CROSS-REPO-CONTRACT-GOVERNANCE-2026-08-28-fable-principal.md
 next_action: >
-  Complete and validate the single R0 records/research carrier. After R0 merges, reconcile
+  Complete exact-head validation and Sol review of PR #6596. After R0 merges, reconcile
   current runtime/transport state and establish one actual claimed Fable principal carrier
   for operation `crg-fable-principal-20260828-sol-001`; only then commission
   CRG-NW-AUTHORITY-V1 on a fresh stable child operation key.
