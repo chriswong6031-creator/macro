@@ -1,0 +1,29 @@
+{
+  "schema": "stock_identity.channel_a_constitution.v1",
+  "version": "v1",
+  "feature_subset": [
+    "f1_kaufman_er_252",
+    "f2_ulcer_252",
+    "f4_variance_ratio_k20_756",
+    "f5_realized_vol_63",
+    "f7_atr_dist_50dma_252"
+  ],
+  "functional_form": "additive_monotone",
+  "separately_preregistered_form_ref": null,
+  "p_eff_counting_rule": "one effective parameter per declared feature's own additive-monotone shape term (a single monotone transform of that feature contributes exactly 1 to p_eff); p_eff is the sum over the declared feature_subset of its declared shape-term count, never a fitted quantity. A richer per-feature shape (e.g. a spline with k knots) would declare k terms for that feature and requires the separately_preregistered_form_ref above to be non-null.",
+  "p_eff_terms": {
+    "f1_kaufman_er_252": 1,
+    "f2_ulcer_252": 1,
+    "f4_variance_ratio_k20_756": 1,
+    "f5_realized_vol_63": 1,
+    "f7_atr_dist_50dma_252": 1
+  },
+  "capacity_denominator": 10,
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false
+  }
+}
