@@ -103,8 +103,12 @@ def test_unchanged_compiler_refuses_googl_and_publishes_nothing() -> None:
         segments=segments,
     )
     assert result["status"] == "failed"
-    assert result["failure"]["code"] == "operator_intro_identity_unparsed"
-    assert result["failure"]["boundary_segment_index"] == 0
+    # Superseded reason, same E3-C outcome. The compiler no longer fails on GOOGL's
+    # vendor dialect -- TFG-1 R2 recovers all nine real question handoffs. It now
+    # refuses for an honest source reason instead: every GOOGL segment role is blank,
+    # so the answering executives have no same-revision role support.
+    assert result["failure"]["code"] == "unexpected_non_housekeeping_speaker"
+    assert result["failure"]["boundary_segment_index"] == 33
     assert result["exchanges"] == []
 
     # The publication gate is fail-closed: no workspace write, no typed absence
@@ -148,8 +152,15 @@ def test_googl_operator_intros_do_not_carry_the_go_ahead_boundary_cue() -> None:
         document_sha256=sha,
         segments=segments,
     )
-    # The generic detector therefore sees one boundary, and it is a false one.
-    assert result["qualifying_boundaries"] == [0]
+    # The cue-based detector saw exactly one boundary and it was the FALSE one: the
+    # pre-presentation IR handoff at segment 0, while all nine real question handoffs
+    # were invisible. Under TFG-1 R2 terminal cues carry no admission authority, so the
+    # detector now recovers exactly the nine analyst intros this receipt independently
+    # identified, and rejects segment 0.
+    assert result["qualifying_boundaries"] == [
+        index for index in RECEIPT_OPERATOR_INTRO_INDEXES if index != 0
+    ]
+    assert 0 not in result["qualifying_boundaries"]
 
 
 # --------------------------------------------------------------------------

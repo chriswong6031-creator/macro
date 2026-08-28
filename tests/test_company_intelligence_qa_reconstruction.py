@@ -239,7 +239,16 @@ def test_same_manager_before_and_after_analyst_followup_is_two_turns():
     assert turns[0]["span_indexes"] != turns[1]["span_indexes"]
 
 
-def test_operator_without_go_ahead_does_not_open_exchange():
+def test_operator_without_go_ahead_now_opens_an_exchange():
+    """Superseded by TFG-1 R2: terminal cues carry ZERO admission authority.
+
+    This test previously asserted that a handoff lacking "go ahead" opened nothing,
+    which is the exact defect TFG exists to remove -- GOOGL says "Your line is now
+    open" and lost all nine of its real question handoffs that way. Under
+    DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT a
+    question-bearing named handoff followed by a source turn IS a structural
+    separator, cue or no cue.
+    """
     segments = _synthetic_two_exchange_call()
     segments[2]["text"] = "Stand by for our first question from Jordan Blake from North Peak."
     result = _reconstruct(
@@ -249,9 +258,10 @@ def test_operator_without_go_ahead_does_not_open_exchange():
         document_id="tx:NOGA",
     )
     assert result["status"] == "ok"
-    assert result["qualifying_boundaries"] == [8]
-    assert len(result["exchanges"]) == 1
-    assert result["exchanges"][0]["questioner"]["name"] == "Riley Chen"
+    assert result["qualifying_boundaries"] == [2, 8]
+    assert len(result["exchanges"]) == 2
+    assert result["exchanges"][0]["questioner"]["name"] == "Jordan Blake"
+    assert result["exchanges"][1]["questioner"]["name"] == "Riley Chen"
 
 
 def test_unexpected_third_party_refuses_rather_than_dropping():
@@ -278,7 +288,10 @@ def test_operator_intro_name_mismatch_refuses():
         document_id="tx:MIS",
     )
     assert result["status"] == "failed"
-    assert result["failure"]["code"] == "operator_analyst_name_conflict"
+    # Superseded classification, same refusal: under R2 a differing next speaker with
+    # no explicit on-for relation is an unresolved questioner, and the structural
+    # separator survives so adjacent spans still cannot merge across it.
+    assert result["failure"]["code"] == "unresolved_questioner_identity"
 
 
 def test_corrupt_source_hash_fails_replay():

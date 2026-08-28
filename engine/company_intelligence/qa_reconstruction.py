@@ -89,22 +89,56 @@ _R2_FULL_NAME_RE = re.compile(
 )
 
 
-# Same-revision participant/title declaration. Honorific optional (COF declares
-# "Jeff Norris, Senior Vice President of Finance" bare), but the title must carry a
-# real office word so ordinary "<Name>, <clause>" prose cannot mint a role.
+# Same-revision participant/title declaration.
+#
+# The frozen corpus uses BOTH orders and they are false friends for each other:
+#   order A  "Kevin Hostetler, our CEO, Keith Jennings, our CFO"      (name first)
+#   order B  "our CEO, Matt Salem, our President and COO, Patrick Mattson"  (office first)
+# Reading ARRY (order A) with the order-B pattern binds Keith Jennings to CEO when the
+# source says CFO -- which would erase one of the two real role conflicts in the corpus.
+# So the order is decided per sentence by whichever appears first, a name or an office.
 _ROSTER_NAME = r"(?-i:[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*(?:\s+[A-Z][A-Za-z\u00c0-\u024f'\u2019\-]*){1,3})"
-_ROSTER_DECL_RE = re.compile(
-    r"\b(?:(?:Mr|Ms|Mrs|Dr)\.?\s+)?(?P<name>" + _ROSTER_NAME + r")\s*,\s*"
-    r"(?P<title>[^.]{3,160}?)"
-    r"(?=,\s*who\b|,\s*and\s+(?:Mr|Ms|Mrs|Dr)\b|\s+and\s+also\b|\.|$)",
+_HONORIFIC = r"(?:(?:Mr|Ms|Mrs|Dr|Prof)\.?\s+)?"
+# An office phrase must BEGIN with an office word once any determiner/possessive is
+# stripped. Without that anchor "Ole Rosgaard, will provide a strategy and market
+# update" parses as a title merely because "CFO" appears later in the sentence.
+_OFFICE_HEAD = (
+    r"(?:chief|president|chairman|chairwoman|treasurer|ceo|cfo|coo|cio|senior|"
+    r"executive|vice|deputy|interim|acting|co-chief|head|managing|general|"
+    r"principal|founder|partner)"
+)
+# Possessives are stripped case-insensitively: the corpus carries both "Capital One's
+# Chief Financial Officer" and "the company's Chief Executive Officer", and requiring a
+# capitalised possessive silently dropped every lowercase one (ARQQ).
+_DETERMINER_RE = re.compile(
+    r"^(?:(?:the|our|its|his|her|a|an)\s+)?"
+    r"(?:[\w'\u2019&.\-]+(?:\s+[\w'\u2019&.\-]+){0,3}['\u2019]s\s+)?",
     re.IGNORECASE,
 )
-_ROSTER_OFFICE_RE = re.compile(
-    r"\b(?:chief|officer|president|treasurer|chairman|chairwoman|ceo|cfo|coo)\b",
+_OFFICE_HEAD_RE = re.compile(r"^" + _OFFICE_HEAD + r"\b", re.IGNORECASE)
+_NAME_COMMA_RE = re.compile(_HONORIFIC + r"(?P<name>" + _ROSTER_NAME + r")\s*,")
+# The office head is anchored inside the pattern, not merely validated afterwards: an
+# earlier determiner otherwise hijacks the match and consumes the real one. KREF's
+# "joined on the call by our CEO, Matt Salem" matched title="call by our CEO" via the
+# leading "the", which failed validation and took "our CEO, Matt Salem" down with it.
+_OFFICE_COMMA_RE = re.compile(
+    r"\b(?:our|the|its)\s+(?P<title>" + _OFFICE_HEAD + r"\b[^,.;]{0,66}?)\s*,\s*"
+    + _HONORIFIC + r"(?P<name>" + _ROSTER_NAME + r")\b",
     re.IGNORECASE,
 )
+# Clauses that end a title rather than continuing it.
+_TITLE_STOP_RE = re.compile(
+    r",\s*who\b|,\s*(?:will|shall|is|was|has|have|and\s+will)\b|\s+and\s+also\b",
+    re.IGNORECASE,
+)
+_TITLE_TAIL_RE = re.compile(
+    r"(?:\s*,)?\s*(?:and\s+)?(?:Mr|Ms|Mrs|Dr|Prof)\.?\s*$|(?:\s*,)?\s*and\s*$|[\s,;.]+$",
+    re.IGNORECASE,
+)
+_SENTENCE_RE = re.compile(r"[^.;]+[.;]?")
 # Closed role-comparison alias table. CEO/CFO/COO only -- no CIO, no open-ended
-# abbreviation derivation.
+# abbreviation derivation. CTRE is exactly why: James Callister is declared Chief
+# Investment Officer and tagged CFO, and that must refuse rather than alias away.
 _ROLE_ALIASES = {
     "ceo": "chief executive officer",
     "cfo": "chief financial officer",
@@ -420,6 +454,64 @@ def _is_explicit_full_name_proxy(speaker: str, principal: str, utterance: str) -
     return claimed == full or claimed == full.split(" ")[0]
 
 
+_HONORIFIC_DOT_RE = re.compile(r"\b(Mr|Ms|Mrs|Dr|Prof|St|Jr|Sr)\.", re.IGNORECASE)
+_SENTINEL = "\u0000"
+
+
+def _split_sentences(body: str) -> list[str]:
+    """Sentence split that does not treat an honorific's period as a sentence end."""
+    guarded = _HONORIFIC_DOT_RE.sub(lambda m: m.group(1) + _SENTINEL, body)
+    return [s.replace(_SENTINEL, ".") for s in _SENTENCE_RE.findall(guarded)]
+
+
+def _clean_title(raw: str) -> str:
+    """Trim a candidate title at its first stop clause and drop trailing connectors."""
+    title = " ".join(str(raw or "").split())
+    stop = _TITLE_STOP_RE.search(title)
+    if stop:
+        title = title[: stop.start()]
+    previous = None
+    while previous != title:
+        previous = title
+        title = _TITLE_TAIL_RE.sub("", title).strip()
+    return title.strip().strip(" ,;")
+
+
+def _is_office_phrase(title: str) -> bool:
+    body = " ".join(str(title or "").split())
+    if not body:
+        return False
+    stripped = _DETERMINER_RE.sub("", body, count=1).strip()
+    return bool(_OFFICE_HEAD_RE.match(stripped or body))
+
+
+def _sentence_declarations(sentence: str) -> list[tuple[str, str]]:
+    """(name, title) pairs from one sentence, in whichever order that sentence uses."""
+    names = [
+        m for m in _NAME_COMMA_RE.finditer(sentence)
+        if not _is_office_phrase(m.group("name"))
+    ]
+    offices = [m for m in _OFFICE_COMMA_RE.finditer(sentence) if _is_office_phrase(m.group("title"))]
+    if not names and not offices:
+        return []
+    name_first = names[0].start("name") if names else len(sentence)
+    office_first = offices[0].start() if offices else len(sentence)
+
+    if office_first < name_first:
+        # order B: the office introduces the person.
+        return [(m.group("name"), _clean_title(m.group("title"))) for m in offices]
+
+    # order A: each name owns the text up to the next declared name.
+    pairs: list[tuple[str, str]] = []
+    for i, match in enumerate(names):
+        start = match.end()
+        end = names[i + 1].start() if i + 1 < len(names) else len(sentence)
+        title = _clean_title(sentence[start:end])
+        if title and _is_office_phrase(title):
+            pairs.append((match.group("name"), title))
+    return pairs
+
+
 def _roster_declarations(
     segments: Sequence[Mapping[str, Any]],
 ) -> dict[str, dict[str, Any]]:
@@ -431,17 +523,15 @@ def _roster_declarations(
     found: dict[str, dict[str, Any]] = {}
     for index, seg in enumerate(segments):
         body = " ".join(_text(seg).split())
-        for match in _ROSTER_DECL_RE.finditer(body):
-            title = match.group("title").strip().strip(" ,;")
-            if not title or not _ROSTER_OFFICE_RE.search(title):
-                continue
-            key = _norm_person(match.group("name"))
-            if not key:
-                continue
-            entry = found.setdefault(key, {"titles": {}, "span_indexes": []})
-            entry["titles"].setdefault(title, None)
-            if index not in entry["span_indexes"]:
-                entry["span_indexes"].append(index)
+        for sentence in _split_sentences(body):
+            for name, title in _sentence_declarations(sentence):
+                key = _norm_person(name)
+                if not key or not title:
+                    continue
+                entry = found.setdefault(key, {"titles": {}, "span_indexes": []})
+                entry["titles"].setdefault(title, None)
+                if index not in entry["span_indexes"]:
+                    entry["span_indexes"].append(index)
     resolved: dict[str, dict[str, Any]] = {}
     for key, entry in found.items():
         titles = list(entry["titles"])
