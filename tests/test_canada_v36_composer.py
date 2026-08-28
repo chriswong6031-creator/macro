@@ -38,9 +38,12 @@ def _composer_text() -> str:
 
 FORBIDDEN_RUNTIME_CSS_TOKENS = (
     'createElement("style")',
+    "createElement('style')",
     "style.textContent",
     "css.textContent",
     "function injectCss",
+    "insertRule",
+    "adoptedStyleSheets",
 )
 
 

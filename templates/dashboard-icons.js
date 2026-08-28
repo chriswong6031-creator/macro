@@ -195,35 +195,60 @@
 /* Shared fail-soft stylesheet loader for the mx-stockdash composer family
    (TP-1 theme-parity extraction, theme-parity-tp1-canada-20260828-sol-001).
    Idempotent: a second caller either fires onReady immediately (stylesheet
-   already loaded) or queues behind the in-flight <link>'s own load event —
-   never a second <link> tag. A stylesheet load failure fails SOFT: onReady
-   is never called, so the composer that gates its injection on it never
-   mounts and the legacy page stays visible and functional. No cache stamp
-   is hand-authored here; the repository's existing asset-stamp/optimizer
-   process re-stamps this href after the asset exists. */
+   already loaded), reads an already-loaded stylesheet off a stale <link>
+   left with no data-ready marker (a page navigation or a prior caller that
+   never got a load event can leave one), or queues behind the in-flight
+   <link>'s own load event — never a second <link> tag. A stylesheet load
+   failure retries with bounded backoff (same attempt<3 / 1500*attempt shape
+   as the composer script retry below it, mirrored because the CSS fetch is
+   entitled-gated the same way and can fail the same transient way); only
+   after the final attempt does it fail SOFT — onReady is never called, the
+   composer that gates its injection on it never mounts, and the legacy page
+   stays visible and functional. The href is hand-stamped
+   (?v=20260828, house practice — matches the sibling script refs in this
+   same file) because this asset is authored inside JS, not HTML, and
+   scripts/optimize_assets.py only walks HTML files; it can never see or
+   re-stamp a href written here. */
 function ensureStockDashCss(onReady) {
   var id = "mx-stockdash-css";
-  var existing = document.getElementById(id);
-  if (existing && existing.getAttribute("data-ready") === "1") {
-    onReady();
-    return;
+  function attemptLoad(attempt) {
+    var existing = document.getElementById(id);
+    if (existing) {
+      if (existing.getAttribute("data-ready") === "1") {
+        onReady();
+        return;
+      }
+      if (existing.sheet) {
+        /* The link exists and its stylesheet is already parsed (e.g. a
+           prior caller's <link> that fired load before data-ready was set,
+           or a same-document stale reference) — no dead listener, resolve
+           now. */
+        existing.setAttribute("data-ready", "1");
+        onReady();
+        return;
+      }
+      existing.addEventListener("load", onReady, { once: true });
+      return;
+    }
+    var link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = "stock-dashboard.css?v=20260828";
+    link.onload = function () {
+      link.setAttribute("data-ready", "1");
+      onReady();
+    };
+    link.onerror = function () {
+      if (link.parentNode) link.parentNode.removeChild(link);
+      if (attempt < 3) {
+        setTimeout(function () { attemptLoad(attempt + 1); }, 1500 * attempt);
+      }
+      /* Fail soft after the final attempt: legacy page remains visible;
+         composer is not injected. */
+    };
+    document.head.appendChild(link);
   }
-  if (existing) {
-    existing.addEventListener("load", onReady, { once: true });
-    return;
-  }
-  var link = document.createElement("link");
-  link.id = id;
-  link.rel = "stylesheet";
-  link.href = "stock-dashboard.css";
-  link.onload = function () {
-    link.setAttribute("data-ready", "1");
-    onReady();
-  };
-  link.onerror = function () {
-    /* Fail soft: legacy page remains visible; composer is not injected. */
-  };
-  document.head.appendChild(link);
+  attemptLoad(1);
 }
 
 /* Canada Stock Dashboard V3.6 progressive composer. Strict no-op elsewhere.

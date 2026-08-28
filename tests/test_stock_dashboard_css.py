@@ -43,6 +43,17 @@ REQUIRED_CANADA_VISIBILITY = (
     ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden",
 )
 
+# selector -> exact expected declaration (whitespace-tolerant). A bare
+# "selector text is present somewhere" check is satisfied by the selector
+# appearing in a comment or with the wrong declaration; pinning the
+# declaration is what actually proves the override still defeats the
+# author display rule it exists to beat.
+REQUIRED_CANADA_VISIBILITY_DECLARATIONS: dict[str, str] = {
+    ".mx-stockdash--ca .ca-v36-card-grid[hidden]": "display:none!important",
+    ".mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden]": "display:none!important",
+    ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden": "display:flex!important",
+}
+
 
 def _css_text() -> str:
     if not TEMPLATE_CSS.exists():
@@ -51,6 +62,34 @@ def _css_text() -> str:
             "extraction has not run (expected RED before that task lands)"
         )
     return TEMPLATE_CSS.read_text(encoding="utf-8")
+
+
+def _extract_balanced_media_block(text: str, media_query_pattern: str) -> str:
+    """Return the body of the FIRST @media block matching media_query_pattern,
+    delimited by brace-balance rather than a greedy-to-EOF ``.*``.
+
+    A prior version of the 680px-block test used
+    ``r"@media\\s*\\(max-width:\\s*680px\\)\\s*\\{(.*)\\}\\s*$"`` — greedy
+    ``.*`` anchored at end-of-file, which only worked because the 680px query
+    happened to be the LAST thing in the file. Any later content (a new rule,
+    a trailing comment block) would have silently swallowed into "the 680px
+    block" or broken the match outright. This walks braces instead, so the
+    captured block is always exactly the one @media body, regardless of what
+    comes after it in the file.
+    """
+    marker = re.search(media_query_pattern + r"\s*\{", text)
+    assert marker, f"could not locate a media block matching {media_query_pattern!r}"
+    start = marker.end()
+    depth = 1
+    i = start
+    while i < len(text) and depth > 0:
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+        i += 1
+    assert depth == 0, f"media block matching {media_query_pattern!r} never closed"
+    return text[start:i - 1]
 
 
 def test_stylesheet_owns_canada_hidden_attribute_visibility():
@@ -62,11 +101,19 @@ def test_stylesheet_owns_canada_hidden_attribute_visibility():
     under the canonical .mx-stockdash--ca mount, not in the deleted
     composer-owned injectCss()."""
     text = _css_text()
+    normalized = re.sub(r"\s+", "", text)
     for rule in REQUIRED_CANADA_VISIBILITY:
         assert rule in text, (
             f"stylesheet lost the {rule!r} override; the Top Picks segment, "
             "leadership filter and grid/table switch would go visually inert "
             "again"
+        )
+    for selector, decl in REQUIRED_CANADA_VISIBILITY_DECLARATIONS.items():
+        pair = re.sub(r"\s+", "", selector) + "{" + decl
+        assert pair in normalized, (
+            f"{selector!r} no longer declares {decl!r} — the selector text "
+            "alone (matched above) is not proof the override still defeats "
+            "the author display rule it exists to beat"
         )
 
 
@@ -81,8 +128,13 @@ def test_stylesheet_roots_canonical_mount_semantics():
     assert re.search(r"\.mx-stockdash\s*\{[^}]*color:\s*var\(--text\)", text), (
         "stylesheet no longer roots .mx-stockdash with color: var(--text)"
     )
-    assert re.search(r"\.mx-stockdash\s*\{[^}]*font-family:\s*var\(--font-ui\)", text), (
-        "stylesheet no longer roots .mx-stockdash with font-family: var(--font-ui)"
+    # Accepts either the bare token or the cache-stale-resilience fallback
+    # stack (var(--font-ui, -apple-system, ...)) — this repair wave (theme-
+    # parity-tp1-canada-20260828-sol-001, R8) restores a literal fallback
+    # everywhere the stylesheet uses var(--font-ui), including the root; the
+    # assertion only needs to keep proving the ROOT reads --font-ui at all.
+    assert re.search(r"\.mx-stockdash\s*\{[^}]*font-family:\s*var\(--font-ui[,)]", text), (
+        "stylesheet no longer roots .mx-stockdash with font-family: var(--font-ui...)"
     )
     assert re.search(r"\.mx-stockdash\s*\*[^{]*\{[^}]*box-sizing:\s*border-box", text), (
         "stylesheet lost the .mx-stockdash * box-sizing: border-box rule"
@@ -93,21 +145,56 @@ def test_stylesheet_stance_and_lane_header_use_prophet_stance_tokens():
     """Action lane/stance identity must use the Prophet stance tokens named
     in the TP-1 plan (var(--ink-pv-<tone>, var(--pv-<tone>))), never a
     market-direction literal (--ink-up/--ink-down/etc.) — applied to both
-    the stance chips AND the at-rest Act-Now lane headers."""
+    the stance chips AND the at-rest Act-Now lane headers, for buy/wait/
+    avoid.
+
+    NEAR IS THE ONE EXCEPTION (theme-parity review repair,
+    theme-parity-tp1-canada-20260828-sol-001): theme.css derives --pv-near
+    FROM --pv-buy (color-mix toward --muted), so binding Near to the stance
+    family paints it as a paler Buy rather than a fourth independent hue —
+    measured pre-repair as a CIELAB collapse of the Buy/Near separation to
+    single digits on both planes. Near is bound to the same informational
+    link ink every other "look, don't act yet" affordance on this estate
+    already uses (var(--ink-link, var(--link))) instead. This is the FROZEN
+    ruling — architecture §5.2/§5.3 outranks the original plan snippet that
+    put Near in the stance family."""
     text = _css_text()
     normalized = re.sub(r"\s+", "", text)
-    for tone in ("buy", "near", "wait", "avoid"):
+    for tone in ("buy", "wait", "avoid"):
         pair = f"var(--ink-pv-{tone},var(--pv-{tone}))"
         assert pair in normalized, (
             f"stylesheet lost the canonical --ink-pv-{tone}/--pv-{tone} "
             "stance token pair"
         )
+    assert "var(--ink-link,var(--link))" in normalized, (
+        "stylesheet lost the var(--ink-link, var(--link)) informational "
+        "ink pair Near now reads"
+    )
     assert re.search(r"\.ca-v36-stance\.buy\s*\{[^}]*--ink-pv-buy", text), (
         ".ca-v36-stance.buy no longer reads the Prophet stance token family"
     )
     assert re.search(r"\.ca-v36-an-hd\.buy\s*\{[^}]*--ink-pv-buy", text), (
         ".ca-v36-an-hd.buy (Act-Now lane header) no longer reads the same "
         "Prophet stance token family as the stance chips"
+    )
+    assert re.search(r"\.ca-v36-stance\.near\s*\{[^}]*--ink-link", text), (
+        ".ca-v36-stance.near must read var(--ink-link, var(--link)), not "
+        "the stance family — near is not an independent hue in theme.css"
+    )
+    assert re.search(r"\.ca-v36-an-hd\.near\s*\{[^}]*--ink-link", text), (
+        ".ca-v36-an-hd.near (Act-Now lane header) must read var(--ink-link, "
+        "var(--link)), not the stance family — near is not an independent "
+        "hue in theme.css"
+    )
+    assert not re.search(r"\.ca-v36-stance\.near\s*\{[^}]*--ink-pv-near", text), (
+        ".ca-v36-stance.near reverted to the stance family "
+        "(--ink-pv-near/--pv-near), which collapses onto Buy because "
+        "theme.css derives --pv-near from --pv-buy"
+    )
+    assert not re.search(r"\.ca-v36-an-hd\.near\s*\{[^}]*--ink-pv-near", text), (
+        ".ca-v36-an-hd.near reverted to the stance family "
+        "(--ink-pv-near/--pv-near), which collapses onto Buy because "
+        "theme.css derives --pv-near from --pv-buy"
     )
 
 
@@ -133,9 +220,7 @@ def test_mobile_segment_grammar_one_lane_at_a_time():
     assert re.search(r"\.ca-v36-an-seg\s*\{[^}]*display:\s*none", text), (
         "the Act-Now segment bar lost its desktop display:none base rule"
     )
-    mq = re.search(r"@media\s*\(max-width:\s*680px\)\s*\{(.*)\}\s*$", text, re.S)
-    assert mq, "could not locate the 680px media query block"
-    block = mq.group(1)
+    block = _extract_balanced_media_block(text, r"@media\s*\(\s*max-width:\s*680px\s*\)")
     for pattern in [
         r"\.ca-v36-an-seg\s*\{[^}]*display:\s*flex",
         r"\.ca-v36-an-lanes\s*\{[^}]*grid-template-columns:\s*1fr",
@@ -275,12 +360,18 @@ def test_light_art_direction_has_explicit_rules_for_every_named_surface():
 
 def test_light_lane_headers_tint_from_the_prophet_stance_tokens():
     """Lane identity in light is a narrow semantic rail plus a low-alpha tint of
-    the SAME stance token the rail uses — never a decoration hue and never a
+    the SAME token the rail uses — never a decoration hue and never a
     market-direction token. Because the tint derives from the stance family, the
     zh 红涨绿跌 flip re-keys it with no zh-specific rule (verified in-browser:
-    zh light Buy resolves red, Avoid green, each tint at 4% of its own ink)."""
+    zh light Buy resolves red, Avoid green, each tint at 4% of its own ink).
+
+    NEAR IS THE ONE EXCEPTION, matching the dark rule's repair (see
+    test_stylesheet_stance_and_lane_header_use_prophet_stance_tokens above):
+    it tints from var(--ink-link, var(--link)) instead of the stance family,
+    because theme.css derives --pv-near from --pv-buy and painting Near in
+    the stance family collapses it onto Buy."""
     text = re.sub(r"\s+", "", _css_text()).replace('"', "").replace("'", "")
-    for tone in ("buy", "near", "wait", "avoid"):
+    for tone in ("buy", "wait", "avoid"):
         rule = (
             f"html[data-theme=light].mx-stockdash--ca.ca-v36-an-hd.{tone}"
             f"{{background:color-mix(insrgb,var(--ink-pv-{tone},var(--pv-{tone}))"
@@ -289,6 +380,15 @@ def test_light_lane_headers_tint_from_the_prophet_stance_tokens():
             f"the light Act-Now '{tone}' lane header no longer tints from the "
             f"--ink-pv-{tone}/--pv-{tone} stance token pair"
         )
+    near_rule = (
+        "html[data-theme=light].mx-stockdash--ca.ca-v36-an-hd.near"
+        "{background:color-mix(insrgb,var(--ink-link,var(--link))"
+    )
+    assert near_rule in text, (
+        "the light Act-Now 'near' lane header no longer tints from "
+        "var(--ink-link, var(--link)) — near must not tint from the stance "
+        "family (--ink-pv-near/--pv-near collapses onto buy)"
+    )
 
 
 def _split_top_level(value: str) -> list[str]:
