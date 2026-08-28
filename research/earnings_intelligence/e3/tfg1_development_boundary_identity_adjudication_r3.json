@@ -1,0 +1,643 @@
+{
+  "schema": "tfg1.development_boundary_identity_adjudication.r3",
+  "status": "sol_ratified_source_truth",
+  "record_state": "awaiting_sol_acceptance_of_this_correction_carrier",
+  "ratified_at": "2026-08-28",
+  "ratified_by": "sol",
+  "ratifying_review": {
+    "pr": 6591,
+    "review_id": 5048161769,
+    "review_state": "CHANGES_REQUESTED",
+    "submitted_at": "2026-08-28T05:27:16Z",
+    "reviewed_head_sha": "77fd9411c9cfb799b245c8138d2f1a40052d3b8d",
+    "pr_state": "closed_unmerged",
+    "note": "PR #6591 is closed unmerged and preserved as evidence. Its implementation commits are candidate/reusable changes only and are not accepted implementation truth."
+  },
+  "source_operation_key": "tfg1-r2-deterministic-transcript-format-hardening-20260827-v1",
+  "source_operation_terminal_state": "STOPPED_AT_DEVELOPMENT_GATE — SECOND GOLD FALSIFIER",
+  "correction_operation_key": "tfg1-r3-gold-source-clean-correction-20260828-v1",
+  "successor_implementation_operation_key": "tfg1-r3-deterministic-transcript-format-hardening-20260828-v1",
+  "supersedes_as_machine_grading_truth": {
+    "path": "research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json",
+    "git_blob_sha": "9017d327fd942a33f7716c8e0a86f72311a43131",
+    "preserved_unchanged": true,
+    "preservation_law": "The R2 adjudication and DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS are retained byte-unchanged as historical falsified experimental evidence. They are never edited to conceal the second gold falsifier, exactly as the TFG-0 110-separator receipt was retained after the first.",
+    "scope_of_correction": "Only the management respondent-role conflict count, the source-clean/refusal partition implied by it, and the representation of per-call refusal reasons as SETS. Every structural separator index, direct/proxy/unresolved questioner label and count is carried over verbatim."
+  },
+  "also_preserved_unchanged": [
+    {
+      "path": "research/earnings_intelligence/e3/tfg0_development_boundary_identity_adjudication.json",
+      "git_blob_sha": "190cad1a69823fb29016f56aae50a6af3668fdaf",
+      "why": "historical 110-separator gold falsified by TFG-1 v1"
+    },
+    {
+      "path": "agentos/decisions/DEC-E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.md",
+      "git_blob_sha": "f48ea2a9aa77b29c5a3abc5f403dbb7b23c08f50",
+      "why": "the first-falsifier ratification; its structural correction remains binding and is not withdrawn"
+    }
+  ],
+  "method_law_unchanged": true,
+  "structural_law_unchanged": true,
+  "holdout_law_unchanged": true,
+  "holdout_bodies_inspected": 0,
+  "model_calls": 0,
+  "compiler_behavior_changed": false,
+  "source_clean_definition": {
+    "id": "QNA_SOURCE_CLEAN",
+    "text": "A call is source-clean for full-call reconstruction only when every real questioner handoff is source-supported AND every management answer that would be accepted into qa_exchange.v1 has positive replayable same-revision respondent role/title support AND no incompatible same-revision role evidence exists for that respondent.",
+    "positive_support_required": true,
+    "absence_of_conflict_is_not_clean": true,
+    "role_support_must_be_same_revision": true,
+    "role_support_must_be_byte_replayable": true,
+    "closed_role_aliases": [
+      "CEO<->Chief Executive Officer",
+      "CFO<->Chief Financial Officer",
+      "COO<->Chief Operating Officer"
+    ],
+    "closed_role_aliases_note": "CIO is deliberately excluded; CTRE tags its Chief Investment Officer as CFO and must refuse.",
+    "derives_from": "research/earnings_intelligence/e3/TFG0_QA_RESPONDENT_IDENTITY_EVIDENCE_AMENDMENT_2026-08-27.md",
+    "why_this_is_a_restatement_not_a_new_threshold": "The frozen respondent amendment already ruled that incompatible explicit segment-role vs roster/title evidence is a management_identity_conflict refusal and that missing role/title support is a management_identity_insufficient refusal. The R2 gold's 9-call clean set contradicted that frozen law. R3 restates the law and corrects the gold to match it; it does not raise a bar."
+  },
+  "blocker_law": {
+    "representation": "set",
+    "order_dependent_first_failure_reason_forbidden": true,
+    "why": "A call may carry several independent source blockers at once. Forcing one order-dependent scalar refusal reason hides real blockers and makes the grading gate depend on evaluation order rather than on source truth.",
+    "vocabulary": {
+      "unresolved_questioner": "At least one true structural separator in the call has a questioner that is not source-resolvable under the frozen direct/explicit-full-name-proxy law. The separator still splits Q&A windows but cannot mint a canonical qa_exchange.v1 object.",
+      "management_role_conflict": "At least one management respondent has explicit incompatible same-revision role evidence (declared office/title vs tagged segment role) outside the closed CEO/CFO/COO alias table.",
+      "missing_same_revision_respondent_role_support": "At least one management respondent that would be accepted into qa_exchange.v1 has no positive replayable same-revision role/title support at all (blank segment role and no roster/title declaration binding that person to a role)."
+    }
+  },
+  "summary": {
+    "calls": 16,
+    "true_question_handoffs": 113,
+    "direct_operator_next_speaker_matches": 97,
+    "explicit_full_name_proxy_handoffs": 6,
+    "source_supported_questioner_handoffs": 103,
+    "unresolved_questioner_handoffs": 10,
+    "calls_with_explicit_management_role_conflict": 5,
+    "calls_with_missing_same_revision_respondent_role_support": 2,
+    "source_clean_calls_for_full_call_reconstruction": 7,
+    "source_conflicted_or_identity_refusal_calls": 9,
+    "calls_with_explicit_management_role_conflict_pairs": [
+      "ARRY/2026Q2",
+      "CTRE/2026Q2",
+      "BANR/2026Q2",
+      "LTH/2026Q2",
+      "HTGC/2026Q2"
+    ],
+    "source_clean_call_pairs": [
+      "OCSL/2026Q3",
+      "GEF/2026Q3",
+      "UPBD/2026Q2",
+      "SCCO/2026Q2",
+      "AGM/2026Q2",
+      "COF/2026Q2",
+      "KREF/2026Q2"
+    ],
+    "source_conflicted_or_identity_refusal_pairs": [
+      "MBLY/2026Q2",
+      "ARQQ/2026Q2",
+      "TRVI/2026Q2",
+      "CTRE/2026Q2",
+      "LTH/2026Q2",
+      "BANR/2026Q2",
+      "FANG/2026Q2",
+      "HTGC/2026Q2",
+      "ARRY/2026Q2"
+    ]
+  },
+  "corrections_from_r2": [
+    {
+      "id": "D1",
+      "field": "calls_with_explicit_management_role_conflict",
+      "r2_value": 2,
+      "r3_value": 5,
+      "added_pairs": [
+        "BANR/2026Q2",
+        "LTH/2026Q2",
+        "HTGC/2026Q2"
+      ],
+      "finding": "Beyond the already-declared ARRY and CTRE, three further calls declare an office in segment #1 that is incompatible with the role tagged on the same person's answer segment.",
+      "partition_effect": "none — BANR, LTH and HTGC were already non-clean for unresolved_questioner. D1 changes only their frozen refusal reason SET, not the clean/refusal partition.",
+      "accepted_by": "Sol review #5048161769 paragraph 1"
+    },
+    {
+      "id": "D2",
+      "field": "source_clean_calls_for_full_call_reconstruction",
+      "r2_value": 9,
+      "r3_value": 7,
+      "removed_pairs": [
+        "ARQQ/2026Q2",
+        "FANG/2026Q2"
+      ],
+      "finding": "ARQQ and FANG each have a management respondent answering inside the Q&A window with a blank segment role and no same-revision title/roster declaration binding them to any role. The R2 gold marked them clean because no conflict existed; absence of conflict is not positive support.",
+      "partition_effect": "ARQQ and FANG move from the source-clean set to the source-refusal set. Clean 9 -> 7; refusal 7 -> 9.",
+      "accepted_by": "Sol review #5048161769 paragraph 2"
+    },
+    {
+      "id": "D3",
+      "field": "per_call refusal reason representation",
+      "r2_value": "implicit single expected_refusal string",
+      "r3_value": "source_blockers set",
+      "finding": "CTRE, LTH, BANR and HTGC each carry both unresolved_questioner and management_role_conflict. The corrected grading law records the full pre-adjudicated source-condition set per call.",
+      "partition_effect": "none",
+      "accepted_by": "Sol review #5048161769 paragraph 3"
+    }
+  ],
+  "carried_forward_unchanged_from_r2": {
+    "true_question_handoffs": 113,
+    "direct_operator_next_speaker_matches": 97,
+    "explicit_full_name_proxy_handoffs": 6,
+    "source_supported_questioner_handoffs": 103,
+    "unresolved_questioner_handoffs": 10,
+    "per_call_structural_indices": "byte-identical to the R2 per_call block for all 16 calls",
+    "three_first_handoff_omissions": "MBLY/2026Q2 #21, ARRY/2026Q2 #31 and KREF/2026Q2 #15 remain ratified structural separators exactly as recorded in the R2 adjudication and DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS.",
+    "proxy_law": "unchanged from DEC:E3FMT-STRUCTURAL-SEPARATORS-PROXY-IDENTITY-AND-SOURCE-CONDITIONED-HOLDOUT",
+    "structural_separator_law": "All 113 ratified development question handoffs are structural separators. The 10 unresolved questioner handoffs still split neighboring Q&A windows but cannot mint canonical qa_exchange.v1 objects."
+  },
+  "development_gate": "R3 must recover 113/113 structural separators with zero opening/queue/closing false positives; resolve 103/103 source-supported direct/proxy questioners; preserve 10/10 unresolved handoffs as separator-only refusals; reconstruct all 7 source-clean calls; make each of the remaining 9 calls fail with EXACTLY its frozen source_blockers set — no missing blocker and no extra blocker; preserve AAPL exactly 7 exchanges / 26 management answer turns / 68 replay spans; accepted unsupported=0, cross-event contamination=0, accepted replay=100%.",
+  "holdout_gate": "unchanged in structure: ranks 17-24 stay unopened until every corrected development gate is green and an exact implementation head is frozen; source-only holdout adjudication must be frozen before compiler output; <6/8 source-clean means INSUFFICIENT_HOLDOUT_POWER; if powered, every source-clean slot must pass; no replacement/skip/rerank and no code change after holdout unseal. The only change is that QNA_SOURCE_CLEAN now requires positive same-revision respondent role/title support, so a slot whose management respondents are untitled adjudicates non-clean rather than clean.",
+  "holdout_power_note": "The corrected definition is strictly narrower than R2's, so it can only lower the holdout clean count. An INSUFFICIENT_HOLDOUT_POWER stop under the corrected definition is a legitimate scientific outcome and must not be rescued by reverting to the falsified absence-of-conflict definition.",
+  "per_call": [
+    {
+      "pair": "OCSL/2026Q3",
+      "true_question_handoff_indices": [
+        29,
+        35,
+        47
+      ],
+      "direct_next_speaker_match_indices": [
+        29,
+        35,
+        47
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "MBLY/2026Q2",
+      "true_question_handoff_indices": [
+        21,
+        31,
+        44,
+        54,
+        65,
+        72,
+        79,
+        89,
+        98
+      ],
+      "direct_next_speaker_match_indices": [
+        31,
+        44,
+        54,
+        65,
+        72,
+        79,
+        89,
+        98
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        21
+      ],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false
+    },
+    {
+      "pair": "GEF/2026Q3",
+      "true_question_handoff_indices": [
+        25,
+        30
+      ],
+      "direct_next_speaker_match_indices": [
+        25
+      ],
+      "explicit_full_name_proxy_indices": [
+        30
+      ],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "ARQQ/2026Q2",
+      "true_question_handoff_indices": [
+        22
+      ],
+      "direct_next_speaker_match_indices": [
+        22
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": true,
+      "source_blockers": [
+        "missing_same_revision_respondent_role_support"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "New in R3. Nick Pointon answers 8 times inside the Q&A window with a blank segment role, and the only same-revision reference is the handoff phrase \"let me turn the call over to Nick Pointon\", which carries no role or title.",
+      "changed_from_r2": true
+    },
+    {
+      "pair": "TRVI/2026Q2",
+      "true_question_handoff_indices": [
+        12,
+        25,
+        41,
+        46,
+        51,
+        58,
+        65,
+        74,
+        85
+      ],
+      "direct_next_speaker_match_indices": [
+        12,
+        25,
+        41,
+        51,
+        74,
+        85
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        46,
+        58,
+        65
+      ],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false
+    },
+    {
+      "pair": "CTRE/2026Q2",
+      "true_question_handoff_indices": [
+        17,
+        24,
+        31,
+        37,
+        45,
+        53,
+        59,
+        72,
+        79,
+        87,
+        94
+      ],
+      "direct_next_speaker_match_indices": [
+        17,
+        24,
+        37,
+        45,
+        53,
+        59,
+        72,
+        87,
+        94
+      ],
+      "explicit_full_name_proxy_indices": [
+        31
+      ],
+      "unresolved_questioner_indices": [
+        79
+      ],
+      "management_role_conflict": true,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "Carried over from the R2 gold: the Chief Investment Officer is tagged CFO. CIO is deliberately absent from the closed CEO/CFO/COO alias table, so this is incompatible rather than aliasable."
+    },
+    {
+      "pair": "LTH/2026Q2",
+      "true_question_handoff_indices": [
+        10,
+        18,
+        31,
+        39,
+        49,
+        59,
+        70,
+        81,
+        92,
+        104,
+        113
+      ],
+      "direct_next_speaker_match_indices": [
+        10,
+        18,
+        31,
+        39,
+        49,
+        70,
+        92
+      ],
+      "explicit_full_name_proxy_indices": [
+        59
+      ],
+      "unresolved_questioner_indices": [
+        81,
+        104,
+        113
+      ],
+      "management_role_conflict": true,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "New in R3. Erik Weaver is declared \"Executive Vice President and CFO\" in segment #1 and tagged CEO on the answer segment.",
+      "changed_from_r2": true
+    },
+    {
+      "pair": "UPBD/2026Q2",
+      "true_question_handoff_indices": [
+        32,
+        44,
+        53,
+        64,
+        74,
+        79,
+        84
+      ],
+      "direct_next_speaker_match_indices": [
+        32,
+        44,
+        53,
+        64,
+        74,
+        79,
+        84
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "SCCO/2026Q2",
+      "true_question_handoff_indices": [
+        53,
+        66,
+        91,
+        109,
+        117
+      ],
+      "direct_next_speaker_match_indices": [
+        53,
+        66,
+        91,
+        109,
+        117
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "AGM/2026Q2",
+      "true_question_handoff_indices": [
+        30,
+        36,
+        49,
+        64
+      ],
+      "direct_next_speaker_match_indices": [
+        30,
+        36,
+        49,
+        64
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "BANR/2026Q2",
+      "true_question_handoff_indices": [
+        20,
+        34,
+        45,
+        55,
+        71,
+        83
+      ],
+      "direct_next_speaker_match_indices": [
+        20,
+        55,
+        83
+      ],
+      "explicit_full_name_proxy_indices": [
+        34,
+        45
+      ],
+      "unresolved_questioner_indices": [
+        71
+      ],
+      "management_role_conflict": true,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "New in R3. Jill Rice is declared \"our Chief Credit Officer\" in segment #1 and tagged CFO on the answer segment.",
+      "changed_from_r2": true
+    },
+    {
+      "pair": "FANG/2026Q2",
+      "true_question_handoff_indices": [
+        4,
+        15,
+        31,
+        40,
+        51,
+        62,
+        73,
+        81,
+        89,
+        96,
+        104,
+        112,
+        124,
+        133
+      ],
+      "direct_next_speaker_match_indices": [
+        4,
+        15,
+        31,
+        40,
+        51,
+        62,
+        73,
+        81,
+        89,
+        96,
+        104,
+        112,
+        124,
+        133
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": true,
+      "source_blockers": [
+        "missing_same_revision_respondent_role_support"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "New in R3. Chad McAllaster answers inside the Q&A window with a blank segment role, and the only same-revision reference is \"I'll let Chad or Danny give the details\", which carries no role or title.",
+      "changed_from_r2": true
+    },
+    {
+      "pair": "HTGC/2026Q2",
+      "true_question_handoff_indices": [
+        33,
+        40,
+        52,
+        61,
+        69,
+        76,
+        83,
+        92
+      ],
+      "direct_next_speaker_match_indices": [
+        33,
+        40,
+        52,
+        69,
+        76,
+        83,
+        92
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [
+        61
+      ],
+      "management_role_conflict": true,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "management_role_conflict",
+        "unresolved_questioner"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "New in R3. Seth Meyer is declared \"President\" in segment #1 and tagged CEO on the answer segment.",
+      "changed_from_r2": true
+    },
+    {
+      "pair": "COF/2026Q2",
+      "true_question_handoff_indices": [
+        20,
+        33,
+        43,
+        53,
+        62,
+        71,
+        80,
+        93,
+        103,
+        114,
+        120
+      ],
+      "direct_next_speaker_match_indices": [
+        20,
+        33,
+        43,
+        53,
+        62,
+        71,
+        80,
+        93,
+        103,
+        114,
+        120
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    },
+    {
+      "pair": "ARRY/2026Q2",
+      "true_question_handoff_indices": [
+        31,
+        36,
+        46,
+        63,
+        76,
+        84,
+        89
+      ],
+      "direct_next_speaker_match_indices": [
+        31,
+        36,
+        46,
+        76,
+        84,
+        89
+      ],
+      "explicit_full_name_proxy_indices": [
+        63
+      ],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": true,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [
+        "management_role_conflict"
+      ],
+      "source_clean_for_full_call_reconstruction": false,
+      "respondent_role_evidence": "Carried over from the R2 gold: explicit incompatible same-revision segment-role vs declared-office evidence. Already recorded as a conflict before this correction."
+    },
+    {
+      "pair": "KREF/2026Q2",
+      "true_question_handoff_indices": [
+        15,
+        25,
+        40,
+        51,
+        60
+      ],
+      "direct_next_speaker_match_indices": [
+        15,
+        25,
+        40,
+        51,
+        60
+      ],
+      "explicit_full_name_proxy_indices": [],
+      "unresolved_questioner_indices": [],
+      "management_role_conflict": false,
+      "missing_same_revision_respondent_role_support": false,
+      "source_blockers": [],
+      "source_clean_for_full_call_reconstruction": true
+    }
+  ]
+}
