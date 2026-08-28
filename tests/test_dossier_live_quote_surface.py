@@ -123,6 +123,18 @@ def test_client_sets_both_languages_for_every_state(client_text: str) -> None:
     assert "zhNode.textContent = zh" in client_text
 
 
+def test_client_stands_down_without_fetch_instead_of_throwing(client_text: str) -> None:
+    """A missing `fetch` throws synchronously, ahead of the promise chain.
+
+    The `.catch` in poll() cannot see it, so the page would keep its correct
+    baked values while logging an uncaught error on every tick.  The guard must
+    therefore come BEFORE the first call site.
+    """
+    guard = "if (typeof window.fetch !== 'function'"
+    assert guard in client_text
+    assert client_text.index(guard) < client_text.index("fetch('/api/dossier-quote/")
+
+
 def test_revealing_a_background_tab_reads_immediately(client_text: str) -> None:
     """A dossier opened in a background tab must not show baked bytes on reveal.
 

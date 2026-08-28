@@ -35,6 +35,13 @@
   var ticker = String(priceNodes[0].getAttribute('data-dq-sym') || '').trim().toUpperCase();
   if (ticker.indexOf('..') !== -1 || !/^[A-Z0-9](?:[A-Z0-9.\-]{0,14}[A-Z0-9])?$/.test(ticker)) return;
 
+  // No fetch (or no Promise) means no quote — stand down and leave the baked
+  // page exactly as rendered. Checked BEFORE first use, because calling a
+  // missing `fetch` throws synchronously, ahead of any promise chain, so the
+  // `.catch` below would never see it: the page would keep its correct baked
+  // values but log an uncaught error on every tick.
+  if (typeof window.fetch !== 'function' || typeof window.Promise !== 'function') return;
+
   var chgRow = document.querySelector('[data-dq-chg]');
   var absNode = document.querySelector('[data-dq-abs]');
   var pctNode = document.querySelector('[data-dq-pct]');
