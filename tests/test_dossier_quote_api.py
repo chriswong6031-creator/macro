@@ -20,6 +20,7 @@ The tests below pin the three properties that keep it impossible:
 """
 from __future__ import annotations
 
+import math
 import urllib.request
 
 import pytest
@@ -68,9 +69,61 @@ HUB_NVDA_DELAYED = {
 }
 
 
+# The SAME symbol in the opposite session state: a verbatim capture at 11:43Z on
+# 2026-08-28, pre-market, before that day's regular session had opened.  The
+# pairing is deliberate — the 503 regression of 2026-08-27 shipped because every
+# fixture in this file was an RTH capture, so no test ever exercised the state
+# the page is actually in for most of the day.
+#
+# The load-bearing difference is the ANCHOR.  With no session in hand today, the
+# hub's anchor has already rolled forward to the last completed close, so
+# `prevClose` EQUALS `last` and the naive move is exactly zero.  `chg` and
+# `prevSessionChg` still carry the move that produced that close, and upstream
+# publishes `prevSessionChg` precisely to say "the move you want is the previous
+# session's" — it deletes the field the moment today's session is in hand.
+HUB_NVDA_PREMARKET = {
+    "NVDA": {
+        "sym": "NVDA",
+        "last": 227.98,
+        "ts": 1787917374,
+        "live": False,
+        "source": "polygon-delayed",
+        "market": "us",
+        "basis": "DELAYED_15M",
+        "regularSession": "closed",
+        "prevClose": 227.98,
+        "chg": 8.7379566917867,
+        "anchor_source": "daily_file",
+        "prevSessionChg": 8.7379566917867,
+        "marketSession": "pre",
+        "extPrice": 227.4,
+        "extChg": -0.2544082814281885,
+        "extTs": 1787916480,
+        "extSession": "pre",
+        "extSource": "polygon-delayed",
+        "extBasis": "DELAYED_15M",
+    }
+}
+
+
 def _hub_row(**overrides):
     row = dict(HUB_NVDA_DELAYED["NVDA"])
     row.update(overrides)
+    return {"NVDA": row}
+
+
+# Sentinel for "this key is absent from the row", which is a DIFFERENT case from
+# "this key is null" and is the one the fallback path turns on.
+_ABSENT = object()
+
+
+def _premarket_row(**overrides):
+    row = dict(HUB_NVDA_PREMARKET["NVDA"])
+    for key, value in overrides.items():
+        if value is _ABSENT:
+            row.pop(key, None)
+        else:
+            row[key] = value
     return {"NVDA": row}
 
 
@@ -219,6 +272,103 @@ def test_change_abs_is_derived_not_read_from_the_percent_field(client, monkeypat
     body = client.get("/api/dossier-quote/NVDA").json()
     assert body["change_abs"] == pytest.approx(10.0)
     assert body["change_pct"] == pytest.approx(20.0)
+
+
+def test_a_rolled_forward_anchor_never_flattens_the_move_to_zero(client, monkeypatch) -> None:
+    """The pre-market state must not render a real move as `+$0.00 · +0.00%`.
+
+    Measured in production 2026-08-28 11:43Z on the served route: every US
+    dossier returned change_abs 0.0 and change_pct 0.0 while the price shown was
+    a close that had moved +8.74% to get there.  The cause is upstream's anchor
+    roll — with no session in hand today, `prevClose` advances to the last close
+    and therefore EQUALS `last`.  Deriving the move from that pair is
+    self-consistent and useless: it measures the close against itself.
+    """
+    _patch_hub(monkeypatch, HUB_NVDA_PREMARKET, now=1787917374 + 30)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["price"] == pytest.approx(227.98)
+    assert body["change_pct"] == pytest.approx(8.7379566917867, abs=1e-9)
+    assert body["change_abs"] == pytest.approx(18.32, abs=0.01)
+    # the zero pair is the defect, named explicitly so a regression cannot pass
+    assert body["change_abs"] != pytest.approx(0.0, abs=1e-9)
+    assert body["change_pct"] != pytest.approx(0.0, abs=1e-9)
+
+
+def test_the_reported_anchor_is_the_one_the_move_was_measured_from(client, monkeypatch) -> None:
+    """price, prev_close and the move must describe ONE session, not two.
+
+    Forwarding upstream's rolled anchor beside the previous session's percentage
+    would publish a triple that cannot be reconciled by the reader: 227.98 from
+    227.98, up 8.74%.  Whichever anchor we publish, the arithmetic has to close.
+    """
+    _patch_hub(monkeypatch, HUB_NVDA_PREMARKET, now=1787917374 + 30)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["prev_close"] == pytest.approx(209.656, abs=0.01)
+    assert body["prev_close"] != pytest.approx(227.98, abs=1e-6)
+    assert body["price"] - body["prev_close"] == pytest.approx(body["change_abs"], abs=1e-9)
+    assert (
+        body["change_abs"] / body["prev_close"] * 100.0
+        == pytest.approx(body["change_pct"], abs=1e-9)
+    )
+
+
+def test_the_previous_session_move_is_only_used_when_upstream_publishes_it(
+    client, monkeypatch
+) -> None:
+    """`prevSessionChg` is upstream's own "today is not in hand" signal.
+
+    It is deleted the moment today's session IS in hand, so its ABSENCE must
+    leave the ordinary same-session derivation exactly as it was — otherwise
+    this fix would quietly rewrite the live RTH path it never meant to touch.
+    """
+    _patch_hub(
+        monkeypatch,
+        _premarket_row(prevSessionChg=_ABSENT, last=230.0, prevClose=200.0),
+        now=1787917374 + 30,
+    )
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["prev_close"] == pytest.approx(200.0)
+    assert body["change_abs"] == pytest.approx(30.0)
+    assert body["change_pct"] == pytest.approx(15.0)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [-100.0, -100.0000001, -250.0, float("nan"), float("inf"), None, "8.74", 0.0],
+)
+def test_an_unusable_previous_session_percent_falls_back_instead_of_dividing_by_zero(
+    client, monkeypatch, bad
+) -> None:
+    """-100% implies a zero anchor; a string or NaN implies no anchor at all.
+
+    Each of these reaches a division, and the honest answer to "I cannot
+    reconstruct the anchor" is the ordinary derivation, never a 500 and never an
+    infinity rendered as a price.
+    """
+    _patch_hub(monkeypatch, _premarket_row(prevSessionChg=bad), now=1787917374 + 30)
+    response = client.get("/api/dossier-quote/NVDA")
+    assert response.status_code == 200
+    body = response.json()
+    assert math.isfinite(body["change_abs"])
+    assert math.isfinite(body["change_pct"])
+    assert math.isfinite(body["prev_close"])
+    assert body["prev_close"] > 0
+
+
+def test_a_negative_previous_session_move_reconstructs_a_higher_anchor(
+    client, monkeypatch
+) -> None:
+    """The sign must survive the reconstruction — a down session stays down.
+
+    Discrimination against a fix that takes the magnitude: from a close of
+    227.98 that fell 8.74%, the anchor is ABOVE the price, not below it.
+    """
+    _patch_hub(monkeypatch, _premarket_row(prevSessionChg=-8.7379566917867), now=1787917374 + 30)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["change_pct"] == pytest.approx(-8.7379566917867, abs=1e-9)
+    assert body["change_abs"] < 0
+    assert body["prev_close"] > body["price"]
+    assert body["prev_close"] == pytest.approx(227.98 / (1 - 0.087379566917867), abs=0.01)
 
 
 # ── 3. allowlist + debrand ──────────────────────────────────────────────────

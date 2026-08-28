@@ -1,5 +1,5 @@
 {
-  "appended": 2,
+  "appended": 0,
   "asof": "2026-08-27",
   "candidates": {
     "R": 2,
@@ -7,7 +7,7 @@
     "W": 33
   },
   "deduped": {
-    "R": 0,
+    "R": 2,
     "T": 3,
     "W": 33
   },
@@ -19,15 +19,15 @@
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
+      "consulted": false,
       "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
       "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 2,
-      "tickers_read": 2
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -48,13 +48,7 @@
       "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-27",
-      "n_tickers": 1544,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
@@ -82,10 +76,7 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "WOR",
-      "LTC"
-    ],
+    "R": [],
     "T": [],
     "W": []
   },
@@ -95,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-28 10:37:29",
-  "runtime_s": 133.2,
+  "run_utc": "2026-08-28 14:26:53",
+  "runtime_s": 114.3,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": -1,
     "asof": "2026-08-28",
-    "n_members": 139,
+    "n_members": 134,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.884,
+        "emerging_score": 2.962,
         "rank": 1,
-        "theme": "Commodities Metals"
-      },
-      {
-        "emerging_score": 2.074,
-        "rank": 2,
         "theme": "Cybersecurity"
       },
       {
-        "emerging_score": 1.845,
+        "emerging_score": 2.734,
+        "rank": 2,
+        "theme": "Commodities Metals"
+      },
+      {
+        "emerging_score": 1.776,
         "rank": 3,
-        "theme": "Crypto & Blockchain"
+        "theme": "Mega-Cap"
       },
       {
-        "emerging_score": 1.404,
+        "emerging_score": 1.77,
         "rank": 4,
-        "theme": "Quantum Computing"
+        "theme": "Biometrics"
       },
       {
-        "emerging_score": 1.375,
+        "emerging_score": 1.333,
         "rank": 5,
-        "theme": "Electric Vehicles"
+        "theme": "Software"
       }
     ]
   },
@@ -147,7 +138,7 @@
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 25.8,
+    "runtime_s": 21.6,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 97,
