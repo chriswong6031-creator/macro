@@ -40,7 +40,7 @@ verified:
       docs/sol_skills/INDEX.md plus COLD_START.md, REVIEW_RETURN.md,
       RECONCILE_STATE.md, and CLOSEOUT.md from the same commit.
     result: >
-      Protected Mastermind is 65d5f07eb7667304c50c9673c61b9a0a6b95d3f3;
+      Protected Mastermind is b901dee0272a99b8a1d60385848b99b7273e8261;
       mastermind.sol_skillpack.v1 version 1.0.0 remains compatible with bootstrap_major 1.
   - claim: "The D12 producer repair is on main and remains BUILT_NOT_PROVEN rather than accepted."
     command: >
@@ -86,6 +86,12 @@ unverified:
       the VPS evaluator consumes that pack without global stale_pack darkness, publishes an
       advancing served/R2 artifact with a non-empty states map, and the external health plane
       reports the pack basis healthy. #6569's fresh-empty fence must not be in breach.
+danger_areas:
+  - "Fresh pass_ts or pack_ok=True alone is not D12 acceptance. #6569 proved a fresh artifact can still serve states={} while the evaluator refuses a stale_pack."
+  - "Do not replace delayed natural Build-B admission with workflow_dispatch. The ordinary scheduled run identity and its actual build_prophet_live_pack step are part of the evidence contract."
+  - "Do not manually dispatch prophet-live.yml while the VPS timer is primary; that bypasses the single-writer production ownership boundary and can create two writers on live/prophet_live.json."
+  - "The #6569 sentinel fences are detection evidence, not producer acceptance by themselves. An ahead-of-calendar/fresh-empty fence going green does not prove that #6554's producer path executed naturally."
+  - "Current GitHub main may advance on unrelated work while this external gate waits. Reconcile exact run/head and material Prophet source paths before interpreting any later nightly as the D12 acceptance carrier."
 unresolved:
   - "D12 production acceptance remains BUILT_NOT_PROVEN. The producer implementation and cleanup are merged; natural arming proof and subsequent live-consumer proof are still owed."
   - "The historical source/operator of the D12 contamination remains unreproduced/unattributed; do not manufacture a contaminated production store merely to make that provenance easier to demonstrate."
