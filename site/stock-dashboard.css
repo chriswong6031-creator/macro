@@ -1,0 +1,392 @@
+/* Stock Dashboard governed presentation — TP-1 Canada theme-parity extraction
+   (theme-parity-tp1-canada-20260828-sol-001).
+   research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md §4-5.
+
+   This file owns every presentation rule the Canada V3.8 composer
+   (site/canada-stock-v36.js) used to author itself as a runtime <style> tag
+   (the deleted injectCss()). It is a paired plain-copy asset — byte-identical
+   to site/stock-dashboard.css (scripts/check_template_site_sync.py) — loaded
+   by templates/dashboard-icons.js's ensureStockDashCss() seam BEFORE the
+   composer script is injected, so the composer never mounts unstyled.
+
+   Scope: everything lives under .mx-stockdash (the shared stock-dashboard
+   mount family) and .mx-stockdash--ca (the Canada variant). The composer
+   keeps its existing .ca-v36-* child class names this wave (V3.8 semantic
+   naming is unchanged) — only the STYLE OWNERSHIP moved.
+
+   Token notes:
+   - --r-ctl / --r-card / --r-panel / --r-pill are the DS-PR-0 radius scale,
+     not yet landed at :root (confirmed in templates/theme.css around its
+     .skel/.mx-ladder comments). Every border-radius below therefore uses the
+     same var(--r-<family>, <current-px>) fallback idiom theme.css itself
+     already uses for .skel/.aib-card/.mx-ladder — the fallback is what
+     always renders today, so dark geometry is preserved 1:1 while the
+     semantic token name is bound for when the scale lands.
+   - Elevation: var(--card-shadow) for flat panel/control surfaces,
+     var(--popover-shadow) for the floating modal card (theme.css defines
+     both tokens per-theme; the modal's previous hand-authored shadow colour
+     functions used the SAME base colour channels theme.css's own
+     --popover-shadow already uses — confirming this is the intended
+     canonical mapping, not an approximation of convenience).
+   - Scrims/glows that were previously raw colour-function literals are
+     recomposed with color-mix(in srgb, var(--bg|--text) N%, transparent),
+     the same idiom templates/theme.css's own .af-scrim uses, preserving the
+     original alpha value exactly.
+   - Action lane/stance identity reads the Prophet stance token family
+     (var(--ink-pv-<tone>, var(--pv-<tone>))), applied to both the stance
+     chips and the Act-Now lane headers — never a market-direction literal.
+     The Canada quote .nb-chg.up/.down convention (var(--ok)/var(--act),
+     Western green-up/red-down even under ZH) is untouched. */
+
+.mx-stockdash {
+  box-sizing: border-box;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+.mx-stockdash *,
+.mx-stockdash *::before,
+.mx-stockdash *::after { box-sizing: border-box; }
+
+/* ---- Canada shell / head / Board+LIVE chips ------------------------------ */
+
+body.page-canada.ca-v36-mounted { background: var(--bg); color: var(--text); }
+body.page-canada.ca-v36-mounted > .panel { display: none !important; }
+
+.mx-stockdash--ca {
+  width: min(1480px, calc(100% - 32px));
+  margin: 22px auto 44px;
+  font-size: 16.2px;
+  line-height: 1.48;
+}
+.mx-stockdash--ca button,
+.mx-stockdash--ca input,
+.mx-stockdash--ca select { font-family: var(--font-ui); }
+
+.mx-stockdash--ca .ca-v36-head { display: flex; align-items: center; gap: 12px; min-height: 66px; margin-bottom: 14px; }
+.mx-stockdash--ca .ca-v36-head h1 { margin: 0; font-size: 31.5px; line-height: 1.05; font-weight: 650; letter-spacing: -.03em; }
+.mx-stockdash--ca .ca-v36-head-spacer { flex: 1; }
+
+.mx-stockdash--ca .ca-v36-chip,
+.mx-stockdash--ca .ca-v36-live {
+  height: 37px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 600; white-space: nowrap;
+}
+.mx-stockdash--ca .ca-v36-live-dot {
+  width: 7px; height: 7px; border-radius: var(--r-pill, 50%);
+  background: var(--ok); box-shadow: 0 0 9px color-mix(in srgb, var(--ok) 55%, transparent);
+}
+.mx-stockdash--ca .ca-v36-live b { color: var(--ok); }
+
+/* Fresh-signals cue (owner .pv-mk-new markers) in the Prophet header. */
+.mx-stockdash--ca .ca-v36-fresh { color: var(--muted); font-size: 12.2px; white-space: nowrap; }
+
+.mx-stockdash--ca .ca-v36-lead-basis {
+  height: 26px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 650; white-space: nowrap;
+}
+
+/* ---- Section shells ------------------------------------------------------ */
+
+.mx-stockdash--ca .ca-v36-panel {
+  margin-bottom: 14px; border: 1px solid var(--line); border-radius: var(--r-panel, 13px);
+  background: var(--panel); box-shadow: var(--card-shadow); overflow: hidden;
+}
+.mx-stockdash--ca .ca-v36-sec-hd { min-height: 54px; display: flex; align-items: center; gap: 10px; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-sec-hd h2 { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -.012em; }
+.mx-stockdash--ca .ca-v36-sec-spacer { flex: 1; }
+.mx-stockdash--ca .ca-v36-link { color: var(--ink-link, var(--link)); font-size: 13px; font-weight: 600; text-decoration: none; }
+.mx-stockdash--ca .ca-v36-link:hover { text-decoration: underline; }
+
+/* ---- What to Act On Now: segmented control / lanes / rows / counts / routes / empty / View-all --- */
+
+.mx-stockdash--ca .ca-v36-an-body { padding: 10px 12px 11px; }
+
+.mx-stockdash--ca .ca-v36-an-seg { display: none; gap: 6px; margin-bottom: 10px; }
+.mx-stockdash--ca .ca-v36-an-seg button {
+  flex: 1; min-width: 0; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 0 7px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-seg-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-an-seg b { flex: none; font-variant-numeric: tabular-nums; font-weight: 700; }
+.mx-stockdash--ca .ca-v36-an-seg button[aria-selected=true] {
+  color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); background: var(--panel);
+}
+
+.mx-stockdash--ca .ca-v36-an-lanes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.mx-stockdash--ca .ca-v36-an-lane { border: 1px solid var(--line); border-radius: var(--r-card, 11px); background: var(--panel2); overflow: hidden; }
+
+.mx-stockdash--ca .ca-v36-an-hd {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px;
+  border-bottom: 1px solid var(--line); border-top: 2px solid currentColor;
+  font-size: 11px; font-weight: 750; text-transform: uppercase; letter-spacing: .02em;
+}
+.mx-stockdash--ca .ca-v36-an-hd.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+.mx-stockdash--ca .ca-v36-an-hd.near { color: var(--ink-pv-near, var(--pv-near)); }
+.mx-stockdash--ca .ca-v36-an-hd.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--ca .ca-v36-an-hd.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+.mx-stockdash--ca .ca-v36-an-hd b { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; }
+
+.mx-stockdash--ca .ca-v36-an-row-w { display: flex; align-items: stretch; border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca .ca-v36-an-hd + .ca-v36-an-row-w { border-top: 0; }
+
+.mx-stockdash--ca .ca-v36-an-row {
+  flex: 1; display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 32px; padding: 5px 10px; border: 0; background: transparent; color: inherit;
+  font-size: 12.6px; font-weight: 650; text-align: left; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-row:hover:not(:disabled),
+.mx-stockdash--ca .ca-v36-an-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-an-row:disabled { cursor: default; }
+.mx-stockdash--ca .ca-v36-an-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-an-n { flex: none; color: var(--muted); font-size: 10.6px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.mx-stockdash--ca .ca-v36-an-go {
+  flex: none; display: inline-flex; align-items: center; padding: 0 9px;
+  border-left: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  color: var(--muted); font-size: 12px; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-an-go:hover { color: var(--text); background: color-mix(in srgb, var(--link) 6%, transparent); }
+
+.mx-stockdash--ca .ca-v36-an-empty { padding: 12px 10px; color: var(--muted); font-size: 12px; text-align: center; }
+
+.mx-stockdash--ca .ca-v36-an-more {
+  display: block; width: 100%; padding: 7px 10px; border: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-an-more:hover { color: var(--text); }
+
+.mx-stockdash--ca .ca-v36-empty-go {
+  display: inline-block; margin-top: 10px; color: var(--ink-link, var(--link));
+  font-size: 12px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-empty-go:hover { text-decoration: underline; }
+
+/* ---- Leadership & Rotation: rows / rank / name / leaders / stance / count / basis --- */
+
+.mx-stockdash--ca .ca-v36-lead-cols { display: block; }
+.mx-stockdash--ca .ca-v36-lead-col-h {
+  display: flex; justify-content: space-between; padding: 11px 14px 10px;
+  color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+}
+
+.mx-stockdash--ca .ca-v36-lead-row {
+  position: relative; width: 100%; min-height: 58px; display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto 34px; align-items: center; gap: 9px; padding: 10px 14px;
+  border: 0; border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: transparent; color: inherit; text-align: left; cursor: pointer; overflow: hidden;
+  transition: .15s ease;
+}
+.mx-stockdash--ca .ca-v36-lead-row:after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: var(--breadth, 8%); height: 1px;
+  background: color-mix(in srgb, var(--link) 44%, transparent); opacity: .5;
+}
+.mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled),
+.mx-stockdash--ca .ca-v36-lead-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-lead-row:disabled { cursor: default; }
+.mx-stockdash--ca .ca-v36-rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; }
+.mx-stockdash--ca .ca-v36-lead-name { display: block; font-size: 14.7px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-leaders { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.7px; text-align: right; }
+
+.mx-stockdash--ca .ca-v36-stance {
+  height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
+  border: 1px solid currentColor; border-radius: var(--r-ctl, 6px);
+  font-size: 10px; font-weight: 750; text-transform: uppercase; white-space: nowrap;
+}
+.mx-stockdash--ca .ca-v36-stance.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+.mx-stockdash--ca .ca-v36-stance.near { color: var(--ink-pv-near, var(--pv-near)); }
+.mx-stockdash--ca .ca-v36-stance.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--ca .ca-v36-stance.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+
+.mx-stockdash--ca .ca-v36-expand-wrap {
+  display: flex; justify-content: center; padding: 9px 12px 11px; border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel2) 32%, transparent);
+}
+.mx-stockdash--ca .ca-v36-expand {
+  height: 35px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 12.5px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-expand:hover { border-color: color-mix(in srgb, var(--text) 30%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Prophet controls / grid / card typography ---------------------------- */
+
+.mx-stockdash--ca .ca-v36-controls { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mx-stockdash--ca .ca-v36-seg { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: var(--r-ctl, 9px); background: var(--panel2); }
+.mx-stockdash--ca .ca-v36-seg button {
+  height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-ctl, 7px);
+  background: transparent; color: var(--muted); font-size: 13.1px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-seg button[aria-selected=true] {
+  background: var(--panel); border-color: var(--line); color: var(--text); box-shadow: var(--card-shadow);
+}
+.mx-stockdash--ca .ca-v36-result { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.mx-stockdash--ca .ca-v36-filter {
+  display: none; height: 32px; align-items: center; padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--link) 35%, var(--line)); border-radius: var(--r-pill, 999px);
+  background: color-mix(in srgb, var(--link) 7%, transparent); color: var(--text); font-size: 12px; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-filter.is-on { display: inline-flex; }
+
+/* ---- Hidden overrides (card.hidden = !show defeats author display rules) --- */
+
+.mx-stockdash--ca .ca-v36-card-grid[hidden] { display: none !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pvcard[hidden] { display: none !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; padding: 14px;
+}
+.mx-stockdash--ca .ca-v36-card-grid .pvcard {
+  min-width: 0; height: 100%; font-family: var(--font-ui);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.mx-stockdash--ca .ca-v36-card-grid .pvcard:hover { transform: translateY(-2px); }
+
+/* .sm-hidden rescue: legacy "show more" hidden state must not survive the move. */
+.mx-stockdash--ca .ca-v36-card-grid .sm-hidden { display: flex !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .pv-chart svg { height: 82px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-bd { padding: 14px 14px 12px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-family: var(--font-ui) !important; font-size: 16.7px !important; font-weight: 700 !important; letter-spacing: -.012em !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-nm { font-family: var(--font-ui) !important; font-size: 12.5px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-ind { font-size: 11.1px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-edge { font-family: var(--font-ui) !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-edn { font-size: 16px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-family: var(--font-ui) !important; font-size: 15.8px !important; font-weight: 750 !important; }
+.mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-family: var(--font-ui) !important; font-size: 13.4px !important; font-weight: 750 !important; }
+
+/* Canada quote colors: Western green-up/red-down, unchanged even under ZH. */
+.mx-stockdash--ca .nb-chg.up,
+.mx-stockdash--ca .ca-v36-table .nb-chg.up { color: var(--ok) !important; }
+.mx-stockdash--ca .nb-chg.down,
+.mx-stockdash--ca .ca-v36-table .nb-chg.down { color: var(--act) !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .pv-chip { font-size: 10.8px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-life-w,
+.mx-stockdash--ca .ca-v36-card-grid .pv-stl { font-size: 11.1px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-zn { min-height: 42px !important; font-size: 11.6px !important; }
+.mx-stockdash--ca .ca-v36-card-grid .pv-znr,
+.mx-stockdash--ca .ca-v36-card-grid .pv-znm { font-family: var(--font-ui) !important; font-size: 11.8px !important; }
+
+.mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
+  border-color: color-mix(in srgb, var(--link) 20%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 8%, transparent),
+    0 0 24px -16px color-mix(in srgb, var(--link) 42%, transparent),
+    0 8px 24px -20px color-mix(in srgb, var(--bg) 55%, transparent);
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-card-grid .ca-v36-top-pick {
+  background: var(--panel);
+  border-color: color-mix(in srgb, var(--link) 18%, var(--line));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--link) 7%, transparent),
+    0 10px 26px -22px color-mix(in srgb, var(--link) 30%, transparent);
+}
+
+.mx-stockdash--ca .ca-v36-empty { grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+.mx-stockdash--ca .ca-v36-empty-switch {
+  display: block; margin: 10px auto 0; height: 31px; padding: 0 13px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--text); font-size: 11.8px; font-weight: 650; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-empty-switch:hover { border-color: color-mix(in srgb, var(--text) 30%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Table / live quote presentation --------------------------------------- */
+
+.mx-stockdash--ca .ca-v36-table { padding: 12px 14px 15px; }
+.mx-stockdash--ca .ca-v36-table[hidden] { display: none !important; }
+.mx-stockdash--ca .ca-v36-table #stocktable-wrap { display: block !important; }
+.mx-stockdash--ca .ca-v36-table .stf-row,
+.mx-stockdash--ca .ca-v36-table .stf-controls { font-family: var(--font-ui) !important; }
+.mx-stockdash--ca .ca-v36-table :is(input, select, button) { min-height: 38px; font-size: 12.8px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table { font-family: var(--font-ui) !important; font-size: 13.3px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table th { font-size: 11px !important; padding: 11px 10px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table td { padding: 11px 10px !important; }
+.mx-stockdash--ca .ca-v36-table .st-table td:nth-child(2) b { font-family: var(--font-ui) !important; font-size: 13.8px; }
+.mx-stockdash--ca .ca-v36-table-live { display: inline-flex; align-items: baseline; gap: 8px; white-space: nowrap; font-family: var(--font-ui); }
+.mx-stockdash--ca .ca-v36-table-live .nb-px { font-size: 14.8px; font-weight: 700; }
+.mx-stockdash--ca .ca-v36-table-live .nb-chg { font-size: 12.7px; font-weight: 750; }
+.mx-stockdash--ca .ca-v36-table tr.ca-v36-hidden { display: none !important; }
+
+/* ---- Research Tools --------------------------------------------------------- */
+
+.mx-stockdash--ca .ca-v36-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 11px 14px; }
+.mx-stockdash--ca .ca-v36-tools b { font-size: 12.8px; margin-right: 2px; }
+.mx-stockdash--ca .ca-v36-tool {
+  height: 37px; display: inline-flex; align-items: center; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--r-ctl, 8px);
+  background: var(--panel2); color: var(--muted); font-size: 12.1px; font-weight: 600; text-decoration: none;
+}
+.mx-stockdash--ca .ca-v36-tool:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); transform: translateY(-1px); }
+
+/* ---- Evidence & Record ------------------------------------------------------ */
+
+.mx-stockdash--ca .ca-v36-evidence-body { display: flex; justify-content: center; padding: 13px 14px 15px; font-family: var(--font-ui); }
+.mx-stockdash--ca .ca-v36-evidence-body .trk { margin: 0; padding: 9px 12px; font-family: var(--font-ui); }
+
+/* ---- Modal (Expand leadership) ---------------------------------------------- */
+
+.mx-stockdash--ca .ca-v36-modal {
+  position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
+  padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
+}
+.mx-stockdash--ca .ca-v36-modal.is-open { display: flex; }
+.mx-stockdash--ca .ca-v36-modal-card {
+  width: min(1180px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 36px));
+  display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-panel, 15px);
+  background: var(--panel); box-shadow: var(--popover-shadow); overflow: hidden;
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-modal { background: color-mix(in srgb, var(--text) 22%, transparent); }
+.mx-stockdash--ca .ca-v36-modal-hd { min-height: 56px; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-modal-hd h3 { margin: 0; font-size: 19px; font-weight: 650; }
+.mx-stockdash--ca .ca-v36-modal-x {
+  margin-left: auto; width: 36px; height: 36px; border: 1px solid var(--line); border-radius: var(--r-ctl, 9px);
+  background: var(--panel2); color: var(--text); font-size: 21px; cursor: pointer;
+}
+.mx-stockdash--ca .ca-v36-modal-body { overflow: auto; padding: 14px; }
+.mx-stockdash--ca .ca-v36-modal-pane { border: 1px solid var(--line); border-radius: var(--r-card, 12px); overflow: hidden; background: var(--panel2); }
+.mx-stockdash--ca .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mx-stockdash--ca .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
+.mx-stockdash--ca .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
+.mx-stockdash--ca .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca .ca-v36-modal-table tbody tr { cursor: pointer; }
+.mx-stockdash--ca .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-modal-table .num,
+.mx-stockdash--ca .ca-v36-modal-table .leaders { color: var(--muted); }
+
+/* ---- Responsive: 1200 / 900 / 680 -------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .mx-stockdash--ca .ca-v36-head { flex-wrap: wrap; }
+  .mx-stockdash--ca .ca-v36-head-spacer { display: none; }
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .mx-stockdash--ca { width: min(100% - 20px, 680px); margin-top: 12px; font-size: 15.8px; }
+  .mx-stockdash--ca .ca-v36-head { gap: 8px; }
+  .mx-stockdash--ca .ca-v36-head h1 { width: 100%; font-size: 27.5px; }
+  .mx-stockdash--ca .ca-v36-fresh { white-space: normal; }
+  .mx-stockdash--ca .ca-v36-sec-hd { align-items: flex-start; flex-wrap: wrap; padding: 11px 12px; }
+  .mx-stockdash--ca .ca-v36-sec-hd h2 { font-size: 17px; }
+  .mx-stockdash--ca .ca-v36-controls { width: 100%; }
+  /* Mobile Act-Now grammar: one segmented lane selector, one lane body at a
+     time, no stacked giant lane cards, no horizontal overflow. */
+  .mx-stockdash--ca .ca-v36-an-seg { display: flex; }
+  .mx-stockdash--ca .ca-v36-an-lanes { grid-template-columns: 1fr; }
+  .mx-stockdash--ca .ca-v36-an-lane { display: none; }
+  .mx-stockdash--ca .ca-v36-an-lane.is-current { display: block; }
+  .mx-stockdash--ca .ca-v36-card-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+  .mx-stockdash--ca .ca-v36-card-grid .pv-tk { font-size: 16.3px !important; }
+  .mx-stockdash--ca .ca-v36-card-grid .nb-px.pv-px { font-size: 15.5px !important; }
+  .mx-stockdash--ca .ca-v36-card-grid .nb-chg.pv-chg { font-size: 13.1px !important; }
+  .mx-stockdash--ca .ca-v36-modal { padding: 8px; }
+  .mx-stockdash--ca .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
+  .mx-stockdash--ca .ca-v36-evidence-body { padding: 11px 10px 13px; }
+}
