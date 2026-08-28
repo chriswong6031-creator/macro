@@ -144,27 +144,32 @@ are interpreted together in a ticker-specific, continuously refreshed current st
 The record belongs with F03 and must remain research/decision-support context until
 its own source, timing, and evaluation law is accepted.
 
-### P-003 — Catalyst-to-options is a persistent state machine
+### P-003 — Catalyst-to-options presents a state-machine contract
 
-The workflow is a durable sequence, not a page called “catalyst-to-options”:
+The public surface presents this sequence, rather than merely a page named
+“catalyst-to-options”:
 
 ```text
 catalyst -> exposed assets -> options structures -> saved thesis -> change monitor
 ```
 
-The thesis binds catalyst, asset, structure, rationale, invalidation, and alert;
-subsequent related catalysts and asset moves update the monitored state. This confirms
-the depth behind `MO-DELTA-033` and `MO-PAID-070` rather than creating a separate
-workflow authority. F03/F11/F08 must preserve the handoffs and persistence, not just
-the module names.
+The public description says a thesis binds catalyst, asset, structure, rationale,
+invalidation, and alert, and that related catalysts and asset moves can change the
+monitored state. No thesis was created, reloaded, or monitored in this operation.
+Accordingly, persistence is **unproven**; the preserved finding is a state-machine
+*contract presented by the public surface*. It confirms the depth behind
+`MO-DELTA-033` and `MO-PAID-070` rather than creating a separate workflow authority.
+F03/F11/F08 must preserve the candidate handoffs and test persistence separately.
 
 ### P-004 — Research Terminal is a continuation graph
 
-A live catalyst is ranked using direction, horizon, confidence, dislocation, and
-pricedness, then transitions to a ticker workspace, valuation inputs, policy pipeline,
-capital-markets analysis, or scenario/portfolio response. The current pages expose
-source/evidence, mechanism, affected assets, risks, invalidation, and monitoring
-conditions through that transition graph.
+A live catalyst is visibly ranked using direction, horizon, confidence, dislocation,
+and pricedness, with calls to continue into a ticker workspace, valuation inputs,
+policy pipeline, capital-markets analysis, or scenario/portfolio response. The current
+page displays source/evidence, mechanism, affected assets, risks, invalidation, and
+monitoring fields associated with that graph. The calls were not activated and no
+saved research object was created, so destination behavior and persistence are
+unproven.
 
 This confirms the relevant existing baseline and delta families but shows that the
 preservation unit is the **event-to-next-research-surface transition**, not the six
@@ -173,15 +178,17 @@ F08/F09 retain their existing ownership boundaries.
 
 ### P-005 — Capital Markets is an issuer state cycle
 
-The capital-markets page combines: issuer qualification; probable action and timing;
+The capital-markets page presents: issuer qualification; probable action and timing;
 candidate financing routes and gating conditions; comparable terms; a transaction
 effect across share count, ownership, debt, interest expense, leverage, liquidity,
-WACC, and valuation; and saved issuer monitoring that reopens when conditions change.
+WACC, and valuation; and an offered saved-issuer/return-on-change workflow. No issuer
+was saved, no transaction was accessed, and no return/monitor transition was observed.
 
 Existing F09 rows name the constituent workbenches. The current preservation delta is
-the state cycle that makes them one returning issuer analysis rather than independent
-screens. It is a depth reconciliation candidate, not approval for a parallel capital-
-structure truth plane.
+the **presented state cycle** that would make them one returning issuer analysis rather
+than independent screens; its actual persistence is an explicit test gap. It is a
+depth reconciliation candidate, not approval for a parallel capital-structure truth
+plane.
 
 ### P-006 — Indexed public route families are themselves preservation evidence
 
@@ -193,14 +200,16 @@ family shape; it does not license bulk copying of event prose or data.
 
 ## 6. Confirmations that reduce ambiguity but do not close the audit
 
-- The public event-to-holdings page confirms the earlier `MO-DELTA-042` pattern:
-  one time-stamped event resolves through a mechanism into per-position direction,
-  timeframe, confidence, evidence, and invalidation, with monitoring as a later
-  state. It is a confirmation, not a new portfolio authority.
-- The API page confirms the earlier API delta and adds monitor/update, stored-analysis,
-  evidence retrieval, and widget-session route shapes. Its declared separation of
+- The public event-to-holdings page visibly presents the earlier `MO-DELTA-042`
+  pattern: one time-stamped event resolves through a mechanism into per-position
+  direction, timeframe, confidence, evidence, and invalidation, with monitoring as an
+  offered later state. No holdings or monitor were submitted, so the state transition
+  is unproven. It is a confirmation, not a new portfolio authority.
+- The API page documents the earlier API delta and adds monitor/update, stored-analysis,
+  evidence retrieval, and widget-session route shapes. Its stated separation of
   evidence and inference, versioning, idempotency, signed delivery, retry, and
-  deduplication remains a contract/reconciliation input only. No API was called.
+  deduplication remains a contract/reconciliation input only. No API was called, so no
+  response, persisted analysis, monitor update, or delivery behavior was verified.
 - The public daily brief page shows a brief as a dated state containing regime,
   cross-asset monitor, transmission-chain status, scorecard, and week-ahead schedule.
   This confirms depth behind the existing daily-brief rows; it is not a new signal
@@ -219,10 +228,11 @@ family shape; it does not license bulk copying of event prose or data.
 ## 8. Visual/state preservation rule
 
 No competitor screenshots, visual assets, or source code are imported. Desktop public
-layouts were observed only to validate that the recorded fields and transition controls
-exist as visible product state. The durable record intentionally stores semantic visual
-structure—panel, list/table, filter, detail, action, and entitlement placements—rather
-than screenshots. Mobile behavior and authenticated visual states remain unproven.
+layouts were observed only to validate visible state and controls. The matrix now
+records semantic visual structure, available action, observed action result/auth
+boundary, transition contract, persistence status, and entitlement status separately.
+It intentionally stores that semantic visual structure rather than screenshots. Mobile
+behavior and authenticated visual states remain unproven.
 
 ## 9. Required next action and review challenge
 
