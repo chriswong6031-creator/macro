@@ -426,6 +426,62 @@ change and was not made here. Discriminating tests
 `test_grain_cadence_null_preserves_weekly_grain_weekday_distribution`,
 `test_grain_cadence_null_preserves_stamp_lag_exactly`.
 
+**MAJOR weekday-phase repair (delta-review third pass) — what is actually
+guaranteed:** the §4-repair fix above constrains `K` to a MULTIPLE of the
+grain period in SESSIONS, but a fixed session count is not a fixed number of
+CALENDAR WEEKS on a real (holiday-bearing) trading calendar — the M4-regression
+fix's own discriminating test only appeared to prove weekday preservation
+because its fixture was a holiday-free `pd.bdate_range`, where session count
+and calendar weeks coincide exactly with no gaps. On a real calendar, a
+period-multiple `K` alone does NOT guarantee that every fire in a group lands
+back on its own original weekday. `grain_cadence_null` now runs an explicit,
+bounded, deterministic-seeded search
+(`engine.stock_identity.ruler_nulls._weekday_preserving_offset`,
+`GRAIN_CADENCE_PHASE_RETRY_BUDGET = 25`) per `(family_key, symbol)` group:
+
+1. The group's earliest fire (the "anchor") is landed on its own weekday: the
+   candidate `K`s in `[63, 252]` (still multiples of the grain period) are
+   filtered to those that are weekday-admissible for the anchor alone.
+2. Ordered nearest-to-the-original-seeded-draw first (deterministic
+   tie-break), each anchor-admissible `K` is tried in turn — up to the retry
+   budget — and accepted the moment EVERY fire in the group (not merely the
+   anchor) is verified to land back on its own original weekday under that
+   same shared `K`.
+3. If the retry budget is exhausted with no `K` verified for every fire, the
+   LARGEST anchor-admissible multiple is used as a last-resort shift (still a
+   real, in-range, session-landing offset), and that group's output rows are
+   marked `phase_preserved: false` rather than silently claiming a guarantee
+   that was never actually verified. (Pathological last resort, essentially
+   unreachable in practice: if NO multiple in the declared range is even
+   anchor-admissible, the original unconstrained seeded draw is kept, also
+   marked `phase_preserved: false`.)
+
+**Exact guarantee:** for a group marked `phase_preserved: true`, EVERY fire in
+that group is verified to land on its own original weekday under the null.
+For a group marked `phase_preserved: false`, no such guarantee holds — the
+shift is still a valid, real-session, period-constrained, in-declared-range
+offset, but the weekday phase of one or more fires may have drifted, and this
+is disclosed per row rather than hidden. A group whose symbol has no trading
+calendar available at all (untouched, no shift applied) carries
+`phase_preserved: <NA>`. Empirically, whether a group actually achieves
+`phase_preserved: true` depends on how tightly clustered its fires are and how
+the calendar's holidays happen to fall — a narrow, modestly-sized group (e.g.
+10 fires within ~200 sessions) reliably finds a fully-verified `K`; a group
+whose fires span YEARS (the REAL pilot cohort's actual weekly-grain groups —
+see §6.10's real-scale finding, which measures `phase_preserved: false` for
+ALL 35 of 35 real weekly-grain groups) can genuinely have no single shared `K`
+in `[63, 252]` sessions that keeps every fire's weekday consistent, and is
+honestly marked `phase_preserved: false` rather than shipping an unverified
+claim. Discriminating tests
+(`tests/test_stock_identity_ruler_nulls.py`, both on a holiday-perturbed
+fixture, not the holiday-free one):
+`test_grain_cadence_null_preserves_weekly_grain_weekday_distribution` (named
+regression — the pre-pass-3 `grain_cadence_null`, an unconstrained
+period-multiple draw with no weekday admissibility search, lands this exact
+fixture/seed's fires on two distinct weekdays, `{3, 4}`, failing the
+assertion the current implementation now satisfies),
+`test_grain_cadence_null_phase_preserved_column_is_false_when_no_k_satisfies_every_fire`.
+
 ### 6.3 M11-regression — `random_fire_null` restores count/dwell matching (freeze §4.3 item 1)
 
 The §4 repair's `random_fire_null` drew each fire's new session INDEPENDENTLY
@@ -590,7 +646,50 @@ alone:
   (`scripts/stock_identity_build_ruler.py`,
   `scripts/stock_identity_calibrate_w3.py`) was updated to pass it.
 
-### 6.9 Pilot smoke re-run and spec hash
+### 6.9 Delta-review third pass — remaining MINORs and a NIT
+
+* **MINOR, cutoff harmonization completed:** §6.6's B3-minor (2) harmonized
+  `stock_identity_calibrate_w3.py`'s second barrier onto the frozen
+  `si_constants_v1.json` `calibration_history_cutoff`, but
+  `scripts/stock_identity_calibration_replay.py`'s `run_substrate` — the FIRST
+  barrier, the one that actually executes the (potentially multi-hour) 759-name
+  replay — still re-derived its own cutoff via `recent_history_cutoff()` on
+  whatever symbol set/calendar that particular run happened to have bars
+  loaded for. A disagreement between the two would only surface after the full
+  replay completed, when the second barrier's comparison raised. Fixed:
+  `run_substrate` now reads the cutoff from the SAME frozen source
+  (`frozen_calibration_history_cutoff()`, `CONSTANTS_PATH`'s
+  `calibration_history_cutoff`) directly. `recent_history_cutoff()` is kept and
+  still called, but only as a cheap CROSS-CHECK against the frozen value — a
+  disagreement is surfaced immediately as a line-start
+  `::warning title=si-w3a-substrate-cutoff-disagreement::...` GitHub annotation
+  (bare `print`, `flush=True` — house law), never raised, and the frozen value
+  always wins. Tests:
+  `test_frozen_calibration_history_cutoff_reads_the_real_committed_constant_calib_replay`,
+  `test_run_substrate_reads_cutoff_from_frozen_constants_not_recomputed`,
+  `test_run_substrate_warns_but_does_not_raise_on_cutoff_disagreement`,
+  `test_run_substrate_does_not_warn_when_frozen_and_derived_cutoff_agree`.
+* **MINOR, eligible-episode receipt fields:** the substrate provenance receipt
+  (`provenance_receipt.json`) gains `n_eligible_episodes`, `n_eligible_censored`,
+  and `censored_share_of_eligible`, computed from the substrate's own episode
+  catalog restricted to `tier <= 2` (the same "useful-zone" tier floor
+  `engine.stock_identity.episodes.durable_lows`'s default `min_tier` uses) —
+  so the censored-mass question ("how much of the eligible population never
+  resolved") is answerable directly from the receipt at 759-name scale,
+  before any PR-3 constant is even read, rather than requiring a reader to
+  reload the full `calibration_episodes_v1.parquet`. `censored_share_of_eligible`
+  is `None` (never a spurious `0.0`) when there are zero eligible episodes.
+  Tests: `test_run_substrate_provenance_carries_eligible_episode_fields`,
+  `test_run_substrate_eligible_episode_fields_are_zero_on_no_episodes`.
+* **NIT, proximity-pair grain column:** `equal_proximity_control`'s output
+  pair rows now carry a `grain` column recording the (single, shared) grain
+  that scoped the pair (the `(episode_id, grain)` group key §6.5 already
+  groups by) — `PROXIMITY_PAIR_COLUMNS` gained the field. A reader of the pair
+  output alone can now see which cadence bucket produced a pair without
+  rejoining `metrics`. Test:
+  `test_equal_proximity_control_pair_rows_carry_the_scoping_grain`.
+
+### 6.10 Pilot smoke re-run and spec hash
 
 `python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir <dir>`
 re-run after this repair pass, PR-3 still `pending_sealed_calibration`:
@@ -613,8 +712,45 @@ re-run after this repair pass, PR-3 still `pending_sealed_calibration`:
   `null_random_fire_events_v1.parquet` reproduce the real events'
   `signal_known_ts - signal_ts` lag EXACTLY, row for row (9,371 of 31,119 real
   events carry a nonzero lag; both nulls preserve every one of them).
-  `equal_proximity_pairs = 4820` under the new (episode, grain)-grouped
-  contract, `equal_proximity_pairs_truncated = 0`.
+  `random_fire_null`'s inter-fire gap MULTISET was independently re-verified
+  per `(family_key, symbol)` group against this same run's real events (257
+  groups checked, 0 mismatches). `equal_proximity_pairs = 4820` under the new
+  (episode, grain)-grouped contract, `equal_proximity_pairs_truncated = 0`,
+  and every pair row now carries the scoping `grain` (§6.9 NIT).
+* **Weekday-phase MAJOR fix — real-scale finding (delta-review third pass):**
+  the real pilot cohort's actual weekly-grain (`grain="W"`) events carry a
+  Friday share of **0.7589** (2,684 real `W`-grain events; not the ~0.622
+  figure named in the commissioning packet, which this run does not
+  reproduce — reported as measured, not adjusted to match). Under the null,
+  the weekly-grain rows' weekday share is **NOT preserved in aggregate**
+  (Friday share drops to 0.2575; `phase_preserved` is `False` for all 2,684 of
+  2,684 weekly-grain rows, and for all 35 of 35 `(family_key, symbol)`
+  weekly-grain groups, including single/few-fire groups). This is a
+  DISCLOSED, verified structural finding, not an algorithm defect: every real
+  pilot weekly-grain group spans MULTIPLE YEARS (the rarest, e.g.
+  `weekly_washout_turn`/`AG`, 15 fires from 2018-12-10 to 2026-06-22), and a
+  brute-force scan of the ENTIRE declared `[63, 252]`-session range (every
+  multiple of the grain period, not merely the seeded/anchor-admissible
+  candidates the real search tries) proves the true ceiling for two example
+  groups: `weekly_washout_turn`/`KO` (85 pure-`W` fires) tops out at 28/85
+  (33%) fires weekday-matched under its single best-possible shared `K` in
+  range; `sea_event_classes`/`KO` (1,719 mixed-grain fires, dominant grain
+  `2B`) tops out at 115/337 even ignoring the mixed-grain dominant-period
+  limitation entirely. No algorithm operating within the FROZEN shape (one
+  shared `K` per `(family_key, symbol)` group, drawn from the declared
+  `[63, 252]`-session range) can close this gap for groups spanning years —
+  it is a property of how many synthetic-calendar holidays accumulate
+  differently across DIFFERENT starting epochs within that same session-count
+  window, not a search-quality defect. The discriminating unit tests
+  (`test_grain_cadence_null_preserves_weekly_grain_weekday_distribution`,
+  `test_grain_cadence_null_phase_preserved_column_is_false_when_no_k_satisfies_every_fire`)
+  prove the search DOES achieve full, verified weekday preservation for a
+  narrower/tighter group (10 fires within ~9 months) and DOES honestly
+  disclose `phase_preserved: false` rather than silently claiming success
+  when it cannot — the mechanism is correct; the pilot cohort's real group
+  time-spans are simply outside what the frozen session-range design can
+  guarantee. See the commissioning packet's own delta-review report for the
+  disposition of this finding.
 * This build packet does not execute the real 759-name calibration-fire
   substrate act (out of scope per the commissioning packet), so the two B3-minor
   guard-drop counters (`n_events_dropped_by_recent_history_guard`,

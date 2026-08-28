@@ -469,6 +469,143 @@ def test_run_substrate_output_has_no_fit_rank_best_columns(synthetic_partition, 
         assert forbidden.isdisjoint(cols_lower)
 
 
+# ---------------------------------------------------------------------------
+# MINOR (delta-review third pass): run_substrate reads its recent-history
+# guard cutoff from the FROZEN si_constants_v1.json calibration_history_cutoff
+# (the same source calibrate_w3.py already reads), not a re-derivation from
+# whatever symbol set/calendar this particular run happens to have bars loaded
+# for. recent_history_cutoff() is kept only as a cheap cross-check that warns
+# (line-start ::warning) on disagreement.
+# ---------------------------------------------------------------------------
+def _fake_constants_path_with_cutoff(tmp_path, cutoff_str, name="si_constants_v1.json"):
+    """A fake si_constants_v1.json carrying the REAL committed file's full
+    payload (so unrelated reads -- P_pre, the episode constants -- keep
+    working) with only calibration_history_cutoff overridden."""
+    real_constants = json.loads(calib_replay.CONSTANTS_PATH.read_text(encoding="utf-8"))
+    path = tmp_path / name
+    path.write_text(
+        json.dumps({**real_constants, "calibration_history_cutoff": cutoff_str}),
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_frozen_calibration_history_cutoff_reads_the_real_committed_constant_calib_replay():
+    """Parity check: calib_replay's own frozen_calibration_history_cutoff must
+    read the SAME committed si_constants_v1.json field as calib_w3's -- both
+    are now the SAME single frozen source of truth."""
+    cutoff = calib_replay.frozen_calibration_history_cutoff()
+    assert cutoff == pd.Timestamp("2026-02-11")
+    assert cutoff == calib_w3.frozen_calibration_history_cutoff()
+
+
+def test_run_substrate_reads_cutoff_from_frozen_constants_not_recomputed(
+    monkeypatch, tmp_path, synthetic_partition, fake_w2_machinery,
+):
+    """The substrate's recorded recent_history_guard_cutoff must come from the
+    FROZEN constant, not a re-derivation from this run's own combined bars
+    calendar -- proved by pointing the frozen constant at a deliberately
+    different (but still valid) date than what recent_history_cutoff() would
+    derive from this fixture's synthetic calendar, and checking the
+    substrate's recorded cutoff follows the frozen value, not the derived
+    one."""
+    replay_manifest, roster = synthetic_partition
+    frozen_cutoff_str = "2020-01-02"
+    monkeypatch.setattr(
+        calib_replay, "CONSTANTS_PATH", _fake_constants_path_with_cutoff(tmp_path, frozen_cutoff_str),
+    )
+    result = calib_replay.run_substrate(replay_manifest, sample=["SYN_A", "SYN_B"])
+    assert result.provenance["recent_history_guard_cutoff"] == frozen_cutoff_str
+
+
+def test_run_substrate_warns_but_does_not_raise_on_cutoff_disagreement(
+    monkeypatch, tmp_path, capsys, synthetic_partition, fake_w2_machinery,
+):
+    """MINOR: a real disagreement between the frozen constant and what this
+    run's own combined bars calendar would derive must surface as a
+    line-start GitHub warning (never through a logger -- house law, a
+    prefixing format makes GitHub silently drop it) IMMEDIATELY, rather than
+    only being discovered after a multi-hour replay completes and
+    calibrate_w3.py's second barrier catches it -- and it must never raise;
+    the frozen value still wins."""
+    replay_manifest, roster = synthetic_partition
+    frozen_cutoff_str = "2020-01-02"  # far from the derived cutoff for this fixture
+    monkeypatch.setattr(
+        calib_replay, "CONSTANTS_PATH", _fake_constants_path_with_cutoff(tmp_path, frozen_cutoff_str),
+    )
+    result = calib_replay.run_substrate(replay_manifest, sample=["SYN_A", "SYN_B"])  # must not raise
+    out = capsys.readouterr().out
+    assert out.startswith("::warning") or "\n::warning" in out
+    assert "si-w3a-substrate-cutoff-disagreement" in out
+    assert result.provenance["recent_history_guard_cutoff"] == frozen_cutoff_str
+
+
+def test_run_substrate_does_not_warn_when_frozen_and_derived_cutoff_agree(
+    monkeypatch, tmp_path, capsys, synthetic_partition, fake_w2_machinery,
+):
+    """The cross-check must not spuriously warn when the frozen constant and
+    the run's own derived cutoff genuinely agree."""
+    replay_manifest, roster = synthetic_partition
+    partition = calib_replay._partition_manifest()
+    asof = pd.Timestamp(partition["asof"])
+    raw_bars = {
+        sym: fake_w2_machinery[sym].loc[fake_w2_machinery[sym].index <= asof]
+        for sym in ("SYN_A", "SYN_B")
+    }
+    full_calendar = pd.DatetimeIndex(sorted({d for df in raw_bars.values() for d in df.index}))
+    expected_cutoff = calib_replay.recent_history_cutoff(asof, full_calendar, guard_sessions=126)
+    monkeypatch.setattr(
+        calib_replay, "CONSTANTS_PATH",
+        _fake_constants_path_with_cutoff(tmp_path, str(expected_cutoff.date())),
+    )
+    calib_replay.run_substrate(replay_manifest, sample=["SYN_A", "SYN_B"])
+    out = capsys.readouterr().out
+    assert "::warning" not in out
+
+
+# ---------------------------------------------------------------------------
+# MINOR (delta-review third pass): the substrate provenance receipt names the
+# eligible (tier<=2) episode population and its censored share, computed from
+# the substrate's own episode catalog -- answerable at 759-name scale directly
+# from the receipt, before any PR-3 constant is even read.
+# ---------------------------------------------------------------------------
+def test_run_substrate_provenance_carries_eligible_episode_fields(synthetic_partition, fake_w2_machinery):
+    replay_manifest, roster = synthetic_partition
+    result = calib_replay.run_substrate(replay_manifest, sample=["SYN_A", "SYN_B"])
+    prov = result.provenance
+    for key in ("n_eligible_episodes", "n_eligible_censored", "censored_share_of_eligible"):
+        assert key in prov
+    assert isinstance(prov["n_eligible_episodes"], int)
+    assert isinstance(prov["n_eligible_censored"], int)
+    assert prov["n_eligible_censored"] <= prov["n_eligible_episodes"]
+    if prov["n_eligible_episodes"]:
+        assert prov["censored_share_of_eligible"] == pytest.approx(
+            prov["n_eligible_censored"] / prov["n_eligible_episodes"]
+        )
+    else:
+        assert prov["censored_share_of_eligible"] is None
+    # sanity: the fields are actually derived from the substrate's OWN episode
+    # catalog (tier<=2), not a placeholder constant.
+    if result.episodes is not None and not result.episodes.empty and "tier" in result.episodes.columns:
+        eligible = result.episodes.loc[pd.to_numeric(result.episodes["tier"], errors="coerce") <= 2]
+        assert prov["n_eligible_episodes"] == len(eligible)
+
+
+def test_run_substrate_eligible_episode_fields_are_zero_on_no_episodes(
+    synthetic_partition, fake_w2_machinery,
+):
+    """A roster that produces NO episodes at all (here, every name unavailable
+    -- SYN_MISSING alone) must report zero eligible counts and a None share,
+    never raise."""
+    replay_manifest, roster = synthetic_partition
+    result = calib_replay.run_substrate(replay_manifest, sample=["SYN_MISSING"])
+    assert result.episodes is None or result.episodes.empty
+    prov = result.provenance
+    assert prov["n_eligible_episodes"] == 0
+    assert prov["n_eligible_censored"] == 0
+    assert prov["censored_share_of_eligible"] is None
+
+
 def test_run_substrate_provenance_proves_genuine_invocation():
     """UNPATCHED — proves the real ``run_substrate`` invokes the SAME W2 entry
     points genuinely (module/function identities), not a hash recorded in a
@@ -903,6 +1040,32 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
         return fake_w2_machinery[sym]
     monkeypatch.setattr("engine.stock_identity.plane.load_symbol", fake_load_symbol)
 
+    # Minor repair (delta-review third pass): run_substrate now reads its
+    # cutoff from the FROZEN si_constants_v1.json (calib_replay.CONSTANTS_PATH)
+    # rather than deriving it -- point that at a fake file carrying exactly the
+    # cutoff this synthetic partition's own combined bars calendar derives, so
+    # (a) run_substrate's frozen-vs-derived cross-check never disagrees and
+    # prints a stray ::warning into a test's captured stdout, and (b) the
+    # substrate's own guard truncation still exercises this fixture's short,
+    # tight bars window exactly as it did before this repair.
+    asof = pd.Timestamp(partition["asof"])
+    full_calendar = pd.DatetimeIndex(sorted({
+        d for sym in roster for d in fake_w2_machinery[sym].loc[fake_w2_machinery[sym].index <= asof].index
+    }))
+    expected_cutoff = calib_replay.recent_history_cutoff(asof, full_calendar, guard_sessions=126)
+    fake_constants_path = tmp_path / "si_constants_v1.json"
+    # run_substrate also reads P_pre and the episode constants (X/Y/N/k/z/M/m/
+    # D1/D2/S_reclaim) off this SAME CONSTANTS_PATH (unrelated to the cutoff
+    # repair) -- start from the REAL committed file's full payload and override
+    # only calibration_history_cutoff, so those unrelated reads keep working
+    # once CONSTANTS_PATH is redirected here.
+    real_constants = json.loads(calib_replay.CONSTANTS_PATH.read_text(encoding="utf-8"))
+    fake_constants_path.write_text(
+        json.dumps({**real_constants, "calibration_history_cutoff": str(expected_cutoff.date())}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(calib_replay, "CONSTANTS_PATH", fake_constants_path)
+
     # the FULL drawn roster (not a sample) -- assert_full_roster_coverage (B1)
     # would otherwise correctly refuse a partial-roster substrate here too.
     result = calib_replay.run_substrate(replay_manifest, sample=None)
@@ -910,16 +1073,12 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
     substrate_dir = tmp_path / "substrate"
     calib_replay.write_substrate(result, substrate_dir)
 
-    # B3-minor: the second barrier now checks the substrate's recorded cutoff
-    # against a FROZEN constants file (never a recomputation) -- point it at a
-    # fake si_constants_v1.json carrying exactly the cutoff THIS synthetic
-    # substrate actually recorded, so the harmonized check passes for this
-    # fully-synthetic partition/asof.
-    fake_constants_path = tmp_path / "si_constants_v1.json"
-    fake_constants_path.write_text(
-        json.dumps({"calibration_history_cutoff": result.provenance["recent_history_guard_cutoff"]}),
-        encoding="utf-8",
-    )
+    # B3-minor: the second barrier (calib_w3) also checks the substrate's
+    # recorded cutoff against a FROZEN constants file (never a recomputation)
+    # -- the SAME fake file above already carries exactly the cutoff this
+    # synthetic substrate now records, so it doubles as calib_w3's frozen
+    # source too.
+    assert result.provenance["recent_history_guard_cutoff"] == str(expected_cutoff.date())
     monkeypatch.setattr(calib_w3, "CALIBRATION_CONSTANTS_PATH", fake_constants_path)
 
     return substrate_dir

@@ -134,7 +134,21 @@ def assert_disjoint_from_pilot_and_blind(roster: list[str]) -> None:
 
 def recent_history_cutoff(asof: pd.Timestamp, calendar: pd.DatetimeIndex, guard_sessions: int = 126) -> pd.Timestamp:
     """The 126th trading session strictly before ``asof``, on a calendar built from
-    the substrate's own combined bars (no external calendar dependency)."""
+    the substrate's own combined bars (no external calendar dependency).
+
+    Minor repair (delta-review third pass): this function is no longer
+    :func:`run_substrate`'s PRIMARY cutoff source — that role now belongs to
+    :func:`frozen_calibration_history_cutoff`, the same frozen
+    ``si_constants_v1.json`` source ``scripts/stock_identity_calibrate_w3.py``
+    already reads (its own ``frozen_calibration_history_cutoff``). This
+    function is kept and still called, but only as a CROSS-CHECK: a
+    disagreement between what it derives from THIS run's own combined bars
+    calendar and the frozen constant is surfaced as a line-start GitHub
+    warning immediately, rather than being discovered only after the full
+    (multi-hour) replay completes, when ``stock_identity_calibrate_w3.py``'s
+    own second-barrier check compares the substrate's recorded cutoff against
+    the same frozen constant.
+    """
     cal = pd.DatetimeIndex(sorted(set(calendar[calendar <= asof])))
     if len(cal) <= guard_sessions:
         raise ValueError(
@@ -142,6 +156,21 @@ def recent_history_cutoff(asof: pd.Timestamp, calendar: pd.DatetimeIndex, guard_
             f"the {guard_sessions}-session recent-history guard"
         )
     return cal[-(guard_sessions + 1)]
+
+
+def frozen_calibration_history_cutoff() -> pd.Timestamp:
+    """The single frozen source of truth for the W3A recent-history guard
+    cutoff — ``si_constants_v1.json``'s ``calibration_history_cutoff`` (the
+    SAME source ``scripts/stock_identity_calibrate_w3.py``'s own
+    ``frozen_calibration_history_cutoff`` reads), computed ONCE at
+    partition-build time. :func:`run_substrate` reads this directly rather
+    than re-deriving a cutoff from whatever symbol set/calendar this
+    particular run happens to have bars loaded for (minor repair,
+    delta-review third pass) — :func:`recent_history_cutoff` above is kept
+    only as a cross-check against this value, never the primary source.
+    """
+    values = json.loads(CONSTANTS_PATH.read_text(encoding="utf-8"))
+    return pd.Timestamp(values["calibration_history_cutoff"])
 
 
 def assert_bars_within_guard(bars_by_symbol: dict[str, pd.DataFrame], cutoff: pd.Timestamp) -> None:
@@ -254,14 +283,45 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         raw_bars[sym] = df
         plane_id_by_symbol[sym] = plane_id
 
-    # B3: compute + enforce the recent-history cutoff HERE, on the combined
-    # calendar of the raw (asof-bounded, pre-cutoff) bars, and truncate every
-    # downstream input to it before anything derived from it is generated.
+    # B3: enforce the recent-history cutoff HERE, on the combined calendar of
+    # the raw (asof-bounded, pre-cutoff) bars, and truncate every downstream
+    # input to it before anything derived from it is generated.
+    #
+    # Minor repair (delta-review third pass): the cutoff itself is now read
+    # from the FROZEN si_constants_v1.json calibration_history_cutoff (the
+    # same source scripts/stock_identity_calibrate_w3.py's second barrier
+    # already checks against), not re-derived from whatever symbol set this
+    # particular run happens to have bars loaded for. recent_history_cutoff()
+    # is still called, but only as a CHEAP cross-check — a disagreement is
+    # surfaced as a line-start GitHub warning immediately, not discovered only
+    # after a multi-hour replay completes and calibrate_w3.py's own
+    # second-barrier check catches it.
     cutoff: pd.Timestamp | None = None
     bars_by_symbol: dict[str, pd.DataFrame] = {}
     if raw_bars:
         full_calendar = pd.DatetimeIndex(sorted({d for df in raw_bars.values() for d in df.index}))
-        cutoff = recent_history_cutoff(asof, full_calendar, guard_sessions=126)
+        cutoff = frozen_calibration_history_cutoff()
+        try:
+            derived_cutoff = recent_history_cutoff(asof, full_calendar, guard_sessions=126)
+        except ValueError as exc:
+            derived_cutoff = None
+            print(
+                "::warning title=si-w3a-substrate-cutoff-derivation-failed::could not "
+                "derive a cross-check recent_history_cutoff from this run's own "
+                f"combined bars calendar ({exc}); proceeding with the frozen "
+                f"si_constants_v1.json calibration_history_cutoff {cutoff.date()} unchecked",
+                flush=True,
+            )
+        if derived_cutoff is not None and derived_cutoff != cutoff:
+            print(
+                "::warning title=si-w3a-substrate-cutoff-disagreement::derived "
+                f"recent_history_cutoff {derived_cutoff.date()} (from this run's own "
+                "combined bars calendar) disagrees with the frozen si_constants_v1.json "
+                f"calibration_history_cutoff {cutoff.date()} -- using the frozen value; "
+                "a real disagreement usually means this run's symbol set/calendar "
+                "differs from the one used at partition-build time",
+                flush=True,
+            )
         bars_by_symbol = truncate_to_guard(raw_bars, cutoff)
         assert_bars_within_guard(bars_by_symbol, cutoff)
 
@@ -355,6 +415,23 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
     if cutoff is not None:
         assert_recent_history_guard(events, episodes_df, cutoff)
 
+    # Minor repair (delta-review third pass): the substrate provenance receipt
+    # names the ELIGIBLE (tier<=2, per engine.stock_identity.episodes.durable_lows'
+    # own "useful-zone" tier floor) episode population and its censored share so
+    # the censored-mass question is answerable directly from the receipt at
+    # 759-name scale, BEFORE any PR-3 constant is even read -- never requiring a
+    # reader to reload the full episodes parquet just to ask "how much of the
+    # eligible population never resolved".
+    n_eligible_episodes = 0
+    n_eligible_censored = 0
+    censored_share_of_eligible: float | None = None
+    if episodes_df is not None and not episodes_df.empty and "tier" in episodes_df.columns:
+        eligible = episodes_df.loc[pd.to_numeric(episodes_df["tier"], errors="coerce") <= 2]
+        n_eligible_episodes = int(len(eligible))
+        if n_eligible_episodes and "censored" in eligible.columns:
+            n_eligible_censored = int(eligible["censored"].sum())
+            censored_share_of_eligible = n_eligible_censored / n_eligible_episodes
+
     provenance = {
         "schema": PROVENANCE_SCHEMA,
         "fire_fns_module": pilot_replay._fire_fns.__module__,
@@ -388,6 +465,11 @@ def run_substrate(manifest: dict[str, Any], *, sample: list[str] | None = None) 
         "recent_history_guard_sessions": 126,
         "n_events_dropped_by_recent_history_guard": n_events_guard_dropped,
         "n_episodes_censored_by_recent_history_guard": n_episodes_guard_censored,
+        # Minor repair (delta-review third pass): eligible (tier<=2) episode
+        # population and censored share, answerable directly from this receipt.
+        "n_eligible_episodes": n_eligible_episodes,
+        "n_eligible_censored": n_eligible_censored,
+        "censored_share_of_eligible": censored_share_of_eligible,
     }
 
     return SubstrateResult(

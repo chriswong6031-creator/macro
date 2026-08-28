@@ -59,6 +59,35 @@ def _trading_calendar_bars(symbol="AAA", start="2018-01-01", n=1200):
     )
 
 
+def _trading_calendar_bars_with_holidays(symbol="AAA", start="2018-01-01", n=1200, seed=20260828):
+    """A REAL-shaped trading calendar: a plain business-day range with a
+    synthetic holiday dropped ~once every 5 weeks (25 business days) -- never
+    on a fixed weekday, so the calendar's own periodic phase genuinely breaks
+    (weekday-phase MAJOR fix, delta-review third pass discriminating fixture).
+    A holiday-FREE ``pd.bdate_range`` (the prior discriminating test's fixture)
+    makes every 5-session shift trivially weekday-preserving, since session
+    count and calendar weeks coincide exactly with no gaps -- that coincidence
+    is exactly what let the M4-regression fix's own test pass despite not
+    actually verifying weekday agreement. This fixture removes it."""
+    idx_full = pd.bdate_range(start, periods=n + n // 15 + 20)
+    rng = np.random.default_rng(seed)
+    drop_mask = np.zeros(len(idx_full), dtype=bool)
+    i = 0
+    while i < len(idx_full):
+        i += 25  # ~5 weeks of business days
+        if i < len(idx_full):
+            offset = int(rng.integers(-2, 3))
+            drop_idx = min(max(i + offset, 0), len(idx_full) - 1)
+            drop_mask[drop_idx] = True
+    idx = idx_full[~drop_mask][:n]
+    close = 100.0 + np.cumsum(np.random.default_rng(1).normal(0, 0.5, len(idx)))
+    return pd.DataFrame(
+        {"open": close, "high": close + 1, "low": close - 1, "close": close,
+         "volume": np.full(len(idx), 1_000_000.0)},
+        index=idx,
+    )
+
+
 # ---------------------------------------------------------------------------
 # M11: count/dwell-matched random fire placement (freeze §4.3 item 1;
 # M11-regression fix)
@@ -220,14 +249,54 @@ def test_grain_cadence_null_offset_is_a_multiple_of_the_grain_period():
 
 
 def test_grain_cadence_null_preserves_weekly_grain_weekday_distribution():
-    """M4-regression discriminating test (cadence PHASE): weekly-grain fires
-    landing on the SAME weekday must all still land on that SAME weekday after
-    the null -- an unconstrained offset (the M4-regression this closes) would
-    scatter them across weekdays."""
-    bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
+    """Weekday-phase MAJOR fix discriminating test (delta-review third pass):
+    weekly-grain fires landing on the SAME weekday must all still land on that
+    SAME weekday after the null -- proved on a REAL-shaped calendar carrying
+    synthetic holidays (not the holiday-free ``pd.bdate_range`` the prior
+    (M4-regression) version of this test used, where a period-multiple offset
+    is trivially weekday-preserving because session count and calendar weeks
+    coincide exactly with no gaps). On a real calendar, a fixed number of
+    SESSIONS is not a fixed number of calendar WEEKS -- a pure period-multiple
+    ``K`` (the pre-pass-3 shape) is NOT actually weekday-preserving in
+    general; only the delta-review third pass's explicit per-group weekday
+    search is. This exact fixture/seed pair is pinned as a NAMED regression:
+    the pre-pass-3 ``grain_cadence_null`` (an unconstrained period-multiple
+    draw, no weekday admissibility search) lands these fires on TWO distinct
+    weekdays ({3, 4}) at seed=13, failing this assertion."""
+    bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
     calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
-    # weekly-grain fires clustered early (positions < 500) so a K in [63,252]
-    # can never push any of them past the calendar's end (n=1200 sessions).
+    # weekly-grain fires clustered early and narrowly (positions < 200) so a
+    # single shared K in [63,252] has a real chance of preserving every fire's
+    # own weekday simultaneously despite the holiday-perturbed calendar -- a
+    # wider/sparser cluster (e.g. 20 fires across 400 sessions) can make NO
+    # single K in range weekday-consistent for every fire, which is a real,
+    # disclosed (phase_preserved=false) limitation, not what this test probes.
+    fridays = calendar[calendar.weekday == 4]
+    fridays = fridays[calendar.searchsorted(fridays) < 200][:10]
+    events = pd.DataFrame({
+        "event_id": [f"E{i}" for i in range(len(fridays))],
+        "family_key": ["fam.w"] * len(fridays), "symbol": ["AAA"] * len(fridays),
+        "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
+    })
+    out = grain_cadence_null(events, bars, seed=13)
+    assert set(pd.to_datetime(out["signal_ts"]).dt.weekday) == {4}
+    # the search actually VERIFIED this, rather than merely getting lucky --
+    # phase_preserved must be disclosed True for this group.
+    assert bool(out["phase_preserved"].iloc[0]) is True
+
+
+def test_grain_cadence_null_phase_preserved_column_is_false_when_no_k_satisfies_every_fire():
+    """Weekday-phase MAJOR fix: when no K in [63,252] sessions makes EVERY
+    fire in the group agree on its own weekday (a widely-spread group on a
+    holiday-perturbed calendar -- the pathological case the fallback exists
+    for), the null must still return a valid, real-session-landing shift, but
+    must mark that group's rows ``phase_preserved: false`` rather than
+    silently claiming a phase guarantee it did not verify."""
+    bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
+    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
+    # A wide, densely-populated weekly-grain group (20 fires across 400
+    # sessions) -- empirically, no shared K in [63,252] sessions keeps every
+    # one of these fires on Friday simultaneously under this holiday pattern.
     fridays = calendar[calendar.weekday == 4]
     fridays = fridays[calendar.searchsorted(fridays) < 400][:20]
     events = pd.DataFrame({
@@ -236,7 +305,12 @@ def test_grain_cadence_null_preserves_weekly_grain_weekday_distribution():
         "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
     })
     out = grain_cadence_null(events, bars, seed=13)
-    assert set(pd.to_datetime(out["signal_ts"]).dt.weekday) == {4}
+    # every fire still lands on a REAL trading session...
+    assert set(pd.to_datetime(out["signal_ts"])) <= set(calendar)
+    # ...but the group's own weekday guarantee is disclosed as failed, not
+    # silently claimed.
+    assert bool(out["phase_preserved"].iloc[0]) is False
+    assert set(pd.to_datetime(out["signal_ts"]).dt.weekday) != {4}
 
 
 def test_grain_cadence_null_preserves_stamp_lag_exactly():
@@ -397,6 +471,30 @@ def test_equal_proximity_control_missing_grain_column_returns_empty():
     out, truncated = equal_proximity_control(metrics, tolerance_atr=0.5)
     assert out.empty
     assert truncated == 0
+
+
+def test_equal_proximity_control_pair_rows_carry_the_scoping_grain():
+    """NIT (delta-review third pass): each output pair row must carry the
+    ``grain`` that scoped it (the shared (episode_id, grain) group key), so a
+    reader of the pair output alone can see which cadence bucket produced it
+    without rejoining ``metrics``."""
+    metrics = pd.DataFrame({
+        "event_id": ["E1", "E2", "E3", "E4"],
+        "family_key": ["fam.a", "fam.b", "fam.a", "fam.b"],
+        "episode_id": ["EP1", "EP1", "EP1", "EP1"],
+        "grain": ["daily", "daily", "weekly", "weekly"],
+        "atr_dist": [0.10, 0.12, 0.50, 0.55],
+    })
+    out, truncated = equal_proximity_control(metrics, tolerance_atr=0.5)
+    assert "grain" in out.columns
+    assert not out.empty
+    for _, row in out.iterrows():
+        # the pair's OWN grain column must equal the grain BOTH its fires
+        # actually carried in the input metrics -- never blank/mismatched.
+        left_grain = metrics.loc[metrics["event_id"] == row["left_event_id"], "grain"].iloc[0]
+        right_grain = metrics.loc[metrics["event_id"] == row["right_event_id"], "grain"].iloc[0]
+        assert row["grain"] == left_grain == right_grain
+    assert set(out["grain"]) <= {"daily", "weekly"}
 
 
 def test_equal_proximity_control_never_pairs_across_grains_m3_minor():

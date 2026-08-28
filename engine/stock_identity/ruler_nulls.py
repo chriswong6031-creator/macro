@@ -23,7 +23,21 @@ Three of the freeze's seven mandatory nulls/controls are ruler-side and built he
    stamp lag; both are restored here: shifting ``signal_ts`` by a
    period-constrained ``K`` and reconstructing
    ``signal_known_ts = new_signal_ts + (orig_known_ts - orig_signal_ts)`` per
-   event).
+   event). **Weekday-phase MAJOR fix (delta-review third pass):** a period-5
+   multiple of ``K`` is a multiple of the group's grain period, but on a REAL
+   trading calendar (which carries holidays) a fixed number of SESSIONS is not
+   a fixed number of CALENDAR WEEKS — the M4-regression fix above only
+   *appeared* weekday-preserving because its own discriminating test used a
+   holiday-free ``pd.bdate_range`` fixture, where session count and calendar
+   weeks coincide exactly. :func:`grain_cadence_null` now explicitly searches
+   for a ``K`` that lands the group's earliest ("anchor") fire on the SAME
+   weekday, verifies every OTHER fire in the group also preserves its own
+   weekday under that same ``K`` (bounded, deterministic-seeded retries over
+   the nearest admissible multiples to the original draw), and — only if no
+   admissible ``K`` makes every fire's weekday agree within the retry budget —
+   falls back to the largest anchor-admissible multiple and marks that group's
+   rows ``phase_preserved: false`` rather than silently claiming a phase
+   preservation it did not actually verify.
 3. **Equal-proximity comparison** (:func:`equal_proximity_control`) — pairs
    cross-family fires within the SAME episode AND SAME grain whose ATR-distance
    gap is within a declared tolerance (freeze review finding M2/M3 — the prior
@@ -48,6 +62,7 @@ import pandas as pd
 __all__ = [
     "PROXIMITY_PAIR_COLUMNS",
     "GRAIN_PERIOD_SESSIONS",
+    "GRAIN_CADENCE_PHASE_RETRY_BUDGET",
     "random_fire_null",
     "grain_cadence_null",
     "equal_proximity_control",
@@ -55,7 +70,7 @@ __all__ = [
 
 PROXIMITY_PAIR_COLUMNS: tuple[str, ...] = (
     "left_event_id", "right_event_id", "left_family_key", "right_family_key",
-    "left_atr_dist", "right_atr_dist", "atr_dist_gap", "episode_id",
+    "left_atr_dist", "right_atr_dist", "atr_dist_gap", "episode_id", "grain",
 )
 
 #: Deterministic seeded circular-shift offset range for the grain/cadence null
@@ -76,6 +91,13 @@ GRAIN_PERIOD_SESSIONS: dict[str, int] = {
     "W": 5,
     "2W": 10,
 }
+
+#: Bounded retry budget for the weekday-phase search (delta-review MAJOR
+#: weekday-phase finding): the number of admissible-K candidates (nearest to
+#: the original seeded draw first, deterministic tie-break) tried before
+#: :func:`grain_cadence_null` gives up on an all-fires-agree K and falls back
+#: to the largest anchor-admissible multiple with ``phase_preserved: false``.
+GRAIN_CADENCE_PHASE_RETRY_BUDGET = 25
 
 
 def _grain_period_sessions(grain: Any) -> int:
@@ -184,26 +206,97 @@ def random_fire_null(
     return out
 
 
+def _weekday_preserving_offset(
+    calendar: pd.DatetimeIndex,
+    positions: np.ndarray,
+    anchor_pos: int,
+    period: int,
+    lo: int,
+    hi: int,
+    m0: int,
+    retry_budget: int,
+) -> tuple[int, bool]:
+    """Search ``[lo, hi]`` (multiples of ``period``, i.e. candidate offsets
+    ``K = m * period``) for a ``K`` that lands EVERY fire in ``positions`` on
+    its own original weekday, given the seeded draw ``m0`` as the search
+    center (nearest-first, deterministic tie-break toward the smaller ``m``).
+
+    Returns ``(k, phase_preserved)``. ``phase_preserved`` is ``True`` only when
+    a ``K`` was found (within ``retry_budget`` candidates) that preserves
+    EVERY fire's weekday — not merely the anchor's. If the retry budget is
+    exhausted without such a ``K``, or no candidate even preserves the
+    anchor's weekday, the largest anchor-admissible multiple is returned (or,
+    in the pathological case where no multiple in range preserves even the
+    anchor's weekday, the original unconstrained draw) with
+    ``phase_preserved=False`` — the fallback is disclosed, never silently
+    claimed as phase-preserving.
+    """
+    n = len(calendar)
+    ms = np.arange(lo, hi + 1, dtype=np.int64)
+    ks = ms * period
+    anchor_new_positions = (anchor_pos + ks) % n
+    anchor_weekday = calendar[anchor_pos].weekday()
+    anchor_match = np.array(
+        [calendar[int(p)].weekday() == anchor_weekday for p in anchor_new_positions]
+    )
+    admissible_ms = ms[anchor_match]
+
+    if len(admissible_ms) == 0:
+        # Pathological: no offset in the declared range preserves even the
+        # anchor's weekday. Defensive last resort -- keep the original
+        # unconstrained draw; never claim phase preservation.
+        return int(m0) * period, False
+
+    # Nearest-to-m0 first (deterministic: derives only from the seeded m0 and
+    # the calendar, no further RNG draws needed), stable tie-break.
+    order = admissible_ms[np.argsort(np.abs(admissible_ms - m0), kind="stable")]
+    budget = min(retry_budget, len(order))
+    for m in order[:budget]:
+        k = int(m) * period
+        new_positions = (positions + k) % n
+        all_match = all(
+            calendar[int(p2)].weekday() == calendar[int(p1)].weekday()
+            for p1, p2 in zip(positions, new_positions)
+        )
+        if all_match:
+            return k, True
+
+    # Bounded retries exhausted: no K in range makes every fire agree on its
+    # own weekday. Fall back to the largest anchor-admissible multiple and
+    # disclose the failure via phase_preserved=False rather than shipping an
+    # unverified phase claim.
+    return int(admissible_ms.max()) * period, False
+
+
 def grain_cadence_null(
     events: pd.DataFrame, bars_by_symbol: Mapping[str, pd.DataFrame], seed: int,
 ) -> pd.DataFrame:
     """Trading-session-space circular shift, phase- and stamp-lag-preserving
-    (freeze review finding M4; M4-regression fix).
+    (freeze review finding M4; M4-regression fix; weekday-phase MAJOR fix,
+    delta-review third pass).
 
-    Per ``(family_key, symbol)`` group, one deterministic seeded offset ``K`` —
-    constrained to a MULTIPLE of the group's own DOMINANT grain period in
-    trading sessions (mode over the group's own ``grain`` values;
-    :func:`_grain_period_sessions`; ``1D``->1, ``3D``->3, ``W``->5, ``2W``->10)
-    — is drawn from the declared ``[63, 252]``-session range and every fire's
-    ``signal_ts`` in the group is moved ``K`` sessions forward on that symbol's
-    own trading calendar, wrapping within its coverage. The period constraint
-    means the shift preserves the group's cadence PHASE (e.g. a weekly-grain
-    group's weekday distribution is unchanged), not merely its circular
-    session-gap magnitude. KNOWN LIMITATION: this is a per-(family_key, symbol)
-    grouping (the frozen shape), so a group that mixes multiple grains for the
-    same symbol (observed in the real pilot cohort's ``sea_event_classes``
-    family) applies the DOMINANT grain's period to every fire in the group —
-    a minority grain sharing that group does not get its own phase preserved.
+    Per ``(family_key, symbol)`` group, an offset ``K`` — constrained to a
+    MULTIPLE of the group's own DOMINANT grain period in trading sessions
+    (mode over the group's own ``grain`` values; :func:`_grain_period_sessions`;
+    ``1D``->1, ``3D``->3, ``W``->5, ``2W``->10) and drawn from the declared
+    ``[63, 252]``-session range — is searched (:func:`_weekday_preserving_offset`)
+    so that EVERY fire in the group lands on its own ORIGINAL weekday, not
+    merely a multiple-of-period session count. A fixed number of trading
+    SESSIONS is not a fixed number of calendar WEEKS on a real (holiday-
+    bearing) calendar, so period-multiple magnitude alone does not guarantee
+    weekday phase; the search draws a seeded candidate ``K``, verifies every
+    fire's weekday against it, and retries (bounded, deterministic) over the
+    nearest admissible multiples before falling back to the largest
+    anchor-admissible multiple and marking the group's rows
+    ``phase_preserved: false`` if no fully-agreeing ``K`` is found — the
+    guarantee is DISCLOSED per group, never silently claimed. Every fire's
+    ``signal_ts`` in the group is then moved ``K`` sessions forward on that
+    symbol's own trading calendar, wrapping within its coverage. KNOWN
+    LIMITATION: this is a per-(family_key, symbol) grouping (the frozen
+    shape), so a group that mixes multiple grains for the same symbol
+    (observed in the real pilot cohort's ``sea_event_classes`` family) applies
+    the DOMINANT grain's period to every fire in the group — a minority grain
+    sharing that group does not get its own phase preserved.
     ``signal_known_ts`` is then reconstructed per event as
     ``new_signal_ts + (orig_known_ts - orig_signal_ts)`` — each event's own
     stamp lag is preserved EXACTLY as a timedelta, never collapsed to zero by
@@ -212,6 +305,12 @@ def grain_cadence_null(
     construction (it is drawn FROM the calendar), so no null fire's
     ``signal_ts`` can ever fall on a non-session date; breaking correspondence
     to the specific episode anchors is the null's purpose.
+
+    The output carries a ``phase_preserved`` column (nullable boolean): ``True``
+    for every row in a group whose chosen ``K`` was verified to preserve every
+    fire's weekday, ``False`` for a group that fell back to the
+    largest-admissible-multiple guess, and ``<NA>`` for a group whose symbol
+    had no trading calendar available (untouched, no shift applied at all).
     """
     if events is None or events.empty:
         return events.copy() if events is not None else events
@@ -220,6 +319,7 @@ def grain_cadence_null(
     out = _ensure_signal_ts_and_known_ts(out)
     stamp_lag = out["signal_known_ts"] - out["signal_ts"]
     rng = np.random.default_rng(seed)
+    out["phase_preserved"] = pd.array([pd.NA] * len(out), dtype="boolean")
 
     for (fam, sym), idx in out.groupby(["family_key", "symbol"]).groups.items():
         calendar = _symbol_calendar(bars_by_symbol, str(sym))
@@ -247,11 +347,22 @@ def grain_cadence_null(
         hi = GRAIN_CADENCE_NULL_MAX_SESSIONS // period
         if hi < lo:
             hi = lo
-        m = int(rng.integers(lo, hi + 1))
-        k = m * period
+        m0 = int(rng.integers(lo, hi + 1))
 
         positions = calendar.searchsorted(sub["signal_ts"].to_numpy(), side="left")
-        positions = np.clip(positions, 0, n - 1)
+        positions = np.clip(positions, 0, n - 1).astype(np.int64)
+
+        # The group's "anchor" fire (earliest signal_ts) is what the freeze
+        # review's weekday-phase finding names -- the K search first lands
+        # THIS fire on its own weekday, then verifies every other fire too.
+        anchor_iloc = int(np.argmin(sub["signal_ts"].to_numpy()))
+        anchor_pos = int(positions[anchor_iloc])
+
+        k, phase_preserved = _weekday_preserving_offset(
+            calendar, positions, anchor_pos, period, lo, hi, m0,
+            GRAIN_CADENCE_PHASE_RETRY_BUDGET,
+        )
+
         new_positions = (positions + k) % n
         new_signal_ts = calendar[new_positions]
 
@@ -259,6 +370,7 @@ def grain_cadence_null(
         out.loc[sub.index, "signal_known_ts"] = (
             pd.DatetimeIndex(new_signal_ts) + stamp_lag.loc[sub.index].to_numpy()
         )
+        out.loc[sub.index, "phase_preserved"] = phase_preserved
 
     return out
 
@@ -279,7 +391,10 @@ def equal_proximity_control(metrics: pd.DataFrame, tolerance_atr: float) -> tupl
     A row with no ``grain`` value (``NaN``/missing) is treated as its own group
     (pandas ``groupby`` with ``dropna=False``) rather than silently coalesced
     with any other grain, so an ungraded/unknown grain never masquerades as a
-    match.
+    match. Each output pair row carries a ``grain`` column recording the
+    (single, shared) grain that scoped the pair — a reader of the pair output
+    alone can see which cadence bucket produced it, without rejoining
+    ``metrics`` (NIT, delta-review third pass).
 
     Per-episode-and-grain fire counts are small (a handful at most), so no scan
     cap is needed once pairing is grouped by (episode, grain) — every candidate
@@ -329,6 +444,7 @@ def equal_proximity_control(metrics: pd.DataFrame, tolerance_atr: float) -> tupl
                     "right_atr_dist": float(atr[j]),
                     "atr_dist_gap": float(abs(gap)),
                     "episode_id": episode_id,
+                    "grain": grain,
                 })
     if not rows:
         return empty, truncated
