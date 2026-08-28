@@ -67,7 +67,7 @@ supersedes:
   - "WS:EVAL-OS-MEASUREMENT-LAW stale W5 unresolved-control-ruling blocker"
   - "WS:EVAL-OS-OUTPUT-HEALTH stale old-branch/PR next action"
 decided_by: ceo-sol
- decided_at: 2026-08-27
+decided_at: 2026-08-27
 ---
 
 Full capability ledger, no-rebuild boundaries, `PROVEN_LIVE` law and bounded continuation waves
