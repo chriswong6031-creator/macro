@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime as dt
+
 import pandas as pd
 
 import collectors.china_stock_prices as china_stock_prices
@@ -28,7 +30,7 @@ def test_tencent_code_maps_a_share_suffixes_only():
     assert tx.tencent_code("AAPL") is None
 
 
-def test_frame_from_payload_remaps_tencent_row_order():
+def test_frame_from_payload_remaps_row_order_and_lots_to_shares():
     payload = {
         "code": 0,
         "data": {
@@ -47,6 +49,19 @@ def test_frame_from_payload_remaps_tencent_row_order():
     assert df.loc[pd.Timestamp("2026-08-27"), "close"] == 61.09
     assert df.loc[pd.Timestamp("2026-08-27"), "high"] == 61.71
     assert df.loc[pd.Timestamp("2026-08-27"), "low"] == 60.80
+    assert df.loc[pd.Timestamp("2026-08-27"), "volume"] == 2_345_600.0
+
+
+def test_completed_session_guard_drops_intraday_partial_bar():
+    frame = _frame([("2026-08-27", 61.09), ("2026-08-28", 62.00)])
+    during_session = dt.datetime(2026, 8, 28, 9, 40, tzinfo=tx._SHANGHAI)
+    after_finalization = dt.datetime(2026, 8, 28, 16, 10, tzinfo=tx._SHANGHAI)
+
+    during = tx.keep_completed_sessions(frame, during_session)
+    assert during.index.max() == pd.Timestamp("2026-08-27")
+
+    after = tx.keep_completed_sessions(frame, after_finalization)
+    assert after.index.max() == pd.Timestamp("2026-08-28")
 
 
 def test_heal_extends_only_stale_name_on_compatible_overlap(monkeypatch):
