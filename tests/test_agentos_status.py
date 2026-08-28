@@ -629,10 +629,13 @@ def test_readiness_states_explain_graph_and_authored_progress(
     assert ready["reason_code"] == "dependencies_satisfied"
     assert ready["unmet_dependencies"] == []
 
-    waiting = records[("MACRO-CONTEXT-INDEX", "W2")]
+    # C0 regold 2026-08-28: MACRO-CONTEXT-INDEX W2 is done (Agent OS Phase 3
+    # landed), so it no longer exhibits an unmet dependency; PROPHET-US-ENTRY-TIMING
+    # W2 (todo, depends_on the unfinished W1) is the live single-unmet-dep fixture.
+    waiting = records[("PROPHET-US-ENTRY-TIMING", "W2")]
     assert waiting["state"] == "blocked"
     assert waiting["reason_code"] == "unmet_dependencies"
-    assert waiting["unmet_dependencies"] == ["WS:MACRO-CONTEXT-INDEX#W1"]
+    assert waiting["unmet_dependencies"] == ["WS:PROPHET-US-ENTRY-TIMING#W1"]
 
     parent_blocked = records[("GMI-THEME-GRAPH", "TRANSMISSION")]
     assert parent_blocked["state"] == "blocked"
