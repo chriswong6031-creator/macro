@@ -118,7 +118,7 @@ The Chairman is not the routine relay. Sol is not the per-PR queue. Durable stat
 
 ## Authority precedence
 
-On every fresh pickup read, in order (amended per Sol ruling 2026-08-28 — identical to freeze §2.0):
+On every fresh pickup read, in order (amended per Sol ruling 2026-08-28 — freeze §2.0's canonical order with pickup-specific rungs appended below their lawful tier; freeze §2.0 is the authoritative wording on any divergence):
 
 1. current live Chairman/Sol ruling;
 2. current protected Mastermind Sol Skillpack + mandatory universal source laws;

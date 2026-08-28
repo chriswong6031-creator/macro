@@ -72,7 +72,7 @@ The file body itself records the exact actual return date/time, operation key, P
 
 ## 4. Precedence
 
-For W3 execution, read in this order (Sol ruling 2026-08-28 — identical to freeze §2.0):
+For W3 execution, read in this order (Sol ruling 2026-08-28 — freeze §2.0's canonical order applied to the W3 document set; freeze §2.0 is the authoritative wording on any divergence):
 
 1. current live Chairman/Sol ruling;
 2. current protected Skillpack + mandatory universal source laws;

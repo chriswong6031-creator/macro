@@ -77,6 +77,8 @@ Expected: import/file failure because `ruler.py` / `ruler_spec_v1.json` do not e
 
 Implement `RulerSpec` as an immutable dataclass containing only receipted constants: the previously frozen W1 geometry constants (attribution pre-window, useful-zone session/ATR bounds, false-start ATR threshold, ATR basis, grain labels, episode-type anchor mapping) plus the PR-3 ruler-composite family (`recall floor`, `lambda_fs`, any declared composite constants), which does not exist yet and is written exactly once by Task 3C. Until Task 3C runs, the PR-3 fields carry the explicit sentinel `{"status": "pending_sealed_calibration"}` — never a guessed number.
 
+Synthetic-fixture testing bridge (per the freeze's ordering law — "metric/composite primitives are frozen and tested on synthetic fixtures first"): Tasks 2-3 test the metric/composite MATH by constructing a `RulerSpec` directly in test code with clearly-labeled FIXTURE-ONLY constants (e.g. `lambda_fs=0.5`). Fixture constants are never serialized to `ruler_spec_v1.json`, never readable by any script path, and are not receipts; a test asserts the shipped JSON still carries the pending sentinel while fixture tests pass. Production PR-3 values exist only after Task 3C.
+
 Canonical hash implementation:
 
 ```python
@@ -226,7 +228,7 @@ def test_c_loc_r_exact_formula():
     assert out.loc[0, "c_loc_r"] == pytest.approx(0.5 * 0.8 - spec.lambda_fs * 0.1)
 ```
 
-Also assert `c_loc_d` refuses rows below the frozen recall floor.
+Also assert `c_loc_d` refuses rows below the recall floor. (`spec` in these tests is the fixture-only test spec per Task 1's synthetic-fixture bridge — production constants do not exist until Task 3C.)
 
 - [ ] **Step 2: Add failing null invariance tests**
 
@@ -253,7 +255,7 @@ python3 -m pytest tests/test_stock_identity_ruler.py tests/test_stock_identity_r
 python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir /tmp/si-w3a-ruler-smoke
 ```
 
-Expected: pass; both graded composites present; all nulls present; no blind/fit/rank output.
+Expected: tests pass (composite math proven on fixture-only constants); metric/unconditional artifacts and all nulls present in the real smoke; the build script REFUSES to compute composites while the spec's PR-3 fields carry the pending sentinel (it must never substitute a fixture value) and emits an explicit `composites_pending_sealed_calibration` marker instead; no blind/fit/rank output. The "both graded composites present" acceptance moves to Task 3C.
 
 - [ ] **Step 7: Commit Task 3**
 
@@ -277,7 +279,7 @@ git commit -m "stock-identity W3A: add composites and localization nulls"
 ```python
 def load_constitution(path: Path) -> "ChannelAConstitution": ...
 def count_p_eff(constitution: "ChannelAConstitution") -> int: ...
-def assert_capacity(p_eff: int, n_names: int) -> None:  # raises CapacityViolation when p_eff > n_train_names // 10 (exact floor law)
+def assert_capacity(p_eff: int, n_train_names: int) -> None:  # raises CapacityViolation when p_eff > n_train_names // 10 (exact floor law)
     ...
 ```
 
@@ -345,7 +347,7 @@ Register the exact declared ±20% diagnostic sensitivity grids in the TrialLedge
 python3 scripts/stock_identity_calibration_replay.py --manifest data/stock_identity/ruler/calibration_replay_manifest_v1.json
 ```
 
-Tests assert: the replayed name set equals the drawn roster exactly (disjoint from pilot cohort and blind-arm manifest); zero-fire names appear as explicit zero-fire observations; unavailable-input names produce the typed blocker exit; no fit/rank/best column exists in any output; W2 pilot artifact bytes are unchanged.
+Tests assert: the replayed name set equals the drawn roster exactly (disjoint from pilot cohort and blind-arm manifest); zero-fire names appear as explicit zero-fire observations; unavailable-input names produce the typed blocker exit; no fit/rank/best column exists in any output; W2 pilot artifact bytes are unchanged; the run's provenance receipt proves actual invocation of the registered W2 replay entry points (module/function identities and the family registry/spec hashes asserted from inside the run — a hash recorded in the manifest alone is not proof the run used that machinery); no bar after `asof − 126 trading days` enters the constant-setting input (the recent-history guard is enforced in code and its violation raises); and every substrate output row/artifact carries `calibration_substrate: true`, which the Task 4 census input validators and the W5 population path REFUSE (fence test included here and mirrored in Task 4).
 
 - [ ] **Step 5: Run the one-time constant-setting act**
 
@@ -357,7 +359,15 @@ Tests assert: the replayed name set equals the drawn roster exactly (disjoint fr
 python3 -m pytest tests/test_stock_identity_w3_calibration.py -q
 ```
 
-Expected: rule-hash-before-value receipts asserted; manifest-before-run proven; no pending sentinel remains; roster exactness + blind/pilot exclusion proven; zero-fire and typed-blocker semantics proven; re-run refusal proven.
+Expected: rule-hash-before-value receipts asserted; manifest-before-run proven; no pending sentinel remains; roster exactness + blind/pilot exclusion proven; zero-fire and typed-blocker semantics proven; machinery-invocation, recent-history-guard and substrate-fence assertions green; re-run refusal proven.
+
+- [ ] **Step 6B: Re-run the real pilot smoke on the receipted spec**
+
+```bash
+python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir /tmp/si-w3a-ruler-smoke
+```
+
+Expected: both graded composites now present (this is the acceptance deferred from Task 3), all nulls present, no blind/fit/rank output.
 
 - [ ] **Step 7: Commit Task 3C**
 
@@ -393,7 +403,7 @@ def build_estimability_census(
 ) -> pd.DataFrame: ...
 ```
 
-`support` is the typed outcome-independent support/coverage frame emitted by the Task 2 ruler build (`support_coverage_v1.parquet`). Its closed column contract is exactly: `episode_id`, `event_id`, `ticker`, `known_ts`, `calendar_block`, `family`, `grain`, `attributed` (bool presence, not quality), `price_coverage`, `feature_coverage`, `price_plane_id`, `availability_state` (censored/not-yet-available/structural-absence/etc.). Per Sol ruling 2026-08-28, the outcome-leakage whitelist/closed-schema validation applies to ALL census inputs, not only the support frame: `build_estimability_census` first validates `episodes`, `events`, `attribution`, `support`, and `feature_coverage` each against its own closed column schema, and raises `OutcomeLeakage` if ANY input carries a realized-fit column — `c_loc_r`, `c_loc_d`, `lead_lag`, `price_dist`, `atr_dist`, `mae_after`, `capture`, `recall_at_tier`, `zone_precision`, `false_start`, `false_start_rate`, `relative_order`, `consistency` — or any column not in that input's closed contract. Cell inclusion/estimability may never depend on how well any expert scored, through any argument.
+`support` is the typed outcome-independent support/coverage frame emitted by the Task 2 ruler build (`support_coverage_v1.parquet`). Its closed column contract is exactly: `episode_id`, `event_id`, `ticker`, `known_ts`, `calendar_block`, `family`, `grain`, `attributed` (bool presence, not quality), `price_coverage`, `feature_coverage`, `price_plane_id`, `availability_state` (censored/not-yet-available/structural-absence/etc.). Per Sol ruling 2026-08-28, the outcome-leakage whitelist/closed-schema validation applies to ALL census inputs, not only the support frame: `build_estimability_census` first validates `episodes`, `events`, `attribution`, `support`, and `feature_coverage` each against its own closed column schema, and raises `OutcomeLeakage` if ANY input carries a realized-fit column — `c_loc_r`, `c_loc_d`, `lead_lag`, `price_dist`, `atr_dist`, `mae_after`, `capture`, `recall_at_tier`, `zone_precision`, `false_start`, `false_start_rate`, `relative_order`, `consistency` — or any column not in that input's closed contract. Cell inclusion/estimability may never depend on how well any expert scored, through any argument. The same validators REFUSE any input row or artifact carrying `calibration_substrate: true` — the Task 3C substrate can never enter the census or the W5 population (fence test mirrored from Task 3C).
 
 Required outputs per candidate cell include `episode_n`, `calendar_cluster_n`, `largest3_cluster_share`, `fire_n`, `fires_per_name_year`, `episode_attribution_rate`, `grain_coverage`, `feature_coverage`, `price_plane_id`, `estimability_state`, and `unestimable_reason`.
 

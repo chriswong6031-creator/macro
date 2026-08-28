@@ -42,6 +42,8 @@ Every Stock Identity execution read follows this order:
 
 Binding fail-closed clause: a later derivative's silence/omission never repeals a ratified original control. A later document wins only where it explicitly identifies the clause it changes and has lawful Sol/Chairman authority to do so. Any conflict or omission touching preregistered scientific law stops the lane and returns to Sol.
 
+Supersession note: the pre-ruling authority-precedence ladder printed in the immutable pickup packet `agentos/handoffs/STOCK-IDENTITY-2026-08-28-PROGRAM-START.md` is SUPERSEDED by this section (it operates through that ladder's own rung 1 — current Chairman/Sol instruction); that file is byte-pinned by the 2026-08-28 dispatch and is deliberately left unedited.
+
 These are immutable unless Sol/Chairman explicitly supersede them in a new decision:
 
 - **`DNR:KILL-OUTCOME-AUDITION` remains total.** A name may never choose an expert because that expert ranked best on that name's own historical outcomes, under the localization ruler or any other ruler.
