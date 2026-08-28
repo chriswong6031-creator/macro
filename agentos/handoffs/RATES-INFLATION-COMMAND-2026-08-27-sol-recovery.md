@@ -81,7 +81,7 @@ unverified:
   - claim: MRI coherent-target challengers improve on lawful benchmarks.
     what_would_verify: matured clean aligned forward evidence under the frozen epoch and manual promotion adjudication.
   - claim: Dealer-load-extreme is promotable.
-    what_would_verify: >=12 months forward history plus every frozen preregistered lift/HAC/permutation gate; earliest approximately 2027-07.
+    what_would_verify: ">=12 months forward history plus every frozen preregistered lift/HAC/permutation gate; earliest approximately 2027-07."
 unresolved:
   - "PR #6543 requires independent review/CI/merge before F0 becomes accepted durable truth."
   - "Current theta surface liveness is unproven by committed history alone."
