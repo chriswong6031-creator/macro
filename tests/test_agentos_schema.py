@@ -916,6 +916,52 @@ def test_program_identity_is_mapping_key_not_display_name(tmp_path: Path) -> Non
     assert got["available"] is True
     assert [row["key"] for row in got["programs"]] == ["alpha-program"]
     assert got["programs"][0]["name"] == "Totally Different Display Name"
+
+
+def test_program_registry_heterogeneous_keys_are_explicitly_malformed(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+            "  1:\n"
+            "    name: Numeric Key\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+
+    assert agentos._load_program_registry(path) == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_malformed",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
+def test_program_registry_invalid_utf8_is_explicitly_malformed(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    path.write_bytes(b"\xff\xfe")
+
+    assert agentos._load_program_registry(path) == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_malformed",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
 # ------------------------------------------- Project Recovery R8-B1 typed wait
 
 

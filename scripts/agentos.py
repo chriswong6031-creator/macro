@@ -226,6 +226,8 @@ def _load_program_registry(path: Path = _PROGRAMS) -> dict[str, Any]:
         return unavailable("program_registry_unavailable")
     try:
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        return unavailable("program_registry_malformed")
     except OSError:
         return unavailable("program_registry_unavailable")
     except yaml.YAMLError:
@@ -237,6 +239,8 @@ def _load_program_registry(path: Path = _PROGRAMS) -> dict[str, Any]:
     programs = doc.get("programs")
     if not isinstance(ontology, dict) or not isinstance(programs, dict):
         return unavailable("program_registry_malformed")
+    if any(not isinstance(key, str) or not key.strip() or key != key.strip() for key in programs):
+        return unavailable("program_registry_malformed")
     lifecycle_values = ontology.get("lifecycle_states")
     if not isinstance(lifecycle_values, list) or not lifecycle_values:
         return unavailable("program_registry_malformed")
@@ -246,8 +250,6 @@ def _load_program_registry(path: Path = _PROGRAMS) -> dict[str, Any]:
 
     rows: list[dict[str, str]] = []
     for key in sorted(programs):
-        if not isinstance(key, str) or not key.strip() or key != key.strip():
-            return unavailable("program_registry_malformed")
         row = programs[key]
         if not isinstance(row, dict):
             return unavailable("program_registry_malformed")
