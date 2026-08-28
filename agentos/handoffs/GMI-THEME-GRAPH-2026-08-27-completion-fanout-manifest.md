@@ -1,72 +1,75 @@
 ---
 workstream: "WS:GMI-THEME-GRAPH"
-session: sol/gmi-theme-graph-fanout-manifest-20260827
+session: sol/gmi-theme-graph-fanout-manifest-20260828
 model: sol
 ended_because: complete
 mission: >
-  Bind every remaining core GMI completion wave to one stable organizational
-  operation identity, one dependency position and one owner boundary so future
-  routing can claim work without recreating the program or relying on Slack posts.
+  Reconcile the remaining GMI child operations under the now-canonical sustained F04
+  parent so unique graph-native work is executable without duplicating the newer
+  transmission/product owners or requiring Sol/Chairman per-PR routing.
 state_before: >
-  Remaining work was described across D2/W3 research documents and a stale Agent OS
-  transmission todo, with no single claim manifest and with newer K3-D/F04 collision
-  surfaces not reflected in the GMI workstream.
+  The 2026-08-27 manifest included standalone GMI W4/W5 and treated F04 as pending.
+  MarketOntology #6504 has since merged and current Chairman approval adopts the
+  finish-and-fold architecture.
 changed:
   - path: agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-completion-fanout-manifest.md
-    what: "Created stable allocation and dependency manifest for all core completion children."
+    what: "Removed standalone GMI W4/W5/W6 execution rows and bound the surviving GMI children beneath the existing F04 parent operation."
 verified:
-  - claim: "D2C/D2D are the first missing executable substrate children."
-    command: "D2 handoff + GitHub implementation census"
-    result: "PASS; no D2C/D2D/D2E carrier exists on the reconciliation base."
-  - claim: "Later children have explicit dependency gates."
-    command: "W3 continuation directive + D1 merge-order ruling"
+  - claim: "F04 is canonical."
+    command: "Read merged MarketOntology #6504 + MAS-145."
+    result: "PASS."
+  - claim: "D2C/D2D/D2E/W3B/W3C remain the unique graph-native unfinished children."
+    command: "Read current GMI/D2/W3B source law + implementation census."
     result: "PASS."
 unverified:
-  - claim: "Any child is currently claimed by a Fable/Executive worker."
-    what_would_verify: "Canonical Executive Job/Worker receipt or known active human/Fable receiver ACK on the exact packet."
+  - claim: "An exact F04 receiver has claimed the parent lane."
+    what_would_verify: "Chairman assignment + exact-thread PICKUP_ACK and watcher receipt."
 unresolved:
-  - "All new children remain UNCLAIMED or DEPENDENCY_HELD at manifest creation."
+  - "The surviving child rows remain unstarted until lawful pickup/current-state collision census."
 next_actions:
-  - "Claim D2C and D2D only through a lawful receiver/runtime route after fresh collision census."
-  - "Advance later rows only when their exact predecessor acceptance is canonical."
+  - "Assign one Fable principal to the existing F04 parent operation, then run D2C/D2D according to the table below."
+  - "F04 principal routes bounded child implementation downward and owns continuity through final production acceptance."
 do_not_redo:
-  - "Do not mint a second operation key for the same logical child."
-  - "Do not translate Slack delivery into ACK/QUEUED/EXECUTING."
-  - "Do not absorb K3-D or MarketOntology F04 into a GMI child."
+  - "No replacement parent operation key."
+  - "No standalone GMI W4/W5/W6 build."
+  - "No duplicate K3-D/TXI/F04 owner."
 danger_areas:
-  - "Concurrent carriers touching the same graph/config/Agent OS paths."
-  - "Stale worker packet executed after a newer owner/source-law change."
+  - "Two children editing one canonical path concurrently; stale source law; Fable child-coding scope creep; watcher silence."
 ---
 
 # Allocation manifest
 
-| Order | Wave | Operation key | Initial state | Depends on | Preferred owner | Exact stop/return |
-|---:|---|---|---|---|---|---|
-| 1A | D2C PIT vintages | `gmi-theme-pit-d2c-20260827-sol-001` | UNCLAIMED / NOT_DISPATCHED | accepted predecessors already on main | sustained GMI Fable principal / bounded frontier child | return merged/build proof + natural PIT receipt; do not enter D2E |
-| 1B | D2D ontology/probation | `gmi-theme-ontology-d2d-20260827-sol-001` | UNCLAIMED / NOT_DISPATCHED | accepted predecessors already on main | sustained GMI Fable principal / bounded frontier child | return mapping/coverage proof; do not enter D2E |
-| 2 | D2E acceptance | `gmi-theme-accept-d2e-20260827-sol-001` | DEPENDENCY_HELD | D2C + D2D | GMI Fable principal | close D2 only after rights/coverage/strict/natural proof |
-| 3 | W3B ThemeState | `gmi-theme-state-w3b-20260827-sol-001` | DEPENDENCY_HELD | D2E | GMI Fable principal | natural state producer+reader proof; do not enter W3C |
-| 4 | W3C cohort | `gmi-theme-cohort-w3c-20260827-sol-001` | DEPENDENCY_HELD | W3B | GMI Fable principal | U.S.+CN post-selection consumer proof; do not enter W4 |
-| 5 | W4 relationships | `gmi-theme-relations-w4-20260827-sol-001` | DEPENDENCY_HELD | W3C for primary journey | GMI Fable principal with K3/owner review | cited positive+abstention relationship query; do not enter W5 |
-| 6 | W5 sensorium | `gmi-theme-sensorium-w5-20260827-sol-001` | DEPENDENCY_HELD | W4 | GMI Fable principal | owner-leg composition proof; do not create product/UI fork |
-| 7 | W6 product composition | adopt pending `marketontology-f04-ontology-transmission-20260826-fable-001` | EXTERNAL/PENDING CANONICAL | W5 + #6504 canonical owner law | MarketOntology F04 sustained COO | production browser/machine product proof; return final bundle to Sol |
+**Sustained parent:** `marketontology-f04-ontology-transmission-20260826-fable-001`  
+**Projected issue:** `MAS-145`  
+**Parent route:** Fable + Claude Code principal, with cheaper bounded workers below it.
 
-## Claim law
+| Order | Child | Operation key | Depends on | Preferred execution | Exact stop/return |
+|---:|---|---|---|---|---|
+| 1A | D2C PIT vintages | `gmi-theme-pit-d2c-20260827-sol-001` | current accepted predecessors | Codex/Terra/Sonnet under F04 principal unless principal ambiguity is proven | merge + natural PIT proof to F04; terminalize child watcher; do not auto-start D2E |
+| 1B | D2D ontology/probation | `gmi-theme-ontology-d2d-20260827-sol-001` | current accepted predecessors | Codex/Terra/Sonnet under F04 principal unless principal ambiguity is proven | mapping/coverage/adversarial proof to F04; terminalize child watcher |
+| 2 | D2E acceptance | `gmi-theme-accept-d2e-20260827-sol-001` | accepted D2C + D2D | F04 principal + independent reviewer; repair only through owner if needed | one D2 acceptance verdict + natural receipt; terminalize child watcher |
+| 3 | W3B ThemeState | `gmi-theme-state-w3b-20260827-sol-001` | accepted D2E | F04 principal continuity; bounded builder + independent reviewer | sole producer + Neural Web reconciliation + natural producer/reader proof |
+| 4 | W3C cohort | `gmi-theme-cohort-w3c-20260827-sol-001` | accepted W3B | bounded builder under F04 principal | real U.S.+China post-selection consumer proof; close GMI development frontier |
+| 5 | F04 product verticals | fresh child keys minted under current Commission Wave law | relevant accepted GMI/K3/TXI dependencies | least-scarce capable worker under F04 principal | one useful real consumer per child; continue until integrated final bundle |
 
-D2C and D2D are the only rows eligible to be claimed first. A claiming principal must refresh:
+## Claim and concurrency law
 
-- protected Sol Skillpack;
-- Macro default branch;
-- open PR/branch collisions;
-- current GMI/K3/MarketOntology owner law;
-- exact target-path ownership.
+The parent F04 receiver performs the current collision census. D2C and D2D may modify concurrently only when their actual carriers are disjoint. If they share a modifying canonical path, sequence them while retaining their distinct logical child identities.
 
-If D2C and D2D both need to modify the same canonical file/carrier, do not run them as independent writers. Sequence them under one sustained principal and preserve the same operation identities as logical work units.
+Each independent child gets:
 
-## Parallel work outside this manifest
+- fresh current-state/owner collision reconciliation;
+- explicit child start state;
+- one modifying carrier;
+- its own reciprocal watcher cycle;
+- terminal STOP/disarm before the next child starts.
 
-K3-D PR #6514 and MarketOntology records PR #6504 are independent adjacent programs. They may continue under their own authority/carriers. Their progress never advances a GMI row automatically; GMI adopts only accepted canonical outputs.
+The F04 parent may remain nonterminal while children cycle underneath it. Parent Slack/thread continuity does not become lifecycle authority.
 
-## Final acceptance owner
+## Folded work
 
-Sol performs milestone/architecture acceptance against the Chairman outcome after the W6 real product bundle returns. The Chairman is not a routine review hop. Any W7+ reranking/neighbor-discovery/trading authority remains a separately promoted research program after core context/research completion.
+The prior proposed GMI W4 relationship, W5 Sensorium and W6 product rows are removed from this manifest as independent build work. Their useful jobs survive under K3-D/current relationship owners, TXI/incorporation/specialist measurements and the existing F04 product lane. This is supersession, not feature deletion.
+
+## Final acceptance
+
+F04 returns one integrated bundle after real U.S., China and transmission/explanation production journeys pass and durable records are reconciled. Sol performs final adversarial acceptance. Only then does Sol send terminal `SOL ACCEPTED / STOP` for the F04 parent and both sides disarm the parent watcher.
