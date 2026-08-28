@@ -18,10 +18,19 @@ Everything else reports.  That is the ratchet: compliant surfaces cannot regress
 new surfaces are born compliant, and the backlog is migrated on a schedule rather
 than in one heroic red-build weekend.
 
+A THIRD mode, `enforce-added`, blocks forward-only: it takes a unified diff via
+`--diff-file` (a real file path, or `-` for stdin) and exits non-zero only when
+a finding in `ADDED_BLOCKING_RULES` lands on a line the diff actually ADDED.
+Pre-existing debt on an unchanged line never blocks, however many rules it
+trips — that is what lets a NEW violation fail closed without reddening the
+whole estate the day this ships. `report` and full `enforce` are unchanged.
+
 Usage::
 
     python3 scripts/check_design_system.py                  # report (exit 0)
     python3 scripts/check_design_system.py --mode enforce   # blocking arm
+    python3 scripts/check_design_system.py --mode enforce-added \
+        --diff-file /tmp/design.diff                        # forward-only arm
     python3 scripts/check_design_system.py --self-check     # prove the rules bite
 
 CLOSURE LEGIBILITY (load-bearing, do not regress): this module names exactly ONE
@@ -61,7 +70,7 @@ SANCTIONED_LITERAL_FILES: frozenset[str] = frozenset({
     "templates/navigation-refresh.css",
 })
 
-MODES = ("report", "enforce")
+MODES = ("report", "enforce", "enforce-added")
 
 # Rules 1-4 are mechanical and exact — they are what `--mode enforce` blocks on.
 # Rules 5-6 are HEURISTICS by design (a regex cannot know whether `.foo-card` is
@@ -69,6 +78,15 @@ MODES = ("report", "enforce")
 # warn-tier for as long as this script exists.
 BLOCKING_RULES = ("color-literal", "font-family-literal", "radius-literal",
                   "literal-custom-property")
+
+# `--mode enforce-added` blocks on rules 1-4 PLUS the two rules whose whole
+# reason for existing is a NEW decision (an emoji nobody had before, a second
+# token root nobody had before) — rules that would be absurd to whole-estate
+# enforce given the legacy debt, but are exactly what forward-only enforcement
+# exists to catch on a line nobody had touched until this PR.  `BLOCKING_RULES`
+# stays a plain tuple (other code reads it as one); `frozenset(...)` of it here
+# is just this constant's own type, not a mutation of the original (C3).
+ADDED_BLOCKING_RULES = frozenset(BLOCKING_RULES) | {"emoji", "parallel-token-root"}
 
 # Rule 6 seed.  DELIBERATELY SMALL: this is the vocabulary the Tier-1 glance
 # doctrine bans outright (internal state names, untranslated statistics,
@@ -93,6 +111,12 @@ RADIUS_RE = re.compile(r"border-radius\s*:\s*([^;}\n]+)")
 CUSTOM_PROP_RE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:\s*([^;}\n]+)")
 CARD_CLASS_RE = re.compile(r"\.([A-Za-z0-9_-]*-card)\b\s*(?=[,{:.\[])")
 STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
+
+# A `:root` selector block, captured whole so its body can be checked for ANY
+# custom-property declaration regardless of whether the value is a literal or a
+# derivation — see rule 9 (parallel-token-root) below.  Naive about nested
+# braces, same as STYLE_BLOCK_RE; CSS custom-property blocks do not nest them.
+ROOT_BLOCK_RE = re.compile(r"(?<![\w-]):root\b\s*\{([^}]*)\}", re.DOTALL)
 
 # A custom property whose value is ONLY composition over other tokens is a
 # DERIVATION, not a literal — that is exactly how a surface is supposed to extend
@@ -249,6 +273,21 @@ def scan_text(rel_path: str, text: str) -> list[Finding]:
                         if "<style" in m.lower()), 1)
         findings.append(Finding("inline-style-bytes", rel_path, line_no,
                                 f"{inline} bytes of inline <style>"))
+
+    # 9 — parallel token root: a `:root` block outside theme.css that declares a
+    # custom property is a SECOND palette definition, even when every value is a
+    # pure token derivation — the violation is the second root, not the literal.
+    # theme.css is the sole legitimate root (not even SANCTIONED_LITERAL_FILES is
+    # exempt: that list exempts literals, never a parallel root). A scoped
+    # (non-`:root`) derived custom property stays legal — that is how a surface
+    # is supposed to extend the palette.
+    if not is_theme:
+        for match in ROOT_BLOCK_RE.finditer(cleaned):
+            if CUSTOM_PROP_RE.search(match.group(1)):
+                line_no = cleaned.count("\n", 0, match.start()) + 1
+                findings.append(Finding("parallel-token-root", rel_path, line_no,
+                                        ":root block declares a custom property "
+                                        "outside theme.css"))
     return findings
 
 
@@ -326,6 +365,72 @@ def blocking_findings(findings: Iterable[Finding], governed: set[str],
     return out
 
 
+# --- diff parsing (forward-only enforcement) ---------------------------------
+#
+# Pure text parsing, no subprocess call (CLOSURE LEGIBILITY) — the diff always
+# arrives as text via --diff-file, produced by the CALLER's own `git diff`.
+
+HUNK_RE = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+
+
+def parse_added_line_numbers(diff_text: str) -> dict[str, set[int]]:
+    """Which NEW-file line numbers a unified diff ADDED, keyed by new-side path.
+
+    Deliberately naive about anything but the `+`/`-`/context markers and the
+    `diff --git` / `--- ` / `+++ ` headers — no git plumbing.  Two shapes need
+    explicit handling or the line numbers silently desync (C2, binding):
+
+    - ``\\ No newline at end of file`` is not a real diff line.  Counting it
+      shifts every subsequent line number in the hunk by one.
+    - An added line whose CONTENT happens to start with ``++``/``--`` must not
+      be mistaken for a ``+++ file``/``--- file`` header.  A real header only
+      ever appears between a file's ``diff --git`` line and its first ``@@``
+      hunk; once a hunk has started, an ``in_hunk`` flag keeps a
+      header-shaped content line from being misread as a header.
+    """
+    out: dict[str, set[int]] = {}
+    path: Optional[str] = None
+    new_line = 0
+    in_hunk = False
+    for raw in diff_text.splitlines():
+        if raw.startswith("\\"):
+            # "\ No newline at end of file" — not a real line; do not count it.
+            continue
+        if raw.startswith("diff --git "):
+            in_hunk = False
+            continue
+        if not in_hunk and raw.startswith("--- "):
+            continue
+        if not in_hunk and raw.startswith("+++ "):
+            candidate = raw[4:]
+            path = candidate[2:] if candidate[:2] in ("a/", "b/") else candidate
+            out.setdefault(path, set())
+            continue
+        match = HUNK_RE.match(raw)
+        if match:
+            in_hunk = True
+            new_line = int(match.group(1))
+            continue
+        if path is None or not in_hunk:
+            continue
+        if raw.startswith("+"):
+            out[path].add(new_line)
+            new_line += 1
+        elif raw.startswith("-"):
+            continue
+        else:
+            new_line += 1
+    return out
+
+
+def added_blocking_findings(findings: Iterable[Finding],
+                            added_lines: dict[str, set[int]]) -> list[Finding]:
+    """Findings whose rule is forward-blocking AND whose line was just added."""
+    return [finding for finding in findings
+            if finding.rule in ADDED_BLOCKING_RULES
+            and finding.line in added_lines.get(finding.path, set())]
+
+
 # --- reporting --------------------------------------------------------------
 
 ANNOTATION_CAP = 10
@@ -339,6 +444,53 @@ def annotate(level: str, message: str) -> None:
     line.  `flush` is load-bearing — stdout is block-buffered when piped in CI.
     """
     print(f"::{level} title=design-system::{message}", flush=True)
+
+
+def report_added(findings: list[Finding], blocking: list[Finding]) -> None:
+    """Forward-only reporting for `--mode enforce-added`.
+
+    Deliberately NOT `report()`.  `report()` always dumps the whole estate
+    census, which is exactly right for `report`/`enforce` (both mean "show me
+    everything") but would be a defect here: on the real estate the census runs
+    ~19,000 findings, so an unscoped dump makes forward-only enforcement LOOK
+    like it reddened the whole estate on every PR (the outcome TP-0 exists to
+    avoid), floods CI logs by roughly a megabyte, and buries the one line a
+    developer actually needs to act on.  The summary annotation therefore leads
+    with the BLOCKING count — the number the developer must act on — and the
+    estate total is surfaced only as explicitly-labelled non-blocking context,
+    never as this mode's error count.  `--mode report` remains the way to see
+    the full census; this function never substitutes for it.
+    """
+    non_blocking_estate = len(findings) - len(blocking)
+    census_note = (f"{non_blocking_estate} further pre-existing, non-blocking "
+                   f"finding(s) in the estate — run --mode report for the full "
+                   f"census")
+    if not blocking:
+        annotate("notice", f"R0 enforce-added: 0 blocking finding(s) "
+                           f"({census_note})")
+        print(f"design-system ratchet — mode=enforce-added blocking=0 "
+              f"(estate pre-existing, non-blocking: {non_blocking_estate})",
+              flush=True)
+        return
+
+    annotate("error", f"R0 enforce-added: {len(blocking)} blocking finding(s) "
+                      f"on line(s) added by this diff ({census_note})")
+    emitted = 1
+    for finding in blocking[:ANNOTATION_CAP - emitted]:
+        annotate("error",
+                 f"{finding.path}:{finding.line} [{finding.rule}] {finding.detail}")
+        emitted += 1
+    if len(blocking) > ANNOTATION_CAP - 1:
+        print(f"... {len(blocking) - (ANNOTATION_CAP - 1)} further blocking "
+              f"finding(s) not annotated (cap {ANNOTATION_CAP}); full detail "
+              f"follows", flush=True)
+
+    print(f"design-system ratchet — mode=enforce-added blocking={len(blocking)} "
+          f"(estate pre-existing, non-blocking: {non_blocking_estate})",
+          flush=True)
+    for finding in blocking:
+        print(f"{finding.path}:{finding.line}: {finding.rule}: {finding.detail}",
+              flush=True)
 
 
 def report(findings: list[Finding], *, mode: str, blocking: list[Finding]) -> None:
@@ -393,8 +545,11 @@ DIRTY_FIXTURES: dict[str, tuple[str, str]] = {
 
 CLEAN_FIXTURE = (
     "clean.css",
+    # A SCOPED derived custom property, not `:root` — a non-theme `:root` block
+    # is itself the parallel-token-root violation (rule 9), so a fixture meant
+    # to prove "this is all legal" must not use one.
     ".x{color:var(--ink-1);font-family:var(--font-body);"
-    "border-radius:var(--r-2)}\n:root{--ink-soft:var(--ink-1)}\n",
+    "border-radius:var(--r-2)}\nbody.page-x{--ink-soft:var(--ink-1)}\n",
 )
 
 
@@ -447,15 +602,39 @@ def load_registry(path: Path) -> Optional[dict]:
         return None
 
 
+def _read_diff(path: Optional[str]) -> str:
+    """Read unified diff text for `--mode enforce-added`.
+
+    `path` is a caller-supplied file path (or `-` for stdin) — not a scan-root
+    constant, so it does not touch CLOSURE LEGIBILITY.  No git plumbing: the
+    caller's own `git diff` produced this text; this module only parses it.
+    Absence (`None`) is not fatal — it means no line was ever "added", so
+    `main()` fails open with a loud warning rather than crashing.
+    """
+    if path is None:
+        return ""
+    if path == "-":
+        return sys.stdin.read()
+    try:
+        return Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--mode", choices=MODES, default="report",
-                    help="report (default; always exit 0) or enforce (blocks on "
-                         "rules 1-4 in governed-compliant or new templates)")
+                    help="report (default; always exit 0), enforce (blocks on "
+                         "rules 1-4 in governed-compliant or new templates), or "
+                         "enforce-added (blocks only on ADDED_BLOCKING_RULES "
+                         "findings whose line --diff-file actually added)")
     ap.add_argument("--root", type=Path, default=REPO_ROOT,
                     help="repository root to scan (tests point this at a fixture)")
     ap.add_argument("--registry", type=Path, default=None,
                     help="page registry JSON; governs which templates enforce")
+    ap.add_argument("--diff-file", type=str, default=None,
+                    help="unified diff text for --mode enforce-added (e.g. "
+                         "`git diff --unified=0 -- templates`); '-' reads stdin")
     # `--selftest` is the house spelling every other guard uses, and the one
     # scripts/check_house_law_registry.py looks for when it verifies that a
     # `selftest: true` registry entry is not a stale claim. Both spellings run
@@ -482,6 +661,21 @@ def main(argv: Optional[list[str]] = None) -> int:
                  "enforce ran with no readable --registry: every template counts "
                  "as NEW, so the whole estate is blocking. Pass --registry to "
                  "scope enforcement to design_system.compliant rows.")
+
+    if args.mode == "enforce-added":
+        # Fail OPEN, but say so: with no diff, no line was ever "added" by
+        # definition, so nothing can block — the opposite default from
+        # `enforce`, because this mode's entire contract is "only new lines
+        # count" and there is no such thing as an unscoped forward-only gate.
+        if args.diff_file is None:
+            annotate("warning",
+                     "enforce-added ran with no --diff-file: no line counts as "
+                     "added, so nothing can block. Pass --diff-file (or '-' for "
+                     "stdin) with the PR's own unified diff.")
+        added_lines = parse_added_line_numbers(_read_diff(args.diff_file))
+        added_blocking = added_blocking_findings(findings, added_lines)
+        report_added(findings, added_blocking)
+        return 1 if added_blocking else 0
 
     report(findings, mode=args.mode, blocking=blocking)
 
