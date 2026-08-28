@@ -60,9 +60,11 @@ waves:
     status: todo
     depends_on: [OA-1T-MACRO]
     next_action: >
-      CLOSED. Preserve the existing unsigned target and preregistered population. Correctly
-      populated event-time features are an entrance requirement; code existence is not
-      promotion evidence.
+      CLOSED. Preserve the existing unsigned target and exact preregistered population;
+      do not add new OI/GEX/positioning fusion features under this wave. Correctly populated
+      event-time features are an entrance requirement and code existence is not promotion
+      evidence. Any product-probability promotion must be separately reviewed against current
+      DNR:KILL-FUSED-COMPOSITE scope; ambiguity requires explicit DNR adjudication, not inference.
   - id: OA-3
     title: Exact-option NBBO lifecycle and outcome contract under existing owners
     status: todo
@@ -77,6 +79,8 @@ waves:
     next_action: >
       CLOSED. The existing unsigned FS score may not be relabeled directional. Any bearish
       or bullish probability requires a new lawful prospective/OOS family and exact horizon.
+      A family that would fuse OI/GEX/other positioning keys into a predictive score requires
+      an explicit DNR:KILL-POSITIONING-FUSION scope ruling before the test begins.
   - id: OA-5
     title: Promoted signal to existing Options Issue Desk operator workflow
     status: todo
@@ -97,7 +101,7 @@ landmines:
   - >
     Do not treat the Terminal fixed-weight flowScore.ts heuristic as alpha probability. Its
     lawful role is Attention/Salience only; calibrated probability belongs to a governed Macro
-    statistical family after promotion.
+    statistical family only after the statistical gate and current DNR authority review.
   - >
     No synthetic Chain Heat ask-share proxy (~buy=0.80/~sell=0.20/mixed=0.50) may enter Alpha
     training or calibrated candidate evidence as measured NBBO truth.
@@ -110,7 +114,8 @@ landmines:
   - >
     Current DNR law remains binding: KILL-LLM-ORIGINATION, KILL-FUSED-COMPOSITE,
     KILL-POSITIONING-FUSION, HOLD-THETA-TAPE, KILL-DOI-FAMILY, KILL-SKEW-DECELERATION,
-    KILL-CHARM-NARRATIVES and KILL-OFFHORIZON-VERDICTS.
+    KILL-CHARM-NARRATIVES and KILL-OFFHORIZON-VERDICTS. This OA-0 decision creates no
+    implicit exception to any of them.
 do_not_redo:
   - "Another options collector, ThetaData Terminal instance, live-flow store, event identity, campaign ledger, outcome ledger, Issue Desk, rank/gate/sizing control plane, or generic Options super-score."
   - "Re-running stale MomoEdge research as activity; use the frozen benchmark and current product/source evidence."
