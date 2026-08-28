@@ -595,3 +595,37 @@ def test_roster_evidence_from_another_revision_is_rejected():
         qa_exchange.validate_qa_exchanges(
             exchanges, event_id=EVENT_ID, document_id=DOCUMENT_ID, document_sha256=SHA
         )
+
+
+def test_aapl_publishes_through_the_production_admission_path_as_legacy():
+    """The oracle through the REAL gate, not just the reconstructor.
+
+    Two things must hold together and only this path shows both: AAPL still admits
+    exactly 7/26/68, AND every one of its respondents keeps the legacy four-key shape.
+    The frozen amendment requires existing AAPL objects and immutable generations to
+    need no migration, so an extended respondent appearing here would be a silent
+    contract break for readers even though the counts still looked right.
+    """
+    raw = gzip.open(AAPL_FIXTURE).read()
+    sha = hashlib.sha256(raw).hexdigest()
+    assert sha == AAPL_SHA256
+    accepted = qa_exchange.accepted_qa_exchanges_for_transcript(
+        event_id="evt_cik0000320193_2026q3_results",
+        document_id="tx:AAPL/2026Q3",
+        document_sha256=sha,
+        segments=copy.deepcopy(json.loads(raw)["segments"]),
+    )
+    assert len(accepted) == AAPL_EXCHANGES
+    respondents = [r for ex in accepted for r in ex["respondents"]]
+    assert len(respondents) == AAPL_ANSWER_TURNS
+    spans = sum(
+        len(ex["question_spans"]) + len(ex["answer_spans"]) for ex in accepted
+    )
+    assert spans == AAPL_REPLAY_SPANS
+    assert all(set(r) == set(qa_exchange.RESPONDENT_KEYS) for r in respondents)
+    qa_exchange.validate_qa_exchanges(
+        accepted,
+        event_id="evt_cik0000320193_2026q3_results",
+        document_id="tx:AAPL/2026Q3",
+        document_sha256=sha,
+    )
