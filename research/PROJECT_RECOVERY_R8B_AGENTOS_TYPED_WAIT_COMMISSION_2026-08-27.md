@@ -1,14 +1,14 @@
 # Project Recovery R8-B — Agent OS Typed Intentional-Wait Commission
 
-**Date:** 2026-08-27  
-**Owner:** Sol, AI CEO  
-**Chairman authority:** explicit current approval to continue the Recovery + Anti-Replay robustness spine and activate R8-B in parallel with the Fresh-Sol Harness  
-**Operation key:** `project-recovery-r8b-agentos-wait-20260827-sol-001`  
-**Carrier:** `sol/project-recovery-r8b-agentos-wait-20260827` — one carrier only  
-**Repository:** `mastermindx-market-intelligence/macro`  
-**Current Macro pickup:** `f244f0b34330cac9c98a815a3c0e97d0ba5b1d7f`  
-**Protected Mastermind / Skillpack:** `mastermindx-market-intelligence/Mastermind@6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182`, `mastermind.sol_skillpack.v1` v1.0.0, bootstrap major 1  
-**Approved R8 planning carrier:** Mastermind PR #171; R8-B plan `docs/superpowers/plans/2026-08-27-project-recovery-r8-agentos-wait-contract.md`  
+**Date:** 2026-08-27
+**Owner:** Sol, AI CEO
+**Chairman authority:** explicit current approval to continue the Recovery + Anti-Replay robustness spine and activate R8-B in parallel with the Fresh-Sol Harness
+**Operation key:** `project-recovery-r8b-agentos-wait-20260827-sol-001`
+**Carrier:** `sol/project-recovery-r8b-agentos-wait-20260827` — one carrier only
+**Repository:** `mastermindx-market-intelligence/macro`
+**Current Macro pickup:** `f244f0b34330cac9c98a815a3c0e97d0ba5b1d7f`
+**Protected Mastermind / Skillpack:** `mastermindx-market-intelligence/Mastermind@6f1bc3dd39f1ebecd3c22e44aa11ca7a13fa5182`, `mastermind.sol_skillpack.v1` v1.0.0, bootstrap major 1
+**Approved R8 planning carrier:** Mastermind PR #171; R8-B plan `docs/superpowers/plans/2026-08-27-project-recovery-r8-agentos-wait-contract.md`
 
 ## Observable mission
 
