@@ -23,6 +23,7 @@ import argparse
 import hashlib
 import json
 import sys
+from dataclasses import replace as dataclass_replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -256,6 +257,110 @@ def compute_constants_from_substrate(
     return recall_floor, lambda_fs, cells
 
 
+def core_spec_hash(spec: RulerSpec, *, recall_floor: float | None, lambda_fs: float | None, status: str) -> str:
+    """The spec's substantive-content hash with ``pr3_receipt`` projected to
+    ``None`` (freeze review finding M8's "spec hash before/after"). The receipt
+    itself embeds this hash, so hashing the receipt-INCLUSIVE spec would be
+    self-referential (a value can never legally hash itself); this hashes only
+    the geometry/PR3-status/PR3-values/authority that the receipt is ABOUT,
+    which is exactly the substantive content a before/after comparison needs to
+    prove changed."""
+    projected = dataclass_replace(
+        spec, recall_floor=recall_floor, lambda_fs=lambda_fs, pr3_status=status, pr3_receipt=None,
+    )
+    return projected.spec_hash()
+
+
+def build_seal_receipt(
+    *, recall_floor: float, lambda_fs: float, base_spec: RulerSpec, roster: list[str],
+    manifest: dict[str, Any], provenance: dict[str, Any], provenance_path: Path,
+    cutoff: pd.Timestamp, registration_receipt: dict[str, Any],
+) -> dict[str, Any]:
+    """Assemble the M8 seal receipt: per-constant value + rule hash/status,
+    roster hash, replay-manifest hash, W2 family-registry hash, substrate
+    provenance hash, spec hash before/after, timestamp. This is the SAME
+    ``receipt`` dict embedded in ``ruler_spec_v1.json``'s ``pr3.receipt`` field
+    AND rendered into ``W3_RULER_REGISTRATION.md`` (via
+    :func:`append_seal_receipt_to_registration`)."""
+    replay_manifest_hash = hashlib.sha256(REPLAY_MANIFEST_PATH.read_bytes()).hexdigest()
+    substrate_provenance_hash = hashlib.sha256(provenance_path.read_bytes()).hexdigest()
+    w2_family_registry_hash = hashlib.sha256(
+        json.dumps(
+            provenance.get("spec_hashes_asserted_at_run", {}), sort_keys=True, separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    spec_hash_before_seal = core_spec_hash(
+        base_spec, recall_floor=None, lambda_fs=None, status=PR3_PENDING_SENTINEL,
+    )
+    spec_hash_after_seal = core_spec_hash(
+        base_spec, recall_floor=recall_floor, lambda_fs=lambda_fs, status="sealed",
+    )
+    return {
+        "computed_at": datetime.now(timezone.utc).isoformat(),
+        "recall_floor": {
+            "value": recall_floor,
+            "rule": RECALL_FLOOR_RULE,
+            "rule_hash": registration_receipt["recall_floor_rule_hash"],
+            "status": RULE_REVIEW_STATUS,
+            "diagnostic_variants_pm20pct": diagnostic_variants(recall_floor),
+        },
+        "lambda_fs": {
+            "value": lambda_fs,
+            "rule": LAMBDA_FS_RULE,
+            "rule_hash": registration_receipt["lambda_fs_rule_hash"],
+            "status": RULE_REVIEW_STATUS,
+            "diagnostic_variants_pm20pct": diagnostic_variants(lambda_fs),
+        },
+        "roster_sha256": manifest["roster"]["roster_sha256"],
+        "n_names_drawn": len(roster),
+        "recent_history_guard_cutoff": str(cutoff.date()),
+        "trial_ledger_family": TRIAL_FAMILY,
+        "trial_ledger_effective_n": registration_receipt["diagnostic_grid_effective_n"],
+        "fit_read_look_budget": registration_receipt["fit_read_look_budget"],
+        "replay_manifest_hash": replay_manifest_hash,
+        "w2_family_registry_hash": w2_family_registry_hash,
+        "substrate_provenance_hash": substrate_provenance_hash,
+        "spec_hash_before_seal": spec_hash_before_seal,
+        "spec_hash_after_seal": spec_hash_after_seal,
+        # kept for backward compatibility with the pre-M8 field name
+        "base_spec_hash_before_seal": base_spec.spec_hash(),
+    }
+
+
+def format_seal_receipt_markdown(receipt: dict[str, Any]) -> str:
+    """M8: the registration-doc append block for a completed real seal."""
+    rf, lf = receipt["recall_floor"], receipt["lambda_fs"]
+    lines = [
+        "",
+        "## 5. Sealed constants receipt (Task 3C Step 5 -- the real, one-time seal)",
+        "",
+        f"- Sealed at: `{receipt['computed_at']}`",
+        f"- `recall_floor` = `{rf['value']}` (rule hash `{rf['rule_hash']}`, status `{rf['status']}`)",
+        f"- `lambda_fs` = `{lf['value']}` (rule hash `{lf['rule_hash']}`, status `{lf['status']}`)",
+        f"- Roster hash: `{receipt['roster_sha256']}` (n={receipt['n_names_drawn']})",
+        f"- Replay-manifest hash: `{receipt['replay_manifest_hash']}`",
+        f"- W2 family-registry hash: `{receipt['w2_family_registry_hash']}`",
+        f"- Substrate provenance hash: `{receipt['substrate_provenance_hash']}`",
+        f"- Spec hash before seal: `{receipt['spec_hash_before_seal']}`",
+        f"- Spec hash after seal: `{receipt['spec_hash_after_seal']}`",
+        f"- Recent-history guard cutoff: `{receipt['recent_history_guard_cutoff']}`",
+        f"- Trial ledger family: `{receipt['trial_ledger_family']}` (effective N="
+        f"{receipt['trial_ledger_effective_n']})",
+        f"- Fit-read look budget: `{receipt['fit_read_look_budget']}`",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def append_seal_receipt_to_registration(receipt: dict[str, Any]) -> None:
+    """M8: append the seal receipt to ``W3_RULER_REGISTRATION.md`` (via the
+    module-level ``REGISTRATION_PATH``, so a test can monkeypatch it to a
+    throwaway file, exactly like ``SPEC_PATH``)."""
+    block = format_seal_receipt_markdown(receipt)
+    with REGISTRATION_PATH.open("a", encoding="utf-8") as f:
+        f.write(block)
+
+
 def seal_ruler_spec(
     recall_floor: float, lambda_fs: float, *, receipt: dict[str, Any],
 ) -> RulerSpec:
@@ -426,34 +531,20 @@ def main() -> int:
         events, attribution, episodes, bars_by_symbol, base_spec,
     )
 
-    receipt: dict[str, Any] = {
-        "computed_at": datetime.now(timezone.utc).isoformat(),
-        "recall_floor": {
-            "value": recall_floor,
-            "rule": RECALL_FLOOR_RULE,
-            "rule_hash": registration_receipt["recall_floor_rule_hash"],
-            "status": RULE_REVIEW_STATUS,
-            "diagnostic_variants_pm20pct": diagnostic_variants(recall_floor),
-        },
-        "lambda_fs": {
-            "value": lambda_fs,
-            "rule": LAMBDA_FS_RULE,
-            "rule_hash": registration_receipt["lambda_fs_rule_hash"],
-            "status": RULE_REVIEW_STATUS,
-            "diagnostic_variants_pm20pct": diagnostic_variants(lambda_fs),
-        },
-        "roster_sha256": manifest["roster"]["roster_sha256"],
-        "n_names_drawn": len(roster),
-        "recent_history_guard_cutoff": str(cutoff.date()),
-        "trial_ledger_family": TRIAL_FAMILY,
-        "trial_ledger_effective_n": registration_receipt["diagnostic_grid_effective_n"],
-        "fit_read_look_budget": registration_receipt["fit_read_look_budget"],
-        "base_spec_hash_before_seal": base_spec.spec_hash(),
-    }
+    # M8: the seal receipt carries per-constant value+rule hash, roster hash,
+    # replay-manifest hash, W2 family-registry hash, substrate provenance hash,
+    # spec hash before/after, and a timestamp -- written into BOTH
+    # ruler_spec_v1.json's pr3.receipt AND W3_RULER_REGISTRATION.md.
+    receipt: dict[str, Any] = build_seal_receipt(
+        recall_floor=recall_floor, lambda_fs=lambda_fs, base_spec=base_spec, roster=roster,
+        manifest=manifest, provenance=provenance, provenance_path=provenance_path,
+        cutoff=cutoff, registration_receipt=registration_receipt,
+    )
 
     print(json.dumps(receipt, indent=2, sort_keys=True, default=str), flush=True)
 
     sealed = seal_ruler_spec(recall_floor, lambda_fs, receipt=receipt)
+    append_seal_receipt_to_registration(receipt)
     print(json.dumps({"sealed_spec_hash": sealed.spec_hash()}, indent=2), flush=True)
     return 0
 

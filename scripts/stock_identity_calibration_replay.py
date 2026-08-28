@@ -27,6 +27,7 @@ import hashlib
 import json
 import os
 import sys
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -48,12 +49,20 @@ DATA = REPO_ROOT / "data" / "stock_identity"
 PARTITION_MANIFEST_PATH = DATA / "partition" / "partition_manifest_v1.json"
 CONSTANTS_PATH = DATA / "constants" / "si_constants_v1.json"
 
+#: Per the manifest storage contract (`data/stock_identity/ruler/calibration_replay_manifest_v1.json`
+#: `.storage.large_artifact_location`): large calibration substrate artifacts go
+#: to scratch, never committed. ``STOCK_IDENTITY_CALIBRATION_SCRATCH`` is the
+#: lawful override. The FALLBACK default here must never hardcode any one
+#: session's own working-directory path (freeze review MINORS finding — a prior
+#: revision of this file hardcoded one specific session's private
+#: session-scoped working path, which becomes another session's non-durable
+#: directory the moment any OTHER session, or a later run of this same session
+#: under a different identity, runs it); it uses the OS temp root instead,
+#: which is always writable and never session-specific.
 SCRATCH = Path(
     os.environ.get(
         "STOCK_IDENTITY_CALIBRATION_SCRATCH",
-        "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-"
-        "worktrees-stock-identity-fable-coo-ae87a1/6ea3445d-6aa1-4b74-adf2-149cb792db63/"
-        "scratchpad/calibration_substrate",
+        str(Path(tempfile.gettempdir()) / "stock_identity_calibration_substrate"),
     )
 )
 

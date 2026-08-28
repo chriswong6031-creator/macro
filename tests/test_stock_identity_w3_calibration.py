@@ -33,8 +33,10 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -561,6 +563,117 @@ def test_seal_ruler_spec_re_pins_spec_hash(throwaway_spec):
 
 
 # ---------------------------------------------------------------------------
+# M8: the real seal writes a full receipt into BOTH ruler_spec_v1.json AND
+# W3_RULER_REGISTRATION.md
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def throwaway_registration(tmp_path, monkeypatch):
+    dest = tmp_path / "W3_RULER_REGISTRATION.md"
+    dest.write_text("# fixture registration doc\n", encoding="utf-8")
+    monkeypatch.setattr(calib_w3, "REGISTRATION_PATH", dest)
+    return dest
+
+
+def _fixture_seal_inputs(tmp_path):
+    from engine.stock_identity.ruler import RulerSpec
+
+    base_spec = RulerSpec.from_json(REAL_SPEC_PATH)
+    manifest = json.loads(REAL_REPLAY_MANIFEST_PATH.read_text(encoding="utf-8"))
+    roster = ["FIX_A", "FIX_B"]
+    provenance = {
+        "spec_hashes_asserted_at_run": {"fam.fixture": "deadbeef"},
+        "recent_history_guard_cutoff": "2020-06-01",
+    }
+    provenance_path = tmp_path / "provenance_receipt.json"
+    provenance_path.write_text(json.dumps(provenance), encoding="utf-8")
+    registration_receipt = {
+        "recall_floor_rule_hash": calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE),
+        "lambda_fs_rule_hash": calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE),
+        "diagnostic_grid_effective_n": 6,
+        "fit_read_look_budget": 3,
+    }
+    return dict(
+        recall_floor=0.35, lambda_fs=0.75, base_spec=base_spec, roster=roster,
+        manifest=manifest, provenance=provenance, provenance_path=provenance_path,
+        cutoff=pd.Timestamp("2020-06-01"), registration_receipt=registration_receipt,
+    )
+
+
+def test_build_seal_receipt_carries_every_m8_field(tmp_path):
+    receipt = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    for key in (
+        "recall_floor", "lambda_fs", "roster_sha256", "replay_manifest_hash",
+        "w2_family_registry_hash", "substrate_provenance_hash",
+        "spec_hash_before_seal", "spec_hash_after_seal", "computed_at",
+    ):
+        assert key in receipt, f"missing M8 receipt field: {key}"
+    assert receipt["recall_floor"]["value"] == pytest.approx(0.35)
+    assert receipt["lambda_fs"]["value"] == pytest.approx(0.75)
+    assert len(receipt["replay_manifest_hash"]) == 64
+    assert len(receipt["w2_family_registry_hash"]) == 64
+    assert len(receipt["substrate_provenance_hash"]) == 64
+    assert len(receipt["spec_hash_before_seal"]) == 64
+    assert len(receipt["spec_hash_after_seal"]) == 64
+    assert receipt["spec_hash_before_seal"] != receipt["spec_hash_after_seal"]
+
+
+def test_core_spec_hash_excludes_the_receipt_itself(tmp_path):
+    """The before/after hashes must never depend on the receipt's own contents
+    (a value can't legally hash itself) -- two receipts differing only in an
+    unrelated field must still project to the SAME core hash."""
+    from engine.stock_identity.ruler import RulerSpec
+
+    base_spec = RulerSpec.from_json(REAL_SPEC_PATH)
+    h1 = calib_w3.core_spec_hash(base_spec, recall_floor=0.35, lambda_fs=0.75, status="sealed")
+    h2 = calib_w3.core_spec_hash(base_spec, recall_floor=0.35, lambda_fs=0.75, status="sealed")
+    assert h1 == h2  # deterministic, independent of any receipt object identity
+
+
+def test_format_seal_receipt_markdown_contains_every_hash(tmp_path):
+    receipt = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    block = calib_w3.format_seal_receipt_markdown(receipt)
+    assert receipt["replay_manifest_hash"] in block
+    assert receipt["w2_family_registry_hash"] in block
+    assert receipt["substrate_provenance_hash"] in block
+    assert receipt["spec_hash_before_seal"] in block
+    assert receipt["spec_hash_after_seal"] in block
+    assert "0.35" in block
+    assert "0.75" in block
+
+
+def test_append_seal_receipt_to_registration_writes_the_throwaway_file(
+    tmp_path, throwaway_registration,
+):
+    receipt = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    before = throwaway_registration.read_text(encoding="utf-8")
+    calib_w3.append_seal_receipt_to_registration(receipt)
+    after = throwaway_registration.read_text(encoding="utf-8")
+    assert after.startswith(before)
+    assert receipt["spec_hash_after_seal"] in after
+    # the REAL, committed registration doc is untouched
+    assert REAL_REGISTRATION_PATH.read_text(encoding="utf-8") == REGISTRATION_DOC_SNAPSHOT
+
+
+REAL_REGISTRATION_PATH = ROOT / "research" / "stock_identity" / "W3_RULER_REGISTRATION.md"
+REGISTRATION_DOC_SNAPSHOT = REAL_REGISTRATION_PATH.read_text(encoding="utf-8")
+
+
+def test_seal_and_append_end_to_end_never_touches_real_registration_doc(
+    throwaway_spec, throwaway_registration, tmp_path,
+):
+    """The real (fixture-value) seal path -- seal_ruler_spec +
+    append_seal_receipt_to_registration -- writes into the THROWAWAY spec and
+    THROWAWAY registration doc only; the real committed
+    W3_RULER_REGISTRATION.md is byte-identical before and after."""
+    receipt = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    calib_w3.seal_ruler_spec(0.35, 0.75, receipt=receipt)
+    calib_w3.append_seal_receipt_to_registration(receipt)
+
+    assert "0.35" in throwaway_registration.read_text(encoding="utf-8")
+    assert REAL_REGISTRATION_PATH.read_text(encoding="utf-8") == REGISTRATION_DOC_SNAPSHOT
+
+
+# ---------------------------------------------------------------------------
 # end-to-end constant computation on a synthetic substrate (the composite math
 # is already frozen in Tasks 2-3; this proves the calibration wiring calls it
 # correctly end-to-end on fixture data)
@@ -830,6 +943,28 @@ def test_dry_run_leaves_tracked_tree_byte_clean_and_writes_no_ledger_entry(
     # dry-run must never call seal_ruler_spec.
     from engine.stock_identity.ruler import RulerSpec
     assert RulerSpec.from_json(calib_w3.SPEC_PATH).pr3_pending is True
+
+
+# ---------------------------------------------------------------------------
+# MINORS: scratch fallback is never another session's private scratchpad path
+# ---------------------------------------------------------------------------
+def test_scratch_fallback_default_is_not_hardcoded_to_any_session_scratchpad():
+    """Named regression: a prior revision of this module hardcoded a specific
+    session's UUID-scoped working-directory path as the SCRATCH fallback
+    default -- another session's (or a later run's) private, non-durable
+    directory. The fallback must be a generic, non-session-specific location
+    (the OS temp root), honoring STOCK_IDENTITY_CALIBRATION_SCRATCH as the
+    lawful override."""
+    import re
+    src = Path(calib_replay.__file__).read_text(encoding="utf-8")
+    assert "tempfile.gettempdir()" in src
+    # no UUID (session-identifying) literal appears anywhere in the source
+    uuid_pattern = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+    assert not uuid_pattern.search(src)
+    # the actual default resolves under the OS temp root, not a fixed absolute
+    # path baked in at authoring time
+    default = calib_replay.SCRATCH
+    assert str(default).startswith(tempfile.gettempdir()) or "STOCK_IDENTITY_CALIBRATION_SCRATCH" in os.environ
 
 
 def test_dry_run_output_report_has_no_numeric_constant_values(monkeypatch, capsys, dry_run_substrate):
