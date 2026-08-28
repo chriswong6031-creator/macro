@@ -64,6 +64,52 @@ Migration work follows `research/DESIGN_MIGRATION_FACTORY_V1.md`: builders execu
 a committed migration packet exactly and never invent design language — a builder
 that believes the packet is wrong stops and escalates.
 
+### Theme art direction — required (TP-0, 2026-08-27)
+
+Dark and light are **two deliberate art directions of one semantic system**, not
+a design and its skin. They share information architecture, component semantics,
+spacing/type scales, state meanings, user actions, data contracts, ordering and
+density law, and interaction behavior. They do **not** have to share material
+treatment: dark is a command center (luminance depth, instrument calm, restrained
+glow); light is a research workspace (cool canvas, white material, hairline
+discipline, shadow instead of glow).
+
+**Token substitution alone is never proof of a light design.** "The same CSS
+still renders once the tokens swap" is exactly the failure this law exists to
+stop.
+
+Every material UI packet must name: DARK TREATMENT; LIGHT TREATMENT; which
+mechanisms intentionally differ and why; the reference/baseline; theme-specific
+degraded states; and the evidence matrix (dark/light × EN/ZH × desktop 1440 /
+mobile 390). A packet missing the light art direction or its evidence is
+`PARTIAL/BLOCKED`, never `PASS`.
+
+- **Designer:** state both art directions separately and supply both evidence
+  sets; never approve "same CSS, tokens swap" without arguing why the mechanism
+  genuinely works in both luminance environments.
+- **Builder:** if a frozen spec lacks LIGHT TREATMENT or its required evidence,
+  stop `PARTIAL/BLOCKED` — do not invent or silently translate one, and never
+  add an opaque runtime stylesheet to escape a design-system constraint.
+- **Reviewer:** `PASS` on a material UI change requires dark and light each
+  adjudicated as designs — hierarchy, material depth, semantic color, responsive
+  composition, EN/ZH parity. Functional browser success is necessary, never
+  sufficient.
+
+**Substantive product styling may not be authored as an opaque runtime
+stylesheet system inside page/composer JavaScript** — no multi-kilobyte
+`style.textContent` material system, no parallel palette/token family, no
+duplicated light/dark stylesheet branches invisible to the design-system
+checker. JavaScript may mount and recompose canonical DOM, set state
+classes/attributes, select existing variants, and apply genuinely data-dependent
+inline geometry; governed presentation source owns the material decisions.
+
+Forward-only enforcement (inherited debt reports, but does not newly block):
+`scripts/check_design_system.py --mode enforce-added` on changed lines,
+`scripts/check_runtime_style_injection.py` as a ratcheted budget that may only
+stay flat or shrink, and `scripts/check_ui_visual_evidence.py` for the committed
+dual-theme evidence receipt. CI checks evidence existence and state identity
+only — a human/Opus reviewer owns visual taste.
+
 ## Workspace and git
 
 - The canonical tree is GitHub `origin/main`
