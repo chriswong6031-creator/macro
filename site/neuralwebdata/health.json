@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-28T08:03:42.464184+00:00",
+  "produced_at": "2026-08-28T09:51:55.970732+00:00",
   "as_of": "2026-08-27",
   "overall_status": "warn",
   "lobes": [
@@ -3440,14 +3440,30 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-08-27T11:58:32+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-08-28T09:49:02+00:00",
     "run_status": {
       "status": "ok",
       "degraded": false,
       "degradation_reason": null,
       "model_used": "claude-opus-4-8",
       "provider_attempts": [
+        {
+          "provider": "oauth",
+          "model": "claude-opus-4-8",
+          "attempted": true,
+          "ok": false,
+          "error_type": "auth",
+          "error_message": "Error code: 403 - {'type': 'error', 'error': {'type': 'permission_error', 'message': 'OAuth authentication is currently not allowed for this organization.', 'details': {'error_code': 'oauth_not_allowed_for_organization'}}, 'request_id': 'req_011CeUwJZhXYwyT7G2UgXJyp'}"
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
+          "attempted": true,
+          "ok": true,
+          "error_type": null,
+          "error_message": null
+        },
         {
           "provider": "codex",
           "model": "gpt-5.6-sol",
@@ -3489,11 +3505,11 @@
           "error_message": null
         }
       ],
-      "tool_call_batches": 4,
+      "tool_call_batches": 5,
       "individual_tool_calls": 9,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-27T10:18:38Z"
+      "context_as_of": "2026-08-28T08:00:22Z"
     },
     "probation": {
       "granted": false,
