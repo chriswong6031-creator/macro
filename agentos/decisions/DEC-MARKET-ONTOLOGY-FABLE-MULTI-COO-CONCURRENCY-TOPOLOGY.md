@@ -13,10 +13,13 @@ answer: >
   through already-authorized distinct logical roles, disjoint Executive child
   Jobs/Attempts/workers under the F00/root responsibility once that routing is
   production-proven, or bounded temporary manual workers whose transport does not
-  create organizational seat identity. Every modifying child still binds to one
-  current carrier and must pass fresh owner/dependency/collision checks. F00 remains a
-  coverage accountant, dependency/collision coordinator and integrator; it is not a
-  routine serial approval hop.
+  create organizational seat identity. Every bounded child mission routes to the
+  least-scarce capable worker under current protected routing law; a Fable route owes
+  an explicit WHY FABLE, otherwise the routing record owes WHY NOT FABLE. Every
+  modifying child still binds to one current carrier and must pass fresh
+  owner/dependency/collision checks. F00 remains a coverage accountant,
+  dependency/collision coordinator and integrator; it is not a routine serial approval
+  hop.
 rationale: >
   Chairman intent still rejects the observed one-provider-conversation / one-operator
   serial bottleneck. The newer accepted Operator Continuity Fable Root/Seat amendment
@@ -48,9 +51,9 @@ alternatives:
       churn and violate the no-duplicate/no-recommission boundary.
 evidence:
   - "Chairman instruction 2026-08-26: preserve concurrent execution and stop one COO ↔ Sol micromanagement."
-  - "Current protected Mastermind@e2092cb6235519ac7f50fb3aa50ec1c1a6f627c0: docs/superpowers/specs/2026-08-27-operator-continuity-fable-root-seat-amendment.md is unchanged from the prior pin."
-  - "Current protected #185 convergence amendment remains in force: supersede the phrase 'separate Fable COOs'; one logical Fable COO responsibility/seat, with parallel subordinate execution only through existing law."
-  - "Protected master advance #186 is records-only Linear credential-boundary source law and does not alter Fable root/seat, Market Ontology, or transport authority."
+  - "Current protected Mastermind@e023f9b4df388814286d42462af0e86a64eea563 / mastermind.sol_skillpack.v1 v1.0.1: the accepted Fable Root/Seat amendment remains controlling and the current-state convergence amendment still supersedes the phrase 'separate Fable COOs'."
+  - "Current protected routing law: Fable is not the default child executor; bounded child missions route to the least-scarce capable worker with explicit WHY FABLE or WHY NOT FABLE reasoning."
+  - "Protected #178 is merged at the current pin but remains BUILT_NOT_PROVEN / PRODUCTION_INERT; it does not make Agent Relay/Wake/provider mutation, Executive routing, or watcher lifecycle authority live."
   - agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md
   - research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md
   - agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md
@@ -113,6 +116,14 @@ Each active lane
 - Before that path is proven, a bounded manual worker can be used only when the receiver
   is known active and current transport law is satisfied; the manual transport does not
   create another durable Fable COO identity.
+- Every bounded child mission uses the least-scarce capable worker under current
+  protected routing law. Fable is reserved for work that genuinely benefits from its
+  scarce continuity/reasoning surface and therefore carries `WHY FABLE`; other routes
+  carry `WHY NOT FABLE`.
+- Reciprocal continuation watchers are temporary attention/transport only. Even with
+  protected #178 merged, current Worker Presence remains `BUILT_NOT_PROVEN /
+  PRODUCTION_INERT`; a watcher owns no Job/Attempt/Worker/Event state, execution, retry,
+  completion or authority.
 - F00 continuously reconciles complete-parity coverage and prevents omissions, duplicate
   owners and cross-lane collisions; it does not rewrite specialist truth or become a
   serial approval queue.
@@ -125,6 +136,6 @@ Each active lane
 
 If governed subordinate capacity is lower than the number of runnable lanes, do not
 invent more Fable seats and do not collapse the frozen lane identities. Prioritize the
-highest-value collision-free bounded work, route well-specified subwaves through lawful
-available workers under the F00/root responsibility, and leave unclaimed lanes explicitly
-unclaimed until real capacity/receiver evidence exists.
+highest-value collision-free bounded work, route well-specified subwaves through the
+least-scarce lawful available workers under the F00/root responsibility, and leave
+unclaimed lanes explicitly unclaimed until real capacity/receiver evidence exists.
