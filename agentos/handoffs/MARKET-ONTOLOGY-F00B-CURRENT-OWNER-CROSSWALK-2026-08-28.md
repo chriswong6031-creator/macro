@@ -34,9 +34,12 @@ changed:
   - path: agentos/handoffs/MARKET-ONTOLOGY-F00B-CURRENT-OWNER-CROSSWALK-2026-08-28.md
     what: "This handoff."
 verified:
+  - claim: "Every row's current_owner is a lawful responsibility owner; implementation absence lives only in state/evidence (Sol REQUEST_REPAIR item 2)."
+    command: "python3 regex sweep of current_owner for none/unassigned/unresolved/unowned/not-built/neither/not-established patterns after rewriting 23 rows to workstream/lane responsibility owners"
+    result: "PASS — zero offending owner cells; missing implementations remain NOT_BUILT/SPEC_ONLY in capability_state with evidence."
   - claim: "Crosswalk covers exactly the frozen scope with zero unowned/unknown rows and only house vocabulary."
     command: "python3 csv audit: 130 rows; id set == MO-PAID-001..088 ∪ MO-DELTA-001..042; no dup/missing/extra; no empty adjudication cells; states ⊆ house 8-state vocab; dispositions ⊆ 6-value vocab"
-    result: "PASS — counts: NOT_BUILT 59, PARTIAL 48, SPEC_ONLY 11, BUILT_NOT_PROVEN 6, PROVEN_LIVE 6; dispositions BUILD_NEW 50, UPGRADE_EXISTING 41, PROJECTION_OVER_EXISTING 20, RESEARCH_CONTEXT_ONLY 15, PROVEN_EXISTING 4."
+    result: "PASS — final recount from the repaired CSV: NOT_BUILT 59, PARTIAL 49, SPEC_ONLY 11, BUILT_NOT_PROVEN 6, PROVEN_LIVE 5; dispositions BUILD_NEW 50, UPGRADE_EXISTING 41, PROJECTION_OVER_EXISTING 20, RESEARCH_CONTEXT_ONLY 15, PROVEN_EXISTING 4. CSV, summary, handoff and RESULT recomputed together per Sol REQUEST_REPAIR item 3."
   - claim: "Carrier protocol satisfied on the exact Slack thread before work began."
     command: "Slack thread C0BSBM78V1N/1787906810.553069: ACK 1787907937.258169, WATCH_ARMED 1787908079.822839, START 1787908093.153319; Skillpack SHA verified via git rev-parse in Mastermind checkout"
     result: "PASS — Skillpack e023f9b4df388814286d42462af0e86a64eea563 v1.0.1 loaded (INDEX + vocabulary + dialogue/routing law); amendment 1787907339.753029 read pre-START and applied."
@@ -56,6 +59,8 @@ unverified:
   - claim: "No licensed deal-flow/rating/maritime/sovereign data contract exists anywhere outside the repo."
     what_would_verify: "Chairman/commercial contract inventory; census can only prove no reference exists in code/docs."
 unresolved:
+  - "Completion label is COARSE_CROSSWALK_COMPLETE only (per #6611 merge 532fe442 / DEC:MARKET-ONTOLOGY-GRANULAR-FULL-PARITY-BEYOND-PARITY-RATCHET): this artifact is the coarse F00C owner-map input; COVERAGE_COMPLETE/PARITY_COMPLETE are separate later milestones; no disposition here is an exclusion."
+  - "P-001..P-006 (preservation audit, OPEN PR #6610, unaccepted) are pre-mapped in the summary as PENDING_SOURCE_ACCEPTANCE; reconcile at accepted tier when/if #6610 lands."
   - "MAS-170 Linear projection unread (connector unauthenticated); carrier text treated as the governing intent."
   - "REJECTED_BY_DESIGN candidates await explicit Sol rulings (MO-PAID-048/050 absent license, MO-DELTA-040, authority semantics of MO-PAID-024/MO-DELTA-006)."
   - "25 rows carry inline UNVERIFIED flags (options producer wiring, display freshness receipts, off-repo data contracts, Supabase-side deletion, non-US legal sources, commodity-family coverage)."

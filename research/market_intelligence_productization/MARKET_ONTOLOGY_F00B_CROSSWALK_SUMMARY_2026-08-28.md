@@ -23,6 +23,26 @@ UNVERIFIED flags inside their evidence/rights/notes rather than silent claims).
 Capability states use the house vocabulary at PROVEN tier: docs/spec/merged infra
 are not production proof; a sibling program counts only at its proven capability tier.
 
+## Completion claim and #6611 reconciliation
+
+**Claim: `COARSE_CROSSWALK_COMPLETE` — nothing more.** Per the merged granular
+full-parity ratchet (#6611, merge `532fe442`;
+DEC:MARKET-ONTOLOGY-GRANULAR-FULL-PARITY-BEYOND-PARITY-RATCHET): the 88 + delta
+rows are coarse anchors, not proof of granular absorption; this artifact is the
+coarse F00C owner-map input and never `COVERAGE_COMPLETE` or `PARITY_COMPLETE`.
+Priority controls sequencing, never inclusion — no disposition in this crosswalk
+(including `RESEARCH_CONTEXT_ONLY`) is an exclusion, and `REJECTED_BY_DESIGN`
+candidates reject a mechanism only, never the lawful underlying job, which
+requires a stronger equivalent or adjudicated impossibility before closure.
+F00A (exact P1 admission), F00C (zero-loss granular reconciliation), and F00D
+(beyond-parity synthesis) remain separate gates outside this child.
+
+**Owner resolution law (Sol repair 2026-08-28):** every row's `current_owner` is
+a lawful responsibility owner (workstream/lane + canonical owner route). Absence
+of an implementation is recorded only in `capability_state`/`evidence`/`notes`,
+never in the owner field. Verified: zero owner cells carry
+none/unassigned/unresolved/unowned language.
+
 ## Counts
 
 Capability state (130 rows, post-audit): **NOT_BUILT 59 · PARTIAL 49 · SPEC_ONLY 11 ·
@@ -141,6 +161,49 @@ Per-lane state matrix:
 | #6596 CRG R0 | OPEN | F12 cross-repo contract governance (no new Contract Bus authorized) |
 | #6543 Rates/Inflation Command F0 | OPEN awaiting_ci | F01 rates axis |
 | LER program (#6599) | MERGED/FROZEN | The existing Radar MO-PAID-042 projects over — never a duplicate lifecycle |
+
+## Preservation pre-map — P-001..P-006 (status: PENDING_SOURCE_ACCEPTANCE)
+
+Source: the final preservation audit on OPEN, UNACCEPTED PR #6610 (head
+`a7ff402a`). Until Sol accepts that carrier, these are pre-mapped here inside
+the existing coarse scope — they are NOT new parity rows, and #6610 is not
+treated as canonical. Evidence ceiling per the Sol amendment: the competitor's
+public surface presents contracts/state machines whose persistence was NOT
+tested (no thesis/issuer/monitor was created); nothing here inherits
+direction/confidence/priced% authority semantics absent calibrated promotion.
+
+- **P-001 Ticker Impact Ledger** (event → typed AssumptionChange → durable
+  per-ticker log): lane F06/F07; owner WS:MARKET-OS (F06) + FIF (F07); proposed
+  state NOT_BUILT (entity-level bridge absent; adjacent rows MO-PAID-021/022);
+  proposed disposition UPGRADE_EXISTING over MO-PAID-021/022 — not a new
+  financial-truth store; ceiling research_display_only.
+- **P-002 Composed ticker-options "current read"** (composition law over live
+  primitives): lane F03; owner WS:MARKET-OS (F03) + Options C0 (#6604) +
+  WS:ADVANCED-DATA-OPTIONS; proposed state PARTIAL (primitives live/display-tier,
+  composition absent); disposition UPGRADE_EXISTING; ceiling research/decision-
+  support context until its own source/timing/evaluation law is accepted.
+- **P-003 Catalyst-to-options state machine** (catalyst→exposure→structure→saved
+  thesis→change monitor; persistence unproven): lanes F03/F11/F08; owner
+  WS:MARKET-OS (F03 lane) + future F11 Thesis object; proposed state SPEC_ONLY;
+  disposition BUILD_NEW folded into MO-PAID-070/MO-DELTA-033; ceiling
+  research_expression_only; persistence must be tested separately.
+- **P-004 Research-terminal continuation graph** (event-to-next-research-surface
+  transition is the preservation unit): lane F04 (cross-lane accountant); owner
+  WS:MARKET-OS (F04); proposed state NOT_BUILT (transition unit); disposition
+  PROJECTION_OVER_EXISTING; ceiling research_priority_only; destination
+  persistence unproven.
+- **P-005 Capital-markets issuer state cycle** (one returning issuer analysis
+  over the F09 workbenches): lane F09; owner WS:MARKET-OS (F09) +
+  capital-markets owners; proposed state NOT_BUILT (cycle; constituent engines
+  PARTIAL); disposition BUILD_NEW as depth reconciliation — no parallel
+  capital-structure truth plane; ceiling context/human_research_only.
+- **P-006 Indexed public route families as preservation evidence** (public
+  record schema + route-family shape): lane F13/F00 evidence plane; owner F00
+  program control + K1 Evidence Foundation; an evidence-retention obligation,
+  not a capability row; disposition RESEARCH_CONTEXT_ONLY; no bulk copying of
+  event prose/data is licensed.
+
+If #6610 lands before the next RESULT, reconcile these at their accepted tier.
 
 ## UNVERIFIED register (bounded, explicit)
 
