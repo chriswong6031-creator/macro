@@ -82,3 +82,51 @@ Continuity itself remains `SPEC_ONLY` at architecture level / `NOT_BUILT` for cr
 capability. The next fresh Sol should start OCR-1 V3 without changing Capacity Fabric's H0/P0
 sequence and should treat a truthful host-identity refusal as a successful falsifier, not a reason
 to invent a new host identity plane.
+
+## 2026-08-28 post-#185 Capacity/H0 collision reconciliation
+
+This section is a later current-state reconciliation and **supersedes only** the older frontmatter
+sentence that said to continue the CF2-H0 installed-host proof in parallel. It does not rewrite the
+historical #181 architecture receipt or change the eventual `H0 -> independent P0 -> CF2-I`
+dependency order.
+
+Current protected Operating-Surface Convergence source law from Mastermind #185 reserves the
+existing Codex/H0 canary, its four changed paths, privileged bootstrap, production host and eventual
+native H0 ceremony. No replacement H0 carrier or overlapping host/capacity mutation is permitted
+until that same carrier returns and Sol reconciles it.
+
+The previously unidentified carrier has now returned its exact non-secret identity through
+`operator-continuity-h0-collision-reconcile-20260828-sol-001`:
+
+- repository: `mastermindx-market-intelligence/Mastermind`;
+- branch: `codex/cf2-h0-source-closure-20260827`;
+- PR: none; carrier is local-only;
+- immutable returned head: `21d423fa1d02c0046b09de121ecb18d5a6df0942`;
+- exact session: `Codex 01a03330-4c36-7a11-b730-44c591ed3481`;
+- host/principal: `Mac-Studio.local`, `chriswong` uid 501, non-root;
+- exact four returned paths:
+  - `.superpowers/sdd/2026-08-27-executive-capacity-cf2-h0-final-review-continuation/progress.md`;
+  - `.superpowers/sdd/2026-08-27-executive-capacity-cf2-h0-final-review-continuation/task-2-report.md`;
+  - `ops/executive_os/capacity_host_artifacts.py`;
+  - `tests/test_capacity_host_artifacts.py`;
+- effect state: `BUILT_NOT_PROVEN` local Git work only; no native/root/host/provider/OAuth effect;
+- owner state at reconciliation: `ACTIVE_PAUSED_FOR_RECONCILIATION`;
+- stable operation key in the local implementation carrier: **not recorded**.
+
+Sol accepted and terminally stopped the read-only identity-reconciliation child after this return.
+That STOP did **not** authorize the underlying H0 source carrier to resume and did not authorize the
+native H0 ceremony.
+
+### Current exact Capacity action
+
+Hold all independent H0/root/provider work. The same existing Codex session/carrier must first be
+resumed/reconciled in place under current protected Skillpack/source law, without a new branch,
+provider session, reset/rebase/force or replacement carrier. It must establish/recover a stable
+logical operation identity and return the current exact branch/head/four-path state, RED-first and
+review/proof receipts, current protected-source collision result, and explicit terminal versus
+remaining native-admin state. Only Sol acceptance of that same-carrier return may release the single
+native H0 ceremony. After accepted H0 installed-host PASS and required verify-only proof, continue to
+an independent P0 rerun; only accepted P0 can release CF2-I.
+
+CF1 and CF2-F remain closed and must not be reopened. No credential, OAuth/device-login, provider
+call, Worker routing or automatic failover is authorized by this reconciliation.
