@@ -3,7 +3,7 @@
 Operation: `marketontology-f00b-current-owner-crosswalk-20260828-sol-001`
 Parent program: `marketontology-complete-parity-fanout-20260826-sol-001` (F00, `WS:MARKET-OS`)
 Linear projection: MAS-170 (UNVERIFIED this session — Linear MCP unauthenticated; intent taken from the Sol carrier text on C0BSBM78V1N/1787906810.553069)
-Base: Macro main `5542999e890f4719d18b5a0c764b418cdd4201ce` · Skillpack `Mastermind@e023f9b4df388814286d42462af0e86a64eea563` v1.0.1
+Base: Macro main `5542999e890f4719d18b5a0c764b418cdd4201ce` at pickup (branch since forward-reconciled at each Sol adjudication) · Skillpack `Mastermind@e023f9b4df388814286d42462af0e86a64eea563` v1.0.1 (pickup-time pin, historical — later Sol adjudications re-pinned newer protected masters)
 
 ## What this is
 
@@ -164,11 +164,14 @@ Per-lane state matrix:
 | #6543 Rates/Inflation Command F0 | OPEN awaiting_ci | F01 rates axis |
 | LER program (#6599) | MERGED/FROZEN | The existing Radar MO-PAID-042 projects over — never a duplicate lifecycle |
 
-## Preservation findings — P-001..P-006 (consumed at ACCEPTED preservation-evidence tier)
+## Preservation findings — P-001..P-006 (consumed at accepted preservation-evidence tier)
 
-Source: the final preservation audit, now MERGED/ACCEPTED via PR #6610 (merge
-`471597e00baf` from source head `a7ff402a`). It is consumed here at its
-accepted **preservation-evidence** tier: the classifications below map
+Source: the final preservation audit, now MERGED via PR #6610 (merge
+`471597e00baf` from source head `a7ff402a`) and accepted at the
+preservation-evidence tier by its independent review receipt
+(`MARKET_ONTOLOGY_FINAL_PRESERVATION_INDEPENDENT_REVIEW_2026-08-28.md`, PASS at
+`60cceb7f5f59`, FIT_TO_MERGE: YES) — merged is not Sol-accepted, and no higher
+tier is claimed. It is consumed here at that **preservation-evidence** tier: the classifications below map
 P-001..P-006 onto EXISTING 88+delta rows/families/owners — they mint no new
 parity rows. Preserved invariants from the accepted source:
 `SAFE_TO_LOSE_MARKETONTOLOGY_ACCESS: NO`; the exact-byte P1 corpus remains an
@@ -180,7 +183,8 @@ promotion.
 - **P-001 Ticker Impact Ledger** (event → typed AssumptionChange → durable
   per-ticker log): lane F06/F07; owner WS:MARKET-OS (F06) + FIF (F07); proposed
   state NOT_BUILT (entity-level bridge absent; adjacent rows MO-PAID-021/022);
-  proposed disposition UPGRADE_EXISTING over MO-PAID-021/022 — not a new
+  proposed disposition UPGRADE_EXISTING over MO-PAID-021, while MO-PAID-022
+  remains NOT_BUILT/BUILD_NEW and the bridge folds into it — not a new
   financial-truth store; ceiling research_display_only.
 - **P-002 Composed ticker-options "current read"** (composition law over live
   primitives): lane F03; owner WS:MARKET-OS (F03) + Options C0 (#6604) +

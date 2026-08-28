@@ -84,7 +84,7 @@ do_not_redo:
   - "Do not import/reconstruct the retained 1,556-row P1 corpus — F00A exact-byte import remains a separate open gate."
 danger_areas:
   - "Merged ≠ accepted: K2-C (#6533) and every HOLD carrier must be read at its Sol-acceptance state, not its merge state, when consuming this crosswalk."
-  - "Sparse-tree blindness: site/ and data/ absence is a worktree profile, never capability evidence; 25 rows carry explicit UNVERIFIED freshness/wiring flags."
+  - "Sparse-tree blindness: site/ and data/ absence is a worktree profile, never capability evidence; 27 rows carry explicit UNVERIFIED freshness/wiring flags."
   - "Rights-gated rows (military/maritime/satellite/chokepoint/deal-flow/sovereign) must not be commissioned as builds before their Chairman/commercial gates."
 prs:
   - "carrier PR for this crosswalk (opened from claude/mo-f00b-crosswalk-20260828 off main 5542999e890f; HOLD-FOR-SOL, records/research only)"
