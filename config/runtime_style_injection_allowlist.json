@@ -1,0 +1,168 @@
+{
+  "files": {
+    "site/account.js": {
+      "create_style": 2
+    },
+    "site/allocation_scorecard.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "site/canada-stock-v36.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "site/chart.js": {
+      "create_style": 1
+    },
+    "site/desk_watch.js": {
+      "create_style": 1
+    },
+    "site/forming_narratives.js": {
+      "create_style": 1
+    },
+    "site/globe-deck.js": {
+      "create_style": 2
+    },
+    "site/heatmap.js": {
+      "create_style": 1
+    },
+    "site/hk-stock-v36.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "site/lightweight-charts-v5.js": {
+      "create_style": 1
+    },
+    "site/lightweight-charts.js": {
+      "create_style": 1
+    },
+    "site/live.js": {
+      "create_style": 1
+    },
+    "site/mm_brain.js": {
+      "create_style": 1
+    },
+    "site/nav_market.js": {
+      "create_style": 1
+    },
+    "site/plotly-2.32.0.min.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "site/radar_panel.js": {
+      "create_style": 2,
+      "style_markup": 1
+    },
+    "site/release_publications_live.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "site/rotation_events.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "site/stock-logos.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "site/stocktable.js": {
+      "create_style": 1,
+      "style_markup": 1,
+      "style_text": 1
+    },
+    "site/subsector_rotation.js": {
+      "create_style": 1
+    },
+    "site/terminal_overlay.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "site/theme.js": {
+      "create_style": 10,
+      "style_markup": 1,
+      "style_text": 1
+    },
+    "site/theme_addons.js": {
+      "style_markup": 1
+    },
+    "site/time_machine.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "site/vector_chart.js": {
+      "create_style": 1
+    },
+    "site/wh_banner.js": {
+      "create_style": 1
+    },
+    "templates/account.js": {
+      "create_style": 2
+    },
+    "templates/allocation_scorecard.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "templates/desk_watch.js": {
+      "create_style": 1
+    },
+    "templates/forming_narratives.js": {
+      "create_style": 1
+    },
+    "templates/heatmap.js": {
+      "create_style": 1
+    },
+    "templates/lightweight-charts.js": {
+      "create_style": 1
+    },
+    "templates/live.js": {
+      "create_style": 1
+    },
+    "templates/mm_brain.js": {
+      "create_style": 1
+    },
+    "templates/nav_market.js": {
+      "create_style": 1
+    },
+    "templates/plotly-2.32.0.min.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "templates/release_publications_live.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "templates/rotation_events.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "templates/stock-logos.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "templates/stocktable.js": {
+      "create_style": 1,
+      "style_markup": 1,
+      "style_text": 1
+    },
+    "templates/subsector_rotation.js": {
+      "create_style": 1
+    },
+    "templates/terminal_overlay.js": {
+      "create_style": 1,
+      "style_text": 1
+    },
+    "templates/theme.js": {
+      "create_style": 9,
+      "style_markup": 1
+    },
+    "templates/time_machine.js": {
+      "create_style": 1,
+      "style_markup": 1
+    },
+    "templates/wh_banner.js": {
+      "create_style": 1
+    }
+  },
+  "generated_from": "84d6831275cc8f964a7877f5e6f212c5ee4637cf",
+  "schema": "mastermind.runtime_style_allowlist.v1"
+}
