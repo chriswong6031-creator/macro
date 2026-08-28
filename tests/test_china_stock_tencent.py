@@ -64,6 +64,29 @@ def test_completed_session_guard_drops_intraday_partial_bar():
     assert after.index.max() == pd.Timestamp("2026-08-28")
 
 
+def test_adapter_caps_primary_plane_before_repair(monkeypatch):
+    primary = {"600118.SS": _frame([("2026-08-27", 61.09), ("2026-08-28", 62.00)])}
+    monkeypatch.setattr(china_stock_prices, "fetch_ohlc", lambda *args, **kwargs: primary)
+    monkeypatch.setattr(
+        china_stock_prices,
+        "keep_completed_sessions",
+        lambda frame: frame.loc[frame.index <= pd.Timestamp("2026-08-27")],
+    )
+
+    seen: dict[str, pd.DataFrame] = {}
+
+    def _repair(frames, tickers, group, cfg):
+        seen.update(frames)
+        return frames
+
+    monkeypatch.setattr(china_stock_prices, "heal_adjusted_tails", _repair)
+    adapter = china_stock_prices.ChinaStockPriceAdapter.__new__(china_stock_prices.ChinaStockPriceAdapter)
+    adapter.cfg = {}
+    out = adapter.fetch(tickers=["600118.SS"])
+    assert out["600118.SS"].index.max() == pd.Timestamp("2026-08-27")
+    assert seen["600118.SS"].index.max() == pd.Timestamp("2026-08-27")
+
+
 def test_heal_extends_only_stale_name_on_compatible_overlap(monkeypatch):
     stale = _frame([("2026-08-20", 60.0), ("2026-08-21", 61.0)])
     current = _frame([("2026-08-26", 100.0), ("2026-08-27", 101.0)])
