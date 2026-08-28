@@ -729,24 +729,51 @@ def _add_cache(out: list[tuple], seen: set[str], closes_path, meta_path, label: 
     return added
 
 
+def _last_session(close) -> "object | None":
+    """Latest valid session DATE of a close series — tz/time-of-day stripped so a
+    UTC-stamped cache and an exchange-local deep store compare on the CN session,
+    never on raw timezone timestamps. None when missing/empty/unparseable."""
+    try:
+        s = close.dropna()
+        if s.empty:
+            return None
+        ts = pd.Timestamp(s.index.max())
+        if ts.tzinfo is not None:
+            ts = ts.tz_localize(None)
+        return ts.date()
+    except Exception:  # noqa: BLE001 — an unparseable index earns no authority either way
+        return None
+
+
 def _overlay_deep_ohlc(out: list[tuple], group: str, min_rows: int = 300) -> int:
     """Upgrade names to the deep per-name OHLC store (data/<group>/<ticker>.parquet —
     real high/low + decades of history from collectors/china_stock_prices.py) wherever
     the nightly collector has backfilled them, replacing the ~5y close-only search/
     breadth cache series (which carry high=None). Mirrors how build_stock_library
     sources US names from data/stocks. Names not yet in the store keep their cache
-    series, so this is a pure, NON-REGRESSING upgrade that fills in as the store grows
-    (the seed ships ~12 names; nightly backfills the rest). See
+    series, and a deep series whose latest valid session TRAILS the cache's keeps the
+    fresher cache tuple (a lagging store must never move the Prophet board clock
+    backward — 2026-08-27), so this is a NON-REGRESSING upgrade that fills in as the
+    store grows (the seed ships ~12 names; nightly backfills the rest). See
     research/signal_engine/MULTICOUNTRY_DATA.md."""
     n = 0
-    for i, (t, _close, _high, name, sector) in enumerate(out):
+    stale = 0
+    for i, (t, close, _high, name, sector) in enumerate(out):
         df = store.read(group, t)
         if df is None or "close" not in df.columns or len(df["close"].dropna()) < min_rows:
+            continue
+        cache_last = _last_session(close)
+        deep_last = _last_session(df["close"])
+        if cache_last is not None and (deep_last is None or deep_last < cache_last):
+            stale += 1
             continue
         out[i] = (t, df["close"], df.get("high"), name, sector)
         n += 1
     if n:
         log.info("china library: upgraded %d names to the deep OHLC store (%s)", n, group)
+    if stale:
+        log.info("china library: kept %d fresher cache series over a stale deep store (%s)",
+                 stale, group)
     return n
 
 
