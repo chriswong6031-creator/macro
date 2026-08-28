@@ -1,5 +1,9 @@
 """
-grade_row semantics per README v1.4 / CXI-R17.
+grade_row semantics per README v1.4 / CXI-R17, plus the CXI eval-harness metric
+repair (C0, 2026-08-28, op key macro-context-index-completion-20260828-sol-001):
+true governance A0/A1 precision, negative-control accuracy, NOT-EVALUATED
+handling for a missing/unindexed project DB, and per-row project scoping
+(CXI-R16).
 
 - R17a: required_status binds ONLY to verdict-carrying registry sources
   (DO_NOT_REBUILD.md, ruling_graph.yml, compiled_kill_registry.yml); other
@@ -11,7 +15,16 @@ grade_row semantics per README v1.4 / CXI-R17.
 
 from __future__ import annotations
 
-from scripts.context_index_eval import grade_row
+import pytest
+
+from scripts.context_index_eval import (
+    grade_row,
+    evaluate_row,
+    compute_governance_true_precision,
+    compute_negative_control_accuracy,
+    _not_evaluated_reason,
+    _project_db_map_for_row,
+)
 
 
 def _pkt(rows):
@@ -90,3 +103,227 @@ def test_retrieval_error_is_not_an_honest_null():
     grade = grade_row(row, {"results": [], "no_answer_reason": None, "error": "boom"})
     assert not grade["pass"]
     assert "ERROR" in grade["notes"]
+
+
+# ---------------------------------------------------------------------------
+# (a) TRUE governance A0/A1 precision — TP/FP arithmetic + 0-denominator NOT-MET
+# ---------------------------------------------------------------------------
+
+
+def _gov_row(**over):
+    base = {
+        "id": "CTX-GOV",
+        "family": "governance",
+        "required_sources": [_DNR],
+        "acceptable_sources": ["CLAUDE.md"],
+    }
+    base.update(over)
+    return base
+
+
+def _gov_result(path, authority_class, project="macro-dashboard"):
+    return {
+        "path": path,
+        "source_uri": f"repo://{project}/{path}",
+        "authority_class": authority_class,
+    }
+
+
+def test_governance_true_precision_counts_required_and_acceptable_sources_as_tp():
+    row = _gov_row()
+    packet = {
+        "results": [
+            _gov_result(_DNR, "A0"),  # TP: matches required_sources
+            _gov_result("CLAUDE.md", "A1"),  # TP: matches acceptable_sources
+            _gov_result("research/unrelated_doc.md", "A0"),  # FP: A0/A1 but no source match
+            _gov_result("engine/some_engine_file.py", "A3"),  # ignored: not A0/A1
+        ],
+    }
+    results_by_id = {row["id"]: {"row": row, "packet": packet}}
+
+    out = compute_governance_true_precision(results_by_id)
+
+    assert out["tp"] == 2
+    assert out["fp"] == 1
+    assert out["precision"] == pytest.approx(2 / 3)
+
+
+def test_governance_true_precision_ignores_non_governance_rows():
+    gov = _gov_row()
+    gov_packet = {"results": [_gov_result(_DNR, "A0")]}
+    other = {"id": "CTX-OTHER", "family": "research", "required_sources": [_DNR], "acceptable_sources": []}
+    other_packet = {"results": [_gov_result("research/unrelated_doc.md", "A0")]}
+    results_by_id = {
+        gov["id"]: {"row": gov, "packet": gov_packet},
+        other["id"]: {"row": other, "packet": other_packet},
+    }
+
+    out = compute_governance_true_precision(results_by_id)
+
+    # Only the governance row's A0 result counts; the research-family FP is excluded.
+    assert out["tp"] == 1
+    assert out["fp"] == 0
+    assert out["precision"] == 1.0
+
+
+def test_governance_true_precision_zero_denominator_is_not_met():
+    row = _gov_row()
+    packet = {"results": [_gov_result(_DNR, "A3")]}  # matches, but not A0/A1
+    results_by_id = {row["id"]: {"row": row, "packet": packet}}
+
+    out = compute_governance_true_precision(results_by_id)
+
+    assert out["tp"] == 0
+    assert out["fp"] == 0
+    assert out["precision"] is None
+
+
+def test_governance_true_precision_empty_scope_is_not_met():
+    out = compute_governance_true_precision({})
+    assert out["tp"] == 0
+    assert out["fp"] == 0
+    assert out["precision"] is None
+
+
+# ---------------------------------------------------------------------------
+# (b) Negative-control (no-answer) accuracy
+# ---------------------------------------------------------------------------
+
+
+def test_negative_control_accuracy_computation():
+    results_by_id = {
+        "CTX-N1": {"row": {"family": "negative_control"}, "pass": True},
+        "CTX-N2": {"row": {"family": "negative_control"}, "pass": False},
+        "CTX-N3": {"row": {"family": "negative_control"}, "pass": True},
+        "CTX-G1": {"row": {"family": "governance"}, "pass": True},  # excluded: wrong family
+    }
+
+    out = compute_negative_control_accuracy(results_by_id)
+
+    assert out["total"] == 3
+    assert out["pass"] == 2
+    assert out["accuracy"] == pytest.approx(2 / 3)
+
+
+def test_negative_control_accuracy_zero_rows_in_scope_is_not_met():
+    out = compute_negative_control_accuracy({})
+    assert out["total"] == 0
+    assert out["pass"] == 0
+    assert out["accuracy"] is None
+
+
+# ---------------------------------------------------------------------------
+# (c) NOT-EVALUATED: a missing project DB never grades as a correct null
+# ---------------------------------------------------------------------------
+
+
+def test_not_evaluated_reason_reports_missing_db_file(tmp_path):
+    assert _not_evaluated_reason("terminal", tmp_path) == "db missing: terminal.sqlite"
+
+
+def test_not_evaluated_reason_none_when_db_present_and_indexed(tmp_path, monkeypatch):
+    import scripts.context_index_eval as cie
+
+    db_path = tmp_path / "terminal.sqlite"
+    db_path.write_bytes(b"not a real sqlite file, existence + sha are both faked")
+    monkeypatch.setattr(cie, "index_sha", lambda path: "deadbeef")
+
+    assert cie._not_evaluated_reason("terminal", tmp_path) is None
+
+
+def test_no_answer_row_with_missing_db_is_not_evaluated_never_pass(tmp_path):
+    """The exact bug this wave fixes: a no_answer row must NEVER grade as a
+    'correct null' just because an absent DB returns zero results."""
+    row = {
+        "id": "CTX-P1",
+        "family": "negative_control",
+        "project": "terminal",
+        "required_sources": [],
+        "required_status": "no_answer",
+        "query": "does this cross-repo system exist",
+    }
+
+    result = evaluate_row(row, db_dir=tmp_path, repo_root_map={})
+
+    assert result["not_evaluated"] is True
+    assert result["reason"] == "db missing: terminal.sqlite"
+    assert "pass" not in result
+
+
+def test_not_evaluated_row_excluded_from_negative_control_accuracy(tmp_path):
+    """A NOT-EVALUATED row must never enter results_by_id, so it can never be
+    counted (correctly or incorrectly) by any downstream metric."""
+    row = {
+        "id": "CTX-P1",
+        "family": "negative_control",
+        "project": "terminal",
+        "required_sources": [],
+        "required_status": "no_answer",
+        "query": "does this cross-repo system exist",
+    }
+    result = evaluate_row(row, db_dir=tmp_path, repo_root_map={})
+    assert result["not_evaluated"] is True
+
+    # Simulating run_eval's loop: a not_evaluated row is never added to results_by_id.
+    results_by_id: dict = {}
+    out = compute_negative_control_accuracy(results_by_id)
+    assert out["total"] == 0
+    assert out["accuracy"] is None
+
+
+# ---------------------------------------------------------------------------
+# (d) Per-row project scoping (CXI-R16): exactly the owning project's DB
+# ---------------------------------------------------------------------------
+
+
+def test_project_db_map_for_row_scopes_to_owning_project_only():
+    assert _project_db_map_for_row({"project": "terminal"}) == {"terminal": "terminal.sqlite"}
+    assert _project_db_map_for_row({"project": "mastermind"}) == {"mastermind": "mastermind.sqlite"}
+    assert _project_db_map_for_row({"project": "macro-dashboard"}) == {"macro-dashboard": "shared.sqlite"}
+
+
+def test_project_db_map_for_row_defaults_to_macro_dashboard_when_absent():
+    assert _project_db_map_for_row({}) == {"macro-dashboard": "shared.sqlite"}
+
+
+def test_private_visibility_row_still_scopes_to_its_own_project_only(monkeypatch):
+    """Regression guard for the fixed bug: a private-visibility row whose
+    project is macro-dashboard must NOT expand to the full 3-DB map."""
+    row = {
+        "id": "CTX-005",
+        "family": "gotcha",
+        "project": "macro-dashboard",
+        "visibility": "private",
+    }
+    assert _project_db_map_for_row(row) == {"macro-dashboard": "shared.sqlite"}
+
+
+def test_evaluate_row_calls_build_packet_with_only_the_owning_project_db_map(tmp_path, monkeypatch):
+    """End-to-end (within evaluate_row) confirmation that the removed 3-DB
+    code path for private rows is gone: build_packet is invoked with
+    project_db_map scoped to exactly the row's own project."""
+    import scripts.context_index_eval as cie
+
+    captured = {}
+
+    def fake_build_packet(**kwargs):
+        captured.update(kwargs)
+        return {"results": [], "no_answer_reason": "nothing matched"}
+
+    monkeypatch.setattr(cie, "_not_evaluated_reason", lambda project, db_dir: None)
+    monkeypatch.setattr(cie, "build_packet", fake_build_packet)
+
+    row = {
+        "id": "CTX-PRIV",
+        "family": "gotcha",
+        "project": "terminal",
+        "visibility": "private",
+        "required_sources": [],
+        "required_status": "no_answer",
+        "query": "does something exist",
+    }
+
+    result = evaluate_row(row, db_dir=tmp_path, repo_root_map={})
+
+    assert result["not_evaluated"] is False
+    assert captured["project_db_map"] == {"terminal": "terminal.sqlite"}
