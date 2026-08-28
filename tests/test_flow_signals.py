@@ -34,8 +34,9 @@ def _make_event(event_id: str, ts: str = "2026-07-13T10:30:00Z",
                 session_date: str = "2026-07-13",
                 root: str = "AAPL",
                 dte_bucket: str = "8_30d",
-                premium: float = 300_000.0) -> dict:
-    return {
+                premium: float = 300_000.0,
+                **overrides) -> dict:
+    row = {
         "id": event_id,
         "ts": ts,
         "root": root,
@@ -61,6 +62,8 @@ def _make_event(event_id: str, ts: str = "2026-07-13T10:30:00Z",
         "swept": True,
         "session_date": session_date,
     }
+    row.update(overrides)
+    return row
 
 
 def _make_feed_blob(events: list[dict], session_date: str = "2026-07-13") -> dict:
@@ -883,3 +886,172 @@ class TestN5PITDefense:
         assert abs(ret5) < 0.01, (
             f"fwd_ret_5={ret5:.6f} suggests future spike leaked into grading"
         )
+
+
+# ── OA-1T: measured microstructure flattened into the Flow ML ledger ──────────
+
+MICRO_SCHEMA = "options.trade_nbbo_microstructure/v1"
+
+MICRO_BLOCK = {
+    "schema": MICRO_SCHEMA,
+    "source_print_count": 4,
+    "nbbo_valid_print_count": 3,
+    "source_premium_usd": 1_000_000.0,
+    "nbbo_covered_premium_usd": 900_000.0,
+    "nbbo_print_coverage": 0.75,
+    "nbbo_premium_coverage": 0.9,
+    "at_ask_share": 0.6,
+    "at_bid_share": 0.2,
+    "inside_share": 0.15,
+    "outside_share": 0.05,
+    "aggression_share": 0.8,
+    "aggression_balance": 0.4,
+    "spread_median_usd": 0.05,
+    "spread_median_pct": 0.02,
+    "quote_age_median_ms": 110.0,
+    "quote_age_max_ms": 250.0,
+    "bid_size_median": 40.0,
+    "ask_size_median": 45.0,
+}
+
+MEASURED_COLS = (
+    "vol_gt_oi_ratio",
+    "microstructure_schema",
+    "source_print_count",
+    "nbbo_valid_print_count",
+    "source_premium_usd",
+    "nbbo_covered_premium_usd",
+    "nbbo_print_coverage",
+    "nbbo_premium_coverage",
+    "at_ask_share",
+    "at_bid_share",
+    "inside_share",
+    "outside_share",
+    "aggression_share",
+    "aggression_balance",
+    "spread_median_usd",
+    "spread_median_pct",
+    "quote_age_median_ms",
+    "quote_age_max_ms",
+    "bid_size_median",
+    "ask_size_median",
+)
+
+
+def _measured_event(event_id: str, **overrides) -> dict:
+    payload = {
+        "microstructure": json.loads(json.dumps(MICRO_BLOCK)),
+        "vol_gt_oi_ratio": 1.5,
+    }
+    payload.update(overrides)
+    return _make_event(event_id, **payload)
+
+
+class TestMeasuredMicrostructureLedgerColumns:
+    def test_event_microstructure_flattens_into_flow_ml_ledger_row(self):
+        from collectors.flow_signals import _events_from_blob
+
+        row = _events_from_blob(_make_feed_blob([_measured_event("evtM1")]))[0]
+
+        assert row["microstructure_schema"] == MICRO_SCHEMA
+        assert row["vol_gt_oi_ratio"] == pytest.approx(1.5)
+        assert row["source_print_count"] == 4
+        assert row["nbbo_valid_print_count"] == 3
+        assert row["source_premium_usd"] == pytest.approx(1_000_000.0)
+        assert row["nbbo_covered_premium_usd"] == pytest.approx(900_000.0)
+        assert row["nbbo_print_coverage"] == pytest.approx(0.75)
+        assert row["nbbo_premium_coverage"] == pytest.approx(0.9)
+        assert row["at_ask_share"] == pytest.approx(0.6)
+        assert row["at_bid_share"] == pytest.approx(0.2)
+        assert row["inside_share"] == pytest.approx(0.15)
+        assert row["outside_share"] == pytest.approx(0.05)
+        assert row["aggression_share"] == pytest.approx(0.8)
+        assert row["aggression_balance"] == pytest.approx(0.4)
+        assert row["spread_median_usd"] == pytest.approx(0.05)
+        assert row["spread_median_pct"] == pytest.approx(0.02)
+        assert row["quote_age_median_ms"] == pytest.approx(110.0)
+        assert row["quote_age_max_ms"] == pytest.approx(250.0)
+        assert row["bid_size_median"] == pytest.approx(40.0)
+        assert row["ask_size_median"] == pytest.approx(45.0)
+
+    def test_legacy_event_without_microstructure_yields_null_additive_columns(self):
+        """A pre-OA-1T event is null on every measured column — never 0."""
+        from collectors.flow_signals import _events_from_blob
+
+        row = _events_from_blob(_make_feed_blob([_make_event("evtLegacy")]))[0]
+
+        for column in MEASURED_COLS:
+            assert column in row, f"{column} missing from ledger row"
+            assert row[column] is None, f"{column} should be null, got {row[column]!r}"
+        # The legacy fields it does carry are untouched.
+        assert row["vol_gt_oi"] is True
+        assert row["premium"] == pytest.approx(300_000.0)
+
+    def test_unknown_microstructure_schema_is_not_trusted(self):
+        """Values under an unreviewed contract are not parsed as if they were
+        this one."""
+        from collectors.flow_signals import _events_from_blob
+
+        foreign = json.loads(json.dumps(MICRO_BLOCK))
+        foreign["schema"] = "options.trade_nbbo_microstructure/v2"
+        row = _events_from_blob(
+            _make_feed_blob([_measured_event("evtForeign", microstructure=foreign)])
+        )[0]
+
+        assert row["microstructure_schema"] is None
+        assert row["at_ask_share"] is None
+        assert row["nbbo_premium_coverage"] is None
+        # The top-level scalar is its own field and does not ride on that schema.
+        assert row["vol_gt_oi_ratio"] == pytest.approx(1.5)
+
+    def test_existing_parquet_rows_receive_null_new_columns_on_append(self, tmp_path):
+        """Schema evolution: historical rows gain null columns, never a backfill."""
+        from collectors.flow_signals import (
+            _EVENT_COLS, _append_rows, _events_from_blob,
+        )
+
+        ledger_path = tmp_path / "ledger.parquet"
+        legacy_cols = [c for c in _EVENT_COLS if c not in MEASURED_COLS]
+        assert len(legacy_cols) == len(_EVENT_COLS) - len(MEASURED_COLS)
+
+        legacy_row = _events_from_blob(_make_feed_blob([_make_event("evtOld")]))[0]
+        legacy_df = pd.DataFrame(
+            [{k: legacy_row[k] for k in legacy_cols}], columns=legacy_cols,
+        )
+        legacy_df.to_parquet(ledger_path, index=False)
+
+        rich_rows = _events_from_blob(_make_feed_blob([_measured_event("evtNew")]))
+        assert _append_rows(ledger_path, rich_rows) == 1
+
+        df = pd.read_parquet(ledger_path)
+        assert list(df["event_id"]) == ["evtOld", "evtNew"]
+        old, new = df.iloc[0], df.iloc[1]
+        for column in MEASURED_COLS:
+            assert pd.isna(old[column]), f"historical row backfilled on {column}"
+        assert new["at_ask_share"] == pytest.approx(0.6)
+        assert new["vol_gt_oi_ratio"] == pytest.approx(1.5)
+        assert new["microstructure_schema"] == MICRO_SCHEMA
+
+    def test_reharvest_cannot_mutate_first_microstructure_values(self, tmp_path):
+        from collectors.flow_signals import (
+            _append_rows, _events_from_blob, _load_existing_ids,
+        )
+
+        ledger_path = tmp_path / "ledger.parquet"
+        first = _measured_event("evtKeepFirst")
+        _append_rows(ledger_path, _events_from_blob(_make_feed_blob([first])))
+
+        restated = json.loads(json.dumps(MICRO_BLOCK))
+        restated["at_ask_share"] = 0.99
+        second = _measured_event("evtKeepFirst", microstructure=restated)
+
+        existing_ids = _load_existing_ids(ledger_path)
+        new_rows = [
+            r for r in _events_from_blob(_make_feed_blob([second]))
+            if r["event_id"] not in existing_ids
+        ]
+        _append_rows(ledger_path, new_rows)
+
+        df = pd.read_parquet(ledger_path)
+        assert len(df) == 1
+        assert float(df.iloc[0]["at_ask_share"]) == pytest.approx(0.60)

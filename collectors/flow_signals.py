@@ -92,6 +92,29 @@ _EVENT_COLS = [
     "zerodte",
     "signing_source",
     "swept",
+    # OA-1T measured trade-vs-NBBO microstructure, flattened from the event's
+    # additive `microstructure` block. Historical rows stay null on every one of
+    # these: a later NBBO/OI observation is not event-time truth.
+    "vol_gt_oi_ratio",
+    "microstructure_schema",
+    "source_print_count",
+    "nbbo_valid_print_count",
+    "source_premium_usd",
+    "nbbo_covered_premium_usd",
+    "nbbo_print_coverage",
+    "nbbo_premium_coverage",
+    "at_ask_share",
+    "at_bid_share",
+    "inside_share",
+    "outside_share",
+    "aggression_share",
+    "aggression_balance",
+    "spread_median_usd",
+    "spread_median_pct",
+    "quote_age_median_ms",
+    "quote_age_max_ms",
+    "bid_size_median",
+    "ask_size_median",
     # Collector-stamped metadata
     "detector_version",
     "source",         # 'live_feed'
@@ -250,6 +273,50 @@ def _infer_session_date_from_archive_key(key: str) -> str | None:
 
 # ── event extraction ─────────────────────────────────────────────────────────
 
+MICROSTRUCTURE_SCHEMA = "options.trade_nbbo_microstructure/v1"
+
+
+def _measured_microstructure_cols(ev: dict) -> dict[str, Any]:
+    """Flatten the event's additive measured block into ledger columns.
+
+    The nested object is trusted only under its exact reviewed schema string.
+    Anything else — absent, malformed, or a future/foreign version — yields nulls
+    rather than values parsed under a contract nobody has read.  Missing never
+    becomes 0: a zero share and an unmeasured share are different facts.
+    """
+    micro = ev.get("microstructure")
+    trusted: dict = (
+        micro
+        if isinstance(micro, dict) and micro.get("schema") == MICROSTRUCTURE_SCHEMA
+        else {}
+    )
+    return {
+        # Top level on the event, not inside the block, so it stands on its own.
+        "vol_gt_oi_ratio": _coerce_float(ev.get("vol_gt_oi_ratio")),
+        "microstructure_schema": MICROSTRUCTURE_SCHEMA if trusted else None,
+        "source_print_count": _coerce_int(trusted.get("source_print_count")),
+        "nbbo_valid_print_count": _coerce_int(trusted.get("nbbo_valid_print_count")),
+        "source_premium_usd": _coerce_float(trusted.get("source_premium_usd")),
+        "nbbo_covered_premium_usd": _coerce_float(
+            trusted.get("nbbo_covered_premium_usd"),
+        ),
+        "nbbo_print_coverage": _coerce_float(trusted.get("nbbo_print_coverage")),
+        "nbbo_premium_coverage": _coerce_float(trusted.get("nbbo_premium_coverage")),
+        "at_ask_share": _coerce_float(trusted.get("at_ask_share")),
+        "at_bid_share": _coerce_float(trusted.get("at_bid_share")),
+        "inside_share": _coerce_float(trusted.get("inside_share")),
+        "outside_share": _coerce_float(trusted.get("outside_share")),
+        "aggression_share": _coerce_float(trusted.get("aggression_share")),
+        "aggression_balance": _coerce_float(trusted.get("aggression_balance")),
+        "spread_median_usd": _coerce_float(trusted.get("spread_median_usd")),
+        "spread_median_pct": _coerce_float(trusted.get("spread_median_pct")),
+        "quote_age_median_ms": _coerce_float(trusted.get("quote_age_median_ms")),
+        "quote_age_max_ms": _coerce_float(trusted.get("quote_age_max_ms")),
+        "bid_size_median": _coerce_float(trusted.get("bid_size_median")),
+        "ask_size_median": _coerce_float(trusted.get("ask_size_median")),
+    }
+
+
 def _events_from_blob(blob: dict, session_date_hint: str | None = None) -> list[dict]:
     """Extract and normalize events from a feed/archive blob.
 
@@ -330,6 +397,7 @@ def _events_from_blob(blob: dict, session_date_hint: str | None = None) -> list[
             "zerodte":         _coerce_bool(ev.get("zerodte", False)),
             "signing_source":  str(ev.get("signing_source", "tape")),
             "swept":           _coerce_bool(ev.get("swept", False)),
+            **_measured_microstructure_cols(ev),
             "detector_version": detector_version,
             "source":          "live_feed",
             "ingested_at":     ingested_at,
