@@ -1,8 +1,8 @@
 ---
 workstream: "WS:BREATHING-PLATFORM"
 session: sol/breathing-completion-masterplan-20260828
-model: GPT-5.6 Sol
-ended_because: commissioned_next_child
+model: sol
+ended_because: complete
 mission: >
   Freeze the full U.S. Breathing Platform completion architecture, reconcile the
   post-2026-08-27 D12/permanence changes, and create the first bounded COO child
@@ -26,30 +26,37 @@ changed:
       first C0 production-truth child operation.
 verified:
   - claim: Current protected Sol procedure is compatible and watcher/routing laws are loaded atomically.
-    evidence: >
-      Mastermind protected master 038d1271b98e88b24e039c1ce4127d6503945845;
-      mastermind.sol_skillpack.v1 1.0.1; bootstrap major 1; INDEX, COLD_START,
-      COMMISSION_WAVE plus universal dialogue-close and worker-routing addendum
-      read from that exact commit.
+    command: >
+      GitHub fetch of docs/sol_skills/{INDEX,COLD_START,COMMISSION_WAVE}.md plus the
+      universal dialogue-close and worker-routing addendum at Mastermind protected
+      master 038d1271b98e88b24e039c1ce4127d6503945845
+    result: >
+      All files report mastermind.sol_skillpack.v1, skillpack_version 1.0.1,
+      minimum_bootstrap_major 1, read atomically from that exact commit.
   - claim: D12 is no longer NOT_BUILT.
-    evidence: >
-      Macro PR #6554 merged 2026-08-27T16:07:38Z, squash
-      43e07debafd3c95c027fc027b53a137ff06e6767. It quarantines malformed,
-      non-session and not-yet-completed series tips before both pack-tip
-      selection and gate submission. PR explicitly marks D12 BUILT_NOT_PROVEN
-      pending natural production pack/evaluator/dead-man proof.
+    command: >
+      GitHub read of Macro PR #6554 merge state and squash commit
+      43e07debafd3c95c027fc027b53a137ff06e6767
+    result: >
+      Merged 2026-08-27T16:07:38Z. It quarantines malformed, non-session and
+      not-yet-completed series tips before both pack-tip selection and gate
+      submission. PR explicitly marks D12 BUILT_NOT_PROVEN pending natural
+      production pack/evaluator/dead-man proof.
   - claim: Aug-27 exposed an additional fresh-but-empty / ahead-pack monitoring defect.
-    evidence: >
-      Macro PR #6569 merged 2026-08-27T23:44:26Z, squash
-      06d68455e55808a9a328d41e03f50f7a76b5021e. Production at 19:12Z had a
-      fresh prophet_live pass clock with n_states=0 while stale_pack darkened the
-      evaluator; sentinel still said ok. #6569 adds the repeated-empty breach and
-      ahead-of-calendar pack fence. Natural proof remains owed.
+    command: >
+      GitHub read of Macro PR #6569 merge state and squash commit
+      06d68455e55808a9a328d41e03f50f7a76b5021e
+    result: >
+      Merged 2026-08-27T23:44:26Z. Production at 19:12Z had a fresh prophet_live
+      pass clock with n_states=0 while stale_pack darkened the evaluator; sentinel
+      still said ok. #6569 adds the repeated-empty breach and ahead-of-calendar
+      pack fence. Natural proof remains owed.
   - claim: No current open PR collision was found for the core named surfaces at freeze.
-    evidence: >
-      At Macro base ba270c60c1fe825f2e9fce1fcf507b7272a67b63, open-PR
-      searches for close_pass, prophet_live and massive_stock_day returned no
-      direct matches. Every modifying child must re-run the check.
+    command: >
+      Open-PR searches for close_pass, prophet_live and massive_stock_day at Macro
+      base ba270c60c1fe825f2e9fce1fcf507b7272a67b63
+    result: >
+      No direct matches. Every modifying child must re-run the check.
 unverified:
   - "Exact Aug-26 close_observed_at→candidate→reader row, if a private host receipt exists but was never recorded."
   - "Exact Aug-27 close-pass ruler row and browser composition; Aug-27 independent Prophet-Live was demonstrably dark/empty, so the overall session is not accepted by this program without proof of truthful combined degradation."
@@ -71,6 +78,11 @@ do_not_redo:
   - "No duplicate monitor/alert control plane."
   - "No Prophet rank/gate/entry-timing retune from Breathing."
   - "No arbitrary timeout/memory inflation as a substitute for a measured bottleneck."
+danger_areas:
+  - "Causal truth moved multiple times inside one market day (#6554, #6562, #6569); a child that grades stale bytes builds a stale fix — re-pin current main at every claim."
+  - "Board as_of, live pass_ts/quote clock, armed-pack as_of, and nightly source_asof are independent clocks; conflating them reproduces the Aug-27 false-green."
+  - "A fresh artifact timestamp on one plane while another required plane is stale/empty reads as healthy to the sentinel; empty states is not healthy and missing is not zero."
+  - "Missing reader timestamps stay missing/FAIL; inferring them from R2 or file mtime rewrites first-visibility history."
 ---
 
 # COO program-control handoff

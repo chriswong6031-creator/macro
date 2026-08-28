@@ -61,6 +61,17 @@ do_not_redo:
     on one node is a race decided by fetch order.
 danger_areas:
   - >
+    `regularSession` is the STATE of the regular session ("rth" while open,
+    "closed" after the bell), NOT the session a print came from. Reading it the
+    second way and refusing non-"rth" rows 503'd every US dossier overnight
+    (shipped in #6572, fixed in #6592). The closed row still carries the correct
+    settled close, which is exactly what an overnight dossier must show.
+  - >
+    Test fixtures here are live captures. The original was taken during RTH, so
+    every test agreed the market was open and nothing exercised the closed
+    state — which is what the page is in for most of the day. Any new fixture
+    must be paired with one from the opposite session state.
+  - >
     `chg` from the hub is a PERCENT, not the dollar move, and `ts` is the
     vendor's print clock that stops advancing after the close. Both mis-readings
     render a plausible number and raise nothing.
