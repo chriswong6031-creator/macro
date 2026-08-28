@@ -96,6 +96,7 @@ _BRIEF_MARK = _ROOT / "data" / "governance" / ".ceo_brief_last"
 STATE_SCHEMA = "agent_os_state.v1"
 BRIEF_SCHEMA = "ceo_brief.v1"
 READINESS_SCHEMA = "agentos.readiness.v1"
+PROGRAM_REGISTRY_SCHEMA = "agentos.program_registry.v1"
 
 # Sibling checkouts, resolved by walking up from this repo.  Macro is this checkout; the
 # other two are separate clones under the shared project home.  Absent is NORMAL (I4).
@@ -202,6 +203,66 @@ def _load_programs() -> set[str] | None:
                     keys.add(key)
         return keys or None
     return None
+
+
+def _load_program_registry(path: Path = _PROGRAMS) -> dict[str, Any]:
+    """Return the bounded semantic-program projection without changing legacy joins."""
+    source = "config/mastermind_programs.yml"
+
+    def unavailable(reason: str) -> dict[str, Any]:
+        return {
+            "schema": PROGRAM_REGISTRY_SCHEMA,
+            "available": False,
+            "reason": reason,
+            "source": source,
+            "programs": [],
+        }
+
+    if not path.exists():
+        return unavailable("program_registry_unavailable")
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except OSError:
+        return unavailable("program_registry_unavailable")
+    except yaml.YAMLError:
+        return unavailable("program_registry_malformed")
+
+    if not isinstance(doc, dict) or doc.get("schema") != "mastermind_programs.v1":
+        return unavailable("program_registry_malformed")
+    ontology = doc.get("ontology")
+    programs = doc.get("programs")
+    if not isinstance(ontology, dict) or not isinstance(programs, dict):
+        return unavailable("program_registry_malformed")
+    lifecycle_values = ontology.get("lifecycle_states")
+    if not isinstance(lifecycle_values, list) or not lifecycle_values:
+        return unavailable("program_registry_malformed")
+    if any(not isinstance(value, str) or not value.strip() for value in lifecycle_values):
+        return unavailable("program_registry_malformed")
+    lifecycle = set(lifecycle_values)
+
+    rows: list[dict[str, str]] = []
+    for key in sorted(programs):
+        if not isinstance(key, str) or not key.strip() or key != key.strip():
+            return unavailable("program_registry_malformed")
+        row = programs[key]
+        if not isinstance(row, dict):
+            return unavailable("program_registry_malformed")
+        projected: dict[str, str] = {}
+        for field in ("name", "lifecycle_state", "scope", "kind", "category"):
+            value = row.get(field)
+            if not isinstance(value, str) or not value.strip():
+                return unavailable("program_registry_malformed")
+            projected[field] = value
+        if projected["lifecycle_state"] not in lifecycle:
+            return unavailable("program_registry_malformed")
+        rows.append({"key": key, **projected})
+
+    return {
+        "schema": PROGRAM_REGISTRY_SCHEMA,
+        "available": True,
+        "source": source,
+        "programs": rows,
+    }
 
 
 # ---------------------------------------------------------------- helpers
