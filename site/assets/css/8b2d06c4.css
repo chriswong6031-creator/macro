@@ -104,6 +104,19 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .livestamp{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--ink-ok, var(--ok));white-space:nowrap;}
 [data-lang="zh"] .livestamp{letter-spacing:0;text-transform:none;}
+/* Quote-state stamp. The pip and its label are painted from the QUOTE's own
+   measured freshness, never from the build date — a nightly page used to print
+   a pulsing green "Live" beside a price that was a day old. The green pulse is
+   therefore reserved for `live`: a measured realtime row inside an open
+   regular session. Every weaker state is a still, muted pip, so "current"
+   can never be implied by decoration alone. */
+.dq-stamp[data-dq-state]{color:var(--muted);}
+.dq-stamp[data-dq-state] .live-dot{background:var(--muted);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="delayed"]{color:var(--warn);}
+.dq-stamp[data-dq-state="delayed"] .live-dot{background:var(--warn);box-shadow:none;animation:none;}
+.dq-stamp[data-dq-state="live"]{color:var(--ink-ok,var(--ok));}
+.dq-stamp[data-dq-state="live"] .live-dot{background:var(--ok);
+  box-shadow:0 0 7px 1px color-mix(in srgb,var(--ok) 60%,transparent);animation:v6lp 2.6s ease-in-out infinite;}
 .wk52{margin-top:16px;}
 .wk52 .lbls{display:flex;justify-content:space-between;gap:14px;font-size:10.5px;color:var(--muted);margin-bottom:5px;}
 .wk52 .lbls b{color:var(--text);font-weight:650;}
