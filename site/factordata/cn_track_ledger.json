@@ -32,8 +32,8 @@
   "capture_undefined_pct": null,
   "n_logged": 109,
   "n_locked_excluded": 0,
-  "n_skipped_awaiting_t1": 9,
-  "n_skipped_total": 9,
+  "n_skipped_awaiting_t1": 13,
+  "n_skipped_total": 13,
   "board_definition": "cn_prophet_v4"
  },
  "rows": [
@@ -2443,8 +2443,8 @@
   "survivorship": {
    "n_locked_excluded": 0,
    "n_skipped_no_price": 0,
-   "n_skipped_awaiting_t1": 9,
-   "n_skipped_total": 9,
+   "n_skipped_awaiting_t1": 13,
+   "n_skipped_total": 13,
    "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
   },
   "board_definition": "cn_prophet_v4",
@@ -7639,8 +7639,8 @@
    },
    {
     "t": "688608.SS",
-    "nm": "Bestechnic (Shanghai) Co., Ltd. / 恒玄科技",
-    "sec": "Technology",
+    "nm": null,
+    "sec": null,
     "grp": null,
     "d": "2026-07-16",
     "e": 122.58,
@@ -14901,8 +14901,8 @@
    },
    {
     "t": "600732.SS",
-    "nm": null,
-    "sec": null,
+    "nm": "Shanghai Aiko Solar Energy Co.,Ltd. / 爱旭股份",
+    "sec": "Technology",
     "grp": null,
     "d": "2026-06-30",
     "e": 13.76,
@@ -16615,8 +16615,8 @@
     "mae_p10_pct": -12.88,
     "n_logged": 144,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 7,
-    "n_skipped_total": 7,
+    "n_skipped_awaiting_t1": 10,
+    "n_skipped_total": 10,
     "board_definition": "cn_prophet_v2_shadow"
    },
    "rows": [
@@ -19797,8 +19797,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 7,
-     "n_skipped_total": 7,
+     "n_skipped_awaiting_t1": 10,
+     "n_skipped_total": 10,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
@@ -19957,8 +19957,8 @@
     },
     {
      "t": "002756.SZ",
-     "nm": null,
-     "sec": null,
+     "nm": "Yongxing Special Materials Technology Co.,Ltd / 永兴材料",
+     "sec": "Basic Materials",
      "grp": null,
      "d": "2026-08-14",
      "e": 49.04,
@@ -20881,8 +20881,8 @@
     },
     {
      "t": "002756.SZ",
-     "nm": null,
-     "sec": null,
+     "nm": "Yongxing Special Materials Technology Co.,Ltd / 永兴材料",
+     "sec": "Basic Materials",
      "grp": null,
      "d": "2026-08-10",
      "e": 48.86,
@@ -22006,8 +22006,8 @@
     "capture_undefined_pct": null,
     "n_logged": 109,
     "n_locked_excluded": 0,
-    "n_skipped_awaiting_t1": 9,
-    "n_skipped_total": 9,
+    "n_skipped_awaiting_t1": 13,
+    "n_skipped_total": 13,
     "board_definition": "cn_prophet_v3_shadow"
    },
    "rows": [
@@ -24418,8 +24418,8 @@
     "survivorship": {
      "n_locked_excluded": 0,
      "n_skipped_no_price": 0,
-     "n_skipped_awaiting_t1": 9,
-     "n_skipped_total": 9,
+     "n_skipped_awaiting_t1": 13,
+     "n_skipped_total": 13,
      "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats; n_skipped_no_price counts store misses only, awaiting-T+1 episodes are in flight"
     },
     "exit_rule": "10-session forced verdict · T+1 open fill · no oscillator target (3D thresholds not yet refit for A-shares)",
