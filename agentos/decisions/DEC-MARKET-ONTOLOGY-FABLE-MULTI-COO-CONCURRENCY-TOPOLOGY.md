@@ -48,8 +48,9 @@ alternatives:
       churn and violate the no-duplicate/no-recommission boundary.
 evidence:
   - "Chairman instruction 2026-08-26: preserve concurrent execution and stop one COO ↔ Sol micromanagement."
-  - "Protected Mastermind@97f85ce5b84030faf4d291f988a1c642fb15e80a: docs/superpowers/specs/2026-08-27-operator-continuity-fable-root-seat-amendment.md"
-  - "Protected Mastermind #185 current-state amendment: supersede the phrase 'separate Fable COOs'; one logical Fable COO responsibility/seat, with parallel subordinate execution only through existing law."
+  - "Current protected Mastermind@e2092cb6235519ac7f50fb3aa50ec1c1a6f627c0: docs/superpowers/specs/2026-08-27-operator-continuity-fable-root-seat-amendment.md is unchanged from the prior pin."
+  - "Current protected #185 convergence amendment remains in force: supersede the phrase 'separate Fable COOs'; one logical Fable COO responsibility/seat, with parallel subordinate execution only through existing law."
+  - "Protected master advance #186 is records-only Linear credential-boundary source law and does not alter Fable root/seat, Market Ontology, or transport authority."
   - agentos/decisions/DEC-MARKET-ONTOLOGY-COMPLETE-CAPABILITY-PARITY-FABLE-COO-FANOUT.md
   - research/market_intelligence_productization/MARKET_ONTOLOGY_COMPLETE_PARITY_ADOPTION_ADDENDUM_2026-08-26.md
   - agentos/handoffs/MARKET-ONTOLOGY-F00-F13-FABLE-COO-FANOUT-MANIFEST-2026-08-26.md
