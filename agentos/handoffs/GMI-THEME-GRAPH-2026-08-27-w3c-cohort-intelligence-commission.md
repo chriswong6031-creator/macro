@@ -12,7 +12,7 @@ state_before: >
   exists. Current selection boards and GMI graph/state remain separate surfaces.
 changed:
   - path: agentos/handoffs/GMI-THEME-GRAPH-2026-08-27-w3c-cohort-intelligence-commission.md
-    what: "Created the held W3C input/output, authority and real-product proof packet."
+    what: "Created the held W3C input/output, authority and real-product proof packet; 2026-08-28 finish-and-fold amendment makes accepted W3C the GMI development close boundary."
 verified:
   - claim: "W3C is post-selection read-only context."
     command: "CEO W3 continuation directive §§39–46"
@@ -27,6 +27,7 @@ next_actions:
 do_not_redo:
   - "No upstream candidate insertion, rank change, readiness change or board reordering."
   - "No second ThemeState, identity resolver or selection-history store."
+  - "No standalone GMI W4/W5/W6 continuation; accepted W3C closes the unfinished GMI development frontier and the sustained F04 parent continues product composition through existing owners."
 danger_areas:
   - "Joining current membership to a historical selection episode."
   - "Flattening overlapping subthemes into one coarse label."
@@ -48,11 +49,11 @@ This is the user-visible payoff that motivated the W3 re-charter: five independe
 
 ## Authority / precedence
 
-Chairman completion freeze; W3B accepted contract; CEO W3 continuation directive §§39–46; current U.S./China selection producer contracts; Data OS identity; GMI PIT membership; zero-authority law.
+Chairman completion freeze; W3B accepted contract; CEO W3 continuation directive §§39–46; current U.S./China selection producer contracts; Data OS identity; GMI PIT membership; zero-authority law; 2026-08-28 finish-and-fold ruling that makes W3C the GMI development close boundary.
 
 ## Exact scope / non-goals
 
-Build one read-only cohort contract/reader/projection and real consumers for the incumbent U.S. Prophet/actionable board and China Prophet/What-to-Act-On-Now surfaces that are current at claim time. Preserve existing selection artifacts; do not fork their lifecycle or publication truth. No ranking, no candidate generation, no board order changes, no neighbor insertion, no trade recommendation, no W4 relationship origination.
+Build one read-only cohort contract/reader/projection and real consumers for the incumbent U.S. Prophet/actionable board and China Prophet/What-to-Act-On-Now surfaces that are current at claim time. Preserve existing selection artifacts; do not fork their lifecycle or publication truth. No ranking, no candidate generation, no board order changes, no neighbor insertion, no trade recommendation, no relationship-engine origination.
 
 ## Complete user / machine journey
 
@@ -98,4 +99,4 @@ Pass only if U.S. and China users can see truthful cohort context on real finali
 
 ## Stop condition
 
-Stop at accepted W3C product/machine proof and return to W4. Do not start richer relationship edges or neighbor-ranking experiments in this carrier. Any selection-owner contract change or authority ambiguity returns to Sol.
+Stop at accepted W3C product/machine proof. Update the GMI workstream to close the unfinished development frontier and return control to the sustained F04 parent operation for downstream explanation/transmission/opportunity product composition through current canonical owners. Do not start a standalone GMI relationship/Sensorium/product wave and do not start neighbor-ranking experiments. Terminalize the W3C watcher cycle before any new F04 child operation begins. Any selection-owner contract change or authority ambiguity returns to Sol.
