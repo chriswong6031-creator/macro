@@ -1,0 +1,323 @@
+{
+  "schema": "mastermind.single_name.reference_twin_examples/v0",
+  "reference_only": true,
+  "not_production_truth": true,
+  "generated_for_design_at": "2026-08-28T09:55:00Z",
+  "authority": {
+    "can_rank": false,
+    "can_size": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_escalate": false,
+    "can_trade": false
+  },
+  "examples": [
+    {
+      "schema": "mastermind.single_name.reference_twin/v1-draft",
+      "issuer": {
+        "company_id": "cik:0001577552",
+        "legal_name": "Alibaba Group Holding Limited",
+        "reporting_currency": "CNY",
+        "fiscal_year_end": "03-31",
+        "canonical_identity_ref": "engine/company_intelligence/identity.py"
+      },
+      "economic_securities": [
+        {
+          "security_group_id": "ordinary_share:alibaba",
+          "security_kind": "ordinary_share",
+          "share_class": "ordinary",
+          "trading_counters": [
+            {
+              "counter_id": "xhkg:9988",
+              "mic": "XHKG",
+              "ticker": "9988",
+              "trading_currency": "HKD",
+              "market_calendar": "XHKG"
+            },
+            {
+              "counter_id": "xhkg:89988",
+              "mic": "XHKG",
+              "ticker": "89988",
+              "trading_currency": "CNY",
+              "market_calendar": "XHKG"
+            }
+          ]
+        },
+        {
+          "security_group_id": "ads:alibaba:baba",
+          "security_kind": "ads",
+          "share_class": "ADS",
+          "trading_counters": [
+            {
+              "counter_id": "xnys:BABA",
+              "mic": "XNYS",
+              "ticker": "BABA",
+              "trading_currency": "USD",
+              "market_calendar": "XNYS"
+            }
+          ],
+          "conversion_relationships": [
+            {
+              "target_security_group_id": "ordinary_share:alibaba",
+              "relationship": "ads_represents_ordinary_shares",
+              "ads_units": 1,
+              "ordinary_share_units": 8,
+              "fungibility": "bidirectional",
+              "source_ref": "https://www.alibabagroup.com/en-US/faqs-investor-information"
+            }
+          ]
+        }
+      ],
+      "selected_counter_id": "xhkg:9988",
+      "as_of": "2026-08-28T09:55:00Z",
+      "material_changes": [
+        {
+          "change_key": "ali_2026q2_results",
+          "kind": "results_event",
+          "published_at": "2026-08-20T00:00:00Z",
+          "plain": "Alibaba published June-quarter 2026 results under a new four-segment structure.",
+          "source_ref": "https://www.alibabagroup.com/en-US/document-2026456290057781248",
+          "authority": "descriptive"
+        },
+        {
+          "change_key": "ali_20260826_equity_placement",
+          "kind": "equity_placement_event",
+          "published_at": "2026-08-26T00:00:00Z",
+          "plain": "Alibaba completed an HK$80 billion placement of 710 million newly issued ordinary shares at HK$112.70, with stated proceeds for AI computing and data-centre/cloud infrastructure.",
+          "source_ref": "https://www.alibabagroup.com/en-US/document-2029365886510432256",
+          "authority": "descriptive"
+        }
+      ],
+      "reported_facts": {
+        "event_ref": "alibaba_june_quarter_2026",
+        "ontology_version": "alibaba.segment.v2026q2",
+        "currency": "CNY",
+        "period": "three_months_ended_2026-06-30",
+        "observations": [
+          {"metric_key": "ali.group.revenue", "value": 268953, "unit": "RMB_million", "yoy_pct": 9},
+          {"metric_key": "ali.ecom.segment_revenue", "value": 205862, "unit": "RMB_million", "yoy_pct": 4},
+          {"metric_key": "ali.cloud.segment_revenue", "value": 48437, "unit": "RMB_million", "yoy_pct": 45},
+          {"metric_key": "ali.ai_apps.segment_revenue", "value": 3338, "unit": "RMB_million", "yoy_pct": 16},
+          {"metric_key": "ali.cloud.ai_related_product_revenue", "value": 12376, "unit": "RMB_million"},
+          {"metric_key": "ali.group.capex", "value": 67678, "unit": "RMB_million", "yoy_pct": 75},
+          {"metric_key": "ali.group.cash_liquid_investments", "value": 474505, "unit": "RMB_million"}
+        ],
+        "source_ref": "https://www.alibabagroup.com/en-US/document-2026456290057781248"
+      },
+      "owner_views": {
+        "identity": {
+          "capability_state": "BUILT_NOT_PROVEN",
+          "owner_ref": "engine/company_intelligence/identity.py",
+          "coverage_state": "reference_identity_resolved",
+          "authority": "context_only"
+        },
+        "stock_identity": {
+          "capability_state": "PROVEN_LIVE",
+          "owner_ref": "research/stock_identity/dossiers/BABA.md",
+          "coverage_state": "BABA_W1_available",
+          "notes": [
+            "Fingerprint, bars-only state and path episodes available.",
+            "Identity epoch remains provisional epoch_0.",
+            "All authority false."
+          ]
+        },
+        "cross_listing_context": {
+          "capability_state": "PROVEN_LIVE",
+          "owner_ref": "engine/hk_adr_bridge.py",
+          "coverage_state": "direct_BABA_to_9988_display_context",
+          "authority": "display_only"
+        },
+        "options_structure_us": {
+          "capability_state": "PARTIAL",
+          "coverage_state": "owner_specific_current_state_required",
+          "authority": "owner_defined"
+        },
+        "options_structure_hk": {
+          "capability_state": "NOT_BUILT",
+          "typed_absence": {
+            "reason_code": "source_unlicensed",
+            "field_path": "owner_views.options_structure_hk",
+            "plain_en": "No governed HK stock-options owner is available for 9988 yet.",
+            "plain_zh": "目前尚无经治理的9988港股期权数据归属系统。",
+            "fill_condition": "A canonical options owner qualifies and licences an HK source."
+          }
+        },
+        "capital_structure": {
+          "capability_state": "PARTIAL",
+          "coverage_state": "official_placement_event_available_owner_current_state_pending",
+          "authority": "context_only"
+        }
+      },
+      "typed_absences": [
+        {
+          "reason_code": "owner_not_built",
+          "field_path": "owner_views.stock_identity.identity_epoch",
+          "plain_en": "A real point-in-time identity epoch has not been built by Stock Identity yet.",
+          "plain_zh": "Stock Identity尚未建立真正的时点化个股身份阶段。",
+          "fill_condition": "Stock Identity W4 is accepted and published."
+        },
+        {
+          "reason_code": "owner_not_built",
+          "field_path": "forecast_book",
+          "plain_en": "No SNI forecast is published in the reference-twin phase.",
+          "plain_zh": "参考数字孪生阶段不发布SNI预测。",
+          "fill_condition": "A later forecast family is preregistered and prospectively accepted."
+        }
+      ],
+      "evidence_health": {
+        "material_claims_with_source_or_absence": true,
+        "rights_summary": "mixed_public_primary_and_house_owner",
+        "correction_state": "current_as_observed",
+        "forecast_authority": false
+      }
+    },
+    {
+      "schema": "mastermind.single_name.reference_twin/v1-draft",
+      "issuer": {
+        "company_id": "cik:0001293451",
+        "legal_name": "Tencent Holdings Limited",
+        "reporting_currency": "CNY",
+        "fiscal_year_end": "12-31",
+        "canonical_identity_ref": "engine/company_intelligence/identity.py",
+        "primary_company_event_source": "HKEX_and_issuer"
+      },
+      "economic_securities": [
+        {
+          "security_group_id": "ordinary_share:tencent",
+          "security_kind": "ordinary_share",
+          "share_class": "ordinary",
+          "trading_counters": [
+            {
+              "counter_id": "xhkg:700",
+              "mic": "XHKG",
+              "ticker": "700",
+              "trading_currency": "HKD",
+              "market_calendar": "XHKG"
+            },
+            {
+              "counter_id": "xhkg:80700",
+              "mic": "XHKG",
+              "ticker": "80700",
+              "trading_currency": "CNY",
+              "market_calendar": "XHKG"
+            }
+          ]
+        }
+      ],
+      "selected_counter_id": "xhkg:700",
+      "as_of": "2026-08-28T09:55:00Z",
+      "material_changes": [
+        {
+          "change_key": "tencent_2026q2_results",
+          "kind": "results_event",
+          "published_at": "2026-08-12T00:00:00Z",
+          "plain": "Tencent published results for the three and six months ended 30 June 2026.",
+          "source_ref": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/2026081200296.pdf",
+          "authority": "descriptive"
+        },
+        {
+          "change_key": "tencent_august_2026_buybacks",
+          "kind": "repurchase_event_stream",
+          "published_at": "2026-08-27T00:00:00Z",
+          "plain": "Tencent's next-day disclosure return recorded repeated August purchases for cancellation that had not yet been cancelled at the disclosure close.",
+          "source_ref": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0827/2026082700758.pdf",
+          "authority": "descriptive"
+        }
+      ],
+      "reported_facts": {
+        "event_ref": "tencent_q2_2026",
+        "ontology_version": "tencent.segment.v2026q2",
+        "currency": "CNY",
+        "period": "three_months_ended_2026-06-30",
+        "observations": [
+          {"metric_key": "tencent.group.revenue", "value": 204785, "unit": "RMB_million", "yoy_pct": 11},
+          {"metric_key": "tencent.group.gross_profit", "value": 118433, "unit": "RMB_million", "yoy_pct": 13},
+          {"metric_key": "tencent.vas.revenue", "value": 98414, "unit": "RMB_million", "yoy_pct": 8},
+          {"metric_key": "tencent.marketing.revenue", "value": 43565, "unit": "RMB_million", "yoy_pct": 22},
+          {"metric_key": "tencent.fbs.revenue", "value": 60286, "unit": "RMB_million", "yoy_pct": 9},
+          {"metric_key": "tencent.wechat_weixin.combined_mau", "value": 1439, "unit": "million_users", "yoy_pct": 2},
+          {"metric_key": "tencent.qq.mobile_mau", "value": 520, "unit": "million_users", "yoy_pct": -2},
+          {"metric_key": "tencent.group.net_cash", "value": 58191, "unit": "RMB_million"},
+          {"metric_key": "tencent.group.capex", "value": 52784, "unit": "RMB_million"}
+        ],
+        "source_ref": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/0812/2026081200296.pdf"
+      },
+      "owner_views": {
+        "identity": {
+          "capability_state": "BUILT_NOT_PROVEN",
+          "owner_ref": "engine/company_intelligence/identity.py",
+          "coverage_state": "reference_identity_resolved",
+          "authority": "context_only"
+        },
+        "hk_official_filings": {
+          "capability_state": "PROVEN_LIVE",
+          "owner_ref": "engine/hk_filing_bus.py",
+          "coverage_state": "results_buyback_and_selected_event_taxonomy",
+          "authority": "display_only"
+        },
+        "cross_listing_context": {
+          "capability_state": "PARTIAL",
+          "owner_ref": "engine/hk_adr_bridge.py",
+          "coverage_state": "KWEB_group_proxy_only",
+          "notes": [
+            "No direct Tencent U.S. bridge is claimed.",
+            "KWEB is China-internet group context, not Tencent issuer evidence."
+          ],
+          "authority": "display_only"
+        },
+        "stock_identity": {
+          "capability_state": "NOT_BUILT",
+          "typed_absence": {
+            "reason_code": "insufficient_coverage",
+            "field_path": "owner_views.stock_identity",
+            "plain_en": "No accepted Tencent Stock Identity reference artifact is bound to this draft payload.",
+            "plain_zh": "本参考载荷尚未绑定经接受的腾讯Stock Identity个股身份文件。",
+            "fill_condition": "The Stock Identity owner publishes and accepts a Tencent artifact."
+          }
+        },
+        "options_structure_hk": {
+          "capability_state": "NOT_BUILT",
+          "typed_absence": {
+            "reason_code": "source_unlicensed",
+            "field_path": "owner_views.options_structure_hk",
+            "plain_en": "No governed HK stock-options owner is available for 700 yet.",
+            "plain_zh": "目前尚无经治理的700港股期权数据归属系统。",
+            "fill_condition": "A canonical options owner qualifies and licences an HK source."
+          }
+        },
+        "southbound_holdings": {
+          "capability_state": "PARTIAL",
+          "owner_ref": "engine/hk_southbound_stocks.py",
+          "coverage_state": "third_party_holdings_and_change_context",
+          "rights_state": "contract_review_required",
+          "notes": [
+            "Observation is not labeled smart money or directional intent.",
+            "Holding-value changes are price-contaminated unless decomposed."
+          ]
+        }
+      },
+      "typed_absences": [
+        {
+          "reason_code": "insufficient_coverage",
+          "field_path": "owner_views.cross_listing_context.direct_tencent_bridge",
+          "plain_en": "Tencent-specific U.S.-to-HK overnight evidence is not available; the current bridge is a KWEB group proxy.",
+          "plain_zh": "目前没有腾讯专属的美股至港股隔夜证据；现有桥接仅为KWEB行业代理。",
+          "fill_condition": "A qualified Tencent-specific source and owner are accepted."
+        },
+        {
+          "reason_code": "owner_not_built",
+          "field_path": "forecast_book",
+          "plain_en": "No SNI forecast is published in the reference-twin phase.",
+          "plain_zh": "参考数字孪生阶段不发布SNI预测。",
+          "fill_condition": "A later forecast family is preregistered and prospectively accepted."
+        }
+      ],
+      "evidence_health": {
+        "material_claims_with_source_or_absence": true,
+        "rights_summary": "mixed_public_primary_and_third_party_context",
+        "correction_state": "current_as_observed",
+        "forecast_authority": false
+      }
+    }
+  ]
+}
