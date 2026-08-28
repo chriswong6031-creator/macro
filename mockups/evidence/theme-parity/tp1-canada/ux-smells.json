@@ -1,6 +1,6 @@
 {
   "disclaimer": "Heuristics identify review targets; they do not determine that a page is bad.",
-  "generated_at": "2026-08-28T09:32:10Z",
+  "generated_at": "2026-08-28T10:23:20Z",
   "metric_notes": {
     "asof_present": "approximate contract probe (selector OR case-insensitive text pattern); absence is a prompt to look, not a verdict",
     "console_error_count": "distinct console 'error' texts across every state of the page the driver attempted, captured or not — a state that failed to load is often the one carrying the evidence",
@@ -50,10 +50,10 @@
           "viewport": "desktop"
         },
         "panel_count": 6,
-        "payload_bytes_total": 664125,
+        "payload_bytes_total": 806447,
         "raw_slug_hit_count": 0,
         "raw_slug_hits": [],
-        "request_count": 39,
+        "request_count": 38,
         "screenshot_completion": 1.0,
         "section_count": 6,
         "source_present": false,
@@ -70,7 +70,7 @@
     "base_url": null,
     "kind": "site_dir",
     "resolved_gitdir_or_none": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/canada-theme-parity-tp1-2595cf",
-    "resolved_sha_or_none": "fdcee15baf388e021f7a779f2580df1303b411d9",
+    "resolved_sha_or_none": "129fa4f52b6d57a955588f37d3a21b06de7a60d8",
     "resolved_sha_source": "HEAD of the nearest git directory at or above --site-dir: /Users/chriswong/Documents/Cluade/Macro Dashboard/.git/worktrees/canada-theme-parity-tp1-2595cf (nearest-above is git's own rule; that this checkout produced --site-dir is not verified)",
     "site_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/canada-theme-parity-tp1-2595cf/site"
   },
