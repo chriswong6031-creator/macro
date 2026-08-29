@@ -20,6 +20,7 @@ owns_paths:
   - config/theme_sources.yml
 decisions:
   - DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING
+  - DEC:GMI-F04-BOUNDED-CHILD-ROUTING-2026-08-28
 artifacts:
   - research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md
   - research/theme_graph/CEO_W3_CONTINUATION_DIRECTIVE_2026-08-14.md
@@ -45,16 +46,21 @@ waves:
     title: "PIT vintage completion — gmi-theme-pit-d2c-20260827-sol-001"
     status: todo
     next_action: >
-      First executable GMI child. Under the claimed F04 sustained principal, refresh
-      current main/open carriers and make required current-snapshot membership planes
-      forward-replayable without backfilling later knowledge.
+      First executable GMI child. Under the active F04 logical COO responsibility, route
+      this architecture-frozen bounded child through the least-scarce capable worker
+      avenue (Terra preferred), refresh current main/open carriers and make required
+      current-snapshot membership planes forward-replayable without backfilling later
+      knowledge. A live Fable provider conversation is not a prerequisite.
   - id: D2D
     title: "Ontology + probation breadth — gmi-theme-ontology-d2d-20260827-sol-001"
     status: todo
     next_action: >
-      First executable GMI child. Under the claimed F04 sustained principal, complete
-      curated probation/adjudication breadth and navigability across local concepts and
-      existing owner structural classifications. Unmapped remains legal; no fuzzy mapping.
+      First executable GMI child. Under the active F04 logical COO responsibility, route
+      this architecture-frozen bounded child through the least-scarce capable worker
+      avenue (Terra preferred), complete curated probation/adjudication breadth and
+      navigability across local concepts and existing owner structural classifications.
+      Unmapped remains legal; no fuzzy mapping. A live Fable provider conversation is
+      not a prerequisite.
   - id: D2E
     title: "Rights / coverage / D2 acceptance — gmi-theme-accept-d2e-20260827-sol-001"
     status: todo
@@ -105,22 +111,32 @@ landmines:
     The prior standalone GMI W4 relationship and W5 Sensorium commissions are
     REJECTED_BY_DESIGN as separate builds. Their useful jobs survive under current owners.
   - >-
+    Logical F04/COO ownership is not a provider-session admission gate. Under current
+    protected worker-routing law, architecture-frozen D2C/D2D should route to the
+    least-scarce capable bounded avenue; Fable is reserved for genuine principal-level
+    ambiguity/collision/continuity requirements.
+  - >-
     Watchers and Slack are attention/transport only. Every watcher-enabled child requires
     explicit CONTINUE/STOP semantics; terminal STOP disarms both temporary watchers and
     does not authorize the next child.
 next_action: >
-  Claim the existing F04 parent operation marketontology-f04-ontology-transmission-20260826-fable-001
-  through one explicit Fable principal pickup. That principal performs a fresh collision census
-  and starts D2C plus D2D concurrently only if their modifying write surfaces are genuinely
-  disjoint; otherwise it sequences them. D2E/W3B/W3C remain dependency-held. Sol is not a routine
-  per-PR hop; return only at frozen executive gates, milestone bundles or final acceptance.
+  After DEC:GMI-F04-BOUNDED-CHILD-ROUTING-2026-08-28 is main-canonical, Sol performs a
+  fresh collision census and commissions existing D2C operation
+  gmi-theme-pit-d2c-20260827-sol-001 and existing D2D operation
+  gmi-theme-ontology-d2d-20260827-sol-001 as separate CAPACITY_SELECTABLE bounded children,
+  with PREFERRED_AVENUE Terra unless current evidence justifies escalation. They may run
+  concurrently only if their receiving workers' exact planned write surfaces are genuinely
+  disjoint; otherwise sequence. D2E/W3B/W3C remain dependency-held. F04 logical COO
+  responsibility remains active above the children; a live Fable provider conversation is
+  required only when a principal-level ambiguity or cross-owner integration gate actually
+  arises.
 ---
 
 ## Current production substrate
 
 Natural GMI receipt at current reconciliation: belief_time 2026-08-27, computed_at
 2026-08-27T09:15:04Z, 3,881 nodes, 12,172 append-only edge rows / 8,292 latest-belief
-edges, 2,806 identity-resolution rows, 268 Finviz subthemes, 375 THS concepts,
+edges, 2,806 identity-resolution rows, 268 Finviz local subthemes, 375 THS concepts,
 499 measurement candidates and 144 semantic-only local capability rows. The strategic
 crosswalk remains 18 canonical themes with 61 THS mappings and 314 unmapped concepts.
 
