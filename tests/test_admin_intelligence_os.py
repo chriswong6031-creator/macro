@@ -346,6 +346,48 @@ def test_null_output_class_stays_null_and_cannot_be_validated():
     assert "output_class_null" in result["evidence_reason_codes"]
 
 
+def test_t1_null_output_class_cannot_be_backfilled_from_a_t4_record():
+    """Even contradictory downstream bytes cannot overwrite T1's explicit null contract."""
+    cell = evidence_cell(output_class=None, validation_state="validated")
+    output = healthy_output(
+        engine_id=cell["engine_id"], output_class="predictive", authority="engine_input"
+    )
+
+    rows = IOS._engine_rows(
+        {"outputs": [output]}, {"engines": [cell], "excluded": []}, {}
+    )
+
+    assert rows[0]["output_class"] is None
+    assert rows[0]["evidence_status"] == "Accruing"
+    assert "output_class_null" in rows[0]["evidence_reason_codes"]
+
+
+def test_panel_and_detail_keep_a_canonical_t1_cell_with_no_t4_outputs(
+    monkeypatch, tmp_path
+):
+    """Every canonical T1 cell gets a disposition, including an explicit no-output failure."""
+    cell = evidence_cell()
+    view = {"outputs": [], "summary": {}, "generated": {}}
+    registry = {"engines": [cell], "excluded": []}
+    monkeypatch.setattr(
+        IOS,
+        "_derive",
+        lambda root, force: (view, registry, {}, 0.0, "miss"),
+    )
+
+    panel = IOS.panel(root=tmp_path)
+    assert panel["census"]["canonical_engines"] == 1
+    assert panel["engines"][0]["engine_id"] == cell["engine_id"]
+    assert panel["engines"][0]["evidence_status"] == "Degraded"
+    assert "health_no_outputs" in panel["engines"][0]["evidence_reason_codes"]
+    assert sum(band["n_engines"] for band in panel["ceo_view"]) == 1
+
+    detail = IOS.engine_detail(cell["engine_id"], root=tmp_path)
+    assert detail["ok"] is True
+    assert detail["engine"]["evidence_status"] == "Degraded"
+    assert detail["outputs"] == []
+
+
 def test_mixed_explicit_bases_refuse_a_validated_disposition():
     """Two incompatible explicit clocks must not pool into one apparently mature verdict."""
     provider = qledger_provider(

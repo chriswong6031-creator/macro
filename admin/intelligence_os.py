@@ -322,15 +322,23 @@ def worst_state(states) -> str | None:
 
 def _engine_rows(view: dict, registry: dict, evidence_by_engine: dict) -> list[dict]:
     """One row per engine, folded from the T4 records and joined to the T1 engine cell."""
-    by_engine: dict[str, list[dict]] = {}
+    canonical_cells = [
+        row for row in (registry.get("engines") or []) if isinstance(row, dict)
+    ]
+    # T1 is the unit of account. Seed every canonical cell before folding T4 so a
+    # zero-output failure remains visible as Degraded instead of disappearing.
+    by_engine: dict[str, list[dict]] = {
+        str(row.get("engine_id")): []
+        for row in canonical_cells
+        if str(row.get("engine_id") or "")
+    }
     for record in view.get("outputs") or []:
         eid = record.get("engine_id") or UNREGISTERED_ENGINE_ID
         by_engine.setdefault(eid, []).append(record)
 
     cells = {
         str(row.get("engine_id")): row
-        for row in (registry.get("engines") or [])
-        if isinstance(row, dict)
+        for row in canonical_cells
     }
     canonical_ids = set(cells)
     for row in registry.get("excluded") or []:
@@ -346,11 +354,11 @@ def _engine_rows(view: dict, registry: dict, evidence_by_engine: dict) -> list[d
                 "canonical_t1": eid in canonical_ids,
                 "owner_program": cell.get("owner_program"),
                 "producer": cell.get("producer"),
-                # T1's overlay is the ONLY source. A record's class and the cell's class
-                # are the same adjudication; neither is inferred from the other's absence.
-                "output_class": cell.get("output_class")
-                or records[0].get("output_class"),
-                "authority": cell.get("authority") or records[0].get("authority"),
+                # T1's overlay is the ONLY source. Never backfill its explicit null from
+                # a downstream T4 record, even if contradictory bytes reach this seam.
+                "output_class": cell.get("output_class"),
+                "authority": cell.get("authority")
+                or (records[0].get("authority") if records else None),
                 "n_artifacts": len(records),
                 "worst_state": worst_state(r.get("state") for r in records),
                 "state_counts": counts,
@@ -438,16 +446,30 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001 — fail open; see panel()
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
+    registry_rows = (registry.get("engines") or []) + (registry.get("excluded") or [])
+    cell = next(
+        (
+            row
+            for row in registry_rows
+            if isinstance(row, dict) and str(row.get("engine_id")) == wanted
+        ),
+        None,
+    )
     outputs = [
         r
         for r in (view.get("outputs") or [])
         if (r.get("engine_id") or UNREGISTERED_ENGINE_ID) == wanted
     ]
-    if not outputs:
+    if not outputs and cell is None:
         known = sorted(
             {
                 str(r.get("engine_id") or UNREGISTERED_ENGINE_ID)
                 for r in (view.get("outputs") or [])
+            }
+            | {
+                str(row.get("engine_id"))
+                for row in registry_rows
+                if isinstance(row, dict) and str(row.get("engine_id") or "")
             }
         )
         return {
@@ -456,21 +478,15 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
             "known_ids_sample": known[:20],
         }
 
-    cell = next(
-        (
-            row
-            for row in (registry.get("engines") or []) + (registry.get("excluded") or [])
-            if isinstance(row, dict) and str(row.get("engine_id")) == wanted
-        ),
-        {},
-    )
+    cell = cell or {}
     engine = {
             "engine_id": wanted,
             "owner_program": cell.get("owner_program"),
             "producer": cell.get("producer"),
-            "output_class": cell.get("output_class") or outputs[0].get("output_class"),
+            "output_class": cell.get("output_class"),
             "output_class_rationale": cell.get("output_class_reason"),
-            "authority": cell.get("authority") or outputs[0].get("authority"),
+            "authority": cell.get("authority")
+            or (outputs[0].get("authority") if outputs else None),
             "ledger": cell.get("ledger"),
             "ledger_evidence": cell.get("ledger_evidence"),
             "graded_by_design": cell.get("graded_by_design"),
