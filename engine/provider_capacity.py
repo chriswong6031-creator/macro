@@ -23,7 +23,7 @@ SCHEMA = "mastermind.provider_capacity.v1"
 PRODUCER_REPOSITORY = "mastermindx-market-intelligence/macro"
 PRODUCER_PROGRAM = "shared-ai-provider-control"
 IMPLEMENTATION_ID = "provider-capacity-v1"
-IMPLEMENTATION_VERSION = 1
+IMPLEMENTATION_VERSION = 2
 HOST_REF = "local-unbound"
 
 HEALTH_FRESHNESS_SECONDS = 10 * 60
@@ -57,6 +57,7 @@ class SlotDefinition:
 
 
 SUPPORTED_SLOTS = (
+    SlotDefinition("alibaba_subscription", "alibaba", "subscription", "unconfigured", "unconfigured", "unconfigured"),
     SlotDefinition("claude_code_oauth", "claude", "subscription", "oauth", "api", "oauth"),
     *(
         SlotDefinition(
@@ -72,8 +73,21 @@ SUPPORTED_SLOTS = (
     SlotDefinition("codex_account", "codex", "subscription", "attached_login", "native_cli", "codex"),
     SlotDefinition("codex_account_2", "codex", "subscription", "attached_login", "native_cli", "codex"),
     SlotDefinition("codex_account_3", "codex", "subscription", "attached_login", "native_cli", "codex"),
+    SlotDefinition("cursor_subscription", "cursor", "subscription", "unconfigured", "unconfigured", "unconfigured"),
     SlotDefinition("deepseek_api_key", "deepseek", "metered_api", "api_key", "api", "deepseek"),
+    SlotDefinition("glm_subscription", "glm", "subscription", "unconfigured", "unconfigured", "unconfigured"),
+    SlotDefinition("grok_subscription", "grok", "subscription", "unconfigured", "unconfigured", "unconfigured"),
+    SlotDefinition("openrouter_api_key", "openrouter", "metered_api", "unconfigured", "unconfigured", "unconfigured"),
 )
+
+UNCONFIGURED_SLOT_IDS = frozenset({
+    "alibaba_subscription",
+    "cursor_subscription",
+    "glm_subscription",
+    "grok_subscription",
+    "openrouter_api_key",
+})
+NO_QUOTA_SLOT_IDS = frozenset({"deepseek_api_key", *UNCONFIGURED_SLOT_IDS})
 
 DEGRADED_CODES = {
     "PRODUCER_SOURCE_UNGROUNDED",
@@ -81,6 +95,7 @@ DEGRADED_CODES = {
     "PROVIDER_ENABLEMENT_UNKNOWN",
     "PROVIDER_COOLING_UNKNOWN",
     "PROVIDER_BUDGET_UNKNOWN",
+    "PROVIDER_CONFIGURATION_UNCONFIGURED",
     "PROVIDER_HEALTH_UNKNOWN",
     "PROVIDER_INVENTORY_UNKNOWN",
     "PROVIDER_OUTCOME_UNKNOWN",
@@ -373,6 +388,27 @@ def _unknown_quota(horizon: str, duration_seconds: int) -> dict[str, Any]:
     }
 
 
+def _unconfigured_observation(definition: SlotDefinition) -> dict[str, Any]:
+    if definition.capability_id not in UNCONFIGURED_SLOT_IDS:
+        raise ProviderCapacityError("SLOT_IS_CONFIGURED")
+    return {
+        "capability_id": definition.capability_id,
+        "present": False,
+        "enabled": False,
+        "health": _unknown_health(),
+        "cooling": _unknown_cooling(),
+        "quota_horizons": [],
+        "last_outcome": {"class": "unknown", "observed_at": None},
+        "degraded_codes": [
+            "PROVIDER_BUDGET_UNKNOWN",
+            "PROVIDER_CONFIGURATION_UNCONFIGURED",
+            "PROVIDER_COOLING_UNKNOWN",
+            "PROVIDER_HEALTH_UNKNOWN",
+            "PROVIDER_OUTCOME_UNKNOWN",
+        ],
+    }
+
+
 def _freshness(observed_at: str, stale_after: str, generated_at: datetime) -> str:
     observed = _parse_time(observed_at)
     stale = _parse_time(stale_after)
@@ -520,7 +556,7 @@ def _quota_from_sources(
     budget_config: Mapping[str, Any],
     generated_at: datetime,
 ) -> tuple[list[dict[str, Any]], list[str]]:
-    if definition.provider == "deepseek":
+    if definition.capability_id in NO_QUOTA_SLOT_IDS:
         return [], ["PROVIDER_BUDGET_UNKNOWN"]
 
     five = _unknown_quota("five_hour", 5 * 3600)
@@ -673,6 +709,9 @@ def collect_current_observations(
     }
     observations: list[dict[str, Any]] = []
     for definition in SUPPORTED_SLOTS:
+        if definition.capability_id in UNCONFIGURED_SLOT_IDS:
+            observations.append(_unconfigured_observation(definition))
+            continue
         if definition.provider == "codex":
             source = dict(codex_by_id.get(definition.capability_id, {}))
             source["enabled"] = codex_source.get("enabled")
@@ -989,27 +1028,30 @@ def _build_snapshot_from_observations(
     for definition in SUPPORTED_SLOTS:
         observation = by_id.get(definition.capability_id)
         if observation is None:
-            observation = {
-                "capability_id": definition.capability_id,
-                "present": None,
-                "enabled": None,
-                "health": _unknown_health(),
-                "cooling": _unknown_cooling(),
-                "quota_horizons": [] if definition.provider == "deepseek" else [
-                    _unknown_quota("five_hour", 5 * 3600),
-                    _unknown_quota("weekly", 7 * 24 * 3600),
-                ],
-                "last_outcome": {"class": "unknown", "observed_at": None},
-                "degraded_codes": [
-                    "PROVIDER_INVENTORY_UNKNOWN",
-                    "PROVIDER_PRESENCE_UNKNOWN",
-                    "PROVIDER_ENABLEMENT_UNKNOWN",
-                    "PROVIDER_COOLING_UNKNOWN",
-                    "PROVIDER_HEALTH_UNKNOWN",
-                    "PROVIDER_BUDGET_UNKNOWN",
-                    "PROVIDER_OUTCOME_UNKNOWN",
-                ],
-            }
+            if definition.capability_id in UNCONFIGURED_SLOT_IDS:
+                observation = _unconfigured_observation(definition)
+            else:
+                observation = {
+                    "capability_id": definition.capability_id,
+                    "present": None,
+                    "enabled": None,
+                    "health": _unknown_health(),
+                    "cooling": _unknown_cooling(),
+                    "quota_horizons": [] if definition.capability_id in NO_QUOTA_SLOT_IDS else [
+                        _unknown_quota("five_hour", 5 * 3600),
+                        _unknown_quota("weekly", 7 * 24 * 3600),
+                    ],
+                    "last_outcome": {"class": "unknown", "observed_at": None},
+                    "degraded_codes": [
+                        "PROVIDER_INVENTORY_UNKNOWN",
+                        "PROVIDER_PRESENCE_UNKNOWN",
+                        "PROVIDER_ENABLEMENT_UNKNOWN",
+                        "PROVIDER_COOLING_UNKNOWN",
+                        "PROVIDER_HEALTH_UNKNOWN",
+                        "PROVIDER_BUDGET_UNKNOWN",
+                        "PROVIDER_OUTCOME_UNKNOWN",
+                    ],
+                }
         slot, slot_degraded = _normalize_slot(definition, observation, now)
         slots.append(slot)
         degraded_rows.extend(slot_degraded)
@@ -1168,14 +1210,25 @@ def validate_snapshot(document: Mapping[str, Any], *, check_hash: bool = True) -
         ]
         if quotas != sorted(quotas, key=lambda row: (_HORIZON_ORDER[row["horizon"]], row["metric"])):
             raise ProviderCapacityError("QUOTA_ORDER_INVALID")
-        expected_quota_ids = [] if definition.provider == "deepseek" else [
+        expected_quota_ids = [] if definition.capability_id in NO_QUOTA_SLOT_IDS else [
             ("five_hour", "provider_allocation"),
             ("weekly", "provider_allocation"),
         ]
         if [(row["horizon"], row["metric"]) for row in quotas] != expected_quota_ids:
             raise ProviderCapacityError("QUOTA_INVENTORY_INVALID")
         outcome = _normalize_outcome(slot["last_outcome"])
+        if definition.capability_id in UNCONFIGURED_SLOT_IDS and (
+            slot["present"] is not False
+            or slot["enabled"] is not False
+            or health != _unknown_health()
+            or cooling != _unknown_cooling()
+            or quotas
+            or outcome != {"class": "unknown", "observed_at": None}
+        ):
+            raise ProviderCapacityError("UNCONFIGURED_SLOT_STATE_INVALID")
         required_degradations: list[str] = []
+        if definition.capability_id in UNCONFIGURED_SLOT_IDS:
+            required_degradations.append("PROVIDER_CONFIGURATION_UNCONFIGURED")
         if slot["present"] is None:
             required_degradations.append("PROVIDER_PRESENCE_UNKNOWN")
         if slot["enabled"] is None:
