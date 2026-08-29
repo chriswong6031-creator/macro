@@ -261,40 +261,47 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
   transition: .15s ease;
 }
 /* Breadth measure — achromatic in BOTH themes (theme-parity-tp1-canada-
-   20260828-sol-001 R2; bounded gauge R3-02). A reserved hue may not carry
-   magnitude, so the measure reads from the achromatic --muted/--line family
-   rather than the reserved --link hue. R2's inset ::after alone was still
-   an UNBOUNDED row-width fill (width: var(--breadth); max-width: calc(100%
-   - 24px)) — on a ~1300px panel that inset is only ~24px, so a 100%-count
-   row still rendered as a near-full-width rule, not an instrument. This is
-   a BOUNDED GAUGE instead: a fixed-length TRACK (::before, 100 gauge units
-   wide) establishes the scale's visible end, and the FILL (::after) is
-   `var(--breadth) * --mx-breadth-unit` gauge units wide, so a 100 value
-   fills exactly to the track's terminus and stops — legible as "full",
-   never mistaken for a row divider. Both pseudo-elements sit at the same
-   inset (bottom: 6px, left: 0), clear of the row's own border-top boundary.
-   Both are scoped to `.ca-v36-lead-row.ca-v36-has-breadth` — the marker
-   class the composer emits ONLY when a row carries a measured --breadth —
-   so an unknown-membership row (no marker class) renders NEITHER track nor
-   fill, rather than an empty track implying a measured-but-zero group.
+   20260828-sol-001 R2; bounded gauge R3-02; visibly-bounded + row-anchored
+   R3). A reserved hue may not carry magnitude, so the measure reads from
+   the achromatic --muted family rather than the reserved --link hue. R3-02's
+   TRACK/FILL pair was the right shape but the same 3px height + coincident
+   inset made a full-value fill visually swallow its track — two adversarial
+   RIG passes measured it as an unbounded proportional bar with no visible
+   end. The TRACK (::before) is now taller (5px) AND wider (+6px) than the
+   FILL (::after, 3px) so a 100%-value fill still leaves visible track
+   shoulders on every side — that surviving remainder IS the "end geometry",
+   the legible proof the instrument is bounded. Both anchor off the row's
+   14px content edge (left: 14px track / 17px fill, matching the row's own
+   `padding: 10px 14px`) instead of the bare row edge (left: 0), so the
+   gauge reads as a sub-instrument of the row's content column rather than
+   an underline of the ticker line above it. The FILL also carries an
+   explicit `max-width: calc(100 * var(--mx-breadth-unit) * 1px)` clamp —
+   redundant with the composer's own 0-100 breadth range, but a deliberate
+   second line of defense: an out-of-range --breadth value can never
+   overrun the track's own terminus. Both are scoped to
+   `.ca-v36-lead-row.ca-v36-has-breadth` — the marker class the composer
+   emits ONLY when a row carries a measured --breadth — so an
+   unknown-membership row (no marker class) renders NEITHER track nor fill,
+   rather than an empty track implying a measured-but-zero group.
    --mx-breadth-unit is deliberately UNITLESS (a bare gauge-px scalar, not a
    `2px` literal) — scripts/check_design_system.py's literal-custom-property
    rule blocks any custom property whose declared value is a literal
    quantity-with-unit, so the `px` is applied once, inline, at each of the
-   two calc() use sites below instead of being baked into the property
+   calc() use sites below instead of being baked into the property
    declaration; the scale still lives in exactly one place to override. */
 .mx-stockdash--ca .ca-v36-lead-row { --mx-breadth-unit: 2; }
 .mx-stockdash--ca .ca-v36-lead-row.ca-v36-has-breadth::before {
-  content: ""; position: absolute; left: 0; bottom: 6px; height: 3px;
-  width: calc(100 * var(--mx-breadth-unit) * 1px);
+  content: ""; position: absolute; left: 14px; bottom: 5px; height: 5px;
+  width: calc(100 * var(--mx-breadth-unit) * 1px + 6px);
   border-radius: var(--r-pill, 999px);
-  background: color-mix(in srgb, var(--line) 55%, transparent);
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
 }
 .mx-stockdash--ca .ca-v36-lead-row.ca-v36-has-breadth::after {
-  content: ""; position: absolute; left: 0; bottom: 6px; height: 3px;
+  content: ""; position: absolute; left: 17px; bottom: 6px; height: 3px;
   width: calc(var(--breadth, 0) * var(--mx-breadth-unit) * 1px);
+  max-width: calc(100 * var(--mx-breadth-unit) * 1px);
   border-radius: var(--r-pill, 999px);
-  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  background: color-mix(in srgb, var(--muted) 85%, transparent);
 }
 .mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled) { background: color-mix(in srgb, var(--link) 6%, transparent); }
 /* Active-filter marker — dark idiom, same rationale as .ca-v36-an-row above
@@ -506,6 +513,26 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
    tabular figures; every other column — including Name — is left-aligned
    text (theme-parity-tp1-canada-20260828-sol-001 R3). */
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td.num { text-align: right; }
+/* Numeric HEADER alignment (R3 repair): modalPane() (site/canada-stock-v36.js)
+   emits every <th> unclassed — there is no th.num to key off, and the
+   composer is frozen — so the header row instead right-aligned every column,
+   floating "Rank"/the trailing count-title header away from the right-aligned
+   digits below them. modalRows()'s <td class="num"> cells are always the
+   FIRST column when the composer's rk flag is true (Theme #N rank) and
+   always the LAST column (the count), regardless of rk — the table has 5
+   columns when rk is true (Rank/Name/Action/Leaders/Count) and 4 when it is
+   false (Name/Action/Leaders/Count), confirmed against modalRows()'s
+   template-literal column order and modalPane()'s matching <thead> order.
+   `th:last-child` always matches the trailing (count) header in both column
+   counts. `th:first-child:nth-last-child(5)` matches a first-child ONLY when
+   it is simultaneously the 5th-from-last child — i.e. only when the row has
+   exactly 5 columns (rk true) — which is exactly when the first column is
+   the numeric Rank header; at 4 columns (rk false) no th is 5th-from-last,
+   so the selector matches nothing and the Name header stays left-aligned. */
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th:last-child,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th:first-child:nth-last-child(5) {
+  text-align: right;
+}
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
 
@@ -639,8 +666,14 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.avoid {
 }
 
 /* Selected row: --link rail + the existing low-alpha tint. Rail is an inset
-   shadow, not a border, so selecting a row never reflows the grid. */
+   shadow, not a border, so selecting a row never reflows the grid. The base
+   (dark) .is-active rule above carries a 12% --link background wash, which
+   this selector used to inherit unchanged — 12% is a dark-plane intensity;
+   on white material it reads well above the light doctrine's ≤8% highlight-
+   row ceiling. Light gets its own lighter 7% wash instead (R3 repair); dark
+   keeps 12%. */
 html[data-theme=light] .mx-stockdash--ca .ca-v36-an-row.is-active {
+  background: color-mix(in srgb, var(--link) 7%, transparent);
   box-shadow: inset 2px 0 0 var(--link);
 }
 
@@ -724,7 +757,10 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-filter {
    at the right). Selected state gets the 3px --link rail + low-alpha tint. */
 
 html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-col-h { background: var(--bg); }
+/* Same 12%→7% light-ceiling repair as .ca-v36-an-row.is-active above (R3):
+   dark's 12% --link wash stays too strong for a white row. */
 html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row.is-active {
+  background: color-mix(in srgb, var(--link) 7%, transparent);
   box-shadow: inset 3px 0 0 var(--link);
 }
 /* Breadth measure is a shared both-theme treatment (see the BASE bounded-

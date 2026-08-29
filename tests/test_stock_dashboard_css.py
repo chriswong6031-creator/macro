@@ -544,22 +544,59 @@ def test_modal_table_name_column_left_numeric_columns_right():
     )
 
 
+def test_modal_table_numeric_headers_align_over_their_num_columns():
+    """theme-parity-tp1-canada-20260828-sol-001 R3 repair: modalPane()
+    (site/canada-stock-v36.js) emits every <th> unclassed — there is no
+    th.num to key off, and the composer is frozen (out of scope for a CSS
+    packet) — so previously every header stayed left-aligned while the two
+    numeric columns' <td class="num"> cells (modalRows()) were right-
+    aligned, floating the Rank/count-title headers away from their digits.
+
+    modalRows()'s td.num cells are always the FIRST column when the
+    composer's `rk` flag is true (5 total columns: Rank/Name/Action/
+    Leaders/Count) and always the LAST column regardless of rk (4 total
+    columns when rk is false: Name/Action/Leaders/Count) — confirmed
+    directly against modalRows()'s and modalPane()'s matching template-
+    literal column order in site/canada-stock-v36.js. The CSS fix is
+    purely structural/positional (no composer class needed):
+    `th:last-child` always matches the trailing (Count) header regardless
+    of column count, and `th:first-child:nth-last-child(5)` matches a
+    first-child only when the row has exactly 5 total children (rk true) —
+    exactly the case where the first column is the numeric Rank header."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    normalized = re.sub(r"\s+", " ", text)
+    assert re.search(
+        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+th:last-child\s*,"
+        r"\s*\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+"
+        r"th:first-child:nth-last-child\(5\)\s*\{[^}]*text-align:\s*right",
+        normalized,
+    ), (
+        "the sibling-scoped .ca-v36-modal-table th:last-child / "
+        "th:first-child:nth-last-child(5) rule must set text-align: right "
+        "— th:last-child covers the trailing Count header at any column "
+        "count, and th:first-child:nth-last-child(5) covers the leading "
+        "Rank header only when the row has 5 columns (rk true)"
+    )
+
+
 def test_breadth_measure_is_achromatic_not_the_link_hue():
-    """theme-parity-tp1-canada-20260828-sol-001 R2 (Sol REVISE ruling): a
-    reserved hue (--link) may not carry magnitude. The breadth gauge's
-    track (::before) and fill (::after) on .ca-v36-lead-row must both read
-    from the achromatic --line/--muted family in BOTH themes, with
-    comparable semantic authority — no light-only override may reintroduce
-    --link, and dark must not either."""
+    """theme-parity-tp1-canada-20260828-sol-001 R2 (Sol REVISE ruling); R3
+    moved both track and fill onto the single --muted family (see
+    test_breadth_measure_is_a_bounded_gauge_with_a_visible_track for the
+    full R3 geometry rationale). A reserved hue (--link) may not carry
+    magnitude. The breadth gauge's track (::before) and fill (::after) on
+    .ca-v36-lead-row must both read from the achromatic --muted family in
+    BOTH themes, with comparable semantic authority — no light-only
+    override may reintroduce --link, and dark must not either."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
     assert re.search(
         r"\.ca-v36-lead-row\.ca-v36-has-breadth::after\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
         text,
     ), ".ca-v36-lead-row...::after (breadth fill) no longer reads the achromatic --muted token"
     assert re.search(
-        r"\.ca-v36-lead-row\.ca-v36-has-breadth::before\s*\{[^}]*color-mix\(in srgb,\s*var\(--line\)",
+        r"\.ca-v36-lead-row\.ca-v36-has-breadth::before\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
         text,
-    ), ".ca-v36-lead-row...::before (breadth track) no longer reads the achromatic --line token"
+    ), ".ca-v36-lead-row...::before (breadth track) no longer reads the achromatic --muted token"
     for match in re.finditer(r"\.ca-v36-lead-row[^{]*::?(before|after)\s*\{([^}]*)\}", text):
         assert "--link" not in match.group(2), (
             f".ca-v36-lead-row::{match.group(1)} reintroduced var(--link) — "
@@ -568,20 +605,27 @@ def test_breadth_measure_is_achromatic_not_the_link_hue():
 
 
 def test_breadth_measure_is_a_bounded_gauge_with_a_visible_track():
-    """theme-parity-tp1-canada-20260828-sol-001 R3-02 (Sol COND-R3-02): R3's
-    inset ::after-only fill was still an UNBOUNDED row-width geometry
-    (`width: var(--breadth); max-width: calc(100% - 24px)`) — on a ~1300px
-    panel that inset is only ~24px, so a 100%-count row still rendered as a
-    near-full-width rule, not an instrument. The fix reintroduces a ::before
-    but as a fixed-length, bounded GAUGE TRACK (not the old full-row-width
-    divider): both track and fill are scaled by one shared
-    --mx-breadth-unit custom property, so the track's width is a fixed
-    `100 * --mx-breadth-unit` and the fill's width is
-    `var(--breadth) * --mx-breadth-unit` — a 100 value fills exactly to the
-    track's own terminus and stops, never overflowing the row. Both
-    pseudo-elements are scoped to the `.ca-v36-has-breadth` marker class the
-    composer emits only for rows that carry a measured --breadth, so an
-    unknown-membership row renders neither track nor fill."""
+    """theme-parity-tp1-canada-20260828-sol-001 R3-02 (Sol COND-R3-02) +
+    R3 visibly-bounded/row-anchored repair (two adversarial RIG passes
+    against the R3-02 head): R3-02's TRACK/FILL pair shared one 3px height
+    and one coincident inset, so a 100%-value fill visually swallowed its
+    own track — a critic measured a leadership bar at 355px (27% of the
+    row), the old UNBOUNDED percentage geometry the code can no longer
+    literally draw, but which a same-height/same-inset full fill reads as
+    indistinguishably from. The fix makes the TRACK strictly taller (5px)
+    AND wider (+6px) than the FILL (3px) so a full-value fill always leaves
+    visible track shoulders on every side — the surviving remainder IS the
+    checkable "end geometry". Both anchor off the row's 14px content edge
+    (track left: 14px, fill left: 17px — matching the row's own
+    `padding: 10px 14px`) instead of the bare row edge (left: 0), so the
+    gauge reads as anchored to the row's content column rather than as an
+    underline of the ticker line above it. The fill also carries an
+    explicit `max-width` clamp to the track's own 100-unit terminus, a
+    second line of defense against an out-of-range --breadth overrunning
+    the track. Both pseudo-elements stay scoped to the `.ca-v36-has-breadth`
+    marker class the composer emits only for rows that carry a measured
+    --breadth, so an unknown-membership row renders neither track nor
+    fill."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
     # --mx-breadth-unit is deliberately UNITLESS (a bare scalar, not a `2px`
     # literal) — check_design_system.py's literal-custom-property rule blocks
@@ -610,15 +654,27 @@ def test_breadth_measure_is_a_bounded_gauge_with_a_visible_track():
     )
     before_body = before_match.group(1)
     assert re.search(
-        r"width:\s*calc\(\s*100\s*\*\s*var\(--mx-breadth-unit\)\s*\*\s*1px\s*\)",
+        r"width:\s*calc\(\s*100\s*\*\s*var\(--mx-breadth-unit\)\s*\*\s*1px\s*\+\s*6px\s*\)",
         before_body,
     ), (
-        ".ca-v36-lead-row...::before must be a fixed 100-unit track "
-        "(width: calc(100 * var(--mx-breadth-unit) * 1px))"
+        ".ca-v36-lead-row...::before must be a fixed 100-unit track, 6px "
+        "wider than the fill's own 100-unit span "
+        "(width: calc(100 * var(--mx-breadth-unit) * 1px + 6px))"
     )
     assert re.search(r"border-radius:\s*var\(--r-pill", before_body), (
         ".ca-v36-lead-row...::before (track) must carry a rounded "
         "(var(--r-pill)) terminus"
+    )
+    assert "left: 14px" in before_body, (
+        ".ca-v36-lead-row...::before must anchor to the row's 14px content "
+        "edge (left: 14px), not the bare row edge (left: 0) — the previous "
+        "left: 0 anchoring is what made the gauge read as an underline of "
+        "the ticker line above it"
+    )
+    assert "height: 5px" in before_body, (
+        ".ca-v36-lead-row...::before (track) must be taller (5px) than the "
+        "fill (3px) so a full-value fill still leaves a visible track "
+        "shoulder above/below"
     )
     after_match = re.search(
         r"\.ca-v36-lead-row\.ca-v36-has-breadth::after\s*\{([^}]*)\}", text
@@ -634,13 +690,36 @@ def test_breadth_measure_is_a_bounded_gauge_with_a_visible_track():
         "fill, not a bare percentage — and fall back to 0 when the composer "
         "omits --breadth (unknown-membership rows get no meter)"
     )
+    assert re.search(
+        r"max-width:\s*calc\(\s*100\s*\*\s*var\(--mx-breadth-unit\)\s*\*\s*1px\s*\)",
+        after_body,
+    ), (
+        ".ca-v36-lead-row...::after (fill) must clamp to "
+        "max-width: calc(100 * var(--mx-breadth-unit) * 1px) — a second "
+        "line of defense so an out-of-range --breadth can never overrun "
+        "the track's own terminus"
+    )
     assert re.search(r"border-radius:\s*var\(--r-pill", after_body), (
         ".ca-v36-lead-row...::after (fill) must carry a rounded "
         "(var(--r-pill)) terminus"
     )
-    assert "bottom: 6px" in before_body and "bottom: 6px" in after_body, (
-        "track and fill must both sit clear of the row's own border-top "
-        "boundary (bottom: 6px), for boundary separation"
+    assert "left: 17px" in after_body, (
+        ".ca-v36-lead-row...::after must anchor to the row's content edge "
+        "(left: 17px, 3px inset of the track's own 14px so the fill nests "
+        "inside the track's visible shoulder), not the bare row edge"
+    )
+    assert "height: 3px" in after_body, (
+        ".ca-v36-lead-row...::after (fill) must stay shorter (3px) than "
+        "the track (5px) — the height delta is what makes the track's "
+        "shoulder visible at a full-value fill"
+    )
+    assert "bottom: 5px" in before_body, (
+        "the track must sit clear of the row's own border-top boundary "
+        "(bottom: 5px)"
+    )
+    assert "bottom: 6px" in after_body, (
+        "the fill must sit clear of the row's own border-top boundary "
+        "(bottom: 6px)"
     )
     # Bare (unscoped) .ca-v36-lead-row::before/::after must not exist —
     # both pseudo-elements are scoped to the has-breadth marker class so an
@@ -703,6 +782,51 @@ def test_dark_active_filter_rows_get_a_rail_not_only_a_tint():
             r"box-shadow:\s*inset\s*" + rail_px + r"\s+0\s+0\s+var\(--ink-link,\s*var\(--link\)\)",
             body,
         ), f"{selector!r} must carry an inset {rail_px} link-ink rail"
+
+
+def test_light_active_filter_rows_stay_under_the_8pct_highlight_ceiling():
+    """theme-parity-tp1-canada-20260828-sol-001 R3 repair: the base (dark)
+    .is-active rule for both the Act-Now row family and the Leadership row
+    family carries a 12% --link background wash. Before this repair,
+    html[data-theme=light] only added a box-shadow rail and never
+    overrode that background, so the light plane inherited the same 12%
+    tint — above the light-doctrine highlight-row ceiling of 8%. Light
+    must now declare its OWN background at <=8% (7% chosen), and it must
+    differ from dark's 12%, for both row families, under
+    html[data-theme=light]."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    light_text = text.split("html[data-theme=light]", 1)[1]
+    light_text = "html[data-theme=light]" + light_text
+    for selector in (
+        r"\.mx-stockdash--ca\s+\.ca-v36-an-row\.is-active",
+        r"\.mx-stockdash--ca\s+\.ca-v36-lead-row\.is-active",
+    ):
+        match = re.search(
+            r"html\[data-theme=light\]\s+" + selector + r"\s*\{([^}]*)\}", light_text
+        )
+        assert match, (
+            f"html[data-theme=light] {selector!r} rule is missing — light "
+            "must declare its own .is-active background, not inherit dark's"
+        )
+        body = match.group(1)
+        pct_match = re.search(
+            r"background:\s*color-mix\(in srgb,\s*var\(--link\)\s*([0-9.]+)%",
+            body,
+        )
+        assert pct_match, (
+            f"html[data-theme=light] {selector!r} must set its own "
+            "background: color-mix(in srgb, var(--link) N%, transparent) — "
+            "an override, not an inherited dark value"
+        )
+        pct = float(pct_match.group(1))
+        assert pct <= 8, (
+            f"html[data-theme=light] {selector!r} background is {pct}% — "
+            "the light highlight-row doctrine ceiling is <=8%"
+        )
+        assert pct < 12, (
+            f"html[data-theme=light] {selector!r} background ({pct}%) must "
+            "differ from (be lighter than) dark's 12% wash"
+        )
 
 
 def test_stylesheet_is_token_clean():
