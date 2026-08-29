@@ -45,6 +45,7 @@ const cases = JSON.parse(process.argv[2]);
 const out = cases.map(c => ({{
   classes: c.statuses.map(iosEvidenceStatusCls),
   bands: iosNormalizeCeoBands(c.bands),
+  cell: iosEvidenceCell(c.engine),
   detail: iosEvidenceDetailCard(c.engine),
 }}));
 console.log(JSON.stringify(out));
@@ -144,3 +145,26 @@ def test_detail_card_renders_lawful_evidence_without_a_score():
         assert visible in html
     assert "evidence_score" not in html
     assert "Evidence score" not in html
+
+
+def test_noncanonical_detail_renders_registry_gap_not_an_evidence_disposition():
+    rendered = _run(
+        [
+            {
+                "statuses": [],
+                "bands": [],
+                "engine": {
+                    "canonical_t1": False,
+                    "evidence_status": None,
+                    "evidence_reason_codes": ["not_canonical_t1"],
+                },
+            }
+        ]
+    )[0]
+    html = rendered["detail"]
+
+    assert "Registry gap" in html
+    assert "No T1 evidence disposition" in html
+    assert "Accruing" not in html
+    assert "Registry gap" in rendered["cell"]
+    assert "Accruing" not in rendered["cell"]

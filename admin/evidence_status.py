@@ -284,7 +284,11 @@ def derive_evidence_status(
     if immature and not mixed_basis:
         reasons.append("insufficient_maturity")
 
-    if isinstance(provider, Mapping) and provider.get("kind") == "qledger":
+    if (
+        isinstance(provider, Mapping)
+        and provider.get("kind") == "qledger"
+        and not provider_blocked
+    ):
         binding = str(provider.get("binding") or "")
         if binding.startswith("adapter:") and not isinstance(clock_start, Mapping):
             reasons.append("evidence_clock_not_started")
@@ -339,6 +343,8 @@ def derive_evidence_status(
         "family": provider.get("family") if isinstance(provider, Mapping) else None,
         "read_status": provider_read or "ok",
     }
+    if isinstance(provider, Mapping) and provider.get("error"):
+        provider_summary["error"] = str(provider.get("error"))
 
     return {
         "evidence_status": status,

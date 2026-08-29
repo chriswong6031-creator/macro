@@ -4049,6 +4049,13 @@ function iosEvidenceStatusPill(status) {
   const word = status || "not determined";
   return `<span class="statpill ${iosEvidenceStatusCls(status)}">${esc(word)}</span>`;
 }
+function iosEvidenceCell(engine) {
+  const e = engine || {};
+  if (e.canonical_t1 === false) {
+    return `<span class="statpill s-mut">Registry gap</span><div class="sub ios-evidence-provider">No T1 evidence disposition</div>`;
+  }
+  return `${iosEvidenceStatusPill(e.evidence_status)}<div class="sub ios-evidence-provider">${esc((e.evidence_provider || {}).binding || (e.evidence_provider || {}).kind || "owner-native")}</div>`;
+}
 function iosNormalizeCeoBands(bands) {
   const byStatus = {};
   (Array.isArray(bands) ? bands : []).forEach(row => {
@@ -4069,6 +4076,12 @@ function iosEvidenceJson(value) {
 }
 function iosEvidenceDetailCard(e) {
   e = e || {};
+  if (e.canonical_t1 === false) {
+    return `<div class="card ios-evidence-card">
+      <div class="ios-evidence-head"><h3>Evidence disposition</h3><span class="spacer"></span><span class="statpill s-mut">Registry gap</span></div>
+      <div class="sub ios-evidence-law">No T1 evidence disposition. This noncanonical output group remains visible for operational census and repair only.</div>
+    </div>`;
+  }
   const reasons = (e.evidence_reason_codes || []).map(code =>
     `<span class="statpill s-mut mono">${esc(code)}</span>`).join(" ") || `<span class="muted">none</span>`;
   const refs = (e.evidence_refs || []).map(ref =>
@@ -4137,7 +4150,7 @@ function iosRenderTable() {
       <th>Engine</th><th>Evidence</th><th>Program</th><th>Output class</th><th>Authority</th><th class="r">Outputs</th><th>Worst state</th></tr></thead><tbody>
     ${slice.map(r => `<tr>
         <td><a href="#/engine/${encodeURIComponent(r.engine_id)}" class="mono" style="word-break:break-all">${esc(r.engine_id)}</a></td>
-        <td>${iosEvidenceStatusPill(r.evidence_status)}<div class="sub ios-evidence-provider">${esc((r.evidence_provider || {}).binding || (r.evidence_provider || {}).kind || "owner-native")}</div></td>
+        <td>${iosEvidenceCell(r)}</td>
         <td class="sub">${esc(r.owner_program || "—")}</td>
         <td>${r.output_class ? `<b>${esc(r.output_class)}</b>` : `<span class="muted" title="no adjudicated class in the T1 overlay — never guessed here">—</span>`}</td>
         <td class="sub">${esc(r.authority || "—")}</td>

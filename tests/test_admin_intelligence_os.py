@@ -672,6 +672,48 @@ def test_a_bound_but_unreadable_qledger_store_degrades_instead_of_faking_empty(t
     assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
 
 
+def test_malformed_qledger_claims_degrade_instead_of_faking_an_empty_store(tmp_path):
+    """A compatibility reader skipping corrupt JSONL must not become zero evidence."""
+    root = qledger_adapter_root(tmp_path)
+    (root / "data" / "qledger" / "claims.jsonl").write_text(
+        "{not-json}\n", encoding="utf-8"
+    )
+
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "unparseable" in row["evidence_provider"]["error"]
+    assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
+
+
+def test_corrupt_existing_evidence_clock_degrades_instead_of_looking_unstarted(tmp_path):
+    """An existing unreadable write-once receipt is blindness, not an absent clock."""
+    root = qledger_adapter_root(tmp_path)
+    clock_dir = root / "data" / "qledger" / "evidence_clock_start"
+    clock_dir.mkdir(parents=True)
+    (clock_dir / "stock_desk.json").write_text("{not-json}", encoding="utf-8")
+
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "unreadable"
+    assert "evidence clock receipt" in row["evidence_provider"]["error"]
+    assert "evidence_clock_not_started" not in row["evidence_reason_codes"]
+
+
+def test_missing_grades_is_a_lawful_empty_accrual_not_provider_blindness(tmp_path):
+    """Before the first grade, absence of the optional grade ledger is an honest zero."""
+    root = qledger_adapter_root(tmp_path)
+    (root / "data" / "qledger" / "grades.jsonl").unlink()
+
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Accruing"
+    assert row["evidence_provider"]["read_status"] == "ok"
+    assert "evidence_provider_unreadable" not in row["evidence_reason_codes"]
+
+
 def test_new_evidence_clock_invalidates_the_in_process_view(tmp_path):
     """The five-minute cache must not hide the first prospective clock receipt."""
     root = qledger_adapter_root(tmp_path)
@@ -701,6 +743,25 @@ def test_new_evidence_clock_invalidates_the_in_process_view(tmp_path):
     assert "qledger-clock:stock_desk:2026-08-29T01:02:03+00:00" in row[
         "evidence_refs"
     ]
+
+
+@pytest.mark.parametrize("changed_rel", ["data/species/registry.json", "engine/a.py"])
+def test_t1_evidence_input_movement_invalidates_the_in_process_view(
+    tmp_path, changed_rel
+):
+    """Owner lifecycle and producer semantics must not remain stale for the cache TTL."""
+    root = one_engine(tmp_path)
+    assert IOS.panel(root=root)["generated"]["cache"] == "miss"
+    assert IOS.panel(root=root)["generated"]["cache"] == "hit"
+
+    changed = root / changed_rel
+    changed.parent.mkdir(parents=True, exist_ok=True)
+    changed.write_text(
+        '{"species": []}\n' if changed.suffix == ".json" else "# producer changed\n",
+        encoding="utf-8",
+    )
+
+    assert IOS.panel(root=root)["generated"]["cache"] == "miss"
 
 
 def test_revised_existing_evidence_clock_invalidates_the_in_process_view(tmp_path):
@@ -803,6 +864,12 @@ def test_artifacts_outside_every_engine_cell_are_surfaced_not_dropped(tmp_path):
     assert panel["census"]["artifacts"] == 2
     ids = {r["engine_id"] for r in panel["engines"]}
     assert IOS.UNREGISTERED_ENGINE_ID in ids
+    orphan = next(
+        row for row in panel["engines"] if row["engine_id"] == IOS.UNREGISTERED_ENGINE_ID
+    )
+    assert orphan["canonical_t1"] is False
+    assert orphan["evidence_status"] is None
+    assert orphan["evidence_reason_codes"] == ["not_canonical_t1"]
     # The legacy table keeps the orphan visible, but the commissioned CEO ordering is
     # explicitly over canonical T1 cells. A registry gap is not a 2nd engine.
     assert panel["census"]["canonical_engines"] == 1
@@ -816,6 +883,9 @@ def test_artifacts_outside_every_engine_cell_are_surfaced_not_dropped(tmp_path):
 
     detail = IOS.engine_detail(IOS.UNREGISTERED_ENGINE_ID, root=root)
     assert detail["ok"] is True
+    assert detail["engine"]["canonical_t1"] is False
+    assert detail["engine"]["evidence_status"] is None
+    assert detail["engine"]["evidence_reason_codes"] == ["not_canonical_t1"]
     assert [o["artifact_id"] for o in detail["outputs"]] == ["orphan"]
 
 

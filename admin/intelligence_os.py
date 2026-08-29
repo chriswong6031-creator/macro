@@ -65,6 +65,9 @@ _ROOT = Path(__file__).resolve().parent.parent
 #: census and the adjudication overlay. Mirrors scripts/build_intelligence_registry.py.
 _SYNAPSE_REL = Path("config") / "synapse.yml"
 _OVERLAY_REL = Path("config") / "intelligence_registry_overlay.yml"
+_QUAL_LADDER_REL = Path("config") / "qual_ladder.yml"
+_SPECIES_REL = Path("data") / "species" / "registry.json"
+_ARTICLE2_REL = Path("scripts") / "check_synapse_reads.py"
 
 # Existing qledger owner stores whose movement changes A1 evidence. These are cache inputs,
 # not a copied store: the payload still comes from the owner read APIs below.
@@ -163,6 +166,73 @@ def _evidence_mtime_key(root: Path) -> tuple[Any, ...]:
     )
 
 
+def _producer_source_mtime_key(root: Path) -> tuple[tuple[str, int | None], ...] | None:
+    """T1 producer-source identities without inventing another engine registry."""
+    try:
+        import yaml  # noqa: PLC0415 — only loaded when the panel is actually derived
+
+        document = yaml.safe_load((root / _SYNAPSE_REL).read_text(encoding="utf-8"))
+        artifacts = document.get("artifacts") if isinstance(document, dict) else None
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError):
+        return None
+    producers = {
+        str(row.get("producer") or "")
+        for row in (artifacts or {}).values()
+        if isinstance(row, dict)
+    }
+    keyed: list[tuple[str, int | None]] = []
+    for producer in sorted(p for p in producers if p):
+        rel = Path(producer)
+        # Placeholder/absolute/traversal tokens remain T1's concern; this cache key
+        # never stats outside the commissioned root.
+        if rel.is_absolute() or ".." in rel.parts:
+            keyed.append((producer, None))
+            continue
+        keyed.append((producer, _mtime_ns(root / rel)))
+    return tuple(keyed)
+
+
+def _t1_evidence_mtime_key(root: Path) -> tuple[Any, ...]:
+    """Every mutable local input that can change T1 evidence semantics."""
+    return (
+        _mtime_ns(root / _QUAL_LADDER_REL),
+        _mtime_ns(root / _SPECIES_REL),
+        _mtime_ns(root / _ARTICLE2_REL),
+        _producer_source_mtime_key(root),
+    )
+
+
+def _jsonl_candidate_count(path: Path) -> tuple[int | None, str | None]:
+    """Count owner-reader candidate lines; parsing remains with the owner API."""
+    if not path.exists():
+        return None, None
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return None, f"{path.name} is unreadable: {type(exc).__name__}: {exc}"
+    return sum(1 for line in lines if line.strip() and not line.lstrip().startswith("#")), None
+
+
+def _read_status_worse(current: str, candidate: str) -> str:
+    rank = {"ok": 0, "partial": 1, "could_not_look": 2, "unreadable": 2, "error": 3}
+    return candidate if rank.get(candidate, 3) > rank.get(current, 3) else current
+
+
+def _valid_clock_receipt(clock: Any, family: str) -> bool:
+    if not isinstance(clock, dict):
+        return False
+    try:
+        horizon = int(clock.get("declared_horizon_d"))
+    except (TypeError, ValueError):
+        return False
+    return (
+        str(clock.get("claim_family") or "") == family
+        and bool(str(clock.get("first_prospective_registration_utc") or "").strip())
+        and horizon > 0
+        and str(clock.get("horizon_unit") or "") in {"trading_days", "calendar_days"}
+    )
+
+
 def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
     """Read existing qledger owners for concretely bound T1 cells; never write.
 
@@ -170,7 +240,7 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
     unreadable qledger store is represented as ``could_not_look`` rather than passed to
     qledger's missing-file-as-empty compatibility reader and mislabeled zero evidence.
     """
-    from engine import qledger_desk_adapter  # noqa: PLC0415
+    from engine import qledger, qledger_desk_adapter  # noqa: PLC0415
 
     adapter_families = qledger_desk_adapter.known_families()
     bindings: dict[str, tuple[str, str]] = {}
@@ -205,23 +275,78 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
             for engine_id, (family, binding) in bindings.items()
         }
 
+    read_status = "ok"
+    read_errors: list[str] = []
+    claims_candidates, claims_error = _jsonl_candidate_count(claims_path)
+    if claims_error:
+        read_status = "unreadable"
+        read_errors.append(claims_error)
+    else:
+        try:
+            claims_rows = qledger.load_claims(root)
+        except Exception as exc:  # noqa: BLE001 — owner read failed; carry blindness
+            read_status = "unreadable"
+            read_errors.append(f"claims owner read failed: {type(exc).__name__}: {exc}")
+        else:
+            if claims_candidates != len(claims_rows):
+                read_status = "partial"
+                read_errors.append(
+                    f"claims.jsonl has {claims_candidates - len(claims_rows)} "
+                    f"unparseable candidate line(s) of {claims_candidates}"
+                )
+
+    grades_path = root / _QLEDGER_GRADES_REL
+    grades_candidates, grades_error = _jsonl_candidate_count(grades_path)
+    if grades_error:
+        read_status = _read_status_worse(read_status, "unreadable")
+        read_errors.append(grades_error)
+    elif grades_candidates is not None:
+        try:
+            grades_rows = qledger.load_grades(root)
+        except Exception as exc:  # noqa: BLE001 — owner read failed; carry blindness
+            read_status = _read_status_worse(read_status, "unreadable")
+            read_errors.append(f"grades owner read failed: {type(exc).__name__}: {exc}")
+        else:
+            if grades_candidates != len(grades_rows):
+                read_status = _read_status_worse(read_status, "partial")
+                read_errors.append(
+                    f"grades.jsonl has {grades_candidates - len(grades_rows)} "
+                    f"unparseable candidate line(s) of {grades_candidates}"
+                )
+
     families = sorted({family for family, _binding in bindings.values()})
     try:
         from engine import qledger_evidence_clock  # noqa: PLC0415
         from scripts.grade_qledger import compute_promotion_readiness  # noqa: PLC0415
 
         readiness = compute_promotion_readiness(root, families=families)
-        return {
-            engine_id: {
+        providers: dict[str, dict] = {}
+        for engine_id, (family, binding) in bindings.items():
+            family_status = read_status
+            family_errors = list(read_errors)
+            clock_start = qledger_evidence_clock.read_start(family, root=root)
+            safe_family = "".join(
+                ch if (ch.isalnum() or ch in "-_") else "_" for ch in family
+            )
+            clock_path = root / _QLEDGER_CLOCK_DIR_REL / f"{safe_family}.json"
+            if clock_path.exists() and not _valid_clock_receipt(clock_start, family):
+                family_status = _read_status_worse(family_status, "unreadable")
+                family_errors.append(
+                    f"evidence clock receipt {clock_path.name} is unreadable or malformed"
+                )
+                clock_start = None
+            provider = {
                 "kind": "qledger",
                 "binding": binding,
                 "family": family,
-                "read_status": "ok",
-                "clock_start": qledger_evidence_clock.read_start(family, root=root),
+                "read_status": family_status,
+                "clock_start": clock_start,
                 "readiness": readiness.get(family) or {},
             }
-            for engine_id, (family, binding) in bindings.items()
-        }
+            if family_errors:
+                provider["error"] = "; ".join(family_errors)
+            providers[engine_id] = provider
+        return providers
     except Exception as exc:  # noqa: BLE001 — admin reads fail open, but name the blind owner
         return {
             engine_id: {
@@ -240,14 +365,15 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
 def _derive(root: Path, force: bool) -> tuple[dict, dict, dict, float, str]:
     """``(view, registry, evidence, seconds, 'hit'|'miss')`` — cache protocol.
 
-    Keyed on the two declared inputs' mtimes as well as the root, so an edit to either
-    is picked up immediately rather than after the TTL. A missing input keys as ``None``
-    and the TTL alone governs — an absent overlay is a legitimate state, not an error.
+    Keyed on T1 identity/semantic inputs and owner evidence receipts as well as the root,
+    so their movement is picked up immediately rather than after the TTL. A missing input
+    keys as ``None``; absence remains a fact for the owner resolver to interpret.
     """
     key = (
         str(root),
         _mtime_ns(root / _SYNAPSE_REL),
         _mtime_ns(root / _OVERLAY_REL),
+        *_t1_evidence_mtime_key(root),
         *_evidence_mtime_key(root),
     )
     with _LOCK:
@@ -300,6 +426,20 @@ def _tally(rows: list[dict], key: str) -> dict[str, int]:
         label = "null" if value is None else str(value)
         counts[label] = counts.get(label, 0) + 1
     return dict(sorted(counts.items()))
+
+
+def _noncanonical_evidence() -> dict[str, Any]:
+    """Explicitly withhold T7/T8 semantics from a registry-gap output group."""
+    return {
+        "evidence_status": None,
+        "evidence_reason_codes": ["not_canonical_t1"],
+        "evidence_refs": [],
+        "evidence_provider": None,
+        "evidence_ruler": None,
+        "evidence_basis": None,
+        "evidence_maturity": None,
+        "evidence_coverage": None,
+    }
 
 
 def worst_state(states) -> str | None:
@@ -371,7 +511,10 @@ def _engine_rows(view: dict, registry: dict, evidence_by_engine: dict) -> list[d
                 # hoisted to a top-level field so the row cannot be drawn without it.
                 "n_blind": counts.get("null", 0),
             }
-        row.update(derive_evidence_status(cell, records, evidence_by_engine.get(eid)))
+        if eid in canonical_ids:
+            row.update(derive_evidence_status(cell, records, evidence_by_engine.get(eid)))
+        else:
+            row.update(_noncanonical_evidence())
         rows.append(row)
     status_rank = {status: rank for rank, status in enumerate(EVIDENCE_STATUS_ORDER)}
     return sorted(
@@ -479,8 +622,13 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
         }
 
     cell = cell or {}
+    canonical_t1 = any(
+        isinstance(row, dict) and str(row.get("engine_id")) == wanted
+        for row in (registry.get("engines") or [])
+    )
     engine = {
             "engine_id": wanted,
+            "canonical_t1": canonical_t1,
             "owner_program": cell.get("owner_program"),
             "producer": cell.get("producer"),
             "output_class": cell.get("output_class"),
@@ -503,9 +651,10 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
             "n_artifacts": len(outputs),
             "worst_state": worst_state(r.get("state") for r in outputs),
         }
-    engine.update(
-        derive_evidence_status(cell, outputs, evidence_by_engine.get(wanted))
-    )
+    if canonical_t1:
+        engine.update(derive_evidence_status(cell, outputs, evidence_by_engine.get(wanted)))
+    else:
+        engine.update(_noncanonical_evidence())
     return {
         "ok": True,
         "engine": engine,
