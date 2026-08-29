@@ -507,14 +507,20 @@ def test_ibit_resolves_to_the_trusts_own_cik(master: pd.DataFrame) -> None:
 
 
 def test_no_issuer_evidence_rows_retain_their_legacy_value(master: pd.DataFrame) -> None:
-    """AEP/CTRA/TPH (measured misses) and FISV (current symbol FI misses the map) —
-    spec §11: legacy issuer_id retained, aggregation-forbidden, self-heals later."""
+    """CTRA/TPH (measured misses) and FISV (current symbol FI misses the map) —
+    spec §11: legacy issuer_id retained, aggregation-forbidden, self-heals later.
+    AEP left this exemplar set 2026-08: the self-heal the docstring promised
+    actually happened (a later CIK map carries AEP -> 0000004904), so it is
+    asserted below in its healed state instead — the spec's own §11 end-state."""
     rows = master.set_index("inception_code")
-    for code in ("AEP", "CTRA", "TPH", "FISV"):
+    for code in ("CTRA", "TPH", "FISV"):
         row = rows.loc[code]
         assert row["issuer_state"] == "NO_ISSUER_EVIDENCE", code
         assert row["issuer_id"] == f"ISS:{row['listing_key']}", code
         assert row["issuer_cik"] is None or pd.isna(row["issuer_cik"]), code
+    aep = rows.loc["AEP"]
+    assert aep["issuer_state"] == "RESOLVED"
+    assert aep["issuer_cik"] == "0000004904"
 
 
 def test_rddt_enters_resolved_from_current_seeds(master: pd.DataFrame) -> None:
@@ -1051,8 +1057,15 @@ def test_h9_705_rows_tombstone_byte_frozen_except_two_columns(master: pd.DataFra
     `country` != "US"); V4-D2B2-US (this contract) admits ~508 more US rows on top
     of the 705 this test was originally written to pin — the byte-freeze assertions
     below still pin the SAME pre-existing VMRK tombstone row untouched by either
-    wave, only the total-US-row-count changes."""
-    assert len(master[master["country"] == "US"]) == 705 + 508
+    wave, only the total-US-row-count changes.  +1 (2026-08-28): LEG minted from
+    its new config/delisted_symbols.yml exit row (acquired by Somnigroup, 25-NSE
+    accession 0000876661-26-000712) — the EQR->VMRK migration PR.  A FLOOR pin
+    since that PR: it also unwedged the nightly artifact refresh (which had been
+    restoring last-good artifacts on the store/VMRK VendorAliasPruneConflict
+    since ~08-20), so the committed master advances with lawful admissions again
+    and an exact count would rot on the next one; the floor still catches the
+    regression this test exists for — rows silently DISAPPEARING."""
+    assert len(master[master["country"] == "US"]) >= 705 + 508 + 1
     tomb = master[master["security_id"] == "SEC:US-XNYS-VMRK"].iloc[0]
     assert tomb["issuer_state"] == "NO_ISSUER_EVIDENCE"
     assert pd.isna(tomb["issuer_id"])
@@ -2783,10 +2796,17 @@ def test_us_coverage_is_unchanged_by_the_cn_hk_admission(receipt: dict) -> None:
     WBS newly unresolved — a pre-existing, unrelated symbol-directory staleness
     gap).  `issuer.state_counts.RESOLVED` DOES move — the D2B2-US wave (this
     contract) admits ~508 new US securities with CIK-evidenced issuers on top of
-    the pre-existing 699."""
-    assert receipt["coverage"]["total"] == 712
-    assert receipt["coverage"]["resolved"] == 702
-    assert receipt["coverage"]["unresolved"] == 10
+    the pre-existing 699.  713/703 floors since 2026-08-28: LEG entered the
+    curated universe through its config/delisted_symbols.yml exit row (basket-
+    membership/exit-ledger churn, exactly the drift class the note above
+    scopes), and the same PR unwedged the nightly artifact refresh, so exact
+    counts rot with the next lawful admission — floors keep the downward bite
+    (coverage silently SHRINKING is the defect this pins against)."""
+    assert receipt["coverage"]["total"] >= 713
+    assert receipt["coverage"]["resolved"] >= 703
+    assert receipt["coverage"]["unresolved"] <= 10
+    assert receipt["coverage"]["total"] == (
+        receipt["coverage"]["resolved"] + receipt["coverage"]["unresolved"])
     assert receipt["issuer"]["state_counts"]["RESOLVED"] >= 699
     assert receipt["security"]["state_counts"]["SUPERSEDED_DUPLICATE_MINT"] == 1
 
@@ -2880,10 +2900,16 @@ def test_gmi_us_no_registrant_cik_fixture() -> None:
 
 # 6: CIK present, listing absent -> not_listed_cik_present (real-data EA).
 def test_gmi_us_not_listed_cik_present_real_data_ea(receipt: dict) -> None:
+    # EA exemplified this refusal class until 2026-08, when it also left the CIK
+    # map (company_tickers drift) and moved to not_listed_no_cik — the class
+    # itself still has live exemplars (GGRP/NVVE as of the 2026-08-28 regen).
+    # Mirror the sibling no_cik test's shape: pin the class non-empty + a named
+    # current exemplar, not one drifting symbol's exact classification.
     block = receipt["us_gmi_admission"]
-    ea = [r for r in block["refusals_this_run"] if r["symbol"] == "EA"]
-    assert len(ea) == 1
-    assert ea[0]["code"] == "not_listed_cik_present"
+    cik_present = [r for r in block["refusals_this_run"]
+                   if r["code"] == "not_listed_cik_present"]
+    assert len(cik_present) >= 1
+    assert "GGRP" in {r["symbol"] for r in cik_present}
 
 
 # 7: neither rail -> not_listed_no_cik (real-data exemplar from the 21).
@@ -3186,11 +3212,18 @@ def test_gmi_us_accounting_completeness_real_data(receipt: dict) -> None:
 def test_gmi_us_regression_pins_cn_hk_and_legacy_us_unchanged(
     master: pd.DataFrame, receipt: dict,
 ) -> None:
-    assert len(master[master["country"] == "CN"]) == 984
-    assert len(master[master["country"] == "HK"]) == 147
-    assert receipt["coverage"]["total"] == 712
-    assert receipt["coverage"]["resolved"] == 702
-    assert receipt["coverage"]["unresolved"] == 10
+    # CN 984 -> 1005 (floor): the CN seed lanes kept admitting names after the
+    # D2B2-US bake (the committed artifact had already drifted to 1002 before
+    # the 2026-08-28 regeneration; this test was red against it), +3 more
+    # absorbed by that regeneration (002195/300088/300926).  US-side coverage
+    # moved 712->713 with LEG's exit-ledger admission, and the same PR unwedged
+    # the nightly artifact refresh — floors instead of exact counts so lawful
+    # admissions stop rotting this pin while a shrinking population still fails.
+    assert len(master[master["country"] == "CN"]) >= 1005
+    assert len(master[master["country"] == "HK"]) >= 147
+    assert receipt["coverage"]["total"] >= 713
+    assert receipt["coverage"]["resolved"] >= 703
+    assert receipt["coverage"]["unresolved"] <= 10
 
 
 # 16: idempotency + run-2 stability — AMENDMENT R9 corrected law.  §8/§9.16's

@@ -2638,6 +2638,13 @@ stock_search:
              # nightly fetch — Yahoo answers this dead string with the acquirer's
              # re-based tape, so fetching it splices a foreign series (2026-08-22
              # incident). Do NOT delete this line.
+    - LEG    # Leggett & Platt — DELISTED 2026-08-27 (acquired by Somnigroup
+             # International; merger closed 08-26, 25-NSE accession
+             # 0000876661-26-000712). Membership added WITH the exit row: LEG was
+             # only ever universe()-reachable through the S&P 600 constituents,
+             # and the exit-ledger scrape exclusion removes it there — without a
+             # curated line its page and deep links would go dark (CSP-R1), the
+             # exact drop the CTRA/TPH/AVB lines above exist to prevent.
     - AWK    # American Water Works
     - AXP    # American Express
     - AZO    # AutoZone
@@ -3101,6 +3108,7 @@ stock_search:
     CTRA:  {name: "Coterra Energy", sector: "Energy"}
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
+    LEG:   {name: "Leggett & Platt", sector: "Consumer Discretionary"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}

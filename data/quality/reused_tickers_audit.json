@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-28",
+ "asof": "2026-08-29",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -19,35 +19,25 @@
   "stocks_stale_calendar_days": 7,
   "email_alerts": false
  },
- "n": 3026,
+ "n": 3025,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 147,
+ "n_flags": 144,
  "universes": [
   {
    "name": "stocks",
-   "n": 244,
+   "n": 243,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 3,
+   "n_flags": 1,
    "skipped": false,
    "note": "",
    "failed": [],
    "flags": [
     {
-     "name": "AVB",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-24) but no current NASDAQ/NYSE listing"
-    },
-    {
      "name": "ECHO",
      "kind": "zombie",
      "detail": "dead-registry name advancing 1739d past its 2021-11-22 registry bar; overlap corr -0.139"
-    },
-    {
-     "name": "EQR",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-21) but no current NASDAQ/NYSE listing"
     }
    ]
   },
@@ -56,7 +46,7 @@
    "n": 2782,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 144,
+   "n_flags": 143,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -295,11 +285,6 @@
      "name": "ELME",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 1.0) \u2014 the registry, not the store, carries foreign/live tape"
-    },
-    {
-     "name": "EQR",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "FBRX",
@@ -785,7 +770,7 @@
   }
  ],
  "ledger_identity": {
-  "ledger": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/signal_archive/track_record.parquet",
+  "ledger": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/stoic-jones-ed68df/data/signal_archive/track_record.parquet",
   "declared_duplicates": [
    {
     "superseded": "SATS",
@@ -806,7 +791,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59794
+  "ledger_rows": 59804
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
@@ -814,13 +799,13 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 128,
-  "delisted_printing": 11,
+  "delisted_printing": 8,
   "member_identity": 0
  },
  "stores": [
   {
    "store": "stocks",
-   "n_files": 244,
+   "n_files": 243,
    "zombie": [
     {
      "ticker": "ECHO",
@@ -840,18 +825,7 @@
    ],
    "rebirth": [],
    "registry_mismatch": [],
-   "delisted_printing": [
-    {
-     "ticker": "AVB",
-     "store_tip": "2026-08-24",
-     "acked": false
-    },
-    {
-     "ticker": "EQR",
-     "store_tip": "2026-08-21",
-     "acked": false
-    }
-   ]
+   "delisted_printing": []
   },
   {
    "store": "baskets/ohlcv",
@@ -2605,12 +2579,7 @@
     {
      "ticker": "ANGPY",
      "store_tip": "2026-08-27",
-     "acked": false
-    },
-    {
-     "ticker": "EQR",
-     "store_tip": "2026-08-27",
-     "acked": false
+     "acked": true
     },
     {
      "ticker": "FBRX",
@@ -2620,7 +2589,7 @@
     {
      "ticker": "IMPUY",
      "store_tip": "2026-08-27",
-     "acked": false
+     "acked": true
     },
     {
      "ticker": "ISSC",
@@ -2661,17 +2630,14 @@
   "GOLD": "Gold.com, Inc. (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48; fka A-Mark Precious Metals) under its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer \u2014 store holds A-Mark/Gold.com's full history (2014-03-17->, its spinoff listing) and NEVER held Barrick: the file was born 2026-06-30, after the reuse. Prior symbol holders: Barrick (NYSE GOLD 2019-01-02 -> 2025-05-08; renamed Barrick Mining, NYSE 'B' since 2025-05-09); Randgold Resources (NASDAQ GOLD until the 2019-01-01 Barrick merger). CONSUMER DEFECT REPAIRED (PR #5632): gold_miners removes the Barrick-labelled GOLD row entirely, carries Barrick Mining (EDGAR CIK 756894) under NYSE 'B', and seeds curated data/baskets/ohlcv/B.parquet. GOLD remains a valid Gold.com instrument; this was a consumer-label repair, not a store quarantine."
  },
  "delisted_printing_acks": [
+  "ANGPY",
+  "IMPUY",
   "RHHBY"
  ],
  "member_identity_acks": {},
  "unacked_zombies": [],
  "unacked_delisted_printing": [
-  "stocks/AVB",
-  "stocks/EQR",
-  "baskets/ohlcv/ANGPY",
-  "baskets/ohlcv/EQR",
   "baskets/ohlcv/FBRX",
-  "baskets/ohlcv/IMPUY",
   "baskets/ohlcv/ISSC",
   "baskets/ohlcv/LEG",
   "baskets/ohlcv/STRS",

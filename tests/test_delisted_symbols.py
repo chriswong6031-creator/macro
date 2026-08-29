@@ -58,9 +58,9 @@ def fake_ledger(monkeypatch):
 # The shipping ledger — the resolution itself, not just its plumbing
 # ---------------------------------------------------------------------------
 
-def test_shipping_ledger_holds_the_three_resolved_delistings():
+def test_shipping_ledger_holds_the_resolved_delistings():
     rows = ds.ledger()
-    assert set(rows) == {"CTRA", "TPH", "AVB"}
+    assert set(rows) == {"CTRA", "TPH", "AVB", "LEG"}
     assert rows["CTRA"]["delisted_on"] == "2026-05-07"
     assert rows["CTRA"]["acquirer"] == "Devon Energy"
     assert rows["TPH"]["delisted_on"] == "2026-05-14"
@@ -71,6 +71,11 @@ def test_shipping_ledger_holds_the_three_resolved_delistings():
     # AVB (PR #6082 row): Friday last session before the Monday merger close.
     assert rows["AVB"]["delisted_on"] == "2026-08-17"
     assert rows["AVB"]["last_session"] == "2026-08-14"
+    # LEG (EQR->VMRK migration PR row): merger closed ON the last session (08-26,
+    # the 13.7M-share final print); the 25-NSE followed the next day.
+    assert rows["LEG"]["delisted_on"] == "2026-08-27"
+    assert rows["LEG"]["last_session"] == "2026-08-26"
+    assert rows["LEG"]["acquirer"] == "Somnigroup International"
 
 
 def test_no_shipping_row_claims_a_successor_ticker():
