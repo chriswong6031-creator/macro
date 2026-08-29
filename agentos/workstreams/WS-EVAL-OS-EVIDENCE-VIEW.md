@@ -24,7 +24,7 @@ decisions:
 waves:
   - id: A1
     title: T7 per-engine evidence scorecard + T8 global CEO view
-    status: ready
+    status: todo
     next_action: >
       Implement one derived read path and extend the existing Intelligence OS admin API/page.
       Consume current T1 output_class, T4 health and owner-native/qledger evidence without

@@ -58,9 +58,9 @@ def fake_ledger(monkeypatch):
 # The shipping ledger — the resolution itself, not just its plumbing
 # ---------------------------------------------------------------------------
 
-def test_shipping_ledger_holds_the_two_resolved_delistings():
+def test_shipping_ledger_holds_the_three_resolved_delistings():
     rows = ds.ledger()
-    assert set(rows) == {"CTRA", "TPH"}
+    assert set(rows) == {"CTRA", "TPH", "AVB"}
     assert rows["CTRA"]["delisted_on"] == "2026-05-07"
     assert rows["CTRA"]["acquirer"] == "Devon Energy"
     assert rows["TPH"]["delisted_on"] == "2026-05-14"
@@ -68,6 +68,9 @@ def test_shipping_ledger_holds_the_two_resolved_delistings():
     # conflating the two would put the wrong date on the page.
     assert rows["TPH"]["last_session"] == "2026-05-13"
     assert rows["TPH"]["acquirer"] == "Sumitomo Forestry"
+    # AVB (PR #6082 row): Friday last session before the Monday merger close.
+    assert rows["AVB"]["delisted_on"] == "2026-08-17"
+    assert rows["AVB"]["last_session"] == "2026-08-14"
 
 
 def test_no_shipping_row_claims_a_successor_ticker():
@@ -302,3 +305,100 @@ def test_delisted_recs_never_reach_the_demotion_map_or_its_breaker_denominator(c
     assert demote_map == {}
     assert n_dark == 0
     assert "gate disarmed" not in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# The data/stocks lane (collectors/sector_holdings + scripts/heal_stocks_basis) —
+# the AVB 2026-08 successor-splice incident. A delisted feed is not merely
+# useless: Yahoo can answer the dead string with a merger successor's CONTINUING
+# series (AVB's whole 1994-2026 history came back re-based by the ~2.793 exchange
+# ratio plus live post-delisting successor bars), and the collector's
+# basis-rebase path then imports it wholesale via a period='max' re-pull.
+# ---------------------------------------------------------------------------
+
+def test_stocks_retention_drops_ledger_names_but_union_wins():
+    """_fetch_universe semantics with the exit ledger folded into `dead`: a name
+    kept only by on-disk retention is dropped; a name in TODAY's union is fetched
+    anyway (symbol reuse — the union side always wins)."""
+    from collectors import sector_holdings as sh
+    dead = frozenset({"AVB"})
+    assert sh._fetch_universe(["AAPL"], ["AAPL", "AVB"], dead) == ["AAPL"]
+    assert sh._fetch_universe(["AVB", "AAPL"], ["AVB"], dead) == ["AAPL", "AVB"]
+
+
+def test_stocks_fetch_excludes_ledger_names_from_retention(fake_ledger, monkeypatch):
+    """The wiring: StockPriceAdapter.fetch() passes ledger tickers into the
+    retention exclusion, so a delisted-but-still-on-disk name is never requested."""
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.",
+                             last_session="2026-08-14", delisted_on="2026-08-17")})
+    monkeypatch.setattr(sh, "top10_union", lambda: ["AAPL"])
+    monkeypatch.setattr(sh, "_dead_tickers", lambda: frozenset())
+    monkeypatch.setattr(sh.config, "load", lambda: {
+        "yahoo": {"retries": 1, "backoff_base_s": 0, "batch_size": 50,
+                  "upsert_basis_tol": 1e-3}})
+    ad = sh.StockPriceAdapter()
+    monkeypatch.setattr(ad, "stored_series", lambda: ["AAPL", "AVB"])
+    monkeypatch.setattr(ad, "_needs_full", lambda t: False)
+    requested: list[str] = []
+
+    def fake_pull(period, tlist, frames, rebase, tol):
+        requested.extend(tlist)
+        for t in tlist:
+            frames[t] = pd.DataFrame({"close": [1.0]})
+
+    monkeypatch.setattr(ad, "_pull", fake_pull)
+    frames = ad.fetch()
+    assert "AAPL" in requested
+    assert "AVB" not in requested
+    assert "AVB" not in frames
+
+
+def test_stocks_delisted_exclusion_is_announced_at_column_zero(fake_ledger, capsys):
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.",
+                             last_session="2026-08-14", delisted_on="2026-08-17")})
+    dropped = sh._report_delisted_exclusions(["AAPL"], ["AAPL", "AVB"], ds.tickers())
+    assert dropped == ["AVB"]
+    lines = [ln for ln in capsys.readouterr().out.splitlines()
+             if ln.startswith("::notice title=stocks collector delisted::")]
+    assert len(lines) == 1
+    assert "AVB(last session 2026-08-14)" in lines[0]
+
+
+def test_stocks_union_side_ledger_name_is_not_announced(fake_ledger, capsys):
+    """A ledger name still in today's union is being fetched (union wins), so the
+    exclusion notice must not name it — a notice that is always on is a notice
+    nobody reads."""
+    from collectors import sector_holdings as sh
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+    assert sh._report_delisted_exclusions(["AVB"], ["AVB"], ds.tickers()) == []
+    assert "::notice title=stocks collector delisted::" not in capsys.readouterr().out
+
+
+def test_heal_stocks_basis_refuses_ledger_names_even_explicitly(fake_ledger, monkeypatch):
+    """heal() must refuse an exit-ledger name even via --tickers: the wholesale
+    period='max' rewrite is exactly the path that imported the AVB splice."""
+    from scripts import heal_stocks_basis as hsb
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+
+    def boom(*a, **k):  # network sentinel — a refused name must never be fetched
+        raise AssertionError("download attempted for a delisted name")
+
+    monkeypatch.setattr(hsb, "_download", boom)
+    assert hsb.heal(["AVB"], dry_run=False) == []
+
+
+def test_heal_stocks_basis_detect_skips_ledger_names(fake_ledger, monkeypatch, tmp_path):
+    from scripts import heal_stocks_basis as hsb
+    fake_ledger({"AVB": dict(_ROW, company="AvalonBay Communities, Inc.")})
+    d = tmp_path / "stocks"
+    d.mkdir(parents=True)
+    (d / "AVB.parquet").touch()  # glob only needs the name; no read should happen
+    monkeypatch.setattr(hsb.config, "data_dir", lambda: tmp_path)
+
+    def boom(*a, **k):
+        raise AssertionError("download attempted for a delisted-only store")
+
+    monkeypatch.setattr(hsb, "_download", boom)
+    assert hsb.detect(tol=0.005) == []
