@@ -6679,8 +6679,10 @@ def test_quiescence_standing_law_matches_zero_turn_amendment():
         ROOT / "AGENTS.md",
         ROOT / "CLAUDE.md",
         ROOT / ".cursor" / "rules" / "ship-loop-terminal-states.mdc",
-        ROOT / "agentos" / "handoffs" / "CI-MERGE-CONTROL-PLANE-2026-08-24-quiescence.md",
-        ROOT / "agentos" / "workstreams" / "WS-CI-MERGE-CONTROL-PLANE.md",
+        ROOT
+        / "agentos"
+        / "handoffs"
+        / "CI-MERGE-CONTROL-PLANE-2026-08-29-ci-quiescence-v2.md",
     ]
     for path in paths:
         text = path.read_text(encoding="utf-8").lower()

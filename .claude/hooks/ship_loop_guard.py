@@ -3590,8 +3590,16 @@ def _ci_event_route(
     }
 
 
-def _ci_authority_fingerprint(pull: dict[str, Any]) -> str:
-    """Hold/release/merge-authority identity from authoritative PR metadata."""
+def _ci_authority_fingerprint(
+    pull: dict[str, Any], *, extra: Any | None = None
+) -> str:
+    """Hold/release/merge-authority identity from authoritative PR metadata.
+
+    ``extra`` lets an existing authority adapter bind its own already-fetched,
+    mechanically validated source.  HOLD-FOR-SOL uses the authoritative issue
+    comments that complete its protocol; ordinary merge authority passes no
+    extra value and retains the original fingerprint byte-for-byte.
+    """
     labels = sorted(
         str((label or {}).get("name") or "") for label in (pull.get("labels") or [])
     )
@@ -3602,6 +3610,8 @@ def _ci_authority_fingerprint(pull: dict[str, Any]) -> str:
         "body": str(pull.get("body") or ""),
         "auto_merge": bool(pull.get("auto_merge") or pull.get("autoMergeRequest")),
     }
+    if extra is not None:
+        value["extra"] = extra
     return hashlib.sha256(
         json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8")
     ).hexdigest()[:16]

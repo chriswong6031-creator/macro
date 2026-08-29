@@ -636,21 +636,25 @@ information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
 
-**Hold notes do not end the Stop loop — go quiet through the ladder, not through
-repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
-above but is not terminal to the guard: the Stop hook blocks again seconds later,
-and a session that answers every block with another note types near-identical
-hold notes in a tight billed loop for hours (about one hundred such turns measured
-on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
-under an armed watcher; the cost is context × turns and the notes carry zero
-information after the first). When a long external wait is owned by an armed
-watcher or cron and the guard keeps blocking, check the escape-ladder threshold
-(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
-literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
-the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
-no per-Stop hold notes, no tailing your own watcher's output file between ticks.
-Real events (watcher exit, cron fire, task notification, operator message)
-re-invoke the session; that is the only lawful cadence for a parked wait.
+**A proven pending head enters zero-compute CI quiescence** (operator 2026-08-29).
+When the exact pushed head is clean, the deterministic fast preflight is green,
+there is no binding builder-owned red, and this session already owns one confirmed
+native watcher for that PR/head, the Stop ledger mechanically derives
+`CI_QUIESCENT`. Logical delivery ownership stays with the same session, but the
+healthy external wait consumes zero new model turns while external state is
+unchanged. Identical Stop or task-notification observations use only the local
+ledger, exact local head/dirt, and watcher process identity: no GitHub re-poll, no
+fresh narration, no escape-ladder churn, and no successor watcher. One green, red,
+head, hold/authority, or watcher-liveness change claims one wake atomically. Green
+and hold/release change route to release/Sol; every-red inherited-main or
+infrastructure state and a dead watcher with still-pending proof route to
+`#6351/main-integrity`; candidate-owned red clears quiescence and returns to the
+builder, never a cheap exit. A malformed ledger/hold fails closed and PARKED keeps
+its separate exact-head terminal latch. Only the hook may mint these states from
+mechanical evidence; model prose is never quiescence, green, PARKED, merged, or
+terminal truth. This extends the existing Stop ledger and quota/watcher boundary;
+it creates no database, daemon, scheduler, queue, retry service, lifecycle, or
+session identity.
 
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.

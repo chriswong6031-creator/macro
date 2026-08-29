@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -419,3 +420,509 @@ def test_stop_hook_routes_through_wrapper_but_keeps_original_guard_as_delegate()
         for hook in entry["hooks"]
     ]
     assert any("ship_loop_guard.py" in hook.get("command", "") for hook in session_hooks)
+
+
+# ── One PARKED receipt and the shared V2 pending-wait ledger ────────────────
+
+
+def _ledger_guard(
+    tmp_path: Path,
+    *,
+    split=None,
+    pull="default",
+    state_extra=None,
+    enter_quiescence=False,
+    fast_quiescence=False,
+):
+    """A fake guard with the same single transactional ledger as production."""
+    state_path = tmp_path / "state.json"
+    state = {"last_blocker": "unmerged"}
+    state.update(state_extra or {})
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+    open_pull = _pull() if pull == "default" else pull
+    split_result = split or ([], [], ["ci-plan", "contract-delta", "fence-pack"])
+    calls = {
+        "open_pull": 0,
+        "checks": 0,
+        "fast": 0,
+        "enter": 0,
+        "clear": 0,
+    }
+    ledger_lock = threading.Lock()
+    entered = []
+
+    def _open_pull(*_args):
+        calls["open_pull"] += 1
+        return open_pull
+
+    def _head_check_runs(*_args):
+        calls["checks"] += 1
+        return [{"name": "fixture"}]
+
+    def _load(path):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except OSError:
+            return None
+
+    def _save(path, value):
+        Path(path).write_text(json.dumps(value), encoding="utf-8")
+
+    def _update_ledger(path, mutate, **_kwargs):
+        with ledger_lock:
+            latest = _load(path)
+            if not isinstance(latest, dict):
+                return None
+            result = mutate(latest)
+            _save(path, latest)
+            return result
+
+    def _fast(_root, _path, _state):
+        calls["fast"] += 1
+        return fast_quiescence
+
+    def _enter(path, latest, **kwargs):
+        calls["enter"] += 1
+        entered.append(kwargs)
+        if enter_quiescence:
+            latest["ci_quiescence"] = {
+                "mode": "hold",
+                "head": kwargs["head"],
+            }
+            _save(path, latest)
+        return enter_quiescence
+
+    def _clear(path, latest):
+        calls["clear"] += 1
+        latest.pop("ci_quiescence", None)
+        _save(path, latest)
+
+    guard = SimpleNamespace(
+        _repo_root=lambda _payload: tmp_path,
+        _state_path=lambda _root, _payload: state_path,
+        _load=_load,
+        _save=_save,
+        _update_ledger=_update_ledger,
+        _github_slug=lambda _root: ("mastermindx-market-intelligence", "macro"),
+        _open_pull=_open_pull,
+        _get_json=lambda _url: _comments(),
+        _head_check_runs=_head_check_runs,
+        _split_head_runs=lambda _runs: split_result,
+        _ci_quiescence_fast_path=_fast,
+        _enter_ci_quiescence=_enter,
+        _ci_quiescence_clear=_clear,
+        _ci_checks_fingerprint=lambda _runs: "c" * 16,
+        _ci_authority_fingerprint=lambda _pull, **_kwargs: "a" * 16,
+    )
+    return guard, state_path, calls, entered
+
+
+def _install_material_router(guard, state_path: Path):
+    routed = []
+
+    def event_route(kind, *, pr, head, checks):
+        owner = (
+            "#6351/main-integrity"
+            if kind in {"inherited_main", "infrastructure", "missing_evidence"}
+            else "release/Sol"
+        )
+        return {"kind": kind, "owner": owner, "pr": pr, "head": head, "checks": checks}
+
+    def receipt(
+        _path,
+        _state,
+        quiescence,
+        route,
+        *,
+        checks_fingerprint,
+        authority_fingerprint,
+    ):
+        routed.append(route)
+
+        def latch(latest):
+            current = latest["ci_quiescence"]
+            assert current is not quiescence or current == quiescence
+            current["phase"] = "routed"
+            current["route"] = route["owner"]
+            current["checks_fingerprint"] = checks_fingerprint
+            current["authority_fingerprint"] = authority_fingerprint
+
+        guard._update_ledger(state_path, latch)
+        return True
+
+    guard._ci_event_route = event_route
+    guard._ci_material_receipt = receipt
+    return routed
+
+
+def test_first_parked_stop_narrates_once_then_identical_stops_are_silent(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(tmp_path)
+
+    first = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert first is not None and first["action"] == "emit"
+    assert first["value"]["systemMessage"].startswith("SHIP LOOP PARKED")
+    assert json.loads(state_path.read_text())["parked_latch"] == (
+        f"parked:6138:{HEAD}"
+    )
+
+    repeats = [
+        WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        for _ in range(5)
+    ]
+    assert repeats == [{"action": "silent"}] * 5
+    assert calls["open_pull"] == 6 and calls["checks"] == 6
+
+
+def test_pending_hold_without_a_live_watcher_preserves_6626_waiting_block(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, _path, calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(
+            [],
+            ["trusted-ci / trusted-executor-pack-10"],
+            ["ci-plan", "contract-delta", "fence-pack"],
+        ),
+    )
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict is not None and verdict["action"] == "emit"
+    assert "HOLD-FOR-SOL WAITING" in verdict["value"]["reason"]
+    assert calls["enter"] == 1
+
+
+def test_pending_hold_with_one_live_watcher_uses_shared_ci_quiescence(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, entered = _ledger_guard(
+        tmp_path,
+        split=(
+            [],
+            ["trusted-ci / trusted-executor-pack-10"],
+            ["ci-plan", "contract-delta", "fence-pack"],
+        ),
+        enter_quiescence=True,
+    )
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert calls["enter"] == 1
+    assert entered[0]["mode"] == "hold"
+    assert entered[0]["number"] == 6138 and entered[0]["head"] == HEAD
+    assert json.loads(state_path.read_text())["ci_quiescence"]["mode"] == "hold"
+
+
+def test_identical_pending_hold_hits_local_quiescence_before_any_github_probe(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, _path, calls, _entered = _ledger_guard(
+        tmp_path,
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+        fast_quiescence=True,
+    )
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert calls["fast"] == 1
+    assert calls["open_pull"] == 0 and calls["checks"] == 0
+
+
+def test_red_hold_clears_old_quiescence_and_keeps_6626_checks_red_block(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(["ci-pack-3 (failure)"], [], ["fence-pack"]),
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict is not None and verdict["action"] == "emit"
+    assert "HOLD-FOR-SOL CHECKS RED" in verdict["value"]["reason"]
+    assert calls["clear"] == 1
+    assert "ci_quiescence" not in json.loads(state_path.read_text())
+
+
+def test_dead_watcher_with_still_pending_hold_routes_missing_evidence_once(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, _calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(
+            [],
+            ["trusted-ci / trusted-executor-pack-10"],
+            ["ci-plan", "contract-delta", "fence-pack"],
+        ),
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+    routed = _install_material_router(guard, state_path)
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert [route["kind"] for route in routed] == ["missing_evidence"]
+    assert routed[0]["owner"] == "#6351/main-integrity"
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    assert state["ci_quiescence"]["phase"] == "routed"
+
+
+def test_infrastructure_red_hold_routes_away_from_product_builder(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(["trusted-ci admission (timed_out)"], [], ["fence-pack"]),
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+    guard._red_pairs = lambda _runs: [("trusted-ci admission", "timed_out")]
+    guard._ci_infrastructure_red = lambda pairs: pairs == [
+        ("trusted-ci admission", "timed_out")
+    ]
+    routed = _install_material_router(guard, state_path)
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert [route["kind"] for route in routed] == ["infrastructure"]
+    assert routed[0]["owner"] == "#6351/main-integrity"
+    assert calls["clear"] == 0
+
+
+def test_inherited_main_red_hold_routes_away_only_with_complete_base_proof(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(["ci-pack-3 (failure)"], [], ["fence-pack"]),
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+    guard._red_pairs = lambda _runs: [("ci-pack-3", "failure")]
+    guard._ci_infrastructure_red = lambda _pairs: False
+    guard._is_non_binding_check = lambda _name: False
+    guard._started_stamp = lambda _run, *_fields: "2026-08-29T00:00:00Z"
+    guard._base_side_pre_merge = lambda *_args: (
+        {"ci-pack-3": "red on main's exact proof"},
+        [],
+    )
+    routed = _install_material_router(guard, state_path)
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert [route["kind"] for route in routed] == ["inherited_main"]
+    assert routed[0]["owner"] == "#6351/main-integrity"
+    assert calls["clear"] == 0
+
+
+def test_inherited_main_rerun_generations_do_not_look_like_two_distinct_reds(
+    monkeypatch, tmp_path
+):
+    """Two check-run generations with one job name share one base-side proof."""
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, _calls, _entered = _ledger_guard(
+        tmp_path,
+        split=(
+            ["ci-pack-3 (failure)", "ci-pack-3 (failure)"],
+            [],
+            ["fence-pack"],
+        ),
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+    guard._red_pairs = lambda _runs: [
+        ("ci-pack-3", "failure"),
+        ("ci-pack-3", "failure"),
+    ]
+    guard._ci_infrastructure_red = lambda _pairs: False
+    guard._is_non_binding_check = lambda _name: False
+    guard._started_stamp = lambda _run, *_fields: "2026-08-29T00:00:00Z"
+    guard._base_side_pre_merge = lambda *_args: (
+        {"ci-pack-3": "red on main's exact proof"},
+        [],
+    )
+    routed = _install_material_router(guard, state_path)
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict == {"action": "silent"}
+    assert [route["kind"] for route in routed] == ["inherited_main"]
+
+
+def test_green_after_pending_quiescence_clears_wait_then_parks_once(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(
+        tmp_path,
+        state_extra={"ci_quiescence": {"mode": "hold", "head": HEAD}},
+    )
+
+    verdict = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+
+    assert verdict is not None and verdict["action"] == "emit"
+    assert verdict["value"]["systemMessage"].startswith("SHIP LOOP PARKED")
+    state = json.loads(state_path.read_text())
+    assert "ci_quiescence" not in state
+    assert state["parked_latch"] == f"parked:6138:{HEAD}"
+    assert calls["clear"] == 1
+
+
+def test_parked_latch_transaction_preserves_concurrent_watcher(
+    monkeypatch, tmp_path
+):
+    guard, state_path, _calls, _entered = _ledger_guard(tmp_path)
+    probe_started = threading.Event()
+    watcher_written = threading.Event()
+    results = []
+
+    def paused_probe(_guard, _payload):
+        probe_started.set()
+        assert watcher_written.wait(timeout=10)
+        return {
+            "number": 6138,
+            "branch": "claude/held",
+            "head": HEAD,
+            "candidate_kind": "ordinary_unmerged",
+            "source_blocker": "unmerged",
+            "status": "parked",
+            "red": [],
+            "pending": [],
+            "passed": ["ci-plan", "contract-delta", "fence-pack"],
+        }
+
+    monkeypatch.setattr(WRAPPER, "_hold_probe", paused_probe)
+    writer = threading.Thread(
+        target=lambda: results.append(
+            WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        )
+    )
+    writer.start()
+    assert probe_started.wait(timeout=10)
+    latest = json.loads(state_path.read_text(encoding="utf-8"))
+    latest["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh pr checks 6138 --watch --interval 60",
+        "head": HEAD,
+        "created": 1.0,
+    }
+    state_path.write_text(json.dumps(latest), encoding="utf-8")
+    watcher_written.set()
+    writer.join(timeout=10)
+
+    assert not writer.is_alive()
+    assert results and results[0]["action"] == "emit"
+    final = json.loads(state_path.read_text(encoding="utf-8"))
+    assert final["parked_latch"] == f"parked:6138:{HEAD}"
+    assert final["ship_watcher"]["fragment"].startswith("gh pr checks")
+
+
+def test_nonparked_probe_clears_concurrent_latch_without_erasing_watcher(
+    monkeypatch, tmp_path
+):
+    guard, state_path, _calls, _entered = _ledger_guard(tmp_path)
+    probe_started = threading.Event()
+    latch_written = threading.Event()
+    results = []
+
+    def paused_nonparked(_guard, _payload):
+        probe_started.set()
+        assert latch_written.wait(timeout=10)
+        return None
+
+    monkeypatch.setattr(WRAPPER, "_hold_probe", paused_nonparked)
+    writer = threading.Thread(
+        target=lambda: results.append(
+            WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+        )
+    )
+    writer.start()
+    assert probe_started.wait(timeout=10)
+    latest = json.loads(state_path.read_text(encoding="utf-8"))
+    latest["parked_latch"] = f"parked:6138:{HEAD}"
+    latest["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh pr checks 6138 --watch --interval 60",
+        "head": HEAD,
+        "created": 1.0,
+    }
+    state_path.write_text(json.dumps(latest), encoding="utf-8")
+    latch_written.set()
+    writer.join(timeout=10)
+
+    assert not writer.is_alive()
+    assert results == [None]
+    final = json.loads(state_path.read_text(encoding="utf-8"))
+    assert "parked_latch" not in final
+    assert final["ship_watcher"]["fragment"].startswith("gh pr checks")
+
+
+def test_github_outage_delegates_without_clearing_parked_latch(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, _calls, _entered = _ledger_guard(
+        tmp_path, state_extra={"parked_latch": f"parked:6138:{HEAD}"}
+    )
+    guard._open_pull = lambda *_args: (_ for _ in ()).throw(
+        RuntimeError("api.github.com unreachable")
+    )
+
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
+
+
+def test_outage_blocker_mutation_does_not_renarrate_same_parked_hold(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, state_path, calls, _entered = _ledger_guard(
+        tmp_path,
+        state_extra={
+            "last_blocker": "unmerged",
+            "parked_latch": f"parked:6138:{HEAD}",
+        },
+    )
+    original_open = guard._open_pull
+    guard._open_pull = lambda *_args: (_ for _ in ()).throw(
+        RuntimeError("api.github.com unreachable")
+    )
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state["last_blocker"] = "github_unreachable"
+    state_path.write_text(json.dumps(state), encoding="utf-8")
+    guard._open_pull = original_open
+
+    first = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    second = WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"})
+    assert first == second == {"action": "silent"}
+    assert calls["open_pull"] == 2 and calls["checks"] == 2
+
+
+def test_released_or_closed_hold_clears_latch_and_delegates(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    for released_pull in (_pull(draft=False), None):
+        guard, state_path, _calls, _entered = _ledger_guard(
+            tmp_path,
+            pull=released_pull,
+            state_extra={"parked_latch": f"parked:6138:{HEAD}"},
+        )
+        assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+        assert "parked_latch" not in json.loads(
+            state_path.read_text(encoding="utf-8")
+        )

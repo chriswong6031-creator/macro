@@ -32,3 +32,18 @@ changes the hold.
 If any condition above is missing, ambiguous, red, pending, dirty, or stale, fail
 closed and follow the ordinary ship loop instead. A vague request to "hold" or
 "review later" is never enough to create the PARKED state.
+
+## Pending CI quiescence
+
+A clean exact pushed head with deterministic `ci-plan`, `contract-delta`, and
+`fence-pack` green, no binding builder-owned red, and one already-confirmed native
+watcher for the same PR/head may enter mechanically derived `CI_QUIESCENT` in the
+existing Stop ledger. Logical delivery ownership remains with the session while the
+wait consumes **zero new model turns while external state is unchanged**. Repeated
+Stop/task notifications do not poll GitHub, narrate, advance the escape ladder, or
+create a successor watcher. One green, red, head, hold/authority, or watcher-liveness
+change wakes exactly once: green and hold/release changes route to release/Sol;
+inherited-main, infrastructure, or missing-evidence events route to
+`#6351/main-integrity`; builder-owned red clears the wait and blocks the builder.
+Malformed state fails closed. Only mechanical hook evidence may create quiescence or
+PARKED; model prose can never create either state or any terminal truth.
