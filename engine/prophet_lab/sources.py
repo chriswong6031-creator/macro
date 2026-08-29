@@ -206,9 +206,14 @@ def _read_radar_envelopes_from_r2(
     (S7's existing visibility guarantee), so a second special case is not
     needed for that path.
     """
-    resolved_bucket = bucket or radar_spool.r2_bucket_name()
+    # W4.2 / LER-C1: bucket resolution is PREFIX-AWARE — an evidence prefix
+    # resolves the dedicated private store when configured (else the shared
+    # bucket as the explicit legacy read path).  The resolved name is passed
+    # down explicitly so list/get can never silently fall back to the shared
+    # default for an evidence read.
+    resolved_bucket = bucket or radar_spool.r2_bucket_name(prefix)
     try:
-        keys = radar_spool.list_r2_keys(s3, prefix, bucket=bucket)
+        keys = radar_spool.list_r2_keys(s3, prefix, bucket=resolved_bucket)
     except Exception as exc:  # noqa: BLE001 — must surface, never raise into the API's 500 path
         log.warning(
             "prophet_lab: R2 spool list under %s failed (%s: %s)",
@@ -225,7 +230,7 @@ def _read_radar_envelopes_from_r2(
     for key in sorted(keys):
         files_seen += 1
         try:
-            blob = radar_spool.get_r2_object_bytes(s3, key, bucket=bucket)
+            blob = radar_spool.get_r2_object_bytes(s3, key, bucket=resolved_bucket)
         except Exception as exc:  # noqa: BLE001
             log.warning(
                 "prophet_lab: R2 spool object %s unreadable (%s: %s)",
@@ -378,10 +383,14 @@ def resolve_radar_spool(
     2. No R2 (no credentials, no injected client) -> :func:`read_radar_envelopes`
        against ``local_dir`` (``backend in ("local", "unconfigured")``).
     """
+    # W4.2 / LER-C1: credential presence and client construction are
+    # PREFIX-AWARE — for the evidence prefix this resolves the dedicated
+    # private store when configured, else the shared authenticated client
+    # as the explicit legacy read path (never an anonymous fallback).
     client = s3
     client_build_failed = False
-    if client is None and radar_spool.r2_credentials_present():
-        client = radar_spool.r2_client_for_read()
+    if client is None and radar_spool.r2_credentials_present(prefix):
+        client = radar_spool.r2_client_for_read(prefix)
         client_build_failed = client is None
 
     if client is not None:
@@ -402,7 +411,7 @@ def resolve_radar_spool(
             return replace(fallback, backend="local", error=error)
         return SpoolReadResult(
             configured=True, dir_exists=False, backend="r2", error=error,
-            bucket=radar_spool.r2_bucket_name(), prefix=prefix,
+            bucket=radar_spool.r2_bucket_name(prefix), prefix=prefix,
         )
 
     # No R2 credentials at all -- the ordinary local-dev/CI/local-backend case.

@@ -5,10 +5,10 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2811	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	5208	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+scripts/ci/daily_engine_prophet_checkpoint.sh	55	git worktree add -b "$CHECKPOINT_BRANCH" "$CHECKPOINT_DIR" origin/main
+scripts/ci/daily_engine_commit_outputs.sh	51	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
-app/biocatalyst.py	2333	@router.get("/api/biocatalyst/v1/health")
+app/biocatalyst.py	2349	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	455	"""Render one sanitized, hash-bound immutable ``/version`` receipt."""
@@ -36,7 +36,7 @@ engine/capital_structure/source_store.py	24	SEC_OBJECT_PREFIX = "capital_structu
 engine/capital_structure/source_store.py	187	or isinstance(max_byte_length, bool)
 engine/earnings_narrative/private_publication.py	33	PRIVATE_PREFIX = "earnings_wire_private/v1"
 engine/fundamental_forensics/attested_history_store.py	1	"""Read-only store for the DEDICATED attested-history bucket.
-engine/fundamental_forensics/broad_sec_store.py	56	PREFIX = "fundamental_forensics/broad-sec/v1"
+engine/fundamental_forensics/broad_sec_store.py	65	PREFIX = "fundamental_forensics/broad-sec/v1"
 engine/fundamental_forensics/disclosure_bundle.py	56	DISCLOSURE_BUNDLE_PREFIX = "fundamental_forensics/disclosures/v1"
 engine/fundamental_forensics/private_state.py	25	STATE_KEY = "fundamental_forensics/state.json.gz"
 engine/fundamental_forensics/query_snapshots.py	57	QUERY_SNAPSHOT_PREFIX = "fundamental_forensics/query-snapshots/v1"
@@ -54,6 +54,8 @@ engine/options_focused_quote.py	34	W0A_INDEX_KEY = "options_structure/msc_intrad
 engine/options_focused_quote.py	760	prefix = f"private/options_focused_quote/v1/attempts/{digest}"
 engine/prophet_live/r2io.py	32	PACK_KEY = "live_flow/prophet_live_armed.json"
 engine/prophet_live/r2io.py	33	LIVE_KEY = "live_flow/prophet_live.json"
+engine/entry_radar/live_ledger.py	97	EVENT_SPOOL_PREFIX = "live_flow/entry_radar_events"
+engine/entry_radar/spool.py	115	EVIDENCE_PREFIXES: tuple[str, ...] = (
 engine/research_vault/catalog.py	30	CATALOG_KEY = "research_vault/catalog.json"
 engine/research_vault/corpus.py	447	CORPUS_KEY = "research_vault/corpus.sqlite"   # mirrors ingest CORPUS_KEY
 engine/research_vault/ingest.py	59	INBOX_PREFIX = "research_inbox/"
@@ -90,11 +92,11 @@ scripts/build_prophet.py	267	# Landing showcase slice — public teaser payload 
 scripts/build_prophet.py	2275	active_entries.append({
 scripts/build_prophet_marks.py	87	SCHEMA = "prophet.live_marks/v1"
 scripts/build_prophet_marks.py	88	R2_KEY = "live_flow/prophet_marks.json"
-scripts/build_prophet_marks.py	1174	def _private_observation_path(
+scripts/build_prophet_marks.py	1164	def _private_observation_path(
 scripts/build_session_digest.py	104	R2_SURFACE_PREFIX = "live_flow/surface/"
-scripts/build_stock_library.py	3615	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
-scripts/build_stock_library.py	4035	# amended at FS-5.
-scripts/build_stock_library.py	4412	_calls = _collect_potential_calls(to_write)
+scripts/build_stock_library.py	3716	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
+scripts/build_stock_library.py	4136	# amended at FS-5.
+scripts/build_stock_library.py	4513	_calls = _collect_potential_calls(to_write)
 scripts/build_tape_flow_daily.py	12	Storage:
 scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).
@@ -136,8 +138,8 @@ scripts/publish_r2.py	128	"price_pressure",  # DRL W1 event ledger (data/price_p
 scripts/publish_r2.py	147	# host that holds the ThetaData store, and a lost host means a lost
 scripts/publish_r2.py	152	# gitignored — a CI runner checkout holds just the committed _manifest.json +
 scripts/publish_r2.py	171	_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5, "price_pressure": 3}
-scripts/publish_r2.py	346	def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
-scripts/publish_r2.py	446	files = _uploadable(d, base, [p for p in base.rglob("*") if p.is_file()])
+scripts/publish_r2.py	409	def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
+scripts/publish_r2.py	523	files = _uploadable(d, base, _walk_files(base))
 scripts/repair_gex_history.py	63	R2_PREFIX = "options_hub/gex_history/"
 scripts/run_brain_eval.py	61	R2_SUMMARY_PREFIX = "mastermind_response_evals/summary"
 scripts/seal_levels_ledger.py	44	R2_PREFIX = "levels_ledger/"

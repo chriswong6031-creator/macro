@@ -101,6 +101,38 @@ SPOOL_SCHEMA = "mastermind.entry_probe_nomination_spool.v1"
 _NO_PUBLISH_ENV = "ENTRY_RADAR_NO_PUBLISH"
 _SPOOL_DIR_ENV = "ENTRY_RADAR_SPOOL_DIR"
 
+#: Raw Radar evidence prefixes (W4.2 / LER-C1, DSC:RADAR-SPOOL-PUBLIC-R2).
+#: Every key under these prefixes is research/evidence-plane material —
+#: quote coverage, lifecycle transitions, immutable expert events, basis
+#: audits — and is classified PRIVATE_OPERATIONAL by the delivery-plane
+#: registry (config/r2_delivery_plane_classification.v1.json,
+#: ``entry_radar_evidence_spool``).  The shared ``$R2_BUCKET`` bucket is
+#: exposed anonymously through the public R2 dev host, so an evidence key
+#: must NEVER be written through the shared client/bucket: the write path
+#: below refuses (typed, visible) rather than publish evidence to a public
+#: classification.  The nominations prefix rides the same boundary — it is
+#: the same raw observation stream, only an earlier stage of it.
+EVIDENCE_PREFIXES: tuple[str, ...] = (
+    "live_flow/entry_radar_events",
+    "live_flow/entry_radar_nominations",
+)
+
+#: The dedicated PRIVATE evidence store (same shape as the accepted
+#: BIOCATALYST_R2_* / INSTITUTIONAL_13F_R2_* dedicated-store precedents:
+#: all four names required together, no partial credit, no shared-bucket
+#: fallback for WRITES).  The client itself is built by the exact same
+#: builder the shared store uses — one client family, two env bindings.
+_EVIDENCE_ENV_ENDPOINT = "ENTRY_RADAR_R2_ENDPOINT"
+_EVIDENCE_ENV_ACCESS = "ENTRY_RADAR_R2_ACCESS_KEY_ID"
+_EVIDENCE_ENV_SECRET = "ENTRY_RADAR_R2_SECRET_ACCESS_KEY"
+_EVIDENCE_ENV_BUCKET = "ENTRY_RADAR_R2_BUCKET"
+
+
+def is_evidence_key(key: str) -> bool:
+    """True when ``key`` (or a prefix) belongs to the raw evidence plane."""
+    k = str(key or "").lstrip("/")
+    return any(k == p or k.startswith(p + "/") for p in EVIDENCE_PREFIXES)
+
 
 def _no_publish() -> bool:
     return os.environ.get(_NO_PUBLISH_ENV, "").strip() not in ("", "0", "false")
@@ -126,19 +158,17 @@ def _bucket() -> str:
     return os.environ.get("R2_BUCKET", "mastermindx").strip() or "mastermindx"
 
 
-def _r2_client():
-    """S3 client for R2, or None when credentials are absent (graceful no-op).
+def _build_client(ep: str, ak: str, sk: str):
+    """The ONE S3-client builder for this module — both the shared store and
+    the dedicated evidence store bind through here, so there is exactly one
+    client family (same endpoint discipline, same checksum workaround, same
+    lazy boto3 import) no matter which credentials are used.
 
     Shape copy of ``scripts/publish_r2.py::_client`` / prophet-live's ``r2io``,
     including the botocore checksum workaround (R2 rejects the default CRC32
     trailer).  boto3 is imported LAZILY so every test lane imports this module
     without it.
     """
-    ep = os.environ.get("R2_ENDPOINT")
-    ak = os.environ.get("R2_ACCESS_KEY_ID")
-    sk = os.environ.get("R2_SECRET_ACCESS_KEY")
-    if not (ep and ak and sk):
-        return None
     try:
         import boto3  # noqa: PLC0415
         from botocore.config import Config  # noqa: PLC0415
@@ -158,6 +188,53 @@ def _r2_client():
         return None
 
 
+def _r2_client():
+    """Shared-store client, or None when credentials are absent (graceful no-op)."""
+    ep = os.environ.get("R2_ENDPOINT")
+    ak = os.environ.get("R2_ACCESS_KEY_ID")
+    sk = os.environ.get("R2_SECRET_ACCESS_KEY")
+    if not (ep and ak and sk):
+        return None
+    return _build_client(ep, ak, sk)
+
+
+def evidence_credentials_present() -> bool:
+    """All FOUR dedicated evidence-store names set (endpoint/key/secret/bucket).
+
+    Partial configuration is treated as absent — the dedicated-store
+    precedents (BioCatalyst, 13F) require the full set together, because a
+    half-bound store silently inheriting the shared bucket is exactly the
+    exposure class this boundary exists to prevent.
+    """
+    return all(
+        os.environ.get(name, "").strip()
+        for name in (_EVIDENCE_ENV_ENDPOINT, _EVIDENCE_ENV_ACCESS,
+                     _EVIDENCE_ENV_SECRET, _EVIDENCE_ENV_BUCKET)
+    )
+
+
+def evidence_bucket_name() -> str | None:
+    """The dedicated evidence bucket, or None while the store is unconfigured."""
+    if not evidence_credentials_present():
+        return None
+    return os.environ.get(_EVIDENCE_ENV_BUCKET, "").strip() or None
+
+
+def _evidence_client():
+    """Dedicated evidence-store client, or None while unconfigured.
+
+    Built by the SAME :func:`_build_client` the shared store uses — a second
+    env binding, never a second client implementation.
+    """
+    if not evidence_credentials_present():
+        return None
+    return _build_client(
+        os.environ[_EVIDENCE_ENV_ENDPOINT].strip(),
+        os.environ[_EVIDENCE_ENV_ACCESS].strip(),
+        os.environ[_EVIDENCE_ENV_SECRET].strip(),
+    )
+
+
 def local_spool_dir() -> Path | None:
     """``$ENTRY_RADAR_SPOOL_DIR`` when set.  Never a ``data/`` path."""
     raw = os.environ.get(_SPOOL_DIR_ENV, "").strip()
@@ -175,34 +252,57 @@ def local_spool_dir() -> Path | None:
 # instead of the visible health state LAB-0 requires). Nothing about the
 # WRITE path (``NominationSpool``/``EventSpool``) changes.
 # ---------------------------------------------------------------------------
-def r2_credentials_present() -> bool:
-    """Cheap presence check for the three R2 env vars, no client build.
+def r2_credentials_present(prefix: str | None = None) -> bool:
+    """Cheap presence check for the R2 env vars, no client build.
 
     Lets a caller distinguish "no R2 credentials configured at all" (the
     ordinary local-dev/CI case) from "credentials present but the client/list
     call itself failed" without paying for a client build just to answer the
     first question.
+
+    With an evidence ``prefix`` (W4.2 / LER-C1): True when EITHER store can
+    answer an authenticated READ — the dedicated evidence store when
+    configured, else the shared store as the explicit LEGACY read
+    compatibility path (historical envelopes written before the private
+    cutover live in the shared bucket; reading them with the authenticated
+    client preserves identity/history and is not the anonymous exposure the
+    boundary closes).  WRITES never get that fallback — see
+    :meth:`NominationSpool._put`.
     """
-    return bool(
+    shared = bool(
         os.environ.get("R2_ENDPOINT")
         and os.environ.get("R2_ACCESS_KEY_ID")
         and os.environ.get("R2_SECRET_ACCESS_KEY")
     )
+    if prefix is not None and is_evidence_key(prefix):
+        return evidence_credentials_present() or shared
+    return shared
 
 
-def r2_client_for_read() -> Any:
-    """Public seam onto :func:`_r2_client` — the identical client every spool
-    write already builds (same endpoint/keys/checksum-workaround config).  A
-    reader must resolve the SAME backend, not a second, divergently
+def r2_client_for_read(prefix: str | None = None) -> Any:
+    """Public seam onto the module's ONE client builder.  A reader must
+    resolve the SAME backend the writer uses, not a second, divergently
     configured one.  Returns ``None`` when credentials are absent; never
-    raises (matches ``_r2_client``'s own contract).
+    raises (matches :func:`_r2_client`'s own contract).
+
+    With an evidence ``prefix``: the dedicated evidence-store client when
+    configured, else the shared authenticated client as the explicit legacy
+    read path (see :func:`r2_credentials_present`).
     """
+    if prefix is not None and is_evidence_key(prefix) and evidence_credentials_present():
+        return _evidence_client()
     return _r2_client()
 
 
-def r2_bucket_name() -> str:
-    """Public seam onto :func:`_bucket` — the bucket every spool write/read
-    resolves to (``$R2_BUCKET``, default ``mastermindx``)."""
+def r2_bucket_name(prefix: str | None = None) -> str:
+    """Public seam onto the bucket resolution every spool write/read uses.
+
+    With an evidence ``prefix``: the dedicated evidence bucket when the
+    store is configured, else the shared ``$R2_BUCKET`` (legacy reads)."""
+    if prefix is not None and is_evidence_key(prefix):
+        dedicated = evidence_bucket_name()
+        if dedicated:
+            return dedicated
     return _bucket()
 
 
@@ -298,10 +398,33 @@ class NominationSpool:
                   f"({exc}) — nomination events NOT spooled", flush=True)
             return False
 
-        s3 = self._s3 if self._s3 is not None else _r2_client()
+        # W4.2 / LER-C1 evidence boundary (DSC:RADAR-SPOOL-PUBLIC-R2): a raw
+        # evidence key resolves ONLY the dedicated private store from the
+        # environment — never the shared ``$R2_BUCKET`` client, whose bucket
+        # is anonymously readable through the public R2 dev host.  With the
+        # dedicated store unconfigured the R2 leg is REFUSED (typed, visible)
+        # and the write falls to the local spool ladder below: a withheld
+        # envelope is recoverable, a published-to-public envelope is not.
+        # An injected ``s3`` (tests, callers supplying their own reviewed
+        # backend) is used as given — the guard governs env resolution.
+        s3 = self._s3
+        bucket = _bucket()
+        if s3 is None:
+            if is_evidence_key(key):
+                s3 = _evidence_client()
+                bucket = evidence_bucket_name() or bucket
+                if s3 is None:
+                    print(f"::warning title=entry-radar-spool::dedicated evidence store "
+                          f"(ENTRY_RADAR_R2_*) unconfigured — refusing to write evidence "
+                          f"key {key} through the shared public-classified bucket; "
+                          f"falling back to the local spool", flush=True)
+            else:
+                s3 = _r2_client()
+        elif is_evidence_key(key):
+            bucket = evidence_bucket_name() or bucket
         if s3 is not None:
             try:
-                s3.put_object(Bucket=_bucket(), Key=key, Body=body,
+                s3.put_object(Bucket=bucket, Key=key, Body=body,
                               ContentType="application/json")
                 log.info("entry_radar.spool: published %s (%d bytes)", key, len(body))
                 self.written_keys.append(key)
@@ -326,10 +449,19 @@ class NominationSpool:
 
         # Distinguish "never had a sink" from "the sink we had rejected the write":
         # the second is an incident, and reporting it as missing credentials would
-        # send the operator to the wrong place.
-        why = ("the R2 PUT failed and no local fallback is configured"
-               if (self._s3 is not None or _r2_client() is not None)
-               else f"no R2 credentials and no ${_SPOOL_DIR_ENV}")
+        # send the operator to the wrong place.  An evidence key whose dedicated
+        # store is unconfigured is a THIRD case — the R2 leg was refused by the
+        # privacy boundary, not absent and not failed — and the remedy is the
+        # ENTRY_RADAR_R2_* provisioning runbook, not shared-credential repair.
+        if (self._s3 is None and is_evidence_key(key)
+                and not evidence_credentials_present()):
+            why = (f"the evidence store (ENTRY_RADAR_R2_*) is unconfigured, the "
+                   f"shared public-classified bucket is refused for evidence keys, "
+                   f"and no ${_SPOOL_DIR_ENV} local fallback is set")
+        else:
+            why = ("the R2 PUT failed and no local fallback is configured"
+                   if (self._s3 is not None or _r2_client() is not None)
+                   else f"no R2 credentials and no ${_SPOOL_DIR_ENV}")
         print(f"::warning title=entry-radar-spool::{why} — {key} NOT spooled; "
               "ephemeral-producer nominations from this pass are unreconstructible",
               flush=True)

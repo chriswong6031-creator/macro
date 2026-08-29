@@ -219,8 +219,8 @@ def test_health_block_names_r2_backend_when_credentials_resolve(monkeypatch) -> 
                     events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
     key = f"{prefix}/2026-08-19/100000-p1.json"
     s3 = _FakeR2({key: json.dumps(env).encode("utf-8")})
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: s3)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: s3)
 
     payload = build_lab_response(LabRoots())
 
@@ -231,8 +231,8 @@ def test_health_block_names_r2_backend_when_credentials_resolve(monkeypatch) -> 
 def test_health_block_surfaces_r2_credential_failure_as_a_visible_state(monkeypatch) -> None:
     # THE fail-closed property LAB-0 §6 requires: a credential/permission
     # error must never present as an empty-and-clean board.
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: _ExplodingListR2())
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: _ExplodingListR2())
 
     payload = build_lab_response(LabRoots())
     health = payload["health"]
@@ -477,8 +477,8 @@ def test_e2e_baseline_minted_with_no_spooled_pass_leaves_the_cli_refusing(
 # as "R2 unconfigured".
 # ---------------------------------------------------------------------------
 def test_resolve_radar_spool_client_build_failure_is_a_visible_r2_error(monkeypatch) -> None:
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: None)
 
     result = sources_mod.resolve_radar_spool(None)
 
@@ -495,8 +495,8 @@ def test_resolve_radar_spool_client_build_failure_falls_back_to_local_but_stays_
     env = _envelope(pass_ts="2026-08-19T10:00:00Z", pass_id="p1",
                     events=[_g0_event("evt-1", "AAA", signal_ts="2026-08-19T09:55:00Z")])
     _write_pass(spool, session="2026-08-19", stamp="100000-p1", envelope=env)
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: None)
 
     result = sources_mod.resolve_radar_spool(spool)
 
@@ -506,8 +506,8 @@ def test_resolve_radar_spool_client_build_failure_falls_back_to_local_but_stays_
 
 
 def test_health_block_surfaces_r2_client_build_failure(monkeypatch) -> None:
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: None)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: None)
 
     payload = build_lab_response(LabRoots())
     health = payload["health"]
@@ -541,8 +541,8 @@ def test_response_forces_coverage_unverified_when_r2_errored_even_with_local_fal
         "baseline_started_at": "2026-08-19T09:30:00Z",
     }), encoding="utf-8")
 
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: _ExplodingListR2())
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: _ExplodingListR2())
 
     roots = LabRoots(radar_spool_dir=spool, observation_baseline_path=baseline_path)
     payload = build_lab_response(roots)
@@ -658,8 +658,8 @@ def test_resolve_radar_spool_r2_empty_success_discloses_bucket_and_prefix(monkey
 def test_health_block_discloses_bucket_and_prefix_when_r2_resolves(monkeypatch) -> None:
     monkeypatch.setenv("R2_BUCKET", "test-bucket")
     s3 = _FakeR2({})
-    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda: True)
-    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda: s3)
+    monkeypatch.setattr(radar_spool, "r2_credentials_present", lambda *a, **k: True)
+    monkeypatch.setattr(radar_spool, "r2_client_for_read", lambda *a, **k: s3)
 
     payload = build_lab_response(LabRoots())
 
