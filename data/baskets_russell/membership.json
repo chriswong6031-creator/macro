@@ -8644,11 +8644,11 @@
      "name": "Monarch Casino & Resort Inc"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -8796,12 +8796,12 @@
      "name": "Gentherm Inc"
     },
     {
-     "ticker": "BH",
-     "name": "Biglari Holdings Inc"
-    },
-    {
      "ticker": "WINA",
      "name": "Winmark Corp"
+    },
+    {
+     "ticker": "BH",
+     "name": "Biglari Holdings Inc"
     },
     {
      "ticker": "TRIP",
@@ -10714,12 +10714,12 @@
      "name": "AlTi Global Inc"
     },
     {
-     "ticker": "OPFI",
-     "name": "OppFi Inc"
-    },
-    {
      "ticker": "CRD-A",
      "name": "Crawford & Co"
+    },
+    {
+     "ticker": "OPFI",
+     "name": "OppFi Inc"
     },
     {
      "ticker": "CBNK",
@@ -11298,6 +11298,10 @@
     {
      "ticker": "TXG",
      "name": "10x Genomics Inc"
+    },
+    {
+     "ticker": "HQY",
+     "name": "Healthequity Inc"
     },
     {
      "ticker": "SYRE",
@@ -13598,6 +13602,10 @@
      "name": "Pangaea Logistics Solutions Ltd"
     },
     {
+     "ticker": "CMCO",
+     "name": "Columbus Mckinnon Corp"
+    },
+    {
      "ticker": "QUAD",
      "name": "Quad/Graphics Inc"
     },
@@ -14674,10 +14682,6 @@
      "name": "Vistance Networks Inc"
     },
     {
-     "ticker": "NCNO",
-     "name": "Ncino Inc"
-    },
-    {
      "ticker": "PAYO",
      "name": "Payoneer Global Inc"
     },
@@ -14838,6 +14842,10 @@
      "name": "BigBear.ai Holdings Inc"
     },
     {
+     "ticker": "VISN",
+     "name": "Vistance Networks Inc"
+    },
+    {
      "ticker": "AMBQ",
      "name": "Ambiq Micro Inc"
     },
@@ -14914,6 +14922,10 @@
      "name": "Pagerduty Inc"
     },
     {
+     "ticker": "AIP",
+     "name": "Arteris Inc"
+    },
+    {
      "ticker": "MNTN",
      "name": "MNTN Inc"
     },
@@ -14986,12 +14998,12 @@
      "name": "Ceva Inc"
     },
     {
-     "ticker": "LPTH",
-     "name": "Lightpath Technologies Inc"
-    },
-    {
      "ticker": "AOSL",
      "name": "Alpha & Omega Semiconductor Ltd"
+    },
+    {
+     "ticker": "LPTH",
+     "name": "Lightpath Technologies Inc"
     },
     {
      "ticker": "PAYS",
@@ -15194,16 +15206,16 @@
      "name": "One Stop Systems Inc"
     },
     {
-     "ticker": "AVNW",
-     "name": "Aviat Networks Inc"
-    },
-    {
      "ticker": "SMRT",
      "name": "SmartRent Inc"
     },
     {
      "ticker": "RELL",
      "name": "Richardson Electronics Ltd"
+    },
+    {
+     "ticker": "AVNW",
+     "name": "Aviat Networks Inc"
     },
     {
      "ticker": "IMMR",
@@ -15214,16 +15226,16 @@
      "name": "Aeluma Inc"
     },
     {
-     "ticker": "III",
-     "name": "Information Services Group Inc"
-    },
-    {
-     "ticker": "KLTR",
-     "name": "Kaltura Inc"
+     "ticker": "LTRX",
+     "name": "Lantronix Inc"
     },
     {
      "ticker": "LTRX",
      "name": "Lantronix Inc"
+    },
+    {
+     "ticker": "KLTR",
+     "name": "Kaltura Inc"
     },
     {
      "ticker": "SVCO",

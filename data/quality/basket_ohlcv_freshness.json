@@ -1,6 +1,6 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-29T05:12:13.436424+00:00",
+  "checked_at": "2026-08-29T06:08:03.793139+00:00",
   "threshold_sessions": 3,
   "store_max": "2026-08-27",
   "n_members": 702,
@@ -133,7 +133,7 @@
     }
   },
   "n_unsponsored_stale": 25,
-  "n_unsponsored_fresh": 157,
+  "n_unsponsored_fresh": 158,
   "retired": {
     "AVB": {
       "last": "2026-08-19",
@@ -142,17 +142,9 @@
       "delisted_on": "2026-08-17",
       "reason": "acquisition",
       "successor_ticker": null
-    },
-    "LEG": {
-      "last": "2026-08-27",
-      "sessions_behind": 0,
-      "last_session": "2026-08-26",
-      "delisted_on": "2026-08-27",
-      "reason": "acquisition",
-      "successor_ticker": null
     }
   },
-  "n_retired": 2,
+  "n_retired": 1,
   "maintained_finviz_filters": [
     "idx_ndx",
     "idx_rut"

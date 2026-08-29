@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-29T04:11:42.886961+00:00",
+  "generated_at": "2026-08-29T06:11:36.822487+00:00",
   "grade_horizons": [
     5,
     21,
@@ -2541,8 +2541,8 @@
     }
   },
   "counts": {
-    "n_claims": 72435,
-    "n_grades": 93158,
+    "n_claims": 72440,
+    "n_grades": 92063,
     "n_placebo": 1100,
     "n_rejected": 15,
     "grades_by_fill_convention": {
@@ -2555,7 +2555,7 @@
       "explicit_unit_v1:calendar_days:US": 46,
       "explicit_unit_v1:trading_days:CN": 328
     },
-    "n_claims_horizon_unit_declared": 25805,
+    "n_claims_horizon_unit_declared": 25810,
     "n_claims_unstamped_regime": 6509
   },
   "ladder_states": {
@@ -3414,12 +3414,12 @@
       },
       "21": {
         "eligible": false,
-        "reason": "Wilson CI lower bound 0.3907 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='intel_hub' horizon=21d: rolling Wilson CI lower bound=0.3907 <= 0.5 (coin-flip null) at n_dates=28. Auto-demote one rung. Pinned as of 2026-08-29 (narrative_regime precedent).",
-        "n_dates": 28,
-        "wilson_ci_low": 0.390705,
+        "reason": "Wilson CI lower bound 0.3731 <= 0.5 — the hit-rate interval does not clear a coin flip. AUTO-DEMOTE warranted. claim_family='intel_hub' horizon=21d: rolling Wilson CI lower bound=0.3731 <= 0.5 (coin-flip null) at n_dates=27. Auto-demote one rung. Pinned as of 2026-08-29 (narrative_regime precedent).",
+        "n_dates": 27,
+        "wilson_ci_low": 0.373127,
         "current_state": "LEGACY_NOT_AUTHORITY_ELIGIBLE",
         "demote": true,
-        "pinned_reason": "claim_family='intel_hub' horizon=21d: rolling Wilson CI lower bound=0.3907 <= 0.5 (coin-flip null) at n_dates=28. Auto-demote one rung. Pinned as of 2026-08-29 (narrative_regime precedent).",
+        "pinned_reason": "claim_family='intel_hub' horizon=21d: rolling Wilson CI lower bound=0.3731 <= 0.5 (coin-flip null) at n_dates=27. Auto-demote one rung. Pinned as of 2026-08-29 (narrative_regime precedent).",
         "clock_basis": "legacy_calendar_unstamped",
         "clock_migration": false,
         "clock_prior_n_dates": {},
@@ -4072,7 +4072,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-08-29T04:12:40.487917+00:00",
+  "ladder_states_at": "2026-08-29T06:12:32.938394+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -6888,5 +6888,5 @@
       }
     }
   },
-  "promotion_readiness_at": "2026-08-29T04:13:59.205894+00:00"
+  "promotion_readiness_at": "2026-08-29T06:13:48.965674+00:00"
 }
