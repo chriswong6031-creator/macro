@@ -75,7 +75,11 @@ dispositions:
     rationale: V3.8 mounted with zero CSS dependency; TP-1 adds one and must not let it strand entitled visitors — proven by the local 404 fixture (no mount, legacy visible) with a positive control (CSS restored ⇒ mounts)
   - id: platform.theme_lang
     disposition: RETAIN
-    target: theme resolves through html[data-theme] selectors in the governed pair with NO composer remount (live-proven: same mount node across toggle); ZH via existing dual-emit; 390 one-lane grammar preserved (harness cells + lane-2 shot)
+    target: >
+      theme resolves through html[data-theme] selectors in the governed pair
+      with NO composer remount (live-proven, same mount node across toggle);
+      ZH via existing dual-emit; 390 one-lane grammar preserved (harness
+      cells + lane-2 shot)
   - id: platform.sm_hidden_rescue
     disposition: RETAIN
     target: ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden { display:flex !important } in the governed pair, test-pinned at declaration level"

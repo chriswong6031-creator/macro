@@ -137,6 +137,37 @@ first_pass:
       correctly amber and the honest "9 shown · 9 on board" count intact.
 
 second_pass:
-  amended_at: null   # pending — rationale reveal follows this freeze commit
-  amendments: []
-  verdict: null
+  amended_at: "2026-08-29T00:58:00Z"
+  continuation_note: >
+    Pass 2 was executed by a continuation context of the same reviewer
+    identity after the host lost the pass-1 agent's transcript; it was seeded
+    solely from this frozen receipt (freeze commit 7365246eba25 preceded the
+    rationale reveal). The continuation received the rationale before reading
+    the receipt, so upheld-without-reverification rows rest on the receipt's
+    authority; VTC-006/007/008/011 carry the continuation's own independent
+    source/pixel verification.
+  amendments:
+    - {finding: VTC-001, action: downgraded, note: "Canvas-value Prophet bed is the declared recession mechanism (deliberate law); survives only as the three-nesting-models taste input. major → minor."}
+    - {finding: VTC-002, action: downgraded, note: "TP-0 licenses material divergence, so the container/radius fork is lawful; the residue is the spacing-scale delta (≈26px dark gutters vs 0px light separations) which the theme law binds. major → minor."}
+    - {finding: VTC-003, action: upheld, note: "Unanswered by the rationale: four EQUAL-width abutting rail segments over 3/2/2/5 lane counts invite a proportional misread production could not produce. Strongest surviving finding. Stays major."}
+    - {finding: VTC-004, action: withdrawn, note: "Inherited estate law: the pre-TP-1 direction family flips under zh exactly as the stance family does (verified at source), so accepted V3.8 rendered the identical 立即买入-in-red; quote exception preserved verbatim. Referred to estate level."}
+    - {finding: VTC-005, action: withdrawn, note: "Out of boundary: sector lines and the Theme eyebrow are composer-owned copy untouched by TP-1 (verified at source). Referred as estate ZH-nativeness debt."}
+    - {finding: VTC-006, action: upheld, note: "Cause corrected, not softened: the caption text pre-exists; TP-1's descendant-scoped .ca-v36-lead-basis cannot reach the body-appended modal so the basis pill degrades to bare text (verified against pre-extraction bytes: the rule was unscoped). The one confirmed introduced regression; blocking. Stays major."}
+    - {finding: VTC-007, action: downgraded, note: "Mechanism found at source: theme.css .sky-fx is a transient self-removing theme-toggle animation at z 2147483600; the modal z-index literal is byte-identical to pre-extraction. Inherited and out of boundary; residual = estate chrome debt + evidence quality. major → minor."}
+    - {finding: VTC-008, action: downgraded, note: "Inherited: the pre-extraction composer's own 680px block carries the same one-lane truncating grammar (verified at source). Cost stays real as inherited debt. major → minor."}
+    - {finding: VTC-009, action: upheld, note: "Explaining each half does not remove the asymmetry: a magnitude channel legible in light and absent in dark is a theme-parity cost for the authority. Stays minor."}
+    - {finding: VTC-010, action: upheld, note: "Conceded and unforced: --link carries both magnitude and wayfinding on one panel. Stays minor."}
+    - {finding: VTC-011, action: withdrawn, note: "FALSIFIED by pixel re-verification: straight border runs are byte-identical (±1 LSB); the darker samples exist only in 5-7-row corner bands — antialias re-blends from declared DARK DELTA item 5 radius snaps. Not an undeclared delta."}
+    - {finding: VTC-012, action: downgraded, note: "FAB is site chrome (inherited collision); retained as nit because the mitigation lever (a mobile bottom gutter) lives inside TP-1's own CSS pair. minor → nit."}
+  conditions:
+    - {id: C1, blocking: true, finding: VTC-006, action: "Scope .ca-v36-lead-basis (and the stance family, per the sibling critic) to reach the body-appended modal as the modal family already does; recapture both modal cells after repair."}
+    - {id: C2, blocking: false, findings: "VTC-003, VTC-009, VTC-010", action: "Design-authority adjudication: equal-width four-colour rail bar over 3/2/2/5; light-only magnitude channel; accent hue carrying measurement."}
+    - {id: C3, blocking: false, findings: "VTC-001, VTC-002, VTC-007, VTC-008, VTC-012", action: "Record as declared residual debt; no TP-1 action."}
+    - {id: C4, blocking: false, findings: "VTC-004, VTC-005", action: "Referred out of this reference to estate-level stance-flip law and ZH-nativeness debt."}
+  evidence_integrity_note: >
+    The capture harness fired the transient .sky-fx theme-toggle animation
+    during at least 6 evidence cells (orb over modal rows and lane cards) —
+    an evidence-quality defect, not a product defect; future captures should
+    wait out the ~1s animation after forcing a theme.
+  residual_open_findings: {blocker: 0, major: 2, minor: 5, nit: 1}
+  verdict: PASS_WITH_CONDITIONS

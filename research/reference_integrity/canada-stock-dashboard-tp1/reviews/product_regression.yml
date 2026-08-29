@@ -134,6 +134,37 @@ first_pass:
     nav.terminal_routes.
 
 second_pass:
-  amended_at: null   # pending — rationale reveal follows this freeze commit
-  amendments: []
-  verdict: null
+  amended_at: "2026-08-29T00:32:00Z"
+  amendments:
+    - {finding: PRC-001, action: upheld, note: "Confirmed by the designer as a genuine TP-1 regression scheduled for repair; stays major — the full-ranking modal is where a subscriber scans 16 themes and semantic hue is the scan mechanism (root re-verified: descendant-scoped .ca-v36-stance vs body-sibling modal)."}
+    - {finding: PRC-002, action: downgraded, note: "Caption words pre-exist in the composer h4 (re-verified at source); the basis disclosure survives as text and only the pill styling died — a legibility defect cleared by the same rescoping fix as PRC-001. major → minor."}
+    - {finding: PRC-003, action: upheld, note: "The disclosed motivation (whisper read as stray underline on white) answers why light strengthened the track but neither defect: 100% breadth is indistinguishable from a plain divider, and the same unlabeled count/max ratio carries different authority in light than dark. Both facts go to the design authority. Stays major."}
+    - {finding: PRC-004, action: downgraded, note: "The disclosed private,no-store receipts for BOTH assets close the stale-CSS/fresh-JS skew class; residual = mount atomicity rests on a Cache-Control header asserted nowhere in the reviewed bytes, and the vestigial ?v= literal reads as a cache contract it is not. major → minor."}
+    - {finding: PRC-005, action: upheld, note: "Conceded as a fair hardening gap; the fetch-vs-link reason explains the omission without removing it — a stalled (not errored) stylesheet still strands an entitled subscriber for the browser's own timeout. Stays minor."}
+    - {finding: PRC-006, action: upheld, note: "In-source documentation is disclosure, not mitigation; the mode remains fail-OPEN because the modal's only display:none lives inside the combinator-gated rule — an unconditional base rule would make it fail closed at zero design cost. Stays minor."}
+    - {finding: PRC-007, action: upheld, note: "The sibling-IIFE reason explains why the global exists but not why it must — one enclosing IIFE removes the window write on every page. Stays nit."}
+  pass2_corrections:
+    - id: SC-001
+      target: "pass-1 strength: 'dark desktop EN is a near-exact preservation'"
+      status: partly_falsified
+      note: >
+        The revealed seven-delta ledger contradicts that wording: the critic's
+        own pixel probes (buy (69,184,115)→(93,188,134), avoid
+        (224,100,100)→(221,113,114)) were mis-attributed to antialiasing in
+        pass 1 and are the declared buy/avoid ink alignments. Corrected claim:
+        dark is deliberately altered in declared, individually defensible ways
+        that preserve every semantic distinction, not unchanged.
+    - id: SC-002
+      target: "designer claim: near/IN-FAVOUR ink rebound to var(--ink-link)"
+      status: verified_as_restore_not_change
+      note: >
+        The baseline composer already bound .near to var(--ink-link,var(--link))
+        and IN-FAVOUR measures (122,167,224) identically in baseline and
+        proposal dark shots — the rebinding restores production, changing
+        nothing the critic could contest.
+  conditions_for_pass:
+    - "Repair PRC-001 (and PRC-002, same root): scope .ca-v36-stance and .ca-v36-lead-basis to reach the sibling modal; recapture the modal cell in both themes."
+    - "Adjudicate PRC-003 at design-authority altitude on both facts (100%-reads-as-divider collision; dark/light authority split)."
+    - "Supply missing evidence cells: filtered state (pill, is-active, empty branches), Table view both themes, baseline modal cell."
+  residual_open_findings: {blocker: 0, major: 2, minor: 4, nit: 1}
+  verdict: PASS_WITH_CONDITIONS
