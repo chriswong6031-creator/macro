@@ -1883,6 +1883,8 @@ programs:
         path: research/OPTIONS_CONFLUENCE_PROGRAM_BY_FABLE.md
       - repo: terminal
         path: docs/OPTIONS_SUPERINTELLIGENCE_MASTERPLAN_2026-07-31.md
+      - repo: macro
+        path: research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
     implementation:
       - repo: macro
         roots:
