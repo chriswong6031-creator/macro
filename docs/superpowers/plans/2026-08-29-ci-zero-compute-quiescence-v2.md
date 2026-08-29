@@ -103,7 +103,7 @@ Run the focused node IDs and retain the RED output before touching production ho
 
 **Files:**
 
-- Modify: `agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md`
+- Modify unless a current exact-path carrier exists: `agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md`
 - Add: a dated `agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-29-*.md`
 - Do not edit generated Agent OS views.
 
@@ -111,6 +111,8 @@ Run the focused node IDs and retain the RED output before touching production ho
 2. Run deterministic long-wait proof across multiple nominal poll intervals and report watcher-process count, GitHub-observation count, model-facing receipt/turn count, and wake count.
 3. Run mutation proof by disabling/bypassing the quiescence transition in the test harness and confirm repeated poll/narration returns.
 4. Run `python3 scripts/agentos.py validate` after updating the workstream/handoff.
+   If another current PR owns the workstream record, leave that shared file
+   untouched and record the collision plus this bounded wave in the new handoff.
 5. Refresh `origin/main`, reconcile collisions, inspect exact changed files, commit, push, and open one fresh current-main PR.
 6. Return the PR as `PARKED / HOLD-FOR-SOL`: exact head pushed, local worktree clean, draft PR, no `merge-on-green`, auto-merge null, explicit Sol authority/release condition. Do not merge or claim live deployment before Sol adjudication.
 7. Post exact-head `RESULT` or governed `BLOCKED` on the canonical Slack carrier with RED/GREEN/mutation/long-wait evidence, current CI, watcher/model-turn counts, exact files, and durable Agent OS handoff. Re-arm every nonterminal return.

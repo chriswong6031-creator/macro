@@ -63,12 +63,12 @@ verified:
     command: >
       python3 -m pytest -q tests/test_ship_loop_guard.py -k
       'forty_five_minute_wait or hundred_identical or mutation_without_quiescence'
-    result: 6 passed in the deterministic long-wait/mutation selection.
+    result: 2 passed and 395 deselected in the deterministic long-wait/mutation selection.
   - claim: >
       Lawful pending holds reuse ci_quiescence.v1; PARKED narrates once; red,
       release, outage and concurrent watcher/latch changes fail in the safe direction.
     command: python3 -m pytest -q tests/test_ship_loop_hold_wrapper.py
-    result: 47 passed on the current-main reconciled tree.
+    result: 37 passed on the current-main reconciled tree.
   - claim: The cross-account standing law requires the identical zero-turn boundary.
     command: >
       python3 -m pytest -q
@@ -106,7 +106,9 @@ next_actions:
   - Push one fresh draft HOLD-FOR-SOL pull request and return exact-head CI to Sol.
 do_not_redo:
   - Do not reopen, rebase or merge donor PR #6381.
-  - Do not silently fork or mutate PR #6626; its exact commit is reconciled with -x.
+  - >
+    Do not silently fork or mutate PR #6626; its landed commit is reconciled
+    through the recorded current-main merge.
   - Do not create a watcher database, daemon, scheduler, queue, retry service,
     second lifecycle/control plane, successor watcher, or new session identity.
   - >
