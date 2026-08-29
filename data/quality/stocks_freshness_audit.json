@@ -22,18 +22,23 @@
  "n": 244,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 2,
+ "n_flags": 3,
  "universes": [
   {
    "name": "stocks",
    "n": 244,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 2,
+   "n_flags": 3,
    "skipped": false,
    "note": "",
    "failed": [],
    "flags": [
+    {
+     "name": "AVB",
+     "kind": "stale_dead",
+     "detail": "last bar 2026-08-14 \u2014 delisted (config/delisted_symbols.yml, last session 2026-08-14), not alarmed"
+    },
     {
      "name": "EA",
      "kind": "stale_live",
@@ -50,9 +55,9 @@
  "expected_session": "2026-08-28",
  "threshold_calendar_days": 7,
  "totals": {
-  "fresh": 242,
+  "fresh": 241,
   "stale_live": 2,
-  "stale_dead": 0,
+  "stale_dead": 1,
   "missing": 0,
   "unreadable": 0
  },
@@ -70,7 +75,16 @@
    "in_union": false
   }
  ],
- "stale_dead": [],
+ "stale_dead": [
+  {
+   "ticker": "AVB",
+   "last_bar": "2026-08-14",
+   "lag_days": 15,
+   "in_union": false,
+   "delisted_ledger": true,
+   "contradiction": false
+  }
+ ],
  "missing": [],
  "unreadable": []
 }
