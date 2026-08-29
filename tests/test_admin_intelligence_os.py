@@ -703,6 +703,72 @@ def test_semantically_invalid_qledger_rows_degrade_even_when_json_parses(
     assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
 
 
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("direction", True),
+        ("scope", {"type": [], "key": "AAPL"}),
+    ],
+)
+def test_claim_semantic_validation_is_type_total(tmp_path, field, bad_value):
+    """Every JSON type becomes a provider verdict, never a page-level exception."""
+    root = qledger_adapter_root(tmp_path)
+    claim = {
+        "claim_id": "c1",
+        "desk": "stock_desk",
+        "claim_family": "stock_desk",
+        "asof": "2026-08-29",
+        "scope": {"type": "entity", "key": "AAPL"},
+        "direction": 1,
+        "horizon_d": 20,
+        "timestamp_quality": "CRAWL_BOUNDED",
+    }
+    claim[field] = bad_value
+    (root / "data" / "qledger" / "claims.jsonl").write_text(
+        json.dumps(claim) + "\n", encoding="utf-8"
+    )
+
+    result = IOS.panel(root=root)
+    assert result["ok"] is True
+    row = result["engines"][0]
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "semantically invalid" in row["evidence_provider"]["error"]
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("subject_ret", "0.1"),
+        ("excess", {"value": 0.1}),
+    ],
+)
+def test_grade_semantic_validation_rejects_nonnumeric_metrics(
+    tmp_path, field, bad_value
+):
+    """Parseable prose/objects are not numeric owner evidence."""
+    root = qledger_adapter_root(tmp_path)
+    grade = {
+        "claim_id": "c1",
+        "horizon_d": 20,
+        "graded_at": "2026-08-29T01:02:03+00:00",
+        "subject_ret": 0.1,
+        "bench_ret": 0.0,
+        "control_ret": None,
+        "excess": 0.1,
+        "hit": True,
+    }
+    grade[field] = bad_value
+    (root / "data" / "qledger" / "grades.jsonl").write_text(
+        json.dumps(grade) + "\n", encoding="utf-8"
+    )
+
+    row = IOS.panel(root=root)["engines"][0]
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "semantically invalid" in row["evidence_provider"]["error"]
+
+
 def test_corrupt_existing_evidence_clock_degrades_instead_of_looking_unstarted(tmp_path):
     """An existing unreadable write-once receipt is blindness, not an absent clock."""
     root = qledger_adapter_root(tmp_path)

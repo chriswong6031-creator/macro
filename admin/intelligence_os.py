@@ -45,6 +45,7 @@ really are producer-owned; nothing in this module can set it.
 """
 from __future__ import annotations
 
+import math
 import sys
 import threading
 import time
@@ -249,7 +250,21 @@ def _positive_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool) and value > 0
 
 
-def _valid_claim_row(row: Any) -> bool:
+def _nonempty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _finite_number_or_none(value: Any) -> bool:
+    if value is None:
+        return True
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+    )
+
+
+def _valid_claim_row(row: Any, qledger_owner: Any) -> bool:
     """Minimum historical qledger claim identity needed by the owner readers.
 
     This deliberately does not rerun today's registration gate over old rows: that gate
@@ -260,33 +275,62 @@ def _valid_claim_row(row: Any) -> bool:
     if not isinstance(row, dict):
         return False
     scope = row.get("scope")
-    family = str(row.get("claim_family") or row.get("desk") or "").strip()
+    family = row.get("claim_family") or row.get("desk")
+    scope_type = scope.get("type") if isinstance(scope, dict) else None
+    scope_key = scope.get("key") if isinstance(scope, dict) else None
+    direction = row.get("direction")
     unit = row.get("horizon_unit")
     return (
-        bool(str(row.get("claim_id") or "").strip())
-        and bool(str(row.get("desk") or "").strip())
-        and bool(family)
+        _nonempty_string(row.get("claim_id"))
+        and _nonempty_string(row.get("desk"))
+        and _nonempty_string(family)
         and _parse_iso_timestamp(row.get("asof"), require_timezone=False)
         and isinstance(scope, dict)
-        and scope.get("type") in {"entity", "basket", "sector", "macro"}
-        and bool(str(scope.get("key") or "").strip())
-        and row.get("direction") in {-1, 0, 1}
+        and isinstance(scope_type, str)
+        and scope_type in qledger_owner.SCOPE_TYPES
+        and _nonempty_string(scope_key)
+        and type(direction) is int
+        and direction in qledger_owner.DIRECTIONS
         and _positive_int(row.get("horizon_d"))
-        and (unit is None or unit in {"trading_days", "calendar_days"})
+        and (
+            unit is None
+            or (isinstance(unit, str) and unit in qledger_owner.HORIZON_UNITS)
+        )
+        and isinstance(row.get("timestamp_quality"), str)
+        and row.get("timestamp_quality") in qledger_owner.TIMESTAMP_QUALITY
     )
 
 
-def _valid_grade_row(row: Any) -> bool:
+def _valid_grade_row(row: Any, qledger_owner: Any) -> bool:
     """Minimum semantic shape shared by legacy and explicit-clock grade rows."""
     if not isinstance(row, dict):
         return False
     required_metrics = ("subject_ret", "bench_ret", "control_ret", "excess", "hit")
+    unit = row.get("horizon_unit")
+    version = row.get("clock_version")
+    market = row.get("clock_market")
     return (
-        bool(str(row.get("claim_id") or "").strip())
+        _nonempty_string(row.get("claim_id"))
         and _positive_int(row.get("horizon_d"))
         and _parse_iso_timestamp(row.get("graded_at"), require_timezone=True)
         and all(key in row for key in required_metrics)
-        and (row.get("hit") is None or isinstance(row.get("hit"), bool))
+        and all(
+            _finite_number_or_none(row.get(key))
+            for key in ("subject_ret", "bench_ret", "control_ret", "excess")
+        )
+        and (row.get("hit") is None or type(row.get("hit")) is bool)
+        and (
+            unit is None
+            or (isinstance(unit, str) and unit in qledger_owner.HORIZON_UNITS)
+        )
+        and (version is None or version == qledger_owner.CLOCK_V1)
+        and (
+            market is None
+            or (
+                isinstance(market, str)
+                and market in qledger_owner.CLOCK_MARKET_SUPPORT
+            )
+        )
     )
 
 
@@ -364,7 +408,9 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
                     f"claims.jsonl has {claims_candidates - len(claims_rows)} "
                     f"unparseable candidate line(s) of {claims_candidates}"
                 )
-            invalid_claims = sum(not _valid_claim_row(row) for row in claims_rows)
+            invalid_claims = sum(
+                not _valid_claim_row(row, qledger) for row in claims_rows
+            )
             if invalid_claims:
                 read_status = _read_status_worse(read_status, "partial")
                 read_errors.append(
@@ -390,7 +436,9 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
                     f"grades.jsonl has {grades_candidates - len(grades_rows)} "
                     f"unparseable candidate line(s) of {grades_candidates}"
                 )
-            invalid_grades = sum(not _valid_grade_row(row) for row in grades_rows)
+            invalid_grades = sum(
+                not _valid_grade_row(row, qledger) for row in grades_rows
+            )
             if invalid_grades:
                 read_status = _read_status_worse(read_status, "partial")
                 read_errors.append(
