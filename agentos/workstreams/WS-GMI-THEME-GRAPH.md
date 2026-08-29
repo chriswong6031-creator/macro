@@ -46,21 +46,26 @@ waves:
     title: "PIT vintage completion — gmi-theme-pit-d2c-20260827-sol-001"
     status: todo
     next_action: >
-      First executable GMI child. Under the active F04 logical COO responsibility, route
-      this architecture-frozen bounded child through the least-scarce capable worker
-      avenue (Terra preferred), refresh current main/open carriers and make required
-      current-snapshot membership planes forward-replayable without backfilling later
-      knowledge. A live Fable provider conversation is not a prerequisite.
+      First executable GMI child by sequence. Under the active F04 logical COO responsibility,
+      retain Terra as the preferred bounded avenue. Before execution, Sol performs a fresh
+      collision census. If no lawful RuntimeBinding/receiver exists and production automatic
+      placement is not proven live, represent this child as PARKED / WAITING_CAPACITY with
+      needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT; do not fabricate OPEN_PICKUP,
+      Chairman quota labor, ACK, START or watcher state. Once lawfully placed, refresh current
+      main/open carriers and make required current-snapshot membership planes forward-replayable
+      without backfilling later knowledge. A live Fable provider conversation is not a prerequisite.
   - id: D2D
     title: "Ontology + probation breadth — gmi-theme-ontology-d2d-20260827-sol-001"
     status: todo
     next_action: >
-      First executable GMI child. Under the active F04 logical COO responsibility, route
-      this architecture-frozen bounded child through the least-scarce capable worker
-      avenue (Terra preferred), complete curated probation/adjudication breadth and
-      navigability across local concepts and existing owner structural classifications.
-      Unmapped remains legal; no fuzzy mapping. A live Fable provider conversation is
-      not a prerequisite.
+      Second executable GMI child by default sequence. Under the active F04 logical COO
+      responsibility, retain Terra as the preferred bounded avenue and complete curated
+      probation/adjudication breadth and navigability across local concepts and existing owner
+      structural classifications. Unmapped remains legal; no fuzzy mapping. D2D may execute in
+      parallel with D2C only if a current planned-write census proves actual path disjointness.
+      If no lawful RuntimeBinding/receiver exists, remain PARKED / WAITING_CAPACITY with
+      needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT. A live Fable provider conversation
+      is not a prerequisite.
   - id: D2E
     title: "Rights / coverage / D2 acceptance — gmi-theme-accept-d2e-20260827-sol-001"
     status: todo
@@ -112,24 +117,31 @@ landmines:
     REJECTED_BY_DESIGN as separate builds. Their useful jobs survive under current owners.
   - >-
     Logical F04/COO ownership is not a provider-session admission gate. Under current
-    protected worker-routing law, architecture-frozen D2C/D2D should route to the
-    least-scarce capable bounded avenue; Fable is reserved for genuine principal-level
-    ambiguity/collision/continuity requirements.
+    protected worker-routing law, architecture-frozen D2C/D2D prefer the least-scarce
+    capable bounded avenue; Fable is reserved for genuine principal-level ambiguity,
+    collision or continuity requirements.
   - >-
-    Watchers and Slack are attention/transport only. Every watcher-enabled child requires
-    explicit CONTINUE/STOP semantics; terminal STOP disarms both temporary watchers and
-    does not authorize the next child.
+    A preferred avenue is not a RuntimeBinding. Under current protected organizational-
+    continuity law, an architecture-frozen child with no lawful receiver is WAITING_CAPACITY /
+    needs_placement with turn_owner=EXECUTIVE_PLACEMENT. Do not convert that into routine
+    Chairman account selection, broad OPEN_PICKUP fanout or a child watcher with no receiver.
+  - >-
+    Watchers and Slack are attention/transport only. Once a lawful receiver/communication
+    path exists, every watcher-enabled child requires explicit CONTINUE/STOP semantics;
+    terminal STOP disarms both temporary watchers and does not authorize the next child.
 next_action: >
   After DEC:GMI-F04-BOUNDED-CHILD-ROUTING-2026-08-28 is main-canonical, Sol performs a
-  fresh collision census and commissions existing D2C operation
-  gmi-theme-pit-d2c-20260827-sol-001 and existing D2D operation
-  gmi-theme-ontology-d2d-20260827-sol-001 as separate CAPACITY_SELECTABLE bounded children,
-  with PREFERRED_AVENUE Terra unless current evidence justifies escalation. They may run
-  concurrently only if their receiving workers' exact planned write surfaces are genuinely
-  disjoint; otherwise sequence. D2E/W3B/W3C remain dependency-held. F04 logical COO
-  responsibility remains active above the children; a live Fable provider conversation is
-  required only when a principal-level ambiguity or cross-owner integration gate actually
-  arises.
+  fresh collision census for the existing D2C operation gmi-theme-pit-d2c-20260827-sol-001
+  first and D2D operation gmi-theme-ontology-d2d-20260827-sol-001 second by default.
+  PREFERRED_AVENUE remains Terra unless current evidence justifies escalation. If current
+  production placement provides a lawful RuntimeBinding, use the existing canonical
+  admission/pickup path. Otherwise keep the relevant child PARKED / WAITING_CAPACITY with
+  needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT; do not fabricate receiver,
+  OPEN_PICKUP, ACK, START or watcher receipts. D2D may run concurrently only if actual
+  planned write surfaces are genuinely disjoint. D2E/W3B/W3C remain dependency-held.
+  F04 logical COO responsibility remains active above the children; a live Fable provider
+  conversation is required only when a principal-level ambiguity or cross-owner integration
+  gate actually arises.
 ---
 
 ## Current production substrate
