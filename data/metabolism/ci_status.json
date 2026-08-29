@@ -1,37 +1,37 @@
 {
-  "ts": "2026-08-28T18:59:10+00:00",
-  "main_sha": "72ea300477d0873ef2272863512ddecda6c2a485",
+  "ts": "2026-08-29T11:29:46+00:00",
+  "main_sha": "94903e531dc2cf8698d1bc4c947d78d7882f7cf0",
   "red_required": [
     {
-      "name": "sweep",
-      "conclusion": "cancelled",
+      "name": "free-content-estate",
+      "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167778649/job/98837214367"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800518"
     },
     {
       "name": "engine-render-guards",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263186"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800502"
     },
     {
       "name": "tier-gate",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263181"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800488"
     },
     {
-      "name": "font-ui-defined",
-      "conclusion": "cancelled",
+      "name": "template-site-sync",
+      "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33167178407/job/98835263049"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800355"
     }
   ],
   "green": false,
-  "consecutive_failures": 70,
+  "consecutive_failures": 72,
   "sensed_shas": [
-    "72ea300477d0873ef2272863512ddecda6c2a485",
-    "ed202fbcadce2ca9d0ed85abb3b1178318825653"
+    "94903e531dc2cf8698d1bc4c947d78d7882f7cf0",
+    "ab3f0350bac31c6d7bdad7b336b714841c3c3aa3"
   ],
   "heartbeat_degraded": false
 }

@@ -747,7 +747,16 @@ removes the only thing that would have noticed.
 Claude enforces this contract with `.claude/hooks/ship_loop_guard.py` at SessionStart
 and `scripts/ship_loop_hold_wrapper.py` at Stop. The wrapper delegates every ordinary
 state to the canonical guard and only turns a fully lawful Sol hold into terminal
-`SHIP LOOP PARKED`. For ordinary work, the guard snapshots pre-existing dirty files,
+`SHIP LOOP PARKED`. A lawful hold whose binding checks are not yet green instead gets
+`HOLD-FOR-SOL WAITING`, or `HOLD-FOR-SOL CHECKS RED` when one concluded red — and since
+2026-08-28 that applies on `claude/*` as well as `sol/*`. It used to be `sol/*`-only, so
+an ordinary held pull request fell through to `unmerged` and was told to squash-merge and
+deploy the very pull request `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` forbids merging; PR #6608
+took 121 consecutive blocks carrying that impossible instruction. The repair corrects the
+ADVICE only — pending and red still block, `parked` remains the one terminal exit and
+still requires every binding check concluded green, and waiting on CI still does not
+qualify for the escape ladder, so answer such a block with a one-line hold note rather
+than a fresh poll or a `SHIP LOOP BLOCKED` report. For ordinary work, the guard snapshots pre-existing dirty files,
 then refuses a normal stop while session-created work is uncommitted, unpushed,
 unmerged, awaiting a render, or absent from production. `unmerged` is satisfied by an
 actually-MERGED pull request and by nothing else; an armed `merge-on-green` pull request

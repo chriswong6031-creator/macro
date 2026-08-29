@@ -50,9 +50,13 @@ symbols:
     company_zh: AvalonBay Communities
     exchange: NYSE
     cik: '0000915912'
-    # Store tip 2026-08-18 is a 0-volume repeat of the 08-14 close (same flat-forward
-    # tell as CTRA/TPH) — the true last session is the Friday before the Monday
-    # merger close (data/stocks/AVB.parquet, data/baskets/ohlcv/AVB.parquet).
+    # The true last session is the Friday before the Monday merger close. Baskets
+    # store tip 2026-08-19 is a 0-volume flat-forward of the 08-14 close (same tell
+    # as CTRA/TPH). data/stocks/AVB.parquet was healed 2026-08-28: Yahoo spliced the
+    # dead symbol into the acquirer's continuing series (whole history re-based by
+    # the ~2.793 exchange ratio + live successor bars through 08-24) and the
+    # collector's basis-rebase imported it on the 08-22 nightly; the store was
+    # restored to the real AvalonBay basis and truncated at last_session.
     last_session: '2026-08-14'
     delisted_on: '2026-08-17'
     reason: acquisition

@@ -83,7 +83,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from collectors.sector_holdings import _dead_tickers, top10_union  # noqa: E402
-from lib import config, nyse_calendar  # noqa: E402
+from lib import config, delisted_symbols, nyse_calendar  # noqa: E402
 from scripts import audit_common as ac  # noqa: E402
 
 log = logging.getLogger("audit.stocks_freshness")
@@ -164,6 +164,13 @@ def run(cfg: dict | None = None, now: datetime | None = None,
     except Exception as e:  # noqa: BLE001 — _dead_tickers() already degrades gracefully; belt+suspenders
         log.warning("[stocks_freshness] _dead_tickers() raised (%s) — treating as empty", e)
         dead = frozenset()
+    # Exit-ledger rows (config/delisted_symbols.yml) are handled BEFORE the fresh
+    # short-circuit below: a delisted tape that keeps ADVANCING reads as "fresh" to
+    # the lag check, which is exactly how the AVB successor-splice ran 6 nights
+    # unseen (2026-08-22: Yahoo answered the dead symbol with the acquirer's
+    # continuing series and the collector's basis-rebase imported it wholesale).
+    # ledger() fails open to {} on an absent/unreadable file.
+    exit_rows = delisted_symbols.ledger()
 
     stems = {p.stem for p in files if not p.stem.startswith("_")}
     accountable = sorted(stems | union)
@@ -197,6 +204,37 @@ def run(cfg: dict | None = None, now: datetime | None = None,
             continue
         last_bar = idx.max().date()
         lag_days = (today_et - last_bar).days
+        exit_row = exit_rows.get(t)
+        if exit_row is not None:
+            # The security stopped existing — its tape is FINISHED, never "fresh".
+            # A tip past the recorded last session contradicts the exit row and is
+            # loud regardless of union membership: either the resolution is wrong,
+            # the symbol was reused by another issuer, or the vendor spliced a
+            # merger successor's tape under the dead symbol (the AVB 2026-08 class
+            # — collectors/yahoo.py::audit_store_freshness has the same shout for
+            # its lane, and this lane lacking it is what let AVB run unseen).
+            recorded = str(exit_row.get("last_session"))
+            contradiction = str(last_bar) > recorded
+            if contradiction:
+                print(f"::warning title=stocks store audit delisted contradiction::"
+                      f"{t} store tip {last_bar} is AFTER its recorded last session "
+                      f"{recorded} — the exit row in config/delisted_symbols.yml is "
+                      "wrong, the symbol was reused by another issuer, or the vendor "
+                      "spliced a merger successor's tape under the dead symbol; "
+                      "re-resolve before trusting this store", flush=True)
+            if not in_union:
+                # Union-aware mute, same rule as the dead-registry branch below: a
+                # ledger name back in today's union is being actively fetched as a
+                # reused symbol and must keep alarming through the normal classes.
+                totals["stale_dead"] += 1
+                uni.flag(t, "stale_dead", f"last bar {last_bar} — delisted "
+                                          f"(config/delisted_symbols.yml, last session "
+                                          f"{recorded}), not alarmed")
+                stale_dead_records.append({"ticker": t, "last_bar": str(last_bar),
+                                           "lag_days": lag_days, "in_union": in_union,
+                                           "delisted_ledger": True,
+                                           "contradiction": contradiction})
+                continue
         if lag_days <= threshold:
             totals["fresh"] += 1
             continue

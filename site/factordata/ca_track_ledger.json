@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-08-27",
+ "as_of": "2026-08-28",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
