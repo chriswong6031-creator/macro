@@ -27,11 +27,13 @@ Grading (per README v1.5, CXI-R17):
 NOT-EVALUATED (metric repair, C0, 2026-08-28, op key
 macro-context-index-completion-20260828-sol-001): before grading a row, its owning
 project's DB file is checked for existence and a non-empty indexed sha. If either
-check fails, the row is marked NOT-EVALUATED with a reason, is listed in its own
-"### Not evaluated" report section, and is excluded from every
+check fails, the row is marked NOT-EVALUATED with a reason and is listed in its
+own "### Not evaluated" report section. It is excluded from every
 pass/fail/recall/precision/accuracy denominator — including no_answer rows, which
-must never grade as a correct null against an absent DB. Rows already out of scope
-(private-visibility rows when --include-private is not set) keep the prior
+must never grade as a correct null against an absent DB — but it forces the global
+promotion gate and any covering adjudication/governance/negative-control gate to
+NOT-MET. Rows already out of scope (private-visibility rows when
+--include-private is not set) never enter the requested scope and keep the prior
 behavior: excluded entirely, with the existing "Cross-repo block" banner.
 
 Gates reported (PASS/FAIL/NOT-MET):
@@ -529,17 +531,31 @@ def run_eval(include_private: bool = False, output_path: Optional[Path] = None) 
     p50 = latencies_sorted[len(latencies_sorted) // 2] if latencies_sorted else 0.0
     p95 = latencies_sorted[int(len(latencies_sorted) * 0.95)] if latencies_sorted else 0.0
 
-    # Gate results
-    gate_global = "PASS" if global_recall >= _GLOBAL_RECALL_THRESHOLD else "FAIL"
-    gate_adj = "PASS" if adj_recall >= _ADJ_RECALL_THRESHOLD else ("NOT-MET" if adj_total == 0 else "FAIL")
-    if gov_true_precision is None:
-        gate_gov = "NOT-MET"
-    else:
-        gate_gov = "PASS" if gov_true_precision >= _GOV_TRUE_PRECISION_THRESHOLD else "FAIL"
-    if neg_accuracy is None:
-        gate_neg = "NOT-MET"
-    else:
-        gate_neg = "PASS" if neg_accuracy >= _NEG_ACCURACY_THRESHOLD else "FAIL"
+    # Gate results. An intended in-scope row that was NOT-EVALUATED cannot be
+    # discarded as a denominator-only detail: the global promotion gate and
+    # any family gate that covers it are not met. Rows outside the requested
+    # scope never enter all_rows_to_eval, so they do not reach this list.
+    not_evaluated_families = {item["family"] for item in not_evaluated}
+    gate_global = (
+        "NOT-MET" if not_evaluated
+        else ("PASS" if global_recall >= _GLOBAL_RECALL_THRESHOLD else "FAIL")
+    )
+    gate_adj = (
+        "NOT-MET" if "adjudication_replay" in not_evaluated_families
+        else ("PASS" if adj_recall >= _ADJ_RECALL_THRESHOLD else ("NOT-MET" if adj_total == 0 else "FAIL"))
+    )
+    gate_gov = (
+        "NOT-MET" if "governance" in not_evaluated_families
+        else ("NOT-MET" if gov_true_precision is None else (
+            "PASS" if gov_true_precision >= _GOV_TRUE_PRECISION_THRESHOLD else "FAIL"
+        ))
+    )
+    gate_neg = (
+        "NOT-MET" if "negative_control" in not_evaluated_families
+        else ("NOT-MET" if neg_accuracy is None else (
+            "PASS" if neg_accuracy >= _NEG_ACCURACY_THRESHOLD else "FAIL"
+        ))
+    )
 
     # Failed rows detail
     failed_rows = [(rid, r) for rid, r in results_by_id.items() if not r["pass"]]
@@ -571,6 +587,7 @@ def run_eval(include_private: bool = False, output_path: Optional[Path] = None) 
         "neg_total": neg_total,
         "gate_neg": gate_neg,
         "not_evaluated": not_evaluated,
+        "not_evaluated_families": sorted(not_evaluated_families),
         "repo_shas": repo_shas,
         "p50_s": p50,
         "p95_s": p95,

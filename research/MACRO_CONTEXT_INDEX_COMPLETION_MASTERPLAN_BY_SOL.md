@@ -178,6 +178,23 @@ or explicit degraded state.
 **Exit:** adversarial stale/current/conflict tests green; current source always
 wins action read; no cross-project/path leakage.
 
+### Pre-C3 CXI-4 — Private-memory-overlay completion + privacy proof
+
+**Mission:** close the private-memory-overlay prerequisite before C3 without
+implementing that overlay in this C0 repair carrier.
+
+The overlay remains one CXI plane, never a parallel retrieval/control plane. Its
+private material must live in a separate private DB, remain opt-in and off by
+default, and never place private excerpts or raw private-memory logs in the
+repository. The completion packet must prove traversal refusal, symlink-escape
+refusal, and credential-shaped-content refusal before any private material is
+opened or indexed. An independent privacy red-team gate must challenge those
+proofs and accept the boundary before C3 may rely on private-memory results.
+
+**This wave is planning-only here:** no overlay implementation, private-memory
+ingest, default enablement, corpus expansion, or private excerpt/log artifact is
+authorized by C0 repair.
+
 ### C3 — Promotion benchmark
 
 Run full current 104-row shared+private eval on fresh indexes.

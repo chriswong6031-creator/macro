@@ -327,3 +327,83 @@ def test_evaluate_row_calls_build_packet_with_only_the_owning_project_db_map(tmp
 
     assert result["not_evaluated"] is False
     assert captured["project_db_map"] == {"terminal": "terminal.sqlite"}
+
+
+# ---------------------------------------------------------------------------
+# (e) Intended in-scope NOT-EVALUATED rows fail the promotion gates closed
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("not_evaluated_family", "affected_gate"),
+    [
+        ("research", None),
+        ("adjudication_replay", "gate_adj"),
+        ("governance", "gate_gov"),
+        ("negative_control", "gate_neg"),
+    ],
+)
+def test_in_scope_not_evaluated_row_forces_global_and_affected_gates_not_met(
+    tmp_path, monkeypatch, not_evaluated_family, affected_gate
+):
+    """An intended row that cannot be evaluated is not a harmless denominator
+    exclusion: the global promotion gate and its own family gate must be
+    NOT-MET, while the other fully evaluated gates remain independently useful.
+    """
+    import scripts.context_index_eval as cie
+
+    family_counts = {
+        "research": 1,
+        "adjudication_replay": 2,
+        "governance": 2,
+        "negative_control": 2,
+    }
+    rows = []
+    for family, count in family_counts.items():
+        for number in range(count):
+            row_id = f"CTX-{family}-{number}"
+            rows.append({
+                "id": row_id,
+                "family": family,
+                "project": "macro-dashboard",
+                "visibility": "shared",
+                "required_sources": [f"research/{row_id}.md"],
+                "acceptable_sources": [],
+            })
+
+    target = next(row for row in rows if row["family"] == not_evaluated_family)
+
+    def fake_evaluate_row(row, db_dir, repo_root_map):
+        if row["id"] == target["id"]:
+            return {
+                "not_evaluated": True,
+                "reason": "db missing: shared.sqlite",
+                "row": row,
+            }
+        results = []
+        if row["family"] == "governance":
+            results = [{
+                "path": row["required_sources"][0],
+                "source_uri": row["required_sources"][0],
+                "authority_class": "A0",
+            }]
+        return {
+            "not_evaluated": False,
+            "row": row,
+            "pass": True,
+            "packet": {"results": results},
+            "latency_s": 0.01,
+        }
+
+    monkeypatch.setattr(cie, "get_db_dir", lambda: tmp_path)
+    monkeypatch.setattr(cie, "load_questions", lambda: rows)
+    monkeypatch.setattr(cie, "_resolve_repo_root_map", lambda: {})
+    monkeypatch.setattr(cie, "index_sha", lambda _path: "indexed-test-sha")
+    monkeypatch.setattr(cie, "evaluate_row", fake_evaluate_row)
+
+    summary = cie.run_eval(output_path=tmp_path / "results.md")
+
+    assert summary["gate_global"] == "NOT-MET"
+    for gate_name in ("gate_adj", "gate_gov", "gate_neg"):
+        expected = "NOT-MET" if gate_name == affected_gate else "PASS"
+        assert summary[gate_name] == expected

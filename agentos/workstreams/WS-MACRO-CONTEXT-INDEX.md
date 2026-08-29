@@ -37,13 +37,15 @@ waves:
     title: "Benchmark Truth Recovery (Sol op macro-context-index-completion-20260828-sol-001)"
     status: done
     next_action: >
-      Sol adversarial review of the C0 head (PR held HOLD-FOR-SOL). Evidence:
-      agentos/handoffs/WS-MACRO-CONTEXT-INDEX-2026-08-28.md; baselines v6/v7 in
-      research/context_index/BENCHMARK_RESULTS.md.
+      Sol adversarial review of the C0 recovery head (PR #6600 held
+      HOLD-FOR-SOL). Evidence: agentos/handoffs/WS-MACRO-CONTEXT-INDEX-2026-08-28.md;
+      baselines v6/v7 in research/context_index/BENCHMARK_RESULTS.md. After
+      terminal C0 acceptance, C1 requires a fresh child operation, carrier, and
+      commission; it may not reuse this C0 pickup.
 landmines:
   - "Advisory status is load-bearing: cited sources must be opened before acting on them, per CXI-R19."
-  - "Retrieval ranking frozen under the C0 carrier; C1 begins only on explicit Sol CONTINUE."
-next_action: Await Sol review of C0; then C1 deterministic relevance + abstention on frozen v1.6 gold.
+  - "Retrieval ranking frozen under the C0 carrier; C1 requires fresh post-acceptance operation/carrier/commission."
+next_action: Await Sol review of C0 recovery; after terminal C0 acceptance, commission C1 separately for deterministic relevance + abstention on frozen v1.6 gold.
 ---
 
 ## Context

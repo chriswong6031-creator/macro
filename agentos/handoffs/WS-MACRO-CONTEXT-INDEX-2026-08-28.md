@@ -2,7 +2,7 @@
 workstream: "WS:MACRO-CONTEXT-INDEX"
 session: "claude/macro-context-index-c0-20260828 (worktree macro-context-index-completion-e3fcfc)"
 model: fable
-ended_because: complete
+ended_because: crashed
 mission: >
   Sol commission macro-context-index-completion-20260828-sol-001, wave C0
   Benchmark Truth Recovery: make the 104-row gold / evaluator / current 3-repo
@@ -109,8 +109,8 @@ unresolved:
     Terminal CTX-095's strict reading ("fills") vs loose reading ("positions")
     was adjudicated loose-with-honest-notes; Sol may re-rule.
 next_actions:
-  - Sol adversarial review of the C0 immutable head (PR held DRAFT / HOLD-FOR-SOL).
-  - On Sol CONTINUE, C1 deterministic relevance + abstention on the frozen v1.6 gold.
+  - Sol adversarial review of the C0 recovery head on PR #6600 (DRAFT / HOLD-FOR-SOL).
+  - After terminal C0 acceptance, C1 deterministic relevance + abstention on the frozen v1.6 gold requires a fresh child operation, carrier reconciliation, commission, pickup, and watcher cycle. This C0 handoff is not C1 pickup authority.
 do_not_redo:
   - >
     Do not re-audit the 104 rows against the same heads (macro 24ccea3fe482 /
@@ -142,10 +142,14 @@ decisions:
 
 ## Notes for the next session
 
-The C0 carrier is Slack #agent-dispatch thread 1787897185.145289 (operation
-macro-context-index-completion-20260828-sol-001). All PROGRESS/RESULT/BLOCKED
-dialogue stays there; Sol reviews the immutable head and issues
-CONTINUE/RULING/STOP. The truthful baseline is intentionally red — C0's
-deliverable is honest measurement, not green gates. C1 work must run
-before/after comparisons on the FROZEN v1.6 gold with per-row reasons and
-mutation tests; threshold-only retuning is forbidden by the masterplan.
+The prior C0 carrier was Slack #agent-dispatch thread 1787897185.145289
+(operation macro-context-index-completion-20260828-sol-001) and is terminal
+`SESSION_LOST / SOL CLOSED-STOP`; it grants neither pickup nor continuation
+authority. Its separate C0 recovery is bound only to PR #6600 under
+`macro-context-index-c0-recovery-20260828-sol-002`, DRAFT / HOLD-FOR-SOL.
+The truthful baseline is intentionally red — C0's deliverable is honest
+measurement, not green gates. After terminal C0 acceptance, C1 must receive a
+fresh child operation, fresh carrier reconciliation, fresh commission/pickup,
+and a fresh watcher cycle before it runs before/after comparisons on the FROZEN
+v1.6 gold with per-row reasons and mutation tests; threshold-only retuning is
+forbidden by the masterplan.

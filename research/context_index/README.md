@@ -19,7 +19,8 @@ v1.6 — C0 Benchmark Truth Recovery source-audit pass 2026-08-28 (Sol operation
   **CTX-095** (stale negative — Terminal gained a committed positions ledger
   2026-08-13 (#408): `portfolio_positions` migration + `terminal/lib/portfolio.ts`
   CRUD + `/portfolio` route; regolded to `current_state` requiring `portfolio.ts`;
-  execution-level fills remain absent — honest answer is "positions yes, fills no");
+  execution-level fills do not exist — the required two-part answer is "positions
+  ledger yes; execution fills no");
   **CTX-012** (`forbidden`→`superseded`: the CXI-R12 KILL-PARALLEL-KNOWLEDGE-BASE
   kill was OVERRULED/LIFTED by Chairman ruling 2026-08-12, row retained in §1 as
   history with "do not cite it to reject a proposal"; presence-only per CXI-R17c);
@@ -46,7 +47,10 @@ v1.6 — C0 Benchmark Truth Recovery source-audit pass 2026-08-28 (Sol operation
   precision of A0/A1 results (TP = top-10 A0/A1 result matching the row's
   required/acceptable sources; NOT-MET when zero A0/A1 results). A new explicit
   gate "Negative-control (no-answer) accuracy ≥90%" is added. Rows whose owning
-  project DB is missing are NOT-EVALUATED (never pass, no_answer rows included);
+  project DB is missing are NOT-EVALUATED (never pass, no_answer rows included)
+  and force the global promotion gate plus any covering adjudication, governance,
+  or negative-control gate to NOT-MET; rows outside the requested run scope do
+  not trigger that rule;
   each row is evaluated against exactly its owning project's DB (CXI-R16); run
   headers now record repo SHA + dirty flag alongside index SHA per project.
 
@@ -189,7 +193,7 @@ Promotion gates (from research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md CXI-
   pass-rate)".
 - Negative-control (no-answer) accuracy (explicit gate since v1.6): >=90%
   pass-rate over `family: negative_control` rows in scope.
-- Cross-repo block (CTX-082..CTX-096): evaluated separately with Terminal and Mastermind projects opted-in; reported as a distinct family block in the eval report (CXI-R16). Rows whose owning project DB is missing are NOT-EVALUATED and never counted as pass.
+- Cross-repo block (CTX-082..CTX-096): evaluated separately with Terminal and Mastermind projects opted-in; reported as a distinct family block in the eval report (CXI-R16). Rows whose owning project DB is missing are NOT-EVALUATED and never counted as pass; any intended in-scope NOT-EVALUATED row forces the global promotion gate and its covering adjudication, governance, or negative-control gate to NOT-MET. Rows omitted because the caller did not request private scope are not intended in-scope rows.
 
 ## Append-only policy
 
