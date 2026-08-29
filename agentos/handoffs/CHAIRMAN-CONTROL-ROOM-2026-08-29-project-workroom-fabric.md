@@ -26,12 +26,12 @@ changed:
     what: >
       History-preservingly merge current protected Mastermind into the same branch, preserve the
       three prior records, add the canonical reconciliation amendment and advance exact head to
-      1db9a6ea27a81d53ab2141d94f7226be9ea8c549. Current-base diff is exactly four records files.
+      45defc7b57ac93615ff78aa32fd40774b0e130d2. Current-base diff is exactly four records files.
   - path: mastermind:PR #242 / branch sol/project-workroom-wr-r0-20260829
     what: >
       History-preservingly merge the updated #240 parent into the same WR-R0 research branch while
       preserving the exact four research/fixture blobs; advance exact head to
-      596145ffa6f2c89c58133c06638394b22dcb304f.
+      a1c83e5d2a91593f85cf2b8fbd2361583e8f4df4.
   - path: mastermind:PR #233
     what: >
       Post exact adoption/supersession receipt and close unmerged. Preserve branch/commits as history;
@@ -75,9 +75,9 @@ verified:
   - claim: #240 current branch is based on current protected source with one closed records surface.
     command: >
       Compare Mastermind 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b to
-      1db9a6ea27a81d53ab2141d94f7226be9ea8c549.
+      45defc7b57ac93615ff78aa32fd40774b0e130d2.
     result: >
-      Zero behind; exactly four added records files, 3,117 additions, zero deletions.
+      Zero behind; exactly four added records files, 3,116 additions, zero deletions.
   - claim: #233 unique valid law is not lost.
     command: >
       Read all five #233 records and compare them with #240 design, WR-R0 amendment and the new
@@ -88,8 +88,8 @@ verified:
       path-owner and stale current-estate clauses are explicitly rejected.
   - claim: #242 preserves one bounded WR-R0 research diff.
     command: >
-      Compare current #240 parent head 1db9a6ea27a81d53ab2141d94f7226be9ea8c549 to
-      WR-R0 head 596145ffa6f2c89c58133c06638394b22dcb304f.
+      Compare current #240 parent head 45defc7b57ac93615ff78aa32fd40774b0e130d2 to
+      WR-R0 head a1c83e5d2a91593f85cf2b8fbd2361583e8f4df4.
     result: >
       Exactly four added research/fixture files; no runtime, app, credential or SaaS mutation.
   - claim: Workroom implementation is not present in canonical GitHub truth.
@@ -107,7 +107,7 @@ verified:
 unverified:
   - claim: Mastermind #240 exact current head passes required current-base CI and protects.
     what_would_verify: >
-      Workflow 33264414904 concludes SUCCESS, final current protected/base/diff/head review passes,
+      Workflow 33264903032 concludes SUCCESS, final current protected/base/diff/head review passes,
       PR becomes reviewable through a functional GitHub surface, and expected head is protected.
   - claim: WR-R0 #242 is accepted and protected.
     what_would_verify: >
@@ -132,7 +132,7 @@ unresolved:
   - "The prior canary-project-workroom channel-create report was effect-unknown to the prior session; do not retry or bind it without exact Slack readback under a separately authorized canary."
   - "Agent Relay enrollment source is protected, but app credential, host activation, real dialogue canary and multi-workroom Relay remain unproven/not built."
 next_actions:
-  - "Consume #240 workflow 33264414904. On SUCCESS, perform final exact-head/current-base/source-law review; make the PR reviewable through a functional current GitHub path; expected-head merge only."
+  - "Consume #240 workflow 33264903032. On SUCCESS, perform final exact-head/current-base/source-law review; make the PR reviewable through a functional current GitHub path; expected-head merge only."
   - "After #240 protects, retarget #242 to master on the same branch and complete WR-R0 release proof."
   - "Reconcile and release Macro #6661 records after exact Agent OS validation and current-main checks."
   - "Do not commission WR-P0 until #240/#242 are protected and #6662/#6658 plus Initiative post-apply readback are accepted."
