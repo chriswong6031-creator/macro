@@ -800,9 +800,10 @@ control.mastermind-x.com {
 		@mutation not method GET HEAD
 		respond @mutation 405
 
-		reverse_proxy 127.0.0.1:8000 {
+		reverse_proxy 127.0.0.1:8787 {
 			method GET
-			rewrite /api/control-room/auth-check
+			rewrite /api/auth-check
+			header_up Host admin.mastermind-x.com
 			@operator status 2xx
 			handle_response @operator {
 			}

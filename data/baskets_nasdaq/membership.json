@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-28",
+ "as_of": "2026-08-29",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -86,12 +86,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "DDOG",
@@ -102,12 +102,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "PAYX",
@@ -528,12 +528,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "DDOG",
@@ -544,12 +544,12 @@
      "name": "Autodesk Inc"
     },
     {
-     "ticker": "MSTR",
-     "name": "Strategy Inc"
-    },
-    {
      "ticker": "WDAY",
      "name": "Workday Inc"
+    },
+    {
+     "ticker": "MSTR",
+     "name": "Strategy Inc"
     },
     {
      "ticker": "PAYX",
