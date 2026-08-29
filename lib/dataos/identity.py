@@ -59,7 +59,7 @@ import to translate a ticker.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from enum import Enum
@@ -765,11 +765,6 @@ def _normalize_issuer_cik(value: object) -> str | None:
     if value is None:
         return None
     text = str(value).strip()
-    if not text:
-        return None
-    if text.lower().startswith("cik:"):
-        text = text[4:]
-    text = text.lstrip("0") or "0"
     if not _CIK_RE.fullmatch(text):
         raise IdentityError(f"issuer CIK is not a 1-10 digit SEC value: {value!r}")
     return text.zfill(10)
@@ -794,9 +789,9 @@ class SecurityIssuerRow:
     issuer_id: str | None
     issuer_state: str
     listing_key: str
-    issuer_cik: str | None = None
     security_state: str | None = None
     superseded_by: str | None = None
+    issuer_cik: str | None = None
 
 
 class IssuerMaster:
@@ -829,6 +824,9 @@ class IssuerMaster:
         by_issuer: dict[str, list[str]] = {}
         ciks_by_issuer: dict[str, set[str]] = {}
         for row in rows:
+            issuer_cik = _normalize_issuer_cik(row.issuer_cik)
+            if issuer_cik != row.issuer_cik:
+                row = replace(row, issuer_cik=issuer_cik)
             by_security[row.security_id] = row
             # V4-D2B1-R1 §3.6: a security-axis-superseded row (a tombstone) is
             # excluded from issuer aggregation by default — it is still readable via
@@ -837,8 +835,8 @@ class IssuerMaster:
             # if it were a live member of the issuer's roster.
             if row.issuer_id is not None and not row.security_state:
                 by_issuer.setdefault(row.issuer_id, []).append(row.security_id)
-                if row.issuer_cik is not None:
-                    ciks_by_issuer.setdefault(row.issuer_id, set()).add(row.issuer_cik)
+                if issuer_cik is not None:
+                    ciks_by_issuer.setdefault(row.issuer_id, set()).add(issuer_cik)
         self._by_security = by_security
         self._by_issuer: dict[str, tuple[str, ...]] = {
             k: tuple(sorted(v)) for k, v in by_issuer.items()

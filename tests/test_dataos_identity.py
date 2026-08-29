@@ -534,6 +534,63 @@ def test_issuer_master_issuer_cik_refuses_conflicting_current_observations() -> 
         im.cik_of_issuer("ISS:US-XNAS-ONE")
 
 
+@pytest.mark.parametrize("bad_cik", ["", "cik:0000320193", "0000000000320193"])
+def test_issuer_master_issuer_cik_refuses_malformed_source_evidence(bad_cik: str) -> None:
+    """The source field is decimal CIK evidence, never an Earnings company id."""
+    with pytest.raises(IdentityError, match="issuer CIK"):
+        IssuerMaster.from_records([
+            {"security_id": "SEC:US-XNAS-AAPL", "issuer_id": "ISS:US-XNAS-AAPL",
+             "issuer_state": "RESOLVED", "issuer_cik": bad_cik,
+             "listing_key": "US-XNAS-AAPL"},
+        ])
+
+
+def test_issuer_master_issuer_cik_direct_rows_normalize_before_lookup() -> None:
+    """The public direct-row constructor has the same canonical output contract."""
+    im = IssuerMaster([
+        SecurityIssuerRow(
+            security_id="SEC:US-XNAS-AAPL",
+            issuer_id="ISS:US-XNAS-AAPL",
+            issuer_state="RESOLVED",
+            listing_key="US-XNAS-AAPL",
+            issuer_cik="320193",
+        ),
+    ])
+
+    assert im.rows[0].issuer_cik == "0000320193"
+    assert im.cik_of_issuer("ISS:US-XNAS-AAPL") == "0000320193"
+
+
+@pytest.mark.parametrize("bad_cik", ["", "cik:0000320193", "0000000000320193"])
+def test_issuer_master_issuer_cik_direct_rows_refuse_malformed_evidence(bad_cik: str) -> None:
+    row = SecurityIssuerRow(
+        security_id="SEC:US-XNAS-AAPL",
+        issuer_id="ISS:US-XNAS-AAPL",
+        issuer_state="RESOLVED",
+        listing_key="US-XNAS-AAPL",
+        issuer_cik=bad_cik,
+    )
+
+    with pytest.raises(IdentityError, match="issuer CIK"):
+        IssuerMaster([row])
+
+
+def test_security_issuer_row_legacy_positional_optional_fields_remain_in_place() -> None:
+    """Appending the CIK seam cannot reinterpret legacy security-axis arguments."""
+    row = SecurityIssuerRow(
+        "SEC:US-XNYS-VMRK",
+        "ISS:US-XNYS-EQR",
+        "RESOLVED",
+        "US-XNYS-VMRK",
+        "SUPERSEDED_DUPLICATE_MINT",
+        "SEC:US-XNYS-EQR",
+    )
+
+    assert row.security_state == "SUPERSEDED_DUPLICATE_MINT"
+    assert row.superseded_by == "SEC:US-XNYS-EQR"
+    assert row.issuer_cik is None
+
+
 # ── the security axis — V4-D2B1-R1 (§3.6 reader API) ───────────────────────────
 def test_security_state_is_null_by_default_and_excluded_rows_never_aggregate() -> None:
     """A security-axis-superseded row (a tombstone) is excluded from
