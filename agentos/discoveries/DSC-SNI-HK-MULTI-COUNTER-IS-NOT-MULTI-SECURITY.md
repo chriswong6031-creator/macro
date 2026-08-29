@@ -9,10 +9,10 @@ claim: >
   additional economic-security/counter equivalence as a source-receipted descriptive
   relationship without minting a second canonical identity.
 falsifier: >
-  Show a current accepted Data OS identity contract and stored master that natively
-  represents economic-security -> venue-listing -> trading-counter relationships for
-  these reference names, groups 9988 with 89988 and 700 with 80700 as the same economic
-  securities, separately binds BABA as an 8-share ADS, and leaves no SNI-only relationship
+  Falsified if config/identity_seams.yml and the committed Data OS master it declares
+  natively represent economic-security -> venue-listing -> trading-counter relationships
+  for these reference names, group 9988 with 89988 and 700 with 80700 as the same economic
+  securities, separately bind BABA as an 8-share ADS, and leave no SNI-only relationship
   semantics required.
 so_what: >
   SNI-1A must consume Data OS canonical IDs when available, preserve null/unresolved Data
