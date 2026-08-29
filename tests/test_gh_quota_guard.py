@@ -138,6 +138,15 @@ def test_gh_run_watch_default_interval_is_the_trap():
     assert _denied("gh run view 302186 --watch")
 
 
+def test_gh_pr_checks_watch_uses_its_real_ten_second_default_and_same_floor():
+    """The PR watcher is admitted by the ship guard, so quota law must cover it."""
+    assert _denied("gh pr checks 4242 --watch")
+    assert _denied("gh pr checks 4242 --watch --interval 10")
+    assert _denied("gh pr checks 4242 --watch --interval 59")
+    assert not _denied("gh pr checks 4242 --watch --interval 60")
+    assert not _denied("gh -R acme/widgets pr checks 4242 --watch --interval=150")
+
+
 def test_a_slow_explicit_interval_is_allowed():
     """The guard throttles; it does not ban the tool."""
     assert not _denied("gh run watch 302186 --interval 60")
@@ -464,7 +473,7 @@ def test_prose_about_the_dispatch_is_not_a_dispatch(monkeypatch):
     # Every one of these was a shape-5 deny. Each is now judged by shapes 1-4
     # alone, and each passes them: a slow watcher, a one-shot read, or a polite loop.
     "gh run watch 31309720615 --interval 60",
-    "gh pr checks 4242 --watch",
+    "gh pr checks 4242 --watch --interval 60",
     "gh pr checks 4242",
     "gh run view 31309720615",
     "gh run view 31309720615 --log-failed",

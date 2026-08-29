@@ -639,7 +639,7 @@ continuing to work does not mean `gh api` will.
 **A proven pending head enters zero-compute CI quiescence** (operator 2026-08-29).
 When the exact pushed head is clean, the deterministic fast preflight is green,
 there is no binding builder-owned red, and this session already owns one confirmed
-native watcher for that PR/head, the Stop ledger mechanically derives
+PR condition watcher for that PR/head, the Stop ledger mechanically derives
 `CI_QUIESCENT`. Logical delivery ownership stays with the same session, but the
 healthy external wait consumes zero new model turns while external state is
 unchanged. Identical Stop or task-notification observations use only the local
@@ -652,7 +652,13 @@ infrastructure state and a dead watcher with still-pending proof route to
 builder, never a cheap exit. A malformed ledger/hold fails closed and PARKED keeps
 its separate exact-head terminal latch. Only the hook may mint these states from
 mechanical evidence; model prose is never quiescence, green, PARKED, merged, or
-terminal truth. This extends the existing Stop ledger and quota/watcher boundary;
+terminal truth. The admitted `gh pr checks <PR> --watch --interval 60+` command is
+kept inside that one owner but evaluated by the same hook's condition process so
+PR head, checks, hold comments, and review authority are one wake condition; it is
+not a second watcher or lifecycle. After a material receipt, later genuine Stop
+boundaries revalidate its event key remotely: the same event stays narration-silent,
+while a later same-head red or authority change remains visible. This extends the
+existing Stop ledger and quota/watcher boundary;
 it creates no database, daemon, scheduler, queue, retry service, lifecycle, or
 session identity.
 

@@ -1900,6 +1900,181 @@ def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _watch_interval_seconds(command: str) -> int | None:
+    """Explicit native watcher interval, or None when it cannot be proven safe."""
+    match = re.search(r"(?:--interval|(?<!\w)-i)(?:=|\s+)(\d+)\b", command)
+    if not match:
+        return None
+    try:
+        seconds = int(match.group(1))
+    except (TypeError, ValueError):
+        return None
+    return seconds if seconds >= 60 else None
+
+
+def _pr_condition_snapshot(
+    owner: str, repo: str, number: int
+) -> dict[str, Any]:
+    """One authoritative PR/head/check/hold snapshot for the single watcher.
+
+    The watcher output never grants authority. Its only job is to remain alive
+    while the exact wait is unchanged and exit when the Stop hook must perform
+    one fresh authoritative classification. Comments and reviews are included
+    because a HOLD-FOR-SOL release can be carried there without changing check
+    state; omitting them would leave a live check watcher masking the release.
+    """
+    base = f"https://api.github.com/repos/{owner}/{repo}"
+    pull = _get_json(f"{base}/pulls/{number}")
+    if not isinstance(pull, dict):
+        raise RuntimeError(f"pull request #{number} is unanswerable")
+    head = str((pull.get("head") or {}).get("sha") or "")
+    if not re.fullmatch(r"[0-9a-f]{40}", head):
+        raise RuntimeError(f"pull request #{number} has no exact head")
+    comments = _get_json(str(pull.get("comments_url") or f"{base}/issues/{number}/comments"))
+    reviews = _get_json(f"{base}/pulls/{number}/reviews")
+    if not isinstance(comments, list) or not isinstance(reviews, list):
+        raise RuntimeError(f"pull request #{number} authority metadata is unanswerable")
+    authority_extra = {
+        "state": str(pull.get("state") or ""),
+        "merged_at": str(pull.get("merged_at") or ""),
+        "comments": sorted(
+            (
+                str(item.get("id") or ""),
+                str(item.get("updated_at") or ""),
+                str(item.get("body") or ""),
+            )
+            for item in comments
+            if isinstance(item, dict)
+        ),
+        "reviews": sorted(
+            (
+                str(item.get("id") or ""),
+                str(item.get("state") or ""),
+                str(item.get("submitted_at") or ""),
+                str(item.get("commit_id") or ""),
+            )
+            for item in reviews
+            if isinstance(item, dict)
+        ),
+    }
+    runs = _head_check_runs(owner, repo, head)
+    red, pending, _passed = _split_head_runs(runs)
+    return {
+        "head": head,
+        "authority_fingerprint": _ci_authority_fingerprint(
+            pull, extra=authority_extra
+        ),
+        "pending": pending,
+        "red": red,
+    }
+
+
+def _watch_pr_condition_until_material(
+    owner: str,
+    repo: str,
+    number: int,
+    expected_head: str,
+    interval: int,
+) -> int:
+    """Keep one process alive until CI or hold authority materially changes."""
+    if interval < 60 or not re.fullmatch(r"[0-9a-f]{40}", expected_head):
+        return 2
+    try:
+        baseline = _pr_condition_snapshot(owner, repo, number)
+    except Exception as exc:
+        print(f"CI_WATCH_UNAVAILABLE initial: {exc}", file=sys.stderr)
+        return 2
+
+    while True:
+        event = ""
+        if str(baseline.get("head") or "") != expected_head:
+            event = "head_change"
+        elif baseline.get("red"):
+            event = "red"
+        elif not baseline.get("pending"):
+            event = "green"
+        if event:
+            print(
+                json.dumps(
+                    {"event": event, "pr": number, "head": baseline.get("head")},
+                    sort_keys=True,
+                )
+            )
+            return 0
+
+        time.sleep(interval)
+        try:
+            current = _pr_condition_snapshot(owner, repo, number)
+        except Exception as exc:
+            print(f"CI_WATCH_UNAVAILABLE refresh: {exc}", file=sys.stderr)
+            return 2
+        if str(current.get("head") or "") != expected_head:
+            event = "head_change"
+        elif str(current.get("authority_fingerprint") or "") != str(
+            baseline.get("authority_fingerprint") or ""
+        ):
+            event = "authority_change"
+        elif current.get("red"):
+            event = "red"
+        elif not current.get("pending"):
+            event = "green"
+        if event:
+            print(
+                json.dumps(
+                    {"event": event, "pr": number, "head": current.get("head")},
+                    sort_keys=True,
+                )
+            )
+            return 0
+        # Progress within the same pending generation is still an unchanged
+        # external wait. Keep the original authority identity and continue in
+        # this one process; no model-facing completion is emitted.
+
+
+def _pr_condition_watcher_command(root: Path, watch: dict[str, Any]) -> str | None:
+    """Rewrite one admitted PR check watch to the union condition watcher."""
+    condition = str(watch.get("condition") or "")
+    if not condition.startswith("gh-pr-checks:"):
+        return None
+    try:
+        _prefix, repository, subject = condition.split(":", 2)
+    except ValueError:
+        return None
+    if repository == "current-repo":
+        owner, repo = _github_slug(root)
+    else:
+        parts = repository.split("/", 1)
+        if len(parts) != 2 or not all(parts):
+            return None
+        owner, repo = parts
+    if not subject.isdigit():
+        # The monitor must bind a concrete PR identity. The native current-head
+        # spelling is still parsed, but cannot mint quiescence without this
+        # deterministic subject and therefore fails closed at admission.
+        return None
+    commands = watch.get("executed_watch_commands")
+    if not isinstance(commands, list) or len(commands) != 1:
+        return None
+    interval = _watch_interval_seconds(str(commands[0]))
+    if interval is None:
+        return None
+    head = _run(root, "git", "rev-parse", "HEAD")
+    if not re.fullmatch(r"[0-9a-f]{40}", head):
+        return None
+    return shlex.join(
+        [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--watch-pr-condition",
+            owner,
+            repo,
+            subject,
+            head,
+            str(interval),
+        ]
+    )
+
+
 def _canonical_hot_watch_reason(watch: dict[str, Any]) -> str | None:
     """Consult the configured quota rule before minting a pending claim.
 
@@ -2363,10 +2538,26 @@ def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
         admitted = _watcher_gate(root, path, state, watch)
         if admitted:
             reservation = state["ship_watcher"]
+            effective_command = str(watch["command"])
+            if str(watch.get("condition") or "").startswith("gh-pr-checks:"):
+                effective_command = _pr_condition_watcher_command(root, watch) or ""
+                if not effective_command:
+                    # Remove the just-created pending claim before refusing;
+                    # sibling hooks may deny independently, and a command that
+                    # cannot monitor hold authority must not consume the slot.
+                    if state.get("ship_watcher") is reservation:
+                        state.pop("ship_watcher", None)
+                        _save(path, state)
+                    _deny_watcher(
+                        "SHIP WATCHER REFUSED: PR-check quiescence requires one "
+                        "explicit PR number and --interval 60 or higher so the "
+                        "same process can observe checks plus hold/release authority."
+                    )
+                    return
             _allow_watcher(
                 tool_input,
                 _marked_watcher_command(
-                    str(watch["command"]),
+                    effective_command,
                     str(reservation["process_marker"]),
                     path,
                 ),
@@ -3635,10 +3826,10 @@ def _ci_checks_fingerprint(runs: list[dict[str, Any]]) -> str:
     ).hexdigest()[:16]
 
 
-def _ci_watcher_for_pull(
+def _ci_watcher_shape_for_pull(
     state: dict[str, Any], number: Any, head: str
 ) -> dict[str, Any] | None:
-    """One confirmed native PR-check watcher bound to this exact head."""
+    """One confirmed PR-check reservation bound to this exact head."""
     watcher = state.get("ship_watcher")
     if not isinstance(watcher, dict):
         return None
@@ -3654,6 +3845,22 @@ def _ci_watcher_for_pull(
         "gh-pr-checks:current-repo:current-head",
     }
     if condition not in allowed:
+        return None
+    return watcher
+
+
+def _ci_watcher_for_pull(
+    state: dict[str, Any], number: Any, head: str
+) -> dict[str, Any] | None:
+    """One complete PID/start-bound PR watcher eligible to mint quiescence."""
+    watcher = _ci_watcher_shape_for_pull(state, number, head)
+    if watcher is None:
+        return None
+    try:
+        pid = int(watcher.get("process_pid") or 0)
+    except (TypeError, ValueError):
+        return None
+    if pid <= 1 or not str(watcher.get("process_start") or ""):
         return None
     return watcher
 
@@ -3681,9 +3888,15 @@ def _ci_quiescence_record_valid(
     """
     head = str(quiescence.get("head") or "")
     watcher_digest = str(quiescence.get("watcher_digest") or "")
+    watcher_marker = str(quiescence.get("watcher_marker") or "")
+    watcher_start = str(quiescence.get("watcher_start") or "")
     watcher = state.get("ship_watcher")
     try:
         entered_at = float(quiescence.get("entered_at"))
+        watcher_pid = int(quiescence.get("watcher_pid") or 0)
+        current_watcher_pid = int(
+            watcher.get("process_pid") or 0
+        ) if isinstance(watcher, dict) else 0
     except (TypeError, ValueError):
         return False
     return (
@@ -3707,11 +3920,16 @@ def _ci_quiescence_record_valid(
         is not None
         and entered_at > 0
         and bool(watcher_digest)
+        and watcher_pid > 1
+        and bool(watcher_start)
+        and bool(watcher_marker)
         and isinstance(watcher, dict)
         and watcher.get("confirmed") is True
         and str(watcher.get("digest") or "") == watcher_digest
         and str(watcher.get("head") or "") == head
-        and bool(str(watcher.get("process_marker") or ""))
+        and str(watcher.get("process_marker") or "") == watcher_marker
+        and current_watcher_pid == watcher_pid
+        and str(watcher.get("process_start") or "") == watcher_start
     )
 
 
@@ -3759,16 +3977,11 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
 
     phase = str(quiescence.get("phase") or "waiting")
     if phase == "routed":
-        def unchanged_routed(latest: dict[str, Any]) -> bool:
-            current = latest.get("ci_quiescence")
-            if not isinstance(current, dict) or str(current.get("key") or "") != key:
-                return False
-            current["unchanged_observations"] = int(
-                current.get("unchanged_observations") or 0
-            ) + 1
-            return True
-
-        return bool(_update_ledger(path, unchanged_routed, initial=state))
+        # The event receipt suppresses only the same identified material
+        # event. A later Stop must leave the local-only fast path and perform
+        # one authoritative classification: the same event key stays silent,
+        # while a late same-head generation/red/authority change is visible.
+        return False
 
     watcher = state.get("ship_watcher")
     alive: bool | None = False
@@ -3780,7 +3993,7 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
     ):
         alive = _watcher_process_alive(watcher)
 
-    if alive is True or alive is None:
+    if alive is True:
         def unchanged_wait(latest: dict[str, Any]) -> bool:
             current = latest.get("ci_quiescence")
             if not isinstance(current, dict) or str(current.get("key") or "") != key:
@@ -3788,10 +4001,6 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
             current["unchanged_observations"] = int(
                 current.get("unchanged_observations") or 0
             ) + 1
-            if alive is None:
-                current["liveness_unknown_observations"] = int(
-                    current.get("liveness_unknown_observations") or 0
-                ) + 1
             return True
 
         return bool(_update_ledger(path, unchanged_wait, initial=state))
@@ -3874,6 +4083,68 @@ def _ci_material_receipt(
     return True
 
 
+def _ci_watcher_failure_receipt(
+    path: Path,
+    state: dict[str, Any],
+    *,
+    number: Any,
+    head: str,
+    watcher: dict[str, Any],
+    checks: list[str],
+    checks_fingerprint: str,
+    authority_fingerprint: str,
+) -> bool:
+    """Route one dead/incomplete pre-entry watcher without repeated polling."""
+    route = _ci_event_route(
+        "missing_evidence", pr=number, head=head, checks=checks
+    )
+    event_key = hashlib.sha256(
+        json.dumps(
+            {
+                "head": head,
+                "watcher": str(watcher.get("digest") or ""),
+                "checks": checks_fingerprint,
+                "authority": authority_fingerprint,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+
+    def route_once(latest: dict[str, Any]) -> bool:
+        current = latest.get("ci_watcher_failure")
+        if isinstance(current, dict) and str(current.get("key") or "") == event_key:
+            return False
+        latest["ci_watcher_failure"] = {
+            "version": CI_QUIESCENCE_VERSION,
+            "key": event_key,
+            "head": head,
+            "watcher_digest": str(watcher.get("digest") or ""),
+            "checks_fingerprint": checks_fingerprint,
+            "authority_fingerprint": authority_fingerprint,
+            "route": route["owner"],
+            "at": time.time(),
+        }
+        latest["last_blocker"] = ""
+        latest["blocker_count"] = 0
+        return True
+
+    emit = bool(_update_ledger(path, route_once, initial=state))
+    if emit:
+        named = ", ".join(route["checks"][:4]) or "pending checks"
+        _emit(
+            {
+                "systemMessage": (
+                    f"CI_MATERIAL_EVENT missing_evidence: PR #{number} exact head "
+                    f"{head[:12]} routes once to {route['owner']} ({named}). "
+                    "The confirmed condition watcher was incomplete, dead, or "
+                    "unanswerable before quiescent entry; no successor watcher "
+                    "or repeated builder poll is authorized."
+                )
+            }
+        )
+    return True
+
+
 def _ci_red_is_infrastructure(name: str, conclusion: str) -> bool:
     """Classify one concluded red without consulting model-facing prose."""
     infrastructure_conclusions = {
@@ -3883,10 +4154,11 @@ def _ci_red_is_infrastructure(name: str, conclusion: str) -> bool:
         "stale",
         "timed_out",
     }
-    lowered = name.lower()
-    return conclusion in infrastructure_conclusions or any(
-        marker in lowered for marker in CI_INFRASTRUCTURE_CHECK_MARKERS
-    )
+    # A plain ``failure`` is candidate-owned until exact base/semantic proof
+    # says otherwise. Check-name markers describe ownership only for transport
+    # conclusions; treating ``self-mod-fence (failure)`` as infrastructure
+    # gives a candidate that changed hooks a direct own-red escape.
+    return conclusion in infrastructure_conclusions
 
 
 def _ci_infrastructure_red(pairs: list[tuple[str, str]]) -> bool:
@@ -3977,6 +4249,11 @@ def _enter_ci_quiescence(
             watcher.get("digest")
         ):
             return "refused"
+        # Linearize the PID/start proof inside the same ledger lock that writes
+        # the wait record. A liveness observation made before this transaction
+        # cannot authorize entry after the watcher has already exited.
+        if _watcher_process_alive(latest_watcher) is not True:
+            return "refused"
         latest["ci_quiescence"] = {
             "version": CI_QUIESCENCE_VERSION,
             "key": key,
@@ -3986,12 +4263,16 @@ def _enter_ci_quiescence(
             "branch": branch,
             "head": head,
             "watcher_digest": str(watcher.get("digest") or ""),
+            "watcher_marker": str(watcher.get("process_marker") or ""),
+            "watcher_pid": int(watcher.get("process_pid") or 0),
+            "watcher_start": str(watcher.get("process_start") or ""),
             "checks_fingerprint": checks_fingerprint,
             "authority_fingerprint": authority_fingerprint,
             "route": "release",
             "entered_at": time.time(),
             "unchanged_observations": 0,
         }
+        latest.pop("ci_watcher_failure", None)
         latest["last_blocker"] = ""
         latest["blocker_count"] = 0
         return "entered"
@@ -4124,21 +4405,36 @@ def _try_ci_quiescence(
                 "none",
                 "",
             )
-        return (
-            _enter_ci_quiescence(
-                path,
-                state,
-                branch=branch,
-                number=number,
-                head=head,
-                pending=pending,
-                passed=passed,
-                checks_fingerprint=checks_fingerprint,
-                authority_fingerprint=authority_fingerprint,
-            ),
-            "none",
-            "",
+        entered = _enter_ci_quiescence(
+            path,
+            state,
+            branch=branch,
+            number=number,
+            head=head,
+            pending=pending,
+            passed=passed,
+            checks_fingerprint=checks_fingerprint,
+            authority_fingerprint=authority_fingerprint,
         )
+        if entered:
+            return True, "none", ""
+        watcher = _ci_watcher_shape_for_pull(state, number, head)
+        if isinstance(watcher, dict):
+            return (
+                _ci_watcher_failure_receipt(
+                    path,
+                    state,
+                    number=number,
+                    head=head,
+                    watcher=watcher,
+                    checks=pending,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
+            )
+        return False, "none", ""
 
     if isinstance(existing, dict) and preflight_green and not pending:
         route = _ci_event_route("green", pr=number, head=head, checks=passed)
@@ -6850,4 +7146,17 @@ if __name__ == "__main__":
             print(f"SHIP WATCHER confirmation failed: {exc}", file=sys.stderr)
             confirmed = False
         raise SystemExit(0 if confirmed else 1)
+    if len(sys.argv) == 7 and sys.argv[1] == "--watch-pr-condition":
+        try:
+            watch_status = _watch_pr_condition_until_material(
+                sys.argv[2],
+                sys.argv[3],
+                int(sys.argv[4]),
+                sys.argv[5],
+                int(sys.argv[6]),
+            )
+        except Exception as exc:
+            print(f"CI_WATCH_UNAVAILABLE internal: {exc}", file=sys.stderr)
+            watch_status = 2
+        raise SystemExit(watch_status)
     main()

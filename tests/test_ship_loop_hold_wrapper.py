@@ -884,6 +884,39 @@ def test_github_outage_delegates_without_clearing_parked_latch(
     assert json.loads(state_path.read_text(encoding="utf-8"))["parked_latch"]
 
 
+@pytest.mark.parametrize(
+    "state_extra",
+    [
+        {"parked_latch": f"parked:6138:{HEAD}"},
+        {
+            "ci_quiescence": {
+                "mode": "hold",
+                "head": HEAD,
+                "phase": "waiting",
+            }
+        },
+    ],
+)
+def test_local_git_unanswerability_preserves_existing_hold_state(
+    monkeypatch, tmp_path, state_extra
+):
+    guard, state_path, _calls, _entered = _ledger_guard(
+        tmp_path, state_extra=state_extra
+    )
+
+    def failing_git(_root, *args, **_kwargs):
+        if args == ("branch", "--show-current"):
+            return "claude/biocatalyst-p1-0r-authority-closure"
+        raise RuntimeError("local git state unanswerable")
+
+    monkeypatch.setattr(WRAPPER, "_git", failing_git)
+
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    final = json.loads(state_path.read_text(encoding="utf-8"))
+    for key, value in state_extra.items():
+        assert final[key] == value
+
+
 def test_outage_blocker_mutation_does_not_renarrate_same_parked_hold(
     monkeypatch, tmp_path
 ):

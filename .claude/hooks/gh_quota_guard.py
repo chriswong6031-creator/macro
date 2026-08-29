@@ -253,6 +253,14 @@ def strip_heredocs(cmd: str) -> str:
 CMD_POS = r"(?:^|[;&|\n(]|\b(?:do|then|else)\s)\s*"
 # `gh run watch` / `gh run view --watch`
 WATCH_RE = re.compile(CMD_POS + r"gh\s+run\s+(?:watch\b|view\b[^|;&\n]*--watch\b)")
+# `gh pr checks --watch` has a different (10s) default but consumes the same
+# shared REST bucket and is also admitted by the ship-loop watcher boundary.
+# Repository flags may appear globally before ``pr`` or in the checks argv.
+PR_CHECKS_WATCH_RE = re.compile(
+    CMD_POS
+    + r"gh(?:\s+(?:-R|--repo)(?:=|\s+)\S+)*\s+pr\s+checks\b"
+      r"[^|;&\n]*--watch(?:=true)?\b"
+)
 
 #: Shape 6. `gh run cancel <id>` plus both REST spellings the fleet has actually
 #: used — the force-cancel receipt from 2026-08-12 is the second form.
@@ -466,24 +474,33 @@ def deny(reason):
 
 
 def hot_watch_reason(raw: str):
-    """Return the canonical hot ``gh run watch`` denial, if any.
+    """Return the canonical hot native GitHub watcher denial, if any.
 
     Kept as one pure helper so the ship-loop watcher admission hook can avoid
     creating durable state for a command this quota boundary will deny. The
     quota guard remains the sole owner of both the rule and its denial text.
     """
     cmd = strip_heredocs(raw)
-    match = WATCH_RE.search(cmd)
-    if not match:
+    candidates = [
+        ("run", WATCH_RE.search(cmd), 3),
+        ("pr", PR_CHECKS_WATCH_RE.search(cmd), 10),
+    ]
+    candidates = [item for item in candidates if item[1] is not None]
+    if not candidates:
         return None
-    tail = cmd[match.start():]
+    kind, match, default_interval = min(
+        candidates, key=lambda item: int(item[1].start())
+    )
+    tail = re.split(r"[;&|\n]", cmd[match.start():], maxsplit=1)[0]
     interval = INTERVAL_RE.search(tail)
-    seconds = int(interval.group(1)) if interval else 3
+    seconds = int(interval.group(1)) if interval else default_interval
     if seconds >= MIN_WATCH_INTERVAL:
         return None
+    spelling = "gh pr checks --watch" if kind == "pr" else "gh run watch"
     return (
-        f"SHARED GITHUB QUOTA: `gh run watch` polls every {seconds}s "
-        f"(gh's default is 3s), fetching the run AND its jobs each time. "
+        f"SHARED GITHUB QUOTA: `{spelling}` polls every {seconds}s "
+        f"(this command's default is {default_interval}s), repeatedly fetching "
+        "GitHub status state. "
         f"REST's 5,000/hr is ONE bucket for every session, the babysitter, "
         f"and ship_loop_guard.py (which fails closed when rate-limited). "
         f"Three 10-minute windows of this emptied it on 2026-07-26.\n\n"

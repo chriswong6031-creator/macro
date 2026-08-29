@@ -9,6 +9,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import signal
 import stat
@@ -6978,7 +6979,9 @@ def test_main_routes_a_real_pre_tool_use_payload_end_to_end(monkeypatch, capsys,
     monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
     monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: path)
     monkeypatch.setattr(GUARD, "_run", lambda _root, *args, **_kw: "a" * 40)
-    payload = json.dumps(_watcher_payload("gh pr checks 6371 --watch"))
+    payload = json.dumps(
+        _watcher_payload("gh pr checks 6371 --watch --interval 60")
+    )
     monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
     GUARD.main()
     verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
@@ -7083,8 +7086,8 @@ def _v2_pending_session(monkeypatch, tmp_path, *, runs=None):
         "created": GUARD.time.time() - 5,
         "confirmed": True,
         "process_marker": "ship-watcher:v2-owned-session",
-        "pid": 4242,
-        "process_started_at": "Mon Aug 29 01:00:00 2026",
+        "process_pid": 4242,
+        "process_start": "Mon Aug 29 01:00:00 2026",
     }
     GUARD._save(state_path, state)
 
@@ -7112,6 +7115,142 @@ def _v2_pending_session(monkeypatch, tmp_path, *, runs=None):
         GUARD, "_watcher_process_alive", lambda _reservation: True, raising=False
     )
     return repo, state_path, head, current_runs, observed
+
+
+def test_pr_condition_watcher_exits_on_hold_change_while_checks_remain_pending(
+    monkeypatch, capsys
+):
+    """The single admitted watcher observes CI and hold authority as one condition."""
+    snapshots = iter(
+        [
+            {
+                "head": "a" * 40,
+                "authority_fingerprint": "1" * 16,
+                "pending": ["trusted-ci / trusted-executor-pack-3"],
+                "red": [],
+            },
+            {
+                "head": "a" * 40,
+                "authority_fingerprint": "2" * 16,
+                "pending": ["trusted-ci / trusted-executor-pack-3"],
+                "red": [],
+            },
+        ]
+    )
+    monkeypatch.setattr(GUARD, "_pr_condition_snapshot", lambda *_a: next(snapshots))
+    monkeypatch.setattr(GUARD.time, "sleep", lambda seconds: None)
+
+    assert GUARD._watch_pr_condition_until_material(
+        "acme", "widgets", 4242, "a" * 40, 60
+    ) == 0
+    assert "authority_change" in capsys.readouterr().out
+
+
+def test_admitted_pr_watch_is_rewritten_to_one_union_condition_process(
+    monkeypatch, tmp_path
+):
+    watch = GUARD._watcher_request(
+        _watcher_payload(
+            "gh pr checks 4242 --watch --interval 60", background=False
+        )
+    )
+    assert watch is not None
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *_a: "a" * 40)
+
+    command = GUARD._pr_condition_watcher_command(tmp_path, watch)
+
+    assert command is not None
+    words = shlex.split(command)
+    assert words[1:4] == [
+        str(Path(GUARD.__file__).resolve()),
+        "--watch-pr-condition",
+        "acme",
+    ]
+    assert words[-4:] == ["widgets", "4242", "a" * 40, "60"]
+    assert "gh pr checks" not in command
+
+
+def test_pr_condition_snapshot_binds_comments_and_review_authority(monkeypatch):
+    head = "a" * 40
+    authority = {"comment": "HOLD-FOR-SOL", "review": "PENDING"}
+
+    def get_json(url):
+        if url.endswith("/pulls/4242"):
+            return {
+                "number": 4242,
+                "state": "open",
+                "draft": True,
+                "title": "HOLD-FOR-SOL",
+                "body": "Authority: Sol. Release condition: Sol review.",
+                "labels": [],
+                "auto_merge": None,
+                "head": {"sha": head},
+                "comments_url": "https://api.github.com/comments/4242",
+            }
+        if url.endswith("/comments/4242"):
+            return [{"id": 1, "updated_at": "now", "body": authority["comment"]}]
+        if url.endswith("/reviews"):
+            return [
+                {
+                    "id": 2,
+                    "state": authority["review"],
+                    "submitted_at": "now",
+                    "commit_id": head,
+                }
+            ]
+        raise AssertionError(url)
+
+    monkeypatch.setattr(GUARD, "_get_json", get_json)
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda *_a: [_run_stub("trusted-ci / pack", "queued")],
+    )
+    first = GUARD._pr_condition_snapshot("acme", "widgets", 4242)
+    authority["comment"] = "HOLD-FOR-SOL RELEASED BY SOL"
+    authority["review"] = "APPROVED"
+    second = GUARD._pr_condition_snapshot("acme", "widgets", 4242)
+
+    assert first["pending"] == second["pending"] == ["trusted-ci / pack"]
+    assert first["authority_fingerprint"] != second["authority_fingerprint"]
+
+
+def test_quiescence_requires_complete_pid_start_marker_binding(monkeypatch, tmp_path):
+    repo, state_path, head, runs, _observed = _v2_pending_session(monkeypatch, tmp_path)
+    state = GUARD._load(state_path)
+    state["ship_watcher"].pop("process_start")
+    GUARD._save(state_path, state)
+    _red, pending, passed = GUARD._split_head_runs(runs)
+
+    assert GUARD._ci_watcher_for_pull(state, 4242, head) is None
+    assert not GUARD._enter_ci_quiescence(
+        state_path,
+        state,
+        branch="claude/feature",
+        number=4242,
+        head=head,
+        pending=pending,
+        passed=passed,
+        checks_fingerprint="c" * 16,
+        authority_fingerprint="a" * 16,
+    )
+
+
+def test_dead_confirmed_watcher_before_entry_routes_missing_evidence_once(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _reservation: False)
+
+    for _ in range(3):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT missing_evidence") == 1
+    assert "#6351/main-integrity" in output
 
 
 def test_pending_exact_head_with_one_watcher_enters_ci_quiescent_once(
@@ -7259,7 +7398,7 @@ def test_material_green_watcher_exit_breaks_quiescence_exactly_once(
     assert len(material) == 1
     assert "green" in material[0]["systemMessage"]
     assert "release/Sol" in material[0]["systemMessage"]
-    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+    assert observed == {"merged": 6, "pull": 6, "runs": 6}
 
 
 def test_builder_owned_red_never_enters_ci_quiescence(monkeypatch, tmp_path, capsys):
@@ -7320,6 +7459,9 @@ def test_inherited_main_and_infrastructure_routes_name_canonical_ci_owner():
     assert GUARD._ci_event_route(
         "missing_evidence", pr=4242, head="a" * 40, checks=[]
     )["owner"] == "#6351/main-integrity"
+    assert not GUARD._ci_red_is_infrastructure("self-mod-fence", "failure")
+    assert not GUARD._ci_red_is_infrastructure("ci-authority/main", "failure")
+    assert GUARD._ci_red_is_infrastructure("self-mod-fence", "timed_out")
 
 
 def test_model_prose_cannot_mint_quiescence_or_terminal_truth(
@@ -7465,7 +7607,10 @@ def test_inherited_main_red_routes_once_to_6351_and_builder_stays_silent(
     assert len(routed) == 1
     assert "#6351/main-integrity" in routed[0]["systemMessage"]
     assert all(item.get("decision") != "block" for item in outputs[1:])
-    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+    # Once a material event has woken the model, later genuine Stop boundaries
+    # revalidate the event key so a late same-head red cannot stay hidden. The
+    # identical inherited event remains narration-silent on each recheck.
+    assert observed == {"merged": 6, "pull": 6, "runs": 6}
     assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
 
 
@@ -7499,6 +7644,40 @@ def test_infrastructure_red_routes_once_to_6351_without_product_repair(
     assert "#6351/main-integrity" in output
     assert "Fix the cause" not in output
     assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
+
+
+def test_candidate_caused_control_check_failure_stays_with_builder(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("self-mod-fence", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI on pull request #4242: self-mod-fence (failure).",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert outputs[-1]["decision"] == "block"
+    assert "self-mod-fence" in outputs[-1]["reason"]
+    assert all(
+        "CI_MATERIAL_EVENT infrastructure" not in item.get("systemMessage", "")
+        for item in outputs
+    )
 
 
 def test_mixed_infrastructure_and_candidate_red_cannot_hide_the_owned_failure(
@@ -7632,6 +7811,43 @@ def test_hold_or_release_metadata_change_invalidates_old_wait_once(
     assert "release/Sol" in output
     assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
     assert runs == _v2_fast_preflight()
+
+
+def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(pending=False)
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI on pull request #4242: trusted-executor-pack-7 (failure).",
+        ),
+    )
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert sum(
+        item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT green")
+        for item in outputs
+    ) == 1
+    assert outputs[-1]["decision"] == "block"
+    assert "trusted-executor-pack-7" in outputs[-1]["reason"]
+    assert "ci_quiescence" not in GUARD._load(state_path)
 
 
 def test_new_local_head_invalidates_old_quiescence_before_github_reclassification(

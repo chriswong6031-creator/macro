@@ -175,7 +175,27 @@ def _hold_protocol_is_complete(pull: dict[str, Any], comments: list[dict[str, An
     return True
 
 
-def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | None:
+def _hold_candidate_hint(state: dict[str, Any] | None) -> bool:
+    """Whether local unanswerability could erase an existing hold state."""
+    if not isinstance(state, dict):
+        return False
+    quiescence = state.get("ci_quiescence")
+    return (
+        str(state.get("last_blocker") or "") == "unmerged"
+        or str(state.get("parked_latch") or "").startswith("parked:")
+        or (
+            isinstance(quiescence, dict)
+            and str(quiescence.get("mode") or "") == "hold"
+        )
+    )
+
+
+def _hold_probe(
+    guard: ModuleType,
+    payload: dict[str, Any],
+    *,
+    known_state: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
     """Resolve a fully authenticated hold candidate without granting an exit.
 
     ``status`` is ``parked`` only when all binding checks are concluded green.
@@ -186,14 +206,20 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
     # Local failures mean this is not (or is no longer) a candidate. Remote
     # failures are different: they prove nothing and must preserve any existing
     # latch while the canonical guard reports its own outage block.
+    candidate_hint = _hold_candidate_hint(known_state)
     try:
         root = guard._repo_root(payload)
         if root is None:
+            if candidate_hint:
+                raise HoldProbeUnanswerable("repository root is unanswerable")
             return None
         root = Path(root)
         state = guard._load(guard._state_path(root, payload))
         if not isinstance(state, dict):
+            if candidate_hint:
+                raise HoldProbeUnanswerable("hold ledger is unanswerable")
             return None
+        candidate_hint = candidate_hint or _hold_candidate_hint(state)
         last_blocker = str(state.get("last_blocker") or "")
         parked_latch = str(state.get("parked_latch") or "")
         quiescence = state.get("ci_quiescence")
@@ -232,7 +258,11 @@ def _hold_probe(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] | 
         if _git(root, "status", "--porcelain=v1", "--untracked-files=all"):
             return None
         owner, repo = guard._github_slug(root)
-    except Exception:
+    except HoldProbeUnanswerable:
+        raise
+    except Exception as exc:
+        if candidate_hint:
+            raise HoldProbeUnanswerable(str(exc)) from exc
         return None
 
     try:
@@ -570,7 +600,15 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
 
     latched = str((state or {}).get("parked_latch") or "")
     try:
-        probe = _hold_probe(guard, payload)
+        try:
+            probe = _hold_probe(guard, payload, known_state=state)
+        except TypeError as exc:
+            # Rolling compatibility for an evaluated older wrapper or a test
+            # double with the historical two-argument seam. Production's
+            # current probe accepts known_state and does not take this branch.
+            if "known_state" not in str(exc):
+                raise
+            probe = _hold_probe(guard, payload)
     except HoldProbeUnanswerable:
         return None
     except Exception:

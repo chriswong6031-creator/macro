@@ -10,7 +10,7 @@
 
 **Goal:** Keep logical delivery ownership in the same session while a healthy external CI wait consumes one model-facing entry receipt and no further frontier-model turns until a mechanically observable material event.
 
-**Architecture:** Extend the existing ship-loop session ledger and its existing quota/watcher boundary. A quiescence receipt is valid only for the exact clean pushed PR head, a successful bounded preflight, no builder-owned red, and one live native condition watcher whose process identity is atomically reserved in that session's ledger. Repeated Stop or task-notification observations read the local ledger/process marker and return silently without GitHub access. Watcher exit, head/hold/release drift, or a concluded check state atomically claims one wake and re-enters the existing route exactly once.
+**Architecture:** Extend the existing ship-loop session ledger and its existing quota/watcher boundary. A quiescence receipt is valid only for the exact clean pushed PR head, a successful bounded preflight, no builder-owned red, and one live PR condition watcher whose process identity is atomically reserved in that session's ledger. The admitted native `gh pr checks` command remains one owner but is rewritten within the same hook lifecycle to observe the union of exact head, checks, hold comments, and review authority. Repeated unchanged Stop or task-notification observations read the local ledger/process marker and return silently without GitHub access. Watcher exit, head/hold/release drift, or a concluded check state atomically claims one wake and re-enters the existing route exactly once; later Stop boundaries revalidate the material-event key so a distinct same-head event remains visible.
 
 **Non-goals:** No watcher database, daemon, scheduler, queue, retry service, second lifecycle/control plane, new worker identity, `ci.yml` or trusted-executor change, merge-controller rewrite, product code, or prose-derived authority.
 
@@ -66,7 +66,7 @@ Run the focused node IDs and retain the RED output before touching production ho
 1. Selectively port #6381's atomic ledger read-modify-write and compare-and-reserve watcher mechanism into the existing per-session ledger.
 2. Preserve the current quota guard; port only the pure canonical `hot_watch_reason(raw)` normalization needed so quota denial and watcher reservation use the same mechanical reason.
 3. Bind watcher ownership to session key, PR number, exact head, check/route fingerprint, PID, and process-start identity. Refuse a stale/reused PID and refuse multiple live watchers for the same session; do not affect other session ledgers.
-4. Preserve the existing native GitHub condition watcher and its configured hook lifecycle. No detached timer, background polling service, or successor watcher after unchanged exit.
+4. Preserve the existing native GitHub watcher admission and configured hook lifecycle. For PR waits, keep exactly one owner but evaluate checks and hold/review authority in that process so metadata changes are observable. No detached timer, background polling service, second watcher, or successor watcher after unchanged exit.
 5. Run donor atomicity/isolation/PARKED tests green before adding V2 state transitions.
 
 ## Task 4: Implement mechanically derived CI quiescence

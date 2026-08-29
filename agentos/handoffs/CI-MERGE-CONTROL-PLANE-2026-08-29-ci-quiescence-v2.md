@@ -21,11 +21,13 @@ changed:
   - path: .claude/hooks/gh_quota_guard.py
     what: >
       Expose one canonical pure hot-watcher classifier so watcher reservation
-      and quota denial cannot disagree or leave a phantom claim.
+      and quota denial cannot disagree or leave a phantom claim; apply the
+      same 60-second floor to the PR watcher's real ten-second default.
   - path: .claude/hooks/ship_loop_guard.py
     what: >
       Add atomic per-session transactions, exact native watcher identity and
       one-watcher admission, ci_quiescence.v1 derivation/local fast path,
+      a single PR condition process covering checks plus hold/review authority,
       single material-event routing, and fail-closed red ownership boundaries.
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
@@ -61,9 +63,11 @@ verified:
       one remote snapshot, one watcher identity and 100 silent unchanged
       observations over a simulated 2,700-second wait.
     command: >
-      python3 -m pytest -q tests/test_ship_loop_guard.py -k
-      'forty_five_minute_wait or hundred_identical or mutation_without_quiescence'
-    result: 2 passed and 395 deselected in the deterministic long-wait/mutation selection.
+      python3 -m pytest -q
+      tests/test_ship_loop_guard.py::test_one_hundred_identical_stop_and_task_wakes_do_not_repoll_or_renarrate
+      tests/test_ship_loop_guard.py::test_deterministic_forty_five_minute_wait_keeps_one_watcher_and_one_receipt
+      tests/test_ship_loop_guard.py::test_mutation_bypassing_quiescence_reintroduces_one_hundred_poll_blocks
+    result: 3 passed in the deterministic long-wait/mutation selection.
   - claim: >
       Lawful pending holds reuse ci_quiescence.v1; PARKED narrates once; red,
       release, outage and concurrent watcher/latch changes fail in the safe direction.
@@ -81,7 +85,23 @@ verified:
       PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
       tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py
       tests/test_gh_quota_guard.py
-    result: 539 passed, 1 skipped; three pytest temp-cleanup warnings only.
+    result: 547 passed, 1 skipped; three pytest temp-cleanup warnings only.
+  - claim: >
+      The independent review's nine negative controls fail on the pre-review
+      head and pass after binding authority wake, routed-event revalidation,
+      owned control-check failure, quota, PID/start, dead-before-entry and
+      local hold-probe ambiguity.
+    command: >
+      python3 -m pytest -q
+      tests/test_gh_quota_guard.py::test_gh_pr_checks_watch_uses_its_real_ten_second_default_and_same_floor
+      tests/test_ship_loop_guard.py::test_pr_condition_watcher_exits_on_hold_change_while_checks_remain_pending
+      tests/test_ship_loop_guard.py::test_quiescence_requires_complete_pid_start_marker_binding
+      tests/test_ship_loop_guard.py::test_dead_confirmed_watcher_before_entry_routes_missing_evidence_once
+      tests/test_ship_loop_guard.py::test_inherited_main_and_infrastructure_routes_name_canonical_ci_owner
+      tests/test_ship_loop_guard.py::test_candidate_caused_control_check_failure_stays_with_builder
+      tests/test_ship_loop_guard.py::test_routed_receipt_does_not_hide_a_later_same_head_builder_red
+      tests/test_ship_loop_hold_wrapper.py::test_local_git_unanswerability_preserves_existing_hold_state
+    result: 9 failed before the correction and 9 passed after it.
 unverified:
   - claim: Hosted CI is green on the successor pull request's exact head.
     what_would_verify: Concluded binding checks on the fresh successor PR head.
@@ -89,7 +109,7 @@ unresolved:
   - >
     Repository hooks control hook output, GitHub observations, and watcher
     admission; the external client decides whether a task notification creates
-    a model turn. The healthy native watcher has no unchanged completion, and
+    a model turn. The healthy single PR condition watcher has no unchanged completion, and
     the deterministic proof therefore establishes zero model-facing outputs
     after entry, not authority over an arbitrary client's scheduler.
   - >
@@ -114,7 +134,7 @@ do_not_redo:
   - >
     Do not claim the repo hook can prevent an arbitrary external client from
     instantiating a model turn; require zero new model turns while external state
-    is unchanged through the one non-completing native watcher and silent hook path.
+    is unchanged through the one non-completing condition watcher and silent hook path.
 danger_areas:
   - >
     A manually planted partial quiescence dictionary is not authority. The full
@@ -135,12 +155,14 @@ danger_areas:
 ## Observable contract
 
 The exact clean pushed head may enter `CI_QUIESCENT` only after deterministic
-fast preflight is green, no binding builder red exists, and one native watcher is
+fast preflight is green, no binding builder red exists, and one PR condition watcher is
 mechanically confirmed for the same PR/head. The first observation emits one
 receipt. Repeated Stop/task-notification observations consult only local ledger,
 head/dirt, and process identity, producing zero new model turns while external
-state is unchanged. One material green/red/head/hold/watcher change wakes exactly
-once and routes by mechanical ownership.
+state is unchanged. The one watcher observes checks plus hold/review authority.
+One material green/red/head/hold/watcher change wakes exactly once and routes by
+mechanical ownership; later Stop boundaries revalidate the material-event key so
+a distinct same-head event cannot be hidden by the first receipt.
 
 ## Architecture boundary
 
