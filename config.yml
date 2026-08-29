@@ -2627,6 +2627,13 @@ stock_search:
     - ARES   # Ares Management
     - ARLP   # Alliance Resource Partners
     - ARQT   # Arcutis Biotherapeutics
+    - AVB    # AvalonBay Communities — DELISTED 2026-08-17 (acquired by Vivmark
+             # Residential via merger; last session 08-14). Membership kept for the
+             # same reason as CTRA/TPH: page, search entry and deep links stay alive
+             # (CSP-R1). The exit row in config/delisted_symbols.yml stops the
+             # nightly fetch — Yahoo answers this dead string with the acquirer's
+             # re-based tape, so fetching it splices a foreign series (2026-08-22
+             # incident). Do NOT delete this line.
     - AWK    # American Water Works
     - AXP    # American Express
     - AZO    # AutoZone
@@ -3089,6 +3096,7 @@ stock_search:
     # one that says Coterra Energy stopped trading.
     CTRA:  {name: "Coterra Energy", sector: "Energy"}
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
+    AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
