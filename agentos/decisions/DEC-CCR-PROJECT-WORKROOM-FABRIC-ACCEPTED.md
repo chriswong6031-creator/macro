@@ -46,11 +46,13 @@ alternatives:
       Preserves context collision, wrong-thread risk, archaeology and Chairman monitoring labor.
 evidence:
   - "Chairman live directive, 2026-08-29: continue Pro-mode end-to-end Workroom leadership."
-  - "Protected Mastermind 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b, Skillpack v1.0.1/bootstrap-major 1."
-  - "Mastermind #240 exact current head 45defc7b57ac93615ff78aa32fd40774b0e130d2."
+  - "Protected Mastermind c924b37188df2437057b5fd7bfc00ce0db91a1f1, Skillpack v1.0.1/bootstrap-major 1."
+  - "Mastermind #240 exact current head f2a0c37d56e4084c3bad1bebc7b38f44c5dcca91."
+  - "Current-source reconciliation records protected Agent Relay enrollment #238 and AD-ID1 #239 without capability inflation."
   - "Canonical reconciliation amendment on #240 adopts the unique valid #233 planner/provenance law."
   - "Mastermind #233 closed unmerged with supersession receipt 5463703030; MAS-220 is Duplicate of MAS-231."
-  - "Mastermind #242 exact head a1c83e5d2a91593f85cf2b8fbd2361583e8f4df4 remains WR-R0 research only."
+  - "Mastermind #242 exact head 871d983148800d7037eef0e4e9b65263afaa839e remains WR-R0 research only."
+  - "Slack exact readback proves channel C0BTQ71QEA0 exists but is inert/unmanaged/not a Workroom."
   - "Current GitHub census finds no protected/open Workroom implementation carrier beyond records/research."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
@@ -82,6 +84,9 @@ WR-P0 remains `NOT_BUILT`. It belongs in Macro and must consume the accepted
 `linear_portfolio_plan.v1`, accepted Initiative plan plus normalized live readback, a complete Slack
 snapshot and a static policy bound to the exact protected #240 source set. Initial six candidates are
 `SHADOW` and never apply-eligible.
+
+Protected Agent Relay enrollment #238 and AD-ID1 request identity #239 are prerequisites at
+`BUILT_NOT_PROVEN`; neither makes a Workroom, live Relay, runtime claim or production experience.
 
 Do not create `WS:PROJECT-WORKROOMS`, Slack OS, Workroom OS, another lifecycle, project/task database,
 queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router.
