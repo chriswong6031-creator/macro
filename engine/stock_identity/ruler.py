@@ -46,7 +46,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -81,6 +83,28 @@ __all__ = [
 
 #: The explicit sentinel status a shipped spec carries before Task 3C runs.
 PR3_PENDING_SENTINEL = "pending_sealed_calibration"
+
+#: Repo root inferred from this module's own path (``engine/stock_identity/
+#: ruler.py`` -> ``.../engine/stock_identity`` -> ``.../engine`` -> repo root),
+#: the default for the two Sol CONFIRMATION-1 (SI-W3A-RULER-V1) reconstructibility
+#: checks that touch the filesystem outside ``bars_by_symbol`` -- a declared
+#: producer-store existence check and ticker-identity hygiene (see
+#: :func:`_producer_store_available`, :func:`_identity_resolvable`). Callers may
+#: override via the ``repo_root`` keyword threaded through
+#: :func:`build_family_episode_availability` / :func:`aggregate_cell_metrics`,
+#: for test isolation.
+_DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+#: Sol CONFIRMATION-1 point 3(b) ("required producer inputs exist"): a
+#: committed on-disk store path embedded in a registry entry's own
+#: ``producer`` string (e.g. ``confirmed_buy``/``rebuy``'s ``data/
+#: signal_archive/track_record.parquet``, ``sea_event_classes``'s ``data/
+#: stock_events``). Every ``family_key``/``producer`` value in the registry is
+#: itself derived from something that exists in the producing code or a
+#: committed ledger (``engine/stock_identity/replay/registry.py``'s own module
+#: docstring), so a ``data/...`` token embedded in that already-receipted
+#: field is read as structured truth, never invented.
+_PRODUCER_STORE_PATH_RE = re.compile(r"data/[\w./-]+")
 
 #: Cadence classes the grain-cadence null groups by (freeze §4.2 "grain is always
 #: stratified"). Any observed W2 ``grain`` string classifies into exactly one.
@@ -647,40 +671,165 @@ def _family_first_available_bound(entry: Mapping[str, Any] | None) -> tuple[pd.T
     return (pd.Timestamp(val) if val else None), True
 
 
+def _family_provenance_class(entry: Mapping[str, Any] | None) -> tuple[str | None, bool]:
+    """``(provenance_class, field_present)`` — the W2 registry's own R/B/P
+    class for this family (Sol CONFIRMATION-1, SI-W3A-RULER-V1, points 2 and
+    5). ``field_present=False`` means the registry entry carries no
+    ``provenance_class`` key at all, which the caller types ``UNESTIMABLE``
+    per point 5 — a genuinely missing class is never guessed, never defaulted
+    to R (that would be exactly the eligibility-widening the ruling forbids).
+    The committed ``family_registry.json``'s 24 entries all carry a class
+    (10 R / 6 B / 8 P, checked 2026-08-28); Class C is resolved by
+    ``engine/stock_identity/replay/registry.py``'s own consequence matrix to
+    either R or P before it is ever published, so this reader never has to
+    interpret "C" itself."""
+    if entry is None or "provenance_class" not in entry:
+        return None, False
+    val = entry.get("provenance_class")
+    return (str(val) if val else None), True
+
+
+def _family_spec_receipted(entry: Mapping[str, Any] | None) -> bool:
+    """Point 3(a) ("the family's source/era spec ... covers that date"): a
+    structural receipt check — the registry's own ``spec_hash`` is non-empty.
+    Every R/B entry ``engine/stock_identity/replay/registry.py``'s ``_entry()``
+    mints carries a real ``spec_hash`` computed from its own
+    ``spec_constants``; only a Class P entry (already excluded before this
+    check runs — point 2) or a malformed/synthetic one carries a falsy one.
+    The committed registry carries no per-family, per-date era-boundary field
+    beyond ``family_first_available`` (point 1's hard lower bound) — this is
+    the finest-grained "the spec exists and is receipted" signal actually
+    available from existing registry receipts without inventing a new field
+    (never done here — see the module docstring's fail-closed-on-ambiguity
+    rule)."""
+    return bool(entry.get("spec_hash")) if entry is not None else False
+
+
+def _producer_declared_store_path(entry: Mapping[str, Any] | None) -> str | None:
+    producer = str(entry.get("producer") or "") if entry is not None else ""
+    m = _PRODUCER_STORE_PATH_RE.search(producer)
+    return m.group(0) if m else None
+
+
+def _producer_store_available(entry: Mapping[str, Any] | None, repo_root: Path) -> bool:
+    """Point 3(b) ("required producer inputs exist"): when the registry's own
+    ``producer`` field names a committed store path (``confirmed_buy``/
+    ``rebuy``'s ``data/signal_archive/track_record.parquet``,
+    ``sea_event_classes``'s ``data/stock_events``), that path must exist on
+    disk. A pure engine-function producer (``grey_dot_macro``,
+    ``starter_signature``, the tier cascade, the naive comparators, the
+    locked-spec Terminal ports, ...) names no store path at all — its only
+    required input is the price plane, checked separately below — so this
+    check is vacuously satisfied for those families, never a false exclusion."""
+    path = _producer_declared_store_path(entry)
+    if path is None:
+        return True
+    return (repo_root / path).exists()
+
+
+@lru_cache(maxsize=256)
+def _identity_resolvable(symbol: str, repo_root_str: str) -> bool:
+    """Point 3(d) ("identity is resolvable"): reuses the SAME ticker-identity
+    hygiene machinery every other name in this program is checked against
+    (``engine.stock_identity.hygiene.check_symbol``) rather than inventing a
+    second, ruler-local identity notion. ``compute_eligible`` is that module's
+    own "this symbol's series is not a known splice/reuse this program
+    refuses to read" verdict (``COMPUTE_BLOCKLIST`` — one committed entry,
+    ``ABX``, as of 2026-08-28) — exactly "identity is resolvable" for a
+    lawful-reconstructibility check. Cached per ``(symbol, repo_root)``: a
+    full availability build calls this once per ``(family, episode)`` row for
+    what is usually a small, repeated symbol set."""
+    from engine.stock_identity.hygiene import check_symbol
+    verdict = check_symbol(symbol, repo_root=repo_root_str)
+    return bool(verdict.get("compute_eligible", True))
+
+
 def _episode_family_availability_state(
     erow: Any,
     family_entry: Mapping[str, Any] | None,
     family_entry_present: bool,
     bars_by_symbol: Mapping[str, pd.DataFrame] | None,
     bars_supplied: bool,
+    repo_root: Path | None = None,
 ) -> str:
     """One typed availability state for a ``(family, tier-eligible episode)``
-    pair — outcome-independent, never reads ``events``/fires (Ruling 2). Returns
-    :data:`FAMILY_ELIGIBLE_STATE` or one of the closed
-    :data:`AVAILABILITY_TAXONOMY_TOKENS` exclusion states:
+    pair — outcome-independent, never reads ``events``/fires (Ruling 2, then
+    Sol CONFIRMATION-1). Returns :data:`FAMILY_ELIGIBLE_STATE` or one of the
+    closed :data:`AVAILABILITY_TAXONOMY_TOKENS` exclusion states:
 
     * ``"UNESTIMABLE"`` — no family registry was supplied at all, this
-      ``family_key`` is absent from it, or the registry entry genuinely lacks
-      the ``family_first_available`` field (three distinct "cannot establish
-      lawful availability" causes, all typed the same way per Ruling 2 (c) —
-      NEVER a silent fall-through to fired-on coverage), OR no
-      ``bars_by_symbol`` was supplied to check instrument/date coverage.
-    * ``"NOT_YET_AVAILABLE"`` — the registry's ``family_first_available``
+      ``family_key`` is absent from it, the registry entry genuinely lacks the
+      ``family_first_available`` field, the entry genuinely lacks the
+      ``provenance_class`` field (point 5 — a missing class is NEVER guessed
+      or defaulted to R/B), the entry's class is neither R, B nor P, no
+      ``bars_by_symbol`` was supplied, OR (for a null-bound R/B family) the
+      registry entry carries no receipted ``spec_hash`` at all (point 3(a)) —
+      all "cannot establish lawful availability" causes, typed the same way,
+      NEVER a silent fall-through to fired-on coverage or to ELIGIBLE.
+    * ``"STRUCTURAL_ABSENCE"`` — the registry types this family Class P
+      (prospective-only / structural-absence): historically unavailable
+      REGARDLESS of ``family_first_available`` (point 2) — checked BEFORE any
+      date-bound logic below, so a null OR a set bound on a Class P entry both
+      resolve here, never to ``NOT_YET_AVAILABLE``/``ELIGIBLE``.
+    * ``"NOT_YET_AVAILABLE"`` — an R/B family's ``family_first_available``
       postdates the episode's ENTIRE window (start through end/anchor-absent
-      fallback to start) — a resolved, typed exclusion.
+      fallback to start) — point 1's hard lower bound, a resolved, typed
+      exclusion.
+    * ``"SOURCE_FAILED"`` — a null-bound R/B family whose registry
+      ``producer`` names a committed input store the family's own replay
+      requires (point 3(b)), and that store is absent from disk.
     * ``"NO_COVERAGE"`` — bars were supplied but do not cover the episode's
-      instrument/window.
+      instrument/window (point 3(c)).
+    * ``"IDENTITY_UNRESOLVED"`` — a null-bound R/B family whose symbol fails
+      the same ticker-identity hygiene check every other name in this program
+      is read through (point 3(d)) — the symbol's series is a known
+      splice/reuse this program refuses to read.
+
+    Points 3(a)/3(b)/3(d) are scoped EXACTLY as Sol's ruling states them — "for
+    historical R/B families with NULL first-available" — a family with a real,
+    committed ``family_first_available`` bound (``reclaim_waiver``,
+    ``washout_turn``, ``amber_early``) already carries a positive, registry-
+    asserted lower bound from point 1 and is not additionally gated by them.
     """
     if not family_entry_present:
         return "UNESTIMABLE"
     bound, field_present = _family_first_available_bound(family_entry)
     if not field_present:
         return "UNESTIMABLE"
+    provenance_class, class_present = _family_provenance_class(family_entry)
+    if not class_present:
+        return "UNESTIMABLE"
+
+    # Point 2: Class P is historically unavailable REGARDLESS of the bound —
+    # checked before any date-bound logic runs, so "regardless" is literal.
+    if provenance_class == "P":
+        return "STRUCTURAL_ABSENCE"
+    if provenance_class not in ("R", "B"):
+        # An unrecognized class fails closed rather than guessing which of
+        # the two established regimes (bound-law vs structural-absence)
+        # applies to it.
+        return "UNESTIMABLE"
+
     start = pd.Timestamp(erow.start_date)
     end_raw = getattr(erow, "end_date", None)
     end = pd.Timestamp(end_raw) if end_raw is not None and pd.notna(end_raw) else start
     if bound is not None and bound > end:
         return "NOT_YET_AVAILABLE"
+
+    root = repo_root if repo_root is not None else _DEFAULT_REPO_ROOT
+    if bound is None:
+        # Point 3: a historical R/B family with NO registered lower bound is
+        # ELIGIBLE only where the SAME W2 replay/source machinery can
+        # establish, outcome-independently, that it was lawfully
+        # reconstructible: a receipted source/era spec (a) and, when the
+        # registry's own producer names one, an existing committed input
+        # store (b). Price-plane coverage (c) and identity resolvability (d)
+        # are checked below, shared with the bounded-family path.
+        if not _family_spec_receipted(family_entry):
+            return "UNESTIMABLE"
+        if not _producer_store_available(family_entry, root):
+            return "SOURCE_FAILED"
+
     if not bars_supplied:
         return "UNESTIMABLE"
     symbol = str(erow.symbol)
@@ -691,6 +840,10 @@ def _episode_family_availability_state(
     covers = (lo <= start <= hi) or (lo <= end <= hi) or (start <= lo and end >= hi)
     if not covers:
         return "NO_COVERAGE"
+
+    if bound is None and not _identity_resolvable(symbol, str(root)):
+        return "IDENTITY_UNRESOLVED"
+
     return FAMILY_ELIGIBLE_STATE
 
 
@@ -701,35 +854,57 @@ def build_family_episode_availability(
     family_registry: Sequence[Mapping[str, Any]] | Mapping[str, Mapping[str, Any]] | None = None,
     bars_by_symbol: Mapping[str, pd.DataFrame] | None = None,
     tier_ceiling: int = 2,
+    repo_root: str | Path | None = None,
 ) -> pd.DataFrame:
     """The outcome-independent ``(family_key, tier-eligible episode)``
-    availability frame Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law) requires
-    :func:`aggregate_cell_metrics`'s ``recall_at_tier`` denominator be built
-    from — REPLACING the prior events-derived ("fired-on") family/symbol
-    coverage universe. One row per ``(family_key, tier-eligible episode)``
-    pair — REGARDLESS of whether that family ever fired an event on that
-    episode's symbol — carrying a typed, closed ``availability_state``
-    (:data:`FAMILY_ELIGIBLE_STATE` / :data:`AVAILABILITY_TAXONOMY_TOKENS`; see
+    availability frame Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law), narrowed by
+    Sol's CONFIRMATION-1 closed law, requires :func:`aggregate_cell_metrics`'s
+    ``recall_at_tier`` denominator be built from — REPLACING the prior
+    events-derived ("fired-on") family/symbol coverage universe. One row per
+    ``(family_key, tier-eligible episode)`` pair — REGARDLESS of whether that
+    family ever fired an event on that episode's symbol — carrying a typed,
+    closed ``availability_state`` (:data:`FAMILY_ELIGIBLE_STATE` /
+    :data:`AVAILABILITY_TAXONOMY_TOKENS`; see
     :func:`_episode_family_availability_state`).
 
     Availability is established from OUTCOME-INDEPENDENT provenance/coverage
-    only: (i) the W2 family registry's own ``family_first_available``
-    boundary (never postdating the episode's window), and (ii)
-    instrument/date input availability (``bars_by_symbol`` coverage of the
-    episode's window). Grain carries no separate availability axis in the
-    committed provenance — one symbol's OHLCV underlies every grain a family
-    might read it at — so instrument/date/grain availability collapses to (ii)
-    by design, not by omission.
+    only:
 
-    Class-P families (zero committed rows,
-    ``engine/stock_identity/replay/registry.py``'s ``CLASS_P_FAMILIES``) and
-    any family absent from ``family_keys`` never appear here at all — they
-    carry no ``fire_metrics`` rows upstream, so :func:`aggregate_cell_metrics`
-    never forms a cell for them regardless of this frame's content.
+    1. the W2 family registry's own ``family_first_available`` boundary,
+       never postdating the episode's window (hard lower bound, unchanged
+       from Ruling 2);
+    2. the registry's ``provenance_class`` — a Class-P (prospective-only /
+       structural-absence) family is historically unavailable REGARDLESS of
+       that boundary;
+    3. for an R/B family with NO registered boundary, whether the SAME W2
+       replay/source machinery can establish, outcome-independently, that it
+       was lawfully reconstructible for that ``(symbol, date)``: a receipted
+       source/era spec, an existing declared producer input store, price-plane
+       coverage, and ticker-identity resolvability;
+    4. where lawful availability cannot be established at all — a missing
+       registry, a missing family, or a missing ``family_first_available``/
+       ``provenance_class`` field — the episode types ``UNESTIMABLE``, never a
+       guessed value and never a silent fall-through to eligibility.
+
+    Grain carries no separate availability axis in the committed provenance —
+    one symbol's OHLCV underlies every grain a family might read it at — so
+    instrument/date/grain price-plane availability collapses to the bars
+    check by design, not by omission.
+
+    A Class-P family passed here explicitly now resolves to
+    ``"STRUCTURAL_ABSENCE"`` for every episode, never ``ELIGIBLE`` — this
+    predicate is correct as a matter of law independent of the current call
+    graph. In the wired pipeline (:func:`aggregate_cell_metrics`, the pilot
+    build script), Class-P families (zero committed W2 rows,
+    ``engine/stock_identity/replay/registry.py``'s ``CLASS_P_FAMILIES``) still
+    never reach this frame in practice — they carry no ``fire_metrics`` rows
+    upstream, so no cell ever forms for them; any family absent from
+    ``family_keys`` likewise never appears here at all.
     """
     registry_index = _family_registry_index(family_registry)
     family_registry_supplied = family_registry is not None
     bars_supplied = bars_by_symbol is not None
+    root = Path(repo_root) if repo_root is not None else _DEFAULT_REPO_ROOT
 
     eps = episodes if episodes is not None else pd.DataFrame()
     if eps.empty or not {"symbol", "episode_type", "tier", "start_date"} <= set(eps.columns) or not family_keys:
@@ -749,7 +924,7 @@ def build_family_episode_availability(
         entry_present = family_registry_supplied and (family_key in registry_index)
         for erow in tier_eligible.itertuples(index=False):
             state = _episode_family_availability_state(
-                erow, entry, entry_present, bars_by_symbol, bars_supplied,
+                erow, entry, entry_present, bars_by_symbol, bars_supplied, repo_root=root,
             )
             rows.append({
                 "family_key": family_key,
@@ -773,6 +948,7 @@ def aggregate_cell_metrics(
     group_cols: Sequence[str] = ("family_key", "episode_type", "grain"),
     family_registry: Sequence[Mapping[str, Any]] | Mapping[str, Mapping[str, Any]] | None = None,
     bars_by_symbol: Mapping[str, pd.DataFrame] | None = None,
+    repo_root: str | Path | None = None,
 ) -> pd.DataFrame:
     """Per-cell aggregates consumed by :func:`compute_composites`.
 
@@ -828,7 +1004,7 @@ def aggregate_cell_metrics(
     family_keys_present = sorted({str(f) for f in fm["family_key"].dropna().unique()})
     availability = build_family_episode_availability(
         episodes, family_keys_present,
-        family_registry=family_registry, bars_by_symbol=bars_by_symbol,
+        family_registry=family_registry, bars_by_symbol=bars_by_symbol, repo_root=repo_root,
     )
     eligible_by_cell: dict[tuple[Any, Any], set[str]] = {}
     if not availability.empty:

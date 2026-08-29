@@ -583,10 +583,28 @@ def test_c_loc_d_ranks_within_episode_type_grain_stratum_only():
 # Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law) fixture helper: a minimal W2
 # family-registry entry conferring UNRESTRICTED lawful availability
 # (family_first_available=None -- "no known start boundary", the SAME
-# convention family_registry.json's own committed entries use).
+# convention family_registry.json's own committed entries use). Sol
+# CONFIRMATION-1 (point 5) additionally requires a present ``provenance_class``
+# field (R or B -- never P, never omitted) for a null-bound family to type
+# ELIGIBLE rather than UNESTIMABLE; every "unrestricted" fixture entry now
+# carries ``"provenance_class": "R"`` and a synthetic-but-truthy ``spec_hash``
+# (point 3(a)'s structural receipt check) by default. No embedded ``data/``
+# path in the fixture ``producer`` string, so point 3(b)'s producer-store
+# check is vacuous for every fixture family, exactly like the real
+# bar-derived engine families (grey_dot_macro, tier_cascade, the naive
+# comparators, ...).
 # ---------------------------------------------------------------------------
-def _unrestricted_registry(*family_keys: str) -> list[dict]:
-    return [{"family_key": fk, "family_first_available": None} for fk in family_keys]
+def _unrestricted_registry(*family_keys: str, provenance_class: str = "R") -> list[dict]:
+    return [
+        {
+            "family_key": fk,
+            "family_first_available": None,
+            "provenance_class": provenance_class,
+            "spec_hash": f"fixture-spec-hash::{fk}",
+            "producer": "fixture synthetic producer (no data/ store dependency)",
+        }
+        for fk in family_keys
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -753,7 +771,10 @@ def test_recall_denominator_excludes_not_yet_available_symbol_ruling2_regression
     ])
     spec = _fixture_spec()
     bars = {"AAA": _bars("AAA", "2019-06-01", 400), "DDD": _bars("DDD", "2017-06-01", 400)}
-    registry = [{"family_key": "fam.x", "family_first_available": "2019-01-01"}]
+    registry = [{
+        "family_key": "fam.x", "family_first_available": "2019-01-01",
+        "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.x",
+    }]
 
     cells = aggregate_cell_metrics(
         fm, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
@@ -832,6 +853,250 @@ def test_family_symbol_universe_empty_when_events_is_empty():
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
     assert pd.isna(cell["recall_at_tier"])
+
+
+# ---------------------------------------------------------------------------
+# Sol CONFIRMATION-1 (SI-W3A-RULER-V1) — the availability-eligibility closed
+# law narrowing Ruling 2: (1) a non-null family_first_available remains a hard
+# lower bound (unchanged, already covered above); (2) a Class-P family is
+# historically unavailable REGARDLESS of a null date; (3) an R/B family with a
+# NULL first-available is eligible only where the SAME W2 replay/source
+# machinery can establish, outcome-independently, that it was lawfully
+# reconstructible (receipted spec, existing declared producer input, price-
+# plane coverage, resolvable identity); (4) where source-specific availability
+# cannot be established, the existing typed unavailable/unestimable state is
+# returned, NEVER an eligibility inferred from the family having fired or from
+# the null itself; (5) a missing registry entry or missing availability field
+# (including a missing provenance_class) stays UNESTIMABLE. Sol's five
+# required regressions below.
+# ---------------------------------------------------------------------------
+def test_class_p_family_never_eligible_regardless_of_null_date_confirmation1_regression_a():
+    """Regression (a): a Class-P (prospective-only) family with a NULL
+    family_first_available -- the exact shape CLASS_P_FAMILIES ships in the
+    real registry -- must type STRUCTURAL_ABSENCE, never ELIGIBLE, even with
+    full bars coverage. "Regardless of a null date" is the literal law: a
+    Class-P family with a SET bound must also stay STRUCTURAL_ABSENCE (the
+    real registry's own amber_early carries both provenance_class="P" and a
+    non-null family_first_available)."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+    null_bound_registry = [{
+        "family_key": "fam.p", "family_first_available": None,
+        "provenance_class": "P", "producer": "prospective-only by charter",
+    }]
+    availability = build_family_episode_availability(
+        episodes, ["fam.p"], family_registry=null_bound_registry, bars_by_symbol=bars,
+    )
+    assert (availability["availability_state"] == "STRUCTURAL_ABSENCE").all()
+    assert (availability["availability_state"] != FAMILY_ELIGIBLE_STATE).all()
+
+    set_bound_registry = [{
+        "family_key": "fam.p", "family_first_available": "2026-08-11",
+        "provenance_class": "P", "producer": "washout-promoted EARLY marker",
+    }]
+    availability_bound = build_family_episode_availability(
+        episodes, ["fam.p"], family_registry=set_bound_registry, bars_by_symbol=bars,
+    )
+    assert (availability_bound["availability_state"] == "STRUCTURAL_ABSENCE").all()
+
+
+def test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirmation1_regression_b():
+    """Regression (b): an R family with NULL family_first_available -- a
+    receipted spec_hash, an EXISTING declared producer input store, full bars
+    coverage, and a resolvable identity -- becomes ELIGIBLE. The producer
+    string embeds a real committed-store path (the same convention
+    confirmed_buy/rebuy/sea_event_classes use in the shipped registry); this
+    test creates that path under a throwaway repo_root so the positive
+    "input exists" branch is genuinely exercised, not merely vacuous."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+    registry = [{
+        "family_key": "fam.rb", "family_first_available": None,
+        "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.rb",
+        "producer": "engine.fixture:analyze -> data/fixture_store/ledger.parquet",
+    }]
+
+    def _availability(repo_root):
+        return build_family_episode_availability(
+            episodes, ["fam.rb"], family_registry=registry, bars_by_symbol=bars,
+            repo_root=repo_root,
+        )
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_root = Path(tmp)
+        (tmp_root / "data" / "fixture_store").mkdir(parents=True)
+        (tmp_root / "data" / "fixture_store" / "ledger.parquet").write_bytes(b"x")
+        availability = _availability(tmp_root)
+    assert (availability["availability_state"] == FAMILY_ELIGIBLE_STATE).all()
+
+
+def test_rb_null_bound_family_missing_source_coverage_types_unavailable_confirmation1_regression_c():
+    """Regression (c): an R family with NULL family_first_available whose
+    declared producer input store is ABSENT from disk types SOURCE_FAILED
+    (never ELIGIBLE, never a silent fired-on fallback) -- and separately, the
+    SAME family with no receipted spec_hash at all types UNESTIMABLE (point
+    3(a)'s structural receipt check)."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    missing_store_registry = [{
+        "family_key": "fam.rb", "family_first_available": None,
+        "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.rb",
+        "producer": "engine.fixture:analyze -> data/does_not_exist/ledger.parquet",
+    }]
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        availability = build_family_episode_availability(
+            episodes, ["fam.rb"], family_registry=missing_store_registry, bars_by_symbol=bars,
+            repo_root=Path(tmp),
+        )
+    assert (availability["availability_state"] == "SOURCE_FAILED").all()
+
+    no_spec_hash_registry = [{
+        "family_key": "fam.rb", "family_first_available": None,
+        "provenance_class": "R", "spec_hash": None,
+        "producer": "engine.fixture:pure_function",
+    }]
+    availability_no_spec = build_family_episode_availability(
+        episodes, ["fam.rb"], family_registry=no_spec_hash_registry, bars_by_symbol=bars,
+    )
+    assert (availability_no_spec["availability_state"] == "UNESTIMABLE").all()
+
+
+def test_zero_fire_eligible_episode_still_grows_denominator_under_narrowed_law_confirmation1_regression_d():
+    """Regression (d): adding a zero-fire-but-eligible episode still GROWS the
+    recall denominator under the narrowed CONFIRMATION-1 predicate (not just
+    under the pre-CONFIRMATION-1 Ruling 2 shape already covered by regression
+    (a) above) -- an R family, null-bound, spec-receipted, no declared
+    producer-store dependency."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    episodes_aaa_only = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    episodes_with_ccc = pd.concat([
+        episodes_aaa_only,
+        pd.DataFrame([_episode_row(symbol="CCC", episode_type="reset_decline", start_date="2020-02-01")]),
+    ], ignore_index=True)
+    events = pd.DataFrame([
+        {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+         "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
+    ])
+    spec = _fixture_spec()
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400), "CCC": _bars("CCC", "2019-06-01", 400)}
+    registry = _unrestricted_registry("fam.x")
+
+    cells_aaa_only = aggregate_cell_metrics(
+        fm, episodes_aaa_only, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
+    cells_with_ccc = aggregate_cell_metrics(
+        fm, episodes_with_ccc, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
+    recall_aaa_only = cells_aaa_only.loc[
+        (cells_aaa_only["family_key"] == "fam.x") & (cells_aaa_only["episode_type"] == "reset_decline")
+    ].iloc[0]["recall_at_tier"]
+    cell_with_ccc = cells_with_ccc.loc[
+        (cells_with_ccc["family_key"] == "fam.x") & (cells_with_ccc["episode_type"] == "reset_decline")
+    ].iloc[0]
+    assert recall_aaa_only == pytest.approx(1.0)
+    assert cell_with_ccc["recall_at_tier"] == pytest.approx(0.5)
+    assert cell_with_ccc["recall_at_tier"] < recall_aaa_only
+
+
+def test_no_fired_on_fallback_under_any_missing_evidence_path_confirmation1_regression_e():
+    """Regression (e): AAA plainly FIRED (fam.x has a real fire on it), but
+    under FOUR distinct missing-evidence paths the episode is never silently
+    read as eligible via that fire -- recall_at_tier stays undefined (NaN) in
+    every case: (i) missing family_registry entirely (pre-existing Ruling 2(c)
+    coverage, re-asserted here); (ii) registry entry missing provenance_class
+    (NEW under CONFIRMATION-1 point 5); (iii) null-bound R family missing
+    spec_hash (point 3(a)); (iv) null-bound R family with a declared but
+    absent producer store (point 3(b), typed SOURCE_FAILED rather than
+    UNESTIMABLE, but STILL never ELIGIBLE and never fired-on)."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    events = pd.DataFrame([
+        {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+         "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
+    ])
+    spec = _fixture_spec()
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    def _recall(registry):
+        cells = aggregate_cell_metrics(
+            fm, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
+        )
+        cell = cells.loc[
+            (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+        ].iloc[0]
+        return cell["recall_at_tier"]
+
+    # (i) no registry supplied at all.
+    assert pd.isna(_recall(None))
+    # (ii) registry entry present, but no provenance_class key.
+    assert pd.isna(_recall([{"family_key": "fam.x", "family_first_available": None}]))
+    # (iii) R class, null bound, no spec_hash.
+    assert pd.isna(_recall([{
+        "family_key": "fam.x", "family_first_available": None,
+        "provenance_class": "R", "spec_hash": None,
+    }]))
+    # (iv) R class, null bound, spec_hash present, but the declared producer
+    # store does not exist -- SOURCE_FAILED, still never ELIGIBLE/fired-on.
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        cells = aggregate_cell_metrics(
+            fm, episodes, spec, events,
+            family_registry=[{
+                "family_key": "fam.x", "family_first_available": None,
+                "provenance_class": "R", "spec_hash": "h",
+                "producer": "engine.fixture -> data/does_not_exist/ledger.parquet",
+            }],
+            bars_by_symbol=bars, repo_root=Path(tmp),
+        )
+        cell = cells.loc[
+            (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+        ].iloc[0]
+        assert pd.isna(cell["recall_at_tier"])
+
+
+def test_identity_unresolved_symbol_never_eligible_under_null_bound():
+    """Point 3(d): a null-bound R/B family on a ticker-identity-hygiene-
+    blocked symbol (the real, committed COMPUTE_BLOCKLIST -- 'ABX', a verified
+    recycled symbol per engine/stock_identity/hygiene.py) types
+    IDENTITY_UNRESOLVED, never ELIGIBLE, even with full bars coverage and a
+    receipted spec. Uses the REAL repo_root (default) since COMPUTE_BLOCKLIST
+    is a module-level constant, not config-file-driven."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="ABX", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"ABX": _bars("ABX", "2019-06-01", 400)}
+    registry = _unrestricted_registry("fam.x")
+    availability = build_family_episode_availability(
+        episodes, ["fam.x"], family_registry=registry, bars_by_symbol=bars,
+    )
+    assert (availability["availability_state"] == "IDENTITY_UNRESOLVED").all()
 
 
 # ---------------------------------------------------------------------------

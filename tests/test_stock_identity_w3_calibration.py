@@ -1002,8 +1002,15 @@ def test_compute_constants_from_substrate_end_to_end_synthetic(synthetic_partiti
     # Ruling 2: an explicit, unrestricted family_registry entry for
     # "fam.synthetic" -- the real committed registry has no such family, and
     # compute_constants_from_substrate's default (load_family_registry()) would
-    # type every cell UNESTIMABLE for it.
-    fixture_registry = [{"family_key": "fam.synthetic", "family_first_available": None}]
+    # type every cell UNESTIMABLE for it. Sol CONFIRMATION-1 point 5 also
+    # requires a present provenance_class (R/B, never omitted) for a
+    # null-bound family to type ELIGIBLE, and point 3(a) requires a receipted
+    # (truthy) spec_hash -- both added here to keep this fixture genuinely
+    # unrestricted.
+    fixture_registry = [{
+        "family_key": "fam.synthetic", "family_first_available": None,
+        "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.synthetic",
+    }]
     recall_floor, lambda_fs, cells = calib_w3.compute_constants_from_substrate(
         result.events, result.attribution, result.episodes, result.bars_by_symbol, base_spec,
         family_registry=fixture_registry,
@@ -1275,10 +1282,16 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
     # cell UNESTIMABLE and make compute_recall_floor/compute_lambda_fs raise.
     # Point FAMILY_REGISTRY_PATH at a fixture file carrying an unrestricted
     # (family_first_available=None) entry for it, same pattern as the other
-    # monkeypatched module paths above.
+    # monkeypatched module paths above. Sol CONFIRMATION-1 point 5 also
+    # requires a present provenance_class (R/B) and point 3(a) a receipted
+    # spec_hash for a null-bound family to type ELIGIBLE rather than
+    # UNESTIMABLE -- both added to keep this fixture genuinely unrestricted.
     fake_family_registry_path = tmp_path / "family_registry.json"
     fake_family_registry_path.write_text(
-        json.dumps({"families": [{"family_key": "fam.synthetic", "family_first_available": None}]}),
+        json.dumps({"families": [{
+            "family_key": "fam.synthetic", "family_first_available": None,
+            "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.synthetic",
+        }]}),
         encoding="utf-8",
     )
     monkeypatch.setattr(calib_w3, "FAMILY_REGISTRY_PATH", fake_family_registry_path)
