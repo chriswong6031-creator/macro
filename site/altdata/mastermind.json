@@ -1,9 +1,9 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-28",
-  "generated_utc": "2026-08-28T07:44:14.834038+00:00",
+  "generated_utc": "2026-08-28T20:28:41.929755+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
-  "regime_read": "The clearest measured convergence is in semiconductors and AI infrastructure, led by MU, with more mixed but still coherent signals in PLTR, MRK, and MSFT. With no completed track-record observations, conviction remains capped at medium and sentiment-heavy clusters receive less weight.",
+  "regime_read": "Convergence is concentrated in semiconductors, government-linked technology, and healthcare, but several clusters rely partly on sentiment or affiliation rather than harder transaction signals. With no scored track record yet, conviction remains modest despite unusually broad alignment in MU and PLTR.",
   "brain_present": true,
   "brain_usable": true,
   "article3": {
@@ -11,7 +11,7 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-28",
-    "evaluated_at": "2026-08-28T07:43:06+00:00"
+    "evaluated_at": "2026-08-28T13:16:41+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -21,13 +21,13 @@
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
   "n_signals": 96,
-  "n_broken": 24,
+  "n_broken": 25,
   "signals": [
     {
       "ticker": "PLTR",
-      "signal_score": 83,
-      "conviction": "medium",
-      "action": "WATCH",
+      "signal_score": 79,
+      "conviction": "low",
+      "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
       "weighted_score": 2.1,
@@ -62,29 +62,29 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": "PLTR combines current federal-contract activity and acceleration with a uniformly bullish analyst-upgrade cluster and disclosed relationships to Marjorie Taylor Greene and Cathie Wood [gov_contract] [analyst_upgrade_cluster] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]. However, retail and Stocktwits enthusiasm are likely correlated rather than independent, and the Trump-linked transaction signal is on the sell side [retail_buzz] [stocktwits_bull] [trump], making WATCH more appropriate than immediate accumulation.",
+      "thesis": "Federal-contract activity and acceleration provide the principal hard signal [gov_contract], while a uniformly bullish analyst cluster adds institutional confirmation [analyst_upgrade_cluster]. Retail and Stocktwits enthusiasm reinforce momentum but raise crowding risk [retail_buzz] [stocktwits_bull]; the disclosed MTG holding and Cathie Wood affiliation expand the influence graph without proving incremental demand [actor:Marjorie Taylor Greene] [actor:Cathie Wood].",
       "second_order": [
-        "Government AI software: continued PLTR contract momentum would imply broader agency adoption of operational AI",
-        "Defense-cloud infrastructure: larger deployments would require secure compute, storage, and integration capacity"
+        "Government-software theme \u2014 sustained PLTR contract growth would imply broader public-sector digitization spending",
+        "Defense-data infrastructure theme \u2014 expanding deployments would benefit secure cloud, networking, and systems-integration suppliers"
       ],
       "falsifier": {
-        "text": "Federal-contract acceleration turns negative and disclosed institutional or political positioning shifts toward net selling.",
+        "text": "Federal-contract activity decelerates materially and analyst sentiment turns while retail attention remains elevated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "PLTR",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 60
+          "horizon_d": 45
         }
       },
       "clamped": null
     },
     {
       "ticker": "MRK",
-      "signal_score": 82,
-      "conviction": "medium",
-      "action": "WATCH",
+      "signal_score": 78,
+      "conviction": "low",
+      "action": "ACCUMULATE",
       "direction": "long",
       "source": "brain",
       "weighted_score": 1.9,
@@ -107,20 +107,20 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": "MRK's alignment is event-driven rather than sentiment-driven: multiple Phase 3 starts, an FDA label-expansion signal, substantial lobbying activity, and a Trump-linked buy signal form a coherent regulatory and pipeline cluster [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. The healthcare bills are only introduced and do not establish a company-specific catalyst, so they add sector context rather than thesis confirmation [bill:HR10087]. With relative strength already elevated but below the extended threshold, WATCH preserves entry discipline.",
+      "thesis": "Ten Phase 3 starts [clinical_phase3_start], an FDA label-expansion signal [fda_label_expansion], substantial lobbying activity [lobbying], and a Trump-linked buy signal [trump] align around regulatory and pipeline catalysts. The recently introduced cancer-care legislation is directionally relevant to oncology utilization, but it is only introduced and does not establish a company-specific benefit [bill:HR10087].",
       "second_order": [
-        "Clinical-research services: a larger late-stage trial portfolio increases demand for trial execution and data services",
-        "Oncology diagnostics: broader cancer treatment and care planning can raise companion-testing and monitoring demand"
+        "Oncology diagnostics theme \u2014 broader cancer-care planning can increase testing and treatment-selection activity",
+        "Clinical-research services theme \u2014 a larger late-stage pipeline implies demand for trial operations and regulatory support"
       ],
       "falsifier": {
-        "text": "Additional material clinical halts occur or the anticipated label-expansion pathway is delayed or rejected.",
+        "text": "Clinical halts broaden, label-expansion progress stalls, or the late-stage programs fail to advance on schedule.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MRK",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 75
+          "horizon_d": 70
         }
       },
       "clamped": null
@@ -162,13 +162,13 @@
         }
       ],
       "n_affiliated_actors": 2,
-      "thesis": "MSFT shows product and developer adoption alongside innovation activity: strong app demand, substantial model-download activity, GitHub momentum, and a large patent cluster provide several operating-adjacent signals [app_demand] [github_momentum] [patent_cluster]. The Sam Altman partnership relationship supports the AI-platform interpretation, while Bill Ackman's disclosed affiliation adds a smart-money network signal [actor:Sam Altman] [actor:Bill Ackman]. The signals are coherent but lack a direct contracting, insider-buying, or 13F-add channel, keeping conviction low.",
+      "thesis": "Large measured app engagement [app_demand], strong developer and model-download activity [github_momentum], and a sizeable patent cluster [patent_cluster] align across consumer demand, developer adoption, and intellectual-property creation. The factual Sam Altman partnership adds strategic relevance [actor:Sam Altman], while the Bill Ackman affiliation is qualitative and should receive little weight [actor:Bill Ackman].",
       "second_order": [
-        "Data-center power and cooling: sustained cloud and AI usage requires additional electrical and thermal capacity",
-        "Enterprise software integrators: broader AI-platform adoption increases implementation and migration work"
+        "Cloud data-center infrastructure theme \u2014 sustained software and AI adoption implies additional compute, networking, and power demand",
+        "Enterprise AI-services theme \u2014 developer momentum supports implementation, security, and data-governance providers"
       ],
       "falsifier": {
-        "text": "Developer and app-demand momentum declines together without corresponding growth in commercial AI adoption.",
+        "text": "App engagement and developer-download momentum roll over without corresponding commercial adoption.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MSFT",
@@ -1669,6 +1669,35 @@
       "rolling_over": true,
       "off_high_252": -15.5,
       "ret_20d": -11.7,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "DDOG",
+      "signal_score": 17,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.65,
+      "convergence_score": 2,
+      "channels": [
+        "analyst_upgrade_cluster",
+        "github_momentum"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -11.5,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -15.7,
+      "ret_20d": -9.5,
       "above_50dma": false,
       "entry_tier": null,
       "affiliations": [],

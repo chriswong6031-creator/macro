@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-08-28",
-  "generated_utc": "2026-08-28T08:03:47Z",
+  "generated_utc": "2026-08-28T13:37:55Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 312,
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3236,
+        "n_open": 3250,
         "n_past_check_by": 2255
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3236,
+        "n_open": 3250,
         "n_past_check_by": 2255
       },
       "allowed_actions": [
@@ -229,7 +229,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 21906,
+        "n_open": 22360,
         "n_past_check_by": 16500
       },
       "allowed_actions": [
@@ -277,7 +277,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 21906,
+        "n_open": 22360,
         "n_past_check_by": 16500
       },
       "allowed_actions": [
@@ -577,7 +577,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1303,
+        "n_open": 1306,
         "n_past_check_by": 372
       },
       "allowed_actions": [
@@ -838,8 +838,7 @@
           "market",
           "reliability",
           "contradictions",
-          "bottom_sensors",
-          "cortex"
+          "bottom_sensors"
         ]
       },
       "allowed_actions": [
@@ -920,8 +919,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 68427,
-        "n_with_falsifier": 674,
+        "n_claims": 69594,
+        "n_with_falsifier": 675,
         "falsifier_coverage": "1.0%",
         "blocking_reason": "falsifier coverage 1.0%; not a promotion-grade substrate"
       },
@@ -9547,7 +9546,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 11600,
+        "n_open": 11828,
         "n_past_check_by": 0
       },
       "allowed_actions": [

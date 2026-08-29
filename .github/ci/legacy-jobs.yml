@@ -2244,11 +2244,18 @@ jobs:
       # invariants, trd-wrap evidence move, [hidden] XOR overrides) plus the
       # HK loader block in templates/dashboard-icons.js. stdlib-only
       # (pathlib/re), full checkout has site/. No new job.
+      # tests/test_stock_dashboard_css.py (TP-1 theme-parity extraction,
+      # theme-parity-tp1-canada-20260828-sol-001) rides the same Canada
+      # subject as test_canada_v36_composer.py: governed stock-dashboard.css
+      # pair pins (visibility declarations, stance/lane inks, light-presence
+      # fence, token cleanliness via scripts.check_design_system.scan_text —
+      # repo-import only, no new deps), full checkout has site/. No new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_canada_canonical_board.py
           tests/test_canada_v36_composer.py
+          tests/test_stock_dashboard_css.py
           tests/test_hk_v37_composer.py
           tests/test_commodity_signals.py
           tests/test_commodity_index.py
@@ -8494,6 +8501,28 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # CCR-R0 (2026-08-28) belongs in this existing pre-launch security lane:
+      # authenticated operator identity, a fixed admin iframe, Caddy's real
+      # adapted handler order, and the bounded atomic GitHub-source publisher.
+      # The Python dependency closure is already present above. Pin and verify
+      # the same stock Caddy release deployed on the VPS so the adapted-order
+      # assertion cannot silently depend on runner-image contents.
+      - name: Control Room operator, embed, edge and source-publisher boundaries
+        run: |
+          CADDY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$CADDY_DIR"' EXIT
+          curl --fail --silent --show-error --location \
+            --output "$CADDY_DIR/caddy.tar.gz" \
+            https://github.com/caddyserver/caddy/releases/download/v2.11.4/caddy_2.11.4_linux_amd64.tar.gz
+          printf '%s  %s\n' \
+            527fbf917c39189a1e3b31d34fa955601680b2d5c8055d2a87b8b9588dec7bb9 \
+            "$CADDY_DIR/caddy.tar.gz" | sha256sum --check --status
+          tar -xzf "$CADDY_DIR/caddy.tar.gz" -C "$CADDY_DIR" caddy
+          CADDY_BIN="$CADDY_DIR/caddy" python -m pytest \
+            tests/test_admin_control_room.py \
+            tests/test_control_room_auth.py \
+            tests/test_control_room_caddy.py \
+            tests/test_publish_control_room_active_builds.py -q
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
@@ -11851,7 +11880,7 @@ jobs:
         # the lane-latch acceptance exemption, and the heartbeat write/grade round
         # trip — unrun, the whole permanence net is decoration same as the invariants
         # above.
-        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_caddy_hub_boundary.py tests/test_prophet_surface_net.py -q
+        run: python -m pytest tests/test_prophet_rescue.py tests/test_prophet_r2_boundary.py tests/test_live_snapshot_host_guard.py tests/test_no_pages_publish.py tests/test_deploy_bootstrap_private.py tests/test_macro_anon_dependency_guard.py tests/test_m1_macro_consumer_inspector.py tests/test_caddy_hub_boundary.py tests/test_prophet_surface_net.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed

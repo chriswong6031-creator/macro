@@ -22,7 +22,7 @@
  "n": 3026,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 146,
+ "n_flags": 147,
  "universes": [
   {
    "name": "stocks",
@@ -56,7 +56,7 @@
    "n": 2782,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 143,
+   "n_flags": 144,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -302,6 +302,11 @@
      "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
     },
     {
+     "name": "FBRX",
+     "kind": "delisted_printing",
+     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+    },
+    {
      "name": "FF",
      "kind": "registry_mismatch",
      "detail": "same instrument as its dead-registry rows (corr 0.9993) \u2014 the registry, not the store, carries foreign/live tape"
@@ -429,7 +434,7 @@
     {
      "name": "LEG",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-26) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "LOCO",
@@ -809,7 +814,7 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 128,
-  "delisted_printing": 10,
+  "delisted_printing": 11,
   "member_identity": 0
  },
  "stores": [
@@ -2608,6 +2613,11 @@
      "acked": false
     },
     {
+     "ticker": "FBRX",
+     "store_tip": "2026-08-27",
+     "acked": false
+    },
+    {
      "ticker": "IMPUY",
      "store_tip": "2026-08-27",
      "acked": false
@@ -2619,7 +2629,7 @@
     },
     {
      "ticker": "LEG",
-     "store_tip": "2026-08-26",
+     "store_tip": "2026-08-27",
      "acked": false
     },
     {
@@ -2660,6 +2670,7 @@
   "stocks/EQR",
   "baskets/ohlcv/ANGPY",
   "baskets/ohlcv/EQR",
+  "baskets/ohlcv/FBRX",
   "baskets/ohlcv/IMPUY",
   "baskets/ohlcv/ISSC",
   "baskets/ohlcv/LEG",

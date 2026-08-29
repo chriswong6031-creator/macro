@@ -5,27 +5,25 @@
  * If nothing is configured/served it cleanly no-ops and the page stays exactly as
  * the build rendered it.
  *
- * HONESTY: on the current Polygon STANDARD plan (and Yahoo spark) the feed is
- * ~15-MIN DELAYED, not real-time. window.LIVE_DELAYED_MIN (=15) makes the chips show
- * an amber "delayed" dot + "≥15-min delayed" title and SUPPRESSES the green "live"
- * pulse. The green pulse returns automatically once a real-time/websocket plan sets
- * LIVE_DELAYED_MIN=0 (see research/LIVE_DATA_POLYGON.md).
+ * HONESTY: this is now a MIXED-LATENCY feed. Polygon Standard / Yahoo legs keep
+ * their configured vendor delay floor (currently ~15 min), while mainland A-share
+ * snapshots from Tushare rt_k or Tencent carry a zero vendor floor and their real
+ * exchange timestamp. Freshness is therefore resolved PER QUOTE, not by painting
+ * the entire poller delayed merely because one provider is delayed.
  *
- * Three price sources, in priority order (all optional):
- *   - the Worker /quotes endpoint (window.LIVE_QUOTES_URL) -> freshest, per-page,
- *     lowest-latency US via Polygon (delayed on Standard; real-time after a WS upgrade).
- *   - a static full-universe snapshot JSON (window.LIVE_SNAPSHOT_URL, written by
- *     scripts/build_live_quotes on a GitHub Action, fetched from raw.githubusercontent
- *     CORS) -> keyless ~15-min delayed quotes with NO Worker deploy. Same {ts,quotes} shape.
+ * Three browser price sources, in priority order (all optional):
+ *   - the Worker /quotes endpoint (window.LIVE_QUOTES_URL) -> freshest, per-page.
+ *   - a static same-contract snapshot JSON (window.LIVE_SNAPSHOT_URL, written by
+ *     scripts/build_live_quotes) -> provider-specific latency: Tushare/Tencent CN
+ *     live, Polygon/Yahoo according to the configured delayed floor.
  *   - the static live/overlay.json (written by build_live_overlay) -> the
- *     divergence flag + market sessions (+ a price fallback when neither above).
+ *     divergence flag + market sessions (+ a conservative delayed price fallback).
  *
  * Cards carry <span class="nb-px" data-sym="600519.SS" data-mkt="cn">. data-sym is
- * the CANONICAL Yahoo/Polygon symbol the build already knows — the browser does NO
- * symbol re-derivation (the old JS heuristic double-suffixed CN/.BJ names). data-mkt
- * decides the "$" prefix ("us") and decimal precision ("fx" -> 4dp). An adjacent
- * <span class="nb-chg" data-sym="..."> (optional) is painted with the % change
- * (green up / red down) computed from prevClose — used by the index/futures strips.
+ * the canonical market symbol the build already knows — the browser does NO symbol
+ * re-derivation. data-mkt decides currency formatting / decimal precision. An
+ * adjacent <span class="nb-chg" data-sym="..."> (optional) is painted with the %
+ * change computed from prevClose.
  */
 (function () {
   if (window.__mmLiveInit) return; window.__mmLiveInit = true; // idempotency guard — second include is a no-op
@@ -40,12 +38,12 @@
     (SNAP ? SNAP.replace(/quotes\.json(\?.*)?$/, "breadth.json") : "live/breadth.json");
   var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
   var STALE_MIN = window.LIVE_STALE_MIN || 20;
-  // Vendor plan delay FLOOR (min). Polygon Standard + Yahoo spark are ~15-min delayed,
-  // so the whole feed is delayed, never "real-time": when >0 we never show the green
-  // "live" pulse — we show an amber "delayed" dot + an honest title. Set to 0 only once
-  // a real-time/websocket plan is live (see research/LIVE_DATA_POLYGON.md).
+  // Default vendor delay FLOOR (min) for quote sources that do not declare a
+  // lower-latency lane. Today Polygon Standard / Yahoo inherit 15; the mainland
+  // Tushare rt_k + Tencent sources are explicitly zero-floor in sourceDelayFloor().
+  // This is a fallback policy, no longer a claim that every symbol is delayed.
   var DELAYED_MIN = window.LIVE_DELAYED_MIN || 0;
-  var FEED_LABEL = window.LIVE_FEED_LABEL || "";   // honest caption for [data-live-label] nodes
+  var FEED_LABEL = window.LIVE_FEED_LABEL || "";   // honest caption for legacy [data-live-label] nodes
   var OVERLAY = "live/overlay.json";
   var inflight = false, lastTs = 0, pendingRefresh = false;
   var _paused = false, _timer = null;
@@ -76,7 +74,7 @@
   // at all. Do NOT add "hk"/"cn": those are HKD/CNY and a "$" would be plain wrong.
   var DOLLAR_MKT = { us: 1, ca: 1 };
   function fmtPrice(price, mkt) {
-    if (mkt === "crypto") {                       // "$" + thousands, no decimals (matches the baked BTC header)
+    if (mkt === "crypto") {
       try { return "$" + Number(price).toLocaleString(undefined, { maximumFractionDigits: 0 }); }
       catch (e) { return "$" + Math.round(Number(price)); }
     }
@@ -88,12 +86,19 @@
   }
   // Crypto trades 24/7 and is refreshed on its own hourly cadence, so it goes stale
   // only when a scheduled refresh is actually MISSED (~65 min), not at the 20-min
-  // equity threshold — otherwise a healthy hourly BTC quote would read grey for
-  // most of every hour. ageMin already carries the DELAYED_MIN vendor floor.
+  // equity threshold.
   function isStale(mkt, ageMin, fallback) {
     if (ageMin == null) return !!fallback;
     var lim = (mkt === "crypto") ? (window.LIVE_CRYPTO_STALE_MIN || 65) : STALE_MIN;
     return ageMin > lim;
+  }
+  // Vendor-delay authority belongs to the individual quote source. The static
+  // snapshot already carries `source` and `delayMin`; Tushare/Tencent exchange
+  // clocks are genuinely live and must not inherit the Polygon/Yahoo 15m floor.
+  function sourceDelayFloor(q) {
+    var src = String((q && q.source) || "").toLowerCase();
+    if (src === "tushare-rt-k" || src === "tencent") return 0;
+    return DELAYED_MIN;
   }
   // ^TNX transform (Live Tape): Yahoo quotes the 10-year yield as yield×10
   // (42.5 => 4.25%). Price tiles with data-fmt="tnx" show price/10 + "%"; the
@@ -109,17 +114,11 @@
   function tnxPct(v) { v = Number(v); return v > 15 ? v / 10 : v; }
   function fmtTnxPrice(price) { return tnxPct(price).toFixed(2) + "%"; }
   function tnxBps(price, prevClose) {
-    // delta in yield POINTS (both sides scale-normalized) × 100 => bps
     if (prevClose == null) return null;
     return (tnxPct(price) - tnxPct(prevClose)) * 100;
   }
   function paintChg(el, chg, stale, reading) {
-    // data-fmt="tnx": render the delta in bps (from the absolute price delta),
-    // not percent. Falls back to percent if prevClose is unavailable.
     if (isTnx(el) && reading && reading.price != null) {
-      // ws tape frames carry {price, chgPct} but no prevClose — derive it so the
-      // 10Y delta reads in bps on the live socket too (go-live DOM check showed
-      // the percent fallback engaging on every ws tick)
       var _pc = reading.prevClose;
       if (_pc == null && chg != null && isFinite(chg) && Number(chg) > -100) {
         _pc = Number(reading.price) / (1 + Number(chg) / 100);
@@ -134,25 +133,18 @@
         return;
       }
     }
-    if (Math.abs(Number(chg)) < 0.005) chg = 0;   // never render "-0.00%"
+    if (Math.abs(Number(chg)) < 0.005) chg = 0;
     var up = chg >= 0;
     el.textContent = (up ? "+" : "") + Number(chg).toFixed(2) + "%";
-    // "dn" is the render-time twin of "down" on mx5 tiles — drop it too, or a tile
-    // baked dn keeps its old down-colour rule after a live up-tick (green +x% in zh)
     el.classList.remove("up", "down", "dn", "stale");
     el.classList.add(up ? "up" : "down");
-    if (stale) el.classList.add("stale");      // last-session move, not live
+    if (stale) el.classList.add("stale");
   }
   function regionOf(s) {
-    if (/-USD$/.test(s)) return "crypto";      // 24/7 — no session table -> never "market closed"
+    if (/-USD$/.test(s)) return "crypto";
     if (/\.HK$/.test(s)) return "hk";
     if (/\.(SS|SZ|BJ)$/.test(s)) return "cn";
     if (/\.(TO|V)$/.test(s)) return "ca";
-    // Foreign index tickers (^-prefixed): map to their exchange region so the
-    // staleness chip uses the right session clock.  For regions where the overlay
-    // carries no session entry (jp/kr/tw/gb/eu) sessions[region] will be undefined
-    // and closed=false — the staleness state falls back to "stale" never "closed",
-    // which is the correct safe default (we simply don't know).
     if (s === "^HSI")      return "hk";
     if (s === "^GSPC")     return "us";
     if (s === "^GSPTSE")   return "ca";
@@ -161,8 +153,6 @@
     if (s === "^TWII")     return "tw";
     if (s === "^FTSE")     return "gb";
     if (s === "^STOXX50E") return "eu";
-    // 000001.SS / generic .SS / .SZ / .BJ already caught above; any remaining
-    // ^-index without an explicit mapping falls through to "us" as before.
     return "us";
   }
 
@@ -179,25 +169,14 @@
       ".nb-px[data-live='delayed']::after{background:#d97706;animation:none;box-shadow:none}" +
       ".nb-dvg{font-size:10px;font-weight:700;margin-left:5px;padding:0 4px;border-radius:4px;" +
       "vertical-align:middle;white-space:nowrap}" +
-      /* Divergence badges were a dark-plane island: #7f1d1d / #78350f solids read
-         as two black-red blocks on a white page. Tinted chip + ink-grade text is
-         the estate's badge machinery and resolves correctly in both themes. */
       ".nb-dvg.alert{background:color-mix(in srgb,var(--act,#dc2626) 15%,transparent);" +
       "color:var(--ink-act,var(--act,#991b1b))}" +
       ".nb-dvg.watch{background:color-mix(in srgb,var(--warn,#d97706) 16%,transparent);" +
       "color:var(--ink-warn,var(--warn,#92400e))}" +
-      /* Direction text was literal #16a34a / #dc2626 — 3.30:1 and 4.53:1 on white
-         at 12.5px. The --ink-* rungs are the text grade of the same hues, and they
-         carry the zh 红涨绿跌 swap themselves. 62 of the 232 pages that load live.js
-         do NOT link theme.css, so the fallback is a measured AA literal rather than
-         the page's own fill-grade --up/--down; the zh block below stays for exactly
-         those pages (where the rungs exist it resolves to the same flipped ink, so
-         the two can never disagree). */
       ".nb-chg{font-weight:600}" +
       ".nb-chg.up{color:var(--ink-up,#15803d)}" +
       ".nb-chg.down{color:var(--ink-down,#b91c1c)}" +
       ".nb-chg.stale{color:var(--muted,#5d6b7e);font-weight:500}" +
-      /* zh 红涨绿跌: swap up→red, down→green */
       'html[data-lang="zh"] .nb-chg.up{color:var(--ink-up,#b91c1c)}' +
       'html[data-lang="zh"] .nb-chg.down{color:var(--ink-down,#15803d)}' +
       "@media (forced-colors:active){.nb-px[data-live]::after{forced-color-adjust:none;border:1px solid currentColor}}" +
@@ -220,16 +199,11 @@
   }
 
   // ── Shared per-node patch (used by BOTH the poller and the /ws/tape socket) ──
-  // reading = { price, src, stale, ageMin, chg, prevClose, basis } — a normalised
-  // per-symbol quote. Keeping ONE patch path means the websocket tape and the
-  // 60s poller paint tiles identically (spec §3: refactor, don't duplicate).
+  // reading = { price, src, stale, ageMin, delayFloor, chg, prevClose, basis }.
   function patchPriceNode(el, r, sessions) {
     if (r.price == null) return;
     var sym = rawSym(el);
     var mkt = el.getAttribute("data-mkt") || "us";
-    // data-fmt="tnx": ^TNX quotes yield×10 -> show yield% (price/10).
-    // data-bare: panel opts out of the "$" prefix (macro MARKETS tiles mix ETF
-    // quotes with index levels — a $ on half the row reads as an error).
     el.textContent = isTnx(el)
       ? fmtTnxPrice(r.price)
       : (el.hasAttribute("data-bare")
@@ -238,17 +212,19 @@
     var sess = sessions && sessions[regionOf(sym)];
     var closed = sess && sess.open === false;
     var stale = isStale(mkt, r.ageMin, r.stale);
-    // when fresh: "delayed" (amber, no pulse) on a delayed plan, else "live"
-    // (green pulse). A websocket TRADE tick (basis "quote", DELAYED_MIN 0 path)
-    // earns the live pulse; a "poll"-basis reading stays delayed/stale honest.
-    var live = r.basis === "quote";
+    // A websocket trade frame is zero-floor by construction. Poll readings carry
+    // the provider floor resolved in pick(); overlay/poll fallbacks inherit the
+    // global delayed floor. Thus a live Tushare/Tencent A-share is allowed to pulse
+    // green while a Yahoo quote elsewhere on the same page remains amber/delayed.
+    var delayFloor = (r.delayFloor != null && isFinite(r.delayFloor))
+      ? Math.max(0, Number(r.delayFloor))
+      : (r.basis === "quote" ? 0 : DELAYED_MIN);
     var state = stale ? (closed ? "closed" : "stale")
-                      : (live && DELAYED_MIN === 0 ? "1"
-                         : (DELAYED_MIN > 0 ? "delayed" : "1"));
+                      : (delayFloor > 0 ? "delayed" : "1");
     el.setAttribute("data-live", state);
     var word = state === "closed" ? "market closed"
              : state === "stale" ? "stale"
-             : state === "delayed" ? ("≥" + DELAYED_MIN + "-min delayed") : "live";
+             : state === "delayed" ? ("≥" + delayFloor + "-min delayed") : "live";
     el.title = word + " · " + (r.src || "?") +
       (r.ageMin != null ? " · " + Number(r.ageMin).toFixed(0) + "m ago" : "");
   }
@@ -257,16 +233,12 @@
     if (r.chg == null && !(isTnx(el) && r.price != null)) return;
     paintChg(el, r.chg, isStale(mkt, r.ageMin, r.stale), r);
   }
-  // Patch every .nb-px / .nb-chg node bound to `sym` from one reading. Returns
-  // true if it touched anything (so the ws layer knows a tape symbol landed).
   function patchSymbol(sym, r, sessions, ovT) {
     var touched = false;
     nodes().forEach(function (el) {
       if (rawSym(el) !== sym) return;
       patchPriceNode(el, r, sessions);
       touched = true;
-      // divergence chip (only when fresh + not baseline-stale): the nightly
-      // invalidation signal, surfaced to the human watching the same card.
       var ov = ovT && ovT[sym];
       if (ov && ov.divergence && !ov.stale && !ov.baseline_stale) setChip(el, ov.divergence);
     });
@@ -283,38 +255,37 @@
     var ovT = (overlay && overlay.tickers) || {};
     var serverNow = Date.now();
 
-    // Resolve one symbol to a normalised reading, preferring the (fresh) live
-    // quote (Worker or snapshot) over a fresh overlay price.
     function pick(sym) {
       var q = quotes[sym], ov = ovT[sym];
-      var r = { price: null, src: null, stale: true, ageMin: null, chg: null, prevClose: null, basis: null };
+      var r = { price: null, src: null, stale: true, ageMin: null, delayFloor: null,
+                chg: null, prevClose: null, basis: null };
       if (q && q.price != null) {
         r.price = q.price; r.src = q.source; r.basis = "poll";
         var prev = (q.prevClose != null) ? q.prevClose : null;
         r.prevClose = prev;
         r.chg = (q.changePct != null) ? q.changePct : (prev ? (q.price / prev - 1) * 100 : null);
-        // never report an age below the vendor delay floor (a delayed quote IS old)
-        r.ageMin = Math.max(DELAYED_MIN, Math.max(0, (serverNow - (q.ts || serverNow)) / 60000));
+        r.delayFloor = sourceDelayFloor(q);
+        var clockAge = Math.max(0, (serverNow - (q.ts || serverNow)) / 60000);
+        var measuredAge = (typeof q.delayMin === "number" && isFinite(q.delayMin))
+          ? Math.max(0, Number(q.delayMin)) : clockAge;
+        r.ageMin = Math.max(r.delayFloor, measuredAge, clockAge);
         r.stale = r.ageMin > STALE_MIN;
       } else if (ov && ov.price != null) {
         r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale; r.basis = "poll";
         r.prevClose = (ov.prev_close != null) ? ov.prev_close : null;
-        r.ageMin = (ov.age_min != null) ? Math.max(DELAYED_MIN, ov.age_min) : ov.age_min;
+        r.delayFloor = DELAYED_MIN;
+        r.ageMin = (ov.age_min != null) ? Math.max(r.delayFloor, ov.age_min) : ov.age_min;
         r.chg = (ov.chg_pct != null) ? ov.chg_pct : null;
       }
       return r;
     }
 
-    // Union of every symbol on the page (price OR chg node) — patch each once
-    // through the shared path.
     var seen = {};
     symNodes().forEach(function (el) {
       var sym = rawSym(el);
       if (!sym || seen[sym]) return;
       seen[sym] = 1;
       var r = pick(sym);
-      // Freshness guard: don't let a poll reading overwrite a strictly-fresher
-      // websocket tick already on this symbol.
       if (r.price != null && !_wsFresher(sym, serverNow)) patchSymbol(sym, r, sessions, ovT);
     });
   }
@@ -328,7 +299,7 @@
   }
 
   function tick() {
-    if (_paused || document.hidden || inflight) return;      // pause: explicit / hidden / no overlap
+    if (_paused || document.hidden || inflight) return;
     var ns = symNodes();
     if (!ns.length) return;
     var syms = {};
@@ -336,10 +307,6 @@
     var list = Object.keys(syms);
     if (!list.length) return;
     inflight = true;
-    // Worker first (per-page symbol list, real-time US); else the full-universe
-    // snapshot (one CDN-cached file, keyless, shared by every browser/page). If a
-    // Worker IS set but fails/returns empty this tick, fall back to the snapshot
-    // before degrading to the overlay — a transient Worker outage shouldn't blank.
     var qP;
     if (URL) {
       qP = getJSON(URL.replace(/\/$/, "") + "/quotes?symbols=" + encodeURIComponent(list.join(",")))
@@ -352,14 +319,13 @@
     }
     function done() {
       inflight = false;
-      // a refresh() requested mid-flight (SPA navigated to a new symbol) runs now.
       if (pendingRefresh) { pendingRefresh = false; tick(); }
     }
     var bP = document.getElementById("sbx-stamp") ? getJSON(BREADTH) : Promise.resolve(null);
     Promise.all([qP, getJSON(OVERLAY), bP]).then(function (res) {
       var quotes = (res[0] && res[0].quotes) || {};
       var ts = (res[0] && res[0].ts) || 0;
-      if (!(ts && ts < lastTs)) {                            // ignore out-of-order
+      if (!(ts && ts < lastTs)) {
         if (ts) lastTs = ts;
         if (Object.keys(quotes).length || res[1]) apply(quotes, res[1]);
       }
@@ -378,7 +344,7 @@
   // as SELF-CONTAINED block comments (not nested in a `//` line) so the sliced
   // text is still valid, parseable JS.
   /* SBX-BREADTH-CONTRACT-BEGIN */
-  var SBX_MAX_SOURCE_AGE_MIN = 25;   // SLA on the SOURCE clock (mirrors the engine default)
+  var SBX_MAX_SOURCE_AGE_MIN = 25;
   var SBX_STANCE = {
     broad: { l: ["broad", "广泛"], v: ["The advance is well-supported across the full 1,500", "上涨在整个 1500 只股票中获得良好支撑"], tone: "pos" },
     thin:  { l: ["thin", "稀薄"], v: ["Few names hold their trend — rallies here are fragile", "守住趋势的个股很少 — 此时的反弹较脆弱"], tone: "neg" },
@@ -394,28 +360,18 @@
   }
   function sbxSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
   function applyBreadth(b) {
-    // Fail-CLOSED eligibility gate (FROZEN CONTRACT §3): every check returns
-    // EARLY with ZERO DOM writes. `usable !== true` is the load-bearing first
-    // line — an explicit server-side opt-in, so a legacy v1 payload carrying no
-    // `usable` key (or a degraded/offline/no_key fail-soft payload, which is
-    // ALWAYS `usable: false`) is rejected outright and the baked nightly board
-    // (848 adv / 651 dec class of numbers) is left completely untouched.
     if (!b || b.usable !== true) return;
     var c = b && b.comp;
     if (!c || typeof c.adv !== "number" || typeof c.dec !== "number") return;
     if (b.session === "closed") return;
-    // Both clocks are checked with isFinite, NOT a bare `> SLA`: an unparseable
-    // stamp yields NaN, and EVERY NaN comparison is false, so `NaN > SLA` would
-    // sail through the gate and hand a malformed payload live authority over the
-    // baked board — a fail-OPEN hole in a gate whose whole job is to fail closed.
     var srcAge = (typeof b.source_age_min === "number" && isFinite(b.source_age_min))
       ? b.source_age_min : null;
-    if (srcAge === null) return;                          // missing/NaN source clock -> fail closed
-    if (srcAge > SBX_MAX_SOURCE_AGE_MIN) return;          // stale SOURCE, however fresh the build
+    if (srcAge === null) return;
+    if (srcAge > SBX_MAX_SOURCE_AGE_MIN) return;
     var buildStamp = b.built_at || b.asof;
     var buildAge = buildStamp
       ? (Date.now() - new Date(buildStamp).getTime()) / 60000 : NaN;
-    if (!isFinite(buildAge) || buildAge > SBX_MAX_SOURCE_AGE_MIN) return;  // missing/unparseable/stale artifact
+    if (!isFinite(buildAge) || buildAge > SBX_MAX_SOURCE_AGE_MIN) return;
     var n = c.n || (c.adv + c.dec + (c.unch || 0)) || 1;
     var unch = (typeof c.unch === "number") ? c.unch : Math.max(0, n - c.adv - c.dec);
     var den = (c.adv + c.dec + unch) || 1;
@@ -454,20 +410,6 @@
     var stamp = document.getElementById("sbx-stamp");
     if (stamp) {
       stamp.classList.add("live");
-      // The ET time comes from source_asof (the snapshot we actually read), never
-      // the build clock.
-      //
-      // The DELAY NUMBER is delay_min, not source_age_min, and the difference is
-      // user-facing honesty rather than pedantry. source_age_min measures how
-      // stale OUR snapshot is; on the Polygon STANDARD plan the vendor stamps a
-      // current quote_ts on data whose PRICES are 15 minutes behind, so
-      // source_age_min is ~0 while the tape the reader is looking at is a
-      // quarter-hour old. Stamping "≈0-min delayed" over 15-minute-delayed prices
-      // claims real-time data we do not have. delay_min is the producer's honest
-      // total (vendor floor + snapshot staleness), so it is what the reader sees.
-      // Measured on production 2026-08-20: source_age_min 0.0, delay_min 15.
-      // max() keeps it monotone if a future feed ever reports staleness the
-      // producer's floor does not already cover.
       var et = new Date(b.source_asof).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
       var dm = (typeof b.delay_min === "number" && isFinite(b.delay_min))
         ? Math.max(b.delay_min, Math.round(srcAge)) : Math.round(srcAge);
@@ -477,10 +419,6 @@
   }
   /* SBX-BREADTH-CONTRACT-END */
 
-  // Stamp an honest feed caption into any [data-live-label] element the build placed
-  // (e.g. "≈15-min delayed (Polygon Standard / Yahoo)"). No-op if none / no label.
-  // Single-language render + langchange re-paint (an attribute/textContent can't hold
-  // l-en/l-zh spans), same idiom as theme.js placeholders.
   function paintLabel() {
     var zh = document.documentElement.getAttribute("data-lang") === "zh";
     var lab = (zh && window.LIVE_FEED_LABEL_ZH) || FEED_LABEL;
@@ -490,11 +428,6 @@
   }
 
   // ── Live Tape websocket (same-origin /ws/tape) ────────────────────────────
-  // A server-fanout socket that ticks the six macro futures/index/yield tiles
-  // sub-5s. It is a pure ENHANCEMENT over the poller: the poll path already
-  // covers these tiles, so on ANY error/close we simply stop and let polling
-  // carry the page (spec §3). A ws tick wins over a subsequent poll for the same
-  // symbol for WS_FRESH_MS (freshness guard) so the fresher number stays put.
   function _wsFresher(sym, now) {
     var t = _wsLast[sym];
     return t != null && (now - t) < WS_FRESH_MS;
@@ -505,27 +438,20 @@
     return found;
   }
   function _applyWsQuote(q) {
-    // q = {sym, price, chgPct, ts, basis}. Build a reading and patch via the
-    // SHARED path. Drop an out-of-order frame ONLY within the same basis (a late
-    // "quote" can't clobber a fresher "quote"); a "poll" fallback refreshes even
-    // with an older data ts (its quote_ts may be 15 min old) — mirrors the relay
-    // guard, or a dead upstream would freeze the tile on an ever-staler number.
     if (!q || !q.sym || q.price == null) return;
     if (!TAPE_SYMS[q.sym]) return;
     var basis = q.basis || "quote";
     var prevTs = _wsLast[q.sym + "|ts"] || 0;
     var prevBasis = _wsLast[q.sym + "|basis"];
-    if (q.ts && basis === prevBasis && q.ts < prevTs) return;   // same-basis out-of-order — drop
+    if (q.ts && basis === prevBasis && q.ts < prevTs) return;
     var now = Date.now();
     _wsLast[q.sym] = now;
     if (q.ts) _wsLast[q.sym + "|ts"] = q.ts;
     _wsLast[q.sym + "|basis"] = basis;
     var ageMin = q.ts ? Math.max(0, (now - q.ts) / 60000) : 0;
-    // A "poll"-basis relay reading is honestly downgraded (never the live pulse);
-    // a "quote"-basis tick is a real trade print. ageMin drives the stale chip.
     var r = {
       price: q.price, src: "ws:" + (q.basis || "quote"),
-      stale: ageMin > STALE_MIN, ageMin: ageMin,
+      stale: ageMin > STALE_MIN, ageMin: ageMin, delayFloor: null,
       chg: (q.chgPct != null) ? q.chgPct : null,
       prevClose: (q.prevClose != null) ? q.prevClose : null,
       basis: q.basis || "quote"
@@ -539,31 +465,30 @@
     } catch (e) { return null; }
   }
   function startTape() {
-    if (!WS_TAPE) return;                              // ops kill switch -> poll only
-    if (_wsClosed || _wsSock) return;                  // one socket per page
-    if (!("WebSocket" in window)) return;              // ancient browser -> poll only
-    if (!_pageHasTapeSym()) return;                    // no tape tile here -> skip
+    if (!WS_TAPE) return;
+    if (_wsClosed || _wsSock) return;
+    if (!("WebSocket" in window)) return;
+    if (!_pageHasTapeSym()) return;
     var url = _tapeWsUrl();
     if (!url) return;
     var sock;
     try { sock = new WebSocket(url); }
-    catch (e) { return; }                              // blocked/refused -> poll covers it
+    catch (e) { return; }
     _wsSock = sock;
     sock.onmessage = function (ev) {
       var msg;
       try { msg = JSON.parse(ev.data); } catch (e) { return; }
-      if (!msg || msg.type === "heartbeat") return;    // 20s server keepalive
-      if (document.hidden) return;                     // don't paint a hidden tab
+      if (!msg || msg.type === "heartbeat") return;
+      if (document.hidden) return;
       _applyWsQuote(msg);
     };
     sock.onopen = function () { _wsRetry = 0; };
     sock.onclose = function () { _wsSock = null; _scheduleWsReconnect(); };
-    sock.onerror = function () { try { sock.close(); } catch (e) {} };  // -> onclose -> reconnect
+    sock.onerror = function () { try { sock.close(); } catch (e) {} };
   }
   function _scheduleWsReconnect() {
-    if (_wsClosed || _paused) return;                  // paused/torn-down -> stay on poller
+    if (_wsClosed || _paused) return;
     if (_wsTimer) clearTimeout(_wsTimer);
-    // exponential backoff (1s..30s); the poller keeps the tiles live meanwhile.
     var delay = Math.min(30000, 1000 * Math.pow(2, _wsRetry++));
     _wsTimer = setTimeout(function () { if (!document.hidden) startTape(); }, delay);
   }
@@ -582,11 +507,6 @@
     injectStyle();
     paintLabel();
     document.addEventListener("langchange", paintLabel);
-    // Pause/resume API for callers that want to suppress polling (e.g. a settings
-    // toggle persisted in localStorage as liveOff=1).
-    // .pause()  — stops the interval; marks _paused so tick() is a no-op even if called.
-    // .resume() — clears the paused flag, restarts the interval, fires an immediate tick.
-    // .refresh() — existing SPA hook; honours the paused flag (paused = refresh is a no-op).
     window.LiveQuotes = {
       refresh: function () {
         if (_paused) return;
@@ -595,23 +515,21 @@
       pause: function () {
         _paused = true;
         if (_timer) { clearInterval(_timer); _timer = null; }
-        stopTape();                                          // drop the tape socket too
+        stopTape();
       },
       resume: function () {
         _paused = false;
         _wsClosed = false;
         _startTimer();
-        tick();                                              // immediate tick on resume
+        tick();
         startTape();
       }
     };
-    // Live prices are always on (the settings toggle was removed); clear any
-    // previously stored pause so nobody stays stranded off.
     try { localStorage.removeItem("liveOff"); } catch (e) {}
     if (!_paused) {
       tick();
       _startTimer();
-      startTape();                                           // open /ws/tape if a tape tile is present
+      startTape();
     }
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden && !_paused) { tick(); if (!_wsSock) { _wsClosed = false; startTape(); } }
