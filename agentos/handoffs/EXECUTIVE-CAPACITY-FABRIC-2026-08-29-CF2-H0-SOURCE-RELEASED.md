@@ -24,8 +24,8 @@ changed:
       native v3 administrator ceremony; the wave remains in_progress and is not marked accepted.
   - path: agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-29-CF2-H0-SOURCE-RELEASED.md
     what: >
-      New continuation receipt binding source-release evidence, capability limits, unresolved native
-      proof and the exact next action.
+      New continuation receipt binding source-release evidence, capability limits, the resolved
+      protected repair/carrier pins, unresolved native proof and the exact next action.
 verified:
   - claim: "Mastermind PR #213 is merged as 229aebce5e8d0c1c7372f5fead9c24516b027cc1."
     command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/pulls/213"
@@ -50,12 +50,34 @@ verified:
       The compare was zero commits behind protected base and listed exactly the two H0 specs, one H0
       plan, HOST_PREREQUISITES.md, bootstrap-capacity-source-closure.sh, capacity_host_artifacts.py
       and the three H0 tests; no runtime/dispatch/provider/service path was added.
+  - claim: "Branch commit c81aa1f61097a12a7914aae4749fd14ba2471894 is not a lawful post-squash native repair pin."
+    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/compare/c81aa1f61097a12a7914aae4749fd14ba2471894...229aebce5e8d0c1c7372f5fead9c24516b027cc1"
+    result: >
+      GitHub reports status=diverged with merge base 1d5ad1249172e8b93882f0dff157fc13636dd62d.
+      Therefore c81aa1f is branch history and cannot satisfy the released runbook's requirement that
+      REPAIR_MERGE_SHA be an ancestor of the protected current carrier.
+  - claim: "The original protected #197 repair merge cannot be reused as today's native repair pin."
+    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/compare/d3499f8bd5dd4ecc0c172c82146acf4e8733ddec...229aebce5e8d0c1c7372f5fead9c24516b027cc1"
+    result: >
+      d3499f8 is a protected ancestor, but the compare shows the v3 source release changed
+      ops/executive_os/capacity_host_artifacts.py, one of the five authenticated H0 paths whose
+      runbook ls-tree row must equal at repair and carrier pins. It therefore cannot satisfy the
+      current five-path equality gate.
+  - claim: "At current protected master, both H0 native identity axes resolve to 229aebce5e8d0c1c7372f5fead9c24516b027cc1."
+    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/commits/229aebce5e8d0c1c7372f5fead9c24516b027cc1"
+    result: >
+      #213 is the first protected commit containing the final authenticated v3 H0 material; its only
+      parent is the pre-v3 protected a3053115 source. The released runbook permits identity-equal
+      repair/carrier pins and uses the distinct two-pin form after a later protected descendant exists.
+      For the current ceremony set CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1
+      and REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1.
 unverified:
   - claim: "Native H0 is PROVEN_LIVE at the new protected source release."
     what_would_verify: >
       Build the final v3 carrier from protected Mastermind
       229aebce5e8d0c1c7372f5fead9c24516b027cc1 and accepted Macro
-      dcdd939c45b23abce5ba04f95e330ac914a3904b, run the one bounded native administrator ceremony,
+      dcdd939c45b23abce5ba04f95e330ac914a3904b, run the one bounded native administrator ceremony
+      with both CARRIER_COMMIT_SHA and REPAIR_MERGE_SHA pinned to protected 229aebce5e8d0c1c7372f5fead9c24516b027cc1,
       obtain H0 source-repair PASS plus two verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED
       receipts, prove empty stderr and disposable root-carrier absence, with all forbidden services,
       sockets and provider work still absent.
@@ -72,6 +94,8 @@ next_actions:
     On the native control Mac, re-pin Mastermind protected release
     229aebce5e8d0c1c7372f5fead9c24516b027cc1 and the fixed accepted Macro commit
     dcdd939c45b23abce5ba04f95e330ac914a3904b; verify the current H0 runbook before any sudo action.
+    For this current protected release use CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1
+    and REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1.
   - >
     Build the final `mastermind.capacity_source_transport/v3` carrier from those exact pins and record
     its enclosing SHA-256, payload SHA-256, object count, semantic inventory digest and byte size.
@@ -85,7 +109,12 @@ next_actions:
 do_not_redo:
   - >
     Do not reopen the current-carrier versus immutable-repair identity collision: #213 is the accepted
-    source repair and current protected carrier/immutable repair provenance remain distinct by design.
+    source repair. The carrier and repair axes are distinct by contract but are identity-equal at the
+    current protected #213 release; a future protected descendant may advance only CARRIER_COMMIT_SHA
+    after exact five-path equality is re-proven while REPAIR_MERGE_SHA remains the accepted repair release.
+  - >
+    Do not use d3499f8, e53f5242 or branch-only c81aa1f as the current native repair pin. The first two
+    predate the final authenticated v3 material; c81aa1f is not a protected ancestor after squash.
   - >
     Do not reuse closed PR #208 as an implementation carrier; it was a tests donor only.
   - >
@@ -114,8 +143,10 @@ ended_because: complete
 Before this closeout, the H0 runbook could not truthfully name both current protected carrier identity
 and immutable repair provenance, so the native ceremony was blocked. The bounded source repair is now
 released on protected Mastermind `229aebce5e8d0c1c7372f5fead9c24516b027cc1` with full exact-head hosted
-gates and Sol review. The machine can now build the final v3 carrier and proceed to the separately gated
-native ceremony from one coherent source contract.
+gates and Sol review. The protected squash release is currently both the repair provenance and carrier
+value; the two identity axes remain separate so a later protected descendant can advance the carrier
+without relabelling the accepted repair. The machine can now build the final v3 carrier and proceed to
+the separately gated native ceremony from one coherent source contract.
 
 ## Final capability state
 
@@ -126,7 +157,8 @@ fan-out, CF2-P0 acceptance or CF2-I placement was created by the source release.
 
 ## Exact continuation
 
-Primary continuation: execute the final v3 build and one bounded native administrator ceremony against
-protected `229aebce5e8d0c1c7372f5fead9c24516b027cc1`, stopping only at exact
+Primary continuation: execute the final v3 build and one bounded native administrator ceremony with
+`CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1` and
+`REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1`, stopping only at exact
 `H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED` with the required repeated verify-only proof. Only then may the
 separate CF2-P0 read-only census start.
