@@ -225,6 +225,297 @@ def test_a_curated_output_class_is_passed_through_verbatim(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# A1 evidence disposition — pure, deterministic, and owner-bounded
+# ---------------------------------------------------------------------------
+
+def evidence_cell(**overrides: object) -> dict:
+    """A complete T1-shaped cell for the A1 pure-derivation tests."""
+    cell: dict = {
+        "engine_id": "engine/a.py::prog-one",
+        "producer": "engine/a.py",
+        "owner_program": "prog-one",
+        "output_class": "predictive",
+        "output_class_reason": "curated: fixture",
+        "authority": "engine_input",
+        "ledger": "data/a/theses.jsonl",
+        "ledger_evidence": {
+            "rule": 3,
+            "desk": None,
+            "shape": "store",
+            "corpus_checked": False,
+            "corpus_rows": None,
+        },
+        "graded_by_design": "yes",
+        "graded_by_design_evidence": "strong",
+        "graded_by_design_source": "derived: fixture owner ledger",
+        "declared_horizon": {
+            "horizon_role": ["context"],
+            "horizon_role_homogeneous": True,
+            "horizon_d": [21],
+        },
+        "validation_state": "phase0",
+        "validation_state_evidence": {
+            "bound_species": [],
+            "reason": "no_species_bound",
+        },
+        "evidence_ref": ["fixture.prereg"],
+    }
+    cell.update(overrides)
+    return cell
+
+
+def healthy_output(**overrides: object) -> dict:
+    output: dict = {
+        "artifact_id": "a",
+        "state": "healthy",
+        "assessment_status": "complete",
+        "reason_codes": [],
+    }
+    output.update(overrides)
+    return output
+
+
+def qledger_provider(**row_overrides: object) -> dict:
+    row: dict = {
+        "n_dates": 7,
+        "needed": 25,
+        "ready": False,
+        "approaching": False,
+        "projected_ready_date": "2026-09-30",
+        "reason": "7 independent dates; evidence still accruing",
+        "clock_basis": "explicit_unit_v1:trading_days:US",
+        "clock_migration": False,
+        "clock_prior_n_dates": {},
+        "evidence_basis": "benchmark",
+        "control_coverage": None,
+        "n_cohort_dates": None,
+        "n_controlled_dates": None,
+        "cohort_rowless": {},
+        "control_clock_start": None,
+        "unclassified": False,
+    }
+    row.update(row_overrides)
+    return {
+        "kind": "qledger",
+        "binding": "direct:qledger:fixture",
+        "family": "fixture",
+        "read_status": "ok",
+        "clock_start": {
+            "claim_family": "fixture",
+            "first_prospective_registration_utc": "2026-08-20T01:02:03+00:00",
+            "declared_horizon_d": 21,
+            "horizon_unit": "trading_days",
+            "git_sha": "abc123",
+        },
+        "readiness": {"21": row},
+    }
+
+
+def test_ceo_view_keeps_an_empty_validated_band_visible():
+    """Removing empty bands would turn zero validated engines into an invisible omission."""
+    view = IOS.build_ceo_view(
+        [
+            {"engine_id": "engine/z.py::p", "evidence_status": "Accruing"},
+            {"engine_id": "engine/a.py::p", "evidence_status": "Accruing"},
+        ]
+    )
+
+    assert [band["evidence_status"] for band in view] == [
+        "Validated",
+        "Accruing",
+        "Ungraded by design",
+        "Degraded",
+        "Disproven",
+    ]
+    assert view[0] == {
+        "evidence_status": "Validated",
+        "n_engines": 0,
+        "engine_ids": [],
+    }
+    assert view[1]["engine_ids"] == ["engine/a.py::p", "engine/z.py::p"]
+
+
+def test_null_output_class_stays_null_and_cannot_be_validated():
+    """A validated lifecycle may not fill an unknown metric contract with a guessed class."""
+    cell = evidence_cell(output_class=None, validation_state="validated")
+    result = IOS.derive_evidence_status(cell, [healthy_output()])
+
+    assert cell["output_class"] is None
+    assert result["evidence_status"] == "Accruing"
+    assert "output_class_null" in result["evidence_reason_codes"]
+
+
+def test_mixed_explicit_bases_refuse_a_validated_disposition():
+    """Two incompatible explicit clocks must not pool into one apparently mature verdict."""
+    provider = qledger_provider(
+        n_dates=0,
+        ready=False,
+        clock_basis=None,
+        clock_prior_n_dates={
+            "explicit_unit_v1:calendar_days:US": 11,
+            "explicit_unit_v1:trading_days:US": 14,
+        },
+        by_clock_basis={
+            "explicit_unit_v1:calendar_days:US": {"n_dates": 11, "ready": False},
+            "explicit_unit_v1:trading_days:US": {"n_dates": 14, "ready": False},
+        },
+        reason="two explicit clock bases; refusing to pool",
+    )
+    result = IOS.derive_evidence_status(
+        evidence_cell(validation_state="validated"),
+        [healthy_output()],
+        provider,
+    )
+
+    assert result["evidence_status"] == "Accruing"
+    assert "mixed_clock_basis_refused" in result["evidence_reason_codes"]
+    assert result["evidence_basis"]["pooling_refused"] is True
+    assert sorted(result["evidence_basis"]["available_clock_bases"]) == [
+        "explicit_unit_v1:calendar_days:US",
+        "explicit_unit_v1:trading_days:US",
+    ]
+
+
+def test_immature_qledger_record_is_accruing_with_its_ruler_and_honest_n():
+    """Seven independent dates are not silently rounded up to the 25-date owner floor."""
+    result = IOS.derive_evidence_status(
+        evidence_cell(),
+        [healthy_output()],
+        qledger_provider(),
+    )
+
+    assert result["evidence_status"] == "Accruing"
+    assert "insufficient_maturity" in result["evidence_reason_codes"]
+    assert result["evidence_ruler"]["qledger_clock"] == {
+        "horizon_d": 21,
+        "horizon_unit": "trading_days",
+        "clock_market": "US",
+    }
+    assert result["evidence_maturity"]["rungs"]["21"] == {
+        "n_dates": 7,
+        "needed": 25,
+        "ready": False,
+        "approaching": False,
+        "projected_ready_date": "2026-09-30",
+    }
+
+
+def test_degraded_health_overrides_an_otherwise_validated_engine():
+    """A lifecycle receipt must not paint over an output the current observer cannot trust."""
+    result = IOS.derive_evidence_status(
+        evidence_cell(validation_state="validated"),
+        [healthy_output(state="degraded", assessment_status="partial")],
+    )
+
+    assert result["evidence_status"] == "Degraded"
+    assert "health_degraded" in result["evidence_reason_codes"]
+
+
+def test_blind_output_is_degraded_but_remains_distinct_from_a_health_verdict():
+    """Could-not-look is reduced trust, not an invented unavailable or stale verdict."""
+    result = IOS.derive_evidence_status(
+        evidence_cell(validation_state="validated"),
+        [healthy_output(state=None, assessment_status="could_not_look")],
+    )
+
+    assert result["evidence_status"] == "Degraded"
+    assert "health_blind" in result["evidence_reason_codes"]
+    assert "health_unavailable" not in result["evidence_reason_codes"]
+
+
+def test_ungraded_by_design_requires_t1_semantic_evidence():
+    """Missing data must not be mislabeled as an intentional descriptive contract."""
+    semantic = IOS.derive_evidence_status(
+        evidence_cell(
+            output_class=None,
+            graded_by_design="no — descriptive",
+            graded_by_design_evidence="none",
+            graded_by_design_source="derived: every artifact is infrastructure",
+        ),
+        [healthy_output()],
+    )
+    unsupported = IOS.derive_evidence_status(
+        evidence_cell(
+            output_class="descriptive",
+            graded_by_design="no — not yet",
+            graded_by_design_evidence="none",
+            graded_by_design_source="derived: no ledger",
+        ),
+        [healthy_output()],
+    )
+
+    assert semantic["evidence_status"] == "Ungraded by design"
+    assert "t1_semantic_ungraded" in semantic["evidence_reason_codes"]
+    assert unsupported["evidence_status"] == "Accruing"
+    assert "t1_semantic_ungraded" not in unsupported["evidence_reason_codes"]
+
+
+def test_terminal_owner_state_is_disproven_and_keeps_its_evidence():
+    """A1 displays the owner's terminal decision; it does not recreate or soften it."""
+    result = IOS.derive_evidence_status(
+        evidence_cell(
+            validation_state="falsified",
+            validation_state_evidence={
+                "bound_species": [
+                    {"species_id": "S-DEAD", "validation_status": "falsified"}
+                ],
+                "reason": "single_species",
+            },
+        ),
+        [healthy_output(state="degraded", assessment_status="partial")],
+    )
+
+    assert result["evidence_status"] == "Disproven"
+    assert "owner_terminal_falsified" in result["evidence_reason_codes"]
+    assert "species:S-DEAD" in result["evidence_refs"]
+
+
+def test_validated_requires_the_existing_owner_lifecycle_not_qledger_readiness():
+    """Qledger readiness is measurement evidence and cannot mint validation authority."""
+    ready_provider = qledger_provider(n_dates=30, needed=25, ready=True)
+    still_phase0 = IOS.derive_evidence_status(
+        evidence_cell(validation_state="phase0"), [healthy_output()], ready_provider
+    )
+    owner_validated = IOS.derive_evidence_status(
+        evidence_cell(validation_state="validated", output_class="ranking"),
+        [healthy_output()],
+    )
+
+    assert still_phase0["evidence_status"] == "Accruing"
+    assert owner_validated["evidence_status"] == "Validated"
+    assert "owner_validated" in owner_validated["evidence_reason_codes"]
+    assert "evidence_score" not in owner_validated
+
+
+@pytest.mark.parametrize(
+    ("cell", "adapter_families", "expected"),
+    [
+        (
+            evidence_cell(
+                ledger="qledger:whitehouse",
+                ledger_evidence={"desk": "whitehouse", "rule": 2},
+            ),
+            ("stock_desk", "thematic_desk", "demand_chain"),
+            "whitehouse",
+        ),
+        (
+            evidence_cell(ledger="data/stock_desk/theses.jsonl"),
+            ("stock_desk", "thematic_desk", "demand_chain"),
+            "stock_desk",
+        ),
+        (
+            evidence_cell(ledger="data/not_stock_desk/theses.jsonl"),
+            ("stock_desk", "thematic_desk", "demand_chain"),
+            None,
+        ),
+    ],
+)
+def test_qledger_family_binding_is_exact_and_derived(cell, adapter_families, expected):
+    """A1 may join canonical owner names exactly; fuzzy producer/name routing is illegal."""
+    assert IOS.qledger_family_for_cell(cell, adapter_families) == expected
+
+
+# ---------------------------------------------------------------------------
 # No persisted state
 # ---------------------------------------------------------------------------
 
