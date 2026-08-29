@@ -4,199 +4,226 @@ session: sol/continuity-native-session-recovery-20260829
 model: sol
 ended_because: ci_handoff
 mission: >
-  Preserve the Chairman-directed session/worker recovery reconciliation after the four principal CTO
-  native sessions resumed consuming their exact carriers, distinguish principal-session activity from
-  child ACK/START/effect truth, record AD-ID1 source release and the first real RuntimeBinding START,
-  and leave the permanent exact-session recovery path executable without creating another session,
-  lifecycle, watcher, retry, identity or authority plane.
+  Preserve the Chairman-directed worker/session recovery reconciliation after the four principal CTO
+  native sessions resumed consuming exact carriers, record the now-protected AD-ID1 and AD-CHILD1
+  source waves, keep current child ACK/START/effect state distinct from principal-session liveness,
+  and leave the permanent zero-manual exact-session recovery path recoverable without creating a
+  second session, lifecycle, identity, watcher, retry, queue or authority plane.
 state_before: >
-  Earlier recovery census showed multiple direct-targeted CTO children with no ACK/START and more than
-  thirty Linear In Progress projections, making genuinely dark operations hard to distinguish from
-  completed, review-held, natural-time or admin-gated work. Manual exact-native-task foregrounding and
-  consolidated watcher repair later showed the principal ORION, SENTINEL, TRACE and FORGE sessions were
-  not uniformly dead, but the durable Agent OS layer did not yet record which child operations had
-  actually ACKed/STARTed, which remained pre-START, or that the permanent RuntimeBinding dependency had
-  finally entered real implementation.
+  The recovery estate had more than thirty Linear In Progress projections and several direct-targeted
+  CTO children with no ACK/START, so stale program/review/proof objects were mixed with genuinely dark
+  execution. Manual foregrounding of exact native tasks plus in-place consolidated watcher repair
+  later proved ORION, SENTINEL, TRACE and FORGE were not uniformly dead. The remaining durable problem
+  was to distinguish principal liveness from each child operation's actual ACK/START/effect state and
+  to finish the existing-owner path toward automatic exact-session targeting.
 changed:
   - path: linear:MAS-191
     what: >
-      Reconciled the central continuity projection to protected Mastermind c924b371..., terminal
-      AD-ID1 source release, current ORION/FORGE/TRACE/SENTINEL child consumption states, the still-
-      unproven automatic Wake boundary, and the canonical Canada main-red hold.
+      Reconciled the central continuity projection to protected Mastermind
+      b8f7414e9906d6b5853640a18de68c3b91ffb44b, terminal AD-ID1 + AD-CHILD1 source waves, the
+      still-unproven automatic Wake boundary, current started repair lanes, and the canonical Canada
+      main-red hold.
   - path: linear:MAS-208
     what: >
-      Projected AD-ID1 as Done at its bounded source capability after exact-head RESULT, explicit
-      SOL ACCEPTED / STOP, and protected #239 merge; capability remains BUILT_NOT_PROVEN and
-      PRODUCTION_INERT rather than autonomous delegation live.
+      AD-ID1 is Done at its bounded source capability after exact-head RESULT, explicit SOL ACCEPTED /
+      STOP and protected #239 merge. Capability remains BUILT_NOT_PROVEN / PRODUCTION_INERT rather
+      than autonomous delegation live.
   - path: linear:MAS-210
     what: >
-      Replaced stale NOT_BUILT language with BUILT_NOT_PROVEN after ORION produced Mastermind #246,
-      then recorded the same-carrier history-preserving reconcile to protected c924b371... at exact
-      head f17ad1afeeee291a31552cad4a8f5bea2eb2ede5. Fresh current-head hosted proof remains nonterminal.
-  - path: linear:MAS-226
-    what: >
-      Moved Worker Browser B1 from an unbound repair projection to In Progress only after TRACE emitted
-      ACK, WATCH_ARMED and separate START on the same Mastermind #153 carrier.
+      AD-CHILD1 is Done at its bounded source capability after ORION current-base RESULT, explicit
+      SOL ACCEPTED / STOP, required repository + security proof and protected #246 merge as
+      b8f7414e9906d6b5853640a18de68c3b91ffb44b. This does not authorize AD-DLG2 by implication.
   - path: linear:MAS-237
     what: >
-      Replaced WAITING_CAPACITY/pre-START state with In Progress only after FORGE emitted ACK,
-      WATCH_ARMED and separate START for the approved ABA-safe RuntimeBinding projection. No result,
-      merge or production proof is inferred from START.
+      RuntimeBinding moved from WAITING_CAPACITY/pre-START to In Progress only after FORGE emitted
+      ACK, WATCH_ARMED and separate START on the exact frozen child. No immutable PR/result is inferred
+      from START; this remains the primary permanent automatic-resume dependency.
   - path: linear:MAS-216
     what: >
-      Advanced AD-RETRY1 to In Progress only after SENTINEL emitted a distinct START under protected
-      c924b371.... The retry child owns its four frozen classifier/COO-cycle paths while
-      executive_runtime.py remains explicitly READ_ONLY under the concurrent FORGE MAS-237 fence.
+      AD-RETRY1 moved to In Progress only after SENTINEL emitted a distinct START. Its four frozen
+      retry/classifier/COO-cycle paths are owned while control_plane/executive_runtime.py remains
+      explicitly READ_ONLY under the concurrent FORGE MAS-237 RuntimeBinding fence.
+  - path: linear:MAS-226
+    what: >
+      Worker Browser B1 moved to In Progress only after TRACE emitted ACK, WATCH_ARMED and separate
+      START on the same Mastermind #153 branch/PR. Completion remains unproven.
   - path: linear:MAS-129
     what: >
-      Returned CI Quiescence v2 to In Progress after FORGE ACKed/WATCHed/STARTed the bounded
-      authority-reentry repair on the same Macro #6660 branch/PR; release-finalize remains PARKED.
+      CI Quiescence v2 returned to In Progress after FORGE ACKed/WATCHed/STARTed the bounded
+      authority-reentry repair on the same Macro #6660 branch/PR. Its release-finalize child remains
+      PARKED until repair acceptance.
   - path: linear:MAS-202
     what: >
-      Closed stale reviewer_ack_pending text after FORGE's independent CI-L2 review returned a
-      read-only HOLD. TRACE's implementation effect remains APPLIED_LOCAL_ONLY and frozen; HOLD is
-      release serialization, not permission to re-execute or fail over.
+      FORGE's independent read-only CI-L2 HOLD was consumed by SOL-DIR-PRO. TRACE is now explicitly
+      authorized to materialize the exact existing four-file local C2 effect on the SAME runtime,
+      worktree and branch. State remains APPLIED_LOCAL_ONLY / IMMUTABLE_ARTIFACT_PENDING; this is not
+      permission to re-execute from scratch or fail over.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-29-native-session-recovery-runtimebinding-start.md
     what: >
-      Adds this one recoverable organizational continuation under the existing Chairman Control Room
-      workstream without touching the active workstream file or creating another control plane.
+      Reconciles this one existing Agent OS continuation record to current protected and carrier truth
+      without editing the active Chairman Control Room workstream file or creating another control
+      plane.
 verified:
-  - claim: Protected Mastermind now contains the accepted AD-ID1 source release.
+  - claim: Current protected Mastermind includes both accepted identity source waves.
     command: >
-      Read GitHub protected branch mastermindx-market-intelligence/Mastermind master after the AD-ID1
-      release cycle and re-fetch docs/sol_skills/INDEX.md from that exact commit.
+      Read protected mastermindx-market-intelligence/Mastermind master and fetch
+      docs/sol_skills/INDEX.md, RECONCILE_STATE.md, CLOSEOUT.md and AGENT_DIALOGUE_SESSION_CLOSE_LAW.md
+      from that exact revision.
     result: >
-      Protected master is c924b37188df2437057b5fd7bfc00ce0db91a1f1, commit message
-      "AD-ID1: transport-neutral automated CEO request identity (#239)"; same-SHA Skillpack remains
+      Protected master is b8f7414e9906d6b5853640a18de68c3b91ffb44b, parent c924b371..., commit
+      "AD-CHILD1: deterministic Executive delegation dialogue identity (#246)". Same-SHA Skillpack is
       mastermind.sol_skillpack.v1 v1.0.1 / bootstrap-major 1 compatible.
-  - claim: The AD-ID1 current-base release child is cleanly terminal before the protected merge.
+  - claim: AD-ID1 is terminal at its bounded source boundary.
     command: >
-      Read exact Slack carrier C0BSBM78V1N/1788010409.047809 for operation
-      ad-id1-release-current-base-20260829-sol-001 through its latest reply.
+      Read exact Slack operation ad-id1-release-current-base-20260829-sol-001 and reconcile GitHub PR
+      #239 / protected source.
     result: >
-      SENTINEL ACKed, WATCHed and STARTed; returned RESULT for #239 head
-      418207bca264a1f9756f3713085778db2a66ae56 with exact four accepted blobs, 310 focused/negative
-      tests and hosted/security green; SOL-DIR-PRO then issued explicit SOL ACCEPTED / STOP telling
-      SENTINEL to remove only that child source while retaining principal/seat and AD-RETRY1 sources.
-      No further terminal reply was required unless child-source shutdown failed.
-  - claim: All four principal CTO conversation surfaces are currently consuming their principal lanes, but child execution must still be proven separately.
+      SENTINEL returned exact-head RESULT for #239 head
+      418207bca264a1f9756f3713085778db2a66ae56 with accepted four-file identity scope, 310
+      focused/negative tests and hosted/security green. SOL-DIR-PRO issued explicit SOL ACCEPTED /
+      STOP. #239 then merged and became protected parent c924b371.... No production/runtime activation
+      is inferred.
+  - claim: AD-CHILD1 is terminal and protected at its bounded source boundary.
     command: >
-      Search #agent-dispatch for principal-orion-autonomy-dialogue-spine-20260829-sol-001,
-      principal-sentinel-ingress-authority-retry-20260829-sol-001,
-      principal-trace-operational-product-cutover-20260829-sol-001 and
-      principal-forge-runtime-continuity-fleet-20260829-sol-001 and inspect their exact replies.
+      Read exact Slack carrier C0BSBM78V1N/1788005436.518969 through ORION's final return and bound
+      Sol edge; fetch Mastermind PR #246 and protected master.
+    result: >
+      ORION returned RESULT AD_CHILD1_CURRENT_BASE_GREEN at 1788024794.683009 on exact #246 head
+      f17ad1afeeee291a31552cad4a8f5bea2eb2ede5: exact two-file scope, 53 focused + 608 current-base
+      regressions, compile/diff/leakage PASS, mutation PASS, both independent reviews PASS, repository
+      test 33265319836 SUCCESS and CodeQL/security 33265318318 SUCCESS. SOL-DIR-PRO then issued SOL
+      ACCEPTED / STOP at 1788024815.757869, instructing ORION to remove only this child source and
+      preserve the principal watcher. #246 merged as protected b8f7414e9906d6b5853640a18de68c3b91ffb44b.
+  - claim: No AD-DLG2 child has been commissioned merely because AD-CHILD1 closed.
+    command: >
+      Search Slack for exact frozen successor key ad-dlg2-canonical-dialogue-parent-20260829-orion-001
+      after AD-CHILD1 STOP/merge.
+    result: >
+      Only the ORION principal key-freeze naming the future key is present at the reconciliation
+      boundary; no direct commission, ACK or START exists. The terminal AD-CHILD1 STOP explicitly
+      authorizes no successor by itself.
+  - claim: All four principal CTO native conversation surfaces have demonstrated current consumption.
+    command: >
+      Read the principal ORION, SENTINEL, TRACE and FORGE operations and their consolidated watcher
+      receipts on #agent-dispatch / #mastermind-exec-ops.
     result: >
       ORION, SENTINEL, TRACE and FORGE each emitted principal ACK plus consolidated WATCH_ARMED from
-      their named native task IDs. This proves current transport/session consumption evidence only;
-      it does not create Executive Job/Attempt lifecycle truth or imply every child is STARTed.
+      their named exact native task IDs. This is transport/session-consumption evidence only and does
+      not create Executive Job/Attempt lifecycle truth or imply every child is STARTed.
   - claim: The permanent RuntimeBinding prerequisite has entered real child execution.
     command: >
-      Search exact Slack operation ocr3-t3-runtime-binding-projection-20260829-forge-001 on parent
-      C0BSBM78V1N/1788022568.602469.
+      Read exact Slack operation ocr3-t3-runtime-binding-projection-20260829-forge-001 on parent
+      C0BSBM78V1N/1788022568.602469 and search GitHub for a materialized carrier.
     result: >
       FORGE native task 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0 emitted ACK 1788023335.030139,
-      WATCH_ARMED 1788023543.537949 and START 1788023575.125489 on isolated same-operation branch/
-      worktree. START reported collision-clear frozen paths and effect_state STARTED / SOURCE_UNCHANGED.
+      WATCH_ARMED 1788023543.537949 and START 1788023575.125489 on an isolated same-operation
+      worktree/branch with the frozen path census clear. No remote RuntimeBinding PR/RESULT was visible
+      at the latest immutable census, so implementation remains in flight and source movement must be
+      reconciled on the same sticky carrier.
+  - claim: AD-RETRY1 is genuinely STARTed without stealing the RuntimeBinding writer seam.
+    command: >
+      Read exact Slack operation ad-retry1-typed-retry-safety-20260829-sentinel-001 after AD-ID1 STOP.
+    result: >
+      SENTINEL emitted separate START 1788023970.313649 after fresh protected/path preflight. Owned
+      write paths are executive_retry_safety.py, its focused tests, executive_coo_cycle.py and
+      phase1fc integration tests. control_plane/executive_runtime.py is explicitly READ_ONLY under the
+      FORGE MAS-237 fence. No immutable remote retry artifact/RESULT was visible at the latest census.
   - claim: CI Quiescence #6660 has one real bounded repair execution and no replacement carrier.
     command: >
-      Search exact Slack operation ci-quiescence-v2-authority-reentry-repair-20260829-forge-001 and
-      inspect Macro #6660 carrier identity at START.
+      Read exact Slack operation ci-quiescence-v2-authority-reentry-repair-20260829-forge-001 and
+      fetch Macro #6660.
     result: >
-      FORGE emitted ACK/WATCH/START; START preserved Macro #6660 / branch
+      FORGE emitted ACK/WATCH/START on the SAME Macro #6660 / branch
       claude/ci-quiescence-v2-20260829-sol-001 at inherited head
-      a170f1a362fd3d55ad94877399294229600b2479 and reported REPAIR_NOT_YET_APPLIED. Release-finalize
-      remains PARKED and inherited baseline reds remain outside this repair.
-  - claim: Worker Browser B1 repair is genuinely STARTed on its same carrier.
+      a170f1a362fd3d55ad94877399294229600b2479. Latest immutable read still showed that same remote
+      head, so repair completion is not inferred. Release-finalize remains PARKED.
+  - claim: Worker Browser B1 repair is genuinely STARTed on the same existing Git carrier.
     command: >
-      Search exact Slack operation worker-browser-b1-governed-repair-20260829-trace-001 on parent
-      C0BSBM78V1N/1788022608.851569.
+      Read exact Slack operation worker-browser-b1-governed-repair-20260829-trace-001 and fetch
+      Mastermind #153.
     result: >
-      TRACE native task 01a04bdf-b144-7af2-a08c-5d28ee63aad0 emitted ACK, WATCH_ARMED and separate
-      START against Mastermind #153 / sol/worker-browser-b1-20260825. No repair completion or product
-      proof is inferred from that START.
-  - claim: AD-RETRY1 is now genuinely STARTed while preserving RuntimeBinding write ownership.
+      TRACE native task 01a04bdf-b144-7af2-a08c-5d28ee63aad0 emitted ACK/WATCH/START against the SAME
+      Mastermind #153 / sol/worker-browser-b1-20260825. Latest immutable read still showed remote head
+      fe3a13d68b22fb2883831d141905c4fcb3ae7aba, so no repair completion or governed browser proof is
+      inferred.
+  - claim: CI C2 review HOLD has been consumed and the existing local effect is released for materialization only.
     command: >
-      Search exact Slack operation ad-retry1-typed-retry-safety-20260829-sentinel-001 after the AD-ID1
-      terminal STOP and protected c924b371... source movement.
+      Read exact operation ci-l2-false-ownership-20260829-sol-001 and the later SOL-DIR-PRO semantic
+      edge after FORGE's independent read-only review.
     result: >
-      SENTINEL first consumed a fresh SOL CONTINUE, then emitted START 1788023970.313649 with protected
-      pin c924b37188df2437057b5fd7bfc00ce0db91a1f1, clear target-path/worktree collisions, and four
-      owned retry-safety/classifier/COO-cycle paths. control_plane/executive_runtime.py is explicitly
-      READ_ONLY_FORGE_MAS237_FENCE, preventing a concurrent double writer.
-  - claim: ORION has reconciled AD-CHILD1 #246 to the current protected source without widening scope.
+      SOL-DIR-PRO issued SOL RULING / CONTINUE — MATERIALIZE EXISTING LOCAL EFFECT ON SAME
+      RUNTIME/CARRIER at 1788023816.450369. The authorized object remains the exact local TRACE
+      worktree/branch at pre-effect head a54876945bcc3b6ca27020ebadcbd220fa948ef9, dirty diff SHA-256
+      0b8bab39025e01bc28a889d51b6faac241b507940bcfae5498326f85c2e46954, exactly four paths. No later
+      immutable TRACE RESULT/BLOCKED was visible at the reconciliation boundary.
+  - claim: Canada TP-1 remains blocked by the canonical shared main-red repair rather than owning a duplicate Caddy repair.
     command: >
-      Read the exact AD-CHILD1 carrier after SOL-DIR-PRO's post-AD-ID1 CONTINUE, then fetch Mastermind
-      PR #246 and its current-head workflow state.
+      Reconcile Macro #6662 and its workflow state against current Macro main.
     result: >
-      ORION emitted CURRENT_BASE_RECONCILED for #246; GitHub reports open/non-draft/mergeable head
-      f17ad1afeeee291a31552cad4a8f5bea2eb2ede5 on base c924b371..., still exactly the two frozen
-      implementation/test files. Fresh hosted CI run 33265319836 is IN_PROGRESS, so release remains
-      nonterminal and the earlier 41d648... proof is supporting history only.
-  - claim: Canada TP-1 remains blocked by the canonical shared main-red repair rather than owning a second Caddy fix.
-    command: >
-      Fetch Macro #6662 and its exact-head workflow state, then compare its recorded base with current
-      Macro main movement.
-    result: >
-      #6662 remains the sole combined Caddy + Linear-import main-red repair at head
-      fb3cd8b59b67ac0e0a1697cdb14714812aecb0d8; fences are SUCCESS and semantic CI remained queued at
-      the last direct workflow read. Macro main advanced afterward through disjoint records/marketing
-      movement, so release still owes fresh current-main reconciliation/proof. TP-1 must stay held.
+      #6662 remains the single combined Caddy + Linear-import main-red carrier at head
+      fb3cd8b59b67ac0e0a1697cdb14714812aecb0d8. Fences are green; trusted semantic packs remained
+      queued for self-hosted capacity at the latest direct read. Current Macro main is
+      b2c82f52b73871ce73955ff58399d4b53a0d621e after path-disjoint records/marketing movement, so
+      #6662 still owes current-main reconciliation/proof before TP-1 may resume.
 unverified:
   - claim: RuntimeBinding is implemented, exact-head reviewed or accepted.
     what_would_verify: >
-      FORGE RESULT on the same started MAS-237 carrier with immutable Mastermind PR/head, frozen
-      three-path census, focused/adversarial/hosted repository and security proof, current protected
-      c924b371... reconciliation, followed by Sol acceptance.
+      FORGE RESULT on the SAME started MAS-237 carrier with immutable Mastermind PR/head, frozen
+      three-path census, focused/adversarial/hosted repository + security proof, reconciliation to
+      then-current protected Mastermind, and Sol acceptance. A local START or principal heartbeat is
+      insufficient.
   - claim: Automatic exact-session wake/resume is production-capable.
     what_would_verify: >
-      Accepted MAS-237 RuntimeBinding followed by the separately admitted MAS-229 Wake ACK1 consumer
-      proving exact current session/generation TARGET_ACKNOWLEDGED and SOURCE_RESOLVED through the real
-      existing-owner path, plus a real zero-manual-foreground canary. Principal heartbeat recovery is
+      Accepted MAS-237 RuntimeBinding followed by a separately admitted MAS-229 Wake ACK1 child proving
+      exact current session/generation TARGET_ACKNOWLEDGED and existing SOURCE_RESOLVED through the
+      real owner path, followed by a real zero-manual-foreground canary. Manual foreground recovery is
       not this proof.
   - claim: AD-RETRY1 implementation is complete and retry-safe requeue is accepted.
     what_would_verify: >
-      SENTINEL RESULT on the same started child with immutable bounded implementation head, frozen
-      reason/decision discriminators, no executive_runtime.py write, focused/negative mutation proof,
-      hosted repository/security green, and Sol acceptance.
-  - claim: CI Quiescence #6660 and Worker Browser #153 repairs are complete.
+      SENTINEL RESULT on the SAME started child with immutable bounded implementation head, frozen
+      reason/decision discriminators, zero executive_runtime.py write, focused/negative mutation proof,
+      hosted repository/security green and Sol acceptance under then-current protected source.
+  - claim: CI Quiescence #6660, Worker Browser #153 and TRACE C2 materialization are complete.
     what_would_verify: >
-      Immutable same-carrier repair heads, required discriminating tests/hosted proof and canonical
-      worker RESULT followed by Sol review. Their START receipts are nonterminal.
-  - claim: The Executive OS Job/Attempt lifecycle state for these Slack-carried children was directly verified by this handoff session.
+      Immutable same-carrier heads/PRs, required discriminating/hosted proof and canonical worker
+      RESULT followed by Sol review. START/materialization permission is nonterminal.
+  - claim: The Executive OS Job/Attempt lifecycle state for the Slack-carried children was directly verified by this handoff session.
     what_would_verify: >
-      A direct read of the canonical Executive OS/runtime status path for the relevant operation/Job/
-      Attempt identities. This handoff intentionally does not turn Slack native-task receipts into
+      Direct read of the canonical Executive OS/runtime status path for the relevant operation/Job/
+      Attempt identities. This handoff intentionally does not convert Slack native-task receipts into
       Executive lifecycle facts.
-  - claim: Macro #6662 has cleared the inherited main red and TP-1 may resume.
+  - claim: Macro #6662 has cleared the inherited main red and Canada TP-1 may resume.
     what_would_verify: >
-      Same-carrier reconciliation to then-current Macro main, terminal-green required trusted packs/
+      Same-carrier reconciliation to then-current Macro main, terminal-green required trusted packs /
       final gate and fresh main proof showing the inherited Caddy/Linear-import reds cleared, followed
       by the owning Sol's explicit same-carrier TP-1 CONTINUE.
 unresolved:
-  - "Manual foreground/principal heartbeat recovery proved the CTO conversation surfaces were not uniformly dead, but it did not prove durable automatic exact-session targeting."
-  - "MAS-237 START occurred before protected Mastermind advanced to c924b371...; the same started carrier must reconcile current source before immutable acceptance rather than restart or fail over."
-  - "ORION #246 is current-base at f17ad1af... but still awaits terminal fresh-head hosted/security proof and a canonical RESULT before Sol acceptance."
-  - "AD-RETRY1 is STARTed on disjoint owned paths; its executive_runtime.py read-only fence against FORGE/MAS-237 must survive the full implementation and return."
+  - "Principal/native session consumption is restored, but durable automatic exact-session targeting is still unproven."
+  - "MAS-237 START predates protected AD-ID1 and AD-CHILD1 merges; source movement is a same-carrier reconcile gate, not a reason to restart, rebind or fail over."
+  - "AD-RETRY1 remains STARTed on disjoint owned paths; its executive_runtime.py read-only fence against FORGE/MAS-237 must survive through immutable return."
+  - "TRACE C2 has materialization authority for exactly the existing local effect, but no replacement implementation or new local effect is authorized."
+  - "No AD-DLG2 child exists yet; the frozen future key is not a commission."
   - "Canada TP-1 remains a sticky started operation blocked on #6662; no TP-1-specific Caddy repair or blind CI retry is lawful."
 next_actions:
-  - "Primary: consume FORGE's next material RESULT/BLOCKED on MAS-237 RuntimeBinding, re-pin then-current protected Mastermind, review the immutable same-carrier artifact, and issue exactly one same-carrier Sol edge."
+  - "Primary: consume FORGE's next material RESULT/BLOCKED on the already-STARTED MAS-237 RuntimeBinding carrier, re-pin then-current protected Mastermind, review the immutable same-carrier artifact, and issue exactly one same-carrier Sol edge."
   - "Only after accepted RuntimeBinding, admit the already-frozen MAS-229 Wake ACK1 child on a fresh lawful operation/carrier; do not implement another RuntimeBinding owner inside Wake."
-  - "Consume ORION's current-head #246 hosted/security terminal state and typed RESULT; only a current-base PASS may close AD-CHILD1 and open a separately admitted successor."
-  - "Consume FORGE's #6660 authority-reentry repair return on the same PR/branch; only after repair acceptance may the separate release-finalize child resume."
-  - "Consume TRACE's Worker Browser #153 repair return on the same PR/branch and verify all four frozen blocker classes plus real governed browser proof before acceptance."
+  - "Consume FORGE's #6660 authority-reentry repair return on the same PR/branch; only after repair acceptance may its separate release-finalize child resume."
+  - "Consume TRACE's Worker Browser #153 repair return on the same PR/branch and verify all frozen blocker classes plus real governed browser proof before acceptance."
+  - "Consume TRACE's C2 materialization return on the exact existing runtime/worktree/branch; reject re-execution, replacement carrier or widened effect."
   - "Consume SENTINEL's AD-RETRY1 return on the same started child and reject any write into executive_runtime.py while MAS-237 owns that seam."
   - "Keep Canada TP-1 held until canonical #6662 clears its current-main/hosted proof gate, then issue the owning Sol's explicit same-carrier continuation rather than creating another repair lane."
 do_not_redo:
-  - "Do not recreate a four-CTO dark/dead diagnosis from raw Linear status or Slack delivery; use exact operation ACK/START/return evidence and the canonical runtime owner for lifecycle facts."
-  - "Do not create a Session OS, second RuntimeBinding registry, watcher DB, retry service, provider-session registry, queue or lifecycle plane."
-  - "Do not rebind/fail over a STARTed MAS-237, AD-RETRY1, #6660, Worker Browser or ORION child merely because protected/main source moves; reconcile on the same carrier."
-  - "Do not reopen AD-ID1 release work: #239 is protected as c924b371... and its child received explicit SOL ACCEPTED / STOP."
-  - "Do not infer child START from an active principal lane, internal subagent intent, direct delivery, ACK or WATCH_ARMED."
+  - "Do not recreate a four-CTO dark/dead diagnosis from raw Linear status or Slack delivery; use exact child ACK/START/return evidence and the canonical runtime owner for lifecycle facts."
+  - "Do not create a Session OS, second RuntimeBinding/session registry, watcher DB, retry service, provider-session registry, queue or lifecycle plane."
+  - "Do not rebind/fail over a STARTed MAS-237, AD-RETRY1, #6660, Worker Browser or C2 operation merely because protected/main source moves; reconcile on the same carrier."
+  - "Do not reopen AD-ID1 or AD-CHILD1 source waves: each received explicit SOL ACCEPTED / STOP and is protected at its bounded source boundary."
+  - "Do not infer a child START from an active principal lane, internal subagent intent, direct delivery, ACK or WATCH_ARMED."
+  - "Do not treat the future AD-DLG2 operation key as an authorization; it requires a fresh lawful commission after its gate."
   - "Do not merge #6654 separately or add a Caddy fix to TP-1 while #6662 is the canonical combined main-red carrier."
   - "Do not use the active WS:CHAIRMAN-CONTROL-ROOM file as a scratch recovery ledger; preserve additive Agent OS records and selective Linear projections."
 danger_areas:
-  - "Protected Mastermind is moving quickly; any modifying Sol edge must re-pin INDEX and required same-SHA skills immediately before action."
-  - "Combined principal watchers intentionally survive terminal child STOP. Removing an entire seat/principal watcher when one child stops recreates the incident class."
+  - "Protected Mastermind is moving quickly; every modifying Sol edge must re-pin INDEX and required same-SHA skills immediately before action."
+  - "Combined principal watchers intentionally survive terminal child STOP. Removing an entire seat/principal watcher when one child closes recreates the incident class."
   - "Raw Linear In Progress counts mix parent programs, admin/natural-time gates, review holds and real started workers; never equate the count with occupied provider capacity."
   - "Slack transport/session receipts are strong evidence of carrier consumption but remain distinct from Executive OS Job/Attempt lifecycle authority."
   - "Source movement after START is not a reason to mint a replacement carrier; it is a current-base reconciliation gate on the same started operation."
@@ -204,10 +231,11 @@ danger_areas:
 
 # Return point
 
-Start from protected Mastermind `c924b37188df2437057b5fd7bfc00ce0db91a1f1`, Linear MAS-191,
-and the exact currently STARTed carriers for MAS-237 RuntimeBinding, AD-RETRY1, Macro #6660 repair,
-Worker Browser #153 and ORION #246. The primary recovery outcome is partial: principal/native session
-consumption is restored, AD-ID1 source is protected, RuntimeBinding and retry-safety implementation
-have STARTed, and ORION #246 is current-base, but zero-manual-foreground exact-session Wake is still
-unproven. The next decisive event remains the same-carrier MAS-237 return; only an accepted
-RuntimeBinding may open fresh MAS-229 Wake ACK1 execution.
+Start from protected Mastermind `b8f7414e9906d6b5853640a18de68c3b91ffb44b`, Linear MAS-191,
+and the exact currently STARTed carriers for MAS-237 RuntimeBinding, AD-RETRY1, Macro #6660 repair and
+Worker Browser #153, plus TRACE C2's released same-runtime materialization carrier. AD-ID1 and
+AD-CHILD1 are terminal/protected bounded source waves and must not be reopened. No AD-DLG2 child is
+commissioned at this boundary. The primary recovery outcome remains partial: principal/native session
+consumption is restored and deterministic identity source is protected, but zero-manual-foreground
+exact-session Wake is still unproven. The next decisive event is the SAME-carrier MAS-237 return; only
+an accepted RuntimeBinding may open fresh MAS-229 Wake ACK1 execution.
