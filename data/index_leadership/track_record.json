@@ -1,7 +1,7 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-27",
-  "generated_at": "2026-08-28T11:58:53.433607+00:00",
+  "generated_at": "2026-08-29T08:07:51.141958+00:00",
   "is_context_only": true,
   "n_snapshots": 507,
   "n_days": 17,
@@ -11,22 +11,22 @@
       "by_stage": {
         "running": {
           "n": 350,
-          "mean_fwd_rel": -0.0012,
-          "hit_rate": 0.511
+          "mean_fwd_rel": -0.0014,
+          "hit_rate": 0.503
         },
         "coiling": {
           "n": 20,
-          "mean_fwd_rel": 0.0098,
-          "hit_rate": 0.75
+          "mean_fwd_rel": 0.0082,
+          "hit_rate": 0.7
         },
         "coiling_primed": {
           "n": 26,
-          "mean_fwd_rel": 0.021,
+          "mean_fwd_rel": 0.0217,
           "hit_rate": 0.846
         }
       },
-      "running_ic": 0.1273,
-      "running_ic_t_hac": 4.238,
+      "running_ic": 0.1198,
+      "running_ic_t_hac": 3.953,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
@@ -40,31 +40,31 @@
         },
         "coiling": {
           "n": 13,
-          "mean_fwd_rel": -0.0121,
+          "mean_fwd_rel": -0.015,
           "hit_rate": 0.308
         },
         "coiling_primed": {
           "n": 19,
-          "mean_fwd_rel": 0.0447,
+          "mean_fwd_rel": 0.0465,
           "hit_rate": 0.842
         }
       },
-      "running_ic": 0.018,
-      "running_ic_t_hac": 0.414,
+      "running_ic": 0.0119,
+      "running_ic_t_hac": 0.278,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 166,
+      "n_matured": 167,
       "by_stage": {
         "running": {
-          "n": 156,
-          "mean_fwd_rel": 0.0022,
-          "hit_rate": 0.558
+          "n": 157,
+          "mean_fwd_rel": 0.002,
+          "hit_rate": 0.554
         },
         "coiling": {
           "n": 8,
-          "mean_fwd_rel": -0.0218,
+          "mean_fwd_rel": -0.0252,
           "hit_rate": 0.625
         },
         "coiling_primed": {
@@ -88,7 +88,7 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.1273,
+  "peak_ic": 0.1198,
   "proven": {
     "5": true,
     "10": false,
@@ -104,7 +104,7 @@
       "id": "russell:electronic-components",
       "name": "Electronic Components",
       "stage": "running",
-      "fwd_rel": -0.0889,
+      "fwd_rel": -0.0925,
       "horizon_d": 21
     },
     {
@@ -141,14 +141,6 @@
     },
     {
       "date": "2026-08-05",
-      "id": "russell:specialty-retail",
-      "name": "Specialty Retail",
-      "stage": "running",
-      "fwd_rel": -0.0464,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-08-05",
       "id": "subsectors:aerospace-defense",
       "name": "Aerospace & Defense",
       "stage": "running",
@@ -161,6 +153,14 @@
       "name": "Reshoring & Industrial Capex",
       "stage": "running",
       "fwd_rel": -0.0341,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-05",
+      "id": "subsectors:specialty-industrial-machinery",
+      "name": "Specialty Industrial Machinery",
+      "stage": "running",
+      "fwd_rel": -0.0258,
       "horizon_d": 21
     }
   ],

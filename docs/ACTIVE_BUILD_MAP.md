@@ -2,12 +2,17 @@
 
 # Active Build Map
 
-Generated: 2026-08-29T04:39:02.970608+00:00  |  Open PRs: 37  |  Merged (window): 500  |  base: `7889043a4e079286c1928641f5f9933066e203b4`
+Generated: 2026-08-29T10:10:47.291791+00:00  |  Open PRs: 41  |  Merged (window): 500  |  base: `f598aa73efac8587ffc224b285affca2d3f3c540`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
+| #6651 | [HOLD-FOR-SOL] feat(admin): add Intelligence OS evidence view | `claude/eval-os-a1-evidence-view-20260828` | 2026-08-29 | DRAFT |
+| #6650 | [TDD][LINEAR] Initiative portfolio strategy v1 | `sol/linear-initiative-plan-task1-20260829` | 2026-08-29 | — |
+| #6648 | [RECORDS][HOLD-FOR-SOL] Codex native-session collision reconciliation | `sol/chairman-control-room-codex-session-collision-20260829` | 2026-08-29 | DRAFT |
+| #6647 | HOLD-FOR-SOL: fix(canada): TP-1 R3 — breadth truth, bounded gauge, dark filter parity, modal alignment | `claude/tp1-canada-r3` | 2026-08-29 | DRAFT |
+| #6643 | stocks: EQR->VMRK key migration (#4622) + LEG exit row + OTC acks + dataos unwedge | `claude/eqr-vmrk-key-migration` | 2026-08-29 | ⚠ CONFLICTING |
 | #6642 | feat(agentos): publish direct source-record content identity | `codex/agentos-source-records-digest-20260829` | 2026-08-29 | DRAFT |
 | #6641 | HOLD-FOR-SOL: CF2-P0 provider-family truth snapshot | `claude/capacity-fabric-p0-provider-truth-20260829` | 2026-08-29 | DRAFT |
 | #6638 | stock-identity W3A: episode-localization ruler engine + sealed PR-3 constants (SI-W3A-RULER-V1) | `claude/si-w3a-ruler-v1` | 2026-08-29 | DRAFT / ⚠ protected:1 |
@@ -16,13 +21,12 @@ Generated: 2026-08-29T04:39:02.970608+00:00  |  Open PRs: 37  |  Merged (window)
 | #6631 | records(gmi): route frozen F04 children without provider-Fable gate | `sol/gmi-f04-bounded-child-routing-20260828` | 2026-08-29 | DRAFT |
 | #6628 | fix(ci): preserve red trusted-pack evidence for ci-gate (#6351) | `sol/ci-red-pack-relay-recovery-6351` | 2026-08-29 | DRAFT / ⚠ protected:1 |
 | #6627 | HOLD-FOR-SOL: fix(canada): TP-1 R2 — RIG REVISE repairs (modal reachability, fail-closed base, inset rails, achromatic breadth) | `claude/tp1-canada-r2` | 2026-08-29 | DRAFT |
-| #6626 | fix(ship-loop): a lawful claude/* HOLD-FOR-SOL waits instead of being told to merge | `claude/ship-loop-hold-wait-for-ordinary-branches` | 2026-08-29 | — |
 | #6625 | [HOLD-FOR-SOL] radar(w4.2): private evidence-spool boundary — dedicated store + shared-bucket refusal (LER-C1) | `claude/ler-c1-private-spool` | 2026-08-29 | DRAFT |
 | #6620 | records(canada): TP-1 theme-parity closeout — canada_stocks compliant post-proof | `claude/tp1-canada-closeout` | 2026-08-28 | — |
 | #6615 | [PLAN][STACKED] SNI semantic registration + SNI-1A contract execution plans | `sol/sni1a-plan-20260828` | 2026-08-28 | DRAFT |
 | #6613 | [ARCHITECTURE][HOLD-FOR-SOL] SNI-1 Alibaba/Tencent reference twin contract | `sol/sni1-reference-twin-20260828` | 2026-08-29 | DRAFT |
 | #6609 | HOLD-FOR-SOL: records(market-os): F00B current-owner capability crosswalk (88+42 parity scope) | `claude/mo-f00b-crosswalk-20260828` | 2026-08-29 | DRAFT |
-| #6604 | HOLD-FOR-SOL: records(options): Options Intelligence C0 consolidated masterplan + program-control freeze | `claude/options-intelligence-c0-program-control` | 2026-08-29 | DRAFT / ⚠ protected:1 / files-truncated |
+| #6604 | HOLD-FOR-SOL: records(options): Options Intelligence C0 consolidated masterplan + program-control freeze | `claude/options-intelligence-c0-program-control` | 2026-08-29 | DRAFT |
 | #6600 | HOLD-FOR-SOL: CXI C0 Benchmark Truth Recovery (op macro-context-index-completion-20260828-sol-001) — do not merge | `claude/macro-context-index-c0-20260828` | 2026-08-29 | DRAFT |
 | #6596 | records(crg): establish cross-repo contract governance execution home | `sol/cross-repo-contract-governance-r0-20260828` | 2026-08-29 | DRAFT |
 | #6595 | HOLD-FOR-SOL: records(market-os): reconcile Fable root-seat topology | `sol/marketontology-fable-seat-topology-reconcile-20260828` | 2026-08-28 | DRAFT |
@@ -52,19 +56,15 @@ Generated: 2026-08-29T04:39:02.970608+00:00  |  Open PRs: 37  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #6625 | #6604 | 3 | `.github/ci/legacy-jobs.yml`, `agentos/handoffs/OPERATOR-CONTINUITY-2026-08-28-SOL-CONTINUATION-CHECKPOINT.md`, `agentos/handoffs/OPERATOR-CONTINUITY-2026-08-28-SOL-SESSION-HANDOFF.md` |
+| #6647 | #6627 | 25 | `mockups/evidence/theme-parity/tp1-canada/after-dark-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/after-light-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/allcands-dark-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/allcands-light-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/cells/06242bd37dade760.png`, `mockups/evidence/theme-parity/tp1-canada/cells/4efe886e93a53336.png`, `mockups/evidence/theme-parity/tp1-canada/cells/61758cf00e1ac6b3.png`, `mockups/evidence/theme-parity/tp1-canada/cells/69ee71c5645fedfe.png` +17 more |
+| #6643 | #6625 | 1 | `tests/test_caddy_hub_boundary.py` |
 | #6638 | #6625 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6638 | #6604 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6638 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6638 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6638 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6628 | #6604 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #6625 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6625 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6625 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6604 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6604 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6604 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6514 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6514 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6426 | #6423 | 1 | `tests/test_merge_on_green_semantic.py` |
@@ -78,6 +78,7 @@ Generated: 2026-08-29T04:39:02.970608+00:00  |  Open PRs: 37  |  Merged (window)
 | #6634 | feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65) [release carrier] | 2026-08-29 |
 | #6633 | heal(agentos): schema-normalize four 08-28 records redding the contract fleet-wide | 2026-08-29 |
 | #6630 | records(eval-os): open A1 evidence-view workstream and handoff | 2026-08-29 |
+| #6626 | fix(ship-loop): a lawful claude/* HOLD-FOR-SOL waits instead of being told to merge | 2026-08-29 |
 | #6623 | stocks: exit-ledger fetch exclusion + AVB successor-splice heal | 2026-08-29 |
 | #6622 | prophet: record B1 natural production acceptance | 2026-08-29 |
 | #6621 | fix(ci): re-base probe ceilings for the three deliberate always-on gates (TP-1 repair edge) | 2026-08-28 |
@@ -573,7 +574,6 @@ Generated: 2026-08-29T04:39:02.970608+00:00  |  Open PRs: 37  |  Merged (window)
 | #6063 | docs(agentos): D3 temporal Change Tape close — WS seal + handoff | 2026-08-20 |
 | #6060 | records(dislocation): Turn 4 replay adjudication and blind P0 freeze | 2026-08-20 |
 | #6059 | govrev: fit the D3 page under a ratcheted raw-byte budget (296 KiB) | 2026-08-20 |
-| #6058 | records(prophet-lab): day-3 close-out — G-D PASS + Gate B findings + W-L1 referral + day-3 handoff | 2026-08-20 |
 
 ---
 
