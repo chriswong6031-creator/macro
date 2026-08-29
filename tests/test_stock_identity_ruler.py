@@ -183,16 +183,19 @@ def test_shipped_spec_carries_sealed_pr3_values_with_complete_receipt():
     EXPECTED to now DISAGREE with the current, repaired ``ruler.py`` bytes --
     that disagreement is the live proof the repair is actually present and
     that the old (rejected) seal cannot be silently read as still covering
-    the current implementation. The expected receipt hash is read from the
-    committed file itself (never hand-typed and re-checked against a second,
-    independent literal) so a future edit to the fenced receipt file would
-    still be caught by a change in this value, while the SEPARATE literal
-    pinned below (the value as of the 2026-08-29 repair, prefix
-    ``42905b81``) additionally proves the receipt itself has not silently
-    drifted since this test was written -- both checks are load-bearing.
-    ``ruler_nulls.py`` was NOT touched by this repair (frozen per the
-    commission's OUT-OF-SCOPE fence), so its hash pin stays an EQUALITY
-    check against the current file, unchanged."""
+    the current implementation. Two checks against the receipt's stored
+    ``ruler_py`` hash are load-bearing, not one: this test reads that hash
+    live from the committed receipt file AND separately pins it as an
+    inline, hand-typed literal (prefix ``42905b81``, the value as of the
+    2026-08-29 repair) below -- the assertion that the two agree IS the
+    tamper-detection cross-check, catching a future silent edit to the
+    fenced, OUT-OF-SCOPE receipt file (the file-read value would move while
+    the hand-typed literal here stays fixed, breaking the equality). Only
+    THEN is the current ``ruler.py`` hash computed live and asserted to
+    differ from both, proving the repair is actually present rather than
+    merely assumed. ``ruler_nulls.py`` was NOT touched by this repair
+    (frozen per the commission's OUT-OF-SCOPE fence), so its hash pin stays
+    an EQUALITY check against the current file, unchanged."""
     spec = RulerSpec.from_json(SPEC_PATH)
     assert spec.pr3_pending is False
     assert spec.recall_floor == pytest.approx(0.05)
@@ -1126,6 +1129,77 @@ def test_rb_null_bound_family_unestimable_despite_full_lawful_source_input_cover
         availability = _availability(tmp_root)
     assert (availability["availability_state"] == "UNESTIMABLE").all()
     assert (availability["availability_state"] != FAMILY_ELIGIBLE_STATE).all()
+
+
+def test_nan_like_bound_representations_all_fail_closed_review_f1():
+    """Adversarial review 2026-08-29, finding F1: before
+    ``_family_first_available_bound`` was hardened, any NaN-like
+    representation of "no bound" -- float ``nan``, ``np.nan``, ``pd.NaT``,
+    ``pd.NA``, and string spellings like ``"NaT"``/``"nan"`` -- round-tripped
+    through the OLD ``pd.Timestamp(val) if val else None`` into ``pd.NaT``,
+    a value that is TRUTHY. Every downstream ``bound is None`` gate in
+    ``_episode_family_availability_state`` (including Sol's REQUEST_REPAIR
+    fail-closed null-bound terminal grant) was then silently skipped, so a
+    row carrying one of these representations could reach
+    ``FAMILY_ELIGIBLE_STATE`` bypassing ALL sub-checks (spec receipt,
+    producer store, identity, and the null-bound terminal grant). Every
+    representation below, on an otherwise fully-lawful R-class entry (real
+    ``spec_hash``, no producer store path, full bars coverage, a clean
+    symbol), must resolve ``"UNESTIMABLE"`` -- never ``FAMILY_ELIGIBLE_
+    STATE`` -- and must never raise.
+
+    Mutation-killing: temporarily reverting ONLY the
+    ``pd.api.types.is_scalar(val) and pd.isna(val)`` branch in
+    ``_family_first_available_bound`` (restoring the pre-repair
+    ``pd.Timestamp(val) if val else None`` shape) flips this test to fail
+    for the float-NaN/``np.nan``/``pd.NaT``/``pd.NA`` cases."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    nan_like_representations = [
+        float("nan"), np.nan, pd.NaT, pd.NA, "NaT", "nan", "None", "null", "", None,
+    ]
+    for val in nan_like_representations:
+        registry = [{
+            "family_key": "fam.nanlike", "family_first_available": val,
+            "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.nanlike",
+        }]
+        availability = build_family_episode_availability(
+            episodes, ["fam.nanlike"], family_registry=registry, bars_by_symbol=bars,
+        )
+        assert (availability["availability_state"] == "UNESTIMABLE").all(), repr(val)
+        assert (availability["availability_state"] != FAMILY_ELIGIBLE_STATE).all(), repr(val)
+
+    # Bounded, tz-aware representation (N4): point 1's hard-lower-bound path
+    # must behave IDENTICALLY whether the bound is tz-naive or tz-aware --
+    # never raise on the `bound > end` comparison and never silently diverge
+    # to a different state.
+    episode = _episode_row(
+        symbol="AAA", episode_type="reset_decline", start_date="2020-06-02",
+        anchor_date="2020-07-01", end_date="2020-08-01",
+    )
+    episodes_bounded = pd.DataFrame([episode])
+    bars_bounded = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    def _availability_for_bound(bound_value):
+        registry = [{
+            "family_key": "fam.tzbound", "family_first_available": bound_value,
+            "provenance_class": "R",
+        }]
+        return build_family_episode_availability(
+            episodes_bounded, ["fam.tzbound"], family_registry=registry,
+            bars_by_symbol=bars_bounded,
+        )
+
+    naive_availability = _availability_for_bound("2020-06-01")
+    tz_aware_availability = _availability_for_bound("2020-06-01T00:00:00Z")
+    assert (naive_availability["availability_state"] == FAMILY_ELIGIBLE_STATE).all()
+    assert (
+        naive_availability["availability_state"].tolist()
+        == tz_aware_availability["availability_state"].tolist()
+    )
 
 
 def test_null_bound_family_spec_hash_content_never_confers_eligibility_sol_request_repair():

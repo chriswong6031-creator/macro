@@ -664,11 +664,46 @@ def _family_first_available_bound(entry: Mapping[str, Any] | None) -> tuple[pd.T
     already used throughout ``data/stock_identity/expert_events/
     family_registry.json`` (21 of 24 committed entries carry ``null``),
     ``engine/stock_identity/replay/registry.py``, and
-    ``scripts/stock_identity_replay_pilot.py`` (``fa.get(...)``)."""
+    ``scripts/stock_identity_replay_pilot.py`` (``fa.get(...)``).
+
+    Every NaN-like or unparseable representation of "no bound" -- float
+    ``nan``, ``np.nan``, ``pd.NaT``, ``pd.NA``, and string spellings like
+    ``"NaT"``/``"nan"`` -- resolves to a null bound here too, and therefore
+    fails closed the same way a JSON ``null`` does per Sol's REQUEST_REPAIR
+    (Slack C0BSBM78V1N, 2026-08-29): 2026-08-29 adversarial review finding
+    F1 showed that before this hardening, any of those NaN-like
+    representations round-tripped through ``pd.Timestamp(val)`` into
+    ``pd.NaT`` -- a value that is truthy, so the old ``bound is None`` gates
+    downstream in :func:`_episode_family_availability_state` were skipped
+    entirely and the row could reach :data:`FAMILY_ELIGIBLE_STATE` bypassing
+    every sub-check (spec receipt, producer store, identity, and the
+    null-bound terminal grant). ``pd.isna`` is checked on the raw value
+    BEFORE any boolean-truthiness test (never ``if val`` first) because
+    ``pd.NA`` raises ``TypeError`` on truthiness. A value that fails to
+    parse as a timestamp at all (garbage string) is likewise treated as a
+    null bound -- typed fail-closed to UNESTIMABLE downstream -- rather than
+    raising out of this outcome-independent predicate. A timezone-aware
+    bound is normalized to naive (``tz_localize(None)``) so the later
+    ``bound > end`` comparison in :func:`_episode_family_availability_state`
+    can never raise ``TypeError`` comparing aware to naive timestamps."""
     if entry is None or "family_first_available" not in entry:
         return None, False
     val = entry.get("family_first_available")
-    return (pd.Timestamp(val) if val else None), True
+    if val is None:
+        return None, True
+    if pd.api.types.is_scalar(val) and pd.isna(val):
+        return None, True
+    if not val:
+        return None, True
+    try:
+        ts = pd.Timestamp(val)
+    except (ValueError, TypeError):
+        return None, True
+    if pd.isna(ts):
+        return None, True
+    if ts.tzinfo is not None:
+        ts = ts.tz_localize(None)
+    return ts, True
 
 
 def _family_provenance_class(entry: Mapping[str, Any] | None) -> tuple[str | None, bool]:
@@ -811,9 +846,13 @@ def _episode_family_availability_state(
     Points 3(a)/3(b)/3(d) are scoped EXACTLY as Sol's ruling states them — "for
     historical R/B families with NULL first-available" — a family with a real,
     committed ``family_first_available`` bound (``reclaim_waiver``,
-    ``washout_turn``, ``amber_early``) already carries a positive, registry-
-    asserted lower bound from point 1 and is not additionally gated by them:
-    it can still reach ``FAMILY_ELIGIBLE_STATE``.
+    ``weekly_washout_turn``) already carries a positive, registry-asserted
+    lower bound from point 1 and is not additionally gated by them: it can
+    still reach ``FAMILY_ELIGIBLE_STATE``. (``amber_early`` also carries a
+    committed bound but is Class P -- it resolves to ``STRUCTURAL_ABSENCE``
+    at point 2 regardless of that bound, so it does not belong in this
+    point-1 bounded-R/B example list; corrected 2026-08-29 per adversarial
+    review finding N3, a pre-existing slip.)
 
     A null-bound family is different, per Sol's REQUEST_REPAIR (Slack
     C0BSBM78V1N, 2026-08-29): the original implementation substituted

@@ -51,7 +51,7 @@ unverified:
     what_would_verify: "Sol RULING/ACCEPTED on the program thread after the milestone RESULT; merge of #6638 is Sol's. RESOLVED 2026-08-29: Sol ruled REQUEST_REPAIR, not accepted — see the 'Milestone status' section below and the fail-closed repair packet (Slack C0BSBM78V1N)."
 unresolved:
   - "Null #6 cadence control is PARTIAL by Sol ruling: 92/285 pilot groups controlled (5.3% of rows); dark groups are typed and barred from cadence-controlled/cross-grain inference; W3B/W5 must consume cadence_control_coverage_v1 and abstain where the control is required but unavailable — the power/ABSTAIN law owns the consequence."
-  - "Point 3(a)'s date dimension of source-era reconstructibility is unenforceable from existing registry receipts (no per-date era field exists; none was invented per Sol's fail-closed law); for null-bound R/B families the date axis rests on the family_first_available bound, which is null for exactly those families. Recorded as a data limitation."
+  - "Point 3(a)'s date dimension of source-era reconstructibility is unenforceable from existing registry receipts (no per-date era field exists; none was invented per Sol's fail-closed law). POST-REPAIR (Sol REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29 census): null-bound R/B rows now fail closed to UNESTIMABLE unconditionally, regardless of the other sub-checks (spec receipt, producer store, identity, bars coverage) — the date axis for those families is unestablishable from any committed artifact in this tree, not merely absent. Recorded as a data limitation."
   - "The sealed receipt's status string 'declared_pending_sol_rule_review' predates Sol's rule-form ruling; the sealed forms ARE the ruled A2/B1 (registration section 5.1). The receipt is immutable; the caveat lives in the registration and a pinning test."
   - "The W2 replay machinery's own registry work-file stages into a hardcoded foreign session scratchpad path (module constant outside this carrier's owned files); provenance hashes bind the substrate regardless. Cosmetic follow-up for a W2-owned pass."
   - "_identity_resolvable carries a today-unreachable fail-open default (hygiene.check_symbol always sets the key); flagged for a fail-closed default in a future W3B-adjacent pass."
@@ -155,6 +155,23 @@ receipt's voiding proof, pinned by a live test.
 makes NO second seal and does not decide when or whether one should follow;
 that decision, and the shape of the re-seal act if one is warranted, is
 Sol's to rule on next.
+
+(f) **Pilot-cohort calibration degeneracy under the repaired predicate
+(2026-08-29 adversarial review F2).** With `recall_at_tier_distribution`'s
+defined-cell count dropped to 2/50 (both exactly `0.0`), the pilot cohort's
+calibration is DEGENERATE under the repaired predicate: `compute_lambda_fs`
+raises `BlockedDegenerateCalibrationError` (numerator
+`median(recall × zone_precision) = 0.0`; denominator `0.6481978771972514`;
+`n_lawful_population = 50`) and `compute_recall_floor` returns the bare
+preregistered `0.05` clamp carrying no sample information; composites fail
+closed (`c_loc_r`/`c_loc_d` `NaN`, `gate_reason` `recall_at_tier_nan` on
+48/50 cells). This is measured on the PILOT cohort, NOT the guard-truncated
+sealed-calibration substrate (b)-(d) above describe — indicative, not proof,
+of what a corrective re-seal on the current substrate would produce — and it
+signals that such a re-seal may itself terminate in
+`BLOCKED_DEGENERATE_CALIBRATION` rather than a fresh seal. Full detail:
+registration document §6.14.1. This is the fact Sol's re-seal-boundary
+ruling in (e) needs before ruling, not a decision on its own.
 
 ## What exists now
 

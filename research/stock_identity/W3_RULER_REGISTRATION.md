@@ -1250,8 +1250,12 @@ now implement Sol's five-point law exactly:
    These four sub-checks are scoped EXACTLY as Sol's ruling states them —
    "for historical R/B families with NULL first-available" — a family with a
    real, committed `family_first_available` bound (`reclaim_waiver`,
-   `washout_turn`, `amber_early`) is governed by point 1 alone and is not
-   additionally gated by (a)/(b)/(d).
+   `weekly_washout_turn`) is governed by point 1 alone and is not
+   additionally gated by (a)/(b)/(d). (`amber_early` also carries a
+   committed bound but is Class P — point 2 resolves it to
+   `STRUCTURAL_ABSENCE` regardless of that bound, so it is not a point-1
+   bounded R/B example; corrected 2026-08-29 per adversarial review finding
+   N3, a pre-existing slip.)
 
    **REPAIRED (Sol REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29):** the
    paragraph above described (a)/(b)/(c)/(d) all passing as SUFFICIENT for a
@@ -1600,6 +1604,39 @@ is undefined once its family has zero `ELIGIBLE` episodes to form a
 denominator from; this is an AVAILABILITY-STATE consequence, not a
 recall/lambda/outcome recomputation, and no PR-3 constant, ledger row, or
 sealed artifact was touched or re-derived to produce it.
+
+### 6.14.1 Pilot-cohort calibration degeneracy under the repaired predicate (2026-08-29 adversarial review F2)
+
+**Measured, outcome-free consequence of the §6.14 availability shift on the
+downstream calibration machinery (no ledger row, no sealed artifact, no
+committed data file touched — this is a read of what the existing pilot
+inputs would now produce if calibration were re-run against them; it was NOT
+re-run for real, and no PR-3 constant changed).** With
+`recall_at_tier_distribution.n_cells_defined` dropped to 2/50 (both defined
+cells exactly `0.0`) under the repaired predicate, the pilot cohort's
+calibration is DEGENERATE: `compute_lambda_fs` raises
+`BlockedDegenerateCalibrationError` (numerator
+`median(recall × zone_precision) = 0.0`; denominator
+`0.6481978771972514`; `n_lawful_population = 50`), and `compute_recall_floor`
+returns the bare preregistered `0.05` clamp carrying no sample information —
+neither constant can be estimated from this cohort's data any more.
+Downstream composites fail closed the same way: `c_loc_r`/`c_loc_d` are
+`NaN` and `gate_reason` reads `recall_at_tier_nan` on 48/50 cells.
+
+**Scope caveat (load-bearing for Sol's re-seal-boundary ruling, §6.13/§6.14
+above).** This degeneracy is measured on the PILOT cohort only — the
+smaller, pre-guard-truncation substrate this registration's smoke re-runs use
+throughout — not on the guard-truncated sealed-calibration substrate the
+real PR-3 seal (§5 below) was computed against. It is therefore INDICATIVE,
+not proof, of what a corrective re-seal on the current (repaired) predicate
+would produce: the sealed substrate's larger population and different
+family/episode composition may or may not reproduce the same degeneracy.
+What this measurement DOES establish is the shape of the question Sol's
+pending re-seal-boundary ruling must answer — a corrective re-seal run on
+the current substrate may itself terminate in
+`BLOCKED_DEGENERATE_CALIBRATION` rather than in a fresh seal, and that
+possibility should inform the ruling rather than be discovered only after
+attempting it.
 
 ## 5. Sealed constants receipt (Task 3C Step 5 -- the real, one-time seal)
 
