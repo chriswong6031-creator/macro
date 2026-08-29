@@ -351,3 +351,18 @@
 {"date": "2026-08-27", "pair_id": "ailogic_vs_legacy", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.004509, "leg_den_ret_1w": 0.003912, "state": "TRENDING", "kind": "basket"}
 {"date": "2026-08-27", "pair_id": "software_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.029768, "leg_den_ret_1w": -0.004509, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-08-27", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.02221, "leg_den_ret_1w": -0.004509, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-28", "pair_id": "smh_vs_spy", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 1.011, "z63": -0.842, "pct_3y": 91.8, "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "smh_vs_qqq", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 1.047, "z63": -0.876, "pct_3y": 92.3, "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "igv_vs_smh", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.079295, "leg_den_ret_1w": 0.018228, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.079295, "leg_den_ret_1w": 0.014218, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "qqq_vs_rsp", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 0.224, "z63": -0.669, "pct_3y": 87.0, "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "smh_vs_rsp", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 0.959, "z63": -0.825, "pct_3y": 91.3, "kind": "etf"}
+{"date": "2026-08-28", "pair_id": "memory_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.033326, "leg_den_ret_1w": 0.018068, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-28", "pair_id": "ailogic_vs_equipment", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.018068, "leg_den_ret_1w": -0.014834, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-28", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.000757, "leg_den_ret_1w": 0.018068, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-29", "pair_id": "igv_vs_smh", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.079295, "leg_den_ret_1w": 0.018228, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-08-29", "pair_id": "igv_vs_qqq", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.079295, "leg_den_ret_1w": 0.014218, "state": "NO_ANCHOR", "kind": "etf"}
+{"date": "2026-08-29", "pair_id": "smh_vs_rsp", "event": "state_transition", "state_from": "BASING", "state": "NO_ANCHOR", "z252": 0.784, "z63": -1.231, "pct_3y": 89.4, "kind": "etf"}
+{"date": "2026-08-29", "pair_id": "memory_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.033326, "leg_den_ret_1w": 0.018068, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-29", "pair_id": "ailogic_vs_equipment", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": 0.018068, "leg_den_ret_1w": -0.014834, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-29", "pair_id": "power_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.000757, "leg_den_ret_1w": 0.018068, "state": "NO_ANCHOR", "kind": "basket"}

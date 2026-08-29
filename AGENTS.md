@@ -64,6 +64,52 @@ Migration work follows `research/DESIGN_MIGRATION_FACTORY_V1.md`: builders execu
 a committed migration packet exactly and never invent design language — a builder
 that believes the packet is wrong stops and escalates.
 
+### Theme art direction — required (TP-0, 2026-08-27)
+
+Dark and light are **two deliberate art directions of one semantic system**, not
+a design and its skin. They share information architecture, component semantics,
+spacing/type scales, state meanings, user actions, data contracts, ordering and
+density law, and interaction behavior. They do **not** have to share material
+treatment: dark is a command center (luminance depth, instrument calm, restrained
+glow); light is a research workspace (cool canvas, white material, hairline
+discipline, shadow instead of glow).
+
+**Token substitution alone is never proof of a light design.** "The same CSS
+still renders once the tokens swap" is exactly the failure this law exists to
+stop.
+
+Every material UI packet must name: DARK TREATMENT; LIGHT TREATMENT; which
+mechanisms intentionally differ and why; the reference/baseline; theme-specific
+degraded states; and the evidence matrix (dark/light × EN/ZH × desktop 1440 /
+mobile 390). A packet missing the light art direction or its evidence is
+`PARTIAL/BLOCKED`, never `PASS`.
+
+- **Designer:** state both art directions separately and supply both evidence
+  sets; never approve "same CSS, tokens swap" without arguing why the mechanism
+  genuinely works in both luminance environments.
+- **Builder:** if a frozen spec lacks LIGHT TREATMENT or its required evidence,
+  stop `PARTIAL/BLOCKED` — do not invent or silently translate one, and never
+  add an opaque runtime stylesheet to escape a design-system constraint.
+- **Reviewer:** `PASS` on a material UI change requires dark and light each
+  adjudicated as designs — hierarchy, material depth, semantic color, responsive
+  composition, EN/ZH parity. Functional browser success is necessary, never
+  sufficient.
+
+**Substantive product styling may not be authored as an opaque runtime
+stylesheet system inside page/composer JavaScript** — no multi-kilobyte
+`style.textContent` material system, no parallel palette/token family, no
+duplicated light/dark stylesheet branches invisible to the design-system
+checker. JavaScript may mount and recompose canonical DOM, set state
+classes/attributes, select existing variants, and apply genuinely data-dependent
+inline geometry; governed presentation source owns the material decisions.
+
+Forward-only enforcement (inherited debt reports, but does not newly block):
+`scripts/check_design_system.py --mode enforce-added` on changed lines,
+`scripts/check_runtime_style_injection.py` as a ratcheted budget that may only
+stay flat or shrink, and `scripts/check_ui_visual_evidence.py` for the committed
+dual-theme evidence receipt. CI checks evidence existence and state identity
+only — a human/Opus reviewer owns visual taste.
+
 ## Workspace and git
 
 - The canonical tree is GitHub `origin/main`
@@ -590,6 +636,22 @@ information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
 
+**Hold notes do not end the Stop loop — go quiet through the ladder, not through
+repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
+above but is not terminal to the guard: the Stop hook blocks again seconds later,
+and a session that answers every block with another note types near-identical
+hold notes in a tight billed loop for hours (about one hundred such turns measured
+on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
+under an armed watcher; the cost is context × turns and the notes carry zero
+information after the first). When a long external wait is owned by an armed
+watcher or cron and the guard keeps blocking, check the escape-ladder threshold
+(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
+literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
+the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
+no per-Stop hold notes, no tailing your own watcher's output file between ticks.
+Real events (watcher exit, cron fire, task notification, operator message)
+re-invoke the session; that is the only lawful cadence for a parked wait.
+
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 
@@ -685,7 +747,16 @@ removes the only thing that would have noticed.
 Claude enforces this contract with `.claude/hooks/ship_loop_guard.py` at SessionStart
 and `scripts/ship_loop_hold_wrapper.py` at Stop. The wrapper delegates every ordinary
 state to the canonical guard and only turns a fully lawful Sol hold into terminal
-`SHIP LOOP PARKED`. For ordinary work, the guard snapshots pre-existing dirty files,
+`SHIP LOOP PARKED`. A lawful hold whose binding checks are not yet green instead gets
+`HOLD-FOR-SOL WAITING`, or `HOLD-FOR-SOL CHECKS RED` when one concluded red — and since
+2026-08-28 that applies on `claude/*` as well as `sol/*`. It used to be `sol/*`-only, so
+an ordinary held pull request fell through to `unmerged` and was told to squash-merge and
+deploy the very pull request `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` forbids merging; PR #6608
+took 121 consecutive blocks carrying that impossible instruction. The repair corrects the
+ADVICE only — pending and red still block, `parked` remains the one terminal exit and
+still requires every binding check concluded green, and waiting on CI still does not
+qualify for the escape ladder, so answer such a block with a one-line hold note rather
+than a fresh poll or a `SHIP LOOP BLOCKED` report. For ordinary work, the guard snapshots pre-existing dirty files,
 then refuses a normal stop while session-created work is uncommitted, unpushed,
 unmerged, awaiting a render, or absent from production. `unmerged` is satisfied by an
 actually-MERGED pull request and by nothing else; an armed `merge-on-green` pull request

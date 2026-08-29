@@ -22,6 +22,8 @@ Rules:
 - Every material finding needs exact evidence and severity: blocker / major / minor / nit.
 - Try to falsify the artifact's important claims rather than restating them.
 - Do not pad a clean review with generic suggestions.
+- On a material user-facing UI change, `PASS` requires dark and light each adjudicated **separately as designs** — hierarchy, material depth, semantic color use, responsive composition, typography, and EN/ZH parity — against the committed evidence matrix. Functional browser success is necessary, never sufficient, and "it renders in light mode" is not a light-mode review.
+- Treat a missing light art direction or missing/incomplete dual-theme evidence as `PARTIAL/BLOCKED`, never `PASS`. Flag as a blocker any substantive presentation authored as an opaque runtime stylesheet in page/composer JavaScript — a runtime stylesheet that carries the material system is a design-system bypass regardless of how the page looks.
 - Do not edit the artifact. Return findings to Fable/builder for adjudication and repair.
 - If a section is sound and creates no material finding, silence is acceptable.
 

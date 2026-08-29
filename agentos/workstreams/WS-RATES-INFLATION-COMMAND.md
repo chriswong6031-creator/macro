@@ -89,7 +89,8 @@ next_action: >
   Submit the frozen RIC-F1, RIC-F2 and RIC-F3 packets through canonical Executive
   admission/routing as three disjoint operations. Require a pickup ACK for every commission and,
   once its entrance gate clears, a separate START receipt before modification. Call a lane active
-  only after its concrete carrier/session receipts are proven; none was active at this reconciliation.
+  only after its concrete carrier/session receipts are proven; none was active at the 2026-08-27
+  cross-plane reconciliation.
 ---
 
 ## Why this workstream exists

@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CELH-BULL-20260527",
-  "asof": "2026-08-27",
+  "asof": "2026-08-29",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
-  "management_confidence": 83.1,
-  "raw_confidence": 83.5,
-  "delta_vs_base": 23.1,
+  "management_confidence": 70.9,
+  "raw_confidence": 68.3,
+  "delta_vs_base": 10.9,
   "recommended_action": "hold",
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 82.1,
-    "pace": 100.0,
-    "retention": 98.2,
+    "progress": 66.0,
+    "pace": 82.3,
+    "retention": 60.8,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.524,
-    "dist_to_t1_r": -1.024,
-    "dist_to_t2_r": 0.476,
-    "horizon_pct_used": 62.2,
-    "p1": 1.6824,
-    "p2": 0.8412,
+    "dist_to_stop_r": 2.562,
+    "dist_to_t1_r": -0.062,
+    "dist_to_t2_r": 1.438,
+    "horizon_pct_used": 66.7,
+    "p1": 1.0415,
+    "p2": 0.5207,
     "p3": null,
-    "move_r": 2.524,
+    "move_r": 1.562,
     "mfe_r": 2.571,
     "mae_r": -0.918
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-17",
   "_first_t1_ts": "2026-08-21",
   "_first_t2_ts": null,
-  "days_elapsed": 28,
-  "tau": 0.6222
+  "days_elapsed": 30,
+  "tau": 0.6667
 }

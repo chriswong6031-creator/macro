@@ -249,14 +249,33 @@ waves:
     title: PR-7 outcome-calibrated Opportunity model (gated on honest sample)
     status: todo
     depends_on: [W6]
+    # Completion-freeze mapping (2026-08-28): runs as child LER-C7 only when the
+    # preregistered prospective sample gate is satisfied by real W5/qledger
+    # accrual; honest ACCRUING/NOT YET MEASURED otherwise. Sol owns the
+    # scientific verdict. Never fabricated to unblock W9/product.
   - id: W8
     title: PR-8 UI reference + RIG (Prophet Board sister language, operator directive 2026-08-13)
-    status: todo
+    status: in_progress
+    pr: 5737
     depends_on: [W0]
+    # Opened as a reviewable reference PR (#5737). NOT done until merged.
+    # Commissioning 2026-08-17: freeze a8c763dc APPROVE_WITH_CONDITIONS.
+    # Do not auto-roll W9.
+    # Completion-freeze mapping (2026-08-28): sole existing carrier is OPEN PR
+    # #5737 (reference-only, head b30243f3efd2 at freeze). Child LER-C5
+    # reconciles and lands THAT carrier history-preservingly; a replacement W8
+    # branch/PR is forbidden. May run independently of C1-C4 after fresh
+    # path/authority disjointness proof. Reference completion only — landing
+    # W8 does not authorize starting W9.
   - id: W9
     title: PR-9 production UI + live RTH verification
     status: todo
     depends_on: [W4, W6, W8]
+    # Completion-freeze mapping (2026-08-28): runs as child LER-C6 after
+    # C2 (reliability), C4 (real Research Priority acceptance) and C5 (W8
+    # reference on main); C3 must be working for prospective-evidence fields.
+    # No templates/entry_radar.html.j2 exists on current main at freeze. The
+    # W7 Opportunity slot ships NOT YET MEASURED until LER-C7 concludes.
 landmines:
   - "Session worktrees are sparse: data/, site/, mockups/ are absent locally — artifact-existence checks must use git ls-files / git show or the primary checkout (read-only), never a bare ls."
   - "DNR:KILL-WASHOUT-TURN (entry-stack Amendment-3, #1747) is adjacent: any promotion of a Radar detector must confront that kill by name; display/accruing tier is free, authority is not."
@@ -265,7 +284,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: "#5845 MERGED 2026-08-18T12:40:51Z (squash 8552db805ea6) — Sol's post-merge acceptance of its bounded follow-up is the remaining W6 item; do not redesign the score, do not mark W6 done, do not start W7 or W9. W8 UI reference remains #5737. W4.1 live transport correction commissioned 2026-08-18 (Chairman Prophet Operator Lab program, V4-B5A) is build worker's PR #5929, OPEN and NOT YET MERGED as of this update — see the W4.1 wave row for scope/receipts; the commissioning session owns review and merge, not the build worker. #5897 (W4 test-baseline repair) MERGED 2026-08-19, so W4.1 rebased onto a green W4 baseline."
+next_action: "Completion program governs (2026-08-28, DEC:LER-END-TO-END-COMPLETION-ARCHITECTURE-FREEZE, records carrier #6599). SUPERSEDED sequencing: the prior next_action's '#5929 OPEN and NOT YET MERGED' clause is stale — #5929 MERGED 2026-08-19T17:27:25Z (squash 9ef200f), #5995 MERGED 2026-08-19T19:51:58Z, quote-ts heal #6095 MERGED 2026-08-20T15:03:30Z, and W4.1 was genuinely commissioned 2026-08-20 (first real envelope 240/2979 usable, then warm ~5-min Lab live_forward; see W4.1 row — all receipts preserved). Commissioning did NOT complete the program: dark-gap/cold-start recovery and full-natural-RTH cadence remain open (Sol Day-5 ruling), DSC:RADAR-SPOOL-PUBLIC-R2 is unrebutted with no accepted remediation, and the canonical W5 prospective consumer is DISCONNECTED (DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED — ledger_state.json session 2026-08-27 = WAITING_FOR_LIVE_SOURCE, spool_dir=null, zero observed/live-forward/qledger; Prophet Lab live_forward is NOT W5/Eval-OS evidence). W6 stays in_progress: #5834+#5845 merged but not accepted on a non-empty real developing-RTH board; do not redesign the score. Remaining work runs as bounded child waves LER-C0..C8 under research/live_entry_radar/LIVE_ENTRY_RADAR_COMPLETION_ARCHITECTURE_MASTERPLAN_2026-08-28.md with a sustained Fable COO (one fresh operation key + one carrier + terminal watcher boundary per modifying child; graph in §Completion program below). Immediate next: after C0 (#6599) merges, start LER-C1 private evidence transport. Frozen: Prophet paths, detector formulas/hashes G0 9be89a8acc8b905c / C1 f0bbd6cf3a6e2339 / C2 d8ba60a25cfa7400 / C3 d54dc1e55c4261c8 / C4 dce21ac680233ee2 (context-only) / C5 13dec66345a0376c; F1 unbuilt/refusing. W8 = existing #5737 only (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9); W9 not started before C2/C4/C5."
 ---
 
 ## Context
@@ -283,3 +302,44 @@ Champion G0 is the Terminal repo's early anticipation dot (`charting-app/signal_
 cross-repo parity is fixture-enforced, never copy-paste drift. Evaluation reuses the
 Evaluation OS + the PSS §7 timing-ruler discipline; ranking ships as ACCRUING Research
 Priority until house promotion gates clear.
+
+## Completion program (Chairman-approved freeze, 2026-08-28)
+
+Governing records — all on carrier
+[#6599](https://github.com/mastermindx-market-intelligence/macro/pull/6599):
+
+- `research/live_entry_radar/LIVE_ENTRY_RADAR_COMPLETION_ARCHITECTURE_MASTERPLAN_2026-08-28.md`
+  (completion outcome, capability ledger, architecture freeze, completion law);
+- `DEC:LER-END-TO-END-COMPLETION-ARCHITECTURE-FREEZE` (sequencing/no-rebuild ruling;
+  supersedes ONLY the stale #5929-open next-action assumptions — every historical
+  receipt in the wave rows above is preserved verbatim and remains controlling);
+- `DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED` (Lab live_forward ≠ canonical
+  W5/Evaluation-OS prospective evidence; current durable ledger is
+  WAITING_FOR_LIVE_SOURCE with a null spool path);
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-28-fable-coo-program.md` (sustained
+  Fable COO operating contract + child-wave watcher protocol);
+- `docs/superpowers/plans/2026-08-28-live-entry-radar-completion-program.md`
+  (task-by-task C0-C8 program).
+
+Accepted child-wave graph (each modifying child = one fresh stable operation key,
+one GitHub carrier, one exact Slack thread, terminal watcher boundary):
+
+```text
+LER-C0 records/program-control acceptance (carrier #6599; this reconciliation)
+ -> LER-C1 W4.2 private evidence transport (spool non-anonymous; existing R2 owner)
+ -> LER-C2 W4.3 dark-gap recovery + full natural RTH cadence + current coverage
+ -> LER-C3 W5.2 prospective Eval OS reconnect (real event -> private spool ->
+            forward.parquet -> qledger; existing sole reconciler only)
+ -> LER-C4 W6.1 real non-empty Research Priority acceptance (Sol scientific gate)
+ -> LER-C5 W8 reconciliation of existing #5737 only (independent when disjoint)
+ -> LER-C6 W9 production entry_radar.html (real data; browser acceptance)
+ -> LER-C7 W7 Opportunity science only when sample-ready (Sol scientific gate)
+ -> LER-C8 integrated acceptance + read-only Stock Identity handoff
+```
+
+Wave mapping: C1/C2 close the W4.1 residues; C3 closes the W5 prospective gap;
+C4 closes W6; C5 lands W8; C6 ships W9; C7 adjudicates W7; C8 closes the
+program under the masterplan §11 completion law (Truth / Intelligence / Product /
+Learning). Radar records expert events; `WS:STOCK-IDENTITY` (active carrier
+#6529, not editable from Radar children) remains the sole per-security
+expert-routing owner, consuming a read-only event boundary.

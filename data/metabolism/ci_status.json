@@ -1,37 +1,37 @@
 {
-  "ts": "2026-08-27T20:46:29+00:00",
-  "main_sha": "d5b86cc5285662e1f5ef2527b147527d0396bb9d",
+  "ts": "2026-08-29T11:29:46+00:00",
+  "main_sha": "94903e531dc2cf8698d1bc4c947d78d7882f7cf0",
   "red_required": [
+    {
+      "name": "free-content-estate",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800518"
+    },
     {
       "name": "engine-render-guards",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33060552923/job/98477968268"
-    },
-    {
-      "name": "free-content-estate",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33060552923/job/98477968257"
-    },
-    {
-      "name": "font-ui-defined",
-      "conclusion": "cancelled",
-      "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33060552923/job/98477968171"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800502"
     },
     {
       "name": "tier-gate",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33060552923/job/98477968145"
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800488"
+    },
+    {
+      "name": "template-site-sync",
+      "conclusion": "failure",
+      "status": "completed",
+      "url": "https://github.com/mastermindx-market-intelligence/macro/actions/runs/33240081708/job/99067800355"
     }
   ],
   "green": false,
-  "consecutive_failures": 68,
+  "consecutive_failures": 72,
   "sensed_shas": [
-    "d5b86cc5285662e1f5ef2527b147527d0396bb9d",
-    "dda6505c656dabde9da0c5973186144574255cb9"
+    "94903e531dc2cf8698d1bc4c947d78d7882f7cf0",
+    "ab3f0350bac31c6d7bdad7b336b714841c3c3aa3"
   ],
   "heartbeat_degraded": false
 }

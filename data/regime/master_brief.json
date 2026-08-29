@@ -2,38 +2,38 @@
   "schema": "master_brief.v2",
   "lens": "macro",
   "is_context_only": true,
-  "generated_at": "2026-08-27T09:42:42.510125+00:00",
+  "generated_at": "2026-08-29T09:17:50.543485+00:00",
   "model": "gpt-5.6-sol",
   "served_by": "codex",
-  "state_asof": "2026-08-26",
+  "state_asof": "2026-08-28",
   "tldr": [
-    "Main driver: Crypto is surging, but the wider market is not joining clearly.",
-    "Regime shift: Reflation is losing ground to Stagflation.",
-    "Safety check: Credit is calm, though bonds no longer cushion stock falls.",
-    "Global split: China and Hong Kong remain weak as US risk appetite holds.",
+    "Dollar shock: A sharp dollar move is pressuring commodities and overseas markets.",
+    "Regime drift: Reflation remains displayed, but the odds are shifting toward Stagflation.",
+    "Credit calm: Bonds and credit show no broad market stress.",
+    "Global split: China and Hong Kong remain weak while Bitcoin stays risk-on.",
     "What to do: Watch \u2014 don't chase"
   ],
-  "summary": "Crypto strength leads a fragile risk rally while contracting liquidity and a regime shift limit confidence.",
-  "regime_read": "The US remains in Reflation territory, but it is transitioning toward Stagflation. Growth has improved while inflation has cooled, yet confidence is low and liquidity is contracting.\n\nCrypto liquidity is today's clear driver. Bitcoin and ether lead higher, but broader risk assets are not confirming strongly.",
+  "summary": "Markets remain calm, but cooling growth, stubborn inflation and a jumpy dollar make the risk-on mood fragile.",
+  "regime_read": "The map still shows Reflation, but that position is not settled. Growth has cooled, and the odds are shifting toward Stagflation. Contracting liquidity adds caution.\n\nToday\u2019s main driver is a dollar shock, though the dollar evidence is mixed and confidence is low. A reversal would quickly weaken this read.",
   "conflicts": [
-    "Risk split: Crypto says risk appetite is strong, China and Hong Kong say global growth remains weak \u2014 this rally is narrow.",
-    "Market cushion: Credit remains healthy, but bonds are not offsetting stock losses \u2014 stress is low, yet protection is weaker.",
-    "Policy tension: The Fed remains firm and inflation persists, while growth is improving \u2014 long-term borrowing costs may stay uncomfortable."
+    "Calm versus hedge: Credit says markets are healthy, but bonds are not cushioning stocks \u2014 diversification is less reliable.",
+    "US versus Asia: American markets remain risk-on, while China and Hong Kong show growth fear \u2014 global demand is uneven.",
+    "Policy versus prices: The Fed remains hawkish and restrictive, while inflation is cooling \u2014 relief depends on continued cooling."
   ],
-  "rotation_check": "Crypto jumped while broad liquidity contracts and earlier risk-asset legs show no fresh leadership, so the expected sequence is running out of order.",
+  "rotation_check": "The sequence is running unevenly: China and Hong Kong remain weak while Bitcoin is risk-on, despite contracting liquidity.",
   "transmission": [
-    "If crypto strength keeps up \u2192 risk appetite may spread beyond digital assets.",
-    "If contracting liquidity keeps up \u2192 narrow market leadership becomes harder to sustain."
+    "If dollar strength keeps up \u2192 commodities, overseas shares and Bitcoin face more pressure",
+    "If growth cooling keeps up \u2192 the shift toward Stagflation gains credibility"
   ],
   "watch_items": [
-    "Crypto reversal: The main market driver has failed.",
-    "Broader participation: The rally is becoming more durable.",
-    "Credit widening: Bond investors are becoming worried.",
-    "Stagflation transition: Inflation pressure is overtaking improving growth."
+    "Dollar reversal: pressure on commodities and overseas markets should ease",
+    "Regime confirmation: continued drift would move the map into Stagflation",
+    "Credit widening: calm risk conditions would be breaking",
+    "Jobs weakness: the Fed\u2019s restrictive stance becomes harder to maintain"
   ],
-  "confidence": "medium",
+  "confidence": "low",
   "theses": [],
-  "raw_text": "{\"tldr\":[\"Main driver: Crypto is surging, but the wider market is not joining clearly.\",\"Regime shift: Reflation is losing ground to Stagflation.\",\"Safety check: Credit is calm, though bonds no longer cushion stock falls.\",\"Global split: China and Hong Kong remain weak as US risk appetite holds.\",\"What to do: Watch \u2014 don't chase\"],\"summary\":\"Crypto strength leads a fragile risk rally while contracting liquidity and a regime shift limit confidence.\",\"regime_read\":\"The US remains in Reflation territory, but it is transitioning toward Stagflation. Growth has improved while inflation has cooled, yet confidence is low and liquidity is contracting.\\n\\nCrypto liquidity is today's clear driver. Bitcoin and ether lead higher, but broader risk assets are not confirming strongly.\",\"conflicts\":[\"Risk split: Crypto says risk appetite is strong, China and Hong Kong say global growth remains weak \u2014 this rally is narrow.\",\"Market cushion: Credit remains healthy, but bonds are not offsetting stock losses \u2014 stress is low, yet protection is weaker.\",\"Policy tension: The Fed remains firm and inflation persists, while growth is improving \u2014 long-term borrowing costs may stay uncomfortable.\"],\"transmission\":[\"If crypto strength keeps up \u2192 risk appetite may spread beyond digital assets.\",\"If contracting liquidity keeps up \u2192 narrow market leadership becomes harder to sustain.\"],\"rotation_check\":\"Crypto jumped while broad liquidity contracts and earlier risk-asset legs show no fresh leadership, so the expected sequence is running out of order.\",\"watch_items\":[\"Crypto reversal: The main market driver has failed.\",\"Broader participation: The rally is becoming more durable.\",\"Credit widening: Bond investors are becoming worried.\",\"Stagflation transition: Inflation pressure is overtaking improving growth.\"],\"confidence\":\"medium\",\"forward_watch\":[{\"date\":\"2026-09-04\",\"label\":\"Jobs report (nonfarm payrolls)\",\"kind\":\"NFP\",\"note\":\"Shows whether firm hiring still supports growth.\"},{\"date\":\"2026-09-10\",\"label\":\"PPI (producer prices)\",\"kind\":\"PPI\",\"note\":\"Shows whether business cost pressure is cooling.\"},{\"date\":\"2026-09-03\",\"label\":\"claims\",\"kind\":\"release\",\"note\":\"Only the benchmark is available; the model projection is not reliable.\"}],\"forward_read\":\"The jobs report matters most for the growth side of the transition. Producer prices will test whether inflation pressure is easing.\"}",
+  "raw_text": "{\"tldr\":[\"Dollar shock: A sharp dollar move is pressuring commodities and overseas markets.\",\"Regime drift: Reflation remains displayed, but the odds are shifting toward Stagflation.\",\"Credit calm: Bonds and credit show no broad market stress.\",\"Global split: China and Hong Kong remain weak while Bitcoin stays risk-on.\",\"What to do: Watch \u2014 don't chase\"],\"summary\":\"Markets remain calm, but cooling growth, stubborn inflation and a jumpy dollar make the risk-on mood fragile.\",\"regime_read\":\"The map still shows Reflation, but that position is not settled. Growth has cooled, and the odds are shifting toward Stagflation. Contracting liquidity adds caution.\\n\\nToday\u2019s main driver is a dollar shock, though the dollar evidence is mixed and confidence is low. A reversal would quickly weaken this read.\",\"conflicts\":[\"Calm versus hedge: Credit says markets are healthy, but bonds are not cushioning stocks \u2014 diversification is less reliable.\",\"US versus Asia: American markets remain risk-on, while China and Hong Kong show growth fear \u2014 global demand is uneven.\",\"Policy versus prices: The Fed remains hawkish and restrictive, while inflation is cooling \u2014 relief depends on continued cooling.\"],\"transmission\":[\"If dollar strength keeps up \u2192 commodities, overseas shares and Bitcoin face more pressure\",\"If growth cooling keeps up \u2192 the shift toward Stagflation gains credibility\"],\"rotation_check\":\"The sequence is running unevenly: China and Hong Kong remain weak while Bitcoin is risk-on, despite contracting liquidity.\",\"watch_items\":[\"Dollar reversal: pressure on commodities and overseas markets should ease\",\"Regime confirmation: continued drift would move the map into Stagflation\",\"Credit widening: calm risk conditions would be breaking\",\"Jobs weakness: the Fed\u2019s restrictive stance becomes harder to maintain\"],\"confidence\":\"low\",\"forward_watch\":[{\"date\":\"2026-09-04\",\"label\":\"Jobs report (nonfarm payrolls)\",\"kind\":\"NFP\",\"note\":\"Tests whether firm hiring can withstand cooling growth.\"},{\"date\":\"2026-09-10\",\"label\":\"PPI (producer prices)\",\"kind\":\"PPI\",\"note\":\"Shows whether business price pressure is rebuilding.\"},{\"date\":\"2026-09-11\",\"label\":\"CPI (consumer prices)\",\"kind\":\"CPI\",\"note\":\"The key test for the shift toward Stagflation.\"}],\"forward_read\":\"Jobs come first, followed by two inflation tests. Together they will clarify whether cooling growth or stubborn prices dominates.\"}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
@@ -42,22 +42,22 @@
       "date": "2026-09-04",
       "label": "Jobs report (nonfarm payrolls)",
       "kind": "NFP",
-      "note": "Shows whether firm hiring still supports growth."
+      "note": "Tests whether firm hiring can withstand cooling growth."
     },
     {
       "date": "2026-09-10",
       "label": "PPI (producer prices)",
       "kind": "PPI",
-      "note": "Shows whether business cost pressure is cooling."
+      "note": "Shows whether business price pressure is rebuilding."
     },
     {
-      "date": "2026-09-03",
-      "label": "claims",
-      "kind": "release",
-      "note": "Only the benchmark is available; the model projection is not reliable."
+      "date": "2026-09-11",
+      "label": "CPI (consumer prices)",
+      "kind": "CPI",
+      "note": "The key test for the shift toward Stagflation."
     }
   ],
-  "forward_read": "The jobs report matters most for the growth side of the transition. Producer prices will test whether inflation pressure is easing.",
+  "forward_read": "Jobs come first, followed by two inflation tests. Together they will clarify whether cooling growth or stubborn prices dominates.",
   "nw_context_used": true,
   "cortex_status": "absent",
   "refresh_days": 1,
@@ -106,36 +106,36 @@
       "key": "driver",
       "label_en": "What's moving markets",
       "label_zh": "\u5f53\u524d\u4e3b\u5bfc",
-      "value_en": "Crypto liquidity",
-      "value_zh": "Crypto liquidity",
+      "value_en": "USD shock",
+      "value_zh": "USD shock",
       "tone": "info"
     }
   ],
   "zh": {
-    "summary": "\u52a0\u5bc6\u8d27\u5e01\u8d70\u5f3a\u63a8\u52a8\u8106\u5f31\u7684\u98ce\u9669\u8d44\u4ea7\u53cd\u5f39\uff0c\u4f46\u6d41\u52a8\u6027\u6536\u7f29\u548c\u5e02\u573a\u673a\u5236\u8f6c\u53d8\u9650\u5236\u4e86\u4fe1\u5fc3\u3002",
-    "regime_read": "\u7f8e\u56fd\u4ecd\u5904\u4e8e\u518d\u901a\u80c0\u9636\u6bb5\uff0c\u4f46\u6b63\u5411\u6ede\u80c0\u8fc7\u6e21\u3002\u589e\u957f\u6709\u6240\u6539\u5584\uff0c\u901a\u80c0\u6709\u6240\u964d\u6e29\uff0c\u4f46\u4fe1\u5fc3\u4f4e\u8ff7\u4e14\u6d41\u52a8\u6027\u6b63\u5728\u6536\u7f29\u3002\n\n\u52a0\u5bc6\u8d27\u5e01\u6d41\u52a8\u6027\u662f\u4eca\u65e5\u660e\u786e\u7684\u9a71\u52a8\u56e0\u7d20\u3002Bitcoin\u548cether\u9886\u6da8\uff0c\u4f46\u66f4\u5e7f\u6cdb\u7684\u98ce\u9669\u8d44\u4ea7\u5e76\u672a\u5f62\u6210\u5f3a\u52b2\u786e\u8ba4\u3002",
-    "rotation_check": "\u52a0\u5bc6\u8d27\u5e01\u5927\u6da8\uff0c\u4f46\u6574\u4f53\u6d41\u52a8\u6027\u6536\u7f29\uff0c\u65e9\u5148\u4e0a\u6da8\u7684\u98ce\u9669\u8d44\u4ea7\u4e5f\u672a\u51fa\u73b0\u65b0\u7684\u9886\u6da8\u529b\u91cf\uff0c\u56e0\u6b64\u9884\u671f\u4e2d\u7684\u8f6e\u52a8\u987a\u5e8f\u6b63\u5728\u88ab\u6253\u4e71\u3002",
+    "summary": "\u5e02\u573a\u4f9d\u7136\u5e73\u9759\uff0c\u4f46\u589e\u957f\u964d\u6e29\u3001\u901a\u80c0\u987d\u56fa\u4ee5\u53ca\u7f8e\u5143\u5267\u70c8\u6ce2\u52a8\uff0c\u4f7f\u98ce\u9669\u504f\u597d\u60c5\u7eea\u663e\u5f97\u8106\u5f31\u3002",
+    "regime_read": "\u5e02\u573a\u56fe\u8c31\u4ecd\u663e\u793a\u518d\u901a\u80c0\uff0c\u4f46\u8fd9\u4e00\u683c\u5c40\u5c1a\u672a\u7a33\u56fa\u3002\u589e\u957f\u5df2\u7ecf\u964d\u6e29\uff0c\u8f6c\u5411\u6ede\u80c0\u7684\u53ef\u80fd\u6027\u6b63\u5728\u4e0a\u5347\u3002\u6d41\u52a8\u6027\u6536\u7f29\u4e5f\u589e\u6dfb\u4e86\u8c28\u614e\u60c5\u7eea\u3002\n\n\u4eca\u5929\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u662f\u7f8e\u5143\u51b2\u51fb\uff0c\u4f46\u7f8e\u5143\u76f8\u5173\u4fe1\u53f7\u4e0d\u4e00\uff0c\u5224\u65ad\u7f6e\u4fe1\u5ea6\u8f83\u4f4e\u3002\u82e5\u7f8e\u5143\u8d70\u52bf\u9006\u8f6c\uff0c\u8fd9\u4e00\u5224\u65ad\u5c06\u8fc5\u901f\u51cf\u5f31\u3002",
+    "rotation_check": "\u8fd9\u4e00\u6f14\u53d8\u8fc7\u7a0b\u5e76\u4e0d\u5747\u8861\uff1a\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5e02\u573a\u4f9d\u7136\u75b2\u5f31\uff0c\u800c Bitcoin \u5c3d\u7ba1\u9762\u4e34\u6d41\u52a8\u6027\u6536\u7f29\uff0c\u4ecd\u5904\u4e8e\u98ce\u9669\u504f\u597d\u72b6\u6001\u3002",
     "tldr": [
-      "\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\uff1a\u52a0\u5bc6\u8d27\u5e01\u5927\u6da8\uff0c\u4f46\u6574\u4f53\u5e02\u573a\u5e76\u672a\u660e\u663e\u8ddf\u6da8\u3002",
-      "\u5e02\u573a\u73af\u5883\u8f6c\u53d8\uff1a\u518d\u901a\u80c0\u6b63\u9010\u6e10\u8ba9\u4f4d\u4e8e\u6ede\u80c0\u3002",
-      "\u5b89\u5168\u68c0\u67e5\uff1a\u4fe1\u8d37\u5e02\u573a\u4fdd\u6301\u5e73\u9759\uff0c\u4f46\u503a\u5238\u5df2\u65e0\u6cd5\u7f13\u51b2\u80a1\u5e02\u4e0b\u8dcc\u3002",
-      "\u5168\u7403\u5206\u5316\uff1a\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5e02\u573a\u4f9d\u7136\u75b2\u8f6f\uff0c\u800c\u7f8e\u56fd\u5e02\u573a\u98ce\u9669\u504f\u597d\u4fdd\u6301\u575a\u633a\u3002",
-      "\u5e94\u5bf9\u7b56\u7565\uff1a\u4fdd\u6301\u89c2\u671b\uff0c\u4e0d\u8981\u8ffd\u6da8\u3002"
+      "\u7f8e\u5143\u51b2\u51fb\uff1a\u7f8e\u5143\u5927\u5e45\u6ce2\u52a8\u6b63\u7ed9\u5927\u5b97\u5546\u54c1\u548c\u6d77\u5916\u5e02\u573a\u5e26\u6765\u538b\u529b\u3002",
+      "\u5e02\u573a\u73af\u5883\u6f02\u79fb\uff1a\u518d\u901a\u80c0\u4ecd\u5360\u4e3b\u5bfc\uff0c\u4f46\u5411\u6ede\u80c0\u8f6c\u53d8\u7684\u53ef\u80fd\u6027\u6b63\u5728\u4e0a\u5347\u3002",
+      "\u4fe1\u8d37\u5e73\u9759\uff1a\u503a\u5238\u548c\u4fe1\u8d37\u5e02\u573a\u672a\u663e\u793a\u5e7f\u6cdb\u538b\u529b\u3002",
+      "\u5168\u7403\u5206\u5316\uff1a\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5e02\u573a\u6301\u7eed\u75b2\u8f6f\uff0c\u800c Bitcoin \u4ecd\u5904\u4e8e\u98ce\u9669\u504f\u597d\u72b6\u6001\u3002",
+      "\u5e94\u5bf9\u7b56\u7565\uff1a\u4fdd\u6301\u89c2\u671b\uff0c\u5207\u52ff\u8ffd\u6da8\u3002"
     ],
     "conflicts": [
-      "\u98ce\u9669\u5206\u5316\uff1a\u52a0\u5bc6\u8d27\u5e01\u663e\u793a\u98ce\u9669\u504f\u597d\u5f3a\u52b2\uff0c\u800c\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5e02\u573a\u663e\u793a\u5168\u7403\u589e\u957f\u4f9d\u7136\u75b2\u5f31\u2014\u2014\u672c\u8f6e\u53cd\u5f39\u8303\u56f4\u72ed\u7a84\u3002",
-      "\u5e02\u573a\u7f13\u51b2\uff1a\u4fe1\u8d37\u5e02\u573a\u4f9d\u7136\u5065\u5eb7\uff0c\u4f46\u503a\u5238\u672a\u80fd\u5bf9\u51b2\u80a1\u7968\u635f\u5931\u2014\u2014\u538b\u529b\u8f83\u4f4e\uff0c\u4f46\u4fdd\u62a4\u4f5c\u7528\u51cf\u5f31\u3002",
-      "\u653f\u7b56\u5f20\u529b\uff1aFed\u7acb\u573a\u4f9d\u7136\u575a\u5b9a\uff0c\u901a\u80c0\u6301\u7eed\uff0c\u800c\u589e\u957f\u6b63\u5728\u6539\u5584\u2014\u2014\u957f\u671f\u501f\u8d37\u6210\u672c\u53ef\u80fd\u7ee7\u7eed\u5904\u4e8e\u4ee4\u4eba\u4e0d\u5b89\u7684\u9ad8\u4f4d\u3002"
+      "\u5e73\u9759\u4e0e\u5bf9\u51b2\uff1a\u4fe1\u8d37\u5e02\u573a\u663e\u793a\u6574\u4f53\u72b6\u51b5\u5065\u5eb7\uff0c\u4f46\u503a\u5238\u672a\u80fd\u7f13\u51b2\u80a1\u7968\u6ce2\u52a8\u2014\u2014\u5206\u6563\u5316\u7684\u53ef\u9760\u6027\u6709\u6240\u4e0b\u964d\u3002",
+      "\u7f8e\u56fd\u4e0e\u4e9a\u6d32\uff1a\u7f8e\u56fd\u5e02\u573a\u4ecd\u5904\u4e8e\u98ce\u9669\u504f\u597d\u72b6\u6001\uff0c\u800c\u4e2d\u56fd\u5185\u5730\u548c\u9999\u6e2f\u5e02\u573a\u663e\u73b0\u589e\u957f\u62c5\u5fe7\u2014\u2014\u5168\u7403\u9700\u6c42\u5e76\u4e0d\u5747\u8861\u3002",
+      "\u653f\u7b56\u4e0e\u7269\u4ef7\uff1aFed \u4ecd\u4fdd\u6301\u9e70\u6d3e\u548c\u9650\u5236\u6027\u7acb\u573a\uff0c\u800c\u901a\u80c0\u6b63\u5728\u964d\u6e29\u2014\u2014\u80fd\u5426\u7f13\u89e3\u53d6\u51b3\u4e8e\u901a\u80c0\u80fd\u5426\u6301\u7eed\u964d\u6e29\u3002"
     ],
     "transmission": [
-      "\u5982\u679c\u52a0\u5bc6\u8d27\u5e01\u6301\u7eed\u8d70\u5f3a \u2192 \u98ce\u9669\u504f\u597d\u53ef\u80fd\u6269\u6563\u81f3\u6570\u5b57\u8d44\u4ea7\u4ee5\u5916\u3002",
-      "\u5982\u679c\u6d41\u52a8\u6027\u6301\u7eed\u6536\u7f29 \u2192 \u72ed\u7a84\u7684\u5e02\u573a\u9886\u6da8\u683c\u5c40\u5c06\u66f4\u96be\u7ef4\u6301\u3002"
+      "\u82e5\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a \u2192 \u5927\u5b97\u5546\u54c1\u3001\u6d77\u5916\u80a1\u7968\u548c\u6bd4\u7279\u5e01\u5c06\u9762\u4e34\u66f4\u5927\u538b\u529b",
+      "\u82e5\u589e\u957f\u6301\u7eed\u964d\u6e29 \u2192 \u5411\u6ede\u80c0\u8f6c\u53d8\u7684\u5224\u65ad\u5c06\u66f4\u5177\u53ef\u4fe1\u5ea6"
     ],
     "watch_items": [
-      "\u52a0\u5bc6\u8d27\u5e01\u53cd\u8f6c\uff1a\u4e3b\u8981\u5e02\u573a\u9a71\u52a8\u56e0\u7d20\u5df2\u5931\u6548\u3002",
-      "\u53c2\u4e0e\u9762\u6269\u5927\uff1a\u672c\u8f6e\u4e0a\u6da8\u6b63\u53d8\u5f97\u66f4\u5177\u6301\u7eed\u6027\u3002",
-      "\u4fe1\u7528\u5229\u5dee\u6269\u5927\uff1a\u503a\u5238\u6295\u8d44\u8005\u6b63\u65e5\u76ca\u62c5\u5fe7\u3002",
-      "\u8f6c\u5411\u6ede\u80c0\uff1a\u901a\u80c0\u538b\u529b\u6b63\u76d6\u8fc7\u589e\u957f\u6539\u5584\u3002"
+      "\u7f8e\u5143\u8d70\u52bf\u9006\u8f6c\uff1a\u5927\u5b97\u5546\u54c1\u548c\u6d77\u5916\u5e02\u573a\u7684\u538b\u529b\u5e94\u4f1a\u7f13\u89e3",
+      "\u5e02\u573a\u73af\u5883\u786e\u8ba4\uff1a\u82e5\u6301\u7eed\u6f02\u79fb\uff0c\u5e02\u573a\u683c\u5c40\u5c06\u8f6c\u5165\u6ede\u80c0",
+      "\u4fe1\u7528\u5229\u5dee\u6269\u5927\uff1a\u5e73\u9759\u7684\u98ce\u9669\u73af\u5883\u5c06\u88ab\u6253\u7834",
+      "\u5c31\u4e1a\u75b2\u8f6f\uff1a\u7f8e\u8054\u50a8\u66f4\u96be\u7ef4\u6301\u9650\u5236\u6027\u7acb\u573a"
     ]
   }
 }

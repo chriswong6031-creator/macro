@@ -1,0 +1,5 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/stock-dashboard.css
+  - templates/dashboard-icons.js
+manifest: mockups/evidence/theme-parity/tp1-canada/manifest.json

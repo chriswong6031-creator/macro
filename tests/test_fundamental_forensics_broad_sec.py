@@ -2169,6 +2169,141 @@ def test_ff1r_conflicting_recent_and_historical_duplicate_accession_fails_closed
     )["next_ordinal"] == 0
 
 
+def test_duplicate_filing_acceptance_datetime_compares_by_instant_only() -> None:
+    """Duplicate facts retain first source text, except equal UTC instants."""
+    accession = "0001628280-26-048138"
+
+    def row(**changes: object) -> dict[str, object]:
+        base: dict[str, object] = {
+            "accession_number": accession,
+            "cik": "0001275187",
+            "ticker": "ANGO",
+            "form": "10-Q",
+            "filing_date": "2026-07-14",
+            "report_date": "2026-06-30",
+            "acceptance_datetime": "2026-07-14T19:42:40Z",
+            "primary_document": "ango-20250630.htm",
+            "is_xbrl": True,
+            "is_inline_xbrl": True,
+        }
+        return {**base, **changes}
+
+    first = row()
+    millis = row(acceptance_datetime="2026-07-14T19:42:40.000Z")
+    tenth = row(acceptance_datetime="2026-07-14T19:42:40.1Z")
+    hundredth = row(acceptance_datetime="2026-07-14T19:42:40.100Z")
+
+    assert broad_sec_store._merge_filing_rows([first, millis]) == [first]
+    assert broad_sec_store._merge_filing_rows([millis, first]) == [millis]
+    assert broad_sec_store._merge_filing_rows([tenth, hundredth]) == [tenth]
+    assert broad_sec_store._merge_filing_rows([first, dict(first)]) == [first]
+    broad_sec_store._assert_no_duplicate_filing_conflicts([first], [millis])
+    assert broad_sec_store._parse_acceptance("2026-07-14T19:42:40.000Z") == (
+        "2026-07-14T19:42:40.000Z"
+    )
+
+    for incompatible in (
+        row(acceptance_datetime="2026-07-14T19:42:40.001Z"),
+        row(acceptance_datetime="2026-07-14T19:42:41Z"),
+        row(acceptance_datetime="not-an-instant"),
+        *[
+            row(**{field: value})
+            for field, value in (
+                ("cik", "0000320193"),
+                ("ticker", "AAPL"),
+                ("form", "10-K"),
+                ("filing_date", "2026-07-15"),
+                ("report_date", "2026-06-29"),
+                ("primary_document", "ango-alternate.htm"),
+                ("is_xbrl", False),
+                ("is_inline_xbrl", False),
+            )
+        ],
+    ):
+        with pytest.raises(BroadSecError) as err:
+            broad_sec_store._merge_filing_rows([first, incompatible])
+        assert err.value.reason_code == "historical_submissions_conflict"
+
+
+def test_ff1r_ango_timestamp_representation_reconciles_without_rewriting_legacy_evidence(
+    tmp_path: Path,
+) -> None:
+    """The production-shaped ANGO duplicate advances only the lawful cursor."""
+    cik = "0001275187"
+    ticker = "ANGO"
+    accession = "0001628280-26-048138"
+    second_cik = "0001275188"
+    second_accession = "0001275188-26-000001"
+    repo, universe, store = _layout(tmp_path, [(ticker, int(cik)), ("SECOND", int(second_cik))])
+    fake = FakeSec()
+    index_rows = [
+        _idx_row(cik, "10-Q", "2026-07-14", accession, name="ANGO"),
+        _idx_row(second_cik, "10-Q", "2026-07-20", second_accession, name="SECOND"),
+    ]
+    assert index_rows[0]["cik"] == cik
+    assert index_rows[0]["filename"] == f"edgar/data/{int(cik)}/{accession}.txt"
+    assert accession[:10] == "0001628280"
+    assert accession[:10] != cik
+    fake.set_index(index_rows)
+    assert _poll(store, universe, fake, _clocks(POLL_1), repo_root=repo).exit_code == 0
+    legacy_accepted = "2026-07-14T19:42:40Z"
+    current_accepted = "2026-07-14T19:42:40.000Z"
+    current_body = _submissions_bytes(
+        cik,
+        [_filing(accession, "10-Q", accepted=current_accepted, filed="2026-07-14")],
+    )
+    current_sha, current_created = broad_sec_store.admit_source_bytes(store, current_body)
+    assert current_created is True
+    legacy = _manifest_transport_fixture(cik, ticker, accessions=[accession])
+    legacy["relevant_filings"][0].update(
+        {
+            "filing_date": "2026-07-14",
+            "report_date": "2026-07-14",
+            "acceptance_datetime": legacy_accepted,
+        }
+    )
+    legacy["submissions_sha256"] = current_sha
+    legacy["submissions_object_key"] = object_key(current_sha)
+    del legacy["submissions_components"]
+    del legacy["submissions_source_set_sha256"]
+    legacy_id = _legacy_issuer_source_identity(legacy)
+    legacy["manifest_id"] = legacy_id
+    legacy_raw = canonical_json(legacy).encode()
+    legacy_key = issuer_manifest_key(cik, legacy_id)
+    assert store.put_bytes_strict_conditional(legacy_key, legacy_raw, expected_version=None)
+    _put_pointer(store, issuer_latest_key(cik), _issuer_pointer(cik, ticker, legacy_id, legacy))
+    pointer_before = store.get_bytes_strict(issuer_latest_key(cik))
+    assert pointer_before is not None
+    assert legacy["submissions_sha256"] == sha256(current_body).hexdigest()
+    fake.submissions[cik] = current_body
+
+    result = _poll(
+        store,
+        universe,
+        fake,
+        _clocks(POLL_2, recovery_from=RECOVERY_FROM),
+        repo_root=repo,
+        mode="recovery",
+        max_affected_issuers=1,
+    )
+
+    assert result.exit_code == 1
+    assert result.receipt["reason_code"] == "recovery_in_progress"
+    assert result.receipt["recovery"]["candidate_cik_count"] == 2
+    assert result.receipt["recovery"]["selected_ciks"] == [cik]
+    assert result.receipt["recovery"]["completed_this_run"] == 1
+    assert result.receipt["recovery"]["completed_total"] == 1
+    assert fake.historical_fetches == []
+    assert fake.facts_fetches == []
+    assert _load_gzip_json(
+        store, _load_json(store, recovery_continuation_pointer_key())["object_key"]
+    )["next_ordinal"] == 1
+    assert store.get_bytes_strict(issuer_latest_key(cik)) == pointer_before
+    assert store.get_bytes_strict(legacy_key) == legacy_raw
+    assert legacy_accepted.encode() in legacy_raw
+    assert current_accepted.encode() not in legacy_raw
+
+
 def test_ff1r_post_cutoff_historical_accession_is_withheld_and_not_consumed(
     tmp_path: Path,
 ) -> None:
@@ -3083,7 +3218,7 @@ def test_incremental_reads_valid_manifest_larger_than_pointer_envelope(tmp_path:
 
     new_accession = "0000320193-26-000044"
     filings = [
-        _filing(prior_accession, "10-Q", accepted=ACCEPT_Q, filed="2026-06-15"),
+        _filing(prior_accession, "10-Q", accepted="2026-06-15T20:11:00.000Z", filed="2026-06-15"),
         _filing(new_accession, "10-Q", accepted=ACCEPT_NEW, filed="2026-08-12"),
     ]
     fake.submissions[AAPL[1]] = _submissions_bytes(AAPL[1], filings)
@@ -3094,12 +3229,17 @@ def test_incremental_reads_valid_manifest_larger_than_pointer_envelope(tmp_path:
     assert result.exit_code == 0
     assert result.receipt["reason_code"] == "complete"
     assert all(failure["reason_code"] != "source_binding_failure" for failure in result.receipt["failures"])
+    assert fake.facts_fetches == [AAPL[1]]
     current_pointer = _load_json(store, issuer_latest_key(AAPL[1]))
     current = _load_json(store, current_pointer["manifest_key"])
     assert current["previous_manifest_id"] == prior_pointer["manifest_id"]
     assert current["cumulative_relevant_accessions"][:1] == prior[
         "cumulative_relevant_accessions"
     ]
+    assert store.get_bytes_strict(prior_pointer["manifest_key"]) == prior_raw
+    by_accession = {row["accession_number"]: row for row in current["relevant_filings"]}
+    assert by_accession[prior_accession]["acceptance_datetime"] == ACCEPT_Q
+    assert by_accession[new_accession]["acceptance_datetime"] == ACCEPT_NEW
 
 
 def test_recovery_reads_valid_manifest_larger_than_pointer_envelope(tmp_path: Path) -> None:

@@ -7,6 +7,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from http.cookies import SimpleCookie
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -496,6 +497,89 @@ def _req(port, path, method="GET", body=None, cookies=None, headers=None):
     return urllib.request.urlopen(req, timeout=10)
 
 
+def _response_cookies(response):
+    morsels = []
+    for header in response.headers.get_all("Set-Cookie") or []:
+        parsed = SimpleCookie()
+        parsed.load(header)
+        assert len(parsed) == 1
+        morsels.append(next(iter(parsed.values())))
+    return morsels
+
+
+def test_session_check_promotes_only_a_valid_deployed_session_to_parent_domain():
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_PASSWORD="s3cret",
+                   ADMIN_SESSION_SECRET="it-secret", ADMIN_SESSION_TTL_HOURS="1")
+    httpd, port = _server()
+    try:
+        anonymous = _req(port, "/api/session")
+        assert json.loads(anonymous.read())["authenticated"] is False
+        assert _response_cookies(anonymous) == []
+
+        invalid = _req(port, "/api/session",
+                       cookies={auth.SESSION_COOKIE: "invalid"})
+        assert json.loads(invalid.read())["authenticated"] is False
+        assert _response_cookies(invalid) == []
+
+        session = auth.mint_session()
+        promoted_response = _req(
+            port, "/api/session", cookies={auth.SESSION_COOKIE: session}
+        )
+        assert json.loads(promoted_response.read())["authenticated"] is True
+        promoted = _response_cookies(promoted_response)
+        assert [(m.key, m["domain"]) for m in promoted] == [
+            (auth.SESSION_COOKIE, "mastermind-x.com"),
+            (auth.SESSION_COOKIE, ""),
+        ]
+        shared, legacy = promoted
+        if shared.value != session:
+            raise AssertionError("session promotion changed the signed value")
+        assert shared["path"] == "/"
+        assert shared["samesite"] == "Strict"
+        assert shared["secure"] is True
+        assert shared["httponly"] is True
+        assert shared["max-age"] == "3600"
+        assert legacy.value == ""
+        assert legacy["path"] == "/"
+        assert legacy["samesite"] == "Strict"
+        assert legacy["secure"] is True
+        assert legacy["httponly"] is True
+        assert legacy["max-age"] == "0"
+        assert all(m.key != auth.CSRF_COOKIE for m in promoted)
+    finally:
+        httpd.shutdown(); httpd.server_close()
+        _restore(old)
+
+
+def test_logout_clears_host_and_parent_domain_sessions_but_only_host_csrf():
+    old = _set_env(ADMIN_DEPLOYED="1", ADMIN_PASSWORD="s3cret",
+                   ADMIN_SESSION_SECRET="it-secret")
+    httpd, port = _server()
+    try:
+        response = _req(port, "/api/logout", "POST", {}, cookies={
+            auth.SESSION_COOKIE: auth.mint_session(),
+            auth.CSRF_COOKIE: auth.new_csrf(),
+        })
+        cleared = _response_cookies(response)
+        assert [(m.key, m["domain"]) for m in cleared] == [
+            (auth.SESSION_COOKIE, ""),
+            (auth.SESSION_COOKIE, "mastermind-x.com"),
+            (auth.CSRF_COOKIE, ""),
+        ]
+        for morsel in cleared:
+            assert morsel.value == ""
+            assert morsel["path"] == "/"
+            assert morsel["samesite"] == "Strict"
+            assert morsel["secure"] is True
+            assert morsel["max-age"] == "0"
+        assert cleared[0]["httponly"] is True
+        assert cleared[1]["httponly"] is True
+        assert cleared[2]["httponly"] == ""
+    finally:
+        httpd.shutdown(); httpd.server_close()
+        _restore(old)
+
+
 def test_deployed_mode_requires_session():
     old = _set_env(ADMIN_DEPLOYED="1", ADMIN_PASSWORD="s3cret",
                    ADMIN_SESSION_SECRET="it-secret")
@@ -536,6 +620,7 @@ def test_deployed_mode_requires_session():
             jar[k] = rest.split(";")[0]
         assert auth.SESSION_COOKIE in jar and auth.CSRF_COOKIE in jar
         assert "Secure" in " ".join(setc) and "HttpOnly" in " ".join(setc)
+        assert all("Domain=" not in cookie for cookie in setc)
 
         # with the session cookie, the protected route works
         r = _req(port, "/api/health", cookies={auth.SESSION_COOKIE: jar[auth.SESSION_COOKIE]})

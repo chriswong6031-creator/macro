@@ -316,7 +316,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=cfb8c072" defer></script>
+  <script src="live.js?v=f7bdf7cc" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -342,6 +342,10 @@
 
   
   
+  
+  <div class="panel span12" style="border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 7%,var(--panel));padding:9px 13px;font-size:12px;line-height:1.55">
+    <span class="l-en"><strong>⚠ BOARD DELAYED</strong> — prices as of 2026-08-26 (2d behind). Data is stale; readings on this page may not reflect latest prices. Check a live quote before acting.</span><span class="l-zh"><strong>⚠ 数据延迟</strong> — 价格截至 2026-08-26（落后 2 天）。当前数据过期，本页读数可能不反映最新价格，操作前请确认最新报价。</span>
+  </div>
   
 
   
@@ -460,7 +464,7 @@
         
         
         <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--ink-down, var(--down))">72</span> ▾</button>
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--ink-down, var(--down))">70</span> ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -521,22 +525,22 @@
         <div class="cnx-pop" id="cnx-pop-risk" style="left:auto">
           <div class="cnx-pop-h"><span class="l-en">Pullback risk radar</span><span class="l-zh">回撤风险雷达</span></div>
           
-          <div class="cnx-pop-big"><span class="n">72</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
-          <div class="cnx-pop-sub"><span class="l-en">~35% chance of a ≥5% pullback within a month · 1.1× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约35% · 约为平时的1.1倍</span></div>
+          <div class="cnx-pop-big"><span class="n">70</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
+          <div class="cnx-pop-sub"><span class="l-en">~32% chance of a ≥5% pullback within a month · 1.1× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约32% · 约为平时的1.1倍</span></div>
           
           <div class="cnx-pop-row">
-            <div class="pr-t"><span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span><b>89</b></div>
-            <div class="cnx-pop-bar"><i style="width:89%;background:var(--down)"></i></div>
+            <div class="pr-t"><span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span><b>85</b></div>
+            <div class="cnx-pop-bar"><i style="width:85%;background:var(--down)"></i></div>
           </div>
           
           <div class="cnx-pop-row">
-            <div class="pr-t"><span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span><b>49</b></div>
-            <div class="cnx-pop-bar"><i style="width:49%;background:var(--down)"></i></div>
+            <div class="pr-t"><span><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span><b>45</b></div>
+            <div class="cnx-pop-bar"><i style="width:45%;background:var(--down)"></i></div>
           </div>
           
           <div class="cnx-pop-row">
-            <div class="pr-t"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>37</b></div>
-            <div class="cnx-pop-bar"><i style="width:37%;background:var(--down)"></i></div>
+            <div class="pr-t"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>41</b></div>
+            <div class="cnx-pop-bar"><i style="width:41%;background:var(--down)"></i></div>
           </div>
           
           
@@ -804,8 +808,8 @@
           <div class="mx5-mkt-ticker">SSE</div>
           <div class="mx5-mkt-sub"><span class="l-en">Shanghai</span><span class="l-zh">上证综指</span></div>
           
-          <div class="mx5-mkt-price nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>3,912.5</div>
-          <div class="mx5-mkt-delta nb-chg up" data-sym="000001.SS" data-mkt="cn">+0.6%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="000001.SS" data-mkt="cn" data-bare>3,956.6</div>
+          <div class="mx5-mkt-delta nb-chg up" data-sym="000001.SS" data-mkt="cn">+1.1%</div>
           
         </div>
         
@@ -824,12 +828,12 @@
         </div>
         
         
-        <div class="mx5-mkt-tile up" data-sym="^HSI" data-mkt="hk">
+        <div class="mx5-mkt-tile dn" data-sym="^HSI" data-mkt="hk">
           <div class="mx5-mkt-ticker">HSI</div>
           <div class="mx5-mkt-sub"><span class="l-en">Hang Seng</span><span class="l-zh">恒生</span></div>
           
-          <div class="mx5-mkt-price nb-px" data-sym="^HSI" data-mkt="hk" data-bare>25,653</div>
-          <div class="mx5-mkt-delta nb-chg up" data-sym="^HSI" data-mkt="hk">+0.6%</div>
+          <div class="mx5-mkt-price nb-px" data-sym="^HSI" data-mkt="hk" data-bare>25,566</div>
+          <div class="mx5-mkt-delta nb-chg dn" data-sym="^HSI" data-mkt="hk">-0.3%</div>
           
         </div>
       </div>
@@ -891,23 +895,40 @@
     
     
     
-    
-    
-    
-    
-    
-    <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:rgba(224,160,48,.35)">
-      <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:rgba(224,160,48,.16);color:var(--warn)"><span class="l-en">CAUTION</span><span class="l-zh">谨慎</span></span></div>
+    <div class="cnx-card">
+      <div class="cnx-ctitle"><span class="l-en">Top Stock Setups</span><span class="l-zh">精选买点</span> <span style="margin-left:auto;font-size:10px;color:var(--muted)"><span class="l-en">FROM THE STOCK BOARD</span><span class="l-zh">来自股票看板</span></span></div>
       
-      <div class="cnx-bignum" style="color:var(--warn)">72<span style="font-size:14px;color:var(--muted)"> /100</span></div>
-      <div class="cnx-bigsub" style="color:var(--warn)"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
+      <div class="cnx-stk">
+        <span class="tkr"><a class="cnx-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol=002456.SZ" target="_blank" rel="noopener">欧菲光</a></span>
+        <div class="meta"><b>002456.SZ</b> · Technology</div>
+        <span class="cnx-stage"><span class="l-en">ENTRY</span><span class="l-zh">ENTRY</span></span>
+      </div>
       
-      <div class="cnx-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">35%</span></div>
-      <div class="cnx-kv"><span class="k"><span class="l-en">Deep-drawdown gauge</span><span class="l-zh">深跌仪表</span></span>
-        
-        
-        <span class="v"><span style="font-weight:700;color:var(--warn)"><span class="l-en">Elevated</span><span class="l-zh">偏高</span></span></span></div>
-      <div class="cnx-foot"><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
+      <div class="cnx-stk">
+        <span class="tkr"><a class="cnx-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol=300782.SZ" target="_blank" rel="noopener">卓胜微</a></span>
+        <div class="meta"><b>300782.SZ</b> · Technology</div>
+        <span class="cnx-stage"><span class="l-en">ENTRY</span><span class="l-zh">ENTRY</span></span>
+      </div>
+      
+      <div class="cnx-stk">
+        <span class="tkr"><a class="cnx-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol=300085.SZ" target="_blank" rel="noopener">银之杰</a></span>
+        <div class="meta"><b>300085.SZ</b> · Technology</div>
+        <span class="cnx-stage"><span class="l-en">ENTRY</span><span class="l-zh">ENTRY</span></span>
+      </div>
+      
+      <div class="cnx-stk">
+        <span class="tkr"><a class="cnx-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol=300124.SZ" target="_blank" rel="noopener">汇川技术</a></span>
+        <div class="meta"><b>300124.SZ</b> · Industrials</div>
+        <span class="cnx-stage"><span class="l-en">ENTRY</span><span class="l-zh">ENTRY</span></span>
+      </div>
+      
+      <div class="cnx-stk">
+        <span class="tkr"><a class="cnx-tkr-btn" href="https://app.mastermind-x.com/terminal?symbol=601958.SS" target="_blank" rel="noopener">金钼股份</a></span>
+        <div class="meta"><b>601958.SS</b> · Basic Materials</div>
+        <span class="cnx-stage"><span class="l-en">ENTRY</span><span class="l-zh">ENTRY</span></span>
+      </div>
+      
+      <a class="cnx-screener-btn" href="china_stocks.html"><span class="l-en">Stock Screener →</span><span class="l-zh">选股看板 →</span></a>
     </div>
     
 
@@ -943,7 +964,7 @@
           <g filter="url(#cnxDialGlow)">
             <line class="fg-mark-s" x1="190" y1="185" x2="190" y2="30"
                   stroke-width="4" stroke-linecap="round"
-                  transform="rotate(72.0, 190, 185)"/>
+                  transform="rotate(77.4, 190, 185)"/>
             <circle class="fg-mark-s" cx="190" cy="185" r="9"  fill="rgba(8,12,18,.8)" stroke-width="2.5"/>
             <circle class="fg-mark-f" cx="190" cy="185" r="4"/>
           </g>
@@ -962,8 +983,8 @@
       </div>
       <div class="mx5-sentiment-label">
         
-        <span class="l-en">Composite at 90 &middot; a heads-up, not a scored signal</span>
-        <span class="l-zh">综合指数 90 &middot; 仅供参考，不构成评分信号</span>
+        <span class="l-en">Composite at 93 &middot; a heads-up, not a scored signal</span>
+        <span class="l-zh">综合指数 93 &middot; 仅供参考，不构成评分信号</span>
         
       </div>
       
@@ -1080,12 +1101,12 @@
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-flows')">
       <div class="cnx-ctitle"><span class="l-en">Connect Flows</span><span class="l-zh">互联通资金</span></div>
       
-      <div class="cnx-bignum" style="color:var(--up)">+¥32亿</div>
+      <div class="cnx-bignum" style="color:var(--up)">+¥12亿</div>
       <div class="cnx-bigsub" style="color:var(--up)"><span class="l-en">Southbound buying</span><span class="l-zh">南向买入</span></div>
-      <div class="cnx-kv"><span class="k"><span class="l-en">Streak</span><span class="l-zh">连续</span></span><span class="v">9/20 <span class="l-en">days</span><span class="l-zh">天</span></span></div>
+      <div class="cnx-kv"><span class="k"><span class="l-en">Streak</span><span class="l-zh">连续</span></span><span class="v">10/20 <span class="l-en">days</span><span class="l-zh">天</span></span></div>
       
       
-      <div class="cnx-kv"><span class="k"><span class="l-en">Top buys</span><span class="l-zh">主要买入</span></span><span class="v">小米集团-W · MINIMAX-W · 腾讯控股</span></div>
+      <div class="cnx-kv"><span class="k"><span class="l-en">Top buys</span><span class="l-zh">主要买入</span></span><span class="v">胜宏科技 · 智谱 · 长飞光纤光缆</span></div>
       
       <div class="cnx-foot"><span class="l-en">Mainland money supporting Hong Kong.</span><span class="l-zh">内地资金持续支撑香港。</span></div>
     </div>
@@ -1097,17 +1118,17 @@
         
         <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>提醒：日内请重点关注（以下均为北京时间）</b>
-            <span class="sub">PBoC · 华尔街见闻</span></div>
-        </div>
-        
-        <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>央行定于9月4日发行科创未来(人工智能)金银纪念币一套 均为法定货币</b>
+          <div class="tx"><b>房贷最长可贷40年，深圳800万房子月供直降4313元！</b>
             <span class="sub">PBoC · 格隆汇</span></div>
         </div>
         
-        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 789 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>中国证监会发布《关于资本市场支持构建房地产发展新模式的意见》</b>
+            <span class="sub">Policy · 上海证券报</span></div>
+        </div>
+        
+        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 811 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
       
     </div>
   </div>
@@ -1151,7 +1172,7 @@
       
       
       
-      <p style="font-size:12px;margin:6px 0 0"><span class="l-en">China improving: Growth remains weak but has recovered while inflation stays very cool</span><span class="l-zh">中国改善：增长仍然疲弱但已有复苏，通胀依然非常温和</span></p>
+      <p style="font-size:12px;margin:6px 0 0"><span class="l-en">China squeeze: Growth is improving, but system liquidity is still shrinking</span><span class="l-zh">中国流动性挤压：增长正在改善，但体系流动性仍在收缩</span></p>
       
       
       <div class="cnx-foot"><span class="l-en">A read-through of signals — not a signal source.</span><span class="l-zh">信号解读 — 非信号来源。</span></div>
@@ -1353,27 +1374,27 @@
     <div class="cnx-dlg-body rrd">
 
       
-      <div class="rrd-hd tone-warn">
+      <div class="rrd-hd tone-muted">
         <div class="rrd-hd-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <div class="rrd-hd-txt">
           <div class="rrd-hd-label"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
           
-          <div class="rrd-hd-sub"><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
+          <div class="rrd-hd-sub"><span class="l-en">A risk is building — stay normal, just watch it.</span><span class="l-zh">风险在积累 — 保持正常，留意即可。</span></div>
           
           
-          <div class="rrd-hd-sub"><span class="l-en">Intensity</span><span class="l-zh">强度</span> <b>72</b>/100</div>
+          <div class="rrd-hd-sub"><span class="l-en">Intensity</span><span class="l-zh">强度</span> <b>70</b>/100</div>
           
         </div>
       </div>
 
-      <div class="rrx rrx-caution" style="--rc:var(--warn)">
+      <div class="rrx rrx-watch" style="--rc:var(--info)">
   
   <div class="rrx-main">
   <div class="rrx-hd">
-    <span class="rrx-ic">⚠️</span>
+    <span class="rrx-ic">🌤️</span>
     <div class="rrx-id">
       <div class="rrx-ttl"><span class="l-en">Risk Radar</span><span class="l-zh">风险雷达</span>
-        <span class="rrx-badge"><span class="l-en">CAUTION</span><span class="l-zh">警戒</span> · 72/100</span>
+        <span class="rrx-badge"><span class="l-en">WATCH</span><span class="l-zh">观察</span> · 70/100</span>
         <span class="help">?<span class="tip"><span class="l-en">Pullback-risk gauge. Use high readings to trim risk, not to pick stocks.</span><span class="l-zh">回撤风险仪表。高读数用于降风险，不用于选股。</span></span></span>
       </div>
       <div class="rrx-dom"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
@@ -1384,36 +1405,36 @@
       
       
     </div>
-    <div class="rrx-gross"><span class="gv">×0.90</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
+    <div class="rrx-gross"><span class="gv">×0.97</span><span class="gn"><span class="l-en">gross</span><span class="l-zh">建议仓位</span></span></div>
   </div>
 
   
   <div class="rrx-odds">
     <div class="rrx-odds-l">
       <div class="rrx-cap"><span class="l-en">Pullback odds</span><span class="l-zh">回撤概率</span> <span class="rrx-cap-sub"><span class="l-en">≥5% drop · measured vs normal</span><span class="l-zh">≥5% · 实测对比常态</span></span></div>
-      <div class="rrx-big">35<span class="pct">%</span><span class="rrx-hz"><span class="l-en">within 21 days</span><span class="l-zh">21 日内</span></span></div>
-      <div class="rrx-vsn"><b>1.15×</b> <span class="l-en">vs normal</span><span class="l-zh">对比常态</span> 30%</div>
+      <div class="rrx-big">32<span class="pct">%</span><span class="rrx-hz"><span class="l-en">within 21 days</span><span class="l-zh">21 日内</span></span></div>
+      <div class="rrx-vsn"><b>1.05×</b> <span class="l-en">vs normal</span><span class="l-zh">对比常态</span> 30%</div>
     </div>
     <div class="rrx-ramp"><div class="rrx-col">
-        <span class="rrx-v">9%</span>
+        <span class="rrx-v">8%</span>
         <div class="rrx-tk">
-          <div class="rrx-norm" style="height:17%"></div>
-          <div class="rrx-fill" style="height:21%"></div>
+          <div class="rrx-norm" style="height:18%"></div>
+          <div class="rrx-fill" style="height:20%"></div>
         </div>
         <span class="rrx-hl"><span class="l-en">5d</span><span class="l-zh">5日</span></span>
       </div>
       <div class="rrx-col">
-        <span class="rrx-v">18%</span>
+        <span class="rrx-v">16%</span>
         <div class="rrx-tk">
-          <div class="rrx-norm" style="height:37%"></div>
-          <div class="rrx-fill" style="height:42%"></div>
+          <div class="rrx-norm" style="height:41%"></div>
+          <div class="rrx-fill" style="height:41%"></div>
         </div>
         <span class="rrx-hl"><span class="l-en">10d</span><span class="l-zh">10日</span></span>
       </div>
       <div class="rrx-col is-hd">
-        <span class="rrx-v">35%</span>
+        <span class="rrx-v">32%</span>
         <div class="rrx-tk">
-          <div class="rrx-norm" style="height:71%"></div>
+          <div class="rrx-norm" style="height:78%"></div>
           <div class="rrx-fill" style="height:82%"></div>
         </div>
         <span class="rrx-hl"><span class="l-en">21d</span><span class="l-zh">21日</span></span>
@@ -1437,12 +1458,12 @@
     <div class="rrx-rec-mid">
       
       <svg class="rrx-rec-spark" viewBox="0 0 96 26" preserveAspectRatio="none" aria-hidden="true">
-        <polyline points="3.0,3.0 6.9,3.9 10.8,5.1 14.7,6.7 18.7,7.6 22.6,5.4 26.5,4.2 30.4,5.4 34.3,11.4 38.2,8.7 42.1,10.8 46.0,7.4 50.0,12.3 53.9,10.5 57.8,8.6 61.7,8.7 65.6,7.9 69.5,8.7 73.4,15.8 77.3,19.7 81.3,21.2 85.2,21.5 89.1,23.0 93.0,22.6" fill="none" stroke="var(--rvc)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="3.0,3.0 6.9,4.2 10.8,5.7 14.7,6.6 18.7,4.5 22.6,3.3 26.5,4.5 30.4,10.4 34.3,7.7 38.2,9.8 42.1,6.4 46.0,11.2 50.0,9.5 53.9,7.6 57.8,7.7 61.7,6.9 65.6,7.7 69.5,14.7 73.4,18.5 77.3,19.9 81.3,20.2 85.2,21.7 89.1,18.9 93.0,23.0" fill="none" stroke="var(--rvc)" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
         <circle class="pk" cx="3.0" cy="3.0" r="1.6"/>
-        <circle class="lx" cx="93.0" cy="22.6" r="2.1"/>
+        <circle class="lx" cx="93.0" cy="23.0" r="2.1"/>
       </svg>
       
-      <span class="rrx-rec-sub"><span class="l-en">Pullback odds 50% → 35% (peaked 29 days ago).</span><span class="l-zh">回撤概率 50% → 35%（29 日前见顶）。</span></span>
+      <span class="rrx-rec-sub"><span class="l-en">Pullback odds 50% → 32% (peaked 24 days ago).</span><span class="l-zh">回撤概率 50% → 32%（24 日前见顶）。</span></span>
     </div>
     
     <div class="rrx-rec-cats none"><span class="l-en">No liquidity catalyst yet — risk easing on its own; watch for a policy / liquidity turn to confirm.</span><span class="l-zh">尚无流动性催化 — 风险自行回落；留意政策／流动性转向以确认。</span></div>
@@ -1453,13 +1474,13 @@
   
   
   
-  <div class="rrx-ev"><span class="rrx-ev-k"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></span><span class="l-en">A-share breadth < 200-day</span><span class="l-zh">A股广度跌破200日</span> <span class="rrx-ev-p"><span class="l-en">89th</span><span class="l-zh">第89百分位</span> ✓</span></div>
+  <div class="rrx-ev"><span class="rrx-ev-k"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></span><span class="l-en">A-share breadth < 200-day</span><span class="l-zh">A股广度跌破200日</span> <span class="rrx-ev-p"><span class="l-en">85th</span><span class="l-zh">第85百分位</span> ✓</span></div>
   
   
 
   
   
-  <div class="rrx-do"><span class="rrx-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
+  <div class="rrx-do"><span class="rrx-do-k"><span class="l-en">Do</span><span class="l-zh">应对</span></span><span class="l-en">A risk is building — stay normal, just watch it.</span><span class="l-zh">风险在积累 — 保持正常，留意即可。</span></div>
   
 
   
@@ -1476,13 +1497,13 @@
     <span class="l-en">Pressure from abroad: low</span>
     <span class="l-zh">海外传导压力：低</span>
     <span class="rrx-rec-chip"><span class="l-en">Japan</span><span class="l-zh">日本</span></span>
-    <span class="help">?<span class="tip"><span class="l-en">Japan: connection 6.7%, 4.4% off its 21-day high, -3.1% in 10 sessions | United States: connection 14.4%, 1.6% off its 21-day high, -0.9% in 10 sessions | Australia: connection 9.0%, 2.3% off its 21-day high, -1.4% in 10 sessions</span><span class="l-zh">日本：关联6.7%，近21日高点回落4.4%，近10日-3.1%；美国：关联14.4%，近21日高点回落1.6%，近10日-0.9%；澳大利亚：关联9.0%，近21日高点回落2.3%，近10日-1.4%</span></span></span>
+    <span class="help">?<span class="tip"><span class="l-en">Japan: connection 6.1%, 4.1% off its 21-day high, -3.4% in 10 sessions | South Korea: connection 7.0%, 2.7% off its 21-day high, -0.4% in 10 sessions | United States: connection 14.5%, 0.9% off its 21-day high, -0.9% in 10 sessions</span><span class="l-zh">日本：关联6.1%，近21日高点回落4.1%，近10日-3.4%；韩国：关联7.0%，近21日高点回落2.7%，近10日-0.4%；美国：关联14.5%，近21日高点回落0.9%，近10日-0.9%</span></span></span>
   </div>
   <div class="rrx-cyc rrx-fxc">
     <span class="rrx-cyc-k"><span class="l-en">Yuan pressure</span><span class="l-zh">人民币压力</span></span>
     <span class="chip ok" style="font-size:10px;padding:1px 6px;"><span class="l-en">Normal</span><span class="l-zh">正常</span></span>
     <span class="l-en">Offshore yuan: no unusual pressure</span><span class="l-zh">离岸人民币：无异常压力</span>
-    <span class="rrx-rec-chip">-10bp</span>
+    <span class="rrx-rec-chip">-9bp</span>
   </div><div class="rrx-cyc rrx-fxc">
     <span class="rrx-cyc-k"><span class="l-en">Dollar</span><span class="l-zh">美元</span></span>
     <span class="chip ok" style="font-size:10px;padding:1px 6px;"><span class="l-en">Falling</span><span class="l-zh">走弱</span></span>
@@ -1508,8 +1529,8 @@
           <span class="rrd-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>
           <div class="rrd-tile-body">
             <div class="rrd-tile-lbl"><span class="l-en">Leading</span><span class="l-zh">领先信号</span></div>
-            <div class="rrd-tile-state"><span class="l-en">Shanghai Composite <b>2%</b> below its 200-day average</span>
-              <span class="l-zh">上证综指低于200日均线 <b>2%</b></span><span class="rrd-tile-chip"><span class="l-en">A-share breadth < 200-day</span><span class="l-zh">A股广度跌破200日</span></span>
+            <div class="rrd-tile-state"><span class="l-en">Shanghai Composite <b>1%</b> below its 200-day average</span>
+              <span class="l-zh">上证综指低于200日均线 <b>1%</b></span><span class="rrd-tile-chip"><span class="l-en">A-share breadth < 200-day</span><span class="l-zh">A股广度跌破200日</span></span>
             </div>
           </div>
           <span class="rrd-tile-tip">?</span>
@@ -1517,7 +1538,7 @@
         
 
         
-        <div class="rrd-tile tone-up" data-tip-en="How far the markets that trade with China have fallen from their own recent highs: Japan 4% off · United States 2% off · Australia 2% off" data-tip-zh="与中国关联最深的市场距各自近期高点的回撤：日本 4%；美国 2%；澳大利亚 2%">
+        <div class="rrd-tile tone-up" data-tip-en="How far the markets that trade with China have fallen from their own recent highs: Japan 4% off · South Korea 3% off · United States 1% off" data-tip-zh="与中国关联最深的市场距各自近期高点的回撤：日本 4%；韩国 3%；美国 1%">
           <span class="rrd-tile-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="10" r="7"/><path d="M5 10h14M12 3a12 12 0 010 14"/><path d="M12 17v4"/></svg></span>
           <div class="rrd-tile-body">
             <div class="rrd-tile-lbl"><span class="l-en">Overseas</span><span class="l-zh">境外</span></div>
@@ -1580,20 +1601,20 @@
       <div class="rrd-ladder">
         <div class="rrd-lrow tone-down">
           <span class="rrd-lname"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span>
-          <span class="rrd-fbar"><i style="width:89%"></i></span>
-          <span class="rrd-lscore">89</span>
-          <span class="rrd-lband"><span class="l-en">Risk-off</span><span class="l-zh">避险</span></span>
+          <span class="rrd-fbar"><i style="width:85%"></i></span>
+          <span class="rrd-lscore">85</span>
+          <span class="rrd-lband"><span class="l-en">Elevated</span><span class="l-zh">偏高</span></span>
         </div>
         <div class="rrd-lrow tone-warn">
           <span class="rrd-lname"><span class="l-en">Capital outflow / FX</span><span class="l-zh">资本外流／汇率</span></span>
-          <span class="rrd-fbar"><i style="width:49%"></i></span>
-          <span class="rrd-lscore">49</span>
+          <span class="rrd-fbar"><i style="width:45%"></i></span>
+          <span class="rrd-lscore">45</span>
           <span class="rrd-lband"><span class="l-en">Calm</span><span class="l-zh">平静</span></span>
         </div>
         <div class="rrd-lrow tone-warn">
           <span class="rrd-lname"><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
-          <span class="rrd-fbar"><i style="width:37%"></i></span>
-          <span class="rrd-lscore">37</span>
+          <span class="rrd-fbar"><i style="width:41%"></i></span>
+          <span class="rrd-lscore">41</span>
           <span class="rrd-lband"><span class="l-en">Calm</span><span class="l-zh">平静</span></span>
         </div>
         
@@ -1611,7 +1632,7 @@
           <b><span class="l-en">Easing</span><span class="l-zh">宽松</span></b>
         </span>
         
-        <span class="rrd-chip tone-up" data-tip-en="Yuan per dollar offshore, -0.4% on the day. A weaker yuan is a headwind for A-shares." data-tip-zh="离岸市场每美元兑人民币，当日 -0.4%。人民币走弱对A股构成逆风。">
+        <span class="rrd-chip tone-up" data-tip-en="Yuan per dollar offshore, -0.5% on the day. A weaker yuan is a headwind for A-shares." data-tip-zh="离岸市场每美元兑人民币，当日 -0.5%。人民币走弱对A股构成逆风。">
           <span class="l-en">Offshore yuan</span><span class="l-zh">离岸人民币</span>
           <b><span class="l-en">6.71, firmer</span><span class="l-zh">6.71，走强</span></b>
         </span>
@@ -1657,9 +1678,9 @@
           <span class="rrd-fread"><span class="l-en">thin</span><span class="l-zh">稀少</span></span>
         </div>
         
-        <div class="rrd-frow tone-muted" data-tip-en="Mainland money into Hong Kong over the last 20 sessions, net buyers on 9 of them. Read it as risk appetite, not as an A-share flow." data-tip-zh="近20个交易日内地资金流入港股的净额，其中 9 日为净买入。反映风险偏好，并非A股本身的资金流。">
+        <div class="rrd-frow tone-muted" data-tip-en="Mainland money into Hong Kong over the last 20 sessions, net buyers on 10 of them. Read it as risk appetite, not as an A-share flow." data-tip-zh="近20个交易日内地资金流入港股的净额，其中 10 日为净买入。反映风险偏好，并非A股本身的资金流。">
           <span class="rrd-fname"><span class="l-en">Southbound, 20 sessions</span><span class="l-zh">南向资金 · 近20日</span></span><span></span>
-          <span class="rrd-fval">+¥66亿</span>
+          <span class="rrd-fval">+¥82亿</span>
           <span class="rrd-fread"><span class="l-en">mixed</span><span class="l-zh">进出参半</span></span>
         </div>
         
@@ -1702,36 +1723,36 @@
       <div class="rrd-ldr-rows">
         
         <div class="rrd-ldr-row is-plain tone-muted">
-          <span class="rrd-ldr-tkr">300782.SZ</span>
-          <span class="rrd-ldr-name"><span class="l-en">Maxscend Microelectronics Company Limited</span><span class="l-zh">卓胜微</span></span>
+          <span class="rrd-ldr-tkr">002456.SZ</span>
+          <span class="rrd-ldr-name"><span class="l-en">OFILM Group Co., Ltd.</span><span class="l-zh">欧菲光</span></span>
           
           <span class="rrd-ldr-val">#1</span>
         </div>
         
         <div class="rrd-ldr-row is-plain tone-muted">
-          <span class="rrd-ldr-tkr">000969.SZ</span>
-          <span class="rrd-ldr-name"><span class="l-en">Advanced Technology & Materials Co., Ltd.</span><span class="l-zh">安泰科技</span></span>
+          <span class="rrd-ldr-tkr">300782.SZ</span>
+          <span class="rrd-ldr-name"><span class="l-en">Maxscend Microelectronics Company Limited</span><span class="l-zh">卓胜微</span></span>
           
           <span class="rrd-ldr-val">#2</span>
         </div>
         
         <div class="rrd-ldr-row is-plain tone-muted">
-          <span class="rrd-ldr-tkr">002797.SZ</span>
-          <span class="rrd-ldr-name"><span class="l-en">First Capital Securities Co., Ltd.</span><span class="l-zh">第一创业</span></span>
+          <span class="rrd-ldr-tkr">300085.SZ</span>
+          <span class="rrd-ldr-name"><span class="l-en">Shenzhen InfoGem Technologies Co., Ltd.</span><span class="l-zh">银之杰</span></span>
           
           <span class="rrd-ldr-val">#3</span>
         </div>
         
         <div class="rrd-ldr-row is-plain tone-muted">
-          <span class="rrd-ldr-tkr">002456.SZ</span>
-          <span class="rrd-ldr-name"><span class="l-en">OFILM Group Co., Ltd.</span><span class="l-zh">欧菲光</span></span>
+          <span class="rrd-ldr-tkr">300124.SZ</span>
+          <span class="rrd-ldr-name"><span class="l-en">Shenzhen Inovance Technology Co.,Ltd</span><span class="l-zh">汇川技术</span></span>
           
           <span class="rrd-ldr-val">#4</span>
         </div>
         
         <div class="rrd-ldr-row is-plain tone-muted">
-          <span class="rrd-ldr-tkr">300327.SZ</span>
-          <span class="rrd-ldr-name"><span class="l-en">Sino Wealth Electronic Ltd.</span><span class="l-zh">中颖电子</span></span>
+          <span class="rrd-ldr-tkr">601958.SS</span>
+          <span class="rrd-ldr-name"><span class="l-en">Jinduicheng Molybdenum Co., Ltd.</span><span class="l-zh">金钼股份</span></span>
           
           <span class="rrd-ldr-val">#5</span>
         </div>
@@ -1750,7 +1771,7 @@
           <span class="rrd-fxv">
             <span class="rrd-tile-chip"><span class="l-en">No unusual pressure</span><span class="l-zh">无异常压力</span></span>
             <span class="l-en">Offshore yuan against the mainland rate</span><span class="l-zh">离岸人民币对在岸价差</span>
-            <span class="rrd-fxnum">-10bp</span>
+            <span class="rrd-fxnum">-9bp</span>
           </span>
         </div>
         
@@ -1786,10 +1807,10 @@
           
           <div class="cnx-ihcard">
             <div class="t"><span class="l-en">SHANGHAI COMPOSITE</span><span class="l-zh">上证综指</span></div>
-            <div class="p">3912.52</div>
+            <div class="p">3956.57</div>
             <span class="cnx-badchip"><span class="l-en">Below</span><span class="l-zh">下方</span> 200d ✕</span>
-            <span class="cnx-badchip"><span class="l-en">Below</span><span class="l-zh">下方</span> 50d ✕</span>
-            <span class="cnx-nchip">-7.8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+            <span class="cnx-okchip"><span class="l-en">Above</span><span class="l-zh">上方</span> 50d ✓</span>
+            <span class="cnx-nchip">-6.7% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
           </div>
           
           <div class="cnx-ihcard">
@@ -1802,17 +1823,17 @@
           
           <div class="cnx-ihcard">
             <div class="t"><span class="l-en">SHENZHEN COMPONENT</span><span class="l-zh">深证成指</span></div>
-            <div class="p">13841.33</div>
+            <div class="p">14048.88</div>
             <span class="cnx-badchip"><span class="l-en">Below</span><span class="l-zh">下方</span> 200d ✕</span>
             <span class="cnx-badchip"><span class="l-en">Below</span><span class="l-zh">下方</span> 50d ✕</span>
-            <span class="cnx-nchip">-15.5% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
+            <span class="cnx-nchip">-14.2% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>
           </div>
           
           
           
           <div class="cnx-ihcard">
             <div class="t"><span class="l-en">HANG SENG</span><span class="l-zh">恒生指数</span></div>
-            <div class="p">25,653 <span class="cnx-tt-up" style="font-size:12px">+0.6%</span></div>
+            <div class="p">25,566 <span class="cnx-tt-dn" style="font-size:12px">-0.3%</span></div>
             <span class="cnx-nchip"><span class="l-en">live-patched intraday</span><span class="l-zh">盘中实时更新</span></span>
           </div>
           
@@ -1892,29 +1913,29 @@
             <div class="cnx-eyebrow"><span class="l-en">Margin crowd meter</span><span class="l-zh">两融拥挤度</span></div>
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 6px">
-              <span class="cnx-bignum">2.64%</span>
+              <span class="cnx-bignum">2.62%</span>
             </div>
             <div class="cnx-kv"><span class="k"><span class="l-en">Pctile</span><span class="l-zh">分位</span></span><span class="v">90</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">Maint. ratio</span><span class="l-zh">维持担保</span></span><span class="v">276.9%</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Maint. ratio</span><span class="l-zh">维持担保</span></span><span class="v">282.1%</span></div>
             <div class="cnx-kv"><span class="k"><span class="l-en">20d net buy</span><span class="l-zh">20日净买入</span></span>
-              <span class="v cnx-tt-up">+37</span></div>
-            <div class="chart"><figure class="ilx ilx-line" style="color:var(--info);--ilx-len:993.9;--ilx-h:190px" role="img" aria-label="Margin financing chart"><svg viewBox="0 0 560 190" preserveAspectRatio="none" aria-hidden="true"><defs></defs><line class="ilx-ref" x1="0" y1="20.0" x2="560" y2="20.0"/><path class="ilx-path" d="M0.0 147.09 L2.55 143.7 L5.09 144.87 L7.64 139.88 L10.18 139.78 L12.73 146.94 L15.27 142.22 L17.82 145.77 L20.36 146.83 L22.91 144.18 L25.45 146.35 L28.0 142.75 L30.55 142.75 L33.09 147.09 L35.64 147.73 L38.18 145.13 L40.73 142.96 L43.27 147.62 L45.82 153.3 L48.36 145.29 L50.91 145.87 L53.45 140.52 L56.0 141.58 L58.55 146.78 L61.09 143.22 L63.64 147.36 L66.18 145.03 L68.73 149.22 L71.27 149.06 L73.82 146.35 L76.36 144.28 L78.91 146.94 L81.45 144.81 L84.0 143.12 L86.55 144.23 L89.09 136.86 L91.64 142.64 L94.18 138.88 L96.73 140.31 L99.27 144.07 L101.82 139.72 L104.36 143.22 L106.91 144.07 L109.45 141.1 L112.0 141.79 L114.55 144.23 L117.09 144.13 L119.64 145.45 L122.18 147.78 L124.73 145.08 L127.27 148.37 L129.82 145.29 L132.36 143.38 L134.91 148.31 L137.45 146.35 L140.0 149.16 L142.55 148.1 L145.09 133.84 L147.64 141.53 L150.18 145.61 L152.73 144.13 L155.27 135.11 L157.82 143.91 L160.36 150.22 L162.91 146.78 L165.45 154.04 L168.0 152.87 L170.55 157.12 L173.09 156.43 L175.64 150.43 L178.18 152.56 L180.73 149.11 L183.27 151.28 L185.82 153.62 L188.36 150.65 L190.91 154.15 L193.45 153.09 L196.0 147.89 L198.55 146.78 L201.09 152.18 L203.64 144.92 L206.18 151.81 L208.73 150.75 L211.27 154.46 L213.82 155.79 L216.36 151.07 L218.91 150.86 L221.45 157.06 L224.0 156.74 L226.55 163.27 L229.09 161.25 L231.64 158.81 L234.18 160.99 L236.73 157.17 L239.27 156.32 L241.82 158.28 L244.36 158.71 L246.91 155.68 L249.45 154.31 L252.0 158.92 L254.55 157.06 L257.09 154.41 L259.64 154.68 L262.18 159.34 L264.73 155.26 L267.27 159.18 L269.82 157.65 L272.36 162.05 L274.91 161.78 L277.45 156.69 L280.0 154.84 L282.55 159.4 L285.09 157.27 L287.64 152.08 L290.18 154.41 L292.73 147.04 L295.27 145.19 L297.82 150.12 L300.36 148.74 L302.91 146.46 L305.45 146.46 L308.0 142.59 L310.55 140.89 L313.09 145.45 L315.64 142.22 L318.18 137.34 L320.73 139.94 L323.27 154.57 L325.82 156.69 L328.36 153.3 L330.91 156.59 L333.45 150.81 L336.0 154.57 L338.55 151.02 L341.09 152.29 L343.64 157.7 L346.18 157.96 L348.73 155.05 L351.27 155.68 L353.82 153.4 L356.36 151.5 L358.91 154.04 L361.45 156.48 L364.0 152.66 L366.55 155.21 L369.09 152.03 L371.64 154.09 L374.18 152.45 L376.73 152.66 L379.27 150.01 L381.82 170.0 L384.36 153.62 L386.91 155.47 L389.45 151.23 L392.0 153.14 L394.55 142.43 L397.09 142.32 L399.64 146.62 L402.18 144.66 L404.73 139.78 L407.27 138.4 L409.82 142.43 L412.36 141.31 L414.91 145.87 L417.45 146.03 L420.0 142.43 L422.55 144.71 L425.09 142.0 L427.64 134.05 L430.18 144.18 L432.73 144.23 L435.27 149.06 L437.82 150.59 L440.36 148.37 L442.91 148.21 L445.45 150.54 L448.0 148.42 L450.55 151.55 L453.09 151.5 L455.64 150.06 L458.18 151.18 L460.73 147.36 L463.27 148.63 L465.82 142.85 L468.36 143.22 L470.91 137.23 L473.45 138.29 L476.0 133.57 L478.55 133.15 L481.09 136.44 L483.64 136.38 L486.18 133.52 L488.73 131.03 L491.27 134.0 L493.82 129.76 L496.36 133.57 L498.91 136.01 L501.45 129.76 L504.0 132.14 L506.55 127.9 L509.09 132.09 L511.64 136.86 L514.18 135.59 L516.73 125.67 L519.27 128.75 L521.82 133.94 L524.36 134.1 L526.91 131.51 L529.45 133.89 L532.0 124.35 L534.55 126.36 L537.09 120.0 L539.64 124.56 L542.18 117.3 L544.73 115.39 L547.27 119.31 L549.82 121.86 L552.36 129.86 L554.91 131.19 L557.45 127.69 L560.0 129.28"/><circle class="ilx-dot" cx="560.0" cy="129.28" r="3.2"/></svg><span class="ilx-reflab" style="top:10.5%">4.7</span><span class="ilx-d ilx-d0">2020-08-17</span><span class="ilx-d ilx-d1">2026-08-26</span><span class="ilx-tag">2.64<span class="ilx-u"><span class="l-en">%</span><span class="l-zh">%</span></span></span></figure></div>
+              <span class="v cnx-tt-up">+519</span></div>
+            <div class="chart"><figure class="ilx ilx-line" style="color:var(--info);--ilx-len:1008.6;--ilx-h:190px" role="img" aria-label="Margin financing chart"><svg viewBox="0 0 560 190" preserveAspectRatio="none" aria-hidden="true"><defs></defs><line class="ilx-ref" x1="0" y1="20.0" x2="560" y2="20.0"/><path class="ilx-path" d="M0.0 146.99 L2.55 143.7 L5.09 144.23 L7.64 139.88 L10.18 139.78 L12.73 146.94 L15.27 142.22 L17.82 145.77 L20.36 146.83 L22.91 143.81 L25.45 146.35 L28.0 142.75 L30.55 142.75 L33.09 147.09 L35.64 147.73 L38.18 145.13 L40.73 142.96 L43.27 149.96 L45.82 153.3 L48.36 145.29 L50.91 140.52 L53.45 145.29 L56.0 146.78 L58.55 142.85 L61.09 143.22 L63.64 147.36 L66.18 145.03 L68.73 149.22 L71.27 149.06 L73.82 145.77 L76.36 146.94 L78.91 144.07 L81.45 144.81 L84.0 143.12 L86.55 144.23 L89.09 136.86 L91.64 142.32 L94.18 138.88 L96.73 140.31 L99.27 144.07 L101.82 139.72 L104.36 143.22 L106.91 144.07 L109.45 141.1 L112.0 141.9 L114.55 145.03 L117.09 144.13 L119.64 146.62 L122.18 147.78 L124.73 145.08 L127.27 148.37 L129.82 145.29 L132.36 143.38 L134.91 148.31 L137.45 146.35 L140.0 149.16 L142.55 147.73 L145.09 133.84 L147.64 145.61 L150.18 141.21 L152.73 135.11 L155.27 146.03 L157.82 143.91 L160.36 150.22 L162.91 146.78 L165.45 154.62 L168.0 152.87 L170.55 157.12 L173.09 156.43 L175.64 150.43 L178.18 152.56 L180.73 149.11 L183.27 153.62 L185.82 150.91 L188.36 150.65 L190.91 154.15 L193.45 151.76 L196.0 146.78 L198.55 147.31 L201.09 152.18 L203.64 144.92 L206.18 153.51 L208.73 150.75 L211.27 155.52 L213.82 155.79 L216.36 150.86 L218.91 151.02 L221.45 157.06 L224.0 157.12 L226.55 163.27 L229.09 161.25 L231.64 158.81 L234.18 160.99 L236.73 157.17 L239.27 156.32 L241.82 158.28 L244.36 158.71 L246.91 154.68 L249.45 154.31 L252.0 158.92 L254.55 157.06 L257.09 154.41 L259.64 154.68 L262.18 159.34 L264.73 156.8 L267.27 159.55 L269.82 157.65 L272.36 162.05 L274.91 161.62 L277.45 155.42 L280.0 154.84 L282.55 159.4 L285.09 157.27 L287.64 152.08 L290.18 154.41 L292.73 145.19 L295.27 146.19 L297.82 150.12 L300.36 148.74 L302.91 145.87 L305.45 146.46 L308.0 141.95 L310.55 140.89 L313.09 145.45 L315.64 137.34 L318.18 144.02 L320.73 139.94 L323.27 155.26 L325.82 156.69 L328.36 153.3 L330.91 156.06 L333.45 150.81 L336.0 154.57 L338.55 151.02 L341.09 152.29 L343.64 157.7 L346.18 157.96 L348.73 155.05 L351.27 155.68 L353.82 152.56 L356.36 151.5 L358.91 154.04 L361.45 156.48 L364.0 152.66 L366.55 155.21 L369.09 152.03 L371.64 154.09 L374.18 152.45 L376.73 150.01 L379.27 156.8 L381.82 170.0 L384.36 153.62 L386.91 155.47 L389.45 151.23 L392.0 151.39 L394.55 142.32 L397.09 143.33 L399.64 146.62 L402.18 144.23 L404.73 138.61 L407.27 138.4 L409.82 142.43 L412.36 141.95 L414.91 145.87 L417.45 146.03 L420.0 142.43 L422.55 144.71 L425.09 142.0 L427.64 134.05 L430.18 144.23 L432.73 144.66 L435.27 149.06 L437.82 150.59 L440.36 148.21 L442.91 149.16 L445.45 150.54 L448.0 148.42 L450.55 151.55 L453.09 151.5 L455.64 150.06 L458.18 150.54 L460.73 147.36 L463.27 148.63 L465.82 142.85 L468.36 142.0 L470.91 135.85 L473.45 138.29 L476.0 133.57 L478.55 133.15 L481.09 136.44 L483.64 136.38 L486.18 133.26 L488.73 131.03 L491.27 134.0 L493.82 129.76 L496.36 133.57 L498.91 136.01 L501.45 129.76 L504.0 132.14 L506.55 127.9 L509.09 136.86 L511.64 133.47 L514.18 135.59 L516.73 125.67 L519.27 129.12 L521.82 133.94 L524.36 134.1 L526.91 131.51 L529.45 133.41 L532.0 124.35 L534.55 125.57 L537.09 120.0 L539.64 124.56 L542.18 116.61 L544.73 115.39 L547.27 122.92 L549.82 121.86 L552.36 130.92 L554.91 131.19 L557.45 127.69 L560.0 130.5"/><circle class="ilx-dot" cx="560.0" cy="130.5" r="3.2"/></svg><span class="ilx-reflab" style="top:10.5%">4.7</span><span class="ilx-d ilx-d0">2020-08-18</span><span class="ilx-d ilx-d1">2026-08-27</span><span class="ilx-tag">2.62<span class="ilx-u"><span class="l-en">%</span><span class="l-zh">%</span></span></span></figure></div>
             
           </div>
           <div>
             <div class="cnx-eyebrow"><span class="l-en">Sentiment thermometer</span><span class="l-zh">情绪温度计</span></div>
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 6px">
-              <span class="cnx-bignum">¥1.82<span class="l-en">T</span><span class="l-zh">万亿</span></span>
+              <span class="cnx-bignum">¥2.14<span class="l-en">T</span><span class="l-zh">万亿</span></span>
             </div>
             <div class="cnx-kv"><span class="k"><span class="l-en">Band</span><span class="l-zh">区间</span></span><span class="v"><span class="l-en">mania</span><span class="l-zh">狂热</span></span></div>
             
-            <div class="cnx-kv"><span class="k"><span class="l-en">Turnover heat</span><span class="l-zh">成交热度</span></span><span class="v cnx-tt-up"><span class="l-en">90th percentile</span><span class="l-zh">第90百分位</span><span class="l-en"> — elevated</span><span class="l-zh"> — 偏高</span></span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Turnover heat</span><span class="l-zh">成交热度</span></span><span class="v cnx-tt-up"><span class="l-en">93rd percentile</span><span class="l-zh">第93百分位</span><span class="l-en"> — elevated</span><span class="l-zh"> — 偏高</span></span></div>
             
             
-            <div class="cnx-kv"><span class="k"><span class="l-en">Limit-up / down</span><span class="l-zh">涨停 / 跌停</span></span><span class="v cnx-tt-up">77</span> / <span class="cnx-tt-dn">3</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Limit-up / down</span><span class="l-zh">涨停 / 跌停</span></span><span class="v cnx-tt-up">82</span> / <span class="cnx-tt-dn">1</span></div>
             
-            <div class="chart"><figure class="ilx ilx-line" style="color:var(--warn);--ilx-len:2506.6;--ilx-h:150px" role="img" aria-label="Market turnover chart"><svg viewBox="0 0 560 150" preserveAspectRatio="none" aria-hidden="true"><defs></defs><line class="ilx-ref" x1="0" y1="115.62" x2="560" y2="115.62"/><path class="ilx-path" d="M0.0 115.24 L2.55 110.64 L5.09 117.15 L7.64 110.86 L10.18 115.45 L12.73 114.02 L15.27 120.15 L17.82 116.55 L20.36 122.22 L22.91 121.75 L25.45 115.59 L28.0 120.08 L30.55 122.98 L33.09 108.49 L35.64 119.95 L38.18 118.38 L40.73 123.41 L43.27 115.72 L45.82 122.17 L48.36 122.93 L50.91 125.12 L53.45 125.79 L56.0 120.6 L58.55 125.71 L61.09 120.56 L63.64 124.2 L66.18 128.04 L68.73 127.86 L71.27 125.31 L73.82 129.56 L76.36 124.64 L78.91 122.56 L81.45 128.65 L84.0 126.12 L86.55 127.77 L89.09 129.14 L91.64 118.67 L94.18 122.42 L96.73 129.0 L99.27 132.76 L101.82 128.99 L104.36 128.99 L106.91 131.69 L109.45 132.12 L112.0 119.59 L114.55 125.25 L117.09 131.42 L119.64 131.13 L122.18 132.69 L124.73 130.35 L127.27 110.14 L129.82 100.62 L132.36 33.82 L134.91 102.79 L137.45 78.38 L140.0 75.14 L142.55 97.06 L145.09 86.2 L147.64 73.86 L150.18 91.79 L152.73 58.56 L155.27 63.35 L157.82 89.4 L160.36 88.21 L162.91 104.6 L165.45 99.56 L168.0 88.44 L170.55 98.28 L173.09 75.18 L175.64 79.73 L178.18 103.26 L180.73 97.65 L183.27 106.19 L185.82 100.88 L188.36 106.33 L190.91 113.28 L193.45 107.14 L196.0 116.41 L198.55 103.37 L201.09 103.45 L203.64 111.42 L206.18 105.73 L208.73 82.95 L211.27 91.09 L213.82 83.61 L216.36 89.55 L218.91 75.07 L221.45 99.81 L224.0 84.23 L226.55 87.24 L229.09 98.5 L231.64 95.17 L234.18 99.92 L236.73 99.99 L239.27 110.85 L241.82 115.86 L244.36 94.11 L246.91 91.21 L249.45 111.99 L252.0 117.29 L254.55 106.98 L257.09 114.24 L259.64 109.26 L262.18 98.98 L264.73 108.3 L267.27 104.1 L269.82 111.71 L272.36 108.56 L274.91 114.83 L277.45 110.23 L280.0 105.18 L282.55 109.78 L285.09 100.75 L287.64 99.02 L290.18 112.6 L292.73 110.78 L295.27 94.55 L297.82 98.58 L300.36 108.14 L302.91 99.99 L305.45 91.36 L308.0 100.41 L310.55 85.03 L313.09 86.03 L315.64 90.38 L318.18 83.94 L320.73 98.55 L323.27 91.37 L325.82 76.91 L328.36 73.7 L330.91 56.03 L333.45 67.52 L336.0 43.23 L338.55 52.63 L341.09 69.65 L343.64 82.55 L346.18 64.62 L348.73 72.7 L351.27 44.26 L353.82 77.99 L356.36 65.61 L358.91 76.19 L361.45 60.56 L364.0 79.71 L366.55 92.88 L369.09 93.86 L371.64 70.94 L374.18 67.39 L376.73 86.17 L379.27 76.28 L381.82 83.84 L384.36 83.33 L386.91 91.82 L389.45 83.22 L392.0 95.93 L394.55 86.33 L397.09 97.12 L399.64 89.55 L402.18 78.76 L404.73 93.33 L407.27 86.56 L409.82 86.07 L412.36 76.72 L414.91 80.52 L417.45 53.64 L420.0 17.24 L422.55 51.77 L425.09 62.14 L427.64 45.86 L430.18 40.5 L432.73 54.28 L435.27 62.7 L437.82 77.3 L440.36 82.72 L442.91 75.5 L445.45 44.56 L448.0 69.91 L450.55 75.46 L453.09 60.6 L455.64 67.51 L458.18 80.68 L460.73 67.93 L463.27 84.1 L465.82 81.87 L468.36 87.37 L470.91 95.08 L473.45 67.84 L476.0 70.99 L478.55 62.71 L481.09 68.63 L483.64 55.57 L486.18 62.63 L488.73 41.62 L491.27 31.12 L493.82 52.48 L496.36 52.74 L498.91 33.04 L501.45 38.52 L504.0 55.91 L506.55 44.7 L509.09 60.72 L511.64 63.75 L514.18 41.97 L516.73 45.99 L519.27 24.65 L521.82 40.06 L524.36 27.26 L526.91 63.5 L529.45 36.22 L532.0 55.19 L534.55 68.89 L537.09 50.6 L539.64 84.51 L542.18 64.24 L544.73 82.32 L547.27 75.16 L549.82 60.17 L552.36 63.98 L554.91 77.53 L557.45 65.23 L560.0 88.55"/><circle class="ilx-dot" cx="560.0" cy="88.55" r="3.2"/></svg><span class="ilx-reflab" style="top:77.1%">10000</span><span class="ilx-d ilx-d0">2024-03-11</span><span class="ilx-d ilx-d1">2026-08-26</span><span class="ilx-tag">18,218<span class="ilx-u"><span class="l-en">亿</span><span class="l-zh">亿</span></span></span></figure></div>
+            <div class="chart"><figure class="ilx ilx-line" style="color:var(--warn);--ilx-len:2503.7;--ilx-h:150px" role="img" aria-label="Market turnover chart"><svg viewBox="0 0 560 150" preserveAspectRatio="none" aria-hidden="true"><defs></defs><line class="ilx-ref" x1="0" y1="115.62" x2="560" y2="115.62"/><path class="ilx-path" d="M0.0 115.24 L2.55 110.64 L5.09 117.15 L7.64 110.86 L10.18 115.45 L12.73 114.02 L15.27 120.15 L17.82 116.55 L20.36 122.22 L22.91 121.75 L25.45 115.59 L28.0 120.08 L30.55 122.98 L33.09 108.49 L35.64 119.95 L38.18 118.38 L40.73 123.41 L43.27 115.72 L45.82 122.17 L48.36 122.93 L50.91 125.12 L53.45 125.79 L56.0 120.6 L58.55 125.71 L61.09 120.56 L63.64 124.2 L66.18 128.04 L68.73 127.86 L71.27 125.31 L73.82 129.56 L76.36 124.64 L78.91 122.56 L81.45 128.65 L84.0 126.12 L86.55 127.77 L89.09 129.14 L91.64 118.67 L94.18 122.42 L96.73 129.0 L99.27 132.76 L101.82 128.99 L104.36 129.69 L106.91 131.69 L109.45 132.12 L112.0 119.59 L114.55 125.25 L117.09 131.42 L119.64 131.13 L122.18 132.69 L124.73 130.35 L127.27 110.14 L129.82 100.62 L132.36 33.82 L134.91 102.79 L137.45 78.38 L140.0 75.14 L142.55 97.06 L145.09 73.86 L147.64 91.79 L150.18 71.13 L152.73 58.56 L155.27 63.35 L157.82 95.97 L160.36 88.21 L162.91 104.6 L165.45 99.56 L168.0 88.44 L170.55 98.28 L173.09 75.18 L175.64 79.73 L178.18 103.26 L180.73 97.65 L183.27 106.19 L185.82 100.88 L188.36 106.33 L190.91 107.14 L193.45 116.41 L196.0 103.37 L198.55 110.64 L201.09 103.45 L203.64 111.42 L206.18 97.35 L208.73 82.95 L211.27 91.09 L213.82 83.61 L216.36 75.07 L218.91 85.14 L221.45 99.81 L224.0 84.23 L226.55 87.24 L229.09 98.5 L231.64 95.17 L234.18 99.92 L236.73 99.99 L239.27 110.85 L241.82 115.86 L244.36 94.11 L246.91 91.21 L249.45 111.99 L252.0 117.29 L254.55 106.98 L257.09 114.24 L259.64 103.62 L262.18 98.98 L264.73 108.3 L267.27 104.1 L269.82 111.71 L272.36 109.61 L274.91 114.83 L277.45 110.23 L280.0 105.18 L282.55 106.18 L285.09 99.02 L287.64 106.37 L290.18 112.6 L292.73 110.78 L295.27 94.55 L297.82 99.27 L300.36 108.14 L302.91 99.99 L305.45 91.36 L308.0 100.41 L310.55 85.03 L313.09 86.03 L315.64 90.38 L318.18 83.94 L320.73 98.55 L323.27 91.37 L325.82 72.6 L328.36 73.7 L330.91 56.03 L333.45 63.62 L336.0 43.23 L338.55 52.63 L341.09 71.21 L343.64 82.55 L346.18 64.62 L348.73 44.26 L351.27 77.99 L353.82 65.61 L356.36 77.21 L358.91 60.56 L361.45 79.71 L364.0 84.19 L366.55 92.88 L369.09 93.86 L371.64 67.39 L374.18 71.16 L376.73 86.17 L379.27 76.28 L381.82 83.84 L384.36 91.82 L386.91 83.22 L389.45 88.41 L392.0 95.93 L394.55 97.12 L397.09 80.98 L399.64 89.55 L402.18 78.76 L404.73 93.33 L407.27 85.27 L409.82 86.07 L412.36 76.72 L414.91 80.52 L417.45 44.73 L420.0 17.24 L422.55 51.77 L425.09 62.14 L427.64 40.5 L430.18 41.2 L432.73 62.7 L435.27 64.05 L437.82 78.58 L440.36 82.72 L442.91 66.84 L445.45 44.56 L448.0 69.91 L450.55 75.46 L453.09 60.6 L455.64 68.94 L458.18 80.68 L460.73 67.93 L463.27 87.17 L465.82 81.87 L468.36 93.59 L470.91 95.08 L473.45 67.84 L476.0 70.99 L478.55 62.71 L481.09 55.57 L483.64 64.55 L486.18 57.68 L488.73 31.12 L491.27 36.96 L493.82 52.74 L496.36 33.04 L498.91 52.23 L501.45 38.52 L504.0 55.91 L506.55 46.43 L509.09 61.47 L511.64 63.75 L514.18 41.97 L516.73 24.65 L519.27 39.64 L521.82 27.26 L524.36 42.99 L526.91 63.5 L529.45 36.22 L532.0 58.99 L534.55 68.89 L537.09 50.6 L539.64 84.51 L542.18 64.24 L544.73 82.32 L547.27 60.17 L549.82 77.18 L552.36 63.98 L554.91 77.53 L557.45 88.55 L560.0 78.04"/><circle class="ilx-dot" cx="560.0" cy="78.04" r="3.2"/></svg><span class="ilx-reflab" style="top:77.1%">10000</span><span class="ilx-d ilx-d0">2024-03-11</span><span class="ilx-d ilx-d1">2026-08-27</span><span class="ilx-tag">21,410<span class="ilx-u"><span class="l-en">亿</span><span class="l-zh">亿</span></span></span></figure></div>
             
           </div>
         </div>
@@ -2103,9 +2124,9 @@
           <div>
             <div class="cnx-eyebrow"><span class="l-en">Breadth — is the move broad?</span><span class="l-zh">宽度 — 行情是否广泛？</span></div>
             
-            <div class="cnx-kv"><span class="k"><span class="l-en">Above 50-day</span><span class="l-zh">50日上方</span></span><span class="v">48.3%</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">Above 200-day</span><span class="l-zh">200日上方</span></span><span class="v">32.0%</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">Advancers vs decliners</span><span class="l-zh">涨跌家数</span></span><span class="v"><span class="cnx-tt-up">1167</span> / <span class="cnx-tt-dn">492</span></span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Above 50-day</span><span class="l-zh">50日上方</span></span><span class="v">48.2%</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Above 200-day</span><span class="l-zh">200日上方</span></span><span class="v">31.9%</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Advancers vs decliners</span><span class="l-zh">涨跌家数</span></span><span class="v"><span class="cnx-tt-up">1173</span> / <span class="cnx-tt-dn">493</span></span></div>
             <div class="cnx-kv"><span class="k"><span class="l-en">New highs − lows</span><span class="l-zh">新高-新低</span></span><span class="v">4</span></div>
             
           </div>
@@ -2190,12 +2211,12 @@
             <div class="cnx-eyebrow"><span class="l-en">Southbound flow · mainland → Hong Kong</span><span class="l-zh">南向资金 · 内地 → 香港</span></div>
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 8px">
-              <span class="cnx-bignum" style="color:var(--up)">+¥32亿</span>
+              <span class="cnx-bignum" style="color:var(--up)">+¥12亿</span>
             </div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">20-day cumulative</span><span class="l-zh">20日累计</span></span><span class="v cnx-tt-up">+¥66亿</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">Buy-day streak</span><span class="l-zh">净买入天数</span></span><span class="v">9/20</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">20-day cumulative</span><span class="l-zh">20日累计</span></span><span class="v cnx-tt-up">+¥82亿</span></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Buy-day streak</span><span class="l-zh">净买入天数</span></span><span class="v">10/20</span></div>
             <div class="cnx-kv"><span class="k"><span class="l-en">Total HK holdings</span><span class="l-zh">港股持仓市值</span></span><span class="v">¥12.3<span class="l-en">T</span><span class="l-zh">万亿</span></span></div>
-            <div class="chart"><figure class="ilx ilx-baseline" style="color:var(--info);--ilx-len:2232.5;--ilx-h:190px" role="img" aria-label="Southbound cumulative flow chart"><svg viewBox="0 0 560 190" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="ilxct-4f11a2fa"><rect x="0" y="0" width="560" height="158.06"/></clipPath><clipPath id="ilxcb-4f11a2fa"><rect x="0" y="158.06" width="560" height="31.939999999999998"/></clipPath><linearGradient id="ilxgu-4f11a2fa" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity=".40"/><stop offset="1" stop-color="var(--up)" stop-opacity="0"/></linearGradient><linearGradient id="ilxgd-4f11a2fa" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--down)" stop-opacity=".40"/><stop offset="1" stop-color="var(--down)" stop-opacity="0"/></linearGradient><path id="ilxa-4f11a2fa" d="M0.0 158.06 L0.0 133.31 L2.55 133.09 L5.09 139.11 L7.64 130.97 L10.18 142.02 L12.73 134.36 L15.27 138.97 L17.82 141.57 L20.36 132.02 L22.91 137.85 L25.45 131.81 L28.0 132.16 L30.55 125.9 L33.09 122.4 L35.64 115.26 L38.18 118.68 L40.73 104.51 L43.27 104.07 L45.82 99.31 L48.36 100.34 L50.91 87.18 L53.45 86.11 L56.0 96.52 L58.55 89.86 L61.09 86.83 L63.64 88.37 L66.18 95.28 L68.73 95.22 L71.27 86.27 L73.82 77.18 L76.36 101.35 L78.91 93.41 L81.45 111.61 L84.0 103.72 L86.55 111.94 L89.09 104.3 L91.64 105.27 L94.18 101.77 L96.73 109.52 L99.27 95.1 L101.82 83.85 L104.36 76.27 L106.91 67.36 L109.45 66.13 L112.0 74.26 L114.55 71.14 L117.09 83.32 L119.64 80.74 L122.18 89.01 L124.73 92.19 L127.27 103.72 L129.82 90.76 L132.36 101.11 L134.91 81.16 L137.45 64.59 L140.0 62.93 L142.55 54.86 L145.09 49.84 L147.64 28.19 L150.18 24.36 L152.73 40.39 L155.27 36.03 L157.82 54.38 L160.36 55.58 L162.91 69.28 L165.45 56.86 L168.0 39.84 L170.55 20.0 L173.09 37.84 L175.64 35.54 L178.18 22.7 L180.73 34.21 L183.27 50.28 L185.82 51.82 L188.36 76.49 L190.91 91.09 L193.45 140.71 L196.0 138.47 L198.55 144.72 L201.09 146.54 L203.64 159.81 L206.18 144.95 L208.73 127.84 L211.27 134.73 L213.82 124.26 L216.36 110.82 L218.91 112.0 L221.45 109.02 L224.0 114.67 L226.55 109.34 L229.09 106.92 L231.64 108.13 L234.18 113.94 L236.73 110.43 L239.27 106.52 L241.82 107.89 L244.36 103.14 L246.91 106.68 L249.45 100.78 L252.0 109.59 L254.55 97.14 L257.09 92.71 L259.64 75.98 L262.18 93.77 L264.73 78.7 L267.27 80.22 L269.82 86.53 L272.36 72.21 L274.91 62.86 L277.45 68.53 L280.0 83.66 L282.55 99.12 L285.09 81.41 L287.64 92.45 L290.18 82.62 L292.73 82.16 L295.27 62.23 L297.82 84.18 L300.36 67.89 L302.91 72.72 L305.45 54.15 L308.0 55.04 L310.55 63.06 L313.09 53.14 L315.64 67.17 L318.18 62.3 L320.73 83.52 L323.27 78.15 L325.82 90.13 L328.36 79.69 L330.91 86.33 L333.45 78.34 L336.0 87.38 L338.55 88.79 L341.09 90.52 L343.64 83.28 L346.18 76.56 L348.73 71.72 L351.27 82.64 L353.82 86.18 L356.36 98.65 L358.91 102.29 L361.45 110.76 L364.0 108.22 L366.55 126.12 L369.09 125.34 L371.64 135.31 L374.18 139.9 L376.73 146.57 L379.27 137.18 L381.82 132.29 L384.36 132.86 L386.91 126.28 L389.45 127.35 L392.0 119.88 L394.55 118.78 L397.09 122.41 L399.64 117.25 L402.18 127.31 L404.73 128.44 L407.27 103.6 L409.82 109.74 L412.36 93.13 L414.91 92.64 L417.45 109.75 L420.0 89.32 L422.55 103.65 L425.09 107.52 L427.64 87.47 L430.18 98.95 L432.73 117.96 L435.27 104.68 L437.82 132.14 L440.36 110.27 L442.91 131.83 L445.45 142.21 L448.0 114.16 L450.55 131.19 L453.09 148.13 L455.64 144.86 L458.18 128.06 L460.73 141.51 L463.27 123.34 L465.82 132.95 L468.36 124.3 L470.91 129.04 L473.45 116.28 L476.0 132.62 L478.55 116.72 L481.09 132.3 L483.64 143.08 L486.18 152.71 L488.73 146.74 L491.27 145.08 L493.82 138.82 L496.36 145.03 L498.91 134.87 L501.45 141.65 L504.0 151.67 L506.55 141.56 L509.09 131.7 L511.64 144.82 L514.18 155.64 L516.73 143.35 L519.27 129.05 L521.82 137.45 L524.36 114.11 L526.91 113.07 L529.45 104.92 L532.0 118.39 L534.55 108.88 L537.09 115.65 L539.64 128.1 L542.18 126.88 L544.73 143.79 L547.27 151.09 L549.82 161.5 L552.36 152.05 L554.91 166.4 L557.45 170.0 L560.0 154.18 L560.0 158.06 Z"/><path id="ilxl-4f11a2fa" d="M0.0 133.31 L2.55 133.09 L5.09 139.11 L7.64 130.97 L10.18 142.02 L12.73 134.36 L15.27 138.97 L17.82 141.57 L20.36 132.02 L22.91 137.85 L25.45 131.81 L28.0 132.16 L30.55 125.9 L33.09 122.4 L35.64 115.26 L38.18 118.68 L40.73 104.51 L43.27 104.07 L45.82 99.31 L48.36 100.34 L50.91 87.18 L53.45 86.11 L56.0 96.52 L58.55 89.86 L61.09 86.83 L63.64 88.37 L66.18 95.28 L68.73 95.22 L71.27 86.27 L73.82 77.18 L76.36 101.35 L78.91 93.41 L81.45 111.61 L84.0 103.72 L86.55 111.94 L89.09 104.3 L91.64 105.27 L94.18 101.77 L96.73 109.52 L99.27 95.1 L101.82 83.85 L104.36 76.27 L106.91 67.36 L109.45 66.13 L112.0 74.26 L114.55 71.14 L117.09 83.32 L119.64 80.74 L122.18 89.01 L124.73 92.19 L127.27 103.72 L129.82 90.76 L132.36 101.11 L134.91 81.16 L137.45 64.59 L140.0 62.93 L142.55 54.86 L145.09 49.84 L147.64 28.19 L150.18 24.36 L152.73 40.39 L155.27 36.03 L157.82 54.38 L160.36 55.58 L162.91 69.28 L165.45 56.86 L168.0 39.84 L170.55 20.0 L173.09 37.84 L175.64 35.54 L178.18 22.7 L180.73 34.21 L183.27 50.28 L185.82 51.82 L188.36 76.49 L190.91 91.09 L193.45 140.71 L196.0 138.47 L198.55 144.72 L201.09 146.54 L203.64 159.81 L206.18 144.95 L208.73 127.84 L211.27 134.73 L213.82 124.26 L216.36 110.82 L218.91 112.0 L221.45 109.02 L224.0 114.67 L226.55 109.34 L229.09 106.92 L231.64 108.13 L234.18 113.94 L236.73 110.43 L239.27 106.52 L241.82 107.89 L244.36 103.14 L246.91 106.68 L249.45 100.78 L252.0 109.59 L254.55 97.14 L257.09 92.71 L259.64 75.98 L262.18 93.77 L264.73 78.7 L267.27 80.22 L269.82 86.53 L272.36 72.21 L274.91 62.86 L277.45 68.53 L280.0 83.66 L282.55 99.12 L285.09 81.41 L287.64 92.45 L290.18 82.62 L292.73 82.16 L295.27 62.23 L297.82 84.18 L300.36 67.89 L302.91 72.72 L305.45 54.15 L308.0 55.04 L310.55 63.06 L313.09 53.14 L315.64 67.17 L318.18 62.3 L320.73 83.52 L323.27 78.15 L325.82 90.13 L328.36 79.69 L330.91 86.33 L333.45 78.34 L336.0 87.38 L338.55 88.79 L341.09 90.52 L343.64 83.28 L346.18 76.56 L348.73 71.72 L351.27 82.64 L353.82 86.18 L356.36 98.65 L358.91 102.29 L361.45 110.76 L364.0 108.22 L366.55 126.12 L369.09 125.34 L371.64 135.31 L374.18 139.9 L376.73 146.57 L379.27 137.18 L381.82 132.29 L384.36 132.86 L386.91 126.28 L389.45 127.35 L392.0 119.88 L394.55 118.78 L397.09 122.41 L399.64 117.25 L402.18 127.31 L404.73 128.44 L407.27 103.6 L409.82 109.74 L412.36 93.13 L414.91 92.64 L417.45 109.75 L420.0 89.32 L422.55 103.65 L425.09 107.52 L427.64 87.47 L430.18 98.95 L432.73 117.96 L435.27 104.68 L437.82 132.14 L440.36 110.27 L442.91 131.83 L445.45 142.21 L448.0 114.16 L450.55 131.19 L453.09 148.13 L455.64 144.86 L458.18 128.06 L460.73 141.51 L463.27 123.34 L465.82 132.95 L468.36 124.3 L470.91 129.04 L473.45 116.28 L476.0 132.62 L478.55 116.72 L481.09 132.3 L483.64 143.08 L486.18 152.71 L488.73 146.74 L491.27 145.08 L493.82 138.82 L496.36 145.03 L498.91 134.87 L501.45 141.65 L504.0 151.67 L506.55 141.56 L509.09 131.7 L511.64 144.82 L514.18 155.64 L516.73 143.35 L519.27 129.05 L521.82 137.45 L524.36 114.11 L526.91 113.07 L529.45 104.92 L532.0 118.39 L534.55 108.88 L537.09 115.65 L539.64 128.1 L542.18 126.88 L544.73 143.79 L547.27 151.09 L549.82 161.5 L552.36 152.05 L554.91 166.4 L557.45 170.0 L560.0 154.18"/></defs><use href="#ilxa-4f11a2fa" class="ilx-area" fill="url(#ilxgu-4f11a2fa)" clip-path="url(#ilxct-4f11a2fa)"/><use href="#ilxa-4f11a2fa" class="ilx-area" fill="url(#ilxgd-4f11a2fa)" clip-path="url(#ilxcb-4f11a2fa)"/><line class="ilx-water" x1="0" y1="158.06" x2="560" y2="158.06"/><use href="#ilxl-4f11a2fa" class="ilx-path ilx-up" clip-path="url(#ilxct-4f11a2fa)"/><use href="#ilxl-4f11a2fa" class="ilx-path ilx-down" clip-path="url(#ilxcb-4f11a2fa)"/><circle class="ilx-dot ilx-dot-up" cx="560.0" cy="154.18" r="3.2"/></svg><span class="ilx-d ilx-d0">2024-08-27</span><span class="ilx-d ilx-d1">2026-08-27</span><span class="ilx-tag">6,583.4<span class="ilx-u"><span class="l-en">亿</span><span class="l-zh">亿</span></span></span></figure></div>
+            <div class="chart"><figure class="ilx ilx-baseline" style="color:var(--info);--ilx-len:2159.1;--ilx-h:190px" role="img" aria-label="Southbound cumulative flow chart"><svg viewBox="0 0 560 190" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="ilxct-91890f63"><rect x="0" y="0" width="560" height="158.06"/></clipPath><clipPath id="ilxcb-91890f63"><rect x="0" y="158.06" width="560" height="31.939999999999998"/></clipPath><linearGradient id="ilxgu-91890f63" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--up)" stop-opacity=".40"/><stop offset="1" stop-color="var(--up)" stop-opacity="0"/></linearGradient><linearGradient id="ilxgd-91890f63" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="var(--down)" stop-opacity=".40"/><stop offset="1" stop-color="var(--down)" stop-opacity="0"/></linearGradient><path id="ilxa-91890f63" d="M0.0 158.06 L0.0 133.09 L2.55 139.11 L5.09 130.97 L7.64 132.95 L10.18 142.02 L12.73 134.36 L15.27 140.32 L17.82 141.57 L20.36 132.02 L22.91 137.27 L25.45 131.81 L28.0 131.45 L30.55 122.4 L33.09 121.13 L35.64 115.26 L38.18 111.71 L40.73 102.81 L43.27 104.07 L45.82 99.31 L48.36 98.63 L50.91 86.11 L53.45 96.52 L56.0 89.86 L58.55 86.83 L61.09 91.4 L63.64 88.37 L66.18 95.28 L68.73 89.29 L71.27 77.18 L73.82 82.57 L76.36 101.35 L78.91 98.29 L81.45 111.61 L84.0 111.94 L86.55 104.6 L89.09 105.27 L91.64 103.37 L94.18 109.52 L96.73 95.1 L99.27 89.68 L101.82 75.85 L104.36 76.27 L106.91 66.34 L109.45 66.13 L112.0 74.26 L114.55 75.86 L117.09 83.32 L119.64 80.74 L122.18 92.19 L124.73 103.72 L127.27 90.76 L129.82 101.11 L132.36 81.16 L134.91 75.93 L137.45 56.87 L140.0 62.93 L142.55 49.84 L145.09 42.08 L147.64 24.36 L150.18 26.35 L152.73 40.39 L155.27 42.97 L157.82 55.58 L160.36 69.28 L162.91 56.86 L165.45 54.89 L168.0 20.0 L170.55 37.84 L173.09 33.32 L175.64 35.54 L178.18 22.7 L180.73 34.21 L183.27 56.51 L185.82 51.82 L188.36 91.09 L190.91 111.08 L193.45 140.71 L196.0 143.14 L198.55 147.46 L201.09 159.81 L203.64 144.95 L206.18 138.7 L208.73 127.84 L211.27 129.66 L213.82 110.82 L216.36 112.0 L218.91 109.02 L221.45 114.67 L224.0 109.34 L226.55 106.92 L229.09 108.34 L231.64 110.07 L234.18 113.94 L236.73 107.5 L239.27 105.62 L241.82 107.89 L244.36 103.14 L246.91 100.78 L249.45 106.14 L252.0 109.59 L254.55 92.71 L257.09 75.98 L259.64 93.77 L262.18 78.7 L264.73 83.53 L267.27 86.53 L269.82 68.87 L272.36 72.21 L274.91 62.86 L277.45 77.39 L280.0 99.02 L282.55 99.12 L285.09 81.41 L287.64 92.45 L290.18 82.16 L292.73 62.23 L295.27 79.06 L297.82 84.18 L300.36 59.57 L302.91 72.72 L305.45 54.15 L308.0 63.06 L310.55 59.4 L313.09 53.14 L315.64 67.17 L318.18 69.78 L320.73 83.52 L323.27 90.13 L325.82 79.69 L328.36 86.33 L330.91 79.24 L333.45 78.34 L336.0 89.93 L338.55 90.52 L341.09 83.28 L343.64 80.08 L346.18 76.56 L348.73 71.72 L351.27 86.18 L353.82 88.14 L356.36 102.29 L358.91 105.31 L361.45 110.76 L364.0 118.93 L366.55 126.12 L369.09 132.1 L371.64 141.54 L374.18 146.57 L376.73 137.18 L379.27 136.83 L381.82 132.29 L384.36 128.86 L386.91 124.05 L389.45 127.35 L392.0 118.78 L394.55 121.56 L397.09 122.41 L399.64 117.25 L402.18 128.44 L404.73 125.97 L407.27 103.6 L409.82 109.74 L412.36 92.64 L414.91 109.75 L417.45 93.49 L420.0 89.32 L422.55 107.52 L425.09 87.47 L427.64 99.19 L430.18 102.8 L432.73 117.96 L435.27 114.16 L437.82 132.14 L440.36 110.27 L442.91 135.0 L445.45 142.21 L448.0 114.16 L450.55 131.9 L453.09 148.13 L455.64 128.06 L458.18 144.32 L460.73 141.51 L463.27 123.34 L465.82 132.95 L468.36 124.3 L470.91 116.28 L473.45 132.62 L476.0 116.72 L478.55 132.3 L481.09 133.6 L483.64 152.71 L486.18 152.55 L488.73 145.08 L491.27 138.82 L493.82 145.03 L496.36 134.87 L498.91 148.34 L501.45 151.67 L504.0 141.56 L506.55 131.7 L509.09 145.55 L511.64 155.64 L514.18 143.35 L516.73 141.62 L519.27 129.05 L521.82 130.49 L524.36 113.07 L526.91 104.92 L529.45 118.39 L532.0 108.88 L534.55 115.65 L537.09 119.54 L539.64 128.1 L542.18 136.07 L544.73 151.09 L547.27 161.5 L549.82 156.08 L552.36 152.05 L554.91 170.0 L557.45 164.67 L560.0 153.2 L560.0 158.06 Z"/><path id="ilxl-91890f63" d="M0.0 133.09 L2.55 139.11 L5.09 130.97 L7.64 132.95 L10.18 142.02 L12.73 134.36 L15.27 140.32 L17.82 141.57 L20.36 132.02 L22.91 137.27 L25.45 131.81 L28.0 131.45 L30.55 122.4 L33.09 121.13 L35.64 115.26 L38.18 111.71 L40.73 102.81 L43.27 104.07 L45.82 99.31 L48.36 98.63 L50.91 86.11 L53.45 96.52 L56.0 89.86 L58.55 86.83 L61.09 91.4 L63.64 88.37 L66.18 95.28 L68.73 89.29 L71.27 77.18 L73.82 82.57 L76.36 101.35 L78.91 98.29 L81.45 111.61 L84.0 111.94 L86.55 104.6 L89.09 105.27 L91.64 103.37 L94.18 109.52 L96.73 95.1 L99.27 89.68 L101.82 75.85 L104.36 76.27 L106.91 66.34 L109.45 66.13 L112.0 74.26 L114.55 75.86 L117.09 83.32 L119.64 80.74 L122.18 92.19 L124.73 103.72 L127.27 90.76 L129.82 101.11 L132.36 81.16 L134.91 75.93 L137.45 56.87 L140.0 62.93 L142.55 49.84 L145.09 42.08 L147.64 24.36 L150.18 26.35 L152.73 40.39 L155.27 42.97 L157.82 55.58 L160.36 69.28 L162.91 56.86 L165.45 54.89 L168.0 20.0 L170.55 37.84 L173.09 33.32 L175.64 35.54 L178.18 22.7 L180.73 34.21 L183.27 56.51 L185.82 51.82 L188.36 91.09 L190.91 111.08 L193.45 140.71 L196.0 143.14 L198.55 147.46 L201.09 159.81 L203.64 144.95 L206.18 138.7 L208.73 127.84 L211.27 129.66 L213.82 110.82 L216.36 112.0 L218.91 109.02 L221.45 114.67 L224.0 109.34 L226.55 106.92 L229.09 108.34 L231.64 110.07 L234.18 113.94 L236.73 107.5 L239.27 105.62 L241.82 107.89 L244.36 103.14 L246.91 100.78 L249.45 106.14 L252.0 109.59 L254.55 92.71 L257.09 75.98 L259.64 93.77 L262.18 78.7 L264.73 83.53 L267.27 86.53 L269.82 68.87 L272.36 72.21 L274.91 62.86 L277.45 77.39 L280.0 99.02 L282.55 99.12 L285.09 81.41 L287.64 92.45 L290.18 82.16 L292.73 62.23 L295.27 79.06 L297.82 84.18 L300.36 59.57 L302.91 72.72 L305.45 54.15 L308.0 63.06 L310.55 59.4 L313.09 53.14 L315.64 67.17 L318.18 69.78 L320.73 83.52 L323.27 90.13 L325.82 79.69 L328.36 86.33 L330.91 79.24 L333.45 78.34 L336.0 89.93 L338.55 90.52 L341.09 83.28 L343.64 80.08 L346.18 76.56 L348.73 71.72 L351.27 86.18 L353.82 88.14 L356.36 102.29 L358.91 105.31 L361.45 110.76 L364.0 118.93 L366.55 126.12 L369.09 132.1 L371.64 141.54 L374.18 146.57 L376.73 137.18 L379.27 136.83 L381.82 132.29 L384.36 128.86 L386.91 124.05 L389.45 127.35 L392.0 118.78 L394.55 121.56 L397.09 122.41 L399.64 117.25 L402.18 128.44 L404.73 125.97 L407.27 103.6 L409.82 109.74 L412.36 92.64 L414.91 109.75 L417.45 93.49 L420.0 89.32 L422.55 107.52 L425.09 87.47 L427.64 99.19 L430.18 102.8 L432.73 117.96 L435.27 114.16 L437.82 132.14 L440.36 110.27 L442.91 135.0 L445.45 142.21 L448.0 114.16 L450.55 131.9 L453.09 148.13 L455.64 128.06 L458.18 144.32 L460.73 141.51 L463.27 123.34 L465.82 132.95 L468.36 124.3 L470.91 116.28 L473.45 132.62 L476.0 116.72 L478.55 132.3 L481.09 133.6 L483.64 152.71 L486.18 152.55 L488.73 145.08 L491.27 138.82 L493.82 145.03 L496.36 134.87 L498.91 148.34 L501.45 151.67 L504.0 141.56 L506.55 131.7 L509.09 145.55 L511.64 155.64 L514.18 143.35 L516.73 141.62 L519.27 129.05 L521.82 130.49 L524.36 113.07 L526.91 104.92 L529.45 118.39 L532.0 108.88 L534.55 115.65 L537.09 119.54 L539.64 128.1 L542.18 136.07 L544.73 151.09 L547.27 161.5 L549.82 156.08 L552.36 152.05 L554.91 170.0 L557.45 164.67 L560.0 153.2"/></defs><use href="#ilxa-91890f63" class="ilx-area" fill="url(#ilxgu-91890f63)" clip-path="url(#ilxct-91890f63)"/><use href="#ilxa-91890f63" class="ilx-area" fill="url(#ilxgd-91890f63)" clip-path="url(#ilxcb-91890f63)"/><line class="ilx-water" x1="0" y1="158.06" x2="560" y2="158.06"/><use href="#ilxl-91890f63" class="ilx-path ilx-up" clip-path="url(#ilxct-91890f63)"/><use href="#ilxl-91890f63" class="ilx-path ilx-down" clip-path="url(#ilxcb-91890f63)"/><circle class="ilx-dot ilx-dot-up" cx="560.0" cy="153.2" r="3.2"/></svg><span class="ilx-d ilx-d0">2024-08-28</span><span class="ilx-d ilx-d1">2026-08-28</span><span class="ilx-tag">8,240.2<span class="ilx-u"><span class="l-en">亿</span><span class="l-zh">亿</span></span></span></figure></div>
             
           </div>
           <div>
@@ -2207,24 +2228,24 @@
               <tr><th><span class="l-en">Stock</span><span class="l-zh">股票</span></th><th class="r"><span class="l-en">Turnover亿</span><span class="l-zh">成交亿</span></th><th class="r"><span class="l-en">Day</span><span class="l-zh">当日</span></th></tr>
               
               <tr><td>中际旭创 <span style="color:var(--muted)">300308</span></td>
-                <td class="r">47.02</td>
-                <td class="r cnx-tt-up">+1.8%</td></tr>
-              
-              <tr><td>新易盛 <span style="color:var(--muted)">300502</span></td>
-                <td class="r">27.78</td>
-                <td class="r cnx-tt-up">+2.6%</td></tr>
+                <td class="r">55.22</td>
+                <td class="r cnx-tt-dn">-0.9%</td></tr>
               
               <tr><td>宁德时代 <span style="color:var(--muted)">300750</span></td>
-                <td class="r">27.14</td>
-                <td class="r cnx-tt-dn">-1.6%</td></tr>
+                <td class="r">47.22</td>
+                <td class="r cnx-tt-dn">-1.2%</td></tr>
               
-              <tr><td>澜起科技 <span style="color:var(--muted)">688008</span></td>
-                <td class="r">21.19</td>
-                <td class="r cnx-tt-up">+10.1%</td></tr>
+              <tr><td>新易盛 <span style="color:var(--muted)">300502</span></td>
+                <td class="r">34.76</td>
+                <td class="r cnx-tt-dn">-2.5%</td></tr>
               
-              <tr><td>阳光电源 <span style="color:var(--muted)">300274</span></td>
-                <td class="r">20.96</td>
-                <td class="r cnx-tt-dn">-12.2%</td></tr>
+              <tr><td>寒武纪 <span style="color:var(--muted)">688256</span></td>
+                <td class="r">21.1</td>
+                <td class="r cnx-tt-dn">-0.1%</td></tr>
+              
+              <tr><td>生益科技 <span style="color:var(--muted)">600183</span></td>
+                <td class="r">19.44</td>
+                <td class="r cnx-tt-up">+3.3%</td></tr>
               
             </table>
             
@@ -2233,13 +2254,13 @@
             <table class="cnx-mt">
               <tr><th><span class="l-en">Buys</span><span class="l-zh">买入</span></th><th class="r"><span class="l-en">Net亿</span><span class="l-zh">净亿</span></th></tr>
               
-              <tr><td>小米集团-W</td><td class="r cnx-tt-up">+6.5</td></tr>
+              <tr><td>胜宏科技</td><td class="r cnx-tt-up">+3.2</td></tr>
               
-              <tr><td>MINIMAX-W</td><td class="r cnx-tt-up">+6.2</td></tr>
+              <tr><td>智谱</td><td class="r cnx-tt-up">+3.0</td></tr>
               
-              <tr><td>腾讯控股</td><td class="r cnx-tt-up">+4.5</td></tr>
+              <tr><td>长飞光纤光缆</td><td class="r cnx-tt-up">+2.4</td></tr>
               
-              <tr><td>华虹宏力</td><td class="r cnx-tt-up">+3.5</td></tr>
+              <tr><td>建滔积层板</td><td class="r cnx-tt-up">+1.6</td></tr>
               
             </table>
             
@@ -2278,13 +2299,13 @@
           <div>
             
             <div class="cnx-eyebrow"><span class="l-en">Construction demand</span><span class="l-zh">建材需求</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">Steel + iron-ore gauge</span><span class="l-zh">钢铁+铁矿指标</span></span><span class="v">-0.98</span></div>
-            <div class="chart"><figure class="ilx ilx-line" style="color:var(--info);--ilx-len:2691.8;--ilx-h:170px" role="img" aria-label="Construction demand chart"><svg viewBox="0 0 560 170" preserveAspectRatio="none" aria-hidden="true"><defs></defs><path class="ilx-path" d="M0.0 70.67 L2.55 59.35 L5.09 75.19 L7.64 99.33 L10.18 104.61 L12.73 134.03 L15.27 117.44 L17.82 94.05 L20.36 86.51 L22.91 81.98 L25.45 89.53 L28.0 142.33 L30.55 144.59 L33.09 116.68 L35.64 136.29 L38.18 121.21 L40.73 151.38 L43.27 77.46 L45.82 18.62 L48.36 54.07 L50.91 34.46 L53.45 84.25 L56.0 66.14 L58.55 82.74 L61.09 76.7 L63.64 48.79 L66.18 61.62 L68.73 47.28 L71.27 42.76 L73.82 72.93 L76.36 97.07 L78.91 66.9 L81.45 65.39 L84.0 75.95 L86.55 66.14 L89.09 51.06 L91.64 45.02 L94.18 60.11 L96.73 37.48 L99.27 52.56 L101.82 49.55 L104.36 75.19 L106.91 64.63 L109.45 69.91 L112.0 81.23 L114.55 66.14 L117.09 87.26 L119.64 94.05 L122.18 91.79 L124.73 56.34 L127.27 48.04 L129.82 53.32 L132.36 54.83 L134.91 42.76 L137.45 41.25 L140.0 57.84 L142.55 57.09 L145.09 45.78 L147.64 32.2 L150.18 54.83 L152.73 51.81 L155.27 76.7 L157.82 72.93 L160.36 81.98 L162.91 81.23 L165.45 64.63 L168.0 94.81 L170.55 78.97 L173.09 73.69 L175.64 87.26 L178.18 76.7 L180.73 114.42 L183.27 136.29 L185.82 121.96 L188.36 120.45 L190.91 133.28 L193.45 127.24 L196.0 112.16 L198.55 121.21 L201.09 130.26 L203.64 140.82 L206.18 122.72 L208.73 108.38 L211.27 121.96 L213.82 120.45 L216.36 143.84 L218.91 140.06 L221.45 151.38 L224.0 145.34 L226.55 140.06 L229.09 138.56 L231.64 143.08 L234.18 144.59 L236.73 138.56 L239.27 142.33 L241.82 133.28 L244.36 136.29 L246.91 115.93 L249.45 118.94 L252.0 94.81 L254.55 95.56 L257.09 84.25 L259.64 82.74 L262.18 45.78 L264.73 50.3 L267.27 70.67 L269.82 78.97 L272.36 66.14 L274.91 80.47 L277.45 62.37 L280.0 82.74 L282.55 91.79 L285.09 93.3 L287.64 82.74 L290.18 79.72 L292.73 95.56 L295.27 92.54 L297.82 81.23 L300.36 75.19 L302.91 83.49 L305.45 78.21 L308.0 68.41 L310.55 66.9 L313.09 84.25 L315.64 93.3 L318.18 82.74 L320.73 80.47 L323.27 101.59 L325.82 103.1 L328.36 94.81 L330.91 100.84 L333.45 74.44 L336.0 79.72 L338.55 100.84 L341.09 98.58 L343.64 107.63 L346.18 100.09 L348.73 85.75 L351.27 92.54 L353.82 82.74 L356.36 82.74 L358.91 72.18 L361.45 72.93 L364.0 97.07 L366.55 94.05 L369.09 106.87 L371.64 101.59 L374.18 86.51 L376.73 88.02 L379.27 86.51 L381.82 78.97 L384.36 83.49 L386.91 57.09 L389.45 68.41 L392.0 63.13 L394.55 78.97 L397.09 86.51 L399.64 78.21 L402.18 86.51 L404.73 75.19 L407.27 88.77 L409.82 102.35 L412.36 103.86 L414.91 104.61 L417.45 118.19 L420.0 106.87 L422.55 107.63 L425.09 103.86 L427.64 95.56 L430.18 80.47 L432.73 66.9 L435.27 72.93 L437.82 63.88 L440.36 73.69 L442.91 69.16 L445.45 74.44 L448.0 77.46 L450.55 95.56 L453.09 105.37 L455.64 97.82 L458.18 87.26 L460.73 78.97 L463.27 76.7 L465.82 81.23 L468.36 75.95 L470.91 52.56 L473.45 48.79 L476.0 57.09 L478.55 60.86 L481.09 77.46 L483.64 70.67 L486.18 85.0 L488.73 85.0 L491.27 78.21 L493.82 94.05 L496.36 85.75 L498.91 91.79 L501.45 85.0 L504.0 100.09 L506.55 109.14 L509.09 112.91 L511.64 106.87 L514.18 117.44 L516.73 113.66 L519.27 106.12 L521.82 112.91 L524.36 97.82 L526.91 101.59 L529.45 106.12 L532.0 112.16 L534.55 114.42 L537.09 132.52 L539.64 144.59 L542.18 130.26 L544.73 140.82 L547.27 135.54 L549.82 136.29 L552.36 131.77 L554.91 133.28 L557.45 122.72 L560.0 122.72"/><circle class="ilx-dot" cx="560.0" cy="122.72" r="3.2"/></svg><span class="ilx-d ilx-d0">2024-07-31</span><span class="ilx-d ilx-d1">2026-08-27</span><span class="ilx-tag">93.1</span></figure></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">Steel + iron-ore gauge</span><span class="l-zh">钢铁+铁矿指标</span></span><span class="v">-0.85</span></div>
+            <div class="chart"><figure class="ilx ilx-line" style="color:var(--info);--ilx-len:2589.9;--ilx-h:170px" role="img" aria-label="Construction demand chart"><svg viewBox="0 0 560 170" preserveAspectRatio="none" aria-hidden="true"><defs></defs><path class="ilx-path" d="M0.0 67.65 L2.55 59.35 L5.09 75.19 L7.64 81.98 L10.18 103.86 L12.73 133.28 L15.27 117.44 L17.82 115.93 L20.36 85.75 L22.91 81.98 L25.45 88.77 L28.0 109.14 L30.55 142.33 L33.09 143.84 L35.64 115.93 L38.18 120.45 L40.73 151.38 L43.27 116.68 L45.82 18.62 L48.36 53.32 L50.91 44.27 L53.45 34.46 L56.0 84.25 L58.55 66.14 L61.09 82.74 L63.64 63.88 L66.18 48.79 L68.73 61.62 L71.27 42.76 L73.82 61.62 L76.36 72.93 L78.91 97.07 L81.45 66.9 L84.0 65.39 L86.55 75.19 L89.09 63.13 L91.64 45.02 L94.18 59.35 L96.73 37.48 L99.27 36.72 L101.82 52.56 L104.36 51.81 L106.91 75.19 L109.45 64.63 L112.0 81.23 L114.55 66.14 L117.09 86.51 L119.64 88.77 L122.18 93.3 L124.73 78.97 L127.27 48.04 L129.82 53.32 L132.36 45.78 L134.91 54.83 L137.45 42.76 L140.0 41.25 L142.55 57.84 L145.09 55.58 L147.64 32.95 L150.18 31.44 L152.73 54.07 L155.27 54.83 L157.82 76.7 L160.36 75.95 L162.91 81.98 L165.45 64.63 L168.0 92.54 L170.55 94.81 L173.09 78.21 L175.64 73.69 L178.18 86.51 L180.73 93.3 L183.27 132.52 L185.82 136.29 L188.36 119.7 L190.91 132.52 L193.45 120.45 L196.0 111.4 L198.55 124.98 L201.09 124.98 L203.64 137.8 L206.18 140.06 L208.73 108.38 L211.27 109.14 L213.82 121.96 L216.36 120.45 L218.91 145.34 L221.45 139.31 L224.0 150.63 L226.55 144.59 L229.09 137.8 L231.64 139.31 L234.18 143.08 L236.73 144.59 L239.27 137.8 L241.82 142.33 L244.36 133.28 L246.91 136.29 L249.45 115.93 L252.0 117.44 L254.55 92.54 L257.09 94.81 L259.64 81.98 L262.18 61.62 L264.73 45.78 L267.27 53.32 L269.82 78.97 L272.36 76.7 L274.91 66.14 L277.45 61.62 L280.0 82.74 L282.55 81.98 L285.09 91.79 L287.64 92.54 L290.18 81.98 L292.73 79.72 L295.27 94.81 L297.82 91.03 L300.36 75.19 L302.91 76.7 L305.45 83.49 L308.0 74.44 L310.55 66.14 L313.09 69.91 L315.64 88.02 L318.18 92.54 L320.73 79.72 L323.27 93.3 L325.82 102.35 L328.36 100.84 L330.91 94.81 L333.45 86.51 L336.0 74.44 L338.55 91.03 L341.09 100.09 L343.64 106.88 L346.18 99.33 L348.73 98.58 L351.27 85.0 L353.82 91.79 L356.36 81.98 L358.91 81.98 L361.45 72.18 L364.0 82.74 L366.55 103.1 L369.09 93.3 L371.64 106.12 L374.18 97.82 L376.73 86.51 L379.27 87.26 L381.82 78.21 L384.36 82.74 L386.91 56.34 L389.45 67.65 L392.0 61.62 L394.55 63.13 L397.09 84.25 L399.64 85.75 L402.18 77.46 L404.73 74.44 L407.27 88.77 L409.82 88.02 L412.36 103.1 L414.91 103.86 L417.45 111.4 L420.0 117.44 L422.55 106.12 L425.09 106.88 L427.64 95.56 L430.18 87.26 L432.73 69.91 L435.27 66.9 L437.82 72.18 L440.36 63.13 L442.91 72.93 L445.45 69.16 L448.0 76.7 L450.55 89.53 L453.09 105.37 L455.64 103.1 L458.18 85.0 L460.73 87.26 L463.27 76.7 L465.82 81.23 L468.36 75.19 L470.91 69.16 L473.45 48.04 L476.0 52.56 L478.55 60.86 L481.09 66.9 L483.64 76.7 L486.18 69.91 L488.73 84.25 L491.27 77.46 L493.82 89.53 L496.36 94.05 L498.91 85.0 L501.45 84.25 L504.0 100.09 L506.55 102.35 L509.09 112.16 L511.64 106.12 L514.18 116.68 L516.73 116.68 L519.27 106.88 L521.82 112.91 L524.36 100.84 L526.91 97.07 L529.45 105.37 L532.0 107.63 L534.55 113.66 L537.09 114.42 L539.64 143.84 L542.18 142.33 L544.73 129.5 L547.27 137.8 L549.82 134.03 L552.36 135.54 L554.91 131.01 L557.45 125.73 L560.0 116.68"/><circle class="ilx-dot" cx="560.0" cy="116.68" r="3.2"/></svg><span class="ilx-d ilx-d0">2024-08-01</span><span class="ilx-d ilx-d1">2026-08-28</span><span class="ilx-tag">93.5</span></figure></div>
             
             
             <div class="cnx-eyebrow"><span class="l-en">Fiscal & market stress</span><span class="l-zh">财政与市场压力</span></div>
-            <div class="cnx-kv"><span class="k"><span class="l-en">10Y government yield</span><span class="l-zh">10年期国债</span></span><span class="v">1.699%</span></div>
-            <div class="chart"><figure class="ilx ilx-line" style="color:var(--warn);--ilx-len:1155.6;--ilx-h:170px" role="img" aria-label="Government bond yield chart"><svg viewBox="0 0 560 170" preserveAspectRatio="none" aria-hidden="true"><defs></defs><path class="ilx-path" d="M0.0 33.21 L2.53 32.29 L5.07 37.25 L7.6 33.12 L10.14 38.81 L12.67 31.65 L15.2 35.69 L17.74 34.95 L20.27 18.62 L22.81 21.65 L25.34 29.36 L27.87 32.57 L30.41 28.16 L32.94 28.99 L35.48 39.26 L38.01 36.97 L40.54 35.59 L43.08 38.16 L45.61 44.13 L48.14 40.36 L50.68 52.38 L53.21 50.27 L55.75 40.73 L58.28 38.16 L60.81 43.21 L63.35 36.33 L65.88 43.85 L68.42 38.16 L70.95 43.67 L73.48 46.51 L76.02 38.99 L78.55 39.45 L81.09 36.42 L83.62 38.71 L86.15 43.85 L88.69 50.37 L91.22 42.93 L93.76 45.23 L96.29 41.1 L98.82 36.79 L101.36 39.81 L103.89 40.27 L106.43 44.22 L108.96 42.29 L111.49 48.35 L114.03 53.94 L116.56 61.1 L119.1 58.16 L121.63 53.48 L124.16 55.14 L126.7 44.59 L129.23 44.31 L131.76 50.27 L134.3 47.52 L136.83 55.32 L139.37 51.47 L141.9 37.7 L144.43 41.37 L146.97 30.36 L149.5 32.2 L152.04 38.62 L154.57 34.86 L157.1 40.0 L159.64 35.41 L162.17 28.62 L164.71 30.82 L167.24 32.57 L169.77 32.57 L172.31 29.72 L174.84 31.47 L177.38 35.87 L179.91 36.33 L182.44 34.68 L184.98 35.32 L187.51 39.45 L190.05 38.53 L192.58 47.25 L195.11 48.16 L197.65 50.46 L200.18 48.26 L202.71 52.84 L205.25 57.61 L207.78 51.19 L210.32 53.3 L212.85 56.05 L215.38 59.91 L217.92 53.48 L220.45 53.67 L222.99 61.47 L225.52 64.77 L228.05 60.73 L230.59 63.12 L233.12 55.78 L235.66 55.59 L238.19 50.27 L240.72 52.84 L243.26 48.44 L245.79 48.44 L248.33 55.04 L250.86 55.23 L253.39 49.91 L255.93 49.08 L258.46 55.23 L261.0 55.78 L263.53 62.2 L266.06 62.11 L268.6 69.72 L271.13 66.15 L273.67 69.17 L276.2 68.99 L278.73 77.61 L281.27 74.49 L283.8 83.39 L286.33 90.0 L288.87 82.39 L291.4 85.23 L293.94 88.26 L296.47 87.06 L299.0 91.93 L301.54 93.58 L304.07 81.93 L306.61 83.49 L309.14 87.71 L311.67 86.06 L314.21 88.99 L316.74 89.72 L319.28 95.23 L321.81 95.41 L324.34 87.71 L326.88 89.82 L329.41 100.73 L331.95 102.57 L334.48 91.28 L337.01 96.15 L339.55 100.09 L342.08 100.92 L344.62 110.46 L347.15 110.83 L349.68 91.1 L352.22 104.4 L354.75 100.0 L357.29 99.08 L359.82 104.5 L362.35 104.04 L364.89 108.07 L367.42 108.26 L369.95 130.64 L372.49 131.1 L375.02 141.65 L377.56 140.64 L380.09 151.29 L382.62 144.13 L385.16 149.09 L387.69 151.38 L390.23 141.75 L392.76 142.2 L395.29 132.66 L397.83 131.47 L400.36 123.86 L402.9 131.01 L405.43 148.08 L407.96 147.07 L410.5 144.96 L413.03 148.81 L415.57 142.94 L418.1 139.45 L420.63 144.5 L423.17 144.04 L425.7 147.71 L428.24 147.34 L430.77 146.06 L433.3 147.25 L435.84 143.95 L438.37 142.66 L440.9 137.53 L443.44 142.85 L445.97 133.86 L448.51 136.33 L451.04 128.26 L453.57 123.58 L456.11 129.45 L458.64 123.3 L461.18 130.74 L463.71 128.08 L466.24 131.01 L468.78 133.21 L471.31 131.38 L473.85 131.65 L476.38 127.71 L478.91 126.06 L481.45 129.54 L483.98 129.82 L486.52 127.34 L489.05 123.3 L491.58 129.64 L494.12 128.72 L496.65 131.65 L499.19 130.0 L501.72 133.76 L504.25 134.96 L506.79 131.38 L509.32 129.73 L511.86 132.11 L514.39 130.46 L516.92 134.41 L519.46 138.26 L521.99 135.42 L524.52 135.69 L527.06 138.72 L529.59 137.07 L532.13 141.75 L534.66 137.43 L537.19 139.36 L539.73 140.28 L542.26 137.62 L544.8 137.71 L547.33 139.27 L549.86 138.63 L552.4 141.2 L554.93 140.55 L557.47 143.76 L560.0 141.93"/><circle class="ilx-dot" cx="560.0" cy="141.93" r="3.2"/></svg><span class="ilx-d ilx-d0">2021-08-11</span><span class="ilx-d ilx-d1">2026-08-27</span><span class="ilx-tag">1.70<span class="ilx-u"><span class="l-en">%</span><span class="l-zh">%</span></span></span></figure></div>
+            <div class="cnx-kv"><span class="k"><span class="l-en">10Y government yield</span><span class="l-zh">10年期国债</span></span><span class="v">1.695%</span></div>
+            <div class="chart"><figure class="ilx ilx-line" style="color:var(--warn);--ilx-len:1150.2;--ilx-h:170px" role="img" aria-label="Government bond yield chart"><svg viewBox="0 0 560 170" preserveAspectRatio="none" aria-hidden="true"><defs></defs><path class="ilx-path" d="M0.0 35.69 L2.53 32.29 L5.07 37.25 L7.6 38.81 L10.14 34.22 L12.67 31.65 L15.2 35.69 L17.74 34.95 L20.27 18.62 L22.81 22.75 L25.34 29.36 L27.87 32.57 L30.41 28.16 L32.94 32.84 L35.48 39.26 L38.01 35.59 L40.54 38.16 L43.08 44.13 L45.61 38.99 L48.14 41.28 L50.68 52.38 L53.21 50.09 L55.75 40.73 L58.28 38.16 L60.81 43.21 L63.35 36.33 L65.88 43.85 L68.42 38.16 L70.95 43.67 L73.48 46.51 L76.02 37.89 L78.55 36.42 L81.09 39.54 L83.62 38.71 L86.15 44.13 L88.69 50.37 L91.22 42.93 L93.76 44.13 L96.29 37.89 L98.82 36.79 L101.36 40.27 L103.89 41.74 L106.43 44.22 L108.96 44.95 L111.49 53.94 L114.03 61.1 L116.56 55.32 L119.1 58.16 L121.63 53.48 L124.16 55.14 L126.7 44.31 L129.23 45.96 L131.76 50.27 L134.3 47.52 L136.83 55.32 L139.37 50.55 L141.9 37.7 L144.43 41.37 L146.97 30.36 L149.5 32.2 L152.04 38.62 L154.57 34.86 L157.1 40.0 L159.64 33.76 L162.17 28.62 L164.71 30.82 L167.24 32.57 L169.77 32.47 L172.31 29.72 L174.84 33.3 L177.38 36.33 L179.91 34.68 L182.44 36.05 L184.98 36.69 L187.51 39.45 L190.05 38.9 L192.58 48.16 L195.11 48.16 L197.65 50.46 L200.18 48.26 L202.71 52.84 L205.25 57.61 L207.78 51.19 L210.32 54.4 L212.85 56.05 L215.38 59.91 L217.92 53.48 L220.45 53.67 L222.99 62.48 L225.52 64.77 L228.05 60.73 L230.59 60.64 L233.12 55.59 L235.66 54.68 L238.19 50.27 L240.72 52.84 L243.26 48.44 L245.79 48.71 L248.33 55.04 L250.86 55.23 L253.39 49.63 L255.93 49.08 L258.46 55.78 L261.0 55.78 L263.53 63.12 L266.06 62.11 L268.6 69.72 L271.13 66.15 L273.67 69.17 L276.2 72.48 L278.73 77.61 L281.27 76.42 L283.8 85.23 L286.33 90.0 L288.87 82.39 L291.4 85.23 L293.94 88.44 L296.47 87.06 L299.0 93.58 L301.54 90.37 L304.07 81.93 L306.61 87.71 L309.14 85.41 L311.67 86.88 L314.21 89.72 L316.74 90.37 L319.28 95.41 L321.81 92.57 L324.34 87.71 L326.88 89.82 L329.41 100.73 L331.95 102.57 L334.48 91.28 L337.01 96.88 L339.55 100.92 L342.08 101.19 L344.62 110.64 L347.15 110.83 L349.68 91.1 L352.22 104.4 L354.75 99.08 L357.29 99.45 L359.82 105.87 L362.35 104.04 L364.89 108.26 L367.42 109.27 L369.95 131.1 L372.49 134.77 L375.02 142.48 L377.56 140.64 L380.09 151.29 L382.62 144.13 L385.16 151.38 L387.69 150.74 L390.23 140.0 L392.76 142.2 L395.29 131.47 L397.83 123.86 L400.36 131.01 L402.9 131.47 L405.43 148.08 L407.96 147.07 L410.5 144.96 L413.03 148.81 L415.57 142.94 L418.1 139.45 L420.63 144.5 L423.17 144.22 L425.7 147.71 L428.24 147.34 L430.77 146.06 L433.3 147.25 L435.84 142.66 L438.37 137.53 L440.9 141.84 L443.44 142.85 L445.97 133.86 L448.51 136.33 L451.04 127.98 L453.57 123.58 L456.11 129.45 L458.64 123.3 L461.18 130.74 L463.71 128.08 L466.24 131.75 L468.78 133.21 L471.31 131.38 L473.85 131.56 L476.38 127.71 L478.91 126.06 L481.45 129.54 L483.98 129.82 L486.52 127.34 L489.05 123.3 L491.58 129.82 L494.12 128.72 L496.65 131.65 L499.19 130.0 L501.72 134.96 L504.25 134.86 L506.79 129.82 L509.32 129.73 L511.86 132.11 L514.39 130.46 L516.92 136.15 L519.46 138.26 L521.99 135.42 L524.52 135.69 L527.06 138.72 L529.59 137.43 L532.13 141.75 L534.66 137.43 L537.19 139.36 L539.73 140.28 L542.26 137.62 L544.8 137.71 L547.33 139.27 L549.86 138.81 L552.4 141.2 L554.93 141.56 L557.47 143.76 L560.0 142.3"/><circle class="ilx-dot" cx="560.0" cy="142.3" r="3.2"/></svg><span class="ilx-d ilx-d0">2021-08-12</span><span class="ilx-d ilx-d1">2026-08-28</span><span class="ilx-tag">1.70<span class="ilx-u"><span class="l-en">%</span><span class="l-zh">%</span></span></span></figure></div>
             
             
             <div class="cnx-kv"><span class="k"><span class="l-en">Property stocks</span><span class="l-zh">地产股</span></span><span class="v cnx-tt-dn">-33.0% <span class="l-en">from</span><span class="l-zh">距</span> ATH</span></div>
@@ -2315,11 +2336,11 @@
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>China improving</b>: Growth remains weak but has recovered while inflation stays very cool</span><span class="l-zh"><b>中国改善</b>：增长仍然疲弱但已有复苏，通胀依然非常温和</span></li><li><span class="l-en"><b>Easing blocked</b>: Past support has not yet reached credit or wider liquidity</span><span class="l-zh"><b>宽松受阻</b>：此前支持措施尚未传导至信贷或整体流动性</span></li><li><span class="l-en"><b>Hong Kong split</b>: Global optimism helps, but mainland selling and peg outflows weigh</span><span class="l-zh"><b>香港分化</b>：全球乐观情绪带来支撑，但内地抛售和联系汇率资金外流构成压力</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>China squeeze</b>: Growth is improving, but system liquidity is still shrinking</span><span class="l-zh"><b>中国流动性挤压</b>：增长正在改善，但体系流动性仍在收缩</span></li><li><span class="l-en"><b>Hong Kong split</b>: Global optimism clashes with mainland selling and peg outflows</span><span class="l-zh"><b>香港市场分化</b>：全球乐观情绪与内地抛售及联系汇率资金外流形成冲突</span></li><li><span class="l-en"><b>Leaders stretched</b>: Healthcare and coal look extended; better groups may offer pullback setups</span><span class="l-zh"><b>领涨板块涨幅过大</b>：医疗和煤炭走势偏高；表现较好的板块回调时或有布局机会</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
         <span class="l-en"><b>What to do</b>: Watch — don't chase</span>
-        <span class="l-zh"><b>如何操作</b>：观望——不要追涨</span>
+        <span class="l-zh"><b>操作建议</b>：观望——不要追高</span>
       </span>
     </div>
   </div>
@@ -2353,51 +2374,44 @@
     <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-08-26</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">Mainland China remains in Growth-scare territory, though growth has improved. The next map direction is unclear because the transition guide is missing. Tight system liquidity is today's main driver.
+    <span class="l-en">Mainland China remains in a growth scare, though growth has improved while prices stay weak. The next direction is unclear because the transition signal is missing. Shrinking system liquidity is today’s main brake.
 
-Hong Kong shares the growth worry but faces stronger outside forces. Global risk appetite is supportive, while mainland selling, peg outflows and dollar uncertainty pull the other way.</span>
-    <span class="l-zh">中国内地仍处于增长恐慌区间，尽管增长已有改善。由于缺少转型指引，下一步走势尚不明确。系统流动性紧张是今日的主要驱动因素。
+Hong Kong sits in the same weak-growth area, but global optimism offers support. Mainland selling and peg outflows are pulling the other way.</span>
+    <span class="l-zh">中国内地仍处于增长担忧之中，尽管增长已有改善，但价格依然疲弱。由于缺乏转向信号，下一步方向尚不明朗。系统流动性收缩是当前的主要制约。
 
-香港同样面临增长担忧，但受到更强的外部力量影响。全球风险偏好提供支撑，而内地资金抛售、联系汇率资金外流和美元不确定性则形成反向压力。</span>
+香港同样处于增长疲弱区间，但全球乐观情绪提供支撑。内地资金抛售和联系汇率制度下的资金外流则构成反向压力。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Policy pipes</b>: Past easing says support is coming, system liquidity says money remains tight — the help is still stuck in the pipes</span><span class="l-zh"><b>政策传导</b>：此前宽松表明支持即将到来，系统流动性则显示资金依然紧张——援助仍滞留在传导管道中</span></li><li><span class="l-en"><b>Hong Kong split</b>: Global markets say risk appetite is strong, mainland flows say sell — outside support is masking local weakness</span><span class="l-zh"><b>香港分化</b>：全球市场显示风险偏好强劲，内地资金流向则发出卖出信号——外部支撑正在掩盖本地疲弱</span></li><li><span class="l-en"><b>Sector warning</b>: Coal and banks look strong, money-flow tracking says demand is fading — recent leaders appear stretched</span><span class="l-zh"><b>板块预警</b>：煤炭和银行看似强势，但资金流追踪显示需求正在减弱——近期领涨板块似已透支涨幅</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Policy pipes</b>: Past easing says support, the China liquidity read says money is shrinking — relief has not fully reached markets</span><span class="l-zh"><b>政策传导</b>：此前宽松释放支持信号，但中国流动性指标显示资金正在收缩——利好尚未完全传导至市场</span></li><li><span class="l-en"><b>Hong Kong mood</b>: Global markets say risk-on, mainland flows say sell — Hong Kong can lag even when overseas mood improves</span><span class="l-zh"><b>香港情绪</b>：全球市场偏向风险资产，内地资金流向却显示卖出——即使海外情绪改善，香港市场仍可能落后</span></li><li><span class="l-en"><b>Sector split</b>: Banks remain strong, but money is leaving them — their lead looks vulnerable</span><span class="l-zh"><b>行业分化</b>：银行股仍然强势，但资金正在流出——其领涨地位看起来较为脆弱</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If tight China liquidity keeps up → weak credit will delay broader gains in brokers and property</span><span class="l-zh">若中国流动性持续偏紧 → 信贷疲弱将推迟券商和地产板块的普遍上涨</span></li><li><span class="l-en">If mainland selling of Hong Kong keeps up → global optimism will struggle to lift local shares</span><span class="l-zh">若内地持续抛售港股 → 全球乐观情绪将难以提振本地股市</span></li></ul>
-    </div></div>
-  <div class="aib2-card aib2-card--full aib2-card--playbook">
-    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
-    <div class="aib2-prose">
-      <span class="l-en">Coal's price lead is now opposed by fading money flows and selling inside the group. That supports caution toward stretched mainland leaders.</span>
-      <span class="l-zh">煤炭价格的领先优势如今受到资金流减弱和板块内部抛售的冲击。这意味着应谨慎看待涨幅过大的内地龙头。</span>
-    </div>
-  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+      <ul class="aib2-items"><li><span class="l-en">If shrinking China liquidity keeps up → policy-sensitive shares struggle to sustain rebounds</span><span class="l-zh">如果中国流动性持续收缩 → 政策敏感型股票的反弹将难以持续</span></li><li><span class="l-en">If mainland selling and peg outflows keep up → Hong Kong trails global risk markets</span><span class="l-zh">若内地抛售和联系汇率资金外流持续，香港市场将落后于全球风险资产市场</span></li></ul>
+    </div></div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>China surveys improve</b>: the growth recovery gains firmer footing</span>
-          <span class="l-zh"><b>中国调查数据改善</b>：增长复苏基础更加稳固</span>
+          <span class="l-en"><b>August 31 growth survey</b>: improvement would support the healing story</span>
+          <span class="l-zh"><b>8月31日增长调查</b>：若改善，将支持经济修复逻辑</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Credit turns upward</b>: past easing is finally reaching the economy</span>
-          <span class="l-zh"><b>信贷转为上行</b>：此前的宽松政策终于传导至实体经济</span>
+          <span class="l-en"><b>China liquidity turns supportive</b>: easing is finally reaching the system</span>
+          <span class="l-zh"><b>中国流动性转向支持</b>：宽松政策终于开始传导至金融体系</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Peg outflows ease</b>: Hong Kong loses a key local drag</span>
-          <span class="l-zh"><b>联系汇率资金外流缓解</b>：香港市场一项关键本地拖累减弱</span>
+          <span class="l-en"><b>Mainland buying returns</b>: pressure on Hong Kong begins to ease</span>
+          <span class="l-zh"><b>内地买盘回归</b>：香港市场压力开始缓解</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Coal flows recover</b>: the warning against its recent lead weakens</span>
-          <span class="l-zh"><b>煤炭流动恢复</b>：对其近期领先走势的警示减弱</span>
+          <span class="l-en"><b>Chip pullback holds</b>: quiet buying may be gaining traction</span>
+          <span class="l-zh"><b>芯片股回调企稳</b>：低调买盘或正增强</span>
         </span>
       </li></ul>
   </div>
@@ -2422,76 +2436,76 @@ Hong Kong shares the growth worry but faces stronger outside forces. Global risk
         <div class="cnx-sep"></div>
         
         
-        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 789 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
+        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 811 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
         
         
         <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>提醒：日内请重点关注（以下均为北京时间）</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 100/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>央行定于9月4日发行科创未来(人工智能)金银纪念币一套 均为法定货币</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 格隆汇 · 82/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>光大期货：关注今晚全球央行年会，短线黄金谨慎对待</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 同花顺 · 82/100</span></div>
+          <div class="tx"><b>房贷最长可贷40年，深圳800万房子月供直降4313元！</b>
+            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 格隆汇 · 96/100</span></div>
         </div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>华尔街见闻早餐 | 2026年8月28日</b>
+          <div class="tx"><b>中国证监会发布《关于资本市场支持构建房地产发展新模式的意见》</b>
+            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 上海证券报 · 96/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>金十数据整理：昨日今晨重要新闻汇总（2026-08-29）</b>
+            <span class="sub"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span> · 金十数据 · 82/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">🏦</span>
+          <div class="tx"><b>8月28日杰克逊霍尔全球央行年会要点总结</b>
             <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 82/100</span></div>
         </div>
         
         
         <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>资本市场支持房地产新政落地 多措并举满足房企合理融资需求</b>
+            <span class="sub"><span class="l-en">Credit</span><span class="l-zh">信用</span> · Eastmoney · 79/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>证监会支持房企合理融资 助力构建房地产发展新模式</b>
+            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 证券时报 · 82/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>两部门：改革完善房地产信贷管理 推动加快构建房地产发展新模式</b>
+            <span class="sub"><span class="l-en">Credit</span><span class="l-zh">信用</span> · 上海证券报 · 82/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>专家：现房销售更强调“所见即所得”，契合存量房时代运行逻辑</b>
+            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 金十数据 · 74/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>工行副行长：预计零售、普惠贷款的资产质量也将保持在合理、可控的区间</b>
+            <span class="sub"><span class="l-en">Credit</span><span class="l-zh">信用</span> · 华尔街见闻 · 74/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
           <span class="ic">🏦</span>
-          <div class="tx"><b>中国央行公开市场今日净回笼2455亿元</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 76/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>商务部：推动人工智能等数智技术更好赋能服务贸易发展</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 金十数据 · 72/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>苹果公司：iCloud贵州项目健康发展 将持续投资贵州深耕数字经济</b>
-            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 富途牛牛 · 68/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>国家发改委：促进集成电路产业高质量发展 我国集成电路关键核心技术新突破</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 富途牛牛 · 60/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>今年1至7月全国社会物流总额214.5万亿元 同比增长5.0%</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 华尔街见闻 · 66/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>China retail fuel prices expected to rise at Aug 28 adjustment</b>
-            <span class="sub"><span class="l-en">Markets</span><span class="l-zh">市场</span> · 金十数据 · 66/100</span></div>
+          <div class="tx"><b>纳指科技指数收跌将近0.8%，半导体指数跌约3.5%，生物科技指数跌超2.7%</b>
+            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 74/100</span></div>
         </div>
         
         
@@ -2667,7 +2681,7 @@ Hong Kong shares the growth worry but faces stronger outside forces. Global risk
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-28 03:11 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-08-29 02:02 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -2922,5 +2936,6 @@ window.__CHART_SWAP__ = {
   }, true);
 })();
 </script>
+<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>
