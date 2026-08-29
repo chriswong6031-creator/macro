@@ -1,9 +1,9 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-08-29T04:14:04.556919+00:00",
+  "generated_at": "2026-08-29T06:13:54.933818+00:00",
   "global": {
-    "n_claims": 72435,
-    "n_grades": 93158,
+    "n_claims": 72440,
+    "n_grades": 92063,
     "n_with_falsifier": 677,
     "falsifier_coverage": 0.009346,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
@@ -220,9 +220,9 @@
       "n_hit_gradeable": 3360,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 2774,
-        "graded_5d_share": 0.784059,
-        "matured_21d_count": 954,
+        "graded_5d_count": 2742,
+        "graded_5d_share": 0.775014,
+        "matured_21d_count": 934,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
@@ -416,15 +416,15 @@
       }
     },
     "whitehouse": {
-      "n_claims": 156,
+      "n_claims": 161,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
       "hit_gradeable_share": 1.0,
-      "n_hit_gradeable": 156,
+      "n_hit_gradeable": 161,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 90,
-        "graded_5d_share": 0.576923,
+        "graded_5d_count": 86,
+        "graded_5d_share": 0.534161,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -440,7 +440,7 @@
         "channels_fill_rate": 0.0,
         "n_channels": 0,
         "source_id_fill_rate": 1.0,
-        "n_source_id": 156,
+        "n_source_id": 161,
         "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)"
       }
     }
@@ -773,9 +773,9 @@
       "n_hit_gradeable": 3360,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 2774,
-        "graded_5d_share": 0.784059,
-        "matured_21d_count": 954,
+        "graded_5d_count": 2742,
+        "graded_5d_share": 0.775014,
+        "matured_21d_count": 934,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
       },
@@ -998,15 +998,15 @@
       }
     },
     "whitehouse": {
-      "n_claims": 156,
+      "n_claims": 161,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
       "hit_gradeable_share": 1.0,
-      "n_hit_gradeable": 156,
+      "n_hit_gradeable": 161,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
-        "graded_5d_count": 90,
-        "graded_5d_share": 0.576923,
+        "graded_5d_count": 86,
+        "graded_5d_share": 0.534161,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -1022,13 +1022,13 @@
         "channels_fill_rate": 0.0,
         "n_channels": 0,
         "source_id_fill_rate": 1.0,
-        "n_source_id": 156,
+        "n_source_id": 161,
         "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)"
       }
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-08-29T04:11:42.886961+00:00",
+    "generated_at": "2026-08-29T06:11:36.822487+00:00",
     "grade_horizons": [
       5,
       21,

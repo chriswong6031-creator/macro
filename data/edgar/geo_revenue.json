@@ -1,6 +1,6 @@
 {
 "schema":"edgar.geo_revenue.v1",
-"updated":"2026-08-29T03:57:35.437723+00:00",
+"updated":"2026-08-29T05:58:27.487353+00:00",
 "by_ticker":{
 "AAPL":{
 "foreign_pct":63.5,
@@ -33621,6 +33621,29 @@
 }
 ]
 },
+"SENS":{
+"foreign_pct":20.8,
+"asof":"2025-12-31",
+"source":"10-K 2025-12-31",
+"fy":2025,
+"accession":"0001104659-26-022298",
+"method":"us_member",
+"concept":"RevenueFromContractWithCustomerExcludingAssessedTax",
+"by_region":[
+{
+"key":"US",
+"label":"US",
+"cls":"us",
+"pct":79.2
+},
+{
+"key":"NonUs",
+"label":"Non Us",
+"cls":"foreign_total",
+"pct":20.8
+}
+]
+},
 "EYPT":{
 "foreign_pct":4.4,
 "asof":"2025-12-31",
@@ -33891,10 +33914,10 @@
 "meta":{
 "universe":2841,
 "attempted":2310,
-"parsed":950,
+"parsed":951,
 "skips":{
-"no_geo_axis":990,
-"no_denominator":315,
+"no_geo_axis":995,
+"no_denominator":316,
 "no_10k":25,
 "no_instance":20,
 "em_gt_foreign":5,
