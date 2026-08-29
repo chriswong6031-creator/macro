@@ -940,7 +940,7 @@ class TestD2B2US:
         hold; a floor still fails on the defect this pins — CN/HK resolutions
         silently disappearing."""
         current = baked_idres.loc[baked_idres.groupby("node_id")["computed_at"].idxmax()]
-        for market, floor in (("cn", 1002), ("hk", 147)):
+        for market, floor in (("cn", 1005), ("hk", 147)):
             rows = current[current["market_scope"] == market]
             resolved = rows[rows["resolution_state"] == "RESOLVED"]
             assert len(resolved) >= floor
@@ -953,3 +953,27 @@ class TestD2B2US:
         gold = _resolve("co:us:GOLD", master_inputs, etf_symbols)
         assert b["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"
         assert gold["resolution_state"] == "DEFERRED_IDENTITY_EXCEPTION"
+
+
+def test_dated_current_catalog_rows_are_never_historical_evidence():
+    """Two-clock law, vendor-identity form (2026-08-28): the exclusion of the
+    current-catalog spaces from HISTORICAL mode used to be implemented as a row-shape
+    test (both bounds null), which was equivalent only while `store`/`yahoo_fetch`
+    could emit nothing but open rows. Since the EQR->VMRK key migration the `store`
+    space carries a DATED family, so a shape test would admit repo-catalog rows as
+    historical-naming evidence — the exact repeal the law forbids. Pin the boundary:
+    a dated `store` row never answers, an identically-dated `yahoo` row does."""
+    from lib.dataos.identity import VendorAliasTable
+
+    table = VendorAliasTable.from_records([
+        {"vendor": "store", "vendor_symbol": "OLD", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": None, "valid_to": "2026-08-18"},
+        {"vendor": "store", "vendor_symbol": "NEW", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": "2026-08-18", "valid_to": None},
+        {"vendor": "yahoo", "vendor_symbol": "OLD", "security_id": "SEC:US-XNYS-OLD",
+         "valid_from": None, "valid_to": "2026-08-18"},
+    ])
+    on = date(2026, 1, 2)
+    assert ir._historical_alias_resolve(table, "store", "OLD", on) is None
+    assert ir._historical_alias_resolve(table, "yahoo_fetch", "OLD", on) is None
+    assert ir._historical_alias_resolve(table, "yahoo", "OLD", on) == "SEC:US-XNYS-OLD"

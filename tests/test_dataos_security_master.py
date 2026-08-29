@@ -1064,8 +1064,11 @@ def test_h9_705_rows_tombstone_byte_frozen_except_two_columns(master: pd.DataFra
     restoring last-good artifacts on the store/VMRK VendorAliasPruneConflict
     since ~08-20), so the committed master advances with lawful admissions again
     and an exact count would rot on the next one; the floor still catches the
-    regression this test exists for — rows silently DISAPPEARING."""
-    assert len(master[master["country"] == "US"]) >= 705 + 508 + 1
+    regression this test exists for — rows silently DISAPPEARING — and the loose
+    ceiling catches its mirror, a duplicate-mint regression phantom-minting rows
+    en masse (fine-grained admission accounting is the receipt tests' job)."""
+    n_us = len(master[master["country"] == "US"])
+    assert 705 + 508 + 1 <= n_us <= 705 + 508 + 1 + 120
     tomb = master[master["security_id"] == "SEC:US-XNYS-VMRK"].iloc[0]
     assert tomb["issuer_state"] == "NO_ISSUER_EVIDENCE"
     assert pd.isna(tomb["issuer_id"])
@@ -2786,7 +2789,7 @@ def test_cn_hk_rows_country_agrees_with_their_own_mic(master: pd.DataFrame) -> N
 
 # ── US existing identity fixtures unchanged (boundary "US existing identity
 #    fixtures remain behaviorally unchanged") ────────────────────────────────────
-def test_us_coverage_is_unchanged_by_the_cn_hk_admission(receipt: dict) -> None:
+def test_us_coverage_scope_holds_through_lawful_admissions(receipt: dict) -> None:
     """The CN/HK admission stage runs entirely additively (a SEPARATE US-rows-only
     input to `mint_master_rows`, see build()'s `existing_us_rows` split) — the
     `coverage` block stays scoped to the same legacy curated universe either way
@@ -2802,7 +2805,7 @@ def test_us_coverage_is_unchanged_by_the_cn_hk_admission(receipt: dict) -> None:
     scopes), and the same PR unwedged the nightly artifact refresh, so exact
     counts rot with the next lawful admission — floors keep the downward bite
     (coverage silently SHRINKING is the defect this pins against)."""
-    assert receipt["coverage"]["total"] >= 713
+    assert 713 <= receipt["coverage"]["total"] <= 713 + 120
     assert receipt["coverage"]["resolved"] >= 703
     assert receipt["coverage"]["unresolved"] <= 10
     assert receipt["coverage"]["total"] == (
@@ -3209,19 +3212,23 @@ def test_gmi_us_accounting_completeness_real_data(receipt: dict) -> None:
 
 # 15: regression pins — CN 984 + HK 147 + the pre-existing 705 US rows byte-identical
 # after the expansion run; legacy `coverage` block semantics unchanged (712-scope).
-def test_gmi_us_regression_pins_cn_hk_and_legacy_us_unchanged(
+def test_gmi_us_regression_bands_cn_hk_and_legacy_us(
     master: pd.DataFrame, receipt: dict,
 ) -> None:
-    # CN 984 -> 1005 (floor): the CN seed lanes kept admitting names after the
-    # D2B2-US bake (the committed artifact had already drifted to 1002 before
-    # the 2026-08-28 regeneration; this test was red against it), +3 more
-    # absorbed by that regeneration (002195/300088/300926).  US-side coverage
-    # moved 712->713 with LEG's exit-ledger admission, and the same PR unwedged
-    # the nightly artifact refresh — floors instead of exact counts so lawful
-    # admissions stop rotting this pin while a shrinking population still fails.
-    assert len(master[master["country"] == "CN"]) >= 1005
-    assert len(master[master["country"] == "HK"]) >= 147
-    assert receipt["coverage"]["total"] >= 713
+    # CN 984 -> 1005: the CN seed lanes kept admitting names after the D2B2-US
+    # bake (the committed artifact had already drifted to 1002 before the
+    # 2026-08-28 regeneration; this test was red against it), +3 more absorbed
+    # by that regeneration (002195/300088/300926).  US-side coverage moved
+    # 712->713 with LEG's exit-ledger admission, and the same PR unwedged the
+    # nightly artifact refresh — BANDS instead of exact counts: the floor fails
+    # on populations silently shrinking, the loose ceiling on a cross-scope wave
+    # mass-minting rows into a market it does not own (the "unchanged" bite the
+    # old exact pin carried), while lawful admissions no longer rot the pin.
+    n_cn = len(master[master["country"] == "CN"])
+    n_hk = len(master[master["country"] == "HK"])
+    assert 1005 <= n_cn <= 1005 + 180
+    assert 147 <= n_hk <= 147 + 60
+    assert 713 <= receipt["coverage"]["total"] <= 713 + 120
     assert receipt["coverage"]["resolved"] >= 703
     assert receipt["coverage"]["unresolved"] <= 10
 
@@ -3489,3 +3496,34 @@ def test_r4b_transition_from_pin_baseline_matches_r2_shape(
     }
     rebuilt_symbols = {r["symbol"] for r in block["refusals_this_run"]}
     assert rebuilt_symbols == committed_symbols
+
+
+def test_dated_store_pair_emits_only_for_the_renamed_security() -> None:
+    """AMENDMENT ruling 9 (m3) reuse gate: the `dated` map is keyed by SYMBOL and this
+    repo tracks live ticker reuse, so the dated current-catalog pair must attach only
+    to the security the RenameEvent actually renamed. A stranger security whose
+    current store key merely REUSES the event's old string keeps a plain open row —
+    without the gate it would have its open row closed at a boundary it never crossed
+    and gain a post-boundary row under a symbol it never carried."""
+    from lib.dataos.identity import ListingKey
+
+    resolutions = [
+        # the genuinely renamed security (inception EQR, current key VMRK)
+        BUILD.Resolution("VMRK", ListingKey("US", "XNYS", "EQR"), "EQR", "VMRK",
+                         "fixture", date(1993, 8, 12)),
+        # a hostile stranger: a DIFFERENT security whose current store key is the
+        # reused string "EQR" (post-grace re-mint on another venue)
+        BUILD.Resolution("EQR", ListingKey("US", "XNAS", "EQR2"), "EQR2", "EQR",
+                         "fixture", date(2030, 1, 2)),
+    ]
+    ids = {"VMRK": "SEC:US-XNYS-EQR", "EQR": "SEC:US-XNAS-EQR2"}
+    rows = BUILD.build_alias_rows(resolutions, ids)
+    store = [r for r in rows if r.vendor == BUILD.VENDOR_STORE]
+
+    renamed = {(r.vendor_symbol, r.valid_from, r.valid_to)
+               for r in store if r.security_id == "SEC:US-XNYS-EQR"}
+    assert renamed == {("EQR", None, date(2026, 8, 18)),
+                       ("VMRK", date(2026, 8, 18), None)}
+    stranger = [r for r in store if r.security_id == "SEC:US-XNAS-EQR2"]
+    assert [(r.vendor_symbol, r.valid_from, r.valid_to) for r in stranger] == [
+        ("EQR", None, None)]
