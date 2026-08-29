@@ -229,7 +229,7 @@
           "top_events": []
         },
         {
-          "n_events": 3,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -327,7 +327,7 @@
           "top_events": []
         },
         {
-          "n_events": 15,
+          "n_events": 35,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -442,7 +442,7 @@
           ]
         },
         {
-          "n_events": 73,
+          "n_events": 138,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -477,7 +477,7 @@
     {
       "clusters": [
         {
-          "n_events": 48,
+          "n_events": 49,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -530,7 +530,7 @@
     {
       "clusters": [
         {
-          "n_events": 7,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -553,7 +553,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 10,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []

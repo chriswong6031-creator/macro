@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v2",
   "as_of": "2026-08-29",
-  "generated_at": "2026-08-29T09:34:52.508444+00:00",
+  "generated_at": "2026-08-29T12:46:10.255666+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
@@ -35,17 +35,17 @@
     }
   },
   "by_state": {
-    "POSITIVE_DIVERGENCE": {
-      "n": 1622,
-      "dir_accuracy": 0.424,
-      "excess_vs_base": -0.032,
-      "mean_fwd_ret": -0.016
-    },
     "CONFIRMED_UP": {
       "n": 1611,
       "dir_accuracy": 0.351,
       "excess_vs_base": -0.105,
       "mean_fwd_ret": -0.0355
+    },
+    "POSITIVE_DIVERGENCE": {
+      "n": 1622,
+      "dir_accuracy": 0.424,
+      "excess_vs_base": -0.032,
+      "mean_fwd_ret": -0.016
     },
     "NEGATIVE_DIVERGENCE": {
       "n": 2663,
@@ -124,17 +124,17 @@
         }
       },
       "by_state": {
-        "POSITIVE_DIVERGENCE": {
-          "n": 1622,
-          "dir_accuracy": 0.424,
-          "excess_vs_base": -0.032,
-          "mean_fwd_ret": -0.016
-        },
         "CONFIRMED_UP": {
           "n": 1611,
           "dir_accuracy": 0.351,
           "excess_vs_base": -0.105,
           "mean_fwd_ret": -0.0355
+        },
+        "POSITIVE_DIVERGENCE": {
+          "n": 1622,
+          "dir_accuracy": 0.424,
+          "excess_vs_base": -0.032,
+          "mean_fwd_ret": -0.016
         },
         "NEGATIVE_DIVERGENCE": {
           "n": 2663,
@@ -267,17 +267,17 @@
         }
       },
       "by_state": {
-        "POSITIVE_DIVERGENCE": {
-          "n": 348,
-          "dir_accuracy": 0.44,
-          "excess_vs_base": 0.009,
-          "mean_fwd_ret": -0.0029
-        },
         "CONFIRMED_UP": {
           "n": 318,
           "dir_accuracy": 0.346,
           "excess_vs_base": -0.085,
           "mean_fwd_ret": -0.0741
+        },
+        "POSITIVE_DIVERGENCE": {
+          "n": 348,
+          "dir_accuracy": 0.44,
+          "excess_vs_base": 0.009,
+          "mean_fwd_ret": -0.0029
         },
         "NEGATIVE_DIVERGENCE": {
           "n": 44,
