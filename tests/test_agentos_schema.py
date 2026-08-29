@@ -14,6 +14,7 @@ print, never through a logger.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import os
 import shutil
@@ -760,3 +761,611 @@ def test_no_subcommand_still_announces_itself_as_a_stub() -> None:
     finally:
         agentos.git_dates = original_git_dates
         agentos._repo_sha = original_repo_sha
+
+
+# -------------------------------------------------- R8-B2 semantic program source
+
+
+def _load_agentos_module_for_program_registry():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("agentos_program_registry_contract", CLI)
+    assert spec is not None and spec.loader is not None
+    agentos = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(agentos)
+    return agentos
+
+
+def _write_program_registry(
+    path: Path,
+    *,
+    lifecycle_states: tuple[str, ...] = ("operating", "building"),
+    programs_yaml: str,
+) -> None:
+    lifecycle = "\n".join(f"    - {value}" for value in lifecycle_states)
+    path.write_text(
+        "schema: mastermind_programs.v1\n"
+        "ontology:\n"
+        "  lifecycle_states:\n"
+        f"{lifecycle}\n"
+        "programs:\n"
+        f"{programs_yaml}",
+        encoding="utf-8",
+    )
+
+
+def test_program_registry_normalizes_exact_keys_and_sorts_them(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  beta-program:\n"
+            "    name: Beta\n"
+            "    category: market_intelligence\n"
+            "    kind: intelligence_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: project_infrastructure\n"
+            "    kind: infrastructure\n"
+            "    lifecycle_state: operating\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["schema"] == "agentos.program_registry.v1"
+    assert got["available"] is True
+    assert [row["key"] for row in got["programs"]] == ["alpha-program", "beta-program"]
+    assert got["programs"][1]["lifecycle_state"] == "building"
+
+
+def test_program_registry_lifecycle_membership_comes_from_authored_ontology(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        lifecycle_states=("operating", "building", "evidence_wait"),
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: evidence_wait\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is True
+    assert got["programs"][0]["lifecycle_state"] == "evidence_wait"
+
+
+def test_program_registry_rejects_lifecycle_absent_from_authored_ontology(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        lifecycle_states=("operating", "building"),
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: evidence_wait\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is False
+    assert got["reason"] == "program_registry_malformed"
+    assert got["programs"] == []
+
+
+def test_richer_metadata_failure_does_not_delete_legacy_program_key(
+    tmp_path: Path, monkeypatch,
+) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+
+    assert agentos._load_programs() == {"alpha-program"}
+    got = agentos._load_program_registry(path)
+    assert got["available"] is False
+    assert got["reason"] == "program_registry_malformed"
+
+
+def test_program_registry_missing_source_is_explicit_unavailable(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    got = agentos._load_program_registry(tmp_path / "missing.yml")
+
+    assert got == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_unavailable",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
+def test_program_identity_is_mapping_key_not_display_name(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Totally Different Display Name\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+
+    got = agentos._load_program_registry(path)
+
+    assert got["available"] is True
+    assert [row["key"] for row in got["programs"]] == ["alpha-program"]
+    assert got["programs"][0]["name"] == "Totally Different Display Name"
+
+
+def test_program_registry_heterogeneous_keys_are_explicitly_malformed(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+            "  1:\n"
+            "    name: Numeric Key\n"
+            "    category: market_intelligence\n"
+            "    kind: research_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+
+    assert agentos._load_program_registry(path) == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_malformed",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
+def test_program_registry_invalid_utf8_is_explicitly_malformed(tmp_path: Path) -> None:
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    path.write_bytes(b"\xff\xfe")
+
+    assert agentos._load_program_registry(path) == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_malformed",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+
+
+def _build_state_for_program_registry(agentos, store: Path, *, now: str):
+    parsed = agentos.load_store(store, agentos._load_programs())
+    moment = agentos._parse_moment(now)
+    assert moment is not None
+    return agentos.build_state(
+        parsed,
+        now=moment,
+        degraded=agentos.Degraded(),
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+
+def test_build_state_projects_program_registry_into_the_pure_contract(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """Removing the state projection or PURE_SECTIONS membership must fail."""
+    agentos = _load_agentos_module_for_program_registry()
+    parsed_store = agentos.load_store(store, agentos._load_programs())
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  beta-program:\n"
+            "    name: Beta\n"
+            "    category: market_intelligence\n"
+            "    kind: intelligence_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+    moment = agentos._parse_moment("2026-08-28T16:00:00Z")
+    assert moment is not None
+
+    state = agentos.build_state(
+        parsed_store,
+        now=moment,
+        degraded=agentos.Degraded(),
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+    expected = {
+        "schema": "agentos.program_registry.v1",
+        "available": True,
+        "source": "config/mastermind_programs.yml",
+        "programs": [
+            {
+                "key": "beta-program",
+                "name": "Beta",
+                "lifecycle_state": "building",
+                "scope": "project",
+                "kind": "intelligence_program",
+                "category": "market_intelligence",
+            }
+        ],
+    }
+    assert state["program_registry"] == expected
+    assert agentos.pure_section(state)["program_registry"] == expected
+
+
+def test_build_state_keeps_missing_program_registry_explicit_and_nonfatal(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """An unreadable rich source must not turn status into a hidden healthy empty set."""
+    agentos = _load_agentos_module_for_program_registry()
+    parsed_store = agentos.load_store(store, agentos._load_programs())
+    monkeypatch.setattr(agentos, "_PROGRAMS", tmp_path / "missing.yml")
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+    degraded = agentos.Degraded()
+    moment = agentos._parse_moment("2026-08-28T16:00:00Z")
+    assert moment is not None
+
+    state = agentos.build_state(
+        parsed_store,
+        now=moment,
+        degraded=degraded,
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+    assert state["program_registry"] == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_unavailable",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+    assert degraded.items == []
+
+
+def test_program_registry_pure_section_is_deterministic_across_wall_clocks(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """A volatile omission from PURE_SECTIONS must not hide the registry contract."""
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: project_infrastructure\n"
+            "    kind: infrastructure\n"
+            "    lifecycle_state: operating\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+
+    first = _build_state_for_program_registry(
+        agentos, store, now="2026-08-28T16:00:00Z"
+    )
+    second = _build_state_for_program_registry(
+        agentos, store, now="2026-08-29T16:00:00Z"
+    )
+
+    first_pure = agentos.pure_section(first)
+    second_pure = agentos.pure_section(second)
+    assert "program_registry" in first_pure
+    assert first_pure == second_pure
+
+
+# ------------------------------------------- Project Recovery R8-B1 typed wait
+
+
+def _wait_workstream() -> dict[str, object]:
+    return {
+        "key": "TEST-WAIT",
+        "title": "Test wait",
+        "objective": "Exercise the typed intentional-wait contract.",
+        "status": "active",
+        "program": "test-program",
+        "repos": ["macro"],
+        "owner": "fable",
+        "class": "research",
+        "blast_radius": "reversible",
+        "ambiguity": "specified",
+        "waves": [{"id": "w1", "title": "Accrue", "status": "todo"}],
+        "next_action": "Accrue prospectively.",
+    }
+
+
+def _wait_hard(rec: dict[str, object]):
+    from scripts import agentos
+
+    return [
+        problem
+        for problem in agentos.check_workstream(
+            rec,
+            Path("agentos/workstreams/WS-TEST-WAIT.md"),
+            {"test-program"},
+        )
+        if problem.hard
+    ]
+
+
+def test_workstream_wait_accepts_closed_valid_shape() -> None:
+    rec = _wait_workstream()
+    rec["wait"] = {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    assert _wait_hard(rec) == []
+
+
+@pytest.mark.parametrize(
+    "wait,message_fragment",
+    [
+        (
+            {
+                "kind": "until_ready",
+                "review_after": "2026-09-25",
+                "condition": "Not a registered kind.",
+            },
+            "kind",
+        ),
+        ({"kind": "natural_evidence"}, "review_after"),
+        (
+            {
+                "kind": "external_action",
+                "review_after": "next week",
+                "condition": "Operator action remains outstanding.",
+            },
+            "review_after",
+        ),
+        (
+            {
+                "kind": "external_action",
+                "review_after": "2026-09-25",
+                "condition": "Operator action remains outstanding.",
+                "auto_extend": True,
+            },
+            "auto_extend",
+        ),
+    ],
+)
+def test_workstream_wait_rejects_malformed_closed_contract(
+    wait: dict[str, object], message_fragment: str
+) -> None:
+    rec = _wait_workstream()
+    rec["wait"] = wait
+    hard = _wait_hard(rec)
+    assert any(problem.rule == "bad-wait" for problem in hard)
+    assert any(message_fragment in problem.message for problem in hard)
+
+
+def test_wave_wait_uses_same_contract_and_rejects_blank_condition() -> None:
+    rec = _wait_workstream()
+    wave = rec["waves"][0]
+    assert isinstance(wave, dict)
+    wave["wait"] = {
+        "kind": "calendar_window",
+        "review_after": "2026-09-01",
+        "condition": "  ",
+    }
+    hard = _wait_hard(rec)
+    assert any(problem.rule == "bad-wait" for problem in hard)
+    assert any("condition" in problem.message for problem in hard)
+
+
+def _inject_valid_waits(store: Path) -> None:
+    record = store / "workstreams" / "WS-AGENT-OS.md"
+    _patch(
+        record,
+        "waves:\n",
+        "wait:\n"
+        "  kind: natural_evidence\n"
+        "  review_after: 2026-09-25\n"
+        "  condition: Review whether the preregistered prospective sample matured.\n"
+        "waves:\n",
+    )
+    _patch(
+        record,
+        "    status: done\n    pr: 5472",
+        "    status: done\n"
+        "    wait:\n"
+        "      kind: calendar_window\n"
+        "      review_after: 2026-09-01\n"
+        "      condition: Review at the declared calendar window.\n"
+        "    pr: 5472",
+    )
+
+
+def test_typed_wait_projects_into_state_without_date_serialization_failure(store: Path) -> None:
+    from scripts import agentos
+
+    _inject_valid_waits(store)
+    parsed = agentos.load_store(store, agentos._load_programs())
+    assert not [problem for problem in parsed.problems if problem.hard]
+    now = agentos._parse_moment("2026-08-27T15:00:00Z")
+    assert now is not None
+
+    original_git_dates = agentos.git_dates
+    agentos.git_dates = lambda _path: (None, None)
+    try:
+        state = agentos.build_state(
+            parsed,
+            now=now,
+            degraded=agentos.Degraded(),
+            builds=None,
+            p0_status=None,
+            worktrees={"count": 0, "branches": [], "uncommitted": []},
+        )
+    finally:
+        agentos.git_dates = original_git_dates
+
+    row = next(item for item in state["workstreams"] if item["key"] == "AGENT-OS")
+    assert row["wait"] == {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    first_wave = next(item for item in row["wave_detail"] if item["id"] == "W0")
+    assert first_wave["wait"] == {
+        "kind": "calendar_window",
+        "review_after": "2026-09-01",
+        "condition": "Review at the declared calendar window.",
+    }
+    json.dumps(state, sort_keys=True)
+
+
+def test_typed_wait_projects_into_context_target_and_wave_excerpt(store: Path) -> None:
+    from scripts import agentos
+
+    _inject_valid_waits(store)
+    parsed = agentos.load_store(store, agentos._load_programs())
+    now = agentos._parse_moment("2026-08-27T15:00:00Z")
+    assert now is not None
+
+    original_git_dates = agentos.git_dates
+    original_repo_sha = agentos._repo_sha
+    agentos.git_dates = lambda _path: (None, None)
+    agentos._repo_sha = lambda: "test-sha"
+    try:
+        first = agentos.compile_bundle(
+            parsed,
+            workstream="AGENT-OS",
+            now=now,
+            builds=None,
+            degraded=agentos.Degraded(),
+        )
+        second = agentos.compile_bundle(
+            parsed,
+            workstream="AGENT-OS",
+            now=now,
+            builds=None,
+            degraded=agentos.Degraded(),
+        )
+    finally:
+        agentos.git_dates = original_git_dates
+        agentos._repo_sha = original_repo_sha
+
+    assert first["target"]["wait"] == {
+        "kind": "natural_evidence",
+        "review_after": "2026-09-25",
+        "condition": "Review whether the preregistered prospective sample matured.",
+    }
+    workstream_item = next(
+        item
+        for section in first["sections"]
+        for item in section["items"]
+        if item.get("kind") == "workstream" and item.get("key") == "WS:AGENT-OS"
+    )
+    assert "wait: calendar_window" in workstream_item["excerpt"]
+    assert json.dumps(first, sort_keys=True) == json.dumps(second, sort_keys=True)
+
+
+def test_wait_schema_mirror_names_closed_contract() -> None:
+    mirror = (REPO / "agentos" / "schema" / "workstream.schema.yml").read_text(
+        encoding="utf-8"
+    )
+    for term in (
+        "natural_evidence",
+        "external_dependency",
+        "calendar_window",
+        "external_action",
+        "review_after",
+        "condition",
+    ):
+        assert term in mirror
+
+
+@pytest.mark.parametrize(
+    "wait",
+    [
+        # An unhashable authored `kind` — `kind:` followed by a YAML block sequence, or
+        # the flow typo `kind: {natural_evidence}` which PyYAML resolves to a mapping.
+        {"kind": ["natural_evidence"], "review_after": "2026-09-25", "condition": "c"},
+        {"kind": {"natural_evidence": None}, "review_after": "2026-09-25", "condition": "c"},
+        # Unknown keys of INCOMPARABLE types.  Authored YAML resolves bare `no:`/`on:` to
+        # bools and `2026-09-01:` to a date, so the closed-contract check — the very rule
+        # that exists to reject extra keys — is what a mixed-key mapping reaches first.
+        {"kind": "natural_evidence", "review_after": "2026-09-25", "condition": "c",
+         1: "a", "zz": "b"},
+        {"kind": "natural_evidence", "review_after": "2026-09-25", "condition": "c",
+         None: "a", "zz": "b"},
+        # Pattern-shaped but not a day.  A review date nobody can arrive at is malformed.
+        {"kind": "natural_evidence", "review_after": "2026-13-45", "condition": "c"},
+    ],
+)
+def test_hostile_wait_is_reported_not_raised(wait: dict[str, object]) -> None:
+    """A malformed wait must come back as a typed `bad-wait` finding at BOTH scopes.
+
+    Every input here used to raise out of ``check_workstream``, which turns a record-level
+    validation finding into a crash of the whole fleet-wide `validate` run — the one
+    outcome a validator may never have.
+    """
+    at_workstream = _wait_workstream()
+    at_workstream["wait"] = wait
+    assert [p.rule for p in _wait_hard(at_workstream)] == ["bad-wait"]
+
+    at_wave = _wait_workstream()
+    waves = at_wave["waves"]
+    assert isinstance(waves, list) and isinstance(waves[0], dict)
+    waves[0]["wait"] = wait
+    assert [p.rule for p in _wait_hard(at_wave)] == ["bad-wait"]
+
+
+@pytest.mark.parametrize(
+    "review_after",
+    ["2026-09-25", "2020-01-01", _dt.date(2026, 9, 25), _dt.date(2020, 1, 1)],
+)
+def test_wait_review_after_accepts_dates_including_past_ones(review_after: object) -> None:
+    """A PAST `review_after` is an OVERDUE REVIEW, not an expiry — it stays schema-valid."""
+    rec = _wait_workstream()
+    rec["wait"] = {
+        "kind": "external_action",
+        "review_after": review_after,
+        "condition": "Operator action remains outstanding.",
+    }
+    assert _wait_hard(rec) == []

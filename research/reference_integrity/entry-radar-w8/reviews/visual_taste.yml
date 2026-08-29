@@ -1,0 +1,75 @@
+schema: mastermind.rig_review.v1
+reference_id: entry-radar-w8
+role: visual_taste
+artifact_sha: a8c763dc3dea094fb7c3201e5c3953b921b45464
+
+reviewer:
+  identity: "opus-designer-w8-reattest-5737-B"
+  role: visual_taste_critic
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - "live surface http://127.0.0.1:8793 (bytes proven = freeze a8c763dc)"
+    - "mockups/refs/entry_radar/{index.html,radar.css,radar.js,radar-data.js}"
+    - "committed crops 01/02/04"
+    - "docs/DESIGN_DOCTRINE.md"
+  rationale_received_after_first_pass: true
+  not_opened_in_first_pass:
+    - mockups/refs/entry_radar/FINDING_DISPOSITIONS.md
+    - mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md
+
+first_pass:
+  frozen_at: "2026-08-17T13:42:00Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: VTC-B-401
+      severity: minor
+      capability: sister.prophet_card_language
+      finding: >
+        Overlay still emits a Lifecycle axis span then hides it with display:none.
+        Correct for this reference (mutation-testable R2b). W9 must not emit the span.
+    - id: VTC-B-402
+      severity: minor
+      finding: >
+        DESIGN_NOTES §1 says the overlay does not repeat the LIFECYCLE axis because
+        "that word already sits in the body." The body prints the lifecycle STATE
+        word (Pre-candidate), not the axis label "Lifecycle". Reword in the W9
+        handoff so an implementer does not reinstate the overlay axis.
+    - id: VTC-B-403
+      severity: minor
+      finding: >
+        Lifecycle state word prints twice (overlay chip and body .pv-life-w) on
+        16/16 cards. Pre-existing; R2b made the echo more conspicuous. W9 must
+        decide which element owns the glance.
+    - id: VTC-B-404
+      severity: minor
+      finding: >
+        P11/P11b/P11c prove occlusion on dark+EN only. Independent sweep of 76
+        pages (ZH/light/1920/19 states) was 0; EN dark 1024 is the worst case.
+        Do not read a green verify.py as proof of ZH/light parity.
+  strengths:
+    - "Chip-vs-quote occlusion 0 at 1024/1280/1440/1920 × EN/ZH × dark/light; worst clearance 22.73px at 1024 EN."
+    - "elementFromPoint at chip right-inner returned the chip on 36/36 onscreen cards."
+    - "Committed crops 01/02 print full PRE-CANDIDATE; prior PRE-CANDIDAT truncation is gone."
+    - "Overlay is two-row sister wrap (chip, then EXPERT), not the rejected three-row stack."
+    - "title= 0; 390 overflow 0; --er-life invariant under ZH; provisional dashed vs confirmed filled; light cards #fff on #f7f8fa."
+    - "VTC-D-002 resolved by disclosure: §5 no longer claims VTC-304 fully inherited."
+
+second_pass:
+  amended_at: "2026-08-17T13:42:00Z"
+  amendments:
+    - finding: VTC-B-401
+      action: upheld
+      note: "W9-facing. Do not re-cut the freeze. Do not emit the hidden axis span in production."
+    - finding: VTC-B-402
+      action: upheld
+      note: "W9-facing copy. The design act (R2b) is right; only the sentence is imprecise."
+    - finding: VTC-B-403
+      action: upheld
+      note: "W9 decision, not a freeze re-open. Blocking on a consequence of the prescribed R2b would move the goalposts."
+    - finding: VTC-B-404
+      action: upheld
+      note: "Harness coverage note. Binding case (EN dark 1024) is gated."
+  verdict: PASS_WITH_CONDITIONS

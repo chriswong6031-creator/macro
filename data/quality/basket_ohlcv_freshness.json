@@ -1,11 +1,11 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-28T04:21:11.987261+00:00",
+  "checked_at": "2026-08-29T04:07:34.857001+00:00",
   "threshold_sessions": 3,
   "store_max": "2026-08-27",
   "n_members": 702,
   "n_stale": 2,
-  "n_behind_within_threshold": 1,
+  "n_behind_within_threshold": 0,
   "stale": {
     "EA": {
       "last": "2026-08-10",
@@ -28,7 +28,7 @@
   "absent_all_rungs": [],
   "n_absent_all_rungs": 0,
   "n_store_files": 2782,
-  "n_sponsored": 2599,
+  "n_sponsored": 2598,
   "n_sponsored_no_file": 0,
   "unsponsored": {
     "SEM": {
@@ -133,7 +133,7 @@
     }
   },
   "n_unsponsored_stale": 25,
-  "n_unsponsored_fresh": 157,
+  "n_unsponsored_fresh": 158,
   "retired": {
     "AVB": {
       "last": "2026-08-19",

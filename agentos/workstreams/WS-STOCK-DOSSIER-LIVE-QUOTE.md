@@ -23,30 +23,48 @@ ambiguity: specified
 waves:
   - id: P0
     title: Bounded dossier quote projection + honest freshness stamp
-    status: awaiting_ci
+    status: done
     pr: 6572
+  - id: P0b
+    title: Measured realtime enabled; rolled-anchor zero-move fixed
+    status: done
+    pr: 6617
   - id: P1
     title: Not commissioned — Sol owns scoping; see DEC/handoff before starting
     status: todo
 next_action: >
-  Sol/Chairman ruling on HUB_REALTIME_QUOTES (see next_actions[0]) — it is a
-  shared entitlement switch, not the quote-freshness lever the P0 commission
-  took it for, so P0 deliberately left it unset.
+  Nothing blocking. P0 is live and proven against a genuinely realtime feed
+  (2026-08-28 13:30:46Z, measured 153.8 ms print-age floor). The one open item
+  is a Terminal-repo question that needs its own commission — see
+  next_actions[0].
 next_actions:
   - >
-    RULING NEEDED (Sol/Chairman): the P0 commission authorized setting
-    HUB_REALTIME_QUOTES=1 on the Terminal env, believing it a quote-freshness
-    lever. It is not — it is also read by terminal/app/api/intraday/route.ts and
-    unlocks the Terminal's 1s/5s/15s/30s bar band, and hub/README.md states it is
-    deliberately the single switch a PENDING anonymous-vs-sign-in ruling is meant
-    to land on. It was therefore NOT set. Answer whether unlocking the seconds
-    band is intended; if yes, flip it just before a US regular-session open,
-    where the realtime verdict can actually be measured.
+    OPTIONAL, Terminal repo, needs its own commission: the dossier cannot show a
+    realtime PRE-MARKET price. Polygon zeroes the whole `day` block before
+    09:30 ET and hub/lib/snapshot.js parseSnapshot() returns null on
+    `day.c <= 0`, so every US row is discarded pre-market even with the realtime
+    leg on. The row still carries a usable print (measured 2026-08-28 11:43Z:
+    lastTrade 24 s old, plus a 1-minute bar). `day` semantics are
+    regular-session on purpose, so this is a deliberate design question, not a
+    bug to patch in passing.
+resolved_actions:
   - >
-    Re-verify the dossier during an OPEN US regular session to obtain the
-    realtime verdict P0 could not: the session was closed at build time, so the
-    `live` branch is proven by construction and in-browser, but not yet observed
-    against a genuinely realtime production feed.
+    RESOLVED 2026-08-28 — HUB_REALTIME_QUOTES=1 is SET in /opt/terminal/.env
+    (backup .env.bak-20260828-dossier-live) and quote-hub restarted, under
+    operator authorization ("authorized to conduct any changes needed").
+    The earlier deferral was WRONG on its facts: quote-hub.service carries
+    EnvironmentFile=/opt/terminal/.env but terminal.service carries NO
+    EnvironmentFile at all, and Next.js loads env from its own project root one
+    directory below — so the flag never reaches the Terminal process and the
+    1s/5s/15s/30s seconds band stays off. The pending anonymous-vs-sign-in
+    ruling is untouched. HUB_POLYGON_CLUSTER deliberately left at `delayed`;
+    the snapshot leg is REST, so TP-1's sole-WS law is intact.
+  - >
+    RESOLVED 2026-08-28 — the realtime verdict P0 could not obtain was observed
+    in production 46 s after the opening bell: hub verdict
+    {tier:"realtime", floorLagMs:153.77}, route freshness "live" / session
+    "regular", and the served page repainted 227.98→226.82 with the move, the
+    sign, both language strings and the green pulse moving together.
 do_not_redo:
   - >
     Do NOT read the Quote Hub contract out of the charting-app checkout on the
@@ -60,6 +78,31 @@ do_not_redo:
     /stocks/ is /stocks/live/quotes.json — a path that does not exist. Two owners
     on one node is a race decided by fetch order.
 danger_areas:
+  - >
+    The percent cross-check in `_public_projection` compares upstream's `chg`
+    against the percent implied by last/prevClose and, on disagreement, derives
+    both from the price pair. It CANNOT notice that its two inputs are the SAME
+    number. Outside RTH upstream's anchor rolls forward until prevClose == last,
+    so that rule measured the close against itself and published
+    `+$0.00 · +0.00%` on every US dossier (measured 2026-08-28 11:43Z; fixed in
+    #6617 via prevSessionChg). Any future consistency rule here needs an
+    explicit degenerate-case check.
+  - >
+    Enabling HUB_REALTIME_QUOTES appears to do nothing until 09:30 ET: /health
+    shows realtime true, ttlMs 8000, cache filling, errors 0, while
+    verdict.tier stays "unknown" and rows keep DELAYED_15M. That is the design
+    (see next_actions[0]), not a broken flag — do not go looking for a fault.
+  - >
+    `regularSession` is the STATE of the regular session ("rth" while open,
+    "closed" after the bell), NOT the session a print came from. Reading it the
+    second way and refusing non-"rth" rows 503'd every US dossier overnight
+    (shipped in #6572, fixed in #6592). The closed row still carries the correct
+    settled close, which is exactly what an overnight dossier must show.
+  - >
+    Test fixtures here are live captures. The original was taken during RTH, so
+    every test agreed the market was open and nothing exercised the closed
+    state — which is what the page is in for most of the day. Any new fixture
+    must be paired with one from the opposite session state.
   - >
     `chg` from the hub is a PERCENT, not the dollar move, and `ts` is the
     vendor's print clock that stops advancing after the close. Both mis-readings

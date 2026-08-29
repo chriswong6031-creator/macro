@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENOV-BULL-20260703",
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 40.4,
@@ -10,21 +10,21 @@
   "recommended_action": "trim",
   "human_state": "Window Elapsed \u2014 Awaiting Close",
   "components": {
-    "validity": 100.0,
-    "progress": 1.0,
-    "pace": 26.0,
-    "retention": 0.6,
+    "validity": 91.0,
+    "progress": 0.0,
+    "pace": 24.7,
+    "retention": 0.0,
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.005,
-    "dist_to_t1_r": 1.495,
-    "dist_to_t2_r": 2.995,
-    "horizon_pct_used": 106.7,
-    "p1": 0.0035,
-    "p2": 0.0017,
+    "dist_to_stop_r": 0.933,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 108.9,
+    "p1": -0.045,
+    "p2": -0.0225,
     "p3": null,
-    "move_r": 0.005,
+    "move_r": -0.067,
     "mfe_r": 0.872,
     "mae_r": -0.17
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-14",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 48,
-  "tau": 1.0667
+  "days_elapsed": 49,
+  "tau": 1.0889
 }

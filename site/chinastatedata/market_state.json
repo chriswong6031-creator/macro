@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
-  "as_of": "2026-08-27",
-  "generated_utc": "2026-08-27T23:41:04Z",
+  "as_of": "2026-08-28",
+  "generated_utc": "2026-08-28T19:38:10Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -81,14 +81,14 @@
       "limit_down_breadth_pct": 0.0
     },
     "name_summary": {
-      "n_packets": 156,
-      "chase_veto_count": 15,
-      "fillable_count": 151
+      "n_packets": 158,
+      "chase_veto_count": 16,
+      "fillable_count": 152
     },
     "names_ref": "site/chinastatedata/microstructure.json#name_packets"
   },
   "policy": {
-    "as_of": "2026-08-27",
+    "as_of": "2026-08-28",
     "policy_impulse": "neutral",
     "transmission_channel": [],
     "recent_event_count": 10,
@@ -126,15 +126,15 @@
     ],
     "staleness": {
       "per_source_days": {
-        "lpr": 7,
-        "rrr": 477,
+        "lpr": 8,
+        "rrr": 478,
         "fr007": 0,
-        "communiques": 121
+        "communiques": 122
       }
     }
   },
   "rotation": {
-    "as_of": "2026-08-27",
+    "as_of": "2026-08-28",
     "sector_phase_distribution": {
       "Bottoming": 39,
       "Topping": 7,
@@ -158,51 +158,51 @@
       "LAGGARD: Agriculture ranked #29/31 (-26.3%) — among the weakest this leg"
     ],
     "ths_heat": {
-      "as_of": "2026-08-27",
+      "as_of": "2026-08-28",
       "basket_count": 237,
-      "above_200d_pct": 60.8,
+      "above_200d_pct": 60.3,
       "hot_baskets": [
         {
           "id": "ths_innovative_rx",
-          "ret_60d": 0.2439
-        },
-        {
-          "id": "thsc308690",
-          "ret_60d": 0.1467
+          "ret_60d": 0.273
         },
         {
           "id": "thsc308822",
-          "ret_60d": 0.1449
+          "ret_60d": 0.1683
         },
         {
           "id": "thsc301146",
-          "ret_60d": 0.1439
+          "ret_60d": 0.1466
+        },
+        {
+          "id": "thsc308690",
+          "ret_60d": 0.1291
         },
         {
           "id": "ths_synbio",
-          "ret_60d": 0.1367
+          "ret_60d": 0.1273
         }
       ],
       "cold_baskets": [
         {
-          "id": "thsc309128",
-          "ret_60d": -0.1599
+          "id": "thsc308753",
+          "ret_60d": -0.1579
+        },
+        {
+          "id": "thsc309120",
+          "ret_60d": -0.1645
         },
         {
           "id": "thsc300223",
-          "ret_60d": -0.1726
-        },
-        {
-          "id": "thsc308753",
-          "ret_60d": -0.1761
+          "ret_60d": -0.1676
         },
         {
           "id": "ths_appliances",
-          "ret_60d": -0.1828
+          "ret_60d": -0.1755
         },
         {
           "id": "thsc300795",
-          "ret_60d": -0.2104
+          "ret_60d": -0.2238
         }
       ]
     }
@@ -226,10 +226,10 @@
     ],
     "conditions": {
       "roro": {
-        "roro": -0.102,
-        "roro_raw": -0.102,
+        "roro": -0.101,
+        "roro_raw": -0.101,
         "roro_state": "neutral",
-        "china_roro_copper_gold": 0.919,
+        "china_roro_copper_gold": 0.931,
         "china_roro_breadth": 0.69,
         "china_roro_southbound": -0.29,
         "china_roro_m1_m2": -0.393,
@@ -243,7 +243,7 @@
             "key": "copper_gold",
             "name_en": "Copper / Gold",
             "name_zh": "铜／金 比",
-            "value": 0.919,
+            "value": 0.931,
             "lean": "risk-on"
           },
           {
@@ -385,31 +385,31 @@
   },
   "external": {
     "yield_curve": {
-      "as_of": "2026-08-27",
+      "as_of": "2026-08-28",
       "staleness_days": 0,
-      "cn_10y": 1.6988,
-      "cn_2y": 1.254,
-      "cn_slope_10_2": 0.4448000000000001,
-      "cn_us_10y_spread": -2.9711999999999996
+      "cn_10y": 1.6949,
+      "cn_2y": 1.2547,
+      "cn_slope_10_2": 0.44020000000000015,
+      "cn_us_10y_spread": null
     },
     "cgb_curve": {
-      "as_of": "2026-08-27",
+      "as_of": "2026-08-28",
       "staleness_days": 0,
-      "m3": 1.2064,
-      "y1": 1.2159,
-      "y5": 1.4115,
-      "y10": 1.6988,
-      "y30": 2.144,
-      "slope_10y_3m": 0.4924
+      "m3": 1.2021,
+      "y1": 1.2132,
+      "y5": 1.4119,
+      "y10": 1.6949,
+      "y30": 2.148,
+      "slope_10y_3m": 0.4928
     },
     "usdcnh": {
-      "quote": 6.714,
-      "chg_pct": -0.4,
-      "as_of": "Aug 27, 2026"
+      "quote": 6.715,
+      "chg_pct": -0.5,
+      "as_of": "Aug 28, 2026"
     },
     "dxy": {
-      "quote": 99.11,
-      "chg": -0.9,
+      "quote": 99.2,
+      "chg": -0.8,
       "label": "DXY"
     }
   },
@@ -435,7 +435,7 @@
     "phase_evidence: turnover_z20_null"
   ],
   "contradictions": [
-    "microstructure_chase_vs_participation: 15 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
+    "microstructure_chase_vs_participation: 16 names carry chase_veto while participation.regime='dormant' (theme-level chase pressure in a low-participation tape — theme breadth may be narrow)"
   ],
   "falsifiers": [
     {
@@ -458,6 +458,6 @@
     "participation: zt_breadth:null on 2026-08-26",
     "participation: etf_share_chg:null on 2026-08-26",
     "participation: northbound:DEAD post-2024-08-16 SLF-050",
-    "participation: snapshot_staleness:published row 2026-08-26 is 1d behind tape tail 2026-08-27; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+    "participation: snapshot_staleness:published row 2026-08-26 is 2d behind tape tail 2026-08-28; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
   ]
 }

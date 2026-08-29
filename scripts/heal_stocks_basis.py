@@ -33,7 +33,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config, store  # noqa: E402
+from lib import config, delisted_symbols, store  # noqa: E402
 
 log = logging.getLogger("heal_stocks_basis")
 
@@ -74,7 +74,12 @@ def detect(tol: float) -> list[str]:
     """Names whose stored closes diverge from a fresh 2y adjusted fetch beyond
     *tol* on any overlap date, plus names shallower than DEEP_MIN_ROWS."""
     d = config.data_dir() / GROUP
-    tickers = sorted(p.stem for p in d.glob("*.parquet"))
+    # Exit-ledger names are never "drifted" — a delisted symbol's fresh fetch is
+    # whatever Yahoo now serves under the dead string (a merger successor's
+    # re-based tape, the AVB 2026-08 class), so the drift detect fires by
+    # construction and "healing" it would IMPORT the contamination wholesale.
+    exited = delisted_symbols.tickers()
+    tickers = sorted(p.stem for p in d.glob("*.parquet") if p.stem not in exited)
     flagged: list[str] = []
     for i in range(0, len(tickers), BATCH):
         batch = tickers[i:i + BATCH]
@@ -107,7 +112,17 @@ def detect(tol: float) -> list[str]:
 
 
 def heal(tickers: list[str], dry_run: bool) -> list[str]:
-    """Re-fetch period='max' and rewrite each file wholesale. Returns failures."""
+    """Re-fetch period='max' and rewrite each file wholesale. Returns failures.
+
+    Exit-ledger names are refused even when requested explicitly via --tickers:
+    the wholesale rewrite is exactly the path that imported the AVB successor
+    splice (see detect), and there is no valid heal for a finished tape."""
+    exited = sorted(set(tickers) & delisted_symbols.tickers())
+    if exited:
+        log.error("refusing delisted name(s) %s — exit rows in "
+                  "config/delisted_symbols.yml; a fresh fetch for a dead symbol is "
+                  "not this security's tape", ", ".join(exited))
+        tickers = [t for t in tickers if t not in set(exited)]
     failed: list[str] = []
     for i in range(0, len(tickers), BATCH):
         batch = tickers[i:i + BATCH]

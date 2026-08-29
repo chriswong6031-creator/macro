@@ -1929,6 +1929,18 @@ _FILING_FACT_FIELDS = (
 )
 
 
+def _filing_fact_values_are_compatible(field: str, left: Any, right: Any) -> bool:
+    """Compare duplicate filing facts without rewriting their source representation."""
+    if left == right:
+        return True
+    if field != "acceptance_datetime" or not isinstance(left, str) or not isinstance(right, str):
+        return False
+    try:
+        return _iso_order_key(left) == _iso_order_key(right)
+    except ValueError:
+        return False
+
+
 def _merge_filing_rows(*groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
     merged: dict[str, dict[str, Any]] = {}
     for rows in groups:
@@ -1946,7 +1958,9 @@ def _merge_filing_rows(*groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 continue
             for field in _FILING_FACT_FIELDS:
                 left, right = existing.get(field), row.get(field)
-                if left is not None and right is not None and left != right:
+                if left is not None and right is not None and not _filing_fact_values_are_compatible(
+                    field, left, right
+                ):
                     raise BroadSecError(
                         "historical_submissions_conflict",
                         f"accession {accession} conflicts on {field}",

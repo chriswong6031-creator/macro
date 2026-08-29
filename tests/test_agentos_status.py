@@ -637,7 +637,10 @@ def test_readiness_states_explain_graph_and_authored_progress(
     assert waiting["reason_code"] == "unmet_dependencies"
     assert waiting["unmet_dependencies"] == ["WS:PROPHET-US-ENTRY-TIMING#W1"]
 
-    parent_blocked = records[("GMI-THEME-GRAPH", "TRANSMISSION")]
+    # D2C is the current unfinished authored wave; the former TRANSMISSION wave no
+    # longer exists by design (folded to the completed TRANSMISSION-FOLD), so the
+    # blocked-parent exemplar rides D2C rather than resurrecting a dead wave id.
+    parent_blocked = records[("GMI-THEME-GRAPH", "D2C")]
     assert parent_blocked["state"] == "blocked"
     assert parent_blocked["reason_code"] == "workstream_blocked"
     assert parent_blocked["unmet_dependencies"] == []

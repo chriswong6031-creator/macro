@@ -103,6 +103,12 @@ _CLOSED_STALE_MAX_AGE_SECONDS = 5 * 24 * 3600.0
 # realtime", which is the truthful answer.
 _REALTIME_BASES = frozenset({"REALTIME", "LIVE"})
 
+# Session tags that would mean ``last`` is NOT a regular-session print.  Note
+# what is absent: "closed".  A closed regular session still has a settled
+# regular-session close, and that close is exactly what an overnight dossier
+# should show.
+_EXTENDED_SESSION_TAGS = frozenset({"pre", "premarket", "pre-market", "post", "after", "afterhours", "after-hours", "extended", "overnight"})
+
 # How far the hub's own percent may sit from the one implied by
 # last/prevClose before we stop trusting it.  Generous enough for float noise
 # and rounding, tight enough that a different session's percent never passes.
@@ -298,15 +304,23 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     entirely — rendering an after-hours print as the day move would invert the
     sign the reader acts on (measured 2026-08-27: regular +8.74%, ext -0.76%).
     """
-    # The hub tags a row with the session its print came FROM.  Read it: it is
-    # the only positive evidence that ``last`` is a regular-session print, and
-    # without it an extended-hours print reaching ``last`` would be published as
-    # the regular price with a regular percent beside it.  Absent is tolerated
-    # (older rows omit it); a tag naming a NON-regular session is refused.
+    # ``regularSession`` reports the STATE of the regular session — "rth" while
+    # it is open, "closed" once it is not.  It does NOT mean "the session this
+    # print came from", which is how it was first read here, and reading it that
+    # way refused every good row overnight: measured in production 2026-08-28,
+    # NVDA carried last=227.98 / prevClose=209.66 (the correct settled close for
+    # 2026-08-27) with regularSession "closed", and this raised, so every US
+    # dossier 503'd all night and fell back to its baked price.
+    #
+    # Only an explicitly EXTENDED tag is refusable, and even that is defence in
+    # depth: upstream already keeps extended prints out of ``last`` entirely
+    # (its ext feed rejects RTH-tagged prints, and non-RTH aggregates are routed
+    # to the ext namespace before the primary fields are touched), which is why
+    # the extended print lives in extPrice/extChg rather than here.
     print_session = row.get("regularSession")
-    if isinstance(print_session, str) and print_session.strip().lower() not in ("rth", "regular", ""):
+    if isinstance(print_session, str) and print_session.strip().lower() in _EXTENDED_SESSION_TAGS:
         raise ValueError(
-            f"quote hub row is not a regular-session print: {print_session!r}"
+            f"quote hub row is an extended-session print: {print_session!r}"
         )
 
     price = _finite_number(row.get("last"))
@@ -315,6 +329,37 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     prev_close = _finite_number(row.get("prevClose"))
     if price is None or price <= 0 or prev_close is None or prev_close <= 0:
         raise ValueError("quote hub row carried no usable regular-session price")
+
+    # ── The anchor rolls forward; the price does not ──────────────────────────
+    # Upstream advances its anchor the moment a session settles, so whenever
+    # today's regular session is not in hand, `prevClose` becomes the LAST close
+    # and therefore equals `last`.  Deriving the move from that pair measures the
+    # close against itself: measured in production 2026-08-28 11:43Z, every US
+    # dossier served `change_abs 0.0, change_pct 0.0` over a price that had moved
+    # +8.74% to get there.  Self-consistent, and useless — the reader is shown a
+    # flat tape for the ~17.5 hours a day the regular session is not open.
+    #
+    # `prevSessionChg` is upstream's own signal for exactly this state: it
+    # carries the move that PRODUCED the published close, and it is deleted the
+    # instant today's session is in hand.  So when it is present, IT is the move
+    # that belongs beside this price, and the anchor is reconstructed from the
+    # pair we are about to publish — never forwarded from the rolled one, or the
+    # triple we hand the browser (227.98, from 227.98, up 8.74%) could not be
+    # reconciled by anyone reading it.
+    #
+    # Absent, unusable, or implying a non-positive anchor, we fall through to the
+    # ordinary derivation rather than divide.  `ratio > 0` is the single guard
+    # and it carries both jobs: at exactly -100% the ratio is 0 and the division
+    # would raise, and below -100% it is negative, which would hand back an
+    # anchor that is not a price.  It is deliberately the ONLY check.  A second,
+    # overlapping guard on the quotient reads as extra safety but is unreachable
+    # behind this one, so no test can prove it is still there — and an assertion
+    # nothing can falsify is not a safeguard, it is decoration.
+    prev_session_pct = _finite_number(row.get("prevSessionChg"))
+    if prev_session_pct is not None:
+        ratio = 1.0 + prev_session_pct / 100.0
+        if ratio > 0:
+            prev_close = price / ratio
 
     # `chg` upstream is a PERCENT despite the name; the dollar move is derived
     # from prevClose.  Those are two DIFFERENT sources — the hub selects its own

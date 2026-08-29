@@ -1,33 +1,34 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-27T11:58:32+00:00",
-  "summary": "Context-only shadow deliberation: the blackboard remains risk-on while the US regime is low-confidence Q2/Reflation and transitioning. Risk Radar is calm and receding: its measured 21-day pullback rate is 13.0% versus a 17.8% base rate, so it is not an adverse edge. Breadth is healthy and volatility is normalizing, but market confirmation has no fresh internal chips. The principal restraint is orderly liquidity contraction, alongside restrictive real yields and an in-progress August inflation proxy indicating upward price pressure; that proxy is not an official CPI observation. Factor evidence is immature: only 10 panel dates, no Pair G records, no factor-attention track record, and no tradeable composite. No new hypothesis was staked because the available observations do not yet justify spending the weekly metabolism budget.",
+  "as_of": "2026-08-28T14:31:38+00:00",
+  "summary": "Context-only committee read: the headline tape is risk-on and the risk radar is calm/receding, but this is not a clean all-clear. The confirmed US regime remains Q2 Reflation at low confidence (0.218) even though its current axes read raw Q3: growth -0.267 and inflation +0.36, with only 1 of 7 confirmation sessions complete. Liquidity is contracting in an orderly, non-stressed drain; credit is healthy and tight; volatility is normalizing; breadth remains broadly intact above the 200-day measure, although the latest session had more decliners than advancers. No market-recovery confirmation chip is fresh, so the recovery context should not be described as confirmed. Factor intelligence is immature: only 10 panel dates, no Pair G records, no factor-attention grading history, no scorecard survivors, and the composite is non-tradeable. This memo annotates existing evidence only and originates no signal, ranking, trade, or probability.",
   "what_fired": [
-    "Risk-on world-state display verdict, score 76.",
-    "Risk Radar de-escalation eligibility: internals, growth, and rates scares have receded; h21 drawdown rate is flat at 13%.",
-    "One confluence tension: 27 ticker-level demand-versus-supply divergences conflict with the briefing aggregation.",
-    "Options contradiction context for existing buy-lane names KDP and NBIS: five-day OTM-put skew is rising; de-escalation context only.",
-    "Three shadow attention items were recorded: briefing divergence persistence, KDP options contradiction, and stale master-brain thesis hygiene."
+    "World-state display verdict: RISK_ON, score 77, as of 2026-08-27.",
+    "Risk radar calm and receding: measured 21-day >=5% pullback rate 13.0% versus 17.8% base rate; this is below-base context, not an edge.",
+    "Raw regime axes no longer support confirmed Q2; Q3 transition count is 1 of 7 sessions.",
+    "Confluence contradiction: DHI and KDP buy-lane context versus five-day-rising OTM-put skew, as of 2026-08-19.",
+    "Briefing-divergence tension: 31 ticker-level demand-versus-supply divergences, including IBM, VSAT, RKLB, and NET.",
+    "Factor Pair G did not fire: ledger absent because the panel has fewer than 60 distinct dates."
   ],
-  "contradictions_review": "The current graph contains two display-only tensions. First, ticker-level demand/tape evidence conflicts with briefing aggregation across 27 names, including IBM, FTNT, VSAT, and IRDM. Second, rising five-day OTM-put skew contradicts existing buy-lane context for KDP and NBIS; this may only de-escalate and cannot imply a short. Pair G is dormant because the factor panel has fewer than 60 distinct dates. Open master-brain theses are also operationally conflicted with current evidence: repeated underweight semiconductors theses face recent positive XLK/SMH short-horizon momentum, while growth-over-value underweights face IWF/IWD +3.17% and QQQ/SPY +2.48% over 20 days. These disagreements are attention matters, not new directional claims. Several thesis check-by dates have passed, and duplicate thesis IDs reduce audit clarity.",
+  "contradictions_review": "Two current graph contradictions were found. First, the briefing contains 31 directional demand-versus-supply divergences; this is a broad tension, not a directional conclusion. Second, DHI and KDP have rising put-skew context against existing buy-lane membership; the legal use is de-escalation only. Separately, the regime label is internally stale relative to its axes: confirmed Q2 versus raw Q3. The factor contradiction ledger is dormant, so absence means insufficient history rather than agreement. Review of the master-brain ledger found many open theses past their check_by dates. Several semiconductor underweight theses deserve explicit review against current mixed evidence: SMH is above its 200-day trend and up 2.27% over 20 days, but down 10.95% over 60 days, semiconductor migration breadth is weak, and the AI-semiconductor thematic falsifier has fired. That is conflicted context, not validation of either side. The open growth-over-value underweight thesis also needs review because IWF/IWD is +2.76% over 20 days while real yields remain restrictive; its dated falsifier must be evaluated rather than informally extended.",
   "decaying_families": [
-    "Master-brain open theses past their check-by dates remain unscored or unretired, including semiconductors, Bitcoin, China equities, long Treasuries, high-yield credit, and US equities.",
-    "Policy engine outcomes are negative across available 5-day and 21-day Q1/Q2 samples and remain unarmed.",
-    "Desk thematic, stock, and AI families show negative 63-day signed excess and remain unarmed.",
-    "Radar signed-excess rows are negative across 5-day, 21-day, and 63-day horizons; its present calm reading is therefore retained only as measured risk context.",
-    "Factor composite, investment, low-volatility, and low-beta legs are non-tradeable or negative-IC; the panel history floor is not met."
+    "Radar claims: kernel estimates are negative across 5-, 21-, and 63-day signed-excess horizons in Q2/all-regime rows; no radar kernel row is armed.",
+    "Policy family: negative signed-excess estimates at 5-, 21-, and 63-day horizons; all rows remain unarmed or underpowered.",
+    "Thematic-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous one-contributor held-out comparison.",
+    "Stock-desk family: negative 63-day signed-excess estimates in Q1 and Q2; unarmed and based on a vacuous held-out comparison.",
+    "Altdata: positive five-day estimates decay to negative 21- and 63-day estimates; pooled implementation remains unarmed after losing out of sample.",
+    "US-board Q2: negative signed-excess estimates at five and ten days; pooled implementation remains unarmed. Board and track-record rows using unsigned MFE proxies must not be read as directional alpha."
   ],
   "deserves_operator": [
-    "Review whether the 27 briefing-versus-ticker divergences persist: clear only if the next two nightly builds fall below 10 names and no name persists for three consecutive sessions.",
-    "Review KDP's existing buy-lane context while put skew is rising: clear after two consecutive observations without rising skew or if KDP exits the lane. Do not infer a short.",
-    "Repair thesis-ledger hygiene within five trading sessions: score, retire, or explicitly extend all overdue open theses and resolve duplicate IDs.",
-    "Review semiconductor underweight theses against current counterevidence before their next use: recent tech momentum is positive, although 60-day SMH performance remains weak and leadership breadth is strained.",
-    "Review growth-over-value underweight theses against the current +3.17% 20-day IWF/IWD pulse; this is a contradiction to an existing thesis, not an originated overweight.",
-    "Treat liquidity contraction as a missing confirmation for the risk-on tape: orderly drain is a headwind context, but funding and credit stress remain calm."
+    "US regime-label mismatch: confirmed Q2 versus raw Q3, with a pre-committed seven-session resolution criterion.",
+    "DHI and KDP options contradiction: clear only when buy-lane membership or rising-skew condition ceases on refreshed data.",
+    "Overdue master-brain thesis hygiene: close, score, or explicitly re-register every thesis past its check_by date.",
+    "Semiconductor underweight theses: current evidence is conflicted and several evaluation deadlines have passed; apply their registered falsifiers rather than carrying the narrative forward.",
+    "Factor coverage caveat: Pair G and attention authority have no usable grading history; zero records are insufficient coverage, not evidence of no contradictions."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-26",
+    "as_of": "2026-08-28",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -39,8 +40,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 9,
-      "total_rows": 17
+      "ungradeable": 18,
+      "total_rows": 26
     },
     "is_context_only": true
   },
@@ -107,6 +108,6 @@
     "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-27T10:18:38Z"
+    "context_as_of": "2026-08-28T13:34:04Z"
   }
 }
