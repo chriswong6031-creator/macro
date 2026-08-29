@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LECO-BULL-20260731",
-  "asof": "2026-08-28",
+  "asof": "2026-08-29",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 50.6,
-  "raw_confidence": 50.6,
-  "delta_vs_base": -9.4,
+  "management_confidence": 50.3,
+  "raw_confidence": 49.9,
+  "delta_vs_base": -9.7,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 12.2,
-    "pace": 25.3,
+    "pace": 21.9,
     "retention": 50.0,
     "overlay": 64.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.151,
     "dist_to_t1_r": 1.349,
     "dist_to_t2_r": 2.849,
-    "horizon_pct_used": 46.7,
+    "horizon_pct_used": 48.9,
     "p1": 0.1009,
     "p2": 0.0504,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 21,
-  "tau": 0.4667
+  "days_elapsed": 22,
+  "tau": 0.4889
 }
