@@ -1196,7 +1196,16 @@ is describing the INVALIDATED reading, not current behavior. §6.14 records
 the census and the repair's measured impact; the sealed
 `data/stock_identity/ruler/ruler_spec_v1.json` receipt (§5 below) is likewise
 preserved byte-for-byte as a rejected-attempt record, not evidence of an
-accepted seal — the re-seal boundary awaits Sol's explicit ruling.
+accepted seal. RULED 2026-08-29 (Sol, "NO CORRECTIVE RE-SEAL UNDER CURRENT
+ONE-TIME LAW"): the repair is PASS, but no corrective seal may run in this
+child — Task 3C's PR-3 read was ONE-TIME and was consumed under the invalid
+population, so the production-calibration state is BLOCKED / W3A MILESTONE
+NOT ACCEPTED (deliberately NOT `BLOCKED_DEGENERATE_CALIBRATION`: no second
+lawful read was authorized, so degeneracy was never lawfully tested on the
+repaired sealed population). Recovery requires a fresh Sol-granted authority
+boundary: a newly authorized sealed calibration epoch/partition, or an
+explicit amendment/waiver of the one-time look law with fresh
+preregistration — described only, neither chosen nor executed here.
 
 Sol's ruling (Slack ts `1787967972.011309`) closed the availability-null
 question with exact law, declaring the `_episode_family_availability_state`
@@ -1708,8 +1717,10 @@ accepted milestone. `ruler_implementation_sha256.ruler_py` below
 (`42905b81...`) now deliberately DISAGREES with the current, repaired
 `ruler.py` bytes; that disagreement is the receipt's own voiding proof (see
 `tests/test_stock_identity_ruler.py::test_shipped_spec_carries_sealed_pr3_
-values_with_complete_receipt`). The re-seal boundary awaits Sol's explicit
-ruling.
+values_with_complete_receipt`). RULED 2026-08-29: Sol denied any corrective
+re-seal in this child under the one-time look law (see §6.13 status note) —
+this receipt stays a rejected-attempt record permanently unless a fresh
+Sol-granted authority boundary opens a new sealed calibration epoch.
 
 - Sealed at: `2026-08-29T03:37:58.620149+00:00`
 - `recall_floor` = `0.05` (rule hash `71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf`, status `declared_pending_sol_rule_review`)

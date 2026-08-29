@@ -57,7 +57,7 @@ unresolved:
   - "_identity_resolvable carries a today-unreachable fail-open default (hygiene.check_symbol always sets the key); flagged for a fail-closed default in a future W3B-adjacent pass."
 next_actions:
   - "RESOLVED 2026-08-29: Sol ruled REQUEST_REPAIR (Slack C0BSBM78V1N) rather than accept/merge — the fail-closed repair (null-bound R/B rows type UNESTIMABLE unconditionally) plus the date-evidence census are recorded in registration §6.13/§6.14 and this file's 'Milestone status' section."
-  - "Sol: rule on the re-seal boundary now that the repair is in place — whether/when a corrective seal should follow, and its shape. Not decided by this repair."
+  - "RESOLVED 2026-08-29: Sol ruled NO corrective re-seal under the current one-time law (repair PASS; production calibration BLOCKED / milestone NOT ACCEPTED). Recovery needs a fresh authority boundary from Sol — a newly authorized sealed calibration epoch/partition, or an explicit amendment/waiver of the one-time look law with fresh preregistration. See 'Milestone status' §(e)."
   - "On acceptance: SI-W3B-ESTIMABILITY-V1 unlocks against the frozen support/coverage + cadence-control-coverage schemas (consume absence as outcome-independent estimability input)."
   - "SI-W3S-DEAD-CONTROL-V1 starts post-milestone per Sol's Terra-avenue ruling: extend config/delisted_symbols.yml to >=5 rows under its own SEC evidence protocol with a mechanical preregistered selection rule, and extend the existing Polygon dead-name collector to persist o/h/l/v (owner inventory packet in the program thread, 2026-08-28)."
   - "W3 Measurement Release closes only when Sol accepts W3A + W3B + W3S status together (freeze gate)."
@@ -151,10 +151,26 @@ sha256.ruler_py` pin (`42905b81...`) now deliberately disagrees with the
 current, repaired `ruler.py` bytes; that disagreement is itself the
 receipt's voiding proof, pinned by a live test.
 
-(e) **Corrective re-seal awaits Sol's explicit boundary ruling.** This repair
-makes NO second seal and does not decide when or whether one should follow;
-that decision, and the shape of the re-seal act if one is warranted, is
-Sol's to rule on next.
+(e) **Corrective re-seal RULED OUT in this child — Sol ruling 2026-08-29
+("NO CORRECTIVE RE-SEAL UNDER CURRENT ONE-TIME LAW", Slack C0BSBM78V1N).**
+Sol judged the repair itself PASS for the availability defect, then DENIED
+any corrective seal under current authority: Task 3C's PR-3 constant-setting
+act is ONE-TIME by the accepted W3 plan — the first sealed read consumed it
+under the unlawful eligibility population, and population-determining
+`ruler.py` has since (lawfully, by order) changed, so rereading the same
+sealed cohort after observing its values would be a second look / new
+scientific amendment, not a bounded repair of the authorized act. No
+`ruler_spec_v2`, no second receipt family, no new TrialLedger look budget,
+no new calibration partition/epoch may be minted in this child. The
+production-calibration state is therefore **BLOCKED / W3A MILESTONE NOT
+ACCEPTED** — and deliberately NOT `BLOCKED_DEGENERATE_CALIBRATION`, because
+no second lawful calibration read was authorized, so degeneracy has never
+been lawfully tested on the repaired sealed population. Recovering
+production constants requires a FRESH authority boundary that only Sol can
+grant, via one of two candidate shapes (described here per the ruling,
+neither chosen nor executed): a newly authorized sealed calibration
+epoch/partition, or an explicit amendment/waiver of the one-time look law
+with fresh preregistration.
 
 (f) **Pilot-cohort calibration degeneracy under the repaired predicate
 (2026-08-29 adversarial review F2).** With `recall_at_tier_distribution`'s
@@ -170,8 +186,12 @@ sealed-calibration substrate (b)-(d) above describe — indicative, not proof,
 of what a corrective re-seal on the current substrate would produce — and it
 signals that such a re-seal may itself terminate in
 `BLOCKED_DEGENERATE_CALIBRATION` rather than a fresh seal. Full detail:
-registration document §6.14.1. This is the fact Sol's re-seal-boundary
-ruling in (e) needs before ruling, not a decision on its own.
+registration document §6.14.1. This fact was placed before Sol's
+re-seal-boundary ruling; Sol's 2026-08-29 ruling in (e) denied any second
+read in this child, so this degeneracy signal remains an untested
+indication — it was never lawfully confirmed or refuted on the repaired
+sealed population, and must not be cited as a measured verdict of that
+population.
 
 ## What exists now
 

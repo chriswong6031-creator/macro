@@ -61,18 +61,23 @@ waves:
       Dead Instrument Control Set registered as a hard PR-5/Q1 predecessor.
   - id: W3A
     title: Episode localization ruler engine (C-LOC-R/C-LOC-D + controls; no fit read)
-    status: done
+    status: in_progress
     pr: 6638
     depends_on: [W2]
     next_action: >
-      BUILT + SEALED on carrier PR #6638 (DRAFT, Sol milestone gate): executable ruler,
-      nulls incl. D3b cadence-phase (PARTIAL coverage per Sol ruling — 92/285 pilot
-      groups controlled, dark groups typed and barred from cadence-controlled
-      inference), Channel-A model constitution, availability-based recall denominator
-      (Sol five-point law), and the ONE-TIME PR-3 seal: recall_floor=0.05,
-      lambda_fs=0.00027929738756017066 from SI-SEALED-CAL-P1 (759/759 names,
-      hash-chained receipt in ruler_spec_v1.json + registration §5). done = merged;
-      the wave closes when Sol accepts the W3A milestone and merges #6638.
+      MILESTONE NOT ACCEPTED (Sol REQUEST_REPAIR then re-seal denial, 2026-08-29).
+      The ruler engine, nulls, model constitution and fail-closed availability law
+      are built, review-clean and carried on PR #6638 (DRAFT, Sol gate), but the
+      ONE-TIME PR-3 seal was consumed under an unlawful eligibility population
+      (generic spec_hash stood in for date-specific source/era proof; census: 0/14
+      null-bound R/B families have such evidence). The repair is PASS; the sealed
+      Attempt-1 artifacts (recall_floor=0.05, lambda_fs=2.7930e-4, receipt in
+      ruler_spec_v1.json + registration §5) are preserved byte-for-byte as a
+      REJECTED-attempt record; Sol denied any corrective re-seal in this child
+      under the one-time look law. Production-calibration state: BLOCKED.
+      Recovery requires a fresh Sol authority boundary (new sealed calibration
+      epoch/partition, or amendment/waiver of the one-time look law with fresh
+      preregistration) — neither minted here.
   - id: W3B
     title: Fit estimability + dependence/effective-N census (no fit read)
     status: todo
