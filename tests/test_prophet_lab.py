@@ -48,7 +48,9 @@ Ticker map (by fixture design):
 """
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import replace
+import json
 from pathlib import Path
 
 import pytest
@@ -80,6 +82,12 @@ from engine.prophet_lab.contracts import (
     OBSERVATION_RETROSPECTIVE_SEED,
     SCHEMA_LAB_BOARD,
 )
+from engine.prophet_lab.intelligence_vector import (
+    IntelligenceVectorContractError,
+    build_earnings_intelligence_vector,
+    validate_intelligence_vector,
+)
+from lib.dataos.identity import IdentityError, IssuerMaster
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "prophet_lab"
 
@@ -1473,3 +1481,305 @@ def test_full_width_entry_event_round_trips_through_the_reader(
     expert = c1_rows["III"]["experts"][0]
     assert expert["event_id"] == event_dict["event_id"]
     assert expert["signal_known_ts"] == "2026-08-18T14:30:05Z"
+
+
+# ---------------------------------------------------------------------------
+# D5 Task 2 — pure Earnings intelligence-vector projection
+# ---------------------------------------------------------------------------
+
+_D5_EPISODE_GENERATION = "peg:" + "a" * 64
+_D5_EPISODE_ID = "pe:SEC:US-XNAS-AAPL:epoch_0:sa:" + "b" * 24 + ":1"
+
+
+def _d5_episode(*, company_id: str = "ISS:US:320193") -> dict:
+    return {
+        "schema": "prophet.candidate_episode/v1",
+        "episode_id": _D5_EPISODE_ID,
+        "company_id": company_id,
+        "security_id": "SEC:US-XNAS-AAPL",
+        "state": "CANDIDATE",
+        "opened_at": "2026-07-30T20:31:00Z",
+        "opened_session": "2026-07-30",
+        "structural_anchor": {
+            "time": "2026-07-30T20:00:00Z",
+            "event_id": "evt-structural-anchor",
+        },
+        "expert_events": ["radar:event:content-addressed-1"],
+    }
+
+
+def _d5_master(*, include_cik: bool = True) -> IssuerMaster:
+    return IssuerMaster.from_records([{
+        "security_id": "SEC:US-XNAS-AAPL",
+        "issuer_id": "ISS:US:320193",
+        "issuer_state": "active",
+        "listing_key": "US:XNAS:AAPL",
+        "issuer_cik": "0000320193" if include_cik else None,
+    }])
+
+
+def _d5_workspace(*, secret: bool = False) -> dict:
+    return {
+        "schema": "event_workspace.v1",
+        "event_id": "evt_cik0000320193_2026q3_results",
+        "issuer": {"company_id": "cik:0000320193", "display_name": "Apple Inc."},
+        "fiscal_period": {"year": 2026, "quarter": 3, "calendar_end": "2026-06-27"},
+        "lifecycle": {
+            "state": "complete",
+            "source_available_at": "2026-07-30T20:00:00Z",
+            "observed_at": "2026-07-30T20:03:00Z",
+        },
+        "facts": [{
+            "schema": "event_fact.v1",
+            "metric": "revenue",
+            "value": 109_417_000_000,
+            "unit": "USD",
+            "period": "2026Q3",
+            "basis": "reported",
+            "source_span": {"text": "RAW FACT SPAN MUST NOT LEAK"},
+        }],
+        "deltas": [{
+            "schema": "metric_delta.v1",
+            "metric": "revenue",
+            "current": {"value": 109_417_000_000, "unit": "USD", "basis": "reported"},
+            "prior": {"state": "absent", "reason": "not_available"},
+            "consensus": {"state": "absent", "reason": "consensus_unlicensed"},
+            "basis_match": False,
+        }],
+        "guidance": [{
+            "metric": "revenue_yoy_pct",
+            "low": 9.0,
+            "high": 11.0,
+            "unit": "pct",
+            "horizon": "2026Q4",
+            "status": "issued",
+            "source_span": {"text": "RAW GUIDANCE SPAN MUST NOT LEAK"},
+        }],
+        "claims": ([{
+            "body": "PRIVATE TRANSCRIPT CLAIM MUST NOT LEAK",
+            "private_path": "/private/earnings/transcript.txt",
+        }] if secret else []),
+        "sources": [{
+            "kind": "issuer_release",
+            "document_id": "doc:issuer-release:1",
+            "source_sha256": "c" * 64,
+            "url": "https://private.example/never-copy",
+            "receipt_state": "byte_replayed",
+        }, {
+            "kind": "transcript",
+            "document_id": "doc:transcript:1",
+            "source_sha256": "d" * 64,
+            "body": "RAW TRANSCRIPT BODY MUST NOT LEAK",
+            "private_path": "/private/transcript.json",
+        }],
+        "warnings": ["consensus_unlicensed"],
+        "generation_id": "1" * 24,
+        "generated_at": "2026-07-30T20:04:00Z",
+        "authority": "context_only",
+        "prophet_flags": {
+            "may_rank": False,
+            "may_size": False,
+            "may_gate": False,
+            "prophet_authority": False,
+        },
+    }
+
+
+def _d5_revisions(*, workspace: dict | None = None) -> list[dict]:
+    workspace = workspace or _d5_workspace()
+    return [{
+        "generation_id": workspace["generation_id"],
+        "source_sha256": "c" * 64,
+        "source_available_at": workspace["lifecycle"]["source_available_at"],
+        "observed_at": workspace["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace": workspace,
+    }]
+
+
+def _build_d5(**overrides) -> dict:
+    kwargs = {
+        "episode": _d5_episode(),
+        "episode_generation_id": _D5_EPISODE_GENERATION,
+        "episode_known_at": "2026-07-30T20:05:00Z",
+        "issuer_master": _d5_master(),
+        "find_event_id": lambda company_id: "evt_cik0000320193_2026q3_results",
+        "read_revisions": lambda event_id: _d5_revisions(),
+    }
+    kwargs.update(overrides)
+    return build_earnings_intelligence_vector(**kwargs)
+
+
+def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritative() -> None:
+    payload = _build_d5()
+    validate_intelligence_vector(payload)
+
+    assert payload["schema"] == "prophet.intelligence_vector/v1"
+    assert payload["projection_id"].startswith("piv:")
+    assert payload["episode_ref"] == {
+        "schema": "prophet.candidate_episode/v1",
+        "episode_id": _D5_EPISODE_ID,
+        "generation_id": _D5_EPISODE_GENERATION,
+        "identity_ref": "ISS:US:320193",
+    }
+    assert payload["decision_cut"] == {
+        "opened_at": "2026-07-30T20:31:00Z",
+        "opened_session": "2026-07-30",
+        "anchor_time": "2026-07-30T20:00:00Z",
+        "known_at": "2026-07-30T20:05:00Z",
+        "tradable_at": {
+            "state": "NOT_ASSERTED",
+            "value": None,
+            "basis": "no_us_availability_owner_and_b4_not_built",
+        },
+    }
+    assert payload["fusion_bindings"] == []
+    assert payload["authority"] == {
+        "can_rank": False,
+        "can_gate": False,
+        "can_size": False,
+        "can_originate_signal": False,
+        "can_change_entry_open": False,
+        "can_change_execution": False,
+    }
+    assert payload["assembly_receipt"]["event_discovery_scope"] == "CURRENT_GENERATION_ONLY"
+    assert payload["assembly_receipt"]["historical_event_set_reconstruction"] is False
+    assert payload["assembly_receipt"]["identity_resolution_scope"] == "CURRENT_REGISTRANT_ONLY"
+    assert payload["assembly_receipt"]["revision_visibility_scope"] == "ISSUER_RELEASE_SOURCE_HASH_ONLY"
+    assert "500" in payload["assembly_receipt"]["revision_chain_bound_disclosure"]
+
+    family = payload["evidence_families"][0]
+    assert set(family) == {
+        "family_projection_id", "evidence_family_id", "family_contract_version",
+        "owner_ref", "subject_binding", "semantic_head_ids", "method_version",
+        "point_in_time", "applicability", "coverage", "freshness", "rights",
+        "identity_state", "quality", "source_refs", "evidence_roots",
+        "observations", "trajectory", "correction", "calibration",
+        "fusion_bindings", "authority", "owner_warnings",
+    }
+    assert family["evidence_family_id"] == "earnings.event"
+    assert family["identity_state"] == "RESOLVED"
+    assert family["coverage"]["state"] == "COVERED"
+    assert family["point_in_time"]["decision_admissibility"] == "ADMISSIBLE"
+    assert family["fusion_bindings"] == []
+    assert family["authority"] == payload["authority"]
+    assert family["owner_warnings"] == ["consensus_unlicensed"]
+    assert {o["native_metric_id"] for o in family["observations"]} == {
+        "fact:revenue", "delta:revenue", "guidance:revenue_yoy_pct",
+    }
+    assert all(o["value_state"] == "PRESENT" for o in family["observations"])
+    assert all(o["method_class"] == "ADAPTER_MECHANICAL_PROJECTION" for o in family["observations"])
+    assert all(o["absence_reasons"] == [] for o in family["observations"])
+    assert family["correction"]["state_at_decision"] == "NONE"
+    assert family["correction"]["current_state"] == "CURRENT"
+    assert len(payload["economic_dependence_groups"]) == 1
+    group = payload["economic_dependence_groups"][0]
+    assert group["relation"] == "COMMON_INFORMATION_ORIGIN"
+    assert group["basis"] == "CONTRACT_RULE"
+    assert set(group["member_observation_refs"]) == {
+        observation["observation_id"] for observation in family["observations"]
+    }
+    assert all(
+        observation["economic_dependence_group_ids"] == [group["dependence_group_id"]]
+        for observation in family["observations"]
+    )
+
+    rebuilt = _build_d5()
+    assert rebuilt["projection_id"] == payload["projection_id"]
+    changed_transport = deepcopy(payload)
+    changed_transport["assembly_receipt"]["assembled_at"] = "2099-01-01T00:00:00Z"
+    validate_intelligence_vector(changed_transport)
+    assert changed_transport["projection_id"] == payload["projection_id"]
+
+
+def test_identity_is_resolved_before_current_manifest_discovery() -> None:
+    calls: list[str] = []
+
+    class OrderedMaster:
+        def cik_of_issuer(self, issuer_id: str) -> str:
+            calls.append(f"identity:{issuer_id}")
+            return "0000320193"
+
+    def discover(company_id: str) -> str:
+        calls.append(f"discover:{company_id}")
+        return "evt_cik0000320193_2026q3_results"
+
+    _build_d5(issuer_master=OrderedMaster(), find_event_id=discover)
+    assert calls == ["identity:ISS:US:320193", "discover:cik:0000320193"]
+
+
+def test_unresolved_identity_never_discovers_or_claims_healthy_empty_coverage() -> None:
+    calls: list[str] = []
+    payload = _build_d5(
+        issuer_master=_d5_master(include_cik=False),
+        find_event_id=lambda company_id: calls.append(company_id),
+    )
+    assert calls == []
+    family = payload["evidence_families"][0]
+    assert family["identity_state"] == "UNRESOLVED"
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert family["point_in_time"]["decision_admissibility"] == "UNKNOWN"
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert family["observations"][0]["absence_reasons"] == ["IDENTITY_UNRESOLVED"]
+
+
+def test_ambiguous_identity_is_conflicted_and_never_discovers() -> None:
+    calls: list[str] = []
+
+    class AmbiguousMaster:
+        def cik_of_issuer(self, issuer_id: str) -> str:
+            raise IdentityError(f"conflicting current issuer CIK observations for {issuer_id}")
+
+    payload = _build_d5(
+        issuer_master=AmbiguousMaster(),
+        find_event_id=lambda company_id: calls.append(company_id),
+    )
+    assert calls == []
+    family = payload["evidence_families"][0]
+    assert family["identity_state"] == "AMBIGUOUS"
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert family["observations"][0]["absence_reasons"] == ["CONFLICTED"]
+
+
+def test_projection_never_copies_raw_workspace_claim_body_span_url_or_private_path() -> None:
+    workspace = _d5_workspace(secret=True)
+    payload = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=workspace))
+    serialized = json.dumps(payload, sort_keys=True)
+    for secret in (
+        "PRIVATE TRANSCRIPT CLAIM MUST NOT LEAK",
+        "RAW TRANSCRIPT BODY MUST NOT LEAK",
+        "RAW FACT SPAN MUST NOT LEAK",
+        "RAW GUIDANCE SPAN MUST NOT LEAK",
+        "https://private.example/never-copy",
+        "/private/earnings/transcript.txt",
+        "/private/transcript.json",
+    ):
+        assert secret not in serialized
+
+
+@pytest.mark.parametrize(
+    "forbidden",
+    [
+        "score", "rank", "weight", "confidence", "conviction",
+        "evidence_count", "entry_open", "ENTRY_OPEN", "body", "claims",
+        "transcript", "private_path", "workspace",
+    ],
+)
+def test_closed_validator_rejects_prohibited_authority_and_leakage_fields(forbidden: str) -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0][forbidden] = "forbidden"
+    with pytest.raises(IntelligenceVectorContractError, match="forbidden|closed"):
+        validate_intelligence_vector(payload)
+
+
+def test_closed_validator_rejects_episode_generation_drift_and_authority_escalation() -> None:
+    payload = _build_d5()
+    payload["episode_ref"]["generation_id"] = "peg:" + "f" * 64
+    with pytest.raises(IntelligenceVectorContractError, match="projection_id|generation"):
+        validate_intelligence_vector(payload)
+
+    payload = _build_d5()
+    payload["authority"]["can_rank"] = True
+    with pytest.raises(IntelligenceVectorContractError, match="authority"):
+        validate_intelligence_vector(payload)
