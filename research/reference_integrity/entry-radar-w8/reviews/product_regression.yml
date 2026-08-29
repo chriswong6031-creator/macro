@@ -1,0 +1,78 @@
+schema: mastermind.rig_review.v1
+reference_id: entry-radar-w8
+role: product_regression
+artifact_sha: a8c763dc3dea094fb7c3201e5c3953b921b45464
+
+reviewer:
+  identity: "opus-reviewer-w8-reattest-5737-A"
+  role: product_regression_critic
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - "frozen artifact bytes: mockups/refs/entry_radar/{index.html,radar.css,radar.js,radar-data.js} + DESIGN_NOTES.md"
+    - "live reference http://127.0.0.1:8793 (served bytes hash-verified == a8c763dc)"
+    - "prior BLOCK on 9c8990d: RGXB-001 / RGXB-002 / RGXB-003"
+  rationale_received_after_first_pass: true
+  note: >
+    Re-attestation of named prior findings. Repair claim was in the commission.
+    Mitigation: independent probe plus a mutant control (axis restored) that
+    produced 68 occlusions / 176 rail overflows against 0 on the freeze.
+
+first_pass:
+  frozen_at: "2026-08-17T13:44:07Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: PRC-R-001
+      severity: minor
+      capability: sister.prophet_card_language
+      finding: >
+        Overlay rail has 2.2px headroom at 1024 (ovl 112.0px vs PRE-CANDIDATE
+        109.8px). A font or copy change re-opens RGXB-001 with no shrink/wrap.
+    - id: PRC-R-002
+      severity: minor
+      finding: >
+        Live P11 pytest skips in CI: signal-contract installs no Playwright.
+        Static R29/R27b still run. Skip is disclosed, not a silent pass.
+    - id: PRC-R-003
+      severity: minor
+      finding: >
+        M29 is tautological with R27b (same CSS literal). Geometric proof is
+        the live predicate, not 28/28 mutations.
+    - id: PRC-R-004
+      severity: minor
+      finding: >
+        DESIGN_NOTES §1 conflates the hidden AXIS label with the lifecycle
+        WORD in the body. The chip is self-labelling; do not restore the axis.
+  strengths:
+    - "Causal: restoring the overlay axis reproduces PRE-CANDIDATE under the quote (28.3px at 1024); frozen bytes produce 0."
+    - "Corrected P11 is sensitive: 244 violations on the mutant, 0 on the artifact."
+    - "338 card-measurements at 1024/1280/1440 × dark/light EN: 0 occlusions, 0 rail overflow. elementFromPoint chip 234/234."
+    - "featured == Best exact set; quiet Probe Set 42; path-null branches honest; no title=; no production page."
+
+second_pass:
+  amended_at: "2026-08-17T13:44:07Z"
+  amendments:
+    - finding: RGXB-001
+      action: withdrawn
+      note: "Verified remediated on a8c763dc. Mutant control reproduced then eliminated the defect. Does not mean the finding was invalid when raised."
+    - finding: RGXB-002
+      action: withdrawn
+      note: "P11 now compares lifechip vs quote plus rail overflow and is demonstrably sensitive."
+    - finding: RGXB-003
+      action: downgraded
+      note: "Silent pass gone (explicit skip). CI still has no Playwright, so live geometry is static-only there. Carried as W9-COND-2."
+    - finding: PRC-R-001
+      action: upheld
+      note: "W9-COND-1. Do not inherit 2.2px as a design invariant."
+    - finding: PRC-R-002
+      action: upheld
+      note: "W9-COND-2. Production port must run live P11 where Playwright exists."
+    - finding: PRC-R-003
+      action: upheld
+      note: "W9 must not read M29 as geometric proof."
+    - finding: PRC-R-004
+      action: upheld
+      note: "W9 copy. Overlay chip is self-labelling; omit the axis span."
+  verdict: PASS_WITH_CONDITIONS
