@@ -1,0 +1,138 @@
+# Proposal ledger (RIG V1 §5-§6) — the deployed TP-1 Canada surface.
+# The "proposed artifact" is the ALREADY-DEPLOYED TP-1 result (post-deploy
+# governance repair; chronology recorded truthfully in baseline.yml and
+# manifest.yml). Frozen at the TP-1 squash-merge on main.
+schema: mastermind.rig_proposal.v1
+reference_id: canada-stock-dashboard-tp1
+
+proposed_artifact:
+  frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+  paths:
+    - templates/stock-dashboard.css   # governed presentation pair (source)
+    - site/stock-dashboard.css        # byte-identical published copy
+    - site/canada-stock-v36.js        # composer, injectCss() removed (6+/60- vs base)
+    - templates/dashboard-icons.js    # fail-soft ensureStockDashCss loader (paired)
+    - site/dashboard-icons.js
+  screenshots:
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-dark-zh-desktop.png, viewport: desktop, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-light-zh-desktop.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-dark-en-mobile.png, viewport: mobile, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-light-en-mobile.png, viewport: mobile, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-dark-zh-mobile.png, viewport: mobile, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-cell-light-zh-mobile.png, viewport: mobile, theme: light, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-modal-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-modal-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-allcands-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-allcands-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1/proposal-mobile-light-lane2-390.png, viewport: mobile, theme: light, locale: en}
+
+dispositions:
+  - id: actnow.four_lane_map
+    disposition: RETAIN
+    target: same DOM/semantics; presentation moves to governed CSS (.mx-stockdash--ca lanes; light renders the four lanes as one white instrument with hairline columns and semantic rails)
+  - id: actnow.per_group_membership
+    disposition: RETAIN
+    target: composer logic untouched (site/canada-stock-v36.js diff is injectCss deletion + mount-class line only)
+  - id: actnow.research_routes
+    disposition: RETAIN
+    target: untouched composer routes; verified live post-deploy
+  - id: prophet.top_picks_projection
+    disposition: RETAIN
+    target: untouched composer population logic; verified live (5 visible / 4 hidden / 9 on board)
+  - id: prophet.grid_table_xor
+    disposition: RETAIN
+    target: hidden-attribute XOR preserved; CSS overrides pinned at declaration level with !important in the governed pair
+  - id: prophet.population_filters
+    disposition: RETAIN
+    target: untouched composer filters; verified live ("2 shown · 9 on board" round trip)
+  - id: prophet.live_quotes
+    disposition: RETAIN
+    target: ".nb-chg.up/.down → var(--ok)/var(--act) ported verbatim into the governed pair (Western colors under ZH preserved)"
+  - id: leadership.themes_only_rank
+    disposition: RETAIN
+    target: untouched composer; light restyles rows as an institutional list (rank and stance remain separate axes)
+  - id: leadership.expand_modal
+    disposition: IMPROVE
+    target: modal family rescoped ".mx-stockdash--ca ~ .ca-v36-modal" (the composer body-appends the modal)
+    rationale: the extraction's descendant scope had orphaned the modal CSS (dead in both themes on the intermediate head); the sibling scope restores the accepted V3.8 overlay under the governed namespace and is runtime-proven by the committed modal shots
+  - id: clocks.board_vs_live
+    disposition: RETAIN
+    target: untouched markup; chip styling ported into the governed pair
+  - id: record.track_record
+    disposition: RETAIN
+    target: untouched; verified live
+  - id: nav.terminal_routes
+    disposition: RETAIN
+    target: untouched
+  - id: platform.two_fetch_degrade
+    disposition: RETAIN
+    target: untouched
+  - id: platform.fail_soft_legacy
+    disposition: IMPROVE
+    target: ensureStockDashCss gates composer injection on the governed stylesheet with bounded retry (attempt<3, backoff), stale-listener probe, and fail-soft to the legacy page
+    rationale: V3.8 mounted with zero CSS dependency; TP-1 adds one and must not let it strand entitled visitors — proven by the local 404 fixture (no mount, legacy visible) with a positive control (CSS restored ⇒ mounts)
+  - id: platform.theme_lang
+    disposition: RETAIN
+    target: theme resolves through html[data-theme] selectors in the governed pair with NO composer remount (live-proven: same mount node across toggle); ZH via existing dual-emit; 390 one-lane grammar preserved (harness cells + lane-2 shot)
+  - id: platform.sm_hidden_rescue
+    disposition: RETAIN
+    target: ".mx-stockdash--ca .ca-v36-card-grid .sm-hidden { display:flex !important } in the governed pair, test-pinned at declaration level"
+
+additions:
+  - "Deliberate light-mode art direction (research-workspace): dissolved lane boxes into one white instrument with 2px semantic rails; recessed Prophet tray with white ringed cards; deepened segmented track with raised white selection; cool text-derived modal scrim; Leadership breadth measure on a full-width hairline track. Dark remains the V3.8 command-center rendering with seven declared deltas (near-lane/HOLD ink restored to V3.8 link-blue; modal shadow geometry restored; segmented selected shadow restored; scrim base token-derived sub-perceptual; radius snapped to the canonical five-stop scale ≤2px; buy and avoid lane inks aligned to the Prophet stance family, dE76 ≈10/≈8)."
+
+user_tasks:
+  - id: task.scan_act_now
+    task: Glance the four lanes and pick a group to act on
+    critical: true
+    production: four raised lane cards, dark-first; light was token-translated grey-in-grey
+    proposal: identical rows/caps/routes; light renders one instrument with four semantic-rail columns; dark unchanged
+    verdict: UNKNOWN
+    notes: critics adjudicate; population and routes live-verified identical
+  - id: task.pick_candidate
+    task: Find the closest-to-buy Prophet candidates and open one
+    critical: true
+    production: Top Picks card grid with stance chips, warn badges, zones
+    proposal: same cards and population; light cards are white on a recessed tray with a ring on picks
+    verdict: UNKNOWN
+  - id: task.filter_population
+    task: Filter by sector/theme and trust the counts
+    critical: true
+    production: honest "N shown · M on board" with pill
+    proposal: identical logic, live-verified round trip
+    verdict: UNKNOWN
+  - id: task.read_quotes
+    task: Read LIVE quotes and dates in either language
+    critical: true
+    production: LIVE cells green-up/red-down (even under ZH), Board vs LIVE chips
+    proposal: identical rules ported to governed CSS; live pre-market state showed neutral "—" cells
+    verdict: UNKNOWN
+  - id: task.leadership_depth
+    task: Open the leadership modal for the full ranking
+    critical: true
+    production: overlay dialog (V3.8-accepted)
+    proposal: overlay dialog under the rescoped sibling selector, live-proven both themes
+    verdict: UNKNOWN
+  - id: task.mobile_one_lane
+    task: Use the board at 390 one lane at a time
+    critical: true
+    production: segmented one-lane grammar, no overflow
+    proposal: identical grammar; light border reset fixed at equal specificity (lane-2 shot)
+    verdict: UNKNOWN
+
+authority_delta:
+  - id: auth.no_new_claims
+    production_claim: board displays owner-derived ranks, counts, stances, quotes with honest nulls
+    proposal_claim: identical — presentation-only change; no new number, rank, badge, or wording is introduced
+    direction: equal
+    warranted: true
+    evidence: "composer diff = injectCss deletion + mount-class line (6+/60-); functional reviewer invariant table all-PASS"
+
+information_economics:
+  words_per_card: {production: "unchanged — copy untouched", proposal: "unchanged — copy untouched"}
+  findings:
+    - "No copy, count, or chart changed; the delta is material treatment only (surfaces, rails, shadows, radii, inks)."
+  preserved:
+    - "Glance-tier density identical; no glance→read conversion anywhere."

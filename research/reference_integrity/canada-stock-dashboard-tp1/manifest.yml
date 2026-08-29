@@ -1,0 +1,44 @@
+# RIG manifest (RIG V1 §3) — canada-stock-dashboard-tp1.
+# POST-DEPLOY GOVERNANCE REPAIR (chronology recorded truthfully): the TP-1
+# implementation merged (e2091032ad1f) and passed entitled production proof
+# BEFORE this RIG set existed; the L9 gate then correctly refused the registry
+# compliance flip (#6620) because no approved reference existed for this
+# surface. This set is the ordered repair (Sol ruling, carrier
+# theme-parity-tp1-canada-20260828-sol-001, 2026-08-28): fresh independent
+# critics under true rationale quarantine, judging the deployed artifact
+# against the pre-TP-1 production baseline. It does not claim RIG preceded
+# the migration, and it retrofits nothing from the earlier non-quarantined
+# reviews.
+schema: mastermind.rig_manifest.v1
+reference_id: canada-stock-dashboard-tp1
+scope: full
+status: in_review
+
+surface:
+  route: canada_stocks.html
+  registry_row: macro:canada_stocks
+  archetype: discovery_board
+
+author:
+  identity: "TP-1 carrier lanes (opus designer light art direction + sonnet builder extraction), coordinated by Fable COO session canada-theme-parity-tp1-2595cf; RIG artifacts authored by the coordinator"
+  role: designer
+
+reference_files:
+  - path: templates/stock-dashboard.css
+    frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+  - path: site/stock-dashboard.css
+    frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+  - path: site/canada-stock-v36.js
+    frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+  - path: templates/dashboard-icons.js
+    frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+  - path: site/dashboard-icons.js
+    frozen_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml

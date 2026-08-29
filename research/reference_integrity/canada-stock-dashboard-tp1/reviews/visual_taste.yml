@@ -1,0 +1,142 @@
+# Critic receipt (RIG V1 §6) — Reviewer B, visual/taste. Two-pass with
+# rationale quarantine; first pass frozen at commit before rationale reveal.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1
+role: visual_taste
+artifact_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+
+reviewer:
+  identity: "rig-critic-b-slate-harrier-0828"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (baseline.yml user_job)
+    - production-before artifact (baseline-dark/light-en-1440.png + pre-change source copies)
+    - proposed-after artifact (comment-redacted frozen copies + 14 rendered proposal PNGs)
+    - capability ledger (baseline.yml)
+    - design law (docs/DESIGN_DOCTRINE.md, research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md — law, not rationale)
+  rationale_received_after_first_pass: true
+  notes: >
+    Critic's own declaration: quarantine honored in full; redacted sources in
+    the pass-1 packet were deliberately not needed for pixel judgments, so
+    pixel ownership (page CSS vs shared chrome) is inferred from rendering.
+
+first_pass:
+  frozen_at: "2026-08-29T00:05:46Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: VTC-001
+      severity: major
+      finding: >
+        In light the Prophet section's content bed is painted at exactly the
+        page canvas value (proposal-light-en-1440.png x57-69,y1000 =
+        (232,235,241) = page canvas) where production painted it #ffffff — the
+        largest panel becomes the named "panel ≈ bg" flatness case, and the
+        page carries three different light nesting models on one screen
+        (Act-Now white-on-white, Prophet white-on-canvas, Evidence near-white).
+    - id: VTC-002
+      severity: major
+      finding: >
+        The primary module's geometry forks by theme, not just material: light
+        lane rails/cells run edge-to-edge with 1px separations and no card
+        container or radius, while dark keeps ~26px gutters and rounded cards —
+        toggling theme re-composes What-to-Act-On-Now rather than
+        re-materializing it.
+    - id: VTC-003
+      severity: major
+      finding: >
+        The four light rails abut into one continuous ~1301px four-colour bar
+        of EQUAL segment widths above lanes whose counts are 3/2/2/5, inviting
+        a proportional read the data does not support; production's inset
+        rails could not be misread that way.
+    - id: VTC-004
+      severity: major
+      finding: >
+        ZH renders 立即买入 (Buy Now) red and 减仓/回避 (Reduce/Avoid) green in
+        both themes (proposal-cell-light/dark-zh-desktop.png lane header row) —
+        judged in pass 1 as a partial action/health semantics flip that the
+        reference would freeze as "buy = red" canon for the ZH desk.
+    - id: VTC-005
+      severity: major
+      finding: >
+        The ZH board is not a native composition at Tier 1: every Prophet
+        card's sector line stays English (Information Technology / Materials /
+        Energy / Communication) and every leadership row keeps the English
+        eyebrow "Theme" beside its ZH name — raw EN dropped into ZH copy on
+        the glance tier.
+    - id: VTC-006
+      severity: major
+      finding: >
+        The Leadership overlay's caption reads "Theme Leadership Theme rank"
+        in both themes (y≈138) — a concatenated non-sentence about to be
+        frozen as canonical copy — and the Name column is right-aligned
+        against a left-aligned Action column, giving the most-scanned column a
+        ragged left edge that defeats vertical scanning of 16 themes.
+    - id: VTC-007
+      severity: major
+      finding: >
+        The ambient aurora paints across the dialog's live rows in both themes
+        (moon crescent / sun core over rows 6-8 beneath the Action values at
+        x≈660-780, y≈390-510) — ambient art touching legibility inside an
+        overlay, where Hold/Avoid land on the bright core.
+    - id: VTC-008
+      severity: major
+      finding: >
+        At 390 the stance vocabulary — the product's core words and the only
+        exposure of three of the four lanes — is truncated on the switcher
+        itself ("Buy N… / In Fav… / Botto… / Redu…", "减仓 /… 5"), with
+        leadership names clipped alongside.
+    - id: VTC-009
+      severity: minor
+      finding: >
+        The rotation-strength rail is legible in one theme only: light is 2px
+        accent-blue while dark keeps production's ~1.6:1 whisper — the
+        command-center theme silently lacks a magnitude channel the research
+        theme now has.
+    - id: VTC-010
+      severity: minor
+      finding: >
+        The restored light rail is painted in the wayfinding accent, so on one
+        panel --link blue means both "magnitude" (row rails) and "go here"
+        (Thematic Baskets ↗ / Expand leadership ↗) — measurement wearing the
+        category/accent hue.
+    - id: VTC-011
+      severity: minor
+      finding: >
+        Dark hairlines are dimmed against production at no stated gain (lane
+        card border (58,65,79)→(45,51,63); section panel border
+        (47,53,66)→(29,33,43)) — softening the dark board's structural read
+        while the same pass strengthens the Grid/Table control border.
+    - id: VTC-012
+      severity: minor
+      finding: >
+        At 390 the collapsed Ask-Mastermind FAB lands on the #1 pick card and
+        covers part of RANK #1 / 排名 #1 — the one card the user is meant to
+        read first; chrome-owned, but the board's mobile composition leaves no
+        safe gutter for it.
+  strengths:
+    - Light Prophet cards finally read as material rather than as outlines
+      (white card + hairline on a cool bed instead of white-card-on-white) —
+      closer to the stated light direction than production is.
+    - The rotation magnitude rail goes from effectively invisible in
+      production light (~1.2:1) to readable — a data channel light previously
+      did not deliver at all.
+    - Light gains real table structure (tinted subhead band and footer row
+      separating chrome from data) which production rendered as
+      undifferentiated white.
+    - Dark identity is preserved rather than churned (18,486 changed pixels
+      total, mostly ticker and chips) with two deliberate improvements (lane
+      title ink lifted to a brighter rung; segmented-control border
+      strengthened).
+    - Mobile is deliberate re-composition, not a squeezed desktop (stance chip
+      strip with exactly one lane expanded; lane-2 shot proves the switch
+      re-composes; single-column full-bleed cards).
+    - All Candidates holds one grammar across both themes with WAIT states
+      correctly amber and the honest "9 shown · 9 on board" count intact.
+
+second_pass:
+  amended_at: null   # pending — rationale reveal follows this freeze commit
+  amendments: []
+  verdict: null

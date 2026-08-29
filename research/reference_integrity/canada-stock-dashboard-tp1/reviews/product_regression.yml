@@ -1,0 +1,139 @@
+# Critic receipt (RIG V1 §6) — Reviewer A, product regression. Two-pass with
+# rationale quarantine; first pass frozen at commit before rationale reveal.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1
+role: product_regression
+artifact_sha: e2091032ad1f53eb8b8cfa3767aa6498f414193e
+
+reviewer:
+  identity: "rig-critic-a-lattice-heron-7734"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (baseline.yml user_job)
+    - production-before artifact (baseline-dark/light-en-1440.png + pre-change source copies baseline-canada-stock-v36.js / baseline-dashboard-icons.js)
+    - proposed-after artifact (comment-redacted frozen copies of stock-dashboard.css / canada-stock-v36.js / dashboard-icons.js + 15 rendered proposal PNGs)
+    - capability ledger (baseline.yml)
+  rationale_received_after_first_pass: true
+  notes: >
+    Proposed-artifact comments were uniformly redacted in the pass-1 copies
+    because the deployed stylesheet header carries the designer rationale
+    (DARK DELTA ledger); the critic judged behavior and rendered output.
+    Critic's own declaration: quarantine honored in full — no proposal.yml/
+    manifest.yml, nothing under templates/ or site/, no theme-parity docs,
+    no PR/Slack/prior-review material, no git history commands.
+
+first_pass:
+  frozen_at: "2026-08-29T00:05:46Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: PRC-001
+      severity: major
+      capability: leadership.expand_modal
+      finding: >
+        .ca-v36-stance is rescoped to .mx-stockdash--ca .ca-v36-stance
+        (stylesheet) but the modal is appended to document.body as a SIBLING
+        of the composed main, so the full-ranking Action column loses border,
+        uppercase, size and semantic hue in BOTH themes
+        (proposal-modal-light/dark-en-1440.png rows y=214..817 render
+        Accumulate/Hold/Avoid as uniform muted plain text where at-rest rows
+        show green ACCUMULATE / blue HOLD chips); the same rescoping drops the
+        body-level font-family the baseline set, so nothing outside the
+        composed main inherits the dashboard UI font.
+    - id: PRC-002
+      severity: major
+      capability: leadership.themes_only_rank
+      finding: >
+        .ca-v36-lead-basis is rescoped the same way (baseline had it
+        unscoped), so the modal pane heading collapses its basis pill into the
+        garbled single string "Theme Leadership Theme rank"
+        (proposal-modal-light/dark-en-1440.png y=138), destroying the mandated
+        visible-basis disclosure at the one surface where all 16 owner ranks
+        are read, while the at-rest panel keeps a correct THEME RANK pill.
+    - id: PRC-003
+      severity: major
+      capability: leadership.themes_only_rank
+      finding: >
+        The light-only 2px --link breadth rule (stylesheet light section)
+        promotes the count/max breadth whisper (1px/opacity .5 in dark) into a
+        prominent blue quantitative rule in light only
+        (proposal-light-en-1440.png y=1219/1277/1335/1393/1451): it gives
+        data-ink weight to a presentation-derived ratio published nowhere, at
+        100% breadth it reads as a plain full-width divider while at 60-80% it
+        reads as a bar, and it makes the same number carry different authority
+        in dark than in light.
+    - id: PRC-004
+      severity: major
+      capability: platform.fail_soft_legacy
+      finding: >
+        The composer's stylesheet now arrives as a separately-cached asset
+        behind a hand-typed key (stock-dashboard.css?v=20260828) against an
+        entitled/no-store composer script — a CSS/JS skew class the baseline
+        made structurally impossible by carrying the sheet inline; there is no
+        runtime handshake (no sentinel custom property asserted before mount),
+        and because the legacy-panel hide rule moved into that sheet the
+        mismatch cannot fail soft once buildShell has relocated the cards out
+        of the legacy panels.
+    - id: PRC-005
+      severity: minor
+      capability: platform.fail_soft_legacy
+      finding: >
+        ensureStockDashCss gates inject() entirely on link.onload with backoff
+        only on the error path and no timeout, while the two data artifacts
+        carry an explicit 2.5s degrade timer for exactly this hazard — a
+        stalled (rather than errored) stylesheet strands an entitled
+        subscriber on the legacy page for the browser's own network timeout.
+    - id: PRC-006
+      severity: minor
+      capability: leadership.expand_modal
+      finding: >
+        All modal presentation is bound to DOM adjacency via
+        .mx-stockdash--ca ~ .ca-v36-modal, valid only while .site-nav's parent
+        is body; a future wrapper on the shared nav family stops the
+        combinator matching and strips the modal's display:none default —
+        failing OPEN as permanently visible unstyled ranking content.
+    - id: PRC-007
+      severity: minor
+      capability: platform.fail_soft_legacy
+      finding: >
+        ensureStockDashCss is declared bare at top level of the site-wide icon
+        hydrator, outside any IIFE unlike every other unit in that file, so it
+        is published on window for every page loading dashboard-icons.js.
+        (Critic severity: nit; recorded at minor, the schema's floor.)
+  strengths:
+    - Dark desktop EN is near-exact preservation (pixel diff outside the
+      animated ticker confined to antialiasing bands; every lane, count,
+      chip, rank, card, clock and route in identical position).
+    - The light Act-Now treatment is a genuine second art direction, not a
+      token swap (boxed panel2 lane cards become white-material columns with
+      4%-tinted semantic header bands; lane membership stays unambiguous).
+    - Stance hues move off the quote-direction inks onto the dedicated
+      --ink-pv family — exactly the separation the design lineage demands —
+      with hues measurably preserved and the --ok/--act quote binding kept
+      verbatim.
+    - EN/ZH stance-hue behaviour is symmetric across both themes, so the
+      locale convention is not silently theme-dependent.
+    - Total-failure ordering of the new dependency is correct — a fully dead
+      stylesheet leaves the untouched legacy page; the HK loader is left
+      byte-identical.
+    - The composer diff is genuinely presentation-only — the only behavioural
+      deltas are injectCss()/FONT_UI deletion and the mount-class line; no
+      ranking, filter, membership, clock, quote or fetch semantics moved.
+  capability_dispositions_note: >
+    preserved: actnow.four_lane_map, actnow.per_group_membership,
+    actnow.research_routes, prophet.top_picks_projection, prophet.live_quotes,
+    clocks.board_vs_live, record.track_record, platform.two_fetch_degrade,
+    platform.theme_lang, platform.sm_hidden_rescue.
+    regressed: leadership.themes_only_rank (PRC-002/003),
+    leadership.expand_modal (PRC-001/006), platform.fail_soft_legacy
+    (PRC-004/005).
+    unverified (no evidence cell): prophet.grid_table_xor (Table view),
+    prophet.population_filters (filtered/pill/empty states),
+    nav.terminal_routes.
+
+second_pass:
+  amended_at: null   # pending — rationale reveal follows this freeze commit
+  amendments: []
+  verdict: null
