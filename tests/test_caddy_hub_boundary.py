@@ -38,12 +38,15 @@ CADDYFILE_PATH = REPO_ROOT / "app" / "deploy" / "Caddyfile"
 # proxy COUNT is pinned so a silently-dropped block is caught rather than
 # passing vacuously.
 # ---------------------------------------------------------------------------
-def test_shipped_caddyfile_has_exactly_eight_backend_proxies_all_safe() -> None:
+def test_shipped_caddyfile_has_exactly_seven_backend_proxies_all_safe() -> None:
+    # Re-pinned 8 -> 7 after #6635 (4a449f855c34): the control-room auth
+    # proxy moved off 127.0.0.1:8000 onto the :8787 admin session handler,
+    # which this :8000 hub-boundary classifier deliberately does not cover.
     text = CADDYFILE_PATH.read_text(encoding="utf-8")
     proxies = classify_backend_proxies(text)
 
-    assert len(proxies) == 8, (
-        f"expected exactly 8 :8000 backend reverse_proxy blocks, found {len(proxies)}: {proxies}\n"
+    assert len(proxies) == 7, (
+        f"expected exactly 7 :8000 backend reverse_proxy blocks, found {len(proxies)}: {proxies}\n"
         "If this is a deliberate topology change, update the pinned count here — do not just "
         "delete the assertion, that is exactly the vacuous pass clause F exists to prevent."
     )
@@ -53,8 +56,8 @@ def test_shipped_caddyfile_has_exactly_eight_backend_proxies_all_safe() -> None:
     peer_stamped = [p for p in proxies if p.classification == SAFE_PEER_STAMPED]
     fixed_rewrite = [p for p in proxies if p.classification == SAFE_FIXED_REWRITE]
     assert len(peer_stamped) == 2, peer_stamped
-    assert len(fixed_rewrite) == 6, fixed_rewrite
-    assert len(peer_stamped) + len(fixed_rewrite) == 8
+    assert len(fixed_rewrite) == 5, fixed_rewrite
+    assert len(peer_stamped) + len(fixed_rewrite) == 7
 
 
 def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
@@ -63,6 +66,8 @@ def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
     diff a reviewer will actually look at."""
     text = CADDYFILE_PATH.read_text(encoding="utf-8")
     proxies = {p.line: p.classification for p in classify_backend_proxies(text)}
+    # Re-pinned after #6635 (4a449f855c34): the line-803 control-room block
+    # left the :8000 plane for the :8787 admin session handler.
     assert proxies == {
         121: SAFE_PEER_STAMPED,
         146: SAFE_PEER_STAMPED,
@@ -71,7 +76,6 @@ def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
         390: SAFE_FIXED_REWRITE,
         428: SAFE_FIXED_REWRITE,
         770: SAFE_FIXED_REWRITE,
-        803: SAFE_FIXED_REWRITE,
     }
 
 
