@@ -4,7 +4,7 @@
 schema: mastermind.rig_review.v1
 reference_id: canada-stock-dashboard-tp1-r2
 role: visual_taste
-artifact_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+artifact_sha: 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2
 
 reviewer:
   identity: "rig-r2-critic-b-slatewren-0f31"
@@ -129,6 +129,38 @@ first_pass:
     no such finding was filed.
 
 second_pass:
-  amended_at: null   # pending — rationale reveal follows this freeze commit
-  amendments: []
-  verdict: null
+  amended_at: "2026-08-29T02:35:00Z"
+  continuation_note: >
+    Pass 2 executed by a continuation context of the same reviewer identity
+    after the host lost the pass-1 agent's transcript (findings frozen at
+    commit 5a34417ffc8e before the reveal; the authority accepted this
+    continuation form in the predecessor cycle). The continuation received the
+    rationale before reading the receipt; every amendment is grounded in a
+    cited post-reveal source re-verification or explicitly marked
+    rationale-claim-accepted. It re-verified against the REAL r2 artifact
+    (origin/claude/tp1-canada-r2 head), catching that this receipt's original
+    artifact_sha did not resolve (coordinator transcription error, since
+    corrected in place to 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2).
+  amendments:
+    - {finding: VTC-201, action: downgraded, note: "Chairman-approved frozen architecture, stated in the artifact's own words; dark's retained luminance step is the same architecture. E2 observation carried as taste input against settled two-cycle law. major → advisory."}
+    - {finding: VTC-202, action: upheld, note: "Re-verified: the filter-origin rail is authored light-only; dark carries strictly less information for the identical state. CSS-only, in-boundary, converges with sibling PRC-204; the ENTRY-OPEN idiom is the repair mechanism. Stays major."}
+    - {finding: VTC-203, action: upheld, note: "HARDENED on re-derivation: fill-vs-track separation token-recomputed at ~1.71:1 light / ~1.95:1 dark (worse than the filed ~2.2:1), and the 3px fill sits at bottom:0 flush against the next row's border-top — the ownership ambiguity is structural. The residual the authority reserved. Stays major."}
+    - {finding: VTC-204, action: downgraded, note: "Inheritance verified at the pre-extraction bytes (ellipsis truncation + achromatic pills byte-equivalent in V3.8's runtime stylesheet); CORRECTION for the authority: the mechanism is governed CSS, not composer markup — repairable CSS-only in a later cycle; the byte-identity ground was mis-located. major → minor, referred estate debt."}
+    - {finding: VTC-205, action: upheld, note: "Provenance RESOLVED beyond the two-stylesheet check: the cause is a page-global bare th,td{text-align:right} in site/assets/css/f03170b9.css:187, loaded by canada_stocks.html:64, whose td:first-child exception reproduces the rendering exactly. Inherited page-global — but repairable with ONE declaration in the governed namespace, and the critical-task scanning cost holds. Stays major."}
+    - {finding: VTC-206, action: downgraded, note: "Composer-emitted copy under the verified 0-line composer diff; referred estate ZH-nativeness debt per the predecessor closure. major → referred."}
+    - {finding: VTC-207, action: downgraded, note: "Authority-ordered restoration of accepted V3.8 dark (stated at the rule); a stronger dark scrim is a new dark decision unavailable to this cycle. Travels to the estate. minor → advisory."}
+    - {finding: VTC-208, action: downgraded, note: "Inherited composition, with a mechanism CORRECTION: the dialog geometry is governed CSS (max-height + overflow:auto), so the missing scroll affordance is a CSS scroll-fade away, no composer byte needed — the rationale's composer-owned ground was mis-located. minor → estate debt."}
+    - {finding: VTC-209, action: downgraded, note: "Composer-emitted chip string under the 0-line-diff fence (independently confirmed); genuinely unfixable this cycle. minor → referred."}
+    - {finding: VTC-210, action: downgraded, note: "Composer/engine-emitted V3.8 copy under the same fence; the vocabulary debt is real and estate-level (the banned-vocab whitelist has not reached this surface). minor → referred."}
+  verdict_conditions:
+    - "VTC-202: give dark an equivalent-information filter-origin marker (CSS-only, in-boundary)."
+    - "VTC-203: separate the breadth measure from the row boundary and raise fill/track separation above ~1.71:1 light / ~1.95:1 dark."
+    - "VTC-205: restore left alignment on the modal Name column inside the governed namespace so the page-global right-align stops reaching the ranked list."
+  rationale_corrections_for_the_authority:
+    - "VTC-204/VTC-208 were referred on a composer/byte-identity ground that does not hold — both mechanisms are governed CSS."
+    - "VTC-205 is no longer provenance-unresolved (page-global bundle rule identified at source)."
+    - "VTC-203's filed contrast figure was too generous; corrected numbers are worse."
+  referred_to_estate: [VTC-201, VTC-204, VTC-206, VTC-207, VTC-208, VTC-209, VTC-210]
+  strengths_carried_unamended: true
+  withdrawals: 0
+  verdict: PASS_WITH_CONDITIONS

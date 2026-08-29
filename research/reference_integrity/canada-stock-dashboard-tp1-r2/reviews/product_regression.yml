@@ -4,7 +4,7 @@
 schema: mastermind.rig_review.v1
 reference_id: canada-stock-dashboard-tp1-r2
 role: product_regression
-artifact_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+artifact_sha: 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2
 
 reviewer:
   identity: "rig-r2-critic-a-9f3c1a7d-quiet-lynx"
@@ -125,6 +125,38 @@ first_pass:
       and a real exit).
 
 second_pass:
-  amended_at: null   # pending — rationale reveal follows this freeze commit
-  amendments: []
-  verdict: null
+  amended_at: "2026-08-29T02:05:00Z"
+  continuation_note: >
+    Pass 2 executed by a continuation context of the same reviewer identity
+    after the host lost the pass-1 agent's transcript (findings were frozen at
+    commit 5a34417ffc8e before the reveal; the design authority accepted this
+    continuation form in the predecessor cycle). The continuation received the
+    rationale before reading the receipt; mitigation: every amendment anchors
+    to primary source or committed images, and the single withdrawal rests on
+    theme.css token definitions, not the rationale's say-so.
+  amendments:
+    - {finding: PRC-201, action: upheld, note: "Composer limb conceded (floor + normalization byte-identical V3.8, out of boundary); residual refined and upheld at MAJOR: r2's CSS newly ADDS the full-width ::before track, and track+fill is what converts a whisper into a read-as-meter — an 8%-floored fill on a null-membership row now paints unknown as legible quantity in both themes. The track was not ordered, only the weight/parity. In-boundary CSS mitigations exist: drop/lighten the track, or label the measure; suppress-at-null needs the composer. Carried to the authority as the unruled emergent cost of its own order."}
+    - {finding: PRC-202, action: downgraded, note: "Fail-closed base and sibling scope are the authority's explicit orders answering the predecessor fail-OPEN exposure; both requested repairs are barred (namespace law / byte-identity); the scroll-lock half is itself inherited byte-identical. Residual latent dead-button+scroll-lock mode recorded as the ordered trade-off's cost. major → minor."}
+    - {finding: PRC-203, action: downgraded, note: "Adjudicated deployed architecture (no-store receipts, 404 fixture + positive control, mirrored retry); the 'silently deletes every capability' framing partially falsified at source — mount class only on success path and the legacy-hide rule lives INSIDE the gated sheet, so failure leaves legacy rendered. Residual costs (capability absence on style failure, serial round-trip, no final-failure signal) recorded under the named debt. major → minor."}
+    - {finding: PRC-204, action: upheld, note: "No counter-fact: active-filter state is authored in light only (inset --link rails) while dark carries ~1.09:1 tint — a state MEANING both art directions must share. In-boundary CSS repair using dark's own idiom (luminance/edge, not light's colour rail); repair together with sibling VTC-202. Stays minor but bars PASS as a dark art-direction deficiency."}
+    - {finding: PRC-205, action: withdrawn, note: "FALSIFIED at source under the pass-2 grant: both token families are :root-defined in theme.css (with light and light+zh overrides), so no var() chain can go invalid; the ZH flip is the accepted estate stance law with the quotes-only Canada exception verified preserved."}
+    - {finding: PRC-206, action: upheld, note: "Reclassified inherited-unattributed: pre-extraction bytes carry identical alignment rules, so the rendered right-alignment originates outside both compared stylesheets; the defect is real and a canonical reference must not adopt it silently — requires a live computed-style DOM check before ratification. Stays minor, not a REVISE item against r2."}
+    - {finding: PRC-207, action: upheld, note: "Re-verified; repair must COORDINATE with PRC-201 — restoring a literal 8% fallback would strengthen paint-null-as-quantity; correct form is a 0 fallback or 8% paired with null suppression. Stays at the schema minor floor."}
+    - {finding: PRC-208, action: upheld, note: "Re-verified; in-boundary one-line CSS repair. Stays at the schema minor floor."}
+  routing:
+    revise_in_boundary: [PRC-204, PRC-207, PRC-208]
+    to_authority_unruled: [PRC-201]
+    recorded_ordered_cost: [PRC-202, PRC-203]
+    referred_inherited: [PRC-206]
+    withdrawn: [PRC-205]
+  pass1_partial_basis_discharged: >
+    The pass-1 PARTIAL basis (dark/ZH-mobile cells unopened) is discharged —
+    all eight cells were opened this pass. The surviving bases are PRC-204
+    (dark not fully adjudicated as a design) and PRC-201 (unruled emergent
+    cost).
+  observation_not_a_finding: >
+    ZH cells carry untranslated composer-owned strings (Theme #N, PROPHET,
+    English sector names) — inherited, out of boundary; recorded so the
+    authority is not surprised (pass 2 may not add findings).
+  strengths_retracted: none
+  verdict: PARTIAL

@@ -107,7 +107,7 @@ predecessors:
         kind: condition
         disposition: RESOLVED_BY_CHANGE
         evidence: >
-          New frozen SHA 82a627d4c1029154524809e3a90e4ba842722e11 (branch
+          New frozen SHA 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2 (branch
           claude/tp1-canada-r2); this r2 artifact set exists to run the fresh
           rationale-quarantined two-pass critics against it; predecessor
           receipts remain on disk as historical evidence under the REVISE

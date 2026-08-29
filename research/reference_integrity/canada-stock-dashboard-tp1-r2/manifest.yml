@@ -22,11 +22,11 @@ author:
 
 reference_files:
   - path: templates/stock-dashboard.css
-    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+    frozen_sha: 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2
   - path: site/stock-dashboard.css
-    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+    frozen_sha: 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2
   - path: tests/test_stock_dashboard_css.py
-    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+    frozen_sha: 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2
 
 files:
   baseline: baseline.yml
