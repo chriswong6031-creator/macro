@@ -12,32 +12,44 @@ Three of the freeze's seven mandatory nulls/controls are ruler-side and built he
    dwell/burstiness structure entirely; that is a *weaker*, differently-shaped
    null than the freeze's own "count/dwell-matched" requirement, not a stronger
    one).
-2. **Grain/cadence null** (:func:`grain_cadence_null`) — a deterministic, seeded,
-   trading-session-space circular shift that preserves cadence PHASE: one
-   multiple ``K`` of the group's own grain period, drawn from the declared
-   ``[63, 252]``-session range, is applied per ``(family_key, symbol)`` to every
-   fire's ``signal_ts`` on the symbol's own trading calendar, wrapping within
-   coverage (M4-regression — an EARLIER repair drew an unconstrained offset and
-   collapsed ``signal_known_ts``/``signal_ts`` to the SAME shifted value, which
-   breaks a weekly-grain group's weekday phase and destroys each event's own
-   stamp lag; both are restored here: shifting ``signal_ts`` by a
-   period-constrained ``K`` and reconstructing
-   ``signal_known_ts = new_signal_ts + (orig_known_ts - orig_signal_ts)`` per
-   event). **Weekday-phase MAJOR fix (delta-review third pass):** a period-5
-   multiple of ``K`` is a multiple of the group's grain period, but on a REAL
-   trading calendar (which carries holidays) a fixed number of SESSIONS is not
-   a fixed number of CALENDAR WEEKS — the M4-regression fix above only
-   *appeared* weekday-preserving because its own discriminating test used a
-   holiday-free ``pd.bdate_range`` fixture, where session count and calendar
-   weeks coincide exactly. :func:`grain_cadence_null` now explicitly searches
-   for a ``K`` that lands the group's earliest ("anchor") fire on the SAME
-   weekday, verifies every OTHER fire in the group also preserves its own
-   weekday under that same ``K`` (bounded, deterministic-seeded retries over
-   the nearest admissible multiples to the original draw), and — only if no
-   admissible ``K`` makes every fire's weekday agree within the retry budget —
-   falls back to the largest anchor-admissible multiple and marks that group's
-   rows ``phase_preserved: false`` rather than silently claiming a phase
-   preservation it did not actually verify.
+2. **Grain/cadence null** (:func:`grain_cadence_null`, Ruling 3 of Sol's PR-3 seal
+   law, SI-W3A-RULER-V1) — a deterministic, seeded, trading-session-space shift
+   in TWO stages per ``(family_key, symbol)`` group: (a) one shared BASE shift
+   ``K`` — a multiple of the group's own grain period, drawn from the declared
+   ``[63, 252]``-session range, identical to every fire in the group (unchanged
+   from the prior design); then (b) EACH fire is independently snapped from its
+   own post-base-shift position to the NEAREST actual trading session carrying
+   that fire's own ORIGINAL weekday, bounded to an absolute snap of at most
+   :data:`GRAIN_CADENCE_SNAP_BOUND_SESSIONS` (4) trading sessions, deterministic
+   tie-break toward the EARLIER candidate session when two land at the same
+   absolute distance. This is an EXPLICIT, DECLARED design change (Ruling 3):
+   the null is now exact-cadence-PHASE (every non-unestimable row lands on its
+   own original weekday, exactly) with a declared BOUNDED GAP PERTURBATION —
+   it is explicitly NOT dwell-matched (per-fire independent snapping can move
+   different fires in a group by different amounts, so the inter-fire SESSION
+   GAP multiset is no longer preserved exactly; only :func:`random_fire_null`
+   (null #1) carries the exact count/dwell law). The prior design (a single
+   per-group search for a ``K`` that made EVERY fire agree on weekday
+   simultaneously, falling back to an unverified guess when none existed) is
+   superseded: on a real pilot-scale cohort, weekly-grain groups routinely span
+   MULTIPLE YEARS, and no ``K`` within the frozen ``[63, 252]``-session range
+   can achieve full-group weekday agreement for them (a structural property of
+   the frozen session-range/shared-K design, verified by brute force,
+   documented in ``W3_RULER_REGISTRATION.md`` §6.2/§6.10) — the per-fire snap
+   makes phase preservation achievable per fire regardless of group span, at
+   the declared cost of a small (≤4-session), disclosed, per-fire gap
+   perturbation. Event COUNT, event IDENTITY (``event_id``), each event's own
+   stamp lag (``signal_known_ts - signal_ts``), and the group's CHRONOLOGICAL
+   fire order are all still preserved exactly. If the snap search finds no
+   lawful same-weekday target within the bound for any fire in the group, or
+   the independently-snapped positions would collide or invert the group's
+   chronological order, the WHOLE group is marked cadence-null
+   ``cadence_null_state = "unestimable"`` (typed column) and left UNTOUCHED
+   (original ``signal_ts``/``signal_known_ts`` preserved) rather than forcing a
+   broken or silently-incoherent shift. Per-row ``phase_preserved`` and
+   ``snap_sessions`` are published, plus group/summary gap-distortion
+   statistics (the distribution of ``|snap_sessions|``, per-group max, and the
+   unestimable-group count) via :func:`grain_cadence_null_summary`.
 3. **Equal-proximity comparison** (:func:`equal_proximity_control`) — pairs
    cross-family fires within the SAME episode AND SAME grain whose ATR-distance
    gap is within a declared tolerance (freeze review finding M2/M3 — the prior
@@ -62,9 +74,12 @@ import pandas as pd
 __all__ = [
     "PROXIMITY_PAIR_COLUMNS",
     "GRAIN_PERIOD_SESSIONS",
-    "GRAIN_CADENCE_PHASE_RETRY_BUDGET",
+    "GRAIN_CADENCE_SNAP_BOUND_SESSIONS",
+    "GRAIN_CADENCE_NULL_MIN_SESSIONS",
+    "GRAIN_CADENCE_NULL_MAX_SESSIONS",
     "random_fire_null",
     "grain_cadence_null",
+    "grain_cadence_null_summary",
     "equal_proximity_control",
 ]
 
@@ -92,12 +107,12 @@ GRAIN_PERIOD_SESSIONS: dict[str, int] = {
     "2W": 10,
 }
 
-#: Bounded retry budget for the weekday-phase search (delta-review MAJOR
-#: weekday-phase finding): the number of admissible-K candidates (nearest to
-#: the original seeded draw first, deterministic tie-break) tried before
-#: :func:`grain_cadence_null` gives up on an all-fires-agree K and falls back
-#: to the largest anchor-admissible multiple with ``phase_preserved: false``.
-GRAIN_CADENCE_PHASE_RETRY_BUDGET = 25
+#: Ruling 3 (SI-W3A-RULER-V1 PR-3 seal law) — the absolute bound, in trading
+#: sessions, on the per-fire snap :func:`grain_cadence_null` may apply AFTER
+#: the group's shared base shift ``K`` to land a fire on its own original
+#: weekday. Declared and frozen; never widened at runtime to rescue a group
+#: that would otherwise go ``cadence_null_state = "unestimable"``.
+GRAIN_CADENCE_SNAP_BOUND_SESSIONS = 4
 
 
 def _grain_period_sessions(grain: Any) -> int:
@@ -206,111 +221,91 @@ def random_fire_null(
     return out
 
 
-def _weekday_preserving_offset(
-    calendar: pd.DatetimeIndex,
-    positions: np.ndarray,
-    anchor_pos: int,
-    period: int,
-    lo: int,
-    hi: int,
-    m0: int,
-    retry_budget: int,
-) -> tuple[int, bool]:
-    """Search ``[lo, hi]`` (multiples of ``period``, i.e. candidate offsets
-    ``K = m * period``) for a ``K`` that lands EVERY fire in ``positions`` on
-    its own original weekday, given the seeded draw ``m0`` as the search
-    center (nearest-first, deterministic tie-break toward the smaller ``m``).
+def _snap_to_own_weekday(
+    calendar: pd.DatetimeIndex, shifted_pos: int, target_weekday: int, bound: int,
+) -> tuple[int | None, int | None]:
+    """Ruling 3: search sessions within ``[shifted_pos - bound, shifted_pos +
+    bound]`` (clipped to the calendar) for the one carrying ``target_weekday``
+    closest to ``shifted_pos``. Deterministic tie-break: at equal absolute
+    distance the EARLIER (smaller-position) session wins, so offsets are tried
+    smaller-magnitude-first and, within a magnitude, earlier-before-later.
 
-    Returns ``(k, phase_preserved)``. ``phase_preserved`` is ``True`` only when
-    a ``K`` was found (within ``retry_budget`` candidates) that preserves
-    EVERY fire's weekday — not merely the anchor's. If the retry budget is
-    exhausted without such a ``K``, or no candidate even preserves the
-    anchor's weekday, the largest anchor-admissible multiple is returned (or,
-    in the pathological case where no multiple in range preserves even the
-    anchor's weekday, the original unconstrained draw) with
-    ``phase_preserved=False`` — the fallback is disclosed, never silently
-    claimed as phase-preserving.
+    Returns ``(new_pos, snap_sessions)`` — ``snap_sessions`` is the SIGNED
+    delta ``new_pos - shifted_pos`` (published per-row, so the pre-snap base
+    position is always reconstructible as ``new_pos - snap_sessions``). Returns
+    ``(None, None)`` when no session within the bound carries the target
+    weekday — "no lawful target exists for some fire" (Ruling 3), which the
+    caller turns into a whole-group ``cadence_null_state = "unestimable"``.
     """
     n = len(calendar)
-    ms = np.arange(lo, hi + 1, dtype=np.int64)
-    ks = ms * period
-    anchor_new_positions = (anchor_pos + ks) % n
-    anchor_weekday = calendar[anchor_pos].weekday()
-    anchor_match = np.array(
-        [calendar[int(p)].weekday() == anchor_weekday for p in anchor_new_positions]
-    )
-    admissible_ms = ms[anchor_match]
-
-    if len(admissible_ms) == 0:
-        # Pathological: no offset in the declared range preserves even the
-        # anchor's weekday. Defensive last resort -- keep the original
-        # unconstrained draw; never claim phase preservation.
-        return int(m0) * period, False
-
-    # Nearest-to-m0 first (deterministic: derives only from the seeded m0 and
-    # the calendar, no further RNG draws needed), stable tie-break.
-    order = admissible_ms[np.argsort(np.abs(admissible_ms - m0), kind="stable")]
-    budget = min(retry_budget, len(order))
-    for m in order[:budget]:
-        k = int(m) * period
-        new_positions = (positions + k) % n
-        all_match = all(
-            calendar[int(p2)].weekday() == calendar[int(p1)].weekday()
-            for p1, p2 in zip(positions, new_positions)
-        )
-        if all_match:
-            return k, True
-
-    # Bounded retries exhausted: no K in range makes every fire agree on its
-    # own weekday. Fall back to the largest anchor-admissible multiple and
-    # disclose the failure via phase_preserved=False rather than shipping an
-    # unverified phase claim.
-    return int(admissible_ms.max()) * period, False
+    if n == 0:
+        return None, None
+    shifted_pos = min(max(int(shifted_pos), 0), n - 1)
+    for offset in range(0, bound + 1):
+        candidates = (shifted_pos,) if offset == 0 else (shifted_pos - offset, shifted_pos + offset)
+        for cand in candidates:
+            if 0 <= cand < n and calendar[cand].weekday() == target_weekday:
+                return cand, cand - shifted_pos
+    return None, None
 
 
 def grain_cadence_null(
     events: pd.DataFrame, bars_by_symbol: Mapping[str, pd.DataFrame], seed: int,
 ) -> pd.DataFrame:
-    """Trading-session-space circular shift, phase- and stamp-lag-preserving
-    (freeze review finding M4; M4-regression fix; weekday-phase MAJOR fix,
-    delta-review third pass).
+    """Ruling 3 (SI-W3A-RULER-V1 PR-3 seal law): trading-session base shift
+    PLUS a bounded per-fire weekday snap, stamp-lag- and order-preserving.
 
-    Per ``(family_key, symbol)`` group, an offset ``K`` — constrained to a
-    MULTIPLE of the group's own DOMINANT grain period in trading sessions
+    Per ``(family_key, symbol)`` group: (1) draw ONE shared base shift ``K`` —
+    a multiple of the group's own DOMINANT grain period in trading sessions
     (mode over the group's own ``grain`` values; :func:`_grain_period_sessions`;
-    ``1D``->1, ``3D``->3, ``W``->5, ``2W``->10) and drawn from the declared
-    ``[63, 252]``-session range — is searched (:func:`_weekday_preserving_offset`)
-    so that EVERY fire in the group lands on its own ORIGINAL weekday, not
-    merely a multiple-of-period session count. A fixed number of trading
-    SESSIONS is not a fixed number of calendar WEEKS on a real (holiday-
-    bearing) calendar, so period-multiple magnitude alone does not guarantee
-    weekday phase; the search draws a seeded candidate ``K``, verifies every
-    fire's weekday against it, and retries (bounded, deterministic) over the
-    nearest admissible multiples before falling back to the largest
-    anchor-admissible multiple and marking the group's rows
-    ``phase_preserved: false`` if no fully-agreeing ``K`` is found — the
-    guarantee is DISCLOSED per group, never silently claimed. Every fire's
-    ``signal_ts`` in the group is then moved ``K`` sessions forward on that
-    symbol's own trading calendar, wrapping within its coverage. KNOWN
-    LIMITATION: this is a per-(family_key, symbol) grouping (the frozen
-    shape), so a group that mixes multiple grains for the same symbol
-    (observed in the real pilot cohort's ``sea_event_classes`` family) applies
-    the DOMINANT grain's period to every fire in the group — a minority grain
-    sharing that group does not get its own phase preserved.
-    ``signal_known_ts`` is then reconstructed per event as
-    ``new_signal_ts + (orig_known_ts - orig_signal_ts)`` — each event's own
-    stamp lag is preserved EXACTLY as a timedelta, never collapsed to zero by
-    setting both columns to the same shifted value (the M4-regression this fix
-    closes). Every placed ``signal_ts`` lands on an actual trading session by
-    construction (it is drawn FROM the calendar), so no null fire's
-    ``signal_ts`` can ever fall on a non-session date; breaking correspondence
-    to the specific episode anchors is the null's purpose.
+    ``1D``->1, ``3D``->3, ``W``->5, ``2W``->10), drawn from the declared
+    ``[63, 252]``-session range, identical to the prior design's draw — and
+    apply it circularly to every fire's position; (2) INDEPENDENTLY snap each
+    fire from its own post-``K`` position to the nearest actual trading session
+    carrying that fire's own ORIGINAL weekday
+    (:func:`_snap_to_own_weekday`), bounded to
+    :data:`GRAIN_CADENCE_SNAP_BOUND_SESSIONS` (4) sessions each way, earlier
+    session wins ties. This is a DECLARED design change from the prior
+    single-shared-K weekday search (Ruling 3): real pilot-scale weekly-grain
+    groups span multiple years, so no single ``K`` in ``[63, 252]`` sessions
+    can weekday-align every fire in such a group simultaneously (a structural
+    property of the frozen session-range/shared-K design, verified by brute
+    force -- ``W3_RULER_REGISTRATION.md`` §6.2/§6.10); per-fire snapping makes
+    exact weekday preservation achievable per fire regardless of group span,
+    at the cost of a small, DECLARED, per-fire gap perturbation -- the null is
+    exact-cadence-PHASE but explicitly NOT dwell-matched (only
+    :func:`random_fire_null`, null #1, carries the exact count/dwell law).
 
-    The output carries a ``phase_preserved`` column (nullable boolean): ``True``
-    for every row in a group whose chosen ``K`` was verified to preserve every
-    fire's weekday, ``False`` for a group that fell back to the
-    largest-admissible-multiple guess, and ``<NA>`` for a group whose symbol
-    had no trading calendar available (untouched, no shift applied at all).
+    No fire is ever dropped: event COUNT and event IDENTITY (``event_id``) are
+    always preserved. Each event's own stamp lag
+    (``signal_known_ts - signal_ts``) is preserved EXACTLY as a timedelta.
+    Within a successfully-shifted group the fires' CHRONOLOGICAL ORDER (by
+    original ``signal_ts``) is verified preserved in the new positions -- a
+    STRICT increase is required, so two originally-distinct fires snapping to
+    the SAME session (a collision) or snapping out of their original relative
+    order (an inversion) both refuse the group's shift.
+
+    If ANY fire in the group has no lawful same-weekday target within the
+    snap bound, OR the group's snapped positions collide or invert
+    chronological order, the WHOLE group is marked
+    ``cadence_null_state = "unestimable"`` and left COMPLETELY UNTOUCHED
+    (original ``signal_ts``/``signal_known_ts`` preserved) rather than forcing
+    an incoherent or partially-broken shift.
+
+    Three published columns:
+
+    * ``cadence_null_state`` (string) -- ``"applied"`` (the group's shift+snap
+      succeeded and was applied), ``"unestimable"`` (collision/inversion/no
+      lawful target -- group left untouched), or ``"no_calendar"`` (the
+      symbol had no trading calendar available at all -- group left untouched,
+      identical to the prior design's convention).
+    * ``phase_preserved`` (nullable boolean) -- ``True`` for every row of an
+      ``"applied"`` group (weekday preservation is verified by construction
+      for every such row), ``<NA>`` otherwise.
+    * ``snap_sessions`` (nullable Int64) -- the signed per-fire snap distance
+      (stage 2 only, sessions) for every row of an ``"applied"`` group,
+      ``<NA>`` otherwise. :func:`grain_cadence_null_summary` derives the
+      group/summary gap-distortion statistics from this column.
     """
     if events is None or events.empty:
         return events.copy() if events is not None else events
@@ -320,23 +315,23 @@ def grain_cadence_null(
     stamp_lag = out["signal_known_ts"] - out["signal_ts"]
     rng = np.random.default_rng(seed)
     out["phase_preserved"] = pd.array([pd.NA] * len(out), dtype="boolean")
+    out["snap_sessions"] = pd.array([pd.NA] * len(out), dtype="Int64")
+    out["cadence_null_state"] = pd.array(["no_calendar"] * len(out), dtype="object")
 
     for (fam, sym), idx in out.groupby(["family_key", "symbol"]).groups.items():
         calendar = _symbol_calendar(bars_by_symbol, str(sym))
         n = len(calendar)
         sub = out.loc[idx]
         if n == 0:
-            continue
+            continue  # cadence_null_state stays "no_calendar" for this group
 
         # The GROUP's dominant grain (mode, not merely the first row -- a
-        # deterministic and representative choice) decides the period. A
-        # (family_key, symbol) group that mixes multiple grains (observed in
-        # the real pilot cohort's `sea_event_classes` family) applies the
-        # dominant grain's period to every fire in the group, per the frozen
-        # per-(family_key, symbol) grouping -- a minority grain sharing that
-        # group does not get its OWN phase preserved (documented limitation,
-        # not silently redesigned into a finer (family_key, symbol, grain)
-        # grouping, which would be a larger, separately-decided change).
+        # deterministic and representative choice) decides the base-shift
+        # period. A (family_key, symbol) group that mixes multiple grains
+        # (observed in the real pilot cohort's `sea_event_classes` family)
+        # applies the dominant grain's period to every fire in the group, per
+        # the frozen per-(family_key, symbol) grouping (documented limitation,
+        # unchanged from the prior design).
         grain_val = (
             sub["grain"].mode().iloc[0]
             if "grain" in sub.columns and sub["grain"].notna().any()
@@ -348,31 +343,118 @@ def grain_cadence_null(
         if hi < lo:
             hi = lo
         m0 = int(rng.integers(lo, hi + 1))
+        k = m0 * period
 
         positions = calendar.searchsorted(sub["signal_ts"].to_numpy(), side="left")
         positions = np.clip(positions, 0, n - 1).astype(np.int64)
+        original_weekdays = [calendar[int(p)].weekday() for p in positions]
+        shifted_positions = (positions + k) % n
 
-        # The group's "anchor" fire (earliest signal_ts) is what the freeze
-        # review's weekday-phase finding names -- the K search first lands
-        # THIS fire on its own weekday, then verifies every other fire too.
-        anchor_iloc = int(np.argmin(sub["signal_ts"].to_numpy()))
-        anchor_pos = int(positions[anchor_iloc])
+        new_positions = np.empty(len(positions), dtype=np.int64)
+        snap_sessions = np.empty(len(positions), dtype=np.int64)
+        lawful = True
+        for i, (sp, wd) in enumerate(zip(shifted_positions, original_weekdays)):
+            np_pos, snap = _snap_to_own_weekday(
+                calendar, int(sp), wd, GRAIN_CADENCE_SNAP_BOUND_SESSIONS,
+            )
+            if np_pos is None:
+                lawful = False
+                break
+            new_positions[i] = np_pos
+            snap_sessions[i] = snap
 
-        k, phase_preserved = _weekday_preserving_offset(
-            calendar, positions, anchor_pos, period, lo, hi, m0,
-            GRAIN_CADENCE_PHASE_RETRY_BUDGET,
-        )
+        if lawful:
+            # Chronological-order + collision check: taken in their ORIGINAL
+            # signal_ts order, the group's new positions must never INVERT
+            # (a later fire snapping before an earlier one) and must never
+            # introduce a NEW collision (two originally-DISTINCT positions
+            # snapping to the same session). A pair that was ALREADY tied in
+            # the original data (two fires sharing one signal_ts) is exempt
+            # from the no-new-collision check -- they were indistinguishable
+            # in time before this null ran too, so a tied snap is not a
+            # distortion this check exists to catch.
+            order_idx = np.argsort(positions, kind="stable")
+            ordered_orig = positions[order_idx]
+            ordered_new = new_positions[order_idx]
+            if len(ordered_new) >= 2:
+                orig_diff = np.diff(ordered_orig)
+                new_diff = np.diff(ordered_new)
+                inversion = np.any(new_diff < 0)
+                new_collision = np.any((orig_diff > 0) & (new_diff == 0))
+                if inversion or new_collision:
+                    lawful = False
 
-        new_positions = (positions + k) % n
+        if not lawful:
+            out.loc[sub.index, "cadence_null_state"] = "unestimable"
+            # phase_preserved/snap_sessions stay <NA>; signal_ts/signal_known_ts
+            # stay at their original (untouched) values -- never force a
+            # broken or partially-incoherent shift.
+            continue
+
         new_signal_ts = calendar[new_positions]
-
         out.loc[sub.index, "signal_ts"] = new_signal_ts
         out.loc[sub.index, "signal_known_ts"] = (
             pd.DatetimeIndex(new_signal_ts) + stamp_lag.loc[sub.index].to_numpy()
         )
-        out.loc[sub.index, "phase_preserved"] = phase_preserved
+        out.loc[sub.index, "phase_preserved"] = True
+        out.loc[sub.index, "snap_sessions"] = snap_sessions
+        out.loc[sub.index, "cadence_null_state"] = "applied"
 
     return out
+
+
+def grain_cadence_null_summary(out: pd.DataFrame) -> dict[str, Any]:
+    """Ruling 3: group/summary gap-distortion statistics for a
+    :func:`grain_cadence_null` output — the distribution of ``|snap_sessions|``
+    (the per-fire distance from the shared base shift to its own
+    weekday-matched landing session) plus the count of groups/rows marked
+    ``cadence_null_state == "unestimable"``. Surfaced in the W3A build
+    summary alongside the null's row-level output (Ruling 3's "group/summary
+    gap-distortion statistics ... in the null output and build summary")."""
+    empty = {
+        "n_rows": 0, "n_rows_applied": 0, "n_rows_unestimable": 0,
+        "n_rows_no_calendar": 0, "n_groups_unestimable": 0,
+        "snap_sessions_abs_mean": None, "snap_sessions_abs_median": None,
+        "snap_sessions_abs_max": None, "snap_sessions_abs_p95": None,
+        "per_group_max_abs_snap_sessions": {},
+    }
+    if out is None or out.empty or "cadence_null_state" not in out.columns:
+        return empty
+
+    state = out["cadence_null_state"]
+    n_rows_applied = int((state == "applied").sum())
+    n_rows_unestimable = int((state == "unestimable").sum())
+    n_rows_no_calendar = int((state == "no_calendar").sum())
+
+    n_groups_unestimable = 0
+    per_group_max: dict[str, float] = {}
+    if {"family_key", "symbol"} <= set(out.columns):
+        for (fam, sym), sub in out.groupby(["family_key", "symbol"]):
+            if bool((sub["cadence_null_state"] == "unestimable").any()):
+                n_groups_unestimable += 1
+            applied = sub.loc[sub["cadence_null_state"] == "applied", "snap_sessions"]
+            if not applied.empty:
+                abs_vals = pd.to_numeric(applied, errors="coerce").dropna().abs()
+                if len(abs_vals):
+                    per_group_max[f"{fam}::{sym}"] = float(abs_vals.max())
+
+    snaps = pd.to_numeric(out.loc[state == "applied", "snap_sessions"], errors="coerce").dropna()
+    abs_snaps = snaps.abs()
+    return {
+        "n_rows": int(len(out)),
+        "n_rows_applied": n_rows_applied,
+        "n_rows_unestimable": n_rows_unestimable,
+        "n_rows_no_calendar": n_rows_no_calendar,
+        "n_groups_unestimable": n_groups_unestimable,
+        "snap_sessions_abs_mean": float(abs_snaps.mean()) if len(abs_snaps) else None,
+        "snap_sessions_abs_median": float(abs_snaps.median()) if len(abs_snaps) else None,
+        "snap_sessions_abs_max": float(abs_snaps.max()) if len(abs_snaps) else None,
+        "snap_sessions_abs_p95": (
+            float(np.percentile(abs_snaps.to_numpy(dtype=float), 95, method="linear"))
+            if len(abs_snaps) else None
+        ),
+        "per_group_max_abs_snap_sessions": per_group_max,
+    }
 
 
 def equal_proximity_control(metrics: pd.DataFrame, tolerance_atr: float) -> tuple[pd.DataFrame, int]:

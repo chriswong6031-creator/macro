@@ -61,6 +61,9 @@ __all__ = [
     "FORBIDDEN_OUTPUT_TOKENS",
     "GRAIN_CLASSES",
     "SUPPORT_COVERAGE_COLUMNS",
+    "AVAILABILITY_TAXONOMY_TOKENS",
+    "FAMILY_EPISODE_AVAILABILITY_COLUMNS",
+    "FAMILY_ELIGIBLE_STATE",
     "PendingSealedCalibrationError",
     "MissingRankStratumColumnsError",
     "UnconditionalBlockUniverseError",
@@ -70,6 +73,7 @@ __all__ = [
     "validate_ruler_inputs",
     "compute_fire_metrics",
     "compute_unconditional_block",
+    "build_family_episode_availability",
     "aggregate_cell_metrics",
     "compute_composites",
     "build_support_coverage",
@@ -125,6 +129,21 @@ CELL_METRIC_COLUMNS: tuple[str, ...] = (
     "family_key", "episode_type", "grain", "n_fires", "n_episodes",
     "false_start_rate", "flooding", "recall_at_tier", "zone_precision",
     "relative_order", "consistency", "atr_dist_median_in_zone",
+)
+
+#: The one non-problem eligibility state (Ruling 2, SI-W3A-RULER-V1 PR-3 seal
+#: law) -- deliberately NOT drawn from :data:`AVAILABILITY_TAXONOMY_TOKENS`,
+#: symmetric with ``build_support_coverage``'s ``"resolved"`` (that constant's
+#: docstring: the taxonomy enumerates failure/absence semantics only).
+FAMILY_ELIGIBLE_STATE = "ELIGIBLE"
+
+#: Row shape of :func:`build_family_episode_availability` — one row per
+#: ``(family_key, tier-eligible episode)`` pair, outcome-independent (never
+#: reads fires/events), carrying a typed ``availability_state`` drawn from
+#: :data:`FAMILY_ELIGIBLE_STATE` or the closed
+#: :data:`AVAILABILITY_TAXONOMY_TOKENS` exclusion set.
+FAMILY_EPISODE_AVAILABILITY_COLUMNS: tuple[str, ...] = (
+    "family_key", "episode_type", "symbol", "episode_id", "availability_state",
 )
 
 _REQUIRED_EVENT_COLUMNS: tuple[str, ...] = (
@@ -598,6 +617,150 @@ def compute_unconditional_block(
     ).reset_index(drop=True)
 
 
+def _family_registry_index(
+    family_registry: Sequence[Mapping[str, Any]] | Mapping[str, Mapping[str, Any]] | None,
+) -> dict[str, Mapping[str, Any]]:
+    """Normalize either the raw ``family_registry.json``'s ``families`` list or an
+    already-keyed ``{family_key: entry}`` mapping. ``None`` yields an empty index
+    (every family then reads as registry-absent -- Ruling 2 (c): never a silent
+    fired-on fallback)."""
+    if family_registry is None:
+        return {}
+    if isinstance(family_registry, Mapping):
+        return dict(family_registry)
+    return {str(entry["family_key"]): entry for entry in family_registry if "family_key" in entry}
+
+
+def _family_first_available_bound(entry: Mapping[str, Any] | None) -> tuple[pd.Timestamp | None, bool]:
+    """``(bound, field_present)``. ``field_present=False`` means the registry
+    entry does not carry a ``family_first_available`` key AT ALL (Ruling 2
+    design note: a genuinely-missing provenance field types the family
+    unestimable, never a guessed value). A PRESENT field whose value is
+    ``None``/falsy means "no known start boundary" -- the SAME convention
+    already used throughout ``data/stock_identity/expert_events/
+    family_registry.json`` (21 of 24 committed entries carry ``null``),
+    ``engine/stock_identity/replay/registry.py``, and
+    ``scripts/stock_identity_replay_pilot.py`` (``fa.get(...)``)."""
+    if entry is None or "family_first_available" not in entry:
+        return None, False
+    val = entry.get("family_first_available")
+    return (pd.Timestamp(val) if val else None), True
+
+
+def _episode_family_availability_state(
+    erow: Any,
+    family_entry: Mapping[str, Any] | None,
+    family_entry_present: bool,
+    bars_by_symbol: Mapping[str, pd.DataFrame] | None,
+    bars_supplied: bool,
+) -> str:
+    """One typed availability state for a ``(family, tier-eligible episode)``
+    pair — outcome-independent, never reads ``events``/fires (Ruling 2). Returns
+    :data:`FAMILY_ELIGIBLE_STATE` or one of the closed
+    :data:`AVAILABILITY_TAXONOMY_TOKENS` exclusion states:
+
+    * ``"UNESTIMABLE"`` — no family registry was supplied at all, this
+      ``family_key`` is absent from it, or the registry entry genuinely lacks
+      the ``family_first_available`` field (three distinct "cannot establish
+      lawful availability" causes, all typed the same way per Ruling 2 (c) —
+      NEVER a silent fall-through to fired-on coverage), OR no
+      ``bars_by_symbol`` was supplied to check instrument/date coverage.
+    * ``"NOT_YET_AVAILABLE"`` — the registry's ``family_first_available``
+      postdates the episode's ENTIRE window (start through end/anchor-absent
+      fallback to start) — a resolved, typed exclusion.
+    * ``"NO_COVERAGE"`` — bars were supplied but do not cover the episode's
+      instrument/window.
+    """
+    if not family_entry_present:
+        return "UNESTIMABLE"
+    bound, field_present = _family_first_available_bound(family_entry)
+    if not field_present:
+        return "UNESTIMABLE"
+    start = pd.Timestamp(erow.start_date)
+    end_raw = getattr(erow, "end_date", None)
+    end = pd.Timestamp(end_raw) if end_raw is not None and pd.notna(end_raw) else start
+    if bound is not None and bound > end:
+        return "NOT_YET_AVAILABLE"
+    if not bars_supplied:
+        return "UNESTIMABLE"
+    symbol = str(erow.symbol)
+    bars = bars_by_symbol.get(symbol) if bars_by_symbol else None
+    if bars is None or bars.empty:
+        return "NO_COVERAGE"
+    lo, hi = bars.index.min(), bars.index.max()
+    covers = (lo <= start <= hi) or (lo <= end <= hi) or (start <= lo and end >= hi)
+    if not covers:
+        return "NO_COVERAGE"
+    return FAMILY_ELIGIBLE_STATE
+
+
+def build_family_episode_availability(
+    episodes: pd.DataFrame,
+    family_keys: Sequence[str],
+    *,
+    family_registry: Sequence[Mapping[str, Any]] | Mapping[str, Mapping[str, Any]] | None = None,
+    bars_by_symbol: Mapping[str, pd.DataFrame] | None = None,
+    tier_ceiling: int = 2,
+) -> pd.DataFrame:
+    """The outcome-independent ``(family_key, tier-eligible episode)``
+    availability frame Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law) requires
+    :func:`aggregate_cell_metrics`'s ``recall_at_tier`` denominator be built
+    from — REPLACING the prior events-derived ("fired-on") family/symbol
+    coverage universe. One row per ``(family_key, tier-eligible episode)``
+    pair — REGARDLESS of whether that family ever fired an event on that
+    episode's symbol — carrying a typed, closed ``availability_state``
+    (:data:`FAMILY_ELIGIBLE_STATE` / :data:`AVAILABILITY_TAXONOMY_TOKENS`; see
+    :func:`_episode_family_availability_state`).
+
+    Availability is established from OUTCOME-INDEPENDENT provenance/coverage
+    only: (i) the W2 family registry's own ``family_first_available``
+    boundary (never postdating the episode's window), and (ii)
+    instrument/date input availability (``bars_by_symbol`` coverage of the
+    episode's window). Grain carries no separate availability axis in the
+    committed provenance — one symbol's OHLCV underlies every grain a family
+    might read it at — so instrument/date/grain availability collapses to (ii)
+    by design, not by omission.
+
+    Class-P families (zero committed rows,
+    ``engine/stock_identity/replay/registry.py``'s ``CLASS_P_FAMILIES``) and
+    any family absent from ``family_keys`` never appear here at all — they
+    carry no ``fire_metrics`` rows upstream, so :func:`aggregate_cell_metrics`
+    never forms a cell for them regardless of this frame's content.
+    """
+    registry_index = _family_registry_index(family_registry)
+    family_registry_supplied = family_registry is not None
+    bars_supplied = bars_by_symbol is not None
+
+    eps = episodes if episodes is not None else pd.DataFrame()
+    if eps.empty or not {"symbol", "episode_type", "tier", "start_date"} <= set(eps.columns) or not family_keys:
+        return pd.DataFrame({c: pd.Series(dtype="object") for c in FAMILY_EPISODE_AVAILABILITY_COLUMNS})
+
+    tier_eligible = eps.loc[eps["tier"].fillna(3) <= tier_ceiling].copy()
+    if tier_eligible.empty:
+        return pd.DataFrame({c: pd.Series(dtype="object") for c in FAMILY_EPISODE_AVAILABILITY_COLUMNS})
+
+    tier_eligible["eligible_episode_id"] = tier_eligible.apply(
+        lambda r: episode_identifier(r["symbol"], r["episode_type"], r["start_date"]), axis=1
+    )
+
+    rows: list[dict[str, Any]] = []
+    for family_key in sorted(set(family_keys)):
+        entry = registry_index.get(family_key)
+        entry_present = family_registry_supplied and (family_key in registry_index)
+        for erow in tier_eligible.itertuples(index=False):
+            state = _episode_family_availability_state(
+                erow, entry, entry_present, bars_by_symbol, bars_supplied,
+            )
+            rows.append({
+                "family_key": family_key,
+                "episode_type": erow.episode_type,
+                "symbol": str(erow.symbol),
+                "episode_id": erow.eligible_episode_id,
+                "availability_state": state,
+            })
+    return pd.DataFrame(rows, columns=list(FAMILY_EPISODE_AVAILABILITY_COLUMNS))
+
+
 # ---------------------------------------------------------------------------
 # Task 3: cell aggregation + composites
 # ---------------------------------------------------------------------------
@@ -608,28 +771,33 @@ def aggregate_cell_metrics(
     events: pd.DataFrame,
     *,
     group_cols: Sequence[str] = ("family_key", "episode_type", "grain"),
+    family_registry: Sequence[Mapping[str, Any]] | Mapping[str, Mapping[str, Any]] | None = None,
+    bars_by_symbol: Mapping[str, pd.DataFrame] | None = None,
 ) -> pd.DataFrame:
     """Per-cell aggregates consumed by :func:`compute_composites`.
 
     ``recall_at_tier`` — of EVERY tier-eligible episode (tier <= 2, the "useful"
     episodes per ``episodes.py`` tier floors) in the ``episodes`` catalog that
-    belongs to the cell's ``episode_type`` and lies within the cell's family's own
-    symbol coverage (every symbol that family FIRED an event on anywhere in
-    ``events`` — attributed or not, regardless of grain/episode_type) —
-    REGARDLESS of whether that episode ever received a fire — the fraction that
-    received at least one in-zone fire (``|atr_dist| <= useful_zone_delta_atr``)
-    from this cell. A cell whose eligible episodes never fired at all still
-    reports a defined ``0.0``, never ``NaN`` (freeze review finding B2 — the
-    prior implementation counted only episodes that already had a fire recorded,
-    inflating recall for cells with silent coverage gaps). The family's symbol
-    coverage universe is built from ``events`` (EVERY fire, attributed or not),
-    never from ``fire_metrics`` (freeze review finding B2-residual — a
-    fire_metrics-derived universe silently excludes a symbol where the family
-    fired but nothing ever attributed, since such a fire never produces a
-    fire_metrics row at all, which under-counts the recall denominator exactly
-    like the original B2 defect). ``zone_precision`` — of the cell's fires with a
-    defined ``atr_dist``, the fraction that landed in-zone. ``false_start_rate``
-    — mean of the per-fire ``false_start`` flag over resolved (non-``None``)
+    belongs to the cell's ``episode_type`` and that the cell's family was
+    LAWFULLY AVAILABLE to fire on (Ruling 2, SI-W3A-RULER-V1 PR-3 seal law —
+    see :func:`build_family_episode_availability`) — REGARDLESS of whether
+    that episode ever received a fire — the fraction that received at least
+    one in-zone fire (``|atr_dist| <= useful_zone_delta_atr``) from this cell.
+    A cell whose eligible episodes never fired at all still reports a defined
+    ``0.0``, never ``NaN`` (freeze review finding B2). The eligibility
+    universe is now built from OUTCOME-INDEPENDENT provenance/coverage (the
+    ``family_registry``'s ``family_first_available`` boundary plus
+    ``bars_by_symbol`` instrument/date coverage) — Ruling 2 REPLACES the prior
+    events-derived ("fired-on") family/symbol coverage universe: adding an
+    available symbol with eligible episodes and zero fires now GROWS the
+    denominator (and can only hold or lower recall, never improve it), a
+    genuinely not-yet-available symbol never enters the denominator, and
+    missing eligibility evidence (``family_registry``/``bars_by_symbol`` not
+    supplied, or a family/field absent from the registry) types the excluded
+    episodes ``UNESTIMABLE`` rather than silently falling through to the OLD
+    fired-on read. ``zone_precision`` — of the cell's fires with a defined
+    ``atr_dist``, the fraction that landed in-zone. ``false_start_rate`` —
+    mean of the per-fire ``false_start`` flag over resolved (non-``None``)
     fires. ``flooding`` — fires per eligible-episode useful-zone session
     (``n_fires / (n_eligible * useful_zone_window_sessions)``), a size-invariant
     density read on noise (freeze review finding M7 — previously not normalized
@@ -637,6 +805,11 @@ def aggregate_cell_metrics(
     "noisier" at equal density). ``relative_order`` — over same-episode fire
     pairs, the fraction where the temporally later fire sits closer to anchor.
     ``consistency`` — ``1 - CV(|atr_dist|)`` within the cell, clipped to ``[0, 1]``.
+
+    ``events`` is retained as a required positional parameter for call-site
+    compatibility only — Ruling 2 removes its prior use (deriving the
+    recall-denominator coverage universe from fired-on events); it is no
+    longer read by this function's own logic.
     """
     if fire_metrics is None or fire_metrics.empty:
         return pd.DataFrame({c: pd.Series(dtype="object") for c in CELL_METRIC_COLUMNS})
@@ -644,26 +817,24 @@ def aggregate_cell_metrics(
     fm = fire_metrics.copy()
     fm["_in_zone"] = fm["atr_dist"].abs() <= spec.useful_zone_delta_atr
 
-    # Each family's own symbol coverage universe — every symbol that family FIRED
-    # an event on anywhere (attributed or not), used to bound the eligible-episode
-    # population for B2/M7 below — sourced from EVENTS (never fire_metrics, which
-    # is attributed-only and would silently drop a symbol a family fired on but
-    # never attributed into; B2-residual) and never the outcome-rank of any name
-    # (DNR:KILL-OUTCOME-AUDITION).
-    family_symbol_universe: dict[Any, set[str]] = {}
-    if events is not None and not events.empty:
-        family_symbol_universe = {
-            fam: set(sub_ev["symbol"].astype(str)) for fam, sub_ev in events.groupby("family_key")
-        }
-
-    eps = episodes if episodes is not None else pd.DataFrame()
-    eps_tier_eligible = pd.DataFrame()
-    if not eps.empty and {"symbol", "episode_type", "tier", "start_date"} <= set(eps.columns):
-        eps_tier_eligible = eps.loc[eps["tier"].fillna(3) <= 2].copy()
-        if not eps_tier_eligible.empty:
-            eps_tier_eligible["_episode_id"] = eps_tier_eligible.apply(
-                lambda r: episode_identifier(r["symbol"], r["episode_type"], r["start_date"]), axis=1
-            )
+    # Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): the recall-denominator
+    # eligibility universe is now the outcome-independent
+    # build_family_episode_availability() frame — never events-derived
+    # ("fired-on") coverage (DNR:KILL-OUTCOME-AUDITION also applies: this
+    # never reads any expert's own outcome rank). Computed ONCE, keyed by
+    # (family_key, episode_type), for every family_key that appears among
+    # fm's own groups (a family with zero fires anywhere never forms a cell
+    # at all, so its eligibility is never needed).
+    family_keys_present = sorted({str(f) for f in fm["family_key"].dropna().unique()})
+    availability = build_family_episode_availability(
+        episodes, family_keys_present,
+        family_registry=family_registry, bars_by_symbol=bars_by_symbol,
+    )
+    eligible_by_cell: dict[tuple[Any, Any], set[str]] = {}
+    if not availability.empty:
+        elig_only = availability.loc[availability["availability_state"] == FAMILY_ELIGIBLE_STATE]
+        for (fam, etype), sub_a in elig_only.groupby(["family_key", "episode_type"]):
+            eligible_by_cell[(fam, etype)] = set(sub_a["episode_id"])
 
     rows: list[dict[str, Any]] = []
     for key, sub in fm.groupby(list(group_cols), dropna=False):
@@ -681,14 +852,8 @@ def aggregate_cell_metrics(
         fs = sub["false_start"].dropna()
         false_start_rate = float(fs.mean()) if len(fs) else np.nan
 
-        covered_symbols = family_symbol_universe.get(family_key, set())
-        eligible_ids: set[str] = set()
-        if not eps_tier_eligible.empty:
-            elig_rows = eps_tier_eligible.loc[
-                (eps_tier_eligible["episode_type"] == episode_type)
-                & (eps_tier_eligible["symbol"].astype(str).isin(covered_symbols))
-            ]
-            eligible_ids = set(elig_rows["_episode_id"])
+        family_key_str = str(family_key) if family_key is not None else None
+        eligible_ids = eligible_by_cell.get((family_key_str, episode_type), set())
         n_eligible = len(eligible_ids)
 
         recalled_ids = set(

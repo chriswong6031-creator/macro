@@ -60,6 +60,13 @@ REGISTRATION_PATH = REPO_ROOT / "research" / "stock_identity" / "W3_RULER_REGIST
 #: cutoff. Monkeypatchable (like SPEC_PATH/REPLAY_MANIFEST_PATH above) for tests
 #: that build a fully synthetic partition/asof.
 CALIBRATION_CONSTANTS_PATH = DATA / "constants" / "si_constants_v1.json"
+#: Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): the committed W2 family registry
+#: — the outcome-independent ``family_first_available`` provenance source the
+#: sealed-calibration path's ``aggregate_cell_metrics`` call now requires for
+#: its recall-denominator eligibility (replacing the prior events-derived
+#: "fired-on" coverage universe). Monkeypatchable like the other module-level
+#: paths above.
+FAMILY_REGISTRY_PATH = DATA / "expert_events" / "family_registry.json"
 
 TRIAL_FAMILY = "stock_identity_w3_ruler_calibration"
 
@@ -69,6 +76,44 @@ class PartialSubstrateError(RuntimeError):
     coverage of the FULL drawn roster (freeze review finding B1) — refuses
     BEFORE computing anything from partition data, rather than silently
     computing a constant off a partial roster."""
+
+
+class BlockedDegenerateCalibrationError(RuntimeError):
+    """Ruling 1(b) (SI-W3A-RULER-V1 PR-3 seal law): the typed, fail-closed
+    refusal for ``lambda_fs = median(recall_at_tier * zone_precision) /
+    P75(false_start_rate)`` when either the numerator or the denominator,
+    computed over the lawful sealed-calibration grading-cell population, is
+    not finite and strictly greater than zero. There is NO epsilon, NO
+    clipping, NO cap, NO alternate quantile, and NO fallback fixed lambda
+    anywhere in this path — a degenerate calibration substrate is escalated
+    to Sol as a typed ``BLOCKED_DEGENERATE_CALIBRATION`` receipt, never
+    silently patched around."""
+
+    def __init__(
+        self, *, numerator: float, denominator: float, n_lawful_population: int, reason: str,
+    ) -> None:
+        self.numerator = numerator
+        self.denominator = denominator
+        self.n_lawful_population = n_lawful_population
+        self.reason = reason
+        super().__init__(
+            f"BLOCKED_DEGENERATE_CALIBRATION: {reason} (numerator={numerator!r}, "
+            f"denominator={denominator!r}, n_lawful_population={n_lawful_population})"
+        )
+
+    def to_receipt(self) -> dict[str, Any]:
+        """The typed receipt surfaced to Sol (printed by ``main()`` and never
+        written to ``ruler_spec_v1.json`` — the pr3 sentinel stays pending on
+        this path, since no constant was ever set)."""
+        return {
+            "status": "BLOCKED_DEGENERATE_CALIBRATION",
+            "reason": self.reason,
+            "numerator": self.numerator,
+            "denominator": self.denominator,
+            "n_lawful_population": self.n_lawful_population,
+            "lambda_fs_rule": LAMBDA_FS_RULE,
+            "lambda_fs_rule_hash": rule_hash(LAMBDA_FS_RULE),
+        }
 
 
 #: B4 disclosure (adversarial review, REPAIR-BEFORE-SEAL): this repair does NOT
@@ -88,57 +133,119 @@ RULE_REVIEW_STATUS = "declared_pending_sol_rule_review"
 #: rule predates the value (the hash is recorded in the registration in Step 2,
 #: before Step 4/5 ever run against partition data). UNCHANGED by the RULE FORM —
 #: only the disclosed TEXT changes here (status: declared_pending_sol_rule_review,
-#: RULE_REVIEW_STATUS above). The SELECTION MATH (P25 of recall_at_tier / inverse
-#: P75 of false_start_rate, each rounded to its own grid) is unchanged by either
-#: repair pass. The §4 repair pass corrected the population-wording clause once
-#: (MINORS finding: "align rule-text population wording with implementation") to
-#: name the ``n_episodes > 0`` / ``n_fires > 0`` predicate each function has
+#: RULE_REVIEW_STATUS above).
+#:
+#: **Ruling 1 (SI-W3A-RULER-V1 PR-3 seal law, Sol) REPLACES both rules' exact
+#: forms** — this is a genuine rule-FORM change, not a textual-accuracy-only
+#: fix like the two prior re-pins below it in this constant's history:
+#:
+#: * ``recall_floor`` becomes exactly ``max(quantize_to_nearest_0.05(P25(
+#:   recall_at_tier on the lawful sealed-calibration grading-cell population)),
+#:   0.05)`` — the ``0.05`` floor is now an explicit, PREREGISTERED SUBSTANTIVE
+#:   floor (never a rounding artifact): even a population whose quantized P25
+#:   would land BELOW 0.05 is clamped up to 0.05, so ``recall_floor`` can never
+#:   be zero. Zero-recall cells are NEVER dropped or conditioned out of the
+#:   population (no A3 conditioning) — the P25 is taken over the FULL lawful
+#:   population, including any cell whose ``recall_at_tier == 0.0``.
+#: * ``lambda_fs`` becomes exactly ``median(recall_at_tier * zone_precision) /
+#:   P75(false_start_rate)`` on the SAME lawful population — a wholly
+#:   different FORM from the prior ``1 / max(P75(false_start_rate), 0.01)``,
+#:   with NO rounding grid (the prior "rounded to the nearest 0.25" step is
+#:   gone; the ruling's formula is exact). The computation is FAIL-CLOSED: it
+#:   is valid ONLY when both the numerator (the median of
+#:   ``recall_at_tier * zone_precision``) and the denominator (P75 of
+#:   ``false_start_rate``) are finite and STRICTLY greater than zero. If
+#:   either condition fails, the constant-setting act refuses with a typed
+#:   ``BlockedDegenerateCalibrationError`` / ``BLOCKED_DEGENERATE_CALIBRATION``
+#:   receipt to Sol — there is NO epsilon, NO clipping, NO cap, NO alternate
+#:   quantile, and NO fallback fixed lambda anywhere in this path.
+#:
+#: **The lawful sealed-calibration grading-cell population** (shared by both
+#: rules, frozen here before any partition read): every row of the
+#: calibration-fire substrate's cell-aggregate frame
+#: (``aggregate_cell_metrics``' own output) with ``n_episodes > 0`` — i.e. the
+#: cell exists at all (a cell is only ever emitted for a
+#: ``(family_key, episode_type, grain)`` combination that fired at least
+#: once; freeze review finding B2/B2-residual retired the OLD "at least one
+#: fire" ambiguity, so this conjunct is now a near-tautological existence
+#: gate over the frame's own rows, retained verbatim from the prior rule text
+#: for continuity). PER-RULE missing-value behavior on top of that shared
+#: gate — each metric's OWN pandas ``.dropna()``, applied independently,
+#: never coupled across metrics (a cell can satisfy the ``n_episodes > 0``
+#: gate yet still carry a NaN on any ONE of ``recall_at_tier`` /
+#: ``zone_precision`` / ``false_start_rate`` independently — e.g. a fire whose
+#: ``atr_dist`` never resolved, or whose ``false_start`` flag never resolved):
+#: ``recall_floor``'s P25 is taken over ``recall_at_tier.dropna()``;
+#: ``lambda_fs``'s numerator is taken over
+#: ``(recall_at_tier * zone_precision).dropna()`` (a row's product is
+#: undefined, and so excluded, if EITHER factor is undefined) and its
+#: denominator over ``false_start_rate.dropna()``. **Quantile convention**:
+#: every percentile in this file (P25 for ``recall_floor``, P75 for
+#: ``lambda_fs``'s denominator) uses ``numpy.percentile``'s ``linear``
+#: interpolation method (numpy's default; passed explicitly here so the
+#: convention is pinned in code, not merely inherited from a default that
+#: could silently change upstream). **Deterministic serialization**: the
+#: sealed receipt/spec are always written via ``json.dumps(...,
+#: sort_keys=True, ...)`` (:func:`seal_ruler_spec`), so re-serializing an
+#: identical receipt always produces byte-identical output.
+#:
+#: This is a genuine RULE-FORM change (not the population-wording-only fixes
+#: below), so BOTH hashes necessarily changed again and are re-recorded in
+#: ``W3_RULER_REGISTRATION.md`` §3.1 with every PRIOR hash retained alongside
+#: the new one (same disclosure pattern as the population-wording re-pins).
+#:
+#: --- history of PRIOR (pre-Ruling-1) rule-TEXT-only changes, retained for
+#: provenance: the §4 repair pass corrected the population-wording clause once
+#: (MINORS finding: "align rule-text population wording with implementation")
+#: to name the ``n_episodes > 0`` / ``n_fires > 0`` predicate each function had
 #: always applied, rather than the prior prose's inaccurate "tier-eligible
 #: episode" description (a DIFFERENT, unrelated quantity — B2's fix to
-#: recall_at_tier's own denominator). The delta-review repair pass below
-#: corrects it a SECOND time (RULE-TEXT ITEMS finding) to name BOTH conjuncts
-#: each function has always applied: the count filter above AND the implicit
-#: ``.dropna()`` on the ranked column itself (a cell can satisfy the count
-#: filter yet still carry a NaN ``recall_at_tier``/``false_start_rate``, so the
-#: dropna is a genuine SECOND filter, not a restatement of the first). Both are
-#: textual accuracy fixes, not rule-form changes: no computed value exists yet
-#: to void, and the corrected text describes the SAME code path that has run
-#: unchanged throughout both passes. Each hash necessarily changed again and is
-#: re-recorded in W3_RULER_REGISTRATION.md §3.1 with the prior hash retained
-#: alongside it (same disclosure pattern as the first re-pin).
+#: recall_at_tier's own denominator). The delta-review repair pass then
+#: corrected it a SECOND time (RULE-TEXT ITEMS finding) to name BOTH conjuncts
+#: each function had always applied: the count filter above AND the implicit
+#: ``.dropna()`` on the ranked column itself. Both were textual accuracy
+#: fixes, not rule-form changes, at the time they landed.
 RECALL_FLOOR_RULE = (
-    "recall_floor = the 25th percentile (P25) of the cell-level recall_at_tier "
-    "distribution, computed over every (family_key, episode_type, grain) cell in "
-    "the calibration-fire substrate satisfying BOTH conjuncts compute_recall_floor "
-    "has always applied: (1) n_episodes > 0 (aggregate_cell_metrics' own count of "
-    "that cell's distinct FIRED episodes -- i.e. a cell with at least one fire; "
-    "this is a DIFFERENT quantity from the tier-eligible-episode set "
-    "recall_at_tier's own denominator is computed over), AND (2) a DEFINED "
-    "(non-NaN) recall_at_tier value (compute_recall_floor's own pandas "
-    "'.dropna()' on the recall_at_tier column -- a cell can satisfy (1) yet "
-    "still carry a NaN recall_at_tier if none of its family's episodes in that "
-    "episode_type/coverage are tier-eligible, so this is a genuine second "
-    "filter, never a restatement of (1)), rounded to the nearest 0.05. A cell "
-    "below this floor is judged too rarely localized for C-LOC-D to be graded. "
-    "The rule references only the POPULATION of measured cells and never any "
-    "expert's own outcome rank (DNR:KILL-OUTCOME-AUDITION)."
+    "recall_floor = max(quantize_to_nearest_0.05(P25(recall_at_tier on the lawful "
+    "sealed-calibration grading-cell population)), 0.05). The lawful population is "
+    "every row of the calibration-fire substrate's cell-aggregate frame "
+    "(aggregate_cell_metrics' own output) with n_episodes > 0 (the cell exists at "
+    "all -- emitted only for a (family_key, episode_type, grain) combination that "
+    "fired at least once), further restricted to a DEFINED (non-NaN) "
+    "recall_at_tier value (a genuine second, independent filter -- pandas "
+    "'.dropna()' on the recall_at_tier column alone; a cell can satisfy the count "
+    "gate yet still carry a NaN recall_at_tier). Zero-recall cells (recall_at_tier "
+    "== 0.0) are NEVER dropped or conditioned out of this population (no A3 "
+    "conditioning) -- the P25 is taken over the FULL lawful population including "
+    "them. P25 uses numpy.percentile's linear interpolation method, passed "
+    "explicitly. The 0.05 floor is an explicit, PREREGISTERED SUBSTANTIVE floor, "
+    "never a rounding artifact: even a population whose quantized P25 lands below "
+    "0.05 is clamped up to 0.05, so recall_floor can never be zero. A cell below "
+    "this floor is judged too rarely localized for C-LOC-D to be graded. The rule "
+    "references only the POPULATION of measured cells and never any expert's own "
+    "outcome rank (DNR:KILL-OUTCOME-AUDITION)."
 )
 
 LAMBDA_FS_RULE = (
-    "lambda_fs = 1 / max(P75(false_start_rate), 0.01), rounded to the nearest 0.25, "
-    "where P75(false_start_rate) is the 75th percentile of the cell-level "
-    "false_start_rate distribution computed over every (family_key, episode_type, "
-    "grain) cell in the calibration-fire substrate satisfying BOTH conjuncts "
-    "compute_lambda_fs has always applied: (1) n_fires > 0 (at least one fire), "
-    "AND (2) a DEFINED (non-NaN) false_start_rate value (compute_lambda_fs's own "
-    "pandas '.dropna()' on the false_start_rate column -- a cell can satisfy (1) "
-    "yet still carry a NaN false_start_rate if every one of its fires lacks a "
-    "resolved false_start flag, e.g. no anchor, so this is a genuine second "
-    "filter, never a restatement of (1)). The penalty scale is calibrated so a "
-    "cell at the empirical P75 false-start rate loses approximately one full "
-    "composite point. The rule references only the POPULATION distribution of "
-    "false_start_rate and never any expert's own outcome rank "
-    "(DNR:KILL-OUTCOME-AUDITION)."
+    "lambda_fs = median(recall_at_tier * zone_precision) / P75(false_start_rate), "
+    "both computed over the SAME lawful sealed-calibration grading-cell population "
+    "recall_floor's rule defines (n_episodes > 0 -- the cell exists at all). The "
+    "numerator's population is further restricted to rows with a DEFINED "
+    "(non-NaN) product of recall_at_tier * zone_precision (pandas '.dropna()' on "
+    "that product -- undefined, and so excluded, if EITHER factor is undefined); "
+    "the denominator's population is restricted to rows with a DEFINED "
+    "false_start_rate (pandas '.dropna()' on that column alone, independent of "
+    "the numerator's filter). P75 uses numpy.percentile's linear interpolation "
+    "method, passed explicitly. NO rounding or quantization grid is applied to "
+    "the result -- lambda_fs is the exact quotient. FAIL-CLOSED: this computation "
+    "is valid ONLY when the numerator (the median product) AND the denominator "
+    "(the P75 false-start rate) are BOTH finite and STRICTLY greater than zero. "
+    "If either fails, the constant-setting act refuses with a typed "
+    "BLOCKED_DEGENERATE_CALIBRATION error/receipt to Sol -- there is NO epsilon, "
+    "NO clipping, NO cap, NO alternate quantile, and NO fallback fixed lambda "
+    "anywhere in this path. The rule references only the POPULATION "
+    "distributions of recall_at_tier, zone_precision, and false_start_rate, and "
+    "never any expert's own outcome rank (DNR:KILL-OUTCOME-AUDITION)."
 )
 
 #: The declared ±20% diagnostic sensitivity grid (Step 3) — registered in the
@@ -216,21 +323,73 @@ def assert_full_roster_coverage(
         )
 
 
+def _lawful_calibration_population(cells: pd.DataFrame) -> pd.DataFrame:
+    """Ruling 1(c): the single 'lawful sealed-calibration grading-cell
+    population' predicate shared by BOTH PR-3 constant rules —
+    ``n_episodes > 0`` (the cell exists at all; ``aggregate_cell_metrics``
+    only ever emits a row for a ``(family_key, episode_type, grain)``
+    combination that fired at least once). Each rule then applies its OWN
+    per-metric ``.dropna()`` independently on top of this shared gate (a cell
+    can satisfy this gate yet still carry a NaN on any ONE of
+    ``recall_at_tier`` / ``zone_precision`` / ``false_start_rate``
+    independently — a blanket dropna here would silently couple three
+    independent metrics' missingness together)."""
+    return cells.loc[cells["n_episodes"] > 0]
+
+
 def compute_recall_floor(cells: pd.DataFrame) -> float:
-    eligible = cells.loc[cells["n_episodes"] > 0, "recall_at_tier"].dropna()
+    """RECALL_FLOOR_RULE, exactly: max(quantize_to_nearest_0.05(P25(
+    recall_at_tier on the lawful population)), 0.05). Zero-recall cells are
+    NEVER dropped (no A3 conditioning); the 0.05 floor is a preregistered
+    substantive minimum, not a rounding artifact."""
+    population = _lawful_calibration_population(cells)
+    eligible = population["recall_at_tier"].dropna()
     if eligible.empty:
-        raise ValueError("no eligible cells (n_episodes>0) to compute recall_floor")
-    p25 = float(np.percentile(eligible.to_numpy(dtype=float), 25))
-    return round(p25 / 0.05) * 0.05
+        raise ValueError(
+            "no lawful cells (n_episodes>0, defined recall_at_tier) to compute recall_floor"
+        )
+    p25 = float(np.percentile(eligible.to_numpy(dtype=float), 25, method="linear"))
+    quantized = round(p25 / 0.05) * 0.05
+    return max(quantized, 0.05)
 
 
 def compute_lambda_fs(cells: pd.DataFrame) -> float:
-    fired = cells.loc[cells["n_fires"] > 0, "false_start_rate"].dropna()
-    if fired.empty:
-        raise ValueError("no fired cells (n_fires>0) to compute lambda_fs")
-    p75 = max(float(np.percentile(fired.to_numpy(dtype=float), 75)), 0.01)
-    raw = 1.0 / p75
-    return round(raw / 0.25) * 0.25
+    """LAMBDA_FS_RULE, exactly: median(recall_at_tier * zone_precision) /
+    P75(false_start_rate), over the SAME lawful population. FAIL-CLOSED: both
+    numerator and denominator must be finite and strictly > 0, or this raises
+    :class:`BlockedDegenerateCalibrationError` — NO epsilon, NO clipping, NO
+    cap, NO alternate quantile, and NO fallback fixed lambda."""
+    population = _lawful_calibration_population(cells)
+    n_lawful_population = int(len(population))
+
+    product = (population["recall_at_tier"] * population["zone_precision"]).dropna()
+    numerator = float(product.median()) if not product.empty else float("nan")
+
+    fsr = population["false_start_rate"].dropna()
+    denominator = (
+        float(np.percentile(fsr.to_numpy(dtype=float), 75, method="linear"))
+        if not fsr.empty else float("nan")
+    )
+
+    numerator_ok = np.isfinite(numerator) and numerator > 0
+    denominator_ok = np.isfinite(denominator) and denominator > 0
+    if not (numerator_ok and denominator_ok):
+        reasons = []
+        if not numerator_ok:
+            reasons.append(
+                f"numerator median(recall_at_tier*zone_precision)={numerator!r} is not "
+                "finite and strictly > 0"
+            )
+        if not denominator_ok:
+            reasons.append(
+                f"denominator P75(false_start_rate)={denominator!r} is not finite and "
+                "strictly > 0"
+            )
+        raise BlockedDegenerateCalibrationError(
+            numerator=numerator, denominator=denominator,
+            n_lawful_population=n_lawful_population, reason="; ".join(reasons),
+        )
+    return numerator / denominator
 
 
 def diagnostic_variants(base: float) -> dict[str, float]:
@@ -258,20 +417,47 @@ def _fixture_spec_for_computation(atr_basis, p_pre, w, delta, theta_fs, anchor_m
     )
 
 
+def load_family_registry() -> list[dict[str, Any]]:
+    """Ruling 2: the committed W2 family registry's ``families`` list, read
+    straight off disk (never re-derived/invented). ``[]`` (never ``None``)
+    when the file does not exist, so a caller checking
+    ``family_registry is not None`` still supplies a real, empty-but-present
+    list rather than accidentally reading as "not supplied"."""
+    if not FAMILY_REGISTRY_PATH.exists():
+        return []
+    payload = json.loads(FAMILY_REGISTRY_PATH.read_text(encoding="utf-8"))
+    return list(payload.get("families", []))
+
+
 def compute_constants_from_substrate(
     events: pd.DataFrame, attribution: pd.DataFrame, episodes: pd.DataFrame,
     bars_by_symbol: dict[str, pd.DataFrame], base_spec: RulerSpec,
+    *, family_registry: list[dict[str, Any]] | None = None,
 ) -> tuple[float, float, pd.DataFrame]:
     """Runs the ruler's own metric/aggregation math (already frozen in Tasks 2-3)
     over the guard-truncated calibration substrate, then applies the pre-declared
-    rules. Returns ``(recall_floor, lambda_fs, cells)``."""
+    rules. Returns ``(recall_floor, lambda_fs, cells)``.
+
+    Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): ``aggregate_cell_metrics``'s
+    recall-denominator eligibility is now availability-based
+    (``family_registry`` + ``bars_by_symbol``), applied identically to this
+    sealed-calibration path and to the pilot diagnostics build
+    (``scripts/stock_identity_build_ruler.py``). ``family_registry`` defaults
+    to :func:`load_family_registry`'s committed read when the caller does not
+    supply one explicitly (test callers may still pass ``None``/``[]``/a
+    fixture list directly)."""
     calc_spec = _fixture_spec_for_computation(
         base_spec.atr_basis, base_spec.p_pre_sessions, base_spec.useful_zone_window_sessions,
         base_spec.useful_zone_delta_atr, base_spec.false_start_atr_threshold,
         base_spec.episode_type_anchor,
     )
+    if family_registry is None:
+        family_registry = load_family_registry()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars_by_symbol, calc_spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, calc_spec, events)
+    cells = aggregate_cell_metrics(
+        fire_metrics, episodes, calc_spec, events,
+        family_registry=family_registry, bars_by_symbol=bars_by_symbol,
+    )
     recall_floor = compute_recall_floor(cells)
     lambda_fs = compute_lambda_fs(cells)
     return recall_floor, lambda_fs, cells
@@ -554,9 +740,14 @@ def main() -> int:
         # The returned values are deliberately UNUSED beyond isinstance() below —
         # build_dry_run_report has no parameter through which a real value could
         # reach the printed report.
-        recall_floor, lambda_fs, cells = compute_constants_from_substrate(
-            events, attribution, episodes, bars_by_symbol, base_spec,
-        )
+        try:
+            recall_floor, lambda_fs, cells = compute_constants_from_substrate(
+                events, attribution, episodes, bars_by_symbol, base_spec,
+            )
+        except BlockedDegenerateCalibrationError as exc:
+            print(f"::error title=si-w3a-blocked-degenerate-calibration::{exc}", flush=True)
+            print(json.dumps(exc.to_receipt(), indent=2, sort_keys=True, default=str), flush=True)
+            return 3
         # Explicit raise, not a bare `assert` (which python -O strips) — this is
         # the proof that the dry-run computation actually succeeded, not an
         # optional debugging aid.
@@ -575,9 +766,20 @@ def main() -> int:
     ledger = TrialLedger(family=TRIAL_FAMILY)
     registration_receipt = register_rules_and_grid(ledger, info_cutoff=str(asof.date()))
 
-    recall_floor, lambda_fs, cells = compute_constants_from_substrate(
-        events, attribution, episodes, bars_by_symbol, base_spec,
-    )
+    try:
+        recall_floor, lambda_fs, cells = compute_constants_from_substrate(
+            events, attribution, episodes, bars_by_symbol, base_spec,
+        )
+    except BlockedDegenerateCalibrationError as exc:
+        # Ruling 1(b): FAIL-CLOSED, typed refusal — no epsilon/clipping/cap/
+        # alternate quantile/fallback fixed lambda anywhere in this path. The
+        # rule registration above (rule text + hashes, diagnostic grid) has
+        # already been recorded — that is the rule, not a value — but
+        # ruler_spec_v1.json's pr3 sentinel is NEVER touched on this path:
+        # seal_ruler_spec is never reached.
+        print(f"::error title=si-w3a-blocked-degenerate-calibration::{exc}", flush=True)
+        print(json.dumps(exc.to_receipt(), indent=2, sort_keys=True, default=str), flush=True)
+        return 3
 
     # M8: the seal receipt carries per-constant value+rule hash, roster hash,
     # replay-manifest hash, W2 family-registry hash, substrate provenance hash,

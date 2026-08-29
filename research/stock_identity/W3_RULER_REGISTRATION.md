@@ -98,16 +98,23 @@ constant family was set halfway — the stop is clean.
 **Declared rules (Step 2 — the hash exists and is recorded here BEFORE any value is
 computed from partition data). Both rule declarations carry
 `status: declared_pending_sol_rule_review` as of the §4 repair pass — see §4.4.
-Both hashes were re-pinned a SECOND time by the §6 delta-review repair pass below
-(RULE-TEXT ITEMS) — every prior hash for each constant is retained here as history;
-none was ever computed against real partition data, so no value was voided by
-either re-pin:**
+Both hashes were re-pinned a SECOND time by the §6 delta-review repair pass
+(RULE-TEXT ITEMS, textual accuracy only) and a THIRD time by Sol's Ruling 1
+(SI-W3A-RULER-V1 PR-3 seal law, §6.11 below) — a genuine rule-FORM change, the
+first of the three re-pins that is. Every prior hash for each constant is
+retained here as history; none was ever computed against real partition data,
+so no value was voided by any re-pin:**
 
-* `recall_floor` — rule hash `c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969`
+* `recall_floor` — rule hash `b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a63a6a0045`
   (`scripts.stock_identity_calibrate_w3.rule_hash(RECALL_FLOOR_RULE)`; see the module
-  constant for the exact literal rule text — P25 of the cell-level `recall_at_tier`
-  distribution over cells satisfying BOTH `n_episodes > 0` (at least one fire) AND a
-  DEFINED `recall_at_tier` value (`.dropna()`), rounded to the nearest 0.05).
+  constant for the exact literal rule text — Ruling 1(a):
+  `max(quantize_to_nearest_0.05(P25(recall_at_tier on the lawful sealed-calibration
+  grading-cell population)), 0.05)`, over cells satisfying BOTH `n_episodes > 0`
+  (the cell exists at all) AND a DEFINED `recall_at_tier` value (`.dropna()`). The
+  `0.05` floor is now an explicit PREREGISTERED SUBSTANTIVE floor (never a
+  rounding artifact); zero-recall cells are NEVER dropped or conditioned out (no
+  A3 conditioning); P25 uses `numpy.percentile`'s `linear` interpolation method,
+  passed explicitly.
   **Hash history:** Task 3C original
   `7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb` ->
   §4 repair `671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69`
@@ -116,13 +123,29 @@ either re-pin:**
   §6 delta-review repair `c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969`
   (named the SECOND conjunct, `.dropna()`, the code has always applied alongside
   `n_episodes > 0` — a cell can satisfy the count filter yet still carry a NaN
-  `recall_at_tier`). All three transitions are textual accuracy fixes, not
-  rule-form changes: the SELECTION MATH is byte-identical across all three, and no
-  value had been computed under any prior text to void.
-* `lambda_fs` — rule hash `a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a`
-  (`rule_hash(LAMBDA_FS_RULE)`; inverse P75 of the cell-level `false_start_rate`
-  distribution over cells satisfying BOTH `n_fires > 0` (at least one fire) AND a
-  DEFINED `false_start_rate` value (`.dropna()`), rounded to the nearest 0.25).
+  `recall_at_tier`) -> **Ruling 1(a)**
+  `b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a63a6a0045` (the
+  `max(..., 0.05)` preregistered substantive floor — a genuine rule-FORM
+  change; the PRIOR three hashes shared byte-identical selection math with only
+  textual accuracy differences, but this one changes the actual formula: the
+  0.05 floor is now applied unconditionally, never merely a side-effect of
+  rounding).
+* `lambda_fs` — rule hash `8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366`
+  (`rule_hash(LAMBDA_FS_RULE)`; Ruling 1(b):
+  `median(recall_at_tier * zone_precision) / P75(false_start_rate)`, both over the
+  SAME lawful (`n_episodes > 0`) population — the numerator's own population
+  further restricted to a DEFINED product (`.dropna()` on
+  `recall_at_tier * zone_precision`), the denominator's to a DEFINED
+  `false_start_rate` (`.dropna()`, independent of the numerator's filter). P75
+  uses `numpy.percentile`'s `linear` interpolation method, passed explicitly. NO
+  rounding grid is applied (the prior "rounded to the nearest 0.25" step is
+  gone). FAIL-CLOSED: valid only when numerator AND denominator are both finite
+  and strictly > 0, else the constant-setting act refuses with a typed
+  `BLOCKED_DEGENERATE_CALIBRATION` error/receipt
+  (`scripts.stock_identity_calibrate_w3.BlockedDegenerateCalibrationError`) — NO
+  epsilon, NO clipping, NO cap, NO alternate quantile, NO fallback fixed lambda
+  anywhere in this path (grep-level test:
+  `tests/test_stock_identity_w3_calibration.py::test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback`).
   **Hash history:** original/§4-repair
   `110a7757f44573cf2ef3bf2bcaa68736e1a0476e67f99cdfecd8e4a479027d1e` (unchanged by
   §4 — its population wording, "at least one fire", already matched the
@@ -130,9 +153,11 @@ either re-pin:**
   `a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a` (named the
   SECOND conjunct, `.dropna()`, the code has always applied — a cell can satisfy
   `n_fires > 0` yet still carry a NaN `false_start_rate` if every one of its fires
-  lacks a resolved `false_start` flag, e.g. no anchor). A textual accuracy fix, not
-  a rule-form change: the SELECTION MATH is byte-identical, and no value had been
-  computed under the old text to void.
+  lacks a resolved `false_start` flag, e.g. no anchor) -> **Ruling 1(b)**
+  `8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366` (a WHOLLY
+  DIFFERENT formula — `1 / max(P75(false_start_rate), 0.01)` replaced by
+  `median(recall_at_tier * zone_precision) / P75(false_start_rate)`, fail-closed,
+  no rounding grid — the largest rule-form change either constant has undergone).
 
 All current hashes are deterministic and reproducible from the committed rule text:
 `python3 -c "import scripts.stock_identity_calibrate_w3 as m; print(m.rule_hash(m.RECALL_FLOOR_RULE)); print(m.rule_hash(m.LAMBDA_FS_RULE))"`.
@@ -758,3 +783,219 @@ re-run after this repair pass, PR-3 still `pending_sealed_calibration`:
   run here; their surfacing/annotation behavior is proven on synthetic
   fixtures in `tests/test_stock_identity_w3_calibration.py` (e.g.
   `test_run_substrate_drops_or_censors_outputs_beyond_the_recent_history_cutoff`).
+
+## 6.11 Sol's three PR-3 seal-law rulings (SI-W3A-RULER-V1) — implementation
+
+Sol closed the three scientific-law decisions blocking the PR-3 seal with exact
+forms. This packet implements all three as ruled, without executing the real
+substrate or the seal itself (out of scope; `ruler_spec_v1.json`'s `pr3` block
+stays byte-intact and `data/trial_ledger.jsonl` is untouched).
+
+### Ruling 1 — PR-3 constant rules (`scripts/stock_identity_calibrate_w3.py`)
+
+Both `RECALL_FLOOR_RULE` and `LAMBDA_FS_RULE` are REPLACED with new exact
+forms (rule-form change, not textual accuracy — see the re-pinned hashes in
+§3.1 above):
+
+* **`recall_floor`** = `max(quantize_to_nearest_0.05(P25(recall_at_tier on
+  the lawful sealed-calibration grading-cell population)), 0.05)`. The `0.05`
+  minimum is now an explicit, PREREGISTERED SUBSTANTIVE floor — stated as
+  such in the rule text — never a rounding-artifact side effect. Zero-recall
+  cells are never dropped or conditioned out of the population (no A3
+  conditioning): `compute_recall_floor`'s population predicate is unchanged
+  from the pre-Ruling-1 form (`n_episodes > 0` AND a defined `recall_at_tier`)
+  and applies the P25 over the FULL such population, including any
+  `recall_at_tier == 0.0` row.
+* **`lambda_fs`** = `median(recall_at_tier * zone_precision) /
+  P75(false_start_rate)`, on the SAME lawful population, with NO rounding
+  grid (the prior "rounded to the nearest 0.25" is gone — the result is the
+  exact quotient). FAIL-CLOSED: valid only when the numerator (median of the
+  product) AND the denominator (P75 of `false_start_rate`) are BOTH finite
+  and strictly greater than zero. Any other outcome raises the typed
+  `BlockedDegenerateCalibrationError` (`BLOCKED_DEGENERATE_CALIBRATION`
+  status, a JSON receipt naming the numerator/denominator/population size and
+  the failing reason, printed via `::error` and returned as exit code `3`
+  from `main()`) — there is NO epsilon, NO clipping, NO cap, NO alternate
+  quantile, and NO fallback fixed lambda anywhere in `compute_lambda_fs`'s
+  code (grep-enforced by
+  `test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback`, which
+  scans the function's CODE — not its docstring, which names the prohibition
+  in prose — for rescue-shaped tokens). Both rules share one frozen
+  population predicate, `_lawful_calibration_population(cells)` =
+  `cells.loc[cells["n_episodes"] > 0]`, with each metric's OWN independent
+  `.dropna()` applied on top (a cell can satisfy the shared gate yet still
+  carry a NaN on any ONE of `recall_at_tier` / `zone_precision` /
+  `false_start_rate` independently). Both rules pin the quantile convention
+  explicitly (`numpy.percentile(..., method="linear")`) and rely on the
+  pre-existing deterministic JSON serialization (`sort_keys=True`) for the
+  sealed receipt/spec. Registered BEFORE any partition read via the same
+  rule-before-value discipline the module has always used
+  (`register_rules_and_grid` hashes the frozen module-level rule-text
+  constants before Step 4/5 ever touch computed values). The ±20% diagnostic
+  grid (`DIAGNOSTIC_GRID`) is unchanged mechanics — still diagnostic-only,
+  still registered before execution, never read back to reselect a constant.
+
+Tests (`tests/test_stock_identity_w3_calibration.py`):
+`test_rule_hashes_match_the_registration_document`,
+`test_rule_hashes_match_the_currently_committed_registration_values`,
+`test_compute_recall_floor_is_p25_rounded_to_nearest_005` (still exercises the
+shared quantization/floor path),
+`test_compute_lambda_fs_is_median_product_over_p75_false_start_rate`,
+`test_compute_lambda_fs_rounds_nothing`,
+`test_compute_lambda_fs_raises_typed_blocked_degenerate_on_all_nan_population`,
+`test_compute_lambda_fs_raises_typed_blocked_degenerate_on_zero_denominator`,
+`test_compute_lambda_fs_raises_typed_blocked_degenerate_on_zero_numerator`,
+`test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback`.
+
+### Ruling 2 — availability-based recall denominator (`engine/stock_identity/ruler.py`)
+
+`aggregate_cell_metrics`'s recall-denominator eligibility universe is
+REPLACED: the prior `family_symbol_universe` (built from `events` — every
+symbol a family FIRED on anywhere, attributed or not — "fired-on" coverage)
+is gone. A new function, `build_family_episode_availability(episodes,
+family_keys, family_registry=None, bars_by_symbol=None)`, builds one row per
+`(family_key, tier-eligible episode)` pair — REGARDLESS of whether that
+family ever fired on that episode's symbol — carrying a typed
+`availability_state`:
+
+* `"ELIGIBLE"` (`FAMILY_ELIGIBLE_STATE`) — the W2 family registry's own
+  `family_first_available` boundary does not postdate the episode's window
+  (start through end, or start alone when end is undefined) AND
+  `bars_by_symbol` covers the episode's window for that symbol. A PRESENT
+  `family_first_available` field whose value is `None`/falsy means "no known
+  start boundary" — the same convention already used throughout
+  `data/stock_identity/expert_events/family_registry.json` (21 of 24
+  committed entries carry `null`), `engine/stock_identity/replay/registry.py`,
+  and `scripts/stock_identity_replay_pilot.py`.
+* `"NOT_YET_AVAILABLE"` — the registry's `family_first_available` postdates
+  the episode's entire window.
+* `"NO_COVERAGE"` — bars were supplied but do not cover the episode's
+  instrument/window.
+* `"UNESTIMABLE"` — lawful availability cannot be established at all: no
+  `family_registry` was supplied, the `family_key` is absent from it, the
+  registry entry genuinely lacks the `family_first_available` field, or no
+  `bars_by_symbol` was supplied. This is the fail-closed path Ruling 2(c)
+  requires — missing eligibility evidence is TYPED, never silently treated
+  as available nor folded into the old fired-on read.
+
+`aggregate_cell_metrics` gained two new keyword-only parameters,
+`family_registry` and `bars_by_symbol` (both default `None`, preserving the
+prior call signature's positional shape — `events` is retained as a required
+positional parameter for call-site compatibility only and is no longer read
+for eligibility). Instrument/date/grain availability collapses to (ii) input
+bars coverage by design, not omission: the committed provenance carries no
+grain-differentiated availability signal (one symbol's OHLCV underlies every
+grain a family might read it at). Applied identically to the pilot
+diagnostics build (`scripts/stock_identity_build_ruler.py`, which now loads
+the committed `family_registry.json` via `_family_registry()`) and the
+sealed-calibration path (`compute_constants_from_substrate` in
+`scripts/stock_identity_calibrate_w3.py`, which defaults to
+`load_family_registry()`'s committed read when the caller does not supply an
+explicit `family_registry`).
+
+Sol's three required regressions (`tests/test_stock_identity_ruler.py`):
+
+* **(a)** `test_recall_denominator_grows_from_available_zero_fire_symbol_ruling2_regression_a`
+  — a symbol with eligible episodes and ZERO fires (never even appearing in
+  `events`) GROWS the denominator (1.0 -> 0.5) and cannot improve recall.
+* **(b)** `test_recall_denominator_excludes_not_yet_available_symbol_ruling2_regression_b`
+  — a symbol whose family only became available after the episode's entire
+  window never enters the denominator, even with full bars coverage.
+* **(c)** `test_recall_denominator_missing_eligibility_evidence_never_falls_through_to_fired_on_ruling2_regression_c`
+  — with no `family_registry`/`bars_by_symbol` supplied, `recall_at_tier` is
+  `NaN` (every episode types `UNESTIMABLE`), never silently computed off the
+  discarded fired-on universe.
+
+Every pre-existing recall/flooding test in `test_stock_identity_ruler.py` that
+exercised the OLD fired-on universe (`test_recall_denominator_counts_eligible_episodes_regardless_of_fire`,
+`test_family_symbol_universe_uses_events_not_fire_metrics_b2_residual` — renamed
+to a regression-(a)-shaped test above — and
+`test_flooding_is_invariant_to_cell_size_at_equal_density`) was updated to
+supply an unrestricted `family_registry` + `bars_by_symbol` explicitly, since
+the eligibility universe is now genuinely UNIVERSE-WIDE per lawfully-available
+family (not scoped to "symbols this family happens to have fired on") — the
+flooding-invariance test now computes each family's cell via its OWN
+independent call (disjoint `episodes`/`bars_by_symbol` per family) rather than
+one combined call, since within one combined call every lawfully-available
+family now sees every tier-eligible episode in that catalog regardless of
+symbol, which is the intended fix (a silent, fired-on-biased recall universe),
+not a defect to route around.
+
+### Ruling 3 — cadence-phase null D3b (`engine/stock_identity/ruler_nulls.py`)
+
+`grain_cadence_null`'s shape changes: it keeps the ONE deterministic,
+period-constrained, seeded SHARED base shift `K` per `(family_key, symbol)`
+group (unchanged draw mechanics — a multiple of the group's dominant grain
+period, from the declared `[63, 252]`-session range). AFTER that base shift,
+each fire is INDEPENDENTLY snapped from its own post-`K` position to the
+NEAREST actual trading session carrying that fire's own ORIGINAL weekday
+(`_snap_to_own_weekday`), bounded to `GRAIN_CADENCE_SNAP_BOUND_SESSIONS` (4)
+sessions each way, deterministic tie-break toward the EARLIER session at
+equal distance. This supersedes the delta-review third pass's single-shared-K
+weekday SEARCH (§6.9 above): that design could never achieve full-group
+weekday agreement for real pilot-scale weekly-grain groups spanning multiple
+years (verified by brute force, §6.10 above) — per-fire snapping makes exact
+weekday preservation achievable per fire regardless of group span, at the
+declared cost of a small, disclosed, per-fire gap perturbation.
+
+Event COUNT, event IDENTITY (`event_id`), and each event's own stamp lag
+(`signal_known_ts - signal_ts`) are still preserved exactly. The group's
+CHRONOLOGICAL fire order is verified preserved in the new (snapped)
+positions: an INVERSION (a later fire snapping before an earlier one) or a
+NEW COLLISION (two originally-DISTINCT fires snapping to the same session —
+a pre-existing tie in the original data is exempt from this check, since two
+fires already indistinguishable in time were not distorted by staying tied)
+both refuse the group's shift. If any fire in the group has no lawful
+same-weekday target within the snap bound, OR the group's snapped positions
+collide/invert, the WHOLE group is marked with a new typed column,
+`cadence_null_state ∈ {"applied", "unestimable", "no_calendar"}`, and left
+COMPLETELY UNTOUCHED (original `signal_ts`/`signal_known_ts` preserved) when
+not `"applied"` — never a forced or partially-broken shift. Two more
+published per-row columns: `phase_preserved` (nullable boolean — `True` for
+every row of an `"applied"` group, `<NA>` otherwise) and `snap_sessions`
+(nullable Int64 — the signed per-fire snap distance, stage 2 only,
+`<NA>` for non-`"applied"` rows). A new function,
+`grain_cadence_null_summary(out)`, reports group/summary gap-distortion
+statistics (the distribution of `|snap_sessions|`, per-group max,
+unestimable-row/group counts) — wired into
+`scripts/stock_identity_build_ruler.py`'s null manifest section
+(`manifest["nulls"]["grain_cadence_summary"]`).
+
+`_weekday_preserving_offset` and `GRAIN_CADENCE_PHASE_RETRY_BUDGET` (the
+delta-review third pass's per-group weekday SEARCH mechanism) are removed —
+superseded, not merely deprecated.
+
+Docstring/registration update: null #6 (`grain_cadence_null`) is now
+EXACT-cadence-PHASE with a DECLARED BOUNDED gap perturbation, explicitly NOT
+dwell-matched (per-fire independent snapping can move different fires in a
+group by different amounts, so the inter-fire session-gap multiset is no
+longer preserved exactly). Null #1 (`random_fire_null`) is UNCHANGED and
+still carries the exact count/dwell law — this remains the one null in the
+pair that is dwell-matched.
+
+Tests (`tests/test_stock_identity_ruler_nulls.py`):
+`test_grain_cadence_null_preserves_weekday_for_every_non_unestimable_row`
+(real-holiday-calendar fixture proves exact weekday preservation for every
+`"applied"` row),
+`test_grain_cadence_null_preserves_chronological_order_when_applied` (order
+preserved),
+`test_grain_cadence_null_preserves_stamp_lag_exactly` (lag preserved,
+unchanged from the prior pass),
+`test_grain_cadence_null_snap_sessions_within_declared_bound` (snap bound
+respected),
+`test_grain_cadence_null_dense_cluster_marks_group_unestimable` (a dense,
+wide weekly-grain group on the holiday-perturbed calendar produces a
+collision/inversion for at least one seed in `range(60)`, yielding the typed
+`"unestimable"` state for every row, group left byte-identical to the
+original input),
+`test_grain_cadence_null_no_calendar_state_is_typed`,
+`test_grain_cadence_null_base_shift_is_within_declared_session_range` /
+`test_grain_cadence_null_base_shift_is_a_multiple_of_the_grain_period`
+(reconstruct the pre-snap base `K` from the published `snap_sessions` column
+— the FULLY-realized shift, base + snap, is no longer itself bounded to
+`[63, 252]` sessions, since the declared snap perturbation is layered on top;
+this is an intentional consequence of Ruling 3's shape, not a defect),
+`test_grain_cadence_null_summary_reports_gap_distortion_stats`, plus the
+retained separation assertion
+(`test_grain_cadence_and_random_nulls_separate_from_real_placement`) and the
+pre-existing determinism/no-non-session-landing tests, all unchanged.

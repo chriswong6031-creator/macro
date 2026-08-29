@@ -200,17 +200,37 @@ def test_compute_recall_floor_is_p25_rounded_to_nearest_005():
     assert floor == pytest.approx(round(np.percentile([0.10, 0.30, 0.50, 0.70], 25) / 0.05) * 0.05)
 
 
-def test_compute_lambda_fs_is_inverse_p75_rounded_to_quarter():
+def test_compute_lambda_fs_is_median_product_over_p75_false_start_rate():
+    """Ruling 1(b): lambda_fs = median(recall_at_tier * zone_precision) /
+    P75(false_start_rate), over the lawful (n_episodes>0) population, with NO
+    rounding grid."""
     cells = pd.DataFrame({
         "n_episodes": [5, 5, 5, 5],
         "n_fires": [10, 10, 10, 0],
         "recall_at_tier": [0.1, 0.2, 0.3, np.nan],
+        "zone_precision": [0.5, 0.6, 0.7, np.nan],
         "false_start_rate": [0.05, 0.10, 0.20, np.nan],
     })
     lam = calib_w3.compute_lambda_fs(cells)
-    fired = [0.05, 0.10, 0.20]
-    expected_raw = 1.0 / max(float(np.percentile(fired, 75)), 0.01)
-    assert lam == pytest.approx(round(expected_raw / 0.25) * 0.25)
+    product = [0.1 * 0.5, 0.2 * 0.6, 0.3 * 0.7]
+    fsr = [0.05, 0.10, 0.20]
+    expected = float(np.median(product)) / float(np.percentile(fsr, 75, method="linear"))
+    assert lam == pytest.approx(expected)
+
+
+def test_compute_lambda_fs_rounds_nothing():
+    """Ruling 1(b): the prior 'rounded to the nearest 0.25' step is GONE --
+    lambda_fs is the exact quotient, deliberately NOT a multiple of 0.25."""
+    cells = pd.DataFrame({
+        "n_episodes": [3],
+        "recall_at_tier": [0.4],
+        "zone_precision": [0.5],
+        "false_start_rate": [0.3],
+    })
+    lam = calib_w3.compute_lambda_fs(cells)
+    expected_exact = (0.4 * 0.5) / 0.3  # ~0.6667, not a 0.25-grid value
+    assert lam == pytest.approx(expected_exact)
+    assert lam != pytest.approx(round(expected_exact / 0.25) * 0.25)
 
 
 def test_compute_recall_floor_raises_on_no_eligible_cells():
@@ -220,11 +240,69 @@ def test_compute_recall_floor_raises_on_no_eligible_cells():
         calib_w3.compute_recall_floor(cells)
 
 
-def test_compute_lambda_fs_raises_on_no_fired_cells():
+def test_compute_lambda_fs_raises_typed_blocked_degenerate_on_all_nan_population():
+    """Ruling 1(b) fail-closed path: an all-NaN numerator AND denominator over
+    the lawful population raises the typed BlockedDegenerateCalibrationError,
+    never a bare ValueError -- and the error's receipt names the reason."""
     cells = pd.DataFrame({"n_episodes": [1], "n_fires": [0],
-                           "recall_at_tier": [np.nan], "false_start_rate": [np.nan]})
-    with pytest.raises(ValueError):
+                           "recall_at_tier": [np.nan], "zone_precision": [np.nan],
+                           "false_start_rate": [np.nan]})
+    with pytest.raises(calib_w3.BlockedDegenerateCalibrationError) as excinfo:
         calib_w3.compute_lambda_fs(cells)
+    assert not np.isfinite(excinfo.value.numerator)
+    assert not np.isfinite(excinfo.value.denominator)
+    receipt = excinfo.value.to_receipt()
+    assert receipt["status"] == "BLOCKED_DEGENERATE_CALIBRATION"
+
+
+def test_compute_lambda_fs_raises_typed_blocked_degenerate_on_zero_denominator():
+    """Injecting a false_start_rate distribution whose P75 is exactly zero
+    (denominator == 0, not merely NaN) must ALSO raise the typed blocker --
+    the fail-closed gate requires STRICTLY greater than zero, not merely
+    defined."""
+    cells = pd.DataFrame({
+        "n_episodes": [3, 3, 3],
+        "recall_at_tier": [0.2, 0.3, 0.4],
+        "zone_precision": [0.5, 0.5, 0.5],
+        "false_start_rate": [0.0, 0.0, 0.0],
+    })
+    with pytest.raises(calib_w3.BlockedDegenerateCalibrationError) as excinfo:
+        calib_w3.compute_lambda_fs(cells)
+    assert excinfo.value.denominator == pytest.approx(0.0)
+
+
+def test_compute_lambda_fs_raises_typed_blocked_degenerate_on_zero_numerator():
+    """A numerator (median product) of exactly zero must ALSO raise the typed
+    blocker -- zero is not > 0."""
+    cells = pd.DataFrame({
+        "n_episodes": [3, 3, 3],
+        "recall_at_tier": [0.0, 0.0, 0.0],
+        "zone_precision": [0.5, 0.5, 0.5],
+        "false_start_rate": [0.1, 0.2, 0.3],
+    })
+    with pytest.raises(calib_w3.BlockedDegenerateCalibrationError) as excinfo:
+        calib_w3.compute_lambda_fs(cells)
+    assert excinfo.value.numerator == pytest.approx(0.0)
+
+
+def test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback():
+    """Grep-level test (Ruling 1(b)): the rule path carries no epsilon,
+    clipping, cap, alternate-quantile, or fallback-constant vocabulary that
+    could rescue a degenerate numerator/denominator instead of refusing."""
+    src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    start = src.index("def compute_lambda_fs(")
+    end = src.index("\ndef ", start + 1)
+    body = src[start:end]
+    # Strip the function's own docstring (its PROSE deliberately names "no
+    # epsilon/clipping/fallback" as the LAW it upholds) so only the CODE below
+    # it is scanned for an actual rescue mechanism.
+    doc_end = body.index('"""', body.index('"""') + 3) + 3
+    code = body[doc_end:]
+    banned_code_shapes = ["eps =", "eps=", "+ eps", "clip(", "clip_",
+                           "or 0.01", "max(denominator", "min(denominator",
+                           "max(numerator", "min(numerator", "fallback"]
+    for token in banned_code_shapes:
+        assert token not in code, f"forbidden rescue shape {token!r} found in compute_lambda_fs's code"
 
 
 # ---------------------------------------------------------------------------
@@ -407,10 +485,22 @@ def fake_w2_machinery(monkeypatch):
         def one_fire(df):
             if sym == "SYN_ZERO":
                 return []
-            # a fire inside the reset_decline episode's attribution window
+            # Two fires inside the reset_decline episode's attribution window
             # (episode start 2019-07-02, durable low/end 2019-11-18; verified
-            # against the frozen W1 episode constants)
-            return [_fake_event(sym, "fam.synthetic", pd.Timestamp("2019-09-10"))]
+            # against the frozen W1 episode constants): one near the durable
+            # low (in-zone, no false start) and one early in the window while
+            # price is still near the flat 100 level, far from the ~70
+            # anchor -- this second fire's price_dist/ATR trips false_start
+            # (Ruling 1(b)'s compute_lambda_fs is FAIL-CLOSED on an all-zero
+            # false_start_rate population; a single-fire-per-symbol synthetic
+            # fixture with no false start anywhere is a genuinely degenerate
+            # calibration population under the new rule, so the fixture needs
+            # a real false start to exercise the ordinary happy-path plumbing
+            # tests that assume a computed, non-degenerate lambda_fs).
+            return [
+                _fake_event(sym, "fam.synthetic", pd.Timestamp("2019-11-15")),
+                _fake_event(sym, "fam.synthetic", pd.Timestamp("2019-07-08")),
+            ]
 
         def none_fire(df):
             return []
@@ -823,8 +913,14 @@ def test_compute_constants_from_substrate_end_to_end_synthetic(synthetic_partiti
     assert not result.unavailable
 
     base_spec = RulerSpec.from_json(REAL_SPEC_PATH)
+    # Ruling 2: an explicit, unrestricted family_registry entry for
+    # "fam.synthetic" -- the real committed registry has no such family, and
+    # compute_constants_from_substrate's default (load_family_registry()) would
+    # type every cell UNESTIMABLE for it.
+    fixture_registry = [{"family_key": "fam.synthetic", "family_first_available": None}]
     recall_floor, lambda_fs, cells = calib_w3.compute_constants_from_substrate(
         result.events, result.attribution, result.episodes, result.bars_by_symbol, base_spec,
+        family_registry=fixture_registry,
     )
     assert isinstance(recall_floor, float)
     assert isinstance(lambda_fs, float)
@@ -972,18 +1068,19 @@ def test_rule_review_status_is_declared_pending_sol_rule_review():
 
 
 def test_rule_hashes_match_the_currently_committed_registration_values():
-    """RULE-TEXT ITEMS (delta-review repair pass): BOTH rule texts now name the
-    SECOND conjunct each function has always applied (a '.dropna()' on the
-    ranked column, distinct from the count filter alone) -- a textual accuracy
-    fix, not a rule-form change (no computed value existed to void), so both
-    hashes necessarily changed again and are re-recorded in
-    W3_RULER_REGISTRATION.md §3.1 (with every prior hash retained alongside,
-    same disclosure pattern as the earlier single re-pin)."""
+    """Ruling 1 (SI-W3A-RULER-V1 PR-3 seal law) REPLACES both rules' exact
+    forms (recall_floor gains the max(...,0.05) preregistered substantive
+    floor; lambda_fs's formula is now median(recall_at_tier*zone_precision) /
+    P75(false_start_rate), fail-closed, no rounding grid) -- a genuine
+    rule-FORM change, so both hashes changed again and are re-recorded in
+    W3_RULER_REGISTRATION.md §3.1 with every PRIOR hash (including the two
+    pre-Ruling-1 population-wording-only re-pins) retained alongside the new
+    one."""
     assert calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE) == (
-        "a1a2aaac5f9f77fe53f0c0d6440b81881d35b9f21883907ebfba5f4c08ef3d8a"
+        "8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366"
     )
     assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
-        "c11789af43b1522c9169f89a92c3e7f4ccf79003cac7f97c3e9ed5342af81969"
+        "b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a63a6a0045"
     )
 
 
@@ -1080,6 +1177,21 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
     # source too.
     assert result.provenance["recent_history_guard_cutoff"] == str(expected_cutoff.date())
     monkeypatch.setattr(calib_w3, "CALIBRATION_CONSTANTS_PATH", fake_constants_path)
+
+    # Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): aggregate_cell_metrics'
+    # recall-denominator eligibility now needs a W2 family registry entry for
+    # "fam.synthetic" (the synthetic fixture family) -- the REAL committed
+    # family_registry.json carries no such family, which would type every
+    # cell UNESTIMABLE and make compute_recall_floor/compute_lambda_fs raise.
+    # Point FAMILY_REGISTRY_PATH at a fixture file carrying an unrestricted
+    # (family_first_available=None) entry for it, same pattern as the other
+    # monkeypatched module paths above.
+    fake_family_registry_path = tmp_path / "family_registry.json"
+    fake_family_registry_path.write_text(
+        json.dumps({"families": [{"family_key": "fam.synthetic", "family_first_available": None}]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(calib_w3, "FAMILY_REGISTRY_PATH", fake_family_registry_path)
 
     return substrate_dir
 

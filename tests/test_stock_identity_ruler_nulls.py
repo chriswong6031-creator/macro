@@ -6,13 +6,18 @@
    not drawn independently), every placed ``signal_ts`` lands on a real trading
    session, each event's own stamp lag is preserved exactly, and the null
    materially breaks episode correspondence.
-2. ``grain_cadence_null`` is a deterministic, seeded, trading-session circular
-   shift constrained to a multiple of the group's own grain period
-   (M4-regression fix): every placed ``signal_ts`` lands on a real trading
-   session, circular session-gaps are preserved exactly, a weekly-grain group's
-   weekday PHASE is preserved, and each event's own stamp lag
-   (``signal_known_ts - signal_ts``) is preserved exactly rather than
-   collapsed to zero.
+2. ``grain_cadence_null`` (Ruling 3, SI-W3A-RULER-V1 PR-3 seal law) is a
+   deterministic, seeded, trading-session BASE shift (multiple of the group's
+   own grain period) PLUS an independent, bounded (<=4 session) per-fire snap
+   to that fire's own original weekday: every non-``"unestimable"`` row lands
+   on a real trading session carrying its own original weekday EXACTLY, each
+   event's own stamp lag (``signal_known_ts - signal_ts``) is preserved
+   exactly, and the group's chronological fire order is preserved. This is
+   explicitly NOT dwell-matched (only ``random_fire_null``, null #1, carries
+   the exact count/dwell law) -- the per-fire snap is a declared, bounded gap
+   perturbation. A group whose snap would collide or invert chronological
+   order, or that has no lawful same-weekday target for some fire, is marked
+   ``cadence_null_state == "unestimable"`` and left untouched.
 3. ``equal_proximity_control`` only pairs fires that fired into the SAME
    episode AND SAME grain (M3-minor added grain to the group key), never pairs
    observations whose ATR-distance gap exceeds the declared tolerance, never
@@ -28,10 +33,12 @@ import pytest
 from engine.stock_identity.ruler_nulls import (
     GRAIN_CADENCE_NULL_MAX_SESSIONS,
     GRAIN_CADENCE_NULL_MIN_SESSIONS,
+    GRAIN_CADENCE_SNAP_BOUND_SESSIONS,
     GRAIN_PERIOD_SESSIONS,
     PROXIMITY_PAIR_COLUMNS,
     equal_proximity_control,
     grain_cadence_null,
+    grain_cadence_null_summary,
     random_fire_null,
 )
 
@@ -181,27 +188,6 @@ def test_grain_cadence_null_never_lands_on_a_non_session_date():
     assert set(pd.to_datetime(out["signal_known_ts"])) <= calendar
 
 
-def test_grain_cadence_null_preserves_circular_session_gaps():
-    """Chosen so the whole fire sequence's shift does not straddle the trading
-    calendar's wrap boundary -- under that condition the null's session gaps
-    (measured on the SAME calendar's session positions) are preserved exactly,
-    not merely modulo the calendar length."""
-    bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
-    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
-    # fires clustered early in the calendar so offset K in [63,252] can never
-    # push any of them past the calendar's end (n=1200 sessions).
-    ts = calendar[[100, 105, 130, 140]]
-    events = pd.DataFrame({
-        "event_id": ["E0", "E1", "E2", "E3"], "family_key": ["fam.x"] * 4,
-        "symbol": ["AAA"] * 4, "signal_ts": ts, "signal_known_ts": ts,
-        "grain": ["1D"] * 4,
-    })
-    out = grain_cadence_null(events, bars, seed=3)
-    real_pos = calendar.searchsorted(pd.to_datetime(events["signal_known_ts"]).to_numpy())
-    null_pos = calendar.searchsorted(pd.to_datetime(out["signal_known_ts"]).to_numpy())
-    assert list(np.diff(null_pos)) == list(np.diff(real_pos))
-
-
 def test_grain_cadence_null_is_seed_deterministic():
     events = _events_for_symbol(n=6, step_days=4)
     bars = {"AAA": _trading_calendar_bars()}
@@ -210,9 +196,14 @@ def test_grain_cadence_null_is_seed_deterministic():
     pd.testing.assert_series_equal(a["signal_known_ts"], b["signal_known_ts"])
 
 
-def test_grain_cadence_null_offset_is_within_declared_session_range():
-    """The drawn K used to shift a lone-fire group is directly recoverable as the
-    session-position delta, and must fall in [63, 252]."""
+def test_grain_cadence_null_base_shift_is_within_declared_session_range():
+    """Ruling 3: the SHARED BASE shift K (before the per-fire weekday snap) is
+    directly reconstructible from the published ``snap_sessions`` column as
+    ``null_pos - snap_sessions - real_pos``, and must fall in [63, 252] -- the
+    per-fire snap layered on top (<=4 sessions) is a SEPARATE, declared
+    perturbation and is deliberately excluded from this bound (the prior
+    design's test measured the fully-realized shift, which no longer equals
+    the base K once a bounded snap is added)."""
     bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
     calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
     ts = calendar[[500]]
@@ -221,17 +212,20 @@ def test_grain_cadence_null_offset_is_within_declared_session_range():
         "signal_ts": ts, "signal_known_ts": ts, "grain": ["1D"],
     })
     out = grain_cadence_null(events, bars, seed=21)
+    assert out["cadence_null_state"].iloc[0] == "applied"
     real_pos = calendar.searchsorted(ts.to_numpy())[0]
     null_pos = calendar.searchsorted(pd.to_datetime(out["signal_known_ts"]).to_numpy())[0]
-    k = (null_pos - real_pos) % len(calendar)
-    assert GRAIN_CADENCE_NULL_MIN_SESSIONS <= k <= GRAIN_CADENCE_NULL_MAX_SESSIONS
+    snap = int(out["snap_sessions"].iloc[0])
+    base_k = (null_pos - snap - real_pos) % len(calendar)
+    assert GRAIN_CADENCE_NULL_MIN_SESSIONS <= base_k <= GRAIN_CADENCE_NULL_MAX_SESSIONS
 
 
-def test_grain_cadence_null_offset_is_a_multiple_of_the_grain_period():
-    """M4-regression: the drawn offset K must be a MULTIPLE of the group's own
-    grain period in sessions (GRAIN_PERIOD_SESSIONS), not merely inside
-    [63, 252] -- this is what preserves cadence PHASE, not just magnitude. A
-    weekly (grain='W', period 5) group's K must be a multiple of 5."""
+def test_grain_cadence_null_base_shift_is_a_multiple_of_the_grain_period():
+    """The BASE shift K (reconstructed by subtracting the published
+    ``snap_sessions``) must be a MULTIPLE of the group's own grain period in
+    sessions (GRAIN_PERIOD_SESSIONS) -- this is what preserves cadence PHASE
+    at the base-shift stage, before the per-fire snap. A weekly (grain='W',
+    period 5) group's base K must be a multiple of 5."""
     bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
     calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
     ts = calendar[[500]]
@@ -242,35 +236,25 @@ def test_grain_cadence_null_offset_is_a_multiple_of_the_grain_period():
     period = GRAIN_PERIOD_SESSIONS["W"]
     for seed in range(10):
         out = grain_cadence_null(events, bars, seed=seed)
+        if out["cadence_null_state"].iloc[0] != "applied":
+            continue
         real_pos = calendar.searchsorted(ts.to_numpy())[0]
         null_pos = calendar.searchsorted(pd.to_datetime(out["signal_ts"]).to_numpy())[0]
-        k = (null_pos - real_pos) % len(calendar)
-        assert k % period == 0, f"seed {seed}: k={k} is not a multiple of the weekly period {period}"
+        snap = int(out["snap_sessions"].iloc[0])
+        base_k = (null_pos - snap - real_pos) % len(calendar)
+        assert base_k % period == 0, f"seed {seed}: base_k={base_k} is not a multiple of {period}"
 
 
-def test_grain_cadence_null_preserves_weekly_grain_weekday_distribution():
-    """Weekday-phase MAJOR fix discriminating test (delta-review third pass):
-    weekly-grain fires landing on the SAME weekday must all still land on that
-    SAME weekday after the null -- proved on a REAL-shaped calendar carrying
-    synthetic holidays (not the holiday-free ``pd.bdate_range`` the prior
-    (M4-regression) version of this test used, where a period-multiple offset
-    is trivially weekday-preserving because session count and calendar weeks
-    coincide exactly with no gaps). On a real calendar, a fixed number of
-    SESSIONS is not a fixed number of calendar WEEKS -- a pure period-multiple
-    ``K`` (the pre-pass-3 shape) is NOT actually weekday-preserving in
-    general; only the delta-review third pass's explicit per-group weekday
-    search is. This exact fixture/seed pair is pinned as a NAMED regression:
-    the pre-pass-3 ``grain_cadence_null`` (an unconstrained period-multiple
-    draw, no weekday admissibility search) lands these fires on TWO distinct
-    weekdays ({3, 4}) at seed=13, failing this assertion."""
+def test_grain_cadence_null_preserves_weekday_for_every_non_unestimable_row():
+    """Ruling 3 discriminating test: proved on a REAL-shaped calendar carrying
+    synthetic holidays (not a holiday-free ``pd.bdate_range``, where a
+    period-multiple offset is trivially weekday-preserving because session
+    count and calendar weeks coincide exactly with no gaps). Every row whose
+    ``cadence_null_state == "applied"`` must land EXACTLY on its own original
+    weekday -- the per-fire snap makes this achievable regardless of how the
+    holiday-perturbed calendar warps the shared base shift."""
     bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
     calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
-    # weekly-grain fires clustered early and narrowly (positions < 200) so a
-    # single shared K in [63,252] has a real chance of preserving every fire's
-    # own weekday simultaneously despite the holiday-perturbed calendar -- a
-    # wider/sparser cluster (e.g. 20 fires across 400 sessions) can make NO
-    # single K in range weekday-consistent for every fire, which is a real,
-    # disclosed (phase_preserved=false) limitation, not what this test probes.
     fridays = calendar[calendar.weekday == 4]
     fridays = fridays[calendar.searchsorted(fridays) < 200][:10]
     events = pd.DataFrame({
@@ -279,24 +263,63 @@ def test_grain_cadence_null_preserves_weekly_grain_weekday_distribution():
         "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
     })
     out = grain_cadence_null(events, bars, seed=13)
-    assert set(pd.to_datetime(out["signal_ts"]).dt.weekday) == {4}
-    # the search actually VERIFIED this, rather than merely getting lucky --
-    # phase_preserved must be disclosed True for this group.
-    assert bool(out["phase_preserved"].iloc[0]) is True
+    applied = out.loc[out["cadence_null_state"] == "applied"]
+    assert len(applied) > 0
+    assert set(pd.to_datetime(applied["signal_ts"]).dt.weekday) == {4}
+    assert applied["phase_preserved"].fillna(False).astype(bool).all()
 
 
-def test_grain_cadence_null_phase_preserved_column_is_false_when_no_k_satisfies_every_fire():
-    """Weekday-phase MAJOR fix: when no K in [63,252] sessions makes EVERY
-    fire in the group agree on its own weekday (a widely-spread group on a
-    holiday-perturbed calendar -- the pathological case the fallback exists
-    for), the null must still return a valid, real-session-landing shift, but
-    must mark that group's rows ``phase_preserved: false`` rather than
-    silently claiming a phase guarantee it did not verify."""
+def test_grain_cadence_null_snap_sessions_within_declared_bound():
+    """Every published ``snap_sessions`` value must respect the declared
+    :data:`GRAIN_CADENCE_SNAP_BOUND_SESSIONS` bound (4)."""
     bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
     calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
-    # A wide, densely-populated weekly-grain group (20 fires across 400
-    # sessions) -- empirically, no shared K in [63,252] sessions keeps every
-    # one of these fires on Friday simultaneously under this holiday pattern.
+    fridays = calendar[calendar.weekday == 4][:60]
+    events = pd.DataFrame({
+        "event_id": [f"E{i}" for i in range(len(fridays))],
+        "family_key": ["fam.w"] * len(fridays), "symbol": ["AAA"] * len(fridays),
+        "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
+    })
+    for seed in range(8):
+        out = grain_cadence_null(events, bars, seed=seed)
+        applied = out.loc[out["cadence_null_state"] == "applied"]
+        if applied.empty:
+            continue
+        snaps = applied["snap_sessions"].astype(int)
+        assert snaps.abs().max() <= GRAIN_CADENCE_SNAP_BOUND_SESSIONS
+
+
+def test_grain_cadence_null_preserves_chronological_order_when_applied():
+    """Within an ``"applied"`` group, the NEW positions (in the group's own
+    original chronological order) must be strictly increasing -- the same
+    invariant the collision/inversion check enforces before a group is ever
+    marked ``"applied"``."""
+    bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
+    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
+    ts = calendar[[100, 105, 130, 140, 175]]
+    events = pd.DataFrame({
+        "event_id": [f"E{i}" for i in range(5)], "family_key": ["fam.x"] * 5,
+        "symbol": ["AAA"] * 5, "signal_ts": ts, "signal_known_ts": ts,
+        "grain": ["1D"] * 5,
+    })
+    out = grain_cadence_null(events, bars, seed=3)
+    assert (out["cadence_null_state"] == "applied").all()
+    orig_pos = calendar.searchsorted(pd.to_datetime(events["signal_ts"]).to_numpy())
+    new_pos = calendar.searchsorted(pd.to_datetime(out["signal_ts"]).to_numpy())
+    order = np.argsort(orig_pos, kind="stable")
+    assert np.all(np.diff(new_pos[order]) > 0)
+
+
+def test_grain_cadence_null_dense_cluster_marks_group_unestimable():
+    """Ruling 3's typed-refusal path: a dense, wide weekly-grain group on a
+    holiday-perturbed calendar (20 fires across 400 sessions) can produce a
+    snap collision/inversion for at least one seed -- that group must be
+    marked ``cadence_null_state == "unestimable"`` for EVERY row and left
+    completely UNTOUCHED (original signal_ts/signal_known_ts preserved, no
+    phase_preserved/snap_sessions value), never a forced or partially-broken
+    shift."""
+    bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
+    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
     fridays = calendar[calendar.weekday == 4]
     fridays = fridays[calendar.searchsorted(fridays) < 400][:20]
     events = pd.DataFrame({
@@ -304,13 +327,49 @@ def test_grain_cadence_null_phase_preserved_column_is_false_when_no_k_satisfies_
         "family_key": ["fam.w"] * len(fridays), "symbol": ["AAA"] * len(fridays),
         "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
     })
+    found = False
+    for seed in range(60):
+        out = grain_cadence_null(events, bars, seed=seed)
+        if (out["cadence_null_state"] == "unestimable").all():
+            found = True
+            pd.testing.assert_series_equal(
+                out["signal_ts"].reset_index(drop=True), events["signal_ts"].reset_index(drop=True),
+                check_names=False,
+            )
+            pd.testing.assert_series_equal(
+                out["signal_known_ts"].reset_index(drop=True), events["signal_known_ts"].reset_index(drop=True),
+                check_names=False,
+            )
+            assert out["phase_preserved"].isna().all()
+            assert out["snap_sessions"].isna().all()
+            break
+    assert found, "expected at least one seed in range(60) to produce a collision/inversion on this dense cluster"
+
+
+def test_grain_cadence_null_no_calendar_state_is_typed():
+    events = _events_for_symbol(symbol="NOCAL")
+    out = grain_cadence_null(events, {}, seed=1)
+    assert (out["cadence_null_state"] == "no_calendar").all()
+    pd.testing.assert_series_equal(out["signal_known_ts"], events["signal_known_ts"])
+
+
+def test_grain_cadence_null_summary_reports_gap_distortion_stats():
+    bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
+    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
+    fridays = calendar[calendar.weekday == 4]
+    fridays = fridays[calendar.searchsorted(fridays) < 200][:10]
+    events = pd.DataFrame({
+        "event_id": [f"E{i}" for i in range(len(fridays))],
+        "family_key": ["fam.w"] * len(fridays), "symbol": ["AAA"] * len(fridays),
+        "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
+    })
     out = grain_cadence_null(events, bars, seed=13)
-    # every fire still lands on a REAL trading session...
-    assert set(pd.to_datetime(out["signal_ts"])) <= set(calendar)
-    # ...but the group's own weekday guarantee is disclosed as failed, not
-    # silently claimed.
-    assert bool(out["phase_preserved"].iloc[0]) is False
-    assert set(pd.to_datetime(out["signal_ts"]).dt.weekday) != {4}
+    summary = grain_cadence_null_summary(out)
+    assert summary["n_rows"] == len(events)
+    assert summary["n_rows_applied"] + summary["n_rows_unestimable"] + summary["n_rows_no_calendar"] == len(events)
+    if summary["n_rows_applied"] > 0:
+        assert summary["snap_sessions_abs_max"] is not None
+        assert summary["snap_sessions_abs_max"] <= GRAIN_CADENCE_SNAP_BOUND_SESSIONS
 
 
 def test_grain_cadence_null_preserves_stamp_lag_exactly():

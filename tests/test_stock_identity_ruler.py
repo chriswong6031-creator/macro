@@ -33,12 +33,15 @@ from engine.stock_identity.ruler import (
     FIRE_METRIC_COLUMNS,
     SUPPORT_COVERAGE_COLUMNS,
     UNCONDITIONAL_BLOCK_COLUMNS,
+    FAMILY_ELIGIBLE_STATE,
+    FAMILY_EPISODE_AVAILABILITY_COLUMNS,
     FORBIDDEN_OUTPUT_TOKENS,
     MissingRankStratumColumnsError,
     PendingSealedCalibrationError,
     RulerSpec,
     UnconditionalBlockUniverseError,
     aggregate_cell_metrics,
+    build_family_episode_availability,
     build_support_coverage,
     compute_composites,
     compute_fire_metrics,
@@ -577,6 +580,16 @@ def test_c_loc_d_ranks_within_episode_type_grain_stratum_only():
 
 
 # ---------------------------------------------------------------------------
+# Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law) fixture helper: a minimal W2
+# family-registry entry conferring UNRESTRICTED lawful availability
+# (family_first_available=None -- "no known start boundary", the SAME
+# convention family_registry.json's own committed entries use).
+# ---------------------------------------------------------------------------
+def _unrestricted_registry(*family_keys: str) -> list[dict]:
+    return [{"family_key": fk, "family_first_available": None} for fk in family_keys]
+
+
+# ---------------------------------------------------------------------------
 # B2 + M7: aggregate_cell_metrics recall denominator / flooding normalization
 # ---------------------------------------------------------------------------
 def _two_symbol_recall_fixture():
@@ -617,32 +630,36 @@ def test_recall_denominator_counts_eligible_episodes_regardless_of_fire():
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
+    registry = _unrestricted_registry("fam.x")
+    cells = aggregate_cell_metrics(
+        fire_metrics, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
     cell = cells.loc[
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
     # AAA's resolved reset_decline episode fired in-zone; AAA's OWN censored
     # reset_decline episode and BBB's reset_decline episode of the SAME type
-    # never fired at all but are both tier-eligible, and BBB is in fam.x's
-    # coverage via its EVENTS (it fired a reclaim event on BBB -- B2-residual:
-    # this fixture's BBB reclaim attribution never actually resolves to a
-    # fire_metrics row due to an episode_index quirk in the fixture itself,
-    # which is exactly the "fired but never attributed" shape B2-residual
-    # exists to still count) -> denominator = 3 eligible episodes (AAA's two +
-    # BBB's one), only AAA's resolved one is recalled -> 1/3, never the 1/2 a
-    # fire_metrics-derived universe would have silently under-counted to by
-    # missing BBB.
+    # never fired at all but are both tier-eligible. Ruling 2 (SI-W3A-RULER-V1
+    # PR-3 seal law): BBB enters fam.x's recall denominator via LAWFUL
+    # AVAILABILITY (an unrestricted family_registry entry + bars_by_symbol
+    # coverage for BBB), never via events/fired-on coverage -> denominator = 3
+    # eligible episodes (AAA's two + BBB's one), only AAA's resolved one is
+    # recalled -> 1/3.
     assert cell["recall_at_tier"] == pytest.approx(1 / 3)
 
 
 def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
-    """Named regression: the prior implementation counted only fired episodes in
-    the denominator, so it would have reported recall_at_tier == 1.0 for the same
-    fixture — this test fails under that old behavior."""
+    """Named regression: a fired-on-only denominator would have reported
+    recall_at_tier == 1.0 for the same fixture (only AAA's resolved episode
+    ever fired) — this test fails under that behavior, both under the OLD
+    events-derived universe and the new availability-based one."""
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
+    registry = _unrestricted_registry("fam.x")
+    cells = aggregate_cell_metrics(
+        fire_metrics, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
     cell = cells.loc[
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
@@ -650,15 +667,120 @@ def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
 
 
 # ---------------------------------------------------------------------------
-# B2-residual: family_symbol_universe is built from EVENTS (all fires,
-# attributed or not), never from fire_metrics (attributed-only)
+# Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): the recall-denominator eligibility
+# universe is built from OUTCOME-INDEPENDENT provenance/coverage (W2 family
+# registry + input bars), never from events/fired-on coverage. Sol's three
+# required regressions: (a) an available symbol with eligible episodes and
+# ZERO fires grows the denominator and cannot improve recall; (b) a genuinely
+# not-yet-available symbol never enters the denominator; (c) missing
+# eligibility evidence never falls through to fired-on coverage.
 # ---------------------------------------------------------------------------
-def test_family_symbol_universe_uses_events_not_fire_metrics_b2_residual():
-    """Discriminating test for B2-residual: a symbol where a family FIRED but
-    NOTHING attributed must still enter that family's recall denominator via its
-    tier-eligible episodes. Old code (family_symbol_universe from fire_metrics,
-    which is attributed-only) would never see CCC at all here, since CCC never
-    produced a fire_metrics row — this test fails under that old behavior."""
+def test_recall_denominator_grows_from_available_zero_fire_symbol_ruling2_regression_a():
+    """Regression (a): CCC never appears in ``events`` AT ALL (not even an
+    unattributed fire) but is still ELIGIBLE via family_registry + bars, which
+    GROWS the denominator and cannot improve recall -- eligibility no longer
+    derives from events in any form."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    episodes_aaa_only = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    episodes_with_ccc = pd.concat([
+        episodes_aaa_only,
+        pd.DataFrame([_episode_row(symbol="CCC", episode_type="reset_decline", start_date="2020-02-01")]),
+    ], ignore_index=True)
+    # CCC has NO row anywhere in events -- fam.x never fired on it, attributed
+    # or not.
+    events = pd.DataFrame([
+        {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+         "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
+    ])
+    spec = _fixture_spec()
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400), "CCC": _bars("CCC", "2019-06-01", 400)}
+    registry = _unrestricted_registry("fam.x")
+
+    cells_aaa_only = aggregate_cell_metrics(
+        fm, episodes_aaa_only, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
+    cells_with_ccc = aggregate_cell_metrics(
+        fm, episodes_with_ccc, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
+    recall_aaa_only = cells_aaa_only.loc[
+        (cells_aaa_only["family_key"] == "fam.x") & (cells_aaa_only["episode_type"] == "reset_decline")
+    ].iloc[0]["recall_at_tier"]
+    cell_with_ccc = cells_with_ccc.loc[
+        (cells_with_ccc["family_key"] == "fam.x") & (cells_with_ccc["episode_type"] == "reset_decline")
+    ].iloc[0]
+    # AAA alone: 1 eligible episode, 1 recalled -> 1.0. Adding CCC (zero fires,
+    # but lawfully available) grows the denominator to 2 -> 0.5, strictly LOWER,
+    # never higher.
+    assert recall_aaa_only == pytest.approx(1.0)
+    assert cell_with_ccc["recall_at_tier"] == pytest.approx(0.5)
+    assert cell_with_ccc["recall_at_tier"] < recall_aaa_only
+
+
+def test_recall_denominator_excludes_not_yet_available_symbol_ruling2_regression_b():
+    """Regression (b): a symbol whose family only became available AFTER the
+    tier-eligible episode's entire window must NEVER enter the denominator,
+    even though bars cover it fully."""
+    fm = pd.DataFrame([{
+        "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+        "episode_id": "AAA::reset_decline::2020-01-01",
+        "episode_type": "reset_decline", "episode_tier": 1, "grain": "daily",
+        "signal_known_ts": pd.Timestamp("2020-01-10"),
+        "lead_lag": 0.0, "price_dist": 0.0, "atr_dist": 0.1, "mae_after": 0.0,
+        "mae_basis": "low", "capture": 0.5, "false_start": False,
+    }])
+    # DDD's episode resolves entirely in 2018 -- well before fam.x's registered
+    # family_first_available of 2019-01-01. AAA's episode (default window,
+    # ending 2020-03-09) postdates that boundary and must stay eligible.
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+        _episode_row(
+            symbol="DDD", episode_type="reset_decline", start_date="2018-01-01",
+            anchor_date="2018-02-01", end_date="2018-03-09",
+        ),
+    ])
+    events = pd.DataFrame([
+        {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
+         "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
+    ])
+    spec = _fixture_spec()
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400), "DDD": _bars("DDD", "2017-06-01", 400)}
+    registry = [{"family_key": "fam.x", "family_first_available": "2019-01-01"}]
+
+    cells = aggregate_cell_metrics(
+        fm, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
+    )
+    cell = cells.loc[
+        (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
+    ].iloc[0]
+    # DDD's episode window entirely predates fam.x's family_first_available, so
+    # it is NOT_YET_AVAILABLE -- excluded. Denominator is AAA's 1 episode only,
+    # recalled -> 1.0, never diluted by an episode the family could not have
+    # fired on.
+    assert cell["recall_at_tier"] == pytest.approx(1.0)
+
+    availability = build_family_episode_availability(
+        episodes, ["fam.x"], family_registry=registry, bars_by_symbol=bars,
+    )
+    ddd_state = availability.loc[availability["symbol"] == "DDD", "availability_state"].iloc[0]
+    assert ddd_state == "NOT_YET_AVAILABLE"
+
+
+def test_recall_denominator_missing_eligibility_evidence_never_falls_through_to_fired_on_ruling2_regression_c():
+    """Regression (c): with NO family_registry and NO bars_by_symbol supplied,
+    lawful availability cannot be established at all -- recall_at_tier must be
+    undefined (NaN, availability_state UNESTIMABLE), NEVER silently computed
+    off the old fired-on (events-derived) coverage universe, even though AAA
+    plainly fired and would have produced a defined value under that discarded
+    read."""
     fm = pd.DataFrame([{
         "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
         "episode_id": "AAA::reset_decline::2020-01-01",
@@ -669,31 +791,29 @@ def test_family_symbol_universe_uses_events_not_fire_metrics_b2_residual():
     }])
     episodes = pd.DataFrame([
         _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
-        _episode_row(symbol="CCC", episode_type="reset_decline", start_date="2020-02-01"),
     ])
-    # fam.x fired on CCC too, but that fire never attributed to any episode -- it
-    # has no row in fire_metrics (fm) above, only in events.
     events = pd.DataFrame([
         {"event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
          "signal_known_ts": pd.Timestamp("2020-01-10"), "grain": "1D"},
-        {"event_id": "E2", "family_key": "fam.x", "symbol": "CCC",
-         "signal_known_ts": pd.Timestamp("2019-01-01"), "grain": "1D"},
     ])
     spec = _fixture_spec()
+    # No family_registry, no bars_by_symbol -- both default to None.
     cells = aggregate_cell_metrics(fm, episodes, spec, events)
     cell = cells.loc[
         (cells["family_key"] == "fam.x") & (cells["episode_type"] == "reset_decline")
     ].iloc[0]
-    # CCC's reset_decline episode enters the denominator (2 eligible episodes)
-    # even though CCC never contributed a fire_metrics row -- only AAA's episode
-    # is recalled -> 1/2, never 1/1 (the OLD fire_metrics-only universe result).
-    assert cell["recall_at_tier"] == pytest.approx(0.5)
+    assert pd.isna(cell["recall_at_tier"])
+
+    availability = build_family_episode_availability(episodes, ["fam.x"])
+    assert (availability["availability_state"] == "UNESTIMABLE").all()
 
 
 def test_family_symbol_universe_empty_when_events_is_empty():
-    """No events -> no family symbol coverage at all -> recall_at_tier is
-    undefined (NaN), never a fabricated value or a raise: with an empty
-    coverage universe there is no eligible-episode population to divide by."""
+    """``events`` is no longer read for eligibility at all (Ruling 2) -- an
+    empty ``events`` frame has NO effect on recall_at_tier one way or the
+    other; with no family_registry/bars_by_symbol supplied (both default
+    None), recall_at_tier is undefined (NaN, UNESTIMABLE), never a fabricated
+    value or a raise."""
     fm = pd.DataFrame([{
         "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
         "episode_id": "AAA::reset_decline::2020-01-01",
@@ -727,10 +847,17 @@ def test_unconditional_block_raises_when_universe_omits_an_observed_pair():
 
 def test_flooding_is_invariant_to_cell_size_at_equal_density():
     """Two cells with the same fires-per-eligible-episode-session density but
-    different absolute sizes must report the SAME flooding value (M7). Each
-    family fires on its OWN symbol so the two families' eligible-episode
-    universes are genuinely disjoint (episodes carry no family_key of their
-    own — coverage is keyed by which symbols a family fired on)."""
+    different absolute sizes must report the SAME flooding value (M7). Ruling
+    2 (SI-W3A-RULER-V1 PR-3 seal law): a family's eligible-episode universe is
+    now availability-based (family registry + bars), not events-derived, and
+    is NOT scoped to "symbols this family happens to have fired on" — within
+    ONE combined ``episodes``/``bars_by_symbol`` call every lawfully-available
+    family sees every tier-eligible episode in that catalog, regardless of
+    symbol. To keep the two families' eligible-episode POPULATIONS genuinely
+    different sizes (the property this invariance test needs), each family is
+    computed via its OWN call with only its own symbol's episodes/bars in
+    scope — modeling two families whose lawful universes are legitimately
+    different in size, which is what the M7 invariant is actually about."""
     small = pd.DataFrame([
         {"event_id": f"S{i}", "family_key": "fam.small", "symbol": "SMALLSYM",
          "episode_id": f"SMALLSYM::reset_decline::2020-0{(i % 3) + 1}-01",
@@ -760,16 +887,28 @@ def test_flooding_is_invariant_to_cell_size_at_equal_density():
         _episode_row(symbol="LARGESYM", episode_type="reset_decline", start_date=f"2020-0{k}-01")
         for k in range(1, 7)
     ])
-    all_eps = pd.concat([small_eps, large_eps], ignore_index=True)
     spec = _fixture_spec()
-    events = pd.DataFrame({
-        "event_id": fm["event_id"], "family_key": fm["family_key"], "symbol": fm["symbol"],
-        "signal_known_ts": fm["signal_known_ts"], "grain": fm["grain"],
+    small_events = pd.DataFrame({
+        "event_id": small["event_id"], "family_key": small["family_key"], "symbol": small["symbol"],
+        "signal_known_ts": small["signal_known_ts"], "grain": small["grain"],
     })
+    large_events = pd.DataFrame({
+        "event_id": large["event_id"], "family_key": large["family_key"], "symbol": large["symbol"],
+        "signal_known_ts": large["signal_known_ts"], "grain": large["grain"],
+    })
+    small_bars = {"SMALLSYM": _bars("SMALLSYM", "2019-06-01", 400)}
+    large_bars = {"LARGESYM": _bars("LARGESYM", "2019-06-01", 400)}
 
-    cells = aggregate_cell_metrics(fm, all_eps, spec, events)
-    small_cell = cells.loc[cells["family_key"] == "fam.small"].iloc[0]
-    large_cell = cells.loc[cells["family_key"] == "fam.large"].iloc[0]
+    small_cells = aggregate_cell_metrics(
+        small, small_eps, spec, small_events,
+        family_registry=_unrestricted_registry("fam.small"), bars_by_symbol=small_bars,
+    )
+    large_cells = aggregate_cell_metrics(
+        large, large_eps, spec, large_events,
+        family_registry=_unrestricted_registry("fam.large"), bars_by_symbol=large_bars,
+    )
+    small_cell = small_cells.loc[small_cells["family_key"] == "fam.small"].iloc[0]
+    large_cell = large_cells.loc[large_cells["family_key"] == "fam.large"].iloc[0]
     assert small_cell["flooding"] == pytest.approx(large_cell["flooding"])
     assert small_cell["flooding"] == pytest.approx((4 / 3) / spec.useful_zone_window_sessions)
 

@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -31,6 +32,7 @@ from engine.stock_identity.ruler import (  # noqa: E402
     PendingSealedCalibrationError,
     RulerSpec,
     aggregate_cell_metrics,
+    build_family_episode_availability,
     build_support_coverage,
     compute_composites,
     compute_fire_metrics,
@@ -39,6 +41,7 @@ from engine.stock_identity.ruler import (  # noqa: E402
 from engine.stock_identity.ruler_nulls import (  # noqa: E402
     equal_proximity_control,
     grain_cadence_null,
+    grain_cadence_null_summary,
     random_fire_null,
 )
 
@@ -49,6 +52,12 @@ SPEC_PATH = DATA / "ruler" / "ruler_spec_v1.json"
 FINGERPRINT_PATH = DATA / "fingerprints" / "pilot_fingerprint_v0.parquet"
 PARTITION_MANIFEST_PATH = DATA / "partition" / "partition_manifest_v1.json"
 CALIBRATION_REPLAY_MANIFEST_PATH = DATA / "ruler" / "calibration_replay_manifest_v1.json"
+#: Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): the committed W2 family registry
+#: (spec/provenance including ``family_first_available``) — the outcome-
+#: independent source ``aggregate_cell_metrics``'s recall-denominator
+#: eligibility is now built from, replacing the prior events-derived
+#: ("fired-on") coverage universe.
+FAMILY_REGISTRY_PATH = EVENTS_DIR / "family_registry.json"
 
 #: Deterministic seeds for the two seeded nulls, recorded here and in the W3
 #: registration artifact (plan Task 3 Step 4 "seeds are deterministic and
@@ -108,6 +117,41 @@ def _write_parquet(df: pd.DataFrame, path: Path) -> None:
     df.to_parquet(path)
 
 
+def _family_registry() -> list[dict[str, Any]]:
+    """Ruling 2: the committed W2 family registry's ``families`` list, loaded
+    straight off disk (never re-derived/invented) — the outcome-independent
+    ``family_first_available`` provenance :func:`build_family_episode_availability`
+    reads. ``[]`` (never ``None``) when the file does not exist, so a caller
+    that checks ``family_registry is not None`` still supplies a real,
+    empty-but-present list rather than accidentally reading as "not
+    supplied"."""
+    if not FAMILY_REGISTRY_PATH.exists():
+        return []
+    payload = json.loads(FAMILY_REGISTRY_PATH.read_text(encoding="utf-8"))
+    return list(payload.get("families", []))
+
+
+def _availability_stats(availability: pd.DataFrame) -> dict[str, Any]:
+    """Ruling 2 smoke-report numbers: defined-cell count / mean / median / P25
+    of the availability-based recall distribution is reported from ``cells``
+    directly by the caller; this helper reports how many (family, symbol)
+    pairs carry a typed UNAVAILABLE state (never silently folded into a
+    fired-on read)."""
+    if availability is None or availability.empty:
+        return {"n_family_symbol_pairs": 0, "n_family_symbol_pairs_unavailable": 0,
+                "unavailable_state_counts": {}}
+    pairs = availability[["family_key", "symbol"]].drop_duplicates()
+    non_eligible = availability.loc[availability["availability_state"] != "ELIGIBLE"]
+    unavailable_pairs = non_eligible[["family_key", "symbol"]].drop_duplicates()
+    return {
+        "n_family_symbol_pairs": int(len(pairs)),
+        "n_family_symbol_pairs_unavailable": int(len(unavailable_pairs)),
+        "unavailable_state_counts": {
+            str(k): int(v) for k, v in non_eligible["availability_state"].value_counts().items()
+        },
+    }
+
+
 def _family_universe() -> list[str]:
     """The W2 family registry's family_key set, read from the already-committed
     calibration replay manifest (``w2_family_registry_reuse.spec_hashes_at_manifest_freeze``
@@ -133,14 +177,30 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
     universe = [(fam, sym) for fam in families for sym in symbols] if families else None
     unconditional = compute_unconditional_block(events, attribution, episodes, universe=universe)
     support = build_support_coverage(events, attribution, episodes, bars, _feature_symbols())
-    cells = aggregate_cell_metrics(fire_metrics, episodes, spec, events)
+
+    # Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law): the recall-denominator
+    # eligibility universe is now availability-based (committed W2 family
+    # registry + input bars), never events-derived ("fired-on") coverage —
+    # applied here to the pilot diagnostics build exactly as to the sealed-
+    # calibration path (scripts/stock_identity_calibrate_w3.py).
+    family_registry = _family_registry()
+    cells = aggregate_cell_metrics(
+        fire_metrics, episodes, spec, events, family_registry=family_registry, bars_by_symbol=bars,
+    )
+    fire_family_keys = sorted({str(f) for f in fire_metrics["family_key"].dropna().unique()}) \
+        if not fire_metrics.empty else []
+    availability = build_family_episode_availability(
+        episodes, fire_family_keys, family_registry=family_registry, bars_by_symbol=bars,
+    )
 
     output_dir.mkdir(parents=True, exist_ok=True)
     _write_parquet(fire_metrics, output_dir / "fire_metrics_v1.parquet")
     _write_parquet(unconditional, output_dir / "unconditional_block_v1.parquet")
     _write_parquet(support, output_dir / "support_coverage_v1.parquet")
     _write_parquet(cells, output_dir / "cell_metrics_v1.parquet")
+    _write_parquet(availability, output_dir / "family_episode_availability_v1.parquet")
 
+    recall_defined = cells["recall_at_tier"].dropna() if "recall_at_tier" in cells.columns else pd.Series(dtype=float)
     manifest: dict[str, Any] = {
         "schema": "stock_identity.w3a_ruler_smoke.v1",
         "spec_hash": spec.spec_hash(),
@@ -161,6 +221,20 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
         # MINORS: the same provisional-basis tag the support frame's own
         # calendar_block_basis column carries, surfaced in the build summary too.
         "calendar_block_basis": "calendar_quarter_provisional",
+        # Ruling 2: the availability-based recall_at_tier distribution over
+        # every DEFINED cell, plus how many (family, symbol) pairs carry a
+        # typed unavailable state.
+        "recall_at_tier_distribution": {
+            "n_cells_defined": int(len(recall_defined)),
+            "n_cells_total": int(len(cells)),
+            "mean": float(recall_defined.mean()) if len(recall_defined) else None,
+            "median": float(recall_defined.median()) if len(recall_defined) else None,
+            "p25": (
+                float(np.percentile(recall_defined.to_numpy(dtype=float), 25, method="linear"))
+                if len(recall_defined) else None
+            ),
+        },
+        "family_symbol_availability": _availability_stats(availability),
     }
 
     if spec.pr3_pending:
@@ -203,6 +277,10 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
             "random_fire_rows": int(len(random_null_events)),
             "grain_cadence_seed": GRAIN_CADENCE_NULL_SEED,
             "grain_cadence_rows": int(len(grain_null_events)),
+            # Ruling 3 (SI-W3A-RULER-V1 PR-3 seal law): group/summary
+            # gap-distortion statistics for the cadence-phase null (per-fire
+            # snap_sessions distribution, unestimable-group count).
+            "grain_cadence_summary": grain_cadence_null_summary(grain_null_events),
             "equal_proximity_tolerance_atr": EQUAL_PROXIMITY_TOLERANCE_ATR,
             "equal_proximity_pairs": int(len(proximity)),
             "equal_proximity_pairs_truncated": proximity_truncated,
