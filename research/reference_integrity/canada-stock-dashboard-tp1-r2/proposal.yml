@@ -71,7 +71,10 @@ dispositions:
     rationale: closes predecessor blockers PRC-002/PRC-003/VTC-009/VTC-010 under Sol's reserved-hue ruling
   - id: leadership.expand_modal
     disposition: IMPROVE
-    target: stance chips styled inside the modal via the sibling-scoped selector family; modal root carries the UI font stack; unconditional fail-closed base rule `.ca-v36-modal { display: none; }` independent of the combinator
+    target: >
+      stance chips styled inside the modal via the sibling-scoped selector
+      family; modal root carries the UI font stack; unconditional fail-closed
+      base rule (.ca-v36-modal display none) independent of the combinator
     rationale: closes predecessor blockers PRC-001/VTC-006 and the PRC-006 fail-open mode per Sol COND-01
   - id: clocks.board_vs_live
     disposition: RETAIN
