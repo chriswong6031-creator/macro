@@ -7,13 +7,13 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-29",
-    "evaluated_at": "2026-08-29T09:32:53+00:00"
+    "evaluated_at": "2026-08-29T12:44:28+00:00"
   },
-  "generated_at": "2026-08-29T09:32:53.801581+00:00",
+  "generated_at": "2026-08-29T12:44:28.406584+00:00",
   "state_asof": "2026-08-29",
   "model": "claude-opus-4-8",
-  "regime_read": "The strongest measured convergence sits in semiconductors, defense software, pharma, and enterprise AI, but several clusters rely partly on sentiment or qualitative affiliations rather than harder flows. With no completed track-record observations, conviction remains modest and the cleaner reads favor non-extended names where operational or policy channels align with ownership signals.",
-  "regime_read_zh": "\u5f53\u524d\u8f83\u5f3a\u7684\u53ef\u6d4b\u805a\u5408\u96c6\u4e2d\u5728\u534a\u5bfc\u4f53\u3001\u56fd\u9632\u8f6f\u4ef6\u3001\u5236\u836f\u548c\u4f01\u4e1aAI\uff0c\u4f46\u90e8\u5206\u4fe1\u53f7\u4ecd\u4f9d\u8d56\u60c5\u7eea\u6216\u5b9a\u6027\u5173\u8054\uff0c\u800c\u975e\u66f4\u786c\u7684\u8d44\u91d1\u6d41\u8bc1\u636e\u3002\u7531\u4e8e\u5386\u53f2\u5224\u65ad\u5c1a\u65e0\u5230\u671f\u8bc4\u5206\uff0c\u6574\u4f53\u7f6e\u4fe1\u5ea6\u4fdd\u6301\u514b\u5236\uff0c\u66f4\u503c\u5f97\u5173\u6ce8\u7684\u662f\u8fd0\u8425\u6216\u653f\u7b56\u4fe1\u53f7\u4e0e\u6301\u4ed3\u4fe1\u53f7\u76f8\u4e92\u5370\u8bc1\u3001\u4e14\u5c1a\u672a\u8fc7\u5ea6\u4e0a\u6da8\u7684\u6807\u7684\u3002",
+  "regime_read": "The clearest measured convergence is in semiconductors, government-linked software, pharma catalysts, and an activist airline situation, but the signals remain unusual activity rather than proven edge. With no completed track-record observations, conviction stays modest despite several six-channel clusters.",
+  "regime_read_zh": "\u76ee\u524d\u6700\u6e05\u6670\u7684\u591a\u6e90\u4fe1\u53f7\u96c6\u4e2d\u5728\u534a\u5bfc\u4f53\u3001\u653f\u5e9c\u76f8\u5173\u8f6f\u4ef6\u3001\u533b\u836f\u50ac\u5316\u5242\u548c\u822a\u7a7a\u516c\u53f8\u7ef4\u6743\u4e8b\u4ef6\uff0c\u4f46\u8fd9\u4e9b\u4fe1\u53f7\u4ec5\u4ee3\u8868\u5f02\u5e38\u6d3b\u52a8\uff0c\u5e76\u975e\u5df2\u8bc1\u660e\u7684\u8d85\u989d\u6536\u76ca\u6765\u6e90\u3002\u7531\u4e8e\u5c1a\u65e0\u5df2\u5b8c\u6210\u8bc4\u4f30\u7684\u5386\u53f2\u5224\u65ad\uff0c\u5373\u4f7f\u90e8\u5206\u6807\u7684\u8fbe\u5230\u516d\u901a\u9053\u6c47\u805a\uff0c\u7f6e\u4fe1\u5ea6\u4ecd\u4fdd\u6301\u514b\u5236\u3002",
   "theses": [
     {
       "ticker": "MU",
@@ -21,12 +21,12 @@
       "conviction": "low",
       "action": "AVOID",
       "horizon_d": 60,
-      "thesis": "The pack's strongest weighted cluster combines net buying by four congressional members, strongly positive insider purchase pressure, accelerating federal grants, and a sizable patent cluster [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster]. Bullish social sentiment and the Ro Khanna affiliation add breadth but are softer confirmation [stocktwits_bull] [actor:Ro Khanna]. The stock has lagged SPY over 60 days, so the signal is not being chased.",
-      "thesis_zh": "\u8be5\u8bc1\u636e\u5305\u4e2d\u6743\u91cd\u6700\u9ad8\u7684\u805a\u5408\u540c\u65f6\u5305\u542b\u56db\u540d\u56fd\u4f1a\u8bae\u5458\u7684\u51c0\u4e70\u5165\u3001\u663e\u8457\u4e3a\u6b63\u7684\u5185\u90e8\u4eba\u4e70\u5165\u538b\u529b\u3001\u52a0\u901f\u7684\u8054\u90a6\u62e8\u6b3e\u4ee5\u53ca\u8f83\u5927\u7684\u4e13\u5229\u96c6\u7fa4 [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster]\u3002\u770b\u591a\u793e\u4ea4\u60c5\u7eea\u548c\u4e0eRo Khanna\u7684\u5173\u8054\u6269\u5927\u4e86\u4fe1\u53f7\u8986\u76d6\u9762\uff0c\u4f46\u5c5e\u4e8e\u8f83\u8f6f\u7684\u5370\u8bc1 [stocktwits_bull] [actor:Ro Khanna]\u3002\u8be5\u80a1\u8fc7\u53bb60\u65e5\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\u578b\u5224\u65ad\u3002",
+      "thesis": "MU has the pack's strongest actionable alignment: purchases by four members of Congress, strongly positive measured insider activity, accelerating federal grants, and a large patent cluster coincide with bullish retail sentiment and a disclosed Ro Khanna affiliation [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster] [stocktwits_bull] [actor:Ro Khanna]. Its 60-day relative underperformance and non-extended flag leave room for the signals to translate without chasing.",
+      "thesis_zh": "MU\u5448\u73b0\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u53ef\u64cd\u4f5c\u6c47\u805a\uff1a\u56db\u540d\u56fd\u4f1a\u8bae\u5458\u7684\u51c0\u4e70\u5165\u3001\u660e\u663e\u4e3a\u6b63\u7684\u5185\u90e8\u4eba\u58eb\u6d3b\u52a8\u3001\u52a0\u901f\u7684\u8054\u90a6\u62e8\u6b3e\u548c\u8f83\u5927\u7684\u4e13\u5229\u96c6\u7fa4\uff0c\u4e0e\u770b\u6da8\u7684\u6563\u6237\u60c5\u7eea\u53ca\u5df2\u62ab\u9732\u7684Ro Khanna\u5173\u8054\u540c\u65f6\u51fa\u73b0 [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster] [stocktwits_bull] [actor:Ro Khanna]\u3002\u517660\u65e5\u76f8\u5bf9\u8868\u73b0\u843d\u540e\u4e14\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4e3a\u4fe1\u53f7\u8f6c\u5316\u7559\u4e0b\u4e86\u7a7a\u95f4\u3002",
       "second_order": [
-        "AMAT \u2014 memory-capacity investment would support wafer-fabrication equipment demand, with its own congressional and patent signals",
-        "Semiconductor equipment \u2014 sustained memory investment would transmit into fabrication and process-tool spending",
-        "Data-center memory supply chain \u2014 tighter high-performance memory demand would benefit upstream components and packaging"
+        "AMAT \u2014 memory-capacity investment would support semiconductor-equipment demand, while AMAT also has congressional and patent signals in the pack",
+        "Semiconductor equipment \u2014 any sustained memory expansion would pull through fabrication-tool spending",
+        "Data-center memory supply chain \u2014 stronger memory demand would benefit upstream materials and component suppliers"
       ],
       "evidence": [
         "congress_cluster",
@@ -34,9 +34,10 @@
         "gov_grant_accel",
         "patent_cluster",
         "stocktwits_bull",
+        "cnbc_pick",
         "actor:Ro Khanna"
       ],
-      "dissent": "The 60-day relative underperformance may reflect weakening memory fundamentals, while social sentiment and affiliation signals could be noisy.",
+      "dissent": "MU has underperformed SPY by 13.9 percentage points over 60 days, which may reflect deteriorating memory fundamentals that transactional and sentiment signals have not captured.",
       "weighted_score": 2.65,
       "channels": [
         "affiliation",
@@ -50,7 +51,7 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Insider purchase pressure reverses while federal-grant acceleration fades and congressional net buying turns neutral or negative.",
+        "text": "Federal-grant momentum reverses and insider activity turns net negative while MU continues losing relative ground to SPY.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MU",
@@ -72,25 +73,25 @@
       "ticker": "PLTR",
       "lean": "overweight",
       "conviction": "low",
-      "action": "ACCUMULATE",
+      "action": "WATCH",
       "horizon_d": 45,
-      "thesis": "Government contract activity and acceleration align with a unanimous bullish analyst cluster, strong retail sentiment, and disclosed political/fund relationships [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]. This is a broad six-channel cluster, but much of the incremental breadth is sentiment-based, and the Trump-linked transaction is marked as a sell [trump], limiting conviction.",
-      "thesis_zh": "\u653f\u5e9c\u5408\u540c\u6d3b\u52a8\u53ca\u5176\u52a0\u901f\u4e0e\u4e00\u81f4\u770b\u591a\u7684\u5206\u6790\u5e08\u96c6\u7fa4\u3001\u5f3a\u52b2\u6563\u6237\u60c5\u7eea\uff0c\u4ee5\u53ca\u62ab\u9732\u7684\u653f\u6cbb\u4eba\u7269\u548c\u57fa\u91d1\u5173\u8054\u540c\u65f6\u51fa\u73b0 [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]\u3002\u867d\u7136\u8fd9\u662f\u4e00\u4e2a\u8986\u76d6\u516d\u4e2a\u6e20\u9053\u7684\u5e7f\u6cdb\u805a\u5408\uff0c\u4f46\u65b0\u589e\u5e7f\u5ea6\u8f83\u591a\u6765\u81ea\u60c5\u7eea\u4fe1\u53f7\uff0c\u800c\u4e14\u7279\u6717\u666e\u5173\u8054\u4ea4\u6613\u88ab\u6807\u8bb0\u4e3a\u5356\u51fa [trump]\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u53d7\u9650\u3002",
+      "thesis": "PLTR combines recent government-contract activity and acceleration with a uniformly bullish analyst cluster, strong retail attention, bullish Stocktwits sentiment, and disclosed links to Cathie Wood and Marjorie Taylor Greene [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Cathie Wood] [actor:Marjorie Taylor Greene]. The signal is mixed because the pack's Trump-linked indicator is explicitly on the sell side, and the stock has already outperformed SPY materially, so the appropriate posture is watch rather than chase.",
+      "thesis_zh": "PLTR\u540c\u65f6\u5177\u5907\u8fd1\u671f\u653f\u5e9c\u5408\u540c\u6d3b\u52a8\u53ca\u5176\u52a0\u901f\u3001\u96c6\u4e2d\u770b\u6da8\u7684\u5206\u6790\u5e08\u4fe1\u53f7\u3001\u8f83\u9ad8\u7684\u6563\u6237\u5173\u6ce8\u5ea6\u3001Stocktwits\u770b\u6da8\u60c5\u7eea\uff0c\u4ee5\u53ca\u4e0eCathie Wood\u548cMarjorie Taylor Greene\u7684\u5df2\u62ab\u9732\u8054\u7cfb [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Cathie Wood] [actor:Marjorie Taylor Greene]\u3002\u4f46\u8bc1\u636e\u5e76\u4e0d\u5b8c\u5168\u4e00\u81f4\uff1a\u8bc1\u636e\u5305\u4e2d\u7684\u7279\u6717\u666e\u76f8\u5173\u6307\u6807\u660e\u786e\u4f4d\u4e8e\u5356\u51fa\u4fa7\uff0c\u800c\u4e14\u8be5\u80a1\u5df2\u663e\u8457\u8dd1\u8d62SPY\uff0c\u56e0\u6b64\u66f4\u9002\u5408\u89c2\u5bdf\u800c\u975e\u8ffd\u6da8\u3002",
       "second_order": [
-        "Government IT integrators \u2014 continued federal software deployment can pull through implementation and integration work",
-        "Cloud infrastructure \u2014 expanding government analytics workloads require additional compute and storage",
-        "Cybersecurity software \u2014 broader federal data deployment raises adjacent security and access-control requirements"
+        "MSFT \u2014 enterprise and government AI adoption can support adjacent cloud-compute demand",
+        "Government IT modernization \u2014 durable contract activity would benefit integrators and secure-cloud vendors",
+        "Defense analytics software \u2014 PLTR contract momentum would indicate broader agency spending on data platforms"
       ],
       "evidence": [
         "gov_contract",
         "analyst_upgrade_cluster",
         "retail_buzz",
         "stocktwits_bull",
-        "actor:Marjorie Taylor Greene",
+        "trump",
         "actor:Cathie Wood",
-        "trump"
+        "actor:Marjorie Taylor Greene"
       ],
-      "dissent": "The political sell signal and heavy reliance on bullish analysts and retail sentiment may outweigh the modest contract acceleration.",
+      "dissent": "The Trump-linked sell signal conflicts with the bullish cluster, while strong retail enthusiasm and 60-day relative outperformance increase crowding and entry risk.",
       "weighted_score": 2.1,
       "channels": [
         "affiliation",
@@ -104,7 +105,7 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Government contract activity contracts materially and analyst or retail sentiment turns negative at the same time.",
+        "text": "Government-contract acceleration turns negative and subsequent contract activity fails to sustain the recent pace.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "PLTR",
@@ -120,23 +121,24 @@
       "ticker": "MRK",
       "lean": "overweight",
       "conviction": "low",
-      "action": "ACCUMULATE",
-      "horizon_d": 60,
-      "thesis": "Eleven Phase 3 starts and an FDA label-expansion signal align with elevated lobbying activity and a disclosed Trump-linked buy [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. The healthcare legislation is only introduced and is not a direct company-specific catalyst, so it adds sector context rather than firm evidence. Four clinical halts and already-strong relative performance keep conviction low.",
-      "thesis_zh": "11\u9879III\u671f\u4e34\u5e8a\u542f\u52a8\u548cFDA\u6807\u7b7e\u6269\u5c55\u4fe1\u53f7\uff0c\u4e0e\u8f83\u9ad8\u7684\u6e38\u8bf4\u6d3b\u52a8\u53ca\u62ab\u9732\u7684\u7279\u6717\u666e\u5173\u8054\u4e70\u5165\u540c\u65f6\u51fa\u73b0 [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]\u3002\u533b\u7597\u6cd5\u6848\u76ee\u524d\u4ec5\u5904\u4e8e\u63d0\u51fa\u9636\u6bb5\uff0c\u4e5f\u5e76\u975e\u516c\u53f8\u7279\u5b9a\u50ac\u5316\u5242\uff0c\u56e0\u6b64\u53ea\u80fd\u63d0\u4f9b\u884c\u4e1a\u80cc\u666f\uff0c\u4e0d\u80fd\u4f5c\u4e3a\u76f4\u63a5\u8bc1\u636e\u3002\u56db\u9879\u4e34\u5e8a\u6682\u505c\u4ee5\u53ca\u5df2\u7ecf\u8f83\u5f3a\u7684\u76f8\u5bf9\u8868\u73b0\u4f7f\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u5728\u4f4e\u4f4d\u3002",
+      "action": "WATCH",
+      "horizon_d": 70,
+      "thesis": "MRK's read rests on eleven Phase 3 starts, an FDA label-expansion signal, substantial lobbying activity, and a Trump-linked buy indicator [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. Proposed cancer-care planning legislation supplies a broad healthcare-policy backdrop, but it is only introduced and does not establish a direct MRK benefit [bill:HR10087]. With relative performance already strong and four clinical halts in the pack, the catalyst set merits monitoring rather than immediate accumulation.",
+      "thesis_zh": "MRK\u7684\u5224\u65ad\u57fa\u4e8e11\u9879\u4e09\u671f\u4e34\u5e8a\u542f\u52a8\u3001FDA\u6807\u7b7e\u6269\u5c55\u4fe1\u53f7\u3001\u8f83\u5927\u7684\u6e38\u8bf4\u6d3b\u52a8\u4ee5\u53ca\u7279\u6717\u666e\u76f8\u5173\u4e70\u5165\u6307\u6807 [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]\u3002\u62df\u8bae\u4e2d\u7684\u764c\u75c7\u7167\u62a4\u89c4\u5212\u6cd5\u6848\u63d0\u4f9b\u4e86\u5e7f\u4e49\u533b\u7597\u653f\u7b56\u80cc\u666f\uff0c\u4f46\u8be5\u6cd5\u6848\u4ec5\u5904\u4e8e\u63d0\u51fa\u9636\u6bb5\uff0c\u4e14\u4e0d\u80fd\u8bc1\u660eMRK\u4f1a\u76f4\u63a5\u53d7\u76ca [bill:HR10087]\u3002\u8003\u8651\u5230\u76f8\u5bf9\u8868\u73b0\u5df2\u7ecf\u8f83\u5f3a\uff0c\u4e14\u8bc1\u636e\u5305\u8bb0\u5f55\u4e864\u9879\u4e34\u5e8a\u6682\u505c\uff0c\u66f4\u9002\u5408\u6301\u7eed\u89c2\u5bdf\u50ac\u5316\u5242\u800c\u975e\u7acb\u5373\u4ecb\u5165\u3002",
       "second_order": [
-        "Oncology diagnostics \u2014 broader cancer treatment pathways can increase companion-diagnostic demand",
-        "Clinical research services \u2014 a large late-stage pipeline supports trial-management and laboratory activity",
-        "Cancer-care coordination software \u2014 proposed Medicare planning coverage could support care-management infrastructure if enacted"
+        "Oncology diagnostics \u2014 broader cancer-care planning could increase testing and treatment-pathway coordination",
+        "Clinical-research services \u2014 a large late-stage pipeline supports demand for trial execution and monitoring",
+        "Healthcare providers \u2014 proposed Medicare cancer-care coordination payments could support oncology service infrastructure"
       ],
       "evidence": [
         "clinical_phase3_start",
         "fda_label_expansion",
         "lobbying",
+        "special_situation",
         "trump",
         "bill:HR10087"
       ],
-      "dissent": "Four clinical halts create a meaningful pipeline-quality counterweight, while the stock is approaching the extended threshold after outperforming SPY.",
+      "dissent": "Four clinical halts create a meaningful counter-signal, and the proposed healthcare legislation is preliminary rather than a company-specific catalyst.",
       "weighted_score": 1.9,
       "channels": [
         "clinical_phase3_start",
@@ -149,17 +151,17 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Late-stage clinical halts increase or the label-expansion pathway is withdrawn or delayed without offsetting Phase 3 progress.",
+        "text": "Additional clinical halts outweigh new Phase 3 starts and the expected label expansion does not progress.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MRK",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 60
+          "horizon_d": 70
         }
       },
-      "check_by": "2026-11-20"
+      "check_by": "2026-12-04"
     },
     {
       "ticker": "LUV",
@@ -167,20 +169,21 @@
       "conviction": "low",
       "action": "AVOID",
       "horizon_d": 60,
-      "thesis": "An activist 13D, strong app-demand indicators, and three recent material 8-K events create a coherent setup around operational change and shareholder pressure [activist_13d] [app_demand] [material_8k]. The disclosed Paul Singer affiliation strengthens the activist interpretation [actor:Paul Singer], while negative relative performance leaves room for a rerating rather than signaling an extended entry.",
-      "thesis_zh": "\u79ef\u6781\u80a1\u4e1c13D\u7533\u62a5\u3001\u5f3a\u52b2\u7684\u5e94\u7528\u9700\u6c42\u6307\u6807\u548c\u8fd1\u671f\u4e09\u9879\u91cd\u59278-K\u4e8b\u4ef6\uff0c\u5171\u540c\u5f62\u6210\u4e86\u56f4\u7ed5\u8fd0\u8425\u53d8\u5316\u4e0e\u80a1\u4e1c\u65bd\u538b\u7684\u8fde\u8d2f\u903b\u8f91 [activist_13d] [app_demand] [material_8k]\u3002\u62ab\u9732\u7684Paul Singer\u5173\u8054\u8fdb\u4e00\u6b65\u5f3a\u5316\u4e86\u79ef\u6781\u7ef4\u6743\u89e3\u8bfb [actor:Paul Singer]\uff0c\u800c\u76f8\u5bf9\u8868\u73b0\u4e3a\u8d1f\u610f\u5473\u7740\u6f5c\u5728\u903b\u8f91\u66f4\u504f\u5411\u4f30\u503c\u91cd\u4f30\uff0c\u800c\u975e\u8ffd\u9010\u8fc7\u5ea6\u4e0a\u6da8\u3002",
+      "thesis": "LUV presents a coherent event-driven setup: an activist 13D, disclosed Paul Singer affiliation, strong measured app engagement, and multiple recent material 8-K filings point to simultaneous governance, customer-demand, and corporate-change activity [activist_13d] [actor:Paul Singer] [app_demand] [material_8k]. The stock is non-extended and has lagged SPY modestly, so the entry is not being chased, although the pack provides no direct operating or margin evidence.",
+      "thesis_zh": "LUV\u5448\u73b0\u8f83\u8fde\u8d2f\u7684\u4e8b\u4ef6\u9a71\u52a8\u7ec4\u5408\uff1a\u7ef4\u6743\u6295\u8d44\u800513D\u7533\u62a5\u3001\u5df2\u62ab\u9732\u7684Paul Singer\u5173\u8054\u3001\u8f83\u5f3a\u7684\u5e94\u7528\u7aef\u53c2\u4e0e\u5ea6\uff0c\u4ee5\u53ca\u8fd1\u671f\u591a\u4efd\u91cd\u59278-K\u6587\u4ef6\uff0c\u5171\u540c\u6307\u5411\u6cbb\u7406\u3001\u5ba2\u6237\u9700\u6c42\u548c\u516c\u53f8\u53d8\u9769\u6d3b\u52a8 [activist_13d] [actor:Paul Singer] [app_demand] [material_8k]\u3002\u8be5\u80a1\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4e14\u8fd1\u671f\u5c0f\u5e45\u843d\u540eSPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\uff1b\u4e0d\u8fc7\u8bc1\u636e\u5305\u6ca1\u6709\u63d0\u4f9b\u76f4\u63a5\u7684\u7ecf\u8425\u6216\u5229\u6da6\u7387\u8bc1\u636e\u3002",
       "second_order": [
-        "Airline distribution technology \u2014 operational changes can require refreshed booking and revenue-management systems",
-        "Aircraft maintenance providers \u2014 improved utilization and fleet execution can increase outsourced maintenance demand",
-        "Domestic travel ecosystem \u2014 healthier passenger demand can support airports, lodging, and travel services"
+        "Airline technology vendors \u2014 operational restructuring could increase spending on scheduling and revenue-management systems",
+        "Aircraft maintenance suppliers \u2014 improved fleet utilization or refurbishment would support aftermarket demand",
+        "Domestic travel ecosystem \u2014 sustained app engagement would support airports, lodging, and travel-service providers"
       ],
       "evidence": [
         "activist_13d",
+        "affiliation",
         "app_demand",
         "material_8k",
         "actor:Paul Singer"
       ],
-      "dissent": "High app ratings and review counts do not establish current booking growth, and activist involvement may signal deeper operational problems rather than near-term improvement.",
+      "dissent": "App ratings and filings do not establish improving unit economics, and activist involvement can produce disruption without operational gains.",
       "weighted_score": 1.65,
       "channels": [
         "activist_13d",
@@ -192,7 +195,7 @@
       "extended": false,
       "scorable": true,
       "falsifier": {
-        "text": "Passenger-demand indicators weaken while material filings show no credible operational or capital-allocation change.",
+        "text": "Activist-led changes fail to produce measurable operating improvement while app engagement weakens.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "LUV",
@@ -209,94 +212,11 @@
         "conviction": "low",
         "lean": "underweight"
       }
-    },
-    {
-      "ticker": "MSFT",
-      "lean": "overweight",
-      "conviction": "low",
-      "action": "ACCUMULATE",
-      "horizon_d": 60,
-      "thesis": "Consumer app demand, developer momentum, model-download activity, and a large patent cluster align across usage, ecosystem, and intellectual-property channels [app_demand] [github_momentum] [patent_cluster]. The Sam Altman partnership relationship adds strategic relevance, while the Bill Ackman affiliation is softer support [actor:Sam Altman] [actor:Bill Ackman]. The evidence measures ecosystem strength but does not directly establish incremental revenue or margin conversion.",
-      "thesis_zh": "\u6d88\u8d39\u8005\u5e94\u7528\u9700\u6c42\u3001\u5f00\u53d1\u8005\u52a8\u91cf\u3001\u6a21\u578b\u4e0b\u8f7d\u6d3b\u52a8\u548c\u5927\u578b\u4e13\u5229\u96c6\u7fa4\u5728\u4f7f\u7528\u91cf\u3001\u751f\u6001\u7cfb\u7edf\u53ca\u77e5\u8bc6\u4ea7\u6743\u6e20\u9053\u4e0a\u76f8\u4e92\u547c\u5e94 [app_demand] [github_momentum] [patent_cluster]\u3002\u4e0eSam Altman\u7684\u5408\u4f5c\u5173\u7cfb\u589e\u52a0\u4e86\u6218\u7565\u76f8\u5173\u6027\uff0c\u800cBill Ackman\u5173\u8054\u5c5e\u4e8e\u8f83\u8f6f\u7684\u652f\u6301 [actor:Sam Altman] [actor:Bill Ackman]\u3002\u8fd9\u4e9b\u8bc1\u636e\u8861\u91cf\u7684\u662f\u751f\u6001\u5b9e\u529b\uff0c\u4f46\u4e0d\u80fd\u76f4\u63a5\u8bc1\u660e\u65b0\u589e\u6536\u5165\u6216\u5229\u6da6\u7387\u8f6c\u5316\u3002",
-      "second_order": [
-        "Cloud data-center infrastructure \u2014 developer and model activity requires additional compute, networking, and storage",
-        "Semiconductor accelerators \u2014 expanding AI workloads support demand for training and inference hardware",
-        "Enterprise software integrators \u2014 broader AI adoption creates deployment, governance, and workflow-integration work"
-      ],
-      "evidence": [
-        "app_demand",
-        "github_momentum",
-        "patent_cluster",
-        "actor:Sam Altman",
-        "actor:Bill Ackman"
-      ],
-      "dissent": "Downloads, stars, patents, and app reviews can remain strong without producing enough incremental profit to justify expectations.",
-      "weighted_score": 1.6,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "github_momentum",
-        "patent_cluster"
-      ],
-      "rs_vs_spy_60d": 12.9,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "Developer and model-download momentum declines for a sustained period without corresponding growth in commercial AI usage.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MSFT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 60
-        }
-      },
-      "check_by": "2026-11-20"
-    },
-    {
-      "ticker": "T",
-      "lean": "overweight",
-      "conviction": "low",
-      "action": "ACCUMULATE",
-      "horizon_d": 45,
-      "thesis": "A sharp acceleration in 30-day federal contract activity aligns with net buying by three congressional members [gov_contract_accel] [congress_cluster]. The shares have been roughly neutral versus SPY, leaving a non-extended entry, but only two independent channels are present and the contract increase may be episodic.",
-      "thesis_zh": "30\u65e5\u8054\u90a6\u5408\u540c\u6d3b\u52a8\u5927\u5e45\u52a0\u901f\uff0c\u540c\u65f6\u4e09\u540d\u56fd\u4f1a\u8bae\u5458\u5448\u51c0\u4e70\u5165 [gov_contract_accel] [congress_cluster]\u3002\u8be5\u80a1\u76f8\u5bf9SPY\u5927\u81f4\u6301\u5e73\uff0c\u5165\u573a\u5e76\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u76ee\u524d\u4ec5\u6709\u4e24\u4e2a\u72ec\u7acb\u6e20\u9053\uff0c\u800c\u4e14\u5408\u540c\u589e\u957f\u53ef\u80fd\u662f\u4e00\u6b21\u6027\u7684\u3002",
-      "second_order": [
-        "Telecom network equipment \u2014 sustained public-sector awards can pull through network upgrades and hardware demand",
-        "Fiber construction services \u2014 contract-backed connectivity projects can support deployment and engineering work",
-        "Secure communications \u2014 public-sector connectivity spending can benefit managed-network and cybersecurity services"
-      ],
-      "evidence": [
-        "gov_contract_accel",
-        "congress_cluster"
-      ],
-      "dissent": "The apparent contract acceleration could be a timing-driven one-off, and congressional trading alone offers little operational confirmation.",
-      "weighted_score": 1.7,
-      "channels": [
-        "congress_cluster",
-        "gov_contract_accel"
-      ],
-      "rs_vs_spy_60d": 2.8,
-      "extended": false,
-      "scorable": true,
-      "falsifier": {
-        "text": "Federal contract activity returns to its prior pace and congressional net buying ceases.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "T",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 45
-        }
-      },
-      "check_by": "2026-10-30"
     }
   ],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-08-28",
+    "as_of": "2026-08-29",
     "scored_total": 0,
     "open": 16,
     "unscored_soft": 0,
@@ -355,7 +275,7 @@
   },
   "confidence": "low",
   "n_clusters": 12,
-  "raw_text": "{\"regime_read\":\"The strongest measured convergence sits in semiconductors, defense software, pharma, and enterprise AI, but several clusters rely partly on sentiment or qualitative affiliations rather than harder flows. With no completed track-record observations, conviction remains modest and the cleaner reads favor non-extended names where operational or policy channels align with ownership signals.\",\"regime_read_zh\":\"\u5f53\u524d\u8f83\u5f3a\u7684\u53ef\u6d4b\u805a\u5408\u96c6\u4e2d\u5728\u534a\u5bfc\u4f53\u3001\u56fd\u9632\u8f6f\u4ef6\u3001\u5236\u836f\u548c\u4f01\u4e1aAI\uff0c\u4f46\u90e8\u5206\u4fe1\u53f7\u4ecd\u4f9d\u8d56\u60c5\u7eea\u6216\u5b9a\u6027\u5173\u8054\uff0c\u800c\u975e\u66f4\u786c\u7684\u8d44\u91d1\u6d41\u8bc1\u636e\u3002\u7531\u4e8e\u5386\u53f2\u5224\u65ad\u5c1a\u65e0\u5230\u671f\u8bc4\u5206\uff0c\u6574\u4f53\u7f6e\u4fe1\u5ea6\u4fdd\u6301\u514b\u5236\uff0c\u66f4\u503c\u5f97\u5173\u6ce8\u7684\u662f\u8fd0\u8425\u6216\u653f\u7b56\u4fe1\u53f7\u4e0e\u6301\u4ed3\u4fe1\u53f7\u76f8\u4e92\u5370\u8bc1\u3001\u4e14\u5c1a\u672a\u8fc7\u5ea6\u4e0a\u6da8\u7684\u6807\u7684\u3002\",\"theses\":[{\"ticker\":\"MU\",\"lean\":\"overweight\",\"conviction\":\"medium\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"The pack's strongest weighted cluster combines net buying by four congressional members, strongly positive insider purchase pressure, accelerating federal grants, and a sizable patent cluster [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster]. Bullish social sentiment and the Ro Khanna affiliation add breadth but are softer confirmation [stocktwits_bull] [actor:Ro Khanna]. The stock has lagged SPY over 60 days, so the signal is not being chased.\",\"thesis_zh\":\"\u8be5\u8bc1\u636e\u5305\u4e2d\u6743\u91cd\u6700\u9ad8\u7684\u805a\u5408\u540c\u65f6\u5305\u542b\u56db\u540d\u56fd\u4f1a\u8bae\u5458\u7684\u51c0\u4e70\u5165\u3001\u663e\u8457\u4e3a\u6b63\u7684\u5185\u90e8\u4eba\u4e70\u5165\u538b\u529b\u3001\u52a0\u901f\u7684\u8054\u90a6\u62e8\u6b3e\u4ee5\u53ca\u8f83\u5927\u7684\u4e13\u5229\u96c6\u7fa4 [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster]\u3002\u770b\u591a\u793e\u4ea4\u60c5\u7eea\u548c\u4e0eRo Khanna\u7684\u5173\u8054\u6269\u5927\u4e86\u4fe1\u53f7\u8986\u76d6\u9762\uff0c\u4f46\u5c5e\u4e8e\u8f83\u8f6f\u7684\u5370\u8bc1 [stocktwits_bull] [actor:Ro Khanna]\u3002\u8be5\u80a1\u8fc7\u53bb60\u65e5\u8dd1\u8f93SPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\u578b\u5224\u65ad\u3002\",\"second_order\":[\"AMAT \u2014 memory-capacity investment would support wafer-fabrication equipment demand, with its own congressional and patent signals\",\"Semiconductor equipment \u2014 sustained memory investment would transmit into fabrication and process-tool spending\",\"Data-center memory supply chain \u2014 tighter high-performance memory demand would benefit upstream components and packaging\"],\"evidence\":[\"congress_cluster\",\"insider_mspr\",\"gov_grant_accel\",\"patent_cluster\",\"stocktwits_bull\",\"actor:Ro Khanna\"],\"dissent\":\"The 60-day relative underperformance may reflect weakening memory fundamentals, while social sentiment and affiliation signals could be noisy.\",\"falsifier_text\":\"Insider purchase pressure reverses while federal-grant acceleration fades and congressional net buying turns neutral or negative.\"},{\"ticker\":\"PLTR\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":45,\"thesis\":\"Government contract activity and acceleration align with a unanimous bullish analyst cluster, strong retail sentiment, and disclosed political/fund relationships [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]. This is a broad six-channel cluster, but much of the incremental breadth is sentiment-based, and the Trump-linked transaction is marked as a sell [trump], limiting conviction.\",\"thesis_zh\":\"\u653f\u5e9c\u5408\u540c\u6d3b\u52a8\u53ca\u5176\u52a0\u901f\u4e0e\u4e00\u81f4\u770b\u591a\u7684\u5206\u6790\u5e08\u96c6\u7fa4\u3001\u5f3a\u52b2\u6563\u6237\u60c5\u7eea\uff0c\u4ee5\u53ca\u62ab\u9732\u7684\u653f\u6cbb\u4eba\u7269\u548c\u57fa\u91d1\u5173\u8054\u540c\u65f6\u51fa\u73b0 [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Marjorie Taylor Greene] [actor:Cathie Wood]\u3002\u867d\u7136\u8fd9\u662f\u4e00\u4e2a\u8986\u76d6\u516d\u4e2a\u6e20\u9053\u7684\u5e7f\u6cdb\u805a\u5408\uff0c\u4f46\u65b0\u589e\u5e7f\u5ea6\u8f83\u591a\u6765\u81ea\u60c5\u7eea\u4fe1\u53f7\uff0c\u800c\u4e14\u7279\u6717\u666e\u5173\u8054\u4ea4\u6613\u88ab\u6807\u8bb0\u4e3a\u5356\u51fa [trump]\uff0c\u56e0\u6b64\u7f6e\u4fe1\u5ea6\u53d7\u9650\u3002\",\"second_order\":[\"Government IT integrators \u2014 continued federal software deployment can pull through implementation and integration work\",\"Cloud infrastructure \u2014 expanding government analytics workloads require additional compute and storage\",\"Cybersecurity software \u2014 broader federal data deployment raises adjacent security and access-control requirements\"],\"evidence\":[\"gov_contract\",\"analyst_upgrade_cluster\",\"retail_buzz\",\"stocktwits_bull\",\"actor:Marjorie Taylor Greene\",\"actor:Cathie Wood\",\"trump\"],\"dissent\":\"The political sell signal and heavy reliance on bullish analysts and retail sentiment may outweigh the modest contract acceleration.\",\"falsifier_text\":\"Government contract activity contracts materially and analyst or retail sentiment turns negative at the same time.\"},{\"ticker\":\"MRK\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"Eleven Phase 3 starts and an FDA label-expansion signal align with elevated lobbying activity and a disclosed Trump-linked buy [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. The healthcare legislation is only introduced and is not a direct company-specific catalyst, so it adds sector context rather than firm evidence. Four clinical halts and already-strong relative performance keep conviction low.\",\"thesis_zh\":\"11\u9879III\u671f\u4e34\u5e8a\u542f\u52a8\u548cFDA\u6807\u7b7e\u6269\u5c55\u4fe1\u53f7\uff0c\u4e0e\u8f83\u9ad8\u7684\u6e38\u8bf4\u6d3b\u52a8\u53ca\u62ab\u9732\u7684\u7279\u6717\u666e\u5173\u8054\u4e70\u5165\u540c\u65f6\u51fa\u73b0 [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]\u3002\u533b\u7597\u6cd5\u6848\u76ee\u524d\u4ec5\u5904\u4e8e\u63d0\u51fa\u9636\u6bb5\uff0c\u4e5f\u5e76\u975e\u516c\u53f8\u7279\u5b9a\u50ac\u5316\u5242\uff0c\u56e0\u6b64\u53ea\u80fd\u63d0\u4f9b\u884c\u4e1a\u80cc\u666f\uff0c\u4e0d\u80fd\u4f5c\u4e3a\u76f4\u63a5\u8bc1\u636e\u3002\u56db\u9879\u4e34\u5e8a\u6682\u505c\u4ee5\u53ca\u5df2\u7ecf\u8f83\u5f3a\u7684\u76f8\u5bf9\u8868\u73b0\u4f7f\u7f6e\u4fe1\u5ea6\u7ef4\u6301\u5728\u4f4e\u4f4d\u3002\",\"second_order\":[\"Oncology diagnostics \u2014 broader cancer treatment pathways can increase companion-diagnostic demand\",\"Clinical research services \u2014 a large late-stage pipeline supports trial-management and laboratory activity\",\"Cancer-care coordination software \u2014 proposed Medicare planning coverage could support care-management infrastructure if enacted\"],\"evidence\":[\"clinical_phase3_start\",\"fda_label_expansion\",\"lobbying\",\"trump\",\"bill:HR10087\"],\"dissent\":\"Four clinical halts create a meaningful pipeline-quality counterweight, while the stock is approaching the extended threshold after outperforming SPY.\",\"falsifier_text\":\"Late-stage clinical halts increase or the label-expansion pathway is withdrawn or delayed without offsetting Phase 3 progress.\"},{\"ticker\":\"LUV\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"An activist 13D, strong app-demand indicators, and three recent material 8-K events create a coherent setup around operational change and shareholder pressure [activist_13d] [app_demand] [material_8k]. The disclosed Paul Singer affiliation strengthens the activist interpretation [actor:Paul Singer], while negative relative performance leaves room for a rerating rather than signaling an extended entry.\",\"thesis_zh\":\"\u79ef\u6781\u80a1\u4e1c13D\u7533\u62a5\u3001\u5f3a\u52b2\u7684\u5e94\u7528\u9700\u6c42\u6307\u6807\u548c\u8fd1\u671f\u4e09\u9879\u91cd\u59278-K\u4e8b\u4ef6\uff0c\u5171\u540c\u5f62\u6210\u4e86\u56f4\u7ed5\u8fd0\u8425\u53d8\u5316\u4e0e\u80a1\u4e1c\u65bd\u538b\u7684\u8fde\u8d2f\u903b\u8f91 [activist_13d] [app_demand] [material_8k]\u3002\u62ab\u9732\u7684Paul Singer\u5173\u8054\u8fdb\u4e00\u6b65\u5f3a\u5316\u4e86\u79ef\u6781\u7ef4\u6743\u89e3\u8bfb [actor:Paul Singer]\uff0c\u800c\u76f8\u5bf9\u8868\u73b0\u4e3a\u8d1f\u610f\u5473\u7740\u6f5c\u5728\u903b\u8f91\u66f4\u504f\u5411\u4f30\u503c\u91cd\u4f30\uff0c\u800c\u975e\u8ffd\u9010\u8fc7\u5ea6\u4e0a\u6da8\u3002\",\"second_order\":[\"Airline distribution technology \u2014 operational changes can require refreshed booking and revenue-management systems\",\"Aircraft maintenance providers \u2014 improved utilization and fleet execution can increase outsourced maintenance demand\",\"Domestic travel ecosystem \u2014 healthier passenger demand can support airports, lodging, and travel services\"],\"evidence\":[\"activist_13d\",\"app_demand\",\"material_8k\",\"actor:Paul Singer\"],\"dissent\":\"High app ratings and review counts do not establish current booking growth, and activist involvement may signal deeper operational problems rather than near-term improvement.\",\"falsifier_text\":\"Passenger-demand indicators weaken while material filings show no credible operational or capital-allocation change.\"},{\"ticker\":\"MSFT\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":60,\"thesis\":\"Consumer app demand, developer momentum, model-download activity, and a large patent cluster align across usage, ecosystem, and intellectual-property channels [app_demand] [github_momentum] [patent_cluster]. The Sam Altman partnership relationship adds strategic relevance, while the Bill Ackman affiliation is softer support [actor:Sam Altman] [actor:Bill Ackman]. The evidence measures ecosystem strength but does not directly establish incremental revenue or margin conversion.\",\"thesis_zh\":\"\u6d88\u8d39\u8005\u5e94\u7528\u9700\u6c42\u3001\u5f00\u53d1\u8005\u52a8\u91cf\u3001\u6a21\u578b\u4e0b\u8f7d\u6d3b\u52a8\u548c\u5927\u578b\u4e13\u5229\u96c6\u7fa4\u5728\u4f7f\u7528\u91cf\u3001\u751f\u6001\u7cfb\u7edf\u53ca\u77e5\u8bc6\u4ea7\u6743\u6e20\u9053\u4e0a\u76f8\u4e92\u547c\u5e94 [app_demand] [github_momentum] [patent_cluster]\u3002\u4e0eSam Altman\u7684\u5408\u4f5c\u5173\u7cfb\u589e\u52a0\u4e86\u6218\u7565\u76f8\u5173\u6027\uff0c\u800cBill Ackman\u5173\u8054\u5c5e\u4e8e\u8f83\u8f6f\u7684\u652f\u6301 [actor:Sam Altman] [actor:Bill Ackman]\u3002\u8fd9\u4e9b\u8bc1\u636e\u8861\u91cf\u7684\u662f\u751f\u6001\u5b9e\u529b\uff0c\u4f46\u4e0d\u80fd\u76f4\u63a5\u8bc1\u660e\u65b0\u589e\u6536\u5165\u6216\u5229\u6da6\u7387\u8f6c\u5316\u3002\",\"second_order\":[\"Cloud data-center infrastructure \u2014 developer and model activity requires additional compute, networking, and storage\",\"Semiconductor accelerators \u2014 expanding AI workloads support demand for training and inference hardware\",\"Enterprise software integrators \u2014 broader AI adoption creates deployment, governance, and workflow-integration work\"],\"evidence\":[\"app_demand\",\"github_momentum\",\"patent_cluster\",\"actor:Sam Altman\",\"actor:Bill Ackman\"],\"dissent\":\"Downloads, stars, patents, and app reviews can remain strong without producing enough incremental profit to justify expectations.\",\"falsifier_text\":\"Developer and model-download momentum declines for a sustained period without corresponding growth in commercial AI usage.\"},{\"ticker\":\"T\",\"lean\":\"overweight\",\"conviction\":\"low\",\"action\":\"ACCUMULATE\",\"horizon_d\":45,\"thesis\":\"A sharp acceleration in 30-day federal contract activity aligns with net buying by three congressional members [gov_contract_accel] [congress_cluster]. The shares have been roughly neutral versus SPY, leaving a non-extended entry, but only two independent channels are present and the contract increase may be episodic.\",\"thesis_zh\":\"30\u65e5\u8054\u90a6\u5408\u540c\u6d3b\u52a8\u5927\u5e45\u52a0\u901f\uff0c\u540c\u65f6\u4e09\u540d\u56fd\u4f1a\u8bae\u5458\u5448\u51c0\u4e70\u5165 [gov_contract_accel] [congress_cluster]\u3002\u8be5\u80a1\u76f8\u5bf9SPY\u5927\u81f4\u6301\u5e73\uff0c\u5165\u573a\u5e76\u672a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4f46\u76ee\u524d\u4ec5\u6709\u4e24\u4e2a\u72ec\u7acb\u6e20\u9053\uff0c\u800c\u4e14\u5408\u540c\u589e\u957f\u53ef\u80fd\u662f\u4e00\u6b21\u6027\u7684\u3002\",\"second_order\":[\"Telecom network equipment \u2014 sustained public-sector awards can pull through network upgrades and hardware demand\",\"Fiber construction services \u2014 contract-backed connectivity projects can support deployment and engineering work\",\"Secure communications \u2014 public-sector connectivity spending can benefit managed-network and cybersecurity services\"],\"evidence\":[\"gov_contract_accel\",\"congress_cluster\"],\"dissent\":\"The apparent contract acceleration could be a timing-driven one-off, and congressional trading alone offers little operational confirmation.\",\"falsifier_text\":\"Federal contract activity returns to its prior pace and congressional net buying ceases.\"}],\"confidence\":\"low\"}",
+  "raw_text": "{\n  \"regime_read\": \"The clearest measured convergence is in semiconductors, government-linked software, pharma catalysts, and an activist airline situation, but the signals remain unusual activity rather than proven edge. With no completed track-record observations, conviction stays modest despite several six-channel clusters.\",\n  \"regime_read_zh\": \"\u76ee\u524d\u6700\u6e05\u6670\u7684\u591a\u6e90\u4fe1\u53f7\u96c6\u4e2d\u5728\u534a\u5bfc\u4f53\u3001\u653f\u5e9c\u76f8\u5173\u8f6f\u4ef6\u3001\u533b\u836f\u50ac\u5316\u5242\u548c\u822a\u7a7a\u516c\u53f8\u7ef4\u6743\u4e8b\u4ef6\uff0c\u4f46\u8fd9\u4e9b\u4fe1\u53f7\u4ec5\u4ee3\u8868\u5f02\u5e38\u6d3b\u52a8\uff0c\u5e76\u975e\u5df2\u8bc1\u660e\u7684\u8d85\u989d\u6536\u76ca\u6765\u6e90\u3002\u7531\u4e8e\u5c1a\u65e0\u5df2\u5b8c\u6210\u8bc4\u4f30\u7684\u5386\u53f2\u5224\u65ad\uff0c\u5373\u4f7f\u90e8\u5206\u6807\u7684\u8fbe\u5230\u516d\u901a\u9053\u6c47\u805a\uff0c\u7f6e\u4fe1\u5ea6\u4ecd\u4fdd\u6301\u514b\u5236\u3002\",\n  \"theses\": [\n    {\n      \"ticker\": \"MU\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"medium\",\n      \"action\": \"ACCUMULATE\",\n      \"horizon_d\": 60,\n      \"thesis\": \"MU has the pack's strongest actionable alignment: purchases by four members of Congress, strongly positive measured insider activity, accelerating federal grants, and a large patent cluster coincide with bullish retail sentiment and a disclosed Ro Khanna affiliation [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster] [stocktwits_bull] [actor:Ro Khanna]. Its 60-day relative underperformance and non-extended flag leave room for the signals to translate without chasing.\",\n      \"thesis_zh\": \"MU\u5448\u73b0\u8bc1\u636e\u5305\u4e2d\u6700\u5f3a\u7684\u53ef\u64cd\u4f5c\u6c47\u805a\uff1a\u56db\u540d\u56fd\u4f1a\u8bae\u5458\u7684\u51c0\u4e70\u5165\u3001\u660e\u663e\u4e3a\u6b63\u7684\u5185\u90e8\u4eba\u58eb\u6d3b\u52a8\u3001\u52a0\u901f\u7684\u8054\u90a6\u62e8\u6b3e\u548c\u8f83\u5927\u7684\u4e13\u5229\u96c6\u7fa4\uff0c\u4e0e\u770b\u6da8\u7684\u6563\u6237\u60c5\u7eea\u53ca\u5df2\u62ab\u9732\u7684Ro Khanna\u5173\u8054\u540c\u65f6\u51fa\u73b0 [congress_cluster] [insider_mspr] [gov_grant_accel] [patent_cluster] [stocktwits_bull] [actor:Ro Khanna]\u3002\u517660\u65e5\u76f8\u5bf9\u8868\u73b0\u843d\u540e\u4e14\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4e3a\u4fe1\u53f7\u8f6c\u5316\u7559\u4e0b\u4e86\u7a7a\u95f4\u3002\",\n      \"second_order\": [\n        \"AMAT \u2014 memory-capacity investment would support semiconductor-equipment demand, while AMAT also has congressional and patent signals in the pack\",\n        \"Semiconductor equipment \u2014 any sustained memory expansion would pull through fabrication-tool spending\",\n        \"Data-center memory supply chain \u2014 stronger memory demand would benefit upstream materials and component suppliers\"\n      ],\n      \"evidence\": [\n        \"congress_cluster\",\n        \"insider_mspr\",\n        \"gov_grant_accel\",\n        \"patent_cluster\",\n        \"stocktwits_bull\",\n        \"cnbc_pick\",\n        \"actor:Ro Khanna\"\n      ],\n      \"dissent\": \"MU has underperformed SPY by 13.9 percentage points over 60 days, which may reflect deteriorating memory fundamentals that transactional and sentiment signals have not captured.\",\n      \"falsifier_text\": \"Federal-grant momentum reverses and insider activity turns net negative while MU continues losing relative ground to SPY.\",\n      \"lean\": \"overweight\"\n    },\n    {\n      \"ticker\": \"PLTR\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"WATCH\",\n      \"horizon_d\": 45,\n      \"thesis\": \"PLTR combines recent government-contract activity and acceleration with a uniformly bullish analyst cluster, strong retail attention, bullish Stocktwits sentiment, and disclosed links to Cathie Wood and Marjorie Taylor Greene [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Cathie Wood] [actor:Marjorie Taylor Greene]. The signal is mixed because the pack's Trump-linked indicator is explicitly on the sell side, and the stock has already outperformed SPY materially, so the appropriate posture is watch rather than chase.\",\n      \"thesis_zh\": \"PLTR\u540c\u65f6\u5177\u5907\u8fd1\u671f\u653f\u5e9c\u5408\u540c\u6d3b\u52a8\u53ca\u5176\u52a0\u901f\u3001\u96c6\u4e2d\u770b\u6da8\u7684\u5206\u6790\u5e08\u4fe1\u53f7\u3001\u8f83\u9ad8\u7684\u6563\u6237\u5173\u6ce8\u5ea6\u3001Stocktwits\u770b\u6da8\u60c5\u7eea\uff0c\u4ee5\u53ca\u4e0eCathie Wood\u548cMarjorie Taylor Greene\u7684\u5df2\u62ab\u9732\u8054\u7cfb [gov_contract] [analyst_upgrade_cluster] [retail_buzz] [stocktwits_bull] [actor:Cathie Wood] [actor:Marjorie Taylor Greene]\u3002\u4f46\u8bc1\u636e\u5e76\u4e0d\u5b8c\u5168\u4e00\u81f4\uff1a\u8bc1\u636e\u5305\u4e2d\u7684\u7279\u6717\u666e\u76f8\u5173\u6307\u6807\u660e\u786e\u4f4d\u4e8e\u5356\u51fa\u4fa7\uff0c\u800c\u4e14\u8be5\u80a1\u5df2\u663e\u8457\u8dd1\u8d62SPY\uff0c\u56e0\u6b64\u66f4\u9002\u5408\u89c2\u5bdf\u800c\u975e\u8ffd\u6da8\u3002\",\n      \"second_order\": [\n        \"MSFT \u2014 enterprise and government AI adoption can support adjacent cloud-compute demand\",\n        \"Government IT modernization \u2014 durable contract activity would benefit integrators and secure-cloud vendors\",\n        \"Defense analytics software \u2014 PLTR contract momentum would indicate broader agency spending on data platforms\"\n      ],\n      \"evidence\": [\n        \"gov_contract\",\n        \"analyst_upgrade_cluster\",\n        \"retail_buzz\",\n        \"stocktwits_bull\",\n        \"trump\",\n        \"actor:Cathie Wood\",\n        \"actor:Marjorie Taylor Greene\"\n      ],\n      \"dissent\": \"The Trump-linked sell signal conflicts with the bullish cluster, while strong retail enthusiasm and 60-day relative outperformance increase crowding and entry risk.\",\n      \"falsifier_text\": \"Government-contract acceleration turns negative and subsequent contract activity fails to sustain the recent pace.\",\n      \"lean\": \"overweight\"\n    },\n    {\n      \"ticker\": \"MRK\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"WATCH\",\n      \"horizon_d\": 70,\n      \"thesis\": \"MRK's read rests on eleven Phase 3 starts, an FDA label-expansion signal, substantial lobbying activity, and a Trump-linked buy indicator [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]. Proposed cancer-care planning legislation supplies a broad healthcare-policy backdrop, but it is only introduced and does not establish a direct MRK benefit [bill:HR10087]. With relative performance already strong and four clinical halts in the pack, the catalyst set merits monitoring rather than immediate accumulation.\",\n      \"thesis_zh\": \"MRK\u7684\u5224\u65ad\u57fa\u4e8e11\u9879\u4e09\u671f\u4e34\u5e8a\u542f\u52a8\u3001FDA\u6807\u7b7e\u6269\u5c55\u4fe1\u53f7\u3001\u8f83\u5927\u7684\u6e38\u8bf4\u6d3b\u52a8\u4ee5\u53ca\u7279\u6717\u666e\u76f8\u5173\u4e70\u5165\u6307\u6807 [clinical_phase3_start] [fda_label_expansion] [lobbying] [trump]\u3002\u62df\u8bae\u4e2d\u7684\u764c\u75c7\u7167\u62a4\u89c4\u5212\u6cd5\u6848\u63d0\u4f9b\u4e86\u5e7f\u4e49\u533b\u7597\u653f\u7b56\u80cc\u666f\uff0c\u4f46\u8be5\u6cd5\u6848\u4ec5\u5904\u4e8e\u63d0\u51fa\u9636\u6bb5\uff0c\u4e14\u4e0d\u80fd\u8bc1\u660eMRK\u4f1a\u76f4\u63a5\u53d7\u76ca [bill:HR10087]\u3002\u8003\u8651\u5230\u76f8\u5bf9\u8868\u73b0\u5df2\u7ecf\u8f83\u5f3a\uff0c\u4e14\u8bc1\u636e\u5305\u8bb0\u5f55\u4e864\u9879\u4e34\u5e8a\u6682\u505c\uff0c\u66f4\u9002\u5408\u6301\u7eed\u89c2\u5bdf\u50ac\u5316\u5242\u800c\u975e\u7acb\u5373\u4ecb\u5165\u3002\",\n      \"second_order\": [\n        \"Oncology diagnostics \u2014 broader cancer-care planning could increase testing and treatment-pathway coordination\",\n        \"Clinical-research services \u2014 a large late-stage pipeline supports demand for trial execution and monitoring\",\n        \"Healthcare providers \u2014 proposed Medicare cancer-care coordination payments could support oncology service infrastructure\"\n      ],\n      \"evidence\": [\n        \"clinical_phase3_start\",\n        \"fda_label_expansion\",\n        \"lobbying\",\n        \"special_situation\",\n        \"trump\",\n        \"bill:HR10087\"\n      ],\n      \"dissent\": \"Four clinical halts create a meaningful counter-signal, and the proposed healthcare legislation is preliminary rather than a company-specific catalyst.\",\n      \"falsifier_text\": \"Additional clinical halts outweigh new Phase 3 starts and the expected label expansion does not progress.\",\n      \"lean\": \"overweight\"\n    },\n    {\n      \"ticker\": \"LUV\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"action\": \"ACCUMULATE\",\n      \"horizon_d\": 60,\n      \"thesis\": \"LUV presents a coherent event-driven setup: an activist 13D, disclosed Paul Singer affiliation, strong measured app engagement, and multiple recent material 8-K filings point to simultaneous governance, customer-demand, and corporate-change activity [activist_13d] [actor:Paul Singer] [app_demand] [material_8k]. The stock is non-extended and has lagged SPY modestly, so the entry is not being chased, although the pack provides no direct operating or margin evidence.\",\n      \"thesis_zh\": \"LUV\u5448\u73b0\u8f83\u8fde\u8d2f\u7684\u4e8b\u4ef6\u9a71\u52a8\u7ec4\u5408\uff1a\u7ef4\u6743\u6295\u8d44\u800513D\u7533\u62a5\u3001\u5df2\u62ab\u9732\u7684Paul Singer\u5173\u8054\u3001\u8f83\u5f3a\u7684\u5e94\u7528\u7aef\u53c2\u4e0e\u5ea6\uff0c\u4ee5\u53ca\u8fd1\u671f\u591a\u4efd\u91cd\u59278-K\u6587\u4ef6\uff0c\u5171\u540c\u6307\u5411\u6cbb\u7406\u3001\u5ba2\u6237\u9700\u6c42\u548c\u516c\u53f8\u53d8\u9769\u6d3b\u52a8 [activist_13d] [actor:Paul Singer] [app_demand] [material_8k]\u3002\u8be5\u80a1\u672a\u88ab\u6807\u8bb0\u4e3a\u8fc7\u5ea6\u5ef6\u4f38\uff0c\u4e14\u8fd1\u671f\u5c0f\u5e45\u843d\u540eSPY\uff0c\u56e0\u6b64\u5e76\u975e\u8ffd\u6da8\uff1b\u4e0d\u8fc7\u8bc1\u636e\u5305\u6ca1\u6709\u63d0\u4f9b\u76f4\u63a5\u7684\u7ecf\u8425\u6216\u5229\u6da6\u7387\u8bc1\u636e\u3002\",\n      \"second_order\": [\n        \"Airline technology vendors \u2014 operational restructuring could increase spending on scheduling and revenue-management systems\",\n        \"Aircraft maintenance suppliers \u2014 improved fleet utilization or refurbishment would support aftermarket demand\",\n        \"Domestic travel ecosystem \u2014 sustained app engagement would support airports, lodging, and travel-service providers\"\n      ],\n      \"evidence\": [\n        \"activist_13d\",\n        \"affiliation\",\n        \"app_demand\",\n        \"material_8k\",\n        \"actor:Paul Singer\"\n      ],\n      \"dissent\": \"App ratings and filings do not establish improving unit economics, and activist involvement can produce disruption without operational gains.\",\n      \"falsifier_text\": \"Activist-led changes fail to produce measurable operating improvement while app engagement weakens.\",\n      \"lean\": \"overweight\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and checkable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

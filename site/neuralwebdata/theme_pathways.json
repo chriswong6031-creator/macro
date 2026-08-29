@@ -5120,7 +5120,7 @@
   "stale_legs": [],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-29T09:54:32Z",
+  "produced_at": "2026-08-29T13:05:19Z",
   "inputs_hash": "sha256:2a10000273d911c6805fb7435192b7addf102d48fa72d149ea4efb0e12ec98fa",
   "tier": "display"
 }
