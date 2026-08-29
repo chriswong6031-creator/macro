@@ -3384,32 +3384,6 @@ def _workstream_excerpt(
 # ------------------------------------------------------------ Phase 3: the walk
 
 
-def _bundle_source_record_paths(
-    store: Store, envelope: dict[str, Any]
-) -> list[Path]:
-    """Direct record candidates named by the complete bounded compiler walk.
-
-    The union spans selected, budget-omitted and field-excluded rows.  Consequently a
-    clock crossing may move a record between those projections without moving source
-    identity.  Non-Agent-OS higher-law and artifact pointers never resolve through the
-    store path table and are excluded by construction.
-    """
-    projected = {_rel(path): path for path in store.paths.values()}
-    rows: list[dict[str, Any]] = []
-    for section in envelope.get("sections") or []:
-        if isinstance(section, dict):
-            rows.extend(item for item in section.get("items") or [] if isinstance(item, dict))
-    rows.extend(item for item in envelope.get("excluded") or [] if isinstance(item, dict))
-    rows.extend(
-        item for item in envelope.get("omitted_due_to_budget") or [] if isinstance(item, dict)
-    )
-    return [
-        projected[path]
-        for row in rows
-        if isinstance((path := row.get("path")), str) and path in projected
-    ]
-
-
 def compile_bundle(
     store: Store,
     *,
@@ -3438,10 +3412,30 @@ def compile_bundle(
         store, workstream=workstream, task=task, search_fn=search_fn, degraded=degraded
     )
 
+    # Digest membership is entered where the walk RESOLVES a direct record, never read
+    # back from the emitted envelope.  An output-shaped enumeration silently loses every
+    # record the walk USES without emitting a row for it — a resolved `superseded_by`
+    # target is exactly that: it decides whether the superseded record is evicted or
+    # rendered, and appears in no section, no `excluded` row and no budget omission.  It
+    # also silently GAINS artifact pointers that merely name a record path the walk never
+    # opened.  Registering at the store-table door makes the two sets the same set by
+    # construction, so a later pack, section or tail cannot move one without the other.
+    # The BOUNDARY is the store table, not the store: a record the walk OPENS as a source
+    # is bound; the whole-store eligibility scans (`affects`/`scope` matching) and the
+    # citation-count join are read but never opened, and the amendment excludes auxiliary
+    # join results by name — binding them would be the whole-store hash it forbids.
+    sources: dict[str, Path] = {}
+
+    def source(table_key: str) -> Path:
+        """Resolve one direct record through the store table and bind it to identity."""
+        path = store.paths[table_key]
+        sources.setdefault(str(path.resolve()), path)
+        return path
+
     envelope: dict[str, Any] = {
         "schema": BUNDLE_SCHEMA,
         "source_records_digest": _source_records_digest(
-            [], repository_root=_record_repository_root(store.root)
+            sources.values(), repository_root=_record_repository_root(store.root)
         ),
         "target": {
             "workstream": f"WS:{target['key']}" if target["key"] else None,
@@ -3474,7 +3468,7 @@ def compile_bundle(
     hnd_all = store.of_type("HND")
     rec = ws_all[key]
     envelope["target"]["wait"] = _wait_row(rec)
-    ws_path = store.paths[f"WS/{key}"]
+    ws_path = source(f"WS/{key}")
     program = rec.get("program") if isinstance(rec.get("program"), str) else None
     prs = _pr_index(builds)
     # Record-LOCAL hard problems only.  A sibling whose own frontmatter is wrong is a lie
@@ -3551,7 +3545,7 @@ def compile_bundle(
         if dep_rec is None:
             drop("dependency", f"WS:{dep}", "—", "dangling depends_on — no such record")
             continue
-        dep_path = store.paths[f"WS/{dep}"]
+        dep_path = source(f"WS/{dep}")
         if malformed("dependency", f"WS:{dep}", dep_path):
             continue
         _, dep_updated = git_dates(dep_path)
@@ -3600,11 +3594,14 @@ def compile_bundle(
         if dec_rec is None:
             drop("decision", f"DEC:{dec_key}", "—", "dangling citation — no such record")
             continue
-        dec_path = store.paths[f"DEC/{dec_key}"]
+        dec_path = source(f"DEC/{dec_key}")
         if malformed("decision", f"DEC:{dec_key}", dec_path):
             continue
         replacement, raw = _supersession(dec_rec, "DEC", dec_all)
         if replacement is not None:
+            # The replacement is READ, not rendered: eviction happens only because that
+            # record resolves, so its authored bytes are part of this bundle's identity.
+            source(f"DEC/{replacement}")
             # NEVER co-equal.  Supersession is the whole reason both records survive; a
             # bundle that listed them side by side would undo it.
             drop("decision", f"DEC:{dec_key}", dec_path, f"superseded_by DEC:{replacement}")
@@ -3669,11 +3666,12 @@ def compile_bundle(
         if dsc_rec is None:
             drop("discovery", f"DSC:{dsc_key}", "—", "dangling citation — no such record")
             continue
-        dsc_path = store.paths[f"DSC/{dsc_key}"]
+        dsc_path = source(f"DSC/{dsc_key}")
         if malformed("discovery", f"DSC:{dsc_key}", dsc_path):
             continue
         replacement, raw = _supersession(dsc_rec, "DSC", dsc_all)
         if replacement is not None:
+            source(f"DSC/{replacement}")
             drop("discovery", f"DSC:{dsc_key}", dsc_path, f"superseded_by DSC:{replacement}")
             continue
         if raw is not None:
@@ -3737,7 +3735,7 @@ def compile_bundle(
     if mine:
         latest = max(mine, key=handoff_rank)
         for stem in mine:
-            hnd_path = store.paths[f"HND/{stem}"]
+            hnd_path = source(f"HND/{stem}")
             if stem != latest:
                 drop("handoff", stem, hnd_path, f"older_handoff (latest: {latest})")
                 continue
@@ -3882,8 +3880,7 @@ def compile_bundle(
     envelope["excluded"] = excluded
     envelope["omitted_due_to_budget"] = omitted
     envelope["source_records_digest"] = _source_records_digest(
-        _bundle_source_record_paths(store, envelope),
-        repository_root=_record_repository_root(store.root),
+        sources.values(), repository_root=_record_repository_root(store.root)
     )
     # Re-read at the end: the walk itself degrades (an unresolvable DNR row, an absent
     # sibling), and a snapshot taken at envelope time would drop exactly those.
