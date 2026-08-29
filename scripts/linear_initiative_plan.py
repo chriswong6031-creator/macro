@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Deterministic validation for the Chairman-approved Linear Initiative strategy.
+"""Deterministic Linear Initiative desired-state and drift compiler.
 
-This Task-1 module is deliberately zero-network and write-free. Project lifecycle
-selection remains owned by ``scripts.linear_portfolio_plan``; this module only
-validates the static strategic classification layered above its emitted plan.
+Project lifecycle selection remains owned by ``scripts.linear_portfolio_plan``.
+This module layers the Chairman-approved strategic Initiative classification
+over that Project plan. It performs zero network calls and zero Linear writes.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -46,6 +48,14 @@ _EXPECTED_EXCEPTIONS = {
     ("linear_project_id", "9aef6461-306a-4a3c-911b-c6a4b6635a78", "canonical_parent_unresolved"),
 }
 _WATCHLIST_EXCEPTION = "WS:WATCHLIST-PORTFOLIO-CEO"
+_HARD_DRIFT_CODES = frozenset({
+    "unexpected_initiative",
+    "initiative_name_ambiguous",
+    "project_binding_ambiguous",
+    "membership_multi_parent",
+    "exception_has_forbidden_membership",
+    "unmapped_visible_project",
+})
 
 
 class InitiativePlanError(RuntimeError):
@@ -181,7 +191,11 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
 
     memberships = _membership_mapping(strategy.get("memberships"), failures)
     if len(memberships) != 50:
-        failures.append({"code": "strategy_membership_count_mismatch", "expected": 50, "actual": len(memberships)})
+        failures.append({
+            "code": "strategy_membership_count_mismatch",
+            "expected": 50,
+            "actual": len(memberships),
+        })
 
     initiative_keys = set(_EXPECTED_INITIATIVES)
     for workstream_key, initiative_key in memberships.items():
@@ -203,21 +217,463 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
         failures.append({
             "code": "strategy_exception_mismatch",
             "expected": sorted(_EXPECTED_EXCEPTIONS),
-            "actual": sorted(exception_set, key=lambda row: tuple(str(item) for item in row)),
+            "actual": sorted(
+                exception_set,
+                key=lambda row: tuple(str(item) for item in row),
+            ),
         })
 
     for identity_kind, identity, _reason in exception_set:
-        if identity_kind == "workstream_key" and isinstance(identity, str) and identity in memberships:
-            failures.append({"code": "strategy_exception_also_mapped", "workstream_key": identity})
+        if (
+            identity_kind == "workstream_key"
+            and isinstance(identity, str)
+            and identity in memberships
+        ):
+            failures.append({
+                "code": "strategy_exception_also_mapped",
+                "workstream_key": identity,
+            })
 
     universe, active = _project_keys(project_plan)
     for workstream_key in sorted(memberships):
         if workstream_key not in universe:
-            failures.append({"code": "strategy_membership_unknown_workstream", "workstream_key": workstream_key})
+            failures.append({
+                "code": "strategy_membership_unknown_workstream",
+                "workstream_key": workstream_key,
+            })
 
     for workstream_key in sorted(active):
         if workstream_key not in memberships and workstream_key != _WATCHLIST_EXCEPTION:
-            failures.append({"code": "strategy_unmapped_active_workstream", "workstream_key": workstream_key})
+            failures.append({
+                "code": "strategy_unmapped_active_workstream",
+                "workstream_key": workstream_key,
+            })
 
     if failures:
         raise InitiativePlanError(failures)
+
+
+def render_description(row: Mapping[str, Any]) -> str:
+    """Render approved Initiative prose without adding new semantics."""
+    return (
+        f"Outcome: {row['outcome']}\n\n"
+        f"Moat: {row['moat']}\n\n"
+        f"Completion ruler: {row['completion_ruler']}\n\n"
+        f"Scope law: {row['scope_law']}"
+    )
+
+
+def _load_snapshot(path: Path | None) -> dict[str, Any] | None:
+    if path is None:
+        return None
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise InitiativePlanError([{
+            "code": "initiative_snapshot_unreadable",
+            "path": str(path),
+            "error": type(exc).__name__,
+        }]) from exc
+    if not isinstance(doc, dict) or doc.get("schema") != SNAPSHOT_SCHEMA:
+        raise InitiativePlanError([{
+            "code": "initiative_snapshot_wrong_schema",
+            "path": str(path),
+        }])
+    return doc
+
+
+def _project_rows(
+    project_plan: Mapping[str, Any],
+) -> tuple[dict[str, Mapping[str, Any]], set[str]]:
+    rows: dict[str, Mapping[str, Any]] = {}
+    active: set[str] = set()
+    for bucket in ("active_projects", "review_candidates", "excluded_projects"):
+        raw_rows = project_plan.get(bucket, [])
+        if not isinstance(raw_rows, list):
+            continue
+        for row in raw_rows:
+            if not isinstance(row, Mapping):
+                continue
+            key = row.get("workstream_key")
+            if not isinstance(key, str):
+                continue
+            rows[key] = row
+            if bucket in {"active_projects", "review_candidates"}:
+                active.add(key)
+    return rows, active
+
+
+def _snapshot_projects(
+    snapshot: Mapping[str, Any] | None,
+) -> list[Mapping[str, Any]]:
+    if snapshot is None:
+        return []
+    rows = snapshot.get("projects")
+    if not isinstance(rows, list):
+        raise InitiativePlanError([{"code": "initiative_snapshot_missing_projects"}])
+    return [row for row in rows if isinstance(row, Mapping)]
+
+
+def _snapshot_initiatives(
+    snapshot: Mapping[str, Any] | None,
+) -> list[Mapping[str, Any]]:
+    if snapshot is None:
+        return []
+    rows = snapshot.get("initiatives")
+    if not isinstance(rows, list):
+        raise InitiativePlanError([{"code": "initiative_snapshot_missing_initiatives"}])
+    return [row for row in rows if isinstance(row, Mapping)]
+
+
+def _desired_initiatives(strategy: Mapping[str, Any]) -> list[dict[str, Any]]:
+    initiatives = _initiative_mapping(strategy.get("initiatives"), [])
+    out: list[dict[str, Any]] = []
+    for key in sorted(initiatives):
+        row = initiatives[key]
+        out.append({
+            "initiative_key": key,
+            "name": row["name"],
+            "summary": row["summary"],
+            "description": render_description(row),
+            "status": row["status"],
+            "priority": row["priority"],
+            "health": row["health"],
+            "owner_id": row["owner"],
+            "lead_team": row["lead_team"],
+            "target_date": row["target_date"],
+            "labels": list(row["labels"]),
+            "parent_initiative_ids": [],
+        })
+    return out
+
+
+def _binding_rows(
+    *,
+    project_plan: Mapping[str, Any],
+    strategy: Mapping[str, Any],
+    snapshot: Mapping[str, Any] | None,
+) -> list[dict[str, Any]]:
+    project_by_key, active = _project_rows(project_plan)
+    snapshot_by_key: dict[str, list[Mapping[str, Any]]] = {}
+    for row in _snapshot_projects(snapshot):
+        key = row.get("workstream_key")
+        if isinstance(key, str):
+            snapshot_by_key.setdefault(key, []).append(row)
+
+    memberships = _membership_mapping(strategy.get("memberships"), [])
+    initiative_rows = _initiative_mapping(strategy.get("initiatives"), [])
+    out: list[dict[str, Any]] = []
+    for workstream_key in sorted(memberships):
+        source = project_by_key[workstream_key]
+        matches = snapshot_by_key.get(workstream_key, [])
+        bound_id = None
+        if (
+            len(matches) == 1
+            and isinstance(matches[0].get("project_id"), str)
+            and matches[0].get("project_id")
+        ):
+            bound_id = matches[0]["project_id"]
+        initiative_key = memberships[workstream_key]
+        out.append({
+            "workstream_key": workstream_key,
+            "initiative_key": initiative_key,
+            "initiative_name": initiative_rows[initiative_key]["name"],
+            "project_id": bound_id,
+            "desired_project_name": source.get("desired_project_name"),
+            "desired_project_status_class": source.get("desired_project_status_class"),
+            "canonical_status": source.get("canonical_status"),
+            "project_required": workstream_key in active,
+        })
+    return out
+
+
+def _current_membership_names(
+    project: Mapping[str, Any],
+    initiative_name_by_id: Mapping[str, str],
+) -> list[str]:
+    names = project.get("initiative_names")
+    if isinstance(names, list):
+        clean_names = [
+            str(value)
+            for value in names
+            if isinstance(value, str) and value
+        ]
+        if clean_names or not project.get("initiative_ids"):
+            return clean_names
+    ids = project.get("initiative_ids")
+    if not isinstance(ids, list):
+        return []
+    return [
+        initiative_name_by_id[value]
+        for value in ids
+        if isinstance(value, str) and value in initiative_name_by_id
+    ]
+
+
+def initiative_drift(
+    snapshot: Mapping[str, Any] | None,
+    desired_initiatives: Sequence[Mapping[str, Any]],
+    desired_memberships: Sequence[Mapping[str, Any]],
+    exceptions: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Compare one normalized witness to the exact approved desired state."""
+    if snapshot is None:
+        return []
+
+    drift: list[dict[str, Any]] = []
+    current_initiatives = _snapshot_initiatives(snapshot)
+    by_name: dict[str, list[Mapping[str, Any]]] = {}
+    id_to_name: dict[str, str] = {}
+    for row in current_initiatives:
+        name = row.get("name")
+        if isinstance(name, str):
+            by_name.setdefault(name, []).append(row)
+        initiative_id = row.get("initiative_id")
+        if isinstance(initiative_id, str) and isinstance(name, str):
+            id_to_name[initiative_id] = name
+
+    desired_names = {row["name"] for row in desired_initiatives}
+    for desired in desired_initiatives:
+        matches = by_name.get(desired["name"], [])
+        if not matches:
+            drift.append({
+                "code": "initiative_missing",
+                "initiative_key": desired["initiative_key"],
+                "name": desired["name"],
+            })
+            continue
+        if len(matches) > 1:
+            drift.append({
+                "code": "initiative_name_ambiguous",
+                "initiative_key": desired["initiative_key"],
+                "name": desired["name"],
+                "count": len(matches),
+            })
+            continue
+
+        current = matches[0]
+        field_map = {
+            "status": "status",
+            "priority": "priority",
+            "health": "health",
+            "owner_id": "owner_id",
+            "lead_team": "lead_team",
+            "target_date": "target_date",
+            "labels": "labels",
+            "parent_initiative_ids": "parent_initiative_ids",
+        }
+        fields: list[str] = []
+        for desired_field, current_field in field_map.items():
+            current_value = current.get(current_field)
+            desired_value = desired.get(desired_field)
+            if desired_field in {"labels", "parent_initiative_ids"}:
+                current_value = (
+                    sorted(current_value)
+                    if isinstance(current_value, list)
+                    else current_value
+                )
+                desired_value = (
+                    sorted(desired_value)
+                    if isinstance(desired_value, list)
+                    else desired_value
+                )
+            if current_value != desired_value:
+                fields.append(desired_field)
+        if fields:
+            drift.append({
+                "code": "initiative_field_drift",
+                "initiative_key": desired["initiative_key"],
+                "initiative_id": current.get("initiative_id"),
+                "fields": sorted(fields),
+            })
+
+    for name, rows in sorted(by_name.items()):
+        if name not in desired_names:
+            for row in rows:
+                drift.append({
+                    "code": "unexpected_initiative",
+                    "initiative_id": row.get("initiative_id"),
+                    "name": name,
+                })
+
+    current_projects = _snapshot_projects(snapshot)
+    by_workstream: dict[str, list[Mapping[str, Any]]] = {}
+    for row in current_projects:
+        key = row.get("workstream_key")
+        if isinstance(key, str):
+            by_workstream.setdefault(key, []).append(row)
+
+    desired_membership_by_key = {
+        row["workstream_key"]: row
+        for row in desired_memberships
+    }
+    for desired in desired_memberships:
+        key = desired["workstream_key"]
+        matches = by_workstream.get(key, [])
+        if not matches:
+            code = (
+                "project_create_required"
+                if desired.get("project_required")
+                else "project_binding_missing"
+            )
+            drift.append({"code": code, "workstream_key": key})
+            continue
+        if len(matches) > 1:
+            drift.append({
+                "code": "project_binding_ambiguous",
+                "workstream_key": key,
+                "count": len(matches),
+            })
+            continue
+
+        project = matches[0]
+        project_id = project.get("project_id")
+        if not isinstance(project_id, str) or not project_id:
+            drift.append({
+                "code": "project_binding_missing",
+                "workstream_key": key,
+            })
+            continue
+
+        names = _current_membership_names(project, id_to_name)
+        if len(names) == 0:
+            drift.append({
+                "code": "membership_missing",
+                "workstream_key": key,
+                "project_id": project_id,
+                "desired_initiative": desired["initiative_name"],
+            })
+        elif len(names) > 1:
+            drift.append({
+                "code": "membership_multi_parent",
+                "workstream_key": key,
+                "project_id": project_id,
+                "current_initiatives": sorted(names),
+            })
+        elif names[0] != desired["initiative_name"]:
+            drift.append({
+                "code": "membership_wrong",
+                "workstream_key": key,
+                "project_id": project_id,
+                "current_initiative": names[0],
+                "desired_initiative": desired["initiative_name"],
+            })
+
+    exception_ws = {
+        row.get("identity")
+        for row in exceptions
+        if row.get("identity_kind") == "workstream_key"
+    }
+    exception_ids = {
+        row.get("identity")
+        for row in exceptions
+        if row.get("identity_kind") == "linear_project_id"
+    }
+    for project in current_projects:
+        key = project.get("workstream_key")
+        project_id = project.get("project_id")
+        is_exception = key in exception_ws or project_id in exception_ids
+        names = _current_membership_names(project, id_to_name)
+        if is_exception:
+            if names or project.get("initiative_ids"):
+                drift.append({
+                    "code": "exception_has_forbidden_membership",
+                    "workstream_key": key,
+                    "project_id": project_id,
+                    "current_initiatives": sorted(names),
+                })
+            continue
+
+        if isinstance(key, str) and key in desired_membership_by_key:
+            continue
+
+        drift.append({
+            "code": "unmapped_visible_project",
+            "workstream_key": key,
+            "project_id": project_id,
+            "name": project.get("name"),
+        })
+
+    return sorted(drift, key=lpp.canonical_bytes)
+
+
+def compile_initiative_plan(
+    *,
+    project_plan: Mapping[str, Any],
+    strategy_path: Path,
+    snapshot_path: Path | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Compile Initiative desired state from an already-compiled Project plan."""
+    strategy = load_strategy(strategy_path)
+    validate_strategy(strategy, project_plan)
+    snapshot = _load_snapshot(snapshot_path)
+
+    desired_initiatives = _desired_initiatives(strategy)
+    desired_memberships = _binding_rows(
+        project_plan=project_plan,
+        strategy=strategy,
+        snapshot=snapshot,
+    )
+    exceptions = [
+        dict(row)
+        for row in strategy.get("unassigned_exceptions", [])
+        if isinstance(row, Mapping)
+    ]
+    exceptions = sorted(exceptions, key=lpp.canonical_bytes)
+    drift = initiative_drift(
+        snapshot,
+        desired_initiatives,
+        desired_memberships,
+        exceptions,
+    )
+    hard_blockers = [
+        row
+        for row in drift
+        if row["code"] in _HARD_DRIFT_CODES
+    ]
+    drift_counts = dict(
+        sorted(Counter(row["code"] for row in drift).items())
+    )
+    group_counts = dict(
+        sorted(Counter(row["initiative_key"] for row in desired_memberships).items())
+    )
+
+    semantic: dict[str, Any] = {
+        "schema": PLAN_SCHEMA,
+        "source_design": dict(strategy.get("source_design", {})),
+        "project_plan_semantic_hash": project_plan.get("semantic_hash"),
+        "desired_initiatives": desired_initiatives,
+        "desired_memberships": desired_memberships,
+        "unassigned_exceptions": exceptions,
+        "drift": drift,
+        "hard_blockers": hard_blockers,
+        "summary": {
+            "desired_initiatives": len(desired_initiatives),
+            "desired_memberships": len(desired_memberships),
+            "unassigned_exceptions": len(exceptions),
+            "group_counts": group_counts,
+            "drift_counts": drift_counts,
+            "hard_blockers": len(hard_blockers),
+        },
+    }
+    digest = hashlib.sha256(lpp.canonical_bytes(semantic)).hexdigest()
+    plan = {**semantic, "semantic_hash": digest}
+    receipt = {
+        "schema": RECEIPT_SCHEMA,
+        "status": "compiled",
+        "strategy_source_revision": strategy.get("source_design", {}).get(
+            "protected_revision"
+        ),
+        "project_plan_semantic_hash": project_plan.get("semantic_hash"),
+        "initiative_plan_semantic_hash": digest,
+        "desired_counts": {
+            "initiatives": len(desired_initiatives),
+            "memberships": len(desired_memberships),
+            "exceptions": len(exceptions),
+        },
+        "group_counts": group_counts,
+        "exception_bindings": exceptions,
+        "drift_code_counts": drift_counts,
+        "snapshot_supplied": snapshot_path is not None,
+    }
+    return plan, receipt
