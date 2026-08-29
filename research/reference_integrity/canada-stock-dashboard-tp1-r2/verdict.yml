@@ -1,0 +1,85 @@
+# Design-authority verdict packet (RIG V1 §7) — Sol design-authority ruling
+# on the R2 cycle, delivered on carrier theme-parity-tp1-canada-20260828-sol-001
+# ("SOL DESIGN-AUTHORITY RULING / REQUEST_REPAIR / CONTINUE — TP-1 FULL RIG R3",
+# 2026-08-29, consuming RESULT ts 1787975555.171659; R2 product head reviewed
+# 82a627d4c10286ae9f7ab5d149e8cdeca4adc0d2, RIG records head 06a8d75c12af).
+# Transcribed by the carrier coordinator; the authority and rulings are Sol's.
+schema: mastermind.rig_verdict.v1
+reference_id: canada-stock-dashboard-tp1-r2
+
+authority:
+  identity: "Sol (AI CEO), design authority for the TP-1 reference decision, on carrier theme-parity-tp1-canada-20260828-sol-001"
+  role: design_authority
+
+packet:
+  materially_improved: >
+    All four R1-ordered repairs landed and critic-verified: modal stance/basis
+    reachability with visual proof, fail-closed modal base, inset per-lane
+    light rails (continuous-bar defect measured absent), achromatic breadth
+    parity; new filtered/table/filter-miss evidence cells; sky-fx-clean named
+    shots with the harness defect root-caused.
+  materially_worsened: >
+    The breadth channel, made legible per order, now surfaces the inherited
+    Math.max(8,…) floor as a quantitative lie: null/unknown membership can
+    paint as non-zero quantity — a missing≠zero violation once the whisper
+    becomes an instrument. The full-width track still collides with the row
+    boundary with insufficient fill/track separation (measured ~1.71:1 light /
+    ~1.95:1 dark), so 100% can read structural.
+  disappeared: >
+    Nothing at capability level; zero REMOVEs across the sixteen dispositions.
+  behavior_harder: >
+    Locating the active-filter origin row in dark (light carries rails; dark
+    ~1.09:1 tint only); scanning the modal's ranked Name column against the
+    inherited page-global right alignment.
+  stronger_claims: >
+    None (authority delta equal); however the floored meter implicitly claims
+    knowledge of unknown memberships — the exact claim the R3 breadth-truth
+    repair removes.
+  intent_vs_convenience: >
+    The surviving defects trace to executing the R2 order at CSS-only
+    boundary: the floor could not be fixed without the composer (now
+    authorized for a presentation-only repair), and the track was an
+    over-literal reading of "measure on a track".
+  production_preferable_for: >
+    Reading membership-unknown leadership rows (production's whisper could not
+    lie legibly); locating the dark filter origin (equal-poor in production,
+    but light's new rail sets the parity bar dark now misses).
+  strongest_argument_against: >
+    Approving would canonize a meter that paints unknown as quantity and a
+    100%-reads-as-divider composition — both named, measured, and repairable
+    in one bounded cycle.
+
+blocking_findings:
+  - finding: PRC-201
+    resolution: upheld_revise
+    note: "Breadth truth: distinguish unknown/null (no meter) from numeric zero (true zero) from positive (truthful count/max, no fake floor) — presentation-only composer repair authorized on this carrier."
+  - finding: VTC-203
+    resolution: upheld_revise
+    note: "Remove the full-width track; inset achromatic meter/fill with visible end geometry and separation from the row boundary; 100% must read as measure; no reserved wayfinding hue."
+  - finding: PRC-204
+    resolution: upheld_revise
+    note: "With VTC-202: dark needs an equivalent-information active-filter marker via the existing dark luminance/edge/state idiom — equal legibility, not necessarily light's blue rail."
+  - finding: VTC-205
+    resolution: upheld_revise
+    note: "Left-align the modal Name/first text column inside the governed Canada modal namespace, preserving legitimate numeric right-aligned columns."
+
+overrides: []
+
+verdict: REVISE
+conditions:
+  - id: COND-R3-01
+    text: "Breadth truth (PRC-201): unknown emits no quantitative meter; numeric zero renders true zero; positive uses truthful count/max proportion without a fake minimum floor; the displayed — vs numeric count distinction and all ranking/membership authority preserved; no data-owner changes. Presentation-only composer repair authorized."
+  - id: COND-R3-02
+    text: "Breadth composition (VTC-203): full-width track removed; inset achromatic meter with visible end geometry and separation from the row boundary; 100% reads as a measure; no reserved wayfinding hue."
+  - id: COND-R3-03
+    text: "Dark filter-state parity (PRC-204/VTC-202): equivalent-information marker in dark via the existing dark idiom."
+  - id: COND-R3-04
+    text: "Modal Name alignment (VTC-205): left-align Name/first text column in the governed modal namespace; numeric columns stay right-aligned."
+  - id: COND-R3-05
+    text: "Close R2 as REVISE; mint fresh R3 reference id/SHA; R3 continuity.yml closes every R2 open item by id under V1.1; fresh independent two-pass rationale-quarantined critics on the new frozen SHA returning ONLY the legal RIG enum (PASS | PASS_WITH_CONDITIONS | BLOCK — Reviewer A's PARTIAL was an illegal enum the in_review checker mode did not arm on)."
+  - id: COND-R3-06
+    text: "Run normal checker mode AND check_reference_integrity.py --evaluate <R3-id> before return; focused tests pin null→no-meter / zero→0 / positive→truthful, 100%-inset non-divider geometry, dark filter parity, modal Name alignment, template/site pair sync; exact-head hosted CI; typed BLOCKED if fresh main still carries the unrelated AgentOS red (do not repair that plane in TP-1); recapture changed states against the fresh page environment."
+preserved_strengths:
+  - "All four R2-ordered repairs landed and were critic-verified; the continuous-bar defect is measured absent."
+  - "Composer byte-identity held through R2; every V3.8 guard survives byte-for-byte."
+  - "Fresh two-pass quarantine executed with freeze-commit proof both cycles; honest disclosure of host transcript losses and the coordinator's own SHA transcription error."
