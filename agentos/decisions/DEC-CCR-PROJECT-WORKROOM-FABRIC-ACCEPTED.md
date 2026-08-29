@@ -18,11 +18,11 @@ rationale: >
   The company problem is blurred ownership and unusable collaboration topology, not a lack of apps.
   #agent-dispatch became a global visual queue, project board and session monitor, while Slack and
   Linear activity were sometimes mistaken for runtime or completion. Project Workrooms improve
-  collaboration only when exact source separation survives. #240 contains current Slack/Linear
-  platform falsification, public-internal V1, static Home Canvas, optional read-only Radar, separate
-  Workroom Projector and Agent Relay principals, exact Initiative/Project/Slack/resource joins and a
-  staged production ruler. Older #233 carried useful planner/provenance law; those clauses were
-  explicitly adopted into #240 before #233 closed, so one coherent source family remains.
+  collaboration only when exact source separation survives. #240 contains the platform-hardened
+  public-internal V1, static Home Canvas, optional read-only Radar, separate Workroom Projector and
+  Agent Relay principals, exact Initiative/Project/Slack/resource joins and a staged production
+  ruler. Older #233 carried useful planner/provenance law; those clauses were adopted into #240
+  before #233 closed, leaving one source family.
 alternatives:
   - option: Keep both #233 and #240 active
     why_not: >
@@ -44,10 +44,12 @@ alternatives:
       Preserves context collision, wrong-thread risk, archaeology and Chairman monitoring labor.
 evidence:
   - "Chairman live directive, 2026-08-29: continue Pro-mode end-to-end Workroom leadership."
-  - "Current protected Mastermind b8f7414e9906d6b5853640a18de68c3b91ffb44b; final Workroom release waits for #245/#228 and a new atomic Skillpack load."
-  - "Mastermind #240 exact branch-local head 2497669a4a71ad7b9e00a3e3a2db78e186ae1a28."
-  - "Mastermind #242 exact branch-local head 4caf45bff37ed4fe5127560866c8a4d1e54011b4."
-  - "The canonical amendment freezes exact Project/Initiative/Slack/resource inputs and safe navigation law."
+  - "Protected Mastermind is b8f7414e9906d6b5853640a18de68c3b91ffb44b with Skillpack v1.0.1/bootstrap 1."
+  - "Durable #212 handoff 5465349204 makes SOL-DIR-RECOVERY / recovery-002 the current release owner and terminates predecessor pro-001 authority."
+  - "Mastermind #240 exact branch-local head 5c838ed2e208ad8283bea9828c01dea37aad6f57; exact five records-only files; behind protected by disjoint #246 only."
+  - "Mastermind #242 exact stacked head ec1fafd52820a21823cede80a0848df9097914c9; zero-behind #240 and exactly seven research/fixture files."
+  - "Fresh Linear read at 2026-08-29T19:03:53-04:00 returned zero Initiatives, 50 Projects and zero Initiative memberships."
+  - "Macro #6662 merged as ec2b4cc33560a719f35e6d1c8528c4d6828073a3; #6658 remains open with three same-carrier blockers."
   - "Mastermind #233 closed unmerged after unique-law adoption; MAS-220 and MAS-221 are Duplicate of MAS-231."
   - "Slack exact readback proves channel C0BTQ71QEA0 exists but is inert/unmanaged/not a Workroom."
   - "Current GitHub census finds no Workroom implementation carrier beyond records/research."
@@ -91,7 +93,9 @@ negative control: canonical Agent OS `parked` must defeat Linear `In Progress` a
 Workroom actions.
 
 Protected Agent Relay enrollment, AD-ID1 and AD-CHILD1 are prerequisites at `BUILT_NOT_PROVEN`;
-none makes a Workroom, live Relay, runtime claim or production experience.
+none makes a Workroom, live Relay, runtime claim or production experience. Release order remains
+#245 watcher procedure, #228 Steward, #240 architecture, #242 research, #6661 organizational records,
+then #6658 plus live Initiative apply/readback before WR-P0.
 
 Do not create `WS:PROJECT-WORKROOMS`, Slack OS, Workroom OS, another lifecycle, project/task database,
 queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router.
