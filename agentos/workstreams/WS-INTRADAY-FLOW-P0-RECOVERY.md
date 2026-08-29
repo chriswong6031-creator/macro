@@ -80,6 +80,7 @@ waves:
       desktop+narrow browser journey. On PASS, land a separate records closeout.
 decisions:
   - "DEC:INTRADAY-FLOW-PR4-MERGED-PRODUCTION-ACCEPTANCE-OWED"
+  - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
 discoveries:
   - "DSC:INTRADAY-FLOW-RTH-NULL-QUOTE-BOOT"
   - "DSC:OPEX-FUTURE-MONTH-LAST-OBS-CLAMP"
@@ -135,6 +136,8 @@ artifacts:
   - agentos/handoffs/INTRADAY-FLOW-P0-RECOVERY-2026-08-20-closeout.md
   - agentos/handoffs/INTRADAY-FLOW-P0-RECOVERY-2026-08-20-pr4-merge-reconciliation.md
   - agentos/decisions/DEC-INTRADAY-FLOW-PR4-MERGED-PRODUCTION-ACCEPTANCE-OWED.md
+  - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
+  - agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md
 ---
 
 ## Context
