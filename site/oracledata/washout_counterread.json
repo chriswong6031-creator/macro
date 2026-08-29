@@ -1,8 +1,8 @@
 {
  "schema": "washout_counterread.v1",
- "as_of": "2026-08-27",
+ "as_of": "2026-08-28",
  "show": false,
- "growth_score": 20.2,
+ "growth_score": 33.6,
  "growth_band": "calm",
  "growth_extreme": false,
  "price_depths": [
@@ -25,8 +25,8 @@
   {
    "index": "XLK",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -4.73,
-   "depth_pctile": 67.4,
+   "drawdown_pct": -6.2,
+   "depth_pctile": 73.9,
    "extreme": false,
    "n_hist": 2520
   }
