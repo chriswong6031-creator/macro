@@ -7176,7 +7176,8 @@ def test_pr_condition_snapshot_binds_comments_and_review_authority(monkeypatch):
     authority = {"comment": "HOLD-FOR-SOL", "review": "PENDING"}
 
     def get_json(url):
-        if url.endswith("/pulls/4242"):
+        path = urllib.parse.urlsplit(url).path
+        if path.endswith("/pulls/4242"):
             return {
                 "number": 4242,
                 "state": "open",
@@ -7188,9 +7189,9 @@ def test_pr_condition_snapshot_binds_comments_and_review_authority(monkeypatch):
                 "head": {"sha": head},
                 "comments_url": "https://api.github.com/comments/4242",
             }
-        if url.endswith("/comments/4242"):
+        if path.endswith("/comments/4242"):
             return [{"id": 1, "updated_at": "now", "body": authority["comment"]}]
-        if url.endswith("/reviews"):
+        if path.endswith("/reviews"):
             return [
                 {
                     "id": 2,
@@ -7214,6 +7215,87 @@ def test_pr_condition_snapshot_binds_comments_and_review_authority(monkeypatch):
 
     assert first["pending"] == second["pending"] == ["trusted-ci / pack"]
     assert first["authority_fingerprint"] != second["authority_fingerprint"]
+
+
+def test_authority_loader_reads_page_two_and_refuses_a_full_cap(monkeypatch):
+    calls = []
+
+    def get_json(url):
+        calls.append(url)
+        page = int(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["page"][0])
+        if page == 1:
+            return [{"id": index} for index in range(100)]
+        if page == 2:
+            return [{"id": 101, "body": "RELEASED BY SOL"}]
+        raise AssertionError(url)
+
+    monkeypatch.setattr(GUARD, "_get_json", get_json)
+    rows = GUARD._bounded_github_list(
+        "https://api.github.com/repos/acme/widgets/issues/4242/comments"
+    )
+    assert rows[-1]["body"] == "RELEASED BY SOL"
+    assert len(calls) == 2
+
+    monkeypatch.setattr(
+        GUARD,
+        "_get_json",
+        lambda _url: [{"id": index} for index in range(100)],
+    )
+    with pytest.raises(RuntimeError, match="pagination bound"):
+        GUARD._bounded_github_list(
+            "https://api.github.com/repos/acme/widgets/pulls/4242/reviews"
+        )
+
+
+def test_union_watcher_declares_a_safe_fourteen_session_request_budget():
+    cycles_per_hour = 1 + (3600 // GUARD.CI_PR_WATCH_INTERVAL_SECONDS)
+    worst_case = (
+        14 * cycles_per_hour * GUARD.CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE
+    )
+    assert GUARD.CI_PR_WATCH_INTERVAL_SECONDS >= 180
+    assert GUARD.CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE == 12
+    assert worst_case <= 3600
+
+
+def test_union_snapshot_normal_cycle_uses_five_rest_requests(monkeypatch):
+    head = "a" * 40
+    calls = []
+
+    def get_json(url):
+        calls.append(url)
+        split = urllib.parse.urlsplit(url)
+        query = urllib.parse.parse_qs(split.query)
+        if split.path.endswith("/pulls/4242"):
+            return {
+                "number": 4242,
+                "state": "open",
+                "draft": False,
+                "title": "ordinary PR",
+                "body": "",
+                "labels": [],
+                "auto_merge": None,
+                "head": {"sha": head},
+                "comments_url": "https://api.github.com/comments/4242",
+            }
+        if split.path.endswith("/comments/4242") or split.path.endswith("/reviews"):
+            return []
+        if split.path.endswith("/check-runs"):
+            page = int(query["page"][0])
+            batch = 100 if page == 1 else 1
+            return {
+                "total_count": 101,
+                "check_runs": [
+                    _run_stub(f"trusted-ci / pack-{page}-{index}", "queued")
+                    for index in range(batch)
+                ],
+            }
+        raise AssertionError(url)
+
+    monkeypatch.setattr(GUARD, "_get_json", get_json)
+    snapshot = GUARD._pr_condition_snapshot("acme", "widgets", 4242)
+
+    assert snapshot["head"] == head and snapshot["pending"]
+    assert len(calls) == 5
 
 
 def test_quiescence_requires_complete_pid_start_marker_binding(monkeypatch, tmp_path):
@@ -7848,6 +7930,51 @@ def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(
     assert outputs[-1]["decision"] == "block"
     assert "trusted-executor-pack-7" in outputs[-1]["reason"]
     assert "ci_quiescence" not in GUARD._load(state_path)
+
+
+def test_configured_hold_wrapper_preserves_ordinary_material_reentry(
+    monkeypatch, tmp_path, capsys
+):
+    wrapper_path = ROOT / "scripts" / "ship_loop_hold_wrapper.py"
+    spec = importlib.util.spec_from_file_location("ship_loop_wrapper_integration", wrapper_path)
+    assert spec and spec.loader
+    wrapper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wrapper)
+
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(pending=False)
+    payload = {"hook_event_name": "Stop", "cwd": str(repo)}
+    assert wrapper._handle_stop(GUARD, payload) is None
+    assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "waiting"
+    GUARD._stop(repo, state_path, payload)
+    first = capsys.readouterr().out
+    assert first.count("CI_MATERIAL_EVENT green") == 1
+
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: trusted-executor-pack-7 (failure).",
+        ),
+    )
+    assert wrapper._handle_stop(GUARD, payload) is None
+    GUARD._stop(repo, state_path, payload)
+    late = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert late[-1]["decision"] == "block"
+    assert "trusted-executor-pack-7" in late[-1]["reason"]
 
 
 def test_new_local_head_invalidates_old_quiescence_before_github_reclassification(

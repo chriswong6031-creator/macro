@@ -276,11 +276,30 @@ def _hold_probe(
         return None
 
     comments_url = str(pull.get("comments_url") or "")
+    reviews_url = (
+        f"https://api.github.com/repos/{owner}/{repo}/pulls/{number}/reviews"
+    )
     try:
-        comments = guard._get_json(comments_url) if comments_url else []
+        list_loader = getattr(guard, "_bounded_github_list", None)
+        comments = (
+            list_loader(comments_url)
+            if comments_url and callable(list_loader)
+            else guard._get_json(comments_url)
+            if comments_url
+            else []
+        )
+        reviews = (
+            list_loader(reviews_url)
+            if callable(list_loader)
+            else guard._get_json(reviews_url)
+        )
     except Exception as exc:
         raise HoldProbeUnanswerable(str(exc)) from exc
-    if not isinstance(comments, list) or not _hold_protocol_is_complete(pull, comments):
+    if (
+        not isinstance(comments, list)
+        or not isinstance(reviews, list)
+        or not _hold_protocol_is_complete(pull, comments)
+    ):
         return None
 
     try:
@@ -310,6 +329,7 @@ def _hold_probe(
         "passed": passed,
         "pull": pull,
         "comments": comments,
+        "reviews": reviews,
         "runs": runs,
         "owner": owner,
         "repo": repo,
@@ -471,16 +491,28 @@ def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
 
 
 def _authority_fingerprint(guard: ModuleType, probe: dict[str, Any]) -> str:
-    """Bind the wait to PR metadata plus the comments that ratified the hold."""
-    extra = [
-        {
-            "id": comment.get("id"),
-            "updated_at": comment.get("updated_at"),
-            "body": str(comment.get("body") or ""),
-        }
-        for comment in probe.get("comments", [])
-        if isinstance(comment, dict)
-    ]
+    """Bind the wait to all bounded comment and review authority records."""
+    extra = {
+        "comments": [
+            {
+                "id": comment.get("id"),
+                "updated_at": comment.get("updated_at"),
+                "body": str(comment.get("body") or ""),
+            }
+            for comment in probe.get("comments", [])
+            if isinstance(comment, dict)
+        ],
+        "reviews": [
+            {
+                "id": review.get("id"),
+                "state": review.get("state"),
+                "submitted_at": review.get("submitted_at"),
+                "commit_id": review.get("commit_id"),
+            }
+            for review in probe.get("reviews", [])
+            if isinstance(review, dict)
+        ],
+    }
     return str(guard._ci_authority_fingerprint(probe["pull"], extra=extra))
 
 
@@ -614,14 +646,19 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
     except Exception:
         return None
 
+    quiescence = (state or {}).get("ci_quiescence")
+
     if probe is None:
         # Positive local/remote evidence says the prior state no longer derives.
         # An outage took the exception path above and deliberately clears nothing.
+        # This adapter owns HOLD mode only. Ordinary material re-entry must reach
+        # the canonical guard with its exact record intact so green/red/head/
+        # authority is classified and emitted exactly once.
+        if isinstance(quiescence, dict) and quiescence.get("mode") == "ordinary":
+            return None
         _clear_wait(guard, path, state)
         _clear_parked_latch(guard, path)
         return None
-
-    quiescence = (state or {}).get("ci_quiescence")
 
     if probe["status"] == "parked":
         # PARKED itself is the one green wake/release receipt for a hold. Clear

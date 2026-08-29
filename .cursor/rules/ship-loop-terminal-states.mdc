@@ -47,6 +47,10 @@ inherited-main, infrastructure, or missing-evidence events route to
 `#6351/main-integrity`; builder-owned red clears the wait and blocks the builder.
 The admitted `gh pr checks <PR> --watch --interval 60+` command remains one owner;
 the same hook evaluates checks plus hold/review authority as its union condition.
+It clamps the internal cadence to at least 180 seconds and bounds one snapshot to
+12 REST requests: one PR, three 100-record comment pages, three review pages, and
+five check-run pages. Fourteen isolated first-hour watchers therefore spend no more
+than 3,528 requests. A full final authority page is unanswerable and fails closed.
 After a material receipt, later Stop boundaries revalidate the event key so an
 identical event stays narration-silent but a later same-head red remains visible.
 Malformed state fails closed. Only mechanical hook evidence may create quiescence or

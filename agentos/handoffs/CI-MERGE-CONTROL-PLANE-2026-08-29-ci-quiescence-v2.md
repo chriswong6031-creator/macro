@@ -28,11 +28,14 @@ changed:
       Add atomic per-session transactions, exact native watcher identity and
       one-watcher admission, ci_quiescence.v1 derivation/local fast path,
       a single PR condition process covering checks plus hold/review authority,
+      bounded three-page authority reads, an aggregate-safe 180-second cadence,
       single material-event routing, and fail-closed red ownership boundaries.
   - path: scripts/ship_loop_hold_wrapper.py
     what: >
       Reconcile PR #6626 with the donor's one-time PARKED latch and bind lawful
-      pending holds to the same quiescence ledger and watcher boundary.
+      pending holds to the same quiescence ledger and watcher boundary. Preserve
+      ordinary-mode records for canonical material re-entry and bind paginated
+      comment plus review authority into the hold fingerprint.
   - path: .claude/settings.json
     what: >
       Put the existing watcher gate on Bash PreToolUse as well as the quota
@@ -72,7 +75,7 @@ verified:
       Lawful pending holds reuse ci_quiescence.v1; PARKED narrates once; red,
       release, outage and concurrent watcher/latch changes fail in the safe direction.
     command: python3 -m pytest -q tests/test_ship_loop_hold_wrapper.py
-    result: 37 passed on the current-main reconciled tree.
+    result: 41 hold-wrapper tests passed inside the current focused joint run.
   - claim: The cross-account standing law requires the identical zero-turn boundary.
     command: >
       python3 -m pytest -q
@@ -85,7 +88,7 @@ verified:
       PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
       tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py
       tests/test_gh_quota_guard.py
-    result: 547 passed, 1 skipped; three pytest temp-cleanup warnings only.
+    result: 555 passed, 1 skipped; three pytest temp-cleanup warnings only.
   - claim: >
       The independent review's nine negative controls fail on the pre-review
       head and pass after binding authority wake, routed-event revalidation,
@@ -102,6 +105,19 @@ verified:
       tests/test_ship_loop_guard.py::test_routed_receipt_does_not_hide_a_later_same_head_builder_red
       tests/test_ship_loop_hold_wrapper.py::test_local_git_unanswerability_preserves_existing_hold_state
     result: 9 failed before the correction and 9 passed after it.
+  - claim: >
+      The configured wrapper preserves ordinary-mode material re-entry, comment
+      and review authority are bounded and page-complete, and fourteen isolated
+      watchers fit the declared REST budget.
+    command: >
+      python3 -m pytest -q
+      tests/test_ship_loop_guard.py::test_authority_loader_reads_page_two_and_refuses_a_full_cap
+      tests/test_ship_loop_guard.py::test_union_watcher_declares_a_safe_fourteen_session_request_budget
+      tests/test_ship_loop_guard.py::test_union_snapshot_normal_cycle_uses_five_rest_requests
+      tests/test_ship_loop_guard.py::test_configured_hold_wrapper_preserves_ordinary_material_reentry
+      tests/test_ship_loop_hold_wrapper.py::test_ordinary_quiescence_is_never_cleared_by_the_hold_wrapper
+      tests/test_ship_loop_hold_wrapper.py::test_hold_probe_uses_paginated_comments_including_page_two
+    result: 4 failed and 2 passed before the correction; all 6 passed after it.
 unverified:
   - claim: Hosted CI is green on the successor pull request's exact head.
     what_would_verify: Concluded binding checks on the fresh successor PR head.
@@ -148,6 +164,10 @@ danger_areas:
     PARKED and CI_QUIESCENT are distinct: PARKED is a fully green Sol-controlled
     terminal hold; quiescence is a nonterminal pending wait that retains delivery
     ownership and wakes on one material event.
+  - >
+    The union watcher clamps admitted 60-second commands to 180 seconds and
+    bounds comments/reviews at three 100-record pages each. Cap exhaustion is
+    missing evidence, never permission to infer unchanged authority.
 ---
 
 # CI C1 zero-compute quiescence V2
@@ -160,6 +180,10 @@ mechanically confirmed for the same PR/head. The first observation emits one
 receipt. Repeated Stop/task-notification observations consult only local ledger,
 head/dirt, and process identity, producing zero new model turns while external
 state is unchanged. The one watcher observes checks plus hold/review authority.
+Its internal cadence is at least 180 seconds; one snapshot is bounded to 12 REST
+requests, so fourteen isolated first-hour watchers consume at most 3,528. Comment
+and review authority is page-complete through three 100-record pages and fails
+closed if the bound is exhausted.
 One material green/red/head/hold/watcher change wakes exactly once and routes by
 mechanical ownership; later Stop boundaries revalidate the material-event key so
 a distinct same-head event cannot be hidden by the first receipt.

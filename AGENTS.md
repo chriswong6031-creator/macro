@@ -655,7 +655,12 @@ mechanical evidence; model prose is never quiescence, green, PARKED, merged, or
 terminal truth. The admitted `gh pr checks <PR> --watch --interval 60+` command is
 kept inside that one owner but evaluated by the same hook's condition process so
 PR head, checks, hold comments, and review authority are one wake condition; it is
-not a second watcher or lifecycle. After a material receipt, later genuine Stop
+not a second watcher or lifecycle. The command's admitted interval is clamped to
+at least 180 seconds inside that process. One snapshot is bounded to 12 REST
+requests (one PR, at most three 100-record comment pages, three review pages, and
+five check-run pages), so even fourteen isolated first-hour watchers consume at
+most 3,528 requests; a full final authority page is unanswerable and fails closed
+rather than hiding a later Sol comment or review. After a material receipt, later genuine Stop
 boundaries revalidate its event key remotely: the same event stays narration-silent,
 while a later same-head red or authority change remains visible. This extends the
 existing Stop ledger and quota/watcher boundary;

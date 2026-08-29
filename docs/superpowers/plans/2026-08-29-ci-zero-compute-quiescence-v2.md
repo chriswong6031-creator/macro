@@ -67,6 +67,9 @@ Run the focused node IDs and retain the RED output before touching production ho
 2. Preserve the current quota guard; port only the pure canonical `hot_watch_reason(raw)` normalization needed so quota denial and watcher reservation use the same mechanical reason.
 3. Bind watcher ownership to session key, PR number, exact head, check/route fingerprint, PID, and process-start identity. Refuse a stale/reused PID and refuse multiple live watchers for the same session; do not affect other session ledgers.
 4. Preserve the existing native GitHub watcher admission and configured hook lifecycle. For PR waits, keep exactly one owner but evaluate checks and hold/review authority in that process so metadata changes are observable. No detached timer, background polling service, second watcher, or successor watcher after unchanged exit.
+   Clamp the union process to an aggregate-safe cadence and paginate comment/review
+   authority through a small explicit fail-closed bound; prove the worst-case
+   request count for fourteen isolated sessions remains below the shared REST pool.
 5. Run donor atomicity/isolation/PARKED tests green before adding V2 state transitions.
 
 ## Task 4: Implement mechanically derived CI quiescence
@@ -80,6 +83,8 @@ Run the focused node IDs and retain the RED output before touching production ho
 2. Gate entry on exact pushed clean head, successful fast preflight checks, no builder-owned red, pending external checks, and one confirmed live watcher bound to the same PR/head/fingerprint.
 3. On first entry, atomically persist the record and emit one concise `CI_QUIESCENT` system receipt. Do not emit `decision:block`, schedule a Stop retry, or create a successor task.
 4. On identical Stop/task-notification observations, validate only the local exact-head/process marker and return silently before any GitHub command.
+   Ensure the configured HOLD wrapper delegates ordinary-mode material re-entry
+   without clearing the canonical quiescence record first.
 5. On watcher exit or local head/hold marker drift, atomically claim a single re-entry token. Exactly one observer may perform the next GitHub classification; duplicates remain silent.
 6. Route concluded states through existing ownership law: green to release/Sol, own red to the builder, inherited-main or infrastructure/missing-proof red to #6351. Never let quiescence hide or cheaply escape own red.
 7. Clear or replace stale quiescence records on material state change; never infer merged/shipped/deployed/terminal state from watcher exit.

@@ -194,6 +194,15 @@ WATCHER_START_GRACE_SECONDS = 60
 # green from an absence of red.
 CI_QUIESCENCE_VERSION = "ci_quiescence.v1"
 CI_QUIESCENCE_FAST_PREFLIGHT = frozenset({"ci-plan", "contract-delta", "fence-pack"})
+# One union watcher can spend at most one PR request, three bounded pages each
+# for comments and reviews, and five check-run pages: 12 REST requests/cycle.
+# At the enforced 180-second cadence, fourteen isolated sessions spend at most
+# 3,528 requests in their first hour, below GitHub's normal 5,000/hour budget
+# with room for the rest of the ship-loop fleet. The CLI still accepts the
+# documented ``--interval 60+`` shape; the internal watcher clamps it upward.
+CI_PR_WATCH_INTERVAL_SECONDS = 180
+CI_PR_AUTHORITY_MAX_PAGES = 3
+CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE = 12
 # A crashed wake claimant may not suppress the material event forever. This is
 # a lease inside the existing per-session ledger, not a timer or retry loop: it
 # is consulted only if another real Stop/task event already occurs.
@@ -1912,6 +1921,46 @@ def _watch_interval_seconds(command: str) -> int | None:
     return seconds if seconds >= 60 else None
 
 
+def _bounded_github_list(
+    url: str, *, max_pages: int = CI_PR_AUTHORITY_MAX_PAGES
+) -> list[dict[str, Any]]:
+    """Load a GitHub list endpoint completely within a declared hard bound.
+
+    Authority cannot depend on GitHub's default page. A full final page is
+    deliberately unanswerable: there may be a release or HOLD comment just
+    beyond the bound, and a visible prefix cannot prove its own completeness.
+    """
+    if not url or max_pages < 1:
+        raise RuntimeError("GitHub authority pagination is unanswerable")
+    split = urllib.parse.urlsplit(url)
+    query_items = [
+        (key, value)
+        for key, value in urllib.parse.parse_qsl(
+            split.query, keep_blank_values=True
+        )
+        if key not in {"page", "per_page"}
+    ]
+    rows: list[dict[str, Any]] = []
+    for page in range(1, max_pages + 1):
+        query = urllib.parse.urlencode(
+            [*query_items, ("per_page", "100"), ("page", str(page))]
+        )
+        page_url = urllib.parse.urlunsplit(
+            (split.scheme, split.netloc, split.path, query, split.fragment)
+        )
+        payload = _get_json(page_url)
+        if not isinstance(payload, list) or any(
+            not isinstance(item, dict) for item in payload
+        ):
+            raise RuntimeError("GitHub authority page is not a list of records")
+        rows.extend(payload)
+        if len(payload) < 100:
+            return rows
+    raise RuntimeError(
+        f"GitHub authority pagination bound exhausted after {max_pages} pages"
+    )
+
+
 def _pr_condition_snapshot(
     owner: str, repo: str, number: int
 ) -> dict[str, Any]:
@@ -1930,10 +1979,10 @@ def _pr_condition_snapshot(
     head = str((pull.get("head") or {}).get("sha") or "")
     if not re.fullmatch(r"[0-9a-f]{40}", head):
         raise RuntimeError(f"pull request #{number} has no exact head")
-    comments = _get_json(str(pull.get("comments_url") or f"{base}/issues/{number}/comments"))
-    reviews = _get_json(f"{base}/pulls/{number}/reviews")
-    if not isinstance(comments, list) or not isinstance(reviews, list):
-        raise RuntimeError(f"pull request #{number} authority metadata is unanswerable")
+    comments = _bounded_github_list(
+        str(pull.get("comments_url") or f"{base}/issues/{number}/comments")
+    )
+    reviews = _bounded_github_list(f"{base}/pulls/{number}/reviews")
     authority_extra = {
         "state": str(pull.get("state") or ""),
         "merged_at": str(pull.get("merged_at") or ""),
@@ -1979,6 +2028,7 @@ def _watch_pr_condition_until_material(
     """Keep one process alive until CI or hold authority materially changes."""
     if interval < 60 or not re.fullmatch(r"[0-9a-f]{40}", expected_head):
         return 2
+    effective_interval = max(interval, CI_PR_WATCH_INTERVAL_SECONDS)
     try:
         baseline = _pr_condition_snapshot(owner, repo, number)
     except Exception as exc:
@@ -2002,7 +2052,7 @@ def _watch_pr_condition_until_material(
             )
             return 0
 
-        time.sleep(interval)
+        time.sleep(effective_interval)
         try:
             current = _pr_condition_snapshot(owner, repo, number)
         except Exception as exc:

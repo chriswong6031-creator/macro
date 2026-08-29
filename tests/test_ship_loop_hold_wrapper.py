@@ -917,6 +917,48 @@ def test_local_git_unanswerability_preserves_existing_hold_state(
         assert final[key] == value
 
 
+def test_ordinary_quiescence_is_never_cleared_by_the_hold_wrapper(
+    monkeypatch, tmp_path
+):
+    state_extra = {
+        "ci_quiescence": {
+            "version": "ci_quiescence.v1",
+            "mode": "ordinary",
+            "head": HEAD,
+            "phase": "waiting",
+        }
+    }
+    guard, state_path, _calls, _entered = _ledger_guard(
+        tmp_path, state_extra=state_extra, fast_quiescence=False
+    )
+    monkeypatch.setattr(WRAPPER, "_hold_probe", lambda *_a, **_kw: None)
+
+    assert WRAPPER._handle_stop(guard, {"hook_event_name": "Stop"}) is None
+    assert json.loads(state_path.read_text(encoding="utf-8"))["ci_quiescence"] == (
+        state_extra["ci_quiescence"]
+    )
+
+
+def test_hold_probe_uses_paginated_comments_including_page_two(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    guard, _calls = _fake_guard(tmp_path)
+    pages = [
+        [{"id": index, "body": "ordinary discussion"} for index in range(100)],
+        _comments(),
+    ]
+    guard._bounded_github_list = lambda _url: [item for page in pages for item in page]
+    guard._get_json = lambda _url: (_ for _ in ()).throw(
+        AssertionError("single-page authority read is forbidden")
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+
+    assert probe is not None
+    assert any("Release condition" in item["body"] for item in probe["comments"])
+
+
 def test_outage_blocker_mutation_does_not_renarrate_same_parked_hold(
     monkeypatch, tmp_path
 ):
