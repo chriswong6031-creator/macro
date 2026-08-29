@@ -101,6 +101,46 @@ symbols:
       - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-06);
         SEC submissions header carries no ticker and no exchange
 
+  FBRX:
+    company: Forte Biosciences, Inc.
+    company_zh: Forte Biosciences
+    exchange: NASDAQ
+    cik: '0001419041'
+    # True last session 2026-08-26 — the $77.00 cash tender offer expired one
+    # minute after 11:59 p.m. ET that day and the DGCL 251(h) merger closed the
+    # next morning. The baskets store's 2026-08-27 bar is a 0-volume flat-forward
+    # of the 08-26 close (76.99 repeated on all four OHLC fields) — the same
+    # vendor padding tell as CTRA/LEG (#4616). Tape was tender-pinned near $77
+    # for weeks before the close.
+    last_session: '2026-08-26'
+    delisted_on: '2026-08-27'
+    reason: acquisition
+    acquirer: argenx
+    acquirer_zh: argenx
+    consideration: US$77.00 per share in cash (tender offer)
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-08-27 (items 2.01/3.01/3.03/5.01/5.02/5.03) — Avena Merger Sub
+        merged into Forte under DGCL 251(h) following the tender offer that expired
+        2026-08-26 (19.9M shares tendered, ~87.13% with Parent's stake); Forte is
+        now a wholly owned subsidiary of argenx BV (Belgian besloten vennootschap).
+        Merger Agreement dated 2026-07-26. Accession 0001140361-26-034698
+      - 25-NSE 2026-08-27 — Nasdaq delisting notification. Accession 0001354457-26-000824
+      - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-29)
+
+  # STRS has NO row on purpose (2026-08-29): Stratus Properties left NASDAQ
+  # voluntarily under its Plan of Complete Liquidation and Dissolution (8-K
+  # 2026-07-01 item 3.01 accession 0000885508-26-000035; Form 25 2026-07-31
+  # accession 0000885508-26-000037, effective ~08-10; Forms 15-12G/15-15D
+  # 2026-08-10 accessions 0000885508-26-000040/-000044) but the SECURITY STILL
+  # EXISTS: the shares kept printing real OTC bars (real volume, real price
+  # variation — 12-23k shares/day, $18-19) through at least 2026-08-27 while
+  # liquidating distributions are pending. An exit row would freeze a live tape
+  # and assert "stopped existing" about a security that hasn't. It is acked in
+  # config.yml quality.delisted_printing_acks instead. GRADUATION PATH: when the
+  # OTC tape dies (store tip goes stale >7 days), replace that ack with a real
+  # row here carrying the verified final session.
+
   TPH:
     company: Tri Pointe Homes, Inc.
     company_zh: Tri Pointe Homes
@@ -125,3 +165,32 @@ symbols:
       - DEFM14A 2026-03-17 — definitive merger proxy. Accession 0001193125-26-110678
       - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-06)
         and from OpenFIGI under exchCode US
+
+  TWO:
+    company: Two Harbors Investment Corp.
+    company_zh: Two Harbors Investment
+    exchange: NYSE
+    cik: '0001465740'
+    # Store tip == last session: the 2026-08-24 final bar carries a 19.39M-share
+    # closing print at $12.18 ≈ the $12.00 merger consideration + $0.20326 stub
+    # dividend (record date 08-24). No vendor flat-forward padding on this tape.
+    # COMMON STOCK ONLY: the TWO-PA/PB/PC preferreds and the TWOD 9.375% notes
+    # remain NYSE-listed under the same CIK (directory-verified 2026-08-29); this
+    # row covers only the delisted common key 'TWO'.
+    last_session: '2026-08-24'
+    delisted_on: '2026-08-25'
+    reason: acquisition
+    acquirer: CrossCountry Mortgage
+    acquirer_zh: CrossCountry Mortgage
+    consideration: US$12.00 per share in cash, plus a US$0.20326 stub-period dividend
+      for holders of record 2026-08-24 (paid with the merger consideration)
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-08-25 (items 2.01/3.01/3.03/5.01/5.02/8.01) — CrossCountry Merger
+        Corp merged into TWO; TWO survives as a wholly owned subsidiary of
+        CrossCountry Mortgage, LLC. Ex-99.1 closing press release states the
+        $12.00 cash per share and the $0.20326 stub dividend.
+        Accession 0001104659-26-100622
+      - 25-NSE 2026-08-25 — NYSE delisting notification. Accession 0000876661-26-000705
+      - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched
+        2026-08-29); TWO$A/TWO$B/TWO$C preferreds and TWOD notes still listed
