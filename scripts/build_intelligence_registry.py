@@ -161,7 +161,7 @@ def _read_tracked_uncached(root: Path, rel: Path) -> tuple[str | None, str]:
     if on_disk.is_file():
         try:
             return on_disk.read_text(encoding="utf-8"), "worktree"
-        except OSError:
+        except (OSError, UnicodeError):
             pass
     try:
         result = subprocess.run(
@@ -173,7 +173,7 @@ def _read_tracked_uncached(root: Path, rel: Path) -> tuple[str | None, str]:
         )
         if result.returncode == 0 and result.stdout:
             return result.stdout, "git"
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError, UnicodeError):
         pass
     return None, "absent"
 

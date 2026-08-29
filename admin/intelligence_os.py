@@ -225,7 +225,7 @@ def _jsonl_candidate_count(path: Path) -> tuple[int | None, str | None]:
         return None, None
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
+    except (OSError, UnicodeError) as exc:
         return None, f"{path.name} is unreadable: {type(exc).__name__}: {exc}"
     return sum(1 for line in lines if line.strip() and not line.lstrip().startswith("#")), None
 
@@ -448,6 +448,21 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
                     f"grades.jsonl has {invalid_grades} semantically invalid "
                     f"owner row(s) of {len(grades_rows)}"
                 )
+
+    if read_status in {"unreadable", "error"}:
+        error = "; ".join(read_errors) or "qledger owner store is unreadable"
+        return {
+            engine_id: {
+                "kind": "qledger",
+                "binding": binding,
+                "family": family,
+                "read_status": read_status,
+                "clock_start": None,
+                "readiness": {},
+                "error": error,
+            }
+            for engine_id, (family, binding) in bindings.items()
+        }
 
     families = sorted({family for family, _binding in bindings.values()})
     try:

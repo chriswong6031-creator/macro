@@ -703,6 +703,24 @@ def test_semantically_invalid_qledger_rows_degrade_even_when_json_parses(
     assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
 
 
+@pytest.mark.parametrize("store_name", ["claims.jsonl", "grades.jsonl"])
+def test_invalid_utf8_qledger_store_is_provider_blindness_not_page_failure(
+    tmp_path, store_name
+):
+    """Undecodable owner bytes degrade bound evidence while preserving the census."""
+    root = qledger_adapter_root(tmp_path)
+    (root / "data" / "qledger" / store_name).write_bytes(b"\xff\xfe\x00")
+
+    result = IOS.panel(root=root)
+
+    assert result["ok"] is True
+    row = result["engines"][0]
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "unreadable"
+    assert "unreadable" in row["evidence_provider"]["error"]
+    assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
+
+
 @pytest.mark.parametrize(
     ("field", "bad_value"),
     [
