@@ -4,9 +4,9 @@
   "asof": "2026-08-29",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 43.7,
+  "management_confidence": 42.9,
   "raw_confidence": 41.8,
-  "delta_vs_base": -16.3,
+  "delta_vs_base": -17.1,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
