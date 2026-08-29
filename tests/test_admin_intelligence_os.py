@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -515,6 +516,181 @@ def test_qledger_family_binding_is_exact_and_derived(cell, adapter_families, exp
     assert IOS.qledger_family_for_cell(cell, adapter_families) == expected
 
 
+def test_panel_and_detail_expose_one_status_and_all_five_ceo_bands(tmp_path):
+    """Dropping the pure result at the API seam would leave A1 built but invisible."""
+    root = one_engine(tmp_path)
+
+    panel = IOS.panel(root=root)
+    assert panel["census"]["by_evidence_status"] == {"Accruing": 1}
+    assert [band["evidence_status"] for band in panel["ceo_view"]] == list(
+        IOS.EVIDENCE_STATUS_ORDER
+    )
+    assert panel["ceo_view"][0]["n_engines"] == 0
+    row = panel["engines"][0]
+    assert row["output_class"] is None
+    assert row["evidence_status"] == "Accruing"
+    assert "output_class_null" in row["evidence_reason_codes"]
+
+    detail = IOS.engine_detail("engine/a.py::prog-one", root=root)
+    assert detail["engine"]["evidence_status"] == "Accruing"
+    assert detail["engine"]["evidence_provider"]["kind"] == "t1_owner_native"
+    assert detail["engine"]["declared_horizon"]["horizon_role"] == ["context"]
+    assert detail["engine"]["validation_state"] is None
+    assert detail["engine"]["validation_state_evidence"] == {
+        "bound_species": None,
+        "reason": "species_store_absent",
+    }
+
+
+def test_panel_orders_by_evidence_band_then_engine_id(tmp_path):
+    """The CEO view orders status strength, never class or headline performance."""
+    root = _write_root(
+        tmp_path,
+        {
+            "z": artifact("data/z.json", producer="engine/z.py", owner="prog-z"),
+            "a": artifact(
+                "data/a.json",
+                producer="engine/a.py",
+                owner="prog-a",
+                tier="infrastructure",
+            ),
+        },
+    )
+    rows = IOS.panel(root=root)["engines"]
+
+    assert [(row["evidence_status"], row["engine_id"]) for row in rows] == [
+        ("Accruing", "engine/z.py::prog-z"),
+        ("Ungraded by design", "engine/a.py::prog-a"),
+    ]
+
+
+def qledger_adapter_root(tmp_path: Path, *, with_store: bool = True) -> Path:
+    root = _write_root(
+        tmp_path,
+        {
+            "stock-ledger": artifact(
+                "data/stock_desk/theses.jsonl",
+                producer="engine/stock_desk.py",
+                owner="qualitative-intelligence",
+                tier="shadow",
+                fmt="jsonl",
+            )
+        },
+        overlay={
+            "engines": {
+                "engine/stock_desk.py::qualitative-intelligence": {
+                    "output_class": {
+                        "value": "predictive",
+                        "rationale": "forward stock calls in the fixture",
+                    }
+                }
+            }
+        },
+    )
+    if with_store:
+        qdir = root / "data" / "qledger"
+        qdir.mkdir(parents=True, exist_ok=True)
+        (qdir / "claims.jsonl").write_text("", encoding="utf-8")
+        (qdir / "grades.jsonl").write_text("", encoding="utf-8")
+    return root
+
+
+def test_incomplete_e1_adapter_evidence_is_accruing_not_absent(tmp_path):
+    """An empty-but-readable stock desk clock is the commissioned incomplete E1 case."""
+    root = qledger_adapter_root(tmp_path)
+    before = _tree(root)
+
+    panel = IOS.panel(root=root)
+    row = panel["engines"][0]
+    assert row["evidence_status"] == "Accruing"
+    assert row["evidence_provider"] == {
+        "kind": "qledger",
+        "binding": "adapter:stock_desk",
+        "family": "stock_desk",
+        "read_status": "ok",
+    }
+    assert "evidence_clock_not_started" in row["evidence_reason_codes"]
+    assert row["evidence_maturity"]["rungs"]["63"]["n_dates"] == 0
+
+    detail = IOS.engine_detail(
+        "engine/stock_desk.py::qualitative-intelligence", root=root
+    )
+    assert detail["engine"]["evidence_provider"]["family"] == "stock_desk"
+    assert detail["engine"]["evidence_ruler"]["qledger_clock"] is None
+    assert _tree(root) == before
+
+
+def test_a_bound_but_unreadable_qledger_store_degrades_instead_of_faking_empty(tmp_path):
+    """Missing owner bytes are could-not-look, not a zero-row accruing receipt."""
+    root = qledger_adapter_root(tmp_path, with_store=False)
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "could_not_look"
+    assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
+
+
+def test_new_evidence_clock_invalidates_the_in_process_view(tmp_path):
+    """The five-minute cache must not hide the first prospective clock receipt."""
+    root = qledger_adapter_root(tmp_path)
+    first = IOS.panel(root=root)
+    assert first["generated"]["cache"] == "miss"
+    assert IOS.panel(root=root)["generated"]["cache"] == "hit"
+
+    clock_dir = root / "data" / "qledger" / "evidence_clock_start"
+    clock_dir.mkdir(parents=True)
+    (clock_dir / "stock_desk.json").write_text(
+        json.dumps(
+            {
+                "claim_family": "stock_desk",
+                "first_prospective_registration_utc": "2026-08-29T01:02:03+00:00",
+                "declared_horizon_d": 20,
+                "horizon_unit": "trading_days",
+                "git_sha": "abc123",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    fresh = IOS.panel(root=root)
+    assert fresh["generated"]["cache"] == "miss"
+    row = fresh["engines"][0]
+    assert row["evidence_ruler"]["qledger_clock"]["horizon_d"] == 20
+    assert "qledger-clock:stock_desk:2026-08-29T01:02:03+00:00" in row[
+        "evidence_refs"
+    ]
+
+
+def test_revised_existing_evidence_clock_invalidates_the_in_process_view(tmp_path):
+    """Changing clock bytes in place must invalidate even when the directory does not."""
+    root = qledger_adapter_root(tmp_path)
+    clock_dir = root / "data" / "qledger" / "evidence_clock_start"
+    clock_dir.mkdir(parents=True)
+    clock = clock_dir / "stock_desk.json"
+    receipt = {
+        "claim_family": "stock_desk",
+        "first_prospective_registration_utc": "2026-08-29T01:02:03+00:00",
+        "declared_horizon_d": 20,
+        "horizon_unit": "trading_days",
+        "git_sha": "abc123",
+    }
+    clock.write_text(json.dumps(receipt), encoding="utf-8")
+    first = IOS.panel(root=root)
+    assert first["engines"][0]["evidence_ruler"]["qledger_clock"]["horizon_d"] == 20
+    assert IOS.panel(root=root)["generated"]["cache"] == "hit"
+
+    before = clock.stat().st_mtime_ns
+    receipt["declared_horizon_d"] = 63
+    receipt["git_sha"] = "def456"
+    clock.write_text(json.dumps(receipt), encoding="utf-8")
+    os.utime(clock, ns=(before + 1_000_000_000, before + 1_000_000_000))
+
+    fresh = IOS.panel(root=root)
+    assert fresh["generated"]["cache"] == "miss"
+    assert fresh["engines"][0]["evidence_ruler"]["qledger_clock"]["horizon_d"] == 63
+    assert "git:def456" in fresh["engines"][0]["evidence_refs"]
+
+
 # ---------------------------------------------------------------------------
 # No persisted state
 # ---------------------------------------------------------------------------
@@ -585,6 +761,16 @@ def test_artifacts_outside_every_engine_cell_are_surfaced_not_dropped(tmp_path):
     assert panel["census"]["artifacts"] == 2
     ids = {r["engine_id"] for r in panel["engines"]}
     assert IOS.UNREGISTERED_ENGINE_ID in ids
+    # The legacy table keeps the orphan visible, but the commissioned CEO ordering is
+    # explicitly over canonical T1 cells. A registry gap is not a 2nd engine.
+    assert panel["census"]["canonical_engines"] == 1
+    assert panel["census"]["noncanonical_output_groups"] == 1
+    assert sum(band["n_engines"] for band in panel["ceo_view"]) == 1
+    assert IOS.UNREGISTERED_ENGINE_ID not in {
+        engine_id
+        for band in panel["ceo_view"]
+        for engine_id in band["engine_ids"]
+    }
 
     detail = IOS.engine_detail(IOS.UNREGISTERED_ENGINE_ID, root=root)
     assert detail["ok"] is True

@@ -1,16 +1,19 @@
-"""Intelligence OS operator panel — the Eval OS T1 + T4 estate, derived on demand.
+"""Intelligence OS operator panel — Eval OS T1/T4/T7/T8, derived on demand.
 
 WHAT THIS SURFACE IS. One row per intelligence ENGINE (the T1 unit of account: a
 ``producer::owner_program`` cell), carrying the adjudicated ``output_class`` and
 ``authority`` T1 assigned it, plus the worst OUTPUT HEALTH state T4 resolved across the
 engine's artifacts. Drilling into an engine shows the full ``mastermind.output_health.v1``
 record for each of its outputs — which plane decided the state, against which watermark,
-with which reason codes.
+with which reason codes. A1 adds one derived evidence disposition per engine and the five
+global CEO bands, carrying T1 owner lifecycle/semantics, T4 trust, and qledger evidence only
+where an existing owner binding resolves.
 
-WHAT IT IS NOT. It is a CENSUS and a HEALTH READ. There is no score, rank, weight, size,
-promotion state or gate here, and none is computed: ``output_class`` is read from the T1
-overlay and is ``null`` wherever no adjudication exists. A guessed class would be an
-authority claim wearing a census's clothes, so the null is rendered as a null.
+WHAT IT IS NOT. There is no numeric evidence score, performance rank, weight, size,
+promotion service or gate here. ``output_class`` is read from T1 and is ``null`` wherever no
+adjudication exists. A guessed class would be an authority claim wearing a census's clothes,
+so the null is rendered as a null. Qledger readiness is measurement evidence only; the
+existing species/prereg/gauntlet owners remain the sole source of validation authority.
 
 NOTHING IS EVER WRITTEN. Not a cache file, not a snapshot, not a "last known good".
 The whole view is re-derived from ``config/synapse.yml``, the T1 overlay and the estate
@@ -49,12 +52,26 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from admin.evidence_status import (
+    EVIDENCE_STATUS_ORDER,
+    build_ceo_view,
+    derive_evidence_status,
+    qledger_family_for_cell,
+)
+
 _ROOT = Path(__file__).resolve().parent.parent
 
 #: The two declared inputs whose change should invalidate a cached view: the artifact
 #: census and the adjudication overlay. Mirrors scripts/build_intelligence_registry.py.
 _SYNAPSE_REL = Path("config") / "synapse.yml"
 _OVERLAY_REL = Path("config") / "intelligence_registry_overlay.yml"
+
+# Existing qledger owner stores whose movement changes A1 evidence. These are cache inputs,
+# not a copied store: the payload still comes from the owner read APIs below.
+_QLEDGER_CLAIMS_REL = Path("data") / "qledger" / "claims.jsonl"
+_QLEDGER_GRADES_REL = Path("data") / "qledger" / "grades.jsonl"
+_QLEDGER_CLOCK_DIR_REL = Path("data") / "qledger" / "evidence_clock_start"
+_QLEDGER_CONTROL_CLOCK_DIR_REL = Path("data") / "qledger" / "control_evidence_clock_start"
 
 #: Seconds a derived view is served before it is re-derived. The estate moves on a
 #: nightly cadence, so this is about not re-walking 642 artifacts for every click, not
@@ -81,8 +98,8 @@ STATE_SEVERITY: tuple[str | None, ...] = (
 UNREGISTERED_ENGINE_ID = "(no engine cell)"
 
 # --- in-process cache --------------------------------------------------------
-#: key -> (stored_at_monotonic, view, registry). Memory only; see the module docstring.
-_CACHE: dict[tuple, tuple[float, dict, dict]] = {}
+#: key -> (stored_at_monotonic, view, registry, evidence_by_engine). Memory only.
+_CACHE: dict[tuple, tuple[float, dict, dict, dict]] = {}
 #: One derivation at a time. The T4 builder warms module-level read caches, so two
 #: concurrent builds would interleave two snapshots into one answer — and the admin
 #: server is threaded.
@@ -120,19 +137,124 @@ def _trust_mtime() -> bool:
     return False
 
 
-def _derive(root: Path, force: bool) -> tuple[dict, dict, float, str]:
-    """``(view, registry, compute_seconds, 'hit'|'miss')`` — the whole cache protocol.
+def _receipt_tree_mtime_key(path: Path) -> tuple[tuple[str, int, int], ...] | None:
+    """Names, mtimes and sizes for existing owner receipt files under *path*.
+
+    A directory mtime changes when a receipt is added or removed, but not when an
+    existing receipt's bytes change in place.  The cache must see both operations.
+    """
+    if not path.exists():
+        return None
+    rows: list[tuple[str, int, int]] = []
+    for child in sorted(path.rglob("*")):
+        if child.is_file():
+            stat = child.stat()
+            rows.append((child.relative_to(path).as_posix(), stat.st_mtime_ns, stat.st_size))
+    return tuple(rows)
+
+
+def _evidence_mtime_key(root: Path) -> tuple[Any, ...]:
+    """Owner-store facts that invalidate the in-process A1 projection."""
+    return (
+        _mtime_ns(root / _QLEDGER_CLAIMS_REL),
+        _mtime_ns(root / _QLEDGER_GRADES_REL),
+        _receipt_tree_mtime_key(root / _QLEDGER_CLOCK_DIR_REL),
+        _receipt_tree_mtime_key(root / _QLEDGER_CONTROL_CLOCK_DIR_REL),
+    )
+
+
+def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
+    """Read existing qledger owners for concretely bound T1 cells; never write.
+
+    Every other engine remains on T1's owner-native lifecycle/semantic evidence. An
+    unreadable qledger store is represented as ``could_not_look`` rather than passed to
+    qledger's missing-file-as-empty compatibility reader and mislabeled zero evidence.
+    """
+    from engine import qledger_desk_adapter  # noqa: PLC0415
+
+    adapter_families = qledger_desk_adapter.known_families()
+    bindings: dict[str, tuple[str, str]] = {}
+    for cell in registry.get("engines") or []:
+        if not isinstance(cell, dict):
+            continue
+        family = qledger_family_for_cell(cell, adapter_families)
+        if not family:
+            continue
+        binding = (
+            f"direct:qledger:{family}"
+            if str(cell.get("ledger") or "").startswith("qledger:")
+            else f"adapter:{family}"
+        )
+        bindings[str(cell.get("engine_id"))] = (family, binding)
+
+    if not bindings:
+        return {}
+
+    claims_path = root / _QLEDGER_CLAIMS_REL
+    if not claims_path.exists():
+        return {
+            engine_id: {
+                "kind": "qledger",
+                "binding": binding,
+                "family": family,
+                "read_status": "could_not_look",
+                "clock_start": None,
+                "readiness": {},
+                "error": f"{_QLEDGER_CLAIMS_REL} is absent",
+            }
+            for engine_id, (family, binding) in bindings.items()
+        }
+
+    families = sorted({family for family, _binding in bindings.values()})
+    try:
+        from engine import qledger_evidence_clock  # noqa: PLC0415
+        from scripts.grade_qledger import compute_promotion_readiness  # noqa: PLC0415
+
+        readiness = compute_promotion_readiness(root, families=families)
+        return {
+            engine_id: {
+                "kind": "qledger",
+                "binding": binding,
+                "family": family,
+                "read_status": "ok",
+                "clock_start": qledger_evidence_clock.read_start(family, root=root),
+                "readiness": readiness.get(family) or {},
+            }
+            for engine_id, (family, binding) in bindings.items()
+        }
+    except Exception as exc:  # noqa: BLE001 — admin reads fail open, but name the blind owner
+        return {
+            engine_id: {
+                "kind": "qledger",
+                "binding": binding,
+                "family": family,
+                "read_status": "error",
+                "clock_start": None,
+                "readiness": {},
+                "error": f"{type(exc).__name__}: {exc}",
+            }
+            for engine_id, (family, binding) in bindings.items()
+        }
+
+
+def _derive(root: Path, force: bool) -> tuple[dict, dict, dict, float, str]:
+    """``(view, registry, evidence, seconds, 'hit'|'miss')`` — cache protocol.
 
     Keyed on the two declared inputs' mtimes as well as the root, so an edit to either
     is picked up immediately rather than after the TTL. A missing input keys as ``None``
     and the TTL alone governs — an absent overlay is a legitimate state, not an error.
     """
-    key = (str(root), _mtime_ns(root / _SYNAPSE_REL), _mtime_ns(root / _OVERLAY_REL))
+    key = (
+        str(root),
+        _mtime_ns(root / _SYNAPSE_REL),
+        _mtime_ns(root / _OVERLAY_REL),
+        *_evidence_mtime_key(root),
+    )
     with _LOCK:
         if not force:
             cached = _CACHE.get(key)
             if cached is not None and (time.monotonic() - cached[0]) < _TTL_S:
-                return cached[1], cached[2], 0.0, "hit"
+                return cached[1], cached[2], cached[3], 0.0, "hit"
         # Imported HERE, not at module scope: admin/*.py is imported wholesale by the
         # server and by the import smoke suite, and this pulls in yaml, the T1 registry
         # builder and the pure resolver. Keeping it lazy leaves module import free of
@@ -159,14 +281,15 @@ def _derive(root: Path, force: bool) -> tuple[dict, dict, float, str]:
         except SystemExit as exc:
             # The T4 builder's plain exit for an unreadable/unparseable config/synapse.yml.
             raise EstateUnavailable(f"SystemExit: {exc}") from exc
+        evidence = _load_evidence_providers(root, registry)
         elapsed = time.monotonic() - started
-        _CACHE[key] = (time.monotonic(), view, registry)
+        _CACHE[key] = (time.monotonic(), view, registry, evidence)
         # One live root, and the key changes on every registry edit — without this the
         # dict would accumulate a 642-record view per nightly commit for the life of the
         # process.
         for stale in [k for k in _CACHE if k != key and k[0] == str(root)]:
             _CACHE.pop(stale, None)
-        return view, registry, elapsed, "miss"
+        return view, registry, evidence, elapsed, "miss"
 
 
 def _tally(rows: list[dict], key: str) -> dict[str, int]:
@@ -197,7 +320,7 @@ def worst_state(states) -> str | None:
     return worst
 
 
-def _engine_rows(view: dict, registry: dict) -> list[dict]:
+def _engine_rows(view: dict, registry: dict, evidence_by_engine: dict) -> list[dict]:
     """One row per engine, folded from the T4 records and joined to the T1 engine cell."""
     by_engine: dict[str, list[dict]] = {}
     for record in view.get("outputs") or []:
@@ -209,6 +332,7 @@ def _engine_rows(view: dict, registry: dict) -> list[dict]:
         for row in (registry.get("engines") or [])
         if isinstance(row, dict)
     }
+    canonical_ids = set(cells)
     for row in registry.get("excluded") or []:
         if isinstance(row, dict) and str(row.get("engine_id")) not in cells:
             cells[str(row.get("engine_id"))] = row
@@ -217,9 +341,9 @@ def _engine_rows(view: dict, registry: dict) -> list[dict]:
     for eid, records in sorted(by_engine.items()):
         cell = cells.get(eid) or {}
         counts = _tally(records, "state")
-        rows.append(
-            {
+        row = {
                 "engine_id": eid,
+                "canonical_t1": eid in canonical_ids,
                 "owner_program": cell.get("owner_program"),
                 "producer": cell.get("producer"),
                 # T1's overlay is the ONLY source. A record's class and the cell's class
@@ -239,15 +363,23 @@ def _engine_rows(view: dict, registry: dict) -> list[dict]:
                 # hoisted to a top-level field so the row cannot be drawn without it.
                 "n_blind": counts.get("null", 0),
             }
-        )
-    return rows
+        row.update(derive_evidence_status(cell, records, evidence_by_engine.get(eid)))
+        rows.append(row)
+    status_rank = {status: rank for rank, status in enumerate(EVIDENCE_STATUS_ORDER)}
+    return sorted(
+        rows,
+        key=lambda row: (
+            status_rank.get(str(row.get("evidence_status")), len(status_rank)),
+            str(row.get("engine_id")),
+        ),
+    )
 
 
 def panel(root: Path | None = None, force: bool = False) -> dict[str, Any]:
     """The census + per-engine roll-up. Read-only; derived on demand; never persisted."""
     root = Path(root) if root is not None else _ROOT
     try:
-        view, registry, elapsed, cache = _derive(root, force)
+        view, registry, evidence_by_engine, elapsed, cache = _derive(root, force)
     except Exception as exc:  # noqa: BLE001
         # The two exit-flavored failures — T1's SynapseUnavailable and the T4 builder's
         # plain SystemExit for an unreadable config/synapse.yml — are already converted to
@@ -258,7 +390,8 @@ def panel(root: Path | None = None, force: bool = False) -> dict[str, Any]:
 
     records = list(view.get("outputs") or [])
     summary = view.get("summary") or {}
-    engines = _engine_rows(view, registry)
+    engines = _engine_rows(view, registry, evidence_by_engine)
+    canonical_engines = [row for row in engines if row.get("canonical_t1")]
     reasons = sorted(
         (summary.get("reason_codes") or {}).items(), key=lambda kv: (-kv[1], kv[0])
     )
@@ -266,6 +399,8 @@ def panel(root: Path | None = None, force: bool = False) -> dict[str, Any]:
         "ok": True,
         "census": {
             "engines": len(engines),
+            "canonical_engines": len(canonical_engines),
+            "noncanonical_output_groups": len(engines) - len(canonical_engines),
             "artifacts": len(records),
             # "Assessed" means Eval OS could actually LOOK, not that it liked what it
             # saw. The gap between this and `artifacts` is the observer-blindness count,
@@ -276,12 +411,14 @@ def panel(root: Path | None = None, force: bool = False) -> dict[str, Any]:
             "by_state": summary.get("by_state") or {},
             "by_assessment_status": summary.get("by_assessment_status") or {},
             "by_output_class": _tally(records, "output_class"),
+            "by_evidence_status": _tally(canonical_engines, "evidence_status"),
             "by_authority": _tally(records, "authority"),
             "by_storage": _tally(records, "storage"),
             "by_dependency_bound": summary.get("by_dependency_bound") or {},
             "top_reason_codes": [{"code": c, "n": n} for c, n in reasons[:12]],
         },
         "engines": engines,
+        "ceo_view": build_ceo_view(canonical_engines),
         "generated": {
             "observed_at": (view.get("generated") or {}).get("observed_at"),
             "root_mode": (view.get("generated") or {}).get("root_mode"),
@@ -297,7 +434,7 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
     root = Path(root) if root is not None else _ROOT
     wanted = str(engine_id or "")
     try:
-        view, registry, _elapsed, _cache = _derive(root, force=False)
+        view, registry, evidence_by_engine, _elapsed, _cache = _derive(root, force=False)
     except Exception as exc:  # noqa: BLE001 — fail open; see panel()
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
@@ -327,21 +464,34 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
         ),
         {},
     )
-    return {
-        "ok": True,
-        "engine": {
+    engine = {
             "engine_id": wanted,
             "owner_program": cell.get("owner_program"),
             "producer": cell.get("producer"),
             "output_class": cell.get("output_class") or outputs[0].get("output_class"),
             "output_class_rationale": cell.get("output_class_reason"),
             "authority": cell.get("authority") or outputs[0].get("authority"),
+            "ledger": cell.get("ledger"),
+            "ledger_evidence": cell.get("ledger_evidence"),
+            "graded_by_design": cell.get("graded_by_design"),
+            "graded_by_design_evidence": cell.get("graded_by_design_evidence"),
+            "graded_by_design_source": cell.get("graded_by_design_source"),
+            "declared_horizon": cell.get("declared_horizon"),
+            "validation_state": cell.get("validation_state"),
+            "validation_state_evidence": cell.get("validation_state_evidence"),
+            "evidence_ref": cell.get("evidence_ref"),
             # Present only for a cell T1 EXCLUDED (placeholder producer, no code advances
             # it). Rendering the reason is what keeps "not graded" from reading as a
             # grade of zero.
             "excluded_reason": cell.get("reason"),
             "n_artifacts": len(outputs),
             "worst_state": worst_state(r.get("state") for r in outputs),
-        },
+        }
+    engine.update(
+        derive_evidence_status(cell, outputs, evidence_by_engine.get(wanted))
+    )
+    return {
+        "ok": True,
+        "engine": engine,
         "outputs": sorted(outputs, key=lambda r: str(r.get("artifact_id"))),
     }

@@ -4031,7 +4031,69 @@ function iosRowStateCell(r) {
   return iosStatePill(r.worst_state) + badge;
 }
 
-const IOS = { filter: { state: null, output_class: null, authority: null, owner_program: null }, q: "", page: 1, rows: [], data: null };
+/* IOS_EVIDENCE_CONTRACT_START */
+const IOS_EVIDENCE_STATUS_ORDER = [
+  "Validated", "Accruing", "Ungraded by design", "Degraded", "Disproven",
+];
+const IOS_EVIDENCE_STATUS_CLS = {
+  "Validated": "s-ok",
+  "Accruing": "s-warn",
+  "Ungraded by design": "s-mut",
+  "Degraded": "s-bad",
+  "Disproven": "s-bad",
+};
+function iosEvidenceStatusCls(status) {
+  return IOS_EVIDENCE_STATUS_CLS[String(status || "")] || "s-mut";
+}
+function iosEvidenceStatusPill(status) {
+  const word = status || "not determined";
+  return `<span class="statpill ${iosEvidenceStatusCls(status)}">${esc(word)}</span>`;
+}
+function iosNormalizeCeoBands(bands) {
+  const byStatus = {};
+  (Array.isArray(bands) ? bands : []).forEach(row => {
+    if (row && IOS_EVIDENCE_STATUS_ORDER.includes(row.evidence_status)) {
+      byStatus[row.evidence_status] = row;
+    }
+  });
+  return IOS_EVIDENCE_STATUS_ORDER.map(status => Object.assign(
+    { evidence_status: status, n_engines: 0, engine_ids: [] },
+    byStatus[status] || {},
+    { evidence_status: status },
+  ));
+}
+function iosEvidenceJson(value) {
+  if (value === null || value === undefined) return `<code class="mono">null</code>`;
+  const text = (typeof value === "string") ? value : JSON.stringify(value);
+  return `<code class="mono">${esc(text)}</code>`;
+}
+function iosEvidenceDetailCard(e) {
+  e = e || {};
+  const reasons = (e.evidence_reason_codes || []).map(code =>
+    `<span class="statpill s-mut mono">${esc(code)}</span>`).join(" ") || `<span class="muted">none</span>`;
+  const refs = (e.evidence_refs || []).map(ref =>
+    `<span class="statpill s-mut mono">${esc(ref)}</span>`).join(" ") || `<span class="muted">none declared</span>`;
+  const row = (label, value) => `<div class="ios-evidence-kv"><span>${esc(label)}</span><div>${iosEvidenceJson(value)}</div></div>`;
+  return `<div class="card ios-evidence-card">
+    <div class="ios-evidence-head"><h3>Evidence disposition</h3><span class="spacer"></span>${iosEvidenceStatusPill(e.evidence_status)}</div>
+    <div class="sub ios-evidence-law">Derived from owner-native evidence and current output health. It ranks evidence strength, never headline performance, and carries no promotion authority.</div>
+    <div class="ios-evidence-grid">
+      ${row("output class", e.output_class == null ? null : e.output_class)}
+      ${row("owner lifecycle", { validation_state: e.validation_state, evidence: e.validation_state_evidence || null })}
+      ${row("graded by design", { value: e.graded_by_design == null ? null : e.graded_by_design, source: e.graded_by_design_source || null })}
+      ${row("provider", e.evidence_provider || null)}
+      ${row("ruler", e.evidence_ruler || null)}
+      ${row("basis", e.evidence_basis || null)}
+      ${row("maturity", e.evidence_maturity || null)}
+      ${row("coverage", e.evidence_coverage || null)}
+    </div>
+    <div class="ios-out-line"><span class="ios-out-key">reasons</span><span>${reasons}</span></div>
+    <div class="ios-out-line"><span class="ios-out-key">evidence refs</span><span>${refs}</span></div>
+  </div>`;
+}
+/* IOS_EVIDENCE_CONTRACT_END */
+
+const IOS = { filter: { evidence_status: null, state: null, output_class: null, authority: null, owner_program: null }, q: "", page: 1, rows: [], data: null };
 const IOS_PAGE_SIZE = 60;
 
 function iosChip(label, active, on, data) {
@@ -4052,12 +4114,13 @@ function iosMatches(r) {
   const f = IOS.filter;
   const cls = r.output_class == null ? "null" : String(r.output_class);
   const st  = r.worst_state == null ? "null" : String(r.worst_state);
+  if (f.evidence_status && (!r.canonical_t1 || String(r.evidence_status) !== f.evidence_status)) return false;
   if (f.state && st !== f.state) return false;
   if (f.output_class && cls !== f.output_class) return false;
   if (f.authority && String(r.authority) !== f.authority) return false;
   if (f.owner_program && String(r.owner_program) !== f.owner_program) return false;
   if (IOS.q) {
-    const hay = `${r.engine_id} ${r.owner_program || ""} ${r.producer || ""} ${r.output_class || ""}`.toLowerCase();
+    const hay = `${r.engine_id} ${r.owner_program || ""} ${r.producer || ""} ${r.output_class || ""} ${r.evidence_status || ""} ${(r.evidence_reason_codes || []).join(" ")}`.toLowerCase();
     if (!hay.includes(IOS.q.toLowerCase())) return false;
   }
   return true;
@@ -4071,9 +4134,10 @@ function iosRenderTable() {
   const tbl = $("#iosTbl");
   if (!tbl) return;
   tbl.innerHTML = slice.length ? `<table class="ent-table"><thead><tr>
-      <th>Engine</th><th>Program</th><th>Output class</th><th>Authority</th><th class="r">Outputs</th><th>Worst state</th></tr></thead><tbody>
+      <th>Engine</th><th>Evidence</th><th>Program</th><th>Output class</th><th>Authority</th><th class="r">Outputs</th><th>Worst state</th></tr></thead><tbody>
     ${slice.map(r => `<tr>
         <td><a href="#/engine/${encodeURIComponent(r.engine_id)}" class="mono" style="word-break:break-all">${esc(r.engine_id)}</a></td>
+        <td>${iosEvidenceStatusPill(r.evidence_status)}<div class="sub ios-evidence-provider">${esc((r.evidence_provider || {}).binding || (r.evidence_provider || {}).kind || "owner-native")}</div></td>
         <td class="sub">${esc(r.owner_program || "—")}</td>
         <td>${r.output_class ? `<b>${esc(r.output_class)}</b>` : `<span class="muted" title="no adjudicated class in the T1 overlay — never guessed here">—</span>`}</td>
         <td class="sub">${esc(r.authority || "—")}</td>
@@ -4092,14 +4156,15 @@ function iosRenderTable() {
 function iosSetFilter(kind, val) {
   IOS.filter[kind] = (IOS.filter[kind] === val) ? null : val;   // second click clears
   IOS.page = 1;
+  iosRenderCeo();
   iosRenderChips();
   iosRenderTable();
 }
 function iosClearFilters() {
-  IOS.filter = { state: null, output_class: null, authority: null, owner_program: null };
+  IOS.filter = { evidence_status: null, state: null, output_class: null, authority: null, owner_program: null };
   IOS.q = ""; IOS.page = 1;
   const box = $("#iosSearch"); if (box) box.value = "";
-  iosRenderChips(); iosRenderTable();
+  iosRenderCeo(); iosRenderChips(); iosRenderTable();
 }
 function iosGoto(p) { IOS.page = Math.max(1, p); iosRenderTable(); }
 
@@ -4114,6 +4179,7 @@ function iosRenderChips() {
      a select instead of a chip row; the other three are closed enough to see at a glance. */
   const progs = Object.keys(IOS.rows.reduce((acc, r) => { acc[r.owner_program || "—"] = 1; return acc; }, {})).sort();
   el.innerHTML = `
+    <div class="ios-filter-row"><span class="ios-filter-label">evidence</span>${iosNormalizeCeoBands(d.ceo_view).map(band => iosChip(`${band.evidence_status} (${band.n_engines})`, f.evidence_status === band.evidence_status, `iosSetFilter('evidence_status', this.dataset.val)`, { val: band.evidence_status })).join("")}</div>
     <div class="ios-filter-row"><span class="ios-filter-label">state</span>${iosCountsToChips(byWorst, "state", f.state)}</div>
     <div class="ios-filter-row"><span class="ios-filter-label">output class</span>${iosCountsToChips(c.by_output_class, "output_class", f.output_class)}</div>
     <div class="ios-filter-row"><span class="ios-filter-label">authority</span>${iosCountsToChips(c.by_authority, "authority", f.authority)}</div>
@@ -4126,26 +4192,46 @@ function iosRenderChips() {
   if (sel) sel.onchange = () => { IOS.filter.owner_program = sel.value || null; IOS.page = 1; iosRenderTable(); };
 }
 
+function iosCeoView(bands) {
+  const active = IOS.filter.evidence_status;
+  return `<div class="section ios-ceo-title">CEO evidence view <span class="sub">strongest evidence first · never performance</span></div>
+    <div class="ios-ceo-bands" role="list" aria-label="Engines ordered by evidence strength">
+      ${iosNormalizeCeoBands(bands).map((band, index) => {
+        const ids = Array.isArray(band.engine_ids) ? band.engine_ids : [];
+        const sample = ids.slice(0, 3).join(" · ") || "Empty band — valid evidence";
+        return `<button class="ios-evidence-band${active === band.evidence_status ? " on" : ""}" role="listitem" data-val="${esc(band.evidence_status)}" onclick="iosSetFilter('evidence_status', this.dataset.val)">
+          <span class="ios-band-order">${index + 1}</span>
+          <span class="ios-band-name ${iosEvidenceStatusCls(band.evidence_status)}">${esc(band.evidence_status)}</span>
+          <b class="ios-band-count">${fmtNum(band.n_engines)}</b>
+          <span class="ios-band-sample">${esc(sample)}</span>
+        </button>`;
+      }).join("")}
+    </div>`;
+}
+
+function iosRenderCeo() {
+  const el = $("#iosCeo");
+  if (el && IOS.data) el.innerHTML = iosCeoView(IOS.data.ceo_view);
+}
+
 function iosHero(d) {
   const c = d.census || {}, g = d.generated || {};
-  const st = c.by_state || {}, as = c.by_assessment_status || {};
+  const evidence = iosNormalizeCeoBands(d.ceo_view);
+  const canonical = c.canonical_engines == null ? c.engines : c.canonical_engines;
+  const gaps = Number(c.noncanonical_output_groups || 0);
   const chip = (label, n, cls) => `<span class="statpill ${cls}">${esc(String(n == null ? 0 : n))} ${esc(label)}</span>`;
   return `<div class="nw-hero">
     <div class="nw-hero-row">
       <span class="nw-hero-status-word">Intelligence OS</span>
-      <span class="sub" style="margin-left:2px">${fmtNum(c.engines)} engines · ${fmtNum(c.artifacts)} artifacts · ${fmtNum(c.outputs_assessed)} assessed</span>
+      <span class="sub" style="margin-left:2px">${fmtNum(canonical)} canonical engines${gaps ? ` · ${fmtNum(gaps)} registry gap${gaps === 1 ? "" : "s"}` : ""} · ${fmtNum(c.artifacts)} artifacts · ${fmtNum(c.outputs_assessed)} assessed</span>
       <span class="spacer"></span>
       <button class="btn" id="ios-to-nw" title="the bus view of the same estate">Observatory →</button>
       <button class="btn" id="ios-refresh" title="bypass both caches and re-derive the whole estate now">Re-derive</button>
     </div>
     <div class="nw-hero-chips">
-      ${chip("healthy", st.healthy, "s-ok")}
-      ${chip("degraded", st.degraded, "s-warn")}
-      ${chip("stale", st.stale, "s-bad")}
-      ${chip("unavailable", st.unavailable, "s-bad")}
-      ${chip("could not look", as.could_not_look, "s-mut")}
+      ${evidence.map(band => chip(band.evidence_status, band.n_engines, iosEvidenceStatusCls(band.evidence_status))).join("")}
     </div>
-    <div class="nw-hero-note">Derived on demand from the signal registry and the T1 adjudication overlay — nothing on this page is stored.
+    <div class="nw-hero-note">Derived on demand from T1 identity/semantics, T4 output health and existing owner-native evidence — nothing on this page is stored.
       ${g.observed_at ? `Observed ${esc(String(g.observed_at).replace("T", " ").slice(0, 19))} UTC` : ""}
       · ${g.cache === "hit" ? "served from the in-process cache" : `computed in ${esc(String(g.compute_seconds))}s`}
       · presence read from <code>${esc(g.root_mode || "?")}</code>${g.trust_mtime ? "" : " · write-time evidence refused — a deployed file's mtime is its git pull time, not its write time"}.</div>
@@ -4168,6 +4254,7 @@ RENDER.intelligence_os = async () => {
   IOS.data = d; IOS.rows = d.engines || []; IOS.page = 1;
   const c = d.census || {};
   v.innerHTML = iosHero(d) + iosReasonCard(c) + `
+    <div id="iosCeo">${iosCeoView(d.ceo_view)}</div>
     <div class="section">Engines <span class="cnt" id="iosCnt">${fmtNum(IOS.rows.length)}</span></div>
     <div id="iosChips" class="ios-chips"></div>
     <div style="margin:8px 0">
@@ -4279,7 +4366,7 @@ async function renderEngineDetail(id) {
   const head = `<div class="nw-hero">
     <div class="nw-hero-row">
       <span class="nw-hero-status-word mono" style="font-size:16px;word-break:break-all">${esc(e.engine_id || id)}</span>
-      <span class="spacer"></span>${iosStatePill(e.worst_state)}
+      <span class="spacer"></span>${iosEvidenceStatusPill(e.evidence_status)}${iosStatePill(e.worst_state)}
     </div>
     <div class="nw-hero-chips">
       <span class="statpill s-mut">program ${esc(e.owner_program || "—")}</span>
@@ -4293,6 +4380,7 @@ async function renderEngineDetail(id) {
     ${e.output_class ? "" : `<div class="nw-hero-note">No adjudicated output class. That is a gap in the T1 overlay, not a grade — Eval OS never infers one.</div>`}
   </div>`;
   v.innerHTML = iosCrumbs(e.engine_id || id) + head
+    + iosEvidenceDetailCard(e)
     + `<div class="section">Outputs <span class="cnt">${(d.outputs || []).length}</span></div>`
     + (d.outputs || []).map(o => iosOutputCard(o, lobeIds)).join("");
   wireBack();
