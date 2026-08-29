@@ -96,6 +96,7 @@ from engine.prophet_lab.intelligence_vector import (
     build_earnings_intelligence_vector,
     validate_intelligence_vector,
 )
+from engine.us_candidate_episode import episode_id as b1_episode_id
 from lib.dataos.identity import IdentityError, IssuerMaster
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "prophet_lab"
@@ -1500,7 +1501,16 @@ def test_full_width_entry_event_round_trips_through_the_reader(
 # ---------------------------------------------------------------------------
 
 _D5_EPISODE_GENERATION = "peg:" + "a" * 64
-_D5_EPISODE_ID = "pe:SEC:US-XNAS-AAPL:epoch_0:sa:" + "b" * 24 + ":1"
+_D5_ANCHOR = {
+    "kind": "reset_low",
+    "time": "2026-07-30T20:00:00Z",
+    "price": "100.0000",
+    "basis": "turn_watch.reset_low",
+    "source_receipt": "sha256:" + "b" * 64,
+}
+_D5_EPISODE_ID = b1_episode_id(
+    "SEC:US-XNAS-AAPL", "epoch_0", _D5_ANCHOR, 1,
+)
 
 
 def _d5_episode(*, company_id: str = "ISS:US:320193") -> dict:
@@ -1509,13 +1519,11 @@ def _d5_episode(*, company_id: str = "ISS:US:320193") -> dict:
         "episode_id": _D5_EPISODE_ID,
         "company_id": company_id,
         "security_id": "SEC:US-XNAS-AAPL",
+        "identity_epoch": "epoch_0",
         "state": "CANDIDATE",
-        "opened_at": "2026-07-30T20:31:00Z",
+        "opened_at": "2026-07-30T20:05:00Z",
         "opened_session": "2026-07-30",
-        "structural_anchor": {
-            "time": "2026-07-30T20:00:00Z",
-            "event_id": "evt-structural-anchor",
-        },
+        "structural_anchor": deepcopy(_D5_ANCHOR),
         "expert_events": ["radar:event:content-addressed-1"],
     }
 
@@ -1720,7 +1728,7 @@ def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritativ
         "identity_ref": "ISS:US:320193",
     }
     assert payload["decision_cut"] == {
-        "opened_at": "2026-07-30T20:31:00Z",
+        "opened_at": "2026-07-30T20:05:00Z",
         "opened_session": "2026-07-30",
         "anchor_time": "2026-07-30T20:00:00Z",
         "known_at": "2026-07-30T20:05:00Z",
@@ -1936,6 +1944,71 @@ def test_validator_requires_resolved_binding_to_name_an_owner_event() -> None:
         validate_intelligence_vector(payload)
 
 
+def test_no_current_event_preserves_resolved_identity_and_reports_not_covered() -> None:
+    payload = _build_d5(find_event_id=lambda company_id: None)
+    validate_intelligence_vector(payload)
+
+    family = payload["evidence_families"][0]
+    assert family["identity_state"] == "RESOLVED"
+    assert family["subject_binding"] == {
+        "state": "RESOLVED",
+        "episode_company_id": "ISS:US:320193",
+        "earnings_company_id": "cik:0000320193",
+        "owner_subject_id": None,
+    }
+    assert family["coverage"] == {
+        "state": "NOT_COVERED",
+        "basis": "no_current_generation_event",
+    }
+    assert family["observations"][0]["absence_reasons"] == ["NOT_COVERED"]
+    assert payload["assembly_receipt"]["event_id"] is None
+
+
+@pytest.mark.parametrize(
+    ("error_type", "absence_reason"),
+    [
+        (intelligence_vector_mod.CompanyIntelligenceReadError, "SOURCE_UNAVAILABLE"),
+        (intelligence_vector_mod.WorkspaceChainIntegrityError, "CORRECTION_PENDING"),
+    ],
+)
+def test_post_identity_discovery_failure_preserves_resolved_identity(
+    error_type,
+    absence_reason: str,
+) -> None:
+    def fail_discovery(company_id: str):
+        raise error_type("dummy owner discovery failure")
+
+    payload = _build_d5(find_event_id=fail_discovery)
+    validate_intelligence_vector(payload)
+    family = payload["evidence_families"][0]
+    assert family["identity_state"] == "RESOLVED"
+    assert family["subject_binding"]["earnings_company_id"] == "cik:0000320193"
+    assert family["subject_binding"]["owner_subject_id"] is None
+    assert absence_reason in family["observations"][0]["absence_reasons"]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "match"),
+    [
+        (lambda workspace: workspace.update(event_id="evt_cik9999999999_2026q3_results"),
+         "event|binding"),
+        (lambda workspace: workspace["issuer"].update(company_id="cik:9999999999"),
+         "issuer|CIK|binding"),
+        (lambda workspace: workspace.update(generation_id="2" * 24),
+         "generation|binding"),
+    ],
+)
+def test_builder_refuses_foreign_or_divergent_owner_workspace_binding(
+    mutate,
+    match: str,
+) -> None:
+    workspace = _d5_workspace()
+    revision = _d5_revisions(workspace=workspace)[0]
+    mutate(workspace)
+    with pytest.raises(IntelligenceVectorContractError, match=match):
+        _build_d5(read_revisions=lambda event_id: [revision])
+
+
 def test_projection_never_copies_raw_workspace_claim_body_span_url_or_private_path() -> None:
     workspace = _d5_workspace(secret=True)
     payload = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=workspace))
@@ -2028,6 +2101,7 @@ def test_lineage_is_exact_per_field_and_present_observations_are_source_bound() 
         "deltas[0].metric",
         "deltas[0].prior.reason",
         "deltas[0].prior.state",
+        "facts[0].basis",
         "facts[0].metric",
         "facts[0].unit",
         "facts[0].value",
@@ -2065,7 +2139,7 @@ def test_workspace_without_exact_source_lineage_emits_typed_absence_not_present_
         read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
     )["evidence_families"][0]
     assert all(item["value_state"] == "ABSENT" for item in family["observations"])
-    assert family["observations"][0]["absence_reasons"] == ["SOURCE_UNAVAILABLE"]
+    assert family["observations"][0]["absence_reasons"] == ["UNKNOWN"]
 
 
 def test_validator_rejects_present_observation_without_source_or_root_lineage() -> None:
@@ -2116,7 +2190,7 @@ def test_private_locator_shaped_object_ids_are_never_projected(object_id: str) -
     )["evidence_families"][0]
     assert object_id not in json.dumps(family, sort_keys=True)
     assert family["observations"][0]["value_state"] == "ABSENT"
-    assert family["observations"][0]["absence_reasons"] == ["SOURCE_UNAVAILABLE"]
+    assert family["observations"][0]["absence_reasons"] == ["UNKNOWN"]
 
 
 def test_builder_and_validator_close_episode_temporal_and_freshness_claims() -> None:
@@ -2141,6 +2215,66 @@ def test_builder_and_validator_close_episode_temporal_and_freshness_claims() -> 
     }
     _readdress_d5(payload)
     with pytest.raises(IntelligenceVectorContractError, match="freshness|owner"):
+        validate_intelligence_vector(payload)
+
+
+def test_builder_and_validator_require_canonical_b1_episode_and_exact_decision_cut() -> None:
+    episode = _d5_episode()
+    episode["episode_id"] = "pe:SEC:US-XNAS-AAPL:epoch_0:sa:" + "0" * 24 + ":1"
+    with pytest.raises(IntelligenceVectorContractError, match="canonical|episode_id|B1"):
+        _build_d5(episode=episode)
+
+    episode = _d5_episode()
+    episode["opened_at"] = "2026-07-30T20:31:00Z"
+    with pytest.raises(IntelligenceVectorContractError, match="exact|opened_at|decision cut"):
+        _build_d5(episode=episode)
+
+    payload = _build_d5()
+    payload["episode_ref"]["episode_id"] = "episode-1"
+    with pytest.raises(IntelligenceVectorContractError, match="canonical|episode_id|B1"):
+        validate_intelligence_vector(payload)
+
+    payload = _build_d5()
+    payload["episode_ref"]["episode_id"] = (
+        "pe:SEC:US-ZZZZ-AAPL:epoch_0:sa:" + "0" * 24 + ":1"
+    )
+    with pytest.raises(IntelligenceVectorContractError, match="canonical|episode_id|B1"):
+        validate_intelligence_vector(payload)
+
+    payload = _build_d5()
+    payload["decision_cut"]["opened_at"] = "2026-07-30T20:31:00Z"
+    payload["evidence_families"][0]["point_in_time"]["decision_at"]["value"] = (
+        "2026-07-30T20:31:00Z"
+    )
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="exact|opened_at|decision cut"):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize(
+    "clock_name",
+    [
+        "source_effective_at", "source_published_at", "known_at", "captured_at",
+        "computed_at", "corrected_at", "decision_at",
+    ],
+)
+def test_validator_closes_each_point_in_time_clock_basis(clock_name: str) -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["point_in_time"][clock_name]["basis"] = (
+        r"\\DUMMY-SERVER\private-share\owner-packet.json"
+    )
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="clock|basis"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_symmetric_economic_dependence_membership() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["observations"][0][
+        "economic_dependence_group_ids"
+    ] = []
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="dependence|member|symmetric"):
         validate_intelligence_vector(payload)
 
 
@@ -2236,6 +2370,36 @@ def test_integrity_absence_requires_workspace_chain_integrity_receipt() -> None:
         validate_intelligence_vector(payload)
 
 
+def test_assembly_receipt_errors_must_match_the_emitted_outcome() -> None:
+    healthy = _build_d5()
+    healthy["assembly_receipt"]["errors"] = [{
+        "type": "CompanyIntelligenceReadError",
+        "message": "dummy source unavailable",
+    }]
+    with pytest.raises(IntelligenceVectorContractError, match="error|outcome|coverage"):
+        validate_intelligence_vector(healthy)
+
+    def source_unavailable(event_id: str):
+        raise intelligence_vector_mod.CompanyIntelligenceReadError(
+            "dummy source unavailable"
+        )
+
+    unavailable = _build_d5(read_revisions=source_unavailable)
+    unavailable["assembly_receipt"]["errors"] = []
+    with pytest.raises(IntelligenceVectorContractError, match="source|receipt|error"):
+        validate_intelligence_vector(unavailable)
+
+    integrity = _build_d5(read_revisions=lambda event_id: (_ for _ in ()).throw(
+        intelligence_vector_mod.WorkspaceChainIntegrityError("dummy chain mismatch")
+    ))
+    integrity["assembly_receipt"]["errors"] = [{
+        "type": "CompanyIntelligenceReadError",
+        "message": "dummy source unavailable",
+    }]
+    with pytest.raises(IntelligenceVectorContractError, match="integrity|receipt|error"):
+        validate_intelligence_vector(integrity)
+
+
 def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments() -> None:
     def broken_reader(event_id: str):
         raise intelligence_vector_mod.WorkspaceChainIntegrityError(
@@ -2245,6 +2409,7 @@ def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments()
             '\"refresh_token\":\"DUMMY_REFRESH_SENTINEL\" '
             "s3://dummy-private-bucket/internal/object "
             "arn:aws:s3:::dummy-private-bucket C:\\private\\dummy-object "
+            r"\\DUMMY-SERVER\private-share\owner-packet.json "
             "object_key=dummy-private-bucket/internal/object"
         )
 
@@ -2254,7 +2419,7 @@ def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments()
         "DUMMY_TOKEN_SENTINEL", "DUMMY_KEY_SENTINEL", "DUMMY_ACCESS_SENTINEL",
         "DUMMY_SECRET_SENTINEL", "DUMMY_PASSWORD_SENTINEL", "DUMMY_REFRESH_SENTINEL",
         "s3://",
-        "arn:aws:s3", "dummy-private-bucket", "C:\\private",
+        "arn:aws:s3", "dummy-private-bucket", "C:\\private", "DUMMY-SERVER",
     ):
         assert secret not in receipt
 

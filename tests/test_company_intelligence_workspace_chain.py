@@ -32,7 +32,11 @@ from engine.company_intelligence.event_workspace import (
     write_workspace_generation,
 )
 from engine.neuralweb import company_intelligence_reader as reader
-from engine.prophet_lab.intelligence_vector import build_earnings_intelligence_vector
+from engine.prophet_lab.intelligence_vector import (
+    IntelligenceVectorContractError,
+    build_earnings_intelligence_vector,
+)
+from engine.us_candidate_episode import episode_id as b1_episode_id
 from lib.dataos.identity import IssuerMaster
 
 BASE = "https://company-intelligence-chain.example/company_intelligence"
@@ -565,14 +569,22 @@ _D5_GENERATION_ID = "peg:" + "e" * 64
 
 
 def _d5_episode(*, cut: str = "2026-01-31T12:00:00Z") -> dict:
+    anchor = {
+        "kind": "reset_low",
+        "time": cut,
+        "price": "100.0000",
+        "basis": "turn_watch.reset_low",
+        "source_receipt": "sha256:" + "f" * 64,
+    }
     return {
         "schema": "prophet.candidate_episode/v1",
-        "episode_id": "pe:SEC:US-XNAS-AAPL:epoch_0:sa:" + "f" * 24 + ":1",
+        "episode_id": b1_episode_id("SEC:US-XNAS-AAPL", "epoch_0", anchor, 1),
         "company_id": "ISS:US:320193",
         "security_id": "SEC:US-XNAS-AAPL",
+        "identity_epoch": "epoch_0",
         "opened_at": cut,
         "opened_session": cut[:10],
-        "structural_anchor": {"time": "2026-01-30T20:00:00Z"},
+        "structural_anchor": anchor,
         "expert_events": ["radar:event:content-addressed-1"],
     }
 
@@ -608,6 +620,38 @@ def _chain_objects(*bundles: tuple[str, dict, dict]) -> dict[str, dict]:
         }
         for generation_id, manifest, workspace in bundles
     }
+
+
+def test_d5_rejects_foreign_body_returned_by_the_real_revision_reader(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requested = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: requested}, generated_at="2026-01-30T20:03:00Z",
+    )
+    foreign = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        event_id="evt_cik9999999999_2026q3_results",
+    )
+    foreign["issuer"]["company_id"] = "cik:9999999999"
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects((generation_id, manifest, foreign)),
+            marker_generation_id=generation_id,
+        ),
+    )
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="owner workspace event binding|resolved CIK",
+    ):
+        _d5_project()
 
 
 def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_lineage(

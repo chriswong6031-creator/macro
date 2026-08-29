@@ -29,7 +29,15 @@ from engine.neuralweb.company_intelligence_reader import (
     find_current_event_id_for_company,
     read_event_source_revisions,
 )
-from lib.dataos.identity import IdentityError as IssuerIdentityError
+from engine.us_candidate_episode import (
+    EpisodeContractError,
+    episode_id as b1_episode_id,
+)
+from lib.dataos.identity import (
+    IdentityError as IssuerIdentityError,
+    parse_id as parse_dataos_id,
+    security_id as dataos_security_id,
+)
 
 
 SCHEMA_INTELLIGENCE_VECTOR = "prophet.intelligence_vector/v1"
@@ -65,7 +73,12 @@ _FORBIDDEN_KEYS = frozenset({
     "private_path", "path", "url", "workspace", "source_span",
 })
 _PEG_RE = re.compile(r"^peg:[0-9a-f]{64}$")
+_B1_EPISODE_ID_RE = re.compile(
+    r"^pe:(?P<security>SEC:[^:]+):(?P<epoch>[^:]+):sa:"
+    r"[0-9a-f]{24}:(?P<generation>[1-9][0-9]*)$"
+)
 _HASH_RE = re.compile(r"^[0-9a-f]{64}$")
+_WORKSPACE_GENERATION_RE = re.compile(r"^[0-9a-f]{24,64}$")
 _EVENT_ID_RE = re.compile(r"^evt_[A-Za-z0-9_.:-]{1,127}$")
 _EVENT_CIK_RE = re.compile(r"^evt_cik(?P<cik>[0-9]{10})_")
 _EARNINGS_COMPANY_ID_RE = re.compile(r"^cik:(?P<cik>[0-9]{10})$")
@@ -73,6 +86,7 @@ _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
 _PATH_RE = re.compile(r"(?<![A-Za-z0-9])/(?:[^\s]+)")
 _NON_HTTP_URI_RE = re.compile(r"\b(?:s3|gs|file|ftp|ssh)://\S+", re.IGNORECASE)
 _ARN_RE = re.compile(r"\barn:[a-z0-9_-]+:[^\s]+", re.IGNORECASE)
+_UNC_PATH_RE = re.compile(r"\\\\[^\s\\]+\\[^\s]+")
 _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s]+")
 _CREDENTIAL_RE = re.compile(
     r"(?:\bbearer(?:\s+|\s*:\s*)|(?<![A-Za-z0-9])[\"']?"
@@ -91,10 +105,29 @@ _OBJECT_ID_RE = re.compile(
     r"disclosure_document_[0-9a-f]{64})$"
 )
 _FIELD_PATH_RE = re.compile(
-    r"^(?:facts|deltas|guidance)\[[0-9]+\]\."
-    r"(?:metric|value|unit|low|high|status|basis_match|"
-    r"current\.(?:value|unit|basis)|(?:prior|consensus)\.(?:schema|state|reason))$"
+    r"^(?:facts\[[0-9]+\]\.(?:metric|value|unit|basis)|"
+    r"guidance\[[0-9]+\]\.(?:metric|low|high|unit|status)|"
+    r"deltas\[[0-9]+\]\.(?:metric|basis_match|current\.(?:value|unit|basis)|"
+    r"(?:prior|consensus)\.(?:schema|state|reason)))$"
 )
+_CLOCK_BASES = {
+    "source_effective_at": frozenset({
+        "earnings_owner_asserts_no_effective_clock_for_results",
+    }),
+    "source_published_at": frozenset({
+        "event_workspace.lifecycle.source_available_at",
+    }),
+    "known_at": frozenset({"event_workspace.lifecycle.observed_at"}),
+    "captured_at": frozenset({
+        "per_source_system_recorded_at_not_exposed_by_revision_receipt",
+    }),
+    "computed_at": frozenset({"event_workspace.generated_at"}),
+    "corrected_at": frozenset({
+        "later_event_workspace.generated_at",
+        "no_later_visible_source_revision",
+    }),
+    "decision_at": frozenset({"prophet.candidate_episode.opened_at"}),
+}
 _GUIDANCE_STATES = frozenset({"introduced", "reiterated", "raised", "cut", "withdrawn", "absent"})
 _DELTA_ABSENCE_REASONS = frozenset({
     "not_available", "consensus_unlicensed", "no_span_addressable_evidence",
@@ -162,6 +195,7 @@ def _sanitize_error_message(message: str) -> str:
     sanitized = _URL_RE.sub("[redacted-url]", sanitized)
     sanitized = _NON_HTTP_URI_RE.sub("[redacted-locator]", sanitized)
     sanitized = _ARN_RE.sub("[redacted-locator]", sanitized)
+    sanitized = _UNC_PATH_RE.sub("[redacted-path]", sanitized)
     sanitized = _WINDOWS_PATH_RE.sub("[redacted-path]", sanitized)
     sanitized = _PATH_RE.sub("[redacted-path]", sanitized)
     sanitized = "".join(character if character.isprintable() else " " for character in sanitized)
@@ -197,6 +231,82 @@ def _bounded_number(
 def _episode_known_at(episode: Mapping[str, Any]) -> str | None:
     value = episode.get("_d5_episode_known_at")
     return str(value) if _parse_time(value) is not None else None
+
+
+def _validate_b1_episode_identity(episode: Mapping[str, Any]) -> None:
+    raw_episode_id = str(episode.get("episode_id") or "")
+    match = _B1_EPISODE_ID_RE.fullmatch(raw_episode_id)
+    if match is None:
+        raise IntelligenceVectorContractError(
+            "episode_id must have canonical B1 candidate-episode shape"
+        )
+    try:
+        expected = b1_episode_id(
+            str(episode.get("security_id") or ""),
+            str(episode.get("identity_epoch") or ""),
+            _as_mapping(episode.get("structural_anchor")),
+            int(match.group("generation")),
+        )
+    except EpisodeContractError as exc:
+        raise IntelligenceVectorContractError(
+            "episode_id must bind canonical B1 security, epoch, and structural anchor"
+        ) from exc
+    if raw_episode_id != expected:
+        raise IntelligenceVectorContractError(
+            "episode_id does not match canonical B1 episode identity"
+        )
+
+
+def _is_canonical_b1_episode_ref_id(value: Any) -> bool:
+    match = _B1_EPISODE_ID_RE.fullmatch(str(value or ""))
+    if match is None:
+        return False
+    try:
+        kind, listing = parse_dataos_id(match.group("security"))
+    except IssuerIdentityError:
+        return False
+    return (
+        kind == "security"
+        and dataos_security_id(listing) == match.group("security")
+    )
+
+
+def _validate_owner_workspace_binding(
+    revision: Mapping[str, Any], *, event_id: str, earnings_company_id: str,
+) -> Mapping[str, Any]:
+    workspace = revision.get("workspace")
+    if not isinstance(workspace, Mapping):
+        raise IntelligenceVectorContractError(
+            "owner workspace binding requires a workspace body"
+        )
+    expected_cik = _EARNINGS_COMPANY_ID_RE.fullmatch(earnings_company_id)
+    requested_event = _EVENT_CIK_RE.match(event_id)
+    workspace_event_id = str(workspace.get("event_id") or "")
+    workspace_event = _EVENT_CIK_RE.match(workspace_event_id)
+    if (
+        expected_cik is None
+        or requested_event is None
+        or workspace_event is None
+        or requested_event.group("cik") != expected_cik.group("cik")
+        or workspace_event.group("cik") != expected_cik.group("cik")
+        or workspace_event_id != event_id
+    ):
+        raise IntelligenceVectorContractError(
+            "owner workspace event binding disagrees with requested event or resolved CIK"
+        )
+    if _as_mapping(workspace.get("issuer")).get("company_id") != earnings_company_id:
+        raise IntelligenceVectorContractError(
+            "owner workspace issuer binding disagrees with resolved CIK"
+        )
+    if (
+        not isinstance(revision.get("generation_id"), str)
+        or _WORKSPACE_GENERATION_RE.fullmatch(revision["generation_id"]) is None
+        or workspace.get("generation_id") != revision.get("generation_id")
+    ):
+        raise IntelligenceVectorContractError(
+            "owner workspace generation binding disagrees with revision receipt"
+        )
+    return workspace
 
 
 def _clock(
@@ -303,16 +413,6 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
         "authority": dict(ALL_FALSE_AUTHORITY),
         "owner_warnings": [],
     }
-
-
-def _mark_owner_subject_unresolved(family: dict[str, Any]) -> None:
-    """Fail closed when no owner event object was available to bind."""
-    family["identity_state"] = "UNRESOLVED"
-    family["subject_binding"].update({
-        "state": "UNRESOLVED",
-        "earnings_company_id": None,
-        "owner_subject_id": None,
-    })
 
 
 def _source_document_id(item: Mapping[str, Any]) -> str | None:
@@ -461,7 +561,8 @@ def _adapted_field_paths(workspace: Mapping[str, Any]) -> dict[str, list[str]]:
     if fact is not None:
         index, _item, document_id = fact
         paths.setdefault(document_id, set()).update({
-            f"facts[{index}].metric", f"facts[{index}].unit", f"facts[{index}].value",
+            f"facts[{index}].metric", f"facts[{index}].unit",
+            f"facts[{index}].value", f"facts[{index}].basis",
         })
     guidance = _accepted_guidance(workspace)
     if guidance is not None:
@@ -770,6 +871,7 @@ def build_earnings_intelligence_vector(
         raise IntelligenceVectorContractError("episode generation must be peg:<64 lowercase hex>")
     if str(episode.get("schema") or "") != "prophet.candidate_episode/v1":
         raise IntelligenceVectorContractError("episode schema mismatch")
+    _validate_b1_episode_identity(episode)
     if _parse_time(episode_known_at) is None:
         raise IntelligenceVectorContractError("episode_known_at must come from the B1 event stream")
     episode = {**episode, "_d5_episode_known_at": episode_known_at}
@@ -777,11 +879,15 @@ def build_earnings_intelligence_vector(
     if cut is None:
         raise IntelligenceVectorContractError("episode opened_at decision cut is missing or invalid")
     known_at = _parse_time(episode_known_at)
-    if known_at is None or known_at > cut:
-        raise IntelligenceVectorContractError("episode known_at cannot follow opened_at")
+    if known_at is None:
+        raise IntelligenceVectorContractError("episode known_at is invalid")
     anchor_time = _parse_time(_as_mapping(episode.get("structural_anchor")).get("time"))
-    if anchor_time is None or anchor_time > cut:
-        raise IntelligenceVectorContractError("episode anchor_time cannot follow opened_at")
+    if anchor_time is None:
+        raise IntelligenceVectorContractError("episode anchor_time is invalid")
+    if cut != max(anchor_time, known_at):
+        raise IntelligenceVectorContractError(
+            "episode opened_at must equal the exact B1 decision cut max(anchor.time, known_at)"
+        )
 
     episode_company_id = str(episode.get("company_id") or "")
     earnings_company_id: str | None = None
@@ -816,7 +922,6 @@ def build_earnings_intelligence_vector(
     try:
         event_id = find_event_id(earnings_company_id)
     except WorkspaceChainIntegrityError as exc:
-        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "UNKNOWN", "basis": "current_manifest_integrity_failure"}
         family["point_in_time"] = _point_in_time(
             episode, decision_admissibility="UNVERIFIABLE",
@@ -839,7 +944,6 @@ def build_earnings_intelligence_vector(
     except WorkspaceChainNotPublished:
         event_id = None
     except CompanyIntelligenceReadError as exc:
-        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "UNKNOWN", "basis": "source_fetch_failed"}
         family["quality"] = {"flags": ["source_unavailable"]}
         family["observations"] = [_absence_observation(reason_ids=["SOURCE_UNAVAILABLE"])]
@@ -849,7 +953,6 @@ def build_earnings_intelligence_vector(
             dependence_groups=[], event_id=None, errors=[error],
         )
     if event_id is None:
-        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "NOT_COVERED", "basis": "no_current_generation_event"}
         family["quality"] = {"flags": ["current_event_not_published"]}
         family["observations"] = [_absence_observation(reason_ids=["NOT_COVERED"])]
@@ -909,7 +1012,13 @@ def build_earnings_intelligence_vector(
     missing: set[str] = set()
     normalized: list[dict[str, Any]] = []
     for revision in revisions:
-        workspace = _as_mapping(revision.get("workspace"))
+        if not isinstance(revision, Mapping):
+            raise IntelligenceVectorContractError(
+                "owner revision receipt must be an object"
+            )
+        workspace = _validate_owner_workspace_binding(
+            revision, event_id=event_id, earnings_company_id=earnings_company_id,
+        )
         clocks = {
             "source_available_at": revision.get("source_available_at"),
             "observed_at": revision.get("observed_at"),
@@ -1042,7 +1151,7 @@ def build_earnings_intelligence_vector(
     )
     if not family["observations"]:
         family["observations"] = [_absence_observation(
-            reason_ids=["SOURCE_UNAVAILABLE"],
+            reason_ids=["UNKNOWN"],
             correction_lineage_state=lineage_state,
         )]
     family["trajectory"] = _trajectory(
@@ -1267,7 +1376,9 @@ def _validate_observation(value: Any) -> None:
         raise IntelligenceVectorContractError("observation_id content address mismatch")
 
 
-def _validate_clock(value: Any, *, name: str) -> None:
+def _validate_clock(
+    value: Any, *, name: str, expected_bases: frozenset[str],
+) -> None:
     item = _require_keys(
         value,
         frozenset({"state", "value", "interval", "precision", "basis", "source_ref_ids"}),
@@ -1275,6 +1386,8 @@ def _validate_clock(value: Any, *, name: str) -> None:
     )
     if item["state"] not in {"ASSERTED", "NOT_ASSERTED", "NOT_APPLICABLE", "UNKNOWN"}:
         raise IntelligenceVectorContractError(f"{name} state invalid")
+    if item["basis"] not in expected_bases:
+        raise IntelligenceVectorContractError(f"{name} clock basis invalid")
     if item["state"] == "ASSERTED" and _parse_time(item["value"]) is None:
         raise IntelligenceVectorContractError(f"{name} asserted without a valid instant")
     if item["state"] != "ASSERTED" and item["value"] is not None:
@@ -1329,8 +1442,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     )
     if episode_ref["schema"] != "prophet.candidate_episode/v1":
         raise IntelligenceVectorContractError("episode_ref schema mismatch")
-    if not str(episode_ref["episode_id"] or "") or not str(episode_ref["identity_ref"] or "").startswith("ISS:"):
-        raise IntelligenceVectorContractError("episode_ref identity is incomplete")
+    if (
+        not _is_canonical_b1_episode_ref_id(episode_ref["episode_id"])
+        or not str(episode_ref["identity_ref"] or "").startswith("ISS:")
+    ):
+        raise IntelligenceVectorContractError(
+            "episode_ref requires canonical B1 episode_id and issuer identity"
+        )
     if not _PEG_RE.fullmatch(str(episode_ref["generation_id"] or "")):
         raise IntelligenceVectorContractError("episode_ref generation invalid")
     if item["adapter_set_version"] != ADAPTER_SET_VERSION:
@@ -1354,10 +1472,10 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     anchor_time = _parse_time(decision_cut["anchor_time"])
     if opened_at is None or known_at is None or anchor_time is None:
         raise IntelligenceVectorContractError("decision cut timestamps are invalid")
-    if known_at > opened_at:
-        raise IntelligenceVectorContractError("decision known_at cannot follow opened_at")
-    if anchor_time > opened_at:
-        raise IntelligenceVectorContractError("decision anchor_time cannot follow opened_at")
+    if opened_at != max(anchor_time, known_at):
+        raise IntelligenceVectorContractError(
+            "opened_at must equal the exact B1 decision cut max(anchor.time, known_at)"
+        )
     if decision_cut["opened_session"] != str(decision_cut["opened_at"])[:10]:
         raise IntelligenceVectorContractError("opened_session does not match opened_at")
     if item["authority"] != ALL_FALSE_AUTHORITY:
@@ -1402,8 +1520,11 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError(
                 "resolved subject binding requires canonical ten-digit CIK"
             )
-        event_match = _EVENT_CIK_RE.match(str(owner_subject_id or ""))
-        if (
+        event_match = (
+            _EVENT_CIK_RE.match(str(owner_subject_id))
+            if owner_subject_id is not None else None
+        )
+        if owner_subject_id is not None and (
             event_match is None
             or event_match.group("cik") != earnings_match.group("cik")
         ):
@@ -1437,7 +1558,11 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         "source_effective_at", "source_published_at", "known_at", "captured_at",
         "computed_at", "corrected_at", "decision_at",
     ):
-        _validate_clock(point_in_time[clock_name], name=f"family.point_in_time.{clock_name}")
+        _validate_clock(
+            point_in_time[clock_name],
+            name=f"family.point_in_time.{clock_name}",
+            expected_bases=_CLOCK_BASES[clock_name],
+        )
     if (
         not isinstance(point_in_time["missing_clocks"], list)
         or point_in_time["missing_clocks"] != sorted(set(point_in_time["missing_clocks"]))
@@ -1474,6 +1599,15 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     coverage = _require_keys(family["coverage"], frozenset({"state", "basis"}), name="coverage")
     if coverage["state"] not in {"COVERED", "PARTIAL", "NOT_COVERED", "UNKNOWN"}:
         raise IntelligenceVectorContractError("coverage state invalid")
+    if family["identity_state"] == "RESOLVED" and owner_subject_id is None:
+        if coverage not in (
+            {"state": "NOT_COVERED", "basis": "no_current_generation_event"},
+            {"state": "UNKNOWN", "basis": "current_manifest_integrity_failure"},
+            {"state": "UNKNOWN", "basis": "source_fetch_failed"},
+        ):
+            raise IntelligenceVectorContractError(
+                "resolved binding without an owner event requires a coherent not-covered or read-failure outcome"
+            )
     freshness = _require_keys(family["freshness"], frozenset({"state", "basis"}), name="freshness")
     if freshness != {"state": "UNKNOWN", "basis": "owner_has_no_staleness_clock"}:
         raise IntelligenceVectorContractError("freshness requires owner-native clock evidence")
@@ -1696,6 +1830,37 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "assembly receipt errors must be canonical and unique"
         )
+    absence_reasons = {
+        reason
+        for observation in family["observations"]
+        for reason in observation["absence_reasons"]
+    }
+    expected_error_types: set[str] = set()
+    if absence_reasons & {"UNESTIMABLE", "CORRECTION_PENDING"}:
+        expected_error_types.add("WorkspaceChainIntegrityError")
+    if "SOURCE_UNAVAILABLE" in absence_reasons:
+        expected_error_types.add("CompanyIntelligenceReadError")
+    actual_error_types = {error["type"] for error in receipt["errors"]}
+    if (
+        actual_error_types != expected_error_types
+        or len(receipt["errors"]) != len(expected_error_types)
+    ):
+        raise IntelligenceVectorContractError(
+            "assembly error receipt does not match the serialized absence outcome"
+        )
+    if "CompanyIntelligenceReadError" in expected_error_types and coverage != {
+        "state": "UNKNOWN", "basis": "source_fetch_failed",
+    }:
+        raise IntelligenceVectorContractError(
+            "source error receipt requires the source-fetch-failed coverage outcome"
+        )
+    if "WorkspaceChainIntegrityError" in expected_error_types and coverage not in (
+        {"state": "UNKNOWN", "basis": "current_manifest_integrity_failure"},
+        {"state": "UNKNOWN", "basis": "correction_chain_integrity"},
+    ):
+        raise IntelligenceVectorContractError(
+            "integrity error receipt requires an integrity-failure coverage outcome"
+        )
 
     source_ref_ids = {ref["source_ref_id"] for ref in family["source_refs"]}
     root_ids = {root["evidence_root_id"] for root in family["evidence_roots"]}
@@ -1778,6 +1943,29 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                     or not any(path.startswith(prefix) for path in source_ref["field_paths"])
                 ):
                     raise IntelligenceVectorContractError("observation source lineage is not exact")
+                if prefix == "facts[":
+                    fact_paths = {
+                        path for path in source_ref["field_paths"]
+                        if path.startswith("facts[")
+                    }
+                    fact_indices = {
+                        path.split("[", 1)[1].split("]", 1)[0]
+                        for path in fact_paths
+                    }
+                    if len(fact_indices) != 1:
+                        raise IntelligenceVectorContractError(
+                            "fact observation source lineage is not exact"
+                        )
+                    fact_index = next(iter(fact_indices))
+                    if fact_paths != {
+                        f"facts[{fact_index}].basis",
+                        f"facts[{fact_index}].metric",
+                        f"facts[{fact_index}].unit",
+                        f"facts[{fact_index}].value",
+                    }:
+                        raise IntelligenceVectorContractError(
+                            "fact basis must participate in exact source lineage"
+                        )
     present_observations = [
         observation for observation in family["observations"]
         if observation["value_state"] == "PRESENT"
@@ -1793,6 +1981,18 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     ):
         raise IntelligenceVectorContractError(
             "unresolved identity cannot carry owner evidence"
+        )
+    if owner_subject_id is None and (
+        family["source_refs"]
+        or family["evidence_roots"]
+        or present_observations
+        or trajectory["dimensions"]
+        or correction["decision_version_ref_ids"]
+        or correction["later_correction_ref_ids"]
+        or item["economic_dependence_groups"]
+    ):
+        raise IntelligenceVectorContractError(
+            "binding without an owner event cannot carry owner evidence"
         )
     for dimension in trajectory["dimensions"]:
         if not set(dimension["reference_observation_ids"]).issubset(observation_ids):
@@ -1814,18 +2014,16 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError("dependence group references unknown observations")
         if not set(group["basis_refs"]).issubset(root_ids):
             raise IntelligenceVectorContractError("dependence group references unknown roots")
-    integrity_reasons = {
-        reason
-        for observation in family["observations"]
-        for reason in observation["absence_reasons"]
-        if reason in {"UNESTIMABLE", "CORRECTION_PENDING"}
-    }
-    integrity_errors = [
-        error for error in receipt["errors"]
-        if error["type"] == "WorkspaceChainIntegrityError"
-    ]
-    if integrity_reasons and not integrity_errors:
-        raise IntelligenceVectorContractError("integrity absence requires integrity receipt")
+        symmetric_members = {
+            observation["observation_id"]
+            for observation in family["observations"]
+            if group["dependence_group_id"]
+            in observation["economic_dependence_group_ids"]
+        }
+        if set(group["member_observation_refs"]) != symmetric_members:
+            raise IntelligenceVectorContractError(
+                "economic dependence membership must be symmetric"
+            )
 
     family_semantic = {key: deepcopy(value) for key, value in family.items() if key != "family_projection_id"}
     if family["family_projection_id"] != _content_id("pif", family_semantic):
