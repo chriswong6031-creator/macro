@@ -70,7 +70,6 @@ owns_paths:
   - research/PREREG_P0C1_*.md
 discoveries:
   - DSC:NO-QLEDGER-CLAIM-EVER-CARRIED-A-CONTROL-LEG
-  - DSC:E1-STOCK-CLOCK-PROVEN-THEMATIC-STILL-NO-CLAIM
 landmines:
   - "engine/source_registry.py keeps its OWN _add_trading_days NYSE walker and grades narrative_source_call through its own exit. 'ONE resolver' is true only for claims that grade through qledger; do not overstate qledger scope."
   - "Current production track_record contains explicit and legacy bases and refuses pooling; future consumers must preserve this rather than reconstructing family statistics from raw mixed rows."
