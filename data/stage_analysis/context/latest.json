@@ -2,7 +2,7 @@
   "schema": "stage_context.v1",
   "asof": "2026-08-29",
   "data_session": "2026-08-27",
-  "built": "2026-08-29T08:36:21Z",
+  "built": "2026-08-29T11:48:40Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -76,6 +76,52 @@
     "spy_weeks": 17
   },
   "top_stage2": [
+    {
+      "ticker": "ITIC",
+      "company": "Investors Title Co",
+      "sector": "Financial",
+      "stage_source_asof": "2026-08-27",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 82,
+      "ma30_slope_pct5w": 2.546,
+      "pct_vs_ma30": 14.96,
+      "mansfield_rs": 4.34,
+      "vol_ratio": 2.04,
+      "event": "pullback_resume",
+      "gate_tier": "T1",
+      "blackout": false,
+      "arc_pos": 0.325,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 15.7055,
+      "atr_ext": 2.397,
+      "atr_pct_price": 0.0543,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": null
+    },
     {
       "ticker": "HOG",
       "company": "Harley-Davidson",
@@ -248,50 +294,6 @@
       "sata_score": 5,
       "sata_change_1w": 1,
       "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
-    },
-    {
-      "ticker": "ITIC",
-      "company": "Investors Title Co",
-      "sector": "Financial",
-      "stage_source_asof": "2026-08-27",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 6,
-      "fresh": true,
-      "sga_score": 57,
-      "ma30_slope_pct5w": 2.546,
-      "pct_vs_ma30": 14.96,
-      "mansfield_rs": 4.34,
-      "vol_ratio": 2.04,
-      "event": "pullback_resume",
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.325,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好"
-      ],
-      "atr_14w": 15.7055,
-      "atr_ext": 2.397,
-      "atr_pct_price": 0.0543,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2D_extended_run",
       "industry_percentile": null
     },
     {
@@ -3009,12 +3011,6 @@
   ],
   "warnings_stage3": [
     {
-      "ticker": "DSP",
-      "company": "Viant Technology Inc",
-      "weeks_in_stage": 4,
-      "sga_score": 43
-    },
-    {
       "ticker": "YUM",
       "company": "Yum! Brands",
       "weeks_in_stage": 5,
@@ -3045,6 +3041,12 @@
       "sga_score": 25
     },
     {
+      "ticker": "PLUG",
+      "company": "Plug Power Inc",
+      "weeks_in_stage": 4,
+      "sga_score": 25
+    },
+    {
       "ticker": "WH",
       "company": "Wyndham Hotels & Resorts",
       "weeks_in_stage": 4,
@@ -3055,6 +3057,12 @@
       "company": "Opko Health Inc",
       "weeks_in_stage": 5,
       "sga_score": 23
+    },
+    {
+      "ticker": "DSP",
+      "company": "Viant Technology Inc",
+      "weeks_in_stage": 4,
+      "sga_score": 18
     },
     {
       "ticker": "EPM",
@@ -3121,12 +3129,6 @@
       "company": "UMH Properties Inc",
       "weeks_in_stage": 8,
       "sga_score": 13
-    },
-    {
-      "ticker": "AUPH",
-      "company": "Aurinia Pharmaceuticals Inc",
-      "weeks_in_stage": 7,
-      "sga_score": 12
     }
   ],
   "sectors": [
