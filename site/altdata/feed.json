@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-28T07:43:57.193267+00:00",
+  "generated_utc": "2026-08-28T20:28:21.627889+00:00",
   "as_of": "2026-08-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2890,7 +2890,7 @@
       "emoji": "\ud83c\udfe6",
       "label_en": "13F position changes",
       "label_zh": "13F\u6301\u4ed3\u53d8\u5316",
-      "rows": 325505,
+      "rows": 325506,
       "last_seen": "2026-08-27",
       "recent": [
         {
@@ -4467,9 +4467,36 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 2093,
+      "rows": 2096,
       "last_seen": "2026-08-28",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Heartflow+FFRCT+Analysis+Cuts+Unnecessary+Invasive+Heart+Procedures+by+44%25+in+FUSION+Trial",
+          "time": "2026-08-28 06:50:21",
+          "headline": "Heartflow FFRCT Analysis Cuts Unnecessary Invasive Heart Procedures by 44% in FUSION Trial",
+          "category": "press_release_summary",
+          "summary": "<p>Heartflow's FUSION trial shows a 44% reduction in unnecessary invasive heart procedures using FFRCT analysis alongside standard imaging.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Heartflow, Inc. annou\u2026",
+          "image": "https://www.quiverquant.com/images/htfl_rect_new.png",
+          "_first_seen": "2026-08-28T08:20:58.584088+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Micware+Finalizes+Subsidiary+Reorganization+and+New+Management+Structure+to+Advance+DynaPlanet+and+micAuto-PF",
+          "time": "2026-08-28 06:40:18",
+          "headline": "Micware Finalizes Subsidiary Reorganization and New Management Structure to Advance DynaPlanet and micAuto-PF",
+          "category": "press_release_summary",
+          "summary": "<p>Micware announces finalization of business reorganization and management changes effective September 1, 2026, enhancing operational efficiency.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Micware Co., L\u2026",
+          "image": "https://www.quiverquant.com/images/mwc_rect_new.png",
+          "_first_seen": "2026-08-28T08:20:58.584088+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Juan+Vargas+Condemns+Hasan+Piker%E2%80%99s+Comments+on+Violence+Against+Jews",
+          "time": "2026-08-28 06:20:07",
+          "headline": "Press Release: Rep. Juan Vargas Condemns Hasan Piker\u2019s Comments on Violence Against Jews",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Vargas condemned Hasan Piker\u2019s remarks, calling them unacceptable amid rising antisemitism and political violence.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241)\u2026",
+          "image": "https://www.quiverquant.com/images/V000130_congress.png",
+          "_first_seen": "2026-08-28T08:20:58.584088+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Tim+Moore+Announces+%243.8+Million+in+FEMA+Funding+for+Helene+Recovery+in+Western+North+Carolina",
           "time": "2026-08-28 00:20:21",
@@ -4498,12 +4525,12 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Scott+Peters+Convenes+Child+Welfare+Roundtable+on+Trump+Administration+Changes",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Deluzio%2C+Finstad+Reintroduce+Water+Authority+Cybersecurity+Bill",
           "time": "2026-08-27 22:20:29",
-          "headline": "Press Release: Rep. Scott Peters Convenes Child Welfare Roundtable on Trump Administration Changes",
+          "headline": "Press Release: Deluzio, Finstad Reintroduce Water Authority Cybersecurity Bill",
           "category": "legislation_automated",
-          "summary": "<p>Rep. Peters held a press event with providers criticizing federal changes to Head Start and childhood vaccine guidance.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241)\u2026",
-          "image": "https://www.quiverquant.com/images/P000608_congress.png",
+          "summary": "<p>Bipartisan lawmakers reintroduced a bill to expand funding and technical assistance for water-system cybersecurity.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">B\u2026",
+          "image": "https://www.quiverquant.com/images/D000530_congress.png",
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
@@ -4516,6 +4543,15 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Adams%2C+Watson+Coleman+Introduce+Black+Breastfeeding+Week+Resolution",
+          "time": "2026-08-27 22:20:29",
+          "headline": "Press Release: Adams, Watson Coleman Introduce Black Breastfeeding Week Resolution",
+          "category": "legislation_automated",
+          "summary": "<p>Two lawmakers introduced a resolution recognizing Black Breastfeeding Week and highlighting racial disparities in maternal and infant health.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"c\u2026",
+          "image": "https://www.quiverquant.com/images/A000370_congress.png",
+          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Subramanyam+and+Nunn+Introduce+Bill+to+Update+Reserve+Organization+Charter",
           "time": "2026-08-27 22:20:29",
           "headline": "Press Release: Subramanyam and Nunn Introduce Bill to Update Reserve Organization Charter",
@@ -4525,30 +4561,21 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Scott+Peters+Convenes+Child+Welfare+Roundtable+on+Trump+Administration+Changes",
+          "time": "2026-08-27 22:20:29",
+          "headline": "Press Release: Rep. Scott Peters Convenes Child Welfare Roundtable on Trump Administration Changes",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Peters held a press event with providers criticizing federal changes to Head Start and childhood vaccine guidance.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241)\u2026",
+          "image": "https://www.quiverquant.com/images/P000608_congress.png",
+          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Lauren+Underwood+opposes+DHS+plan+to+buy+electric+shock+gloves+for+ICE",
           "time": "2026-08-27 22:20:29",
           "headline": "Press Release: Lauren Underwood opposes DHS plan to buy electric shock gloves for ICE",
           "category": "legislation_automated",
           "summary": "<p>Underwood criticized DHS\u2019s reported plan to buy ICE electric shock gloves, citing safety, accountability, and cost concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
           "image": "https://www.quiverquant.com/images/U000040_congress.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Deluzio%2C+Finstad+Reintroduce+Water+Authority+Cybersecurity+Bill",
-          "time": "2026-08-27 22:20:29",
-          "headline": "Press Release: Deluzio, Finstad Reintroduce Water Authority Cybersecurity Bill",
-          "category": "legislation_automated",
-          "summary": "<p>Bipartisan lawmakers reintroduced a bill to expand funding and technical assistance for water-system cybersecurity.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">B\u2026",
-          "image": "https://www.quiverquant.com/images/D000530_congress.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Adams%2C+Watson+Coleman+Introduce+Black+Breastfeeding+Week+Resolution",
-          "time": "2026-08-27 22:20:29",
-          "headline": "Press Release: Adams, Watson Coleman Introduce Black Breastfeeding Week Resolution",
-          "category": "legislation_automated",
-          "summary": "<p>Two lawmakers introduced a resolution recognizing Black Breastfeeding Week and highlighting racial disparities in maternal and infant health.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"c\u2026",
-          "image": "https://www.quiverquant.com/images/A000370_congress.png",
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
@@ -4597,6 +4624,15 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Procore+Technologies+Gains+as+Investors+Continue+to+Reward+Strong+Q2+Execution+and+AI+Expansion",
+          "time": "2026-08-27 21:21:49",
+          "headline": "Procore Technologies Gains as Investors Continue to Reward Strong Q2 Execution and AI Expansion",
+          "category": "prices_automated",
+          "summary": "<p>Procore Technologies (PCOR) is up 5.4% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears tied to continued optimism around Procore\u2019s stron\u2026",
+          "image": "https://www.quiverquant.com/images/pcor_rect_new.png",
+          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Fox+Corporation+Slides+as+Roku+Deal+Overhang+and+Slower+Growth+Concerns+Weigh",
           "time": "2026-08-27 21:21:49",
           "headline": "Fox Corporation Slides as Roku Deal Overhang and Slower Growth Concerns Weigh",
@@ -4606,12 +4642,12 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Procore+Technologies+Gains+as+Investors+Continue+to+Reward+Strong+Q2+Execution+and+AI+Expansion",
+          "url": "https://www.quiverquant.com/news/Guidewire+Software+gains+as+analyst+target+hike+and+upbeat+growth+expectations+lift+sentiment",
           "time": "2026-08-27 21:21:49",
-          "headline": "Procore Technologies Gains as Investors Continue to Reward Strong Q2 Execution and AI Expansion",
+          "headline": "Guidewire Software gains as analyst target hike and upbeat growth expectations lift sentiment",
           "category": "prices_automated",
-          "summary": "<p>Procore Technologies (PCOR) is up 5.4% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears tied to continued optimism around Procore\u2019s stron\u2026",
-          "image": "https://www.quiverquant.com/images/pcor_rect_new.png",
+          "summary": "<p>Guidewire Software (GWRE) is up 5.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a fresh analyst price-target in\u2026",
+          "image": "https://www.quiverquant.com/images/gwre_rect_new.png",
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
@@ -4651,48 +4687,12 @@
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Guidewire+Software+gains+as+analyst+target+hike+and+upbeat+growth+expectations+lift+sentiment",
-          "time": "2026-08-27 21:21:49",
-          "headline": "Guidewire Software gains as analyst target hike and upbeat growth expectations lift sentiment",
-          "category": "prices_automated",
-          "summary": "<p>Guidewire Software (GWRE) is up 5.2% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver appears to be a fresh analyst price-target in\u2026",
-          "image": "https://www.quiverquant.com/images/gwre_rect_new.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/GitLab+rises+as+analyst+target+hikes+and+AI+momentum+build+ahead+of+earnings",
-          "time": "2026-08-27 21:21:49",
-          "headline": "GitLab rises as analyst target hikes and AI momentum build ahead of earnings",
-          "category": "prices_automated",
-          "summary": "<p>GitLab Inc. (GTLB) is up 7.5% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears tied to a fresh analyst price-target increase, improving c\u2026",
-          "image": "https://www.quiverquant.com/images/gtlb_rect_new.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Samsara+shares+climb+as+investors+weigh+product+momentum+and+upbeat+growth+signals",
-          "time": "2026-08-27 21:21:49",
-          "headline": "Samsara shares climb as investors weigh product momentum and upbeat growth signals",
-          "category": "prices_automated",
-          "summary": "<p>Samsara (IOT) is up 5.1% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The move appears tied to a mix of recent business momentum, fresh product launch\u2026",
-          "image": "https://www.quiverquant.com/images/iot_rect_new.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Domino%27s+Pizza+Slides+as+Soft+Same-Store+Sales+and+a+Recent+Downgrade+Weigh+on+Shares",
           "time": "2026-08-27 21:21:49",
           "headline": "Domino's Pizza Slides as Soft Same-Store Sales and a Recent Downgrade Weigh on Shares",
           "category": "prices_automated",
           "summary": "<p>Domino's Pizza (DPZ) is down 3.6% today. Here is some analysis on what might have caused this price movement.</p><p><strong>Analysis:</strong> The most likely driver is a mix of lingering concern over soft underlyi\u2026",
           "image": "https://www.quiverquant.com/images/dpz_rect_new.png",
-          "_first_seen": "2026-08-28T03:12:24.873622+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Koss+Corporation+Reports+Fourth+Quarter+and+Fiscal+2026+Results%3B+Sales+Rise+and+Full-Year+Loss+Narrows",
-          "time": "2026-08-27 21:20:18",
-          "headline": "Koss Corporation Reports Fourth Quarter and Fiscal 2026 Results; Sales Rise and Full-Year Loss Narrows",
-          "category": "press_release_summary",
-          "summary": "<p>Koss Corporation reports increased fourth-quarter sales and net income, driven by direct-to-consumer growth and tariff refunds.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Koss Corporation has announced\u2026",
-          "image": "https://www.quiverquant.com/images/koss_rect_new.png",
           "_first_seen": "2026-08-28T03:12:24.873622+00:00"
         }
       ]
@@ -5478,21 +5478,161 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 279897,
+      "rows": 279953,
       "last_seen": "2026-08-28",
       "recent": [
         {
           "ticker": "CTSH",
-          "owner_name": "State of Tennessee, Department of Treasury",
+          "owner_name": "JONES FINANCIAL COMPANIES LLLP",
           "owner_title": "Institution",
-          "shares": "166156",
+          "shares": "249752",
           "_collected": "2026-08-28"
         },
         {
           "ticker": "AMD",
-          "owner_name": "SEI INVESTMENTS CO",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
           "owner_title": "Institution",
-          "shares": "1280571",
+          "shares": "1020521",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "US BANCORP \\DE\\",
+          "owner_title": "Institution",
+          "shares": "1107002",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Robeco Institutional Asset Management B.V.",
+          "owner_title": "Institution",
+          "shares": "1093161",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "FIRST TRUST ADVISORS LP",
+          "owner_title": "Institution",
+          "shares": "1090409",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Capital Research Global Investors",
+          "owner_title": "Institution",
+          "shares": "1084575",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "CI INVESTMENTS INC.",
+          "owner_title": "Institution",
+          "shares": "1065164",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "KBC Group NV",
+          "owner_title": "Institution",
+          "shares": "1057142",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Squarepoint Ops LLC",
+          "owner_title": "Institution",
+          "shares": "1023051",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "HRT FINANCIAL LP",
+          "owner_title": "Institution",
+          "shares": "1013100",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "PUBLIC EMPLOYEES RETIREMENT ASSOCIATION OF COLORADO",
+          "owner_title": "Institution",
+          "shares": "959849",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "AGF MANAGEMENT LTD",
+          "owner_title": "Institution",
+          "shares": "1013047",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Handelsbanken Fonder AB",
+          "owner_title": "Institution",
+          "shares": "1000860",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "PFA Pension, Forsikringsaktieselskab",
+          "owner_title": "Institution",
+          "shares": "999509",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Quantinno Capital Management LP",
+          "owner_title": "Institution",
+          "shares": "984882",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
+          "owner_title": "Institution",
+          "shares": "976833",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "ACADIAN ASSET MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "967628",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "PANAGORA ASSET MANAGEMENT INC",
+          "owner_title": "Institution",
+          "shares": "965681",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "CANTOR FITZGERALD, L. P.",
+          "owner_title": "Institution",
+          "shares": "1114253",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Tidal Investments LLC",
+          "owner_title": "Institution",
+          "shares": "1155920",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "DANSKE BANK A/S",
+          "owner_title": "Institution",
+          "shares": "1156291",
+          "_collected": "2026-08-28"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Korea Investment CORP",
+          "owner_title": "Institution",
+          "shares": "1156752",
           "_collected": "2026-08-28"
         },
         {
@@ -5514,146 +5654,6 @@
           "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
           "owner_title": "Institution",
           "shares": "1325594",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
-          "owner_title": "Institution",
-          "shares": "1316311",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Capital World Investors",
-          "owner_title": "Institution",
-          "shares": "1301143",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CIBC Bancorp USA Inc.",
-          "owner_title": "Institution",
-          "shares": "1294192",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "W1M Asset Management Ltd",
-          "owner_title": "Institution",
-          "shares": "1282430",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "PRUDENTIAL FINANCIAL INC",
-          "owner_title": "Institution",
-          "shares": "1276465",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Tidal Investments LLC",
-          "owner_title": "Institution",
-          "shares": "1155920",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "1258935",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "COATUE MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "1239043",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NEOS Investment Management LLC",
-          "owner_title": "Institution",
-          "shares": "1237396",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Raymond James Financial Services Advisors, Inc.",
-          "owner_title": "Institution",
-          "shares": "1230972",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "BESSEMER GROUP INC",
-          "owner_title": "Institution",
-          "shares": "1191421",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Eurizon Capital SGR S.p.A.",
-          "owner_title": "Institution",
-          "shares": "1187497",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Korea Investment CORP",
-          "owner_title": "Institution",
-          "shares": "1156752",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "TWO SIGMA INVESTMENTS, LP",
-          "owner_title": "Institution",
-          "shares": "1372004",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
-          "owner_title": "Institution",
-          "shares": "1390861",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "1407261",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Point72 Asset Management, L.P.",
-          "owner_title": "Institution",
-          "shares": "1414656",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Waverton Investment Management Ltd",
-          "owner_title": "Institution",
-          "shares": "1736942",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Hudson Bay Capital Management LP",
-          "owner_title": "Institution",
-          "shares": "1622810",
-          "_collected": "2026-08-28"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NATIONAL BANK OF CANADA /FI/",
-          "owner_title": "Institution",
-          "shares": "1607891",
           "_collected": "2026-08-28"
         }
       ]
@@ -6399,48 +6399,48 @@
     "hf": [
       {
         "ticker": "MSFT",
-        "downloads_30d": 32338306.0,
-        "wow_pct": -3.5
+        "downloads_30d": 31207343.0,
+        "wow_pct": -6.9
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 193581257.0,
-        "wow_pct": -6.5
-      },
-      {
-        "ticker": "CRM",
-        "downloads_30d": 5130052.0,
-        "wow_pct": -7.1
-      },
-      {
-        "ticker": "AAPL",
-        "downloads_30d": 2254858.0,
-        "wow_pct": -7.3
-      },
-      {
-        "ticker": "META",
-        "downloads_30d": 85116805.0,
-        "wow_pct": -7.7
-      },
-      {
-        "ticker": "NVDA",
-        "downloads_30d": 36510807.0,
+        "downloads_30d": 190616554.0,
         "wow_pct": -7.9
       },
       {
-        "ticker": "IBM",
-        "downloads_30d": 11912395.0,
-        "wow_pct": -9.0
+        "ticker": "NVDA",
+        "downloads_30d": 36369003.0,
+        "wow_pct": -8.3
       },
       {
-        "ticker": "GOOGL",
-        "downloads_30d": 239030039.0,
-        "wow_pct": -9.6
+        "ticker": "IBM",
+        "downloads_30d": 11776542.0,
+        "wow_pct": -10.0
+      },
+      {
+        "ticker": "AAPL",
+        "downloads_30d": 2158774.0,
+        "wow_pct": -11.3
+      },
+      {
+        "ticker": "META",
+        "downloads_30d": 81069004.0,
+        "wow_pct": -12.1
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 43167656.0,
-        "wow_pct": -12.0
+        "downloads_30d": 42817844.0,
+        "wow_pct": -12.7
+      },
+      {
+        "ticker": "CRM",
+        "downloads_30d": 4799869.0,
+        "wow_pct": -13.1
+      },
+      {
+        "ticker": "GOOGL",
+        "downloads_30d": 229286913.0,
+        "wow_pct": -13.2
       }
     ],
     "material_8k": [
@@ -8245,14 +8245,6 @@
       },
       {
         "ticker": "MQG",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
-        "ticker": "MGN",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -12597,11 +12589,11 @@
       },
       {
         "ticker": "CPAC",
-        "category": "Tender Offers",
+        "category": "Acquisitions",
         "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Tender Offers"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "DAWN",
@@ -15804,6 +15796,14 @@
         "detail": "M&A / Divestitures"
       },
       {
+        "ticker": "EZRA",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
+      },
+      {
         "ticker": "HEAL",
         "category": "M&A / Divestitures",
         "confidence": "high",
@@ -17516,12 +17516,28 @@
         "detail": "Strategic Reviews"
       },
       {
+        "ticker": "BWLP",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "ISOU",
         "category": "Spin-Offs",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "SOLS",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
       },
       {
         "ticker": "ZENA",
@@ -18284,6 +18300,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "VREOF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "MCFN",
         "category": "Acquisitions",
         "confidence": "high",
@@ -18690,6 +18714,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "WDC",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "YHNAU",
@@ -19492,6 +19524,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BNS",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "FNWD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -20212,6 +20252,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "VNCE",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "ERNAW",
         "category": "Delistings",
         "confidence": "high",
@@ -20764,6 +20812,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ENGS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "JXG",
         "category": "Acquisitions",
         "confidence": "high",
@@ -20906,6 +20962,14 @@
         "activist": true,
         "filer": null,
         "detail": "Activist Campaigns"
+      },
+      {
+        "ticker": "NFGC",
+        "category": "Delistings",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "PERFF",
@@ -24052,6 +24116,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "NYAX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "HROW",
         "category": "Acquisitions",
         "confidence": "high",
@@ -24269,11 +24341,11 @@
       },
       {
         "ticker": "WKSP",
-        "category": "Delistings",
+        "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "DRMAW",
@@ -24298,6 +24370,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "WATR",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SORA",
@@ -24564,6 +24644,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "VCTR",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "JGH",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -24586,6 +24674,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "VEL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       }
     ],
     "unusual_options": [
@@ -24788,7 +24884,7 @@
         "ticker": "MA",
         "net_up_30d": 32,
         "breadth": 0.94,
-        "est_chg_30d": 1.05,
+        "est_chg_30d": 1.03,
         "n_analysts": 34,
         "bull_ratio": 0.97,
         "rising": true,
@@ -25685,50 +25781,50 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 18346,
-        "wow_pct": 0.8,
+        "stars": 18347,
+        "wow_pct": 0.81,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 15406,
+        "stars": 15407,
         "wow_pct": 0.5,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7753,
-        "wow_pct": 0.35,
+        "stars": 7754,
+        "wow_pct": 0.36,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 189720,
-        "wow_pct": 0.32,
+        "stars": 189743,
+        "wow_pct": 0.33,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 197744,
-        "wow_pct": 0.27,
+        "stars": 197756,
+        "wow_pct": 0.28,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 247990,
+        "stars": 247993,
         "wow_pct": 0.2,
+        "hot": true
+      },
+      {
+        "ticker": "DDOG",
+        "stars": 3714,
+        "wow_pct": 0.11,
         "hot": true
       },
       {
         "ticker": "TWLO",
         "stars": 2077,
         "wow_pct": 0.1,
-        "hot": true
-      },
-      {
-        "ticker": "DDOG",
-        "stars": 3713,
-        "wow_pct": 0.08,
         "hot": false
       },
       {
@@ -25738,8 +25834,14 @@
         "hot": false
       },
       {
+        "ticker": "U",
+        "stars": 19651,
+        "wow_pct": 0.04,
+        "hot": false
+      },
+      {
         "ticker": "ESTC",
-        "stars": 77873,
+        "stars": 77872,
         "wow_pct": 0.03,
         "hot": false
       },
@@ -25750,21 +25852,15 @@
         "hot": false
       },
       {
-        "ticker": "U",
-        "stars": 19650,
-        "wow_pct": 0.03,
-        "hot": false
-      },
-      {
         "ticker": "GTLB",
-        "stars": 24542,
+        "stars": 24543,
         "wow_pct": 0.02,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "stars": 11261,
-        "wow_pct": 0.0,
+        "stars": 11262,
+        "wow_pct": 0.01,
         "hot": false
       },
       {
@@ -27306,14 +27402,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -28982,13 +29078,6 @@
         "last_surprise_pct": 42.9
       },
       {
-        "ticker": "ASO",
-        "next_date": "2026-09-01",
-        "days_to": 4,
-        "eps_forecast": 2.07,
-        "last_surprise_pct": -3.6
-      },
-      {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
         "days_to": 4,
@@ -28999,7 +29088,7 @@
         "ticker": "DELL",
         "next_date": "2026-09-01",
         "days_to": 4,
-        "eps_forecast": 4.63,
+        "eps_forecast": 4.72,
         "last_surprise_pct": 66.0
       },
       {
@@ -29024,10 +29113,17 @@
         "last_surprise_pct": 7.4
       },
       {
+        "ticker": "GIII",
+        "next_date": "2026-09-02",
+        "days_to": 5,
+        "eps_forecast": 0.25,
+        "last_surprise_pct": 30.0
+      },
+      {
         "ticker": "HPE",
         "next_date": "2026-09-02",
         "days_to": 5,
-        "eps_forecast": 0.81,
+        "eps_forecast": 0.82,
         "last_surprise_pct": 52.3
       },
       {
@@ -29052,13 +29148,6 @@
         "last_surprise_pct": 18.4
       },
       {
-        "ticker": "GIII",
-        "next_date": "2026-09-03",
-        "days_to": 6,
-        "eps_forecast": 0.25,
-        "last_surprise_pct": 30.0
-      },
-      {
         "ticker": "PATH",
         "next_date": "2026-09-03",
         "days_to": 6,
@@ -29080,6 +29169,13 @@
         "last_surprise_pct": 13.3
       },
       {
+        "ticker": "ASO",
+        "next_date": "2026-09-09",
+        "days_to": 12,
+        "eps_forecast": 2.07,
+        "last_surprise_pct": -3.6
+      },
+      {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
         "days_to": 13,
@@ -29092,13 +29188,6 @@
         "days_to": 13,
         "eps_forecast": null,
         "last_surprise_pct": null
-      },
-      {
-        "ticker": "GIS",
-        "next_date": "2026-09-16",
-        "days_to": 19,
-        "eps_forecast": 0.73,
-        "last_surprise_pct": 15.8
       },
       {
         "ticker": "FDS",
@@ -29332,7 +29421,7 @@
           "github_momentum",
           "patent_cluster"
         ],
-        "why": "app_demand: 4.77\u2605 \u00d7 20,022,156 reviews \u00b7 github_momentum: +0.32% stars \u00b7 patent_cluster: 362 grants, 42 IPC classes"
+        "why": "app_demand: 4.77\u2605 \u00d7 20,022,156 reviews \u00b7 github_momentum: +0.33% stars \u00b7 patent_cluster: 362 grants, 42 IPC classes"
       },
       {
         "ticker": "ACM",

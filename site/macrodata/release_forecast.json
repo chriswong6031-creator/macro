@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-08-28T07:57:33Z",
+  "asof": "2026-08-28T13:31:15Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -511,7 +511,7 @@
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
-        "model_maturity": 7
+        "model_maturity": 8
       },
       "cutoff_label": "T-1"
     },
@@ -878,7 +878,7 @@
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
-        "model_maturity": 7
+        "model_maturity": 8
       },
       "cutoff_label": "early"
     },
@@ -1609,7 +1609,7 @@
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
-        "model_maturity": 7
+        "model_maturity": 8
       },
       "cutoff_label": "early"
     },
@@ -1694,7 +1694,7 @@
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
-        "model_maturity": 7
+        "model_maturity": 8
       },
       "cutoff_label": "early"
     },
@@ -2020,7 +2020,7 @@
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
-        "model_maturity": 7
+        "model_maturity": 8
       },
       "cutoff_label": "early"
     },

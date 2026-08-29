@@ -5,30 +5,36 @@ freshness stamp. It is deliberately thin: no indicators, no scoring — that liv
 in engine.live_overlay, which splices these prices onto the nightly close series
 and recomputes just the cheap "fast leaves".
 
-Two sources, routed by symbol:
+Three sources, routed by symbol:
   - Polygon snapshot (US equities/ETFs) when a key is present — the entitled,
     lowest-latency feed. Plain (suffix-less, non-future, non-crypto, non-caret)
     symbols go here.
-  - Yahoo `spark` (keyless, universal) for everything else — suffixed symbols
-    (``.SS`` / ``.SZ`` / ``.HK`` / ``.TO`` …), Yahoo futures (``GC=F``), crypto
-    (``BTC-USD``), caret indices (``^VIX``) — and as the US fallback with no key.
+  - Tencent ``qt.gtimg.cn`` for mainland ``.SS`` / ``.SZ`` symbols — the existing
+    product's genuinely live A-share snapshot source. A successful Tencent batch
+    is authoritative for whether each requested name has a current tradable print;
+    a no-trade/suspension placeholder is omitted rather than painted as 0.00%.
+  - Yahoo ``spark`` for every other non-US market, plus US/Tencent transport
+    fallback. Yahoo can be ~15 minutes delayed, so it is availability fallback for
+    China only when the Tencent REQUEST failed, never when Tencent positively
+    answered a name with no current trade.
 
 Each quote carries a ``price_basis`` (trade / minute / day / prev / regular) so a
 consumer can tell a real live trade from a prior close that merely got a fresh
 snapshot-refresh timestamp — the latter must NOT be treated as live.
 
-Design for graceful degradation: the network call is one isolated function with
-light retry, and response parsing is pure (both unit-testable without a socket).
-Any failure -> that symbol is absent; a fully offline run returns ``{}`` and the
-caller marks everything stale.
+Design for graceful degradation: each network call is isolated with light retry.
+Any failure -> that symbol is absent or uses the declared delayed fallback; a fully
+offline run returns ``{}`` and the caller marks everything stale.
 
 DISPLAY / FEED ONLY — never a scored input on its own.
 """
 from __future__ import annotations
 
 import logging
+import re
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -37,6 +43,7 @@ from lib import config
 log = logging.getLogger("live_quotes")
 
 _YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
+_TENCENT_QUOTES = "https://qt.gtimg.cn/q="
 _POLY_SNAPSHOT = "/v2/snapshot/locale/us/markets/stocks/tickers"
 _UA = "Mozilla/5.0 (macro-dashboard live_quotes)"
 # Yahoo's spark endpoint hard-rejects (HTTP 400) a `symbols=` list longer than ~20
@@ -44,6 +51,12 @@ _UA = "Mozilla/5.0 (macro-dashboard live_quotes)"
 # equity quote (a board like china_stocks has 100+ symbols), so the live overlay
 # looked dead off-US. Keep a safe margin below the cliff.
 _YAHOO_BATCH = 20
+# Tencent is comfortable with several dozen comma-separated quote codes. Keep the
+# same 30-name bound the Terminal quote path uses so one provider hiccup has a
+# bounded blast radius and the China Prophet board still resolves in a few calls.
+_TENCENT_BATCH = 30
+_TENCENT_RECORD_RE = re.compile(r'v_((?:sh|sz)\d+)="([^"]*)"', re.IGNORECASE)
+_CN_TZ = ZoneInfo("Asia/Shanghai")
 
 
 # --------------------------------------------------------------- routing ----
@@ -69,9 +82,33 @@ def _us_settle_window(now: datetime | None = None) -> bool:
 def is_us_symbol(sym: str) -> bool:
     """US equity/ETF — Polygon-routable. Anything with a market suffix (``.``), a
     Yahoo future (``=``), a crypto pair (``-``) or a caret index (``^``) is not
-    (indices/futures/crypto are not entitled on the stocks plan -> Yahoo)."""
+    (indices/futures/crypto are not entitled on the stocks plan)."""
     s = str(sym).strip().upper()
     return bool(s) and not any(c in s for c in (".", "=", "-", "^"))
+
+
+def is_cn_symbol(sym: str) -> bool:
+    """Mainland Shanghai/Shenzhen symbol supported by Tencent's live quote feed."""
+    s = str(sym).strip().upper()
+    return s.endswith(".SS") or s.endswith(".SZ")
+
+
+def _tencent_code(sym: str) -> str:
+    s = str(sym).strip().upper()
+    if s.endswith(".SS"):
+        return "sh" + s[:-3]
+    if s.endswith(".SZ"):
+        return "sz" + s[:-3]
+    raise ValueError(f"not a mainland Tencent symbol: {sym}")
+
+
+def _tencent_symbol(code: str) -> str | None:
+    c = str(code).strip().lower()
+    if c.startswith("sh") and c[2:].isdigit():
+        return c[2:] + ".SS"
+    if c.startswith("sz") and c[2:].isdigit():
+        return c[2:] + ".SZ"
+    return None
 
 
 def _now() -> datetime:
@@ -83,6 +120,30 @@ def _delay_min(ts: datetime, now: datetime | None = None) -> float:
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
     return round(max(0.0, (now - ts).total_seconds() / 60.0), 1)
+
+
+def _num(value: object) -> float | None:
+    try:
+        out = float(value)
+        return out if out == out else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _pos(value: object) -> float | None:
+    out = _num(value)
+    return out if out is not None and out > 0 else None
+
+
+def _tencent_timestamp(value: object) -> datetime | None:
+    raw = str(value or "").strip()
+    if len(raw) < 14 or not raw[:14].isdigit():
+        return None
+    try:
+        local = datetime.strptime(raw[:14], "%Y%m%d%H%M%S").replace(tzinfo=_CN_TZ)
+    except ValueError:
+        return None
+    return local.astimezone(timezone.utc)
 
 
 # ----------------------------------------------------------- pure parsers ----
@@ -185,6 +246,67 @@ def parse_yahoo_spark(payload: dict, now: datetime | None = None) -> dict:
     return out
 
 
+def parse_tencent_quotes(text: str, now: datetime | None = None) -> dict:
+    """Tencent ``qt.gtimg.cn`` text -> current mainland quote records.
+
+    Field offsets mirror the existing Terminal adapter: 3 last, 4 previous close,
+    5 open, 6 cumulative volume in lots, 30 exchange timestamp, 32 change %, 33
+    high, 34 low, 37 turnover. The timestamp is a real Asia/Shanghai market clock.
+
+    A suspended/no-trade name can still come back as a syntactically valid record:
+    last == prevClose, change == 0, O/H/L == 0, volume == 0, turnover == 0. That
+    shape is deliberately omitted. It proves no current tradable print; it must not
+    overwrite the last real session with a fake 0.00% move or a fake candle.
+    """
+    now = now or _now()
+    out: dict[str, dict] = {}
+    for match in _TENCENT_RECORD_RE.finditer(text or ""):
+        sym = _tencent_symbol(match.group(1))
+        fields = match.group(2).split("~")
+        if sym is None or len(fields) < 35:
+            continue
+        price = _pos(fields[3] if len(fields) > 3 else None)
+        prev_close = _pos(fields[4] if len(fields) > 4 else None)
+        ts = _tencent_timestamp(fields[30] if len(fields) > 30 else None)
+        if price is None or ts is None:
+            continue
+
+        open_px = _pos(fields[5] if len(fields) > 5 else None)
+        vol_lots = _num(fields[6] if len(fields) > 6 else None)
+        chg = _num(fields[32] if len(fields) > 32 else None)
+        high = _pos(fields[33] if len(fields) > 33 else None)
+        low = _pos(fields[34] if len(fields) > 34 else None)
+        amount = _num(fields[37] if len(fields) > 37 else None)
+        if chg is None and prev_close:
+            chg = (price / prev_close - 1.0) * 100.0
+
+        same_close = (
+            prev_close is not None
+            and abs(price - prev_close) <= max(1e-8, abs(prev_close) * 1e-10)
+        )
+        zero_change = chg is not None and abs(chg) <= 1e-12
+        no_volume = vol_lots is None or vol_lots <= 0
+        no_turnover = amount is None or amount <= 0
+        if same_close and zero_change and open_px is None and high is None and low is None \
+                and no_volume and no_turnover:
+            continue
+
+        out[sym] = {
+            "price": round(price, 4),
+            "quote_ts": ts.isoformat(),
+            "quote_ts_synthetic": False,
+            "source": "tencent",
+            "price_basis": "trade",
+            "delay_min": _delay_min(ts, now),
+            "prev_close": round(prev_close, 4) if prev_close is not None else None,
+            "currency": "CNY",
+            "day_volume": int(vol_lots * 100) if vol_lots is not None else None,
+            "day_high": round(high, 4) if high is not None else None,
+            "day_low": round(low, 4) if low is not None else None,
+        }
+    return out
+
+
 # ------------------------------------------------------------- fetchers ----
 
 def _http_json(url: str, params: dict, timeout: int = 12,
@@ -197,6 +319,28 @@ def _http_json(url: str, params: dict, timeout: int = 12,
                              headers={"User-Agent": _UA})
             if r.status_code == 200:
                 return r.json()
+            if r.status_code in (429, 500, 502, 503, 504) and attempt < retries:
+                time.sleep(backoff * (2 ** attempt))
+                continue
+            log.warning("live_quotes GET %s -> HTTP %s", url, r.status_code)
+            return None
+        except Exception as e:  # noqa: BLE001 — degrade, never abort the overlay
+            if attempt < retries:
+                time.sleep(backoff * (2 ** attempt))
+                continue
+            log.warning("live_quotes GET %s failed: %s", url, e)
+            return None
+    return None
+
+
+def _http_text(url: str, timeout: int = 12,
+               retries: int = 2, backoff: float = 1.5) -> str | None:
+    """GET Tencent's GBK-ish JavaScript envelope; numeric fields are ASCII."""
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(url, timeout=timeout, headers={"User-Agent": _UA})
+            if r.status_code == 200:
+                return r.content.decode("latin1", errors="ignore")
             if r.status_code in (429, 500, 502, 503, 504) and attempt < retries:
                 time.sleep(backoff * (2 ** attempt))
                 continue
@@ -250,25 +394,66 @@ def fetch_yahoo(symbols: list[str]) -> dict:
     return out
 
 
+def fetch_tencent_cn(symbols: list[str]) -> tuple[dict, list[str], str]:
+    """Return (current_quotes, transport_fallback_symbols, status) for mainland names.
+
+    A successful response is authoritative even when one requested symbol produces
+    no current quote (for example a suspended/no-trade placeholder filtered by the
+    parser). Yahoo fallback is therefore used only for batches whose Tencent
+    transport/envelope failed, never to turn an explicit no-trade state back into
+    a delayed pseudo-live quote.
+    """
+    out: dict[str, dict] = {}
+    fallback: list[str] = []
+    responded_batches = 0
+    failed_batches = 0
+    for batch in _chunks(symbols, _TENCENT_BATCH):
+        codes = [_tencent_code(s) for s in batch]
+        text = _http_text(_TENCENT_QUOTES + ",".join(codes))
+        if text is None or not _TENCENT_RECORD_RE.search(text):
+            fallback.extend(batch)
+            failed_batches += 1
+            continue
+        responded_batches += 1
+        parsed = parse_tencent_quotes(text)
+        for sym in batch:
+            key = str(sym).strip().upper()
+            if key in parsed:
+                out[key] = parsed[key]
+    if responded_batches == 0:
+        status = "no_response"
+    elif failed_batches:
+        status = "partial"
+    else:
+        status = "ok"
+    return out, fallback, status
+
+
 def fetch_quotes(symbols: list[str], *, us_source: str | None = None,
                  offline: bool = False, diag: dict | None = None) -> dict:
-    """Return {symbol: quote} for as many symbols as resolve. US symbols go to
-    Polygon when a key + ``us_source=='polygon'`` (default from config); the rest
-    (and the US fallback) go to Yahoo spark. ``offline=True`` short-circuits to
-    ``{}``. If ``diag`` is provided it is filled with feed diagnostics
-    (e.g. ``polygon_status``) for the overlay's ``sources`` block."""
+    """Return {symbol: quote} for as many symbols as resolve.
+
+    US equities prefer Polygon when entitled; mainland .SS/.SZ symbols prefer the
+    genuinely live Tencent snapshot; all other international instruments use Yahoo
+    spark. Yahoo is a China fallback only for a failed Tencent transport batch.
+    ``offline=True`` short-circuits to ``{}``. ``diag`` exposes both provider states.
+    """
     if offline or not symbols:
         if diag is not None:
-            diag["polygon_status"] = "offline" if offline else "unused"
+            state = "offline" if offline else "unused"
+            diag["polygon_status"] = state
+            diag["tencent_status"] = state
         return {}
     cfg = config.load().get("live") or {}
     us_source = us_source or cfg.get("us_source", "polygon")
     key = config.secret("POLYGON_API_KEY") or config.secret("MASSIVE_API_KEY")
 
     us = [s for s in symbols if is_us_symbol(s)]
-    intl = [s for s in symbols if not is_us_symbol(s)]
+    cn = [s for s in symbols if is_cn_symbol(s)]
+    intl = [s for s in symbols if not is_us_symbol(s) and not is_cn_symbol(s)]
     out: dict[str, dict] = {}
     poly_status = "unused"
+    tencent_status = "unused"
 
     if us:
         if us_source == "polygon" and key and not _us_settle_window():
@@ -279,8 +464,14 @@ def fetch_quotes(symbols: list[str], *, us_source: str | None = None,
         missing = [s for s in us if s not in out]   # Yahoo fallback for any gap / no key
         if missing:
             out.update(fetch_yahoo(missing))
+    if cn:
+        cn_out, cn_fallback, tencent_status = fetch_tencent_cn(cn)
+        out.update(cn_out)
+        if cn_fallback:
+            out.update(fetch_yahoo(cn_fallback))
     if intl:
         out.update(fetch_yahoo(intl))
     if diag is not None:
         diag["polygon_status"] = poly_status
+        diag["tencent_status"] = tencent_status
     return out

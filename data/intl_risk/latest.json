@@ -1,9 +1,9 @@
 {
-  "built": "2026-08-28T07:25:17.263861+00:00",
-  "timing_sec": 1.82,
+  "built": "2026-08-28T12:59:15.767134+00:00",
+  "timing_sec": 1.69,
   "em_stress": {
     "state": "calm",
-    "thermometer": 34.5,
+    "thermometer": 34.4,
     "lead_lag": "coincident thermometer — not leading",
     "n_legs_available": 6,
     "n_legs_total": 6,
@@ -35,13 +35,13 @@
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -0.29,
+        "value": -0.24,
         "rvol_20d": 3.25,
-        "dd_pctile": 12.0,
+        "dd_pctile": 11.1,
         "rvol_pctile": 2.9,
-        "pctile": 7.5,
+        "pctile": 7.0,
         "vel_5d_z": null,
-        "vel_20d_z": 0.901,
+        "vel_20d_z": 0.941,
         "z": null,
         "asof": "2026-08-28",
         "stale": false,
@@ -107,7 +107,7 @@
     },
     "gaps": [],
     "as_of": "2026-08-28",
-    "built": "2026-08-28T07:25:15.521824+00:00",
+    "built": "2026-08-28T12:59:14.162088+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -724,41 +724,41 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-08-28T07:25:15.657937+00:00"
+    "built": "2026-08-28T12:59:14.280382+00:00"
   },
   "spillover": {
     "total_connectedness": 81.1,
     "to_others": {
       "EWJ": 101.5,
       "EWG": 127.4,
-      "EWU": 85.9,
+      "EWU": 85.8,
       "EWC": 112.3,
       "EWA": 127.0,
-      "EWL": 89.5,
+      "EWL": 89.7,
       "EWZ": 48.1,
       "EWW": 86.3,
       "INDA": 49.6,
       "EIDO": 68.9,
       "EZA": 97.9,
-      "EWY": 70.6,
-      "EEM": 50.6,
+      "EWY": 70.5,
+      "EEM": 50.7,
       "SPY": 19.3
     },
     "from_others": {
-      "EWJ": 87.9,
+      "EWJ": 87.8,
       "EWG": 85.5,
       "EWU": 87.5,
       "EWC": 89.2,
       "EWA": 86.6,
-      "EWL": 84.8,
-      "EWZ": 74.0,
+      "EWL": 84.5,
+      "EWZ": 73.8,
       "EWW": 70.0,
       "INDA": 87.9,
       "EIDO": 72.4,
       "EZA": 89.7,
       "EWY": 76.8,
-      "EEM": 61.5,
-      "SPY": 81.4
+      "EEM": 61.6,
+      "SPY": 81.5
     },
     "top_transmitters": [
       {
@@ -774,7 +774,7 @@
         "to_others_pct": 112.3
       }
     ],
-    "us_from_others": 81.4,
+    "us_from_others": 81.5,
     "history_weekly": [
       {
         "date": "2025-08-21",
@@ -1007,7 +1007,7 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-08-27",
-    "built": "2026-08-28T07:25:15.787271+00:00",
+    "built": "2026-08-28T12:59:14.410754+00:00",
     "timing_sec": 0.13,
     "params": {
       "window": 150,
@@ -1039,7 +1039,7 @@
     "tightening": false,
     "gaps": [],
     "as_of": "2026-08-27",
-    "built": "2026-08-28T07:25:16.636790+00:00"
+    "built": "2026-08-28T12:59:15.240662+00:00"
   },
   "two_tier": {
     "state": "quiet",
@@ -1082,7 +1082,7 @@
           "note": "EUFN/KBWB absent from yahoo store — only KRE included"
         },
         "move_pctile": {
-          "value": 69.859,
+          "value": 69.86,
           "pctile": 34.9,
           "hot": false,
           "threshold": "pctile >= 85 (full history)",
@@ -1096,7 +1096,7 @@
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": 0.347,
+          "dxy_5d_chg": 0.332,
           "dgs2_5d_chg": 0.0,
           "safety_bid": false,
           "hot": false,
@@ -1107,7 +1107,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-08-28T07:25:16.677310+00:00"
+    "built": "2026-08-28T12:59:15.280399+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1340,15 +1340,15 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-08-27",
-    "built": "2026-08-28T07:25:17.195518+00:00",
+    "built": "2026-08-28T12:59:15.713031+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
   "smile": {
-    "beta": 0.0191,
+    "beta": 0.0185,
     "r2": 0.081,
-    "residual_20d": -0.00689,
-    "residual_20d_z": -0.52,
+    "residual_20d": -0.0059,
+    "residual_20d_z": -0.446,
     "regime": "rates-driven",
     "regime_60d": "rates-driven",
     "safety_bid_today": true,
@@ -1367,7 +1367,7 @@
     "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
     "gaps": [],
     "display_only": true,
-    "built": "2026-08-28T06:49:07.144722+00:00"
+    "built": "2026-08-28T12:27:46.428298+00:00"
   },
   "inversion_board": {
     "n_inverted": 0,
@@ -1411,7 +1411,7 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-08-28T07:25:17.252515+00:00"
+    "built": "2026-08-28T12:59:15.758275+00:00"
   },
   "swap_lines_bn": 0.1,
   "top_transmitters_display": [
@@ -1463,7 +1463,7 @@
         "level": "low"
       },
       "jp": {
-        "pct": 0.4266,
+        "pct": 0.4286,
         "level": "low"
       },
       "tw": {

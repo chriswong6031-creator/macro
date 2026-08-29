@@ -2,7 +2,7 @@
   "schema": "stage_context.v1",
   "asof": "2026-08-28",
   "data_session": "2026-08-27",
-  "built": "2026-08-28T06:47:54Z",
+  "built": "2026-08-28T12:27:38Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -3128,8 +3128,8 @@
   "sectors": [
     {
       "sector": "Financial",
-      "n": 239,
-      "pct_stage2": 79.1,
+      "n": 240,
+      "pct_stage2": 78.8,
       "trend": "up"
     },
     {
@@ -3194,8 +3194,8 @@
     },
     {
       "sector": "Consumer Cyclical",
-      "n": 101,
-      "pct_stage2": 50.5,
+      "n": 100,
+      "pct_stage2": 51.0,
       "trend": "down"
     },
     {

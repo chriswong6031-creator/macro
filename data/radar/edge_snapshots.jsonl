@@ -12046,3 +12046,11 @@
 {"date":"2026-08-27","kind":"ticker","subject":"CRWD","ticker":"CRWD","edge_score":0,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
 {"date":"2026-08-27","kind":"ticker","subject":"NOW","ticker":"NOW","edge_score":0,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
 {"date":"2026-08-27","kind":"ticker","subject":"WDC","ticker":"WDC","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"basket","subject":"ai_infra","ticker":"SMH","edge_score":27,"state":"POSITIVE_DIVERGENCE","era":2,"horizon_d":63}
+{"date":"2026-08-27","kind":"ticker","subject":"APH","ticker":"APH","edge_score":15,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"TER","ticker":"TER","edge_score":14,"state":"POSITIVE_DIVERGENCE","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"ANET","ticker":"ANET","edge_score":6,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"VRT","ticker":"VRT","edge_score":6,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"COHR","ticker":"COHR","edge_score":6,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"LITE","ticker":"LITE","edge_score":6,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
+{"date":"2026-08-27","kind":"ticker","subject":"AMAT","ticker":"AMAT","edge_score":3,"state":"BROKEN_LAGGARD","era":2,"source":"basket_attributed"}

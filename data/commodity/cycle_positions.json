@@ -1,39 +1,39 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 24.4,
+    "pos": 25.5,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
-    "overdue_frac": 0.31,
-    "hazard_1m": 0.4557,
+    "overdue_frac": 0.318,
+    "hazard_1m": 0.4449,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "silver": {
     "cycle_ref": "silver",
-    "pos": 11.1,
+    "pos": 11.6,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
-    "overdue_frac": 0.307,
+    "overdue_frac": 0.314,
     "hazard_1m": 0.4878,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 71.1,
+    "pos": 70.8,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
-    "overdue_frac": 2.774,
+    "overdue_frac": 2.781,
     "hazard_1m": 0.3426,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "oil": {
     "cycle_ref": "oil",
@@ -61,27 +61,27 @@
   },
   "platinum": {
     "cycle_ref": "pgms",
-    "pos": 13.8,
+    "pos": 14.3,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
-    "overdue_frac": 0.279,
+    "overdue_frac": 0.283,
     "hazard_1m": 0.4878,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "palladium": {
     "cycle_ref": "pgms",
-    "pos": 13.8,
+    "pos": 14.3,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
-    "overdue_frac": 0.279,
+    "overdue_frac": 0.283,
     "hazard_1m": 0.4878,
     "hazard_3m": 0.0474,
     "hazard_6m": 0.0894,
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "corn": {
     "cycle_ref": "agriculture",

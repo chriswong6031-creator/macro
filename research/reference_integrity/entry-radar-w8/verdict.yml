@@ -1,0 +1,81 @@
+schema: mastermind.rig_verdict.v1
+reference_id: entry-radar-w8
+
+authority:
+  identity: "cursor-grok-w8-commission-5737"
+  role: design_authority
+
+packet:
+  materially_improved: >
+    A founding Live Entry Radar glance now exists in Prophet Board sister language
+    with Radar information architecture: expert identity preserved, lifecycle
+    distinct from Priority, honesty on nulls / provisional / featured=Best, and
+    the overlay lifecycle chip no longer paints under the price (RGXB-001).
+  materially_worsened: >
+    After hiding the duplicate overlay LIFECYCLE axis, the lifecycle STATE word
+    prints twice more conspicuously (chip + body). The left overlay rail has only
+    2.2px of headroom at 1024 against PRE-CANDIDATE.
+  disappeared: >
+    Overlay LIFECYCLE axis (hidden; mutation-testable). Translated title=.
+    overflow-x:hidden as a 390 proof. Silent two-card featured glow. The lie that
+    amber is single-meaning.
+  behavior_harder: >
+    None for the founding job — there was no production Radar page. W9 must not
+    copy the hidden axis span or treat 2.2px of rail as a budget.
+  stronger_claims: >
+    Featured aura equals the Best lane by construction. Path-null copy tells the
+    truth per state. P11 observes chip-vs-quote, not two chips in the same rail.
+  intent_vs_convenience: >
+    Hiding the overlay axis is product intent (the chip is self-labelling; the
+    axis was overflowing the quote reserve). It is not a clip, ellipsis, or
+    overflow-x:hidden workaround. Keeping C2 variant out of the overlay is the
+    same intent.
+  production_preferable_for: >
+    None. No production entry_radar.html exists. This reference is the only
+    surface that can serve "where is an entry forming." W9 production is a
+    separate commissioning and must not auto-roll from this approval.
+  strongest_argument_against: >
+    The overlay repair sits on 2.2px of margin at 1024, live geometry never
+    executes in the CI job that owns the test (no Playwright), and W9 could copy
+    a display:none Lifecycle span as if it were the design. Those are W9
+    conditions, not freeze recuts: both critics measured 0 occlusions on these
+    bytes, and a mutant with the axis restored reproduces the prior block.
+
+blocking_findings: []
+
+overrides: []
+
+verdict: APPROVE_WITH_CONDITIONS
+conditions:
+  - id: W9-COND-1
+    text: >
+      Do not inherit 2.2px of overlay-rail headroom at 1024 as a design invariant.
+      Re-measure .pv-ovl clientWidth against the widest lifecycle word on the
+      production font stack. Widen the quote reserve or let the lifechip
+      shrink/wrap so a font or copy change cannot silently restore RGXB-001.
+  - id: W9-COND-2
+    text: >
+      The production port must run live P11 (lifechip vs .pv-ovr .pv-quote plus
+      rail overflow, at 1024/1280/1440, dark and light) in an environment that
+      has Playwright. Static R29/R27b and M29 are not geometry proof. A skipped
+      live battery must not be reported as a pass.
+  - id: W9-COND-3
+    text: >
+      Do not emit the overlay Lifecycle axis span. W8 hid it with display:none
+      so the RIG mutation stays testable. Production should omit the span.
+      The overlay chip is self-labelling (the lifecycle WORD sits in the body).
+  - id: W9-COND-4
+    text: >
+      Decide which element owns the lifecycle glance (overlay chip vs body
+      .pv-life-w). Do not ship stacked repetition of the same word without
+      choosing an owner.
+  - id: W9-COND-5
+    text: >
+      Amber is not single-meaning. Stale/degraded/false-start use --warn.
+      Pre-candidate uses --pv-wait. Do not tell production VTC-304 was inherited.
+
+preserved_strengths:
+  - "Sister-language card geometry, light white plane, ZH direction-ink flip, 390 that fits without overflow-x:hidden."
+  - "Honesty architecture: path-null branches, dashed provisional vs filled confirmed, featured=Best, Priority em-dash, Opportunity NOT YET MEASURED."
+  - "One card per (ticker, expert); C4 cannot fire; no Own-It; no fabricated rank."
+  - "Causal overlay repair: mutant restores the occlusion; freeze measures 0."

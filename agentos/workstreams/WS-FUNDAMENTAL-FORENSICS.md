@@ -6,7 +6,7 @@ objective: >
   Mastermind a production-grade incremental broad SEC source plane (FF-1) so
   later waves can see which issuers have new SEC information without a rerender
   minting freshness. FF-2 must not start until FF-1 is production-proven live.
-status: active
+status: parked
 program: fundamental-forensics
 repos: [macro]
 owner: coo-fable
@@ -28,6 +28,7 @@ decisions:
   - DEC:FF-1R-BOUNDED-JULY-RECOVERY
   - DEC:FF-1-ACCESSION-PREFIX-IS-TRANSMITTER
   - DEC:FF-1-PRIOR-COMPLETE-FAILS-CLOSED
+  - DEC:FF-1-ACCEPTANCE-DATETIME-COMPARES-BY-INSTANT
 owns_paths:
   - engine/fundamental_forensics/
   - app/forensics.py
@@ -80,19 +81,15 @@ waves:
     title: July recovery engine
     status: in_progress
     depends_on: [FF-1P2R]
-    pr: [6285, 6318]
+    pr: [6285, 6318, 6391]
     next_action: >
-      BUILT_NOT_PROVEN / BLOCKED_ON_ANGO_ACCEPTANCE_CONFLICT. PR #6318 landed
-      the immutable-manifest transport repair as
-      32cbd775e827653e88f8be6f8094d73e8c3014dc. Sol-released corrective
-      tranche-A run 32708350406 / run_56830b4a74bd82a33d19 cleared the old
-      20,779 > 16,384 transport blocker, then failed closed on its first issuer:
-      ANGO accession 0001628280-26-048138 conflicts on acceptance_datetime.
-      The run made one current-Submissions request, zero historical or Company
-      Facts requests, completed zero issuers, and did not move the recovery
-      checkpoint. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
-      cursor/completed 0, backlog 2,571 and null last-successful recovery
-      receipt. Do not retry or skip ANGO; return the conflict to Sol.
+      PARKED / BUILT_NOT_PROVEN. Sol adjudicated only canonical duplicate
+      acceptance_datetime comparison: exact source text remains first-bound, and
+      valid UTC strings may reconcile only when their frozen _iso_order_key values
+      match. Held PR #6391 is not production authority. Preserve
+      plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+      cursor/completed 0, backlog 2,571 and null last-successful recovery receipt.
+      Do not dispatch, retry, skip ANGO, advance the cursor, or start FF-2.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -151,15 +148,14 @@ do_not_redo:
   - "Do not raise POINTER_MAX_BYTES to admit issuer manifests, rewrite existing immutable manifests, regenerate plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, or advance the recovery cursor to bypass the ANGO refusal."
   - "Do not rerun 32626273461 or 32708350406, dispatch another cursor-zero recovery, skip ANGO, or call the next operation tranche B. The one corrective tranche-A release was consumed by run 32708350406 and stopped on historical_submissions_conflict."
 next_action: >
-  FF-1P2R current-quarter EDGAR-index discovery is PROVEN_LIVE. FF-1 remains
-  PARTIAL / in progress. PR #6318's bounded transport repair is merged, but
-  corrective tranche-A run 32708350406 made zero safe progress and stopped on
-  ANGO historical_submissions_conflict for accession
-  0001628280-26-048138. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+  PARKED / HOLD-FOR-SOL on PR #6391 pending review of its exact candidate head.
+  The held FF-1R comparator repair admits only representationally equal valid UTC
+  acceptance_datetime strings at canonical duplicate reconciliation, retaining the
+  first exact text. It authorizes no recovery operation. Preserve plan
+  e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
   cursor/completed 0, backlog 2,571, null last-successful recovery receipt and
-  the current incremental latest-complete. Sol must adjudicate the exact
-  acceptance_datetime conflict before any new recovery operation. Previous-quarter
-  reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
+  the current incremental latest-complete. Previous-quarter reconciliation is
+  SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
 ---
 
 ## Context

@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TTC-BULL-20260731",
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
   "management_confidence": 55.6,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 98.3,
     "progress": 0.0,
-    "pace": 20.3,
+    "pace": 16.2,
     "retention": 50.0,
     "overlay": 55.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 0.988,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 44.4,
+    "horizon_pct_used": 46.7,
     "p1": -0.0082,
     "p2": -0.0041,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 20,
-  "tau": 0.4444
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

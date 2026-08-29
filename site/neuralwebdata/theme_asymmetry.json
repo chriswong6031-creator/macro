@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
   "as_of": "2026-08-28",
-  "generated_at": "2026-08-28T08:02:59Z",
+  "generated_at": "2026-08-28T13:37:00Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -323,7 +323,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.617,
+          "value": 0.621,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -331,8 +331,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.01 → tightness=0.62",
-          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.01，综合紧张度=0.62"
+          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.02 → tightness=0.62",
+          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.02，综合紧张度=0.62"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -420,7 +420,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.504,
+          "value": 0.505,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -516,7 +516,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.748,
+          "value": 0.75,
           "band": "high",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -524,8 +524,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.07 → tightness=0.75",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.07，综合紧张度=0.75"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.08 → tightness=0.75",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.08，综合紧张度=0.75"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -620,12 +620,12 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.26 → tightness=0.58",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.26，综合紧张度=0.58"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.29 → tightness=0.58",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.29，综合紧张度=0.58"
         },
         "stale_consensus_gap": {
-          "value": 0.35,
-          "band": "med",
+          "value": 0.15,
+          "band": "low",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -634,8 +634,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.419); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.419）；差距收窄。no_dispersion_data"
+          "note_en": "activity not accelerating (ROLLING), revisions positive (level=POSITIVE, breadth=0.419); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（ROLLING），修正正面（水平=POSITIVE，广度=0.419）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.406,
@@ -708,7 +708,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.381,
+          "value": 0.382,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -716,8 +716,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.10 → tightness=0.38",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.10，综合紧张度=0.38"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.11 → tightness=0.38",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.11，综合紧张度=0.38"
         },
         "stale_consensus_gap": {
           "value": 0.15,
@@ -830,7 +830,7 @@
           "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.894）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
-          "value": 0.429,
+          "value": 0.433,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.bull_age.drawdown_from_peak",
@@ -838,11 +838,11 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=2.5%, avg_rs_pctile=0.73, avg_accel_z=0.65 → dislocation=0.43",
-          "note_zh": "最大回撤=2.5%，平均RS百分位=0.73，平均加速z值=0.65 → 错位=0.43"
+          "note_en": "max_drawdown_from_peak=2.8%, avg_rs_pctile=0.71, avg_accel_z=0.59 → dislocation=0.43",
+          "note_zh": "最大回撤=2.8%，平均RS百分位=0.71，平均加速z值=0.59 → 错位=0.43"
         },
         "entry_cleanliness": {
-          "value": 0.425,
+          "value": 0.587,
           "band": "med",
           "inputs": [
             "baskets:theme_intel.textures.clean_entry",
@@ -851,8 +851,8 @@
             "narrative_emergence:hype.stretched_share"
           ],
           "stale": false,
-          "note_en": "avg_clean_quality=0.85, avg_overbought=0.42, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.42",
-          "note_zh": "平均入场质量=0.85，平均超买=0.42，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.42"
+          "note_en": "avg_clean_quality=1.00, avg_overbought=0.38, ext_abs=0.00, hype_stretched=1.00 → cleanliness=0.59",
+          "note_zh": "平均入场质量=1.00，平均超买=0.38，延伸绝对值=0.00，炒作拉伸=1.00 → 入场整洁度=0.59"
         },
         "crowding_hazard": {
           "value": 0.0,
@@ -878,7 +878,7 @@
           "note_zh": "改判条件总数=108，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.662,
+          "value": 0.656,
           "band": "high",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -886,8 +886,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=4.1%, universe_avg_corr=0.06 → orthogonality=0.66. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=4.1%，全局平均相关性=0.06 → 正交性=0.66。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=3.8%, universe_avg_corr=0.06 → orthogonality=0.66. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=3.8%，全局平均相关性=0.06 → 正交性=0.66。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1318,8 +1318,8 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=5.0%, avg_rs_pctile=0.48, avg_accel_z=0.02 → dislocation=0.12",
-          "note_zh": "最大回撤=5.0%，平均RS百分位=0.48，平均加速z值=0.02 → 错位=0.12"
+          "note_en": "max_drawdown_from_peak=5.1%, avg_rs_pctile=0.48, avg_accel_z=0.01 → dislocation=0.12",
+          "note_zh": "最大回撤=5.1%，平均RS百分位=0.48，平均加速z值=0.01 → 错位=0.12"
         },
         "entry_cleanliness": {
           "value": 0.25,
@@ -1358,7 +1358,7 @@
           "note_zh": "改判条件总数=34，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
-          "value": 0.603,
+          "value": 0.601,
           "band": "med",
           "inputs": [
             "covariance_spine:blocks.dispersion.avg_corr",
@@ -1366,8 +1366,8 @@
             "baskets:theme_intel.accel_z"
           ],
           "stale": false,
-          "note_en": "avg_60d_rel=0.5%, universe_avg_corr=0.06 → orthogonality=0.60. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
-          "note_zh": "平均60日相对收益=0.5%，全局平均相关性=0.06 → 正交性=0.60。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
+          "note_en": "avg_60d_rel=0.4%, universe_avg_corr=0.06 → orthogonality=0.60. Per-basket-to-megacap corr not in spine; 60d relative return used as proxy.",
+          "note_zh": "平均60日相对收益=0.4%，全局平均相关性=0.06 → 正交性=0.60。骨干中无逐篮子与大盘相关数据；以60日相对收益代理。"
         }
       }
     },
@@ -1760,7 +1760,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-28T08:02:59Z",
-  "inputs_hash": "sha256:f62ba6fcba2df5b54a4f57f5573116db3cc2c6e670ae66aba25be9b225fb9a5d",
+  "produced_at": "2026-08-28T13:37:00Z",
+  "inputs_hash": "sha256:955531f1acc67769003682f41e7578a7b721bbd473a7aa0ca7c588650d001366",
   "tier": "display"
 }
