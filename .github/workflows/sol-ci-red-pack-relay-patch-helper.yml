@@ -40,16 +40,17 @@ jobs:
 
           path = Path('.github/workflows/ci.yml')
           text = path.read_text(encoding='utf-8')
+          trusted_plan_line = (
+              '          TRUSTED_PLAN_SHA: ' + '$' +
+              '{{ needs.trusted-ci.outputs.plan_sha }}\n'
+          )
 
           replacements = [
               (
                   """    if: >-\n      always() && needs.ci-plan.result == 'success' &&\n      needs.ci-plan.outputs.has_work == 'true' &&\n      (github.event.pull_request.head.repo.full_name != github.repository ||\n      needs.trusted-ci.result == 'success')\n""",
                   """    if: >-\n      always() && needs.ci-plan.result == 'success' &&\n      needs.ci-plan.outputs.has_work == 'true'\n""",
               ),
-              (
-                  '          TRUSTED_PLAN_SHA: ${{ needs.trusted-ci.outputs.plan_sha }}\n',
-                  '',
-              ),
+              (trusted_plan_line, ''),
               (
                   '          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" "$TRUSTED_PLAN_SHA" <<\'PY\'\n',
                   '          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" <<\'PY\'\n',
