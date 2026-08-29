@@ -1,5 +1,5 @@
 {
-"applied": "2026-08-22T03:02:08.946279+00:00",
+"applied": "2026-08-29T07:21:24.903054+00:00",
 "rows_flagged": 168,
 "tickers_flagged": 51,
 "by_flag": {
@@ -5331,6 +5331,20 @@
 "fy_hi": 2019,
 "col": "repurchases",
 "med": 46000.0
+},
+{
+"ticker": "FEIM",
+"fy_lo": 2023,
+"fy_hi": 2023,
+"col": "ni",
+"med": 5594.0
+},
+{
+"ticker": "FEIM",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "ni",
+"med": -903.0
 },
 {
 "ticker": "FTNT",
