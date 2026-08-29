@@ -4,7 +4,7 @@
 
 | board | as_of | records | coverage | status |
 |---|---|---:|---:|---|
-| standouts (engine buy-board) | 2026-08-28 | 57 | 57 | ok |
+| standouts (engine buy-board) | 2026-08-28 | 58 | 58 | ok |
 | briefing (Phase-5 priority queue) | 2026-08-29 | 25 | 25 | ok |
 | radar (divergence radar) | 2026-08-29 | 246 | 246 | ok |
 | altdata (alt-data desk) | 2026-08-29 | 30 | 30 | ok |

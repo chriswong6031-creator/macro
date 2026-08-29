@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-29T09:34:19.113423+00:00",
+  "generated_utc": "2026-08-29T12:45:34.798649+00:00",
   "as_of": "2026-08-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -7676,6 +7676,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "D",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "FNT",
         "category": "Acquisitions",
         "confidence": "high",
@@ -9853,11 +9861,11 @@
       },
       {
         "ticker": "CURLF",
-        "category": "Acquisitions",
-        "confidence": "high",
+        "category": "Tender Offers",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Tender Offers"
       },
       {
         "ticker": "ARAY",
@@ -9949,11 +9957,11 @@
       },
       {
         "ticker": "ENSC",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "EAPI",
@@ -17892,6 +17900,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "NEE-PS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "PDSB",
         "category": "Delistings",
         "confidence": "high",
@@ -18028,6 +18044,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "PTCT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "SPCX",
         "category": "Acquisitions",
         "confidence": "high",
@@ -18061,6 +18085,14 @@
       },
       {
         "ticker": "BGMSP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "DKS",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -18178,6 +18210,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SEQC",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
       },
       {
         "ticker": "HAPN",
@@ -18618,6 +18658,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "ZOOZW",
+        "category": "Strategic Reviews",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
       },
       {
         "ticker": "BHR-PD",
@@ -19125,6 +19173,14 @@
       },
       {
         "ticker": "CONE",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SOARW",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -19658,6 +19714,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "ESCA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "JUNS",
@@ -20645,11 +20709,11 @@
       },
       {
         "ticker": "TNMWF",
-        "category": "Strategic Reviews",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Delistings"
       },
       {
         "ticker": "AYTU",
@@ -20788,14 +20852,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CABR",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "DEVSF",
         "category": "Acquisitions",
         "confidence": "high",
@@ -20850,6 +20906,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SPWRW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "AHRO",
@@ -21452,6 +21516,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "GCTK",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "INSG",
         "category": "Acquisitions",
         "confidence": "high",
@@ -22010,6 +22082,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "NVTS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "YGMZF",
@@ -23916,14 +23996,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "MOBXW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "PCSA",
         "category": "Acquisitions",
         "confidence": "high",
@@ -24470,7 +24542,7 @@
       {
         "ticker": "MAIR",
         "category": "Acquisitions",
-        "confidence": "high",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -24660,6 +24732,22 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GRUSF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PARR",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "RGEN",
         "category": "Acquisitions",
         "confidence": "high",
@@ -24746,6 +24834,14 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
+      },
+      {
+        "ticker": "MBUU",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       }
     ],
     "unusual_options": [
@@ -25000,6 +25096,17 @@
         "hot": true
       },
       {
+        "ticker": "PLTR",
+        "net_up_30d": 24,
+        "breadth": 1.0,
+        "est_chg_30d": 10.49,
+        "n_analysts": 24,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 24,
+        "hot": true
+      },
+      {
         "ticker": "TRV",
         "net_up_30d": 24,
         "breadth": 1.0,
@@ -25022,21 +25129,10 @@
         "hot": true
       },
       {
-        "ticker": "PLTR",
-        "net_up_30d": 24,
-        "breadth": 1.0,
-        "est_chg_30d": 10.49,
-        "n_analysts": 24,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 24,
-        "hot": true
-      },
-      {
         "ticker": "SBUX",
         "net_up_30d": 24,
         "breadth": 0.92,
-        "est_chg_30d": 3.65,
+        "est_chg_30d": 3.42,
         "n_analysts": 26,
         "bull_ratio": 0.96,
         "rising": true,
@@ -25058,7 +25154,7 @@
         "ticker": "TXN",
         "net_up_30d": 23,
         "breadth": 1.0,
-        "est_chg_30d": 12.86,
+        "est_chg_30d": 0.68,
         "n_analysts": 23,
         "bull_ratio": 1.0,
         "rising": true,
@@ -25121,39 +25217,6 @@
         "hot": true
       },
       {
-        "ticker": "TT",
-        "net_up_30d": 21,
-        "breadth": 1.0,
-        "est_chg_30d": 2.33,
-        "n_analysts": 21,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 21,
-        "hot": true
-      },
-      {
-        "ticker": "TYL",
-        "net_up_30d": 21,
-        "breadth": 1.0,
-        "est_chg_30d": 3.55,
-        "n_analysts": 21,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 21,
-        "hot": true
-      },
-      {
-        "ticker": "UNP",
-        "net_up_30d": 21,
-        "breadth": 1.0,
-        "est_chg_30d": 2.59,
-        "n_analysts": 21,
-        "bull_ratio": 1.0,
-        "rising": true,
-        "revision_delta": 21,
-        "hot": true
-      },
-      {
         "ticker": "GS",
         "net_up_30d": 21,
         "breadth": 1.0,
@@ -25176,10 +25239,43 @@
         "hot": true
       },
       {
+        "ticker": "TT",
+        "net_up_30d": 21,
+        "breadth": 1.0,
+        "est_chg_30d": 2.33,
+        "n_analysts": 21,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 21,
+        "hot": true
+      },
+      {
+        "ticker": "TYL",
+        "net_up_30d": 21,
+        "breadth": 1.0,
+        "est_chg_30d": 3.5,
+        "n_analysts": 21,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 21,
+        "hot": true
+      },
+      {
+        "ticker": "UNP",
+        "net_up_30d": 21,
+        "breadth": 1.0,
+        "est_chg_30d": 2.59,
+        "n_analysts": 21,
+        "bull_ratio": 1.0,
+        "rising": true,
+        "revision_delta": 21,
+        "hot": true
+      },
+      {
         "ticker": "UAL",
         "net_up_30d": 21,
         "breadth": 0.91,
-        "est_chg_30d": 0.5,
+        "est_chg_30d": -1.34,
         "n_analysts": 23,
         "bull_ratio": 0.96,
         "rising": true,

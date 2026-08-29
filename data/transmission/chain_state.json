@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-08-27",
-  "built": "2026-08-29 08:36 UTC",
+  "built": "2026-08-29 11:49 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -1078,7 +1078,7 @@
               "series": "BTC-USD",
               "metric": "ret_pct",
               "window": 22,
-              "value": 19.382,
+              "value": 19.583,
               "op": "gt",
               "threshold": 10,
               "passed": true
@@ -1152,7 +1152,7 @@
               "series": "BTC-USD",
               "metric": "ret_pct",
               "window": 22,
-              "value": 19.382,
+              "value": 19.583,
               "op": "gt",
               "threshold": 10,
               "passed": true
