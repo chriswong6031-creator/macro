@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-28T20:28:21.627889+00:00",
-  "as_of": "2026-08-28",
+  "generated_utc": "2026-08-29T01:34:38.590797+00:00",
+  "as_of": "2026-08-29",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6446,17 +6446,17 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 20,
         "items": "8.01"
       },
       {
         "ticker": "MLM",
-        "count": 8,
+        "count": 7,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "ASPI",
-        "count": 7,
+        "count": 6,
         "items": "1.01, 2.03, 7.01"
       },
       {
@@ -6468,16 +6468,6 @@
         "ticker": "EQR",
         "count": 6,
         "items": "1.01, 2.01, 2.03, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "BAX",
-        "count": 5,
-        "items": "1.01, 5.02, 7.01, 8.01"
-      },
-      {
-        "ticker": "MSTR",
-        "count": 5,
-        "items": "7.01, 8.01"
       },
       {
         "ticker": "O",
@@ -6493,6 +6483,11 @@
         "ticker": "TSN",
         "count": 5,
         "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "BAX",
+        "count": 4,
+        "items": "1.01, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "COR",
@@ -6515,14 +6510,9 @@
         "items": "5.02, 8.01"
       },
       {
-        "ticker": "AEE",
-        "count": 3,
-        "items": "8.01"
-      },
-      {
-        "ticker": "ALGT",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01"
+        "ticker": "MSTR",
+        "count": 4,
+        "items": "7.01, 8.01"
       },
       {
         "ticker": "AMD",
@@ -6545,11 +6535,6 @@
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "BEN",
-        "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
         "ticker": "BNY",
         "count": 3,
         "items": "5.02, 8.01"
@@ -6560,14 +6545,29 @@
         "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
-        "ticker": "ICE",
+        "ticker": "LAC",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
       },
       {
-        "ticker": "LAC",
+        "ticker": "LUV",
         "count": 3,
-        "items": "1.01, 2.03, 7.01, 8.01"
+        "items": "1.01, 2.03, 5.02"
+      },
+      {
+        "ticker": "PLD",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
+        "ticker": "PNW",
+        "count": 3,
+        "items": "1.01, 7.01"
+      },
+      {
+        "ticker": "PPL",
+        "count": 3,
+        "items": "7.01, 8.01"
       }
     ],
     "special_situations": [
@@ -25891,13 +25891,6 @@
         "top_issue": "Automotive Industry"
       },
       {
-        "ticker": "CVS",
-        "spend_usd": 4145000.0,
-        "filings": 9,
-        "spike_x": null,
-        "top_issue": "Pharmacy"
-      },
-      {
         "ticker": "VZ",
         "spend_usd": 3835000.0,
         "filings": 16,
@@ -25917,13 +25910,6 @@
         "filings": 10,
         "spike_x": null,
         "top_issue": "Taxation/Internal Revenue Code"
-      },
-      {
-        "ticker": "WMT",
-        "spend_usd": 2749000.0,
-        "filings": 12,
-        "spike_x": null,
-        "top_issue": "Trade (domestic/foreign)"
       },
       {
         "ticker": "ELV",
@@ -25987,6 +25973,20 @@
         "filings": 12,
         "spike_x": null,
         "top_issue": "Banking"
+      },
+      {
+        "ticker": "AZN",
+        "spend_usd": 2000000.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Budget/Appropriations"
+      },
+      {
+        "ticker": "UBER",
+        "spend_usd": 1825000.0,
+        "filings": 11,
+        "spike_x": null,
+        "top_issue": "Transportation"
       }
     ],
     "offexchange": [
@@ -29073,133 +29073,133 @@
       {
         "ticker": "SAIC",
         "next_date": "2026-08-31",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-01",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 4.72,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-01",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-02",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": 0.82,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 5,
+        "days_to": 4,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "ZS",
         "next_date": "2026-09-03",
-        "days_to": 6,
+        "days_to": 5,
         "eps_forecast": 0.06,
         "last_surprise_pct": 25.0
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-08",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-09",
-        "days_to": 12,
+        "days_to": 11,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 13,
+        "days_to": 12,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "FIZZ",
         "next_date": "2026-09-10",
-        "days_to": 13,
+        "days_to": 12,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "FDS",
         "next_date": "2026-09-17",
-        "days_to": 20,
+        "days_to": 19,
         "eps_forecast": 4.3,
         "last_surprise_pct": 2.0
       },
       {
         "ticker": "LEN",
         "next_date": "2026-09-17",
-        "days_to": 20,
+        "days_to": 19,
         "eps_forecast": 1.31,
         "last_surprise_pct": 6.5
       }
@@ -29381,6 +29381,17 @@
         "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
       },
       {
+        "ticker": "AZN",
+        "score": 3,
+        "weighted_score": 1.2,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "lobbying"
+        ],
+        "why": "clinical_phase3_start: 34 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: TRUQAP \u00b7 lobbying: $2,000,000 lobbied"
+      },
+      {
         "ticker": "BRK.B",
         "score": 2,
         "weighted_score": 1.2,
@@ -29401,16 +29412,15 @@
         "why": "insider_mspr: MSPR 71.3 \u00b7 unusual_options: 4.65\u00d7 vol/OI, call-skew"
       },
       {
-        "ticker": "WMT",
-        "score": 4,
-        "weighted_score": 1.1,
+        "ticker": "LUV",
+        "score": 3,
+        "weighted_score": 1.15,
         "channel_list": [
+          "activist_13d",
           "app_demand",
-          "cnbc_pick",
-          "lobbying",
-          "stocktwits_bull"
+          "material_8k"
         ],
-        "why": "app_demand: 4.82\u2605 \u00d7 19,074,267 reviews \u00b7 cnbc_pick: Dan Nathan \u00b7 lobbying: $2,749,000 lobbied \u00b7 stocktwits_bull: 83% bull \u00b7 138,770 watching"
+        "why": "activist_13d: 13D activist campaign \u00b7 app_demand: 4.84\u2605 \u00d7 7,169,741 reviews \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02)"
       },
       {
         "ticker": "MSFT",
@@ -29491,7 +29501,7 @@
           "congress_buy",
           "material_8k"
         ],
-        "why": "congress_buy: 1 member(s) net +6 \u00b7 material_8k: 8 material 8-Ks (items 1.01, 2.01, 2.03, 5.02, 7.01, 8.01)"
+        "why": "congress_buy: 1 member(s) net +6 \u00b7 material_8k: 7 material 8-Ks (items 1.01, 2.01, 2.03, 5.02, 7.01, 8.01)"
       },
       {
         "ticker": "RTX",
@@ -29558,16 +29568,6 @@
           "special_situation"
         ],
         "why": "insider_mspr: MSPR 100.0 \u00b7 news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs"
-      },
-      {
-        "ticker": "CAT",
-        "score": 2,
-        "weighted_score": 0.95,
-        "channel_list": [
-          "13f_add",
-          "insider_mspr"
-        ],
-        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
       }
     ]
   }
