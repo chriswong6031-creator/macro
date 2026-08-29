@@ -17,6 +17,9 @@ state_before: >
   when #6626 later merged as a4c4160e0024fe196225eed5ff3285a9f7be76b2,
   current origin/main was merged normally and the one wrapper conflict resolved
   by preserving both the merged WAITING/CHECKS RED subset and V2 quiescence.
+  The final publication tree is reconciled with Macro main
+  f77ff8669618b1604ddc0b3ae2d06e112245e9f1; the intervening main movement was
+  nightly/data-only and touched none of the twelve successor paths.
 changed:
   - path: .claude/hooks/gh_quota_guard.py
     what: >
@@ -147,9 +150,9 @@ unresolved:
     To avoid a records collision, this successor records the bounded wave in
     this new handoff and leaves that shared workstream file untouched.
 next_actions:
-  - Re-pin current main, protected Mastermind procedure, carrier comments and path collisions immediately before push.
-  - Run the remaining exact-tree adjacent-governance, self-mod fence, Agent OS validation and independent review.
-  - Push one fresh draft HOLD-FOR-SOL pull request and return exact-head CI to Sol.
+  - Keep the successor pull request DRAFT, disarmed and unmerged for explicit Sol review.
+  - Treat any later head, authority or hosted-check change as a new material observation; do not infer acceptance from this handoff.
+  - After Sol releases or rejects the hold, continue only on the canonical #6379 carrier under that explicit edge.
 do_not_redo:
   - Do not reopen, rebase or merge donor PR #6381.
   - >
