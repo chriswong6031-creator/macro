@@ -1,18 +1,11 @@
 ---
 key: PROPHET-D5-BLOCKED-ON-CANONICAL-CANDIDATE-EPISODE-B1
 claim: >
-  Revalidated through Macro main 5216c57afa0793e2ea8a68a20f85bd6729a26049 on
-  2026-08-23: the frozen V4 `prophet.candidate_episode/v1` exists only in
-  research/architecture records; no canonical runtime implementation was found.
-  The existing Entry Radar runtime episode `mastermind.live_entry_episode.v1` is not
-  an alias: it is an operational, re-derivable detector lifecycle whose episode ID
-  hashes (ticker, detector_id, variant, first_armed_at), whose state lives under an
-  injected live state directory, and whose module explicitly says it is not the
-  durable evidence store. The newly landed Earnings Event Intelligence Compiler E3-A
-  records also create no Prophet episode lifecycle: E3 extends canonical
-  `event_workspace.v1`, E3-A is a non-promoted calibration/negative-method experiment,
-  and E3-B live Q&A remains locked. Therefore Cell F cannot lawfully prove an
-  episode-scoped D5 vertical on real canonical V4 episodes until B1 lands.
+  FALSIFIED / CLEARED 2026-08-28. The canonical B1 runtime and real production
+  episode proof now exist on main. Natural scheduled run 33147282433 published the
+  validated HEAD-selected `prophet.candidate_episode/v1` generation and pushed it as
+  commit a8ee11ba0e4815e63db1b612da52e70eb21e828d. D5 no longer needs to reconstruct
+  or surrogate episode identity and may execute the bounded owner-accepted vertical.
 falsifier: >
   A current-main implementation owned by WS:PROPHET-US-V4-RECOVERY that publishes
   and reads `prophet.candidate_episode/v1` on the canonical V4 identity/lifecycle,
@@ -20,25 +13,17 @@ falsifier: >
   episode, a ticker/date row, a Context Vector row, an Earnings event workspace, a
   Lab/Radar detector episode, or a research fixture does not falsify this discovery.
 so_what: >
-  MAS-122 architecture can be frozen now, but its requested first runtime vertical
-  must remain BLOCKED_ON_CANONICAL_CANDIDATE_EPISODE_B1. Do not mint a surrogate
-  D5 episode ID, use (stamp_date,ticker) as a lifecycle, rename Entry Radar’s live
-  episode, or widen MAS-122 to implement B1. Once B1 is proven, resume with the
-  bounded owner-accepted canonical Earnings event_workspace -> thin D5 adapter ->
-  read-only Prophet Lab consumer vertical defined in the Cell F contract.
+  Resume the bounded canonical Earnings event_workspace -> thin D5 adapter ->
+  read-only Prophet Lab consumer vertical defined in the Cell F contract. Continue
+  to forbid a surrogate D5 episode ID, (stamp_date,ticker) lifecycle, or Entry Radar alias.
 kind: architecture
-verified_at: 2026-08-23
+verified_at: 2026-08-28
 verified_by: >
-  GitHub code search for prophet.candidate_episode/v1 on current main returned only
-  research/architecture records; open-PR search for candidate episode B1 returned
-  #6275 itself and no competing B1 carrier. Direct owner-law inspection covered
-  research/prophet_v4/ARCHITECTURE_FREEZE.md,
-  research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md,
-  agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md, the Entry Radar live-episode
-  contract, and current-main WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER plus its E3
-  architecture/landing records. Main movement from the Cell F semantic-census pin
-  through 5216c57afa0793e2ea8a68a20f85bd6729a26049 did not introduce a B1
-  implementation or a D5 owner change.
+  Command `gh run view 33147282433 --job 98870036658 --log` proved the natural
+  descendant run at head 24ccea3fe482; command `git show
+  a8ee11ba0e4815e63db1b612da52e70eb21e828d` proved the pushed main commit;
+  load_candidate_episode_store_snapshot plus load_all_candidates over that committed
+  generation returned 467 episodes and zero duplicate episode, event, or source identities.
 scope:
   - macro
   - research/prophet_v4
@@ -71,3 +56,22 @@ in an already-started run (verified against run `32908543584`).
 
 The architecture half of the blocker is now reconciled: see
 `research/prophet_v4/flagship_cells/CELL_F_D5_CONTRACT_AMENDMENTS_2026-08-26.md`.
+
+## Status note — 2026-08-28: falsifier fully met, discovery cleared
+
+The first qualifying ordinary scheduled descendant was run `33147282433`, triggered at
+`24ccea3fe482ab97c415db387f272b34c4852ed3`. It contains the B1 repair merge and
+naturally executed the schedule-only writer. B1 commit
+`a8ee11ba0e4815e63db1b612da52e70eb21e828d` pushed generation
+`peg:c025bb50c45f319f989a4848249b8a85b65354143e3262f2ad09d07841311b08` to main on
+attempt 1. The shared generation validator and sole canonical reader returned 467 lawful
+SEC/ISS episodes from 915 immutable events and 5,435 typed suppressions with zero
+duplicate episode, event, or source identities. No separate private B1 reader exists.
+
+Unrelated `standout_audit_us` reached its 40-minute timeout before `us_prophet_ledgers`
+began. The workflow continued, B1 subsequently succeeded and pushed its durable
+generation, while the final run conclusion remained `cancelled` solely because of that
+earlier unrelated timeout. This mirrors the
+existing evidence-dimension law: the unrelated cancellation is recorded honestly, while
+the already-pushed exact production packet remains the B1 acceptance evidence. D5's B1
+dependency is therefore cleared; every other D5 boundary remains binding.
