@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-28",
+ "asof": "2026-08-29",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -22,14 +22,14 @@
  "n": 3026,
  "n_failed": 0,
  "fail_pct": 0.0,
- "n_flags": 147,
+ "n_flags": 146,
  "universes": [
   {
    "name": "stocks",
    "n": 244,
    "n_failed": 0,
    "fail_pct": 0.0,
-   "n_flags": 3,
+   "n_flags": 2,
    "skipped": false,
    "note": "",
    "failed": [],
@@ -42,12 +42,7 @@
     {
      "name": "ECHO",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 1739d past its 2021-11-22 registry bar; overlap corr -0.139"
-    },
-    {
-     "name": "EQR",
-     "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-21) but no current NASDAQ/NYSE listing"
+     "detail": "dead-registry name advancing 1740d past its 2021-11-22 registry bar; overlap corr -0.139"
     }
    ]
   },
@@ -785,7 +780,7 @@
   }
  ],
  "ledger_identity": {
-  "ledger": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/signal_archive/track_record.parquet",
+  "ledger": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/signal_archive/track_record.parquet",
   "declared_duplicates": [
    {
     "superseded": "SATS",
@@ -806,7 +801,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59794
+  "ledger_rows": 59804
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
@@ -814,7 +809,7 @@
   "zombie": 5,
   "rebirth": 3,
   "registry_mismatch": 128,
-  "delisted_printing": 11,
+  "delisted_printing": 10,
   "member_identity": 0
  },
  "stores": [
@@ -825,8 +820,8 @@
     {
      "ticker": "ECHO",
      "registry_last": "2021-11-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1739,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1740,
      "overlap": {
       "n_overlap": 99,
       "ret_corr_full": -0.0318,
@@ -844,11 +839,6 @@
     {
      "ticker": "AVB",
      "store_tip": "2026-08-24",
-     "acked": false
-    },
-    {
-     "ticker": "EQR",
-     "store_tip": "2026-08-21",
      "acked": false
     }
    ]
@@ -2667,7 +2657,6 @@
  "unacked_zombies": [],
  "unacked_delisted_printing": [
   "stocks/AVB",
-  "stocks/EQR",
   "baskets/ohlcv/ANGPY",
   "baskets/ohlcv/EQR",
   "baskets/ohlcv/FBRX",
