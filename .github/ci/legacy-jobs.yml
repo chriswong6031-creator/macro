@@ -962,8 +962,14 @@ jobs:
       # pytest reports every file inside one step, and adds no job to a manifest at the
       # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, exactly this job's install line.
+      # W3A ruler suites appended 2026-08-29 (SI-W3A-RULER-V1, PR #6638): localization
+      # ruler contract/metrics/composites, null generators + cadence-control coverage,
+      # Channel-A model constitution, and the sealed PR-3 calibration receipts
+      # (state-aware pre/post-seal branches). Same dependency envelope as the replay
+      # suites already in this step (pandas/numpy/pyarrow/pyyaml); rides the existing
+      # step per the house masking-unit rule rather than minting a manifest job.
       - name: stock-identity atlas guards
-        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py tests/test_stock_identity_replay.py tests/test_stock_identity_replay_leak.py -q
+        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py tests/test_stock_identity_replay.py tests/test_stock_identity_replay_leak.py tests/test_stock_identity_ruler.py tests/test_stock_identity_ruler_nulls.py tests/test_stock_identity_model_constitution.py tests/test_stock_identity_w3_calibration.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
         # Registering the trial budget (above) is only half the chain: the number the
         # PAGE shows must equal the number the calibrator produced. The BTC Vector card
