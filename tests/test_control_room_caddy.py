@@ -76,7 +76,7 @@ def _adapted_control_execution_labels() -> list[str]:
                     continue
                 if kind != "reverse_proxy":
                     continue
-                if handler.get("rewrite", {}).get("uri") == "/api/control-room/auth-check":
+                if handler.get("rewrite", {}).get("uri") == "/api/auth-check":
                     labels.append("auth_proxy")
                     continue
                 if any(
@@ -93,16 +93,19 @@ def test_control_room_authenticates_once_before_the_only_unix_origin():
     """Removing/reordering the auth subrequest or adding a second origin must fail."""
     block = _control_block()
 
-    assert block.count("reverse_proxy 127.0.0.1:8000 {") == 1
-    assert block.count("rewrite /api/control-room/auth-check") == 1
+    assert block.count("reverse_proxy 127.0.0.1:8787 {") == 1
+    assert block.count("rewrite /api/auth-check") == 1
     assert block.count("reverse_proxy unix//run/mastermind-control-room/remote.sock {") == 1
-    assert block.index("rewrite /api/control-room/auth-check") < block.index(
+    assert block.index("rewrite /api/auth-check") < block.index(
         "reverse_proxy unix//run/mastermind-control-room/remote.sock {"
     )
+    auth = block[:block.index("reverse_proxy unix//run/mastermind-control-room/remote.sock {")]
+    assert "header_up Host admin.mastermind-x.com" in auth
     assert re.search(r"@operator\s+status\s+2xx", block)
     assert re.search(r"handle_response\s+@operator\s*\{\s*\}", block)
-    assert "127.0.0.1:8787" not in block
-    assert not re.search(r"reverse_proxy\s+(?:127\.0\.0\.1|localhost|\[::1\]):\d+", block.replace("127.0.0.1:8000", ""))
+    assert "127.0.0.1:8000" not in block
+    assert "/api/control-room/auth-check" not in block
+    assert not re.search(r"reverse_proxy\s+(?:127\.0\.0\.1|localhost|\[::1\]):\d+", block.replace("127.0.0.1:8787", ""))
 
 
 def test_control_room_refuses_health_and_mutation_before_origin():
@@ -114,7 +117,7 @@ def test_control_room_refuses_health_and_mutation_before_origin():
     assert "@mutation not method GET HEAD" in block
     assert "respond @mutation 405" in block
     route = block.index("route {")
-    auth = block.index("rewrite /api/control-room/auth-check")
+    auth = block.index("rewrite /api/auth-check")
     assert route < block.index("respond @health 404") < auth
     assert route < block.index("respond @mutation 405") < auth
     assert "rewrite /healthz" not in block
