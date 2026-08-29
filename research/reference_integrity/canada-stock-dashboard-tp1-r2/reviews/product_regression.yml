@@ -1,0 +1,130 @@
+# Critic receipt (RIG V1 §6) — Reviewer A (r2 cycle), product regression.
+# Fresh critic, no participation in the predecessor cycle. Two-pass with
+# rationale quarantine; first pass frozen at commit before rationale reveal.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1-r2
+role: product_regression
+artifact_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+
+reviewer:
+  identity: "rig-r2-critic-a-9f3c1a7d-quiet-lynx"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (r2 baseline.yml)
+    - production-before artifact (baseline-dark/light-en-1440.png + pre-change source copies)
+    - proposed-after artifact (comment-redacted frozen copies at 82a627d4c102 + 15 rendered proposal PNGs incl. modal/filtered/filter-miss/tableview/mobile)
+    - capability ledger (r2 baseline.yml)
+  rationale_received_after_first_pass: true
+  notes: >
+    Critic's declaration: quarantine honored — only the six pass-1 packet
+    files, r2 baseline.yml, and the committed r2 evidence images were opened;
+    no RIG records of any cycle, no templates/site, no theme-parity docs, no
+    PR/Slack/prior reviews, no git history commands.
+
+first_pass:
+  frozen_at: "2026-08-29T01:32:09Z"
+  verdict: PARTIAL   # critic's top-level status; house law bars PASS with dark/ZH-mobile cells unopened
+  findings:
+    - id: PRC-201
+      severity: major
+      capability: leadership.themes_only_rank
+      finding: >
+        Presentation-minted breadth promoted from whisper to meter with an 8%
+        floor that paints unknown and zero as real quantity: the composer's
+        Math.max(8, ...) floor plus null-membership rows ("—") now renders a
+        visible 8% fill at 3px/opacity 1 where the baseline's 1px/50% whisper
+        made it invisible — a legible non-zero measure for a group the board
+        simultaneously declares unknown, inverting missing≠zero in pixels; the
+        measure is an unlabeled presentation-owned normalization (count / max
+        of visible five) whose scale shifts with the visible set.
+      disposition_requested: label the measure and suppress the fill at null/zero, or restore whisper weight.
+    - id: PRC-202
+      severity: major
+      capability: leadership.expand_modal
+      finding: >
+        Entire modal presentation gated on an unguaranteed sibling adjacency
+        over a hard display:none base: every recovering rule incl. the
+        .is-open opener is scoped .mx-stockdash--ca ~ .ca-v36-modal, and the
+        siblinghood depends on .site-nav being a direct body child — a shared
+        nav-family property this surface does not own; if a wrapper appears,
+        the base display:none wins and "Expand leadership" becomes a dead
+        button that still locks page scroll.
+      disposition_requested: scope modal rules by class or composer-set data attribute; drop the unconditional display:none.
+    - id: PRC-203
+      severity: major
+      capability: platform.fail_soft_legacy
+      finding: >
+        The board is now gated behind the stylesheet: a style-only failure
+        (404/401/CDN blip on stock-dashboard.css) silently deletes every V3.8
+        capability after ~4.5s of retries, and the serial CSS round-trip
+        precedes composer fetch + the two artifact fetches — a second single
+        point of failure and added time-to-board that the baseline's inline
+        stylesheet made impossible.
+      disposition_requested: inject composer unconditionally with independent stylesheet arrival, or carry a critical-path fallback; emit a signal on final CSS failure.
+    - id: PRC-204
+      severity: minor
+      capability: prophet.population_filters
+      finding: >
+        Active-filter state reads clearly in light (2-3px --link inset rails)
+        and nearly not at all in dark (inherited ~6% tint only, ~1.09:1) —
+        "which group is filtering the board" is a state meaning both art
+        directions must share; only its material may differ.
+    - id: PRC-205
+      severity: minor
+      capability: platform.theme_lang
+      finding: >
+        Lane/stance hues moved to the --ink-pv-*/--pv-* family with no
+        baseline ZH cell to prove rendered hues unchanged, and each binding is
+        a two-level var() chain whose terminal fallback is itself a custom
+        property — if --pv-* is undefined in any scope the declaration goes
+        invalid and four lane heads + every stance chip fall to inherited
+        color with no other symptom.
+    - id: PRC-206
+      severity: minor
+      capability: leadership.expand_modal
+      finding: >
+        Modal Name and Leaders values render right-aligned under left-aligned
+        headers (ragged-left ranking list, hardest-to-scan alignment);
+        attribution unresolved — no baseline modal cell exists, so possibly an
+        inherited production defect a canonical reference should not adopt
+        silently.
+    - id: PRC-207
+      severity: minor
+      capability: leadership.themes_only_rank
+      finding: >
+        Breadth fill lost its width fallback (baseline width:var(--breadth,8%)
+        → proposal width:var(--breadth)) — a row rendered without the inline
+        property collapses to zero width instead of the documented minimum.
+        (Critic severity: nit; recorded at the schema floor.)
+    - id: PRC-208
+      severity: minor
+      capability: platform.theme_lang
+      finding: >
+        Body-level font-family declaration dropped (baseline set it on
+        body.page-canada.ca-v36-mounted; proposal re-declares only on
+        .mx-stockdash and the modal) — any future composer-relocated fragment
+        outside those roots reverts to the page font. (Critic severity: nit.)
+  strengths:
+    - Behavior provably unchanged — composer diff vs production is exactly the
+      injectCss()/FONT_UI removal plus the mount-class addition; every
+      adversarially-won V3.8 guard survives byte-for-byte (membership null vs
+      zero, filter affordance gating, no minted rank, honest counts, no
+      force-switch, bounded degrade).
+    - Canada ZH quote exception preserved verbatim (.nb-chg.up→--ok,
+      .down→--act) while the stance family flips — exactly the required split.
+    - Light is authored as a second design (open lane columns with inset
+      colour rails, white material + card shadow, recessive --bg bands,
+      filled-track segmented controls) and holds at 1440 and 390.
+    - Specificity moves the right way — the governed stylesheet outranks
+      legacy page CSS where the runtime stylesheet did not.
+    - Honest-state surfaces intact end to end (filtered "2 shown · 9 on
+      board" with pill; filter-miss "0 shown · 9 on board" with plain words
+      and a real exit).
+
+second_pass:
+  amended_at: null   # pending — rationale reveal follows this freeze commit
+  amendments: []
+  verdict: null

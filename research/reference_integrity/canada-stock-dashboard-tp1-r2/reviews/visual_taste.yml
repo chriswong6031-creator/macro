@@ -1,0 +1,134 @@
+# Critic receipt (RIG V1 §6) — Reviewer B (r2 cycle), visual/taste.
+# Fresh critic, no participation in the predecessor cycle. Two-pass with
+# rationale quarantine; first pass frozen at commit before rationale reveal.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1-r2
+role: visual_taste
+artifact_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+
+reviewer:
+  identity: "rig-r2-critic-b-slatewren-0f31"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (r2 baseline.yml)
+    - production-before artifact (baseline shots; source copies available but unopened — pixel-only judgment)
+    - proposed-after artifact (18 rendered r2 evidence images)
+    - capability ledger (r2 baseline.yml)
+    - design law (DESIGN_DOCTRINE.md; MASTER_PRODUCT_DESIGN_SYSTEM_V1.md — law, not rationale)
+  rationale_received_after_first_pass: true
+  notes: >
+    Critic's declaration: quarantine honored in full; the redacted source
+    copies were deliberately left unopened so no rationale could leak via
+    comments — all findings from rendered pixels + law. Filed no finding on
+    the transient orb (provenance fact given). Flagged the floating
+    Ask-Mastermind chrome occlusions as out-of-artifact scope.
+
+first_pass:
+  frozen_at: "2026-08-29T01:32:09Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: VTC-201
+      severity: major
+      finding: >
+        Light abandons the panel2 lane containment dark keeps: lane bodies are
+        white on a white panel separated only by 1px rules, while the baseline
+        light gave each lane a tinted tile + hairline + gutter and dark keeps
+        discrete bordered cards — the E2 members-of-a-set plane disappears in
+        light while dark retains it (one segmented sheet vs four lanes).
+    - id: VTC-202
+      severity: major
+      finding: >
+        The filter-origin marker is legible in light (2px --link rail + tinted
+        fill on the filtering lane row) and effectively invisible in dark (no
+        rail; ~1.09:1 fill) — the same state carries two different amounts of
+        information across themes; the correct idiom already exists in this
+        artifact (the ENTRY OPEN table row works in both themes).
+    - id: VTC-203
+      severity: major
+      finding: >
+        The breadth measure fails at the top of its own scale and straddles
+        the row boundary: 15/15 rows render a full-width 3px rule — the
+        heaviest horizontal element on the light page — reading as a divider
+        whose row-ownership is ambiguous; fill-vs-track contrast is only
+        ~2.2:1 in both themes, so the broadest participation is exactly where
+        the measure stops looking like one.
+    - id: VTC-204
+      severity: major
+      finding: >
+        At 390 the EN lane selector truncates every stance to 5-6 characters
+        AND drops lane hue entirely (achromatic grey pills) — "lane names ARE
+        stances" and the color coding that carries the desktop scan both
+        vanish at the design floor; ZH shows full stance words, proving
+        composition choice rather than physical limit.
+    - id: VTC-205
+      severity: major
+      finding: >
+        In the Leadership modal (both themes) the primary Name column renders
+        right-aligned under a left-aligned header — a ragged left edge down
+        all 16 rows, the one alignment that makes scanning a ranked name list
+        hardest, on a dialog whose only job is that scan.
+    - id: VTC-206
+      severity: major
+      finding: >
+        ZH prints the same taxonomy in two languages on one screen (lane rows
+        信息技术/原材料/能源 above Prophet cards reading Information
+        Technology/Materials/Energy; English "Theme" eyebrows under translated
+        headers) — provenance unprovable from allowed inputs (no ZH baseline),
+        but the reference would freeze it.
+    - id: VTC-207
+      severity: minor
+      finding: >
+        The dark modal barely separates figure from ground (backdrop ≈ canvas
+        value; dialog surface ≈ ordinary panel), while light dims properly —
+        the same overlay commands markedly less focus in dark.
+    - id: VTC-208
+      severity: minor
+      finding: >
+        Both modals clip "Theme #15" mid-row at the dialog's bottom edge with
+        no fade or scroll affordance — a 16-row table presenting as fifteen
+        and a half with no cue that more exists.
+    - id: VTC-209
+      severity: minor
+      finding: >
+        The population filter chip is typographically unfinished
+        ("Sector:Information Technology×" — no space after the colon, dismiss
+        glyph glued to the last word) — the one visibly hand-set string on an
+        otherwise disciplined surface.
+    - id: VTC-210
+      severity: minor
+      finding: >
+        Table view canonizes glance-tier vocabulary the doctrine bans ("await
+        confluence" on 4 of 5 Entry rows; bare "Mom Screen −0.76", "Tier T2"
+        with no interpretation) — attribution to r2 impossible from allowed
+        inputs, but the reference would freeze it.
+  strengths:
+    - The breadth measure is a real gain at partial width (track + fill
+      landing at 80%/27%/60% for 12/4/9 names — readable proportion at a
+      glance, correctly achromatic beside reserved stance hues).
+    - Light lane headers are more legible and more clearly stance-coded than
+      the grey-tile baseline — every band's ink clears 4.5:1 on its actual
+      painted surface (5.85/5.32/5.40/5.30 measured).
+    - The three newly evidenced states are honestly composed (population kept
+      visible; removable chip; filter-miss answered with plain words + a real
+      exit).
+    - The ENTRY OPEN highlight row works in BOTH themes — the exact idiom
+      VTC-202 shows dark's lane rows lack already exists inside the artifact.
+    - ZH reads as native composition (localized dates, translated controls,
+      no CJK uppercase mangling, coherent 红涨绿跌 flip that leaves amber
+      health unflipped).
+    - Mobile is a deliberate re-composition (stance selector + expanded lane
+      with hue rail; full-bleed single-column cards; unambiguous selected
+      chip in both themes).
+  measurement_note: >
+    Load-bearing pixel measurement: the four light lane rails carry real
+    inter-lane gaps (spans (81,382)/(408,707)/(733,1033)/(1059,1358) at
+    y=251) — the predecessor's continuous four-colour-bar defect is absent;
+    no such finding was filed.
+
+second_pass:
+  amended_at: null   # pending — rationale reveal follows this freeze commit
+  amendments: []
+  verdict: null
