@@ -7346,7 +7346,7 @@ def test_dead_confirmed_watcher_before_entry_routes_missing_evidence_once(
     assert "#6351/main-integrity" in output
 
 
-def test_unanswerable_ordinary_authority_latches_one_pre_entry_missing_evidence(
+def test_unanswerable_ordinary_authority_rechecks_but_receipts_exactly_once(
     monkeypatch, tmp_path, capsys
 ):
     repo, state_path, _head, _runs, observed = _v2_pending_session(
@@ -7368,12 +7368,130 @@ def test_unanswerable_ordinary_authority_latches_one_pre_entry_missing_evidence(
     assert "#6351/main-integrity" in output
     assert "CI_MATERIAL_EVENT authority_change" not in output
     assert '"decision": "block"' not in output
-    assert authority_reads == {"count": 1}
-    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+    assert authority_reads == {"count": 3}
+    assert observed == {"merged": 3, "pull": 3, "runs": 3}
     failure = GUARD._load(state_path)["ci_watcher_failure"]
     assert failure["head"] == _head
     assert failure["watcher_digest"] == "watch-digest-v2"
     assert failure["authority_fingerprint"] == ""
+
+
+def test_unanswerable_pre_entry_authority_reopens_when_it_becomes_answerable(
+    monkeypatch, tmp_path, capsys
+):
+    """A missing-evidence receipt cannot make a recovered authority source invisible."""
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    authority_reads = {"count": 0}
+
+    def authority_recovers(*_args):
+        authority_reads["count"] += 1
+        if authority_reads["count"] == 1:
+            raise RuntimeError("GitHub authority pagination is unanswerable")
+        return {"fingerprint": "a" * 16}
+
+    monkeypatch.setattr(GUARD, "_ci_hold_authority_snapshot", authority_recovers)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT missing_evidence") == 1
+    assert output.count("CI_QUIESCENT:") == 1
+    assert authority_reads == {"count": 2}
+    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+    state = GUARD._load(state_path)
+    assert "ci_watcher_failure" not in state
+    assert state["ci_quiescence"]["phase"] == "waiting"
+
+
+def test_pre_entry_watcher_failure_record_binds_complete_mechanical_identity(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _reservation: False)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    failure = GUARD._load(state_path)["ci_watcher_failure"]
+    assert failure["pr"] == 4242
+    assert failure["branch"] == "claude/feature"
+    assert failure["head"] == head
+    assert failure["watcher_digest"] == "watch-digest-v2"
+    assert failure["watcher_marker"] == "ship-watcher:v2-owned-session"
+    assert failure["watcher_pid"] == 4242
+    assert failure["watcher_start"] == "Mon Aug 29 01:00:00 2026"
+    assert failure["checks"] == ["trusted-ci / trusted-executor-pack-3"]
+    assert failure["checks_fingerprint"] == GUARD._ci_checks_fingerprint(runs)
+    assert failure["authority_state"] == "known"
+    assert failure["authority_fingerprint"]
+    assert failure["route"] == "#6351/main-integrity"
+    assert failure["watcher_liveness"] is False
+    assert failure["at"] > 0
+    assert failure["key"] == GUARD._ci_watcher_failure_key(failure)
+
+
+@pytest.mark.parametrize(
+    ("field", "replacement"),
+    [
+        ("key", "f" * 16),
+        ("pr", 9999),
+        ("branch", "claude/foreign"),
+        ("head", "b" * 40),
+        ("watcher_digest", "foreign-digest"),
+        ("watcher_marker", "foreign-marker"),
+        ("watcher_pid", 9999),
+        ("watcher_pid", None),
+        ("watcher_start", "Tue Aug 30 01:00:00 2026"),
+        ("watcher_start", None),
+        ("checks", ["trusted-ci / foreign-pack"]),
+        ("checks_fingerprint", "b" * 16),
+        ("authority_state", "unanswerable"),
+        ("authority_fingerprint", "b" * 16),
+        ("route", "builder"),
+        ("watcher_liveness", None),
+        ("at", 1.0),
+    ],
+)
+def test_tampered_pre_entry_failure_identity_never_stays_silent(
+    monkeypatch, tmp_path, capsys, field, replacement
+):
+    repo, state_path, _head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _reservation: False)
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+    state = GUARD._load(state_path)
+    state["ci_watcher_failure"][field] = replacement
+    GUARD._save(state_path, state)
+
+    assert not GUARD._ci_watcher_failure_fast_path(
+        repo, state_path, GUARD._load(state_path)
+    )
+    assert "ci_watcher_failure" not in GUARD._load(state_path)
+
+
+def test_same_head_local_branch_drift_reopens_pre_entry_failure(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _reservation: False)
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+    _git(repo, "branch", "-m", "claude/drifted-same-head")
+    assert _git(repo, "rev-parse", "HEAD") == head
+
+    assert not GUARD._ci_watcher_failure_fast_path(
+        repo, state_path, GUARD._load(state_path)
+    )
+    assert "ci_watcher_failure" not in GUARD._load(state_path)
 
 
 def test_pending_exact_head_with_one_watcher_enters_ci_quiescent_once(
@@ -7396,6 +7514,116 @@ def test_pending_exact_head_with_one_watcher_enters_ci_quiescent_once(
     assert quiescence["mode"] == "ordinary"
     assert quiescence["route"] == "release"
     assert observed == {"merged": 1, "pull": 1, "runs": 1}
+
+
+@pytest.mark.parametrize("duplicates", [2, 5, 14])
+def test_simultaneous_first_entry_stops_share_one_remote_classification_burst(
+    monkeypatch, tmp_path, capsys, duplicates
+):
+    """The first ledger claim precedes merged-PR, open-PR, check, and authority reads."""
+    from concurrent.futures import ThreadPoolExecutor
+    import threading
+
+    (tmp_path / "a").mkdir()
+    (tmp_path / "b").mkdir()
+    repo_a, state_a, head_a, _runs_a, _observed_a = _v2_pending_session(
+        monkeypatch, tmp_path / "a"
+    )
+    repo_b, state_b, head_b, _runs_b, _observed_b = _v2_pending_session(
+        monkeypatch, tmp_path / "b"
+    )
+    repos = {repo_a: "one", repo_b: "two"}
+    heads = {"one": head_a, "two": head_b}
+    counts = {
+        "one": {"merged": 0, "pull": 0, "runs": 0, "authority": 0},
+        "two": {"merged": 0, "pull": 0, "runs": 0, "authority": 0},
+    }
+    counts_lock = threading.Lock()
+
+    monkeypatch.setattr(
+        GUARD, "_github_slug", lambda root: ("acme", repos[Path(root)])
+    )
+
+    def counted(repo_name, key):
+        with counts_lock:
+            counts[repo_name][key] += 1
+
+    def merged(_owner, repo_name, _branch):
+        counted(repo_name, "merged")
+        time.sleep(0.05)
+        return None
+
+    def pull(_owner, repo_name, _branch):
+        counted(repo_name, "pull")
+        return _armed_pr(heads[repo_name])
+
+    def head_runs(_owner, repo_name, _head):
+        counted(repo_name, "runs")
+        return _v2_fast_preflight()
+
+    def authority(_owner, repo_name, _pull):
+        counted(repo_name, "authority")
+        return {"fingerprint": "a" * 16}
+
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", merged)
+    monkeypatch.setattr(GUARD, "_open_pull", pull)
+    monkeypatch.setattr(GUARD, "_head_check_runs", head_runs)
+    monkeypatch.setattr(GUARD, "_ci_hold_authority_snapshot", authority)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _reservation: True)
+
+    start = threading.Barrier(duplicates + 1)
+
+    def stop(repo, state_path):
+        start.wait(timeout=10)
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    with ThreadPoolExecutor(max_workers=duplicates + 1) as pool:
+        futures = [pool.submit(stop, repo_a, state_a) for _ in range(duplicates)]
+        futures.append(pool.submit(stop, repo_b, state_b))
+        for future in futures:
+            future.result(timeout=30)
+
+    assert counts == {
+        "one": {"merged": 1, "pull": 1, "runs": 1, "authority": 1},
+        "two": {"merged": 1, "pull": 1, "runs": 1, "authority": 1},
+    }
+    output = capsys.readouterr().out
+    assert output.count("CI_QUIESCENT:") == 2
+    assert GUARD._load(state_a)["ci_quiescence"]["phase"] == "waiting"
+    assert GUARD._load(state_b)["ci_quiescence"]["phase"] == "waiting"
+
+
+def test_first_entry_classification_claim_is_bounded_stale_safe_and_nonterminal(
+    monkeypatch, tmp_path
+):
+    _repo, state_path, head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    state = GUARD._load(state_path)
+
+    status, token = GUARD._ci_first_entry_classification_claim(
+        state_path, state, branch="claude/feature", head=head
+    )
+    duplicate_status, _duplicate_token = GUARD._ci_first_entry_classification_claim(
+        state_path, GUARD._load(state_path), branch="claude/feature", head=head
+    )
+    claim = GUARD._load(state_path)["ci_classification_claim"]
+
+    assert status == "claimed" and token
+    assert duplicate_status == "silent"
+    assert claim["branch"] == "claude/feature" and claim["head"] == head
+    assert claim["pr"] == 4242
+    assert "phase" not in claim and "route" not in claim and "terminal" not in claim
+
+    claim["at"] -= GUARD.CI_QUIESCENCE_WAKE_LEASE_SECONDS + 1
+    ledger = GUARD._load(state_path)
+    ledger["ci_classification_claim"] = claim
+    GUARD._save(state_path, ledger)
+    stale_status, stale_token = GUARD._ci_first_entry_classification_claim(
+        state_path, GUARD._load(state_path), branch="claude/feature", head=head
+    )
+    assert stale_status == "claimed"
+    assert stale_token and stale_token != token
 
 
 def test_lawful_hold_mode_reuses_the_same_mechanical_pending_entry(
@@ -7966,6 +8194,65 @@ def test_ordinary_comment_review_authority_change_invalidates_quiescent_wait_onc
     assert "#6351/main-integrity" not in output
     assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
     assert runs == _v2_fast_preflight()
+
+
+@pytest.mark.parametrize("later_event", ["builder_red", "green", "new_authority"])
+def test_authority_receipt_never_hides_a_later_same_head_material_event(
+    monkeypatch, tmp_path, capsys, later_event
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    authority = {"fingerprint": "1" * 16}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(
+        GUARD,
+        "_ci_hold_authority_snapshot",
+        lambda *_a: {"fingerprint": authority["fingerprint"]},
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    authority["fingerprint"] = "2" * 16
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    if later_event == "builder_red":
+        runs[:] = _v2_fast_preflight(
+            pending=False,
+            red=("trusted-ci / trusted-executor-pack-7", "failure"),
+        )
+        monkeypatch.setattr(
+            GUARD,
+            "_armed_pull_status",
+            lambda *_a: (
+                GUARD.CI_FAILED_UNMERGED,
+                "Failing CI: trusted-executor-pack-7 (failure).",
+            ),
+        )
+    elif later_event == "green":
+        runs[:] = _v2_fast_preflight(pending=False)
+    else:
+        authority["fingerprint"] = "3" * 16
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert sum(
+        item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT authority_change")
+        for item in outputs
+    ) == (2 if later_event == "new_authority" else 1)
+    if later_event == "builder_red":
+        assert outputs[-1]["decision"] == "block"
+        assert "trusted-executor-pack-7" in outputs[-1]["reason"]
+        assert "ci_quiescence" not in GUARD._load(state_path)
+    elif later_event == "green":
+        assert sum(
+            item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT green")
+            for item in outputs
+        ) == 1
+    else:
+        assert GUARD._load(state_path)["ci_quiescence"]["authority_fingerprint"] == "3" * 16
 
 
 def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(

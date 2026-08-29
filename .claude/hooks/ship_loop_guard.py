@@ -210,6 +210,11 @@ CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE = (
 # a lease inside the existing per-session ledger, not a timer or retry loop: it
 # is consulted only if another real Stop/task event already occurs.
 CI_QUIESCENCE_WAKE_LEASE_SECONDS = 120
+# A pre-entry missing-evidence latch is deliberately shorter-lived than a
+# healthy watcher-owned wait. It may suppress duplicate Stops for one union
+# watcher interval, but a recovered authority endpoint or changed liveness must
+# become answerable without a successor watcher or an indefinite local tombstone.
+CI_WATCHER_FAILURE_RECHECK_SECONDS = CI_PR_WATCH_INTERVAL_SECONDS
 # These exact control/fabric checks do not diagnose product code. Their red (or
 # missing semantic evidence needed to interpret them) belongs to canonical CI
 # issue #6351, not to every product builder whose PR inherited the symptom.
@@ -3930,6 +3935,129 @@ def _ci_watcher_for_pull(
     return watcher
 
 
+def _ci_first_entry_classification_claim(
+    path: Path,
+    state: dict[str, Any],
+    *,
+    branch: str,
+    head: str,
+) -> tuple[str, str]:
+    """Linearize the first remote classification for one exact pending wait.
+
+    The claim lives in the existing per-session ledger and carries no verdict,
+    phase, route, or terminal field. It merely makes one Stop the observer for
+    the exact local branch/head/watcher tuple. A crashed observer can be
+    replaced after the ordinary wake lease; a different session has a different
+    ledger and is therefore isolated.
+    """
+    watcher = state.get("ship_watcher")
+    if not isinstance(watcher, dict):
+        return "none", ""
+    condition = str(watcher.get("condition") or "")
+    match = re.fullmatch(r"gh-pr-checks:current-repo:([1-9][0-9]*)", condition)
+    if match is None or not branch.startswith("claude/"):
+        return "none", ""
+    number = int(match.group(1))
+    expected = _ci_watcher_for_pull(state, number, head)
+    if expected is None:
+        return "none", ""
+    token = secrets.token_hex(12)
+    now = time.time()
+
+    def claim(latest: dict[str, Any]) -> str:
+        # A sibling observer may have completed entry while this process waited
+        # for the ledger lock. That completed state is the answer; do not mint a
+        # second classification claim from the stale caller snapshot.
+        if isinstance(latest.get("ci_quiescence"), dict):
+            return "silent"
+        failure = latest.get("ci_watcher_failure")
+        if isinstance(failure, dict):
+            try:
+                failure_at = float(failure.get("at") or 0.0)
+            except (TypeError, ValueError):
+                failure_at = 0.0
+            failure_recheck_due = (
+                str(failure.get("authority_state") or "") == "unanswerable"
+                or now >= failure_at + CI_WATCHER_FAILURE_RECHECK_SECONDS
+            )
+            if not failure_recheck_due:
+                return "silent"
+        latest_watcher = _ci_watcher_for_pull(latest, number, head)
+        if latest_watcher is None:
+            return "none"
+        if any(
+            str(latest_watcher.get(field) or "")
+            != str(expected.get(field) or "")
+            for field in (
+                "digest",
+                "process_marker",
+                "process_pid",
+                "process_start",
+            )
+        ):
+            return "none"
+        current = latest.get("ci_classification_claim")
+        if isinstance(current, dict):
+            try:
+                claimed_at = float(current.get("at") or 0.0)
+            except (TypeError, ValueError):
+                claimed_at = 0.0
+            same_identity = (
+                str(current.get("branch") or "") == branch
+                and str(current.get("head") or "") == head
+                and int(current.get("pr") or 0) == number
+                and str(current.get("watcher_digest") or "")
+                == str(expected.get("digest") or "")
+                and str(current.get("watcher_marker") or "")
+                == str(expected.get("process_marker") or "")
+                and int(current.get("watcher_pid") or 0)
+                == int(expected.get("process_pid") or 0)
+                and str(current.get("watcher_start") or "")
+                == str(expected.get("process_start") or "")
+            )
+            if (
+                same_identity
+                and now < claimed_at + CI_QUIESCENCE_WAKE_LEASE_SECONDS
+            ):
+                return "silent"
+        latest["ci_classification_claim"] = {
+            "version": CI_QUIESCENCE_VERSION,
+            "token": token,
+            "pid": os.getpid(),
+            "at": now,
+            "branch": branch,
+            "head": head,
+            "pr": number,
+            "watcher_digest": str(expected.get("digest") or ""),
+            "watcher_marker": str(expected.get("process_marker") or ""),
+            "watcher_pid": int(expected.get("process_pid") or 0),
+            "watcher_start": str(expected.get("process_start") or ""),
+        }
+        return "claimed"
+
+    result = str(_update_ledger(path, claim, initial=state) or "none")
+    return result, token if result == "claimed" else ""
+
+
+def _ci_first_entry_classification_release(
+    path: Path, state: dict[str, Any], token: str
+) -> None:
+    """Release only this observer's nonterminal first-entry claim."""
+    if not token:
+        return
+
+    def release(latest: dict[str, Any]) -> dict[str, Any]:
+        current = latest.get("ci_classification_claim")
+        if isinstance(current, dict) and str(current.get("token") or "") == token:
+            latest.pop("ci_classification_claim", None)
+        return dict(latest)
+
+    latest = _update_ledger(path, release, initial=state)
+    if isinstance(latest, dict):
+        state.clear()
+        state.update(latest)
+
+
 def _ci_quiescence_clear(path: Path, state: dict[str, Any]) -> None:
     """Remove only the V2 wait record; watcher consumption remains intact."""
     def clear(latest: dict[str, Any]) -> dict[str, Any]:
@@ -4042,15 +4170,12 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
 
     phase = str(quiescence.get("phase") or "waiting")
     if phase == "routed":
-        if str(quiescence.get("material_kind") or "") == "authority_change":
-            # Authority re-entry is handed to release/Sol. With the same exact
-            # local head and watcher identity, a later Stop cannot prove a
-            # distinct remote condition without creating a successor poll.
-            return True
         # The event receipt suppresses only the same identified material
         # event. A later Stop must leave the local-only fast path and perform
         # one authoritative classification: the same event key stays silent,
         # while a late same-head generation/red/authority change is visible.
+        # Authority receipts are not special: making them permanently local
+        # would hide a later green, builder red, or second Sol authority edge.
         return False
 
     watcher = state.get("ship_watcher")
@@ -4097,6 +4222,33 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
     return result != "wake"
 
 
+def _ci_watcher_failure_key(failure: dict[str, Any]) -> str:
+    """Digest every authoritative field of one pre-entry failure receipt."""
+    fields = (
+        "version",
+        "pr",
+        "branch",
+        "head",
+        "watcher_digest",
+        "watcher_marker",
+        "watcher_pid",
+        "watcher_start",
+        "watcher_liveness",
+        "checks",
+        "checks_fingerprint",
+        "authority_fingerprint",
+        "authority_state",
+        "route",
+        "at",
+    )
+    payload = {field: failure.get(field) for field in fields}
+    return hashlib.sha256(
+        json.dumps(
+            payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+
+
 def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any]) -> bool:
     """Keep one unchanged pre-entry failure local and silent.
 
@@ -4123,23 +4275,64 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
             state.update(latest)
 
     head = str(failure.get("head") or "")
+    branch = str(failure.get("branch") or "")
     number = failure.get("pr")
+    checks = failure.get("checks")
+    authority_state = str(failure.get("authority_state") or "")
+    authority_fingerprint = str(failure.get("authority_fingerprint") or "")
+    route = str(failure.get("route") or "")
+    try:
+        number_value = int(number)
+        watcher_pid = int(failure.get("watcher_pid") or 0)
+        recorded_at = float(failure.get("at") or 0.0)
+    except (TypeError, ValueError):
+        number_value = 0
+        watcher_pid = 0
+        recorded_at = 0.0
     if (
         failure.get("version") != CI_QUIESCENCE_VERSION
+        or failure_key != _ci_watcher_failure_key(failure)
         or re.fullmatch(r"[0-9a-f]{16}", failure_key) is None
         or re.fullmatch(r"[0-9a-f]{40}", head) is None
-        or not number
+        or not branch.startswith("claude/")
+        or number_value <= 0
         or not str(failure.get("watcher_digest") or "")
         or not str(failure.get("watcher_marker") or "")
-        or (
-            failure.get("watcher_liveness") is not None
-            and not isinstance(failure.get("watcher_liveness"), bool)
+        or watcher_pid <= 1
+        or not str(failure.get("watcher_start") or "")
+        or not isinstance(failure.get("watcher_liveness"), bool)
+        or not isinstance(checks, list)
+        or not checks
+        or not all(isinstance(check, str) and check for check in checks)
+        or re.fullmatch(
+            r"[0-9a-f]{16}", str(failure.get("checks_fingerprint") or "")
         )
+        is None
+        or authority_state not in {"known", "unanswerable"}
+        or (
+            authority_state == "known"
+            and re.fullmatch(r"[0-9a-f]{16}", authority_fingerprint) is None
+        )
+        or (authority_state == "unanswerable" and bool(authority_fingerprint))
+        or route != "#6351/main-integrity"
+        or recorded_at <= 0
     ):
         clear_failure()
         return False
+    # An unanswerable authority source has no local evidence that it remains
+    # unanswerable. Reopen immediately; a valid record still deduplicates its
+    # already-emitted event key, but it cannot hide later recovery.
+    if authority_state == "unanswerable":
+        return False
+    # Known failure snapshots are duplicate-suppression receipts, not terminal
+    # truth. Bound their local-only lifetime to one watcher observation cadence.
+    if time.time() >= recorded_at + CI_WATCHER_FAILURE_RECHECK_SECONDS:
+        return False
     try:
-        if _run(root, "git", "rev-parse", "HEAD") != head:
+        if (
+            _run(root, "git", "rev-parse", "HEAD") != head
+            or _run(root, "git", "branch", "--show-current") != branch
+        ):
             clear_failure()
             return False
         baseline = state.get("baseline") or {}
@@ -4154,14 +4347,19 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
             return False
     except Exception:
         return False
-    watcher = _ci_watcher_shape_for_pull(state, number, head)
+    watcher = _ci_watcher_for_pull(state, number_value, head)
+    liveness = _watcher_process_alive(watcher) if watcher is not None else None
     if (
         watcher is None
         or str(watcher.get("digest") or "")
         != str(failure.get("watcher_digest") or "")
         or str(watcher.get("process_marker") or "")
         != str(failure.get("watcher_marker") or "")
-        or _watcher_process_alive(watcher) is not failure.get("watcher_liveness")
+        or int(watcher.get("process_pid") or 0) != watcher_pid
+        or str(watcher.get("process_start") or "")
+        != str(failure.get("watcher_start") or "")
+        or not isinstance(liveness, bool)
+        or liveness is not failure.get("watcher_liveness")
     ):
         clear_failure()
         return False
@@ -4229,6 +4427,7 @@ def _ci_watcher_failure_receipt(
     state: dict[str, Any],
     *,
     number: Any,
+    branch: str,
     head: str,
     watcher: dict[str, Any],
     checks: list[str],
@@ -4246,36 +4445,38 @@ def _ci_watcher_failure_receipt(
         else ""
     )
     watcher_liveness = _watcher_process_alive(watcher)
-    event_key = hashlib.sha256(
-        json.dumps(
-            {
-                "head": head,
-                "watcher": str(watcher.get("digest") or ""),
-                "checks": checks_fingerprint,
-                "authority": known_authority or "unanswerable",
-            },
-            sort_keys=True,
-        ).encode("utf-8")
-    ).hexdigest()[:16]
+    try:
+        watcher_pid = int(watcher.get("process_pid") or 0)
+    except (TypeError, ValueError):
+        watcher_pid = 0
+    authority_state = "known" if known_authority else "unanswerable"
+    event_identity = {
+        "version": CI_QUIESCENCE_VERSION,
+        "pr": number,
+        "branch": branch,
+        "head": head,
+        "watcher_digest": str(watcher.get("digest") or ""),
+        "watcher_marker": str(watcher.get("process_marker") or ""),
+        "watcher_pid": watcher_pid,
+        "watcher_start": str(watcher.get("process_start") or ""),
+        "watcher_liveness": watcher_liveness,
+        "checks": list(checks),
+        "checks_fingerprint": checks_fingerprint,
+        "authority_fingerprint": known_authority,
+        "authority_state": authority_state,
+        "route": route["owner"],
+    }
 
     def route_once(latest: dict[str, Any]) -> bool:
         current = latest.get("ci_watcher_failure")
-        if isinstance(current, dict) and str(current.get("key") or "") == event_key:
+        if isinstance(current, dict) and all(
+            current.get(field) == value for field, value in event_identity.items()
+        ):
             return False
-        latest["ci_watcher_failure"] = {
-            "version": CI_QUIESCENCE_VERSION,
-            "key": event_key,
-            "pr": number,
-            "head": head,
-            "watcher_digest": str(watcher.get("digest") or ""),
-            "watcher_marker": str(watcher.get("process_marker") or ""),
-            "watcher_liveness": watcher_liveness,
-            "checks_fingerprint": checks_fingerprint,
-            "authority_fingerprint": known_authority,
-            "authority_state": "known" if known_authority else "unanswerable",
-            "route": route["owner"],
-            "at": time.time(),
-        }
+        record = {**event_identity, "at": time.time()}
+        record["key"] = _ci_watcher_failure_key(record)
+        latest["ci_watcher_failure"] = record
+        latest.pop("ci_classification_claim", None)
         latest["last_blocker"] = ""
         latest["blocker_count"] = 0
         return True
@@ -4424,6 +4625,7 @@ def _enter_ci_quiescence(
             "entered_at": time.time(),
             "unchanged_observations": 0,
         }
+        latest.pop("ci_classification_claim", None)
         latest.pop("ci_watcher_failure", None)
         latest["last_blocker"] = ""
         latest["blocker_count"] = 0
@@ -4507,6 +4709,7 @@ def _try_ci_quiescence(
                         path,
                         state,
                         number=number,
+                        branch=branch,
                         head=head,
                         watcher=watcher,
                         checks=pending,
@@ -4557,6 +4760,17 @@ def _try_ci_quiescence(
                 "none",
                 "",
             )
+        if (
+            str(existing.get("phase") or "") == "routed"
+            and str(existing.get("checks_fingerprint") or "")
+            == checks_fingerprint
+            and old_authority == authority_fingerprint
+        ):
+            # A routed receipt suppresses only its exact material identity.
+            # This comparison happens after a fresh bounded classification, so
+            # an identical event stays exact-once while a later same-head check
+            # generation or authority edge remains visible.
+            return True, "none", ""
 
     if red:
         code, detail = _armed_pull_status(owner, repo, branch, head)
@@ -4631,6 +4845,7 @@ def _try_ci_quiescence(
                     path,
                     state,
                     number=number,
+                    branch=branch,
                     head=head,
                     watcher=watcher,
                     checks=pending,
@@ -6808,10 +7023,18 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         # re-asks once per Stop, which is the cheap direction — the alternative is
         # pinning a session forever on a record that can never answer.
         pull = None
+    classification_token = ""
+    if pull is None and not isinstance(state.get("ci_quiescence"), dict):
+        claim_status, classification_token = _ci_first_entry_classification_claim(
+            path, state, branch=branch, head=head
+        )
+        if claim_status == "silent":
+            return
     if pull is None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
         except Exception as exc:
+            _ci_first_entry_classification_release(path, state, classification_token)
             code = _github_block_code(exc)
             _block(
                 path, state, payload, code, str(exc),
@@ -6852,6 +7075,8 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 "merged_at": pull.get("merged_at"),
             }
             _remember_proof(path, state, "merged_pull", pull_key, pull)
+    if pull:
+        _ci_first_entry_classification_release(path, state, classification_token)
     if not pull:
         # There is no merged pull request, so this session is NOT done — arming
         # `merge-on-green` is a merge convenience, never an exit (operator ruling
@@ -6865,17 +7090,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         # through to the ordinary block below. The escape ladder in `_block` covers
         # a persistently failing API.
         try:
-            quiescence_handled, armed_code, armed_detail = _try_ci_quiescence(
-                root, path, state, owner, repo, branch, head
-            )
-            if quiescence_handled:
-                return
-            if armed_code == "none":
-                armed_code, armed_detail = _armed_pull_status(
-                    owner, repo, branch, head
+            try:
+                quiescence_handled, armed_code, armed_detail = _try_ci_quiescence(
+                    root, path, state, owner, repo, branch, head
                 )
-        except Exception:
-            armed_code, armed_detail = "none", ""
+                if quiescence_handled:
+                    return
+                if armed_code == "none":
+                    armed_code, armed_detail = _armed_pull_status(
+                        owner, repo, branch, head
+                    )
+            except Exception:
+                armed_code, armed_detail = "none", ""
+        finally:
+            _ci_first_entry_classification_release(
+                path, state, classification_token
+            )
         if armed_code != "none":
             _block(path, state, payload, armed_code, armed_detail)
             return
