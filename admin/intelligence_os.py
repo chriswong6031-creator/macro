@@ -166,8 +166,8 @@ def _evidence_mtime_key(root: Path) -> tuple[Any, ...]:
     )
 
 
-def _producer_source_mtime_key(root: Path) -> tuple[tuple[str, int | None], ...] | None:
-    """T1 producer-source identities without inventing another engine registry."""
+def _synapse_dependency_mtime_key(root: Path) -> tuple[Any, ...] | None:
+    """Mutable repo paths whose identity T1 derives from the Synapse document."""
     try:
         import yaml  # noqa: PLC0415 — only loaded when the panel is actually derived
 
@@ -180,16 +180,32 @@ def _producer_source_mtime_key(root: Path) -> tuple[tuple[str, int | None], ...]
         for row in (artifacts or {}).values()
         if isinstance(row, dict)
     }
-    keyed: list[tuple[str, int | None]] = []
+    qual_refs = {
+        str(row.get("qual_ladder_ref") or "").strip()
+        for row in (artifacts or {}).values()
+        if isinstance(row, dict)
+    }
+    producer_keys: list[tuple[str, int | None]] = []
     for producer in sorted(p for p in producers if p):
         rel = Path(producer)
         # Placeholder/absolute/traversal tokens remain T1's concern; this cache key
         # never stats outside the commissioned root.
         if rel.is_absolute() or ".." in rel.parts:
-            keyed.append((producer, None))
+            producer_keys.append((producer, None))
             continue
-        keyed.append((producer, _mtime_ns(root / rel)))
-    return tuple(keyed)
+        producer_keys.append((producer, _mtime_ns(root / rel)))
+
+    prereg_keys: list[tuple[str, int | None]] = []
+    for ref in sorted(r for r in qual_refs if r):
+        rel = Path(ref)
+        if rel.is_absolute() or ".." in rel.parts:
+            prereg_keys.append((ref, None))
+            continue
+        # T1 resolves a ref either as a qual-ladder key or as a repo file. The
+        # ladder file has its own key below; this stat catches a referenced repo
+        # file appearing, disappearing or changing without a Synapse edit.
+        prereg_keys.append((ref, _mtime_ns(root / rel)))
+    return (tuple(producer_keys), tuple(prereg_keys))
 
 
 def _t1_evidence_mtime_key(root: Path) -> tuple[Any, ...]:
@@ -198,7 +214,7 @@ def _t1_evidence_mtime_key(root: Path) -> tuple[Any, ...]:
         _mtime_ns(root / _QUAL_LADDER_REL),
         _mtime_ns(root / _SPECIES_REL),
         _mtime_ns(root / _ARTICLE2_REL),
-        _producer_source_mtime_key(root),
+        _synapse_dependency_mtime_key(root),
     )
 
 
@@ -218,17 +234,71 @@ def _read_status_worse(current: str, candidate: str) -> str:
     return candidate if rank.get(candidate, 3) > rank.get(current, 3) else current
 
 
+def _parse_iso_timestamp(value: Any, *, require_timezone: bool) -> bool:
+    if not isinstance(value, str) or not value.strip():
+        return False
+    try:
+        parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return not require_timezone or parsed.tzinfo is not None
+
+
+def _positive_int(value: Any) -> bool:
+    """JSON booleans are integers in Python, but never lawful horizons."""
+    return isinstance(value, int) and not isinstance(value, bool) and value > 0
+
+
+def _valid_claim_row(row: Any) -> bool:
+    """Minimum historical qledger claim identity needed by the owner readers.
+
+    This deliberately does not rerun today's registration gate over old rows: that gate
+    has tightened over time and some lawful historical claims are retained as rejected
+    or legacy evidence. It only refuses rows that cannot name a claim, family, ruler or
+    observable scope at all.
+    """
+    if not isinstance(row, dict):
+        return False
+    scope = row.get("scope")
+    family = str(row.get("claim_family") or row.get("desk") or "").strip()
+    unit = row.get("horizon_unit")
+    return (
+        bool(str(row.get("claim_id") or "").strip())
+        and bool(str(row.get("desk") or "").strip())
+        and bool(family)
+        and _parse_iso_timestamp(row.get("asof"), require_timezone=False)
+        and isinstance(scope, dict)
+        and scope.get("type") in {"entity", "basket", "sector", "macro"}
+        and bool(str(scope.get("key") or "").strip())
+        and row.get("direction") in {-1, 0, 1}
+        and _positive_int(row.get("horizon_d"))
+        and (unit is None or unit in {"trading_days", "calendar_days"})
+    )
+
+
+def _valid_grade_row(row: Any) -> bool:
+    """Minimum semantic shape shared by legacy and explicit-clock grade rows."""
+    if not isinstance(row, dict):
+        return False
+    required_metrics = ("subject_ret", "bench_ret", "control_ret", "excess", "hit")
+    return (
+        bool(str(row.get("claim_id") or "").strip())
+        and _positive_int(row.get("horizon_d"))
+        and _parse_iso_timestamp(row.get("graded_at"), require_timezone=True)
+        and all(key in row for key in required_metrics)
+        and (row.get("hit") is None or isinstance(row.get("hit"), bool))
+    )
+
+
 def _valid_clock_receipt(clock: Any, family: str) -> bool:
     if not isinstance(clock, dict):
         return False
-    try:
-        horizon = int(clock.get("declared_horizon_d"))
-    except (TypeError, ValueError):
-        return False
     return (
         str(clock.get("claim_family") or "") == family
-        and bool(str(clock.get("first_prospective_registration_utc") or "").strip())
-        and horizon > 0
+        and _parse_iso_timestamp(
+            clock.get("first_prospective_registration_utc"), require_timezone=True
+        )
+        and _positive_int(clock.get("declared_horizon_d"))
         and str(clock.get("horizon_unit") or "") in {"trading_days", "calendar_days"}
     )
 
@@ -294,6 +364,13 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
                     f"claims.jsonl has {claims_candidates - len(claims_rows)} "
                     f"unparseable candidate line(s) of {claims_candidates}"
                 )
+            invalid_claims = sum(not _valid_claim_row(row) for row in claims_rows)
+            if invalid_claims:
+                read_status = _read_status_worse(read_status, "partial")
+                read_errors.append(
+                    f"claims.jsonl has {invalid_claims} semantically invalid "
+                    f"owner row(s) of {len(claims_rows)}"
+                )
 
     grades_path = root / _QLEDGER_GRADES_REL
     grades_candidates, grades_error = _jsonl_candidate_count(grades_path)
@@ -312,6 +389,13 @@ def _load_evidence_providers(root: Path, registry: dict) -> dict[str, dict]:
                 read_errors.append(
                     f"grades.jsonl has {grades_candidates - len(grades_rows)} "
                     f"unparseable candidate line(s) of {grades_candidates}"
+                )
+            invalid_grades = sum(not _valid_grade_row(row) for row in grades_rows)
+            if invalid_grades:
+                read_status = _read_status_worse(read_status, "partial")
+                read_errors.append(
+                    f"grades.jsonl has {invalid_grades} semantically invalid "
+                    f"owner row(s) of {len(grades_rows)}"
                 )
 
     families = sorted({family for family, _binding in bindings.values()})

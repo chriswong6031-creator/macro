@@ -687,12 +687,60 @@ def test_malformed_qledger_claims_degrade_instead_of_faking_an_empty_store(tmp_p
     assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
 
 
+@pytest.mark.parametrize("store_name", ["claims.jsonl", "grades.jsonl"])
+def test_semantically_invalid_qledger_rows_degrade_even_when_json_parses(
+    tmp_path, store_name
+):
+    """Owner readers accepting ``{}`` must not turn corruption into Accruing."""
+    root = qledger_adapter_root(tmp_path)
+    (root / "data" / "qledger" / store_name).write_text("{}\n", encoding="utf-8")
+
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "semantically invalid" in row["evidence_provider"]["error"]
+    assert "evidence_provider_unreadable" in row["evidence_reason_codes"]
+
+
 def test_corrupt_existing_evidence_clock_degrades_instead_of_looking_unstarted(tmp_path):
     """An existing unreadable write-once receipt is blindness, not an absent clock."""
     root = qledger_adapter_root(tmp_path)
     clock_dir = root / "data" / "qledger" / "evidence_clock_start"
     clock_dir.mkdir(parents=True)
     (clock_dir / "stock_desk.json").write_text("{not-json}", encoding="utf-8")
+
+    row = IOS.panel(root=root)["engines"][0]
+
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "unreadable"
+    assert "evidence clock receipt" in row["evidence_provider"]["error"]
+    assert "evidence_clock_not_started" not in row["evidence_reason_codes"]
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value"),
+    [
+        ("first_prospective_registration_utc", "definitely-not-a-timestamp"),
+        ("declared_horizon_d", True),
+    ],
+)
+def test_semantically_invalid_evidence_clock_degrades(tmp_path, field, bad_value):
+    """A parseable receipt still fails closed when its ruler fields are dishonest."""
+    root = qledger_adapter_root(tmp_path)
+    clock_dir = root / "data" / "qledger" / "evidence_clock_start"
+    clock_dir.mkdir(parents=True)
+    receipt = {
+        "claim_family": "stock_desk",
+        "first_prospective_registration_utc": "2026-08-29T01:02:03+00:00",
+        "declared_horizon_d": 20,
+        "horizon_unit": "trading_days",
+        "git_sha": "abc123",
+    }
+    receipt[field] = bad_value
+    (clock_dir / "stock_desk.json").write_text(
+        json.dumps(receipt), encoding="utf-8"
+    )
 
     row = IOS.panel(root=root)["engines"][0]
 
@@ -762,6 +810,35 @@ def test_t1_evidence_input_movement_invalidates_the_in_process_view(
     )
 
     assert IOS.panel(root=root)["generated"]["cache"] == "miss"
+
+
+def test_new_repo_path_prereg_invalidates_the_in_process_view(tmp_path):
+    """A newly materialized Synapse evidence pointer must not hide for the TTL."""
+    prereg_rel = "research/new_prereg.md"
+    root = _write_root(
+        tmp_path,
+        {
+            "a": artifact(
+                "data/a.json",
+                producer="engine/a.py",
+                owner="prog-one",
+                tier="scored",
+                qual_ladder_ref=prereg_rel,
+            )
+        },
+    )
+    (root / "config" / "qual_ladder.yml").write_text("{}\n", encoding="utf-8")
+    first = IOS.panel(root=root)
+    assert prereg_rel not in first["engines"][0]["evidence_refs"]
+    assert IOS.panel(root=root)["generated"]["cache"] == "hit"
+
+    prereg = root / prereg_rel
+    prereg.parent.mkdir(parents=True)
+    prereg.write_text("# prospective protocol\n", encoding="utf-8")
+
+    fresh = IOS.panel(root=root)
+    assert fresh["generated"]["cache"] == "miss"
+    assert prereg_rel in fresh["engines"][0]["evidence_refs"]
 
 
 def test_revised_existing_evidence_clock_invalidates_the_in_process_view(tmp_path):
