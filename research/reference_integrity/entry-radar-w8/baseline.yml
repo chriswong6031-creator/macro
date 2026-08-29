@@ -1,0 +1,95 @@
+schema: mastermind.rig_baseline.v1
+reference_id: entry-radar-w8
+captured_at: "2026-08-15"
+
+production:
+  route: entry_radar.html
+  live_url: ""
+  source_commit: cc6f53f619f439683a4da7aa366843aef6079768
+  source_paths: []
+  shared_surfaces: []
+  note: >
+    No production entry_radar.html exists on origin/main
+    (git ls-tree origin/main -- templates/entry_radar.html.j2 site/entry_radar.html
+    is empty). This is a founding reference. Visual lineage is the R4-resolved
+    Prophet Board sister language, pinned at merge 168a9be00691 / tree d540f493a097.
+
+evidence:
+  screenshots:
+    # Sister-language family — committed production Prophet Board shots.
+    # These are NOT Radar production (Radar has none). They are the visual
+    # family the operator named as the design reference.
+    - {path: mockups/refs/prophet_board_priority/us_board_dark.png, viewport: desktop, theme: dark, locale: en, note: "Prophet Board production family — sister language source, not Radar"}
+    - {path: mockups/refs/prophet_board_priority/us_board_light.png, viewport: desktop, theme: light, locale: en, note: "Prophet Board production family"}
+    - {path: mockups/refs/prophet_board_priority/us_board_zh.png, viewport: desktop, theme: dark, locale: zh, note: "Prophet Board production family"}
+    - {path: mockups/refs/prophet_board_priority/us_board_mobile_dark.png, viewport: mobile390, theme: dark, locale: en, note: "Prophet Board production family"}
+  gaps:
+    - {axis: route, value: entry_radar.html, reason: "No production Radar surface exists. Founding reference."}
+    - {axis: theme, value: light, viewport: mobile390, locale: zh, reason: "Radar production absent; light mobile ZH is a proposal crop, not a production capture"}
+    - {axis: pin, value: r4-html, reason: "R4 Prophet Board reference crops were never committed; the pin is the HTML/CSS/JS tree d540f493a097, read at session start"}
+
+user_job: >
+  An operator scanning U.S. names for an observable entry forming right now —
+  which expert sees it, why, and how fresh — without confusing that job with
+  Prophet's "what do we want to own?"
+
+core_interactions:
+  - there is no production Radar surface; the operator cannot do this job on entry_radar.html today
+
+information_hierarchy:
+  - "absent — no production page"
+
+design_lineage:
+  rulings:
+    - ref: "DEC:LER-PROPHET-BOARD-IS-DESIGN-REFERENCE"
+      evidence: "agentos/decisions/DEC-LER-PROPHET-BOARD-IS-DESIGN-REFERENCE.md"
+      implication: "Sister card/layout language; Radar IA only; R3/R4 defects not inherited"
+    - ref: "contract §13–§15 / §14 UI directive"
+      evidence: "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md"
+      implication: "Lifecycle ≠ Priority; expert identities preserved; C4 stratification only; no fabricated edge"
+    - ref: "DNR:KILL-WASHOUT-TURN"
+      evidence: "research/DO_NOT_REBUILD.md"
+      implication: "C4 must not become a firing washout×turn detector"
+  rejected_variants:
+    - "Bespoke new visual language for Radar (rejected by operator 2026-08-13)"
+    - "Freeze on R3 Prophet reference including known defects (R3 verdict was REVISE)"
+    - "Flatten G0/C1/C2/C3/C5 into one entry_signal"
+  comments:
+    - path: "templates/_prophet_card.html.j2:1-70"
+      note: "Card contract Radar sisters: chart-first, quote overlay, chip anatomy, zone footer — not the verb vocabulary"
+    - path: "mockups/refs/institutionalize/us_stocks/DESIGN_NOTES.md:128-174"
+      note: "R4 closure: do not inherit the defects that ledger closed, and do not inherit Prophet plan semantics"
+
+capabilities:
+  - id: surface.absent
+    user_job: There is no production Radar page. The operator cannot scan live entry episodes here today.
+    evidence: "git ls-tree origin/main -- templates/entry_radar.html.j2 site/entry_radar.html (empty at pin cc6f53f6)"
+    importance: core
+  - id: sister.prophet_card_language
+    user_job: The operator already knows the Prophet Board card/layout language and should not learn a third header or card family.
+    evidence: "mockups/refs/institutionalize/us_stocks/board.css tree d540f493a097; templates/_prophet_card.html.j2"
+    importance: core
+  - id: contract.expert_identities
+    user_job: Tell experts apart — G0, C1, C2 (with variant), C3, C5 — never one generic entry signal.
+    evidence: "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §18 A1 / A5; engine/entry_radar/detectors.py"
+    importance: core
+  - id: contract.c4_not_a_fire
+    user_job: See C4 as context / stratification only.
+    evidence: "engine/entry_radar/challengers.py C4_DETECTOR_ID role=stratification_only"
+    importance: core
+  - id: contract.no_fabricated_edge
+    user_job: Not be shown a fake Priority, Opportunity, or win probability before W6/W7.
+    evidence: "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §15 PR-6/PR-7; W8 brief"
+    importance: core
+  - id: contract.freshness_honesty
+    user_job: See provisional vs confirmed, stale vs live, unavailable vs non-fire.
+    evidence: "contract §14 provisional visual language; #5555 stale-frame law"
+    importance: core
+  - id: contract.false_start_memory
+    user_job: Prior false starts remain visible.
+    evidence: "contract §0 P-10"
+    importance: core
+  - id: contract.multi_expert
+    user_job: One ticker can show multiple expert lanes at once.
+    evidence: "contract §0 P-5"
+    importance: core
