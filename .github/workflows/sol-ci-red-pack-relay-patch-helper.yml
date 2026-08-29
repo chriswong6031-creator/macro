@@ -88,3 +88,5 @@ jobs:
           git config user.email "sol-ci-repair@users.noreply.github.com"
           git commit -m "fix(ci): preserve red trusted-pack evidence for ci-gate (#6351)"
           git push origin HEAD:sol/ci-red-pack-relay-recovery-6351
+
+# Reconciled sparse-checkout attempt; the prior full-checkout run cannot fast-forward this branch.
