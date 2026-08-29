@@ -41,19 +41,32 @@ material_results:
     self-claim. It is intentionally unstarted until Chairman binds a concrete eligible Terra-capable seat in that
     same thread. First stop is tests-only hosted RED for the absent control_plane.operator_continuation module.
   - >
-    Sol-side temporary continuity watches are armed for the exact OCR-3 Slack child and exact #184 carrier. They
-    are attention/transport only: no Executive lifecycle, account selection, failover, retry or merge authority is
-    created. They must terminate on explicit child/PR terminal close according to current watcher law.
+    Sol-side temporary continuity watches are armed for the exact OCR-3 Slack child, exact #184 carrier and the
+    H0 pin-split repair child. They are attention/transport only: no Executive lifecycle, account selection,
+    failover, retry or merge authority is created. They must terminate on explicit child/PR terminal close
+    according to current watcher law.
 capacity_lane:
-  cf2_h0: in_progress
+  cf2_h0: in_progress_source_law_blocked
   truth: >
-    PR #200 source repair is merged; there is no remaining H0 source-code carrier to replay. Native H0 acceptance
-    is NOT proven. Current protected ops/executive_os/HOST_PREREQUISITES.md remains the authority for the selected
-    Alternative B ceremony. The remaining gate is the local macOS administrator ceremony, then repeated verify-only
-    H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED proof, then STOP for independent CF2-P0. No OAuth/provider call/routing in H0.
+    PR #200 is merged as e53f524230ffc4e8730c844f6fc319d50a2050f3 and remains the accepted source-closure/
+    generation-repair identity. Protected Mastermind later advanced to f61ced39d47f935b1dea369bd3ed25e06c954d08
+    via #202, whose exact delta from #200 is only watcher procedure/test and changes no H0 authenticated carrier byte.
+    Current HOST_PREREQUISITES nevertheless requires refs/remotes/origin/master == REPAIR_MERGE_SHA while the H0
+    plan and repair carrier use that same SHA as durable source-closure repair provenance. Therefore the native
+    administrator ceremony is BLOCKED: e53f524 fails the current-origin equality gate, while f61ced would falsely
+    relabel an unrelated watcher-law merge as the source-closure repair identity.
+  repair_wave: >
+    Fresh Slack child 1787966023.775079 / operation cf2-h0-current-master-carrier-pin-repair-20260828-sol-001 is
+    OPEN_PICKUP / PREFERRED_AVENUE CTO Sol / ACCOUNT_BINDING CHAIRMAN_SELECTS / CAPACITY_SELECTABLE. Mission is a
+    RED-first bounded split between exact current protected CARRIER_COMMIT_SHA and immutable REPAIR_MERGE_SHA,
+    preserving exact five-path Git mode/blob equality, ancestry/reachability and current-origin protection before
+    any later privileged launch. Allowed source scope is HOST_PREREQUISITES.md, bootstrap-capacity-source-closure.sh
+    and tests/test_executive_capacity_source_closure_repair.py only; no native ceremony or installed mutation.
   chairman_boundary: >
-    Administrator password/device approval must be entered locally and never pasted into Slack/chat/transcripts.
-    Sol cannot perform that physical secret-bearing step from this session and must not replay any prior H0 effect.
+    DO NOT run sudo/native H0 ceremony yet. First bind an eligible CTO-Sol-capable seat to the pin-split repair
+    thread and let the bounded source repair complete/merge under Sol review. Only a later re-pinned runbook may
+    authorize local administrator execution. Password/device approval must always be entered locally and never
+    pasted into Slack/chat/transcripts.
 next_ocr1_after_184_merge:
   task: OCR-1 Task 4 pure storeless realm-set verifier
   files:
@@ -71,7 +84,8 @@ capability_ledger:
   OCR-0_architecture_freeze: PROVEN_LIVE_AS_SOURCE_LAW
   OCR-1_task1_2_preflight: BUILT_NOT_PROVEN_PENDING_CURRENT_EXACT_HEAD_MERGE
   OCR-1_task4_realm_set_verifier: NOT_BUILT
-  CF2-H0_native_host_acceptance: PARTIAL_ADMIN_GATE
+  CF2-H0_source_law: BROKEN_BY_CURRENT_MASTER_REPAIR_IDENTITY_PIN_COLLISION_REPAIR_COMMISSIONED
+  CF2-H0_native_host_acceptance: NOT_PROVEN_BLOCKED_BY_SOURCE_LAW
   OCR-3_task1_continuation_contract: NOT_BUILT_FRESH_RED_CARRIER_OPEN_UNASSIGNED
   Wake_174: BUILT_NOT_PROVEN_OPEN_DRAFT_PRODUCTION_DISARMED
   Worker_Presence_178: BUILT_NOT_PROVEN_PRODUCTION_INERT
@@ -86,9 +100,9 @@ hard_no_rebuild_boundaries:
   - OpenClaw remains optional subordinate hands and never gains lifecycle, account selection, failover, Slack identity, queue or memory authority.
   - V1 automatic quota rollover remains limited to canonically non-modifying Attempts; write-capable interruption or unresolved EFFECT_UNKNOWN forbids provider/account/host failover.
 exact_next_action: >
-  Re-fetch current protected Mastermind and PR #184 when the exact-head repository test completes. If protected master
+  Re-fetch current protected Mastermind and PR #184 when its exact-head repository test completes. If protected master
   is unchanged and every required exact-head gate is green, record fresh current-source Sol PASS and merge only the
-  reviewed #184 head. If master moved, reconcile same carrier first and require fresh exact-head proof. After actual
-  merge, re-pin current source and commission OCR-1 Task 4 only if no competing carrier exists. In parallel, Chairman
-  may bind a free Terra-capable seat to the fresh OCR-3 Slack thread and may perform the current H0 admin ceremony locally.
+  reviewed #184 head; then re-pin and commission OCR-1 Task 4 if no competing carrier exists. Independently, Chairman
+  may bind one free Terra-capable seat to OCR-3 Task 1 and one eligible CTO-Sol-capable seat to the H0 pin-split repair.
+  Do not execute the H0 administrator ceremony until the source-law blocker is repaired, merged and re-reviewed.
 ---
