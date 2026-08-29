@@ -1,26 +1,26 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-08-28",
-  "generated_at": "2026-08-29T11:08:10.469963+00:00",
+  "generated_at": "2026-08-29T14:47:41.029149+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-08-28-RIVN-20260829110810-1",
+      "id": "2026-08-28-RIVN-20260829144741-1",
       "ticker": "RIVN",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The deterministic verdict finds no clear edge, while the validated selection leg is only marginal and the mixed regime supplies no decisive support. The unblocked entry and turn signal justify watching, but not a relative-performance call.",
+      "thesis": "The deterministic verdict finds no clear edge: the validated selection leg is only marginal, while entry is unblocked and the cycle has turned up. That combination supports watching rather than taking a directional view versus the S&P 500.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z 0.16; 52nd percentile",
-        "Entry unblocked; board direction up",
-        "Regime: mixed"
+        "Selection z 0.16, 52nd percentile",
+        "Entry unblocked, 57th percentile",
+        "Board: TURN SIGNALED, direction up"
       ],
-      "dissent": "The up direction, immediate urgency and turn signal could develop into sustained momentum and S&P 500 outperformance.",
+      "dissent": "The upturn and favorable entry could develop into persistent relative momentum despite the weak selection signal.",
       "falsifier": {
-        "text": "A sustained strengthening of relative momentum after the turn signal would change the read to constructive.",
+        "text": "RIVN establishes sustained relative strength versus the S&P 500 while the uptrend remains intact.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -30,23 +30,23 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-08-28-EZPW-20260829110810-2",
+      "id": "2026-08-28-EZPW-20260829144741-2",
       "ticker": "EZPW",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Positive residual-alpha selection is offset by a weak entry axis, lottery-spike exposure and an accounting-quality watch, so the risk controls argue against extrapolating the near-high momentum. With no cycle block or downtrend, those risks also do not support a short lean.",
+      "thesis": "The verdict remains neutral because favorable residual-alpha selection is offset by a weak entry profile and an accounting-quality watch. With price close to its high and momentum intact, the risk controls argue against chasing but do not support a short.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z 0.90; 64th percentile",
-        "Entry z -0.63; lottery-spike present",
+        "Selection z 0.90, 64th percentile",
+        "Entry z -0.63, 40th percentile",
         "Accounting flag: watch",
-        "Board direction up; 3.3% off high"
+        "Board direction up, 3.3% off high"
       ],
-      "dissent": "Strong momentum near the high could persist, making the entry concerns too conservative and producing relative outperformance.",
+      "dissent": "Strong momentum and the positive selection ordering could continue to carry EZPW ahead of the index.",
       "falsifier": {
-        "text": "Continued relative strength accompanied by a clean consolidation near the high would change the read to constructive.",
+        "text": "EZPW decisively loses its uptrend and continues weakening relative to the S&P 500.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -56,23 +56,23 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-08-28-LAUR-20260829110810-3",
+      "id": "2026-08-28-LAUR-20260829144741-3",
       "ticker": "LAUR",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The entry and quality axes are favorable, but the validated selection leg is nearly flat and its earnings-surprise and revision components are negative. The neutral verdict and mixed regime therefore leave relative direction unresolved.",
+      "thesis": "Good entry and clean quality readings are balanced by only marginal selection and negative earnings-surprise and revision context. The validated ordering does not provide enough separation for a directional call.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z 0.14; 52nd percentile",
-        "Entry z 0.91; 64th percentile",
-        "Quality z 0.94; accounting clean",
-        "SUE z -0.39; revisions z -0.40"
+        "Entry z 0.91, 64th percentile",
+        "Quality z 0.94, accounting clean",
+        "Selection z 0.14, 52nd percentile",
+        "SUE z -0.39 and revisions z -0.40"
       ],
-      "dissent": "The strong entry setup, clean accounting flag and uptrend close to the high could outweigh the weak event context and drive outperformance.",
+      "dissent": "The uptrend, favorable entry and clean quality profile could outweigh the stale negative event context and produce relative outperformance.",
       "falsifier": {
-        "text": "Sustained relative strength from the turn signal with improving revisions would change the read to constructive.",
+        "text": "LAUR sustains a relative breakout versus the S&P 500 with its uptrend intact.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -82,23 +82,23 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-08-28-VIRT-20260829110810-4",
+      "id": "2026-08-28-VIRT-20260829144741-4",
       "ticker": "VIRT",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 15,
-      "thesis": "The validated risk controls clearly say not to chase: entry is blocked, the stock is 44% above its long-term trend line and the cycle favors waiting. Because direction remains up and the stock is near its high, extension alone is not enough for a bearish relative call.",
+      "thesis": "The extension brake and cycle block make this a watch-don't-chase setup, but the stock remains an intact leader near its high, so extension alone is not a bearish signal. Accounting quality adds uncertainty without establishing a directional short case.",
       "evidence": [
         "Verdict: Extended \u2014 wait for a pullback",
-        "Entry blocked; z -2.54",
-        "Cycle blocked",
-        "44% above long-term trend line",
-        "Board direction up; 1.3% off high"
+        "Entry blocked, z -2.54",
+        "Trades 44% above its long-term trend line",
+        "Board direction up, 1.3% off high",
+        "Accounting flag: watch"
       ],
-      "dissent": "The cycle block and extreme extension could mark exhaustion, especially if the accounting concern begins to matter, leading to sharp S&P 500 underperformance.",
+      "dissent": "The cycle block and extreme distance above trend could resolve through sharp relative underperformance rather than a benign consolidation.",
       "falsifier": {
-        "text": "A rollover into sustained relative weakness after failing near the high would change the read to cautious.",
+        "text": "VIRT breaks its uptrend and then persistently underperforms the S&P 500.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -108,23 +108,23 @@
       "engine_verdict": "Extended \u2014 wait for a pullback"
     },
     {
-      "id": "2026-08-28-BGC-20260829110810-5",
+      "id": "2026-08-28-BGC-20260829144741-5",
       "ticker": "BGC",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The deterministic verdict is neutral and the validated selection leg is slightly negative, while entry and quality are also close to indifferent. The extended board state warrants restraint, but the intact up direction provides no actual bearish signal.",
+      "thesis": "No axis supplies meaningful separation: selection, entry and quality are all near the middle of the cross-section. The extended board state warrants restraint, but the unblocked entry and intact uptrend do not justify a bearish lean.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z -0.14; 48th percentile",
-        "Entry z 0.05; unblocked",
-        "Quality z -0.37; accounting clean",
-        "Board: HOLD \u2014 EXTENDED; direction up"
+        "Selection z -0.14, 48th percentile",
+        "Entry z 0.05, 51st percentile and unblocked",
+        "Quality z -0.37, accounting clean",
+        "Board: HOLD \u2014 EXTENDED, direction up"
       ],
-      "dissent": "The uptrend only 4.3% below the high could persist despite the unremarkable factor profile, producing relative outperformance.",
+      "dissent": "The intact uptrend could persist and turn the current extension into continued relative outperformance.",
       "falsifier": {
-        "text": "A decisive loss of the uptrend with sustained relative weakness would change the read to cautious.",
+        "text": "BGC sustains clear relative strength versus the S&P 500 while remaining in an uptrend.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -134,23 +134,23 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-08-28-ALV-20260829110810-6",
+      "id": "2026-08-28-ALV-20260829144741-6",
       "ticker": "ALV",
       "name": null,
       "lean": "cautious",
       "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "The lagging verdict is an actual bearish relative signal rather than an extension warning, reinforced by weak residual-alpha selection and negative earnings-surprise and revision context. The favorable entry axis and turn signal keep conviction moderate, while the historical cautious sample is directionally better but still unbenchmarked.",
+      "thesis": "The explicit lagging verdict is an actual bearish relative signal rather than an extension-only warning, and weak residual-alpha selection reinforces it. The favorable entry and upward turn temper conviction, especially given the track record's unbenchmarked directional accuracy.",
       "evidence": [
         "Verdict: Lagging \u2014 relative weakness",
-        "Selection z -0.58; 41st percentile",
-        "SUE z -1.74; revisions z -0.59",
+        "Selection z -0.58, 41st percentile",
+        "SUE z -1.74 and revisions z -0.59",
         "Board urgency: caution",
-        "Entry z 0.91; cycle unblocked"
+        "Entry unblocked, 64th percentile"
       ],
-      "dissent": "The up direction, unblocked cycle and favorable entry setup could reverse the relative weakness and produce S&P 500 outperformance.",
+      "dissent": "The signaled upward turn and favorable entry could reverse the lagging condition and drive renewed relative strength.",
       "falsifier": {
-        "text": "Sustained relative strength following the turn signal, accompanied by improving revisions, would change the read to neutral or constructive.",
+        "text": "ALV sustains outperformance versus the S&P 500 while preserving its upward turn.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ALV",
