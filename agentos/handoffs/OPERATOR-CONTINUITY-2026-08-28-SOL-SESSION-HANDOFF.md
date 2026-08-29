@@ -2,7 +2,7 @@
 workstream: WS:EXECUTIVE-CAPACITY-FABRIC
 session: sol/operator-continuity-pro-session-20260828
 model: sol
-ended_because: session_reliability_handoff
+ended_because: crashed
 mission: >
   Hand off end-to-end CEO ownership of Operator Continuity & Realm Rebinding to a fresh Sol session
   after the current chat became unreliable. Preserve the Chairman-approved outcome: treat paid Claude
