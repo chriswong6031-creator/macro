@@ -687,9 +687,26 @@ class Handler(BaseHTTPRequestHandler):
             attrs += "; Secure"
         age = 0 if clear else settings.session_ttl_hours() * 3600
         sv, cv = ("" if clear else session), ("" if clear else csrf)
-        return [
+        cookies = [
             f"{auth.SESSION_COOKIE}={sv}; HttpOnly{attrs}; Max-Age={age}",
-            f"{auth.CSRF_COOKIE}={cv}{attrs}; Max-Age={age}",   # readable by JS (double-submit)
+        ]
+        if clear and settings.deployed():
+            cookies.append(
+                f"{auth.SESSION_COOKIE}=; HttpOnly; Domain=mastermind-x.com"
+                f"{attrs}; Max-Age=0"
+            )
+        cookies.append(
+            f"{auth.CSRF_COOKIE}={cv}{attrs}; Max-Age={age}"  # readable by JS (double-submit)
+        )
+        return cookies
+
+    def _promote_session_cookie(self, session: str) -> list[str]:
+        attrs = "; Path=/; SameSite=Strict; Secure"
+        age = settings.session_ttl_hours() * 3600
+        return [
+            f"{auth.SESSION_COOKIE}={session}; HttpOnly; Domain=mastermind-x.com"
+            f"{attrs}; Max-Age={age}",
+            f"{auth.SESSION_COOKIE}=; HttpOnly{attrs}; Max-Age=0",
         ]
 
     def _host_ok(self) -> bool:
@@ -747,13 +764,20 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"ok": True, "service": "macro-admin",
                                    "deployed": settings.deployed()})
             if path == "/api/session":
+                auth_enabled = settings.auth_enabled()
+                authenticated = (not auth_enabled) or self._authed()
+                cookies = None
+                if settings.deployed() and auth_enabled and authenticated:
+                    cookies = self._promote_session_cookie(
+                        self._cookie_val(auth.SESSION_COOKIE) or ""
+                    )
                 return self._json({
-                    "auth_enabled": settings.auth_enabled(),
-                    "authenticated": (not settings.auth_enabled()) or self._authed(),
+                    "auth_enabled": auth_enabled,
+                    "authenticated": authenticated,
                     "deployed": settings.deployed(),
                     "public_url": settings.public_url(),
                     "integrations": _integrations(),
-                })
+                }, cookies=cookies)
 
             # everything else under /api requires a session when auth is on
             if settings.auth_enabled() and not self._authed():
