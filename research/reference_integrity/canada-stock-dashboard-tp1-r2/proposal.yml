@@ -46,7 +46,10 @@ proposed_artifact:
 dispositions:
   - id: actnow.four_lane_map
     disposition: RETAIN
-    target: unchanged from predecessor except the light lane rails are now inset rounded per-lane marks (12px side insets) per Sol COND-02 — no continuous bar, no population-width encoding
+    target: >
+      unchanged from predecessor except the light lane rails are now inset
+      rounded per-lane marks (12px side insets) per Sol COND-02 — no
+      continuous bar, no population-width encoding
   - id: actnow.per_group_membership
     disposition: RETAIN
     target: composer untouched (byte-identical to main)
@@ -90,7 +93,9 @@ dispositions:
     target: untouched
   - id: platform.fail_soft_legacy
     disposition: RETAIN
-    target: loader untouched this cycle (Sol COND-06: PRC-005/PRC-007 are named nonblocking debt for the estate follow-up)
+    target: >
+      loader untouched this cycle (Sol COND-06 — PRC-005/PRC-007 are named
+      nonblocking debt for the estate follow-up)
   - id: platform.theme_lang
     disposition: RETAIN
     target: theme resolution unchanged; 8/8 harness cells recaptured at the R2 bytes
