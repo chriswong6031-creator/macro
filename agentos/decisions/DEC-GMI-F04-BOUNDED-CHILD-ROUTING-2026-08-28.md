@@ -52,8 +52,9 @@ alternatives:
       Fabric/RuntimeBinding owners remain placement authority. This program must not create
       a duplicate router, queue, watcher registry or provider-session database.
 evidence:
-  - "Current protected Mastermind@2962759e8abf6bf722a8582f92af8f84013f5f40 / Skillpack v1.0.1: WORKER_AVENUE_ROUTING preserves Terra as the preferred bounded avenue and Fable as scarce principal capacity."
+  - "Current protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1: WORKER_AVENUE_ROUTING preserves Terra as the preferred bounded avenue and Fable as scarce principal capacity."
   - "Current protected Organizational Continuity & Attention Recovery law represents frozen work with no lawful receiver as WAITING_CAPACITY / needs_placement with turn_owner=EXECUTIVE_PLACEMENT; the architecture is SPEC_ONLY and does not itself prove automatic placement live."
+  - "Mastermind #213 / 229aebce5e8d0c1c7372f5fead9c24516b027cc1 source-released the bounded CF2-H0 transport, but explicitly leaves that capability BUILT_NOT_PROVEN / PRODUCTION_INERT pending a separate native administrator ceremony and grants no CF2-P0/provider/routing/worker/fan-out authority; therefore it is not a live placement edge for D2C/D2D."
   - "Macro #6522 merged as 196c2273ea3e19fe309dbf8909733934c8bde63c; its records-gate child is terminally accepted."
   - "Current WS:GMI-THEME-GRAPH keeps D2C and D2D todo and dependency-gates D2E behind them."
   - "Current D2C and D2D handoffs are complete bounded missions with explicit scope, non-goals, tests, production proof and stop conditions."
@@ -102,8 +103,9 @@ For each child:
   post-START RuntimeBinding stickiness; terminal child STOP authorizes no successor.
 
 The current protected organizational-continuity amendment is `SPEC_ONLY`; it does not itself establish
-that automatic placement is live. Therefore this source-law merge alone cannot be used as a receiver,
-RuntimeBinding, ACK, START or watcher receipt.
+that automatic placement is live. The separate CF2-H0 transport is now source-released but remains
+`BUILT_NOT_PROVEN / PRODUCTION_INERT`, so neither source state can be used as a receiver, RuntimeBinding,
+ACK, START or watcher receipt.
 
 ## Fable escalation rule
 
