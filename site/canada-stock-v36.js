@@ -191,10 +191,16 @@
      membership exists — an unknown-membership group must not offer a
      filter that would paint the full board as if it all matched (§10). */
   function leadRow(x, max) {
-    var breadth = Math.max(8, Math.round(((x.count || 0) / Math.max(1, max)) * 100));
+    /* Breadth truth (Sol R3): null/undefined count is UNKNOWN membership
+       (the row that displays "—") and gets NO meter at all — a floor here
+       would paint an unknown group as if it had measured breadth. A true
+       zero count gets an explicit 0% (no visible fill, but honestly zero).
+       Anything else renders its real proportion with no minimum floor. */
+    var breadth = x.count == null ? null : Math.round(((x.count || 0) / Math.max(1, max)) * 100);
+    var breadthStyle = breadth == null ? '' : ' style="--breadth:' + breadth + '%"';
     var rankTxt = x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—";
     var act = x.members != null ? ' data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
-    return '<button class="ca-v36-lead-row" type="button"' + act + ' style="--breadth:' + breadth + '%"><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
+    return '<button class="ca-v36-lead-row" type="button"' + act + breadthStyle + '><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
   }
   function renderLeadership() {
     var host = qs("#ca-v36-lead-cols");

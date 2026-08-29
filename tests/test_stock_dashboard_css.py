@@ -519,17 +519,38 @@ def test_modal_fail_closed_base_exists():
     )
 
 
+def test_modal_table_name_column_left_numeric_columns_right():
+    """theme-parity-tp1-canada-20260828-sol-001 R3: the Leadership modal's
+    table (modalRows(), site/canada-stock-v36.js) renders Rank and Count as
+    ``<td class="num">`` and Name/Action/Leaders as plain ``<td>``. Pin the
+    alignment split: every plain td (including Name) is left-aligned text,
+    and only td.num carries the right-aligned tabular-figure treatment —
+    under the sibling-scoped modal selector, not the descendant one."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    normalized = re.sub(r"\s+", " ", text)
+    assert re.search(
+        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+td\s*\{[^}]*text-align:\s*left",
+        normalized,
+    ), (
+        "the sibling-scoped .ca-v36-modal-table td rule must set "
+        "text-align: left (Name and every other non-numeric column)"
+    )
+    assert re.search(
+        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+td\.num\s*\{[^}]*text-align:\s*right",
+        normalized,
+    ), (
+        "the sibling-scoped .ca-v36-modal-table td.num rule must set "
+        "text-align: right (Rank + Count, the two numeric columns)"
+    )
+
+
 def test_breadth_measure_is_achromatic_not_the_link_hue():
     """theme-parity-tp1-canada-20260828-sol-001 R2 (Sol REVISE ruling): a
-    reserved hue (--link) may not carry magnitude. The breadth track/fill on
-    .ca-v36-lead-row must read from the achromatic --line/--muted family in
-    BOTH themes, with comparable semantic authority — no light-only
-    override may reintroduce --link, and dark must not either."""
+    reserved hue (--link) may not carry magnitude. The breadth fill on
+    .ca-v36-lead-row must read from the achromatic --muted family in BOTH
+    themes, with comparable semantic authority — no light-only override may
+    reintroduce --link, and dark must not either."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
-    assert re.search(
-        r"\.ca-v36-lead-row::before\s*\{[^}]*color-mix\(in srgb,\s*var\(--line\)",
-        text,
-    ), ".ca-v36-lead-row::before (breadth track) no longer reads the achromatic --line token"
     assert re.search(
         r"\.ca-v36-lead-row::after\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
         text,
@@ -539,6 +560,65 @@ def test_breadth_measure_is_achromatic_not_the_link_hue():
             f".ca-v36-lead-row::{match.group(1)} reintroduced var(--link) — "
             "the breadth measure must stay achromatic in both themes"
         )
+
+
+def test_breadth_measure_has_no_before_track_and_is_inset_with_rounded_terminus():
+    """theme-parity-tp1-canada-20260828-sol-001 R3 (Sol bounded closure): the
+    full-width ::before track read as a divider between rows, not a measure.
+    R3 removes it entirely — .ca-v36-lead-row carries only the ::after fill,
+    which must be inset (max-width short of the row's full extent, with a
+    rounded border-radius terminus) so even a 100%-count row renders as a
+    measure, never a stray full-width line, and must fall back to 0% width
+    when the composer omits --breadth for an unknown-membership row."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    assert not re.search(r"\.ca-v36-lead-row::before\s*\{", text), (
+        "the .ca-v36-lead-row::before full-width track must be removed — "
+        "R3 replaces it with a single inset ::after fill"
+    )
+    after_match = re.search(r"\.ca-v36-lead-row::after\s*\{([^}]*)\}", text)
+    assert after_match, ".ca-v36-lead-row::after (breadth fill) rule is missing"
+    body = after_match.group(1)
+    assert "max-width" in body, (
+        ".ca-v36-lead-row::after must carry a max-width short of 100% so a "
+        "full-breadth row still reads as an inset measure, not a divider"
+    )
+    assert re.search(r"border-radius:\s*var\(--r-pill", body), (
+        ".ca-v36-lead-row::after must carry a rounded (var(--r-pill)) "
+        "terminus"
+    )
+    assert re.search(r"width:\s*var\(--breadth,\s*0%\)", body), (
+        ".ca-v36-lead-row::after must fall back to 0% width when the "
+        "composer omits --breadth (unknown-membership rows get no meter)"
+    )
+
+
+def test_dark_active_filter_rows_get_a_rail_not_only_a_tint():
+    """theme-parity-tp1-canada-20260828-sol-001 R3: the dark plane's
+    .is-active state used to share its rule with :hover (a 6% link tint
+    that reads identically to a hover the pointer has already left). Dark
+    needs an equivalent-information marker to the light plane's box-shadow
+    rail: a deeper background tint AND an inset rail in the link ink, on
+    both the Act-Now row family and the Leadership row family, in the BASE
+    (dark) section — not only under html[data-theme=light]."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    # Split off the light-themed section so these assertions can only match
+    # base (dark) rules, never a light[data-theme] duplicate.
+    base_text = re.split(r"html\[data-theme=light\]", text)[0]
+    for selector, rail_px in (
+        (r"\.mx-stockdash--ca\s+\.ca-v36-an-row\.is-active", "2px"),
+        (r"\.mx-stockdash--ca\s+\.ca-v36-lead-row\.is-active", "3px"),
+    ):
+        match = re.search(selector + r"\s*\{([^}]*)\}", base_text)
+        assert match, f"base (dark) .is-active rule missing for {selector!r}"
+        body = match.group(1)
+        assert re.search(r"color-mix\(in srgb,\s*var\(--link\)\s*12%", body), (
+            f"{selector!r} must carry a deeper (12%) link tint than the "
+            "6% hover wash it used to share"
+        )
+        assert re.search(
+            r"box-shadow:\s*inset\s*" + rail_px + r"\s+0\s+0\s+var\(--ink-link,\s*var\(--link\)\)",
+            body,
+        ), f"{selector!r} must carry an inset {rail_px} link-ink rail"
 
 
 def test_stylesheet_is_token_clean():

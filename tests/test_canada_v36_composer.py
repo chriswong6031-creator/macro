@@ -639,3 +639,74 @@ def test_leadership_activation_never_force_switches_population():
     assert "No Top Picks in this group." in text, "EN zero-state invitation missing"
     assert "该组别中暂无首选。" in text, "ZH zero-state invitation missing"
     assert "ca-v36-empty-switch" in text, "deliberate switch-to-All button missing"
+
+
+# ---------------------------------------------------------------------------
+# theme-parity-tp1-canada-20260828-sol-001 R3 — breadth truth.
+# ---------------------------------------------------------------------------
+
+
+def _lead_row_body() -> str:
+    text = _composer_text()
+    m = re.search(r"function leadRow\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate leadRow() function body via regex"
+    return m.group(0)
+
+
+def test_breadth_has_no_minimum_floor():
+    """theme-parity-tp1-canada-20260828-sol-001 R3 (Sol bounded closure): the
+    breadth measure used to floor every row at Math.max(8, ...), so a
+    genuinely tiny-count theme and a themes with unknown membership (count
+    null, ``x.count || 0`` folding both to 0) rendered the SAME visible
+    minimum sliver — a false, non-zero meter width regardless of truth.
+    Pin that no minimum-floor construction survives in leadRow()."""
+    body = _lead_row_body()
+    assert "Math.max(8" not in body, (
+        "leadRow() still floors the breadth width at a minimum (Math.max(8, "
+        "...)) — null and zero counts must not be forced to a false "
+        "non-zero meter width"
+    )
+
+
+def test_breadth_null_count_emits_no_breadth_custom_property():
+    """A row with unknown membership (x.count == null, the row that renders
+    the "—" count text) must get NO --breadth custom property at all —
+    not a 0% one, not a floored one — so the CSS renders no meter for a
+    group whose breadth was never measured."""
+    body = _lead_row_body()
+    assert re.search(r"x\.count\s*==\s*null", body) or re.search(
+        r"x\.count\s*===?\s*null\s*\|\|\s*x\.count\s*===?\s*undefined", body
+    ), (
+        "leadRow() must branch on a null/undefined count check before "
+        "computing --breadth"
+    )
+    assert re.search(r"breadthStyle\s*=\s*breadth\s*==\s*null\s*\?\s*''", body), (
+        "leadRow() must omit the --breadth style attribute entirely when "
+        "the row's count is null/undefined"
+    )
+    # The returned markup must gate the style attribute on the null-count
+    # branch via the breadthStyle variable — i.e. the pre-R1 unconditional
+    # `act + ' style="--breadth:' + breadth + '%"'` construction (which
+    # concatenated a literal ' style="--breadth:' straight onto `act` with
+    # no null guard) must be gone.
+    assert "act + ' style=\"--breadth:'" not in body, (
+        "leadRow() still unconditionally concatenates a --breadth style "
+        "attribute onto `act` — a null-count row must render the <button> "
+        "with no --breadth at all"
+    )
+    assert "act + breadthStyle" in body, (
+        "leadRow() must build the <button> markup with the conditional "
+        "breadthStyle variable, not an unconditional style attribute"
+    )
+
+
+def test_breadth_zero_count_renders_true_zero_not_a_floor():
+    """A row with a genuinely zero count (x.count === 0, distinct from the
+    null/unknown-membership case above) must render an explicit 0% breadth
+    — never the pre-R1 8% floor, and never omitted like the null case."""
+    body = _lead_row_body()
+    assert re.search(r"Math\.round\(\(\(x\.count\s*\|\|\s*0\)", body), (
+        "leadRow() must still compute the real proportion via "
+        "Math.round(((x.count || 0) / Math.max(1, max)) * 100) for "
+        "non-null counts, including a true zero"
+    )

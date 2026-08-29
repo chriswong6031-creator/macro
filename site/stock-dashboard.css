@@ -209,8 +209,16 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
   min-height: 32px; padding: 5px 10px; border: 0; background: transparent; color: inherit;
   font-size: 12.6px; font-weight: 650; text-align: left; cursor: pointer;
 }
-.mx-stockdash--ca .ca-v36-an-row:hover:not(:disabled),
-.mx-stockdash--ca .ca-v36-an-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-an-row:hover:not(:disabled) { background: color-mix(in srgb, var(--link) 6%, transparent); }
+/* Active-filter marker — dark idiom (theme-parity-tp1-canada-20260828-
+   sol-001 R3): a deeper tint alone reads as a stray hover once the pointer
+   moves off, so an active row also carries an inset rail in the link ink —
+   the same equivalent-information marker the light plane gets from its own
+   box-shadow rail below. */
+.mx-stockdash--ca .ca-v36-an-row.is-active {
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--ink-link, var(--link));
+}
 .mx-stockdash--ca .ca-v36-an-row:disabled { cursor: default; }
 .mx-stockdash--ca .ca-v36-an-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-stockdash--ca .ca-v36-an-n { flex: none; color: var(--muted); font-size: 10.6px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -253,25 +261,27 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
   transition: .15s ease;
 }
 /* Breadth measure — achromatic in BOTH themes (theme-parity-tp1-canada-
-   20260828-sol-001 R2). A reserved hue may not carry magnitude, so the
-   measure reads from the achromatic --line/--muted family rather than the
-   reserved --link hue: a visible rounded track plus a rounded fill of
-   comparable semantic authority on both planes, so a 100% fill reads as a
-   filled measure, not a stray divider. */
-.mx-stockdash--ca .ca-v36-lead-row::before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-  border-radius: var(--r-pill, 999px);
-  background: color-mix(in srgb, var(--line) 60%, transparent);
-}
+   20260828-sol-001 R2, inset geometry R3). A reserved hue may not carry
+   magnitude, so the measure reads from the achromatic --muted family rather
+   than the reserved --link hue. No full-width track: an inset, rounded fill
+   with boundary separation from the next row's border-top and a max-width
+   short of the row's full extent, so even a 100%-count row renders as a
+   measure with a visible rounded terminus, never a stray full-width divider.
+   Rows with unknown membership (no --breadth emitted by the composer) fall
+   back to 0% width — no meter renders. */
 .mx-stockdash--ca .ca-v36-lead-row::after {
-  content: ""; position: absolute; left: 0; bottom: 0; height: 3px;
-  width: var(--breadth);
+  content: ""; position: absolute; left: 0; bottom: 5px; height: 3px;
+  width: var(--breadth, 0%); max-width: calc(100% - 24px);
   border-radius: var(--r-pill, 999px);
-  background: color-mix(in srgb, var(--muted) 55%, transparent);
-  opacity: 1;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
-.mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled),
-.mx-stockdash--ca .ca-v36-lead-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
+.mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled) { background: color-mix(in srgb, var(--link) 6%, transparent); }
+/* Active-filter marker — dark idiom, same rationale as .ca-v36-an-row above
+   (theme-parity-tp1-canada-20260828-sol-001 R3). */
+.mx-stockdash--ca .ca-v36-lead-row.is-active {
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--ink-link, var(--link));
+}
 .mx-stockdash--ca .ca-v36-lead-row:disabled { cursor: default; }
 .mx-stockdash--ca .ca-v36-rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; }
 .mx-stockdash--ca .ca-v36-lead-name { display: block; font-size: 14.7px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -468,9 +478,13 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); text-align: left; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
+/* Rank + count columns (modalRows()'s two td.num cells) stay right-aligned
+   tabular figures; every other column — including Name — is left-aligned
+   text (theme-parity-tp1-canada-20260828-sol-001 R3). */
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td.num { text-align: right; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
 
