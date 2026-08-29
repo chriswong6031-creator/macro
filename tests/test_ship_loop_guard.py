@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -18,6 +19,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -4806,6 +4808,72 @@ def test_malformed_target_hook_fails_closed_as_source_mismatch(
     assert "ci_failed" not in emitted["reason"]
 
 
+@pytest.mark.parametrize("failure", ["missing", "malformed", "spawn", "nonzero"])
+def test_watcher_delegation_failure_emits_an_enforceable_pretool_denial(
+    monkeypatch, tmp_path, capsys, failure
+):
+    """Once a Bash command is classified as a watcher, evaluated-tree
+    delegation is part of admission. A diagnostic systemMessage is not an
+    admission decision and therefore must never fail open."""
+    primary, worktree = _linked_worktrees(tmp_path)
+    target = worktree / ".claude" / "hooks" / "ship_loop_guard.py"
+    if failure != "missing":
+        _install_stub_hook(worktree)
+    if failure == "malformed":
+        target.write_text("def broken(\n", encoding="utf-8")
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: primary)
+    if failure == "spawn":
+        monkeypatch.setattr(
+            GUARD,
+            "_spawn_delegated_guard",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+        )
+    elif failure == "nonzero":
+        monkeypatch.setattr(GUARD, "_spawn_delegated_guard", lambda *_a, **_k: 19)
+    payload = _watcher_payload("gh run watch 123 --exit-status")
+    payload["cwd"] = str(worktree)
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is True
+    emitted = json.loads(capsys.readouterr().out.splitlines()[-1])
+    verdict = emitted["hookSpecificOutput"]
+    assert verdict["hookEventName"] == "PreToolUse"
+    assert verdict["permissionDecision"] == "deny"
+    assert "hook_source_mismatch" in verdict["permissionDecisionReason"]
+
+
+def test_nonzero_watcher_delegate_cannot_precede_the_denial_with_child_stdout(
+    monkeypatch, tmp_path, capsys
+):
+    """Hook stdout is one JSON value. A crashing evaluated child may have
+    printed before exiting; that partial output must not mask the parent's
+    enforceable fail-closed decision."""
+    primary, worktree = _linked_worktrees(tmp_path)
+    _install_stub_hook(worktree)
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: primary)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: worktree)
+    monkeypatch.setattr(GUARD, "_same_git_repository", lambda *_args: True)
+    monkeypatch.setattr(GUARD, "_short_head", lambda _root: "abc123")
+    monkeypatch.setattr(
+        GUARD.subprocess,
+        "run",
+        lambda *_args, **_kwargs: type(
+            "Proc",
+            (),
+            {
+                "returncode": 23,
+                "stdout": b'{"systemMessage":"partial child output"}\n',
+                "stderr": b"child traceback\n",
+            },
+        )(),
+    )
+    payload = _watcher_payload("gh run watch 123 --exit-status")
+    payload["cwd"] = str(worktree)
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is True
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    verdict = json.loads(lines[0])["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+
+
 def test_unrelated_tmp_repo_is_not_a_source_mismatch(monkeypatch, tmp_path, capsys):
     """Existing main() tests use disposable git repos that are not this clone."""
     other = _git_repo_at(tmp_path / "other")
@@ -5493,3 +5561,2146 @@ def test_an_unresolvable_gitdir_is_remembered_as_unresolvable(monkeypatch, tmp_p
     assert GUARD._worktree_index_lock(tmp_path) is None
     assert len(calls) == 1
     assert GUARD._sweep_stale_index_lock(tmp_path) is None
+
+
+# ── ship-watcher quiescence after terminal states (Sol commission #6379) ─────
+#
+# A leftover background task's completion starts a NEW turn via
+# `<task-notification>` (reproduced live 2026-08-24), and that turn's Stop
+# re-enters this guard. Terminal states must therefore be REMEMBERED: a
+# ratified external ladder exit passes the wake silently, exactly as the
+# merged-head ci_failed exit has since 2026-08-19, while internal codes keep
+# the full-priced loop breaker (Journey C, byte-unchanged semantics).
+
+
+def test_every_external_code_mints_a_frozen_exit_key():
+    head = "a" * 40
+    for code in sorted(GUARD.EXTERNAL_BLOCKERS):
+        key = GUARD._external_exit_key(code, head, f"reason for {code}")
+        assert key.startswith(f"{code}:{head}:") and len(key.split(":")) == 3, key
+    for code in ("unmerged", GUARD.CI_FAILED_UNMERGED, "unpushed", "uncommitted",
+                 "unsafe_branch", "guard_error"):
+        assert GUARD._external_exit_key(code, head, "reason") == ""
+
+
+def test_a_ratified_external_exit_quiesces_the_task_notification_wake(tmp_path, capsys):
+    """Incident PR #6377's shape: escape ratified, then a delayed timer wakes
+    the session. The wake turn's Stop re-derives the SAME frozen external state
+    and must pass silently without demanding the report again."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    key = GUARD._external_exit_key("github_unreachable", "a" * 40, "fetch died")
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, key) is False
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, key) is True
+    # The wake: started by a task notification, so stop_hook_active is False and
+    # the final message is ordinary prose, not a SHIP LOOP BLOCKED report.
+    wake = {"stop_hook_active": False, "last_assistant_message": "Leftover timer drained."}
+    before = GUARD._load(path)["total_blocks"]
+    assert _drive_block_keyed(path, capsys, "github_unreachable", wake, key) is True
+    assert GUARD._load(path)["total_blocks"] == before
+    assert GUARD._load(path)["ladder_exits"] == [key]
+
+
+def test_an_external_exit_for_one_head_never_excuses_a_new_head(tmp_path, capsys):
+    """A generic outage reason can recur verbatim for NEW work; the head in the
+    key is what keeps the old report from covering it."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    old = GUARD._external_exit_key("github_unreachable", "a" * 40, "fetch died")
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, old) is False
+    assert _drive_block_keyed(path, capsys, "github_unreachable", reported, old) is True
+    fresh = GUARD._external_exit_key("github_unreachable", "b" * 40, "fetch died")
+    wake = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "github_unreachable", wake, fresh) is False
+    assert GUARD._load(path)["ladder_exits"] == [old]
+
+
+def test_a_changed_external_reason_regates_fresh(tmp_path, capsys):
+    """A materially changed blocker is a NEW state (commission failure case:
+    'external blocker changes reason while a watcher is sleeping')."""
+    path = _block_state(tmp_path)
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    first = GUARD._external_exit_key("render_failed", "a" * 40, "render run 1 failed")
+    assert _drive_block_keyed(path, capsys, "render_failed", reported, first) is False
+    assert _drive_block_keyed(path, capsys, "render_failed", reported, first) is True
+    changed = GUARD._external_exit_key("render_failed", "a" * 40, "render run 2 failed")
+    wake = {"stop_hook_active": False, "last_assistant_message": "done."}
+    assert _drive_block_keyed(path, capsys, "render_failed", wake, changed) is False
+
+
+def test_internal_own_red_cannot_ride_the_external_quiescence_path(tmp_path, capsys):
+    """`ci_failed_unmerged` mints no key and keeps the 10/15 loop breaker: the
+    cheap external wake-quiescence path must be unreachable for an owned red."""
+    path = _block_state(tmp_path)
+    assert GUARD._external_exit_key(GUARD.CI_FAILED_UNMERGED, "a" * 40, "own red") == ""
+    reported = {"stop_hook_active": True, "last_assistant_message": _REPORTED}
+    assert _drive_block(path, capsys, GUARD.CI_FAILED_UNMERGED, reported) is False
+    assert _drive_block(path, capsys, GUARD.CI_FAILED_UNMERGED, reported) is False
+    assert "ladder_exits" not in GUARD._load(path)
+
+
+# ── one-watcher law (PreToolUse ship-watcher gate) ───────────────────────────
+
+
+def _watcher_payload(command: str, background: bool = True, tool: str = "Bash") -> dict:
+    return {
+        "hook_event_name": "PreToolUse",
+        "tool_name": tool,
+        "tool_input": {"command": command, "run_in_background": background},
+    }
+
+
+@pytest.mark.parametrize(
+    "command,background",
+    [
+        ("sleep 600", True),
+        ("sleep 600 && gh run view 1", True),
+        ("sleep 45s && gh pr checks 2", True),
+        ("sleep $WAIT_SECONDS && gh run view 1", True),
+        ("sleep $((30 * 60)) && gh run view 1", True),
+        ("python -c 'import time; time.sleep(600)'", True),
+        ("sleep 600", False),
+        ("sleep 600 && gh run view 1 &", False),
+    ],
+)
+def test_timer_only_wait_forms_are_classified_for_fail_closed_refusal(command, background):
+    """Every form that can wake the model merely to poll unchanged state is
+    classified, including the exact syntactic bypasses from the Sol review.
+
+    Mutation caught: returning ``None`` for foreground, shell-background, or
+    computed sleeps lets those timers bypass the only admission boundary.
+    """
+    request = GUARD._watcher_request(_watcher_payload(command, background=background))
+    assert request is not None
+    assert request["admission"] == "deny_timer"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "/bin/sleep 600",
+        "env sleep 600",
+        "command /usr/bin/sleep 600",
+        "alias nap=/bin/sleep; nap 600",
+        "python -c 'import time as t; t.sleep(600)'",
+        "python -c 'from time import sleep as nap; nap(600)'",
+        "python -c \"__import__('time').sleep(600)\"",
+        "bash -c 'env sleep 600'",
+    ],
+)
+def test_executed_timer_spellings_cannot_bypass_shell_aware_classification(command):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "deny_timer"
+
+
+@pytest.mark.parametrize(
+    "command,admission",
+    [
+        ("eval 'sleep 600'", "deny_timer"),
+        ("eval 'gh run watch 123 --exit-status'", "reserve_condition"),
+        ("CMD='sleep 600'; eval \"$CMD\"", "deny_timer"),
+        ("nohup gh run watch 123 --exit-status &", "deny_detached"),
+        ("exec gh run watch 123 --exit-status", "deny_uncertain"),
+        ("env -S 'sleep 600'", "deny_timer"),
+        ("pwsh -Command 'Start-Sleep 600'", "deny_timer"),
+    ],
+)
+def test_executable_indirection_and_transport_cannot_bypass_wait_admission(
+    command, admission
+):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == admission
+
+
+@pytest.mark.parametrize(
+    "command,argv",
+    [
+        (
+            "/usr/bin/nice gh run watch 123 --exit-status --interval 60",
+            ["/usr/bin/nice"],
+        ),
+        (
+            "/usr/bin/caffeinate -i gh run watch 123 --exit-status --interval 60",
+            ["/usr/bin/caffeinate", "-i"],
+        ),
+        (
+            "timeout 300 gh run watch 123 --exit-status --interval 60",
+            ["timeout", "300"],
+        ),
+    ],
+)
+def test_argv_wrappers_cannot_hide_a_real_fake_gh_watch(
+    command, argv, tmp_path
+):
+    """The classified argv shape is also executed against a fake gh binary.
+
+    This prevents a parser-only repair from recognizing a spelling that the
+    real wrapper does not actually execute as the child command.
+    """
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "reserve_condition"
+    assert request["condition"] == "gh-run:current-repo:123"
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    receipt = tmp_path / "gh-argv.txt"
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$FAKE_GH_RECEIPT\"\n",
+        encoding="utf-8",
+    )
+    fake_gh.chmod(0o700)
+    if argv[0] == "timeout":
+        fake_timeout = fake_bin / "timeout"
+        fake_timeout.write_text(
+            "#!/bin/sh\nshift\nexec \"$@\"\n",
+            encoding="utf-8",
+        )
+        fake_timeout.chmod(0o700)
+    elif not Path(argv[0]).exists():
+        pytest.skip(f"system wrapper absent: {argv[0]}")
+    env = dict(os.environ)
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env.get('PATH', '')}"
+    env["FAKE_GH_RECEIPT"] = str(receipt)
+    subprocess.run(
+        [*argv, "gh", "run", "watch", "123", "--exit-status", "--interval", "60"],
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+        timeout=10,
+    )
+    assert receipt.read_text(encoding="utf-8").splitlines() == [
+        "run",
+        "watch",
+        "123",
+        "--exit-status",
+        "--interval",
+        "60",
+    ]
+
+
+def test_unknown_argv_transport_with_literal_gh_watch_fails_closed():
+    request = GUARD._watcher_request(
+        _watcher_payload(
+            "/opt/local/bin/custom-wrapper gh run watch 123 --exit-status",
+            background=False,
+        )
+    )
+    assert request is not None
+    assert request["admission"] == "deny_uncertain"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "/usr/bin/nice echo gh run watch 123 --exit-status",
+        "/usr/bin/caffeinate -i printf '%s' 'gh run watch 123 --exit-status'",
+        "timeout 300 cat notes-about-gh-run-watch.txt",
+    ],
+)
+def test_argv_wrappers_preserve_data_and_prose_negative_controls(command):
+    assert GUARD._watcher_request(
+        _watcher_payload(command, background=False)
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "cat <<'EOF'\nsleep 600\nEOF",
+        "cat <<'EOF'\ngh run watch 123 --exit-status\nEOF",
+        "python - <<'PY'\nprint('gh run watch 123 --exit-status')\nPY",
+    ],
+)
+def test_heredoc_wait_text_is_data_not_executable_admission(command):
+    assert GUARD._watcher_request(_watcher_payload(command, background=False)) is None
+
+
+@pytest.mark.parametrize(
+    "command,admission,condition",
+    [
+        ("bash <<'EOF'\nsleep 600\nEOF", "deny_timer", "timer-poll"),
+        (
+            "sh -s <<'EOF'\ngh run watch 123 --exit-status --interval 60\nEOF",
+            "reserve_condition",
+            "gh-run:current-repo:123",
+        ),
+        (
+            "python - <<'PY'\nimport time\ntime.sleep(600)\nPY",
+            "deny_timer",
+            "timer-poll",
+        ),
+    ],
+)
+def test_executable_stdin_heredocs_are_classified_as_code(
+    command, admission, condition
+):
+    """A here-document is data only when its consumer treats it as data.
+
+    Interpreter stdin is executable code and must remain inside watcher
+    admission without reintroducing the cat/printf prose false positives.
+    """
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == admission
+    assert request["condition"] == condition
+
+
+@pytest.mark.parametrize(
+    "command,admission,condition",
+    [
+        ("CMD='sleep 600'; $CMD", "deny_uncertain", "uncertain-wait"),
+        (
+            "CMD='gh run watch 123 --exit-status --interval 60'; $CMD",
+            "deny_uncertain",
+            "uncertain-wait",
+        ),
+        ("$(printf '%s' 'sleep 600')", "deny_uncertain", "uncertain-wait"),
+        (
+            "$(printf '%s' 'gh run watch 123 --exit-status --interval 60')",
+            "deny_uncertain",
+            "uncertain-wait",
+        ),
+    ],
+)
+def test_computed_command_position_cannot_bypass_wait_admission(
+    command, admission, condition
+):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == admission
+    assert request["condition"] == condition
+
+
+def test_command_substitution_used_as_an_ordinary_argument_is_not_execution():
+    command = "echo \"$(printf '%s' 'gh run watch 123 --exit-status')\""
+    assert GUARD._watcher_request(_watcher_payload(command, background=False)) is None
+
+
+def test_non_wait_command_substitution_at_command_position_remains_ordinary_bash():
+    assert GUARD._watcher_request(
+        _watcher_payload("$(printf '%s' 'echo ok')", background=False)
+    ) is None
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "echo 'time.sleep(600)'",
+        "printf '%s\\n' 'time.sleep(600)'",
+        "rg -n 'time[.]sleep[(]' tests",
+        "python -c 'print(\"time.sleep(600)\")'",
+        "echo 'gh run watch 123 --exit-status'",
+        "echo 'while waiting for gh to finish'",
+    ],
+)
+def test_wait_syntax_used_as_ordinary_data_is_not_denied(command):
+    assert GUARD._watcher_request(_watcher_payload(command)) is None
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "gh run watch 123 --exit-status",
+        "gh pr checks 456 --watch --interval 60",
+        "gh pr checks --watch --interval 60",
+    ],
+)
+def test_native_condition_watches_are_classified_as_the_one_reservable_owner(command):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "reserve_condition"
+
+
+@pytest.mark.parametrize(
+    "command,condition",
+    [
+        (
+            "/opt/homebrew/bin/gh run watch 123 --exit-status",
+            "gh-run:current-repo:123",
+        ),
+        ("env gh run watch 123 --exit-status", "gh-run:current-repo:123"),
+        ("alias g=gh; g run watch 123 --exit-status", "gh-run:current-repo:123"),
+        (
+            "gh pr checks --watch=true --interval 60",
+            "gh-pr-checks:current-repo:current-head",
+        ),
+    ],
+)
+def test_native_condition_watch_legal_spellings_share_stable_identity(command, condition):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "reserve_condition"
+    assert request["condition"] == condition
+
+
+@pytest.mark.parametrize(
+    "command,condition",
+    [
+        (
+            "gh run watch --exit-status 123 --interval 60",
+            "gh-run:current-repo:123",
+        ),
+        (
+            "gh run watch -R owner/repo 123 --interval 60",
+            "gh-run:owner/repo:123",
+        ),
+        (
+            "gh -R owner/repo run watch --interval 60 124",
+            "gh-run:owner/repo:124",
+        ),
+        (
+            "gh pr checks --watch 456 --interval 60",
+            "gh-pr-checks:current-repo:456",
+        ),
+        (
+            "gh pr checks --required 456 --watch --interval 60",
+            "gh-pr-checks:current-repo:456",
+        ),
+        (
+            "gh pr checks -R owner/repo --watch 456 --interval 60",
+            "gh-pr-checks:owner/repo:456",
+        ),
+    ],
+)
+def test_gh_wait_condition_identity_parses_option_arity_and_subject(
+    command, condition
+):
+    request = GUARD._watcher_request(_watcher_payload(command, background=False))
+    assert request is not None
+    assert request["admission"] == "reserve_condition"
+    assert request["condition"] == condition
+
+
+def test_distinct_repositories_and_subjects_have_distinct_wait_digests():
+    commands = [
+        "gh run watch -R owner/one 123 --interval 60",
+        "gh run watch -R owner/two 123 --interval 60",
+        "gh run watch -R owner/one 124 --interval 60",
+        "gh pr checks -R owner/one --watch 123 --interval 60",
+    ]
+    requests = [GUARD._watcher_request(_watcher_payload(command)) for command in commands]
+    assert all(request is not None for request in requests)
+    assert len({request["condition"] for request in requests}) == len(commands)
+    assert len({request["digest"] for request in requests}) == len(commands)
+
+
+def test_dynamic_watcher_executable_fails_closed_as_watcher_shaped_uncertainty():
+    request = GUARD._watcher_request(
+        _watcher_payload("GH=gh; $GH run watch 123 --exit-status", background=False)
+    )
+    assert request is not None
+    assert request["admission"] == "deny_uncertain"
+
+
+def test_dynamic_sleep_executable_fails_closed_as_watcher_shaped_uncertainty():
+    request = GUARD._watcher_request(
+        _watcher_payload("S=/bin/sleep; $S 600", background=False)
+    )
+    assert request is not None
+    assert request["admission"] == "deny_uncertain"
+
+
+def test_shell_background_operator_cannot_detach_the_reserved_condition_owner():
+    request = GUARD._watcher_request(
+        _watcher_payload("gh run watch 123 --exit-status &", background=False)
+    )
+    assert request is not None
+    assert request["admission"] == "deny_detached"
+
+
+def test_current_pr_watch_has_a_stable_condition_key_independent_of_flag_order():
+    first = GUARD._watcher_request(
+        _watcher_payload("gh pr checks --watch --interval 60", background=False)
+    )
+    second = GUARD._watcher_request(
+        _watcher_payload("gh pr checks --interval 60 --watch", background=True)
+    )
+    assert first is not None and second is not None
+    assert (
+        first["condition"]
+        == second["condition"]
+        == "gh-pr-checks:current-repo:current-head"
+    )
+    assert first["digest"] == second["digest"]
+
+
+def test_explicit_false_watch_flag_is_an_ordinary_one_shot_command():
+    assert GUARD._watcher_request(
+        _watcher_payload("gh pr checks --watch=false", background=False)
+    ) is None
+
+
+def test_watcher_classifier_keeps_ordinary_bash_and_other_tools_out_of_scope():
+    assert GUARD._watcher_request(_watcher_payload("pytest -q tests/test_x.py")) is None
+    assert GUARD._watcher_request(_watcher_payload("echo sleeper")) is None
+    assert GUARD._watcher_request(_watcher_payload("sleep 600", tool="Read")) is None
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "sleep 600",
+        "sleep $WAIT_SECONDS && gh run view 1",
+        "python -c 'import time; time.sleep(600)'",
+        "gh run watch 123 --exit-status &",
+    ],
+)
+def test_timer_and_detached_waits_are_denied_before_delegation(
+    monkeypatch, capsys, command
+):
+    """Classification must reach a real PreToolUse denial even with no ledger;
+    otherwise the syntactic bypass is merely labelled, not prevented."""
+
+    def explode(*_args, **_kwargs):
+        raise AssertionError("refused transport must not reach delegation")
+
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", explode)
+    GUARD._pre_tool_use(_watcher_payload(command, background=False), b"{}")
+    verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "REFUSED" in verdict["permissionDecisionReason"]
+
+
+def _watcher_state(tmp_path: Path, extra: dict | None = None) -> Path:
+    path = tmp_path / "watch-state.json"
+    state = {
+        "root": str(tmp_path),
+        "start_head": "0" * 40,
+        "baseline": {},
+        "last_blocker": "",
+        "blocker_count": 0,
+        "total_blocks": 0,
+        "external_blocks": 0,
+    }
+    state.update(extra or {})
+    GUARD._save(path, state)
+    return path
+
+
+def _drive_watcher_gate(monkeypatch, capsys, path: Path, command: str, head: str = "a" * 40) -> str:
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *args, **_kw: head)
+    watch = GUARD._watcher_request(_watcher_payload(command))
+    assert watch is not None
+    state = GUARD._load(path)
+    GUARD._watcher_gate(Path("/unused"), path, state, watch)
+    return capsys.readouterr().out
+
+
+def test_first_native_condition_watcher_reserves_and_second_is_coalesced(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    command = "gh run watch 1 --exit-status"
+    assert _drive_watcher_gate(monkeypatch, capsys, path, command) == ""
+    reservation = GUARD._load(path)["ship_watcher"]
+    assert reservation["head"] == "a" * 40
+    assert reservation["fragment"] == command
+    assert reservation["condition"] == "gh-run:current-repo:1"
+    # A second request inside the start grace is refused unconditionally —
+    # the admitted task may not have spawned yet, so ps proves nothing.
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "gh pr checks 2 --watch")
+    verdict = json.loads(denied)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHIP WATCHER COALESCED" in verdict["permissionDecisionReason"]
+    assert "still starting" in verdict["permissionDecisionReason"]
+    # The refusal must not clobber the live reservation.
+    assert GUARD._load(path)["ship_watcher"] == reservation
+
+
+def test_admitted_condition_watch_gets_a_unique_process_marker_in_updated_input(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_args: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: path)
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *_args, **_kwargs: "a" * 40)
+
+    payload = _watcher_payload(
+        "gh run watch 123 --exit-status --interval 60", background=True
+    )
+    GUARD._pre_tool_use(payload, b"{}")
+    output = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert output["permissionDecision"] == "allow"
+    updated = output["updatedInput"]
+    assert updated["run_in_background"] is True
+    reservation = GUARD._load(path)["ship_watcher"]
+    marker = reservation["process_marker"]
+    assert marker.startswith("ship-watcher:")
+    assert marker in updated["command"]
+    assert "gh run watch 123 --exit-status --interval 60" in updated["command"]
+    assert reservation["confirmed"] is False
+
+
+def test_hot_watch_inside_executable_heredoc_is_denied_before_reservation(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_args: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: path)
+    command = "sh -s <<'EOF'\ngh run watch 123 --exit-status\nEOF"
+
+    GUARD._pre_tool_use(_watcher_payload(command, background=False), b"{}")
+
+    verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHARED GITHUB QUOTA" in verdict["permissionDecisionReason"]
+    assert "ship_watcher" not in GUARD._load(path)
+
+
+def test_allowed_watcher_confirms_the_existing_reservation_before_gh_executes(
+    monkeypatch, capsys, tmp_path
+):
+    """The permission hook may only create a pending claim. The command that
+    actually survives every parallel PreToolUse hook must confirm that exact
+    marker before GitHub execution, binding ownership to real execution rather
+    than to one hook's isolated allow decision."""
+    path = _watcher_state(tmp_path)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_args: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: path)
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *_args, **_kwargs: "a" * 40)
+
+    GUARD._pre_tool_use(
+        _watcher_payload("gh run watch 123 --exit-status --interval 60", background=False),
+        b"{}",
+    )
+    output = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    updated = output["updatedInput"]["command"]
+
+    fake_gh = tmp_path / "gh"
+    fake_gh.write_text(
+        "#!/bin/sh\nprintf 'executed\\n' > \"$GH_EXECUTED\"\n",
+        encoding="utf-8",
+    )
+    fake_gh.chmod(0o755)
+    receipt = tmp_path / "gh-executed.txt"
+    env = dict(os.environ)
+    env["PATH"] = f"{tmp_path}:{env.get('PATH', '')}"
+    env["GH_EXECUTED"] = str(receipt)
+    result = subprocess.run(
+        ("/bin/bash", "-c", updated),
+        cwd=tmp_path,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert receipt.read_text(encoding="utf-8") == "executed\n"
+    reservation = GUARD._load(path)["ship_watcher"]
+    assert reservation["confirmed"] is True
+    assert int(reservation["process_pid"]) > 0
+    assert reservation["process_start"]
+
+
+def test_process_liveness_uses_unique_reservation_marker_not_shared_command_fragment(
+    monkeypatch, capsys, tmp_path
+):
+    state_path = _watcher_state(tmp_path)
+    state = GUARD._load(state_path)
+    state["ship_watcher"] = {
+        "digest": "08e6d841f709",
+        "condition": "gh-run:current-repo:1",
+        "fragment": "gh run watch 1 --exit-status",
+        "process_marker": "ship-watcher:this-session",
+        "head": "a" * 40,
+        "created": GUARD.time.time() - 300,
+    }
+    GUARD._save(state_path, state)
+    seen = []
+
+    def marker_liveness(reservation):
+        seen.append(reservation["process_marker"])
+        # A sibling runs the identical command, but carries a distinct marker.
+        return reservation["process_marker"] == "ship-watcher:sibling-session"
+
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", marker_liveness)
+    assert _drive_watcher_gate(
+        monkeypatch,
+        capsys,
+        path=state_path,
+        command="gh run watch 2 --exit-status",
+    ) == ""
+    assert seen == ["ship-watcher:this-session"]
+    assert (
+        GUARD._load(state_path)["ship_watcher"]["condition"]
+        == "gh-run:current-repo:2"
+    )
+
+
+def test_watcher_liveness_binds_pid_and_start_identity_and_rejects_pid_reuse(
+    monkeypatch
+):
+    start = "Mon Aug 25 12:34:56 2026"
+    marker = "ship-watcher:owned-session"
+
+    def ps(*_args, **_kwargs):
+        return type(
+            "Proc",
+            (),
+            {
+                "returncode": 0,
+                "stdout": f"  4242 {start} /bin/bash -c : '{marker}'\n",
+            },
+        )()
+
+    monkeypatch.setattr(GUARD.subprocess, "run", ps)
+    reservation = {"process_marker": marker}
+    assert GUARD._watcher_process_alive(reservation) is True
+    assert reservation["process_pid"] == 4242
+    assert reservation["process_start"] == start
+
+    # The numeric PID can be reused after the owner exits. A different start
+    # identity is a different process and must not keep the reservation live.
+    reservation["process_start"] = "Sun Aug 24 12:34:56 2026"
+    assert GUARD._watcher_process_alive(reservation) is False
+
+
+def test_composite_shell_exec_and_identical_sibling_do_not_confuse_liveness(
+    monkeypatch
+):
+    own_marker = "ship-watcher:owned-session"
+    sibling_marker = "ship-watcher:sibling-session"
+    start = "Mon Aug 25 12:34:56 2026"
+
+    def ps(*_args, **_kwargs):
+        return type(
+            "Proc",
+            (),
+            {
+                "returncode": 0,
+                "stdout": (
+                    f"  4001 {start} /bin/bash -c cd /repo && gh run watch 7 "
+                    f"--exit-status >/tmp/log; : '{sibling_marker}'\n"
+                    "  4002 Mon Aug 25 12:35:01 2026 gh run watch 7 --exit-status\n"
+                ),
+            },
+        )()
+
+    monkeypatch.setattr(GUARD.subprocess, "run", ps)
+    # The identical gh child and sibling shell are not this session's owner.
+    assert GUARD._watcher_process_alive({"process_marker": own_marker}) is False
+
+
+def test_multiple_processes_with_one_reservation_marker_are_unanswerable(monkeypatch):
+    marker = "ship-watcher:ambiguous"
+    start = "Mon Aug 25 12:34:56 2026"
+
+    def ps(*_args, **_kwargs):
+        return type(
+            "Proc",
+            (),
+            {
+                "returncode": 0,
+                "stdout": (
+                    f"  41 {start} bash -c : '{marker}'\n"
+                    f"  42 {start} bash -c : '{marker}'\n"
+                ),
+            },
+        )()
+
+    monkeypatch.setattr(GUARD.subprocess, "run", ps)
+    assert GUARD._watcher_process_alive({"process_marker": marker}) is None
+
+
+def _aged_reservation(
+    path: Path,
+    *,
+    age: float = 300.0,
+    fragment: str = "gh run watch 1 --exit-status",
+    head: str = "a" * 40,
+) -> None:
+    state = GUARD._load(path)
+    now = GUARD.time.time()
+    state["ship_watcher"] = {
+        # Literal fixture for ``gh-run:current-repo:1``. This is
+        # intentionally not derived through _watcher_request, so a broken
+        # classifier cannot make both sides agree with itself.
+        "digest": "08e6d841f709",
+        "fragment": fragment,
+        "condition": "gh-run:current-repo:1",
+        # Current-format entries always carry a marker and confirmation; the
+        # marker-less shapes are the LEGACY generations, tested separately by
+        # the release-by-own-deadline regressions.
+        "process_marker": "ship-watcher:" + "ab" * 16,
+        "confirmed": True,
+        "head": head,
+        "created": now - age,
+    }
+    GUARD._save(path, state)
+
+
+def test_a_completed_watch_cannot_spawn_an_unchanged_successor_timer(
+    monkeypatch, capsys, tmp_path
+):
+    """The #6406 mutation: process absence must not authorize the same
+    condition watcher again. That would make completion wake the model, permit
+    a successor, and repeat forever while GitHub remains unchanged."""
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: False)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 1 --exit-status")
+    assert "UNCHANGED WAIT REFUSED" in denied
+    assert GUARD._load(path)["ship_watcher"]["created"] < GUARD.time.time() - 60
+
+
+def test_five_unchanged_observations_admit_zero_successor_watchers(
+    monkeypatch, capsys, tmp_path
+):
+    """N>=5 frozen observations produce no hook-level continuation admission.
+
+    The PreToolUse contract can deterministically prove deny decisions and the
+    absence of a rewritten command. It cannot claim ownership of the client's
+    model-turn lifecycle, which remains an external acceptance boundary.
+    """
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path)
+    before = GUARD._load(path)["ship_watcher"]
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: False)
+    for _ in range(5):
+        denied = _drive_watcher_gate(
+            monkeypatch, capsys, path, "gh run watch 1 --exit-status"
+        )
+        verdict = json.loads(denied)["hookSpecificOutput"]
+        assert verdict["permissionDecision"] == "deny"
+        assert "updatedInput" not in verdict
+        assert "UNCHANGED WAIT REFUSED" in verdict["permissionDecisionReason"]
+    assert GUARD._load(path)["ship_watcher"] == before
+
+
+def test_one_material_change_admits_exactly_one_new_owner(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: False)
+    changed = "gh run watch 2 --exit-status"
+    assert _drive_watcher_gate(monkeypatch, capsys, path, changed) == ""
+    for _ in range(5):
+        denied = _drive_watcher_gate(monkeypatch, capsys, path, changed)
+        assert "SHIP WATCHER COALESCED" in denied
+    assert GUARD._load(path)["ship_watcher"]["condition"] == "gh-run:current-repo:2"
+
+
+def test_identical_conditions_in_distinct_sessions_each_have_one_owner(
+    monkeypatch, capsys, tmp_path
+):
+    first = _watcher_state(tmp_path / "first")
+    second = _watcher_state(tmp_path / "second")
+    command = "gh run watch 1 --exit-status"
+    assert _drive_watcher_gate(monkeypatch, capsys, first, command) == ""
+    assert _drive_watcher_gate(monkeypatch, capsys, second, command) == ""
+    first_marker = GUARD._load(first)["ship_watcher"]["process_marker"]
+    second_marker = GUARD._load(second)["ship_watcher"]["process_marker"]
+    assert first_marker != second_marker
+
+
+def test_a_materially_new_condition_can_replace_a_completed_watcher(
+    monkeypatch, capsys, tmp_path
+):
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: False)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 2 --exit-status") == ""
+    replaced = GUARD._load(path)["ship_watcher"]
+    assert replaced["fragment"] == "gh run watch 2 --exit-status"
+    assert replaced["created"] > GUARD.time.time() - 30
+
+
+def test_a_live_watcher_refuses_stacking_past_head_and_condition_changes(
+    monkeypatch, capsys, tmp_path
+):
+    """Sol re-review blocker: occupancy binds to the REAL task lifetime. While
+    the reserved process is observably alive, neither a moved HEAD nor a
+    changed condition frees the slot."""
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path, age=7200.0)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: True)
+    denied = _drive_watcher_gate(
+        monkeypatch, capsys, path, "gh run watch 2 --exit-status", head="b" * 40
+    )
+    verdict = json.loads(denied)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "still RUNNING" in verdict["permissionDecisionReason"]
+    assert "successor is admitted once" not in verdict["permissionDecisionReason"]
+    assert "material" in verdict["permissionDecisionReason"].lower()
+    # The live reservation is untouched.
+    assert GUARD._load(path)["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
+
+
+def test_unknown_watcher_liveness_refuses_stacking(monkeypatch, capsys, tmp_path):
+    """An unanswerable process table is OCCUPIED, not free: unknown completion
+    must not permit stacking a second live watcher."""
+    path = _watcher_state(tmp_path)
+    _aged_reservation(path)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _f: None)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 2 --exit-status")
+    assert "could not be determined" in denied
+
+
+def test_watcher_process_liveness_reads_the_real_process_table(tmp_path):
+    """_watcher_process_alive against the live host: this test's own pytest
+    process is visible; a nonsense fragment is not; empty is unanswerable."""
+    assert GUARD._watcher_process_alive({}) is None
+
+
+def test_session_ledger_directory_is_private(monkeypatch, tmp_path):
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    root = tmp_path / "repo"
+    root.mkdir()
+    path = GUARD._state_path(root, {"session_id": "private-mode"})
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+
+
+def _mock_root_owned_sticky_temp(monkeypatch):
+    """Make only the first opened directory look like standard root /tmp."""
+    real_fstat = GUARD.os.fstat
+    calls = {"count": 0}
+
+    def root_temp_then_real(descriptor):
+        calls["count"] += 1
+        info = real_fstat(descriptor)
+        if calls["count"] == 1:
+            return SimpleNamespace(
+                st_mode=stat.S_IFDIR | stat.S_ISVTX | 0o777,
+                st_uid=0,
+            )
+        return info
+
+    monkeypatch.setattr(GUARD.os, "fstat", root_temp_then_real)
+
+
+def test_root_owned_sticky_os_temp_root_can_host_private_session_ledgers(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    _mock_root_owned_sticky_temp(monkeypatch)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    path = GUARD._state_path(repo, {"session_id": "root-sticky-temp"})
+
+    assert path.parent.stat().st_mode & 0o777 == 0o700
+    assert path.parent.parent.stat().st_mode & 0o777 == 0o700
+
+
+def test_root_owned_sticky_temp_still_refuses_a_session_root_symlink(
+    monkeypatch, tmp_path
+):
+    victim = tmp_path / "attacker-owned-target"
+    victim.mkdir()
+    (tmp_path / "macro-claude-ship-sessions").symlink_to(
+        victim, target_is_directory=True
+    )
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    _mock_root_owned_sticky_temp(monkeypatch)
+    called = []
+    real_child_open = GUARD._private_child_directory_fd
+
+    def recording_child_open(parent_fd, name, *, create):
+        called.append(name)
+        return real_child_open(parent_fd, name, create=create)
+
+    monkeypatch.setattr(GUARD, "_private_child_directory_fd", recording_child_open)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    with pytest.raises(OSError):
+        GUARD._state_path(repo, {"session_id": "root-sticky-symlink"})
+    assert called == ["macro-claude-ship-sessions"]
+    assert list(victim.iterdir()) == []
+
+
+def test_session_ledger_root_ancestor_symlink_is_never_followed(monkeypatch, tmp_path):
+    victim = tmp_path / "attacker-owned-target"
+    victim.mkdir()
+    ledger_root = tmp_path / "macro-claude-ship-sessions"
+    ledger_root.symlink_to(victim, target_is_directory=True)
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(tmp_path))
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    with pytest.raises(OSError):
+        GUARD._state_path(repo, {"session_id": "ancestor-symlink"})
+    assert list(victim.iterdir()) == []
+
+
+def test_state_and_lock_symlinks_fail_closed_without_touching_their_targets(tmp_path):
+    victim = tmp_path / "victim.json"
+    victim.write_text('{"secret":"unchanged"}', encoding="utf-8")
+    state_link = tmp_path / "state.json"
+    state_link.symlink_to(victim)
+    assert GUARD._load(state_link) is None
+    with pytest.raises(OSError):
+        GUARD._save(state_link, {"replacement": True})
+    assert victim.read_text(encoding="utf-8") == '{"secret":"unchanged"}'
+
+    lock_link = tmp_path / "state.watcher.lock"
+    lock_link.symlink_to(victim)
+    with pytest.raises(OSError):
+        with GUARD._file_lock(lock_link):
+            pytest.fail("a planted lock symlink must never be acquired")
+    assert victim.read_text(encoding="utf-8") == '{"secret":"unchanged"}'
+
+
+@pytest.mark.parametrize("unsafe_kind", ["symlink", "malformed"])
+def test_ordinary_stop_fails_closed_for_an_unsafe_session_ledger(
+    monkeypatch, capsys, tmp_path, unsafe_kind
+):
+    """Only a genuinely absent pre-install ledger gets the one legacy fail-open.
+    A planted symlink or malformed existing ledger is an enforcement fault and
+    must never be collapsed into that absence case."""
+    repo = _repo(tmp_path)
+    victim = tmp_path / "victim.json"
+    victim.write_text('{"secret":"unchanged"}', encoding="utf-8")
+    state_path = tmp_path / "unsafe-state.json"
+    if unsafe_kind == "symlink":
+        state_path.symlink_to(victim)
+    else:
+        state_path.write_text("{not-json", encoding="utf-8")
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: state_path)
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        io.StringIO(json.dumps({"hook_event_name": "Stop", "session_id": "unsafe"})),
+    )
+
+    GUARD.main()
+
+    verdict = json.loads(capsys.readouterr().out)
+    assert verdict["decision"] == "block"
+    assert "guard_error" in verdict["reason"]
+    assert victim.read_text(encoding="utf-8") == '{"secret":"unchanged"}'
+
+
+def test_genuinely_missing_legacy_stop_ledger_retains_the_narrow_fail_open(
+    monkeypatch, capsys, tmp_path
+):
+    repo = _repo(tmp_path)
+    missing = tmp_path / "never-created.json"
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: missing)
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        io.StringIO(json.dumps({"hook_event_name": "Stop", "session_id": "legacy"})),
+    )
+    GUARD.main()
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("unsafe_kind", ["state-symlink", "lock-symlink"])
+def test_session_start_reports_unsafe_ledger_paths_without_claiming_enforcement_loaded(
+    monkeypatch, capsys, tmp_path, unsafe_kind
+):
+    repo = _repo(tmp_path)
+    victim = tmp_path / "victim.json"
+    victim.write_text('{"secret":"unchanged"}', encoding="utf-8")
+    state_path = tmp_path / "session-state.json"
+    if unsafe_kind == "state-symlink":
+        state_path.symlink_to(victim)
+    else:
+        state_path.write_text("{}", encoding="utf-8")
+        state_path.with_suffix(".watcher.lock").symlink_to(victim)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _root, _payload: state_path)
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        io.StringIO(
+            json.dumps(
+                {
+                    "hook_event_name": "SessionStart",
+                    "source": "startup",
+                    "session_id": "unsafe-start",
+                }
+            )
+        ),
+    )
+
+    GUARD.main()
+
+    output = capsys.readouterr().out
+    assert "guard_error" in output
+    assert "MANDATORY SHIP LOOP" not in output
+    assert victim.read_text(encoding="utf-8") == '{"secret":"unchanged"}'
+
+
+def test_stop_path_resolution_fault_is_inside_the_fail_closed_router(
+    monkeypatch, capsys, tmp_path
+):
+    repo = _repo(tmp_path)
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _payload: repo)
+    monkeypatch.setattr(
+        GUARD,
+        "_state_path",
+        lambda *_a: (_ for _ in ()).throw(OSError("unsafe session directory")),
+    )
+    monkeypatch.setattr(
+        GUARD.sys,
+        "stdin",
+        io.StringIO(json.dumps({"hook_event_name": "Stop", "session_id": "unsafe-path"})),
+    )
+    GUARD.main()
+    verdict = json.loads(capsys.readouterr().out)
+    assert verdict["decision"] == "block"
+    assert "guard_error" in verdict["reason"]
+    assert "unsafe session directory" in verdict["reason"]
+
+
+def test_atomic_save_does_not_follow_the_old_predictable_temp_symlink(tmp_path):
+    path = tmp_path / "state.json"
+    victim = tmp_path / "victim.json"
+    victim.write_text("unchanged", encoding="utf-8")
+    planted = path.with_suffix(f".{os.getpid()}.tmp")
+    planted.symlink_to(victim)
+    GUARD._save(path, {"safe": True})
+    assert victim.read_text(encoding="utf-8") == "unchanged"
+    assert GUARD._load(path) == {"safe": True}
+
+
+def test_quiescence_standing_law_matches_zero_turn_amendment():
+    paths = [
+        ROOT / "AGENTS.md",
+        ROOT / "CLAUDE.md",
+        ROOT / ".cursor" / "rules" / "ship-loop-terminal-states.mdc",
+        ROOT / "agentos" / "handoffs" / "CI-MERGE-CONTROL-PLANE-2026-08-24-quiescence.md",
+        ROOT / "agentos" / "workstreams" / "WS-CI-MERGE-CONTROL-PLANE.md",
+    ]
+    for path in paths:
+        text = path.read_text(encoding="utf-8").lower()
+        normalized = " ".join(text.split())
+        assert "zero new model turns while external state is unchanged" in normalized, path
+        assert "fired watcher's successor is admitted" not in normalized, path
+        assert "background command with a literal `sleep`" not in normalized, path
+
+
+def test_only_the_parked_latch_refuses_new_watchers_for_its_exact_head(
+    monkeypatch, capsys, tmp_path
+):
+    parked = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'a' * 40}"})
+    denied = _drive_watcher_gate(monkeypatch, capsys, parked, "gh pr checks 6371 --watch")
+    verdict = json.loads(denied)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+    assert "SHIP WATCHER REFUSED" in verdict["permissionDecisionReason"]
+
+    # A ratified ladder exit does NOT refuse a watcher (red-team F4): exits
+    # have no clearing path, and a transient external blocker (a spent
+    # rate-limit window) lawfully resumes at the same head — its wake
+    # quiescence is owned by the exit-key memory in _block, not by creation
+    # refusal.
+    escaped = _watcher_state(
+        tmp_path,
+        {"ladder_exits": [GUARD._external_exit_key("github_rate_limited", "a" * 40, "x")]},
+    )
+    assert _drive_watcher_gate(monkeypatch, capsys, escaped, "gh pr checks 9 --watch") == ""
+    assert GUARD._load(escaped)["ship_watcher"]["head"] == "a" * 40
+
+    # A latch for a DIFFERENT head never refuses fresh work's watcher.
+    other = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'c' * 40}"})
+    assert _drive_watcher_gate(monkeypatch, capsys, other, "gh pr checks 9 --watch") == ""
+
+
+def test_watcher_admission_fails_closed_without_ledger_or_git(monkeypatch, capsys, tmp_path):
+    # No ledger: _pre_tool_use allows before ever reaching the gate.
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: tmp_path / "absent.json")
+    GUARD._pre_tool_use(
+        _watcher_payload("gh run watch 1 --exit-status --interval 60"), b"{}"
+    )
+    assert "SHIP WATCHER REFUSED" in capsys.readouterr().out
+    # A watcher-shaped request cannot be tracked safely when git is
+    # unanswerable, so admission fails closed instead of recording an unknown
+    # condition identity.
+    path = _watcher_state(tmp_path)
+
+    def broken_run(_root, *_args, **_kw):
+        raise RuntimeError("git unavailable")
+
+    monkeypatch.setattr(GUARD, "_run", broken_run)
+    watch = GUARD._watcher_request(_watcher_payload("gh run watch 1 --exit-status"))
+    GUARD._watcher_gate(Path("/unused"), path, GUARD._load(path), watch)
+    assert "SHIP WATCHER REFUSED" in capsys.readouterr().out
+    assert "ship_watcher" not in GUARD._load(path)
+
+
+def test_fourteen_concurrent_watcher_acquisitions_admit_exactly_one(tmp_path):
+    """Sol re-review blocker: acquisition must be linearizable ACROSS
+    PROCESSES. Three simultaneous watcher-shaped PreToolUse calls race the
+    same session ledger with a widened read→write window; the flock must
+    admit exactly one and refuse the other thirteen. Removing the lock
+    (mutation) makes several observe the empty slot and all admit."""
+    import os as _os
+    import subprocess as _subprocess
+    import sys as _sys
+
+    state_path = _watcher_state(tmp_path)
+    driver = tmp_path / "driver.py"
+    driver.write_text(
+        """
+import importlib.util, pathlib, sys
+spec = importlib.util.spec_from_file_location("g", sys.argv[1])
+g = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(g)
+g._delegate_to_evaluated_hook = lambda *_a: False
+g._repo_root = lambda _p: pathlib.Path(sys.argv[2])
+g._state_path = lambda _r, _p: pathlib.Path(sys.argv[3])
+g._run = lambda _root, *a, **k: "a" * 40
+payload = {
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {"command": "gh run watch 1 --exit-status --interval 60", "run_in_background": True},
+}
+g._pre_tool_use(payload, b"{}")
+""",
+        encoding="utf-8",
+    )
+    env = dict(_os.environ)
+    env["SHIP_WATCHER_TEST_ACQUIRE_DELAY"] = "0.1"
+    procs = [
+        _subprocess.Popen(
+            [_sys.executable, str(driver), str(HOOK_PATH), str(tmp_path), str(state_path)],
+            stdout=_subprocess.PIPE,
+            stderr=_subprocess.PIPE,
+            text=True,
+            env=env,
+        )
+        for _ in range(14)
+    ]
+    outputs = [proc.communicate(timeout=60)[0] for proc in procs]
+    admitted = [out for out in outputs if '"permissionDecision": "allow"' in out]
+    denied = [out for out in outputs if "SHIP WATCHER COALESCED" in out]
+    assert len(admitted) == 1, outputs
+    assert len(denied) == 13, outputs
+    assert GUARD._load(state_path)["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status --interval 60"
+
+
+def test_concurrent_stop_writer_cannot_erase_a_live_watcher_reservation(
+    capsys, tmp_path
+):
+    """A Stop starts from an old snapshot while PreToolUse reserves a watcher.
+
+    Mutation caught: serializing only watcher acquisition still lets the Stop
+    save its stale whole-ledger snapshot afterward and silently reopen the
+    watcher slot while the first process remains alive.
+    """
+    import threading
+
+    path = _watcher_state(tmp_path)
+    stale_loaded = threading.Event()
+    watcher_written = threading.Event()
+
+    def stop_writer():
+        stale = GUARD._load(path)
+        stale_loaded.set()
+        assert watcher_written.wait(timeout=10)
+        GUARD._block(
+            path,
+            stale,
+            {"last_assistant_message": ""},
+            "github_unreachable",
+            "api unavailable",
+        )
+
+    writer = threading.Thread(target=stop_writer)
+    writer.start()
+    assert stale_loaded.wait(timeout=10)
+    current = GUARD._load(path)
+    current["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh run watch 1 --exit-status",
+        "head": "a" * 40,
+        "created": GUARD.time.time(),
+    }
+    with GUARD._file_lock(path.with_suffix(".watcher.lock")):
+        GUARD._save(path, current)
+    watcher_written.set()
+    writer.join(timeout=10)
+    assert not writer.is_alive()
+    state = GUARD._load(path)
+    assert state["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
+    assert state["last_blocker"] == "github_unreachable"
+    capsys.readouterr()
+
+
+def test_concurrent_proof_writer_cannot_erase_a_live_watcher_reservation(tmp_path):
+    """A slow GitHub proof completion must merge into the latest locked ledger,
+    not overwrite the watcher admitted while that proof was in flight."""
+    import threading
+
+    path = _watcher_state(tmp_path)
+    stale_loaded = threading.Event()
+    watcher_written = threading.Event()
+
+    def proof_writer():
+        stale = GUARD._load(path)
+        stale_loaded.set()
+        assert watcher_written.wait(timeout=10)
+        GUARD._remember_proof(path, stale, "ci", "head:abc", {"green": True})
+
+    writer = threading.Thread(target=proof_writer)
+    writer.start()
+    assert stale_loaded.wait(timeout=10)
+    current = GUARD._load(path)
+    current["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": "gh run watch 1 --exit-status",
+        "head": "a" * 40,
+        "created": GUARD.time.time(),
+    }
+    with GUARD._file_lock(path.with_suffix(".watcher.lock")):
+        GUARD._save(path, current)
+    watcher_written.set()
+    writer.join(timeout=10)
+    assert not writer.is_alive()
+    state = GUARD._load(path)
+    assert state["ship_watcher"]["fragment"] == "gh run watch 1 --exit-status"
+    assert state["ship_proofs"]["ci"] == {
+        "key": "head:abc",
+        "value": {"green": True},
+    }
+
+
+def test_non_watcher_bash_returns_before_delegation(monkeypatch, capsys):
+    """The common case must stay free: no delegation subprocess, no git, no
+    ledger read for ordinary Bash calls."""
+
+    def explode(*_a, **_kw):
+        raise AssertionError("non-watcher PreToolUse must not reach delegation")
+
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", explode)
+    monkeypatch.setattr(GUARD, "_repo_root", explode)
+    GUARD._pre_tool_use(_watcher_payload("pytest -q tests/test_x.py", background=False), b"{}")
+    assert capsys.readouterr().out == ""
+
+
+def test_settings_wire_pre_tool_use_watcher_gate():
+    settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+    bash_hooks = [
+        hook
+        for entry in settings["hooks"]["PreToolUse"]
+        if entry.get("matcher") == "Bash"
+        for hook in entry["hooks"]
+    ]
+    commands = [hook["command"] for hook in bash_hooks]
+    assert any("gh_quota_guard.py" in command for command in commands)
+    assert any("ship_loop_guard.py" in command for command in commands)
+
+
+def test_parallel_quota_denial_cannot_leave_a_phantom_consumed_reservation(
+    monkeypatch, tmp_path
+):
+    """Drive the two configured hooks independently as Claude does. The ship
+    hook must not reserve a command the canonical quota guard will deny. The
+    quota-compliant correction is admitted immediately, without sleeping out
+    a pending-claim grace window or creating a second lifecycle."""
+    repo = _repo(tmp_path)
+    scratch = tmp_path / "tmp"
+    scratch.mkdir()
+    env = dict(os.environ)
+    env["TMPDIR"] = str(scratch)
+    env["CLAUDE_PROJECT_DIR"] = str(ROOT)
+    session_id = "parallel-hooks-phantom"
+
+    def run_hook(path: Path, payload: dict) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            (sys.executable, str(path)),
+            cwd=repo,
+            input=json.dumps(payload),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            timeout=30,
+            check=False,
+        )
+
+    start = {
+        "hook_event_name": "SessionStart",
+        "source": "startup",
+        "session_id": session_id,
+        "cwd": str(repo),
+    }
+    started = run_hook(HOOK_PATH, start)
+    assert started.returncode == 0, started.stderr
+
+    hot = _watcher_payload("gh run watch 123 --exit-status", background=False)
+    hot.update({"session_id": session_id, "cwd": str(repo)})
+    quota = run_hook(ROOT / ".claude" / "hooks" / "gh_quota_guard.py", hot)
+    ship = run_hook(HOOK_PATH, hot)
+    quota_verdict = json.loads(quota.stdout)["hookSpecificOutput"]
+    ship_verdict = json.loads(ship.stdout)["hookSpecificOutput"]
+    assert quota_verdict["permissionDecision"] == "deny"
+    assert ship_verdict["permissionDecision"] == "deny"
+
+    monkeypatch.setattr(GUARD.tempfile, "gettempdir", lambda: str(scratch))
+    state_path = GUARD._state_path(repo.resolve(), start)
+    assert "ship_watcher" not in GUARD._load(state_path)
+
+    lawful = _watcher_payload(
+        "gh run watch 123 --exit-status --interval 60", background=False
+    )
+    lawful.update({"session_id": session_id, "cwd": str(repo)})
+    retry = run_hook(HOOK_PATH, lawful)
+    retry_verdict = json.loads(retry.stdout)["hookSpecificOutput"]
+    assert retry_verdict["permissionDecision"] == "allow"
+    replacement = GUARD._load(state_path)["ship_watcher"]
+    assert replacement["confirmed"] is False
+    assert replacement["condition"] == "gh-run:current-repo:123"
+
+
+def test_main_routes_a_real_pre_tool_use_payload_end_to_end(monkeypatch, capsys, tmp_path):
+    """Drive GUARD.main() with an actual PreToolUse payload: the deny JSON is
+    emitted through the whole entrypoint, and a crashing watcher admission
+    fails closed without changing ordinary Bash's fail-open path."""
+    import io
+
+    path = _watcher_state(tmp_path, {"parked_latch": f"parked:6371:{'a' * 40}"})
+    monkeypatch.setattr(GUARD, "_delegate_to_evaluated_hook", lambda *_a: False)
+    monkeypatch.setattr(GUARD, "_repo_root", lambda _p: tmp_path)
+    monkeypatch.setattr(GUARD, "_state_path", lambda _r, _p: path)
+    monkeypatch.setattr(GUARD, "_run", lambda _root, *args, **_kw: "a" * 40)
+    payload = json.dumps(_watcher_payload("gh pr checks 6371 --watch"))
+    monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
+    GUARD.main()
+    verdict = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert verdict["permissionDecision"] == "deny"
+
+    def explode(*_a, **_kw):
+        raise RuntimeError("gate crashed")
+
+    monkeypatch.setattr(GUARD, "_watcher_gate", explode)
+    monkeypatch.setattr(GUARD.sys, "stdin", io.StringIO(payload))
+    GUARD.main()
+    crashed = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert crashed["permissionDecision"] == "deny"
+    assert "admission was unanswerable" in crashed["permissionDecisionReason"]
+
+
+def test_a_legacy_fragmentless_reservation_releases_by_its_own_deadline(
+    monkeypatch, capsys, tmp_path
+):
+    """Migration: a reservation minted by the superseded intermediate gate
+    carries no fragment, so liveness can never be observed for it. Observed
+    live 2026-08-25: demanding evidence wedged the slot forever. It stays
+    occupied until its own recorded deadline, then frees."""
+    path = _watcher_state(tmp_path)
+    now = GUARD.time.time()
+    state = GUARD._load(path)
+    state["ship_watcher"] = {
+        "digest": "d" * 12,
+        "head": "a" * 40,
+        "created": now - 300,
+        "expires": now + 600,
+    }
+    GUARD._save(path, state)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2")
+    assert "earlier guard version" in denied
+    state = GUARD._load(path)
+    state["ship_watcher"]["expires"] = now - 10
+    GUARD._save(path, state)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "sleep 900 && gh pr checks 2") == ""
+    assert GUARD._load(path)["ship_watcher"]["fragment"] == "sleep 900 && gh pr checks 2"
+
+
+def test_a_markerless_fragment_era_reservation_releases_by_its_own_deadline(
+    monkeypatch, capsys, tmp_path
+):
+    """Second superseded generation (observed live 2026-08-26 on this repair's
+    own session): a fragment-carrying but MARKER-LESS reservation can never be
+    identity-bound, so demanding liveness evidence wedged the slot forever.
+    Like the fragment-less generation, it stays occupied until its own
+    recorded deadline, then frees."""
+    path = _watcher_state(tmp_path)
+    now = GUARD.time.time()
+    state = GUARD._load(path)
+    state["ship_watcher"] = {
+        "digest": "d" * 12,
+        "fragment": 'sleep 1500 && echo "CI-WATCH-3: recheck"',
+        "head": "a" * 40,
+        "created": now - 97000,
+        "nominal_fire": now + 600,
+    }
+    GUARD._save(path, state)
+    denied = _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 9 --exit-status")
+    assert "earlier guard version" in denied
+    state = GUARD._load(path)
+    state["ship_watcher"]["nominal_fire"] = now - 10
+    GUARD._save(path, state)
+    assert _drive_watcher_gate(monkeypatch, capsys, path, "gh run watch 9 --exit-status") == ""
+    replaced = GUARD._load(path)["ship_watcher"]
+    assert replaced["condition"] == "gh-run:current-repo:9"
+    assert replaced["process_marker"]
+
+
+# ── C1 zero-compute CI quiescence v2 (issue #6379 V2 recharter) ─────────────
+
+
+def _v2_fast_preflight(*, pending: bool = True, red: tuple[str, str] | None = None) -> list[dict]:
+    runs = [
+        _run_stub("ci-plan", conclusion="success"),
+        _run_stub("contract-delta", conclusion="success"),
+        _run_stub("fence-pack", conclusion="success"),
+    ]
+    if pending:
+        runs.append(_run_stub("trusted-ci / trusted-executor-pack-3", "queued"))
+    else:
+        runs.append(_run_stub("trusted-ci / trusted-executor-pack-3", conclusion="success"))
+    if red is not None:
+        name, conclusion = red
+        runs.append(_run_stub(name, conclusion=conclusion))
+    # The inactive pilot is deliberately non-binding and cannot veto entry.
+    runs.append(_run_stub("ci-authority/codex/merge-queue-pilot", conclusion="failure"))
+    return runs
+
+
+def _v2_pending_session(monkeypatch, tmp_path, *, runs=None):
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    state = GUARD._load(state_path)
+    state["ship_watcher"] = {
+        "digest": "watch-digest-v2",
+        "fragment": "gh pr checks 4242 --watch --interval 60",
+        "condition": "gh-pr-checks:current-repo:4242",
+        "head": head,
+        "created": GUARD.time.time() - 5,
+        "confirmed": True,
+        "process_marker": "ship-watcher:v2-owned-session",
+        "pid": 4242,
+        "process_started_at": "Mon Aug 29 01:00:00 2026",
+    }
+    GUARD._save(state_path, state)
+
+    observed = {"merged": 0, "pull": 0, "runs": 0}
+    current_runs = list(runs or _v2_fast_preflight())
+
+    def merged(*_args):
+        observed["merged"] += 1
+        return None
+
+    def pull(*_args):
+        observed["pull"] += 1
+        return _armed_pr(head)
+
+    def head_runs(*_args):
+        observed["runs"] += 1
+        return list(current_runs)
+
+    monkeypatch.setattr(GUARD, "_fast_forwarded_onto_main", lambda _root: False)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", merged)
+    monkeypatch.setattr(GUARD, "_open_pull", pull)
+    monkeypatch.setattr(GUARD, "_head_check_runs", head_runs)
+    monkeypatch.setattr(
+        GUARD, "_watcher_process_alive", lambda _reservation: True, raising=False
+    )
+    return repo, state_path, head, current_runs, observed
+
+
+def test_pending_exact_head_with_one_watcher_enters_ci_quiescent_once(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, head, _runs, observed = _v2_pending_session(monkeypatch, tmp_path)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    receipt = json.loads(lines[0])
+    assert "CI_QUIESCENT" in receipt["systemMessage"]
+    assert "decision" not in receipt
+    quiescence = GUARD._load(state_path)["ci_quiescence"]
+    assert quiescence["version"] == "ci_quiescence.v1"
+    assert quiescence["pr"] == 4242
+    assert quiescence["head"] == head
+    assert quiescence["watcher_digest"] == "watch-digest-v2"
+    assert quiescence["mode"] == "ordinary"
+    assert quiescence["route"] == "release"
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+
+
+def test_lawful_hold_mode_reuses_the_same_mechanical_pending_entry(
+    monkeypatch, tmp_path, capsys
+):
+    _repo, state_path, head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    _red, pending, passed = GUARD._split_head_runs(runs)
+
+    handled = GUARD._enter_ci_quiescence(
+        state_path,
+        GUARD._load(state_path),
+        branch="claude/feature",
+        number=4242,
+        head=head,
+        pending=pending,
+        passed=passed,
+        checks_fingerprint=GUARD._ci_checks_fingerprint(runs),
+        authority_fingerprint="a" * 16,
+        mode="hold",
+    )
+
+    assert handled is True
+    receipt = json.loads(capsys.readouterr().out)
+    assert receipt["systemMessage"].startswith(
+        "CI_QUIESCENT: lawful HOLD-FOR-SOL WAITING;"
+    )
+    quiescence = GUARD._load(state_path)["ci_quiescence"]
+    assert quiescence["mode"] == "hold"
+    assert quiescence["authority_fingerprint"] == "a" * 16
+
+
+def test_one_hundred_identical_stop_and_task_wakes_do_not_repoll_or_renarrate(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, _runs, observed = _v2_pending_session(monkeypatch, tmp_path)
+
+    for index in range(100):
+        GUARD._stop(
+            repo,
+            state_path,
+            {
+                "stop_hook_active": False,
+                "last_assistant_message": (
+                    "<task-notification>same frozen wait</task-notification>"
+                    if index % 2
+                    else "ordinary Stop on same frozen wait"
+                ),
+            },
+        )
+
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 1
+    assert "CI_QUIESCENT" in json.loads(lines[0])["systemMessage"]
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+    state = GUARD._load(state_path)
+    assert int(state.get("total_blocks") or 0) == 0
+    assert state["ci_quiescence"]["unchanged_observations"] == 99
+
+
+def test_deterministic_forty_five_minute_wait_keeps_one_watcher_and_one_receipt(
+    monkeypatch, tmp_path, capsys
+):
+    """A full healthy wait is local ledger work after its entry snapshot.
+
+    One hundred no-change observations span 45 deterministic minutes here.
+    The test records the exact proof dimensions requested by the V2 charter:
+    one watcher identity, one GitHub snapshot, one model-facing receipt, zero
+    repeated blocks/narration, and no successor watcher.
+    """
+    clock = {"now": 1_788_000_000.0}
+    monkeypatch.setattr(GUARD.time, "time", lambda: clock["now"])
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    initial_watcher = dict(GUARD._load(state_path)["ship_watcher"])
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    for _ in range(100):
+        clock["now"] += 27.0
+        GUARD._stop(
+            repo,
+            state_path,
+            {
+                "stop_hook_active": False,
+                "last_assistant_message": (
+                    "<task-notification>same healthy wait</task-notification>"
+                ),
+            },
+        )
+
+    output = capsys.readouterr().out.splitlines()
+    state = GUARD._load(state_path)
+    quiescence = state["ci_quiescence"]
+    assert clock["now"] - float(quiescence["entered_at"]) == 45 * 60
+    assert len(output) == 1
+    assert "CI_QUIESCENT" in json.loads(output[0])["systemMessage"]
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+    assert quiescence["unchanged_observations"] == 100
+    assert int(state.get("total_blocks") or 0) == 0
+    assert state["ship_watcher"] == initial_watcher
+
+
+def test_material_green_watcher_exit_breaks_quiescence_exactly_once(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, observed = _v2_pending_session(monkeypatch, tmp_path)
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"], raising=False)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(pending=False)
+    for _ in range(5):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert sum(
+        item.get("systemMessage", "").startswith("CI_QUIESCENT:") for item in lines
+    ) == 1
+    material = [item for item in lines if "CI_MATERIAL_EVENT" in item.get("systemMessage", "")]
+    assert len(material) == 1
+    assert "green" in material[0]["systemMessage"]
+    assert "release/Sol" in material[0]["systemMessage"]
+    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+
+
+def test_builder_owned_red_never_enters_ci_quiescence(monkeypatch, tmp_path, capsys):
+    runs = _v2_fast_preflight(
+        red=("trusted-ci / trusted-executor-pack-7", "failure")
+    )
+    repo, state_path, _head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path, runs=runs
+    )
+    monkeypatch.setattr(GUARD, "_base_side_pre_merge", lambda *_a: ({}, []))
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    state = GUARD._load(state_path)
+    assert "ci_quiescence" not in state
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+    assert GUARD.CI_FAILED_UNMERGED in verdict["reason"]
+
+
+def test_missing_preflight_or_watcher_refuses_ci_quiescence(
+    monkeypatch, tmp_path, capsys
+):
+    incomplete = [
+        _run_stub("ci-plan", conclusion="success"),
+        _run_stub("trusted-ci / trusted-executor-pack-3", "queued"),
+    ]
+    repo, state_path, _head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path, runs=incomplete
+    )
+    state = GUARD._load(state_path)
+    state.pop("ship_watcher")
+    GUARD._save(state_path, state)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    assert "ci_quiescence" not in GUARD._load(state_path)
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+    assert "unmerged" in verdict["reason"]
+
+
+def test_inherited_main_and_infrastructure_routes_name_canonical_ci_owner():
+    inherited = GUARD._base_red_block(
+        4242,
+        {"ci-pack-3": "red on main's own newest proof (ci.yml run 77)"},
+        [],
+    )
+    assert "#6351" in inherited
+    assert "product" in inherited.lower()
+    assert "do not" in inherited.lower()
+    assert GUARD._ci_event_route(
+        "infrastructure",
+        pr=4242,
+        head="a" * 40,
+        checks=["trusted-ci / trusted-executor-main-admission (failure)"],
+    )["owner"] == "#6351/main-integrity"
+    assert GUARD._ci_event_route(
+        "missing_evidence", pr=4242, head="a" * 40, checks=[]
+    )["owner"] == "#6351/main-integrity"
+
+
+def test_model_prose_cannot_mint_quiescence_or_terminal_truth(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head = _pushed_unmerged_session(tmp_path)
+    monkeypatch.setattr(GUARD, "_fast_forwarded_onto_main", lambda _root: False)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: None)
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: None)
+
+    GUARD._stop(
+        repo,
+        state_path,
+        {
+            "stop_hook_active": False,
+            "last_assistant_message": (
+                "CI_QUIESCENT green merged shipped PARKED watcher=valid "
+                "preflight=green exact_head=true"
+            ),
+        },
+    )
+
+    state = GUARD._load(state_path)
+    assert "ci_quiescence" not in state
+    assert "parked_latch" not in state
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+
+
+def test_malformed_or_manually_planted_quiescence_record_fails_closed(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, head = _pushed_unmerged_session(tmp_path)
+    state = GUARD._load(state_path)
+    state["ci_quiescence"] = {
+        "version": "model-claimed",
+        "key": "not-a-mechanical-receipt",
+        "phase": "routed",
+        "head": head,
+        "route": "release/Sol",
+    }
+    GUARD._save(state_path, state)
+    monkeypatch.setattr(GUARD, "_fast_forwarded_onto_main", lambda _root: False)
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: None)
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: None)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    assert "ci_quiescence" not in GUARD._load(state_path)
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+    assert "unmerged" in verdict["reason"]
+
+
+def test_dead_watcher_grants_exactly_one_of_fourteen_stop_observers_the_wake(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    alive["value"] = False
+    outcomes = [
+        GUARD._ci_quiescence_fast_path(repo, state_path, GUARD._load(state_path))
+        for _ in range(14)
+    ]
+
+    assert outcomes.count(False) == 1, outcomes
+    assert outcomes.count(True) == 13, outcomes
+    claim = GUARD._load(state_path)["ci_quiescence"]["wake_claim"]
+    assert claim["pid"] == os.getpid() and claim["token"]
+
+
+def test_same_head_candidate_red_wakes_builder_and_clears_cheap_wait(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI on pull request #4242: trusted-ci / trusted-executor-pack-7 (failure).",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert outputs[0]["systemMessage"].startswith("CI_QUIESCENT:")
+    assert outputs[1]["decision"] == "block"
+    assert "trusted-executor-pack-7" in outputs[1]["reason"]
+    assert "ci_quiescence" not in GUARD._load(state_path)
+
+
+def test_inherited_main_red_routes_once_to_6351_and_builder_stays_silent(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-3", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            "unmerged",
+            "Pull request #4242 is NOT merged; this red is inherited from main.",
+        ),
+    )
+
+    for _ in range(5):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    routed = [
+        item for item in outputs
+        if item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT inherited_main")
+    ]
+    assert len(routed) == 1
+    assert "#6351/main-integrity" in routed[0]["systemMessage"]
+    assert all(item.get("decision") != "block" for item in outputs[1:])
+    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+    assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
+
+
+def test_infrastructure_red_routes_once_to_6351_without_product_repair(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-main-admission", "timed_out"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: trusted-executor-main-admission timed out.",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT infrastructure") == 1
+    assert "#6351/main-integrity" in output
+    assert "Fix the cause" not in output
+    assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
+
+
+def test_mixed_infrastructure_and_candidate_red_cannot_hide_the_owned_failure(
+    monkeypatch, tmp_path, capsys
+):
+    """One fabric red must not become an escape hatch for a real pack red."""
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    runs.append(
+        _run_stub(
+            "trusted-ci / trusted-executor-main-admission",
+            conclusion="timed_out",
+        )
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: trusted-executor-pack-7 failed; main-admission timed out.",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert outputs[-1]["decision"] == "block"
+    assert "trusted-executor-pack-7" in outputs[-1]["reason"]
+    assert all(
+        "CI_MATERIAL_EVENT infrastructure" not in item.get("systemMessage", "")
+        for item in outputs
+    )
+    assert "ci_quiescence" not in GUARD._load(state_path)
+
+
+def test_missing_semantic_proof_routes_centrally_only_without_a_product_red(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / ci-gate", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: ci-gate; exact-head semantic evidence is missing.",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT missing_evidence") == 1
+    assert "#6351/main-integrity" in output
+
+
+def test_missing_proof_wording_cannot_hide_a_separate_candidate_pack_red(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    runs.append(_run_stub("trusted-ci / ci-gate", conclusion="failure"))
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: pack-7; ci-gate semantic evidence is missing.",
+        ),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert outputs[-1]["decision"] == "block"
+    assert "pack-7" in outputs[-1]["reason"]
+    assert all(
+        "CI_MATERIAL_EVENT missing_evidence" not in item.get("systemMessage", "")
+        for item in outputs
+    )
+    assert "ci_quiescence" not in GUARD._load(state_path)
+
+
+def test_hold_or_release_metadata_change_invalidates_old_wait_once(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    changed = _armed_pr(head)
+    changed["title"] = "HOLD-FOR-SOL — release condition changed"
+    changed["draft"] = True
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: changed)
+
+    for _ in range(4):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT authority_change") == 1
+    assert "release/Sol" in output
+    assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
+    assert runs == _v2_fast_preflight()
+
+
+def test_new_local_head_invalidates_old_quiescence_before_github_reclassification(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, old_head, _runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    _commit(repo, "next.txt", "material head\n", "feat: material head")
+    _git(repo, "push", "-q", "origin", "claude/feature")
+    new_head = _git(repo, "rev-parse", "HEAD")
+    assert new_head != old_head
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: _armed_pr(new_head))
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    assert "ci_quiescence" not in GUARD._load(state_path)
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+    assert "unmerged" in verdict["reason"]
+
+
+def test_new_uncommitted_bytes_invalidate_quiescence_before_remote_polling(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+
+    (repo / "dirty-after-entry.txt").write_text("not part of the frozen wait\n")
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+    assert "ci_quiescence" not in GUARD._load(state_path)
+    verdict = json.loads(capsys.readouterr().out.splitlines()[-1])
+    assert verdict["decision"] == "block"
+    assert "uncommitted" in verdict["reason"]
+    assert "dirty-after-entry.txt" in verdict["reason"]
+
+
+def test_mutation_bypassing_quiescence_reintroduces_one_hundred_poll_blocks(
+    monkeypatch, tmp_path, capsys
+):
+    """Mutation proof for the V2 transition itself.
+
+    Removing/bypassing only `_try_ci_quiescence` restores the measured incident:
+    every identical Stop reads the open PR/check state again and narrates the
+    unchanged `unmerged` wait. This prevents the 100-observation acceptance from
+    passing merely because its fixture stopped exercising the ordinary ship loop.
+    """
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_try_ci_quiescence",
+        lambda *_a: (False, "none", ""),
+    )
+
+    for _ in range(100):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == 100
+    assert all(json.loads(line)["decision"] == "block" for line in lines)
+    assert all("unmerged" in json.loads(line)["reason"] for line in lines)
+    assert observed == {"merged": 100, "pull": 100, "runs": 100}
+    assert "ci_quiescence" not in GUARD._load(state_path)

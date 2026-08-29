@@ -69,12 +69,16 @@ neither makes it optional, and no counter moved.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import io
 import json
 import os
 import re
+import secrets
+import shlex
+import stat
 import subprocess
 import sys
 import tempfile
@@ -151,6 +155,64 @@ EXTERNAL_BLOCKERS = {
 # benign `unmerged` wait, which is internal and costs 10 consecutive / 15 total.
 # So it is internal, and the ladder now matches the severity of the state.
 CI_FAILED_UNMERGED = "ci_failed_unmerged"
+# ── Ship-watcher quiescence (Sol commission #6379, 2026-08-24) ────────────────
+# A "ship watcher" is one long-lived deterministic condition process: currently
+# `gh run watch` or `gh pr checks --watch`. It polls INSIDE that process and exits
+# only when GitHub materially changes, so unchanged observations produce zero
+# task-completion/model turns. Timer transports (`sleep`, computed sleep forms,
+# polling loops) are refused: even one-at-a-time timers implement the incident
+# loop `timer fires -> model wakes -> unchanged check -> successor timer`.
+# Foreground/background tool flags cannot bypass classification, and shell-level
+# `&` detachment is refused because the reserved shell would no longer own the
+# condition process whose lifetime the ledger tracks.
+#
+# The platform exposes NO way for a hook to enumerate or cancel Claude-native
+# background tasks, so lifetime is controlled at creation. At most one condition
+# process is reserved per session state. After it exits, the same HEAD + condition
+# fingerprint stays consumed: process absence is not permission for an unchanged
+# successor. A genuinely different head/run/check condition may reserve once.
+# Nothing here kills a process or task; an unknown/foreign waiter is simply left
+# alone, which is the fail-closed direction for ownership.
+#
+# OCCUPANCY IS BOUND TO THE REAL WATCHER LIFETIME, observed directly (Sol
+# re-review 2026-08-25). Neither ledger age nor a head move frees the slot —
+# the old Claude-native task may still be alive either way, and hooks cannot
+# cancel it. The slot frees on exactly one kind of
+# evidence: the reserved command's PROCESS is provably absent from the live
+# process table, checked only after the updated command has confirmed its exact
+# shell PID/start identity. PreToolUse creates a PENDING claim because sibling
+# hooks decide in parallel; the command promotes it only after aggregate allow.
+# A denied command therefore cannot permanently consume a condition. Within the
+# grace below, a pending claim stays occupied to prevent concurrent hook calls;
+# afterward it is replaceable, and its stale command cannot start GitHub because
+# confirmation against the replaced marker fails. A confirmed live owner remains
+# occupied until its exact PID/start identity exits. Unknown liveness refuses.
+WATCHER_START_GRACE_SECONDS = 60
+# A CI wait is eligible only after the three small deterministic admission
+# checks have concluded green. The long trusted-executor packs are the external
+# work this state waits for; an absence of these fast proofs is never inferred
+# green from an absence of red.
+CI_QUIESCENCE_VERSION = "ci_quiescence.v1"
+CI_QUIESCENCE_FAST_PREFLIGHT = frozenset({"ci-plan", "contract-delta", "fence-pack"})
+# A crashed wake claimant may not suppress the material event forever. This is
+# a lease inside the existing per-session ledger, not a timer or retry loop: it
+# is consulted only if another real Stop/task event already occurs.
+CI_QUIESCENCE_WAKE_LEASE_SECONDS = 120
+# These exact control/fabric checks do not diagnose product code. Their red (or
+# missing semantic evidence needed to interpret them) belongs to canonical CI
+# issue #6351, not to every product builder whose PR inherited the symptom.
+CI_INFRASTRUCTURE_CHECK_MARKERS = (
+    "trusted-executor-main-admission",
+    "trusted-executor-hosted-plan",
+    "ci-authority/main",
+    "capability-broker",
+    "grader-manifest",
+    "self-mod-fence",
+)
+# Test-only knob: seconds to sleep between the locked read and write of the
+# watcher acquisition, so the concurrency regression can force the interleaving
+# the lock exists to prevent. Unset (production) means zero.
+_WATCHER_ACQUIRE_TEST_DELAY_ENV = "SHIP_WATCHER_TEST_ACQUIRE_DELAY"
 # Roots holding OTHER agent sessions' checkouts. A repository serving several
 # fleets accumulates dozens of them side by side — measured 2026-07-30 in the
 # primary checkout: 34 `.codex-worktrees/*` entries plus `.claire/worktrees/*`
@@ -482,8 +544,24 @@ def _repo_root(payload: dict[str, Any]) -> Path | None:
 def _state_path(root: Path, payload: dict[str, Any]) -> Path:
     session = re.sub(r"[^A-Za-z0-9_.-]", "_", str(payload.get("session_id") or "default"))
     repo_key = hashlib.sha256(str(root).encode()).hexdigest()[:16]
-    directory = Path(tempfile.gettempdir()) / "macro-claude-ship-sessions" / repo_key
-    directory.mkdir(parents=True, exist_ok=True)
+    temp_root = Path(tempfile.gettempdir())
+    root_fd = _private_directory_fd(
+        temp_root, create=False, allow_root_sticky=True
+    )
+    ledger_fd = -1
+    directory_fd = -1
+    try:
+        ledger_fd = _private_child_directory_fd(
+            root_fd, "macro-claude-ship-sessions", create=True
+        )
+        directory_fd = _private_child_directory_fd(ledger_fd, repo_key, create=True)
+    finally:
+        if directory_fd >= 0:
+            os.close(directory_fd)
+        if ledger_fd >= 0:
+            os.close(ledger_fd)
+        os.close(root_fd)
+    directory = temp_root / "macro-claude-ship-sessions" / repo_key
     return directory / f"{session}.json"
 
 
@@ -865,17 +943,218 @@ def _shipped_identical_untracked(
         return set()
 
 
-def _load(path: Path) -> dict[str, Any] | None:
+_OPEN_NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
+_OPEN_CLOEXEC = getattr(os, "O_CLOEXEC", 0)
+_OPEN_DIRECTORY = getattr(os, "O_DIRECTORY", 0)
+
+
+def _private_directory_fd(
+    directory: Path, *, create: bool, allow_root_sticky: bool = False
+) -> int:
+    """Open one trusted directory without following its final name.
+
+    Ledger directories are always effective-UID-owned and private. The one
+    exception is the operating system's outer temp root: a root-owned sticky,
+    world-writable/searchable directory such as ``/tmp`` or ``/private/tmp``.
+    Its children still pass through ``_private_child_directory_fd`` and must be
+    effective-UID-owned 0700 directories.
+    """
+    if create:
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    flags = os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_DIRECTORY | _OPEN_NOFOLLOW
+    descriptor = os.open(directory, flags)
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+        info = os.fstat(descriptor)
+        owned = info.st_uid == os.geteuid()
+        root_sticky = (
+            allow_root_sticky
+            and not create
+            and info.st_uid == 0
+            and bool(info.st_mode & stat.S_ISVTX)
+            and bool(info.st_mode & stat.S_IWOTH)
+            and bool(info.st_mode & stat.S_IXOTH)
+        )
+        if not stat.S_ISDIR(info.st_mode) or not (owned or root_sticky):
+            raise OSError(
+                "ship ledger directory is neither user-owned nor a trusted "
+                "root-owned sticky temp root"
+            )
+        if create:
+            os.fchmod(descriptor, 0o700)
+        return descriptor
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
+def _private_child_directory_fd(parent_fd: int, name: str, *, create: bool) -> int:
+    """Open one private child directory relative to a verified parent.
+
+    Component-at-a-time ``dir_fd`` traversal is load-bearing: applying
+    ``O_NOFOLLOW`` only to the final repo-key directory still follows a planted
+    ``macro-claude-ship-sessions`` ancestor symlink before reaching it.
+    """
+    if not name or name in {".", ".."} or "/" in name:
+        raise OSError("unsafe ship ledger directory component")
+    if create:
+        try:
+            os.mkdir(name, mode=0o700, dir_fd=parent_fd)
+        except FileExistsError:
+            pass
+    descriptor = os.open(
+        name,
+        os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_DIRECTORY | _OPEN_NOFOLLOW,
+        dir_fd=parent_fd,
+    )
+    try:
+        info = os.fstat(descriptor)
+        if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.geteuid():
+            raise OSError("ship ledger directory is not a user-owned directory")
+        if create:
+            os.fchmod(descriptor, 0o700)
+        return descriptor
+    except Exception:
+        os.close(descriptor)
+        raise
+
+
+def _validate_owned_regular(descriptor: int, label: str) -> None:
+    info = os.fstat(descriptor)
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid():
+        raise OSError(f"{label} is not a user-owned regular file")
+
+
+def _validate_destination(directory_fd: int, name: str) -> None:
+    try:
+        info = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        return
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid():
+        raise OSError("ship ledger destination is not a user-owned regular file")
+
+
+def _load_ledger(path: Path, *, allow_missing: bool) -> dict[str, Any] | None:
+    """Load one ledger while distinguishing absence from unsafe existing state."""
+    directory_fd = -1
+    descriptor = -1
+    try:
+        directory_fd = _private_directory_fd(path.parent, create=False)
+        try:
+            descriptor = os.open(
+                path.name,
+                os.O_RDONLY | _OPEN_CLOEXEC | _OPEN_NOFOLLOW,
+                dir_fd=directory_fd,
+            )
+        except FileNotFoundError:
+            if allow_missing:
+                return None
+            raise OSError("ship ledger is missing")
+        _validate_owned_regular(descriptor, "ship ledger")
+        with os.fdopen(descriptor, "r", encoding="utf-8") as handle:
+            descriptor = -1
+            try:
+                value = json.load(handle)
+            except json.JSONDecodeError as exc:
+                raise OSError("ship ledger is malformed") from exc
+        if not isinstance(value, dict):
+            raise OSError("ship ledger root is not an object")
+        return value
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if directory_fd >= 0:
+            os.close(directory_fd)
+
+
+def _load(path: Path) -> dict[str, Any] | None:
+    """Best-effort JSON read for non-authoritative caches and diagnostics."""
+    try:
+        return _load_ledger(path, allow_missing=True)
+    except OSError:
         return None
 
 
+def _atomic_save_json(path: Path, value: Any) -> None:
+    """Atomically replace JSON through an unguessable, no-follow temp file."""
+    directory_fd = _private_directory_fd(path.parent, create=True)
+    temp_name = ""
+    descriptor = -1
+    try:
+        _validate_destination(directory_fd, path.name)
+        for _attempt in range(16):
+            temp_name = f".{path.name}.{os.getpid()}.{secrets.token_hex(12)}.tmp"
+            try:
+                descriptor = os.open(
+                    temp_name,
+                    os.O_WRONLY
+                    | os.O_CREAT
+                    | os.O_EXCL
+                    | _OPEN_CLOEXEC
+                    | _OPEN_NOFOLLOW,
+                    0o600,
+                    dir_fd=directory_fd,
+                )
+                break
+            except FileExistsError:
+                continue
+        else:
+            raise OSError("could not create a unique ship-ledger temp file")
+        _validate_owned_regular(descriptor, "ship ledger temp")
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            descriptor = -1
+            json.dump(value, handle, ensure_ascii=False, sort_keys=True)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(
+            temp_name,
+            path.name,
+            src_dir_fd=directory_fd,
+            dst_dir_fd=directory_fd,
+        )
+        temp_name = ""
+        os.fsync(directory_fd)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if temp_name:
+            try:
+                os.unlink(temp_name, dir_fd=directory_fd)
+            except OSError:
+                pass
+        os.close(directory_fd)
+
+
 def _save(path: Path, state: dict[str, Any]) -> None:
-    temp = path.with_suffix(".tmp")
-    temp.write_text(json.dumps(state, ensure_ascii=False, sort_keys=True), encoding="utf-8")
-    temp.replace(path)
+    _atomic_save_json(path, state)
+
+
+def _ledger_lock_path(path: Path) -> Path:
+    """The one lock for every read-modify-write of a session ledger.
+
+    The historical suffix is retained so an already-running hook from the
+    immediately preceding revision contends on the same file during rollout.
+    This remains part of the existing per-session ledger, not another store.
+    """
+    return path.with_suffix(".watcher.lock")
+
+
+def _update_ledger(path: Path, mutate: Any, *, initial: dict[str, Any] | None = None) -> Any:
+    """Apply one coherent ledger transaction and return ``mutate``'s result.
+
+    Every writer re-loads INSIDE the same lock used by watcher admission. The
+    optional ``initial`` is used only when the ledger genuinely disappeared;
+    it cannot replace a newer on-disk state and therefore cannot erase a
+    concurrent watcher reservation.
+    """
+    with _file_lock(_ledger_lock_path(path)):
+        latest = _load_ledger(path, allow_missing=True)
+        if not isinstance(latest, dict):
+            if initial is None:
+                return None
+            latest = dict(initial)
+        result = mutate(latest)
+        _save(path, latest)
+        return result
 
 
 def _proof(state: dict[str, Any], gate: str, key: str) -> Any | None:
@@ -894,9 +1173,1204 @@ def _remember_proof(
     value: Any,
 ) -> None:
     """Persist completed gates so later Stop turns do not poll GitHub again."""
-    proofs = state.setdefault("ship_proofs", {})
-    proofs[gate] = {"key": key, "value": value}
+    def remember(latest: dict[str, Any]) -> dict[str, Any]:
+        proofs = latest.setdefault("ship_proofs", {})
+        proofs[gate] = {"key": key, "value": value}
+        return dict(latest)
+
+    latest = _update_ledger(path, remember, initial=state)
+    if isinstance(latest, dict):
+        # The current Stop continues from the same authoritative snapshot the
+        # transaction persisted; later proof lookups must not use stale state.
+        state.clear()
+        state.update(latest)
+
+
+def _external_exit_key(code: str, head: str, reason: str) -> str:
+    """Frozen-state identity for an EXTERNAL block's remembered ladder exit.
+
+    External blockers describe machinery the session does not own, so once the
+    full escape ladder has ratified an exit (explicit ``SHIP LOOP BLOCKED:``
+    report on a re-entrant Stop, counters armed), a later wake — typically a
+    leftover background timer's `<task-notification>` turn — re-derives the
+    SAME state and must pass silently instead of re-blocking a session that
+    already lawfully left (Sol commission #6379, incident PR #6377). The key
+    binds code, the exact local HEAD, and a digest of the block evidence:
+
+    - HEAD is load-bearing, not decoration. A generic external reason (an
+      unreachable-API exception text, say) can recur verbatim for NEW work; a
+      session that escaped, then committed and pushed something new, must not
+      have its new head's outage excused by the old head's ratified report.
+    - The reason digest keeps the memory state-specific exactly as it does
+      for the merged-head ``ci_failed`` key: a materially changed blocker
+      (other lane, other run, other error) mints a different key and gates
+      fresh. The converse is equally true and intended: a blocker whose
+      message is byte-stable for its whole window — a rate-limit reason
+      carrying one fixed reset epoch, a render lane that never started —
+      stays silent for that window, which is precisely one report per frozen
+      state. The digest narrows what one report can cover; it does not
+      promise that every underlying retry re-blocks.
+
+    Internal codes NEVER mint a key here: ``unmerged``/``ci_failed_unmerged``/
+    ``unpushed``/``uncommitted``/``unsafe_branch``/``guard_error`` remain owned
+    repair states with only the 10/15 loop breaker, unchanged (Journey C).
+    """
+    if code not in EXTERNAL_BLOCKERS:
+        return ""
+    digest = hashlib.sha256(reason.encode("utf-8")).hexdigest()[:12]
+    return f"{code}:{head}:{digest}"
+
+
+def _python_executes_sleep(source: str) -> bool | None:
+    """Classify actual Python sleep calls without matching inert source text."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    modules: dict[str, str] = {}
+    imported: dict[str, tuple[str, str]] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                modules[alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            for alias in node.names:
+                imported[alias.asname or alias.name] = (node.module, alias.name)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Name) and imported.get(func.id) in {
+            ("time", "sleep"),
+            ("asyncio", "sleep"),
+        }:
+            return True
+        if not isinstance(func, ast.Attribute) or func.attr != "sleep":
+            continue
+        owner = func.value
+        if isinstance(owner, ast.Name) and modules.get(owner.id) in {"time", "asyncio"}:
+            return True
+        if (
+            isinstance(owner, ast.Call)
+            and isinstance(owner.func, ast.Name)
+            and owner.func.id == "__import__"
+            and owner.args
+            and isinstance(owner.args[0], ast.Constant)
+            and owner.args[0].value in {"time", "asyncio"}
+        ):
+            return True
+    return False
+
+
+def _heredoc_delimiters(line: str) -> list[tuple[str, bool]]:
+    """Return executable here-document declarations on one shell header.
+
+    The scanner observes shell quotes so inert text such as ``echo '<<EOF'``
+    cannot hide later executable lines. Only the delimiter declaration is
+    inspected here; the header itself stays in the classifier, preserving an
+    executable trailer such as ``cat <<EOF; sleep 1``.
+    """
+    found: list[tuple[str, bool]] = []
+    index = 0
+    quote = ""
+    escaped = False
+    while index < len(line):
+        char = line[index]
+        if escaped:
+            escaped = False
+            index += 1
+            continue
+        if char == "\\" and quote != "'":
+            escaped = True
+            index += 1
+            continue
+        if quote:
+            if char == quote:
+                quote = ""
+            index += 1
+            continue
+        if char in {"'", '"'}:
+            quote = char
+            index += 1
+            continue
+        if not line.startswith("<<", index) or line.startswith("<<<", index):
+            index += 1
+            continue
+        cursor = index + 2
+        strip_tabs = cursor < len(line) and line[cursor] == "-"
+        if strip_tabs:
+            cursor += 1
+        while cursor < len(line) and line[cursor] in " \t":
+            cursor += 1
+        if cursor >= len(line):
+            index += 2
+            continue
+        delimiter_quote = line[cursor] if line[cursor] in {"'", '"'} else ""
+        if delimiter_quote:
+            end = line.find(delimiter_quote, cursor + 1)
+            if end < 0:
+                index += 2
+                continue
+            delimiter = line[cursor + 1 : end]
+            cursor = end + 1
+        else:
+            end = cursor
+            while end < len(line) and line[end] not in " \t\r\n;&|<>()":
+                end += 1
+            delimiter = line[cursor:end]
+            cursor = end
+        if delimiter:
+            found.append((delimiter, strip_tabs))
+        index = max(cursor, index + 2)
+    return found
+
+
+def _shell_heredoc_parts(command: str) -> tuple[str, list[tuple[str, str, int]]]:
+    """Split shell headers from heredoc bodies without deciding body semantics.
+
+    Each document retains its header and declaration ordinal. The caller can
+    therefore keep ``cat``/``printf`` bodies as data while classifying stdin to
+    ``sh``/``bash``/``python`` as executable code.
+    """
+    pending: list[dict[str, Any]] = []
+    documents: list[tuple[str, str, int]] = []
+    kept: list[str] = []
+    for line in command.splitlines(keepends=True):
+        if pending:
+            current = pending[0]
+            delimiter = str(current["delimiter"])
+            strip_tabs = bool(current["strip_tabs"])
+            candidate = line.rstrip("\r\n")
+            if strip_tabs:
+                candidate = candidate.lstrip("\t")
+            if candidate == delimiter:
+                documents.append(
+                    (
+                        str(current["header"]),
+                        "".join(current["body"]),
+                        int(current["ordinal"]),
+                    )
+                )
+                pending.pop(0)
+            else:
+                current["body"].append(line)
+            # Preserve a command boundary without exposing body text as code.
+            if line.endswith(("\n", "\r")):
+                kept.append("\n")
+            continue
+        kept.append(line)
+        for ordinal, (delimiter, strip_tabs) in enumerate(_heredoc_delimiters(line)):
+            pending.append(
+                {
+                    "delimiter": delimiter,
+                    "strip_tabs": strip_tabs,
+                    "header": line,
+                    "ordinal": ordinal,
+                    "body": [],
+                }
+            )
+    for current in pending:
+        documents.append(
+            (
+                str(current["header"]),
+                "".join(current["body"]),
+                int(current["ordinal"]),
+            )
+        )
+    return "".join(kept), documents
+
+
+def _strip_shell_heredoc_bodies(command: str) -> str:
+    """Remove here-document bodies while retaining every executable header."""
+    return _shell_heredoc_parts(command)[0]
+
+
+def _heredoc_interpreter(header: str, ordinal: int) -> str | None:
+    """Return the interpreter consuming one heredoc, otherwise DATA/unknown."""
+    parsed = _shell_segments(header)
+    if parsed is None:
+        return None
+    candidates: list[list[str]] = []
+    for segment in parsed[0]:
+        if any(word.startswith("<<") and not word.startswith("<<<") for word in segment):
+            candidates.append(list(segment))
+    if ordinal >= len(candidates):
+        return None
+    words = candidates[ordinal]
+    assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+    while words and (assignment.match(words[0]) or words[0] in {"command", "builtin"}):
+        words.pop(0)
+    while words and os.path.basename(words[0]).lower() in {"env", "nohup", "time"}:
+        words.pop(0)
+        while words and (words[0].startswith("-") or assignment.match(words[0])):
+            words.pop(0)
+    if not words:
+        return None
+    executable = os.path.basename(words.pop(0)).lower()
+    arguments = [word for word in words if not word.startswith("<<")]
+    if executable in {"bash", "sh", "zsh"} and "-c" not in arguments:
+        return "shell"
+    if re.fullmatch(r"python(?:3(?:\.\d+)?)?", executable) and "-c" not in arguments:
+        return "python"
+    return None
+
+
+def _shell_segments(command: str) -> tuple[list[list[str]], list[str]] | None:
+    """Tokenize executable shell forms while preserving command boundaries.
+
+    Quotes are consumed by ``shlex``, so a value printed by echo/printf is an
+    argument rather than executable syntax. Newlines remain punctuation so a
+    second command cannot hide behind whitespace tokenization.
+    """
+    try:
+        lexer = shlex.shlex(
+            _strip_shell_heredoc_bodies(command),
+            posix=True,
+            punctuation_chars=";&|()\n",
+        )
+        lexer.whitespace = " \t\r"
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
+    except ValueError:
+        return None
+    segments: list[list[str]] = []
+    separators: list[str] = []
+    current: list[str] = []
+    for token in tokens:
+        if token and all(char in ";&|()\n" for char in token):
+            if current:
+                segments.append(current)
+                current = []
+            separators.append(token)
+        else:
+            current.append(token)
+    if current:
+        segments.append(current)
+    return segments, separators
+
+
+def _gh_wait_condition(words: list[str]) -> tuple[str | None, bool]:
+    """Return one canonical GitHub wait identity and parse uncertainty.
+
+    Repository flags are global in ``gh`` and may legally appear before or
+    after the positional subcommands. Known option arity is consumed before
+    selecting the run/PR subject so flag values can never become identities.
+    """
+    repo = "current-repo"
+    stripped: list[str] = []
+    index = 0
+    while index < len(words):
+        token = words[index]
+        if token in {"-R", "--repo"}:
+            if index + 1 >= len(words):
+                return None, True
+            repo = words[index + 1]
+            index += 2
+            continue
+        if token.startswith("--repo="):
+            repo = token.split("=", 1)[1]
+            if not repo:
+                return None, True
+            index += 1
+            continue
+        stripped.append(token)
+        index += 1
+
+    lowered = [word.lower() for word in stripped]
+    if lowered[:2] == ["run", "watch"]:
+        boolean_flags = {"--compact", "--exit-status"}
+        value_flags = {"--interval", "-i"}
+        subject = ""
+        index = 2
+        while index < len(stripped):
+            token = stripped[index]
+            lower = token.lower()
+            if lower in boolean_flags:
+                index += 1
+                continue
+            if lower in value_flags:
+                if index + 1 >= len(stripped):
+                    return None, True
+                index += 2
+                continue
+            if any(lower.startswith(f"{flag}=") for flag in value_flags):
+                index += 1
+                continue
+            if lower.startswith("-"):
+                return None, True
+            if subject:
+                return None, True
+            subject = token
+            index += 1
+        if not subject:
+            return None, True
+        return f"gh-run:{repo}:{subject}", False
+
+    if lowered[:2] == ["pr", "checks"]:
+        boolean_flags = {"--fail-fast", "--required"}
+        value_flags = {"--interval", "--json", "--jq", "--template"}
+        subject = ""
+        watch = False
+        index = 2
+        while index < len(stripped):
+            token = stripped[index]
+            lower = token.lower()
+            if lower in {"--watch", "--watch=true"}:
+                watch = True
+                index += 1
+                continue
+            if lower == "--watch=false":
+                index += 1
+                continue
+            if lower in boolean_flags:
+                index += 1
+                continue
+            if lower in value_flags:
+                if index + 1 >= len(stripped):
+                    return None, True
+                index += 2
+                continue
+            if any(lower.startswith(f"{flag}=") for flag in value_flags):
+                index += 1
+                continue
+            if lower.startswith("-"):
+                return None, True
+            if subject:
+                return None, True
+            subject = token
+            index += 1
+        if not watch:
+            return None, False
+        return f"gh-pr-checks:{repo}:{subject or 'current-head'}", False
+    return None, False
+
+
+def _shell_wait_classification(
+    command: str,
+    *,
+    depth: int = 0,
+    watch_commands: list[str] | None = None,
+) -> tuple[str, str] | None:
+    """Return ``(admission, condition)`` for supported executed wait forms."""
+    if depth > 3:
+        return ("deny_uncertain", "nested-shell-wait")
+    _, heredocs = _shell_heredoc_parts(command)
+    heredoc_watches: list[str] = []
+    heredoc_uncertain = False
+    for header, body, ordinal in heredocs:
+        interpreter = _heredoc_interpreter(header, ordinal)
+        if interpreter == "shell":
+            nested = _shell_wait_classification(
+                body, depth=depth + 1, watch_commands=watch_commands
+            )
+            if nested is None:
+                continue
+            if nested[0] == "reserve_condition":
+                heredoc_watches.append(nested[1])
+            else:
+                return nested
+        elif interpreter == "python":
+            python_wait = _python_executes_sleep(body)
+            if python_wait is True:
+                return ("deny_timer", "timer-poll")
+            if python_wait is None and re.search(r"(?i)\bsleep\b", body):
+                heredoc_uncertain = True
+    parsed = _shell_segments(command)
+    if parsed is None:
+        # A malformed watcher-shaped shell command is uncertainty, not an
+        # ordinary command. Avoid broad language-sleep substrings here because
+        # quoted data must remain outside this gate.
+        if re.search(r"(?i)\b(?:sleep|start-sleep|gh)\b", command):
+            return ("deny_uncertain", "unparseable-wait")
+        return None
+    segments, separators = parsed
+    detached = any("&" in token and token != "&&" for token in separators)
+    aliases: dict[str, str] = {}
+    variables: dict[str, str] = {}
+    watches: list[str] = list(heredoc_watches)
+    uncertain = heredoc_uncertain
+    in_loop = False
+    saw_loop_gh = False
+    assignment = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=(.*)$", re.DOTALL)
+    control = {"do", "then", "else", "elif", "if", "!", "{"}
+
+    for original in segments:
+        words = list(original)
+        while words and words[0] in {"while", "until"}:
+            in_loop = True
+            words.pop(0)
+        while words and words[0] in control:
+            words.pop(0)
+        if words and words[0] == "done":
+            in_loop = False
+            continue
+        if not words:
+            continue
+
+        if words[0] == "alias":
+            for definition in words[1:]:
+                match = assignment.match(definition)
+                if match:
+                    aliases[definition.split("=", 1)[0]] = match.group(1)
+            continue
+
+        while words:
+            match = assignment.match(words[0])
+            if not match:
+                break
+            variables[words[0].split("=", 1)[0]] = match.group(1)
+            words.pop(0)
+        if not words:
+            continue
+
+        executable = words.pop(0)
+        if executable == "$":
+            # An unquoted command substitution at command position computes
+            # the executable only at runtime. Quoted substitutions remain an
+            # ordinary argument token and never reach this branch.
+            if re.search(r"(?i)\b(?:sleep|start-sleep|gh)\b", command):
+                uncertain = True
+            continue
+        if executable in aliases:
+            try:
+                words = shlex.split(aliases[executable], posix=True) + words
+            except ValueError:
+                uncertain = True
+                continue
+            if not words:
+                uncertain = True
+                continue
+            executable = words.pop(0)
+
+        if executable.startswith("$"):
+            name = executable.lstrip("${").rstrip("}")
+            assigned = variables.get(name, "")
+            if assigned:
+                nested_command = " ".join(
+                    part for part in (assigned, shlex.join(words)) if part
+                )
+                nested = _shell_wait_classification(
+                    nested_command,
+                    depth=depth + 1,
+                    watch_commands=watch_commands,
+                )
+                if nested is not None:
+                    # Even a literal assignment is expanded by the shell into
+                    # an executable/argv boundary the admission hook cannot
+                    # preserve or mark. It is watcher-shaped uncertainty, not
+                    # a native owner and not an ordinary command.
+                    uncertain = True
+                continue
+            if words[:2] in (["run", "watch"], ["pr", "checks"]):
+                uncertain = True
+            continue
+
+        base = os.path.basename(executable).lower()
+        while base in {
+            "command",
+            "builtin",
+            "env",
+            "nohup",
+            "time",
+            "nice",
+            "caffeinate",
+            "timeout",
+        }:
+            if base == "env" and words[:1] in (["-S"], ["--split-string"]):
+                if len(words) < 2:
+                    uncertain = True
+                    break
+                try:
+                    words = shlex.split(words[1], posix=True) + words[2:]
+                except ValueError:
+                    uncertain = True
+                    break
+            elif base == "nice":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-n", "--adjustment"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif option.startswith("--adjustment=") or re.fullmatch(
+                        r"-[0-9]+", option
+                    ):
+                        continue
+                    elif option == "--":
+                        break
+                    else:
+                        uncertain = True
+                        break
+            elif base == "caffeinate":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-t", "-w"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif option == "--" or re.fullmatch(r"-[dimsu]+", option):
+                        if option == "--":
+                            break
+                    else:
+                        uncertain = True
+                        break
+            elif base == "timeout":
+                while words and words[0].startswith("-"):
+                    option = words.pop(0)
+                    if option in {"-k", "--kill-after", "-s", "--signal"}:
+                        if not words:
+                            uncertain = True
+                            break
+                        words.pop(0)
+                    elif (
+                        option in {"--foreground", "--preserve-status", "--verbose"}
+                        or option == "--"
+                        or option.startswith("--kill-after=")
+                        or option.startswith("--signal=")
+                    ):
+                        if option == "--":
+                            break
+                    else:
+                        uncertain = True
+                        break
+                if not uncertain:
+                    if not words:
+                        uncertain = True
+                    else:
+                        words.pop(0)  # duration precedes the child argv
+            else:
+                while words and (words[0].startswith("-") or assignment.match(words[0])):
+                    words.pop(0)
+            if not words:
+                uncertain = True
+                break
+            executable = words.pop(0)
+            base = os.path.basename(executable).lower()
+        if not base:
+            continue
+
+        if base in {"sleep", "start-sleep"}:
+            return ("deny_timer", "timer-poll")
+
+        if base == "eval":
+            expanded: list[str] = []
+            for word in words:
+                match = re.fullmatch(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?", word)
+                expanded.append(variables.get(match.group(1), word) if match else word)
+            nested = _shell_wait_classification(
+                " ".join(expanded),
+                depth=depth + 1,
+                watch_commands=watch_commands,
+            )
+            if nested is not None:
+                return nested
+            continue
+
+        if base == "exec":
+            if not words:
+                continue
+            nested = _shell_wait_classification(
+                shlex.join(words),
+                depth=depth + 1,
+                watch_commands=watch_commands,
+            )
+            if nested is None:
+                continue
+            if nested[0] in {"reserve_condition", "deny_detached"}:
+                return ("deny_uncertain", "exec-replaces-watcher-owner")
+            return nested
+
+        if base in {"bash", "sh", "zsh"} and "-c" in words:
+            index = words.index("-c")
+            if index + 1 >= len(words):
+                uncertain = True
+            else:
+                nested = _shell_wait_classification(
+                    words[index + 1],
+                    depth=depth + 1,
+                    watch_commands=watch_commands,
+                )
+                if nested is not None:
+                    return nested
+            continue
+
+        if base in {"pwsh", "powershell", "powershell.exe"}:
+            lowered_words = [word.lower() for word in words]
+            command_flags = {"-command", "--command", "-c"}
+            command_indexes = [
+                position
+                for position, word in enumerate(lowered_words)
+                if word in command_flags
+            ]
+            if not command_indexes:
+                continue
+            index = command_indexes[0]
+            if index + 1 >= len(words):
+                uncertain = True
+                continue
+            nested = _shell_wait_classification(
+                " ".join(words[index + 1 :]),
+                depth=depth + 1,
+                watch_commands=watch_commands,
+            )
+            if nested is not None:
+                return nested
+            continue
+
+        if re.fullmatch(r"python(?:3(?:\.\d+)?)?", base) and "-c" in words:
+            index = words.index("-c")
+            if index + 1 >= len(words):
+                uncertain = True
+                continue
+            python_wait = _python_executes_sleep(words[index + 1])
+            if python_wait is True:
+                return ("deny_timer", "timer-poll")
+            if python_wait is None and re.search(r"(?i)\bsleep\b", words[index + 1]):
+                uncertain = True
+            continue
+
+        if base != "gh":
+            # Unknown argv transports are ordinary Bash unless their literal
+            # child argv is watcher-shaped. Data/prose commands are explicit
+            # negatives; quoted prose stays one token and cannot match this
+            # executable-position sequence.
+            data_commands = {"cat", "echo", "printf"}
+            lowered_words = [word.lower() for word in words]
+            if base not in data_commands and any(
+                lowered_words[index : index + 3] == ["gh", "run", "watch"]
+                or (
+                    lowered_words[index : index + 2] == ["gh", "pr"]
+                    and "checks" in lowered_words[index + 2 : index + 4]
+                )
+                for index in range(len(lowered_words))
+            ):
+                uncertain = True
+            continue
+        if in_loop:
+            saw_loop_gh = True
+        condition, parse_uncertain = _gh_wait_condition(words)
+        if parse_uncertain:
+            uncertain = True
+        elif condition:
+            watches.append(condition)
+            if watch_commands is not None:
+                watch_commands.append(shlex.join(["gh", *words]))
+
+    if saw_loop_gh:
+        return ("deny_timer", "timer-poll")
+    if uncertain:
+        return ("deny_uncertain", "uncertain-wait")
+    if not watches:
+        return None
+    if len(watches) != 1:
+        return ("deny_uncertain", "multiple-condition-watches")
+    if detached:
+        return ("deny_detached", "detached-condition-watch")
+    return ("reserve_condition", watches[0])
+
+
+def _watcher_request(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Classify executed watcher/timer command forms, not raw substrings.
+
+    Ordinary Bash remains fail-open. Supported native GitHub condition waits
+    may reserve one owner; executed sleeps, polling loops, detached watches,
+    and watcher-shaped uncertainty fail closed.
+    """
+    if str(payload.get("tool_name") or "") != "Bash":
+        return None
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return None
+    command = str(tool_input.get("command") or "")
+    watch_commands: list[str] = []
+    classified = _shell_wait_classification(command, watch_commands=watch_commands)
+    if classified is None:
+        return None
+    admission, condition = classified
+    identity = condition if admission == "reserve_condition" else command
+    return {
+        "command": command,
+        "digest": hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12],
+        "admission": admission,
+        "condition": condition,
+        "executed_watch_commands": watch_commands,
+    }
+
+
+def _canonical_hot_watch_reason(watch: dict[str, Any]) -> str | None:
+    """Consult the configured quota rule before minting a pending claim.
+
+    Claude evaluates sibling PreToolUse hooks in parallel. Without this pure
+    preflight, the quota hook can deny execution after this hook has already
+    persisted an unconfirmed owner. Importing the quota hook's own helper keeps
+    its threshold and denial semantics authoritative and creates no retry or
+    lifecycle plane.
+    """
+    hook = Path(__file__).with_name("gh_quota_guard.py")
+    spec = importlib.util.spec_from_file_location("_ship_loop_quota_guard", hook)
+    if spec is None or spec.loader is None:
+        raise OSError("canonical GitHub quota guard cannot be loaded")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    helper = getattr(module, "hot_watch_reason", None)
+    if not callable(helper):
+        raise OSError("canonical GitHub quota helper is unavailable")
+    commands = watch.get("executed_watch_commands")
+    if not isinstance(commands, list) or not commands:
+        raise OSError("executed watcher command identity is unavailable")
+    for command in commands:
+        reason = helper(str(command))
+        if reason:
+            return str(reason)
+    return None
+
+
+def _latched_terminal_heads(state: dict[str, Any]) -> set[str]:
+    """HEAD shas this session's ledger holds a PARKED latch for.
+
+    ONLY ``parked_latch`` (``parked:<pr>:<head>``, written by the hold wrapper
+    when a lawful HOLD-FOR-SOL becomes PARKED) refuses new watchers. It is the
+    one terminal latch with a clearing path — the wrapper removes it the
+    moment the hold state positively changes — so a refusal here can never
+    outlive the state it describes. ``ladder_exits`` entries deliberately do
+    NOT refuse watchers (red-team F4, 2026-08-24): they are append-only with
+    no clearing path, and a ratified exit on a TRANSIENT external blocker
+    (a spent rate-limit window, say) lawfully resumes at the same head once
+    the blocker lifts — a permanent "terminal" refusal there would deny the
+    resumed session its one legitimate watcher. Post-exit wake QUIESCENCE is
+    already owned by the exit-key memory in ``_block``, while watcher
+    admission independently refuses timer transport and an unchanged
+    condition successor.
+    Unparseable latches contribute nothing: failing to recognise one only
+    ALLOWS a watcher, never denies one.
+    """
+    heads: set[str] = set()
+    latch = str(state.get("parked_latch") or "")
+    parts = latch.split(":")
+    if len(parts) == 3 and parts[0] == "parked" and parts[2]:
+        heads.add(parts[2])
+    return heads
+
+
+def _deny_watcher(reason: str) -> None:
+    _emit(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "deny",
+                "permissionDecisionReason": reason,
+            }
+        }
+    )
+
+
+def _allow_watcher(tool_input: dict[str, Any], command: str) -> None:
+    updated = dict(tool_input)
+    updated["command"] = command
+    _emit(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "permissionDecision": "allow",
+                "updatedInput": updated,
+            }
+        }
+    )
+
+
+def _watcher_fragment(command: str) -> str:
+    """Human-readable reservation receipt; never used as process identity."""
+    for line in command.strip().splitlines():
+        line = line.strip()
+        if line:
+            return line[:120]
+    return ""
+
+
+def _marked_watcher_command(command: str, marker: str, path: Path) -> str:
+    """Confirm aggregate admission, then retain the marker for shell lifetime."""
+    confirmer = shlex.join(
+        [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--confirm-watcher",
+            str(path),
+            marker,
+        ]
+    )
+    return (
+        "{\n"
+        f"{confirmer} \"$$\" || exit $?\n"
+        f"{command}\n"
+        "_ship_watcher_status=$?\n"
+        f": '{marker}'\n"
+        "exit \"$_ship_watcher_status\"\n"
+        "}"
+    )
+
+
+def _process_start_identity(pid: int, marker: str) -> str | None:
+    """Verify one exact reserving shell PID and return its kernel start time."""
+    if pid <= 1 or not marker:
+        return None
+    try:
+        proc = subprocess.run(
+            ("ps", "-p", str(pid), "-o", "lstart=", "-o", "command="),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+    except Exception:
+        return None
+    if proc.returncode:
+        return None
+    rows = [row for row in proc.stdout.splitlines() if row.strip()]
+    if len(rows) != 1:
+        return None
+    match = re.match(r"^\s*(.{24})\s+(.*)$", rows[0])
+    if not match or marker not in match.group(2):
+        return None
+    return match.group(1)
+
+
+def _confirm_watcher(path: Path, marker: str, pid_text: str) -> bool:
+    """Promote one pending reservation only from its executing owner shell."""
+    try:
+        pid = int(pid_text)
+    except (TypeError, ValueError):
+        return False
+    started = _process_start_identity(pid, marker)
+    if not started:
+        return False
+    with _file_lock(_ledger_lock_path(path)):
+        state = _load_ledger(path, allow_missing=True)
+        if not isinstance(state, dict):
+            return False
+        reservation = state.get("ship_watcher")
+        if not isinstance(reservation, dict):
+            return False
+        if str(reservation.get("process_marker") or "") != marker:
+            return False
+        if reservation.get("confirmed") is True:
+            return (
+                int(reservation.get("process_pid") or 0) == pid
+                and str(reservation.get("process_start") or "") == started
+            )
+        if reservation.get("confirmed") is not False:
+            # Missing means a legacy already-executing reservation, never a
+            # pending claim this internal seam is permitted to promote.
+            return False
+        reservation["confirmed"] = True
+        reservation["process_pid"] = pid
+        reservation["process_start"] = started
+        reservation["confirmed_at"] = time.time()
+        _save(path, state)
+        return True
+
+
+def _watcher_process_alive(reservation: dict[str, Any]) -> bool | None:
+    """Verify the reserving shell by unique marker plus PID/start identity.
+
+    New reservations arrive pre-bound by the command-side confirmer. Legacy
+    reservations without a binding may acquire it on first observation. Later
+    polls require marker, PID, and start time, so PID reuse, an identical sibling
+    command, and shell/child argv normalization cannot impersonate this owner.
+    ``None`` is fail-closed ambiguity (ps failure or duplicate marker).
+    """
+    marker = str(reservation.get("process_marker") or "")
+    if not marker:
+        return None
+    try:
+        proc = subprocess.run(
+            ("ps", "-axww", "-o", "pid=", "-o", "lstart=", "-o", "command="),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,
+            check=False,
+        )
+    except Exception:
+        return None
+    if proc.returncode:
+        return None
+    observed: list[tuple[int, str, str]] = []
+    for line in proc.stdout.splitlines():
+        match = re.match(r"^\s*(\d+)\s+(.{24})\s+(.*)$", line)
+        if not match:
+            continue
+        observed.append((int(match.group(1)), match.group(2), match.group(3)))
+
+    try:
+        bound_pid = int(reservation.get("process_pid") or 0)
+    except (TypeError, ValueError):
+        return None
+    bound_start = str(reservation.get("process_start") or "")
+    if bound_pid or bound_start:
+        if not bound_pid or not bound_start:
+            return None
+        return any(
+            pid == bound_pid and started == bound_start and marker in argv
+            for pid, started, argv in observed
+        )
+
+    matches = [(pid, started) for pid, started, argv in observed if marker in argv]
+    if not matches:
+        return False
+    if len(matches) != 1:
+        return None
+    reservation["process_pid"], reservation["process_start"] = matches[0]
+    return True
+
+
+def _watcher_gate(root: Path, path: Path, state: dict[str, Any], watch: dict[str, Any]) -> bool:
+    """Enforce the one-watcher law for THIS session's ship state.
+
+    At most one live delayed-wake reservation per session ledger; none at all
+    once the state it would watch is already terminal. The reservation lives in
+    the same per-session state file every other ship gate uses — worktree and
+    session identity are inherited from ``_state_path``, so one session can
+    never see (let alone refuse or expire) another session's watcher, and
+    nothing is ever killed: an existing background task simply runs out.
+
+    Occupancy is bound to the REAL watcher lifetime (Sol re-review
+    2026-08-25), not to the ledger entry's age or the current HEAD. A pending
+    claim is occupied through WATCHER_START_GRACE_SECONDS; after that it may be
+    replaced because the unconfirmed command did not pass aggregate admission.
+    A confirmed claim is occupied for exactly as long as its process is
+    observably alive. A head move while the old
+    watcher still runs therefore REFUSES — replacing the reservation would
+    leave two live watchers with one recorded. Once absent, the SAME
+    head/condition remains consumed and refuses a recursive successor; only a
+    materially different head or condition can replace it.
+
+    Failure directions are deliberate and split: questions about whether to
+    REFUSE extra machinery (the terminal-latch head read) fail open, while
+    the OCCUPANCY question fails closed — an unanswerable process table
+    refuses, because unknown completion must not permit stacking.
+    """
+    try:
+        head = _run(root, "git", "rev-parse", "HEAD")
+    except Exception:
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the current Git HEAD is unanswerable, so "
+            "this condition watch cannot be bound to a safe state identity. "
+            "Unknown identity must not admit an untracked waiter."
+        )
+        return False
+    if head and head in _latched_terminal_heads(state):
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: this session's ship state at HEAD "
+            f"{head[:12]} is already terminal (PARKED / HOLD-FOR-SOL). A new "
+            "delayed background timer could only wake the session to re-report "
+            "the same frozen hold. Do not create new ship watchers; emit the "
+            "single terminal report and end the turn."
+        )
+        return False
+    reservation = state.get("ship_watcher")
+    now = time.time()
+    if isinstance(reservation, dict):
+        try:
+            created = float(reservation.get("created") or 0.0)
+        except (TypeError, ValueError):
+            created = 0.0
+        fragment = str(reservation.get("fragment") or "")
+        if now < created + WATCHER_START_GRACE_SECONDS:
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: a background ship watcher was reserved "
+                f"{int(now - created)}s ago and is conservatively still starting. "
+                "A session carries AT MOST ONE ship-state watcher — rely on the "
+                "existing timer; its completion will wake this session."
+            )
+            return False
+        if reservation.get("confirmed") is False:
+            # An allow from this hook is only a PENDING claim because sibling
+            # PreToolUse hooks decide in parallel. If another hook denied, the
+            # updated command never ran and therefore never confirmed. Once the
+            # start grace expires, replace that phantom. A late original command
+            # is still safe: its confirmer sees a different marker and exits
+            # before GitHub starts.
+            state.pop("ship_watcher", None)
+            return _watcher_gate(root, path, state, watch)
+        if not reservation.get("process_marker"):
+            # LEGACY reservation without a marker: identity binding is
+            # impossible, so demanding liveness evidence would wedge the slot
+            # forever. TWO superseded generations land here — the fragment-less
+            # 08-25 format (observed live on this repair's own session) and the
+            # fragment-carrying but marker-less intermediate format (observed
+            # live 2026-08-26, same session, wedged the same way). Release
+            # them by their own recorded rule instead: occupied until the
+            # deadline the minting gate stored, then free. Bounded to entries
+            # from superseded gates; every new reservation carries a marker.
+            try:
+                legacy_deadline = float(
+                    reservation.get("expires") or reservation.get("nominal_fire") or 0.0
+                )
+            except (TypeError, ValueError):
+                legacy_deadline = 0.0
+            if now < legacy_deadline:
+                _deny_watcher(
+                    "SHIP WATCHER COALESCED: a background ship watcher reserved "
+                    "by an earlier guard version still owns this wait (until "
+                    f"~{int(legacy_deadline - now)}s from now). Rely on it; its "
+                    "completion will wake this session."
+                )
+                return False
+            alive = False
+        else:
+            alive = _watcher_process_alive(reservation)
+        if alive is None:
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: the reserved ship watcher's liveness "
+                "could not be determined (process table unanswerable), and "
+                "unknown completion must not permit stacking a second live "
+                "watcher. Rely on the existing timer, or retry after its wake."
+            )
+            return False
+        if alive:
+            # First observation binds PID + start identity. Persist that
+            # binding before refusing the competing request.
+            if reservation.get("process_pid") and reservation.get("process_start"):
+                _save(path, state)
+            _deny_watcher(
+                "SHIP WATCHER COALESCED: the reserved background ship watcher "
+                f"({fragment[:60]!r}) is still RUNNING. A session carries AT "
+                "MOST ONE live ship-state watcher. Completion alone never "
+                "authorizes an unchanged successor; only a materially changed "
+                "HEAD or external condition may reserve another owner after "
+                "this exact PID/start identity has exited."
+            )
+            return False
+        same_condition = (
+            str(reservation.get("head") or "") == head
+            and str(reservation.get("digest") or "") == str(watch.get("digest") or "")
+        )
+        if same_condition:
+            _deny_watcher(
+                "SHIP WATCHER UNCHANGED WAIT REFUSED: the prior deterministic "
+                "condition watcher has completed, but this request names the "
+                "same HEAD and external condition. Process absence is not "
+                "permission to create a successor polling turn. Continue from "
+                "the material result that woke the session; do not re-arm the "
+                "same wait."
+            )
+            return False
+        # Process absence plus a different head/condition is the only lawful
+        # replacement path. The old watcher cannot overlap, and the new
+        # fingerprint represents genuinely new external work.
+    state["ship_watcher"] = {
+        "digest": watch["digest"],
+        "fragment": _watcher_fragment(watch["command"]),
+        "process_marker": f"ship-watcher:{secrets.token_hex(16)}",
+        "condition": watch["condition"],
+        "head": head,
+        "created": now,
+        "confirmed": False,
+    }
     _save(path, state)
+    return True
+
+
+def _pre_tool_use(payload: dict[str, Any], raw: bytes) -> None:
+    """PreToolUse entry: gate ship-watcher creation, ignore everything else.
+
+    The non-watcher fast path returns BEFORE delegation on purpose — watcher
+    classification is pure text with identical semantics in every version of
+    this file, and paying a delegated subprocess per ordinary Bash call would
+    tax the whole session for a gate that almost never speaks. Watcher-shaped
+    calls (rare) take the same delegate-to-evaluated-tree route as Stop.
+
+    Acquisition is LINEARIZABLE (Sol re-review 2026-08-25): the ledger read,
+    the occupancy check, and the reservation write happen under one exclusive
+    cross-process flock on a sibling of the state file, and the state is
+    loaded INSIDE the lock — two concurrent watcher-shaped tool calls cannot
+    both observe an empty slot. The lock is scoped to watcher-shaped calls
+    only, so ordinary Bash pays nothing.
+    """
+    watch = _watcher_request(payload)
+    if watch is None:
+        return
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return
+    admission = str(watch.get("admission") or "")
+    if admission == "deny_timer":
+        _deny_watcher(
+            "SHIP WATCHER TIMER REFUSED: sleep/poll timers are not a lawful "
+            "external wait owner. Their completion wakes the reasoning model "
+            "even when the observed state is unchanged and enables recursive "
+            "successor polling. Use one native condition watch such as "
+            "`gh run watch <id> --exit-status` or `gh pr checks --watch`; its "
+            "unchanged observations remain inside one process."
+        )
+        return
+    if admission == "deny_detached":
+        _deny_watcher(
+            "SHIP WATCHER DETACH REFUSED: shell-level `&` detaches the condition "
+            "process from the command lifetime recorded in the session ledger. "
+            "Run one native condition watch without shell detachment."
+        )
+        return
+    if admission != "reserve_condition":
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the watcher-shaped command has no recognized "
+            "safe admission policy. Unknown wait transport fails closed."
+        )
+        return
+    if _delegate_to_evaluated_hook(payload, raw):
+        return
+    try:
+        quota_reason = _canonical_hot_watch_reason(watch)
+    except Exception as exc:
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: the canonical GitHub quota admission rule "
+            f"could not be evaluated ({exc.__class__.__name__}). A watcher "
+            "must fail closed when aggregate permission cannot be proven."
+        )
+        return
+    if quota_reason:
+        _deny_watcher(quota_reason)
+        return
+    root = _repo_root(payload)
+    if root is None:
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: no repository/session identity is available, "
+            "so this condition watch cannot be reserved safely."
+        )
+        return
+    path = _state_path(root, payload)
+    with _file_lock(_ledger_lock_path(path)):
+        delay = os.environ.get(_WATCHER_ACQUIRE_TEST_DELAY_ENV, "")
+        state = _load_ledger(path, allow_missing=True)
+        if not isinstance(state, dict):
+            _deny_watcher(
+                "SHIP WATCHER REFUSED: the existing per-session ship ledger is "
+                "missing or unreadable, so a one-owner reservation cannot be "
+                "proven."
+            )
+            return
+        if delay:
+            # Test-only: widen the read→write window so the concurrency
+            # regression deterministically catches a de-serialized mutant.
+            try:
+                time.sleep(float(delay))
+            except ValueError:
+                pass
+        admitted = _watcher_gate(root, path, state, watch)
+        if admitted:
+            reservation = state["ship_watcher"]
+            _allow_watcher(
+                tool_input,
+                _marked_watcher_command(
+                    str(watch["command"]),
+                    str(reservation["process_marker"]),
+                    path,
+                ),
+            )
 
 
 def _github_slug(root: Path) -> tuple[str, str]:
@@ -984,31 +2458,38 @@ def _github_cache_directory(token: str) -> Path:
 
 @contextmanager
 def _file_lock(path: Path):
-    """Cross-process advisory lock for cache entries and the shared budget."""
-    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    with path.open("a+", encoding="utf-8") as handle:
-        try:
-            os.chmod(path, 0o600)
-        except OSError:
-            pass
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    """Cross-process advisory lock on one owned regular file, without symlinks."""
+    directory_fd = _private_directory_fd(path.parent, create=True)
+    descriptor = -1
+    try:
+        descriptor = os.open(
+            path.name,
+            os.O_RDWR | os.O_CREAT | _OPEN_CLOEXEC | _OPEN_NOFOLLOW,
+            0o600,
+            dir_fd=directory_fd,
+        )
+        _validate_owned_regular(descriptor, "ship ledger lock")
+        os.fchmod(descriptor, 0o600)
+        handle = os.fdopen(descriptor, "a+", encoding="utf-8")
+        descriptor = -1
+    except Exception:
+        if descriptor >= 0:
+            os.close(descriptor)
+        os.close(directory_fd)
+        raise
+    try:
+        with handle:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        os.close(directory_fd)
 
 
 def _save_private_json(path: Path, value: Any) -> None:
-    temp = path.with_suffix(f"{path.suffix}.{os.getpid()}.tmp")
-    temp.write_text(
-        json.dumps(value, ensure_ascii=False, sort_keys=True),
-        encoding="utf-8",
-    )
-    try:
-        temp.chmod(0o600)
-    except OSError:
-        pass
-    temp.replace(path)
+    _atomic_save_json(path, value)
 
 
 def _rate_limit_message(remaining: int, limit: int, reset: int) -> str:
@@ -2077,8 +3558,593 @@ def _base_red_block(number: Any, excused: dict[str, str], pending: list[str]) ->
         "DESTRUCTIVE over a live baseline — preflight `gh run list --workflow ci.yml "
         "--branch main --json databaseId,status --jq '[.[]|select(.status!=\"completed\")]'` "
         "and WATCH an in-flight run (`gh run watch <id> --interval 60`) instead of "
-        "re-dispatching over it. You still own this pull request until the merge lands."
+        "re-dispatching over it. Route the one central repair through #6351/main-integrity; "
+        "product builders must not independently heal foreign base defects. You still own "
+        "this pull request until the merge lands."
     )
+
+
+def _ci_event_route(
+    kind: str, *, pr: Any, head: str, checks: list[str]
+) -> dict[str, Any]:
+    """Mechanical owner packet for one material CI wait event.
+
+    This is routing metadata only. It never declares a check green, a pull
+    request merged, or work shipped; those facts must already have been derived
+    from Git/GitHub observations by the caller.
+    """
+    if kind in {"inherited_main", "infrastructure", "missing_evidence"}:
+        owner = "#6351/main-integrity"
+    elif kind in {"green", "authority_change", "hold_change", "release_change"}:
+        owner = "release/Sol"
+    elif kind == "builder_red":
+        owner = "builder"
+    else:
+        owner = "review/controller"
+    return {
+        "kind": kind,
+        "owner": owner,
+        "pr": pr,
+        "head": head,
+        "checks": list(checks[:8]),
+    }
+
+
+def _ci_authority_fingerprint(pull: dict[str, Any]) -> str:
+    """Hold/release/merge-authority identity from authoritative PR metadata."""
+    labels = sorted(
+        str((label or {}).get("name") or "") for label in (pull.get("labels") or [])
+    )
+    value = {
+        "draft": bool(pull.get("draft") or pull.get("isDraft")),
+        "labels": labels,
+        "title": str(pull.get("title") or ""),
+        "body": str(pull.get("body") or ""),
+        "auto_merge": bool(pull.get("auto_merge") or pull.get("autoMergeRequest")),
+    }
+    return hashlib.sha256(
+        json.dumps(value, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:16]
+
+
+def _ci_checks_fingerprint(runs: list[dict[str, Any]]) -> str:
+    """Stable exact-head check generation/state identity."""
+    rows = sorted(
+        (
+            str(run.get("name") or "unnamed check"),
+            str(run.get("status") or ""),
+            str(run.get("conclusion") or ""),
+            str(run.get("id") or ""),
+            str((run.get("check_suite") or {}).get("id") or ""),
+        )
+        for run in runs
+        if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
+    )
+    return hashlib.sha256(
+        json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()[:16]
+
+
+def _ci_watcher_for_pull(
+    state: dict[str, Any], number: Any, head: str
+) -> dict[str, Any] | None:
+    """One confirmed native PR-check watcher bound to this exact head."""
+    watcher = state.get("ship_watcher")
+    if not isinstance(watcher, dict):
+        return None
+    if watcher.get("confirmed") is not True:
+        return None
+    if str(watcher.get("head") or "") != head:
+        return None
+    if not watcher.get("digest") or not watcher.get("process_marker"):
+        return None
+    condition = str(watcher.get("condition") or "")
+    allowed = {
+        f"gh-pr-checks:current-repo:{number}",
+        "gh-pr-checks:current-repo:current-head",
+    }
+    if condition not in allowed:
+        return None
+    return watcher
+
+
+def _ci_quiescence_clear(path: Path, state: dict[str, Any]) -> None:
+    """Remove only the V2 wait record; watcher consumption remains intact."""
+    def clear(latest: dict[str, Any]) -> dict[str, Any]:
+        latest.pop("ci_quiescence", None)
+        return dict(latest)
+
+    latest = _update_ledger(path, clear, initial=state)
+    if isinstance(latest, dict):
+        state.clear()
+        state.update(latest)
+
+
+def _ci_quiescence_record_valid(
+    state: dict[str, Any], quiescence: dict[str, Any]
+) -> bool:
+    """Require the complete mechanically minted V2 ledger shape.
+
+    The state file is bookkeeping, not an authority source by itself. A
+    partial, legacy, or manually planted dictionary must not turn into a quiet
+    pass merely because it spells ``phase=routed`` and copies the local HEAD.
+    """
+    head = str(quiescence.get("head") or "")
+    watcher_digest = str(quiescence.get("watcher_digest") or "")
+    watcher = state.get("ship_watcher")
+    try:
+        entered_at = float(quiescence.get("entered_at"))
+    except (TypeError, ValueError):
+        return False
+    return (
+        quiescence.get("version") == CI_QUIESCENCE_VERSION
+        and re.fullmatch(r"[0-9a-f]{16}", str(quiescence.get("key") or ""))
+        is not None
+        and re.fullmatch(r"[0-9a-f]{40}", head) is not None
+        and str(quiescence.get("mode") or "") in {"ordinary", "hold"}
+        and bool(str(quiescence.get("branch") or ""))
+        and bool(quiescence.get("pr"))
+        and str(quiescence.get("phase") or "") in {"waiting", "routed"}
+        and str(quiescence.get("route") or "")
+        in {"release", "release/Sol", "#6351/main-integrity"}
+        and re.fullmatch(
+            r"[0-9a-f]{16}", str(quiescence.get("checks_fingerprint") or "")
+        )
+        is not None
+        and re.fullmatch(
+            r"[0-9a-f]{16}", str(quiescence.get("authority_fingerprint") or "")
+        )
+        is not None
+        and entered_at > 0
+        and bool(watcher_digest)
+        and isinstance(watcher, dict)
+        and watcher.get("confirmed") is True
+        and str(watcher.get("digest") or "") == watcher_digest
+        and str(watcher.get("head") or "") == head
+        and bool(str(watcher.get("process_marker") or ""))
+    )
+
+
+def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> bool:
+    """Return True when an unchanged V2 wait must remain completely silent.
+
+    The only external read here is the already-owned watcher process table.
+    There is deliberately no GitHub call. A dead watcher or local head change
+    atomically grants one bounded wake claim; concurrent duplicate Stop hooks
+    stay silent while that claimant performs the authoritative reclassification.
+    """
+    quiescence = state.get("ci_quiescence")
+    if not isinstance(quiescence, dict):
+        return False
+    if not _ci_quiescence_record_valid(state, quiescence):
+        _ci_quiescence_clear(path, state)
+        return False
+    key = str(quiescence.get("key") or "")
+    expected_head = str(quiescence.get("head") or "")
+    try:
+        current_head = _run(root, "git", "rev-parse", "HEAD")
+    except Exception:
+        return False
+    if not key or not expected_head or current_head != expected_head:
+        _ci_quiescence_clear(path, state)
+        return False
+
+    # Entry required the session-created worktree delta to be clean. Recheck
+    # that local predicate before taking the no-GitHub path: a same-HEAD edit
+    # is a material state change and must fall through to the ordinary
+    # uncommitted gate, never remain hidden behind a still-live watcher.
+    try:
+        baseline = state.get("baseline") or {}
+        current = _fingerprint(root)
+        dirty = _changed_since_baseline(baseline, current)
+        if dirty:
+            shipped = _shipped_identical_untracked(root, current, dirty)
+            if shipped:
+                dirty = [entry for entry in dirty if entry not in shipped]
+    except Exception:
+        return False
+    if dirty:
+        _ci_quiescence_clear(path, state)
+        return False
+
+    phase = str(quiescence.get("phase") or "waiting")
+    if phase == "routed":
+        def unchanged_routed(latest: dict[str, Any]) -> bool:
+            current = latest.get("ci_quiescence")
+            if not isinstance(current, dict) or str(current.get("key") or "") != key:
+                return False
+            current["unchanged_observations"] = int(
+                current.get("unchanged_observations") or 0
+            ) + 1
+            return True
+
+        return bool(_update_ledger(path, unchanged_routed, initial=state))
+
+    watcher = state.get("ship_watcher")
+    alive: bool | None = False
+    if (
+        isinstance(watcher, dict)
+        and str(watcher.get("digest") or "")
+        == str(quiescence.get("watcher_digest") or "")
+        and str(watcher.get("head") or "") == expected_head
+    ):
+        alive = _watcher_process_alive(watcher)
+
+    if alive is True or alive is None:
+        def unchanged_wait(latest: dict[str, Any]) -> bool:
+            current = latest.get("ci_quiescence")
+            if not isinstance(current, dict) or str(current.get("key") or "") != key:
+                return False
+            current["unchanged_observations"] = int(
+                current.get("unchanged_observations") or 0
+            ) + 1
+            if alive is None:
+                current["liveness_unknown_observations"] = int(
+                    current.get("liveness_unknown_observations") or 0
+                ) + 1
+            return True
+
+        return bool(_update_ledger(path, unchanged_wait, initial=state))
+
+    now = time.time()
+    token = secrets.token_hex(12)
+
+    def claim_wake(latest: dict[str, Any]) -> str:
+        current = latest.get("ci_quiescence")
+        if not isinstance(current, dict) or str(current.get("key") or "") != key:
+            return "changed"
+        claim = current.get("wake_claim")
+        if isinstance(claim, dict):
+            try:
+                claimed_at = float(claim.get("at") or 0.0)
+            except (TypeError, ValueError):
+                claimed_at = 0.0
+            if now < claimed_at + CI_QUIESCENCE_WAKE_LEASE_SECONDS:
+                return "silent"
+        current["wake_claim"] = {"token": token, "pid": os.getpid(), "at": now}
+        return "wake"
+
+    result = _update_ledger(path, claim_wake, initial=state)
+    return result != "wake"
+
+
+def _ci_material_receipt(
+    path: Path,
+    state: dict[str, Any],
+    quiescence: dict[str, Any],
+    route: dict[str, Any],
+    *,
+    checks_fingerprint: str,
+    authority_fingerprint: str,
+) -> bool:
+    """Latch and emit one role-correct material event; duplicates stay silent."""
+    event_key = hashlib.sha256(
+        json.dumps(
+            {
+                "wait": quiescence.get("key"),
+                "kind": route["kind"],
+                "checks": checks_fingerprint,
+                "authority": authority_fingerprint,
+            },
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+
+    def route_once(latest: dict[str, Any]) -> bool:
+        current = latest.get("ci_quiescence")
+        if not isinstance(current, dict):
+            return False
+        if str(current.get("key") or "") != str(quiescence.get("key") or ""):
+            return False
+        if str(current.get("material_event_key") or "") == event_key:
+            return False
+        current.pop("wake_claim", None)
+        current["phase"] = "routed"
+        current["material_event_key"] = event_key
+        current["material_kind"] = route["kind"]
+        current["route"] = route["owner"]
+        current["checks_fingerprint"] = checks_fingerprint
+        current["authority_fingerprint"] = authority_fingerprint
+        current["material_at"] = time.time()
+        return True
+
+    emit = bool(_update_ledger(path, route_once, initial=state))
+    if emit:
+        named = ", ".join(route["checks"][:4]) or "no binding check name"
+        _emit(
+            {
+                "systemMessage": (
+                    f"CI_MATERIAL_EVENT {route['kind']}: PR #{route['pr']} exact head "
+                    f"{str(route['head'])[:12]} routes once to {route['owner']} "
+                    f"({named}). The prior CI_QUIESCENT wait is invalidated; this "
+                    "receipt is not merged, shipped, deployed, retry, or failover authority."
+                )
+            }
+        )
+    return True
+
+
+def _ci_red_is_infrastructure(name: str, conclusion: str) -> bool:
+    """Classify one concluded red without consulting model-facing prose."""
+    infrastructure_conclusions = {
+        "action_required",
+        "cancelled",
+        "startup_failure",
+        "stale",
+        "timed_out",
+    }
+    lowered = name.lower()
+    return conclusion in infrastructure_conclusions or any(
+        marker in lowered for marker in CI_INFRASTRUCTURE_CHECK_MARKERS
+    )
+
+
+def _ci_infrastructure_red(pairs: list[tuple[str, str]]) -> bool:
+    """Whether every concluded red is control/fabric rather than product code.
+
+    Central routing is an ownership classification, not an ``any()`` marker.
+    A candidate pack failure arriving beside a timed-out admission check still
+    belongs to the builder; otherwise one infrastructure symptom would become
+    a cheap escape for an independently real own-red.
+    """
+    if not pairs:
+        return False
+    for name, conclusion in pairs:
+        if not _ci_red_is_infrastructure(name, conclusion):
+            return False
+    return True
+
+
+def _ci_detail_is_missing_evidence(detail: str) -> bool:
+    lowered = detail.lower()
+    return "evidence" in lowered and any(
+        marker in lowered
+        for marker in ("unusable", "unavailable", "missing", "does not identify")
+    )
+
+
+def _ci_missing_evidence_only(
+    detail: str, pairs: list[tuple[str, str]]
+) -> bool:
+    """Route a missing-proof refusal only when no separate product red exists.
+
+    The semantic gate may be the sole concluded failure when its exact-head
+    fragment is absent; that is a #6351 evidence/fabric event. If an ordinary
+    pack is also red, the builder still owns that independent failure and may
+    not ride the missing-proof route out of the ship loop.
+    """
+    if not _ci_detail_is_missing_evidence(detail) or not pairs:
+        return False
+    return all(
+        _ci_red_is_infrastructure(name, conclusion)
+        or "ci-gate" in name.lower()
+        or "semantic" in name.lower()
+        for name, conclusion in pairs
+    )
+
+
+def _enter_ci_quiescence(
+    path: Path,
+    state: dict[str, Any],
+    *,
+    branch: str,
+    number: Any,
+    head: str,
+    pending: list[str],
+    passed: list[str],
+    checks_fingerprint: str,
+    authority_fingerprint: str,
+    mode: str = "ordinary",
+) -> bool:
+    """Atomically enter one already-proven pending wait.
+
+    Callers own the clean/pushed/authority proof appropriate to their surface.
+    This seam owns the shared parts: exact fast preflight, one live watcher,
+    the versioned ledger record, and the sole entry receipt. ``mode=hold`` is
+    reserved for the existing HOLD wrapper after it has mechanically proven
+    that protocol; it does not let prose or this helper manufacture a hold.
+    """
+    if mode not in {"ordinary", "hold"}:
+        return False
+    if not pending or not CI_QUIESCENCE_FAST_PREFLIGHT.issubset(set(passed)):
+        return False
+    watcher = _ci_watcher_for_pull(state, number, head)
+    if watcher is None or _watcher_process_alive(watcher) is not True:
+        return False
+    key = hashlib.sha256(
+        (
+            f"{mode}:{number}:{head}:{watcher['digest']}:"
+            f"{authority_fingerprint}"
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+
+    def enter(latest: dict[str, Any]) -> str:
+        current = latest.get("ci_quiescence")
+        if isinstance(current, dict):
+            return "already"
+        latest_watcher = _ci_watcher_for_pull(latest, number, head)
+        if latest_watcher is None or str(latest_watcher.get("digest")) != str(
+            watcher.get("digest")
+        ):
+            return "refused"
+        latest["ci_quiescence"] = {
+            "version": CI_QUIESCENCE_VERSION,
+            "key": key,
+            "phase": "waiting",
+            "mode": mode,
+            "pr": number,
+            "branch": branch,
+            "head": head,
+            "watcher_digest": str(watcher.get("digest") or ""),
+            "checks_fingerprint": checks_fingerprint,
+            "authority_fingerprint": authority_fingerprint,
+            "route": "release",
+            "entered_at": time.time(),
+            "unchanged_observations": 0,
+        }
+        latest["last_blocker"] = ""
+        latest["blocker_count"] = 0
+        return "entered"
+
+    result = _update_ledger(path, enter, initial=state)
+    if result == "entered":
+        hold = " lawful HOLD-FOR-SOL WAITING;" if mode == "hold" else ""
+        _emit(
+            {
+                "systemMessage": (
+                    f"CI_QUIESCENT:{hold} PR #{number} exact head {head[:12]} has clean "
+                    "pushed state, deterministic fast preflight green, no binding "
+                    f"builder red, and one watcher {str(watcher.get('digest'))[:12]}. "
+                    "Logical delivery ownership remains; active model occupancy is "
+                    "released until one material event. This is not merged, shipped, "
+                    "accepted, deployed, terminal truth, retry, or failover authority."
+                )
+            }
+        )
+    return result in {"entered", "already"}
+
+
+def _try_ci_quiescence(
+    root: Path,
+    path: Path,
+    state: dict[str, Any],
+    owner: str,
+    repo: str,
+    branch: str,
+    head: str,
+) -> tuple[bool, str, str]:
+    """Enter or resolve the one mechanically derived external CI wait."""
+    existing = state.get("ci_quiescence")
+    watcher = state.get("ship_watcher")
+    if not isinstance(existing, dict):
+        # The ordinary no-watcher path remains byte-for-byte the existing block
+        # behavior and pays no extra GitHub observation.
+        if not isinstance(watcher, dict):
+            return False, "none", ""
+
+    pull = _open_pull(owner, repo, branch)
+    if not pull:
+        if isinstance(existing, dict):
+            _ci_quiescence_clear(path, state)
+        return False, "none", ""
+    labels = {str((label or {}).get("name") or "") for label in (pull.get("labels") or [])}
+    number = pull.get("number")
+    pull_head = str((pull.get("head") or {}).get("sha") or "")
+    if MERGE_ON_GREEN_LABEL not in labels or not pull_head or pull_head != head:
+        if isinstance(existing, dict):
+            _ci_quiescence_clear(path, state)
+        return False, "none", ""
+
+    runs = _head_check_runs(owner, repo, pull_head)
+    red, pending, passed = _split_head_runs(runs)
+    checks_fingerprint = _ci_checks_fingerprint(runs)
+    authority_fingerprint = _ci_authority_fingerprint(pull)
+    passed_names = set(passed)
+
+    if isinstance(existing, dict):
+        old_authority = str(existing.get("authority_fingerprint") or "")
+        if old_authority and old_authority != authority_fingerprint:
+            route = _ci_event_route(
+                "authority_change", pr=number, head=head, checks=red or pending or passed
+            )
+            return (
+                _ci_material_receipt(
+                    path,
+                    state,
+                    existing,
+                    route,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
+            )
+
+    if red:
+        code, detail = _armed_pull_status(owner, repo, branch, head)
+        pairs = _red_pairs(runs)
+        inherited = code == "unmerged" and "inherited" in detail.lower()
+        missing_evidence = _ci_missing_evidence_only(detail, pairs)
+        infrastructure = _ci_infrastructure_red(pairs)
+        if isinstance(existing, dict) and (inherited or missing_evidence or infrastructure):
+            kind = (
+                "inherited_main"
+                if inherited
+                else "missing_evidence"
+                if missing_evidence
+                else "infrastructure"
+            )
+            route = _ci_event_route(kind, pr=number, head=head, checks=red)
+            return (
+                _ci_material_receipt(
+                    path,
+                    state,
+                    existing,
+                    route,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
+            )
+        if isinstance(existing, dict):
+            # Candidate-owned red is the explicit anti-escape boundary: discard
+            # the wait before handing the exact failing packet back to builder.
+            _ci_quiescence_clear(path, state)
+        return False, code, detail
+
+    preflight_green = CI_QUIESCENCE_FAST_PREFLIGHT.issubset(passed_names)
+    if pending and preflight_green:
+        if isinstance(existing, dict):
+            # A native watcher should not exit while the semantic wait is still
+            # identical. Its no-result exit is infrastructure/missing evidence,
+            # not permission for a successor watcher or repeated builder turns.
+            route = _ci_event_route(
+                "missing_evidence", pr=number, head=head, checks=pending
+            )
+            return (
+                _ci_material_receipt(
+                    path,
+                    state,
+                    existing,
+                    route,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
+            )
+        return (
+            _enter_ci_quiescence(
+                path,
+                state,
+                branch=branch,
+                number=number,
+                head=head,
+                pending=pending,
+                passed=passed,
+                checks_fingerprint=checks_fingerprint,
+                authority_fingerprint=authority_fingerprint,
+            ),
+            "none",
+            "",
+        )
+
+    if isinstance(existing, dict) and preflight_green and not pending:
+        route = _ci_event_route("green", pr=number, head=head, checks=passed)
+        return (
+            _ci_material_receipt(
+                path,
+                state,
+                existing,
+                route,
+                checks_fingerprint=checks_fingerprint,
+                authority_fingerprint=authority_fingerprint,
+            ),
+            "none",
+            "",
+        )
+    return False, "none", ""
 
 
 def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[str, str]:
@@ -3846,41 +5912,30 @@ def _block(
     is the only thing that can end that wait early.
 
     A RATIFIED ladder exit is REMEMBERED for the exact frozen state it excused
-    (2026-08-19, operator complaint). ``exit_key`` names one evaluated state —
-    today only `ci_failed` on a merged head, keyed
-    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>``. The reason
-    digest is load-bearing, not decoration: a merged head's check SET is not
-    immutable (a `gh run rerun` or a late-attaching cron can bind a different
-    red to the same shas), so the shas alone would let one ratified report
-    cover an unbounded family of later, unrelated CI states. Digesting the
-    block reason pins the memory to the exact evidence the report answered —
-    any different red produces a different reason, a different key, and a fresh
-    block, which is the fail-closed direction. Without the memory, a long-lived
-    session re-blocked on every subsequent Stop and had to re-file the SAME
-    `SHIP LOOP BLOCKED:` report dozens of times (measured on the 2026-08-19
-    authority-frozen main-red-repair session). The memory records an exit key
-    ONLY at the moment an escape actually fires — which itself required the
-    full evidence report on a re-entrant Stop — and a later block carrying a
-    remembered key passes through without bumping any counter. A DIFFERENT key
-    (new PR, new merge, new evidence) never matches, internal codes never carry
-    a key, and an unratified block records nothing, so no ladder widens: the
-    report is demanded once per frozen state instead of once per Stop.
+    (2026-08-19, operator complaint; widened to every EXTERNAL code by Sol
+    commission #6379, 2026-08-24). ``exit_key`` names one evaluated state: the
+    merged-head red keeps its original
+    ``ci_failed:<head_sha>:<merge_sha>:<sha256(reason)[:12]>`` key, and every
+    other external block site now passes ``_external_exit_key``'s
+    ``<code>:<head_sha>:<sha256(reason)[:12]>``. The reason digest is
+    load-bearing, not decoration: a merged head's check SET is not immutable
+    (a `gh run rerun` or a late-attaching cron can bind a different red to the
+    same shas), and an external blocker that materially changes (other lane,
+    other error) is a NEW state — so a changed reason mints a different key
+    and a fresh block, which is the fail-closed direction. Without the memory,
+    a long-lived session re-blocked on every subsequent Stop and had to
+    re-file the SAME `SHIP LOOP BLOCKED:` report dozens of times (measured on
+    the 2026-08-19 authority-frozen main-red-repair session); the same shape
+    re-entered a lawfully escaped session whenever a leftover background
+    timer's `<task-notification>` turn hit Stop after the escape (incident
+    PR #6377). The memory records an exit key ONLY at the moment an escape
+    actually fires — which itself required the full evidence report on a
+    re-entrant Stop — and a later block carrying a remembered key passes
+    through without bumping any counter. A DIFFERENT key (new PR, new merge,
+    new head, new evidence) never matches, internal codes never carry a key,
+    and an unratified block records nothing, so no ladder widens: the report
+    is demanded once per frozen state instead of once per Stop.
     """
-    exits = state.get("ladder_exits")
-    remembered = [str(item) for item in exits] if isinstance(exits, list) else []
-    if exit_key and exit_key in remembered:
-        return
-    previous = state.get("last_blocker")
-    count = int(state.get("blocker_count") or 0) + 1 if previous == code else 1
-    state["last_blocker"] = code
-    state["blocker_count"] = count
-    total_blocks = int(state.get("total_blocks") or 0) + 1
-    state["total_blocks"] = total_blocks
-    external_blocks = int(state.get("external_blocks") or 0)
-    if code in EXTERNAL_BLOCKERS:
-        external_blocks += 1
-        state["external_blocks"] = external_blocks
-    _save(path, state)
     final = str(payload.get("last_assistant_message") or "").lstrip()
     if not final:
         final = _transcript_final_message(payload).lstrip()
@@ -3899,21 +5954,63 @@ def _block(
     # needs count >= 2 or external_blocks >= 3; any-code needs count >= 10 or
     # total_blocks >= 15). So the first-attempt bailout the flag was guarding against
     # stays impossible — on a first Stop total_blocks is 1 and no arm can fire.
-    reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
-    reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
-    external_escape = code in EXTERNAL_BLOCKERS and (count >= 2 or external_blocks >= 3)
-    any_code_escape = count >= 10 or total_blocks >= 15
-    if reported and (external_escape or any_code_escape):
-        if exit_key:
-            # Bounded: the list only ever holds frozen merged-head identities,
-            # and a session mints at most a handful of merges.
-            state["ladder_exits"] = (remembered + [exit_key])[-20:]
-            _save(path, state)
+    def apply_block(latest: dict[str, Any]) -> dict[str, Any]:
+        exits = latest.get("ladder_exits")
+        remembered = [str(item) for item in exits] if isinstance(exits, list) else []
+        if exit_key and exit_key in remembered:
+            return {"silent": True}
+
+        previous = latest.get("last_blocker")
+        count = int(latest.get("blocker_count") or 0) + 1 if previous == code else 1
+        latest["last_blocker"] = code
+        latest["blocker_count"] = count
+        total_blocks = int(latest.get("total_blocks") or 0) + 1
+        latest["total_blocks"] = total_blocks
+        external_blocks = int(latest.get("external_blocks") or 0)
+        if code in EXTERNAL_BLOCKERS:
+            external_blocks += 1
+            latest["external_blocks"] = external_blocks
+
+        reentrant = bool(payload.get("stop_hook_active")) or total_blocks >= 2
+        reported = reentrant and final.startswith("SHIP LOOP BLOCKED:")
+        external_escape = code in EXTERNAL_BLOCKERS and (
+            count >= 2 or external_blocks >= 3
+        )
+        any_code_escape = count >= 10 or total_blocks >= 15
+        escaped = reported and (external_escape or any_code_escape)
+        if escaped and exit_key:
+            # Bounded: the list only ever holds frozen state identities, and a
+            # session mints at most a handful of them.
+            latest["ladder_exits"] = (remembered + [exit_key])[-20:]
+        return {
+            "silent": False,
+            "escaped": escaped,
+            "count": count,
+            "total_blocks": total_blocks,
+        }
+
+    outcome = _update_ledger(path, apply_block, initial=state)
+    if not isinstance(outcome, dict):
+        # This path is only reachable if the lock/transaction itself failed;
+        # preserve the guard's blocking direction instead of granting an exit.
+        _emit(
+            {
+                "decision": "block",
+                "reason": (
+                    "SHIP LOOP guard_error: session ledger transaction was "
+                    "unanswerable; completion cannot be proven safely."
+                ),
+            }
+        )
+        return
+    if outcome.get("silent") or outcome.get("escaped"):
         return
     # The escape hint is only inviting when an escape is plausibly one attempt away:
     # an external code (its ceiling is low), or an internal code already near the
     # any-code ceiling. Offering it to a fresh internal block would invite a bailout
     # long before the loop breaker is meant to arm.
+    count = int(outcome["count"])
+    total_blocks = int(outcome["total_blocks"])
     escape_hint = code in EXTERNAL_BLOCKERS or count >= 9 or total_blocks >= 14
     body = (
         f"SHIP LOOP {code}: {reason}\n"
@@ -3930,9 +6027,9 @@ def _block(
 
 def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
     source = str(payload.get("source") or "")
-    state = _load(path)
+    state = _load_ledger(path, allow_missing=True)
     if state is None or source in {"startup", "clear"}:
-        state = {
+        baseline_state = {
             "root": str(root),
             "start_head": _run(root, "git", "rev-parse", "HEAD"),
             "baseline": _fingerprint(root),
@@ -3941,7 +6038,17 @@ def _session_start(root: Path, path: Path, payload: dict[str, Any]) -> None:
             "total_blocks": 0,
             "external_blocks": 0,
         }
-        _save(path, state)
+
+        def reset(latest: dict[str, Any]) -> None:
+            # A concurrent/live watcher remains reserved across a SessionStart
+            # reset; erasing it would reopen the slot while its process lives.
+            watcher = latest.get("ship_watcher")
+            latest.clear()
+            latest.update(baseline_state)
+            if isinstance(watcher, dict):
+                latest["ship_watcher"] = watcher
+
+        _update_ledger(path, reset, initial={})
     _emit(
         {
             "hookSpecificOutput": {
@@ -4073,11 +6180,23 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     `if not pull:` branch now always blocks, and only chooses which block to file
     (see `_armed_pull_status`).
     """
-    state = _load(path)
+    state = _load_ledger(path, allow_missing=True)
     # Hooks can be installed during an already-running session. Fail open once so
     # that pre-hook work is not misclassified; every later session is enforced.
     if state is None:
         return
+
+    # A mechanically registered external CI wait answers before the ordinary
+    # completion chain and, critically, before any GitHub call. The exact local
+    # head plus the already-reserved process identity are sufficient to show
+    # that the frozen wait is unchanged. A dead watcher/head change grants one
+    # atomic wake claimant and falls through for authoritative reclassification.
+    if isinstance(state.get("ci_quiescence"), dict):
+        if _ci_quiescence_fast_path(root, path, state):
+            return
+        refreshed = _load_ledger(path, allow_missing=True)
+        if isinstance(refreshed, dict):
+            state = refreshed
 
     baseline = state.get("baseline") or {}
     now = _fingerprint(root)
@@ -4151,7 +6270,10 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         owner, repo = _github_slug(root)
     except Exception as exc:
-        _block(path, state, payload, "github_unreachable", str(exc))
+        _block(
+            path, state, payload, "github_unreachable", str(exc),
+            exit_key=_external_exit_key("github_unreachable", head, str(exc)),
+        )
         return
     pull_key = f"{branch}:{head}"
     pull = _proof(state, "merged_pull", pull_key)
@@ -4172,7 +6294,11 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
+            code = _github_block_code(exc)
+            _block(
+                path, state, payload, code, str(exc),
+                exit_key=_external_exit_key(code, head, str(exc)),
+            )
             return
         if pull:
             # A merged PR and its head/merge/base identities are immutable. Keep
@@ -4221,7 +6347,15 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         # through to the ordinary block below. The escape ladder in `_block` covers
         # a persistently failing API.
         try:
-            armed_code, armed_detail = _armed_pull_status(owner, repo, branch, head)
+            quiescence_handled, armed_code, armed_detail = _try_ci_quiescence(
+                root, path, state, owner, repo, branch, head
+            )
+            if quiescence_handled:
+                return
+            if armed_code == "none":
+                armed_code, armed_detail = _armed_pull_status(
+                    owner, repo, branch, head
+                )
         except Exception:
             armed_code, armed_detail = "none", ""
         if armed_code != "none":
@@ -4236,6 +6370,13 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 path, state, payload, "unmerged", f"No merged main pull request found for {branch}."
             )
         return
+
+    # A merged pull is itself a material invalidation of any pre-merge wait.
+    # Clear the local latch silently here: the remaining merged CI/render/live
+    # gates will emit at most one authoritative block or release, preserving the
+    # hook's one-JSON-value stdout invariant.
+    if isinstance(state.get("ci_quiescence"), dict):
+        _ci_quiescence_clear(path, state)
 
     head_sha = str((pull.get("head") or {}).get("sha") or head)
     # The CI gate needs the merge's identity too: a red on the merged head may be
@@ -4255,17 +6396,23 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 str((pull.get("base") or {}).get("sha") or ""),
             )
         except Exception as exc:
-            _block(path, state, payload, _github_block_code(exc), str(exc))
+            code = _github_block_code(exc)
+            _block(
+                path, state, payload, code, str(exc),
+                exit_key=_external_exit_key(code, head, str(exc)),
+            )
             return
         if ci_ok:
             _remember_proof(path, state, "ci", ci_key, {"reason": ci_reason})
     if not ci_ok:
         code = "ci_failed" if ci_reason.startswith("Failing") else "render_pending"
-        # Only the merged-head red carries an exit key, and the key binds the
-        # exact evidence text: one ratified ladder exit covers later Stops on
-        # the IDENTICAL frozen state only. A different red on the same head
-        # (rerun, late cron) yields a different reason and re-blocks.
-        # `render_pending` states evolve and never carry a key.
+        # The merged-head red keeps its richer three-part key (head:merge:digest)
+        # so already-ratified exits stay recognisable; the render_pending shape of
+        # this site uses the standard external key like every other external
+        # block. Both bind the exact evidence text: one ratified ladder exit
+        # covers later Stops on the IDENTICAL frozen state only — a different
+        # red re-blocks, while a render state whose detail text is byte-stable
+        # (a lane that never started) stays covered by its one ratified report.
         reason_digest = hashlib.sha256(ci_reason.encode("utf-8")).hexdigest()[:12]
         _block(
             path,
@@ -4274,7 +6421,9 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             code,
             ci_reason,
             exit_key=(
-                f"{code}:{ci_key}:{reason_digest}" if code == "ci_failed" else ""
+                f"{code}:{ci_key}:{reason_digest}"
+                if code == "ci_failed"
+                else _external_exit_key(code, head, ci_reason)
             ),
         )
         return
@@ -4283,12 +6432,14 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _run(root, "git", "fetch", "origin", "main", timeout=90)
             _run(root, "git", "merge-base", "--is-ancestor", merge_sha, "origin/main")
         except Exception as exc:
+            reason = f"Merge is not confirmed on origin/main: {exc}"
             _block(
                 path,
                 state,
                 payload,
                 "github_unreachable",
-                f"Merge is not confirmed on origin/main: {exc}",
+                reason,
+                exit_key=_external_exit_key("github_unreachable", head, reason),
             )
             return
         _remember_proof(path, state, "origin_main", merge_sha, True)
@@ -4314,7 +6465,11 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                     root, owner, repo, merge_sha, merged_at, workflow
                 )
             except Exception as exc:
-                _block(path, state, payload, _github_block_code(exc), str(exc))
+                code = _github_block_code(exc)
+                _block(
+                    path, state, payload, code, str(exc),
+                    exit_key=_external_exit_key(code, head, str(exc)),
+                )
                 return
             if status == "deferred":
                 # An in-flight covering run satisfies the gate: the merge is already
@@ -4325,12 +6480,14 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
                 _remember_proof(path, state, gate, merge_sha, {"deferred": detail})
                 render_notes.append(detail)
             elif status != "success":
+                code = "render_failed" if status == "failed" else "render_pending"
                 _block(
                     path,
                     state,
                     payload,
-                    "render_failed" if status == "failed" else "render_pending",
+                    code,
                     detail,
+                    exit_key=_external_exit_key(code, head, detail),
                 )
                 return
             else:
@@ -4344,16 +6501,22 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     try:
         health = _get_json(LIVE_HEALTH_URL)
     except Exception as exc:
-        _block(path, state, payload, "live_unreachable", f"Production health check failed: {exc}")
+        reason = f"Production health check failed: {exc}"
+        _block(
+            path, state, payload, "live_unreachable", reason,
+            exit_key=_external_exit_key("live_unreachable", head, reason),
+        )
         return
     live_ok, live_detail = _live_gate(root, merge_sha, start_head, head, health)
     if not live_ok:
+        reason = f"Production does not yet contain the merge: {live_detail}"
         _block(
             path,
             state,
             payload,
             "live_stale",
-            f"Production does not yet contain the merge: {live_detail}",
+            reason,
+            exit_key=_external_exit_key("live_stale", head, reason),
         )
         return
 
@@ -4466,10 +6629,16 @@ def _emit_hook_source_mismatch(event: str, reason: str) -> None:
             }
         )
         return
+    if event == "PreToolUse":
+        _deny_watcher(
+            "SHIP WATCHER REFUSED: hook_source_mismatch: evaluated-tree "
+            f"admission could not be enforced ({reason})."
+        )
+        return
     _emit({"systemMessage": f"SHIP LOOP hook_source_mismatch: {reason}"})
 
 
-def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> int:
+def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> tuple[int, bytes, bytes]:
     env = os.environ.copy()
     env[DELEGATION_ENV] = "1"
     proc = subprocess.run(
@@ -4480,13 +6649,14 @@ def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> int:
         capture_output=True,
         check=False,
     )
-    if proc.stdout:
-        sys.stdout.buffer.write(proc.stdout)
-        sys.stdout.flush()
-    if proc.stderr:
-        sys.stderr.buffer.write(proc.stderr)
-        sys.stderr.flush()
-    return int(proc.returncode)
+    return int(proc.returncode), bytes(proc.stdout or b""), bytes(proc.stderr or b"")
+
+
+def _write_hook_bytes(stream: Any, value: bytes) -> None:
+    if not value:
+        return
+    stream.buffer.write(value)
+    stream.flush()
 
 
 def _load_payload_and_raw() -> tuple[dict[str, Any] | None, bytes]:
@@ -4553,12 +6723,35 @@ def _delegate_to_evaluated_hook(payload: dict[str, Any], raw: bytes) -> bool:
         )
         return True
     try:
-        _spawn_delegated_guard(target, raw, cwd=evaluated)
+        outcome = _spawn_delegated_guard(target, raw, cwd=evaluated)
     except Exception as exc:
         _emit_hook_source_mismatch(
             event,
             _format_hook_source_mismatch(
                 source, evaluated, f"target hook spawn failed: {exc}"
+            ),
+        )
+        return True
+    if isinstance(outcome, tuple):
+        returncode, child_stdout, child_stderr = outcome
+    else:
+        # Test stubs and one-revision rolling compatibility may still return
+        # the historical integer result.
+        returncode, child_stdout, child_stderr = int(outcome), b"", b""
+    if not returncode:
+        _write_hook_bytes(sys.stdout, child_stdout)
+        _write_hook_bytes(sys.stderr, child_stderr)
+        return True
+    # A failing child may have emitted a partial/allow JSON before crashing.
+    # Hook stdout must remain ONE authoritative denial, so retain diagnostics
+    # on stderr only.
+    _write_hook_bytes(sys.stderr, child_stdout)
+    _write_hook_bytes(sys.stderr, child_stderr)
+    if returncode:
+        _emit_hook_source_mismatch(
+            event,
+            _format_hook_source_mismatch(
+                source, evaluated, f"target hook exited nonzero ({returncode})"
             ),
         )
     return True
@@ -4568,14 +6761,33 @@ def main() -> None:
     payload, raw = _load_payload_and_raw()
     if payload is None:
         return
+    if str(payload.get("hook_event_name") or "") == "PreToolUse":
+        # Ordinary Bash remains fail-open because _watcher_request returns
+        # before touching state. A command already classified as watcher-shaped
+        # fails CLOSED if admission itself crashes: allowing an untracked wait
+        # is exactly how duplicate/no-progress model wakes bypass the gate.
+        try:
+            _pre_tool_use(payload, raw)
+        except Exception:
+            try:
+                watch = _watcher_request(payload)
+            except Exception:
+                watch = None
+            if watch is not None:
+                _deny_watcher(
+                    "SHIP WATCHER REFUSED: watcher admission was unanswerable, "
+                    "so safe single-owner tracking could not be proven."
+                )
+        return
     if _delegate_to_evaluated_hook(payload, raw):
         return
     root = _repo_root(payload)
     if root is None:
         return
-    path = _state_path(root, payload)
     event = str(payload.get("hook_event_name") or "")
+    path: Path | None = None
     try:
+        path = _state_path(root, payload)
         if event == "SessionStart":
             _session_start(root, path, payload)
         elif event == "Stop":
@@ -4592,8 +6804,8 @@ def main() -> None:
                 "The completion guard failed unexpectedly: "
                 f"{exc}. Repair `.claude/hooks/ship_loop_guard.py` before stopping."
             )
-            state = _load(path)
-            if state is not None:
+            state = _load(path) if path is not None else None
+            if state is not None and path is not None:
                 try:
                     _block(path, state, payload, "guard_error", reason)
                     return
@@ -4605,7 +6817,27 @@ def main() -> None:
                     "reason": f"SHIP LOOP guard_error: {reason}",
                 }
             )
+        elif event == "SessionStart":
+            _emit(
+                {
+                    "hookSpecificOutput": {
+                        "hookEventName": "SessionStart",
+                        "additionalContext": (
+                            "SHIP LOOP guard_error: mandatory enforcement did not load: "
+                            f"{exc}. Repair `.claude/hooks/ship_loop_guard.py` and the "
+                            "private session ledger path before modifying repository state."
+                        ),
+                    }
+                }
+            )
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 5 and sys.argv[1] == "--confirm-watcher":
+        try:
+            confirmed = _confirm_watcher(Path(sys.argv[2]), sys.argv[3], sys.argv[4])
+        except Exception as exc:
+            print(f"SHIP WATCHER confirmation failed: {exc}", file=sys.stderr)
+            confirmed = False
+        raise SystemExit(0 if confirmed else 1)
     main()
