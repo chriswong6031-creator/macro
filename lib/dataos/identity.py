@@ -756,6 +756,25 @@ def _null_to_none(value: object) -> object | None:
     return value
 
 
+_CIK_RE = re.compile(r"^\d{1,10}$")
+
+
+def _normalize_issuer_cik(value: object) -> str | None:
+    """Normalize a nullable issuer-master CIK to its ten-digit SEC spelling."""
+    value = _null_to_none(value)
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    if text.lower().startswith("cik:"):
+        text = text[4:]
+    text = text.lstrip("0") or "0"
+    if not _CIK_RE.fullmatch(text):
+        raise IdentityError(f"issuer CIK is not a 1-10 digit SEC value: {value!r}")
+    return text.zfill(10)
+
+
 @dataclass(frozen=True, slots=True)
 class SecurityIssuerRow:
     """One ``security_master.parquet`` row's issuer axis, as read by :class:`IssuerMaster`.
@@ -775,6 +794,7 @@ class SecurityIssuerRow:
     issuer_id: str | None
     issuer_state: str
     listing_key: str
+    issuer_cik: str | None = None
     security_state: str | None = None
     superseded_by: str | None = None
 
@@ -802,11 +822,12 @@ class IssuerMaster:
     prevent, one layer up.)
     """
 
-    __slots__ = ("_by_security", "_by_issuer")
+    __slots__ = ("_by_security", "_by_issuer", "_ciks_by_issuer")
 
     def __init__(self, rows: list[SecurityIssuerRow] | tuple[SecurityIssuerRow, ...] = ()) -> None:
         by_security: dict[str, SecurityIssuerRow] = {}
         by_issuer: dict[str, list[str]] = {}
+        ciks_by_issuer: dict[str, set[str]] = {}
         for row in rows:
             by_security[row.security_id] = row
             # V4-D2B1-R1 §3.6: a security-axis-superseded row (a tombstone) is
@@ -816,9 +837,14 @@ class IssuerMaster:
             # if it were a live member of the issuer's roster.
             if row.issuer_id is not None and not row.security_state:
                 by_issuer.setdefault(row.issuer_id, []).append(row.security_id)
+                if row.issuer_cik is not None:
+                    ciks_by_issuer.setdefault(row.issuer_id, set()).add(row.issuer_cik)
         self._by_security = by_security
         self._by_issuer: dict[str, tuple[str, ...]] = {
             k: tuple(sorted(v)) for k, v in by_issuer.items()
+        }
+        self._ciks_by_issuer: dict[str, tuple[str, ...]] = {
+            k: tuple(sorted(v)) for k, v in ciks_by_issuer.items()
         }
 
     @classmethod
@@ -848,6 +874,7 @@ class IssuerMaster:
             issuer = _null_to_none(rec.get("issuer_id"))
             state = _null_to_none(rec.get("issuer_state"))
             listing_key = _null_to_none(rec.get("listing_key"))
+            issuer_cik = _normalize_issuer_cik(rec.get("issuer_cik"))
             # V4-D2B1-R1 §3.6: absent on a pre-repair master (era-seam, same NaN trap
             # as the fields above) — `.get(...)` + `_null_to_none` handles both the
             # missing-key and the NaN-cell shapes uniformly.
@@ -859,6 +886,7 @@ class IssuerMaster:
                     issuer_id=None if issuer is None else str(issuer),
                     issuer_state=str(state) if state is not None else "",
                     listing_key=str(listing_key) if listing_key is not None else "",
+                    issuer_cik=issuer_cik,
                     security_state=None if security_state is None else str(security_state),
                     superseded_by=None if superseded_by is None else str(superseded_by),
                 )
@@ -884,6 +912,25 @@ class IssuerMaster:
         see :meth:`__init__`.
         """
         return self._by_issuer.get(issuer_id_, ())
+
+    def cik_of_issuer(self, issuer_id_: str) -> str | None:
+        """This issuer's evidenced CURRENT CIK, or ``None`` when unobserved.
+
+        CIK evidence in the master is a current-registrant observation only; this
+        method intentionally has no ``asof`` parameter and cannot establish a
+        historical issuer binding.  Multiple active rows may repeat one CIK (for
+        example, dual share classes), but differing non-null CIKs are an ambiguous
+        identity fact and are refused rather than guessed.
+        """
+        ciks = self._ciks_by_issuer.get(issuer_id_, ())
+        if not ciks:
+            return None
+        if len(ciks) != 1:
+            raise IdentityError(
+                f"conflicting current issuer CIK observations for {issuer_id_!r}: "
+                f"{', '.join(ciks)}"
+            )
+        return ciks[0]
 
     def security_state_of(self, security_id: str) -> str | None:
         """This security's ``security_state`` (V4-D2B1-R1 §3.6) — ``None`` for an

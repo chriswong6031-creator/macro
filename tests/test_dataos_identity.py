@@ -483,6 +483,57 @@ def test_security_issuer_row_is_a_frozen_pure_value() -> None:
         row.security_id = "SEC:US-XNYS-OTHER"  # type: ignore[misc]
 
 
+# ── current issuer -> CIK seam — D5 prerequisite ─────────────────────────────
+def test_issuer_master_issuer_cik_normalizes_to_the_exact_ten_digit_value() -> None:
+    """The current Data OS reader exposes the master-backed CIK, not a new reader."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-AAPL", "issuer_id": "ISS:US-XNAS-AAPL",
+         "issuer_state": "RESOLVED", "issuer_cik": "320193", "listing_key": "US-XNAS-AAPL"},
+    ])
+
+    assert im.cik_of_issuer("ISS:US-XNAS-AAPL") == "0000320193"
+
+
+def test_issuer_master_issuer_cik_accepts_repeated_current_rows_for_one_issuer() -> None:
+    """Dual-class rows with the same evidenced CIK are one current issuer fact."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-GOOG", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "issuer_cik": "0001652044", "listing_key": "US-XNAS-GOOG"},
+        {"security_id": "SEC:US-XNAS-GOOGL", "issuer_id": "ISS:US-XNAS-GOOG",
+         "issuer_state": "RESOLVED", "issuer_cik": "1652044", "listing_key": "US-XNAS-GOOGL"},
+    ])
+
+    assert im.cik_of_issuer("ISS:US-XNAS-GOOG") == "0001652044"
+
+
+def test_issuer_master_issuer_cik_returns_none_for_absent_or_nan_observation() -> None:
+    """Missing current CIK evidence is an unresolved bridge, never a guessed CIK."""
+    nan = float("nan")
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-AEP", "issuer_id": "ISS:US-XNAS-AEP",
+         "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": None, "listing_key": "US-XNAS-AEP"},
+        {"security_id": "SEC:US-XNAS-IBM", "issuer_id": "ISS:US-XNAS-IBM",
+         "issuer_state": "NO_ISSUER_EVIDENCE", "issuer_cik": nan, "listing_key": "US-XNAS-IBM"},
+    ])
+
+    assert im.cik_of_issuer("ISS:US-XNAS-AEP") is None
+    assert im.cik_of_issuer("ISS:US-XNAS-IBM") is None
+    assert im.cik_of_issuer("ISS:UNKNOWN") is None
+
+
+def test_issuer_master_issuer_cik_refuses_conflicting_current_observations() -> None:
+    """An issuer mapping to two non-null current CIKs cannot lawfully pick either."""
+    im = IssuerMaster.from_records([
+        {"security_id": "SEC:US-XNAS-ONE", "issuer_id": "ISS:US-XNAS-ONE",
+         "issuer_state": "RESOLVED", "issuer_cik": "0000320193", "listing_key": "US-XNAS-ONE"},
+        {"security_id": "SEC:US-XNAS-TWO", "issuer_id": "ISS:US-XNAS-ONE",
+         "issuer_state": "RESOLVED", "issuer_cik": "0000789019", "listing_key": "US-XNAS-TWO"},
+    ])
+
+    with pytest.raises(IdentityError, match="conflicting.*CIK"):
+        im.cik_of_issuer("ISS:US-XNAS-ONE")
+
+
 # ── the security axis — V4-D2B1-R1 (§3.6 reader API) ───────────────────────────
 def test_security_state_is_null_by_default_and_excluded_rows_never_aggregate() -> None:
     """A security-axis-superseded row (a tombstone) is excluded from
