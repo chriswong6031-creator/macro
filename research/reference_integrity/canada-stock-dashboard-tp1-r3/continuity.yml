@@ -32,15 +32,17 @@ predecessors:
         disposition: RESOLVED_BY_CHANGE
         evidence: >
           The full-width track is gone. The measure is now a BOUNDED gauge: a
-          fixed-length track (100 gauge units, ~200px desktop / ~110px at 390
-          via the mobile rescale) plus a proportional fill, both achromatic
-          (--line 55% track, --muted 70% fill), both rounded-capped, both
-          lifted 6px clear of the row boundary. A 100% value fills the track
-          and terminates visibly mid-row (~200px of a ~1300px panel), so the
-          broadest participation reads as a full gauge rather than a divider;
-          partial values render proportionally shorter within the same track.
-          Verified in proposal-breadth-dark/light-en-1440.png (15/15 rows vs
-          the 12/4/9 rows).
+          fixed-length track (100 gauge units + 6px, ~206px desktop / ~113px
+          at 390 via the mobile rescale) plus a proportional fill clamped to
+          the track's 100-unit span, both achromatic (--muted 38% track,
+          --muted 85% fill), both rounded-capped, the fill 3px inside a 5px
+          track so a full value leaves a visible 3px shoulder at each end and
+          1px above/below — the bound stays legible AT 100%, which the first
+          two attempts did not achieve. Both are anchored to the row's 14px
+          content edge (not the panel border) and lifted clear of the row
+          boundary. Pixel-verified on breadth-dark-en-1440.png: 4/15 -> 54px,
+          9/15 -> 120px, 12/15 -> 160px, 15/15 -> 200px clamped inside the
+          206px track.
         changed_files:
           - templates/stock-dashboard.css
           - site/stock-dashboard.css
@@ -87,12 +89,18 @@ predecessors:
         kind: condition
         disposition: RESOLVED_BY_CHANGE
         evidence: >
-          Per the VTC-203 row above. Honest process note: the first R3 pass
-          used max-width calc(100% - 24px), which insets a ~1300px panel by
-          only ~2% and still rendered a 100% value as a near-full-width rule;
-          the coordinator caught this against the committed proof shots and
-          ordered the bounded-gauge correction (commit 2d463e7c4e8f) before
-          returning to the authority.
+          Per the VTC-203 row above. Honest process note, two corrections
+          deep: the first R3 pass used max-width calc(100% - 24px), which
+          insets a ~1300px panel by only ~2% and still rendered a 100% value
+          as a near-full-width rule (coordinator caught it against the
+          committed proof shots, corrected at 2d463e7c4e8f); the resulting
+          bounded gauge was then found by BOTH independent critics to carry a
+          track at only ~1.35:1 with no visible bound at full value, and
+          mis-anchored at left:0 against the row's 14px content edge so it
+          read as an underline of the ticker line — corrected at
+          e509db03ee5f with the shoulder geometry and content-edge anchor
+          above. Neither correction was discovered by the authority; both were
+          caught inside the carrier and are recorded rather than smoothed.
         changed_files:
           - templates/stock-dashboard.css
           - site/stock-dashboard.css
@@ -115,7 +123,7 @@ predecessors:
           r2 was closed truthfully as REVISE with the authority's verdict
           transcribed (canada-stock-dashboard-tp1-r2/verdict.yml, manifest
           status revise). This r3 set mints a fresh reference id and a fresh
-          frozen SHA (2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8), carries this
+          frozen SHA (e509db03ee5f7bb5b2ef1140935d57706c858370), carries this
           machine-derived continuity closing every r2 open item by id, and its
           two independent critics run rationale-quarantined two-pass against
           that exact SHA. The authority's enum finding is honoured: r3 critic
@@ -133,7 +141,8 @@ predecessors:
           Focused tests pin null-to-no-meter, zero-to-true-zero,
           positive-to-truthful-no-floor, the bounded non-divider gauge geometry
           and its boundary separation, the mobile rescale, dark active-filter
-          parity, modal Name alignment and template/site pair sync (41 green).
+          parity, modal Name alignment, the light active-tint ceiling and
+          template/site pair sync (43 green).
           Gate runs: check_template_site_sync clean, node --check clean,
           check_design_system --mode enforce-added blocking=0,
           check_runtime_style_injection OK, check_reference_integrity in BOTH

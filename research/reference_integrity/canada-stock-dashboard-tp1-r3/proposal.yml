@@ -9,7 +9,7 @@ schema: mastermind.rig_proposal.v1
 reference_id: canada-stock-dashboard-tp1-r3
 
 proposed_artifact:
-  frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+  frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
   paths:
     - templates/stock-dashboard.css
     - site/stock-dashboard.css

@@ -26,15 +26,15 @@ author:
 
 reference_files:
   - path: templates/stock-dashboard.css
-    frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+    frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
   - path: site/stock-dashboard.css
-    frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+    frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
   - path: site/canada-stock-v36.js
-    frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+    frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
   - path: tests/test_stock_dashboard_css.py
-    frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+    frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
   - path: tests/test_canada_v36_composer.py
-    frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+    frozen_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
 
 files:
   baseline: baseline.yml
