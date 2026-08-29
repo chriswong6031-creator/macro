@@ -962,6 +962,135 @@ def test_program_registry_invalid_utf8_is_explicitly_malformed(tmp_path: Path) -
     }
 
 
+def _build_state_for_program_registry(agentos, store: Path, *, now: str):
+    parsed = agentos.load_store(store, agentos._load_programs())
+    moment = agentos._parse_moment(now)
+    assert moment is not None
+    return agentos.build_state(
+        parsed,
+        now=moment,
+        degraded=agentos.Degraded(),
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+
+def test_build_state_projects_program_registry_into_the_pure_contract(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """Removing the state projection or PURE_SECTIONS membership must fail."""
+    agentos = _load_agentos_module_for_program_registry()
+    parsed_store = agentos.load_store(store, agentos._load_programs())
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  beta-program:\n"
+            "    name: Beta\n"
+            "    category: market_intelligence\n"
+            "    kind: intelligence_program\n"
+            "    lifecycle_state: building\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+    moment = agentos._parse_moment("2026-08-28T16:00:00Z")
+    assert moment is not None
+
+    state = agentos.build_state(
+        parsed_store,
+        now=moment,
+        degraded=agentos.Degraded(),
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+    expected = {
+        "schema": "agentos.program_registry.v1",
+        "available": True,
+        "source": "config/mastermind_programs.yml",
+        "programs": [
+            {
+                "key": "beta-program",
+                "name": "Beta",
+                "lifecycle_state": "building",
+                "scope": "project",
+                "kind": "intelligence_program",
+                "category": "market_intelligence",
+            }
+        ],
+    }
+    assert state["program_registry"] == expected
+    assert agentos.pure_section(state)["program_registry"] == expected
+
+
+def test_build_state_keeps_missing_program_registry_explicit_and_nonfatal(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """An unreadable rich source must not turn status into a hidden healthy empty set."""
+    agentos = _load_agentos_module_for_program_registry()
+    parsed_store = agentos.load_store(store, agentos._load_programs())
+    monkeypatch.setattr(agentos, "_PROGRAMS", tmp_path / "missing.yml")
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+    degraded = agentos.Degraded()
+    moment = agentos._parse_moment("2026-08-28T16:00:00Z")
+    assert moment is not None
+
+    state = agentos.build_state(
+        parsed_store,
+        now=moment,
+        degraded=degraded,
+        builds=None,
+        p0_status=None,
+        worktrees={"count": 0, "branches": [], "uncommitted": []},
+    )
+
+    assert state["program_registry"] == {
+        "schema": "agentos.program_registry.v1",
+        "available": False,
+        "reason": "program_registry_unavailable",
+        "source": "config/mastermind_programs.yml",
+        "programs": [],
+    }
+    assert degraded.items == []
+
+
+def test_program_registry_pure_section_is_deterministic_across_wall_clocks(
+    store: Path, tmp_path: Path, monkeypatch,
+) -> None:
+    """A volatile omission from PURE_SECTIONS must not hide the registry contract."""
+    agentos = _load_agentos_module_for_program_registry()
+    path = tmp_path / "mastermind_programs.yml"
+    _write_program_registry(
+        path,
+        programs_yaml=(
+            "  alpha-program:\n"
+            "    name: Alpha\n"
+            "    category: project_infrastructure\n"
+            "    kind: infrastructure\n"
+            "    lifecycle_state: operating\n"
+            "    scope: project\n"
+        ),
+    )
+    monkeypatch.setattr(agentos, "_PROGRAMS", path)
+    monkeypatch.setattr(agentos, "git_dates", lambda _path: (None, None))
+
+    first = _build_state_for_program_registry(
+        agentos, store, now="2026-08-28T16:00:00Z"
+    )
+    second = _build_state_for_program_registry(
+        agentos, store, now="2026-08-29T16:00:00Z"
+    )
+
+    first_pure = agentos.pure_section(first)
+    second_pure = agentos.pure_section(second)
+    assert "program_registry" in first_pure
+    assert first_pure == second_pure
+
+
 # ------------------------------------------- Project Recovery R8-B1 typed wait
 
 

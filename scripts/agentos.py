@@ -1930,6 +1930,8 @@ def build_state(
         if not problem.hard:
             warnings.append(problem.render(_ROOT))
 
+    program_registry = _load_program_registry(_PROGRAMS)
+
     age_hours: float | None = None
     stamp: str | None = None
     if builds:
@@ -1960,6 +1962,7 @@ def build_state(
             "degraded": degraded.items,
         },
         # ---- pure function of the authored records + join inputs ----
+        "program_registry": program_registry,
         "workstreams": records,
         "needs_ceo": [
             # `workstream`, matching blocked/finished/readiness and the documented
@@ -1979,7 +1982,9 @@ def build_state(
     }
 
 
-PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "warnings")
+PURE_SECTIONS = (
+    "schema", "generator", "program_registry", "workstreams", "needs_ceo", "warnings"
+)
 
 
 def pure_section(state: dict[str, Any]) -> dict[str, Any]:
