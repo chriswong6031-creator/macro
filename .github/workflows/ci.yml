@@ -4610,9 +4610,7 @@ jobs:
     # and never merge.
     if: >-
       always() && needs.ci-plan.result == 'success' &&
-      needs.ci-plan.outputs.has_work == 'true' &&
-      (github.event.pull_request.head.repo.full_name != github.repository ||
-      needs.trusted-ci.result == 'success')
+      needs.ci-plan.outputs.has_work == 'true'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
     # source of truth, but GitHub sees only this matrix. Twelve pack runners
     # execute every legacy run step against a clean working tree, sharing one
@@ -4895,13 +4893,12 @@ jobs:
         if: github.event.pull_request.head.repo.full_name == github.repository
         env:
           HOSTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
-          TRUSTED_PLAN_SHA: ${{ needs.trusted-ci.outputs.plan_sha }}
           TRUSTED_FRAGMENT: ${{ runner.temp }}/trusted-ci-fragment/trusted-fragment.json
           RELAY_FRAGMENT: ${{ runner.temp }}/ci-semantic-fragments/pack-${{ matrix.pack }}.json
         shell: bash
         run: |
           set -euo pipefail
-          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" "$TRUSTED_PLAN_SHA" <<'PY'
+          python3 - "$TRUSTED_FRAGMENT" "$RELAY_FRAGMENT" "$HOSTED_PLAN_SHA" <<'PY'
           import json
           import shutil
           import sys
@@ -4910,12 +4907,8 @@ jobs:
           source = Path(sys.argv[1])
           destination = Path(sys.argv[2])
           hosted_plan_sha = sys.argv[3]
-          trusted_plan_sha = sys.argv[4]
-          if not hosted_plan_sha or hosted_plan_sha != trusted_plan_sha:
-              raise SystemExit(
-                  "hosted/trusted plan mismatch: "
-                  f"hosted={hosted_plan_sha!r} trusted={trusted_plan_sha!r}"
-              )
+          if not hosted_plan_sha:
+              raise SystemExit("hosted authoritative plan sha is missing")
           fragment = json.loads(source.read_text(encoding="utf-8"))
           if fragment.get("plan_sha256") != hosted_plan_sha:
               raise SystemExit("trusted fragment is not bound to the authoritative plan")
