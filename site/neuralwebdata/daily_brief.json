@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-29T13:06:13.810669+00:00",
+  "produced_at": "2026-08-29T15:38:42.428193+00:00",
   "as_of": "2026-08-28",
   "status": "warn",
   "phase": "final",
@@ -9,48 +9,13 @@
     "tool_call_batches": 4,
     "individual_tool_calls": 9,
     "context_stale": false,
-    "summary": "cortex ran (9 tool calls); memo as_of 2026-08-29T10:15:24+00:00"
+    "summary": "cortex ran (9 tool calls); memo as_of 2026-08-29T15:32:35+00:00"
   },
   "what_changed": [
     {
-      "kind": "lobe_status_changed",
-      "id": "site-us-standouts",
-      "summary": "lobe site-us-standouts status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-china-cycle-phase",
-      "summary": "lobe site-china-cycle-phase status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-china-market-state",
-      "summary": "lobe site-china-market-state status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
       "kind": "lobe_row_count_changed",
       "id": "spine-index",
-      "summary": "lobe spine-index row count changed: 412717 → 416744 (1%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_refresh",
-      "id": "confluence-strength",
-      "summary": "lobe confluence-strength refreshed: as_of 2026-08-26 → 2026-08-29, rows 1195 → 1206",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "confluence-tape",
-      "summary": "lobe confluence-tape row count changed: 1300 → 1314 (1%)",
+      "summary": "lobe spine-index row count changed: 416194 → 416744 (0%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
@@ -63,106 +28,22 @@
     },
     {
       "kind": "lobe_row_count_changed",
-      "id": "reflex-firings-regime-selfheal",
-      "summary": "lobe reflex-firings-regime-selfheal row count changed: 19 → 20 (5%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "reflex-firings-commodity-shock",
-      "summary": "lobe reflex-firings-commodity-shock row count changed: 5 → 7 (40%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "ops-push-basket-freeze",
-      "summary": "lobe ops-push-basket-freeze row count changed: 16 → 17 (6%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
       "id": "nw-health-run-history",
-      "summary": "lobe nw-health-run-history row count changed: 42 → 44 (5%)",
+      "summary": "lobe nw-health-run-history row count changed: 43 → 44 (2%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_row_count_changed",
       "id": "governance-ledger",
-      "summary": "lobe governance-ledger row count changed: 96 → 100 (4%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "cortex-attention-firings",
-      "summary": "lobe cortex-attention-firings row count changed: 53 → 56 (6%)",
+      "summary": "lobe governance-ledger row count changed: 98 → 100 (2%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_status_changed",
-      "id": "opex-risk-snapshot",
-      "summary": "lobe opex-risk-snapshot status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "bottom-sensors-json",
-      "summary": "lobe bottom-sensors-json status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "data-neuralweb-biopharma-seasonality-state",
-      "summary": "lobe data-neuralweb-biopharma-seasonality-state status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "neuralweb-daily-brief-history",
-      "summary": "lobe neuralweb-daily-brief-history row count changed: 30 → 31 (3%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "mechanism-pathways-history",
-      "summary": "lobe mechanism-pathways-history row count changed: 43 → 44 (2%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "theme-phase-history",
-      "summary": "lobe theme-phase-history row count changed: 251 → 261 (4%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_row_count_changed",
-      "id": "covariance-spine-history",
-      "summary": "lobe covariance-spine-history row count changed: 39 → 40 (3%)",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "darkpool-context-latest",
-      "summary": "lobe darkpool-context-latest status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "market-structure-latest",
-      "summary": "lobe market-structure-latest status: stale → fresh",
+      "id": "context-candidates",
+      "summary": "lobe context-candidates status: stale → fresh",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     }
@@ -709,7 +590,7 @@
   },
   "causal_lab": {
     "available": true,
-    "asof": "2026-08-28T14:05:53Z",
+    "asof": "2026-08-29T14:48:26Z",
     "new_edges_this_week_by_verdict": {
       "insufficient_power": 22,
       "null": 11,
