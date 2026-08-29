@@ -769,6 +769,138 @@ def test_grade_semantic_validation_rejects_nonnumeric_metrics(
     assert "semantically invalid" in row["evidence_provider"]["error"]
 
 
+def test_grade_semantic_validation_contains_unrepresentable_numeric_metrics(tmp_path):
+    """An enormous JSON integer degrades its provider; it never sinks the panel."""
+    root = qledger_adapter_root(tmp_path)
+    grade = {
+        "claim_id": "c1",
+        "horizon_d": 20,
+        "graded_at": "2026-08-29T01:02:03+00:00",
+        "subject_ret": 10**1000,
+        "bench_ret": 0.0,
+        "control_ret": None,
+        "excess": 0.1,
+        "hit": True,
+    }
+    (root / "data" / "qledger" / "grades.jsonl").write_text(
+        json.dumps(grade) + "\n", encoding="utf-8"
+    )
+
+    result = IOS.panel(root=root)
+    assert result["ok"] is True
+    row = result["engines"][0]
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "semantically invalid" in row["evidence_provider"]["error"]
+
+
+@pytest.mark.parametrize(
+    "basis_patch",
+    [
+        {"clock_version": "explicit_unit_v1"},
+        {"horizon_unit": "trading_days"},
+        {"clock_market": "US"},
+    ],
+)
+def test_grade_semantic_validation_rejects_partial_clock_basis(
+    tmp_path, basis_patch
+):
+    """Partial explicit stamps cannot be silently reclassified as legacy evidence."""
+    root = qledger_adapter_root(tmp_path)
+    grade = {
+        "claim_id": "c1",
+        "horizon_d": 20,
+        "graded_at": "2026-08-29T01:02:03+00:00",
+        "subject_ret": 0.1,
+        "bench_ret": 0.0,
+        "control_ret": None,
+        "excess": 0.1,
+        "hit": True,
+        **basis_patch,
+    }
+    (root / "data" / "qledger" / "grades.jsonl").write_text(
+        json.dumps(grade) + "\n", encoding="utf-8"
+    )
+
+    row = IOS.panel(root=root)["engines"][0]
+    assert row["evidence_status"] == "Degraded"
+    assert row["evidence_provider"]["read_status"] == "partial"
+    assert "semantically invalid" in row["evidence_provider"]["error"]
+
+
+def test_market_unstamped_explicit_basis_remains_lawful(tmp_path):
+    """The owner contract permits version+unit without a market during migration."""
+    root = qledger_adapter_root(tmp_path)
+    grade = {
+        "claim_id": "c1",
+        "horizon_d": 20,
+        "graded_at": "2026-08-29T01:02:03+00:00",
+        "subject_ret": 0.1,
+        "bench_ret": 0.0,
+        "control_ret": None,
+        "excess": 0.1,
+        "hit": True,
+        "clock_version": "explicit_unit_v1",
+        "horizon_unit": "trading_days",
+    }
+    (root / "data" / "qledger" / "grades.jsonl").write_text(
+        json.dumps(grade) + "\n", encoding="utf-8"
+    )
+
+    row = IOS.panel(root=root)["engines"][0]
+    assert row["evidence_provider"]["read_status"] == "ok"
+    assert "evidence_provider_unreadable" not in row["evidence_reason_codes"]
+
+
+def test_qledger_semantic_validators_are_total_over_json_types():
+    """Adversarial JSON values always yield a boolean, never an exception."""
+    from engine import qledger
+
+    values = [None, False, True, 0, 1, 1.5, "", "value", [], {}]
+    claim = {
+        "claim_id": "c1",
+        "desk": "stock_desk",
+        "claim_family": "stock_desk",
+        "asof": "2026-08-29",
+        "scope": {"type": "entity", "key": "AAPL"},
+        "direction": 1,
+        "horizon_d": 20,
+        "timestamp_quality": "CRAWL_BOUNDED",
+    }
+    for field in claim:
+        for value in values:
+            assert isinstance(
+                IOS._valid_claim_row({**claim, field: value}, qledger), bool
+            )
+    for nested in ("type", "key"):
+        for value in values:
+            assert isinstance(
+                IOS._valid_claim_row(
+                    {**claim, "scope": {**claim["scope"], nested: value}}, qledger
+                ),
+                bool,
+            )
+
+    grade = {
+        "claim_id": "c1",
+        "horizon_d": 20,
+        "graded_at": "2026-08-29T01:02:03+00:00",
+        "subject_ret": 0.1,
+        "bench_ret": 0.0,
+        "control_ret": None,
+        "excess": 0.1,
+        "hit": True,
+        "clock_version": "explicit_unit_v1",
+        "horizon_unit": "trading_days",
+        "clock_market": "US",
+    }
+    for field in grade:
+        for value in [*values, float("nan"), float("inf"), float("-inf"), 10**1000]:
+            assert isinstance(
+                IOS._valid_grade_row({**grade, field: value}, qledger), bool
+            )
+
+
 def test_corrupt_existing_evidence_clock_degrades_instead_of_looking_unstarted(tmp_path):
     """An existing unreadable write-once receipt is blindness, not an absent clock."""
     root = qledger_adapter_root(tmp_path)

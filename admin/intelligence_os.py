@@ -257,11 +257,12 @@ def _nonempty_string(value: Any) -> bool:
 def _finite_number_or_none(value: Any) -> bool:
     if value is None:
         return True
-    return (
-        isinstance(value, (int, float))
-        and not isinstance(value, bool)
-        and math.isfinite(value)
-    )
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(float(value))
+    except (OverflowError, ValueError):
+        return False
 
 
 def _valid_claim_row(row: Any, qledger_owner: Any) -> bool:
@@ -309,6 +310,19 @@ def _valid_grade_row(row: Any, qledger_owner: Any) -> bool:
     unit = row.get("horizon_unit")
     version = row.get("clock_version")
     market = row.get("clock_market")
+    legacy_basis = version is None and unit is None and market is None
+    explicit_basis = (
+        version == qledger_owner.CLOCK_V1
+        and isinstance(unit, str)
+        and unit in qledger_owner.HORIZON_UNITS
+        and (
+            market is None
+            or (
+                isinstance(market, str)
+                and market in qledger_owner.CLOCK_MARKET_SUPPORT
+            )
+        )
+    )
     return (
         _nonempty_string(row.get("claim_id"))
         and _positive_int(row.get("horizon_d"))
@@ -319,18 +333,7 @@ def _valid_grade_row(row: Any, qledger_owner: Any) -> bool:
             for key in ("subject_ret", "bench_ret", "control_ret", "excess")
         )
         and (row.get("hit") is None or type(row.get("hit")) is bool)
-        and (
-            unit is None
-            or (isinstance(unit, str) and unit in qledger_owner.HORIZON_UNITS)
-        )
-        and (version is None or version == qledger_owner.CLOCK_V1)
-        and (
-            market is None
-            or (
-                isinstance(market, str)
-                and market in qledger_owner.CLOCK_MARKET_SUPPORT
-            )
-        )
+        and (legacy_basis or explicit_basis)
     )
 
 
