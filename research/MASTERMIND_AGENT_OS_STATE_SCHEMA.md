@@ -382,6 +382,21 @@ command produced it.
     "worktrees": 31,
     "degraded": ["terminal repo not checked out — terminal workstreams show stale PR state"]
   },
+  "program_registry": {
+    "schema": "agentos.program_registry.v1",
+    "available": true,
+    "source": "config/mastermind_programs.yml",
+    "programs": [
+      {
+        "key": "prophet-us",
+        "name": "US Prophet",
+        "lifecycle_state": "building",
+        "scope": "project",
+        "kind": "intelligence_program",
+        "category": "market_intelligence"
+      }
+    ]
+  },
   "workstreams": [
     {
       "key": "PROPHET-US-ENTRY-TIMING",
@@ -419,6 +434,13 @@ command produced it.
 `degraded` and `warnings` are first-class: a view that silently omits a missing input reads as
 "everything is fine," which is the failure I4 exists to prevent.
 
+`program_registry` is a read-only bounded projection of `config/mastermind_programs.yml` for
+exact semantic key joins. Macro's registry remains the owner of program identity, lifecycle
+ontology, and metadata; projecting it does not make Agent OS the owner of runtime or program
+execution state. `available: false` is explicit and semantically distinct from an available
+registry containing zero programs. An unavailable rich projection does not fail `status` or alter
+the legacy key-membership validation join.
+
 The two degradation scopes are intentionally different. Parent `inputs.degraded` reports all
 missing or stale auxiliary joins used by the broader status view. `readiness.degraded` reports
 only hard workstream-authoring problems that excluded or made ambiguous a readiness identity;
@@ -435,7 +457,8 @@ same with the unavailable canonical ref named.
 **Envelope vs pure section.** `generated_at`, `inputs.worktrees`,
 `inputs.active_builds_age_hours`, and `inputs.degraded` are the volatile ENVELOPE and are
 excluded from the byte-identity guarantee. `workstreams`, `needs_ceo`, the complete
-`readiness` envelope, and `warnings` are a pure function of the authored records plus the join
+`program_registry` projection, `readiness` envelope, and `warnings` are a pure function of the
+authored records plus the join
 inputs, and are
 compared byte-for-byte across runs by `tests/test_agentos_status.py`. The split is what
 makes the test meaningful: a byte-identity test that required a frozen clock to pass at
