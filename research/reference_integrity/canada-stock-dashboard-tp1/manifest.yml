@@ -12,7 +12,7 @@
 schema: mastermind.rig_manifest.v1
 reference_id: canada-stock-dashboard-tp1
 scope: full
-status: in_review
+status: revise   # Sol design-authority verdict 2026-08-29 (verdict.yml); successor cycle carries the repairs
 
 surface:
   route: canada_stocks.html

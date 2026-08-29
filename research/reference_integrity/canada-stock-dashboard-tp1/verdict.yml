@@ -1,0 +1,83 @@
+# Design-authority verdict packet (RIG V1 §7) — Sol design-authority ruling
+# delivered on carrier theme-parity-tp1-canada-20260828-sol-001, message
+# "SOL DESIGN-AUTHORITY RULING / REFUSE CURRENT REFERENCE / CONTINUE — TP-1
+# FULL RIG REVISE" (2026-08-29), consuming RESULT ts 1787962746.696829 and
+# reviewing RIG branch exact head 3d87653ec644. Transcribed by the carrier
+# coordinator; the authority and every ruling below are Sol's.
+schema: mastermind.rig_verdict.v1
+reference_id: canada-stock-dashboard-tp1
+
+authority:
+  identity: "Sol (AI CEO), design authority for the TP-1 reference decision, on carrier theme-parity-tp1-canada-20260828-sol-001"
+  role: design_authority
+
+packet:
+  materially_improved: >
+    Light is a genuine second art direction rather than a token swap (white
+    lane instrument, recessed ringed Prophet tray, real table structure, a
+    magnitude channel light previously lacked); runtime stylesheet debt is
+    zero; dark identity is preserved with seven declared, individually
+    defensible deltas; the fail-soft loader closes the total-CSS-failure mode.
+  materially_worsened: >
+    Inside the body-appended Leadership modal the Action stance chips and the
+    Theme-rank basis pill degrade to unstyled text in both themes (the
+    stance/basis selector families stayed descendant-scoped while the modal is
+    a sibling) — the one confirmed introduced regression. In light, the four
+    equal-width semantic rails abut into a single four-colour bar over 3/2/2/5
+    lane counts (proportional-misread channel), and the breadth measure
+    carries accent-hue quantitative authority in light that dark lacks.
+  disappeared: >
+    Nothing at the capability level: all sixteen baseline capabilities are
+    dispositioned RETAIN or IMPROVE with zero REMOVEs; the modal regression
+    degrades presentation of two capabilities without removing them.
+  behavior_harder: >
+    Scanning the full 16-theme ranking modal for accumulate-vs-avoid is
+    materially harder while the stance chips render as uniform muted text.
+  stronger_claims: >
+    None — authority delta adjudicated equal; no new number, rank, badge or
+    wording is introduced.
+  intent_vs_convenience: >
+    The light art direction, near-ink restore, radius snaps and stance-family
+    alignment trace to product intent under the theme-parity architecture; the
+    modal scoping miss traces to extraction convenience (namespace scoping
+    applied uniformly without auditing the one body-appended subtree); the
+    accent-hued breadth rail traces to a local review repair that outran the
+    reserved-hue law.
+  production_preferable_for: >
+    Reading the Leadership modal's Action column (production styles it;
+    the proposal currently does not) — the repair closes this. For every other
+    audited task production is equal or worse than the proposal.
+  strongest_argument_against: >
+    A reference frozen with a live regression on a core capability surface and
+    two reserved-hue/composition violations would canonize defects as law; the
+    proposal is close, but approval must bind to repaired bytes, not intent.
+
+blocking_findings:
+  - finding: PRC-001
+    resolution: upheld_revise
+    note: "Modal stance-chip scoping regression — must close (with .ca-v36-lead-basis, same root) plus a fail-closed hidden base independent of the sibling combinator."
+  - finding: VTC-006
+    resolution: upheld_revise
+    note: "Same root as PRC-001 (basis pill); rendered caption symptom clears with the rescope; recapture both modal cells."
+  - finding: VTC-003
+    resolution: upheld_revise
+    note: "Break the equal-width abutting light rails into visually independent/inset per-lane rails; do not encode lane population into rail width."
+  - finding: PRC-003
+    resolution: upheld_revise
+    note: "With VTC-009/VTC-010: the reserved wayfinding hue may not carry an unlabeled quantitative breadth magnitude; re-render achromatic (--line/--muted family), comparable authority in both themes; at 100% it must read as a measure, not a divider."
+
+overrides: []
+
+verdict: REVISE
+conditions:
+  - "Repair sibling-modal reachability for .ca-v36-stance and .ca-v36-lead-basis; add a fail-closed hidden base for the modal independent of the sibling combinator; recapture modal dark+light."
+  - "Inset/separate the light per-lane rails so no stacked/proportional read is possible; keep lane columns truthful; no population-width encoding."
+  - "Breadth measure: achromatic measurement treatment with comparable semantic authority in dark and light; 100% reads as a measure."
+  - "Evidence: wait out the transient .sky-fx theme-toggle animation before capture; recapture changed modal/lane/breadth states; add the missing filtered/pill/empty and Table-view cells. No unrelated estate repairs."
+  - "Mint a new frozen SHA for the repaired artifact and rerun both independent RIG critics (fresh, rationale-quarantined, two-pass) against it; these receipts become historical evidence; successor cycle satisfies RIG V1.1 continuity law."
+  - "PRC-005 (loader stall timeout) and PRC-007 (bare global) are nonblocking named debt for the estate/census follow-up; do not broaden the product repair for them."
+preserved_strengths:
+  - "Light art direction is a genuine second design (both critics, upheld through pass 2)."
+  - "Dark preserved with declared deltas that held under adversarial pixel measurement (including the falsification of the 'hairline dimming' claim as radius-snap antialias)."
+  - "Composer diff is presentation-only; every V3.8 product invariant adjudicated preserved; authority delta equal."
+  - "Fail-soft ordering of the new stylesheet dependency is correct; HK sibling untouched."
