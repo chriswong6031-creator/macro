@@ -33,7 +33,6 @@ the sole terminal exit and still demands every binding check concluded green.
 Every malformed/ambiguous hold and every non-``sol/*`` unsafe branch delegates
 byte-for-byte to the canonical guard. Ordinary branch, merge, CI, render, and live
 enforcement therefore remains unchanged.
-
 PARKED is narrated once per frozen hold identity. Pending holds share the canonical
 ``ci_quiescence.v1`` record and its already-owned watcher; this wrapper does not add
 a watcher, database, scheduler, queue, retry lane, or lifecycle. An identical wait
