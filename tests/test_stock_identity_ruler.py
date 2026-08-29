@@ -22,6 +22,7 @@ readable by any script path.
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 from pathlib import Path
 
@@ -52,6 +53,40 @@ from engine.stock_identity.ruler import (
 ROOT = Path(__file__).resolve().parents[1]
 SPEC_PATH = ROOT / "data" / "stock_identity" / "ruler" / "ruler_spec_v1.json"
 RULER_SRC = ROOT / "engine" / "stock_identity" / "ruler.py"
+RULER_NULLS_SRC = ROOT / "engine" / "stock_identity" / "ruler_nulls.py"
+
+
+def _pending_variant_of_shipped_spec_path(tmp_path: Path) -> Path:
+    """SI-W3A-RULER-V1 post-seal test repair: PR-3 sealed for real
+    (SI-SEALED-CAL-P1, recall_floor=0.05, lambda_fs=0.000279297) on the shipped
+    ``ruler_spec_v1.json``, so the pre-seal invariants below (pending sentinel
+    present, ``compute_composites`` refusal) can no longer be exercised against
+    the real committed file. Materialize a byte-identical COPY of the shipped
+    spec in ``tmp_path`` with ONLY the ``pr3`` block reset to its pre-seal
+    ``pending_sealed_calibration`` state (verified against git rev
+    0b7442209a35, the commit immediately preceding the seal) so every pre-seal
+    behavior stays live and mutation-killable."""
+    payload = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    payload["pr3"] = {
+        "status": "pending_sealed_calibration",
+        "recall_floor": None,
+        "lambda_fs": None,
+        "receipt": None,
+        "note": (
+            "The PR-3 ruler-composite constant family (lambda_fs, recall floor, "
+            "any declared composite constants) is set exactly once by Task 3C "
+            "from SI-SEALED-CAL-P1 under rule-before-value discipline. Until "
+            "that one-time act runs, this block carries the explicit pending "
+            "sentinel above -- never a guessed number. Fixture-only constants "
+            "used to test the metric/composite MATH on synthetic data live only "
+            "in test code and are never written here."
+        ),
+    }
+    out_path = tmp_path / "ruler_spec_v1_pending_variant.json"
+    out_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8",
+    )
+    return out_path
 
 
 # ---------------------------------------------------------------------------
@@ -131,14 +166,55 @@ def test_ruler_spec_hash_is_stable():
     assert spec.spec_hash() == RulerSpec.from_json(SPEC_PATH).spec_hash()
 
 
-def test_shipped_spec_carries_pending_sentinel_before_task_3c():
-    """The committed JSON must never carry a guessed PR-3 value at Task 1/2/3 time."""
+def test_shipped_spec_carries_sealed_pr3_values_with_complete_receipt():
+    """Sealed-state branch (PR-3's ONE-TIME SEAL, SI-SEALED-CAL-P1, executed
+    2026-08-29): the committed JSON now carries the receipted values, never a
+    guessed number and never the pre-seal pending sentinel. The receipt's
+    ``ruler_implementation_sha256`` pins MUST match the CURRENT bytes of
+    ``ruler.py``/``ruler_nulls.py`` -- this doubles as a live guard on the
+    freeze's voiding clause: any future edit to either implementation file
+    would desync this assertion from the receipt."""
     spec = RulerSpec.from_json(SPEC_PATH)
+    assert spec.pr3_pending is False
+    assert spec.recall_floor == pytest.approx(0.05)
+    assert spec.lambda_fs == pytest.approx(0.00027929738756017066)
+
+    payload = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    assert payload["pr3"]["status"] == "sealed"
+
+    receipt = payload["pr3"]["receipt"]
+    for field in (
+        "recall_floor", "lambda_fs", "computed_at", "n_names_drawn",
+        "spec_hash_before_seal", "spec_hash_after_seal",
+        "ruler_implementation_sha256", "trial_ledger_family",
+        "trial_ledger_effective_n", "roster_sha256", "replay_manifest_hash",
+        "substrate_provenance_hash", "w2_family_registry_hash",
+        "recent_history_guard_cutoff", "fit_read_look_budget",
+    ):
+        assert field in receipt, f"seal receipt missing required field {field!r}"
+
+    impl_hashes = receipt["ruler_implementation_sha256"]
+    assert hashlib.sha256(RULER_SRC.read_bytes()).hexdigest() == impl_hashes["ruler_py"]
+    assert (
+        hashlib.sha256(RULER_NULLS_SRC.read_bytes()).hexdigest()
+        == impl_hashes["ruler_nulls_py"]
+    )
+
+
+def test_pending_variant_spec_carries_pending_sentinel(tmp_path):
+    """Preserves the pre-seal invariant (pending sentinel present, values None)
+    that the shipped file itself can no longer exhibit now that it is sealed --
+    exercised here against a fixture copy of the shipped spec with the PR-3
+    block restored to its pre-seal state, so the behavior stays
+    mutation-killable."""
+    spec = RulerSpec.from_json(_pending_variant_of_shipped_spec_path(tmp_path))
     assert spec.pr3_pending is True
     assert spec.recall_floor is None
     assert spec.lambda_fs is None
+
+    # sanity: the restore never touched the real shipped file
     payload = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
-    assert payload["pr3"]["status"] == "pending_sealed_calibration"
+    assert payload["pr3"]["status"] == "sealed"
 
 
 def test_shipped_spec_authority_all_false():
@@ -149,12 +225,21 @@ def test_shipped_spec_authority_all_false():
     }
 
 
-def test_fixture_spec_is_never_confused_with_shipped_spec():
-    """Fixture-only constants must not equal whatever the shipped file carries."""
+def test_fixture_spec_is_never_confused_with_shipped_spec(tmp_path):
+    """Fixture-only constants must not equal whatever the shipped file carries,
+    and the restored pre-seal fixture copy (used to keep the pending-state
+    invariants mutation-killable now that the real file is sealed) must not be
+    confused with either the fixture or the real sealed shipped spec."""
     fixture = _fixture_spec()
     shipped = RulerSpec.from_json(SPEC_PATH)
+    pending_variant = RulerSpec.from_json(_pending_variant_of_shipped_spec_path(tmp_path))
+
     assert fixture.pr3_status != shipped.pr3_status
-    assert shipped.pr3_pending is True
+    assert shipped.pr3_pending is False  # sealed, SI-SEALED-CAL-P1
+    assert pending_variant.pr3_pending is True
+    assert pending_variant.pr3_status != shipped.pr3_status
+    assert fixture.recall_floor != shipped.recall_floor
+    assert fixture.lambda_fs != shipped.lambda_fs
 
 
 def test_validate_ruler_inputs_raises_on_missing_columns():
@@ -483,12 +568,31 @@ def test_c_loc_d_refuses_rows_below_recall_floor():
     assert pd.isna(out.loc[1, "c_loc_d"])
 
 
-def test_compute_composites_refuses_while_pr3_is_pending():
-    spec = RulerSpec.from_json(SPEC_PATH)
+def test_compute_composites_refuses_while_pr3_is_pending(tmp_path):
+    """Pending-state branch, exercised against the restored fixture copy since
+    the real shipped spec is now sealed (SI-SEALED-CAL-P1) and can no longer
+    demonstrate this refusal itself -- see the sealed-state companion test
+    below."""
+    spec = RulerSpec.from_json(_pending_variant_of_shipped_spec_path(tmp_path))
     assert spec.pr3_pending is True
     row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1}])
     with pytest.raises(PendingSealedCalibrationError):
         compute_composites(row, spec)
+
+
+def test_compute_composites_succeeds_on_sealed_shipped_spec():
+    """Sealed-state branch of the above: PR-3's ONE-TIME SEAL (SI-SEALED-CAL-P1,
+    recall_floor=0.05, lambda_fs=0.000279297) means the real shipped spec is no
+    longer pending -- compute_composites must now actually compute on it
+    instead of refusing."""
+    spec = RulerSpec.from_json(SPEC_PATH)
+    assert spec.pr3_pending is False
+    row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
+                          "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline",
+                          "grain": "daily"}])
+    out = compute_composites(row, spec)
+    assert out.loc[0, "c_loc_r"] == pytest.approx(0.5 * 0.8 - spec.lambda_fs * 0.1)
+    assert pd.notna(out.loc[0, "c_loc_d"])
 
 
 def test_compute_composites_output_columns_closed_to_two_graded():

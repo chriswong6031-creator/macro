@@ -34,7 +34,6 @@ import ast
 import hashlib
 import json
 import os
-import shutil
 import sys
 import tempfile
 from pathlib import Path
@@ -52,6 +51,42 @@ ROOT = Path(__file__).resolve().parents[1]
 REAL_REPLAY_MANIFEST_PATH = ROOT / "data" / "stock_identity" / "ruler" / "calibration_replay_manifest_v1.json"
 REAL_PARTITION_MANIFEST_PATH = ROOT / "data" / "stock_identity" / "partition" / "partition_manifest_v1.json"
 REAL_SPEC_PATH = ROOT / "data" / "stock_identity" / "ruler" / "ruler_spec_v1.json"
+
+
+def _pending_variant_of_real_spec_path(tmp_path: Path, name: str = "ruler_spec_v1.json") -> Path:
+    """SI-W3A-RULER-V1 post-seal test repair: PR-3 sealed for real
+    (SI-SEALED-CAL-P1, recall_floor=0.05, lambda_fs=0.000279297) on
+    ``data/stock_identity/ruler/ruler_spec_v1.json`` on 2026-08-29, so this
+    file's own pre-seal invariants (pending sentinel present, one-time seal
+    law, hash re-pin, dry-run cleanliness) can no longer be exercised against
+    the REAL committed file -- a straight copy of it now refuses immediately
+    (``seal_ruler_spec`` raises "already sealed" on first call). Materialize a
+    byte-identical COPY of the real spec in ``tmp_path`` with ONLY the ``pr3``
+    block reset to its pre-seal ``pending_sealed_calibration`` state (verified
+    against git rev 0b7442209a35, the commit immediately preceding the seal)
+    so every pre-seal behavior stays live and mutation-killable, without ever
+    touching the real committed file."""
+    payload = json.loads(REAL_SPEC_PATH.read_text(encoding="utf-8"))
+    payload["pr3"] = {
+        "status": "pending_sealed_calibration",
+        "recall_floor": None,
+        "lambda_fs": None,
+        "receipt": None,
+        "note": (
+            "The PR-3 ruler-composite constant family (lambda_fs, recall floor, "
+            "any declared composite constants) is set exactly once by Task 3C "
+            "from SI-SEALED-CAL-P1 under rule-before-value discipline. Until "
+            "that one-time act runs, this block carries the explicit pending "
+            "sentinel above -- never a guessed number. Fixture-only constants "
+            "used to test the metric/composite MATH on synthetic data live only "
+            "in test code and are never written here."
+        ),
+    }
+    out_path = tmp_path / name
+    out_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8",
+    )
+    return out_path
 
 
 # ---------------------------------------------------------------------------
@@ -122,18 +157,39 @@ def test_no_script_entry_point_accepts_a_pr3_constant_override():
         assert not overlap, f"{path.name} exposes a PR-3 constant override flag: {overlap}"
 
 
-def test_compute_composites_raises_on_sentinel_bearing_spec():
+def test_compute_composites_raises_on_sentinel_bearing_spec(tmp_path):
     """Named regression, duplicated here (also proven in
     test_stock_identity_ruler.py) because this file is the calibration/PR-3
     boundary: compute_composites must NEVER substitute a guessed value for the
-    still-pending sentinel, from either test suite's entry point."""
+    still-pending sentinel, from either test suite's entry point.
+
+    Pending-state branch: exercised against a restored fixture copy of the
+    real spec, since PR-3's ONE-TIME SEAL (SI-SEALED-CAL-P1) means the real
+    committed file is no longer pending and can no longer demonstrate this
+    refusal itself -- see the sealed-state companion test below."""
     from engine.stock_identity.ruler import PendingSealedCalibrationError, RulerSpec, compute_composites
 
-    spec = RulerSpec.from_json(REAL_SPEC_PATH)
+    spec = RulerSpec.from_json(_pending_variant_of_real_spec_path(tmp_path))
     assert spec.pr3_pending is True
     row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1}])
     with pytest.raises(PendingSealedCalibrationError):
         compute_composites(row, spec)
+
+
+def test_compute_composites_succeeds_on_the_real_sealed_spec():
+    """Sealed-state branch of the above: the real committed spec is sealed
+    (SI-SEALED-CAL-P1, recall_floor=0.05, lambda_fs=0.000279297) so
+    compute_composites must now actually compute on it instead of refusing."""
+    from engine.stock_identity.ruler import RulerSpec, compute_composites
+
+    spec = RulerSpec.from_json(REAL_SPEC_PATH)
+    assert spec.pr3_pending is False
+    row = pd.DataFrame([{"recall_at_tier": 0.5, "zone_precision": 0.8, "false_start_rate": 0.1,
+                          "atr_dist_median_in_zone": 0.3, "episode_type": "reset_decline",
+                          "grain": "daily"}])
+    out = compute_composites(row, spec)
+    assert out.loc[0, "c_loc_r"] == pytest.approx(0.5 * 0.8 - spec.lambda_fs * 0.1)
+    assert pd.notna(out.loc[0, "c_loc_d"])
 
 
 # ---------------------------------------------------------------------------
@@ -805,8 +861,17 @@ def test_assert_disjoint_raises_on_blind_overlap(monkeypatch):
 # ---------------------------------------------------------------------------
 @pytest.fixture
 def throwaway_spec(tmp_path, monkeypatch):
-    dest = tmp_path / "ruler_spec_v1.json"
-    shutil.copy(REAL_SPEC_PATH, dest)
+    """A tmp copy of the real spec with the PR-3 block reset to pending.
+
+    Post-seal repair: the real committed ``ruler_spec_v1.json`` is now sealed
+    (SI-SEALED-CAL-P1), so a straight byte copy of it would already be sealed
+    too -- ``seal_ruler_spec``'s one-time law would then refuse on the FIRST
+    call every test below makes, not just the deliberate second one. Restoring
+    the pre-seal pending state here (never touching the real file) is what
+    keeps the one-time-seal tests exercising the actual pending-to-sealed
+    transition rather than an already-sealed-to-refused no-op.
+    """
+    dest = _pending_variant_of_real_spec_path(tmp_path)
     monkeypatch.setattr(calib_w3, "SPEC_PATH", dest)
     return dest
 
@@ -1200,6 +1265,36 @@ def test_sealed_receipt_carries_rule_review_status(throwaway_spec):
     payload = json.loads(throwaway_spec.read_text(encoding="utf-8"))
     assert payload["pr3"]["receipt"]["recall_floor"]["status"] == "declared_pending_sol_rule_review"
     assert payload["pr3"]["receipt"]["lambda_fs"]["status"] == "declared_pending_sol_rule_review"
+
+
+def test_real_sealed_receipt_status_field_predates_the_rule_form_ruling():
+    """The REAL shipped receipt (data/stock_identity/ruler/ruler_spec_v1.json,
+    sealed by SI-SEALED-CAL-P1) still carries ``status:
+    declared_pending_sol_rule_review`` on both PR-3 constant blocks -- this is
+    a labeling artifact, not evidence the rule form is unreviewed: Sol's
+    rule-form ruling (Ruling 1, W3_RULER_REGISTRATION.md §6.11) landed BEFORE
+    this seal and the sealed ``rule``/``rule_hash`` fields are exactly Sol's
+    ruled forms (Ruling 1(a) for recall_floor, Ruling 1(b) for lambda_fs; the
+    hashes below match §6.11's re-pinned values and
+    test_rule_hashes_match_the_currently_committed_registration_values above).
+    ``RULE_REVIEW_STATUS`` is a single module-level constant the seal path
+    never re-derives per constant, so the sealed receipt still carries the
+    pre-ruling wording even though the ruling has, in fact, already happened.
+    This test pins that reading rather than letting a future reader infer from
+    the string alone that Sol never ruled -- see the registration doc's §5.1
+    caveat for the same note in the human-facing record. Do NOT edit the
+    sealed receipt to fix this string -- the freeze's voiding clause covers
+    it; only the test/doc read of it may change."""
+    payload = json.loads(REAL_SPEC_PATH.read_text(encoding="utf-8"))
+    receipt = payload["pr3"]["receipt"]
+    assert receipt["recall_floor"]["status"] == "declared_pending_sol_rule_review"
+    assert receipt["lambda_fs"]["status"] == "declared_pending_sol_rule_review"
+    assert receipt["recall_floor"]["rule_hash"] == (
+        "71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf"
+    )
+    assert receipt["lambda_fs"]["rule_hash"] == (
+        "8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366"
+    )
 
 
 # ---------------------------------------------------------------------------

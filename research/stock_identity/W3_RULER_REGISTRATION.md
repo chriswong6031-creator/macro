@@ -1396,3 +1396,16 @@ from a different underlying verdict.
 - Recent-history guard cutoff: `2026-02-11`
 - Trial ledger family: `stock_identity_w3_ruler_calibration` (effective N=6)
 - Fit-read look budget: `3`
+
+### 5.1 Status-string caveat (SI-W3A-RULER-V1 test-repair pass)
+
+The `status` field recorded on each PR-3 constant above
+(`declared_pending_sol_rule_review`) is `RULE_REVIEW_STATUS`, a single
+module-level label that predates Sol's rule-form ruling (Ruling 1, §6.11) and
+that the seal path never re-derives per constant — it is a labeling artifact,
+not evidence the rule form went unreviewed. The `rule`/`rule_hash` fields the
+seal actually recorded are exactly Sol's ruled forms (`recall_floor` =
+Ruling 1(a), `lambda_fs` = Ruling 1(b)); the hashes above match §6.11's
+re-pinned values exactly. Left as-is per the freeze's voiding clause (the
+sealed receipt itself may not be edited) — recorded here so a reader does not
+mistake the stale `status` string for evidence Sol's ruling never happened.
