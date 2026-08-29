@@ -76,6 +76,16 @@ verified:
       Native host allowed_origins cannot use a wildcard and the Chrome manifest key can hold a
       consistent extension ID during development. The first implementation must therefore pin one
       deterministic public extension identity rather than allow an unpacked-path-dependent ID to drift.
+  - claim: The S0/S1 extension should not request Chrome's global `tabs` permission by default.
+    command: >
+      Current Chrome `chrome.tabs` and `chrome.windows` API/permission documentation review.
+    result: >
+      Chrome documents that most Tabs API features need no permission; exact host permissions allow
+      reading and querying matching tabs' URL/title-sensitive properties. `tabs.update(... active=true)`
+      and `windows.update(... focused=true)` are browser mutation methods that do not themselves require
+      the global `tabs` permission. Therefore the frozen least-privilege default is `nativeMessaging`
+      plus exact ChatGPT host permissions only. Adding `tabs` requires a discriminating implementation
+      failure proving the exact WSX path cannot work without it and must return to Sol for review.
 unverified:
   - claim: The Chairman host's installed Multilogin Mimic core discovers and launches a registered native-messaging host using the expected product-specific macOS manifest location.
     what_would_verify: >
@@ -101,6 +111,7 @@ next_actions:
   - "When #214 becomes protected/merged, re-pin current protected Mastermind and the compatible Skillpack before any modification, then reconcile #188/#212/current Agent OS/GitHub/Linear/Slack state and all candidate runtime paths."
   - "If no collision or newer authority conflict exists, commission/drive the already-frozen bounded sequence: closed protocol -> MV3 state-only extension -> native-messaging bridge -> exact S1 foreground -> explicit existing chatgpt.py seam -> disposable managed-browser proof -> OCR-6 protocol/receipt handoff."
   - "Pin a deterministic public extension identity so native-host allowed_origins is exact and stable; refuse unknown extension ids/actions/schema/binding revisions."
+  - "Default the extension manifest to `permissions: [nativeMessaging]` plus exact ChatGPT `host_permissions`; do not add global `tabs` unless a RED/proof demonstrates necessity and Sol explicitly accepts the privilege widening."
   - "Do not install on or mutate Chairman chatgpt1/2/3 seats in the first carrier."
 do_not_redo:
   - "Do not create a second WS:CHAIRMAN-CONTROL-ROOM workstream, OCR-6 owner, browser-state owner election, surface-health database, lifecycle, queue, retry plane or watcher registry."
@@ -110,6 +121,7 @@ do_not_redo:
   - "Do not infer nativeMessaging support merely because a vendor says its browser is Chromium/Chrome-compatible; prove the native-host boundary on a disposable profile."
 danger_areas:
   - "A native host manifest that accepts a drifting unpacked extension ID breaks the intended exact allowlist. Keep the extension identity deterministic and public; never solve this with wildcard allowed_origins."
+  - "The global `tabs` permission grants sensitive tab metadata across unrelated tabs. Exact host permissions are sufficient for the designed ChatGPT-only query path according to current Chrome docs; privilege widening needs explicit evidence and review."
   - "Chrome's documented native-host locations are browser-product specific. Mimic/Orbita may use a vendor-specific application/profile path; product behavior must be measured on the disposable host rather than guessed."
   - "Content scripts are less trusted than the extension service worker. Treat every content-script message as attacker-controlled input and keep privileged native actions closed and revalidated in the service worker/native host."
   - "Surface health is ephemeral observation only and must never become work/lifecycle truth or elect the Sol owner."
@@ -131,8 +143,9 @@ discoveries:
 
 Vendor documentation establishes that profile-local custom extensions are a plausible substrate in
 both Mimic and Orbita, but actual native-messaging host discovery remains unproven on the installed
-managed-browser cores. The first implementation must also pin a deterministic extension ID because
-Chrome native messaging requires exact non-wildcard `allowed_origins`.
+managed-browser cores. The first implementation must pin a deterministic extension ID because Chrome
+native messaging requires exact non-wildcard `allowed_origins`, and its least-privilege manifest should
+omit global `tabs` unless a discriminating RED proves the exact ChatGPT-only path needs it.
 
 Resume the same child only after #214 is protected/merged and a fresh current-source/collision re-pin
 passes. No Chairman seat mutation is authorized by this checkpoint.
