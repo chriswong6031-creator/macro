@@ -702,11 +702,63 @@ def test_breadth_null_count_emits_no_breadth_custom_property():
 
 def test_breadth_zero_count_renders_true_zero_not_a_floor():
     """A row with a genuinely zero count (x.count === 0, distinct from the
-    null/unknown-membership case above) must render an explicit 0% breadth
+    null/unknown-membership case above) must render an explicit 0 breadth
     — never the pre-R1 8% floor, and never omitted like the null case."""
     body = _lead_row_body()
     assert re.search(r"Math\.round\(\(\(x\.count\s*\|\|\s*0\)", body), (
         "leadRow() must still compute the real proportion via "
         "Math.round(((x.count || 0) / Math.max(1, max)) * 100) for "
         "non-null counts, including a true zero"
+    )
+
+
+# ---------------------------------------------------------------------------
+# theme-parity-tp1-canada-20260828-sol-001 R3-02 (Sol COND-R3-02) — bounded
+# gauge: --breadth is now emitted UNITLESS (an integer, not a `NN%` string)
+# so the gauge scale constant (--mx-breadth-unit) lives in CSS, and rows that
+# carry a meter get a marker class so the CSS can suppress the gauge TRACK
+# on unknown-membership rows.
+# ---------------------------------------------------------------------------
+
+
+def test_breadth_style_attribute_is_unitless_not_a_percentage():
+    """--breadth must be emitted as a bare integer (no trailing `%`) — R3-02
+    moves the gauge's scale constant into CSS (--mx-breadth-unit), so the
+    composer's job is only to emit the truthful 0-100 magnitude."""
+    body = _lead_row_body()
+    assert re.search(
+        r"breadthStyle\s*=\s*breadth\s*==\s*null\s*\?\s*''\s*:\s*'\s*style=\"--breadth:'\s*\+\s*breadth\s*\+\s*'\"'",
+        body,
+    ), (
+        "leadRow() must build breadthStyle as "
+        "' style=\"--breadth:' + breadth + '\"' — unitless, no trailing %"
+    )
+    assert "%" not in re.sub(r"//.*|/\*.*?\*/", "", body, flags=re.S).split(
+        "breadthStyle ="
+    )[1].split(";")[0], (
+        "the breadthStyle assignment must not embed a literal % unit — the "
+        "gauge scale lives in CSS now"
+    )
+
+
+def test_breadth_meter_rows_get_the_has_breadth_marker_class():
+    """A row that carries a measured --breadth must also carry the
+    ca-v36-has-breadth marker class on the <button>, so the bounded-gauge
+    CSS can scope both the track and the fill to rows that actually have a
+    meter — an unknown-membership row (no --breadth) must get neither the
+    class nor the style attribute."""
+    body = _lead_row_body()
+    assert re.search(
+        r"breadthCls\s*=\s*breadth\s*==\s*null\s*\?\s*''\s*:\s*'\s*ca-v36-has-breadth'",
+        body,
+    ), (
+        "leadRow() must define breadthCls as '' when breadth is null and "
+        "' ca-v36-has-breadth' otherwise"
+    )
+    assert re.search(
+        r'class="ca-v36-lead-row\'\s*\+\s*breadthCls\s*\+\s*\'"', body
+    ), (
+        "leadRow()'s returned <button> markup must build its class "
+        "attribute as class=\"ca-v36-lead-row' + breadthCls + '\" so the "
+        "marker class is gated on the same null check as --breadth"
     )

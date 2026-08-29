@@ -261,17 +261,38 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
   transition: .15s ease;
 }
 /* Breadth measure — achromatic in BOTH themes (theme-parity-tp1-canada-
-   20260828-sol-001 R2, inset geometry R3). A reserved hue may not carry
-   magnitude, so the measure reads from the achromatic --muted family rather
-   than the reserved --link hue. No full-width track: an inset, rounded fill
-   with boundary separation from the next row's border-top and a max-width
-   short of the row's full extent, so even a 100%-count row renders as a
-   measure with a visible rounded terminus, never a stray full-width divider.
-   Rows with unknown membership (no --breadth emitted by the composer) fall
-   back to 0% width — no meter renders. */
-.mx-stockdash--ca .ca-v36-lead-row::after {
-  content: ""; position: absolute; left: 0; bottom: 5px; height: 3px;
-  width: var(--breadth, 0%); max-width: calc(100% - 24px);
+   20260828-sol-001 R2; bounded gauge R3-02). A reserved hue may not carry
+   magnitude, so the measure reads from the achromatic --muted/--line family
+   rather than the reserved --link hue. R2's inset ::after alone was still
+   an UNBOUNDED row-width fill (width: var(--breadth); max-width: calc(100%
+   - 24px)) — on a ~1300px panel that inset is only ~24px, so a 100%-count
+   row still rendered as a near-full-width rule, not an instrument. This is
+   a BOUNDED GAUGE instead: a fixed-length TRACK (::before, 100 gauge units
+   wide) establishes the scale's visible end, and the FILL (::after) is
+   `var(--breadth) * --mx-breadth-unit` gauge units wide, so a 100 value
+   fills exactly to the track's terminus and stops — legible as "full",
+   never mistaken for a row divider. Both pseudo-elements sit at the same
+   inset (bottom: 6px, left: 0), clear of the row's own border-top boundary.
+   Both are scoped to `.ca-v36-lead-row.ca-v36-has-breadth` — the marker
+   class the composer emits ONLY when a row carries a measured --breadth —
+   so an unknown-membership row (no marker class) renders NEITHER track nor
+   fill, rather than an empty track implying a measured-but-zero group.
+   --mx-breadth-unit is deliberately UNITLESS (a bare gauge-px scalar, not a
+   `2px` literal) — scripts/check_design_system.py's literal-custom-property
+   rule blocks any custom property whose declared value is a literal
+   quantity-with-unit, so the `px` is applied once, inline, at each of the
+   two calc() use sites below instead of being baked into the property
+   declaration; the scale still lives in exactly one place to override. */
+.mx-stockdash--ca .ca-v36-lead-row { --mx-breadth-unit: 2; }
+.mx-stockdash--ca .ca-v36-lead-row.ca-v36-has-breadth::before {
+  content: ""; position: absolute; left: 0; bottom: 6px; height: 3px;
+  width: calc(100 * var(--mx-breadth-unit) * 1px);
+  border-radius: var(--r-pill, 999px);
+  background: color-mix(in srgb, var(--line) 55%, transparent);
+}
+.mx-stockdash--ca .ca-v36-lead-row.ca-v36-has-breadth::after {
+  content: ""; position: absolute; left: 0; bottom: 6px; height: 3px;
+  width: calc(var(--breadth, 0) * var(--mx-breadth-unit) * 1px);
   border-radius: var(--r-pill, 999px);
   background: color-mix(in srgb, var(--muted) 70%, transparent);
 }
@@ -706,10 +727,10 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-col-h { background: var(--
 html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row.is-active {
   box-shadow: inset 3px 0 0 var(--link);
 }
-/* Breadth measure is now a shared both-theme treatment (see the BASE
-   ::before/::after rules on .ca-v36-lead-row above) — achromatic track +
-   fill, comparable semantic authority in both planes, no light-only
-   override needed (theme-parity-tp1-canada-20260828-sol-001 R2). */
+/* Breadth measure is a shared both-theme treatment (see the BASE bounded-
+   gauge ::before/::after rules on .ca-v36-lead-row above) — achromatic
+   track + fill, comparable semantic authority in both planes, no light-only
+   override needed (theme-parity-tp1-canada-20260828-sol-001 R2/R3-02). */
 /* Stance chip earns material presence on white from a wash of its OWN stance
    ink (currentColor is the stance token set by .ca-v36-stance.<tone> above),
    the house chip idiom — an outline-only chip reads thin on a white row. */
@@ -785,4 +806,9 @@ html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-x:hover {
   .mx-stockdash--ca ~ .ca-v36-modal { padding: 8px; }
   .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card { width: 100%; max-height: calc(100vh - 16px); }
   .mx-stockdash--ca .ca-v36-evidence-body { padding: 11px 10px 13px; }
+  /* Bounded breadth gauge (R3-02): the 200px desktop gauge (100 units *
+     2px) does not fit a 390px mobile row alongside rank/name/stance/count;
+     rescale the (unitless) --mx-breadth-unit scalar so the gauge stays a
+     110px instrument, not an overflowing bar. */
+  .mx-stockdash--ca .ca-v36-lead-row { --mx-breadth-unit: 1.1; }
 }

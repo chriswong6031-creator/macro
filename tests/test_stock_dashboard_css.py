@@ -546,49 +546,133 @@ def test_modal_table_name_column_left_numeric_columns_right():
 
 def test_breadth_measure_is_achromatic_not_the_link_hue():
     """theme-parity-tp1-canada-20260828-sol-001 R2 (Sol REVISE ruling): a
-    reserved hue (--link) may not carry magnitude. The breadth fill on
-    .ca-v36-lead-row must read from the achromatic --muted family in BOTH
-    themes, with comparable semantic authority — no light-only override may
-    reintroduce --link, and dark must not either."""
+    reserved hue (--link) may not carry magnitude. The breadth gauge's
+    track (::before) and fill (::after) on .ca-v36-lead-row must both read
+    from the achromatic --line/--muted family in BOTH themes, with
+    comparable semantic authority — no light-only override may reintroduce
+    --link, and dark must not either."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
     assert re.search(
-        r"\.ca-v36-lead-row::after\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
+        r"\.ca-v36-lead-row\.ca-v36-has-breadth::after\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
         text,
-    ), ".ca-v36-lead-row::after (breadth fill) no longer reads the achromatic --muted token"
-    for match in re.finditer(r"\.ca-v36-lead-row::?(before|after)\s*\{([^}]*)\}", text):
+    ), ".ca-v36-lead-row...::after (breadth fill) no longer reads the achromatic --muted token"
+    assert re.search(
+        r"\.ca-v36-lead-row\.ca-v36-has-breadth::before\s*\{[^}]*color-mix\(in srgb,\s*var\(--line\)",
+        text,
+    ), ".ca-v36-lead-row...::before (breadth track) no longer reads the achromatic --line token"
+    for match in re.finditer(r"\.ca-v36-lead-row[^{]*::?(before|after)\s*\{([^}]*)\}", text):
         assert "--link" not in match.group(2), (
             f".ca-v36-lead-row::{match.group(1)} reintroduced var(--link) — "
             "the breadth measure must stay achromatic in both themes"
         )
 
 
-def test_breadth_measure_has_no_before_track_and_is_inset_with_rounded_terminus():
-    """theme-parity-tp1-canada-20260828-sol-001 R3 (Sol bounded closure): the
-    full-width ::before track read as a divider between rows, not a measure.
-    R3 removes it entirely — .ca-v36-lead-row carries only the ::after fill,
-    which must be inset (max-width short of the row's full extent, with a
-    rounded border-radius terminus) so even a 100%-count row renders as a
-    measure, never a stray full-width line, and must fall back to 0% width
-    when the composer omits --breadth for an unknown-membership row."""
+def test_breadth_measure_is_a_bounded_gauge_with_a_visible_track():
+    """theme-parity-tp1-canada-20260828-sol-001 R3-02 (Sol COND-R3-02): R3's
+    inset ::after-only fill was still an UNBOUNDED row-width geometry
+    (`width: var(--breadth); max-width: calc(100% - 24px)`) — on a ~1300px
+    panel that inset is only ~24px, so a 100%-count row still rendered as a
+    near-full-width rule, not an instrument. The fix reintroduces a ::before
+    but as a fixed-length, bounded GAUGE TRACK (not the old full-row-width
+    divider): both track and fill are scaled by one shared
+    --mx-breadth-unit custom property, so the track's width is a fixed
+    `100 * --mx-breadth-unit` and the fill's width is
+    `var(--breadth) * --mx-breadth-unit` — a 100 value fills exactly to the
+    track's own terminus and stops, never overflowing the row. Both
+    pseudo-elements are scoped to the `.ca-v36-has-breadth` marker class the
+    composer emits only for rows that carry a measured --breadth, so an
+    unknown-membership row renders neither track nor fill."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    # --mx-breadth-unit is deliberately UNITLESS (a bare scalar, not a `2px`
+    # literal) — check_design_system.py's literal-custom-property rule blocks
+    # a custom property whose declared value is a literal quantity-with-unit,
+    # so the scalar carries no unit suffix and the `px` is applied once,
+    # inline, at each calc() use site instead.
+    unit_match = re.search(
+        r"\.ca-v36-lead-row\s*\{[^}]*--mx-breadth-unit:\s*([0-9.]+)\s*;", text
+    )
+    assert unit_match, (
+        ".ca-v36-lead-row must define a unitless --mx-breadth-unit custom "
+        "property so the gauge scale lives in one place"
+    )
+    assert not re.search(r"--mx-breadth-unit:\s*[0-9.]+px", text), (
+        "--mx-breadth-unit must stay a unitless scalar (no `px` baked into "
+        "the custom-property declaration) — apply `px` at the calc() use "
+        "sites instead, or the design-system literal-custom-property rule "
+        "blocks it"
+    )
+    before_match = re.search(
+        r"\.ca-v36-lead-row\.ca-v36-has-breadth::before\s*\{([^}]*)\}", text
+    )
+    assert before_match, (
+        ".ca-v36-lead-row.ca-v36-has-breadth::before (breadth track) rule "
+        "is missing — the bounded gauge needs a visible fixed-length track"
+    )
+    before_body = before_match.group(1)
+    assert re.search(
+        r"width:\s*calc\(\s*100\s*\*\s*var\(--mx-breadth-unit\)\s*\*\s*1px\s*\)",
+        before_body,
+    ), (
+        ".ca-v36-lead-row...::before must be a fixed 100-unit track "
+        "(width: calc(100 * var(--mx-breadth-unit) * 1px))"
+    )
+    assert re.search(r"border-radius:\s*var\(--r-pill", before_body), (
+        ".ca-v36-lead-row...::before (track) must carry a rounded "
+        "(var(--r-pill)) terminus"
+    )
+    after_match = re.search(
+        r"\.ca-v36-lead-row\.ca-v36-has-breadth::after\s*\{([^}]*)\}", text
+    )
+    assert after_match, ".ca-v36-lead-row.ca-v36-has-breadth::after (breadth fill) rule is missing"
+    after_body = after_match.group(1)
+    assert re.search(
+        r"width:\s*calc\(\s*var\(--breadth,\s*0\)\s*\*\s*var\(--mx-breadth-unit\)\s*\*\s*1px\s*\)",
+        after_body,
+    ), (
+        ".ca-v36-lead-row...::after must scale its width by "
+        "var(--breadth, 0) * var(--mx-breadth-unit) * 1px — a bounded gauge "
+        "fill, not a bare percentage — and fall back to 0 when the composer "
+        "omits --breadth (unknown-membership rows get no meter)"
+    )
+    assert re.search(r"border-radius:\s*var\(--r-pill", after_body), (
+        ".ca-v36-lead-row...::after (fill) must carry a rounded "
+        "(var(--r-pill)) terminus"
+    )
+    assert "bottom: 6px" in before_body and "bottom: 6px" in after_body, (
+        "track and fill must both sit clear of the row's own border-top "
+        "boundary (bottom: 6px), for boundary separation"
+    )
+    # Bare (unscoped) .ca-v36-lead-row::before/::after must not exist —
+    # both pseudo-elements are scoped to the has-breadth marker class so an
+    # unknown-membership row (no marker) renders neither.
     assert not re.search(r"\.ca-v36-lead-row::before\s*\{", text), (
-        "the .ca-v36-lead-row::before full-width track must be removed — "
-        "R3 replaces it with a single inset ::after fill"
+        "an unscoped .ca-v36-lead-row::before would render a track on "
+        "unknown-membership rows too — scope it to .ca-v36-has-breadth"
     )
-    after_match = re.search(r"\.ca-v36-lead-row::after\s*\{([^}]*)\}", text)
-    assert after_match, ".ca-v36-lead-row::after (breadth fill) rule is missing"
-    body = after_match.group(1)
-    assert "max-width" in body, (
-        ".ca-v36-lead-row::after must carry a max-width short of 100% so a "
-        "full-breadth row still reads as an inset measure, not a divider"
+    assert not re.search(r"\.ca-v36-lead-row::after\s*\{", text), (
+        "an unscoped .ca-v36-lead-row::after would render a fill on "
+        "unknown-membership rows too — scope it to .ca-v36-has-breadth"
     )
-    assert re.search(r"border-radius:\s*var\(--r-pill", body), (
-        ".ca-v36-lead-row::after must carry a rounded (var(--r-pill)) "
-        "terminus"
+
+
+def test_breadth_gauge_unit_rescales_on_mobile():
+    """theme-parity-tp1-canada-20260828-sol-001 R3-02: the desktop gauge is
+    100 * --mx-breadth-unit wide; at the desktop 2px unit that is 200px,
+    which does not fit a 390px mobile row next to rank/name/stance/count.
+    The @media (max-width: 680px) block must re-declare --mx-breadth-unit
+    to a smaller value so the gauge still fits."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    mobile_match = re.search(
+        r"@media\s*\(max-width:\s*680px\)\s*\{(.*)\}\s*$", text, re.S
     )
-    assert re.search(r"width:\s*var\(--breadth,\s*0%\)", body), (
-        ".ca-v36-lead-row::after must fall back to 0% width when the "
-        "composer omits --breadth (unknown-membership rows get no meter)"
+    assert mobile_match, "could not locate the @media (max-width: 680px) block"
+    mobile_body = mobile_match.group(1)
+    assert re.search(
+        r"\.ca-v36-lead-row\s*\{[^}]*--mx-breadth-unit:\s*[0-9.]+\s*;", mobile_body
+    ), (
+        "the mobile media block must re-declare .ca-v36-lead-row's "
+        "(unitless) --mx-breadth-unit so the bounded gauge rescales for a "
+        "390px row"
     )
 
 
