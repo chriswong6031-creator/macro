@@ -88,7 +88,7 @@ verified:
       PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
       tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py
       tests/test_gh_quota_guard.py
-    result: 555 passed, 1 skipped; three pytest temp-cleanup warnings only.
+    result: 557 passed, 1 skipped; three pytest temp-cleanup warnings only.
   - claim: >
       The independent review's nine negative controls fail on the pre-review
       head and pass after binding authority wake, routed-event revalidation,
@@ -118,6 +118,16 @@ verified:
       tests/test_ship_loop_hold_wrapper.py::test_ordinary_quiescence_is_never_cleared_by_the_hold_wrapper
       tests/test_ship_loop_hold_wrapper.py::test_hold_probe_uses_paginated_comments_including_page_two
     result: 4 failed and 2 passed before the correction; all 6 passed after it.
+  - claim: >
+      A bounded HOLD authority outage cannot be misclassified as a release-side
+      authority change: the configured wrapper and canonical guard share one
+      fingerprint shape and route exactly one missing-evidence event to #6351.
+    command: >
+      python3 -m pytest -q
+      tests/test_ship_loop_guard.py::test_union_watcher_declares_a_safe_fourteen_session_request_budget
+      tests/test_ship_loop_guard.py::test_configured_hold_wrapper_routes_unanswerable_authority_once
+      tests/test_ship_loop_hold_wrapper.py::test_hold_probe_constructs_comments_endpoint_when_pull_omits_it
+    result: All 3 failed before the final-review correction and passed after it.
 unverified:
   - claim: Hosted CI is green on the successor pull request's exact head.
     what_would_verify: Concluded binding checks on the fresh successor PR head.
@@ -168,6 +178,10 @@ danger_areas:
     The union watcher clamps admitted 60-second commands to 180 seconds and
     bounds comments/reviews at three 100-record pages each. Cap exhaustion is
     missing evidence, never permission to infer unchanged authority.
+  - >
+    HOLD wrapper, union watcher and canonical guard must use the same bounded
+    authority snapshot/fingerprint. An unanswerable snapshot routes once to
+    #6351 as missing evidence; it is never a release-side authority change.
 ---
 
 # CI C1 zero-compute quiescence V2

@@ -275,24 +275,35 @@ def _hold_probe(
     if str((pull.get("head") or {}).get("sha") or "") != head:
         return None
 
-    comments_url = str(pull.get("comments_url") or "")
+    if not number:
+        raise HoldProbeUnanswerable("pull request number is unanswerable")
+    comments_url = str(
+        pull.get("comments_url")
+        or f"https://api.github.com/repos/{owner}/{repo}/issues/{number}/comments"
+    )
     reviews_url = (
         f"https://api.github.com/repos/{owner}/{repo}/pulls/{number}/reviews"
     )
     try:
-        list_loader = getattr(guard, "_bounded_github_list", None)
-        comments = (
-            list_loader(comments_url)
-            if comments_url and callable(list_loader)
-            else guard._get_json(comments_url)
-            if comments_url
-            else []
-        )
-        reviews = (
-            list_loader(reviews_url)
-            if callable(list_loader)
-            else guard._get_json(reviews_url)
-        )
+        snapshot_loader = getattr(guard, "_ci_hold_authority_snapshot", None)
+        if callable(snapshot_loader):
+            authority = snapshot_loader(owner, repo, pull)
+            comments = authority["comments"]
+            reviews = authority["reviews"]
+            authority_fingerprint = str(authority["fingerprint"])
+        else:
+            list_loader = getattr(guard, "_bounded_github_list", None)
+            comments = (
+                list_loader(comments_url)
+                if callable(list_loader)
+                else guard._get_json(comments_url)
+            )
+            reviews = (
+                list_loader(reviews_url)
+                if callable(list_loader)
+                else guard._get_json(reviews_url)
+            )
+            authority_fingerprint = ""
     except Exception as exc:
         raise HoldProbeUnanswerable(str(exc)) from exc
     if (
@@ -330,6 +341,7 @@ def _hold_probe(
         "pull": pull,
         "comments": comments,
         "reviews": reviews,
+        "authority_fingerprint": authority_fingerprint,
         "runs": runs,
         "owner": owner,
         "repo": repo,
@@ -492,26 +504,31 @@ def _parked_message(probe: dict[str, Any]) -> dict[str, str]:
 
 def _authority_fingerprint(guard: ModuleType, probe: dict[str, Any]) -> str:
     """Bind the wait to all bounded comment and review authority records."""
+    shared = str(probe.get("authority_fingerprint") or "")
+    if re.fullmatch(r"[0-9a-f]{16}", shared):
+        return shared
     extra = {
-        "comments": [
-            {
-                "id": comment.get("id"),
-                "updated_at": comment.get("updated_at"),
-                "body": str(comment.get("body") or ""),
-            }
+        "state": str(probe["pull"].get("state") or ""),
+        "merged_at": str(probe["pull"].get("merged_at") or ""),
+        "comments": sorted(
+            (
+                str(comment.get("id") or ""),
+                str(comment.get("updated_at") or ""),
+                str(comment.get("body") or ""),
+            )
             for comment in probe.get("comments", [])
             if isinstance(comment, dict)
-        ],
-        "reviews": [
-            {
-                "id": review.get("id"),
-                "state": review.get("state"),
-                "submitted_at": review.get("submitted_at"),
-                "commit_id": review.get("commit_id"),
-            }
+        ),
+        "reviews": sorted(
+            (
+                str(review.get("id") or ""),
+                str(review.get("state") or ""),
+                str(review.get("submitted_at") or ""),
+                str(review.get("commit_id") or ""),
+            )
             for review in probe.get("reviews", [])
             if isinstance(review, dict)
-        ],
+        ),
     }
     return str(guard._ci_authority_fingerprint(probe["pull"], extra=extra))
 
@@ -642,6 +659,36 @@ def _handle_stop(guard: ModuleType, payload: dict[str, Any]) -> dict[str, Any] |
                 raise
             probe = _hold_probe(guard, payload)
     except HoldProbeUnanswerable:
+        quiescence = (state or {}).get("ci_quiescence")
+        if isinstance(quiescence, dict) and quiescence.get("mode") == "hold":
+            checks_fingerprint = str(
+                quiescence.get("checks_fingerprint") or ""
+            )
+            authority_fingerprint = str(
+                quiescence.get("authority_fingerprint") or ""
+            )
+            probe = {
+                "number": quiescence.get("pr"),
+                "head": str(quiescence.get("head") or ""),
+            }
+            if (
+                re.fullmatch(r"[0-9a-f]{16}", checks_fingerprint)
+                and re.fullmatch(r"[0-9a-f]{16}", authority_fingerprint)
+                and probe["number"]
+                and re.fullmatch(r"[0-9a-f]{40}", probe["head"])
+                and _route_material(
+                    guard,
+                    path,
+                    state,
+                    quiescence,
+                    probe,
+                    "missing_evidence",
+                    ["HOLD authority metadata unanswerable"],
+                    checks_fingerprint,
+                    authority_fingerprint,
+                )
+            ):
+                return {"action": "silent"}
         return None
     except Exception:
         return None

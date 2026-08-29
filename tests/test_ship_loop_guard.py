@@ -7254,6 +7254,11 @@ def test_union_watcher_declares_a_safe_fourteen_session_request_budget():
     )
     assert GUARD.CI_PR_WATCH_INTERVAL_SECONDS >= 180
     assert GUARD.CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE == 12
+    assert GUARD.CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE == (
+        1
+        + (2 * GUARD.CI_PR_AUTHORITY_MAX_PAGES)
+        + GUARD.CI_CHECK_RUN_MAX_PAGES
+    )
     assert worst_case <= 3600
 
 
@@ -7608,6 +7613,7 @@ def test_dead_watcher_grants_exactly_one_of_fourteen_stop_observers_the_wake(
     )
     alive = {"value": True}
     monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(GUARD, "_state_path", lambda *_a: state_path)
     GUARD._stop(repo, state_path, {"stop_hook_active": False})
     capsys.readouterr()
 
@@ -7975,6 +7981,93 @@ def test_configured_hold_wrapper_preserves_ordinary_material_reentry(
     late = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
     assert late[-1]["decision"] == "block"
     assert "trusted-executor-pack-7" in late[-1]["reason"]
+
+
+def test_configured_hold_wrapper_routes_unanswerable_authority_once(
+    monkeypatch, tmp_path, capsys
+):
+    """A paginated HOLD outage is missing evidence, never a fake Sol release."""
+    wrapper_path = ROOT / "scripts" / "ship_loop_hold_wrapper.py"
+    spec = importlib.util.spec_from_file_location(
+        "ship_loop_wrapper_hold_outage", wrapper_path
+    )
+    assert spec and spec.loader
+    wrapper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wrapper)
+
+    repo, state_path, head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    pull = _armed_pr(head, labels=())
+    pull.update(
+        {
+            "draft": True,
+            "title": "HOLD-FOR-SOL: exact-head review",
+            "body": "Authority: Sol\nRelease condition: explicit Sol review",
+            "auto_merge": None,
+            "comments_url": "https://api.github.com/repos/acme/widgets/issues/4242/comments",
+        }
+    )
+    comments = [
+        {
+            "id": 1,
+            "updated_at": "2026-08-29T00:00:00Z",
+            "body": "Authority: Sol\nRelease condition: explicit Sol review",
+        }
+    ]
+    reviews = []
+    authority_fingerprint = wrapper._authority_fingerprint(
+        GUARD,
+        {"pull": pull, "comments": comments, "reviews": reviews},
+    )
+    red, pending, passed = GUARD._split_head_runs(runs)
+    assert not red
+    assert GUARD._enter_ci_quiescence(
+        state_path,
+        GUARD._load(state_path),
+        branch="claude/feature",
+        number=4242,
+        head=head,
+        pending=pending,
+        passed=passed,
+        checks_fingerprint=GUARD._ci_checks_fingerprint(runs),
+        authority_fingerprint=authority_fingerprint,
+        mode="hold",
+    )
+    capsys.readouterr()
+
+    monkeypatch.setattr(GUARD, "_open_pull", lambda *_a: pull)
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: False)
+    monkeypatch.setattr(GUARD, "_state_path", lambda *_a: state_path)
+    monkeypatch.setattr(
+        GUARD,
+        "_bounded_github_list",
+        lambda *_a, **_kw: (_ for _ in ()).throw(
+            RuntimeError("GitHub authority pagination bound exhausted")
+        ),
+    )
+    payload = {"hook_event_name": "Stop", "cwd": str(repo)}
+
+    assert wrapper._handle_stop(GUARD, payload) == {"action": "silent"}
+    assert wrapper._handle_stop(GUARD, payload) == {"action": "silent"}
+    assert GUARD._try_ci_quiescence(
+        repo,
+        state_path,
+        GUARD._load(state_path),
+        "acme",
+        "widgets",
+        "claude/feature",
+        head,
+    ) == (True, "none", "")
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT missing_evidence") == 1
+    assert "#6351/main-integrity" in output
+    assert "authority_change" not in output
+    assert "release/Sol" not in output
+    quiescence = GUARD._load(state_path)["ci_quiescence"]
+    assert quiescence["phase"] == "routed"
+    assert quiescence["material_kind"] == "missing_evidence"
 
 
 def test_new_local_head_invalidates_old_quiescence_before_github_reclassification(

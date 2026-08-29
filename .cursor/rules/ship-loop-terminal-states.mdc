@@ -51,6 +51,9 @@ It clamps the internal cadence to at least 180 seconds and bounds one snapshot t
 12 REST requests: one PR, three 100-record comment pages, three review pages, and
 five check-run pages. Fourteen isolated first-hour watchers therefore spend no more
 than 3,528 requests. A full final authority page is unanswerable and fails closed.
+Wrapper, watcher, and canonical guard share the same bounded authority fingerprint;
+an unanswerable HOLD snapshot routes once as missing evidence to `#6351`, never as
+a release-side authority change.
 After a material receipt, later Stop boundaries revalidate the event key so an
 identical event stays narration-silent but a later same-head red remains visible.
 Malformed state fails closed. Only mechanical hook evidence may create quiescence or

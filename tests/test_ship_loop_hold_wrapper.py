@@ -959,6 +959,37 @@ def test_hold_probe_uses_paginated_comments_including_page_two(
     assert any("Release condition" in item["body"] for item in probe["comments"])
 
 
+def test_hold_probe_constructs_comments_endpoint_when_pull_omits_it(
+    monkeypatch, tmp_path
+):
+    _stub_clean_pushed_git(monkeypatch)
+    pull = _pull()
+    pull.pop("comments_url", None)
+    guard, _state_path, _calls, _entered = _ledger_guard(tmp_path, pull=pull)
+    loaded = []
+
+    def bounded(url):
+        loaded.append(url)
+        if url.endswith("/issues/6138/comments"):
+            return _comments()
+        if url.endswith("/pulls/6138/reviews"):
+            return []
+        raise AssertionError(url)
+
+    guard._bounded_github_list = bounded
+    guard._get_json = lambda _url: (_ for _ in ()).throw(
+        AssertionError("single-page fallback is forbidden")
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+
+    assert probe is not None
+    assert loaded == [
+        "https://api.github.com/repos/mastermindx-market-intelligence/macro/issues/6138/comments",
+        "https://api.github.com/repos/mastermindx-market-intelligence/macro/pulls/6138/reviews",
+    ]
+
+
 def test_outage_blocker_mutation_does_not_renarrate_same_parked_hold(
     monkeypatch, tmp_path
 ):

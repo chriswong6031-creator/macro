@@ -202,7 +202,10 @@ CI_QUIESCENCE_FAST_PREFLIGHT = frozenset({"ci-plan", "contract-delta", "fence-pa
 # documented ``--interval 60+`` shape; the internal watcher clamps it upward.
 CI_PR_WATCH_INTERVAL_SECONDS = 180
 CI_PR_AUTHORITY_MAX_PAGES = 3
-CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE = 12
+CI_CHECK_RUN_MAX_PAGES = 5
+CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE = (
+    1 + (2 * CI_PR_AUTHORITY_MAX_PAGES) + CI_CHECK_RUN_MAX_PAGES
+)
 # A crashed wake claimant may not suppress the material event forever. This is
 # a lease inside the existing per-session ledger, not a timer or retry loop: it
 # is consulted only if another real Stop/task event already occurs.
@@ -1961,6 +1964,46 @@ def _bounded_github_list(
     )
 
 
+def _ci_hold_authority_snapshot(
+    owner: str, repo: str, pull: dict[str, Any]
+) -> dict[str, Any]:
+    """One bounded comment/review snapshot shared by every HOLD observer."""
+    number = pull.get("number")
+    if not owner or not repo or not number:
+        raise RuntimeError("pull request authority identity is unanswerable")
+    base = f"https://api.github.com/repos/{owner}/{repo}"
+    comments = _bounded_github_list(
+        str(pull.get("comments_url") or f"{base}/issues/{number}/comments")
+    )
+    reviews = _bounded_github_list(f"{base}/pulls/{number}/reviews")
+    extra = {
+        "state": str(pull.get("state") or ""),
+        "merged_at": str(pull.get("merged_at") or ""),
+        "comments": sorted(
+            (
+                str(item.get("id") or ""),
+                str(item.get("updated_at") or ""),
+                str(item.get("body") or ""),
+            )
+            for item in comments
+        ),
+        "reviews": sorted(
+            (
+                str(item.get("id") or ""),
+                str(item.get("state") or ""),
+                str(item.get("submitted_at") or ""),
+                str(item.get("commit_id") or ""),
+            )
+            for item in reviews
+        ),
+    }
+    return {
+        "comments": comments,
+        "reviews": reviews,
+        "fingerprint": _ci_authority_fingerprint(pull, extra=extra),
+    }
+
+
 def _pr_condition_snapshot(
     owner: str, repo: str, number: int
 ) -> dict[str, Any]:
@@ -1979,40 +2022,12 @@ def _pr_condition_snapshot(
     head = str((pull.get("head") or {}).get("sha") or "")
     if not re.fullmatch(r"[0-9a-f]{40}", head):
         raise RuntimeError(f"pull request #{number} has no exact head")
-    comments = _bounded_github_list(
-        str(pull.get("comments_url") or f"{base}/issues/{number}/comments")
-    )
-    reviews = _bounded_github_list(f"{base}/pulls/{number}/reviews")
-    authority_extra = {
-        "state": str(pull.get("state") or ""),
-        "merged_at": str(pull.get("merged_at") or ""),
-        "comments": sorted(
-            (
-                str(item.get("id") or ""),
-                str(item.get("updated_at") or ""),
-                str(item.get("body") or ""),
-            )
-            for item in comments
-            if isinstance(item, dict)
-        ),
-        "reviews": sorted(
-            (
-                str(item.get("id") or ""),
-                str(item.get("state") or ""),
-                str(item.get("submitted_at") or ""),
-                str(item.get("commit_id") or ""),
-            )
-            for item in reviews
-            if isinstance(item, dict)
-        ),
-    }
+    authority = _ci_hold_authority_snapshot(owner, repo, pull)
     runs = _head_check_runs(owner, repo, head)
     red, pending, _passed = _split_head_runs(runs)
     return {
         "head": head,
-        "authority_fingerprint": _ci_authority_fingerprint(
-            pull, extra=authority_extra
-        ),
+        "authority_fingerprint": str(authority["fingerprint"]),
         "pending": pending,
         "red": red,
     }
@@ -4371,7 +4386,14 @@ def _try_ci_quiescence(
     labels = {str((label or {}).get("name") or "") for label in (pull.get("labels") or [])}
     number = pull.get("number")
     pull_head = str((pull.get("head") or {}).get("sha") or "")
-    if MERGE_ON_GREEN_LABEL not in labels or not pull_head or pull_head != head:
+    hold_mode = (
+        isinstance(existing, dict) and str(existing.get("mode") or "") == "hold"
+    )
+    if (
+        (not hold_mode and MERGE_ON_GREEN_LABEL not in labels)
+        or not pull_head
+        or pull_head != head
+    ):
         if isinstance(existing, dict):
             _ci_quiescence_clear(path, state)
         return False, "none", ""
@@ -4379,7 +4401,43 @@ def _try_ci_quiescence(
     runs = _head_check_runs(owner, repo, pull_head)
     red, pending, passed = _split_head_runs(runs)
     checks_fingerprint = _ci_checks_fingerprint(runs)
-    authority_fingerprint = _ci_authority_fingerprint(pull)
+    if hold_mode:
+        try:
+            authority_fingerprint = str(
+                _ci_hold_authority_snapshot(owner, repo, pull)["fingerprint"]
+            )
+        except Exception:
+            # A HOLD authority prefix that cannot prove its own completeness is
+            # missing evidence, not a release-side authority change. Reuse the
+            # last mechanically established fingerprint only to key the single
+            # failure receipt; it does not assert that authority is unchanged.
+            authority_fingerprint = str(
+                (existing or {}).get("authority_fingerprint") or ""
+            )
+            if isinstance(existing, dict) and re.fullmatch(
+                r"[0-9a-f]{16}", authority_fingerprint
+            ):
+                route = _ci_event_route(
+                    "missing_evidence",
+                    pr=number,
+                    head=head,
+                    checks=red or pending or passed,
+                )
+                return (
+                    _ci_material_receipt(
+                        path,
+                        state,
+                        existing,
+                        route,
+                        checks_fingerprint=checks_fingerprint,
+                        authority_fingerprint=authority_fingerprint,
+                    ),
+                    "none",
+                    "",
+                )
+            return False, "none", ""
+    else:
+        authority_fingerprint = _ci_authority_fingerprint(pull)
     passed_names = set(passed)
 
     if isinstance(existing, dict):
@@ -4706,7 +4764,7 @@ def _head_check_runs(owner: str, repo: str, head_sha: str) -> list[dict[str, Any
     """
     endpoint = f"https://api.github.com/repos/{owner}/{repo}/commits/{head_sha}/check-runs"
     runs: list[dict[str, Any]] = []
-    for page in range(1, 6):
+    for page in range(1, CI_CHECK_RUN_MAX_PAGES + 1):
         query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
         payload = _get_json(f"{endpoint}?{query}")
         batch = payload.get("check_runs") or []

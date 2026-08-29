@@ -660,7 +660,10 @@ at least 180 seconds inside that process. One snapshot is bounded to 12 REST
 requests (one PR, at most three 100-record comment pages, three review pages, and
 five check-run pages), so even fourteen isolated first-hour watchers consume at
 most 3,528 requests; a full final authority page is unanswerable and fails closed
-rather than hiding a later Sol comment or review. After a material receipt, later genuine Stop
+rather than hiding a later Sol comment or review. The wrapper, watcher, and
+canonical guard use one bounded authority fingerprint; unanswerable HOLD
+authority routes once as missing evidence to `#6351`, never as a release-side
+authority change. After a material receipt, later genuine Stop
 boundaries revalidate its event key remotely: the same event stays narration-silent,
 while a later same-head red or authority change remains visible. This extends the
 existing Stop ledger and quota/watcher boundary;
