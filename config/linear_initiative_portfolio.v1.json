@@ -1,0 +1,207 @@
+{
+  "initiatives": [
+    {
+      "completion_ruler": "Major product consumers can compose owner-native intelligence across multiple domains with stable identity, clocks, provenance, missing/conflict behavior and prospective evidence, without a parallel warehouse, score store or truth plane.",
+      "health": null,
+      "key": "canonical-intelligence-substrate-learning",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Exact provenance, point-in-time semantics, corrections, ontology, graph relationships and prospective evaluation compound across every new capability.",
+      "name": "Canonical Intelligence Substrate & Learning",
+      "outcome": "Mastermind has one canonical intelligence substrate for identity, evidence, relationships, history and learning that every product can compose without rebuilding truth.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 2,
+      "scope_law": "This Initiative owns reusable intelligence capability, not individual customer interfaces and not execution lifecycle state.",
+      "status": "Active",
+      "summary": "Unify identity, evidence, ontology, graph, memory and prospective evaluation into one correction-safe intelligence substrate that every Mastermind product can reuse without duplicate truth stores.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "Users can discover and monitor high-value opportunities across major markets with production-proven timing/context, honest abstention, point-in-time replay and prospective evaluation demonstrating where each signal family helps.",
+      "health": null,
+      "key": "legendary-alpha-discovery-timing",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Multiple independent market, options, company, behavioral and timing systems converge through governed contracts while preserving distinct evidence and failure modes.",
+      "name": "Legendary Alpha Discovery & Timing",
+      "outcome": "Mastermind surfaces genuinely useful opportunities early enough to matter, explains their setup and timing, and earns stronger authority through prospective evidence rather than presentation confidence.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 1,
+      "scope_law": "Descriptive context, research priority, calibrated forecast and trade authority remain separate. No blended score earns authority merely because several systems agree.",
+      "status": "Active",
+      "summary": "Make Mastermind exceptional at finding, timing and validating opportunities across markets through Prophet, options, China alpha, entry intelligence and empirically earned signal authority.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "Multiple real issuers can travel from primary source through canonical identity, event/fact extraction, financial interpretation and customer-facing Retail/Desk projections with correction-safe lineage and honest missing states.",
+      "health": null,
+      "key": "institutional-company-event-intelligence",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Owner-native primary-source intelligence is composed across earnings, filings, financial statements, capital structure and differentiated domain sources rather than reduced to generic summaries.",
+      "name": "Institutional Company & Event Intelligence",
+      "outcome": "Opening a company or material event gives a user institutional-grade understanding of what happened, why it matters, the financial and capital consequences, specialist evidence, catalysts, uncertainties and corrections.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 2,
+      "scope_law": "Specialist programs retain source authority. This Initiative composes depth rather than creating another company-facts truth store.",
+      "status": "Active",
+      "summary": "Deliver institutional-depth company and event research across earnings, filings, financials, capital structure and differentiated specialist primary-source intelligence.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "Current global context is production-fresh, contradiction-aware, historically grounded and consumable by security, discovery and portfolio workflows without inventing consensus where evidence disagrees.",
+      "health": null,
+      "key": "global-markets-regimes-risk-command",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Market, rates, inflation, cycle, liquidity, crypto and risk evidence remains independently inspectable but can be synthesized into coherent context instead of isolated dashboards.",
+      "name": "Global Markets, Regimes & Risk Command",
+      "outcome": "Mastermind continuously explains the market environment around securities and portfolios: what regime exists, what is changing, where evidence conflicts and which risks deserve attention.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 2,
+      "scope_law": "Context informs research and decision support; it does not silently become security rank, position size or trade authority.",
+      "status": "Active",
+      "summary": "Understand global regimes, rates, inflation, cycles, crypto and risk so every opportunity is interpreted inside the correct macro and cross-asset context.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "A real user can complete the Today -> Discover -> Security -> Portfolio/Watchlist -> Terminal/Brain -> return-via-change-monitoring loop across real account state, responsive surfaces and failure modes.",
+      "health": null,
+      "key": "personal-institutional-desk",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Institutional-depth intelligence is compressed into a personal operating system while the same canonical objects remain inspectable at Desk depth.",
+      "name": "Personal Institutional Desk",
+      "outcome": "One user can move coherently from what changed, to opportunity discovery, to security understanding, to holdings/watchlists, to live analysis and back through useful monitoring without feeling like they crossed unrelated products.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 1,
+      "scope_law": "Macro and Terminal remain distinct execution surfaces where appropriate, but they compose one customer experience and one underlying intelligence system.",
+      "status": "Active",
+      "summary": "Unify Macro and Terminal into a persistent personal investing OS for discovery, security analysis, portfolio/watchlists, live workspaces, Brain and meaningful return loops.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "Account boundaries are correct, customer data has proven restoration, commercial failures become human-visible, normal product changes ship through reliable gates, and critical workloads survive expected machine/provider failures.",
+      "health": null,
+      "key": "trusted-production-customer-platform",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "Sophisticated financial intelligence becomes commercially usable because identity, entitlements, customer state, backups, release systems, infrastructure and alerting do not silently undermine it.",
+      "name": "Trusted Production & Customer Platform",
+      "outcome": "Customer- and company-critical paths behave truthfully, recoverably and predictably in production.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 2,
+      "scope_law": "Infrastructure work counts only when it unlocks or protects an observable customer/company capability. Green CI or installed infrastructure alone is not completion.",
+      "status": "Active",
+      "summary": "Make Mastermind dependable enough to sell and trust: correct identity and entitlements, recoverable customer data, observable commercial paths, reliable releases and resilient compute.",
+      "target_date": null
+    },
+    {
+      "completion_ruler": "From Linear plus Chairman Control Room, Chairman can see material programs, accountable next-turn roles, blockers, evidence and exact next actions; Agent OS remains organizational truth, Executive OS remains runtime truth, GitHub remains implementation/proof truth, and Slack/Linear remain transport/projection rather than duplicate control planes.",
+      "health": null,
+      "key": "autonomous-ai-organization",
+      "labels": [],
+      "lead_team": "MastermindX",
+      "moat": "The company itself compounds through durable organizational memory, governed AI capacity and reliable executive orchestration rather than losing decisions and work across chats.",
+      "name": "Autonomous AI Organization",
+      "outcome": "Chairman can direct the company at the strategic level while Sol and governed operators recover state, commission bounded work, continue stalled work and surface decisions without requiring manual session reconciliation.",
+      "owner": null,
+      "parent_initiatives": [],
+      "priority": 1,
+      "scope_law": "No second queue, lifecycle, identity, retry or memory plane may be introduced.",
+      "status": "Active",
+      "summary": "Let Chairman set intent while Sol and governed workers operate the company through durable truth, capacity, control-room visibility and reliable orchestration—without Chairman as message bus.",
+      "target_date": null
+    }
+  ],
+  "memberships": {
+    "autonomous-ai-organization": [
+      "WS:AGENT-OS",
+      "WS:CHAIRMAN-CONTROL-ROOM",
+      "WS:EXECUTIVE-CAPACITY-FABRIC"
+    ],
+    "canonical-intelligence-substrate-learning": [
+      "WS:ALPHA-INTELLIGENCE-INTEGRATION",
+      "WS:GMI-THEME-GRAPH",
+      "WS:STOCK-IDENTITY",
+      "WS:MARKET-MEMORY-W2C",
+      "WS:MASSIVE-STOCK-DAY-R2-COHERENCE",
+      "WS:EVAL-OS-MEASUREMENT-LAW",
+      "WS:EVAL-OS-EVIDENCE-VIEW",
+      "WS:EVAL-OS-T1-ENGINE-REGISTRY",
+      "WS:EVAL-OS-OUTPUT-HEALTH"
+    ],
+    "global-markets-regimes-risk-command": [
+      "WS:RATES-INFLATION-COMMAND",
+      "WS:MACRO-CONTEXT-INDEX",
+      "WS:GREY-DEER-RISK-INTELLIGENCE",
+      "WS:CRYPTO-INTELLIGENCE",
+      "WS:CYCLE-PATTERN-ISSUER-MECHANISM"
+    ],
+    "institutional-company-event-intelligence": [
+      "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER",
+      "WS:FINANCIAL-INTELLIGENCE-FABRIC",
+      "WS:CALCBENCH-FILING-FORENSICS-PARITY",
+      "WS:CAPITAL-STRUCTURE-INTELLIGENCE-V2",
+      "WS:DEFENSE-PROCUREMENT-V3",
+      "WS:BPC-JV-RECON",
+      "WS:CN-SOE-DEMAND",
+      "WS:BIOCATALYST-CORE-PRODUCT",
+      "WS:BIOCATALYST-RECOVERY-V2",
+      "WS:EARNINGS-INTELLIGENCE-OS",
+      "WS:FUNDAMENTAL-FORENSICS"
+    ],
+    "legendary-alpha-discovery-timing": [
+      "WS:ADVANCED-DATA-OPTIONS",
+      "WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY",
+      "WS:INTRADAY-FLOW-P0-RECOVERY",
+      "WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2",
+      "WS:CHINA-ALPHA-INTELLIGENCE",
+      "WS:CN-LIMIT-ALPHA",
+      "WS:PROPHET-CONDITIONAL-FUSION",
+      "WS:PROPHET-HK-CA-REVAMP",
+      "WS:PROPHET-US-AVAILABILITY",
+      "WS:PROPHET-US-ENTRY-TIMING",
+      "WS:PROPHET-US-V4-RECOVERY",
+      "WS:LIVE-ENTRY-RADAR",
+      "WS:BREATHING-PLATFORM",
+      "WS:TOP-ANATOMY"
+    ],
+    "personal-institutional-desk": [
+      "WS:MARKET-OS",
+      "WS:STOCK-DOSSIER-LIVE-QUOTE",
+      "WS:INSTITUTIONAL-PRODUCT-EXPERIENCE-V2"
+    ],
+    "trusted-production-customer-platform": [
+      "WS:ACCOUNT-IDENTITY-HARDENING",
+      "WS:CUSTOMER-DATA-BACKUP",
+      "WS:COMMERCIAL-PATH-ALERTING",
+      "WS:CI-MERGE-CONTROL-PLANE",
+      "WS:RUNNER-FLEET-RESILIENCE"
+    ]
+  },
+  "schema": "linear_initiative_portfolio_strategy.v1",
+  "source_design": {
+    "path": "docs/superpowers/specs/2026-08-29-linear-initiative-portfolio-architecture-design.md",
+    "protected_revision": "7ea5324ac2df8ff9af40a2bdcacb2883889600b5",
+    "repository": "mastermindx-market-intelligence/Mastermind"
+  },
+  "unassigned_exceptions": [
+    {
+      "binding": "workstream_key",
+      "reason": "compatibility_redirect",
+      "value": "WS:WATCHLIST-PORTFOLIO-CEO"
+    },
+    {
+      "binding": "linear_project_id",
+      "reason": "canonical_parent_unresolved",
+      "value": "9aef6461-306a-4a3c-911b-c6a4b6635a78"
+    }
+  ]
+}
