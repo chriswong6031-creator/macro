@@ -44,6 +44,7 @@ serialized to the shipped spec file.
 """
 from __future__ import annotations
 
+import datetime
 import hashlib
 import json
 import re
@@ -666,6 +667,27 @@ def _family_first_available_bound(entry: Mapping[str, Any] | None) -> tuple[pd.T
     ``engine/stock_identity/replay/registry.py``, and
     ``scripts/stock_identity_replay_pilot.py`` (``fa.get(...)``).
 
+    Bound-bearing values are accepted from a CLOSED type allowlist only --
+    ``str``, ``datetime.date``/``datetime.datetime``, ``np.datetime64``, and
+    ``pd.Timestamp``. Every other type, including plain numbers, is REJECTED
+    as a bound and typed a null bound (fail-closed), never coerced. This is
+    load-bearing: 2026-08-29 adversarial review finding R1 showed that
+    ``pd.Timestamp(val)`` interprets a bare ``int``/``float`` as NANOSECONDS
+    since the Unix epoch, so an epoch-SECONDS value such as ``1577836800``
+    (meant to read as 2020-01-01) silently became a bound in 1970 -- a bound
+    so early it is effectively unrestricted, making the family fail OPEN
+    (spuriously ``FAMILY_ELIGIBLE_STATE``-eligible) instead of failing
+    closed. Numeric values are therefore never interpreted as epoch
+    seconds, epoch milliseconds, or any other epoch unit here -- they are
+    simply not bounds. Review finding R2 showed that non-scalar containers
+    (``np.ndarray``, ``pd.Series``, ``list``, ``dict``) escape a naive
+    ``pd.isna``/truthiness gate -- ``bool(np.array([1, 2]))`` raises
+    ``ValueError`` -- and could crash this outcome-independent predicate;
+    the type allowlist routes every container straight to a null bound
+    before any truthiness test ever sees it, and the whole normalization is
+    additionally wrapped in an outer ``try/except`` so no exception of any
+    kind can escape this function.
+
     Every NaN-like or unparseable representation of "no bound" -- float
     ``nan``, ``np.nan``, ``pd.NaT``, ``pd.NA``, and string spellings like
     ``"NaT"``/``"nan"`` -- resolves to a null bound here too, and therefore
@@ -677,33 +699,56 @@ def _family_first_available_bound(entry: Mapping[str, Any] | None) -> tuple[pd.T
     downstream in :func:`_episode_family_availability_state` were skipped
     entirely and the row could reach :data:`FAMILY_ELIGIBLE_STATE` bypassing
     every sub-check (spec receipt, producer store, identity, and the
-    null-bound terminal grant). ``pd.isna`` is checked on the raw value
-    BEFORE any boolean-truthiness test (never ``if val`` first) because
-    ``pd.NA`` raises ``TypeError`` on truthiness. A value that fails to
-    parse as a timestamp at all (garbage string) is likewise treated as a
+    null-bound terminal grant). ``pd.isna`` is checked on the raw SCALAR
+    value BEFORE any boolean-truthiness test (never ``if val`` first)
+    because ``pd.NA`` raises ``TypeError`` on truthiness, and it is guarded
+    by ``pd.api.types.is_scalar`` first so a non-scalar container is never
+    handed to ``pd.isna`` in ambiguous-truth-value form. A value that fails
+    to parse as a timestamp at all (garbage string) is likewise treated as a
     null bound -- typed fail-closed to UNESTIMABLE downstream -- rather than
-    raising out of this outcome-independent predicate. A timezone-aware
-    bound is normalized to naive (``tz_localize(None)``) so the later
-    ``bound > end`` comparison in :func:`_episode_family_availability_state`
-    can never raise ``TypeError`` comparing aware to naive timestamps."""
-    if entry is None or "family_first_available" not in entry:
-        return None, False
-    val = entry.get("family_first_available")
-    if val is None:
-        return None, True
-    if pd.api.types.is_scalar(val) and pd.isna(val):
-        return None, True
-    if not val:
-        return None, True
+    raising out of this outcome-independent predicate.
+
+    A timezone-aware bound is normalized to naive WALL-CLOCK time via
+    ``tz_localize(None)`` -- the UTC offset is discarded and the local wall
+    time is kept as-is (this is NOT the same as converting to UTC first).
+    E.g. ``"2020-06-01T23:00:00-05:00"`` normalizes to naive
+    ``2020-06-01 23:00:00``, not to the UTC-equivalent ``2020-06-02
+    04:00:00``. This is the deliberate convention for a date-grain registry
+    bound: the family's documented "first available" date is a calendar
+    date, not a UTC instant, so wall-clock preservation is right here. The
+    normalization also makes the later ``bound > end`` comparison in
+    :func:`_episode_family_availability_state` safe -- comparing an aware
+    bound to a naive episode boundary would otherwise raise ``TypeError``."""
     try:
-        ts = pd.Timestamp(val)
-    except (ValueError, TypeError):
+        if entry is None or "family_first_available" not in entry:
+            return None, False
+        val = entry.get("family_first_available")
+        if val is None:
+            return None, True
+        if pd.api.types.is_scalar(val) and pd.isna(val):
+            return None, True
+        if not isinstance(
+            val, (str, datetime.date, datetime.datetime, np.datetime64, pd.Timestamp)
+        ):
+            # Closed type allowlist (review R1/R2): everything else --
+            # numbers, bools, bytes, and any container -- is rejected as a
+            # bound and typed null, never coerced or truthiness-tested.
+            return None, True
+        if isinstance(val, str) and not val.strip():
+            return None, True
+        try:
+            ts = pd.Timestamp(val)
+        except (ValueError, TypeError):
+            return None, True
+        if pd.isna(ts):
+            return None, True
+        if ts.tzinfo is not None:
+            ts = ts.tz_localize(None)
+        return ts, True
+    except Exception:
+        # Belt-and-braces (review R2): no exception may escape this
+        # outcome-independent predicate under any input shape.
         return None, True
-    if pd.isna(ts):
-        return None, True
-    if ts.tzinfo is not None:
-        ts = ts.tz_localize(None)
-    return ts, True
 
 
 def _family_provenance_class(entry: Mapping[str, Any] | None) -> tuple[str | None, bool]:

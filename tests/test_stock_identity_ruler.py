@@ -1202,6 +1202,113 @@ def test_nan_like_bound_representations_all_fail_closed_review_f1():
     )
 
 
+def test_rejected_bound_type_representations_all_fail_closed_review_r1_r2():
+    """Adversarial review 2026-08-29, findings R1 (MINOR, fail-OPEN) and R2
+    (MINOR): before ``_family_first_available_bound`` was restructured to a
+    closed type allowlist, these representations either leaked a spuriously
+    ELIGIBLE result or could raise out of this outcome-independent
+    predicate.
+
+    R1: a bare number handed straight to ``pd.Timestamp`` is interpreted as
+    NANOSECONDS since the Unix epoch, so an epoch-SECONDS value such as
+    ``1577836800`` (meant to read 2020-01-01) silently became a bound in
+    1970 -- a bound so early it is effectively unrestricted, making the
+    family fail OPEN (spuriously ``FAMILY_ELIGIBLE_STATE``) instead of
+    failing closed.
+
+    R2: a non-scalar container (``np.ndarray``, ``pd.Series``, ``list``,
+    ``dict``) escapes the ``pd.isna``/truthiness guards -- e.g.
+    ``bool(np.array([1, 2]))`` raises ``ValueError`` -- and could raise out
+    of this outcome-independent predicate instead of resolving.
+
+    Every representation below, on an otherwise fully-lawful R-class entry
+    (real ``spec_hash``, no producer store path, full bars coverage, a
+    clean symbol), must resolve ``"UNESTIMABLE"`` -- never
+    ``FAMILY_ELIGIBLE_STATE`` -- and must never raise.
+
+    Mutation-killing: temporarily re-allowing numeric scalars (removing
+    ``int``/``float``/``bool`` from the type-allowlist rejection so they
+    reach ``pd.Timestamp``) flips the ``1``/``1577836800``/
+    ``1.5778368e9``/``True`` cases to ``FAMILY_ELIGIBLE_STATE`` (the
+    1970-bound leak) -- see the mutation demonstration in the build
+    packet's evidence."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    rejected_representations = [
+        1, 1577836800, 1.5778368e9, True, b"2020-01-01",
+        np.array([]), np.array([1, 2]), pd.Series([1]),
+        [], [1, 2], {}, {"a": 1},
+    ]
+    for val in rejected_representations:
+        registry = [{
+            "family_key": "fam.rejected", "family_first_available": val,
+            "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.rejected",
+        }]
+        availability = build_family_episode_availability(
+            episodes, ["fam.rejected"], family_registry=registry, bars_by_symbol=bars,
+        )
+        assert (availability["availability_state"] == "UNESTIMABLE").all(), repr(val)
+        assert (availability["availability_state"] != FAMILY_ELIGIBLE_STATE).all(), repr(val)
+
+
+def test_tz_aware_bound_normalizes_by_wall_clock_not_utc_conversion_review_r3():
+    """Adversarial review 2026-08-29, finding R3 (NIT): the pre-existing
+    tz-normalization coverage (N4, inside
+    ``test_nan_like_bound_representations_all_fail_closed_review_f1``) only
+    exercised a ``Z`` (UTC, zero-offset) representation, where the
+    wall-clock convention and a hypothetical UTC-conversion convention
+    coincide -- so it could not discriminate between the two. This test
+    uses a non-zero offset (``-05:00``) and an episode ``end_date`` chosen
+    so the two conventions land on OPPOSITE sides of the ``bound > end``
+    ``NOT_YET_AVAILABLE`` gate:
+
+    bound ``"2020-06-01T23:00:00-05:00"``:
+      * wall-clock (``tz_localize(None)``, this function's convention):
+        naive ``2020-06-01 23:00:00`` -- offset discarded, local wall time
+        kept.
+      * UTC-converted (the convention this law forbids):
+        naive ``2020-06-02 04:00:00``.
+
+    With ``end = 2020-06-02 00:00:00``: the wall-clock bound
+    (23:00 on 06-01) is ``<= end`` -> ``FAMILY_ELIGIBLE_STATE``; the
+    UTC-converted bound (04:00 on 06-02) is ``> end`` -> would type
+    ``NOT_YET_AVAILABLE``. The tz-aware case is asserted to match a plain
+    naive bound at the SAME wall-clock time, pinning that wall-clock -- not
+    UTC-conversion -- actually governs.
+
+    Mutation-killing: replacing ``ts.tz_localize(None)`` with
+    ``ts.tz_convert("UTC").tz_localize(None)`` flips the tz-aware case to
+    ``NOT_YET_AVAILABLE`` while the naive case stays
+    ``FAMILY_ELIGIBLE_STATE``, so the two assertions diverge."""
+    episode = _episode_row(
+        symbol="AAA", episode_type="reset_decline", start_date="2020-01-01",
+        anchor_date="2020-05-01", end_date="2020-06-02",
+    )
+    episodes = pd.DataFrame([episode])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    def _availability_for_bound(bound_value):
+        registry = [{
+            "family_key": "fam.r3tz", "family_first_available": bound_value,
+            "provenance_class": "R",
+        }]
+        return build_family_episode_availability(
+            episodes, ["fam.r3tz"], family_registry=registry, bars_by_symbol=bars,
+        )
+
+    naive_availability = _availability_for_bound("2020-06-01T23:00:00")
+    tz_aware_availability = _availability_for_bound("2020-06-01T23:00:00-05:00")
+
+    assert (naive_availability["availability_state"] == FAMILY_ELIGIBLE_STATE).all()
+    assert (
+        naive_availability["availability_state"].tolist()
+        == tz_aware_availability["availability_state"].tolist()
+    )
+
+
 def test_null_bound_family_spec_hash_content_never_confers_eligibility_sol_request_repair():
     """Named directly for Sol's ruling (REQUEST_REPAIR, Slack C0BSBM78V1N,
     2026-08-29): a generic non-empty ``spec_hash`` is NOT a date-coverage

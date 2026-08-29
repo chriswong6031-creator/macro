@@ -1638,6 +1638,61 @@ the current substrate may itself terminate in
 possibility should inform the ruling rather than be discovered only after
 attempting it.
 
+### 6.14.2 Closed bound-type allowlist — numerics/containers fail closed (review R1/R2/R3, 2026-08-29)
+
+A follow-up delta review of the §6.14 repair (2026-08-29) found the
+hardened `_family_first_available_bound()` still normalized any value
+that survived the null/NaN checks by handing it straight to
+`pd.Timestamp(val)`, which accepts far more than the documented
+str/date/datetime64/Timestamp shapes. **R1 (MINOR, fail-open):**
+`pd.Timestamp` interprets a bare `int`/`float` as NANOSECONDS since the
+Unix epoch, so an epoch-SECONDS value such as `1577836800` (meant to read
+2020-01-01) silently became a bound in 1970 — a bound so early it is
+effectively unrestricted, making the family fail OPEN (spuriously
+`FAMILY_ELIGIBLE_STATE`) instead of failing closed. **R2 (MINOR):** a
+non-scalar container (`np.ndarray`, `pd.Series`, `list`, `dict`) escaped
+the `pd.isna`/truthiness guards and could raise (e.g.
+`bool(np.array([1, 2]))` raises `ValueError`) out of this
+outcome-independent predicate. **R3 (NIT):** the existing tz-normalization
+test coverage used only a zero-offset (`Z`) representation, which cannot
+discriminate the wall-clock convention from a hypothetical UTC-conversion
+convention.
+
+The function is now restructured to a CLOSED bound-type allowlist:
+`_family_first_available_bound()` accepts a value as bound-bearing ONLY
+when it is one of `str`, `datetime.date`/`datetime.datetime`,
+`np.datetime64`, or `pd.Timestamp`. Every other type — `int`, `float`,
+`bool`, `bytes`, and any container — is rejected outright and typed a null
+bound (`(None, True)`), never coerced through `pd.Timestamp` and never
+truthiness-tested. Numeric values are therefore NEVER interpreted as
+epoch seconds, epoch milliseconds, or any other epoch unit by this
+function — they are simply not bounds, closing R1. Because the type check
+runs before any scalar-truthiness test and routes every container to a
+null bound directly, a container can never reach an ambiguous
+`bool(...)` evaluation, closing R2. The whole normalization is
+additionally wrapped in an outer `try`/`except Exception` returning
+`(None, True)`, so no exception of any kind can escape this
+outcome-independent predicate under any input shape. Tz-aware bounds
+continue to normalize by WALL CLOCK (`tz_localize(None)` — the UTC offset
+is discarded and the local wall time is kept, e.g.
+`"2020-06-01T23:00:00-05:00"` normalizes to naive `2020-06-01 23:00:00`,
+not to the UTC-equivalent `2020-06-02 04:00:00`), the deliberate
+convention for a date-grain registry bound; a new discriminating test
+(`test_tz_aware_bound_normalizes_by_wall_clock_not_utc_conversion_review_r3`
+in `tests/test_stock_identity_ruler.py`) pins this with a non-zero offset
+and an episode boundary chosen so the wall-clock and UTC-conversion
+conventions land on opposite sides of the `bound > end` gate, closing R3.
+
+All three residuals were unreachable from the committed
+`family_registry.json` (which carries only `NoneType`/`str` values for
+`family_first_available`), so no committed artifact, taxonomy token, or
+outcome/event/fire path is touched by this repair — it is a pure
+type-discipline hardening of the same predicate §6.14 already repaired.
+Tests: `tests/test_stock_identity_ruler.py::
+test_rejected_bound_type_representations_all_fail_closed_review_r1_r2`
+(12 rejected representations, all `"UNESTIMABLE"`, none raising) and
+`::test_tz_aware_bound_normalizes_by_wall_clock_not_utc_conversion_review_r3`.
+
 ## 5. Sealed constants receipt (Task 3C Step 5 -- the real, one-time seal)
 
 **STATUS (2026-08-29): this seal is NOT ACCEPTED.** Sol ruled the milestone
