@@ -44,19 +44,17 @@ waves:
     status: in_progress
     depends_on: [CF2-F]
     next_action: >
-      DO NOT RUN THE NATIVE ADMINISTRATOR CEREMONY YET. Mastermind PR #200 is the accepted H0
-      source-closure/generation-repair carrier and merged as e53f524230ffc4e8730c844f6fc319d50a2050f3.
-      Protected Mastermind later advanced through procedure-only #202 and OCR-1 #184 without changing
-      the existing authenticated H0 carrier material, but the current H0 runbook still overloads one
-      REPAIR_MERGE_SHA as both exact current protected carrier and immutable repair provenance. That
-      now makes the ceremony source law contradictory: the historical repair SHA fails current-origin
-      equality, while relabelling the newer protected tip as the repair identity would falsify provenance.
-      Complete the already-open bounded RED-first H0 current-carrier/repair-identity pin-split repair
-      under operation cf2-h0-current-master-carrier-pin-repair-20260828-sol-001. Only after that source
-      repair is reviewed/merged and the runbook is re-pinned may the local administrator ceremony run.
-      Then require H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED, repeat verify-only, keep all three broker
-      labels disabled/unloaded with sockets absent, and STOP for independent P0. No OAuth/device login,
-      provider call, routing or CF2-I is authorized by H0.
+      SOURCE_REPAIR_RELEASED_DO_NOT_REPEAT. Mastermind PR #213 repaired the current-carrier versus
+      immutable-repair provenance split on the single canonical H0 carrier and squash-merged as
+      229aebce5e8d0c1c7372f5fead9c24516b027cc1 after exact-current-base reconciliation, full required
+      repository test success, CodeQL/static success and exact-head Sol review. Source transport is
+      BUILT_NOT_PROVEN / PRODUCTION_INERT, not native acceptance. On the native control Mac, re-pin
+      protected Mastermind 229aebce5e8d0c1c7372f5fead9c24516b027cc1 and accepted Macro
+      dcdd939c45b23abce5ba04f95e330ac914a3904b, build the final v3 carrier, then run exactly one
+      bounded administrator ceremony from the reviewed runbook. Require source-repair PASS plus two
+      verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable root-carrier
+      absence, and all three broker labels disabled/unloaded with sockets absent. STOP for independent
+      CF2-P0. No OAuth/device login, provider call, routing, services, workers or CF2-I is authorized by H0.
   - id: CF2-P0
     title: Independent post-H0 installed-host acquisition census
     status: todo
@@ -136,6 +134,7 @@ artifacts:
   - agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md
   - agentos/handoffs/AUTONOMY-V1-2026-08-26-sol-operational-reconciliation.md
   - agentos/handoffs/OPERATOR-CONTINUITY-2026-08-28-SOL-CONTINUATION-CHECKPOINT.md
+  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-29-CF2-H0-SOURCE-RELEASED.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
@@ -191,12 +190,13 @@ do_not_redo:
   - "Do not patch `mastermind.provider_capacity.v1` in place to add native Claude realm semantics. OCR-2C Family B, if approved, is a new versioned Provider Control evolution."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room, browser/devserver resources, host arming, merge/deploy authority or capital/trading authority."
 next_action: >
-  Repair the CF2-H0 current-carrier versus immutable-repair-identity source-law collision on the
-  existing bounded RED-first carrier; only after that repair merges may the native H0 administrator
-  ceremony resume, followed by repeated verify-only proof and independent P0. In parallel, OCR-1
-  Task 4 realm-set verification and OCR-3 Task 1 RED-first continuation work may proceed on their
-  separate carriers after Chairman account binding. OCR-2C Family A is refused; Sol must present the
-  Family B cross-repository architecture for Chairman approval before any v2 implementation/spec freeze.
+  Execute the final CF2-H0 v3 build and one bounded native administrator ceremony against protected
+  Mastermind 229aebce5e8d0c1c7372f5fead9c24516b027cc1 and accepted Macro
+  dcdd939c45b23abce5ba04f95e330ac914a3904b. Require repair PASS, two verify-only
+  H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable root-carrier absence and
+  disabled/unloaded broker state with sockets absent; then STOP for independent CF2-P0. In parallel,
+  OCR-1 Task 4 realm-set verification and OCR-3 Task 1 RED-first continuation work may proceed on their
+  separate lawful carriers. OCR-2C Family A is refused; Family B remains a separate architecture gate.
 ---
 
 ## Capability state
@@ -210,9 +210,13 @@ proves no live realm, capacity identity or routing. OCR-1 Task 4 is separately c
 The first independent P0 census correctly refused with `NO_SAFE_CF1_ACQUISITION_PATH`; H0 code then
 merged in Mastermind #157 and source-closure repair #200 merged as `e53f524230ffc4e8730c844f6fc319d50a2050f3`.
 Subsequent protected-master movement exposed a runbook provenance collision between exact current carrier
-and immutable repair identity; H0 is therefore source-law-blocked before the native administrator ceremony.
-Capacity-aware placement, real multi-account routing/fan-out, RF1 provider-neutral suitability, HF1 common
-harness, PF1 first real non-Codex worker and MH1 multi-host transport are not production-proven.
+and immutable repair identity. Mastermind #213 repaired that split on the single canonical H0 carrier and
+released the bounded v3 source transport as protected `229aebce5e8d0c1c7372f5fead9c24516b027cc1`
+after full required repository test, CodeQL/static and exact-head Sol review. Source law is no longer the
+H0 blocker, but the implementation remains `BUILT_NOT_PROVEN` / production-inert until the final native v3
+build and administrator ceremony produce the required installed-host receipts. Capacity-aware placement,
+real multi-account routing/fan-out, RF1 provider-neutral suitability, HF1 common harness, PF1 first real
+non-Codex worker and MH1 multi-host transport are not production-proven.
 
 OCR-2C Family A has returned `FAMILY_A_NO_SAFE_EQUALITY_WITNESS` and
 `FAMILY_A_NO_ROTATION_INVALIDATION`: current native Claude evidence plus existing Provider Control slot
