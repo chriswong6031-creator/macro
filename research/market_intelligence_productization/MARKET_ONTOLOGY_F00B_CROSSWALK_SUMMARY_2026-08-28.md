@@ -158,7 +158,7 @@ Per-lane state matrix:
 | #6576 OA1T plan | MERGED `b0205e58` | Plan/records carrier only — OA-1T-MACRO remains todo/NOT STARTED |
 | #6529 Stock Identity W3-final | OPEN (unclaimed) | F10 analog-lab substrate (episodes W1/W2 done, W3+ unbuilt) |
 | #6522 GMI Theme Graph finish-and-fold | OPEN | F04 theme/transmission substrate (D2C→W3C sequence) |
-| #6582 Eval OS architecture freeze | OPEN | F10/F13 measurement law |
+| #6582 Eval OS architecture freeze | MERGED `4f49a44d` | Records-only freeze — Eval OS capability NOT promoted (PARTIAL until its own PROVEN_LIVE law) |
 | #6598 Eval OS E1 qledger anchoring | MERGED `7cd9748` | E1 anchoring landed (evidence tier only) |
 | #6607 qledger persistence repair | MERGED `18e0f5b8` | stock_briefs producer persistence (evidence tier only) |
 | #6528 Market Memory recharter | OPEN DRAFT | F13-adjacent memory governance |
