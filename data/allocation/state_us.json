@@ -40,12 +40,12 @@
     "us_sector_tech"
   ],
   "held": [
-    "memory_storage",
     "silver_miners",
+    "memory_storage",
     "ai_infra",
     "cybersecurity"
   ],
-  "leader": "memory_storage",
+  "leader": "silver_miners",
   "names": {
     "ai_agents": "AI Agents & Applications",
     "ai_infra": "AI Infrastructure",

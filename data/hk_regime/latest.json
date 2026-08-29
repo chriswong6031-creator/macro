@@ -265,7 +265,7 @@
     },
     "tech_hsi": {
       "level": 0.0002,
-      "chg_20d_pct": -3.17
+      "chg_20d_pct": -2.76
     },
     "cyc_def": {
       "level": 1.6559,
@@ -363,15 +363,6 @@
         "direction": "mainland risk-off \u2014 southbound selling HK, AH premium widening"
       },
       {
-        "driver": "tech_internet_leadership",
-        "label": "Tech / internet leadership",
-        "label_zh": "\u79d1\u6280/\u4e92\u8054\u7f51\u9886\u6da8",
-        "family": "equity-leadership",
-        "projection": -0.39,
-        "strength": 0.39,
-        "direction": "HS-TECH unwind \u2014 internet/tech-led de-rating"
-      },
-      {
         "driver": "us_rate_repricing",
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
@@ -388,6 +379,15 @@
         "projection": 0.28,
         "strength": 0.28,
         "direction": "global risk-ON \u2014 S&P up, VIX & dollar down, EM/copper bid (HK's dominant force)"
+      },
+      {
+        "driver": "tech_internet_leadership",
+        "label": "Tech / internet leadership",
+        "label_zh": "\u79d1\u6280/\u4e92\u8054\u7f51\u9886\u6da8",
+        "family": "equity-leadership",
+        "projection": -0.27,
+        "strength": 0.27,
+        "direction": "HS-TECH unwind \u2014 internet/tech-led de-rating"
       },
       {
         "driver": "china_spillover",
