@@ -5924,6 +5924,17 @@
       "last_as_of": "2026-08-25",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "KRMN",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 1,
+      "strength_slope": null,
+      "state": "new",
+      "last_as_of": "2026-08-29",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
     }
   ],
   "contradiction_pairs": [
@@ -5968,9 +5979,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 1313,
+  "n_tape_rows": 1314,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-29T09:32:52Z",
+  "produced_at": "2026-08-29T12:44:26Z",
   "authority_check": []
 }

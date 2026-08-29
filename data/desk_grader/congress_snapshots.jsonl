@@ -7092,3 +7092,4 @@
 {"date":"2026-08-29","ticker":"PH","departed":true,"left_desk":"2026-08-29","last_rank":145,"last_score":38.2}
 {"date":"2026-08-29","ticker":"VLTO","departed":true,"left_desk":"2026-08-29","last_rank":150,"last_score":37.0}
 {"date":"2026-08-29","ticker":"WFC","departed":true,"left_desk":"2026-08-29","last_rank":114,"last_score":47.8}
+{"date":"2026-08-29","ticker":"FMAO","rank":141,"score":37.3,"lean":1,"covered":true,"unconfirmed":false}
