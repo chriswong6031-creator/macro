@@ -249,6 +249,102 @@ def test_red_sol_hold_repairs_check_without_branch_remediation(monkeypatch, tmp_
     assert "unsafe_branch" not in reason
 
 
+def test_pending_ordinary_claude_hold_waits_instead_of_demanding_a_forbidden_merge(monkeypatch, tmp_path):
+    """The PR #6608 incident: a lawful claude/* hold got merge advice for 121 blocks.
+
+    Before this repair `_hold_block` returned None for every non-`sol/*` branch, so an
+    ordinary held PR fell through to the canonical guard's `unmerged` message telling
+    the session to squash-merge and deploy — an action DEC:SOL-HOLD-IS-A-MERGE-BARRIER
+    forbids for that exact PR. Pin the wait message, and pin that it is still a block.
+    """
+    _stub_clean_pushed_git(monkeypatch)
+    guard, calls = _fake_guard(
+        tmp_path,
+        state={"last_blocker": "unmerged"},
+        split=([], ["trusted-ci / trusted-executor-pack-10"], ["ci-authority", "fences"]),
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+    assert probe is not None and probe["status"] == "pending"
+    assert probe["candidate_kind"] == "ordinary_unmerged"
+
+    block = WRAPPER._hold_block(probe)
+    assert block is not None
+    # Still a block: this repair corrects the advice, never the permission.
+    assert block["decision"] == "block"
+    reason = block["reason"].lower()
+    assert "hold-for-sol waiting" in reason
+    assert "trusted-executor-pack-10" in reason
+    assert "wait for the existing check watcher only" in reason
+    # The exact instructions the old fall-through wrongly produced must be absent.
+    assert "squash-merge" not in reason
+    assert "render/deploy" not in reason
+    # And the two failure modes the incident actually produced.
+    assert "do not re-poll" in reason
+    assert "ship loop blocked" in reason
+    assert calls == {"open_pull": 1, "checks": 1}
+
+
+def test_red_ordinary_claude_hold_repairs_the_check_and_never_merges(monkeypatch, tmp_path):
+    """A red on a held claude/* PR points at the check, not at merging or renaming."""
+    _stub_clean_pushed_git(monkeypatch)
+    guard, _ = _fake_guard(
+        tmp_path,
+        state={"last_blocker": "unmerged"},
+        split=(["ci-pack-3 (failure)"], [], ["fences"]),
+    )
+
+    probe = WRAPPER._hold_probe(guard, {"hook_event_name": "Stop"})
+    assert probe is not None and probe["status"] == "red"
+    assert probe["candidate_kind"] == "ordinary_unmerged"
+
+    block = WRAPPER._hold_block(probe)
+    assert block is not None and block["decision"] == "block"
+    reason = block["reason"].lower()
+    assert "hold-for-sol checks red" in reason
+    assert "ci-pack-3" in reason
+    assert "must not merge" in reason
+    assert "squash-merge" not in reason
+
+
+def test_hold_block_still_refuses_branches_outside_the_two_sanctioned_namespaces(monkeypatch, tmp_path):
+    """The codex/* branch-law repair must survive this widening."""
+    # A probe shape that would otherwise qualify, but on a forbidden namespace.
+    for kind, branch in (("ordinary_unmerged", "codex/forbidden"), ("sol_authority", "claude/not-sol")):
+        assert (
+            WRAPPER._hold_block(
+                {
+                    "candidate_kind": kind,
+                    "branch": branch,
+                    "number": 1,
+                    "head": HEAD,
+                    "status": "pending",
+                    "pending": ["ci-gate"],
+                    "red": [],
+                }
+            )
+            is None
+        )
+
+
+def test_green_ordinary_hold_still_parks_and_pending_still_never_parks(monkeypatch, tmp_path):
+    """Guard the permission boundary this repair must not move."""
+    _stub_clean_pushed_git(monkeypatch)
+
+    green, _ = _fake_guard(tmp_path, state={"last_blocker": "unmerged"})
+    assert WRAPPER._parked_hold(green, {"hook_event_name": "Stop"}) is not None
+
+    pending, _ = _fake_guard(
+        tmp_path, state={"last_blocker": "unmerged"}, split=([], ["ci-gate"], ["fences"])
+    )
+    assert WRAPPER._parked_hold(pending, {"hook_event_name": "Stop"}) is None
+
+    red, _ = _fake_guard(
+        tmp_path, state={"last_blocker": "unmerged"}, split=(["ci-gate (failure)"], [], ["fences"])
+    )
+    assert WRAPPER._parked_hold(red, {"hook_event_name": "Stop"}) is None
+
+
 def test_dirty_or_not_exactly_pushed_hold_does_not_park(monkeypatch, tmp_path):
     guard, _ = _fake_guard(tmp_path)
 
