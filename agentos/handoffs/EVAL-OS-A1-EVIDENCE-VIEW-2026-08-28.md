@@ -2,7 +2,7 @@
 workstream: "WS:EVAL-OS-EVIDENCE-VIEW"
 session: sol/eval-os-a1-evidence-view-20260828
 model: sol
-ended_because: commissioned
+ended_because: complete
 mission: >
   Commission A1 so the existing Intelligence OS admin surface answers, per canonical T1 engine,
   whether evidence is Validated, Accruing, Ungraded by design, Degraded, or Disproven, plus one
