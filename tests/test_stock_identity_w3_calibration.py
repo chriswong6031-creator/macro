@@ -1064,17 +1064,22 @@ def test_compute_constants_from_substrate_end_to_end_synthetic(synthetic_partiti
     assert not result.unavailable
 
     base_spec = RulerSpec.from_json(REAL_SPEC_PATH)
-    # Ruling 2: an explicit, unrestricted family_registry entry for
-    # "fam.synthetic" -- the real committed registry has no such family, and
+    # Ruling 2: an explicit family_registry entry for "fam.synthetic" -- the
+    # real committed registry has no such family, and
     # compute_constants_from_substrate's default (load_family_registry()) would
     # type every cell UNESTIMABLE for it. Sol CONFIRMATION-1 point 5 also
-    # requires a present provenance_class (R/B, never omitted) for a
-    # null-bound family to type ELIGIBLE, and point 3(a) requires a receipted
-    # (truthy) spec_hash -- both added here to keep this fixture genuinely
-    # unrestricted.
+    # requires a present provenance_class (R/B, never omitted). Sol
+    # REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29): a NULL
+    # family_first_available can no longer type ELIGIBLE at all (however
+    # receipted its spec_hash), which would make every cell UNESTIMABLE here
+    # and raise inside compute_recall_floor/compute_lambda_fs -- this test is
+    # about the end-to-end constant-computation WIRING, not the null-bound
+    # availability law, so a BOUNDED entry (predating this synthetic
+    # substrate's fixture bars, which start 2019-01-01) keeps the fixture
+    # genuinely unrestricted via the unchanged bounded path.
     fixture_registry = [{
-        "family_key": "fam.synthetic", "family_first_available": None,
-        "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.synthetic",
+        "family_key": "fam.synthetic", "family_first_available": "1900-01-01",
+        "provenance_class": "R",
     }]
     recall_floor, lambda_fs, cells = calib_w3.compute_constants_from_substrate(
         result.events, result.attribution, result.episodes, result.bars_by_symbol, base_spec,
@@ -1375,17 +1380,19 @@ def dry_run_substrate(tmp_path, monkeypatch, fake_w2_machinery, throwaway_spec):
     # "fam.synthetic" (the synthetic fixture family) -- the REAL committed
     # family_registry.json carries no such family, which would type every
     # cell UNESTIMABLE and make compute_recall_floor/compute_lambda_fs raise.
-    # Point FAMILY_REGISTRY_PATH at a fixture file carrying an unrestricted
-    # (family_first_available=None) entry for it, same pattern as the other
-    # monkeypatched module paths above. Sol CONFIRMATION-1 point 5 also
-    # requires a present provenance_class (R/B) and point 3(a) a receipted
-    # spec_hash for a null-bound family to type ELIGIBLE rather than
-    # UNESTIMABLE -- both added to keep this fixture genuinely unrestricted.
+    # Point FAMILY_REGISTRY_PATH at a fixture file carrying a BOUNDED entry
+    # for it, same pattern as the other monkeypatched module paths above.
+    # Sol CONFIRMATION-1 point 5 also requires a present provenance_class
+    # (R/B). Sol REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29): a NULL
+    # family_first_available can no longer type ELIGIBLE at all -- this
+    # fixture is about the CLI's end-to-end wiring, not the null-bound
+    # availability law, so a bound predating the fixture bars (2019-01-01)
+    # keeps it genuinely unrestricted via the unchanged bounded path.
     fake_family_registry_path = tmp_path / "family_registry.json"
     fake_family_registry_path.write_text(
         json.dumps({"families": [{
-            "family_key": "fam.synthetic", "family_first_available": None,
-            "provenance_class": "R", "spec_hash": "fixture-spec-hash::fam.synthetic",
+            "family_key": "fam.synthetic", "family_first_available": "1900-01-01",
+            "provenance_class": "R",
         }]}),
         encoding="utf-8",
     )

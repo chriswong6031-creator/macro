@@ -690,18 +690,32 @@ def _family_provenance_class(entry: Mapping[str, Any] | None) -> tuple[str | Non
 
 
 def _family_spec_receipted(entry: Mapping[str, Any] | None) -> bool:
-    """Point 3(a) ("the family's source/era spec ... covers that date"): a
-    structural receipt check — the registry's own ``spec_hash`` is non-empty.
-    Every R/B entry ``engine/stock_identity/replay/registry.py``'s ``_entry()``
-    mints carries a real ``spec_hash`` computed from its own
-    ``spec_constants``; only a Class P entry (already excluded before this
-    check runs — point 2) or a malformed/synthetic one carries a falsy one.
-    The committed registry carries no per-family, per-date era-boundary field
-    beyond ``family_first_available`` (point 1's hard lower bound) — this is
-    the finest-grained "the spec exists and is receipted" signal actually
-    available from existing registry receipts without inventing a new field
-    (never done here — see the module docstring's fail-closed-on-ambiguity
-    rule)."""
+    """Malformed/synthetic-entry receipt check ONLY — this is NOT a
+    date-coverage proof for point 3(a). It checks a single structural fact:
+    the registry's own ``spec_hash`` is non-empty. Every R/B entry
+    ``engine/stock_identity/replay/registry.py``'s ``_entry()`` mints carries
+    a real ``spec_hash`` computed from its own ``spec_constants``; only a
+    Class P entry (already excluded before this check runs — point 2) or a
+    malformed/synthetic one carries a falsy one, so a falsy ``spec_hash`` here
+    still means "this entry is malformed/synthetic" and still types
+    ``UNESTIMABLE`` at its original position in the chain.
+
+    Sol ruled (REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29) that
+    CONFIRMATION-1 point 3(a) requires DATE-SPECIFIC source/era
+    reconstructibility proof — that a family's source/era spec covers the
+    PARTICULAR date in question — and that a generic non-empty ``spec_hash``
+    is not that proof; it says nothing about which dates the spec's source/era
+    boundaries actually cover. The 2026-08-29 evidence census confirmed no
+    committed artifact anywhere in this tree records such date-specific
+    coverage for any of the 14 null-bound R/B families (11 NO; 3 PARTIAL — a
+    producer store exists but no committed artifact records that store's date
+    coverage; 0 YES; the only committed date axis in the tree is the
+    instrument-scoped OHLCV price-plane manifest). Because that proof does not
+    exist anywhere to read, this function's ``True`` result no longer confers
+    eligibility on a null-bound family — see
+    :func:`_episode_family_availability_state`'s terminal grant, which now
+    fails EVERY null-bound R/B row closed to ``"UNESTIMABLE"`` regardless of
+    this check's outcome."""
     return bool(entry.get("spec_hash")) if entry is not None else False
 
 
@@ -762,9 +776,18 @@ def _episode_family_availability_state(
       ``family_first_available`` field, the entry genuinely lacks the
       ``provenance_class`` field (point 5 — a missing class is NEVER guessed
       or defaulted to R/B), the entry's class is neither R, B nor P, no
-      ``bars_by_symbol`` was supplied, OR (for a null-bound R/B family) the
-      registry entry carries no receipted ``spec_hash`` at all (point 3(a)) —
-      all "cannot establish lawful availability" causes, typed the same way,
+      ``bars_by_symbol`` was supplied, the registry entry carries no
+      receipted ``spec_hash`` at all (a malformed/synthetic-entry check, NOT
+      point 3(a) itself — see :func:`_family_spec_receipted`), OR — per Sol's
+      REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29) — the family is a
+      null-bound R/B family AT ALL, regardless of whether every other
+      sub-check (spec receipt, producer-store presence, bars coverage,
+      identity resolvability) passed: the 2026-08-29 evidence census proved
+      no committed artifact anywhere in this tree records date-specific
+      source/era reconstructibility for any of the 14 null-bound R/B
+      families (11 NO; 3 PARTIAL; 0 YES), so point 3(a)'s required proof is
+      unestablishable for a null bound and the row fails closed. All of these
+      are "cannot establish lawful availability" causes, typed the same way,
       NEVER a silent fall-through to fired-on coverage or to ELIGIBLE.
     * ``"STRUCTURAL_ABSENCE"`` — the registry types this family Class P
       (prospective-only / structural-absence): historically unavailable
@@ -789,7 +812,31 @@ def _episode_family_availability_state(
     historical R/B families with NULL first-available" — a family with a real,
     committed ``family_first_available`` bound (``reclaim_waiver``,
     ``washout_turn``, ``amber_early``) already carries a positive, registry-
-    asserted lower bound from point 1 and is not additionally gated by them.
+    asserted lower bound from point 1 and is not additionally gated by them:
+    it can still reach ``FAMILY_ELIGIBLE_STATE``.
+
+    A null-bound family is different, per Sol's REQUEST_REPAIR (Slack
+    C0BSBM78V1N, 2026-08-29): the original implementation substituted
+    ``bool(spec_hash)`` — a generic, non-date-specific structural receipt
+    check — for point 3(a)'s actual requirement, date-specific source/era
+    reconstructibility proof for the episode's particular date. Sol ruled
+    that substitution invalid. The 2026-08-29 evidence census that followed
+    proved no committed artifact anywhere in this tree records date-specific
+    source/era coverage for ANY of the 14 null-bound R/B families (11 NO; 3
+    PARTIAL — a producer store exists but no committed artifact records that
+    store's date coverage; 0 YES) — the only date axis committed anywhere in
+    the tree is the instrument-scoped OHLCV price-plane manifest
+    (``data/stock_identity/ohlcv/manifest.json``), which says nothing about
+    any family's source/era coverage. With no committed evidence to read,
+    date-specific reconstructibility is unestablishable for a null-bound
+    family — not merely unproven, but structurally absent from the tree — so
+    every null-bound R/B row now fails closed to ``"UNESTIMABLE"``
+    unconditionally, still passing through the SOURCE_FAILED / NO_COVERAGE /
+    IDENTITY_UNRESOLVED sub-checks above it (unchanged, and still typed
+    distinctly when they fire first) but never reaching
+    ``FAMILY_ELIGIBLE_STATE``. Deriving availability from producer-store
+    event rows or their min/max dates remains forbidden (fired-on evidence,
+    Ruling 2) and was not done here or anywhere in this repair.
     """
     if not family_entry_present:
         return "UNESTIMABLE"
@@ -843,6 +890,24 @@ def _episode_family_availability_state(
 
     if bound is None and not _identity_resolvable(symbol, str(root)):
         return "IDENTITY_UNRESOLVED"
+
+    if bound is None:
+        # Sol REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29): the 2026-08-29
+        # evidence census proved no committed artifact anywhere in the tree
+        # records date-specific source/era reconstructibility for ANY of the
+        # 14 null-bound R/B families (11 NO; 3 PARTIAL — a producer store
+        # exists but no committed artifact records that store's date
+        # coverage; 0 YES). A generic non-empty ``spec_hash`` (what
+        # ``_family_spec_receipted`` above checks) is NOT a date-coverage
+        # proof for CONFIRMATION-1 point 3(a) — it only catches a malformed
+        # or synthetic registry entry. Producer-store event rows/dates are
+        # fired-on evidence and may never be consulted by this
+        # outcome-independent predicate. With no committed date-specific
+        # evidence to read, date-specific reconstructibility is
+        # unestablishable for a null-bound family, so it fails closed here —
+        # a null-bound R/B row can NEVER reach ``FAMILY_ELIGIBLE_STATE``,
+        # regardless of how many of the other sub-checks above it passed.
+        return "UNESTIMABLE"
 
     return FAMILY_ELIGIBLE_STATE
 

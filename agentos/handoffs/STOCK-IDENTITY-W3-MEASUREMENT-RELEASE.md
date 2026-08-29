@@ -48,7 +48,7 @@ unverified:
   - claim: Exact-head hosted CI green on the final PR head
     what_would_verify: "The PR #6638 ci.yml/fences run on the final head concluding green on all binding checks (legacy-jobs edit forces the full suite)."
   - claim: Sol accepts the W3A milestone
-    what_would_verify: "Sol RULING/ACCEPTED on the program thread after the milestone RESULT; merge of #6638 is Sol's."
+    what_would_verify: "Sol RULING/ACCEPTED on the program thread after the milestone RESULT; merge of #6638 is Sol's. RESOLVED 2026-08-29: Sol ruled REQUEST_REPAIR, not accepted — see the 'Milestone status' section below and the fail-closed repair packet (Slack C0BSBM78V1N)."
 unresolved:
   - "Null #6 cadence control is PARTIAL by Sol ruling: 92/285 pilot groups controlled (5.3% of rows); dark groups are typed and barred from cadence-controlled/cross-grain inference; W3B/W5 must consume cadence_control_coverage_v1 and abstain where the control is required but unavailable — the power/ABSTAIN law owns the consequence."
   - "Point 3(a)'s date dimension of source-era reconstructibility is unenforceable from existing registry receipts (no per-date era field exists; none was invented per Sol's fail-closed law); for null-bound R/B families the date axis rests on the family_first_available bound, which is null for exactly those families. Recorded as a data limitation."
@@ -56,7 +56,8 @@ unresolved:
   - "The W2 replay machinery's own registry work-file stages into a hardcoded foreign session scratchpad path (module constant outside this carrier's owned files); provenance hashes bind the substrate regardless. Cosmetic follow-up for a W2-owned pass."
   - "_identity_resolvable carries a today-unreachable fail-open default (hygiene.check_symbol always sets the key); flagged for a fail-closed default in a future W3B-adjacent pass."
 next_actions:
-  - "Sol: review the W3A milestone RESULT on the program thread; accept/merge #6638 or REQUEST_CHANGES."
+  - "RESOLVED 2026-08-29: Sol ruled REQUEST_REPAIR (Slack C0BSBM78V1N) rather than accept/merge — the fail-closed repair (null-bound R/B rows type UNESTIMABLE unconditionally) plus the date-evidence census are recorded in registration §6.13/§6.14 and this file's 'Milestone status' section."
+  - "Sol: rule on the re-seal boundary now that the repair is in place — whether/when a corrective seal should follow, and its shape. Not decided by this repair."
   - "On acceptance: SI-W3B-ESTIMABILITY-V1 unlocks against the frozen support/coverage + cadence-control-coverage schemas (consume absence as outcome-independent estimability input)."
   - "SI-W3S-DEAD-CONTROL-V1 starts post-milestone per Sol's Terra-avenue ruling: extend config/delisted_symbols.yml to >=5 rows under its own SEC evidence protocol with a mechanical preregistered selection rule, and extend the existing Polygon dead-name collector to persist o/h/l/v (owner inventory packet in the program thread, 2026-08-28)."
   - "W3 Measurement Release closes only when Sol accepts W3A + W3B + W3S status together (freeze gate)."
@@ -107,6 +108,53 @@ signal." It did not, at the median. Whether tails/cells above the floor carry
 signal is exactly the question the held W3B estimability census and the frozen
 Q1 read exist to answer lawfully; nothing here prejudges them in either
 direction.
+
+## Milestone status: NOT ACCEPTED — Sol REQUEST_REPAIR 2026-08-29
+
+**This milestone, as sealed above, is NOT accepted.** Sol ruled the W3A
+milestone REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29), superseding the
+"unverified: Sol accepts the W3A milestone" line below with an actual
+answer: no, not as sealed.
+
+(a) **The defect.** `_family_spec_receipted()` substituted
+`bool(entry.spec_hash)` — a generic, non-empty structural receipt check —
+for CONFIRMATION-1 point 3(a)'s actual requirement: DATE-SPECIFIC
+source/era reconstructibility proof for a null-bound R/B family. That
+substituted predicate fed the sealed calibration population.
+
+(b) **The census result.** A completed evidence census (commissioning
+session, 2026-08-29) proved NO committed artifact anywhere in this tree
+records date-specific source/era coverage for ANY of the 14 null-bound R/B
+families the sealed predicate had been treating as eligible: 11 NO, 3
+PARTIAL (a producer store exists but no committed artifact records that
+store's date coverage), 0 YES. The only committed date axis in the tree is
+the instrument-scoped OHLCV price-plane manifest, which says nothing about
+any family's source/era coverage. Full census: registration document §6.14.
+
+(c) **The fail-closed repair.** `_episode_family_availability_state`'s
+terminal grant now returns `"UNESTIMABLE"` unconditionally for every
+null-bound R/B row — such a row can never reach `FAMILY_ELIGIBLE_STATE`,
+regardless of how many other sub-checks it passes. A family with a REAL
+(non-null) `family_first_available` bound is unaffected — eligibility still
+exists via that unchanged path. Measured impact on the committed pilot
+cohort: 4,368 of 4,372 previously-`ELIGIBLE` rows now type `UNESTIMABLE`
+(registration §6.14).
+
+(d) **Sealed artifacts preserved as the rejected-attempt record.** Per the
+repair commission's fences, `data/stock_identity/ruler/ruler_spec_v1.json`,
+`data/stock_identity/ruler/channel_a_constitution_v1.json`,
+`data/stock_identity/ruler/calibration_replay_manifest_v1.json`,
+`data/trial_ledger.jsonl`, `engine/stock_identity/ruler_nulls.py`, and both
+calibration scripts are BYTE-UNTOUCHED by the repair — no second seal, no
+re-derivation of constants. The sealed receipt's `ruler_implementation_
+sha256.ruler_py` pin (`42905b81...`) now deliberately disagrees with the
+current, repaired `ruler.py` bytes; that disagreement is itself the
+receipt's voiding proof, pinned by a live test.
+
+(e) **Corrective re-seal awaits Sol's explicit boundary ruling.** This repair
+makes NO second seal and does not decide when or whether one should follow;
+that decision, and the shape of the re-seal act if one is warranted, is
+Sol's to rule on next.
 
 ## What exists now
 

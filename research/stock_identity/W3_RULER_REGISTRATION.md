@@ -1178,6 +1178,26 @@ before/after via `git diff`.
 
 ## 6.13 Sol CONFIRMATION-1/CONFIRMATION-2 (SI-W3A-RULER-V1) — availability-eligibility closed law + cadence-control coverage output
 
+**STATUS (2026-08-29): the seal this section documents is NOT ACCEPTED.**
+Sol ruled the milestone REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29):
+point 3(a) below — "a receipted source/era spec, i.e. the registry's own
+`spec_hash` is non-empty" — substitutes a generic structural receipt check
+for point 3(a)'s actual requirement, DATE-SPECIFIC source/era
+reconstructibility proof, and the 2026-08-29 evidence census that followed
+(§6.14 below) confirmed no committed artifact anywhere in this tree records
+that date-specific evidence for any of the 14 null-bound R/B families. The
+implementation has since been repaired (fail-closed: a null-bound R/B row
+now NEVER reaches `FAMILY_ELIGIBLE_STATE`, regardless of point 3(a)/3(b)/3(d)
+— see `engine/stock_identity/ruler.py`'s `_episode_family_availability_state`
+terminal grant and its docstring for the current, binding law). The
+narrative below is PRESERVED AS THE HISTORICAL RECORD of the rejected
+attempt — every sentence describing point 3(a) as sufficient for eligibility
+is describing the INVALIDATED reading, not current behavior. §6.14 records
+the census and the repair's measured impact; the sealed
+`data/stock_identity/ruler/ruler_spec_v1.json` receipt (§5 below) is likewise
+preserved byte-for-byte as a rejected-attempt record, not evidence of an
+accepted seal — the re-seal boundary awaits Sol's explicit ruling.
+
 Sol's ruling (Slack ts `1787967972.011309`) closed the availability-null
 question with exact law, declaring the `_episode_family_availability_state`
 predicate as it stood after §6.11's Ruling 2 NOT seal-ready, and separately
@@ -1232,14 +1252,31 @@ now implement Sol's five-point law exactly:
    real, committed `family_first_available` bound (`reclaim_waiver`,
    `washout_turn`, `amber_early`) is governed by point 1 alone and is not
    additionally gated by (a)/(b)/(d).
-4. **Fail-closed on any unestablished source-specific availability.** A
-   failure of (b) types `"SOURCE_FAILED"`; a failure of (d) types
-   `"IDENTITY_UNRESOLVED"`; (a) failing, like every other missing-evidence
-   path, types `"UNESTIMABLE"`. None of these ever falls through to
-   eligibility, and eligibility is NEVER inferred from the family having
-   fired (`aggregate_cell_metrics`'s eligibility universe still never reads
-   `events` for this purpose — unchanged from Ruling 2) or from the null
-   itself.
+
+   **REPAIRED (Sol REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29):** the
+   paragraph above described (a)/(b)/(c)/(d) all passing as SUFFICIENT for a
+   null-bound family to reach `FAMILY_ELIGIBLE_STATE`. Sol ruled that (a) as
+   implemented — a non-empty `spec_hash` — is not the date-specific
+   source/era reconstructibility proof point 3(a) actually requires, and the
+   2026-08-29 evidence census (§6.14) found no committed artifact anywhere
+   in this tree that supplies that proof for any null-bound R/B family. The
+   implementation is now fail-closed: passing (a)/(b)/(c)/(d) no longer
+   confers eligibility on a null-bound family — see point 4 below, repaired.
+4. **Fail-closed on any unestablished source-specific availability —
+   REPAIRED, now including a null bound ITSELF.** A failure of (b) types
+   `"SOURCE_FAILED"`; a failure of (d) types `"IDENTITY_UNRESOLVED"`; (a)
+   failing (a missing/empty `spec_hash` — a malformed/synthetic-entry
+   signal, per `_family_spec_receipted`'s repaired docstring), like every
+   other missing-evidence path, types `"UNESTIMABLE"`. Per the 2026-08-29
+   repair, a null-bound R/B family that passes EVERY ONE of (a)/(b)/(c)/(d)
+   ALSO types `"UNESTIMABLE"` now — a non-empty `spec_hash` was never a
+   date-coverage proof, and no committed artifact anywhere in this tree
+   supplies one, so date-specific reconstructibility is unestablishable for
+   a null bound and the row fails closed unconditionally. None of these ever
+   falls through to eligibility, and eligibility is NEVER inferred from the
+   family having fired (`aggregate_cell_metrics`'s eligibility universe
+   still never reads `events` for this purpose — unchanged from Ruling 2) or
+   from the null itself.
 5. **A missing registry entry or missing field stays UNESTIMABLE.** Extended
    from Ruling 2 to cover a genuinely missing `provenance_class` field too
    (`_family_provenance_class`'s `field_present=False` path) — a missing
@@ -1257,33 +1294,53 @@ already members of `AVAILABILITY_TAXONOMY_TOKENS` (§ frozen taxonomy, freeze
 §7) but were never actually PRODUCED by `_episode_family_availability_state`
 before this pass; no new token was added.
 
-**Sol's five required regressions** (`tests/test_stock_identity_ruler.py`):
+**Sol's five required regressions** (`tests/test_stock_identity_ruler.py`,
+AS ORIGINALLY WRITTEN — see the REPAIRED status below for (b)):
 
 * **(a)** `test_class_p_family_never_eligible_regardless_of_null_date_confirmation1_regression_a`
   — a Class-P family with a null bound, and separately with a SET bound
   (mirroring `amber_early`), both type `STRUCTURAL_ABSENCE`, never
   `ELIGIBLE`.
-* **(b)** `test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirmation1_regression_b`
+* **(b)** *(ORIGINAL, INVALIDATED)* `test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirmation1_regression_b`
   — an R family, null-bound, receipted spec, an EXISTING declared producer
   store (created under a throwaway `repo_root` so the positive branch is
   genuinely exercised), full bars coverage, resolvable identity -> `ELIGIBLE`.
+  **REPAIRED (2026-08-29):** this test has been rewritten as
+  `test_rb_null_bound_family_unestimable_despite_full_lawful_source_input_coverage_sol_request_repair_confirmation1_regression_b`
+  — the IDENTICAL fixture (same full coverage on every sub-check) now
+  asserts `"UNESTIMABLE"`, never `ELIGIBLE`, per the repaired law. A new,
+  additional test named directly for the ruling,
+  `test_null_bound_family_spec_hash_content_never_confers_eligibility_sol_request_repair`,
+  proves two entries differing only in `spec_hash` CONTENT both resolve
+  `UNESTIMABLE`. A new test,
+  `test_bounded_family_availability_path_unchanged_by_null_bound_repair_confirmation1_regression_f`,
+  proves the BOUNDED path (point 1) is unaffected — `bound <= end` still
+  reaches `ELIGIBLE`, `bound > end` still types `NOT_YET_AVAILABLE`.
 * **(c)** `test_rb_null_bound_family_missing_source_coverage_types_unavailable_confirmation1_regression_c`
   — the SAME family with an absent declared producer store types
   `SOURCE_FAILED`; separately, with no `spec_hash` at all, types
-  `UNESTIMABLE`.
+  `UNESTIMABLE`. Unaffected by the repair — both sub-states fire BEFORE the
+  repaired terminal grant is reached.
 * **(d)** `test_zero_fire_eligible_episode_still_grows_denominator_under_narrowed_law_confirmation1_regression_d`
   — under the NARROWED predicate, a zero-fire-but-eligible episode still
   grows `recall_at_tier`'s denominator (1.0 -> 0.5), re-proving Ruling 2's
   regression (a) still holds after CONFIRMATION-1 narrows eligibility.
+  **REPAIRED (2026-08-29):** since a null-bound family can no longer
+  demonstrate this at all (it can never reach `ELIGIBLE`), this test now
+  uses a BOUNDED (not null) family_registry entry to exercise the same
+  "zero-fire eligible episode grows the denominator" property via the
+  unchanged bounded path.
 * **(e)** `test_no_fired_on_fallback_under_any_missing_evidence_path_confirmation1_regression_e`
   — AAA plainly fires, but FOUR distinct missing-evidence paths (no
   registry; missing `provenance_class`; null-bound R missing `spec_hash`;
   null-bound R with an absent declared producer store) all leave
-  `recall_at_tier` undefined, never silently read off the fire.
+  `recall_at_tier` undefined, never silently read off the fire. Unaffected
+  by the repair — none of the four paths reach the repaired terminal grant.
 
 Plus `test_identity_unresolved_symbol_never_eligible_under_null_bound`
 (point 3(d) in isolation, against the real `ABX` `COMPUTE_BLOCKLIST` entry
-and the real `repo_root` default).
+and the real `repo_root` default) — unaffected by the repair, since
+`IDENTITY_UNRESOLVED` fires before the repaired terminal grant.
 
 Every pre-existing fixture conferring "unrestricted" lawful availability
 (`_unrestricted_registry` in `tests/test_stock_identity_ruler.py`, and the
@@ -1292,6 +1349,12 @@ was updated to carry an explicit `provenance_class="R"` and a synthetic
 `spec_hash`, matching the precedent Ruling 2 itself set — an "unrestricted"
 fixture now means "a receipted R/B family with no declared producer-store
 dependency and no registered lower bound", not merely "no lower bound".
+**REPAIRED (2026-08-29):** since a null-bound entry can no longer reach
+`ELIGIBLE` at all, `_unrestricted_registry` now serves ONLY tests exercising
+a null-bound sub-state (the identity-unresolved test above). Every test
+that needed `ELIGIBLE` for reasons unrelated to the null-bound law itself
+(recall-denominator/flooding math) was moved to a new `_bounded_registry`
+helper (an early, non-null `family_first_available` bound) — see §6.14.
 
 ### Part 2 — cadence-control coverage output (W3B input)
 
@@ -1347,10 +1410,11 @@ ruler_spec_v1.json`'s `pr3` block and `data/trial_ledger.jsonl` are both
 confirmed byte-identical before/after via `git diff` (zero diff).
 
 **Availability distribution — measured IDENTICAL to §6.12's baseline, row for
-row.** A direct comparison (the repaired predicate vs. an inline
-reconstruction of the pre-CONFIRMATION-1, Ruling-2-only predicate, run over
-the SAME committed pilot events/episodes/registry/bars) produced **zero**
-row-level differences: **4,372 ELIGIBLE, 308 NOT_YET_AVAILABLE**, no
+row (HISTORICAL — SUPERSEDED 2026-08-29, see §6.14).** A direct comparison
+(the CONFIRMATION-1 predicate as sealed vs. an inline reconstruction of the
+pre-CONFIRMATION-1, Ruling-2-only predicate, run over the SAME committed
+pilot events/episodes/registry/bars) produced **zero** row-level
+differences: **4,372 ELIGIBLE, 308 NOT_YET_AVAILABLE**, no
 `STRUCTURAL_ABSENCE`/`SOURCE_FAILED`/`IDENTITY_UNRESOLVED`/`UNESTIMABLE`/
 `NO_COVERAGE` rows in either version, on this pilot cohort. This is an
 honest, expected result, not a sign the narrowing did nothing: Class-P
@@ -1368,6 +1432,18 @@ fired episode in this pilot touches the one `COMPUTE_BLOCKLIST` symbol
 availability` unchanged: 300 pairs / 20 unavailable, 4,680 rows / 308
 unavailable (all `NOT_YET_AVAILABLE`).
 
+**This entire "measured IDENTICAL" result is exactly what Sol's
+REQUEST_REPAIR (2026-08-29) invalidates.** It is IDENTICAL to Ruling-2's
+baseline precisely BECAUSE point 3(a) as implemented (a non-empty
+`spec_hash`) was vacuously true for every fired R/B family in the pilot
+cohort — it never actually excluded anything, which is the observable
+symptom of substituting a generic receipt check for a date-specific
+reconstructibility proof. Post-repair, the SAME pilot cohort's availability
+distribution changes dramatically: **4,368 of the 4,372 previously-ELIGIBLE
+rows now type `UNESTIMABLE`** (only `weekly_washout_turn`'s 4 bounded rows
+remain `ELIGIBLE`); `recall_at_tier_distribution`'s defined-cell count drops
+from 34/50 to 2/50. See §6.14 for the full before/after census.
+
 **Cadence-control coverage (new artifact, this packet).** 315
 `(family_key, symbol, grain)` groups over 31,119 total fires: **94
 `CONTROLLED`**, **221 `UNESTIMABLE`**, **0 `NO_CALENDAR`** (every pilot
@@ -1380,7 +1456,168 @@ SAME state, which is why `94+221=315` exceeds `92+193=285`: 30 extra rows
 come from mixed-grain groups being counted once per grain they touch, not
 from a different underlying verdict.
 
+## 6.14 Null-bound R/B date-evidence census (2026-08-29)
+
+Sol's REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29) held that
+`_family_spec_receipted()`'s generic non-empty `spec_hash` check does not
+satisfy CONFIRMATION-1 point 3(a)'s DATE-SPECIFIC source/era
+reconstructibility requirement, and directed a census of whether any
+committed artifact anywhere in this tree actually supplies that date-
+specific evidence for the null-bound R/B families the sealed predicate had
+been treating as eligible. The commissioning session (2026-08-29) ran that
+census before this repair was written; this section records its result in
+substance.
+
+**Method.** Every R/B family carrying a `family_first_available: null` entry
+in the committed `data/stock_identity/expert_events/family_registry.json`
+was enumerated, then checked for any committed artifact — anywhere in the
+tree, not merely in the family registry itself — that records date-specific
+source/era coverage for that family (i.e., which calendar dates its
+producer's source/era spec actually covers, as opposed to merely that a
+spec exists and hashes to something).
+
+**Families enumerated (14, all null-bound R/B):** `grey_dot_macro` (R),
+`grey_dot_terminal` (B), `confirmed_buy` (R), `rebuy` (R),
+`sea_event_classes` (R), `bottom_watch_terminal` (B), `starter_signature`
+(R), `tier_cascade_t1`/`t2`/`t3`/`t4` (B, four families), `rsi30_cross` (R),
+`low20d_bounce` (R), `stoch2w_cross` (R).
+
+**Verdicts: 11 NO, 3 PARTIAL, 0 YES.**
+
+* **11 NO** — no committed date-coverage artifact of any kind, and (for the
+  pure engine-function families — `grey_dot_macro`, `grey_dot_terminal`,
+  `starter_signature`, the four `tier_cascade_t*` tiers, `rsi30_cross`,
+  `low20d_bounce`, `stoch2w_cross`) no committed producer input store either
+  — these are computed directly off the price plane, so there is no store to
+  even check.
+* **3 PARTIAL** — `confirmed_buy`, `rebuy`, `sea_event_classes`: a committed
+  producer input store DOES exist on disk (the same paths point 3(b) checks
+  for existence — `data/signal_archive/track_record.parquet` for
+  `confirmed_buy`/`rebuy`, `data/stock_events` for `sea_event_classes`), but
+  no committed artifact anywhere records that store's OWN date coverage
+  (earliest/latest date its rows actually span, or which dates its source is
+  known-good for). Point 3(b) as implemented only checks the store's
+  EXISTENCE, never its date coverage — existence is a different, weaker
+  claim than "covers this particular episode's date."
+* **0 YES** — no null-bound R/B family has a committed artifact that
+  actually satisfies point 3(a)'s date-specific requirement.
+
+**The only committed date axis in the entire tree** relevant to any of these
+families is `data/stock_identity/ohlcv/manifest.json` — the instrument-
+scoped OHLCV price-plane manifest, which records date coverage PER SYMBOL
+for the price plane itself (what point 3(c)/bars coverage already checks).
+It says nothing about any family's SOURCE/ERA coverage — a family's
+source/era spec is a property of the family's DETECTION LOGIC and its
+producer's inputs, not of the price plane every family shares as a common
+substrate. No artifact anywhere ties a family_key to a set of dates its
+detection logic is known-valid for.
+
+**Constructions explicitly ruled OUT, per the commission's fences (never
+attempted here):**
+
+* Deriving availability from producer-store event rows or their observed
+  min/max dates ("fired-on" evidence, Ruling 2's original prohibition,
+  reaffirmed) — a store existing (or even containing rows spanning some
+  date range) is not the same claim as "the source/era spec is
+  known-correct for this date," and reading it that way would smuggle
+  outcome-adjacent evidence into an outcome-independent predicate.
+  Never done.
+* Creating any new availability/event/evidence artifact, taxonomy token, or
+  alternate formula/threshold/roster/missingness rule to manufacture a
+  date-coverage signal where none is committed. Never done.
+
+**Consequence.** With zero committed artifacts supplying point 3(a)'s
+required proof for any null-bound R/B family, date-specific
+reconstructibility is UNESTABLISHABLE for all 14 — not merely unproven on
+this run, but structurally absent from the tree. Every null-bound R/B row
+therefore now types `"UNESTIMABLE"` unconditionally (see
+`_episode_family_availability_state`'s repaired terminal grant in
+`engine/stock_identity/ruler.py`), regardless of whether it also passes
+points 3(b)/(c)/(d).
+
+**Measured impact on the committed pilot cohort (outcome-free — availability
+states only, never recall/lambda/outcome metrics; NO committed artifact and
+NO ledger row were written by this measurement).** Re-ran
+`python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls
+--output-dir <scratch dir>` twice against the SAME committed pilot
+events/episodes/registry/bars — once with the pre-repair predicate
+(`_episode_family_availability_state`'s pre-repair terminal grant restored
+temporarily, then reverted byte-for-byte — confirmed via `diff` against a
+saved copy before restoring), once with the repaired predicate — both writes
+landing only under a scratch `--output-dir`, never under `data/`
+(`git status data/` empty before and after both runs). `spec_hash` is
+identical in both runs (`a599ea14bf79448c40de12342ddbbc2bfc525d0b95966822
+324c651c6dd729e4` — this repair changes no `RulerSpec` geometry).
+
+*Total row-level distribution (4,680 `(family_key, tier-eligible episode)`
+rows, all levels):*
+
+| availability_state | BEFORE (sealed predicate) | AFTER (repaired predicate) |
+|---|---|---|
+| `ELIGIBLE` | 4,372 | 4 |
+| `NOT_YET_AVAILABLE` | 308 | 308 |
+| `UNESTIMABLE` | 0 | 4,368 |
+
+*Per-family breakdown (312 rows/family for the 14 null-bound families, 312
+rows for the one bounded family present, `weekly_washout_turn`; 14 × 312 +
+312 = 4,680):*
+
+| family_key | before `ELIGIBLE` | after `ELIGIBLE` | after `UNESTIMABLE` | rows moved ELIGIBLE→UNESTIMABLE |
+|---|---|---|---|---|
+| bottom_watch_terminal | 312 | 0 | 312 | 312 |
+| confirmed_buy | 312 | 0 | 312 | 312 |
+| grey_dot_macro | 312 | 0 | 312 | 312 |
+| grey_dot_terminal | 312 | 0 | 312 | 312 |
+| low20d_bounce | 312 | 0 | 312 | 312 |
+| rebuy | 312 | 0 | 312 | 312 |
+| rsi30_cross | 312 | 0 | 312 | 312 |
+| sea_event_classes | 312 | 0 | 312 | 312 |
+| starter_signature | 312 | 0 | 312 | 312 |
+| stoch2w_cross | 312 | 0 | 312 | 312 |
+| tier_cascade_t1 | 312 | 0 | 312 | 312 |
+| tier_cascade_t2 | 312 | 0 | 312 | 312 |
+| tier_cascade_t3 | 312 | 0 | 312 | 312 |
+| tier_cascade_t4 | 312 | 0 | 312 | 312 |
+| weekly_washout_turn (bounded, unaffected) | 4 | 4 | 0 | 0 |
+| **TOTAL** | **4,372** | **4** | **4,368** | **4,368** |
+
+All 14 null-bound families in the pilot cohort are uniformly affected (every
+one of their 312 rows moves `ELIGIBLE` → `UNESTIMABLE`) — none partially
+survives, consistent with the census's 11-NO/3-PARTIAL/0-YES finding
+supplying no family with a usable date-coverage proof. `weekly_washout_turn`
+is the only family carrying a real (non-null) `family_first_available`
+bound in the pilot's fired universe, so it alone is untouched by the repair
+— its 4 `ELIGIBLE` + 308 `NOT_YET_AVAILABLE` rows are exactly the bounded-
+path law (point 1), unchanged.
+
+`family_symbol_availability`'s pair-level count also moves:
+`n_family_symbol_pairs_unavailable` rises from 20/300 to 300/300 (every
+pair now carries at least one non-`ELIGIBLE` row); `n_availability_rows_
+unavailable` rises from 308/4,680 to 4,676/4,680.
+`recall_at_tier_distribution.n_cells_defined` drops from 34/50 to 2/50 (mean
+0.0656→0.0, median 0.0209→0.0) — expected, since a cell's `recall_at_tier`
+is undefined once its family has zero `ELIGIBLE` episodes to form a
+denominator from; this is an AVAILABILITY-STATE consequence, not a
+recall/lambda/outcome recomputation, and no PR-3 constant, ledger row, or
+sealed artifact was touched or re-derived to produce it.
+
 ## 5. Sealed constants receipt (Task 3C Step 5 -- the real, one-time seal)
+
+**STATUS (2026-08-29): this seal is NOT ACCEPTED.** Sol ruled the milestone
+this receipt certifies REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29,
+§6.13/§6.14 above) — the `_family_spec_receipted()` predicate that fed this
+seal's calibration population wrongly typed null-bound R/B families
+eligible on a generic non-empty `spec_hash`, and the 2026-08-29 census found
+no committed evidence to support that reading for any of them. The receipt
+below, and `data/stock_identity/ruler/ruler_spec_v1.json` itself, are
+preserved byte-for-byte as the REJECTED-ATTEMPT record (this repair commits
+no second seal and does not touch either file) — not as evidence of an
+accepted milestone. `ruler_implementation_sha256.ruler_py` below
+(`42905b81...`) now deliberately DISAGREES with the current, repaired
+`ruler.py` bytes; that disagreement is the receipt's own voiding proof (see
+`tests/test_stock_identity_ruler.py::test_shipped_spec_carries_sealed_pr3_
+values_with_complete_receipt`). The re-seal boundary awaits Sol's explicit
+ruling.
 
 - Sealed at: `2026-08-29T03:37:58.620149+00:00`
 - `recall_floor` = `0.05` (rule hash `71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf`, status `declared_pending_sol_rule_review`)

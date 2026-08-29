@@ -168,12 +168,31 @@ def test_ruler_spec_hash_is_stable():
 
 def test_shipped_spec_carries_sealed_pr3_values_with_complete_receipt():
     """Sealed-state branch (PR-3's ONE-TIME SEAL, SI-SEALED-CAL-P1, executed
-    2026-08-29): the committed JSON now carries the receipted values, never a
-    guessed number and never the pre-seal pending sentinel. The receipt's
-    ``ruler_implementation_sha256`` pins MUST match the CURRENT bytes of
-    ``ruler.py``/``ruler_nulls.py`` -- this doubles as a live guard on the
-    freeze's voiding clause: any future edit to either implementation file
-    would desync this assertion from the receipt."""
+    2026-08-28): the committed JSON still carries the receipted values from
+    that seal act -- this repair makes NO second seal and does not touch
+    ``ruler_spec_v1.json`` (an OUT-OF-SCOPE fenced artifact; see the frozen
+    repair commission). Sol ruled the PR-3 milestone this receipt certifies
+    NOT ACCEPTED (REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29) because
+    ``_family_spec_receipted()`` substituted a generic non-empty
+    ``spec_hash`` for CONFIRMATION-1 point 3(a)'s required date-specific
+    source/era reconstructibility proof -- so this receipt is preserved
+    byte-for-byte as the REJECTED-ATTEMPT record, not as evidence of an
+    accepted seal.
+
+    The receipt's ``ruler_implementation_sha256.ruler_py`` pin is therefore
+    EXPECTED to now DISAGREE with the current, repaired ``ruler.py`` bytes --
+    that disagreement is the live proof the repair is actually present and
+    that the old (rejected) seal cannot be silently read as still covering
+    the current implementation. The expected receipt hash is read from the
+    committed file itself (never hand-typed and re-checked against a second,
+    independent literal) so a future edit to the fenced receipt file would
+    still be caught by a change in this value, while the SEPARATE literal
+    pinned below (the value as of the 2026-08-29 repair, prefix
+    ``42905b81``) additionally proves the receipt itself has not silently
+    drifted since this test was written -- both checks are load-bearing.
+    ``ruler_nulls.py`` was NOT touched by this repair (frozen per the
+    commission's OUT-OF-SCOPE fence), so its hash pin stays an EQUALITY
+    check against the current file, unchanged."""
     spec = RulerSpec.from_json(SPEC_PATH)
     assert spec.pr3_pending is False
     assert spec.recall_floor == pytest.approx(0.05)
@@ -194,7 +213,21 @@ def test_shipped_spec_carries_sealed_pr3_values_with_complete_receipt():
         assert field in receipt, f"seal receipt missing required field {field!r}"
 
     impl_hashes = receipt["ruler_implementation_sha256"]
-    assert hashlib.sha256(RULER_SRC.read_bytes()).hexdigest() == impl_hashes["ruler_py"]
+    # Sol REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29): the sealed receipt
+    # is a REJECTED-ATTEMPT record, pinned inline to the exact value it
+    # carried at repair time -- if this literal ever needs to change, the
+    # receipt file itself (a fenced, OUT-OF-SCOPE artifact) must NOT have
+    # been the thing that changed.
+    rejected_attempt_ruler_py_sha256 = (
+        "42905b81e6fe622dbbbb7f4044b13cc04acf48ace80f16c63439236fc409e708"
+    )
+    assert impl_hashes["ruler_py"] == rejected_attempt_ruler_py_sha256
+    # The CURRENT (repaired) ruler.py must now DISAGREE with that rejected
+    # receipt hash -- proving the fail-closed repair is present and that the
+    # rejected seal is void for acceptance of the current implementation.
+    assert hashlib.sha256(RULER_SRC.read_bytes()).hexdigest() != impl_hashes["ruler_py"]
+    assert hashlib.sha256(RULER_SRC.read_bytes()).hexdigest() != rejected_attempt_ruler_py_sha256
+    # ruler_nulls.py is untouched by this repair -- equality still holds.
     assert (
         hashlib.sha256(RULER_NULLS_SRC.read_bytes()).hexdigest()
         == impl_hashes["ruler_nulls_py"]
@@ -685,18 +718,26 @@ def test_c_loc_d_ranks_within_episode_type_grain_stratum_only():
 
 # ---------------------------------------------------------------------------
 # Ruling 2 (SI-W3A-RULER-V1 PR-3 seal law) fixture helper: a minimal W2
-# family-registry entry conferring UNRESTRICTED lawful availability
-# (family_first_available=None -- "no known start boundary", the SAME
-# convention family_registry.json's own committed entries use). Sol
-# CONFIRMATION-1 (point 5) additionally requires a present ``provenance_class``
-# field (R or B -- never P, never omitted) for a null-bound family to type
-# ELIGIBLE rather than UNESTIMABLE; every "unrestricted" fixture entry now
-# carries ``"provenance_class": "R"`` and a synthetic-but-truthy ``spec_hash``
-# (point 3(a)'s structural receipt check) by default. No embedded ``data/``
-# path in the fixture ``producer`` string, so point 3(b)'s producer-store
-# check is vacuous for every fixture family, exactly like the real
-# bar-derived engine families (grey_dot_macro, tier_cascade, the naive
-# comparators, ...).
+# family-registry entry with a NULL family_first_available (family_key
+# entries with "no known start boundary", the SAME convention
+# family_registry.json's own committed entries use). Sol CONFIRMATION-1
+# (point 5) additionally requires a present ``provenance_class`` field (R or
+# B -- never P, never omitted); every entry below carries
+# ``"provenance_class": "R"`` and a synthetic-but-truthy ``spec_hash`` by
+# default. No embedded ``data/`` path in the fixture ``producer`` string, so
+# point 3(b)'s producer-store check is vacuous for every fixture family.
+#
+# Sol REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29): a null-bound entry from
+# this helper NO LONGER confers FAMILY_ELIGIBLE_STATE, however many of the
+# other sub-checks it passes -- the 2026-08-29 evidence census proved no
+# committed artifact anywhere in the tree records date-specific source/era
+# reconstructibility for any null-bound R/B family, so this helper now only
+# serves tests that specifically exercise a null-bound sub-state (UNESTIMABLE
+# on a missing/empty spec_hash, SOURCE_FAILED, IDENTITY_UNRESOLVED -- states
+# that fire BEFORE the terminal grant this repair changed). Tests that need a
+# family to reach FAMILY_ELIGIBLE_STATE for reasons unrelated to the
+# null-bound availability law itself (recall-denominator/flooding math, ...)
+# use :func:`_bounded_registry` below instead.
 # ---------------------------------------------------------------------------
 def _unrestricted_registry(*family_keys: str, provenance_class: str = "R") -> list[dict]:
     return [
@@ -706,6 +747,32 @@ def _unrestricted_registry(*family_keys: str, provenance_class: str = "R") -> li
             "provenance_class": provenance_class,
             "spec_hash": f"fixture-spec-hash::{fk}",
             "producer": "fixture synthetic producer (no data/ store dependency)",
+        }
+        for fk in family_keys
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Sol REQUEST_REPAIR (Slack C0BSBM78V1N, 2026-08-29) fixture helper: a
+# family_first_available BOUND (never null), set well before every fixture
+# episode's start_date in this suite, so the family reaches
+# FAMILY_ELIGIBLE_STATE via point 1's hard-lower-bound path -- the bounded
+# path this repair leaves completely unchanged (bound is not None, bound <=
+# end). Used wherever a fixture previously relied on a null-bound
+# "unrestricted" entry purely to make an episode eligible for
+# recall/flooding/aggregate math that has nothing to do with the null-bound
+# availability law itself. Deliberately carries no spec_hash/producer -- the
+# bounded path never reads point 3(a)/3(b) at all (they are scoped, per
+# Sol's ruling, to null-bound families only).
+# ---------------------------------------------------------------------------
+def _bounded_registry(
+    *family_keys: str, provenance_class: str = "R", bound: str = "1900-01-01",
+) -> list[dict]:
+    return [
+        {
+            "family_key": fk,
+            "family_first_available": bound,
+            "provenance_class": provenance_class,
         }
         for fk in family_keys
     ]
@@ -752,7 +819,13 @@ def test_recall_denominator_counts_eligible_episodes_regardless_of_fire():
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    registry = _unrestricted_registry("fam.x")
+    # A bounded (not null) registry entry -- Sol REQUEST_REPAIR (Slack
+    # C0BSBM78V1N, 2026-08-29) means a null-bound entry could no longer reach
+    # FAMILY_ELIGIBLE_STATE here; this test is about recall-denominator
+    # counting math, not the null-bound availability law, so an
+    # effectively-unrestricted BOUNDED entry (predating every fixture
+    # episode) preserves the same test intent via the unchanged bounded path.
+    registry = _bounded_registry("fam.x")
     cells = aggregate_cell_metrics(
         fire_metrics, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
     )
@@ -763,10 +836,10 @@ def test_recall_denominator_counts_eligible_episodes_regardless_of_fire():
     # reset_decline episode and BBB's reset_decline episode of the SAME type
     # never fired at all but are both tier-eligible. Ruling 2 (SI-W3A-RULER-V1
     # PR-3 seal law): BBB enters fam.x's recall denominator via LAWFUL
-    # AVAILABILITY (an unrestricted family_registry entry + bars_by_symbol
-    # coverage for BBB), never via events/fired-on coverage -> denominator = 3
-    # eligible episodes (AAA's two + BBB's one), only AAA's resolved one is
-    # recalled -> 1/3.
+    # AVAILABILITY (a bounded family_registry entry + bars_by_symbol coverage
+    # for BBB), never via events/fired-on coverage -> denominator = 3 eligible
+    # episodes (AAA's two + BBB's one), only AAA's resolved one is recalled ->
+    # 1/3.
     assert cell["recall_at_tier"] == pytest.approx(1 / 3)
 
 
@@ -778,7 +851,7 @@ def test_old_fire_conditional_recall_denominator_would_have_been_wrong():
     events, attribution, episodes, bars = _two_symbol_recall_fixture()
     spec = _fixture_spec()
     fire_metrics = compute_fire_metrics(events, attribution, episodes, bars, spec)
-    registry = _unrestricted_registry("fam.x")
+    registry = _bounded_registry("fam.x")
     cells = aggregate_cell_metrics(
         fire_metrics, episodes, spec, events, family_registry=registry, bars_by_symbol=bars,
     )
@@ -825,7 +898,9 @@ def test_recall_denominator_grows_from_available_zero_fire_symbol_ruling2_regres
     ])
     spec = _fixture_spec()
     bars = {"AAA": _bars("AAA", "2019-06-01", 400), "CCC": _bars("CCC", "2019-06-01", 400)}
-    registry = _unrestricted_registry("fam.x")
+    # Bounded (not null) per Sol REQUEST_REPAIR (Slack C0BSBM78V1N,
+    # 2026-08-29) -- see _bounded_registry's docstring.
+    registry = _bounded_registry("fam.x")
 
     cells_aaa_only = aggregate_cell_metrics(
         fm, episodes_aaa_only, spec, events, family_registry=registry, bars_by_symbol=bars,
@@ -1006,14 +1081,27 @@ def test_class_p_family_never_eligible_regardless_of_null_date_confirmation1_reg
     assert (availability_bound["availability_state"] == "STRUCTURAL_ABSENCE").all()
 
 
-def test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirmation1_regression_b():
-    """Regression (b): an R family with NULL family_first_available -- a
-    receipted spec_hash, an EXISTING declared producer input store, full bars
-    coverage, and a resolvable identity -- becomes ELIGIBLE. The producer
-    string embeds a real committed-store path (the same convention
+def test_rb_null_bound_family_unestimable_despite_full_lawful_source_input_coverage_sol_request_repair_confirmation1_regression_b():
+    """Regression (b), REPAIRED (Sol REQUEST_REPAIR, Slack C0BSBM78V1N,
+    2026-08-29): an R family with NULL family_first_available -- a receipted
+    spec_hash, an EXISTING declared producer input store, full bars coverage,
+    and a resolvable identity, i.e. EVERY sub-check this predicate can run --
+    must STILL resolve UNESTIMABLE, never FAMILY_ELIGIBLE_STATE. Sol ruled
+    that the pre-repair implementation wrongly typed exactly this shape
+    ELIGIBLE by substituting a generic non-empty ``spec_hash`` for point
+    3(a)'s required date-specific source/era reconstructibility proof; the
+    2026-08-29 evidence census then confirmed no committed artifact anywhere
+    in the tree records that proof for any null-bound R/B family. The
+    producer string embeds a real committed-store path (the same convention
     confirmed_buy/rebuy/sea_event_classes use in the shipped registry); this
     test creates that path under a throwaway repo_root so the positive
-    "input exists" branch is genuinely exercised, not merely vacuous."""
+    "input exists" branch is genuinely exercised, not merely vacuous, proving
+    the fail-closed result holds even when every OTHER sub-check passes.
+
+    Mutation-killing: reverting ``_episode_family_availability_state``'s
+    terminal grant back to its pre-repair, unconditional
+    ``return FAMILY_ELIGIBLE_STATE`` for ``bound is None`` flips this
+    assertion and fails this test."""
     episodes = pd.DataFrame([
         _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
     ])
@@ -1036,7 +1124,79 @@ def test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirm
         (tmp_root / "data" / "fixture_store").mkdir(parents=True)
         (tmp_root / "data" / "fixture_store" / "ledger.parquet").write_bytes(b"x")
         availability = _availability(tmp_root)
-    assert (availability["availability_state"] == FAMILY_ELIGIBLE_STATE).all()
+    assert (availability["availability_state"] == "UNESTIMABLE").all()
+    assert (availability["availability_state"] != FAMILY_ELIGIBLE_STATE).all()
+
+
+def test_null_bound_family_spec_hash_content_never_confers_eligibility_sol_request_repair():
+    """Named directly for Sol's ruling (REQUEST_REPAIR, Slack C0BSBM78V1N,
+    2026-08-29): a generic non-empty ``spec_hash`` is NOT a date-coverage
+    proof for CONFIRMATION-1 point 3(a) -- two null-bound R-class registry
+    entries differing ONLY in their ``spec_hash`` string's content both
+    resolve UNESTIMABLE. The characters inside a receipted spec_hash have
+    never carried any date-era information this predicate could read, so no
+    change to that content can ever move a null-bound row's outcome -- both
+    entries below are otherwise identical (same family_key, no producer
+    store named, full bars coverage)."""
+    episodes = pd.DataFrame([
+        _episode_row(symbol="AAA", episode_type="reset_decline", start_date="2020-01-01"),
+    ])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    def _availability(spec_hash_value):
+        registry = [{
+            "family_key": "fam.rb", "family_first_available": None,
+            "provenance_class": "R", "spec_hash": spec_hash_value,
+        }]
+        return build_family_episode_availability(
+            episodes, ["fam.rb"], family_registry=registry, bars_by_symbol=bars,
+        )
+
+    availability_a = _availability("fixture-spec-hash::content-A::era-2019-2020")
+    availability_b = _availability("fixture-spec-hash::content-B::a-totally-different-era-string")
+    assert (availability_a["availability_state"] == "UNESTIMABLE").all()
+    assert (availability_b["availability_state"] == "UNESTIMABLE").all()
+    assert (
+        availability_a["availability_state"].tolist()
+        == availability_b["availability_state"].tolist()
+    )
+
+
+def test_bounded_family_availability_path_unchanged_by_null_bound_repair_confirmation1_regression_f():
+    """Item 6(c): a family with a REAL, committed ``family_first_available``
+    bound is entirely outside the scope of Sol's REQUEST_REPAIR (Slack
+    C0BSBM78V1N, 2026-08-29) -- point 1's hard lower bound still governs it
+    exactly as before the repair. ``bound > end`` (relative to the episode's
+    window) still types NOT_YET_AVAILABLE; ``bound <= end`` still reaches
+    FAMILY_ELIGIBLE_STATE with full bars coverage -- eligibility genuinely
+    still exists in this predicate, just never for a null bound. Neither
+    entry below carries a spec_hash/producer, proving the bounded path never
+    even reads points 3(a)/3(b) (scoped, per Sol's ruling, to null-bound
+    families only)."""
+    episode = _episode_row(
+        symbol="AAA", episode_type="reset_decline", start_date="2020-01-01",
+        anchor_date="2020-02-01", end_date="2020-03-09",
+    )
+    episodes = pd.DataFrame([episode])
+    bars = {"AAA": _bars("AAA", "2019-06-01", 400)}
+
+    early_bound_registry = [{
+        "family_key": "fam.bounded", "family_first_available": "2019-01-01",
+        "provenance_class": "R",
+    }]
+    availability_eligible = build_family_episode_availability(
+        episodes, ["fam.bounded"], family_registry=early_bound_registry, bars_by_symbol=bars,
+    )
+    assert (availability_eligible["availability_state"] == FAMILY_ELIGIBLE_STATE).all()
+
+    late_bound_registry = [{
+        "family_key": "fam.bounded", "family_first_available": "2021-01-01",
+        "provenance_class": "R",
+    }]
+    availability_not_yet = build_family_episode_availability(
+        episodes, ["fam.bounded"], family_registry=late_bound_registry, bars_by_symbol=bars,
+    )
+    assert (availability_not_yet["availability_state"] == "NOT_YET_AVAILABLE").all()
 
 
 def test_rb_null_bound_family_missing_source_coverage_types_unavailable_confirmation1_regression_c():
@@ -1078,8 +1238,12 @@ def test_zero_fire_eligible_episode_still_grows_denominator_under_narrowed_law_c
     """Regression (d): adding a zero-fire-but-eligible episode still GROWS the
     recall denominator under the narrowed CONFIRMATION-1 predicate (not just
     under the pre-CONFIRMATION-1 Ruling 2 shape already covered by regression
-    (a) above) -- an R family, null-bound, spec-receipted, no declared
-    producer-store dependency."""
+    (a) above) -- an R family with a BOUNDED family_first_available (Sol
+    REQUEST_REPAIR, Slack C0BSBM78V1N, 2026-08-29: a null-bound family can no
+    longer demonstrate this at all, since it can never reach
+    FAMILY_ELIGIBLE_STATE regardless of spec-receipt/producer-store checks;
+    the bounded path is unaffected by that repair and still exercises the
+    SAME "zero-fire eligible episode grows the denominator" property)."""
     fm = pd.DataFrame([{
         "event_id": "E1", "family_key": "fam.x", "symbol": "AAA",
         "episode_id": "AAA::reset_decline::2020-01-01",
@@ -1101,7 +1265,9 @@ def test_zero_fire_eligible_episode_still_grows_denominator_under_narrowed_law_c
     ])
     spec = _fixture_spec()
     bars = {"AAA": _bars("AAA", "2019-06-01", 400), "CCC": _bars("CCC", "2019-06-01", 400)}
-    registry = _unrestricted_registry("fam.x")
+    # Bounded (not null) per Sol REQUEST_REPAIR (Slack C0BSBM78V1N,
+    # 2026-08-29) -- see _bounded_registry's docstring.
+    registry = _bounded_registry("fam.x")
 
     cells_aaa_only = aggregate_cell_metrics(
         fm, episodes_aaa_only, spec, events, family_registry=registry, bars_by_symbol=bars,
@@ -1268,13 +1434,15 @@ def test_flooding_is_invariant_to_cell_size_at_equal_density():
     small_bars = {"SMALLSYM": _bars("SMALLSYM", "2019-06-01", 400)}
     large_bars = {"LARGESYM": _bars("LARGESYM", "2019-06-01", 400)}
 
+    # Bounded (not null) per Sol REQUEST_REPAIR (Slack C0BSBM78V1N,
+    # 2026-08-29) -- see _bounded_registry's docstring.
     small_cells = aggregate_cell_metrics(
         small, small_eps, spec, small_events,
-        family_registry=_unrestricted_registry("fam.small"), bars_by_symbol=small_bars,
+        family_registry=_bounded_registry("fam.small"), bars_by_symbol=small_bars,
     )
     large_cells = aggregate_cell_metrics(
         large, large_eps, spec, large_events,
-        family_registry=_unrestricted_registry("fam.large"), bars_by_symbol=large_bars,
+        family_registry=_bounded_registry("fam.large"), bars_by_symbol=large_bars,
     )
     small_cell = small_cells.loc[small_cells["family_key"] == "fam.small"].iloc[0]
     large_cell = large_cells.loc[large_cells["family_key"] == "fam.large"].iloc[0]
