@@ -1,0 +1,149 @@
+---
+workstream: "WS:CI-MERGE-CONTROL-PLANE"
+session: codex/CTO-FORGE/01a04bdf-7a7b-7f63-9abd-9a7c13e944c0
+model: codex
+ended_because: ci_handoff
+mission: >
+  Make a healthy 30-45 minute external CI wait consume one entry receipt and
+  zero new frontier-model turns until one material event, without changing
+  logical delivery ownership or creating a second lifecycle/control plane.
+state_before: >
+  The Stop guard polled GitHub and narrated the same pending state on every
+  observation. PR #6381 held a closed-unmerged donor implementation at exact
+  head 277b758315177dc394bec9ede7f917a37c3a4a08. PR #6626 held the compatible
+  ordinary claude/* HOLD WAITING/CHECKS RED correction at exact head
+  89adf1491121226c3e04f9e0a01d48af3284dd01. Its exact commit was first
+  reconciled with -x after its sole native watcher exited on a transport reset;
+  when #6626 later merged as a4c4160e0024fe196225eed5ff3285a9f7be76b2,
+  current origin/main was merged normally and the one wrapper conflict resolved
+  by preserving both the merged WAITING/CHECKS RED subset and V2 quiescence.
+changed:
+  - path: .claude/hooks/gh_quota_guard.py
+    what: >
+      Expose one canonical pure hot-watcher classifier so watcher reservation
+      and quota denial cannot disagree or leave a phantom claim.
+  - path: .claude/hooks/ship_loop_guard.py
+    what: >
+      Add atomic per-session transactions, exact native watcher identity and
+      one-watcher admission, ci_quiescence.v1 derivation/local fast path,
+      single material-event routing, and fail-closed red ownership boundaries.
+  - path: scripts/ship_loop_hold_wrapper.py
+    what: >
+      Reconcile PR #6626 with the donor's one-time PARKED latch and bind lawful
+      pending holds to the same quiescence ledger and watcher boundary.
+  - path: .claude/settings.json
+    what: >
+      Put the existing watcher gate on Bash PreToolUse as well as the quota
+      boundary; retain the same Stop wrapper and canonical delegate.
+  - path: tests/test_ship_loop_guard.py
+    what: >
+      Pin 100-observation zero-poll behavior, deterministic 45-minute proof,
+      mutation control, material transitions, malformed-state refusal,
+      candidate-owned red, central red routing, and 2/5/14 atomicity/isolation.
+  - path: tests/test_ship_loop_hold_wrapper.py
+    what: >
+      Pin the reconciled HOLD WAITING/CHECKS RED behavior, shared pending wait,
+      one-time PARKED receipt, concurrent ledger preservation, outage refusal,
+      and material route ownership.
+  - path: AGENTS.md
+    what: Record the cross-account zero-compute quiescence law.
+  - path: CLAUDE.md
+    what: Record the same zero-compute quiescence law for Claude sessions.
+  - path: .cursor/rules/ship-loop-terminal-states.mdc
+    what: Record the same mechanical state and negative controls for Cursor.
+  - path: docs/superpowers/plans/2026-08-29-ci-zero-compute-quiescence-v2.md
+    what: Preserve the RED-first implementation and verification plan.
+  - path: agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-29-ci-quiescence-v2.md
+    what: Preserve the durable successor evidence and continuation boundary.
+verified:
+  - claim: >
+      The deterministic long-wait control yields one CI_QUIESCENT receipt,
+      one remote snapshot, one watcher identity and 100 silent unchanged
+      observations over a simulated 2,700-second wait.
+    command: >
+      python3 -m pytest -q tests/test_ship_loop_guard.py -k
+      'forty_five_minute_wait or hundred_identical or mutation_without_quiescence'
+    result: 6 passed in the deterministic long-wait/mutation selection.
+  - claim: >
+      Lawful pending holds reuse ci_quiescence.v1; PARKED narrates once; red,
+      release, outage and concurrent watcher/latch changes fail in the safe direction.
+    command: python3 -m pytest -q tests/test_ship_loop_hold_wrapper.py
+    result: 47 passed on the current-main reconciled tree.
+  - claim: The cross-account standing law requires the identical zero-turn boundary.
+    command: >
+      python3 -m pytest -q
+      tests/test_ship_loop_guard.py::test_quiescence_standing_law_matches_zero_turn_amendment
+    result: Passed on the current-main reconciled tree.
+  - claim: >
+      Guard, hold-wrapper and quota boundaries are jointly green after merging
+      current main and the landed #6626 subset.
+    command: >
+      PYTHONDONTWRITEBYTECODE=1 python3 -B -m pytest -q
+      tests/test_ship_loop_guard.py tests/test_ship_loop_hold_wrapper.py
+      tests/test_gh_quota_guard.py
+    result: 539 passed, 1 skipped; three pytest temp-cleanup warnings only.
+unverified:
+  - claim: Hosted CI is green on the successor pull request's exact head.
+    what_would_verify: Concluded binding checks on the fresh successor PR head.
+unresolved:
+  - >
+    Repository hooks control hook output, GitHub observations, and watcher
+    admission; the external client decides whether a task notification creates
+    a model turn. The healthy native watcher has no unchanged completion, and
+    the deterministic proof therefore establishes zero model-facing outputs
+    after entry, not authority over an arbitrary client's scheduler.
+  - >
+    PR #6626 is now merged on main as a4c4160e0024fe196225eed5ff3285a9f7be76b2.
+    This successor reconciled that main commit through a normal same-branch merge
+    and did not reopen, rebase, mutate, or independently merge #6626.
+  - >
+    Open HOLD PR #6426 edits agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md.
+    To avoid a records collision, this successor records the bounded wave in
+    this new handoff and leaves that shared workstream file untouched.
+next_actions:
+  - Re-pin current main, protected Mastermind procedure, carrier comments and path collisions immediately before push.
+  - Run the remaining exact-tree adjacent-governance, self-mod fence, Agent OS validation and independent review.
+  - Push one fresh draft HOLD-FOR-SOL pull request and return exact-head CI to Sol.
+do_not_redo:
+  - Do not reopen, rebase or merge donor PR #6381.
+  - Do not silently fork or mutate PR #6626; its exact commit is reconciled with -x.
+  - Do not create a watcher database, daemon, scheduler, queue, retry service,
+    second lifecycle/control plane, successor watcher, or new session identity.
+  - >
+    Do not claim the repo hook can prevent an arbitrary external client from
+    instantiating a model turn; require zero new model turns while external state
+    is unchanged through the one non-completing native watcher and silent hook path.
+danger_areas:
+  - >
+    A manually planted partial quiescence dictionary is not authority. The full
+    versioned record, exact local head/dirt, confirmed watcher digest, PID and
+    process-start marker must all revalidate before any silent pass.
+  - >
+    One infrastructure symptom beside a candidate-owned failure must not route
+    the whole red away; every concluded red must be central/inherited before
+    #6351 owns it.
+  - >
+    PARKED and CI_QUIESCENT are distinct: PARKED is a fully green Sol-controlled
+    terminal hold; quiescence is a nonterminal pending wait that retains delivery
+    ownership and wakes on one material event.
+---
+
+# CI C1 zero-compute quiescence V2
+
+## Observable contract
+
+The exact clean pushed head may enter `CI_QUIESCENT` only after deterministic
+fast preflight is green, no binding builder red exists, and one native watcher is
+mechanically confirmed for the same PR/head. The first observation emits one
+receipt. Repeated Stop/task-notification observations consult only local ledger,
+head/dirt, and process identity, producing zero new model turns while external
+state is unchanged. One material green/red/head/hold/watcher change wakes exactly
+once and routes by mechanical ownership.
+
+## Architecture boundary
+
+This is an extension of the existing ship-loop ledger and watcher/quota hook.
+There is no second data store, daemon, scheduler, queue, retry lane, lifecycle,
+control plane, session identity, or prose-authored terminal state. Logical
+delivery ownership never leaves the session merely because active model
+occupancy is released during the external wait.

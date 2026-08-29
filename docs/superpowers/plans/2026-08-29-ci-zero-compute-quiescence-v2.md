@@ -1,9 +1,12 @@
 # CI C1 Zero-Compute Quiescence V2 Implementation Plan
 
-> **Operation:** `ci-quiescence-v2-20260829-sol-001`  
-> **Canonical carrier:** Macro issue #6379 and its bound Slack thread  
-> **Execution owner:** ChatGPT2 / CTO Sol  
-> **Fresh base:** `3ed822213caa096b8665b21ce9c3c3f5c860064f`
+> **Operation:** `ci-quiescence-v2-20260829-sol-001`
+>
+> **Canonical carrier:** Macro issue #6379 and its bound Slack thread
+>
+> **Execution owner:** CTO-FORGE / native task `01a04bdf-7a7b-7f63-9abd-9a7c13e944c0`
+>
+> **Initial RED base:** `3ed822213caa096b8665b21ce9c3c3f5c860064f`
 
 **Goal:** Keep logical delivery ownership in the same session while a healthy external CI wait consumes one model-facing entry receipt and no further frontier-model turns until a mechanically observable material event.
 
@@ -14,7 +17,7 @@
 **Existing-carrier boundaries:**
 
 - PR #6381 is read-only donor evidence at exact head `277b758315177dc394bec9ede7f917a37c3a4a08`; selectively port lawful atomic one-watcher, process-identity, terminal-latch, and no-successor mechanisms and tests only.
-- PR #6626 is the live tactical HOLD subset at exact head `89adf1491121226c3e04f9e0a01d48af3284dd01`. Until it resolves, do not edit `AGENTS.md`, `CLAUDE.md`, `scripts/ship_loop_hold_wrapper.py`, or `tests/test_ship_loop_hold_wrapper.py`. Rebase/reconcile its exact landed bytes before the final documentation/wrapper step; never silently fork them.
+- PR #6626 is the tactical HOLD subset at exact head `89adf1491121226c3e04f9e0a01d48af3284dd01`; it later merged as `a4c4160e0024fe196225eed5ff3285a9f7be76b2`. Reconcile its exact landed bytes before the final documentation/wrapper step; never silently fork them.
 - Preserve all foreign worktree locks and active CI watchers. This lane never reruns, cancels, closes, or mutates #6626.
 
 ---
