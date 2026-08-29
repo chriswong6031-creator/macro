@@ -48,12 +48,15 @@ def test_p3bb_keeps_hosted_pack_names_as_trusted_relays_or_fork_executors() -> N
         "fail-fast": False,
         "matrix": "${{ fromJSON(needs.ci-plan.outputs.matrix) }}",
     }
+    # A completed red trusted pack must still reach the tiny hosted relay matrix:
+    # the raw fragment is the evidence ci-gate needs to report the real failure.
+    # Gating the whole matrix on aggregate trusted-ci success turns one red pack into
+    # twelve false "missing fragment" infrastructure failures.
     assert job["if"] == (
         "always() && needs.ci-plan.result == 'success' && "
-        "needs.ci-plan.outputs.has_work == 'true' && "
-        "(github.event.pull_request.head.repo.full_name != github.repository || "
-        "needs.trusted-ci.result == 'success')"
+        "needs.ci-plan.outputs.has_work == 'true'"
     )
+    assert "needs.trusted-ci.result" not in job["if"]
 
     same_repo_guard = (
         "github.event.pull_request.head.repo.full_name == github.repository"
@@ -75,7 +78,6 @@ def test_p3bb_keeps_hosted_pack_names_as_trusted_relays_or_fork_executors() -> N
     assert parity["if"] == same_repo_guard
     assert parity["env"] == {
         "HOSTED_PLAN_SHA": "${{ needs.ci-plan.outputs.plan_sha }}",
-        "TRUSTED_PLAN_SHA": "${{ needs.trusted-ci.outputs.plan_sha }}",
         "TRUSTED_FRAGMENT": (
             "${{ runner.temp }}/trusted-ci-fragment/trusted-fragment.json"
         ),
@@ -85,7 +87,9 @@ def test_p3bb_keeps_hosted_pack_names_as_trusted_relays_or_fork_executors() -> N
     }
     assert "plan_sha256" in parity["run"]
     assert "HOSTED_PLAN_SHA" in parity["run"]
-    assert "TRUSTED_PLAN_SHA" in parity["run"]
+    # A failed reusable workflow may not publish aggregate workflow outputs. The
+    # fragment's own plan_sha256 is the fail-closed plan binding on the red path.
+    assert "TRUSTED_PLAN_SHA" not in parity["run"]
 
     upload = named_step(job, "publish this pack's raw semantic fragment")
     assert upload["if"] == "always() && needs.ci-plan.outputs.plan_sha != ''"
