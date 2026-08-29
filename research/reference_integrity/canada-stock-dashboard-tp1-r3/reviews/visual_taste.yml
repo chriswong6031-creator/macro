@@ -1,0 +1,104 @@
+# Critic receipt (RIG V1 §6) — Reviewer B (r3 cycle), visual/taste.
+# Fresh critic; no participation in the r1 or r2 cycles.
+#
+# PROVENANCE DEFECT: identical to the note at the head of
+# reviews/product_regression.yml and equally binding here. The pass-1 review
+# was genuinely quarantined (the commission carried no rationale and forbade
+# every RIG record, the templates/site trees and all git history; the packet
+# was returned before any reveal existed), but the coordinator omitted the
+# on-disk freeze commit that r1 and r2 both had, so this receipt was written
+# after the reveal from the critic's returned packet. Reviewer B raised the
+# same defect independently (its GAPS 1) and recorded that it therefore
+# reconstructed its own ten findings from the coordinator's paraphrase. The
+# design authority rules on admissibility.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1-r3
+role: visual_taste
+artifact_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
+
+reviewer:
+  identity: "rig-r3-critic-b-slate-heron-4417"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job (r3 baseline.yml)
+    - production-before artifact (baseline shots + pre-change source copies)
+    - proposed-after artifact (18 rendered images at 2d463e7c4e8f + comment-redacted source)
+    - capability ledger (r3 baseline.yml)
+    - design law (DESIGN_DOCTRINE.md; MASTER_PRODUCT_DESIGN_SYSTEM_V1.md)
+  rationale_received_after_first_pass: true
+  on_disk_freeze_commit: null   # see the PROVENANCE DEFECT note above
+
+first_pass:
+  # Judged frozen SHA 2d463e7c4e8f (the pre-repair R3 head).
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - {id: VTC-301, severity: major, finding: "The breadth gauge's bounding track is drawn below perceptibility in BOTH themes (measured 1.37:1 dark, 1.34:1 light) and carries no border or end cap, so at full value — two of five rows in every shipped shot — the bounded instrument is visually identical to a plain rule; the proportion only reads at mid values."}
+    - {id: VTC-302, severity: major, finding: "The gauge is positioned left:0 inside a row whose content padding is 14px, so the track starts flush against the panel border ~13px left of every other element in the row, and its 200px length terminates near where the ticker string above it ends while sharing that text's muted ink — it reads as an accidental underline of the ticker list rather than a measurement belonging to the row."}
+    - {id: VTC-303, severity: major, finding: "The EN mobile lane selector truncates all four stance names, but lane names ARE the stances under ratified case law and the self-labeling chip strip requires full display names; ZH mobile proves the geometry is not forcing it, so at 390 the EN subscriber loses the plain-word stance that is the panel's whole point."}
+    - {id: VTC-304, severity: major, finding: "ZH is not yet a native composition: the English word 'Theme' prints untranslated before every ZH theme name, and the Prophet card sector subtitles stay English on the same screen where the lanes render those same sectors in Chinese — one datum in two languages on one page."}
+    - {id: VTC-305, severity: minor, finding: "In the leadership modal every column header is left-aligned while numeric cells are right-aligned, so across a 16-row scan the Rank head sits ~100px left of the values it labels and Names is offset from its column — two of five columns have no visual anchor."}
+    - {id: VTC-306, severity: minor, finding: "The active-filter row highlight stops at the dashed divider and excludes the route-arrow cell, leaving a notch at the right end of the marked row, and the light tint is --link 12% against the doctrine's ≤8% ceiling for light highlight rows; the 3px rail is correct and is the important half of the callout idiom."}
+    - {id: VTC-307, severity: minor, finding: "The active filter chip prints with no space after the colon and the dismiss glyph glued to the final word in both themes — the one control that says 'your population is filtered' is the least typographically finished control on the row."}
+    - {id: VTC-308, severity: minor, finding: "The gauge fill is unclamped and leader-normalized, with nothing pinning breadth ≤ 100, so the top row always paints a full track by construction and an out-of-range value would silently overrun the track and still read as full."}
+    - {id: VTC-309, severity: minor, finding: "Tier-1 jargon rides into the ratified reference in the table view ('await confluence' filling the Entry column, 'Mom Screen' heading a column); likely inherited product copy rather than presentation, but ratifying this set as canonical law ratifies the copy with it."}
+    - {id: VTC-310, severity: minor, finding: "(critic severity: nit; recorded at the schema floor) The gauge encodes exactly the datum already printed as the NAMES figure at the opposite end of the same ~1300px row with no label joining them, where the ratified shared-scale-bar idiom pairs a bar with its number adjacently — the strongest available cue for what the bar means sits 1200px away from it."}
+  strengths:
+    - Light is authored as a second art direction, not a token swap — ~40
+      light-scoped rules turn lane cards into hairline columns with inset rails
+      and 4% state tints, give the top pick a 1px ring instead of a bloom,
+      recess the segmented track, and scrim the modal with a cool text-derived
+      wash; it passes the stranger test.
+    - Colour-law discipline is exemplary — zero raw hex literals in 30.5KB of
+      CSS, every value a token or a color-mix on one.
+    - Breadth legibility is materially better than production (from an
+      effectively invisible ~1.3:1 full-row hairline to a measured ~3.8:1 bar).
+    - Dark identity is preserved without drift outside the leadership row.
+    - The states are honest and calm as designs — filter-miss shows the count,
+      a plain-word explanation and a real recovery, with no refutation
+      vocabulary anywhere.
+    - Table view is a real second archetype rather than a squeezed grid.
+    - Mobile is deliberate re-composition, with the gauge unit re-scaled for
+      390 rather than inherited at desktop size.
+    - ZH direction rebinding is internally consistent across the whole board
+      while the breadth gauge stays achromatic, so no directional meaning is
+      accidentally minted.
+
+second_pass:
+  # Judged the REPAIRED artifact e509db03ee5f; all evidence re-taken at that head.
+  verdict: PASS_WITH_CONDITIONS
+  continuation_note: >
+    Executed by a continuation context of the same reviewer identity, seeded
+    from the coordinator's description because the receipt did not yet exist;
+    it received the rationale before reading evidence and declared the
+    pass-1/pass-2 firewall not intact for its own pass. It verified the
+    closures on measured pixels and frozen bytes rather than on assertions,
+    and correctly reviewed via `git show <frozen sha>` after finding that the
+    records worktree is not the product branch.
+  amendments:
+    - {finding: VTC-301, action: downgraded, note: "Repair real and measured: track --line 55% → --muted 38% and 3px → 5px, giving 1.90:1 dark / 1.83:1 light, and at FULL value a 3px shoulder plus a 1px halo above and below survive in both themes. Residual minor: the terminus is a bare 3px sub-3:1 nub, so on a full row the bound reads mainly by cross-row comparison."}
+    - {finding: VTC-302, action: withdrawn, note: "Falsified by re-measurement — track now starts on the row's 14px content edge and the fill on its 17px ink column, with 6px measured clearance to the next row's hairline; at 206px of a ~1300px row it can no longer read as a divider."}
+    - {finding: VTC-303, action: downgraded, note: "Out-of-boundary — composer chip markup frozen for r3 and the composition pre-existing V3.8. The truncation cost is unchanged and stays owed against the estate, not against r3."}
+    - {finding: VTC-304, action: downgraded, note: "Out-of-boundary — composer-emitted copy, byte-identical to the deployed build, already referred as ZH-nativeness debt. The surface is still not natively authored; the debt does not clear by being explained."}
+    - {finding: VTC-305, action: withdrawn, note: "Closed by repair — th:last-child right-aligns the trailing Count header at both column counts and th:first-child:nth-last-child(5) matches Rank only in the 5-column layout, leaving Name left-aligned at 4 columns. Positionally rather than semantically keyed, forced by the frozen unclassed th emission."}
+    - {finding: VTC-306, action: downgraded, note: "Tint half closed and re-verified — light rows now declare their own 7% wash while dark keeps 12%, so the planes carry plane-appropriate intensities. The route-arrow notch is composer-structural and was deliberately not touched, so the finding drops rather than clears."}
+    - {finding: VTC-307, action: downgraded, note: "Out-of-boundary — composer/engine-emitted copy under the same frozen fence; real vocabulary debt owed to the banned-vocab ratchet whose whitelist has not reached this route."}
+    - {finding: VTC-308, action: withdrawn, note: "Closed by repair and re-verified at both scales — a 200px clamp against a 206px track on desktop and 110px against 116px on mobile, so an out-of-range breadth cannot reach the track's end."}
+    - {finding: VTC-309, action: downgraded, note: "Same fence as VTC-307 — engine-emitted column titles with no presentation-only repair available."}
+    - {finding: VTC-310, action: upheld, note: "Unrepaired and unchanged in kind — the measure terminates at x=220 while the count it encodes sits at the right extreme of the row; the repair moved the gauge 14px right, so the two still never share an axis. Recording it for the authority is an acknowledgment, not a closure."}
+  dual_theme_adjudication:
+    dark: {treatment: "luminance-depth instrument, achromatic track/fill, no glow", track_contrast: "1.90:1", bound_at_full_value: "3px shoulder + 1px halo present"}
+    light: {treatment: "same achromatic instrument on white material, hairline discipline", track_contrast: "1.83:1", bound_at_full_value: "3px shoulder + 1px halo present"}
+    parity_judgment: >
+      Genuine art-direction parity for this component, not token substitution
+      alone — both planes measured independently at partial and full value and
+      landing within 0.07 of each other on track contrast, with identical
+      geometry and identical shoulder.
+    responsive: "mobile rescale preserves the shoulder ratio (110px clamp inside a 116px track)"
+  conditions:
+    - "VTC-310 is unrepaired and is a composition ruling for the design authority, not a closure of this cycle."
+    - "VTC-301 residual: any future breadth touch must give the track a designed terminus, not a 3px shoulder."
+    - "VTC-303 / VTC-304 / VTC-306-notch / VTC-307 / VTC-309 must land on the estate ledger as named open debt and must not be absorbed by an r3 PASS."
+    - "The r3 pass-1 frozen receipt must exist before this verdict is ratified — see the PROVENANCE DEFECT note at the head of this file."

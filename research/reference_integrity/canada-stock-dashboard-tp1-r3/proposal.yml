@@ -13,7 +13,7 @@ proposed_artifact:
   paths:
     - templates/stock-dashboard.css
     - site/stock-dashboard.css
-    - site/canada-stock-v36.js      # byte-identical to origin/main (verified 0-line diff)
+    - site/canada-stock-v36.js      # carries EXACTLY the authorized presentation-only breadth repair in leadRow() (16 insertions / 2 deletions vs origin/main); no other composer change
     - templates/dashboard-icons.js  # untouched this cycle (Sol COND-06 debt carve-out)
     - site/dashboard-icons.js
   screenshots:
@@ -174,7 +174,18 @@ authority_delta:
     proposal_claim: identical — presentation-only; the achromatic breadth treatment REDUCES unwarranted visual authority relative to the refused light accent rail
     direction: equal
     warranted: true
-    evidence: "composer byte-identical to origin/main; R2 diff = CSS pair + tests + evidence only"
+    evidence: >
+      The composer delta versus origin/main is 16 insertions / 2 deletions,
+      confined to leadRow(): the Math.max(8, ...) floor removed, --breadth
+      emitted unitless, and a ca-v36-has-breadth marker class added. That IS
+      the presentation-only breadth repair the design authority expressly
+      authorized for this cycle. It introduces no new number, rank, badge,
+      count or wording, and it strictly REDUCES claimed authority (an unknown
+      membership that previously painted a floored 8% meter now paints
+      nothing). CORRECTION OF RECORD: earlier r3 ledger text inherited the r2
+      cycle's "byte-identical / 0-line diff" wording, which was true of r2 and
+      false of r3; an independent critic measured the refutation and the claim
+      is restated here in its true form.
 
 information_economics:
   words_per_card: {production: "unchanged", proposal: "unchanged"}
