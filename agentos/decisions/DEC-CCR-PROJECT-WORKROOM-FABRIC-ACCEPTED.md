@@ -47,10 +47,10 @@ alternatives:
 evidence:
   - "Chairman live directive, 2026-08-29: continue Pro-mode end-to-end Workroom leadership."
   - "Protected Mastermind 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b, Skillpack v1.0.1/bootstrap-major 1."
-  - "Mastermind #240 exact current head 1db9a6ea27a81d53ab2141d94f7226be9ea8c549."
+  - "Mastermind #240 exact current head 45defc7b57ac93615ff78aa32fd40774b0e130d2."
   - "Canonical reconciliation amendment on #240 adopts the unique valid #233 planner/provenance law."
   - "Mastermind #233 closed unmerged with supersession receipt 5463703030; MAS-220 is Duplicate of MAS-231."
-  - "Mastermind #242 exact head 596145ffa6f2c89c58133c06638394b22dcb304f remains WR-R0 research only."
+  - "Mastermind #242 exact head a1c83e5d2a91593f85cf2b8fbd2361583e8f4df4 remains WR-R0 research only."
   - "Current GitHub census finds no protected/open Workroom implementation carrier beyond records/research."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
