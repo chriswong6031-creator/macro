@@ -7346,6 +7346,36 @@ def test_dead_confirmed_watcher_before_entry_routes_missing_evidence_once(
     assert "#6351/main-integrity" in output
 
 
+def test_unanswerable_ordinary_authority_latches_one_pre_entry_missing_evidence(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    authority_reads = {"count": 0}
+
+    def authority_unanswerable(*_args):
+        authority_reads["count"] += 1
+        raise RuntimeError("GitHub authority pagination is unanswerable")
+
+    monkeypatch.setattr(GUARD, "_ci_hold_authority_snapshot", authority_unanswerable)
+
+    for _ in range(3):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT missing_evidence") == 1
+    assert "#6351/main-integrity" in output
+    assert "CI_MATERIAL_EVENT authority_change" not in output
+    assert '"decision": "block"' not in output
+    assert authority_reads == {"count": 1}
+    assert observed == {"merged": 1, "pull": 1, "runs": 1}
+    failure = GUARD._load(state_path)["ci_watcher_failure"]
+    assert failure["head"] == _head
+    assert failure["watcher_digest"] == "watch-digest-v2"
+    assert failure["authority_fingerprint"] == ""
+
+
 def test_pending_exact_head_with_one_watcher_enters_ci_quiescent_once(
     monkeypatch, tmp_path, capsys
 ):
@@ -7926,7 +7956,8 @@ def test_ordinary_comment_review_authority_change_invalidates_quiescent_wait_onc
     GUARD._stop(repo, state_path, {"stop_hook_active": False})
     alive["value"] = False
     authority["fingerprint"] = "2" * 16
-    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    for _ in range(4):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
 
     output = capsys.readouterr().out
     assert output.count("CI_MATERIAL_EVENT authority_change") == 1

@@ -4042,6 +4042,11 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
 
     phase = str(quiescence.get("phase") or "waiting")
     if phase == "routed":
+        if str(quiescence.get("material_kind") or "") == "authority_change":
+            # Authority re-entry is handed to release/Sol. With the same exact
+            # local head and watcher identity, a later Stop cannot prove a
+            # distinct remote condition without creating a successor poll.
+            return True
         # The event receipt suppresses only the same identified material
         # event. A later Stop must leave the local-only fast path and perform
         # one authoritative classification: the same event key stays silent,
@@ -4090,6 +4095,77 @@ def _ci_quiescence_fast_path(root: Path, path: Path, state: dict[str, Any]) -> b
 
     result = _update_ledger(path, claim_wake, initial=state)
     return result != "wake"
+
+
+def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any]) -> bool:
+    """Keep one unchanged pre-entry failure local and silent.
+
+    The latch is not authority evidence: it records that the authoritative
+    snapshot was unanswerable (or the admitted watcher was unusable). Only the
+    same local head, watcher identity, and watcher liveness can retain it.
+    Every local change clears the latch and reopens ordinary classification.
+    """
+    failure = state.get("ci_watcher_failure")
+    if not isinstance(failure, dict):
+        return False
+    failure_key = str(failure.get("key") or "")
+
+    def clear_failure() -> None:
+        def clear(latest: dict[str, Any]) -> dict[str, Any]:
+            current = latest.get("ci_watcher_failure")
+            if isinstance(current, dict) and str(current.get("key") or "") == failure_key:
+                latest.pop("ci_watcher_failure", None)
+            return dict(latest)
+
+        latest = _update_ledger(path, clear, initial=state)
+        if isinstance(latest, dict):
+            state.clear()
+            state.update(latest)
+
+    head = str(failure.get("head") or "")
+    number = failure.get("pr")
+    if (
+        failure.get("version") != CI_QUIESCENCE_VERSION
+        or re.fullmatch(r"[0-9a-f]{16}", failure_key) is None
+        or re.fullmatch(r"[0-9a-f]{40}", head) is None
+        or not number
+        or not str(failure.get("watcher_digest") or "")
+        or not str(failure.get("watcher_marker") or "")
+        or (
+            failure.get("watcher_liveness") is not None
+            and not isinstance(failure.get("watcher_liveness"), bool)
+        )
+    ):
+        clear_failure()
+        return False
+    try:
+        if _run(root, "git", "rev-parse", "HEAD") != head:
+            clear_failure()
+            return False
+        baseline = state.get("baseline") or {}
+        current = _fingerprint(root)
+        dirty = _changed_since_baseline(baseline, current)
+        if dirty:
+            shipped = _shipped_identical_untracked(root, current, dirty)
+            if shipped:
+                dirty = [entry for entry in dirty if entry not in shipped]
+        if dirty:
+            clear_failure()
+            return False
+    except Exception:
+        return False
+    watcher = _ci_watcher_shape_for_pull(state, number, head)
+    if (
+        watcher is None
+        or str(watcher.get("digest") or "")
+        != str(failure.get("watcher_digest") or "")
+        or str(watcher.get("process_marker") or "")
+        != str(failure.get("watcher_marker") or "")
+        or _watcher_process_alive(watcher) is not failure.get("watcher_liveness")
+    ):
+        clear_failure()
+        return False
+    return True
 
 
 def _ci_material_receipt(
@@ -4157,19 +4233,26 @@ def _ci_watcher_failure_receipt(
     watcher: dict[str, Any],
     checks: list[str],
     checks_fingerprint: str,
-    authority_fingerprint: str,
+    authority_fingerprint: str | None,
 ) -> bool:
     """Route one dead/incomplete pre-entry watcher without repeated polling."""
     route = _ci_event_route(
         "missing_evidence", pr=number, head=head, checks=checks
     )
+    known_authority = (
+        authority_fingerprint
+        if isinstance(authority_fingerprint, str)
+        and re.fullmatch(r"[0-9a-f]{16}", authority_fingerprint)
+        else ""
+    )
+    watcher_liveness = _watcher_process_alive(watcher)
     event_key = hashlib.sha256(
         json.dumps(
             {
                 "head": head,
                 "watcher": str(watcher.get("digest") or ""),
                 "checks": checks_fingerprint,
-                "authority": authority_fingerprint,
+                "authority": known_authority or "unanswerable",
             },
             sort_keys=True,
         ).encode("utf-8")
@@ -4182,10 +4265,14 @@ def _ci_watcher_failure_receipt(
         latest["ci_watcher_failure"] = {
             "version": CI_QUIESCENCE_VERSION,
             "key": event_key,
+            "pr": number,
             "head": head,
             "watcher_digest": str(watcher.get("digest") or ""),
+            "watcher_marker": str(watcher.get("process_marker") or ""),
+            "watcher_liveness": watcher_liveness,
             "checks_fingerprint": checks_fingerprint,
-            "authority_fingerprint": authority_fingerprint,
+            "authority_fingerprint": known_authority,
+            "authority_state": "known" if known_authority else "unanswerable",
             "route": route["owner"],
             "at": time.time(),
         }
@@ -4401,6 +4488,8 @@ def _try_ci_quiescence(
     runs = _head_check_runs(owner, repo, pull_head)
     red, pending, passed = _split_head_runs(runs)
     checks_fingerprint = _ci_checks_fingerprint(runs)
+    passed_names = set(passed)
+    preflight_green = CI_QUIESCENCE_FAST_PREFLIGHT.issubset(passed_names)
     try:
         authority_fingerprint = str(
             _ci_hold_authority_snapshot(owner, repo, pull)["fingerprint"]
@@ -4410,6 +4499,23 @@ def _try_ci_quiescence(
         # comments/reviews is missing evidence, not a release-side authority
         # change. Reuse the last mechanically established fingerprint only to
         # key the single failure receipt; it does not assert unchanged authority.
+        if not isinstance(existing, dict) and not red and pending and preflight_green:
+            watcher = _ci_watcher_shape_for_pull(state, number, head)
+            if isinstance(watcher, dict):
+                return (
+                    _ci_watcher_failure_receipt(
+                        path,
+                        state,
+                        number=number,
+                        head=head,
+                        watcher=watcher,
+                        checks=pending,
+                        checks_fingerprint=checks_fingerprint,
+                        authority_fingerprint=None,
+                    ),
+                    "none",
+                    "",
+                )
         authority_fingerprint = str((existing or {}).get("authority_fingerprint") or "")
         if isinstance(existing, dict) and re.fullmatch(
             r"[0-9a-f]{16}", authority_fingerprint
@@ -4433,8 +4539,6 @@ def _try_ci_quiescence(
                 "",
             )
         return False, "none", ""
-    passed_names = set(passed)
-
     if isinstance(existing, dict):
         old_authority = str(existing.get("authority_fingerprint") or "")
         if old_authority and old_authority != authority_fingerprint:
@@ -4487,7 +4591,6 @@ def _try_ci_quiescence(
             _ci_quiescence_clear(path, state)
         return False, code, detail
 
-    preflight_green = CI_QUIESCENCE_FAST_PREFLIGHT.issubset(passed_names)
     if pending and preflight_green:
         if isinstance(existing, dict):
             # A native watcher should not exit while the semantic wait is still
@@ -6602,6 +6705,12 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     # atomic wake claimant and falls through for authoritative reclassification.
     if isinstance(state.get("ci_quiescence"), dict):
         if _ci_quiescence_fast_path(root, path, state):
+            return
+        refreshed = _load_ledger(path, allow_missing=True)
+        if isinstance(refreshed, dict):
+            state = refreshed
+    if isinstance(state.get("ci_watcher_failure"), dict):
+        if _ci_watcher_failure_fast_path(root, path, state):
             return
         refreshed = _load_ledger(path, allow_missing=True)
         if isinstance(refreshed, dict):
