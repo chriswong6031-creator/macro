@@ -30,9 +30,9 @@ changed:
       PRODUCTION_INERT rather than autonomous delegation live.
   - path: linear:MAS-210
     what: >
-      Replaced stale NOT_BUILT language with BUILT_NOT_PROVEN for AD-CHILD1 after ORION produced
-      immutable Mastermind #246 head 41d6483867c099dcc06ea06acf79655a0c0beab8; release remains
-      nonterminal because protected source advanced afterward through AD-ID1.
+      Replaced stale NOT_BUILT language with BUILT_NOT_PROVEN after ORION produced Mastermind #246,
+      then recorded the same-carrier history-preserving reconcile to protected c924b371... at exact
+      head f17ad1afeeee291a31552cad4a8f5bea2eb2ede5. Fresh current-head hosted proof remains nonterminal.
   - path: linear:MAS-226
     what: >
       Moved Worker Browser B1 from an unbound repair projection to In Progress only after TRACE emitted
@@ -44,8 +44,9 @@ changed:
       merge or production proof is inferred from START.
   - path: linear:MAS-216
     what: >
-      Recorded SENTINEL placement and later ACK/WATCH for AD-RETRY1 while deliberately retaining Todo:
-      no separate START exists yet and effect remains NONE.
+      Advanced AD-RETRY1 to In Progress only after SENTINEL emitted a distinct START under protected
+      c924b371.... The retry child owns its four frozen classifier/COO-cycle paths while
+      executive_runtime.py remains explicitly READ_ONLY under the concurrent FORGE MAS-237 fence.
   - path: linear:MAS-129
     what: >
       Returned CI Quiescence v2 to In Progress after FORGE ACKed/WATCHed/STARTed the bounded
@@ -113,12 +114,24 @@ verified:
       TRACE native task 01a04bdf-b144-7af2-a08c-5d28ee63aad0 emitted ACK, WATCH_ARMED and separate
       START against Mastermind #153 / sol/worker-browser-b1-20260825. No repair completion or product
       proof is inferred from that START.
-  - claim: AD-RETRY1 is consumed pre-START rather than executing.
+  - claim: AD-RETRY1 is now genuinely STARTed while preserving RuntimeBinding write ownership.
     command: >
-      Search exact Slack operation ad-retry1-typed-retry-safety-20260829-sentinel-001.
+      Search exact Slack operation ad-retry1-typed-retry-safety-20260829-sentinel-001 after the AD-ID1
+      terminal STOP and protected c924b371... source movement.
     result: >
-      SENTINEL emitted ACK 1788023594.573739 and WATCH_ARMED 1788023621.071919 with effect_state NONE;
-      no separate START was present at the reconciliation boundary, so MAS-216 remains Todo/pre-START.
+      SENTINEL first consumed a fresh SOL CONTINUE, then emitted START 1788023970.313649 with protected
+      pin c924b37188df2437057b5fd7bfc00ce0db91a1f1, clear target-path/worktree collisions, and four
+      owned retry-safety/classifier/COO-cycle paths. control_plane/executive_runtime.py is explicitly
+      READ_ONLY_FORGE_MAS237_FENCE, preventing a concurrent double writer.
+  - claim: ORION has reconciled AD-CHILD1 #246 to the current protected source without widening scope.
+    command: >
+      Read the exact AD-CHILD1 carrier after SOL-DIR-PRO's post-AD-ID1 CONTINUE, then fetch Mastermind
+      PR #246 and its current-head workflow state.
+    result: >
+      ORION emitted CURRENT_BASE_RECONCILED for #246; GitHub reports open/non-draft/mergeable head
+      f17ad1afeeee291a31552cad4a8f5bea2eb2ede5 on base c924b371..., still exactly the two frozen
+      implementation/test files. Fresh hosted CI run 33265319836 is IN_PROGRESS, so release remains
+      nonterminal and the earlier 41d648... proof is supporting history only.
   - claim: Canada TP-1 remains blocked by the canonical shared main-red repair rather than owning a second Caddy fix.
     command: >
       Fetch Macro #6662 and its exact-head workflow state, then compare its recorded base with current
@@ -140,10 +153,11 @@ unverified:
       proving exact current session/generation TARGET_ACKNOWLEDGED and SOURCE_RESOLVED through the real
       existing-owner path, plus a real zero-manual-foreground canary. Principal heartbeat recovery is
       not this proof.
-  - claim: AD-RETRY1 execution has begun.
+  - claim: AD-RETRY1 implementation is complete and retry-safe requeue is accepted.
     what_would_verify: >
-      A separate START on operation ad-retry1-typed-retry-safety-20260829-sentinel-001 after fresh
-      current-source/path preflight. ACK/WATCH alone is insufficient.
+      SENTINEL RESULT on the same started child with immutable bounded implementation head, frozen
+      reason/decision discriminators, no executive_runtime.py write, focused/negative mutation proof,
+      hosted repository/security green, and Sol acceptance.
   - claim: CI Quiescence #6660 and Worker Browser #153 repairs are complete.
     what_would_verify: >
       Immutable same-carrier repair heads, required discriminating tests/hosted proof and canonical
@@ -161,21 +175,21 @@ unverified:
 unresolved:
   - "Manual foreground/principal heartbeat recovery proved the CTO conversation surfaces were not uniformly dead, but it did not prove durable automatic exact-session targeting."
   - "MAS-237 START occurred before protected Mastermind advanced to c924b371...; the same started carrier must reconcile current source before immutable acceptance rather than restart or fail over."
-  - "ORION #246 was built before the c924b371... protected movement; SOL-DIR-PRO has already kept the same child nonterminal for current-base reconciliation/re-proof."
-  - "AD-RETRY1 is ACKed/WATCHed but has no START/effect at this boundary."
+  - "ORION #246 is current-base at f17ad1af... but still awaits terminal fresh-head hosted/security proof and a canonical RESULT before Sol acceptance."
+  - "AD-RETRY1 is STARTed on disjoint owned paths; its executive_runtime.py read-only fence against FORGE/MAS-237 must survive the full implementation and return."
   - "Canada TP-1 remains a sticky started operation blocked on #6662; no TP-1-specific Caddy repair or blind CI retry is lawful."
 next_actions:
   - "Primary: consume FORGE's next material RESULT/BLOCKED on MAS-237 RuntimeBinding, re-pin then-current protected Mastermind, review the immutable same-carrier artifact, and issue exactly one same-carrier Sol edge."
   - "Only after accepted RuntimeBinding, admit the already-frozen MAS-229 Wake ACK1 child on a fresh lawful operation/carrier; do not implement another RuntimeBinding owner inside Wake."
-  - "Keep ORION #246 on its existing child and require current-base reconciliation/re-proof after c924b371... before terminal acceptance or successor AD-DLG2."
+  - "Consume ORION's current-head #246 hosted/security terminal state and typed RESULT; only a current-base PASS may close AD-CHILD1 and open a separately admitted successor."
   - "Consume FORGE's #6660 authority-reentry repair return on the same PR/branch; only after repair acceptance may the separate release-finalize child resume."
   - "Consume TRACE's Worker Browser #153 repair return on the same PR/branch and verify all four frozen blocker classes plus real governed browser proof before acceptance."
-  - "Leave AD-RETRY1 pre-START until SENTINEL emits a distinct START; no second receiver/nudge/failover is warranted from ACK/WATCH state."
+  - "Consume SENTINEL's AD-RETRY1 return on the same started child and reject any write into executive_runtime.py while MAS-237 owns that seam."
   - "Keep Canada TP-1 held until canonical #6662 clears its current-main/hosted proof gate, then issue the owning Sol's explicit same-carrier continuation rather than creating another repair lane."
 do_not_redo:
   - "Do not recreate a four-CTO dark/dead diagnosis from raw Linear status or Slack delivery; use exact operation ACK/START/return evidence and the canonical runtime owner for lifecycle facts."
   - "Do not create a Session OS, second RuntimeBinding registry, watcher DB, retry service, provider-session registry, queue or lifecycle plane."
-  - "Do not rebind/fail over a STARTed MAS-237, #6660, Worker Browser or ORION child merely because protected/main source moves; reconcile on the same carrier."
+  - "Do not rebind/fail over a STARTed MAS-237, AD-RETRY1, #6660, Worker Browser or ORION child merely because protected/main source moves; reconcile on the same carrier."
   - "Do not reopen AD-ID1 release work: #239 is protected as c924b371... and its child received explicit SOL ACCEPTED / STOP."
   - "Do not infer child START from an active principal lane, internal subagent intent, direct delivery, ACK or WATCH_ARMED."
   - "Do not merge #6654 separately or add a Caddy fix to TP-1 while #6662 is the canonical combined main-red carrier."
@@ -191,8 +205,9 @@ danger_areas:
 # Return point
 
 Start from protected Mastermind `c924b37188df2437057b5fd7bfc00ce0db91a1f1`, Linear MAS-191,
-and the exact currently STARTed carriers for MAS-237 RuntimeBinding, Macro #6660 repair, Worker Browser
-#153 and ORION #246. The primary recovery outcome is partial: principal/native session consumption is
-restored, AD-ID1 source is protected, and RuntimeBinding implementation has finally STARTed, but
-zero-manual-foreground exact-session Wake is still unproven. The next decisive event is the same-
-carrier MAS-237 return; only an accepted RuntimeBinding may open fresh MAS-229 Wake ACK1 execution.
+and the exact currently STARTed carriers for MAS-237 RuntimeBinding, AD-RETRY1, Macro #6660 repair,
+Worker Browser #153 and ORION #246. The primary recovery outcome is partial: principal/native session
+consumption is restored, AD-ID1 source is protected, RuntimeBinding and retry-safety implementation
+have STARTed, and ORION #246 is current-base, but zero-manual-foreground exact-session Wake is still
+unproven. The next decisive event remains the same-carrier MAS-237 return; only an accepted
+RuntimeBinding may open fresh MAS-229 Wake ACK1 execution.
