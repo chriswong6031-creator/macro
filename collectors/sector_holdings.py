@@ -21,7 +21,7 @@ from datetime import date, datetime
 import pandas as pd
 
 from collectors.base import Adapter
-from lib import config, nyse_calendar, store
+from lib import config, delisted_symbols, nyse_calendar, store
 
 log = logging.getLogger(__name__)
 
@@ -212,8 +212,41 @@ def _fetch_universe(current: list[str], stored: list[str], dead: frozenset[str])
     union side always wins. Ticker symbols get reused across unrelated companies over
     time, and refusing to fetch a live top-N holding because an unrelated past company
     once traded under the same string would be a worse defect than the one this
-    function exists to fix."""
+    function exists to fix.
+
+    `dead` must include the exit ledger (lib.delisted_symbols), not just the EDGAR
+    dead-name registry — fetch() passes the union of both. The AVB incident
+    (2026-08-22 nightly) is why: AvalonBay delisted 2026-08-17 (acquisition), but the
+    retention side kept requesting the symbol, and Yahoo had spliced it into the
+    acquirer's CONTINUING series — auto_adjust folded the merger exchange ratio
+    (×2.793) into every historical bar, the 1mo window disagreed with the stored
+    basis, `store.basis_shifted` routed it to a period='max' re-pull, and that
+    re-pull rewrote the entire 1994-2026 file onto the successor's basis plus live
+    post-delisting successor bars. A delisted feed is not merely useless — it can
+    answer with a DIFFERENT instrument's tape, and the basis-rebase path then
+    imports it wholesale."""
     return sorted(set(current) | (set(stored) - dead))
+
+
+def _report_delisted_exclusions(current: list[str], stored: list[str],
+                                exited: frozenset[str]) -> list[str]:
+    """Disclose the retained-on-disk names excluded from tonight's fetch by their
+    config/delisted_symbols.yml exit row (R4 never-silent collectors — the
+    collectors/yahoo.py::_report_delisted_exclusions idiom for this lane). A name
+    still in TODAY's union is not excluded (union wins, see _fetch_universe) and so
+    is not reported here. Bare ::notice at line start (annotation law)."""
+    dropped = sorted((set(stored) - set(current)) & exited)
+    if dropped:
+        rows = delisted_symbols.ledger()
+        detail = ", ".join(
+            f"{t}(last session {rows.get(t, {}).get('last_session', '?')})"
+            for t in dropped[:15])
+        more = len(dropped) - min(len(dropped), 15)
+        print(f"::notice title=stocks collector delisted::{len(dropped)} symbol(s) not "
+              f"requested (exit rows in config/delisted_symbols.yml; a delisted feed "
+              f"can return a merger successor's spliced tape — the AVB 2026-08 class): "
+              f"{detail}{f', +{more} more' if more > 0 else ''}", flush=True)
+    return dropped
 
 
 def _report_missing_symbols(requested: list[str], returned, current) -> list[str]:
@@ -366,8 +399,12 @@ class StockPriceAdapter(Adapter):
             raise RuntimeError("no holdings stored yet — run sector_holdings first")
         # Retention: keep fetching every name still on disk even after it exits the
         # top-N union (see _fetch_universe's docstring — the 2026-08-03 freeze
-        # incident). tickers is therefore always >= current, never fewer.
-        tickers = _fetch_universe(current, self.stored_series(), _dead_tickers())
+        # incident), minus exit-ledger + dead-registry names (the AVB 2026-08
+        # successor-splice incident — same docstring).
+        stored = self.stored_series()
+        exited = delisted_symbols.tickers()
+        tickers = _fetch_universe(current, stored, _dead_tickers() | exited)
+        _report_delisted_exclusions(current, stored, exited)
         # daily runs fetch a short window, EXCEPT thin-volume/shallow/stale-tip
         # tickers which get a full-history backfill so a bad seed (or a frozen tip
         # older than the window can bridge) can never silently persist.
