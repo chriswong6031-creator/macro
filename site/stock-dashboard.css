@@ -143,7 +143,12 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 /* Fresh-signals cue (owner .pv-mk-new markers) in the Prophet header. */
 .mx-stockdash--ca .ca-v36-fresh { color: var(--muted); font-size: 12.2px; white-space: nowrap; }
 
-.mx-stockdash--ca .ca-v36-lead-basis {
+/* .ca-v36-lead-basis also renders inside the sibling-scoped Leadership modal
+   title (modalPane()'s title string) — reachability repair,
+   theme-parity-tp1-canada-20260828-sol-001 R2 (see the modal family note
+   below for why the sibling combinator is load-bearing here). */
+.mx-stockdash--ca .ca-v36-lead-basis,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-lead-basis {
   height: 26px; display: inline-flex; align-items: center; padding: 0 9px;
   border: 1px solid var(--line); border-radius: var(--r-pill, 999px);
   background: var(--panel2); color: var(--muted); font-size: 11px; font-weight: 650; white-space: nowrap;
@@ -247,9 +252,23 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
   background: transparent; color: inherit; text-align: left; cursor: pointer; overflow: hidden;
   transition: .15s ease;
 }
-.mx-stockdash--ca .ca-v36-lead-row:after {
-  content: ""; position: absolute; left: 0; bottom: 0; width: var(--breadth, 8%); height: 1px;
-  background: color-mix(in srgb, var(--link) 44%, transparent); opacity: .5;
+/* Breadth measure — achromatic in BOTH themes (theme-parity-tp1-canada-
+   20260828-sol-001 R2). A reserved hue may not carry magnitude, so the
+   measure reads from the achromatic --line/--muted family rather than the
+   reserved --link hue: a visible rounded track plus a rounded fill of
+   comparable semantic authority on both planes, so a 100% fill reads as a
+   filled measure, not a stray divider. */
+.mx-stockdash--ca .ca-v36-lead-row::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  border-radius: var(--r-pill, 999px);
+  background: color-mix(in srgb, var(--line) 60%, transparent);
+}
+.mx-stockdash--ca .ca-v36-lead-row::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 3px;
+  width: var(--breadth);
+  border-radius: var(--r-pill, 999px);
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  opacity: 1;
 }
 .mx-stockdash--ca .ca-v36-lead-row:hover:not(:disabled),
 .mx-stockdash--ca .ca-v36-lead-row.is-active { background: color-mix(in srgb, var(--link) 6%, transparent); }
@@ -259,17 +278,29 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca .ca-v36-leaders { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-stockdash--ca .ca-v36-count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.7px; text-align: right; }
 
-.mx-stockdash--ca .ca-v36-stance {
+/* .ca-v36-stance also renders inside the sibling-scoped Leadership modal
+   (modalRows()'s stance <span>) — reachability repair,
+   theme-parity-tp1-canada-20260828-sol-001 R2. The stylesheet's own scoping
+   pass (Task 3) only ever reached the `.mx-stockdash--ca` descendant tree;
+   the modal is a following SIBLING (see the modal family note below), so
+   every stance/tone rule below is duplicated onto the modal-scoped
+   selector too. */
+.mx-stockdash--ca .ca-v36-stance,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance {
   height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
   border: 1px solid currentColor; border-radius: var(--r-ctl, 8px);
   font-size: 10px; font-weight: 750; text-transform: uppercase; white-space: nowrap;
 }
-.mx-stockdash--ca .ca-v36-stance.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
+.mx-stockdash--ca .ca-v36-stance.buy,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance.buy { color: var(--ink-pv-buy, var(--pv-buy)); }
 /* Near: same repair as the lane header above (DARK DELTA item 1) — the link
    ink, not the stance family. */
-.mx-stockdash--ca .ca-v36-stance.near { color: var(--ink-link, var(--link)); }
-.mx-stockdash--ca .ca-v36-stance.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
-.mx-stockdash--ca .ca-v36-stance.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
+.mx-stockdash--ca .ca-v36-stance.near,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance.near { color: var(--ink-link, var(--link)); }
+.mx-stockdash--ca .ca-v36-stance.wait,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance.wait { color: var(--ink-pv-wait, var(--pv-wait)); }
+.mx-stockdash--ca .ca-v36-stance.avoid,
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance.avoid { color: var(--ink-pv-avoid, var(--pv-avoid)); }
 
 .mx-stockdash--ca .ca-v36-expand-wrap {
   display: flex; justify-content: center; padding: 9px 12px 11px; border-top: 1px solid var(--line);
@@ -407,9 +438,17 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
    while actually matching the shipped DOM. This restores the ACCEPTED V3.8
    production rendering; it is not a new dark decision. */
 
+/* Fail-closed base, independent of the sibling combinator below
+   (theme-parity-tp1-canada-20260828-sol-001 R2). If a future wrapper change
+   ever breaks the strict adjacency the `~` combinator depends on, this
+   hides the modal instead of exposing unstyled content at the foot of the
+   page — the `.is-open` opener below still governs the visible state. */
+.ca-v36-modal { display: none; }
+
 .mx-stockdash--ca ~ .ca-v36-modal {
   position: fixed; inset: 0; z-index: 2147481000; display: none; align-items: center; justify-content: center;
   padding: 20px; background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(8px);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto, sans-serif);
 }
 .mx-stockdash--ca ~ .ca-v36-modal.is-open { display: flex; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-card {
@@ -521,10 +560,33 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-an-lane + .ca-v36-an-lane {
   border-left: 1px solid var(--line);
 }
 
-/* Lane header: the narrow 2px semantic rail is the base rule's
-   `border-top: 2px solid currentColor`; light adds only a ~4% wash of the SAME
-   stance token underneath it. Low enough to stay a tint rather than a
-   highlighter smear (§12), strong enough to key the column. */
+/* Lane header rail — INSET, not a full-width border-top
+   (theme-parity-tp1-canada-20260828-sol-001 R2). The base rule's
+   `border-top: 2px solid currentColor` is a full-width top edge on every
+   one of the four hairline-divided columns; stacked side by side with zero
+   gap (light dissolves the lane box, mechanism 1 above) four full-width
+   rails abut into what reads as ONE continuous four-colour bar, not four
+   independent lane identities. Light instead removes the border-top and
+   draws the rail as an inset, rounded ::before: a clear gap opens at each
+   column's outer edges (12px from each side) so the four rails can never
+   read as a single strip, however narrow the columns get. Light then adds
+   only a ~4% wash of the SAME stance token underneath it. Low enough to
+   stay a tint rather than a highlighter smear (§12), strong enough to key
+   the column. */
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd {
+  border-top: 0;
+  position: relative;
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  border-radius: var(--r-pill, 999px);
+  background: currentColor;
+}
 html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.buy {
   background: color-mix(in srgb, var(--ink-pv-buy, var(--pv-buy)) 4%, transparent);
 }
@@ -630,23 +692,15 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-col-h { background: var(--
 html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row.is-active {
   box-shadow: inset 3px 0 0 var(--link);
 }
-/* Breadth measure reads as an instrument on light, not a stray underline: a
-   full-width 1px hairline TRACK (companion ::before — the measure itself is
-   narrower than the row, so it cannot carry a full-width second layer) plus
-   the measure bar at full opacity and double weight. */
-html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row:before {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-  background: var(--line);
-}
-html[data-theme=light] .mx-stockdash--ca .ca-v36-lead-row:after {
-  height: 2px;
-  background: color-mix(in srgb, var(--link) 55%, transparent);
-  opacity: 1;
-}
+/* Breadth measure is now a shared both-theme treatment (see the BASE
+   ::before/::after rules on .ca-v36-lead-row above) — achromatic track +
+   fill, comparable semantic authority in both planes, no light-only
+   override needed (theme-parity-tp1-canada-20260828-sol-001 R2). */
 /* Stance chip earns material presence on white from a wash of its OWN stance
    ink (currentColor is the stance token set by .ca-v36-stance.<tone> above),
    the house chip idiom — an outline-only chip reads thin on a white row. */
-html[data-theme=light] .mx-stockdash--ca .ca-v36-stance {
+html[data-theme=light] .mx-stockdash--ca .ca-v36-stance,
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance {
   background: color-mix(in srgb, currentColor 7%, transparent);
 }
 html[data-theme=light] .mx-stockdash--ca .ca-v36-expand-wrap { background: var(--bg); }

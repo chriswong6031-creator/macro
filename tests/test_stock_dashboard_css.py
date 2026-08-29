@@ -477,6 +477,70 @@ def test_modal_family_stays_sibling_scoped_to_the_mount():
     )
 
 
+def test_modal_reachable_stance_and_lead_basis_families():
+    """theme-parity-tp1-canada-20260828-sol-001 R2: .ca-v36-stance (the
+    modalRows() action-status chip) and .ca-v36-lead-basis (the modalPane()
+    title's THEME RANK basis pill) both render inside the sibling-scoped
+    Leadership modal (site/canada-stock-v36.js:383-392), but the Task-3
+    scoping pass only ever reached the `.mx-stockdash--ca` descendant tree
+    — both families rendered unstyled inside the modal (RIG-refused
+    regression). Pin that every stance/tone rule and the lead-basis rule is
+    duplicated onto `.mx-stockdash--ca ~ .ca-v36-modal <class>` too, so a
+    later "tidy the selectors" pass cannot silently re-break them."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    normalized = re.sub(r"\s+", "", text)
+    for marker in (
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-stance",
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-stance.buy",
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-stance.near",
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-stance.wait",
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-stance.avoid",
+        ".mx-stockdash--ca~.ca-v36-modal.ca-v36-lead-basis",
+    ):
+        assert marker in normalized, (
+            f"{marker!r} is missing — a modal-scoped stance/tone or "
+            "lead-basis rule regressed to unreachable inside the "
+            "sibling-appended Leadership modal"
+        )
+
+
+def test_modal_fail_closed_base_exists():
+    """theme-parity-tp1-canada-20260828-sol-001 R2: independent of the
+    sibling combinator, the modal must default to display:none as an
+    unconditional base rule. If a future wrapper change ever breaks the
+    strict adjacency the `~` combinator depends on, this keeps the modal
+    HIDDEN rather than rendering unstyled content at the foot of the page —
+    fail-closed, not fail-open."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    assert re.search(r"(?<![\w-])\.ca-v36-modal\s*\{\s*display:\s*none;?\s*\}", text), (
+        "the unconditional `.ca-v36-modal { display: none; }` fail-closed "
+        "base rule is missing — a broken sibling combinator would now "
+        "expose unstyled modal content instead of hiding it"
+    )
+
+
+def test_breadth_measure_is_achromatic_not_the_link_hue():
+    """theme-parity-tp1-canada-20260828-sol-001 R2 (Sol REVISE ruling): a
+    reserved hue (--link) may not carry magnitude. The breadth track/fill on
+    .ca-v36-lead-row must read from the achromatic --line/--muted family in
+    BOTH themes, with comparable semantic authority — no light-only
+    override may reintroduce --link, and dark must not either."""
+    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
+    assert re.search(
+        r"\.ca-v36-lead-row::before\s*\{[^}]*color-mix\(in srgb,\s*var\(--line\)",
+        text,
+    ), ".ca-v36-lead-row::before (breadth track) no longer reads the achromatic --line token"
+    assert re.search(
+        r"\.ca-v36-lead-row::after\s*\{[^}]*color-mix\(in srgb,\s*var\(--muted\)",
+        text,
+    ), ".ca-v36-lead-row::after (breadth fill) no longer reads the achromatic --muted token"
+    for match in re.finditer(r"\.ca-v36-lead-row::?(before|after)\s*\{([^}]*)\}", text):
+        assert "--link" not in match.group(2), (
+            f".ca-v36-lead-row::{match.group(1)} reintroduced var(--link) — "
+            "the breadth measure must stay achromatic in both themes"
+        )
+
+
 def test_stylesheet_is_token_clean():
     """TP-0 design-system enforcement: no color/font/radius literals, no
     parallel :root token family, no emoji (the same rule set --mode
