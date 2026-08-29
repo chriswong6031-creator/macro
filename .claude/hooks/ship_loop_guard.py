@@ -1967,7 +1967,7 @@ def _bounded_github_list(
 def _ci_hold_authority_snapshot(
     owner: str, repo: str, pull: dict[str, Any]
 ) -> dict[str, Any]:
-    """One bounded comment/review snapshot shared by every HOLD observer."""
+    """One bounded comment/review snapshot shared by every CI authority observer."""
     number = pull.get("number")
     if not owner or not repo or not number:
         raise RuntimeError("pull request authority identity is unanswerable")
@@ -3851,10 +3851,10 @@ def _ci_authority_fingerprint(
 ) -> str:
     """Hold/release/merge-authority identity from authoritative PR metadata.
 
-    ``extra`` lets an existing authority adapter bind its own already-fetched,
-    mechanically validated source.  HOLD-FOR-SOL uses the authoritative issue
-    comments that complete its protocol; ordinary merge authority passes no
-    extra value and retains the original fingerprint byte-for-byte.
+    ``extra`` lets a bounded authority snapshot bind its already-fetched,
+    mechanically validated source. Both HOLD-FOR-SOL and ordinary merge
+    authority include the authoritative issue comments and reviews that can
+    alter release authority without changing PR metadata.
     """
     labels = sorted(
         str((label or {}).get("name") or "") for label in (pull.get("labels") or [])
@@ -4401,43 +4401,38 @@ def _try_ci_quiescence(
     runs = _head_check_runs(owner, repo, pull_head)
     red, pending, passed = _split_head_runs(runs)
     checks_fingerprint = _ci_checks_fingerprint(runs)
-    if hold_mode:
-        try:
-            authority_fingerprint = str(
-                _ci_hold_authority_snapshot(owner, repo, pull)["fingerprint"]
+    try:
+        authority_fingerprint = str(
+            _ci_hold_authority_snapshot(owner, repo, pull)["fingerprint"]
+        )
+    except Exception:
+        # An authority prefix that cannot prove its own page-complete
+        # comments/reviews is missing evidence, not a release-side authority
+        # change. Reuse the last mechanically established fingerprint only to
+        # key the single failure receipt; it does not assert unchanged authority.
+        authority_fingerprint = str((existing or {}).get("authority_fingerprint") or "")
+        if isinstance(existing, dict) and re.fullmatch(
+            r"[0-9a-f]{16}", authority_fingerprint
+        ):
+            route = _ci_event_route(
+                "missing_evidence",
+                pr=number,
+                head=head,
+                checks=red or pending or passed,
             )
-        except Exception:
-            # A HOLD authority prefix that cannot prove its own completeness is
-            # missing evidence, not a release-side authority change. Reuse the
-            # last mechanically established fingerprint only to key the single
-            # failure receipt; it does not assert that authority is unchanged.
-            authority_fingerprint = str(
-                (existing or {}).get("authority_fingerprint") or ""
+            return (
+                _ci_material_receipt(
+                    path,
+                    state,
+                    existing,
+                    route,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
             )
-            if isinstance(existing, dict) and re.fullmatch(
-                r"[0-9a-f]{16}", authority_fingerprint
-            ):
-                route = _ci_event_route(
-                    "missing_evidence",
-                    pr=number,
-                    head=head,
-                    checks=red or pending or passed,
-                )
-                return (
-                    _ci_material_receipt(
-                        path,
-                        state,
-                        existing,
-                        route,
-                        checks_fingerprint=checks_fingerprint,
-                        authority_fingerprint=authority_fingerprint,
-                    ),
-                    "none",
-                    "",
-                )
-            return False, "none", ""
-    else:
-        authority_fingerprint = _ci_authority_fingerprint(pull)
+        return False, "none", ""
     passed_names = set(passed)
 
     if isinstance(existing, dict):

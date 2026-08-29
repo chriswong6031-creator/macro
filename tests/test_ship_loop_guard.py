@@ -7106,11 +7106,17 @@ def _v2_pending_session(monkeypatch, tmp_path, *, runs=None):
         observed["runs"] += 1
         return list(current_runs)
 
+    def authority_pages(url):
+        if "/issues/4242/comments" in url or "/pulls/4242/reviews" in url:
+            return []
+        raise AssertionError(f"unexpected authority URL: {url}")
+
     monkeypatch.setattr(GUARD, "_fast_forwarded_onto_main", lambda _root: False)
     monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
     monkeypatch.setattr(GUARD, "_latest_merged_pr", merged)
     monkeypatch.setattr(GUARD, "_open_pull", pull)
     monkeypatch.setattr(GUARD, "_head_check_runs", head_runs)
+    monkeypatch.setattr(GUARD, "_get_json", authority_pages)
     monkeypatch.setattr(
         GUARD, "_watcher_process_alive", lambda _reservation: True, raising=False
     )
@@ -7897,6 +7903,36 @@ def test_hold_or_release_metadata_change_invalidates_old_wait_once(
     output = capsys.readouterr().out
     assert output.count("CI_MATERIAL_EVENT authority_change") == 1
     assert "release/Sol" in output
+    assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
+    assert runs == _v2_fast_preflight()
+
+
+def test_ordinary_comment_review_authority_change_invalidates_quiescent_wait_once(
+    monkeypatch, tmp_path, capsys
+):
+    """Metadata-only ordinary re-entry must not mask a comment/review release."""
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    authority = {"fingerprint": "1" * 16}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(
+        GUARD,
+        "_ci_hold_authority_snapshot",
+        lambda *_a: {"fingerprint": authority["fingerprint"]},
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    alive["value"] = False
+    authority["fingerprint"] = "2" * 16
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_MATERIAL_EVENT authority_change") == 1
+    assert "release/Sol" in output
+    assert "CI_MATERIAL_EVENT missing_evidence" not in output
+    assert "#6351/main-integrity" not in output
     assert GUARD._load(state_path)["ci_quiescence"]["phase"] == "routed"
     assert runs == _v2_fast_preflight()
 
