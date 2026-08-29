@@ -1,0 +1,147 @@
+# Revision continuity closure (RIG V1.1 §13) — derived skeleton via
+#   python3 scripts/check_reference_integrity.py --mandate canada-stock-dashboard-tp1-r3
+# then dispositioned. Closure obligation runs against the NEAREST predecessor,
+# canada-stock-dashboard-tp1-r2 (verdict REVISE, on disk); the older ancestor
+# canada-stock-dashboard-tp1 is declared in manifest lineage as provenance and
+# was closed link-by-link by r2's own continuity.
+schema: mastermind.rig_continuity.v1
+reference_id: canada-stock-dashboard-tp1-r3
+
+predecessors:
+  - reference_id: canada-stock-dashboard-tp1-r2
+    verdict: REVISE
+    source: on_disk
+    closure:
+      - id: PRC-201
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Breadth truth landed in the composer (the single presentation-only
+          leadRow() change Sol authorized): unknown membership (count == null,
+          the rows that display an em dash) now emits NO --breadth property and
+          NO ca-v36-has-breadth marker class, so no meter renders at all; a true
+          zero emits 0; positive values emit the truthful count/max proportion
+          with the Math.max(8, ...) floor removed. Null can no longer paint as
+          non-zero quantity, restoring missing-is-not-zero at the pixel level.
+          Pinned by tests/test_canada_v36_composer.py.
+        changed_files:
+          - site/canada-stock-v36.js
+          - tests/test_canada_v36_composer.py
+      - id: VTC-203
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The full-width track is gone. The measure is now a BOUNDED gauge: a
+          fixed-length track (100 gauge units, ~200px desktop / ~110px at 390
+          via the mobile rescale) plus a proportional fill, both achromatic
+          (--line 55% track, --muted 70% fill), both rounded-capped, both
+          lifted 6px clear of the row boundary. A 100% value fills the track
+          and terminates visibly mid-row (~200px of a ~1300px panel), so the
+          broadest participation reads as a full gauge rather than a divider;
+          partial values render proportionally shorter within the same track.
+          Verified in proposal-breadth-dark/light-en-1440.png (15/15 rows vs
+          the 12/4/9 rows).
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+          - tests/test_stock_dashboard_css.py
+      - id: PRC-204
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Dark active-filter rows now carry equivalent information to light via
+          the dark idiom: the hover rule was split from the active rule, and
+          .is-active gains a 12% link tint PLUS an inset rail (2px on Act-Now
+          rows, 3px on leadership rows) in var(--ink-link, var(--link)).
+          Verified in proposal-filtered-dark-en-1440.png — the filtering row is
+          now distinguishable from its siblings and from hover.
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+          - tests/test_stock_dashboard_css.py
+      - id: VTC-205
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Inside the governed modal namespace the table cells are explicitly
+          left-aligned and numeric cells explicitly right-aligned
+          (.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td /
+          td.num), so the inherited page-global th,td{text-align:right} bundle
+          rule no longer reaches the ranked Name column. Verified in
+          proposal-modal-dark/light-en-1440.png.
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+          - tests/test_stock_dashboard_css.py
+      - id: COND-R3-01
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Per the PRC-201 row above; the em-dash vs numeric count display,
+          ranking and membership authority are preserved byte-identically and
+          no data owner was touched. The composer diff versus origin/main is
+          confined to the single leadRow() breadth line.
+        changed_files:
+          - site/canada-stock-v36.js
+      - id: COND-R3-02
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Per the VTC-203 row above. Honest process note: the first R3 pass
+          used max-width calc(100% - 24px), which insets a ~1300px panel by
+          only ~2% and still rendered a 100% value as a near-full-width rule;
+          the coordinator caught this against the committed proof shots and
+          ordered the bounded-gauge correction (commit 2d463e7c4e8f) before
+          returning to the authority.
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+      - id: COND-R3-03
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: Per the PRC-204 row above; dark uses its own tint+rail idiom rather than copying light's treatment.
+        changed_files:
+          - templates/stock-dashboard.css
+      - id: COND-R3-04
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: Per the VTC-205 row above; legitimate numeric columns remain right-aligned.
+        changed_files:
+          - templates/stock-dashboard.css
+      - id: COND-R3-05
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          r2 was closed truthfully as REVISE with the authority's verdict
+          transcribed (canada-stock-dashboard-tp1-r2/verdict.yml, manifest
+          status revise). This r3 set mints a fresh reference id and a fresh
+          frozen SHA (2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8), carries this
+          machine-derived continuity closing every r2 open item by id, and its
+          two independent critics run rationale-quarantined two-pass against
+          that exact SHA. The authority's enum finding is honoured: r3 critic
+          receipts record ONLY PASS | PASS_WITH_CONDITIONS | BLOCK, and the
+          illegal PARTIAL enum in the r2 receipt was left standing as the
+          historical record rather than rewritten to green a refused cycle.
+        changed_files:
+          - research/reference_integrity/canada-stock-dashboard-tp1-r2/verdict.yml
+          - research/reference_integrity/canada-stock-dashboard-tp1-r3/manifest.yml
+          - research/reference_integrity/canada-stock-dashboard-tp1-r3/continuity.yml
+      - id: COND-R3-06
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Focused tests pin null-to-no-meter, zero-to-true-zero,
+          positive-to-truthful-no-floor, the bounded non-divider gauge geometry
+          and its boundary separation, the mobile rescale, dark active-filter
+          parity, modal Name alignment and template/site pair sync (41 green).
+          Gate runs: check_template_site_sync clean, node --check clean,
+          check_design_system --mode enforce-added blocking=0,
+          check_runtime_style_injection OK, check_reference_integrity in BOTH
+          normal and --evaluate modes. Exact-head hosted CI runs on PR #6647;
+          if fresh main still carries the unrelated AgentOS record-contract
+          red, it is returned as typed BLOCKED evidence and NOT repaired inside
+          TP-1. Evidence was recaptured against the fresh page environment.
+        changed_files:
+          - tests/test_stock_dashboard_css.py
+          - tests/test_canada_v36_composer.py
+          - mockups/evidence/theme-parity/tp1-canada/manifest.json

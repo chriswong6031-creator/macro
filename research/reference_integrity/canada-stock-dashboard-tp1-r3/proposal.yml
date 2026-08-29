@@ -1,0 +1,184 @@
+# Proposal ledger (RIG V1 §5-§6) — the R3-repaired TP-1 Canada surface.
+# Successor cycle to canada-stock-dashboard-tp1-r2 under Sol's second REVISE
+# verdict (2026-08-29):
+# the deployed TP-1 artifact plus the four Sol-ruled repairs, frozen on branch
+# claude/tp1-canada-r3. NOT yet deployed: the predecessor bytes are live in
+# production; this proposal's delta ships only after APPROVE_REFERENCE and a
+# Sol-released merge.
+schema: mastermind.rig_proposal.v1
+reference_id: canada-stock-dashboard-tp1-r3
+
+proposed_artifact:
+  frozen_sha: 2d463e7c4e8fc09cf057b3ed5a7c86bbd21d77e8
+  paths:
+    - templates/stock-dashboard.css
+    - site/stock-dashboard.css
+    - site/canada-stock-v36.js      # byte-identical to origin/main (verified 0-line diff)
+    - templates/dashboard-icons.js  # untouched this cycle (Sol COND-06 debt carve-out)
+    - site/dashboard-icons.js
+  screenshots:
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-modal-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-modal-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-allcands-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-allcands-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-filtered-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-filtered-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-tableview-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-tableview-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-filtermiss-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-mobile-light-lane2-390.png, viewport: mobile, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-breadth-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-breadth-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-dark-zh-desktop.png, viewport: desktop, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-light-zh-desktop.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-dark-en-mobile.png, viewport: mobile, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-light-en-mobile.png, viewport: mobile, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-dark-zh-mobile.png, viewport: mobile, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r3/proposal-cell-light-zh-mobile.png, viewport: mobile, theme: light, locale: zh}
+  screenshot_provenance_note: >
+    The proposal-*.png named shots were captured with a >=1500ms settle so the
+    transient theme.css .sky-fx theme-toggle animation (~1100ms, self-removing)
+    has completed — they are orb-free and authoritative. The proposal-cell-*
+    raw harness cells were captured by scripts/capture_page_evidence.py, whose
+    pre-screenshot settle is hardcoded 400ms, so a transient orb/moon MAY
+    appear in them; that is a known harness evidence artifact (named debt),
+    not page content.
+
+dispositions:
+  - id: actnow.four_lane_map
+    disposition: RETAIN
+    target: >
+      unchanged from predecessor except the light lane rails are now inset
+      rounded per-lane marks (12px side insets) per Sol COND-02 — no
+      continuous bar, no population-width encoding
+  - id: actnow.per_group_membership
+    disposition: RETAIN
+    target: composer untouched (byte-identical to main)
+  - id: actnow.research_routes
+    disposition: RETAIN
+    target: composer untouched
+  - id: prophet.top_picks_projection
+    disposition: RETAIN
+    target: composer untouched; filtered/filter-miss states now evidenced (filtered-*, filtermiss-light)
+  - id: prophet.grid_table_xor
+    disposition: RETAIN
+    target: composer untouched; Table view now evidenced in both themes (tableview-*)
+  - id: prophet.population_filters
+    disposition: IMPROVE
+    target: >
+      composer filter logic untouched; DARK active-filter rows now carry
+      equivalent information to light (12% link tint plus an inset ink-link
+      rail, 2px Act-Now / 3px leadership) via the dark idiom rather than a
+      copy of light's treatment; live pill, is-active and honest counts
+      evidenced in both themes
+    rationale: closes r2 blocker PRC-204 / VTC-202 per Sol COND-R3-03
+  - id: prophet.live_quotes
+    disposition: RETAIN
+    target: quote ink bindings untouched
+  - id: leadership.themes_only_rank
+    disposition: IMPROVE
+    target: >
+      breadth measure re-authored for TRUTH and BOUNDED geometry (Sol R3):
+      unknown membership emits no meter at all, true zero renders zero,
+      positive renders the truthful count/max proportion with the old 8%
+      floor removed; the full-width track is replaced by a fixed-length
+      achromatic gauge (track + proportional fill, rounded caps, lifted 6px
+      clear of the row boundary) so a 100% value terminates visibly mid-row.
+      The basis pill remains reachable inside the body-appended modal.
+    rationale: >
+      closes r2 blockers PRC-201 (missing-is-not-zero at pixel level) and
+      VTC-203 (100%-reads-as-divider), plus r1's PRC-003/VTC-009/VTC-010
+      reserved-hue line, under Sol's COND-R3-01/02.
+  - id: leadership.expand_modal
+    disposition: IMPROVE
+    target: >
+      stance chips styled inside the modal via the sibling-scoped selector
+      family; modal root carries the UI font stack; unconditional fail-closed
+      base rule (.ca-v36-modal display none) independent of the combinator
+    rationale: >
+      closes r1 blockers PRC-001/VTC-006 and the PRC-006 fail-open mode; r3
+      additionally left-aligns the modal Name/text cells and right-aligns
+      numeric cells inside the governed namespace so the inherited
+      page-global th,td{text-align:right} bundle rule no longer reaches the
+      ranked list (r2 blocker VTC-205, Sol COND-R3-04).
+  - id: clocks.board_vs_live
+    disposition: RETAIN
+    target: untouched
+  - id: record.track_record
+    disposition: RETAIN
+    target: untouched
+  - id: nav.terminal_routes
+    disposition: RETAIN
+    target: composer untouched
+  - id: platform.two_fetch_degrade
+    disposition: RETAIN
+    target: untouched
+  - id: platform.fail_soft_legacy
+    disposition: RETAIN
+    target: >
+      loader untouched this cycle (Sol COND-06 — PRC-005/PRC-007 are named
+      nonblocking debt for the estate follow-up)
+  - id: platform.theme_lang
+    disposition: RETAIN
+    target: theme resolution unchanged; 8/8 harness cells recaptured at the R2 bytes
+  - id: platform.sm_hidden_rescue
+    disposition: RETAIN
+    target: untouched
+
+additions:
+  - "R3 delta versus the deployed predecessor: breadth truth in the composer (unknown emits no meter, zero is zero, positive is truthful and unfloored); a bounded achromatic gauge (fixed-length track plus proportional fill, rounded caps, 6px clear of the row boundary, rescaled at 390) replacing the full-width track; dark active-filter tint plus inset rail; modal Name left-alignment with numeric columns right-aligned. Carries forward the R2 repairs (sibling-modal reachability, fail-closed modal base, inset per-lane light rails)."
+
+user_tasks:
+  - id: task.leadership_depth
+    task: Open the leadership modal and scan 16 themes for accumulate-vs-avoid
+    critical: true
+    production: overlay with styled stance chips (V3.8)
+    proposal: overlay with styled stance chips AND basis pill restored (modal shots); fail-closed base
+    verdict: UNKNOWN
+  - id: task.scan_act_now
+    task: Glance the four lanes and pick a group
+    critical: true
+    production: four raised lane cards (dark) / token-translated light
+    proposal: unchanged dark; light = one instrument with INSET per-lane rounded rails (no continuous bar)
+    verdict: UNKNOWN
+  - id: task.read_breadth
+    task: Read the leadership breadth measure without mistaking it for structure
+    critical: false
+    production: dark 1px whisper; light invisible (pre-TP-1)
+    proposal: identical achromatic track+fill both themes, rounded caps so 100% reads as a full bar
+    verdict: UNKNOWN
+  - id: task.filter_population
+    task: Filter by sector/theme and trust the counts
+    critical: true
+    production: honest counts (V3.8)
+    proposal: identical logic; now EVIDENCED (filtered + filter-miss cells)
+    verdict: UNKNOWN
+  - id: task.table_view
+    task: Switch to Table view and read quotes
+    critical: true
+    production: XOR table (V3.8)
+    proposal: identical; now EVIDENCED both themes
+    verdict: UNKNOWN
+  - id: task.mobile_one_lane
+    task: Use the board at 390 one lane at a time
+    critical: true
+    production: segmented one-lane grammar
+    proposal: unchanged; lane-2 shot re-verified at R2 bytes
+    verdict: UNKNOWN
+
+authority_delta:
+  - id: auth.no_new_claims
+    production_claim: board displays owner-derived ranks, counts, stances, quotes with honest nulls
+    proposal_claim: identical — presentation-only; the achromatic breadth treatment REDUCES unwarranted visual authority relative to the refused light accent rail
+    direction: equal
+    warranted: true
+    evidence: "composer byte-identical to origin/main; R2 diff = CSS pair + tests + evidence only"
+
+information_economics:
+  words_per_card: {production: "unchanged", proposal: "unchanged"}
+  findings:
+    - "R2 changes material treatment only; no copy, count or chart changed."
+  preserved:
+    - "Glance-tier density identical."
