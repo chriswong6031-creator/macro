@@ -93,21 +93,19 @@
     "n_members": 60,
     "present_counts": {
      "buy": 0,
-     "ran": 1,
+     "ran": 0,
      "leaders": 3
     },
     "present": {
      "buy": [],
-     "ran": [
-      "PLTR"
-     ],
+     "ran": [],
      "leaders": [
       "OKTA",
       "QLYS",
       "TEAM"
      ]
     },
-    "represented_n": 4,
+    "represented_n": 3,
     "days_since_top5_entry": null
    },
    {
@@ -117,18 +115,17 @@
     "n_members": 24,
     "present_counts": {
      "buy": 0,
-     "ran": 2,
+     "ran": 1,
      "leaders": 0
     },
     "present": {
      "buy": [],
      "ran": [
-      "PLTR",
       "SPGI"
      ],
      "leaders": []
     },
-    "represented_n": 2,
+    "represented_n": 1,
     "days_since_top5_entry": null
    },
    {
@@ -161,19 +158,17 @@
     "n_members": 25,
     "present_counts": {
      "buy": 0,
-     "ran": 1,
+     "ran": 0,
      "leaders": 1
     },
     "present": {
      "buy": [],
-     "ran": [
-      "PLTR"
-     ],
+     "ran": [],
      "leaders": [
       "OKTA"
      ]
     },
-    "represented_n": 2,
+    "represented_n": 1,
     "days_since_top5_entry": null
    }
   ]
@@ -196,7 +191,7 @@
   "n_scored": 49,
   "n_misses": 1,
   "n_top_decile": 3,
-  "n_unrepresented": 15,
+  "n_unrepresented": 14,
   "misses": [
    {
     "basket_id": "gold_miners",
@@ -255,16 +250,15 @@
     "n_members": 12,
     "n_members_live": 7,
     "n_members_read": 12,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "ETHA",
      "GLXY"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.9623,
     "pctile_n": 252,
@@ -324,18 +318,16 @@
     "n_members": 8,
     "n_members_live": 8,
     "n_members_read": 8,
-    "n_members_on_board": 4,
+    "n_members_on_board": 2,
     "members_on_board": [
      "DUOL",
-     "PATH",
-     "PLTR",
-     "TEM"
+     "PATH"
     ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 1,
-     "ran": 3
+     "ran": 1
     },
     "pctile": 0.8631,
     "pctile_n": 252,
@@ -402,12 +394,13 @@
     "n_members": 10,
     "n_members_live": 10,
     "n_members_read": 10,
-    "n_members_on_board": 1,
+    "n_members_on_board": 2,
     "members_on_board": [
-     "EU"
+     "EU",
+     "UEC"
     ],
     "present_counts": {
-     "buy": 1,
+     "buy": 2,
      "watch": 0,
      "leaders": 0,
      "ran": 0
@@ -473,13 +466,15 @@
     "n_members": 11,
     "n_members_live": 11,
     "n_members_read": 11,
-    "n_members_on_board": 0,
-    "members_on_board": [],
+    "n_members_on_board": 1,
+    "members_on_board": [
+     "MP"
+    ],
     "present_counts": {
      "buy": 0,
      "watch": 0,
      "leaders": 0,
-     "ran": 0
+     "ran": 1
     },
     "pctile": 0.6448,
     "pctile_n": 252,
@@ -614,16 +609,15 @@
     "n_members": 17,
     "n_members_live": 17,
     "n_members_read": 17,
-    "n_members_on_board": 2,
+    "n_members_on_board": 1,
     "members_on_board": [
-     "IBM",
-     "PLTR"
+     "IBM"
     ],
     "present_counts": {
      "buy": 1,
      "watch": 0,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.5258,
     "pctile_n": 252,
@@ -926,14 +920,13 @@
     "n_members": 74,
     "n_members_live": 74,
     "n_members_read": 74,
-    "n_members_on_board": 11,
+    "n_members_on_board": 10,
     "members_on_board": [
      "AMAT",
      "GEN",
      "IBM",
      "KEYS",
      "LRCX",
-     "PLTR",
      "SNDK",
      "SWKS",
      "TER",
@@ -944,7 +937,7 @@
      "buy": 4,
      "watch": 6,
      "leaders": 0,
-     "ran": 1
+     "ran": 0
     },
     "pctile": 0.2202,
     "pctile_n": 252,
@@ -1146,7 +1139,7 @@
     "n_members": 47,
     "n_members_live": 47,
     "n_members_read": 47,
-    "n_members_on_board": 8,
+    "n_members_on_board": 9,
     "members_on_board": [
      "CMG",
      "NVR",
@@ -1155,11 +1148,12 @@
      "TJX",
      "TPR",
      "TSLA",
+     "ULTA",
      "YUM"
     ],
     "present_counts": {
      "buy": 3,
-     "watch": 4,
+     "watch": 5,
      "leaders": 0,
      "ran": 1
     },
@@ -1397,15 +1391,16 @@
     "n_members": 21,
     "n_members_live": 21,
     "n_members_read": 21,
-    "n_members_on_board": 3,
+    "n_members_on_board": 4,
     "members_on_board": [
      "BJ",
      "ROST",
-     "TJX"
+     "TJX",
+     "ULTA"
     ],
     "present_counts": {
      "buy": 0,
-     "watch": 3,
+     "watch": 4,
      "leaders": 0,
      "ran": 0
     },

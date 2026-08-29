@@ -1,125 +1,156 @@
 ---
 workstream: WS:CHAIRMAN-CONTROL-ROOM
-session: sol/project-workroom-fabric-20260829
+session: sol/project-workroom-fabric-canonical-reconciliation-20260829
 model: sol-pro
 ended_because: continuation
 mission: >
-  Freeze and begin the end-to-end Slack + Linear Project Workroom Fabric without creating another
-  project, lifecycle, session, watcher, queue, memory or control plane. Preserve Agent OS as durable
-  organizational truth, Executive OS as Job/Attempt/Worker/Event authority, GitHub as
-  implementation/proof truth, Linear as the human Initiative/Project/selected-Issue projection,
-  Slack as the persistent collaboration/dialogue surface, and OCR-6 Steward/Control Room as the
-  present-tense compositor.
+  Reconcile duplicate Project Workroom architecture carriers, preserve every unique valid ruling in
+  one canonical current-source family, correct false-green implementation projections, and leave the
+  exact release and dependency sequence recoverable without creating another control plane.
 state_before: >
-  Mastermind had protected operating-surface and autonomous-delegation architecture, an active
-  Agent Relay/Steward/Linear projector estate, and a concurrent Linear Initiative rollout, but no
-  accepted Project Workroom binding, no Workroom Projector principal, no managed Home/Radar surface,
-  no multi-workroom Agent Relay and no proven Project channel where one logical Sol Project Steward
-  could coordinate several bounded operators/workers. Slack collaboration remained concentrated in
-  global channels/threads and current Agent Relay source was bound to one fixed channel.
+  Two materially overlapping Mastermind Workroom records families were open: #233/MAS-220 under
+  operation project-workroom-convergence-20260829-sol-001 and #240/MAS-231 under operation
+  mastermind-project-workroom-fabric-20260829-sol-001. #240 carried later platform/adversarial
+  hardening but #233 contained unique exact Initiative, Project-plan, source-provenance and
+  shadow/apply action laws. Protected Mastermind had advanced to 7b8f3ca through Agent Relay
+  enrollment #238. Linear MAS-236 also described machine-local Workroom waves as built even though
+  current GitHub default branches and PR census showed records/research only.
 changed:
-  - path: mastermind:docs/superpowers/specs/2026-08-29-project-workroom-fabric-design.md
+  - path: mastermind:docs/superpowers/specs/2026-08-29-project-workroom-fabric-canonical-carrier-reconciliation-amendment.md
     what: >
-      Freeze the Federated Project Workroom Fabric: exact Agent OS WS:<KEY> to normalized Linear
-      Project to deterministic Slack Workroom binding; separate least-privilege Workroom Projector
-      and Agent Relay principals; managed Home/Radar/notes/resources/workflows; exact operation
-      threads; one logical Sol Project Steward with separately governed bounded operators; strict
-      source ownership, failure behavior, privacy, cutover and production acceptance law.
-  - path: mastermind:docs/superpowers/plans/2026-08-29-project-workroom-fabric-rollout.md
+      Select #240 as the sole canonical Workroom carrier; adopt #233's unique valid planner and
+      provenance rules; reconcile protected #238 source movement; freeze exact six shadow mappings;
+      define WR-P0 canonical inputs, atomic source_records, eligibility/apply/action semantics and
+      current NOT_BUILT capability truth; authorize #233 supersession only after adoption.
+  - path: mastermind:PR #240 / branch sol/project-workroom-fabric-20260829
     what: >
-      Decompose the program into protected records, platform/API falsifier, pure desired-state
-      planner, Workroom Projector app/secret boundary, inert channel/surface canary, Agent Relay
-      allowlisting, AD-DLG2 correct-parent join, Linear/Steward projection joins, three-Project
-      pilot, 2/5/14-session adversarial stress, small fleet and executive-first/full-fabric cutover.
+      History-preservingly merge current protected Mastermind into the same branch, preserve the
+      three prior records, add the canonical reconciliation amendment and advance exact head to
+      1db9a6ea27a81d53ab2141d94f7226be9ea8c549. Current-base diff is exactly four records files.
+  - path: mastermind:PR #242 / branch sol/project-workroom-wr-r0-20260829
+    what: >
+      History-preservingly merge the updated #240 parent into the same WR-R0 research branch while
+      preserving the exact four research/fixture blobs; advance exact head to
+      596145ffa6f2c89c58133c06638394b22dcb304f.
+  - path: mastermind:PR #233
+    what: >
+      Post exact adoption/supersession receipt and close unmerged. Preserve branch/commits as history;
+      forbid reopening, merge or reuse of the old operation.
+  - path: linear:MAS-220
+    what: >
+      Bind as Duplicate of MAS-231 and record terminal architecture supersession without canceling
+      the Workroom program.
+  - path: linear:MAS-231
+    what: >
+      Update canonical current source/head, duplicate resolution, current CI gate and exact
+      SPEC_ONLY/NOT_BUILT capability state; move the architecture wave to In Review.
+  - path: linear:MAS-233
+    what: >
+      Record current #242 parent/head/source and keep WR-R0 in review as research only.
+  - path: linear:MAS-236
+    what: >
+      Remove false-green P0A/A0 claims and state current GitHub-grounded capability: architecture and
+      research only, all implementation/actuator/runtime Workroom waves NOT_BUILT.
   - path: agentos/decisions/DEC-CCR-PROJECT-WORKROOM-FABRIC-ACCEPTED.md
     what: >
-      Record the Chairman-approved federated architecture under existing WS:CHAIRMAN-CONTROL-ROOM
-      and reject another project OS, Slack superbot, global dispatch topology or Slack-owned task
-      lifecycle.
+      Update the durable organizational ruling to one canonical #240 family and the adopted #233 law.
   - path: agentos/handoffs/CHAIRMAN-CONTROL-ROOM-2026-08-29-project-workroom-fabric.md
     what: >
-      Add this exact cross-session continuation record without modifying the active Workstream file
-      or colliding with current P0B/ASD and Business-Sol convergence records.
+      Replace stale initial-state continuation with this current canonical carrier, capability and
+      dependency receipt.
 verified:
-  - claim: Protected source and procedure were current and compatible at the modifying architecture gate.
+  - claim: Current protected Mastermind and procedure are compatible.
     command: >
-      GitHub read of protected Mastermind master and same-SHA docs/sol_skills/INDEX.md,
-      COLD_START.md, RECONCILE_STATE.md, COMMISSION_WAVE.md, WATCHER_ACTION_LOOP.md and CLOSEOUT.md.
+      Read protected Mastermind master, docs/sol_skills/INDEX.md, COLD_START.md, RECONCILE_STATE.md,
+      REVIEW_RETURN.md and CLOSEOUT.md from exact SHA 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b.
     result: >
-      Protected Mastermind was reconciled to dfd69451dce5e186ce05f65446023fbe21f07a58;
-      Skillpack schema mastermind.sol_skillpack.v1, version 1.0.1, bootstrap-major 1 remained
-      compatible. The Workroom records carrier history-preservingly incorporated protected watcher
-      resource/fresh-carrier law #205.
-  - claim: The Mastermind Workroom records carrier is disjoint from active implementation owners.
+      Skillpack schema mastermind.sol_skillpack.v1, version 1.0.1, bootstrap-major 1 is compatible.
+  - claim: Protected source movement after #240's prior base is bounded and path-disjoint.
     command: >
-      GitHub compare dfd69451dce5e186ce05f65446023fbe21f07a58...1cc6030012f764194e4487017b2a73f69d6f32ae.
+      Compare Mastermind dfd69451dce5e186ce05f65446023fbe21f07a58 to
+      7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b.
     result: >
-      Exactly two added records files, 2,004 additions, zero deletions; no runtime, config, test,
-      credential, Slack, Linear, Agent OS, Executive, Wake, Capacity, provider or host source changed.
-  - claim: No replacement Workroom implementation or duplicate organizational parent was created.
+      One commit, exactly ops/executive_os/a2_agent_relay_enrollment.py and
+      tests/test_a2_agent_relay_enrollment.py; no Workroom records collision.
+  - claim: #240 current branch is based on current protected source with one closed records surface.
     command: >
-      GitHub code/current-estate search plus current Macro WS:CHAIRMAN-CONTROL-ROOM read and Linear search.
+      Compare Mastermind 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b to
+      1db9a6ea27a81d53ab2141d94f7226be9ea8c549.
     result: >
-      No existing Workroom implementation was found. Existing WS:CHAIRMAN-CONTROL-ROOM already owns
-      the Chairman job and remains the lawful parent. Linear MAS-231 is a selected projection, not a
-      new organizational owner.
-  - claim: The current Linear Initiative and #212 autonomy carriers remain externally owned.
+      Zero behind; exactly four added records files, 3,117 additions, zero deletions.
+  - claim: #233 unique valid law is not lost.
     command: >
-      Current GitHub/Linear/Slack read of active carriers and explicit coordination notice in
-      #mastermind-exec-ops.
+      Read all five #233 records and compare them with #240 design, WR-R0 amendment and the new
+      canonical-carrier amendment before closing #233.
     result: >
-      Workroom PR #240 and MAS-231 state no takeover; no Initiative mutation, #212 branch edit,
-      Agent Relay expansion, Steward mutation, worker dispatch or runtime admission occurred.
-  - claim: Current Agent Relay is genuinely single-channel and therefore requires a bounded later evolution.
+      Exact Initiative mapping, linear_portfolio_plan ownership, atomic provenance, shadow/apply
+      separation and bounded action semantics are explicitly adopted; conflicting private/default,
+      path-owner and stale current-estate clauses are explicitly rejected.
+  - claim: #242 preserves one bounded WR-R0 research diff.
     command: >
-      Read current Mastermind Agent Relay Slack Web API client and enrollment source.
+      Compare current #240 parent head 1db9a6ea27a81d53ab2141d94f7226be9ea8c549 to
+      WR-R0 head 596145ffa6f2c89c58133c06638394b22dcb304f.
     result: >
-      The client is constructed with one channel_id and rejects every other channel; enrollment is
-      bound to #agent-dispatch channel C0BSBM78V1N. Multi-workroom support is NOT_BUILT.
+      Exactly four added research/fixture files; no runtime, app, credential or SaaS mutation.
+  - claim: Workroom implementation is not present in canonical GitHub truth.
+    command: >
+      Search current Mastermind/Macro default branches, open Workroom PRs and branches for
+      project_workroom/slack_project_workrooms implementation carriers.
+    result: >
+      Current Workroom carriers are records/research branches only. WR-P0 and all actuator/runtime
+      waves remain NOT_BUILT.
+  - claim: Duplicate carrier is terminally reconciled.
+    command: >
+      GitHub read of #233 after receipt 5463703030 and Linear read of MAS-220 after duplicate binding.
+    result: >
+      #233 is CLOSED UNMERGED; MAS-220 is Duplicate of MAS-231; old operation has no active worker.
 unverified:
-  - claim: Mastermind PR #240 exact-head/current-base CI and final protected merge are accepted.
+  - claim: Mastermind #240 exact current head passes required current-base CI and protects.
     what_would_verify: >
-      Fresh required test on the current exact head/current protected base, final two-file diff and
-      expected-head protected merge followed by protected readback.
-  - claim: Slack channel/Canvas/List/tab/bookmark/Workflow APIs and least-privilege app scopes are usable in the real workspace.
+      Workflow 33264414904 concludes SUCCESS, final current protected/base/diff/head review passes,
+      PR becomes reviewable through a functional GitHub surface, and expected head is protected.
+  - claim: WR-R0 #242 is accepted and protected.
     what_would_verify: >
-      WR-R0 read-only platform/API/current-estate falsifier with official primary-source method/scope
-      evidence, real workspace non-secret readback and explicit unsupported/UI-only states.
-  - claim: The dedicated Workroom Projector app/secret boundary exists.
+      #240 protects; #242 retargets the same branch to master; fresh exact-head/current-base CI,
+      JSON/secret/source review and Sol acceptance pass.
+  - claim: Agent OS records are protected.
     what_would_verify: >
-      WR-A0/A1 implementation, independent security review, hidden enrollment, exact actor/scope
-      receipt and isolated app-identity canary.
-  - claim: Any real Project Workroom is production-useful.
+      Current Macro-main merge of this same #6661 branch, Agent OS validation, fences/CI and exact
+      two-file review.
+  - claim: Initiative plan and live membership are ready for Workroom planning.
     what_would_verify: >
-      WR-C0/WR-SURF1 inert canaries, Agent Relay allowlist and correct-parent proof, exact
-      Linear/Steward joins, three-Project pilot, adversarial stress and small-fleet acceptance.
+      Macro #6662 terminally greens/lands, #6658 same-carrier blockers close and land, then the
+      Initiative owner returns an accepted post-apply normalized readback with exact IDs/digests.
+  - claim: Any Workroom implementation or live Slack surface exists.
+    what_would_verify: >
+      Fresh separately commissioned WR-P0, WR-A0/A1, inert canary and later production evidence.
 unresolved:
-  - "Mastermind PR #240 is records-only and currently nonterminal until exact-head/current-base release proof lands."
-  - "The concurrent Linear Initiative rollout must supply its accepted normalized Project/Initiative readback before production Workroom bindings are applied."
-  - "MAS-64/MAS-66/MAS-189, current Agent Relay enrollment/live canary, AD-CHILD1/AD-DLG2/AD-RET*/AD-SOL1/AD-FLEET1 and OCR-6 remain independently gated dependencies."
-  - "Slack Lists, Workflow functions, custom channel templates and some tab/folder surfaces may be unsupported, plan-restricted or UI-only; WR-R0 must falsify them rather than assume them."
-  - "Broad same-root parallel write execution remains held until workspace/branch/path/integration/failure-isolation proof exists."
+  - "PR #240 remains DRAFT because the connected ready-for-review mutation surface previously failed before effect; a functional surface or same-branch non-draft successor may be required after CI."
+  - "PR #242 remains stacked and cannot independently protect until #240 protects."
+  - "Macro #6661 remains records-only and must reconcile to current main."
+  - "Macro #6662 and #6658 block accepted Initiative desired-state/readback; no WR-P0 START yet."
+  - "The prior canary-project-workroom channel-create report was effect-unknown to the prior session; do not retry or bind it without exact Slack readback under a separately authorized canary."
+  - "Agent Relay enrollment source is protected, but app credential, host activation, real dialogue canary and multi-workroom Relay remain unproven/not built."
 next_actions:
-  - "Complete current-source/exact-head review and protect Mastermind PR #240 without widening its two-file records surface."
-  - "In parallel, execute WR-R0 as read-only platform/API/current-estate archaeology; do not install an app, request a secret or mutate Slack/Linear."
-  - "After #240 is protected and WR-R0 accepted, commission WR-P0 to Terra as the first code wave: pure zero-network Workroom policy/identity/desired-state compiler in Macro, reusing scripts.linear_portfolio_plan."
-  - "Do not commission WR-A0/A1 or any Slack mutation until WR-R0 and WR-P0 freeze exact method/scope/identity behavior and current collision gates pass."
-  - "Keep the current Linear Initiative session and #212 Sol/director lane as exclusive owners; join their accepted outputs through pointers/dependencies only."
+  - "Consume #240 workflow 33264414904. On SUCCESS, perform final exact-head/current-base/source-law review; make the PR reviewable through a functional current GitHub path; expected-head merge only."
+  - "After #240 protects, retarget #242 to master on the same branch and complete WR-R0 release proof."
+  - "Reconcile and release Macro #6661 records after exact Agent OS validation and current-main checks."
+  - "Do not commission WR-P0 until #240/#242 are protected and #6662/#6658 plus Initiative post-apply readback are accepted."
+  - "When WR-P0 gates clear, route the bounded deterministic Macro implementation to Terra; Fable is unnecessary because architecture is frozen."
 do_not_redo:
-  - "Do not create WS:PROJECT-WORKROOMS, Slack OS, Workroom OS, a task/project database, another lifecycle, queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router."
-  - "Do not edit agentos/workstreams/WS-CHAIRMAN-CONTROL-ROOM.md from this carrier; current P0B/ASD actions and adjacent Macro PR #6657 remain independently active."
-  - "Do not make Agent Relay a Slack superbot. Workroom presentation and exact dialogue use separate least-privilege principals."
-  - "Do not create a channel for every Linear Project, use title similarity, let agents choose destinations, migrate started/effect-unknown carriers, or fall back blindly to #agent-dispatch."
-  - "Do not let Canvas/List/Workflow/Slack/Linear/GitHub activity establish runtime, authority, completion or production acceptance."
-  - "Do not install Sentry, Drive, Notion, Asana, ClickUp, monday.com, Airtable or another plugin as an organizational/project control plane. Sentry/Drive remain optional read-only evidence adapters only after core Workroom proof."
+  - "Do not reopen #232/#233, reuse project-workroom-convergence-20260829-sol-001 or create another Workroom architecture carrier."
+  - "Do not recreate P0A/A0/A1/C0 from machine-local receipts; current GitHub truth says NOT_BUILT."
+  - "Do not create WS:PROJECT-WORKROOMS, Slack OS, Workroom OS, another task/project DB, lifecycle, queue, watcher/retry/session/memory plane or synchronizer."
+  - "Do not make Agent Relay a Slack superbot or merge Workroom Projector authority into dialogue."
+  - "Do not create channels, Initiatives or Linear memberships from WR-P0; it is zero-network planning only."
+  - "Do not retry or fail over an effect-unknown Slack mutation."
 danger_areas:
-  - "Slack workspace/admin scopes can be broad; the Workroom Projector must be a dedicated least-privilege principal and secret handling must reuse reviewed hidden host ceremonies."
-  - "Current Agent Relay and enrollment are single-channel and have independent release/security gates; widening them before their accepted live canary would blur failures and duplicate ownership."
-  - "Linear can false-green implementation or infer project context; exact IDs, optimistic re-read and declared completion law remain mandatory."
-  - "A shared Slack principal may represent several native sessions; current Executive Attempt/Worker/fence and RuntimeBinding—not Slack user/codename—govern sanctioned execution."
-  - "A channel/Canvas/Radar can look healthy while sources are stale; unknown/degraded/source freshness must remain visible and non-actionable."
-prs: [240]
-linear: MAS-231
+  - "Linear and chat summaries can false-green local/unpushed work; GitHub immutable carriers remain implementation truth."
+  - "A public channel requires a complete authoritative census before absence/create can be safe; the current WR-R0 acting-principal snapshot is explicitly incomplete."
+  - "Slack user/app membership is not Worker, RuntimeBinding or action-authoritative Sol identity."
+  - "A source merge is not host installation, live transport, product proof or completion."
+prs: [240, 242, 233, 6661, 6662, 6658]
+linear: [MAS-231, MAS-233, MAS-236, MAS-220]
 decisions:
   - DEC:CCR-PROJECT-WORKROOM-FABRIC-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
@@ -128,10 +159,10 @@ decisions:
 
 # Return point
 
-Project Workroom architecture and a full bounded rollout plan now exist on Mastermind PR #240 and are
-projected in Linear MAS-231. Capability remains `SPEC_ONLY / RECORDS_ONLY`; no Workroom or production
-integration exists. The exact next action is to protect #240 under current source and execute WR-R0
-read-only platform/API/current-estate falsification. WR-P0 pure planning is the first eligible code
-wave after those gates. Initiative rollout, #212 autonomy, Linear projector, Agent Relay, OCR-6,
-Capacity/Wake/RuntimeBinding and all current operator carriers remain independently owned and must not
-be duplicated or silently absorbed.
+One canonical Workroom architecture family now exists on Mastermind #240; #233/MAS-220 is
+terminally superseded after exact unique-law adoption. Capability remains `SPEC_ONLY / RECORDS_ONLY`;
+WR-R0 is research only and every implementation/actuator/runtime Workroom wave is `NOT_BUILT`.
+
+The exact next action is to consume #240 current-base CI and protect the accepted exact head. Then
+retarget/release #242 and #6661. WR-P0 cannot START until current architecture/research is protected
+and the Initiative compiler plus post-apply membership readback are accepted.

@@ -1,56 +1,66 @@
 ---
 key: CCR-PROJECT-WORKROOM-FABRIC-ACCEPTED
 question: >
-  Should Mastermind replace Slack/Linear with another project-management product, keep using one
-  global dispatch channel, or organize material Projects through persistent Slack Workrooms joined
-  to Linear while Agent OS, Executive OS, GitHub and Steward remain canonical?
+  Should Mastermind replace Slack/Linear with another project-management product, keep one global
+  dispatch topology, or organize selected material Projects through persistent Slack Workrooms
+  joined to Linear while Agent OS, Executive OS, GitHub and Steward remain canonical?
 answer: >
-  Adopt the Federated Project Workroom Fabric. One eligible Agent OS WS:<KEY> binds exactly to one
-  normalized Linear Project and one persistent Slack Project Workroom. Linear remains the human
-  Initiative/Project/selected-Issue surface; Slack becomes the shared collaboration room with a
-  managed Home, Radar, resources, structured intake and exact operation threads; Agent OS remains
-  organizational truth; Executive OS remains Job/Attempt/Worker/Event authority; GitHub remains
-  implementation/proof truth; OCR-6 Steward/Control Room remains the present-tense compositor.
-  One logical Sol Project Steward may coordinate multiple bounded COO/operators/workers in the same
-  Workroom, but every operation retains one exact identity, current executor, modification carrier
-  and action-authoritative Sol turn. Slack/Linear never become completion or runtime authority.
+  Adopt the Federated Project Workroom Fabric under existing WS:CHAIRMAN-CONTROL-ROOM. One eligible
+  Agent OS WS:<KEY> may bind exactly to one normalized Linear Project and zero or one selected public-
+  internal Slack Project Workroom. Linear remains Initiative/Project/selected-Issue human projection;
+  Slack is collaboration and exact dialogue transport; Agent OS remains organizational truth;
+  Executive OS remains Job/Attempt/Worker/Event authority; GitHub remains implementation and proof;
+  OCR-6 Steward/Control Room remains the present-tense compositor. One logical Sol Project Steward
+  may coordinate multiple separately admitted bounded operators/workers, but every operation keeps one
+  exact identity, current executor, modifying carrier and action-authoritative Sol turn. Mastermind
+  PR #240 is the sole canonical Workroom architecture/rollout carrier. Older PR #233/MAS-220 is
+  superseded after its unique planner/source-provenance laws were adopted into #240.
 rationale: >
-  The current failure is not lack of applications but blurred ownership: #agent-dispatch has become
-  a visually global queue/project board/session monitor, while Linear is alternately treated as too
-  weak to matter or strong enough to imply runtime/completion. Persistent Project rooms provide
-  durable human context and exploit Slack Canvas/List/Workflow/thread capabilities, while exact
-  source separation prevents a second lifecycle or project database. A dedicated least-privilege
-  Workroom Projector can manage presentation, and the existing Agent Relay can later evolve from one
-  fixed channel to an exact allowlisted Workroom set without becoming a Slack superbot.
+  The company problem is blurred ownership and unusable collaboration topology, not a lack of apps.
+  #agent-dispatch became a global visual queue, project board and session monitor, while Linear and
+  Slack activity were sometimes mistaken for runtime or completion. Project Workrooms improve human
+  navigation and team collaboration only when exact source separation survives. The later #240
+  architecture includes current Slack/Linear platform falsification, public-internal V1, static Home
+  Canvas, optional read-only Radar, separate Workroom Projector and Agent Relay principals, and a
+  staged production ruler. The earlier #233 family contained valid exact Initiative, Project-plan,
+  provenance and shadow/apply rules; those were explicitly carried into #240 before #233 closed, so
+  one coherent source family remains without discarding load-bearing law.
 alternatives:
+  - option: Keep both #233 and #240 as parallel accepted source families
+    why_not: >
+      Creates two operation keys, planner contracts, V1 visibility rules and implementation owner maps.
+      A fresh worker could choose either and build a duplicate Workroom system.
+  - option: Select #240 by recency and discard #233
+    why_not: >
+      Loses exact Initiative key/name comparison, atomic source-record provenance and discriminating
+      planner action law. Current reconciliation adopted those clauses explicitly instead.
   - option: Replace Slack/Linear with Notion, Asana, ClickUp, monday.com, Airtable or another project OS
     why_not: >
-      Creates another project/task/memory/workflow truth plane beside Agent OS, Linear and Executive
-      OS, increasing correction ambiguity rather than solving it.
-  - option: Make Agent Relay one Slack superbot that also creates channels, Canvases, Lists and workflows
+      Creates another project/task/memory/workflow truth plane beside Agent OS, Linear and Executive OS.
+  - option: Make Agent Relay one Slack superbot
     why_not: >
-      Gives the semantic dialogue path broad workspace mutation authority and turns one compromised,
-      stale or malformed dialogue action into a workspace-structure risk. Projection and dialogue
-      require separate least-privilege principals.
-  - option: Keep every project in #agent-dispatch threads
+      Gives dialogue transport broad channel/Canvas/List mutation authority and increases compromise,
+      stale-target and wrong-workspace blast radius.
+  - option: Keep every Project in #agent-dispatch threads
     why_not: >
-      Preserves context collision, Slack archaeology, wrong-thread risk and Chairman monitoring labor.
-      A global transport channel is not a usable company topology.
-  - option: Make Slack Lists/Workflows canonical and synchronize Linear afterward
-    why_not: >
-      Recreates a Slack lifecycle/task database, false completion and dual-write correction problems.
+      Preserves context collision, wrong-thread risk, archaeology and Chairman monitoring labor.
 evidence:
-  - "Chairman live directive, 2026-08-29: Sol owns end-to-end Slack + Linear integration and future agent-communication organization while Mastermind OS / Agent OS remain canonical; routine review gates are delegated to Sol judgment."
-  - "Mastermind PR #240 — Project Workroom Fabric architecture and rollout records carrier."
-  - "Linear MAS-231 — selected human architecture/program projection under WS:CHAIRMAN-CONTROL-ROOM."
-  - "Protected Mastermind #214/#227 — Linear is selective project projection, Slack is transport/collaboration, Executive OS and Agent OS remain canonical, and the Chairman must not depend on #agent-dispatch archaeology."
-  - "Current Agent Relay source/enrollment binds one fixed Slack channel, proving multi-workroom dialogue is a real later implementation seam rather than a channel-naming convention."
-  - "Current Slack/Linear estate contains no accepted Workroom binding/projector implementation; capability is SPEC_ONLY/NOT_BUILT."
+  - "Chairman live directive, 2026-08-29: continue Pro-mode end-to-end Workroom leadership."
+  - "Protected Mastermind 7b8f3ca580f9872ca8ddf60f90c6022ce4a18e6b, Skillpack v1.0.1/bootstrap-major 1."
+  - "Mastermind #240 exact current head 1db9a6ea27a81d53ab2141d94f7226be9ea8c549."
+  - "Canonical reconciliation amendment on #240 adopts the unique valid #233 planner/provenance law."
+  - "Mastermind #233 closed unmerged with supersession receipt 5463703030; MAS-220 is Duplicate of MAS-231."
+  - "Mastermind #242 exact head 596145ffa6f2c89c58133c06638394b22dcb304f remains WR-R0 research only."
+  - "Current GitHub census finds no protected/open Workroom implementation carrier beyond records/research."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
   - MAS-231
+  - MAS-233
+  - MAS-236
+  - MAS-220
   - mastermind-project-workroom-fabric-20260829-sol-001
   - mastermindx-market-intelligence/Mastermind#240
+  - mastermindx-market-intelligence/Mastermind#242
   - Mastermind Agent Relay / AD-DLG2 / OCR-6 / Linear projector integration boundaries
 confidence: high
 reversibility: costly
@@ -60,21 +70,19 @@ decided_at: 2026-08-29
 
 ## Operational consequence
 
-The Workroom Fabric is a wave under the existing Chairman Control Room / Operating-Surface
-Convergence program. Do not create `WS:PROJECT-WORKROOMS`, `Slack OS`, `Workroom OS`, another task DB,
-lifecycle, queue, watcher store, session registry, retry plane, memory plane or synchronizer.
+Use Mastermind #240 as the sole Workroom source-law and rollout carrier. Use #242 only as its bounded
+WR-R0 research child. Do not reopen #232/#233, reuse `project-workroom-convergence-20260829-sol-001`,
+or start code from MAS-220.
 
-The concurrent Linear Initiative carrier remains exclusive owner of Initiative creation/membership.
-Mastermind #212 remains the independently active autonomy/continuity DAG. MAS-64/MAS-66/MAS-189
-remain the exclusive Linear mutation path. Current Agent Relay and OCR-6 carriers remain exclusive
-owners of dialogue and Steward composition.
+The canonical V1 is projector-created `PUBLIC_INTERNAL` Workrooms, static channel-read-only Home
+Canvas, Control Room dynamic truth, optional app-owned/channel-read-only Radar, exact Linear/Slack/
+runtime/proof joins and separate Workroom Projector versus Agent Relay principals.
 
-Production rollout is staged: protected records -> platform/API falsifier -> pure desired-state
-planner -> dedicated Workroom Projector app/credential boundary -> inert channel/surface canary ->
-Agent Relay exact allowlist and AD-DLG2 correct-parent join -> Linear/Steward joins -> three-Project
-pilot -> 2/5/14-session adversarial stress -> small fleet -> executive-first cutover.
+WR-P0 remains `NOT_BUILT`. It belongs in Macro and must consume the accepted
+`linear_portfolio_plan.v1`, accepted Initiative plan plus normalized live readback, a complete Slack
+snapshot and a static policy bound to the exact protected #240 source set. Initial six candidates are
+`SHADOW` and never apply-eligible.
 
-No Workroom is production-complete until real concurrent operation proves zero duplicate effect,
-wrong-thread continuation, stale sanctioned worker, silent orphan and false completion, with truthful
-Slack/Linear outage behavior and a Chairman experience that no longer requires #agent-dispatch
-archaeology, message shuttling, watcher repair, session hunting or routine account selection.
+Do not create `WS:PROJECT-WORKROOMS`, Slack OS, Workroom OS, another lifecycle, project/task database,
+queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router.
+Slack/Linear activity never establishes runtime, authority, completion or production acceptance.
