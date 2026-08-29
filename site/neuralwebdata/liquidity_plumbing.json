@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.liquidity_plumbing.v1",
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "phase_status": {
     "p0_p1_quantity_quality": "integrated",
     "p3_funding_spreads": "integrated",
@@ -26,15 +26,15 @@
     "assets_bn": 6730.912,
     "assets_chg_20d_bn": -7.278,
     "reserve_balances_bn": 2924.936,
-    "walcl_stale_days": 1,
+    "walcl_stale_days": 2,
     "policy_stance": "hawkish",
     "administered_rate_posture": "on_hold",
-    "asof": "2026-08-27"
+    "asof": "2026-08-28"
   },
   "treasury": {
-    "tga_bn": 959.435,
-    "tga_chg_20d_bn": -11.007,
-    "net_issuance_20d_bn": 315.149,
+    "tga_bn": 950.804,
+    "tga_chg_20d_bn": -47.142,
+    "net_issuance_20d_bn": 282.772,
     "expected_tga_pressure": "unknown_until_financing_estimates_parser",
     "coupon_supply_pressure": "context_only",
     "tga_impulse": {
@@ -47,33 +47,33 @@
       "summary_en": "No TGA impulse detected.",
       "summary_zh": "未检测到TGA冲量。"
     },
-    "asof": "2026-08-26"
+    "asof": "2026-08-27"
   },
   "rrp": {
-    "rrp_bn": 0.456,
-    "rrp_chg_20d_bn": -0.62,
+    "rrp_bn": 0.175,
+    "rrp_chg_20d_bn": -1.976,
     "buffer_state": "exhausted"
   },
   "quantity": {
-    "netliq_bn": 5771.021,
-    "netliq_chg_20d_bn": 31.853,
-    "netliq_chg_65d_bn": -88.849,
-    "netliq_pctile_expanding": 0.762001,
+    "netliq_bn": 5779.933,
+    "netliq_chg_20d_bn": -79.54,
+    "netliq_chg_65d_bn": -73.577,
+    "netliq_pctile_expanding": 0.765368,
     "overlay": "contracting"
   },
   "quality": {
     "label": "contracting",
-    "fed_share": 0.03,
+    "fed_share": 0.06,
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
       "hy_oas_pct": 2.67,
-      "hy_oas_z": -0.82,
+      "hy_oas_z": -0.87,
       "nfci": -0.566,
       "nfci_trend": "loose",
       "confirming_stress": false
     },
-    "walcl_stale_days": 1
+    "walcl_stale_days": 2
   },
   "funding": {
     "effr_minus_iorb_bp": -2.0,
@@ -81,39 +81,35 @@
     "effr_minus_iorb_pctile": 0.9137,
     "sofr_minus_iorb_bp": -1.0,
     "sofr_minus_iorb_d20_bp": -1.0,
-    "sofr_minus_iorb_pctile": 0.8745,
+    "sofr_minus_iorb_pctile": 0.8746,
     "sofr_99pctl_minus_iorb_bp": 7.0,
-    "sofr_99pctl_minus_iorb_d20_bp": -2.0,
-    "sofr_99pctl_minus_iorb_pctile": 0.8088,
+    "sofr_99pctl_minus_iorb_d20_bp": -1.0,
+    "sofr_99pctl_minus_iorb_pctile": 0.809,
     "srf_takeup_bn": null,
     "discount_window_primary_credit_bn": null,
     "reserve_scarcity_state": "tightening",
-    "asof": "2026-08-26"
+    "asof": "2026-08-27"
   },
   "components": {
     "walcl": {
       "level_bn": 6730.9,
       "d20_bn": -7.3,
       "d65_bn": 26.5,
-      "pctile": 0.7651
+      "pctile": 0.7652
     },
     "rrp": {
-      "level_bn": 0.5,
-      "d20_bn": -0.6,
-      "d65_bn": -1.4,
-      "pctile": 0.1307
+      "level_bn": 0.2,
+      "d20_bn": -2.0,
+      "d65_bn": -1.0,
+      "pctile": 0.0561
     },
     "tga": {
-      "level_bn": 959.4,
-      "d20_bn": -38.5,
-      "d65_bn": 116.8,
-      "pctile": 0.947
+      "level_bn": 950.8,
+      "d20_bn": 74.2,
+      "d65_bn": 101.1,
+      "pctile": 0.9437
     },
     "netliq_sparkline_90d": [
-      {
-        "d": "2026-05-29",
-        "v": 5788.8
-      },
       {
         "d": "2026-06-01",
         "v": 5846.2
@@ -364,7 +360,11 @@
       },
       {
         "d": "2026-08-27",
-        "v": 5771.0
+        "v": 5779.7
+      },
+      {
+        "d": "2026-08-28",
+        "v": 5779.9
       }
     ],
     "reserves": {
@@ -394,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-28T13:25:16Z",
-  "inputs_hash": "sha256:9391a8a8de841c82846648efb56d89944463a04fa06b6a6c5d93777e6bc9b790",
+  "produced_at": "2026-08-29T09:42:34Z",
+  "inputs_hash": "sha256:f587c683daf8cc4b8a227d40dde13e7c47351ad9beb9f49db9bc3e1b59edbab0",
   "tier": "shadow"
 }
