@@ -1,6 +1,6 @@
 {
  "schema": "options_entry.gate.v3",
- "generated_at": "2026-08-28 13:13 UTC",
+ "generated_at": "2026-08-29 12:41 UTC",
  "scored": false,
  "status": "building_history",
  "weight": 0.0,
@@ -19,13 +19,13 @@
    "ticker"
   ],
   "declared_lane": "buy",
-  "raw_rows": 6183,
-  "raw_events_all_lanes": 3237,
-  "declared_lane_rows": 3298,
+  "raw_rows": 6202,
+  "raw_events_all_lanes": 3243,
+  "declared_lane_rows": 3308,
   "declared_lane_stamped_rows": 667,
-  "excluded_non_buy_rows": 2885,
-  "canonical_events": 1780,
-  "canonical_dates": 31,
+  "excluded_non_buy_rows": 2894,
+  "canonical_events": 1784,
+  "canonical_dates": 32,
   "horizon_mapping": {
    "fwd_ret_5": "horizon=5 ret",
    "fwd_mfe_5": "horizon=5 fwd_mfe_5",
@@ -34,8 +34,8 @@
    "terminal_state_clean8_21": "sole non-null repeated event value"
   }
  },
- "n_ledger_rows": 6183,
- "n_canonical_events": 1780,
+ "n_ledger_rows": 6202,
+ "n_canonical_events": 1784,
  "n_stamped_rows": 667,
  "n_stamped_events": 351,
  "promotion_blockers": [
@@ -1346,7 +1346,7 @@
     "inference_authority": "descriptive_iid_only"
    },
    "caution_only": true,
-   "n_excluded_missing_leg": 1496,
+   "n_excluded_missing_leg": 1500,
    "note": "CAUTION-ONLY (RO-3): beneficial direction = flagged fires show WORSE outcomes (correctly identifies bad entries). NEVER initiates a negative position.",
    "registered_cells_ready": 0,
    "registered_cells_total": 2,
@@ -1743,16 +1743,16 @@
   "S-VOI2: building history (fires=0/0 dates=0/0 overlap_dates=0; need 30 fires, 30 dates, 30 overlapping dates/bucket) \u2014 opt_voi2_flag not yet stamped \u2014 awaits W-C harness extension that adds the stricter z-threshold + contract-count-floor to the stamp (future PR). S-VOI original registration stands; this is a distinct, stricter bucket registered after S-VOI was documented as degenerate (n_cond=42/n_base=4).",
   "S-VANNA-RELIEF: building history (fires=85/144 dates=17/16 overlap_dates=16; need 30 fires, 30 dates, 30 overlapping dates/bucket) \u2014 CAUTION-ONLY (RO-3): holdability / de-escalation / stop-width state. PRIMARY = breach delta (beneficial = LOWER breach). SECONDARY = clean + mfe21 (reported honestly; no pre-judged direction). Never originates a new entry. Sign note (audit #29): flag uses signed net vanna under long-call/short-put dealer convention; mechanism narrative inherits that assumption.",
   "S-FRONT-CHARM: building history (fires=116/122 dates=23/17 overlap_dates=17; need 30 fires, 30 dates, 30 overlapping dates/bucket) \u2014 CAUTION-ONLY (RO-3): elevated front-charm = higher near-term vol risk = wider stops. PRIMARY = breach delta (beneficial = HIGHER breach \u2014 flag correctly identifies vol-exposed entries). SECONDARY = clean + mfe21 (reported honestly). Never initiates a negative position. Root-class caveat: ETF-slice sign is era-unstable (robustness \u00a73.2 of adjudication); per-class breakdowns reported once n\u226530 per class.",
-  "stamp coverage [opt_ivspread_rel]: 285/1780 rows (16.0%)",
-  "stamp coverage [opt_skew]: 297/1780 rows (16.7%)",
-  "stamp coverage [opt_skew_5d_chg]: 284/1780 rows (16.0%)",
-  "stamp coverage [opt_opex_days]: 1744/1780 rows (98.0%)",
-  "stamp coverage [opt_pin_risk]: 307/1780 rows (17.2%)",
-  "stamp coverage [opt_wall_dist_up_pct]: 310/1780 rows (17.4%)",
-  "stamp coverage [opt_wall_dist_down_pct]: 313/1780 rows (17.6%)",
-  "stamp coverage [opt_vanna_relief]: 229/1780 rows (12.9%)",
-  "stamp coverage [opt_front7_charm_share]: 238/1780 rows (13.4%)",
-  "stamp coverage [opt_root_class]: 1780/1780 rows (100.0%)"
+  "stamp coverage [opt_ivspread_rel]: 285/1784 rows (16.0%)",
+  "stamp coverage [opt_skew]: 297/1784 rows (16.6%)",
+  "stamp coverage [opt_skew_5d_chg]: 284/1784 rows (15.9%)",
+  "stamp coverage [opt_opex_days]: 1748/1784 rows (98.0%)",
+  "stamp coverage [opt_pin_risk]: 307/1784 rows (17.2%)",
+  "stamp coverage [opt_wall_dist_up_pct]: 310/1784 rows (17.4%)",
+  "stamp coverage [opt_wall_dist_down_pct]: 313/1784 rows (17.5%)",
+  "stamp coverage [opt_vanna_relief]: 229/1784 rows (12.8%)",
+  "stamp coverage [opt_front7_charm_share]: 238/1784 rows (13.3%)",
+  "stamp coverage [opt_root_class]: 1784/1784 rows (100.0%)"
  ],
  "note": "Pre-registered entry-quality gate (S-IVR/S-DOI/S-WALL/S-VOI + W-C: S-IVSPREAD-F/S-SKEW_DECEL/S-TOP_RISK/S-PIN_RISK/S-VOI2 + W-OVC: S-VANNA-RELIEF/S-FRONT-CHARM). Display/ledger-seed only. Current IID bootstrap/permutation outputs are descriptive and never promote a signal. Exact-metric maturity requires n\u226530 fires, n\u226530 dates, and n\u226530 shared dates per bucket (doctrine \u00a72.3). Ledger primitives only (ruling A10). FDR family=36 tests, BH \u03b1=0.10. No pre-amendment observation may support authority; cluster inference and a frozen sequential-look plan must be registered before a fresh cohort. S-TOP_RISK/S-PIN_RISK/S-FRONT-CHARM are caution-only: beneficial direction = flagged fires worse/higher-vol (correctly de-escalates). S-VANNA-RELIEF is caution-only: holdability context only, not an entry originator. Never initiates a negative position (RO-3)."
 }

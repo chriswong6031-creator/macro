@@ -1313,3 +1313,4 @@
 {"date": "2026-08-27", "ticker": "FIVN", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.5, "performance": 7.8, "session_source": "stage_source_asof"}
 {"date": "2026-08-27", "ticker": "PAY", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.85, "performance": 9.0, "session_source": "stage_source_asof"}
 {"date": "2026-08-27", "ticker": "SJM", "sga_score": 44, "gate_tier": null, "weeks_in_stage": 10, "earnings_present": true, "sentiment": 0.3, "performance": 6.0, "session_source": "stage_source_asof"}
+{"date": "2026-08-27", "ticker": "AMBA", "sga_score": 43, "gate_tier": null, "weeks_in_stage": 3, "earnings_present": true, "sentiment": 0.6666666666666666, "performance": 5.0, "session_source": "stage_source_asof"}

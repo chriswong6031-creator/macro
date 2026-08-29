@@ -1,9 +1,9 @@
 {
   "schema": "nasdaq_internals.v1",
-  "asof": "2026-08-28T12:47:28.631160+00:00",
+  "asof": "2026-08-29T12:10:45.262731+00:00",
   "benchmark": "QQQ",
-  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-28); historical composition approximated. Descriptive, display-only.",
-  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-28）；历史成分经近似处理。描述性展示，仅供参考。",
+  "watermark_en": "Current Nasdaq-100 membership (as of 2026-08-29); historical composition approximated. Descriptive, display-only.",
+  "watermark_zh": "当前纳斯达克100成分股（截至 2026-08-29）；历史成分经近似处理。描述性展示，仅供参考。",
   "ew_vs_qqq": {
     "spread_20d": 4.9913,
     "spread_60d": 1.636,
@@ -20,10 +20,10 @@
       "rs_60d": -9.3813,
       "accel": 11.1206,
       "breadth_above_50dma": 17.39,
-      "dispersion_20d": 11.8364,
+      "dispersion_20d": 11.6187,
       "state": "improving",
       "state_candidate": "improving",
-      "state_days": 10
+      "state_days": 12
     },
     {
       "id": "ai_capex_spenders",
@@ -37,7 +37,7 @@
       "dispersion_20d": 4.2797,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 3
+      "state_days": 5
     },
     {
       "id": "edge_device",
@@ -48,10 +48,10 @@
       "rs_60d": -12.8685,
       "accel": -7.2093,
       "breadth_above_50dma": 50.0,
-      "dispersion_20d": 10.0875,
+      "dispersion_20d": 11.8824,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 20
+      "state_days": 22
     },
     {
       "id": "software_enterprise",
@@ -62,10 +62,10 @@
       "rs_60d": 14.5154,
       "accel": 1.6804,
       "breadth_above_50dma": 75.0,
-      "dispersion_20d": 14.4172,
+      "dispersion_20d": 14.596,
       "state": "leading",
       "state_candidate": "leading",
-      "state_days": 1
+      "state_days": 3
     },
     {
       "id": "cyber",
@@ -76,10 +76,10 @@
       "rs_60d": 27.2736,
       "accel": 11.7956,
       "breadth_above_50dma": 100.0,
-      "dispersion_20d": 6.2614,
+      "dispersion_20d": 9.4628,
       "state": "leading",
       "state_candidate": "leading",
-      "state_days": 1
+      "state_days": 3
     },
     {
       "id": "digital_services_media",
@@ -89,11 +89,11 @@
       "rs_20d": -3.6484,
       "rs_60d": -4.6391,
       "accel": -2.5634,
-      "breadth_above_50dma": 37.5,
-      "dispersion_20d": 10.4831,
+      "breadth_above_50dma": 50.0,
+      "dispersion_20d": 10.7857,
       "state": "lagging",
       "state_candidate": "lagging",
-      "state_days": 14
+      "state_days": 16
     },
     {
       "id": "megacap_quality",
@@ -107,7 +107,7 @@
       "dispersion_20d": 8.4141,
       "state": "weakening",
       "state_candidate": "weakening",
-      "state_days": 1
+      "state_days": 3
     }
   ],
   "divergences": [

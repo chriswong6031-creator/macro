@@ -60,48 +60,48 @@
     "latam": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": 0.1727,
+      "mean_z": 0.2337,
       "n_legs": 3,
       "legs": {
         "rel_equity": -0.809,
         "fx": 0.504,
-        "oas": 0.823
+        "oas": 1.006
       },
       "notes": []
     },
     "em_asia": {
       "direction": "neutral",
       "strength": null,
-      "mean_z": 0.4137,
+      "mean_z": 0.447,
       "n_legs": 3,
       "legs": {
         "rel_equity": 0.069,
         "fx": 1.136,
-        "oas": 0.036
+        "oas": 0.136
       },
       "notes": []
     },
     "emea": {
       "direction": "inflow",
       "strength": "mild",
-      "mean_z": 0.629,
+      "mean_z": 0.7393,
       "n_legs": 3,
       "legs": {
         "rel_equity": 1.143,
         "fx": 0.625,
-        "oas": 0.119
+        "oas": 0.45
       },
       "notes": []
     },
     "em_broad": {
       "direction": "inflow",
       "strength": "mild",
-      "mean_z": 0.756,
+      "mean_z": 0.829,
       "n_legs": 3,
       "legs": {
         "rel_equity": 0.491,
         "fx": 1.351,
-        "oas": 0.426
+        "oas": 0.645
       },
       "notes": []
     }
@@ -299,47 +299,47 @@
     },
     "etf/EWJ": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWG": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWU": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWC": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWA": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWL": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWZ": {
       "first": "2000-07-14",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWW": {
       "first": "1996-03-18",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/INDA": {
       "first": "2012-02-03",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EIDO": {
       "first": "2010-05-07",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EZA": {
       "first": "2003-02-07",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWY": {
       "first": "2000-05-12",
@@ -347,11 +347,11 @@
     },
     "etf/EEM": {
       "first": "2003-04-14",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "etf/EWT": {
       "first": "2000-06-23",
-      "last": "2026-08-27"
+      "last": "2026-08-28"
     },
     "fx/MXN": {
       "first": "2003-12-01",
@@ -359,11 +359,11 @@
     },
     "fx/BRL": {
       "first": "2003-12-01",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/ZAR": {
       "first": "2003-12-01",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/TRY": {
       "first": "2005-01-03",
@@ -371,11 +371,11 @@
     },
     "fx/IDR": {
       "first": "2001-06-28",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/CLP": {
       "first": "2003-12-01",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/PLN": {
       "first": "2003-12-01",
@@ -383,11 +383,11 @@
     },
     "fx/KRW": {
       "first": "2003-12-01",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/INR": {
       "first": "2003-12-01",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/TWD": {
       "first": "2004-03-24",
@@ -411,31 +411,31 @@
     },
     "fx/CAD": {
       "first": "2003-09-17",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fx/AUD": {
       "first": "2006-05-16",
-      "last": "2026-08-28"
+      "last": "2026-08-29"
     },
     "fred/BAMLEMRLCRPILAOAS": {
       "first": "2023-07-11",
-      "last": "2026-08-26"
+      "last": "2026-08-27"
     },
     "fred/BAMLEMRACRPIASIAOAS": {
       "first": "2023-07-11",
-      "last": "2026-08-26"
+      "last": "2026-08-27"
     },
     "fred/BAMLEMRECRPIEMEAOAS": {
       "first": "2023-07-11",
-      "last": "2026-08-26"
+      "last": "2026-08-27"
     },
     "fred/BAMLEMCBPIOAS": {
       "first": "2023-06-13",
-      "last": "2026-08-26"
+      "last": "2026-08-27"
     },
     "fred/BAMLH0A0HYM2": {
       "first": "1996-12-31",
-      "last": "2026-08-26"
+      "last": "2026-08-27"
     },
     "fred/SWPT": {
       "first": "2002-12-18",
