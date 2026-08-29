@@ -2,11 +2,11 @@
 
 # Agent OS state
 
-Generated: 2026-08-29T04:39:03Z  |  54 workstreams (38 active · 1 awaiting_ci · 1 awaiting_review · 4 blocked · 6 done · 4 parked)
+Generated: 2026-08-29T10:10:47Z  |  54 workstreams (38 active · 1 awaiting_ci · 1 awaiting_review · 4 blocked · 6 done · 4 parked)
 
 | Input | Value |
 |---|---|
-| active_builds | data/governance/active_builds.json@2026-08-29T04:39:02.970608+00:00 |
+| active_builds | data/governance/active_builds.json@2026-08-29T10:10:47.291791+00:00 |
 | active_builds age | 0.0h |
 | worktrees | 1 |
 | records | 54 WS · 269 DEC · 231 DSC · 382 handoffs |
@@ -126,6 +126,7 @@ Generated: 2026-08-29T04:39:03Z  |  54 workstreams (38 active · 1 awaiting_ci �
 - agentos/decisions/DEC-CS-V2-IDENTITY-DUAL-READ.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md: [review-overdue] review_by 2026-08-25 has passed
+- agentos/decisions/DEC-CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS.md: [review-overdue] review_by 2026-08-28 has passed
 - agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-D0R-RED-TEAM-ADJUDICATION-2026-08-17.md: [review-overdue] review_by 2026-08-18 has passed
 - agentos/decisions/DEC-E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER.md: [review-overdue] review_by 2026-08-23 has passed

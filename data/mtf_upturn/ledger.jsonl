@@ -983,3 +983,4 @@
 {"session": "2026-08-27", "symbol": "XLB", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": true, "d3_confluence": false, "w_macd": "cross", "w2_macd": false}, "baskets": ["spdr_sector"], "hysteresis_sessions_held": 0}
 {"session": "2026-08-27", "symbol": "XLE", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": false, "d3_confluence": false, "w_macd": "cross", "w2_macd": true}, "baskets": ["spdr_sector"], "hysteresis_sessions_held": 0}
 {"session": "2026-08-27", "symbol": "XOM", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": false, "d3_confluence": false, "w_macd": "cross", "w2_macd": true}, "baskets": ["energy_complex", "us_sector_energy"], "hysteresis_sessions_held": 0}
+{"session": "2026-08-28", "symbol": "XLE", "state": "UPTURN_WATCH", "k": 2, "legs": {"d_macd": false, "d3_confluence": false, "w_macd": "cross", "w2_macd": true}, "baskets": ["spdr_sector"], "hysteresis_sessions_held": 0}
