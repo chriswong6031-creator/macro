@@ -24,20 +24,20 @@ changed:
       native v3 administrator ceremony; the wave remains in_progress and is not marked accepted.
   - path: agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-29-CF2-H0-SOURCE-RELEASED.md
     what: >
-      New continuation receipt binding source-release evidence, capability limits, the resolved
-      protected repair/carrier pins, unresolved native proof and the exact next action.
+      New continuation receipt binding source-release evidence, capability limits, immutable repair
+      provenance, current protected-carrier derivation, unresolved native proof and the exact next action.
 verified:
   - claim: "Mastermind PR #213 is merged as 229aebce5e8d0c1c7372f5fead9c24516b027cc1."
     command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/pulls/213"
     result: >
       GitHub returned state=closed, merged=true, merged_at=2026-08-29T12:01:29Z and
       merge_commit_sha=229aebce5e8d0c1c7372f5fead9c24516b027cc1.
-  - claim: "Protected Mastermind master is the released H0 source tree."
-    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/branches/master"
+  - claim: "At the #213 release edge, protected Mastermind master was the reviewed H0 source tree."
+    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/commits/229aebce5e8d0c1c7372f5fead9c24516b027cc1"
     result: >
-      Protected master points exactly to 229aebce5e8d0c1c7372f5fead9c24516b027cc1; its parent is
-      a3053115c1cf75fa7e67279cb22c18e861e721ec and its tree is the reviewed
-      e8fe0cc545c88c0d8884861f8e6d249d75374849.
+      The protected squash commit 229aebce5e8d0c1c7372f5fead9c24516b027cc1 has parent
+      a3053115c1cf75fa7e67279cb22c18e861e721ec and tree
+      e8fe0cc545c88c0d8884861f8e6d249d75374849, exactly the reviewed #213 release tree.
   - claim: "The exact reviewed #213 head passed the required hosted source gates before release."
     command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/commits/0600562b01c51de36d681f324997d4fb41a0a1dd/check-runs"
     result: >
@@ -56,28 +56,38 @@ verified:
       GitHub reports status=diverged with merge base 1d5ad1249172e8b93882f0dff157fc13636dd62d.
       Therefore c81aa1f is branch history and cannot satisfy the released runbook's requirement that
       REPAIR_MERGE_SHA be an ancestor of the protected current carrier.
-  - claim: "The original protected #197 repair merge cannot be reused as today's native repair pin."
+  - claim: "The original protected #197 repair merge cannot be reused as the immutable final-v3 repair pin."
     command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/compare/d3499f8bd5dd4ecc0c172c82146acf4e8733ddec...229aebce5e8d0c1c7372f5fead9c24516b027cc1"
     result: >
       d3499f8 is a protected ancestor, but the compare shows the v3 source release changed
       ops/executive_os/capacity_host_artifacts.py, one of the five authenticated H0 paths whose
       runbook ls-tree row must equal at repair and carrier pins. It therefore cannot satisfy the
-      current five-path equality gate.
-  - claim: "At current protected master, both H0 native identity axes resolve to 229aebce5e8d0c1c7372f5fead9c24516b027cc1."
+      final-v3 five-path equality gate.
+  - claim: "At the #213 release edge the two H0 identity axes were lawfully identity-equal at 229aebce5e8d0c1c7372f5fead9c24516b027cc1."
     command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/commits/229aebce5e8d0c1c7372f5fead9c24516b027cc1"
     result: >
-      #213 is the first protected commit containing the final authenticated v3 H0 material; its only
-      parent is the pre-v3 protected a3053115 source. The released runbook permits identity-equal
-      repair/carrier pins and uses the distinct two-pin form after a later protected descendant exists.
-      For the current ceremony set CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1
-      and REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1.
+      #213 is the first protected commit containing the final authenticated v3 H0 material. The
+      released runbook permits identity-equal repair/carrier pins at that release edge and preserves
+      the distinct two-pin form for later protected descendants.
+  - claim: "Current protected Mastermind is dfd69451dce5e186ce05f65446023fbe21f07a58, a strict descendant of the immutable #213 repair release with zero authenticated-H0-path movement."
+    command: "https://api.github.com/repos/mastermindx-market-intelligence/Mastermind/compare/229aebce5e8d0c1c7372f5fead9c24516b027cc1...dfd69451dce5e186ce05f65446023fbe21f07a58"
+    result: >
+      GitHub reports status=ahead by exactly one commit with merge base 229aebce5e8d0c1c7372f5fead9c24516b027cc1.
+      The only changed path is docs/superpowers/specs/2026-08-28-watcher-resource-freshness-design.md
+      from records-only PR #205; none of the five authenticated H0 paths moved. Thus, at this
+      reconciliation, CARRIER_COMMIT_SHA advances to dfd69451dce5e186ce05f65446023fbe21f07a58
+      while REPAIR_MERGE_SHA remains 229aebce5e8d0c1c7372f5fead9c24516b027cc1, subject to a fresh
+      exact five-path reproof immediately before native action.
 unverified:
-  - claim: "Native H0 is PROVEN_LIVE at the new protected source release."
+  - claim: "Native H0 is PROVEN_LIVE at the current protected carrier."
     what_would_verify: >
-      Build the final v3 carrier from protected Mastermind
-      229aebce5e8d0c1c7372f5fead9c24516b027cc1 and accepted Macro
-      dcdd939c45b23abce5ba04f95e330ac914a3904b, run the one bounded native administrator ceremony
-      with both CARRIER_COMMIT_SHA and REPAIR_MERGE_SHA pinned to protected 229aebce5e8d0c1c7372f5fead9c24516b027cc1,
+      Immediately before native action re-pin CURRENT protected Mastermind, prove it is a descendant
+      of immutable repair release 229aebce5e8d0c1c7372f5fead9c24516b027cc1 and prove exact Git
+      mode/blob equality for all five authenticated H0 paths. As of this reconciliation the current
+      carrier is dfd69451dce5e186ce05f65446023fbe21f07a58. Build the final v3 carrier from that
+      freshly proven protected carrier and accepted Macro dcdd939c45b23abce5ba04f95e330ac914a3904b,
+      run one bounded native administrator ceremony with CARRIER_COMMIT_SHA set to that fresh
+      protected carrier and REPAIR_MERGE_SHA fixed to 229aebce5e8d0c1c7372f5fead9c24516b027cc1,
       obtain H0 source-repair PASS plus two verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED
       receipts, prove empty stderr and disposable root-carrier absence, with all forbidden services,
       sockets and provider work still absent.
@@ -87,18 +97,23 @@ unverified:
       exact accepted result; a source merge is not P0 evidence.
 unresolved:
   - Native administrator proof is still owed; CF2-H0 remains in_progress and BUILT_NOT_PROVEN / PRODUCTION_INERT.
-  - The final v3 carrier must be rebuilt at protected release 229aebce5e8d0c1c7372f5fead9c24516b027cc1 rather than reusing a PR-head carrier as release identity.
+  - The final v3 carrier must be rebuilt from the then-current protected Mastermind descendant after
+    exact repair-ancestry and five-path equality reproof; a historical PR head or stale protected SHA
+    is not the action-time carrier.
   - CF2-P0 remains held behind exact native H0 acceptance; CF2-I remains held behind CF2-P0.
 next_actions:
   - >
-    On the native control Mac, re-pin Mastermind protected release
-    229aebce5e8d0c1c7372f5fead9c24516b027cc1 and the fixed accepted Macro commit
-    dcdd939c45b23abce5ba04f95e330ac914a3904b; verify the current H0 runbook before any sudo action.
-    For this current protected release use CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1
-    and REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1.
+    On the native control Mac, first re-pin CURRENT protected Mastermind and the fixed accepted Macro
+    commit dcdd939c45b23abce5ba04f95e330ac914a3904b. Preserve immutable
+    REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1 unless a later separately accepted
+    H0 source-repair release supersedes it. As of this reconciliation protected Mastermind is
+    dfd69451dce5e186ce05f65446023fbe21f07a58, so that is the current candidate
+    CARRIER_COMMIT_SHA. Before any build/sudo, prove repair ancestry and exact five-path mode/blob
+    equality; if protected master has advanced, move only CARRIER_COMMIT_SHA after that same reproof.
   - >
-    Build the final `mastermind.capacity_source_transport/v3` carrier from those exact pins and record
-    its enclosing SHA-256, payload SHA-256, object count, semantic inventory digest and byte size.
+    Build the final `mastermind.capacity_source_transport/v3` carrier from the freshly proven
+    current protected carrier plus accepted Macro commit and record its enclosing SHA-256, payload
+    SHA-256, object count, semantic inventory digest and byte size.
   - >
     Run exactly one bounded administrator ceremony from the reviewed H0 runbook. Require repair PASS,
     then two independent verify-only PASS receipts, empty stderr, disposable root-carrier absence and
@@ -109,12 +124,13 @@ next_actions:
 do_not_redo:
   - >
     Do not reopen the current-carrier versus immutable-repair identity collision: #213 is the accepted
-    source repair. The carrier and repair axes are distinct by contract but are identity-equal at the
-    current protected #213 release; a future protected descendant may advance only CARRIER_COMMIT_SHA
-    after exact five-path equality is re-proven while REPAIR_MERGE_SHA remains the accepted repair release.
+    source repair. The carrier and repair axes are distinct by contract. At #213 release they were
+    identity-equal; current protected movement now demonstrates the intended split: the carrier advances
+    to a protected descendant only after exact H0 equality proof while REPAIR_MERGE_SHA remains the
+    immutable accepted repair release.
   - >
-    Do not use d3499f8, e53f5242 or branch-only c81aa1f as the current native repair pin. The first two
-    predate the final authenticated v3 material; c81aa1f is not a protected ancestor after squash.
+    Do not use d3499f8, e53f5242 or branch-only c81aa1f as the immutable final-v3 repair pin. The first
+    two predate the final authenticated v3 material; c81aa1f is not a protected ancestor after squash.
   - >
     Do not reuse closed PR #208 as an implementation carrier; it was a tests donor only.
   - >
@@ -133,20 +149,23 @@ danger_areas:
     never enter ChatGPT, Slack, GitHub, Agent OS or transcripts. The H0 ceremony itself authorizes no
     OAuth/device login or provider call.
   - >
-    The protected source release SHA is now 229aebce5e8d0c1c7372f5fead9c24516b027cc1. A later protected
-    advance must be reconciled against the H0 authenticated material before using it as a native carrier.
+    Current protected Mastermind is dfd69451dce5e186ce05f65446023fbe21f07a58 only as of this
+    reconciliation. Any later protected advance must be freshly read and reconciled against the
+    immutable repair release and all five authenticated H0 rows before using it as the native carrier.
 ended_because: complete
 ---
 
 ## Capability delta
 
 Before this closeout, the H0 runbook could not truthfully name both current protected carrier identity
-and immutable repair provenance, so the native ceremony was blocked. The bounded source repair is now
+and immutable repair provenance, so the native ceremony was blocked. The bounded source repair was
 released on protected Mastermind `229aebce5e8d0c1c7372f5fead9c24516b027cc1` with full exact-head hosted
-gates and Sol review. The protected squash release is currently both the repair provenance and carrier
-value; the two identity axes remain separate so a later protected descendant can advance the carrier
-without relabelling the accepted repair. The machine can now build the final v3 carrier and proceed to
-the separately gated native ceremony from one coherent source contract.
+gates and Sol review. That release remains the immutable repair provenance. Protected master has now
+advanced to `dfd69451dce5e186ce05f65446023fbe21f07a58` through a records-only watcher-design commit that
+moves no authenticated H0 path, demonstrating the intended two-axis contract: current carrier may
+advance across a proven byte/mode-identical protected descendant without relabelling the repair.
+The machine can now build the final v3 carrier and proceed to the separately gated native ceremony
+from one coherent source contract after a fresh action-time carrier/equality reproof.
 
 ## Final capability state
 
@@ -157,8 +176,13 @@ fan-out, CF2-P0 acceptance or CF2-I placement was created by the source release.
 
 ## Exact continuation
 
-Primary continuation: execute the final v3 build and one bounded native administrator ceremony with
-`CARRIER_COMMIT_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1` and
-`REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1`, stopping only at exact
-`H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED` with the required repeated verify-only proof. Only then may the
-separate CF2-P0 read-only census start.
+Primary continuation: immediately before action, re-pin CURRENT protected Mastermind, prove it is a
+protected descendant of immutable repair `229aebce5e8d0c1c7372f5fead9c24516b027cc1`, and prove exact Git
+mode/blob equality for all five authenticated H0 paths. At this reconciliation the current carrier is
+`dfd69451dce5e186ce05f65446023fbe21f07a58`, so the current two pins are
+`CARRIER_COMMIT_SHA=dfd69451dce5e186ce05f65446023fbe21f07a58` and
+`REPAIR_MERGE_SHA=229aebce5e8d0c1c7372f5fead9c24516b027cc1`. Then execute the final v3 build and
+one bounded native administrator ceremony, stopping only at exact
+`H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED` with the required repeated verify-only proof. If protected
+master advances before execution, advance only the carrier after the same reproof. Only after native
+H0 PASS may the separate CF2-P0 read-only census start.
