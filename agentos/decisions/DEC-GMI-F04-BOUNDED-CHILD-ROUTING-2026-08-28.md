@@ -52,7 +52,7 @@ alternatives:
       Fabric/RuntimeBinding owners remain placement authority. This program must not create
       a duplicate router, queue, watcher registry or provider-session database.
 evidence:
-  - "Current protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1: WORKER_AVENUE_ROUTING preserves Terra as the preferred bounded avenue and Fable as scarce principal capacity."
+  - "Repair-time protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1: WORKER_AVENUE_ROUTING preserved Terra as the preferred bounded avenue and Fable as scarce principal capacity. Current protected law was re-verified at final adjudication separately rather than mutating this historical receipt on every unrelated protected-master move."
   - "Current protected Organizational Continuity & Attention Recovery law represents frozen work with no lawful receiver as WAITING_CAPACITY / needs_placement with turn_owner=EXECUTIVE_PLACEMENT; the architecture is SPEC_ONLY and does not itself prove automatic placement live."
   - "Mastermind #213 / 229aebce5e8d0c1c7372f5fead9c24516b027cc1 source-released the bounded CF2-H0 transport, but explicitly leaves that capability BUILT_NOT_PROVEN / PRODUCTION_INERT pending a separate native administrator ceremony and grants no CF2-P0/provider/routing/worker/fan-out authority; therefore it is not a live placement edge for D2C/D2D."
   - "Macro #6522 merged as 196c2273ea3e19fe309dbf8909733934c8bde63c; its records-gate child is terminally accepted."
