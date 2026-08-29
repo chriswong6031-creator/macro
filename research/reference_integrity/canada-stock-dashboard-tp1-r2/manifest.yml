@@ -1,0 +1,37 @@
+# RIG manifest (RIG V1 §3) — canada-stock-dashboard-tp1-r2, the REVISE
+# successor cycle ordered by Sol's design-authority verdict of 2026-08-29
+# (predecessor verdict.yml). Reference files freeze after the R2 repair
+# commit lands; status stays draft until the fresh two-pass critics run.
+schema: mastermind.rig_manifest.v1
+reference_id: canada-stock-dashboard-tp1-r2
+scope: full
+status: in_review
+
+lineage:
+  predecessors:
+    - canada-stock-dashboard-tp1
+
+surface:
+  route: canada_stocks.html
+  registry_row: macro:canada_stocks
+  archetype: discovery_board
+
+author:
+  identity: "TP-1 carrier R2 repair lane (sonnet builder under Sol's frozen REVISE spec), coordinated by Fable COO session canada-theme-parity-tp1-2595cf"
+  role: designer
+
+reference_files:
+  - path: templates/stock-dashboard.css
+    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+  - path: site/stock-dashboard.css
+    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+  - path: tests/test_stock_dashboard_css.py
+    frozen_sha: 82a627d4c1029154524809e3a90e4ba842722e11
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml

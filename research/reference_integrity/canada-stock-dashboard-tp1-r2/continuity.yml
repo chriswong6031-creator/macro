@@ -1,0 +1,128 @@
+# Revision continuity closure (RIG V1.1 §13) — derived skeleton via
+#   python3 scripts/check_reference_integrity.py --mandate canada-stock-dashboard-tp1-r2
+# then dispositioned. Closure obligation runs against the nearest (only)
+# predecessor, canada-stock-dashboard-tp1 (verdict REVISE, on disk).
+schema: mastermind.rig_continuity.v1
+reference_id: canada-stock-dashboard-tp1-r2
+
+predecessors:
+  - reference_id: canada-stock-dashboard-tp1
+    verdict: REVISE
+    source: on_disk
+    closure:
+      - id: PRC-001
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          .ca-v36-stance (base + all four tone rules, base and light sections)
+          now also matches under .mx-stockdash--ca ~ .ca-v36-modal, and the
+          modal root carries the UI font stack; the R2 modal screenshots show
+          styled, tone-coloured stance chips inside the dialog in both themes
+          (proposal-modal-dark/light-en-1440.png).
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+      - id: VTC-006
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          .ca-v36-lead-basis now also matches under the sibling-scoped modal;
+          the "Theme rank" basis pill renders as a bordered filled pill beside
+          "Theme Leadership" in both R2 modal screenshots — the concatenated
+          caption symptom is gone.
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+      - id: VTC-003
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Light lane rails are now inset rounded per-lane marks (12px side
+          insets, var(--r-pill) caps) rendered by a ::before on each lane
+          header with border-top removed — four visually independent rails
+          with clear gaps; no continuous bar, no population-width encoding
+          (proposal-light-en-1440.png).
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+      - id: PRC-003
+        kind: blocker
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          The breadth measure is one shared base-section treatment in BOTH
+          themes: full-width track color-mix(in srgb, var(--line) 60%,
+          transparent) + fill color-mix(in srgb, var(--muted) 55%,
+          transparent), both 3px with rounded caps — achromatic, equal
+          authority in dark and light, and a 100% fill still reads as a bar on
+          a visible track. The dark whisper and light --link rail are deleted;
+          a test pins the fill off var(--link).
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+          - tests/test_stock_dashboard_css.py
+      - id: COND-01
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Sibling-modal reachability repaired for both families; unconditional
+          fail-closed base rule (.ca-v36-modal display none) added independent
+          of the combinator (pinned by test); modal recaptured dark+light at
+          the R2 bytes with the sky-fx wait.
+        changed_files:
+          - templates/stock-dashboard.css
+          - site/stock-dashboard.css
+          - tests/test_stock_dashboard_css.py
+          - mockups/evidence/theme-parity/tp1-canada/modal-dark-en-1440.png
+      - id: COND-02
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Inset per-lane rounded rails per the VTC-003 row above; lane columns
+          and counts untouched.
+        changed_files:
+          - templates/stock-dashboard.css
+      - id: COND-03
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Achromatic shared breadth treatment per the PRC-003 row above.
+        changed_files:
+          - templates/stock-dashboard.css
+      - id: COND-04
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          All named human-facing evidence PNGs recaptured with a >=1500ms
+          settle (past the ~1100ms .sky-fx self-removal), verified orb-free on
+          9 of 12 opened; NEW cells added: filtered (both themes, pill +
+          is-active + honest count), Table view (both themes), and the
+          genuinely-reached filter-miss empty state ("0 shown · 9 on board").
+          Residual named debt, NOT repaired here per the no-unrelated-estate
+          rule: scripts/capture_page_evidence.py's pre-screenshot settle is a
+          hardcoded 400ms with no CLI knob, so RAW harness cells can still
+          catch the orb; --delay-ms is an inter-page sleep, not a settle.
+        changed_files:
+          - mockups/evidence/theme-parity/tp1-canada/manifest.json
+      - id: COND-05
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          New frozen SHA 82a627d4c1029154524809e3a90e4ba842722e11 (branch
+          claude/tp1-canada-r2); this r2 artifact set exists to run the fresh
+          rationale-quarantined two-pass critics against it; predecessor
+          receipts remain on disk as historical evidence under the REVISE
+          verdict.
+        changed_files:
+          - research/reference_integrity/canada-stock-dashboard-tp1-r2/manifest.yml
+      - id: COND-06
+        kind: condition
+        disposition: RESOLVED_BY_CHANGE
+        evidence: >
+          Honoured by inaction where the condition demands inaction: the
+          loader (templates/dashboard-icons.js pair) is untouched in the R2
+          diff — PRC-005 (stall timeout) and PRC-007 (bare global) remain
+          named nonblocking debt, recorded here and in the proposal's
+          platform.fail_soft_legacy disposition for the estate/census
+          follow-up.
+        changed_files:
+          - research/reference_integrity/canada-stock-dashboard-tp1-r2/proposal.yml

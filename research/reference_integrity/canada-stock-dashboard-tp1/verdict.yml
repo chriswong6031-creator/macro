@@ -70,12 +70,18 @@ overrides: []
 
 verdict: REVISE
 conditions:
-  - "Repair sibling-modal reachability for .ca-v36-stance and .ca-v36-lead-basis; add a fail-closed hidden base for the modal independent of the sibling combinator; recapture modal dark+light."
-  - "Inset/separate the light per-lane rails so no stacked/proportional read is possible; keep lane columns truthful; no population-width encoding."
-  - "Breadth measure: achromatic measurement treatment with comparable semantic authority in dark and light; 100% reads as a measure."
-  - "Evidence: wait out the transient .sky-fx theme-toggle animation before capture; recapture changed modal/lane/breadth states; add the missing filtered/pill/empty and Table-view cells. No unrelated estate repairs."
-  - "Mint a new frozen SHA for the repaired artifact and rerun both independent RIG critics (fresh, rationale-quarantined, two-pass) against it; these receipts become historical evidence; successor cycle satisfies RIG V1.1 continuity law."
-  - "PRC-005 (loader stall timeout) and PRC-007 (bare global) are nonblocking named debt for the estate/census follow-up; do not broaden the product repair for them."
+  - id: COND-01
+    text: "Repair sibling-modal reachability for .ca-v36-stance and .ca-v36-lead-basis; add a fail-closed hidden base for the modal independent of the sibling combinator; recapture modal dark+light."
+  - id: COND-02
+    text: "Inset/separate the light per-lane rails so no stacked/proportional read is possible; keep lane columns truthful; no population-width encoding."
+  - id: COND-03
+    text: "Breadth measure: achromatic measurement treatment with comparable semantic authority in dark and light; 100% reads as a measure."
+  - id: COND-04
+    text: "Evidence: wait out the transient .sky-fx theme-toggle animation before capture; recapture changed modal/lane/breadth states; add the missing filtered/pill/empty and Table-view cells. No unrelated estate repairs."
+  - id: COND-05
+    text: "Mint a new frozen SHA for the repaired artifact and rerun both independent RIG critics (fresh, rationale-quarantined, two-pass) against it; these receipts become historical evidence; successor cycle satisfies RIG V1.1 continuity law."
+  - id: COND-06
+    text: "PRC-005 (loader stall timeout) and PRC-007 (bare global) are nonblocking named debt for the estate/census follow-up; do not broaden the product repair for them."
 preserved_strengths:
   - "Light art direction is a genuine second design (both critics, upheld through pass 2)."
   - "Dark preserved with declared deltas that held under adversarial pixel measurement (including the falsification of the 'hairline dimming' claim as radius-snap antialias)."

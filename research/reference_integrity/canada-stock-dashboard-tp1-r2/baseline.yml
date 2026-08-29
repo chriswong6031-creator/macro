@@ -1,0 +1,140 @@
+# Production Baseline Manifest (RIG V1 §4/§5) — Canada Stocks V3.8, the surface
+# TP-1 replaced. CHRONOLOGY NOTE (truthful, per the Sol ruling on carrier
+# theme-parity-tp1-canada-20260828-sol-001): this RIG set is a POST-DEPLOY
+# governance repair. The baseline below is the pre-TP-1 production state
+# (main c819f6428f91), captured with the same harness/viewport as the proposal
+# shots ON 2026-08-28, before the TP-1 implementation bytes were authored —
+# the capture preceded the design work; this RIG record of it did not.
+schema: mastermind.rig_baseline.v1
+reference_id: canada-stock-dashboard-tp1-r2
+captured_at: "2026-08-28"
+
+production:
+  route: canada_stocks.html
+  live_url: https://www.mastermind-x.com/canada_stocks.html
+  source_commit: c819f6428f91f506d719fd2690a06c0eef6341fb
+  source_paths:
+    - site/canada-stock-v36.js        # composer incl. the runtime injectCss() stylesheet
+    - templates/dashboard-icons.js    # entitled composer loader (paired site copy)
+    - site/canada_stocks.html         # legacy page shell the composer recomposes
+    - scripts/build_canada.py         # page builder
+    - templates/canada.html.j2        # page template
+  shared_surfaces:
+    - hk.html                          # sibling composer family (site/hk-stock-v36.js), untouched by TP-1
+
+evidence:
+  screenshots:
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r2/baseline-dark-en-1440.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/canada-stock-dashboard-tp1-r2/baseline-light-en-1440.png, viewport: desktop, theme: light, locale: en}
+  gaps:
+    - {axis: locale, value: zh, reason: "baseline captured dark+light EN desktop only; ZH baseline exists as the V3.8 production acceptance record's screenshots, not as harness cells in this checkout"}
+    - {axis: viewport, value: mobile, reason: "no 390 baseline harness cell; V3.8's 390 grammar is pinned by its acceptance record and tests"}
+    - {axis: access, value: entitled, reason: "baseline cells captured anonymously from committed bytes; entitled behavior pinned by the V3.8 production acceptance (research/STOCK_DASHBOARD_V38_CANADA_ACCEPTANCE_2026-08-27.md)"}
+
+user_job: >
+  A Mastermind subscriber opens the Canada board to see, in seconds, which
+  Canadian groups to act on now, which Prophet candidates are closest to a buy,
+  and who is leading rotation — then drills into research routes or the
+  Terminal.
+
+core_interactions:
+  - Scan the four What-to-Act-On-Now lanes (Buy Now / In Favour / Bottoming Watch / Reduce-Avoid) and open a group's sector research route
+  - Switch Prophet between Top Picks and All Candidates; switch Grid and Table views (mutually exclusive)
+  - Filter the Prophet population by an actionable sector or theme; read the honest "N shown · M on board" count
+  - Read LIVE quote cells and the Board-vintage vs LIVE date chips
+  - Expand the Leadership modal for the full themes-only ranking
+  - Follow Track Record and Terminal routes; toggle theme and language
+
+information_hierarchy:
+  - Page head with Board date and LIVE date chips
+  - What to Act On Now — four semantic lanes with per-group membership counts
+  - Prophet — ranked candidate cards (Top Picks projection) or quote table
+  - Leadership & Rotation — owner theme ranking with action stances
+  - Evidence & Record — track record chip; research tool links
+
+design_lineage:
+  rulings:
+    - ref: "research/STOCK_DASHBOARD_V38_CANADA_ACCEPTANCE_2026-08-27.md"
+      evidence: "PR #6545, squash 1276333b37b9 — PROVEN_LIVE 2026-08-27"
+      implication: "every capability below is production-accepted V3.8 behavior; the presentation repair may not alter product semantics"
+    - ref: "DEC:V38-ACTION-IS-NOT-LEADERSHIP"
+      evidence: "research/STOCK_DASHBOARD_V38_ACTION_LEADERSHIP_ARCHITECTURE.md §8.2"
+      implication: "action timing and leadership are separate axes; no presentation-owned rank anywhere"
+    - ref: "operator #3821 falsifier-language ruling"
+      evidence: "docs/DESIGN_DOCTRINE.md / CLAUDE.md house laws"
+      implication: "no refutation vocabulary on user surfaces"
+    - ref: "zh 红涨绿跌 convention with Canada exception"
+      evidence: "V3.8 acceptance: Canada quote colors remain Western green-up/red-down under ZH"
+      implication: "quote direction inks bind to --ok/--act (never flip); stance hues are separate"
+  rejected_variants:
+    - "sector rank minted from lane-traversal position (removed in V3.8 as presentation-owned rank)"
+    - "global membership flag marking every lane group known (removed in V3.8 — false zeros)"
+  comments:
+    - path: "site/canada-stock-v36.js (V3.8, c819f6428f91)"
+      note: "composer carries its whole stylesheet as a runtime injectCss() string — the governance escape hatch TP-1 exists to remove"
+
+capabilities:
+  - id: actnow.four_lane_map
+    user_job: see at rest which groups to buy / favour / watch / reduce, ≤3 rows per lane with View-all
+    evidence: "V3.8 acceptance production matrix rows 'Mount + §4 order', 'Act-Now lanes'"
+    importance: core
+  - id: actnow.per_group_membership
+    user_job: trust that group counts are real (N · Prophet only when membership is known; out-of-vocabulary groups become research routes, never false zeros)
+    evidence: "V3.8 acceptance 'Per-group membership' — missing ≠ zero"
+    importance: core
+  - id: actnow.research_routes
+    user_job: jump from any lane row to the group's sector research page
+    evidence: "V3.8 acceptance — 9 route links live"
+    importance: core
+  - id: prophet.top_picks_projection
+    user_job: see the first-five accepted Top Picks; switch to All Candidates without changing the population
+    evidence: "V3.8 acceptance 'Sector filter → Prophet' + frozen first-five projection"
+    importance: core
+  - id: prophet.grid_table_xor
+    user_job: switch card grid and quote table views, exactly one visible
+    evidence: "V3.8 acceptance 'Grid/Table XOR exact'"
+    importance: core
+  - id: prophet.population_filters
+    user_job: filter by actionable sector/theme with the population preserved and an honest "N shown · M on board" count; honest filter-miss state
+    evidence: "V3.8 acceptance 'Sector filter' / 'Theme filter'"
+    importance: core
+  - id: prophet.live_quotes
+    user_job: read LIVE price/change cells in cards and table; Western green-up/red-down even under ZH
+    evidence: "V3.8 acceptance 'LIVE / clocks'; .nb-chg.up/.down → --ok/--act"
+    importance: core
+  - id: leadership.themes_only_rank
+    user_job: read owner theme ranks (Theme #N) with visible basis and separate action stance; no sector rank anywhere
+    evidence: "V3.8 acceptance 'Leadership themes-only'"
+    importance: core
+  - id: leadership.expand_modal
+    user_job: open the full themes-only leadership table as an overlay dialog and close it
+    evidence: "V3.8 acceptance 'Modal' row — PASS as an overlay"
+    importance: core
+  - id: clocks.board_vs_live
+    user_job: distinguish the board's data vintage from the LIVE quote date
+    evidence: "V3.8 acceptance 'LIVE / clocks' — two chips"
+    importance: core
+  - id: record.track_record
+    user_job: reach the track-record evidence chip in Evidence & Record
+    evidence: "V3.8 acceptance 'Evidence & Record'"
+    importance: supporting
+  - id: nav.terminal_routes
+    user_job: open tickers in the Terminal from the board
+    evidence: "V3.8 frozen surface — Terminal routes byte-identical"
+    importance: supporting
+  - id: platform.two_fetch_degrade
+    user_job: board renders from the two canadabasketdata artifacts and degrades gracefully (2.5s) when one is slow
+    evidence: "V3.8 frozen surface — two fetches + degrade"
+    importance: core
+  - id: platform.fail_soft_legacy
+    user_job: if the composer cannot run, the legacy page stays visible and functional (never a blank surface)
+    evidence: "V3.8 loader contract; TP-1 extends it to the stylesheet dependency"
+    importance: core
+  - id: platform.theme_lang
+    user_job: use the full board in dark/light and EN/ZH, mobile 390 one-lane grammar included
+    evidence: "V3.8 acceptance 'Dark + light, EN + ZH' + 390 row"
+    importance: core
+  - id: platform.sm_hidden_rescue
+    user_job: card badges hidden by the site-wide .sm-hidden rule are rescued inside the Canada grid
+    evidence: "V3.8 required visibility overrides (.sm-hidden display:flex)"
+    importance: supporting
