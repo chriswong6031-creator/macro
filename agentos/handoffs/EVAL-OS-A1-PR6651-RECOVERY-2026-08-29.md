@@ -1,256 +1,120 @@
 ---
-workstream: WS:EVAL-OS-EVIDENCE-VIEW
-session: pending-placement
-model: Opus preferred
-ended_because: not_started
+workstream: "WS:EVAL-OS-EVIDENCE-VIEW"
+session: sol/eval-os-dark-worker-recovery-20260829
+model: sol
+ended_because: blocked
 mission: >
   Recover the existing A1 implementation on its sole PR #6651 after the prior started runtime became
   continuity-unrecoverable: re-pin current truth, adopt the preserved exact remote candidate rather
   than rebuilding it, repair only the A1-introduced deploy-closure blocker if still present, obtain
   current exact-head CI and independent review, then return for Sol-controlled production proof.
 state_before: >
-  Prior A1 child terminally stopped for RuntimeBinding generation loss. Repository effect is APPLIED
+  Prior A1 child is terminally stopped for RuntimeBinding generation loss. Repository effect is APPLIED
   and preserved at PR #6651 head b1651b800c2d97992464d4a4be8eafce05290e67. PR remains DRAFT/HOLD,
-  unmerged and undeployed. A1 remains BUILT_NOT_PROVEN.
-changed: []
+  unmerged and undeployed. A1 remains BUILT_NOT_PROVEN. Fresh recovery child is waiting for a concrete
+  eligible Opus-capable Claude placement.
+changed:
+  - path: agentos/handoffs/EVAL-OS-A1-PR6651-RECOVERY-2026-08-29.md
+    what: "Created the fresh bounded A1 recovery packet while preserving PR #6651 as the sole implementation carrier."
 verified:
-  - "Protected Skillpack at recovery freeze: Mastermind@c924b37188df2437057b5fd7bfc00ce0db91a1f1, v1.0.1/bootstrap 1."
-  - "Macro recovery base: b2c82f52b73871ce73955ff58399d4b53a0d621e."
-  - "PR #6651 exact preserved head: b1651b800c2d97992464d4a4be8eafce05290e67, OPEN + DRAFT/HOLD, 10 paths."
-  - "Contract-delta repair is already banked on that head."
-  - "A1-introduced hosted red: biocatalyst-deploy-integration via expanded admin load-time import closure."
-  - "Inherited current-main reds have their own external repair carrier #6662 and are not A1 scope."
+  - claim: "PR #6651 remains the preserved A1 implementation carrier at exact head b1651b800c2d97992464d4a4be8eafce05290e67."
+    command: "GitHub get PR #6651 metadata and exact head before recovery freeze."
+    result: "PASS — OPEN + DRAFT/HOLD, unmerged, exact head b1651b800c2d97992464d4a4be8eafce05290e67."
+  - claim: "The old A1 child has an explicit terminal Sol STOP and its known repository effect is APPLIED rather than EFFECT_UNKNOWN."
+    command: "Read Slack C0BSBM78V1N thread 1787971248.615479 through terminal Sol edge 1788024599.319629 and reconcile PR #6651."
+    result: "PASS — child terminal; PR effect preserved."
+  - claim: "Current recovery routing requires a fresh child and exact-thread watcher before START."
+    command: "Read current protected Mastermind Skillpack WORKER_AVENUE_ROUTING.md, COMMISSION_WAVE.md and AGENT_DIALOGUE_SESSION_CLOSE_LAW.md."
+    result: "PASS."
 unverified:
-  - "Whether A1's introduced deploy-closure failure remains on a fresh current-base execution after external main repair settles."
-  - "Final exact-head hosted CI, independent final review, merge/deploy state, authenticated production proof."
+  - claim: "Whether A1's introduced deploy-closure failure remains on a fresh current-base execution after foreign main repair settles."
+    what_would_verify: "Fresh current-main merge-context reproduction on PR #6651 by the lawfully assigned recovery worker."
+  - claim: "Final exact-head hosted CI, independent final review, merge/deploy state and authenticated production proof."
+    what_would_verify: "Recovery worker return plus separate Sol-controlled merge/deploy and authenticated admin proof."
 unresolved:
   - "Smallest correct repair for the A1-introduced deploy/runtime closure if it remains reproducible."
 next_actions:
-  - "Await lawful concrete Opus-capable Claude placement, then DIRECT_TARGETED handoff on one new Slack parent."
-  - "Worker must ACK, arm exact-thread watcher, emit WATCH_ARMED, then START only after fresh pins/collision checks."
+  - "Await lawful concrete Opus-capable Claude placement, then Sol sends a DIRECT_TARGETED assignment on one fresh Slack parent."
+  - "Assigned worker must PICKUP_ACK with actual identity, reread current law/thread, actually arm an exact-thread watcher and emit WATCH_ARMED before separate START."
+  - "Continue only PR #6651; return an immutable reviewed candidate to Sol without merge/deploy."
 do_not_redo:
   - "Do not create a sibling A1 PR or rebuild the feature from scratch."
-  - "Do not re-wake/rebind the old Codex runtime or any Codex CTO."
-  - "Do not repair inherited Caddy/import-hygiene reds inside A1."
-  - "Do not merge/deploy/mark Ready without Sol release after exact-head review."
+  - "Do not re-wake or rebind the old Codex runtime or any Codex CTO."
+  - "Do not repair inherited Caddy/import-hygiene reds inside A1; #6662/foreign current-main ownership remains external."
+  - "Do not merge, deploy or mark Ready without a separate Sol release after exact-head review."
 danger_areas:
-  - "The existing PR changes Agent OS state too; current-main and candidate organizational truth must be reconciled without opening a second WS authority."
   - "Admin import fixes must not solve CI by creating a duplicate evaluator/store or weakening production dependency checks."
+  - "Current-main organizational projection may lag the preserved candidate; reconcile rather than creating a second workstream authority."
 ---
 
-# Operation
+# Eval OS A1 PR #6651 recovery
 
-`eval-os-a1-pr6651-recovery-20260829-sol-001`
+**Fresh operation:** `eval-os-a1-pr6651-recovery-20260829-sol-001`  
+**Preferred avenue:** `Opus`  
+**Receiver binding:** `CAPACITY_SELECTABLE`  
+**Placement state:** `WAITING_CAPACITY / needs_placement`  
+**Why not Fable:** architecture, authority and no-rebuild boundaries are already frozen; this is difficult but bounded exact-PR debugging/review work.  
+**Codex:** prohibited for this recovery; do not re-wake any prior Codex runtime/CTO.
 
-This is a fresh child under the existing Eval OS parent. The prior child
+This is a fresh child under the existing Eval OS parent. The prior operation
 `eval-os-a1-evidence-view-20260828-sol-001` is terminal for runtime-continuity loss. Its GitHub effect
-is known and preserved; this child is a fresh runtime taking over the **same canonical PR carrier**
-after explicit Sol reconciliation, not a hidden failover inside the old Attempt.
-
-## Placement / receiver state
-
-```text
-PREFERRED_AVENUE: Opus
-WHY: difficult but bounded exact-PR recovery, dependency-closure debugging, current-base CI adjudication, independent review and production-proof preparation
-WHY NOT FABLE: the product/authority/no-rebuild architecture is already frozen; no sustained cross-repo principal ambiguity remains
-RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
-PLACEMENT_STATE: WAITING_CAPACITY / needs_placement
-```
-
-This durable packet is **not an unbound worker commission**. Grok Secretary may coordinate capacity
-and nominate an eligible Opus-capable Claude session. Sol performs the direct-targeted assignment only
-after a concrete receiver is resolved.
+is known and preserved. This child may take over the same canonical PR carrier only after a fresh
+lawful receiver assignment; it is not continuation of the old runtime.
 
 ## Observable mission
 
-PR #6651 becomes a current-main-reconciled, exact-head-reviewed A1 candidate whose A1-introduced
-hosted failures are closed, while inherited foreign-plane reds remain with their own owner. The worker
-returns an immutable candidate and proof packet to Sol; it does not merge, deploy or call A1 live.
+Make PR #6651 a current-main-reconciled, exact-head-reviewed A1 candidate with every A1-introduced
+hosted failure closed, while leaving inherited foreign-plane reds with their existing owner. Return
+an immutable candidate and proof packet to Sol. The worker does not merge, deploy or declare A1 live.
 
-## Why it matters
+## Frozen carrier and boundaries
 
-H1 proved the underlying Intelligence OS health surface. A1 adds the human answer layer required by
-Eval OS: per-engine `Validated / Accruing / Ungraded by design / Degraded / Disproven` plus the CEO
-view, while preserving legal rulers/bases and empty/null states. Throwing away the existing 2,273-line
-candidate because its runtime died would waste evidence and invite a duplicate implementation.
-Continuing the dead runtime would violate RuntimeBinding law. This recovery preserves the product and
-the control plane.
+- Sole implementation carrier: Macro PR #6651 / branch `claude/eval-os-a1-evidence-view-20260828`.
+- Preserved pickup head at recovery freeze: `b1651b800c2d97992464d4a4be8eafce05290e67`.
+- Existing candidate is a deterministic derived evidence view over T1/T4 and canonical owner evidence.
+- No persisted score/evidence store, second registry, health store, promotion service, qledger copy,
+  second admin product, queue or router may be introduced.
+- `Validated` may be empty; null `output_class` stays null; illegal/mixed bases never pool; model
+  output has zero evidence or promotion authority.
+- The known A1-introduced hosted red was `biocatalyst-deploy-integration` via expanded admin load-time
+  import closure. Reproduce it on the fresh current merge context before changing anything.
+- Inherited Caddy and Linear-planner/import-hygiene reds are foreign current-main ownership and must
+  not be repaired in this child. Do not absorb #6662 or any successor foreign repair.
 
-## Authority / precedence
+## Required startup protocol
 
-1. Current live Chairman continuation intent for Intelligence Evaluation OS.
-2. CURRENT protected Mastermind Skillpack at pickup.
-3. `research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md`.
-4. `agentos/decisions/DEC-EVAL-OS-DARK-WORKER-RECOVERY-2026-08-29.md`.
-5. `agentos/workstreams/WS-EVAL-OS-EVIDENCE-VIEW.md` as organizational parent, reconciled against the
-   current PR rather than blindly trusting its stale main-branch `todo` projection.
-6. PR #6651 exact remote content and current GitHub CI/evidence.
-7. H1/T1 owner contracts.
+THIS DURABLE FILE IS SCOPE, NOT RECEIVER ASSIGNMENT. After Sol deliberately delivers the commission
+to a concrete eligible Claude session, that delivery is the assignment edge.
 
-If a newer accepted source changes these boundaries, or another PR begins changing the same A1 paths,
-stop and return `DECISION_REQUEST`; do not reset/rebase over concurrent work.
+1. Post `PICKUP_ACK eval-os-a1-pr6651-recovery-20260829-sol-001` on the new exact Slack parent using
+   the actual receiver identity.
+2. Reread the complete exact Slack thread, CURRENT protected Mastermind Skillpack, current Macro main,
+   this file and PR #6651.
+3. **Actually arm a watcher on that exact Slack thread and emit truthful `WATCH_ARMED` before START.**
+   If the tool-first watcher setup cannot succeed, return `WATCH_UNAVAILABLE`; no watcher means no START.
+4. Perform current-main/open-PR/path collision census and verify #6651 remains the one carrier.
+5. Emit a separate `START eval-os-a1-pr6651-recovery-20260829-sol-001` only when the gates are clear.
 
-## Verified current state
+## Execution and proof
 
-Recovery-base facts:
+Reproduce the A1-introduced deploy/import-closure failure on the current merge context. If still real,
+add a discriminating RED regression and make the smallest GREEN repair. Prefer reducing an accidental
+A1 import closure over widening deployment dependencies when that preserves product behavior; if an
+existing deploy contract truly must expand, prove that before touching it. Do not refactor CI or
+repair foreign failures.
 
-- PR #6651: OPEN, DRAFT/HOLD, unmerged, undeployed.
-- Exact preserved head: `b1651b800c2d97992464d4a4be8eafce05290e67`.
-- Exactly 10 changed paths:
-  - `.github/ci/legacy-jobs.yml`
-  - `admin/evidence_status.py`
-  - `admin/intelligence_os.py`
-  - `admin/static/app.js`
-  - `admin/static/styles.css`
-  - `agentos/workstreams/WS-EVAL-OS-EVIDENCE-VIEW.md`
-  - `research/EVAL_OS_A1_EVIDENCE_PROVIDER_MAPPING_2026-08-28.md`
-  - `scripts/build_intelligence_registry.py`
-  - `tests/test_admin_intelligence_os.py`
-  - `tests/test_admin_intelligence_os_ui.py`
-- The candidate implements a deterministic derived evidence view; no persisted evidence-score store
-  was claimed.
-- Focused/local evidence previously included 69 A1 tests, a broader owning command with 377 passes,
-  contract/planner regressions, JS syntax and diff checks.
-- Contract-delta was red before CI-owner repair and green after the `.github/ci/legacy-jobs.yml`
-  amendment.
-- Hosted matrix still identified one **A1-introduced** red: `biocatalyst-deploy-integration`, caused
-  by the candidate's new admin import closure reaching qledger/master_brain/desk/calendar dependencies
-  not covered by `app/deploy/update.sh`'s deployed dependency assumptions.
-- The other then-visible reds were foreign current-main Caddy topology and
-  `scripts/linear_initiative_plan.py` import hygiene. They are owned externally by main-red repair
-  carrier #6662 and must not be absorbed into A1.
-- Current protected RuntimeBinding owner could not recover an ABA-safe generation for the old started
-  runtime; the old child has been terminally stopped. No old Codex runtime may continue this child.
+Run the focused A1/admin tests, owning CI/contract tests, JS/diff checks, and complete hosted exact-head
+matrix. Obtain independent exact-head review from a different worker/model where required. Preserve
+DRAFT/HOLD. Return `RESULT / HOLD-FOR-SOL` with exact head, base/current-main relation, changed files,
+A1-introduced versus inherited CI attribution, test receipts, independent review, remaining production
+gate and watcher state.
 
-## Exact scope
+## Program-level completion remains outside worker scope
 
-The single implementation carrier remains **PR #6651 / branch
-`claude/eval-os-a1-evidence-view-20260828`**. Do not create a new branch/PR merely to change workers.
+A1 becomes `PROVEN_LIVE` only after separate Sol-controlled merge/deploy and authenticated
+`admin.mastermind-x.com` API/UI proof covering empty/null/degraded/incomplete states, lawful
+mixed-basis refusal, negative proof of no persisted score store, no new promotion authority, and
+durable Agent OS/Linear reconciliation. Green CI alone is not completion.
 
-Primary expected A1 surfaces are the existing 10 paths plus only the minimum already-existing deploy
-or import boundary proven necessary to close an A1-introduced blocker. A repair touching
-`app/deploy/update.sh` or another existing deployment contract is permitted only after the worker
-reproduces the introduced failure against the fresh current-base merge and proves that changing the
-A1 import shape alone is not the safer correction. Any added path must be explicitly justified to Sol.
-
-## Explicit non-goals
-
-- no second evidence score database/store/artifact;
-- no second engine registry;
-- no new health monitor/store;
-- no promotion authority, readiness authority or qledger copy;
-- no second admin product/page architecture;
-- no E1 measurement repair inside A1;
-- no inherited Caddy/main-red or Linear-planner repair;
-- no unrelated BioCatalyst behavior change merely because its integration test exposed the closure;
-- no Ready/merge/auto-merge/deploy/production mutation;
-- no Codex/CTO runtime recovery or re-wake.
-
-## Complete operator journey
-
-```text
-fresh protected law + current main
--> verify old child terminal + PR #6651 immutable pickup
--> current-main/path/source collision census
--> reconstruct exact A1 introduced CI failure on current merge context
--> preserve T1/T4/qledger owner boundaries
--> smallest A1 repair if still required
--> exact-head focused tests + hosted matrix
--> independent exact-head review
--> return immutable candidate to Sol
--> Sol separately adjudicates merge/release
--> after merge/deploy, separate authenticated admin.mastermind-x.com proof
-```
-
-The worker does not perform the final release simply because CI turns green.
-
-## Data / contract / null / correction law
-
-- Every T1 engine receives exactly one derived evidence disposition from existing canonical evidence,
-  never a stored score.
-- Allowed high-level dispositions remain `Validated`, `Accruing`, `Ungraded by design`, `Degraded`,
-  `Disproven` under the frozen contract.
-- `Validated` may be empty.
-- Null `output_class` stays null; no engine-name inference.
-- T4 health is context/evidence, not performance authority.
-- qledger bases that cannot legally pool may display separately but never collapse into one statistic.
-- qledger readiness is advisory; existing qual-ladder/species/prereg/gauntlet owners retain authority.
-- Model output has zero evidence/promotion authority.
-- Correction means recompute the derived view from canonical sources; never patch a stored score.
-
-## Method law
-
-Evidence categorization and CEO bands are deterministic derived logic. No LLM/model decides an engine's
-evidence tier or promotion legality. The worker may use model reasoning to debug/review code, but the
-product output stays mechanical and source-linked.
-
-## Failure states
-
-- stale current-main/base;
-- overlapping A1 PR/path ownership;
-- A1-introduced import/deploy closure;
-- inherited foreign CI red;
-- mixed-basis pooling attempt;
-- missing/null output_class;
-- evidence provider unavailable/could_not_look;
-- empty validated/disproven sets;
-- missing production admin auth;
-- persisted evidence-score artifact detected;
-- worker watcher/session loss.
-
-Each is distinct; never hide an inherited red by editing foreign owner code.
-
-## Ordered execution
-
-1. `PICKUP_ACK` on the exact direct-targeted Slack parent with actual receiver identity.
-2. Re-pin current protected Skillpack/current Macro main and reread this packet + full carrier.
-3. **MUST arm an actual watcher on that exact Slack thread and emit truthful `WATCH_ARMED` before
-   START.** If watcher setup fails after the required tool-first checks, return `WATCH_UNAVAILABLE` and
-   do not START silently.
-4. Fresh collision census: PR #6651 exact head/files/state, current main, #6662 status, and all A1
-   candidate paths plus any dependency/deploy path implicated by the known red.
-5. Verify the old A1 child is terminal; do not inherit its runtime/session identity.
-6. Emit separate `START` only after the fresh gates are clear.
-7. Reproduce the A1-introduced deploy-closure failure on the current merge context. Distinguish it
-   from inherited reds.
-8. RED-first discriminating regression where absent -> smallest GREEN repair. Prefer reducing an
-   accidental A1 import closure over widening deployment dependencies when that preserves the product
-   contract; if not, prove why the deployment contract itself must change.
-9. Run focused A1 tests, the owning admin/CI contract tests, JS/diff checks and full hosted matrix on
-   the exact candidate.
-10. Do not touch inherited reds. If #6662 is still external/pending, report that state separately;
-    after it lands, reconcile the same #6651 carrier to current main rather than opening a sibling.
-11. Obtain independent exact-head review by a different worker/model where current review law requires
-    it; reviewer receives no merge authority.
-12. Return `RESULT / HOLD-FOR-SOL` with immutable head, diff, CI classification and review receipt;
-    re-arm watcher after every nonterminal return.
-
-## Acceptance / real proof
-
-Worker-side candidate acceptance requires:
-
-- exact current head and changed-file census bounded;
-- no A1-introduced hosted failures;
-- inherited current-main failures separately owned/adjudicated rather than repaired here;
-- discriminating tests for the deploy/import closure;
-- no duplicate authority/store/control plane;
-- independent exact-head review clean;
-- PR remains DRAFT/HOLD until Sol release.
-
-Program-level A1 `PROVEN_LIVE` additionally requires **after Sol-controlled merge/deploy**:
-
-- real authenticated `admin.mastermind-x.com` API/UI proof;
-- empty/null/degraded/incomplete evidence states visible honestly;
-- mixed-basis refusal visible/verified;
-- negative proof of no persisted score store;
-- no new promotion authority;
-- durable Agent OS/Linear reconciliation.
-
-Green CI alone is never A1 completion.
-
-## Stop condition / continuation
-
-Stop at the immutable reviewed A1 candidate and return it to Sol. Do not merge or deploy. Return exact
-head, base/current-main relationship, changed files, exact A1-introduced-vs-inherited CI disposition,
-focused/full test receipts, independent review, remaining production gate and watcher state.
-Only explicit Sol STOP closes this child.
+Only explicit Sol STOP closes this fresh child. Every nonterminal return must leave the exact-thread
+watcher armed/re-armed.
