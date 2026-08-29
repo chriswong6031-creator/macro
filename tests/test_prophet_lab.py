@@ -63,6 +63,7 @@ from engine.entry_radar.live_ledger import (
 )
 from engine.prophet_lab import LabRoots, build_lab_response
 from engine.prophet_lab import boards as boards_mod
+from engine.prophet_lab import intelligence_vector as intelligence_vector_mod
 from engine.prophet_lab import observation as obs_mod
 from engine.prophet_lab import sources as sources_mod
 from engine.prophet_lab.contracts import (
@@ -1536,12 +1537,20 @@ def _d5_workspace(*, secret: bool = False) -> dict:
             "unit": "USD",
             "period": "2026Q3",
             "basis": "reported",
-            "source_span": {"text": "RAW FACT SPAN MUST NOT LEAK"},
+            "source_span": {
+                "document_id": "doc:issuer-release:1",
+                "text": "RAW FACT SPAN MUST NOT LEAK",
+            },
         }],
         "deltas": [{
             "schema": "metric_delta.v1",
             "metric": "revenue",
-            "current": {"value": 109_417_000_000, "unit": "USD", "basis": "reported"},
+            "current": {
+                "value": 109_417_000_000,
+                "unit": "USD",
+                "basis": "reported",
+                "source_span": {"document_id": "doc:issuer-release:1"},
+            },
             "prior": {"state": "absent", "reason": "not_available"},
             "consensus": {"state": "absent", "reason": "consensus_unlicensed"},
             "basis_match": False,
@@ -1550,10 +1559,13 @@ def _d5_workspace(*, secret: bool = False) -> dict:
             "metric": "revenue_yoy_pct",
             "low": 9.0,
             "high": 11.0,
-            "unit": "pct",
-            "horizon": "2026Q4",
-            "status": "issued",
-            "source_span": {"text": "RAW GUIDANCE SPAN MUST NOT LEAK"},
+            "unit": "percent",
+            "horizon": "FY2026 Q4",
+            "status": "introduced",
+            "source_span": {
+                "document_id": "tx:AAPL/2026Q3",
+                "text": "RAW GUIDANCE SPAN MUST NOT LEAK",
+            },
         }],
         "claims": ([{
             "body": "PRIVATE TRANSCRIPT CLAIM MUST NOT LEAK",
@@ -1567,7 +1579,7 @@ def _d5_workspace(*, secret: bool = False) -> dict:
             "receipt_state": "byte_replayed",
         }, {
             "kind": "transcript",
-            "document_id": "doc:transcript:1",
+            "document_id": "tx:AAPL/2026Q3",
             "source_sha256": "d" * 64,
             "body": "RAW TRANSCRIPT BODY MUST NOT LEAK",
             "private_path": "/private/transcript.json",
@@ -1609,6 +1621,48 @@ def _build_d5(**overrides) -> dict:
     }
     kwargs.update(overrides)
     return build_earnings_intelligence_vector(**kwargs)
+
+
+def _readdress_d5(payload: dict) -> dict:
+    """Recompute D5 content IDs after a hostile semantic mutation."""
+    family = payload["evidence_families"][0]
+    changed_observation_ids: dict[str, str] = {}
+    for observation in family["observations"]:
+        old_id = observation["observation_id"]
+        semantic = {
+            key: deepcopy(value)
+            for key, value in observation.items()
+            if key != "observation_id"
+        }
+        observation["observation_id"] = intelligence_vector_mod._content_id("obs", semantic)
+        changed_observation_ids[old_id] = observation["observation_id"]
+    for group in payload["economic_dependence_groups"]:
+        group["member_observation_refs"] = sorted(
+            changed_observation_ids.get(ref, ref)
+            for ref in group["member_observation_refs"]
+        )
+    for dimension in family["trajectory"]["dimensions"]:
+        dimension["reference_observation_ids"] = sorted(
+            changed_observation_ids.get(ref, ref)
+            for ref in dimension["reference_observation_ids"]
+        )
+    family_semantic = {
+        key: deepcopy(value)
+        for key, value in family.items()
+        if key != "family_projection_id"
+    }
+    family["family_projection_id"] = intelligence_vector_mod._content_id("pif", family_semantic)
+    payload["semantic_heads"] = [{
+        "semantic_head_id": family["semantic_head_ids"][0],
+        "family_projection_ids": [family["family_projection_id"]],
+    }]
+    envelope_semantic = {
+        key: deepcopy(value)
+        for key, value in payload.items()
+        if key not in {"projection_id", "assembly_receipt"}
+    }
+    payload["projection_id"] = intelligence_vector_mod._content_id("piv", envelope_semantic)
+    return payload
 
 
 def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritative() -> None:
@@ -1655,7 +1709,7 @@ def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritativ
         "owner_ref", "subject_binding", "semantic_head_ids", "method_version",
         "point_in_time", "applicability", "coverage", "freshness", "rights",
         "identity_state", "quality", "source_refs", "evidence_roots",
-        "observations", "trajectory", "correction", "calibration",
+        "observations", "explanation_facts", "trajectory", "correction", "calibration",
         "fusion_bindings", "authority", "owner_warnings",
     }
     assert family["evidence_family_id"] == "earnings.event"
@@ -1666,13 +1720,21 @@ def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritativ
     assert family["authority"] == payload["authority"]
     assert family["owner_warnings"] == ["consensus_unlicensed"]
     assert {o["native_metric_id"] for o in family["observations"]} == {
-        "fact:revenue", "delta:revenue", "guidance:revenue_yoy_pct",
+        "fact:revenue", "guidance:revenue_yoy_pct",
     }
+    assert family["explanation_facts"] == []
+    assert family["trajectory"]["state"] == "PARTIAL"
+    assert family["trajectory"]["dimensions"][0]["value"]["basis_match"] is False
     assert all(o["value_state"] == "PRESENT" for o in family["observations"])
     assert all(o["method_class"] == "ADAPTER_MECHANICAL_PROJECTION" for o in family["observations"])
     assert all(o["absence_reasons"] == [] for o in family["observations"])
     assert family["correction"]["state_at_decision"] == "NONE"
     assert family["correction"]["current_state"] == "CURRENT"
+    assert family["point_in_time"]["basis"] == "SOURCE_VINTAGE"
+    assert family["point_in_time"]["captured_at"]["state"] == "NOT_ASSERTED"
+    assert family["freshness"] == {
+        "state": "UNKNOWN", "basis": "owner_has_no_staleness_clock",
+    }
     assert len(payload["economic_dependence_groups"]) == 1
     group = payload["economic_dependence_groups"][0]
     assert group["relation"] == "COMMON_INFORMATION_ORIGIN"
@@ -1756,6 +1818,246 @@ def test_projection_never_copies_raw_workspace_claim_body_span_url_or_private_pa
         "/private/transcript.json",
     ):
         assert secret not in serialized
+
+
+def test_earnings_allowlist_ignores_score_text_and_out_of_bounds_owner_fields() -> None:
+    workspace = _d5_workspace()
+    workspace["facts"].extend([
+        {
+            "metric": "opportunity_score", "value": 7, "unit": "points",
+            "source_span": {"document_id": "doc:issuer-release:1"},
+        },
+        {
+            "metric": "management_comment", "value": "DUMMY_RAW_MANAGEMENT_COMMENT",
+            "unit": None, "source_span": {"document_id": "doc:issuer-release:1"},
+        },
+        {
+            "metric": "revenue", "value": 10**18, "unit": "USD",
+            "source_span": {"document_id": "doc:issuer-release:1"},
+        },
+    ])
+    family = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )["evidence_families"][0]
+    assert [item["native_metric_id"] for item in family["observations"]] == [
+        "fact:revenue", "guidance:revenue_yoy_pct",
+    ]
+    assert "DUMMY_RAW_MANAGEMENT_COMMENT" not in json.dumps(family, sort_keys=True)
+
+
+@pytest.mark.parametrize("value", [-1, 10**18, "109417000000"])
+def test_validator_rejects_revenue_values_outside_closed_numeric_contract(value) -> None:
+    payload = _build_d5()
+    fact = next(
+        item for item in payload["evidence_families"][0]["observations"]
+        if item["native_metric_id"] == "fact:revenue"
+    )
+    fact["value"] = value
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="metric|value|bound"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_unknown_metric_even_after_content_readdress() -> None:
+    payload = _build_d5()
+    fact = next(
+        item for item in payload["evidence_families"][0]["observations"]
+        if item["native_metric_id"] == "fact:revenue"
+    )
+    fact["native_metric_id"] = "fact:opportunity_score"
+    fact["value"] = 7
+    fact["units"] = "points"
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="metric|allowlist"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_free_prose_explanation_fact() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["explanation_facts"] = [{
+        "text": "DUMMY_GENERATED_SUMMARY",
+    }]
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="explanation_facts"):
+        validate_intelligence_vector(payload)
+
+
+def test_lineage_is_exact_per_field_and_present_observations_are_source_bound() -> None:
+    family = _build_d5()["evidence_families"][0]
+    refs = {item["source_ref_id"]: item for item in family["source_refs"]}
+    refs_by_object = {item["object_id"]: item for item in family["source_refs"]}
+    assert refs_by_object["doc:issuer-release:1"]["field_paths"] == [
+        "deltas[0].basis_match",
+        "deltas[0].consensus.reason",
+        "deltas[0].consensus.state",
+        "deltas[0].current.basis",
+        "deltas[0].current.unit",
+        "deltas[0].current.value",
+        "deltas[0].metric",
+        "deltas[0].prior.reason",
+        "deltas[0].prior.state",
+        "facts[0].metric",
+        "facts[0].unit",
+        "facts[0].value",
+    ]
+    assert refs_by_object["tx:AAPL/2026Q3"]["field_paths"] == [
+        "guidance[0].high",
+        "guidance[0].low",
+        "guidance[0].metric",
+        "guidance[0].status",
+        "guidance[0].unit",
+    ]
+    observations = {
+        item["native_metric_id"]: item for item in family["observations"]
+    }
+    assert {
+        refs[ref_id]["object_id"]
+        for ref_id in observations["fact:revenue"]["source_ref_ids"]
+    } == {"doc:issuer-release:1"}
+    assert {
+        refs[ref_id]["object_id"]
+        for ref_id in observations["guidance:revenue_yoy_pct"]["source_ref_ids"]
+    } == {"tx:AAPL/2026Q3"}
+    assert {
+        refs[ref_id]["object_id"]
+        for ref_id in family["trajectory"]["dimensions"][0]["source_ref_ids"]
+    } == {"doc:issuer-release:1"}
+    assert all(item["source_ref_ids"] for item in family["observations"])
+    assert all(item["evidence_root_ids"] for item in family["observations"])
+
+
+def test_workspace_without_exact_source_lineage_emits_typed_absence_not_present_fact() -> None:
+    workspace = _d5_workspace()
+    workspace["sources"] = []
+    family = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )["evidence_families"][0]
+    assert all(item["value_state"] == "ABSENT" for item in family["observations"])
+    assert family["observations"][0]["absence_reasons"] == ["SOURCE_UNAVAILABLE"]
+
+
+def test_validator_rejects_present_observation_without_source_or_root_lineage() -> None:
+    payload = _build_d5()
+    fact = next(
+        item for item in payload["evidence_families"][0]["observations"]
+        if item["native_metric_id"] == "fact:revenue"
+    )
+    fact["source_ref_ids"] = []
+    fact["evidence_root_ids"] = []
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="lineage|source|root"):
+        validate_intelligence_vector(payload)
+
+
+def test_semantically_identical_source_order_has_identical_content_ids() -> None:
+    forward = _d5_workspace()
+    reverse = deepcopy(forward)
+    reverse["sources"] = list(reversed(reverse["sources"]))
+    first = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=forward))
+    second = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=reverse))
+    assert second["projection_id"] == first["projection_id"]
+    assert second["evidence_families"][0] == first["evidence_families"][0]
+
+
+@pytest.mark.parametrize("object_id", [
+    "s3://dummy-private-bucket/internal/object",
+    "gs://dummy-private-bucket/internal/object",
+    "file:///private/dummy-object",
+    "arn:aws:s3:::dummy-private-bucket",
+    "doc:arn:aws:s3:::dummy-private-bucket",
+    "dummy-private-bucket/internal/object",
+    "C:\\private\\dummy-object",
+    "doc:" + "x" * 200,
+    "doc:dummy\nobject",
+])
+def test_private_locator_shaped_object_ids_are_never_projected(object_id: str) -> None:
+    workspace = _d5_workspace()
+    workspace["guidance"] = []
+    workspace["deltas"] = []
+    workspace["facts"][0]["source_span"]["document_id"] = object_id
+    workspace["sources"] = [{
+        "kind": "issuer_release", "document_id": object_id,
+        "source_sha256": "c" * 64,
+    }]
+    family = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )["evidence_families"][0]
+    assert object_id not in json.dumps(family, sort_keys=True)
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert family["observations"][0]["absence_reasons"] == ["SOURCE_UNAVAILABLE"]
+
+
+def test_builder_and_validator_close_episode_temporal_and_freshness_claims() -> None:
+    with pytest.raises(IntelligenceVectorContractError, match="known_at|opened_at"):
+        _build_d5(episode_known_at="2026-07-30T22:00:00Z")
+
+    payload = _build_d5()
+    payload["decision_cut"]["known_at"] = "2026-07-30T22:00:00Z"
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="known_at|opened_at"):
+        validate_intelligence_vector(payload)
+
+    payload = _build_d5()
+    payload["evidence_families"][0]["point_in_time"]["basis"] = "LIVE_CAPTURED"
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="LIVE_CAPTURED|captured_at"):
+        validate_intelligence_vector(payload)
+
+    payload = _build_d5()
+    payload["evidence_families"][0]["freshness"] = {
+        "state": "CURRENT", "basis": "current_at_decision_cut",
+    }
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="freshness|owner"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_uncontrolled_semantic_head_after_content_readdress() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["semantic_head_ids"] = ["rank_vote"]
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="semantic.head|event_expectation"):
+        validate_intelligence_vector(payload)
+
+
+def test_integrity_absence_requires_workspace_chain_integrity_receipt() -> None:
+    def broken_reader(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError(
+            "dummy predecessor hash mismatch"
+        )
+
+    payload = _build_d5(read_revisions=broken_reader)
+    payload["assembly_receipt"]["errors"] = []
+    with pytest.raises(IntelligenceVectorContractError, match="integrity|receipt"):
+        validate_intelligence_vector(payload)
+
+
+def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments() -> None:
+    def broken_reader(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError(
+            "bearer DUMMY_TOKEN_SENTINEL api_key=DUMMY_KEY_SENTINEL "
+            "s3://dummy-private-bucket/internal/object "
+            "arn:aws:s3:::dummy-private-bucket C:\\private\\dummy-object "
+            "object_key=dummy-private-bucket/internal/object"
+        )
+
+    payload = _build_d5(read_revisions=broken_reader)
+    receipt = json.dumps(payload["assembly_receipt"], sort_keys=True)
+    for secret in (
+        "DUMMY_TOKEN_SENTINEL", "DUMMY_KEY_SENTINEL", "s3://",
+        "arn:aws:s3", "dummy-private-bucket", "C:\\private",
+    ):
+        assert secret not in receipt
+
+
+def test_validator_rejects_unsanitized_credential_shaped_error_receipt() -> None:
+    def broken_reader(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError("dummy hash mismatch")
+
+    payload = _build_d5(read_revisions=broken_reader)
+    payload["assembly_receipt"]["errors"][0]["message"] = "bearer DUMMY_TOKEN_SENTINEL"
+    with pytest.raises(IntelligenceVectorContractError, match="sanitized"):
+        validate_intelligence_vector(payload)
 
 
 @pytest.mark.parametrize(

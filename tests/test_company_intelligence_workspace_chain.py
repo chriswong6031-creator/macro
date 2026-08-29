@@ -68,7 +68,7 @@ def _raw_workspace(
         "facts": [{
             "schema": "event_fact.v1", "metric": "revenue", "value": fact_value,
             "unit": "USD", "period": "2026Q3", "basis": "reported",
-            "source_span": {"text": "never project source spans"},
+            "source_span": {"document_id": "doc:1", "text": "never project source spans"},
         }],
         "deltas": [],
         "guidance": [],
@@ -627,6 +627,20 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
         previous_generation_id=gen1,
         previous_manifest_sha256=sha256(canonical_json_bytes(man1)).hexdigest(),
     )
+    assert ws1["facts"][0]["value"] != ws2["facts"][0]["value"]
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(
+            _chain_objects((gen1, man1, ws1), (gen2, man2, ws2)),
+            marker_generation_id=gen1,
+        ),
+    )
+    initial_payload = _d5_project()
+    initial_family = initial_payload["evidence_families"][0]
+    initial_fact = next(
+        item for item in initial_family["observations"]
+        if item["native_metric_id"] == "fact:revenue"
+    )
     fetch_calls: list[str] = []
     monkeypatch.setattr(
         reader, "_fetch_bytes",
@@ -634,10 +648,14 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
                 marker_generation_id=gen2, fetch_calls=fetch_calls),
     )
 
-    family = _d5_project()["evidence_families"][0]
+    corrected_payload = _d5_project()
+    family = corrected_payload["evidence_families"][0]
     fact = next(item for item in family["observations"] if item["native_metric_id"] == "fact:revenue")
     assert fact["value"] == 100
-    assert fact["correction_lineage_state"] == "OBSERVED"
+    assert fact == initial_fact
+    assert fact["observation_id"] == initial_fact["observation_id"]
+    assert fact["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert corrected_payload["projection_id"] != initial_payload["projection_id"]
     assert family["correction"]["state_at_decision"] == "NONE"
     assert family["correction"]["current_state"] == "CORRECTED"
     decision_refs = set(family["correction"]["decision_version_ref_ids"])
