@@ -1379,3 +1379,20 @@ the real pilot cohort) now contributes two coverage rows both carrying the
 SAME state, which is why `94+221=315` exceeds `92+193=285`: 30 extra rows
 come from mixed-grain groups being counted once per grain they touch, not
 from a different underlying verdict.
+
+## 5. Sealed constants receipt (Task 3C Step 5 -- the real, one-time seal)
+
+- Sealed at: `2026-08-29T03:37:58.620149+00:00`
+- `recall_floor` = `0.05` (rule hash `71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf`, status `declared_pending_sol_rule_review`)
+- `lambda_fs` = `0.00027929738756017066` (rule hash `8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366`, status `declared_pending_sol_rule_review`)
+- Roster hash: `2609c8ac83a54aef8a3d2a28077535783cf94f17054a40ad92043cdc1e2bad2e` (n=759)
+- Replay-manifest hash: `e6b85fd844b5330f7d227bc464e7ad294687591be3b7361e9ec47232c2344a74`
+- W2 family-registry hash: `1d3902f35e4b9e22ca8c4a2a9a3d4440f207cb1a694c9cfc43f7ef73dff4b93e`
+- Substrate provenance hash: `2ee5d7120edf96b03e9f29355fd37dcaeeeb0258e30f3aba7e67ce21eb0952d2`
+- Ruler implementation hash (`ruler.py`): `42905b81e6fe622dbbbb7f4044b13cc04acf48ace80f16c63439236fc409e708`
+- Ruler implementation hash (`ruler_nulls.py`): `cd57271435a9e3c1bb50058bb31919e247fb23703582397b88dc1bcefeaa5ccb`
+- Spec hash before seal: `43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb`
+- Spec hash after seal: `fda9b8256aff5102792f347dd542af6827fb69aa55d1adf46f8cb0c10d130216`
+- Recent-history guard cutoff: `2026-02-11`
+- Trial ledger family: `stock_identity_w3_ruler_calibration` (effective N=6)
+- Fit-read look budget: `3`

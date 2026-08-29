@@ -1,43 +1,88 @@
 {
-  "schema": "stock_identity.ruler_spec.v1",
-  "version": "v1",
-  "geometry": {
-    "atr_basis": "wilder_atr14_at_prior_confirmed_close",
-    "p_pre_sessions": 5,
-    "useful_zone_window_sessions": 15,
-    "useful_zone_delta_atr": 0.75,
-    "false_start_atr_threshold": 3.75,
-    "episode_type_anchor": {
-      "reset_decline": "durable_low",
-      "reclaim": "recapture_bar",
-      "failed_breakdown": "breakdown_low"
-    },
-    "grain_classes": ["daily", "weekly"],
-    "geometry_source": {
-      "p_pre_sessions": "si_constants_v1.json values.P_pre (frozen W1 constant)",
-      "useful_zone_window_sessions": "si_constants_v1.json values.w (frozen W1 constant)",
-      "useful_zone_delta_atr": "si_constants_v1.json values.delta (frozen W1 constant)",
-      "false_start_atr_threshold": "si_constants_v1.json values.theta_fs (frozen W1 constant)",
-      "atr_basis": "engine.stock_identity.episodes.ATR_BASIS (frozen W1 constant)",
-      "episode_type_anchor": "engine.stock_identity.episodes anchor-per-type mapping (masterplan §7.3, review finding 25)",
-      "grain_classes": "derived mechanically from observed W2 event grain strings (engine.stock_identity.ruler.grain_class); not itself a partition-computed statistic"
-    }
-  },
-  "graded_composites": ["c_loc_r", "c_loc_d"],
-  "c_loc_d_rank_population": "episode_type_x_grain",
-  "c_loc_d_rank_population_note": "C-LOC-D's rank normalization is computed WITHIN each (episode_type, grain) stratum, never globally across the whole cell population -- a cell's score must be invariant to adding/removing cells from an unrelated stratum (freeze review finding M5). A non-PR-3 structural field: frozen alongside the geometry above, not part of the pending PR-3 constant family.",
-  "pr3": {
-    "status": "pending_sealed_calibration",
-    "recall_floor": null,
-    "lambda_fs": null,
-    "receipt": null,
-    "note": "The PR-3 ruler-composite constant family (lambda_fs, recall floor, any declared composite constants) is set exactly once by Task 3C from SI-SEALED-CAL-P1 under rule-before-value discipline. Until that one-time act runs, this block carries the explicit pending sentinel above -- never a guessed number. Fixture-only constants used to test the metric/composite MATH on synthetic data live only in test code and are never written here."
-  },
   "authority": {
-    "can_rank": false,
-    "can_size": false,
+    "can_escalate": false,
     "can_gate": false,
     "can_originate_signal": false,
-    "can_escalate": false
-  }
+    "can_rank": false,
+    "can_size": false
+  },
+  "c_loc_d_rank_population": "episode_type_x_grain",
+  "c_loc_d_rank_population_note": "C-LOC-D's rank normalization is computed WITHIN each (episode_type, grain) stratum, never globally across the whole cell population -- a cell's score must be invariant to adding/removing cells from an unrelated stratum (freeze review finding M5). A non-PR-3 structural field: frozen alongside the geometry above, not part of the pending PR-3 constant family.",
+  "geometry": {
+    "atr_basis": "wilder_atr14_at_prior_confirmed_close",
+    "episode_type_anchor": {
+      "failed_breakdown": "breakdown_low",
+      "reclaim": "recapture_bar",
+      "reset_decline": "durable_low"
+    },
+    "false_start_atr_threshold": 3.75,
+    "geometry_source": {
+      "atr_basis": "engine.stock_identity.episodes.ATR_BASIS (frozen W1 constant)",
+      "episode_type_anchor": "engine.stock_identity.episodes anchor-per-type mapping (masterplan \u00a77.3, review finding 25)",
+      "false_start_atr_threshold": "si_constants_v1.json values.theta_fs (frozen W1 constant)",
+      "grain_classes": "derived mechanically from observed W2 event grain strings (engine.stock_identity.ruler.grain_class); not itself a partition-computed statistic",
+      "p_pre_sessions": "si_constants_v1.json values.P_pre (frozen W1 constant)",
+      "useful_zone_delta_atr": "si_constants_v1.json values.delta (frozen W1 constant)",
+      "useful_zone_window_sessions": "si_constants_v1.json values.w (frozen W1 constant)"
+    },
+    "grain_classes": [
+      "daily",
+      "weekly"
+    ],
+    "p_pre_sessions": 5,
+    "useful_zone_delta_atr": 0.75,
+    "useful_zone_window_sessions": 15
+  },
+  "graded_composites": [
+    "c_loc_r",
+    "c_loc_d"
+  ],
+  "pr3": {
+    "lambda_fs": 0.00027929738756017066,
+    "recall_floor": 0.05,
+    "receipt": {
+      "base_spec_hash_before_seal": "43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb",
+      "computed_at": "2026-08-29T03:37:58.620149+00:00",
+      "fit_read_look_budget": 3,
+      "lambda_fs": {
+        "diagnostic_variants_pm20pct": {
+          "base": 0.00027929738756017066,
+          "minus20": 0.000223,
+          "plus20": 0.000335
+        },
+        "rule": "lambda_fs = median(recall_at_tier * zone_precision) / P75(false_start_rate), both computed over the SAME lawful sealed-calibration grading-cell population recall_floor's rule defines (n_episodes > 0 -- the cell exists at all). The numerator's population is further restricted to rows with a DEFINED (non-NaN) product of recall_at_tier * zone_precision (pandas '.dropna()' on that product -- undefined, and so excluded, if EITHER factor is undefined); the denominator's population is restricted to rows with a DEFINED false_start_rate (pandas '.dropna()' on that column alone, independent of the numerator's filter). P75 uses numpy.percentile's linear interpolation method, passed explicitly. NO rounding or quantization grid is applied to the result -- lambda_fs is the exact quotient. FAIL-CLOSED: this computation is valid ONLY when the numerator (the median product) AND the denominator (the P75 false-start rate) are BOTH finite and STRICTLY greater than zero. If either fails, the constant-setting act refuses with a typed BLOCKED_DEGENERATE_CALIBRATION error/receipt to Sol -- there is NO epsilon, NO clipping, NO cap, NO alternate quantile, and NO fallback fixed lambda anywhere in this path. The rule references only the POPULATION distributions of recall_at_tier, zone_precision, and false_start_rate, and never any expert's own outcome rank (DNR:KILL-OUTCOME-AUDITION).",
+        "rule_hash": "8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366",
+        "status": "declared_pending_sol_rule_review",
+        "value": 0.00027929738756017066
+      },
+      "n_names_drawn": 759,
+      "recall_floor": {
+        "diagnostic_variants_pm20pct": {
+          "base": 0.05,
+          "minus20": 0.04,
+          "plus20": 0.06
+        },
+        "rule": "recall_floor = max(quantize_to_nearest_0.05(P25(recall_at_tier on the lawful sealed-calibration grading-cell population)), 0.05). The lawful population is every row of the calibration-fire substrate's cell-aggregate frame (aggregate_cell_metrics' own output) with n_episodes > 0 (the cell exists at all -- emitted only for a (family_key, episode_type, grain) combination that fired at least once), further restricted to a DEFINED (non-NaN) recall_at_tier value (a genuine second, independent filter -- pandas '.dropna()' on the recall_at_tier column alone; a cell can satisfy the count gate yet still carry a NaN recall_at_tier). Zero-recall cells (recall_at_tier == 0.0) are NEVER dropped or conditioned out of this population (no A3 conditioning) -- the P25 is taken over the FULL lawful population including them. P25 uses numpy.percentile's linear interpolation method, passed explicitly. The quantize_to_nearest_0.05 step is Python's built-in round() applied to P25/0.05 before rescaling (round(p25 / 0.05) * 0.05); round()'s tie convention at an exact .5 boundary is banker's rounding (round-half-to-even), named here explicitly rather than left as an unstated default. The 0.05 floor is an explicit, PREREGISTERED SUBSTANTIVE floor, never a rounding artifact: even a population whose quantized P25 lands below 0.05 is clamped up to 0.05, so recall_floor can never be zero. A cell below this floor is judged too rarely localized for C-LOC-D to be graded. The rule references only the POPULATION of measured cells and never any expert's own outcome rank (DNR:KILL-OUTCOME-AUDITION).",
+        "rule_hash": "71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf",
+        "status": "declared_pending_sol_rule_review",
+        "value": 0.05
+      },
+      "recent_history_guard_cutoff": "2026-02-11",
+      "replay_manifest_hash": "e6b85fd844b5330f7d227bc464e7ad294687591be3b7361e9ec47232c2344a74",
+      "roster_sha256": "2609c8ac83a54aef8a3d2a28077535783cf94f17054a40ad92043cdc1e2bad2e",
+      "ruler_implementation_sha256": {
+        "ruler_nulls_py": "cd57271435a9e3c1bb50058bb31919e247fb23703582397b88dc1bcefeaa5ccb",
+        "ruler_py": "42905b81e6fe622dbbbb7f4044b13cc04acf48ace80f16c63439236fc409e708"
+      },
+      "spec_hash_after_seal": "fda9b8256aff5102792f347dd542af6827fb69aa55d1adf46f8cb0c10d130216",
+      "spec_hash_before_seal": "43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb",
+      "substrate_provenance_hash": "2ee5d7120edf96b03e9f29355fd37dcaeeeb0258e30f3aba7e67ce21eb0952d2",
+      "trial_ledger_effective_n": 6,
+      "trial_ledger_family": "stock_identity_w3_ruler_calibration",
+      "w2_family_registry_hash": "1d3902f35e4b9e22ca8c4a2a9a3d4440f207cb1a694c9cfc43f7ef73dff4b93e"
+    },
+    "status": "sealed"
+  },
+  "schema": "stock_identity.ruler_spec.v1",
+  "version": "v1"
 }
