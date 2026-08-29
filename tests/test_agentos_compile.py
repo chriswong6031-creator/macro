@@ -1242,3 +1242,8 @@ def test_the_store_this_suite_compiles_is_the_committed_one(tmp_path: Path) -> N
     scratch = tmp_path / "agentos"
     shutil.copytree(STORE, scratch)
     assert _run("validate", "--root", str(scratch)).returncode == 0
+
+
+# MAS-65 extends the canonical always-on collection without relocating its tests.
+from tests.linear_portfolio_plan_cases import *  # noqa: E402,F401,F403
+from tests.linear_portfolio_plan_live_cases import *  # noqa: E402,F401,F403

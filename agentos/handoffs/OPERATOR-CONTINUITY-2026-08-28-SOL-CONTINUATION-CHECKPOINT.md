@@ -3,6 +3,48 @@ workstream: WS:EXECUTIVE-CAPACITY-FABRIC
 session: sol/operator-continuity-continuation-20260828
 model: sol
 status: active_checkpoint
+ended_because: blocked
+state_before: >
+  The prior Sol chat became unreliable and handed the Operator Continuity & Realm Rebinding
+  program to this continuation session (see OPERATOR-CONTINUITY-2026-08-28-SOL-SESSION-HANDOFF).
+  OCR-1 PR #184 was pending acceptance, the CF2-H0 native ceremony was blocked on the
+  carrier-vs-repair identity pin collision, and OCR-2C Family A remained under falsification.
+changed:
+  - path: agentos/handoffs/OPERATOR-CONTINUITY-2026-08-28-SOL-CONTINUATION-CHECKPOINT.md
+    what: >
+      This continuation checkpoint itself: protected-truth pins, the #184 acceptance record,
+      open commission inventory, capability ledger, and the exact next Chairman/Sol actions.
+verified:
+  - claim: "OCR-1 PR #184 is merged into protected Mastermind master as 1d5ad124."
+    command: >
+      git -C Mastermind merge-base --is-ancestor
+      1d5ad1249172e8b93882f0dff157fc13636dd62d origin/master
+    result: >
+      Exit 0 — 1d5ad124 is an ancestor of protected master, matching this record's
+      protected_truth pin (re-run 2026-08-28 during the schema repair of this record).
+unverified:
+  - claim: "#184 provides real production capability."
+    what_would_verify: >
+      Natural production proof of the preflight family; the record itself states
+      BUILT_NOT_PROVEN / PRODUCTION_INERT.
+  - claim: The three open commissions (H0 pin-split, OCR-1 Task 4, OCR-3 Task 1) are being executed.
+    what_would_verify: >
+      Chairman binds concrete seats in the named Slack threads and a same-carrier ACK/START
+      plus typed returns appear; commissions are OPEN_PICKUP and intentionally unstarted.
+unresolved:
+  - CF2-H0 native host ceremony stays blocked until the CARRIER_COMMIT_SHA vs REPAIR_MERGE_SHA source-law collision is repaired and merged.
+  - OCR-1 Task 4, OCR-3 Task 1 replacement, and the H0 pin-split repair all await Chairman concrete receiver binding.
+  - OCR-2C Family B remains a design gate; no v2 Provider Control contract may be written before Chairman approval.
+next_actions:
+  - Chairman binds eligible seats to threads 1787966023.775079 (H0 pin-split), 1787966366.604899 (OCR-1 Task 4), and 1787965301.900189 (OCR-3 Task 1); Sol watchers adjudicate each typed return on the same carrier.
+  - Sol presents the OCR-2C Family B Shared AI Provider Control architecture for Chairman approval before any implementation.
+do_not_redo:
+  - Do not rebuild any plane listed under hard_no_rebuild_boundaries below; Executive OS alone owns lifecycle, and provider/account/host change means a NEW Attempt.
+  - Do not satisfy the H0 current-origin gate by relabelling the newest protected commit as the repair merge.
+  - Do not grant the terminated OCR-3 watcher or any stale watcher continuation/retry/successor authority.
+danger_areas:
+  - No sudo/native H0 ceremony before the pin-split source repair merges under Sol review; passwords/device approvals are entered locally and never pasted into Slack/chat/transcripts.
+  - Conversation state is never transplanted across provider/account/auth-home/host changes.
 mission: >
   Continue Chairman-approved Operator Continuity & Realm Rebinding through real production acceptance without
   redesigning architecture #181, duplicating lifecycle/identity/queue/session/watcher planes, or conflating
