@@ -1,8 +1,8 @@
 # Eval OS A1 — evidence-provider mapping and derived status contract
 
-**Operation:** `eval-os-a1-evidence-view-20260828-sol-001`  
-**Workstream:** `WS:EVAL-OS-EVIDENCE-VIEW`  
-**Census head:** `3ed822213caa096b8665b21ce9c3c3f5c860064f`  
+**Operation:** `eval-os-a1-evidence-view-20260828-sol-001`
+**Workstream:** `WS:EVAL-OS-EVIDENCE-VIEW`
+**Census head:** `3ed822213caa096b8665b21ce9c3c3f5c860064f`
 **Authority:** `research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md`
 
 This is the required pre-code mapping for A1. It records which existing owner may answer
