@@ -86,6 +86,7 @@ jobs:
           fetch-depth: 256
           sparse-checkout: |
             /.github/
+            /agentos/
             /config/
             /engine/metabolism/
             /engine/neuralweb/
@@ -163,6 +164,15 @@ jobs:
         continue-on-error: true
         run: python -m pytest tests/test_self_mod_fence.py tests/test_fence_checkout_contract.py -q
 
+      # #6601/#6633 proved malformed Agent OS records could merge before the
+      # semantic pack reached them. Reuse the canonical whole-store validator
+      # here and fold its outcome into self-mod-fence; this is earlier
+      # observation of the same law, not a second merge authority.
+      - name: agent-os record contract
+        id: agent_os_record_contract
+        continue-on-error: true
+        run: python3 scripts/agentos.py validate
+
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         id: capability_selftest
         continue-on-error: true
@@ -220,6 +230,7 @@ jobs:
           SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
           SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
           SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
+          AGENT_OS_RECORD_CONTRACT: ${{ steps.agent_os_record_contract.outcome }}
           CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
           CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
           GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
@@ -234,6 +245,7 @@ jobs:
                   process.env.SELF_MOD_SELFTEST,
                   process.env.SELF_MOD_LIVE,
                   process.env.SELF_MOD_TESTS,
+                  process.env.AGENT_OS_RECORD_CONTRACT,
                 ],
               },
               {
@@ -273,6 +285,7 @@ jobs:
           SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
           SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
           SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
+          AGENT_OS_RECORD_CONTRACT: ${{ steps.agent_os_record_contract.outcome }}
           CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
           CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
           GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
@@ -284,6 +297,7 @@ jobs:
           set -euo pipefail
           for outcome in \
             "$SELF_MOD_SELFTEST" "$SELF_MOD_LIVE" "$SELF_MOD_TESTS" \
+            "$AGENT_OS_RECORD_CONTRACT" \
             "$CAPABILITY_SELFTEST" "$CAPABILITY_LIVE" \
             "$GRADER_SELFTEST" "$GRADER_LIVE" \
             "$CHAT_NAV_SELFTEST" "$CHAT_NAV_LIVE" "$PUBLISH"; do
@@ -331,6 +345,7 @@ jobs:
             --branch "$BRANCH" \
             --files-file "$FILES_FILE" \
             --trailers-file "$TRAILERS_FILE"
+      - run: python3 scripts/agentos.py validate
       - run: python -m pytest tests/test_self_mod_fence.py -q
 
   fork-capability-broker:
