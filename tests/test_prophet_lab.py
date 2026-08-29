@@ -50,6 +50,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import replace
+import gzip
+from hashlib import sha256
 import json
 from pathlib import Path
 
@@ -61,6 +63,12 @@ from engine.entry_radar.live_ledger import (
     LiveEpisode,
     LiveEpisodeLedger,
 )
+from engine.company_intelligence.event_workspace import (
+    AAPL_CALL_DATE,
+    apple_registry,
+    flagship_fiscal_period,
+)
+from engine.company_intelligence.event_workspace_build import build_event_workspace
 from engine.prophet_lab import LabRoots, build_lab_response
 from engine.prophet_lab import boards as boards_mod
 from engine.prophet_lab import intelligence_vector as intelligence_vector_mod
@@ -91,6 +99,9 @@ from engine.prophet_lab.intelligence_vector import (
 from lib.dataos.identity import IdentityError, IssuerMaster
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "prophet_lab"
+COMPANY_INTELLIGENCE_FIXTURES = (
+    Path(__file__).resolve().parent / "fixtures" / "company_intelligence"
+)
 
 
 def _write_ledger(state_dir: Path) -> None:
@@ -1549,7 +1560,6 @@ def _d5_workspace(*, secret: bool = False) -> dict:
                 "value": 109_417_000_000,
                 "unit": "USD",
                 "basis": "reported",
-                "source_span": {"document_id": "doc:issuer-release:1"},
             },
             "prior": {"state": "absent", "reason": "not_available"},
             "consensus": {"state": "absent", "reason": "consensus_unlicensed"},
@@ -1608,6 +1618,38 @@ def _d5_revisions(*, workspace: dict | None = None) -> list[dict]:
         "form": "8-K",
         "workspace": workspace,
     }]
+
+
+def _d5_real_owner_workspace() -> dict:
+    """Build the AAPL packet through the real Earnings owner producer."""
+    raw_transcript = gzip.decompress(
+        (COMPANY_INTELLIGENCE_FIXTURES / "aapl_fy2026_q3.json.gz").read_bytes()
+    )
+    workspace = build_event_workspace(
+        registry=apple_registry(),
+        ticker="AAPL",
+        asof=AAPL_CALL_DATE,
+        fiscal_period=flagship_fiscal_period(),
+        exhibit_body=(
+            COMPANY_INTELLIGENCE_FIXTURES / "aapl_fy2026_q3_ex99_1.htm"
+        ).read_text(),
+        filing=json.loads(
+            (COMPANY_INTELLIGENCE_FIXTURES / "aapl_fy2026_q3_filing.json").read_text()
+        ),
+        transcript=json.loads(raw_transcript.decode()),
+        transcript_sha256=sha256(raw_transcript).hexdigest(),
+        observed_at="2026-07-30T20:03:00Z",
+        source_available_at="2026-07-30T16:30:00Z",
+        collector_rows=[json.loads(
+            (
+                COMPANY_INTELLIGENCE_FIXTURES
+                / "aapl_edgar_8k_collector_legacy.json"
+            ).read_text()
+        )],
+        wire_record_found=False,
+    )
+    workspace["generation_id"] = "1" * 24
+    return workspace
 
 
 def _build_d5(**overrides) -> dict:
@@ -1755,6 +1797,60 @@ def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritativ
     assert changed_transport["projection_id"] == payload["projection_id"]
 
 
+def test_real_owner_built_workspace_projects_release_fact_delta_and_guidance() -> None:
+    workspace = _d5_real_owner_workspace()
+    release_id = next(
+        item["document_id"] for item in workspace["sources"]
+        if item["kind"] == "issuer_release"
+    )
+    assert release_id == (
+        "disclosure_document_"
+        "19a10f4c5c3120beb56ad21d812aa81582def5e564dbe8de7385266e7800ae0e"
+    )
+    assert "source_span" not in workspace["deltas"][0]["current"]
+
+    payload = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )
+    validate_intelligence_vector(payload)
+    family = payload["evidence_families"][0]
+    assert {item["object_id"] for item in family["source_refs"]} == {
+        release_id,
+        "tx:AAPL/2026Q3",
+    }
+    observations = {
+        item["native_metric_id"]: item for item in family["observations"]
+    }
+    assert observations["fact:revenue"]["value"] == 109_417.0
+    assert observations["fact:revenue"]["units"] == "usd_millions"
+    assert observations["guidance:revenue_yoy_pct"]["value"] == {
+        "low": 9.0,
+        "high": 11.0,
+    }
+    assert family["trajectory"]["state"] == "PARTIAL"
+    dimension = family["trajectory"]["dimensions"][0]
+    assert dimension["value"]["current"] == {
+        "value": 109_417.0,
+        "unit": "usd_millions",
+        "basis": "gaap",
+    }
+    assert dimension["units"] == "usd_millions"
+    assert family["coverage"]["state"] == "COVERED"
+
+
+def test_coverage_is_partial_when_only_one_of_the_owner_allowlisted_lanes_survives() -> None:
+    workspace = _d5_workspace()
+    workspace["facts"][0]["source_span"]["document_id"] = "unsafe-owner-locator"
+    family = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )["evidence_families"][0]
+    assert [item["native_metric_id"] for item in family["observations"]] == [
+        "guidance:revenue_yoy_pct",
+    ]
+    assert family["trajectory"] == {"state": "NOT_APPLICABLE", "dimensions": []}
+    assert family["coverage"]["state"] == "PARTIAL"
+
+
 def test_identity_is_resolved_before_current_manifest_discovery() -> None:
     calls: list[str] = []
 
@@ -1802,6 +1898,42 @@ def test_ambiguous_identity_is_conflicted_and_never_discovers() -> None:
     assert family["identity_state"] == "AMBIGUOUS"
     assert family["coverage"]["state"] == "UNKNOWN"
     assert family["observations"][0]["absence_reasons"] == ["CONFLICTED"]
+
+
+@pytest.mark.parametrize(
+    ("binding_field", "hostile_value"),
+    [
+        ("episode_company_id", "ISS:US:999999999"),
+        ("earnings_company_id", "cik:9999999999"),
+    ],
+)
+def test_validator_rejects_readdressed_issuer_or_cik_misbinding(
+    binding_field: str,
+    hostile_value: str,
+) -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["subject_binding"][binding_field] = hostile_value
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="identity|binding|CIK|event"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_unresolved_identity_binding_to_remain_null() -> None:
+    payload = _build_d5(issuer_master=_d5_master(include_cik=False))
+    family = payload["evidence_families"][0]
+    family["subject_binding"]["earnings_company_id"] = "cik:0000320193"
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="identity|binding|null"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_resolved_binding_to_name_an_owner_event() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["subject_binding"]["owner_subject_id"] = None
+    payload["assembly_receipt"]["event_id"] = None
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="resolved|owner event|binding"):
+        validate_intelligence_vector(payload)
 
 
 def test_projection_never_copies_raw_workspace_claim_body_span_url_or_private_path() -> None:
@@ -2012,6 +2144,78 @@ def test_builder_and_validator_close_episode_temporal_and_freshness_claims() -> 
         validate_intelligence_vector(payload)
 
 
+def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> dict:
+    decision = _d5_workspace()
+    later = deepcopy(decision)
+    later["generation_id"] = "2" * 24
+    later["lifecycle"] = {
+        "state": "complete",
+        "source_available_at": "2026-08-01T19:55:00Z",
+        "observed_at": "2026-08-01T20:00:00Z",
+    }
+    later["generated_at"] = "2026-08-01T20:01:00Z"
+    if later_has_adaptable_evidence:
+        later["facts"][0]["value"] = 110_000_000_000
+        later["deltas"][0]["current"]["value"] = 110_000_000_000
+        later["sources"][0]["source_sha256"] = "e" * 64
+    else:
+        later["facts"] = []
+        later["deltas"] = []
+        later["guidance"] = []
+        later["sources"] = []
+    revisions = _d5_revisions(workspace=decision) + [{
+        "generation_id": later["generation_id"],
+        "source_sha256": "e" * 64,
+        "source_available_at": later["lifecycle"]["source_available_at"],
+        "observed_at": later["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace": later,
+    }]
+    return _build_d5(read_revisions=lambda event_id: revisions)
+
+
+def test_correction_clock_is_bound_to_later_generation_refs_and_state() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_ref_ids = family["correction"]["later_correction_ref_ids"]
+    assert later_ref_ids
+    assert family["correction"]["current_state"] == "CORRECTED"
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": "2026-08-01T20:01:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": later_ref_ids,
+    }
+    later_generations = {
+        ref["version_or_generation"] for ref in family["source_refs"]
+        if ref["source_ref_id"] in later_ref_ids
+    }
+    assert later_generations == {"2" * 24}
+
+
+def test_later_generation_without_projectable_lineage_does_not_assert_correction_clock() -> None:
+    family = _d5_two_generation_payload(
+        later_has_adaptable_evidence=False,
+    )["evidence_families"][0]
+    assert family["correction"]["later_correction_ref_ids"] == []
+    assert family["correction"]["current_state"] == "UNKNOWN"
+    assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
+    assert family["point_in_time"]["corrected_at"]["source_ref_ids"] == []
+
+
+def test_validator_rejects_readdressed_correction_clock_without_later_refs() -> None:
+    payload = _d5_two_generation_payload()
+    payload["evidence_families"][0]["point_in_time"]["corrected_at"][
+        "source_ref_ids"
+    ] = []
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="corrected|correction|later"):
+        validate_intelligence_vector(payload)
+
+
 def test_validator_rejects_uncontrolled_semantic_head_after_content_readdress() -> None:
     payload = _build_d5()
     payload["evidence_families"][0]["semantic_head_ids"] = ["rank_vote"]
@@ -2036,6 +2240,9 @@ def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments()
     def broken_reader(event_id: str):
         raise intelligence_vector_mod.WorkspaceChainIntegrityError(
             "bearer DUMMY_TOKEN_SENTINEL api_key=DUMMY_KEY_SENTINEL "
+            "access_token=DUMMY_ACCESS_SENTINEL "
+            "client_secret=DUMMY_SECRET_SENTINEL password=DUMMY_PASSWORD_SENTINEL "
+            '\"refresh_token\":\"DUMMY_REFRESH_SENTINEL\" '
             "s3://dummy-private-bucket/internal/object "
             "arn:aws:s3:::dummy-private-bucket C:\\private\\dummy-object "
             "object_key=dummy-private-bucket/internal/object"
@@ -2044,7 +2251,9 @@ def test_error_receipts_sanitize_locator_and_credential_shaped_dummy_fragments()
     payload = _build_d5(read_revisions=broken_reader)
     receipt = json.dumps(payload["assembly_receipt"], sort_keys=True)
     for secret in (
-        "DUMMY_TOKEN_SENTINEL", "DUMMY_KEY_SENTINEL", "s3://",
+        "DUMMY_TOKEN_SENTINEL", "DUMMY_KEY_SENTINEL", "DUMMY_ACCESS_SENTINEL",
+        "DUMMY_SECRET_SENTINEL", "DUMMY_PASSWORD_SENTINEL", "DUMMY_REFRESH_SENTINEL",
+        "s3://",
         "arn:aws:s3", "dummy-private-bucket", "C:\\private",
     ):
         assert secret not in receipt
@@ -2055,8 +2264,48 @@ def test_validator_rejects_unsanitized_credential_shaped_error_receipt() -> None
         raise intelligence_vector_mod.WorkspaceChainIntegrityError("dummy hash mismatch")
 
     payload = _build_d5(read_revisions=broken_reader)
-    payload["assembly_receipt"]["errors"][0]["message"] = "bearer DUMMY_TOKEN_SENTINEL"
+    payload["assembly_receipt"]["errors"][0]["message"] = (
+        "access_token=DUMMY_TOKEN_SENTINEL"
+    )
     with pytest.raises(IntelligenceVectorContractError, match="sanitized"):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("assembled_at", "bearer:DUMMY_ASSEMBLY_SENTINEL"),
+        ("revision_chain_bound_disclosure", "DUMMY LOOSE DISCLOSURE 500"),
+    ],
+)
+def test_validator_rejects_untyped_or_nonliteral_assembly_receipt_fields(
+    field: str,
+    value: str,
+) -> None:
+    payload = _build_d5()
+    payload["assembly_receipt"][field] = value
+    with pytest.raises(IntelligenceVectorContractError, match="assembly|receipt|bound|timestamp"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_canonical_typed_assembly_errors() -> None:
+    def broken_reader(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError("dummy hash mismatch")
+
+    payload = _build_d5(read_revisions=broken_reader)
+    payload["assembly_receipt"]["errors"][0]["message"] = 123
+    with pytest.raises(IntelligenceVectorContractError, match="assembly|error|message"):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_rights_blocked_with_present_observations_after_readdress() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["rights"] = {
+        "state": "BLOCKED",
+        "profile_ref": "dummy:block",
+    }
+    _readdress_d5(payload)
+    with pytest.raises(IntelligenceVectorContractError, match="rights|BLOCKED|PRESENT"):
         validate_intelligence_vector(payload)
 
 

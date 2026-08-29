@@ -67,14 +67,18 @@ _FORBIDDEN_KEYS = frozenset({
 _PEG_RE = re.compile(r"^peg:[0-9a-f]{64}$")
 _HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 _EVENT_ID_RE = re.compile(r"^evt_[A-Za-z0-9_.:-]{1,127}$")
+_EVENT_CIK_RE = re.compile(r"^evt_cik(?P<cik>[0-9]{10})_")
+_EARNINGS_COMPANY_ID_RE = re.compile(r"^cik:(?P<cik>[0-9]{10})$")
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
 _PATH_RE = re.compile(r"(?<![A-Za-z0-9])/(?:[^\s]+)")
 _NON_HTTP_URI_RE = re.compile(r"\b(?:s3|gs|file|ftp|ssh)://\S+", re.IGNORECASE)
 _ARN_RE = re.compile(r"\barn:[a-z0-9_-]+:[^\s]+", re.IGNORECASE)
 _WINDOWS_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s]+")
 _CREDENTIAL_RE = re.compile(
-    r"\b(?:bearer\s+|api[_-]?key\s*[:=]\s*|token\s*[:=]\s*|"
-    r"authorization\s*[:=]\s*)[^\s,;]+",
+    r"(?:\bbearer(?:\s+|\s*:\s*)|(?<![A-Za-z0-9])[\"']?"
+    r"(?:api[_-]?key|access[_-]?token|refresh[_-]?token|auth[_-]?token|token|"
+    r"authorization|client[_-]?secret|password|passwd|secret|private[_-]?key)"
+    r"[\"']?\s*[:=]\s*)[\"']?[^\s,;}\]]+",
     re.IGNORECASE,
 )
 _STORAGE_LOCATOR_RE = re.compile(
@@ -83,7 +87,8 @@ _STORAGE_LOCATOR_RE = re.compile(
 )
 _OBJECT_ID_RE = re.compile(
     r"^(?:(?:doc|revision):[A-Za-z0-9][A-Za-z0-9_.:|-]{0,123}|"
-    r"tx:[A-Z0-9](?:[A-Z0-9.-]{0,14}[A-Z0-9])?/\d{4}Q[1-4])$"
+    r"tx:[A-Z0-9](?:[A-Z0-9.-]{0,14}[A-Z0-9])?/\d{4}Q[1-4]|"
+    r"disclosure_document_[0-9a-f]{64})$"
 )
 _FIELD_PATH_RE = re.compile(
     r"^(?:facts|deltas|guidance)\[[0-9]+\]\."
@@ -98,6 +103,10 @@ _DELTA_ABSENCE_REASONS = frozenset({
 _MAX_REVENUE = 1_000_000_000_000_000
 _MIN_GUIDANCE_PCT = -100.0
 _MAX_GUIDANCE_PCT = 1_000.0
+_REVENUE_UNITS = frozenset({"USD", "usd_millions"})
+_REVISION_CHAIN_BOUND_DISCLOSURE = (
+    "CALLER_INJECTED_READER_BOUND; OWNER_DEFAULT_MAX_HOPS=500"
+)
 
 
 class IntelligenceVectorContractError(ValueError):
@@ -296,31 +305,49 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
     }
 
 
+def _mark_owner_subject_unresolved(family: dict[str, Any]) -> None:
+    """Fail closed when no owner event object was available to bind."""
+    family["identity_state"] = "UNRESOLVED"
+    family["subject_binding"].update({
+        "state": "UNRESOLVED",
+        "earnings_company_id": None,
+        "owner_subject_id": None,
+    })
+
+
 def _source_document_id(item: Mapping[str, Any]) -> str | None:
     return _safe_object_id(_as_mapping(item.get("source_span")).get("document_id"))
 
 
-def _accepted_fact(workspace: Mapping[str, Any]) -> tuple[int, Mapping[str, Any], str] | None:
-    accepted: list[tuple[int, Mapping[str, Any], str]] = []
+def _candidate_fact(workspace: Mapping[str, Any]) -> tuple[int, Mapping[str, Any]] | None:
+    accepted: list[tuple[int, Mapping[str, Any]]] = []
     for index, fact in enumerate(_as_list(workspace.get("facts"))):
         if not isinstance(fact, Mapping) or fact.get("metric") != "revenue":
             continue
-        document_id = _source_document_id(fact)
         if (
-            document_id is not None
-            and fact.get("unit") == "USD"
+            fact.get("unit") in _REVENUE_UNITS
             and _bounded_number(
                 fact.get("value"), minimum=0, maximum=_MAX_REVENUE,
             ) is not None
+            and fact.get("basis") in {"reported", "gaap"}
         ):
-            accepted.append((index, fact, document_id))
+            accepted.append((index, fact))
     return accepted[0] if len(accepted) == 1 else None
 
 
-def _accepted_guidance(
+def _accepted_fact(workspace: Mapping[str, Any]) -> tuple[int, Mapping[str, Any], str] | None:
+    candidate = _candidate_fact(workspace)
+    if candidate is None:
+        return None
+    index, fact = candidate
+    document_id = _source_document_id(fact)
+    return (index, fact, document_id) if document_id is not None else None
+
+
+def _candidate_guidance(
     workspace: Mapping[str, Any],
-) -> tuple[int, Mapping[str, Any], str] | None:
-    accepted: list[tuple[int, Mapping[str, Any], str]] = []
+) -> tuple[int, Mapping[str, Any]] | None:
+    accepted: list[tuple[int, Mapping[str, Any]]] = []
     for index, guidance in enumerate(_as_list(workspace.get("guidance"))):
         if not isinstance(guidance, Mapping) or guidance.get("metric") != "revenue_yoy_pct":
             continue
@@ -330,15 +357,24 @@ def _accepted_guidance(
         high = _bounded_number(
             guidance.get("high"), minimum=_MIN_GUIDANCE_PCT, maximum=_MAX_GUIDANCE_PCT,
         )
-        document_id = _source_document_id(guidance)
         if (
-            document_id is not None
-            and guidance.get("unit") == "percent"
+            guidance.get("unit") == "percent"
             and guidance.get("status") in _GUIDANCE_STATES
             and low is not None and high is not None and low <= high
         ):
-            accepted.append((index, guidance, document_id))
+            accepted.append((index, guidance))
     return accepted[0] if len(accepted) == 1 else None
+
+
+def _accepted_guidance(
+    workspace: Mapping[str, Any],
+) -> tuple[int, Mapping[str, Any], str] | None:
+    candidate = _candidate_guidance(workspace)
+    if candidate is None:
+        return None
+    index, guidance = candidate
+    document_id = _source_document_id(guidance)
+    return (index, guidance, document_id) if document_id is not None else None
 
 
 def _delta_absence(value: Any) -> dict[str, str] | None:
@@ -352,8 +388,12 @@ def _delta_absence(value: Any) -> dict[str, str] | None:
     return {"state": "ABSENT", "reason": reason}
 
 
-def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], str] | None:
-    accepted: list[tuple[int, dict[str, Any], str]] = []
+def _candidate_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any]] | None:
+    fact_row = _candidate_fact(workspace)
+    if fact_row is None:
+        return None
+    _fact_index, fact = fact_row
+    accepted: list[tuple[int, dict[str, Any]]] = []
     for index, delta in enumerate(_as_list(workspace.get("deltas"))):
         if (
             not isinstance(delta, Mapping)
@@ -363,17 +403,18 @@ def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], 
         ):
             continue
         current = _as_mapping(delta.get("current"))
-        document_id = _source_document_id(current)
         current_value = _bounded_number(
             current.get("value"), minimum=0, maximum=_MAX_REVENUE,
         )
         prior = _delta_absence(delta.get("prior"))
         consensus = _delta_absence(delta.get("consensus"))
         if (
-            document_id is None
-            or current_value is None
-            or current.get("unit") != "USD"
+            current_value is None
+            or current.get("unit") not in _REVENUE_UNITS
             or current.get("basis") not in {"reported", "gaap"}
+            or current_value != fact.get("value")
+            or current.get("unit") != fact.get("unit")
+            or current.get("basis") != fact.get("basis")
             or prior is None
             or consensus is None
         ):
@@ -383,14 +424,35 @@ def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], 
             "metric": "revenue",
             "current": {
                 "value": current_value,
-                "unit": "USD",
+                "unit": current["unit"],
                 "basis": current["basis"],
             },
             "prior": prior,
             "consensus": consensus,
             "basis_match": False,
-        }, document_id))
+        }))
     return accepted[0] if len(accepted) == 1 else None
+
+
+def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], str] | None:
+    candidate = _candidate_delta(workspace)
+    fact_row = _accepted_fact(workspace)
+    if candidate is None or fact_row is None:
+        return None
+    index, delta = candidate
+    _fact_index, _fact, document_id = fact_row
+    return index, delta, document_id
+
+
+def _owner_allowlisted_lane_count(workspace: Mapping[str, Any]) -> int:
+    return sum(
+        candidate is not None
+        for candidate in (
+            _candidate_fact(workspace),
+            _candidate_guidance(workspace),
+            _candidate_delta(workspace),
+        )
+    )
 
 
 def _adapted_field_paths(workspace: Mapping[str, Any]) -> dict[str, list[str]]:
@@ -597,7 +659,7 @@ def _trajectory(
             "state": "PARTIAL",
             "native_metric_id": "metric_delta:revenue",
             "value": delta,
-            "units": "USD",
+            "units": delta["current"]["unit"],
             "window": None,
             "cadence": "EVENT_NATIVE",
             "method_version": "metric_delta.v1",
@@ -676,7 +738,7 @@ def _build_envelope(
             "historical_event_set_reconstruction": False,
             "identity_resolution_scope": "CURRENT_REGISTRANT_ONLY",
             "revision_visibility_scope": "ISSUER_RELEASE_SOURCE_HASH_ONLY",
-            "revision_chain_bound_disclosure": "CALLER_INJECTED_READER_BOUND; OWNER_DEFAULT_MAX_HOPS=500",
+            "revision_chain_bound_disclosure": _REVISION_CHAIN_BOUND_DISCLOSURE,
             "event_id": event_id,
             "errors": errors or [],
         },
@@ -754,6 +816,7 @@ def build_earnings_intelligence_vector(
     try:
         event_id = find_event_id(earnings_company_id)
     except WorkspaceChainIntegrityError as exc:
+        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "UNKNOWN", "basis": "current_manifest_integrity_failure"}
         family["point_in_time"] = _point_in_time(
             episode, decision_admissibility="UNVERIFIABLE",
@@ -776,6 +839,7 @@ def build_earnings_intelligence_vector(
     except WorkspaceChainNotPublished:
         event_id = None
     except CompanyIntelligenceReadError as exc:
+        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "UNKNOWN", "basis": "source_fetch_failed"}
         family["quality"] = {"flags": ["source_unavailable"]}
         family["observations"] = [_absence_observation(reason_ids=["SOURCE_UNAVAILABLE"])]
@@ -785,6 +849,7 @@ def build_earnings_intelligence_vector(
             dependence_groups=[], event_id=None, errors=[error],
         )
     if event_id is None:
+        _mark_owner_subject_unresolved(family)
         family["coverage"] = {"state": "NOT_COVERED", "basis": "no_current_generation_event"}
         family["quality"] = {"flags": ["current_event_not_published"]}
         family["observations"] = [_absence_observation(reason_ids=["NOT_COVERED"])]
@@ -975,13 +1040,11 @@ def build_earnings_intelligence_vector(
         dependence_group_ids=dependence_ids,
         correction_lineage_state=lineage_state,
     )
-    source_lineage_available = bool(family["observations"])
     if not family["observations"]:
         family["observations"] = [_absence_observation(
             reason_ids=["SOURCE_UNAVAILABLE"],
             correction_lineage_state=lineage_state,
         )]
-        dependence_ids = []
     family["trajectory"] = _trajectory(
         workspace, source_refs=decision_refs, observations=family["observations"],
     )
@@ -997,16 +1060,40 @@ def build_earnings_intelligence_vector(
     }] if dependence_group_id and any(
         item["value_state"] != "ABSENT" for item in family["observations"]
     ) else [])
-    corrected_at = (
-        max(later, key=lambda item: item["parsed"]["generated_at"])["clocks"]["generated_at"]
-        if later else None
-    )
     later_ref_ids = sorted({ref["source_ref_id"] for ref in later_refs})
-    family["coverage"] = (
-        {"state": "COVERED", "basis": "decision_admissible_revision"}
-        if source_lineage_available else
-        {"state": "UNKNOWN", "basis": "exact_source_lineage_unavailable"}
+    later_generation_ids = {
+        ref["version_or_generation"] for ref in later_refs
+    }
+    referenced_later = [
+        item for item in later
+        if item["revision"].get("generation_id") in later_generation_ids
+    ]
+    corrected_at = (
+        max(
+            referenced_later,
+            key=lambda item: item["parsed"]["generated_at"],
+        )["clocks"]["generated_at"]
+        if referenced_later else None
     )
+    expected_lane_count = _owner_allowlisted_lane_count(workspace)
+    projected_lane_count = len([
+        item for item in family["observations"] if item["value_state"] == "PRESENT"
+    ]) + (1 if family["trajectory"]["state"] == "PARTIAL" else 0)
+    if expected_lane_count > 0 and projected_lane_count == expected_lane_count:
+        family["coverage"] = {
+            "state": "COVERED",
+            "basis": "complete_allowlisted_owner_packet",
+        }
+    elif projected_lane_count > 0:
+        family["coverage"] = {
+            "state": "PARTIAL",
+            "basis": "partial_allowlisted_owner_packet",
+        }
+    else:
+        family["coverage"] = {
+            "state": "UNKNOWN",
+            "basis": "exact_source_lineage_unavailable",
+        }
     family["point_in_time"] = _point_in_time(
         episode, clocks=chosen["clocks"], decision_admissibility="ADMISSIBLE",
         corrected_at=corrected_at, corrected_ref_ids=later_ref_ids,
@@ -1023,7 +1110,10 @@ def build_earnings_intelligence_vector(
         "later_correction_ref_ids": later_ref_ids,
         "current_state": (
             "UNKNOWN" if lineage_state == "NOT_OBSERVABLE" or not source_ref_ids
-            else ("CORRECTED" if later_ref_ids else "CURRENT")
+            else (
+                "CORRECTED" if later_ref_ids
+                else ("UNKNOWN" if later else "CURRENT")
+            )
         ),
     }
     return _build_envelope(
@@ -1148,7 +1238,7 @@ def _validate_observation(value: Any) -> None:
     if item["value_state"] == "PRESENT" and item["native_metric_id"] == "fact:revenue":
         if (
             _bounded_number(item["value"], minimum=0, maximum=_MAX_REVENUE) is None
-            or item["units"] != "USD"
+            or item["units"] not in _REVENUE_UNITS
             or item["quality_flags"] != []
         ):
             raise IntelligenceVectorContractError("fact:revenue metric value or bound invalid")
@@ -1213,7 +1303,7 @@ def _validate_metric_delta(value: Any) -> None:
     )
     if (
         _bounded_number(current["value"], minimum=0, maximum=_MAX_REVENUE) is None
-        or current["unit"] != "USD"
+        or current["unit"] not in _REVENUE_UNITS
         or current["basis"] not in {"reported", "gaap"}
     ):
         raise IntelligenceVectorContractError("trajectory current value invalid")
@@ -1299,9 +1389,34 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("identity_state invalid")
     if subject_binding["state"] != family["identity_state"]:
         raise IntelligenceVectorContractError("subject binding and identity_state disagree")
+    if subject_binding["episode_company_id"] != episode_ref["identity_ref"]:
+        raise IntelligenceVectorContractError("subject binding episode identity mismatch")
     owner_subject_id = subject_binding["owner_subject_id"]
     if owner_subject_id is not None and not _EVENT_ID_RE.fullmatch(str(owner_subject_id)):
         raise IntelligenceVectorContractError("owner subject event id invalid")
+    if family["identity_state"] == "RESOLVED":
+        earnings_match = _EARNINGS_COMPANY_ID_RE.fullmatch(
+            str(subject_binding["earnings_company_id"] or "")
+        )
+        if earnings_match is None:
+            raise IntelligenceVectorContractError(
+                "resolved subject binding requires canonical ten-digit CIK"
+            )
+        event_match = _EVENT_CIK_RE.match(str(owner_subject_id or ""))
+        if (
+            event_match is None
+            or event_match.group("cik") != earnings_match.group("cik")
+        ):
+            raise IntelligenceVectorContractError(
+                "resolved binding requires an owner event with the same CIK"
+            )
+    elif (
+        subject_binding["earnings_company_id"] is not None
+        or owner_subject_id is not None
+    ):
+        raise IntelligenceVectorContractError(
+            "unresolved identity binding must retain null owner identifiers"
+        )
     point_in_time = _require_keys(
         family["point_in_time"],
         frozenset({
@@ -1363,8 +1478,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     if freshness != {"state": "UNKNOWN", "basis": "owner_has_no_staleness_clock"}:
         raise IntelligenceVectorContractError("freshness requires owner-native clock evidence")
     rights = _require_keys(family["rights"], frozenset({"state", "profile_ref"}), name="rights")
-    if rights["state"] not in {"ALLOWED", "DERIVED_ONLY", "BLOCKED", "UNKNOWN"}:
-        raise IntelligenceVectorContractError("rights state invalid")
+    if rights != {
+        "state": "ALLOWED",
+        "profile_ref": "event_workspace.v1:derived_only",
+    }:
+        raise IntelligenceVectorContractError(
+            "Earnings rights must be ALLOWED; BLOCKED cannot carry PRESENT values"
+        )
     quality = _require_keys(family["quality"], frozenset({"flags"}), name="quality")
     if (
         not isinstance(quality["flags"], list)
@@ -1392,17 +1512,18 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             "dimension": dimension_item["dimension"],
             "state": dimension_item["state"],
             "native_metric_id": dimension_item["native_metric_id"],
-            "units": dimension_item["units"],
             "window": dimension_item["window"],
             "cadence": dimension_item["cadence"],
             "method_version": dimension_item["method_version"],
         } != {
             "dimension": "REVISION_CHANGE", "state": "PARTIAL",
-            "native_metric_id": "metric_delta:revenue", "units": "USD",
+            "native_metric_id": "metric_delta:revenue",
             "window": None, "cadence": "EVENT_NATIVE", "method_version": "metric_delta.v1",
         }:
             raise IntelligenceVectorContractError("trajectory dimension outside Earnings allowlist")
         _validate_metric_delta(dimension_item["value"])
+        if dimension_item["units"] != dimension_item["value"]["current"]["unit"]:
+            raise IntelligenceVectorContractError("trajectory units disagree with owner delta")
         for list_name in ("reference_observation_ids", "source_ref_ids"):
             if (
                 not isinstance(dimension_item[list_name], list)
@@ -1434,6 +1555,8 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("CORRECTED requires later correction refs")
     if correction["current_state"] == "CURRENT" and correction["later_correction_ref_ids"]:
         raise IntelligenceVectorContractError("CURRENT cannot carry later correction refs")
+    if correction["later_correction_ref_ids"] and correction["current_state"] != "CORRECTED":
+        raise IntelligenceVectorContractError("later correction refs require CORRECTED state")
     calibration = _require_keys(
         family["calibration"], frozenset({"state", "registration_ref"}), name="calibration",
     )
@@ -1535,8 +1658,15 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("current-registrant identity limitation must be disclosed")
     if receipt["revision_visibility_scope"] != "ISSUER_RELEASE_SOURCE_HASH_ONLY":
         raise IntelligenceVectorContractError("source-revision visibility limitation must be disclosed")
-    if "500" not in str(receipt["revision_chain_bound_disclosure"]):
+    if receipt["revision_chain_bound_disclosure"] != _REVISION_CHAIN_BOUND_DISCLOSURE:
         raise IntelligenceVectorContractError("revision-chain default bound must be disclosed")
+    assembled_at = receipt["assembled_at"]
+    if assembled_at is not None and (
+        not isinstance(assembled_at, str) or _parse_time(assembled_at) is None
+    ):
+        raise IntelligenceVectorContractError(
+            "assembly receipt assembled_at must be null or a valid timestamp"
+        )
     if (
         receipt["adapter"] != ADAPTER_SET_VERSION
         or receipt["source_reader"] != "read_event_source_revisions"
@@ -1547,16 +1677,25 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("assembly receipt event id mismatch")
     for error in receipt["errors"]:
         error_item = _require_keys(error, frozenset({"type", "message"}), name="assembly error")
-        message = str(error_item["message"])
+        message = error_item["message"]
         if (
             error_item["type"] not in {
                 "WorkspaceChainIntegrityError", "CompanyIntelligenceReadError",
             }
+            or not isinstance(message, str)
             or not message
             or len(message) > 500
             or _sanitize_error_message(message) != message
         ):
             raise IntelligenceVectorContractError("assembly error receipt is not sanitized")
+    if receipt["errors"] != sorted(
+        receipt["errors"], key=lambda error: (error["type"], error["message"]),
+    ) or len({(error["type"], error["message"]) for error in receipt["errors"]}) != len(
+        receipt["errors"]
+    ):
+        raise IntelligenceVectorContractError(
+            "assembly receipt errors must be canonical and unique"
+        )
 
     source_ref_ids = {ref["source_ref_id"] for ref in family["source_refs"]}
     root_ids = {root["evidence_root_id"] for root in family["evidence_roots"]}
@@ -1568,6 +1707,39 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         correction["later_correction_ref_ids"]
     ).issubset(source_ref_ids):
         raise IntelligenceVectorContractError("correction references unknown source refs")
+    decision_ref_ids = set(correction["decision_version_ref_ids"])
+    later_ref_ids = set(correction["later_correction_ref_ids"])
+    corrected_clock = point_in_time["corrected_at"]
+    if later_ref_ids:
+        if (
+            corrected_clock["state"] != "ASSERTED"
+            or corrected_clock["basis"] != "later_event_workspace.generated_at"
+            or set(corrected_clock["source_ref_ids"]) != later_ref_ids
+            or _parse_time(corrected_clock["value"]) is None
+        ):
+            raise IntelligenceVectorContractError(
+                "corrected_at must bind the later correction generation refs"
+            )
+        decision_generations = {
+            source_refs_by_id[ref_id]["version_or_generation"]
+            for ref_id in decision_ref_ids
+        }
+        later_generations = {
+            source_refs_by_id[ref_id]["version_or_generation"]
+            for ref_id in later_ref_ids
+        }
+        if not later_generations or decision_generations & later_generations:
+            raise IntelligenceVectorContractError(
+                "decision and correction generations must be distinct"
+            )
+    elif corrected_clock != _clock(
+        state="NOT_ASSERTED",
+        value=None,
+        basis="no_later_visible_source_revision",
+    ):
+        raise IntelligenceVectorContractError(
+            "corrected_at cannot be asserted without later correction refs"
+        )
     for root in family["evidence_roots"]:
         if root["source_ref_id"] not in source_ref_ids:
             raise IntelligenceVectorContractError("evidence root references unknown source")
@@ -1606,6 +1778,22 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                     or not any(path.startswith(prefix) for path in source_ref["field_paths"])
                 ):
                     raise IntelligenceVectorContractError("observation source lineage is not exact")
+    present_observations = [
+        observation for observation in family["observations"]
+        if observation["value_state"] == "PRESENT"
+    ]
+    if family["identity_state"] != "RESOLVED" and (
+        family["source_refs"]
+        or family["evidence_roots"]
+        or present_observations
+        or trajectory["dimensions"]
+        or correction["decision_version_ref_ids"]
+        or correction["later_correction_ref_ids"]
+        or item["economic_dependence_groups"]
+    ):
+        raise IntelligenceVectorContractError(
+            "unresolved identity cannot carry owner evidence"
+        )
     for dimension in trajectory["dimensions"]:
         if not set(dimension["reference_observation_ids"]).issubset(observation_ids):
             raise IntelligenceVectorContractError("trajectory references unknown observations")
