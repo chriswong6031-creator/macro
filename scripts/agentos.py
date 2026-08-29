@@ -64,6 +64,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import fnmatch
+import hashlib
 import json
 import os
 import re
@@ -97,6 +98,7 @@ STATE_SCHEMA = "agent_os_state.v1"
 BRIEF_SCHEMA = "ceo_brief.v1"
 READINESS_SCHEMA = "agentos.readiness.v1"
 PROGRAM_REGISTRY_SCHEMA = "agentos.program_registry.v1"
+SOURCE_RECORDS_DIGEST_SCHEMA = "agentos.source_records_digest.v1"
 
 # Sibling checkouts, resolved by walking up from this repo.  Macro is this checkout; the
 # other two are separate clones under the shared project home.  Absent is NORMAL (I4).
@@ -1142,6 +1144,56 @@ class Store:
         return {k[len(marker):]: v for k, v in self.records.items() if k.startswith(marker)}
 
 
+def _record_repository_root(record_root: Path) -> Path:
+    """Repository root used for stable source-path identity.
+
+    The canonical store is ``<repo>/agentos``.  Tests and explicit ``--root`` callers
+    may use an equivalent isolated tree outside this checkout; its parent is then the
+    only honest repository-relative anchor.
+    """
+    resolved = record_root.resolve()
+    try:
+        resolved.relative_to(_ROOT)
+    except ValueError:
+        return resolved.parent
+    return _ROOT
+
+
+def _direct_record_paths(root: Path) -> list[Path]:
+    """Every direct authored record path the canonical store loader can inspect."""
+    return [
+        path
+        for folder, _prefix, _fileprefix, _checker in SPECS
+        for path in sorted((root / folder).glob("*.md"))
+    ]
+
+
+def _source_records_digest(
+    paths: Iterable[Path], *, repository_root: Path = _ROOT
+) -> str:
+    """Content identity of exact direct-record paths and bytes.
+
+    Each source contributes ``repository-relative UTF-8 path + NUL + SHA-256(bytes)``
+    inside one canonical compact JSON envelope.  Acquisition clocks, git metadata,
+    generated views and live joins never enter this function.
+    """
+    root = repository_root.resolve()
+    sources: dict[str, Path] = {}
+    for raw_path in paths:
+        path = Path(raw_path).resolve()
+        relative = path.relative_to(root).as_posix()
+        sources[relative] = path
+    rows = [
+        relative + "\0" + hashlib.sha256(sources[relative].read_bytes()).hexdigest()
+        for relative in sorted(sources)
+    ]
+    envelope = {"schema": SOURCE_RECORDS_DIGEST_SCHEMA, "sources": rows}
+    payload = json.dumps(
+        envelope, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(payload).hexdigest()
+
+
 def load_store(root: Path, programs: set[str] | None) -> Store:
     """Parse and check every record under ``root``.  Never raises; never writes."""
     store = Store(root)
@@ -1948,6 +2000,10 @@ def build_state(
     return {
         "schema": STATE_SCHEMA,
         "generator": "scripts/agentos.py status",
+        "source_records_digest": _source_records_digest(
+            _direct_record_paths(store.root),
+            repository_root=_record_repository_root(store.root),
+        ),
         # ---- envelope: volatile, excluded from the byte-identity comparison ----
         "generated_at": _iso_z(now),
         "inputs": {
@@ -1983,7 +2039,8 @@ def build_state(
 
 
 PURE_SECTIONS = (
-    "schema", "generator", "program_registry", "workstreams", "needs_ceo", "warnings"
+    "schema", "generator", "source_records_digest", "program_registry", "workstreams",
+    "needs_ceo", "warnings"
 )
 
 
@@ -3327,6 +3384,32 @@ def _workstream_excerpt(
 # ------------------------------------------------------------ Phase 3: the walk
 
 
+def _bundle_source_record_paths(
+    store: Store, envelope: dict[str, Any]
+) -> list[Path]:
+    """Direct record candidates named by the complete bounded compiler walk.
+
+    The union spans selected, budget-omitted and field-excluded rows.  Consequently a
+    clock crossing may move a record between those projections without moving source
+    identity.  Non-Agent-OS higher-law and artifact pointers never resolve through the
+    store path table and are excluded by construction.
+    """
+    projected = {_rel(path): path for path in store.paths.values()}
+    rows: list[dict[str, Any]] = []
+    for section in envelope.get("sections") or []:
+        if isinstance(section, dict):
+            rows.extend(item for item in section.get("items") or [] if isinstance(item, dict))
+    rows.extend(item for item in envelope.get("excluded") or [] if isinstance(item, dict))
+    rows.extend(
+        item for item in envelope.get("omitted_due_to_budget") or [] if isinstance(item, dict)
+    )
+    return [
+        projected[path]
+        for row in rows
+        if isinstance((path := row.get("path")), str) and path in projected
+    ]
+
+
 def compile_bundle(
     store: Store,
     *,
@@ -3357,6 +3440,9 @@ def compile_bundle(
 
     envelope: dict[str, Any] = {
         "schema": BUNDLE_SCHEMA,
+        "source_records_digest": _source_records_digest(
+            [], repository_root=_record_repository_root(store.root)
+        ),
         "target": {
             "workstream": f"WS:{target['key']}" if target["key"] else None,
             "task": task,
@@ -3795,6 +3881,10 @@ def compile_bundle(
     ]
     envelope["excluded"] = excluded
     envelope["omitted_due_to_budget"] = omitted
+    envelope["source_records_digest"] = _source_records_digest(
+        _bundle_source_record_paths(store, envelope),
+        repository_root=_record_repository_root(store.root),
+    )
     # Re-read at the end: the walk itself degrades (an unresolvable DNR row, an absent
     # sibling), and a snapshot taken at envelope time would drop exactly those.
     envelope["degraded"] = list(degraded.items)
