@@ -1175,3 +1175,207 @@ unchanged (92/285 applied, 1,661/31,119 rows, `|snap_sessions|` mean
 1.22/median 1.0/max 4.0). `data/stock_identity/ruler/ruler_spec_v1.json`'s
 `pr3` block and `data/trial_ledger.jsonl` confirmed byte-identical
 before/after via `git diff`.
+
+## 6.13 Sol CONFIRMATION-1/CONFIRMATION-2 (SI-W3A-RULER-V1) — availability-eligibility closed law + cadence-control coverage output
+
+Sol's ruling (Slack ts `1787967972.011309`) closed the availability-null
+question with exact law, declaring the `_episode_family_availability_state`
+predicate as it stood after §6.11's Ruling 2 NOT seal-ready, and separately
+required a machine-readable cadence-control coverage/state output for W3B.
+Two independent parts, both implemented in `engine/stock_identity/ruler.py`
+and `engine/stock_identity/ruler_nulls.py`; D3b's own per-fire mechanics
+(§6.11 Ruling 3) stay byte-untouched — no bound widening, no per-fire K, no
+coverage rescue.
+
+### Part 1 — availability-eligibility closed law (five points)
+
+`build_family_episode_availability` / `_episode_family_availability_state`
+now implement Sol's five-point law exactly:
+
+1. **Hard lower bound (unchanged from Ruling 2).** A non-null
+   `family_first_available` remains a hard lower bound — episodes before it
+   type `NOT_YET_AVAILABLE`.
+2. **Class-P is unavailable regardless of the bound.** A family whose W2
+   registry `provenance_class` is `"P"` (prospective-only / structural-
+   absence) types `"STRUCTURAL_ABSENCE"` for EVERY tier-eligible episode,
+   checked BEFORE any date-bound logic — a Class-P entry with a non-null
+   `family_first_available` (the real registry's own `amber_early`, born
+   2026-08-11) still resolves here, never to `NOT_YET_AVAILABLE`/`ELIGIBLE`.
+3. **Null-bound R/B eligibility requires positive, outcome-independent
+   reconstructibility evidence**, drawn entirely from existing W2 registry
+   receipts, `bars_by_symbol` plane coverage, and the SAME ticker-identity
+   hygiene machinery (`engine.stock_identity.hygiene.check_symbol`) every
+   other name in this program is checked against — no second availability/
+   event/evidence store:
+   * (a) a receipted source/era spec — the registry entry's own `spec_hash`
+     is non-empty (every real R/B `_entry()` in
+     `engine/stock_identity/replay/registry.py` carries one; only a Class-P
+     or malformed entry does not);
+   * (b) required producer inputs exist — when the registry's own
+     `producer` field embeds a committed `data/...` store path (
+     `confirmed_buy`/`rebuy`'s `data/signal_archive/track_record.parquet`,
+     `sea_event_classes`'s `data/stock_events`), that path must exist on
+     disk; a pure engine-function producer (`grey_dot_macro`, the tier
+     cascade, the naive comparators, the locked-spec Terminal ports) names
+     no store path, so this check is vacuous for those families, never a
+     false exclusion;
+   * (c) price-plane coverage — unchanged from Ruling 2, `bars_by_symbol`
+     covers the episode's instrument/window;
+   * (d) identity resolvability — the symbol passes
+     `hygiene.check_symbol(...)["compute_eligible"]` (the same
+     splice/reuse-refusal verdict `COMPUTE_BLOCKLIST` already governs
+     elsewhere in this program — one committed entry, `ABX`, as of
+     2026-08-28).
+
+   These four sub-checks are scoped EXACTLY as Sol's ruling states them —
+   "for historical R/B families with NULL first-available" — a family with a
+   real, committed `family_first_available` bound (`reclaim_waiver`,
+   `washout_turn`, `amber_early`) is governed by point 1 alone and is not
+   additionally gated by (a)/(b)/(d).
+4. **Fail-closed on any unestablished source-specific availability.** A
+   failure of (b) types `"SOURCE_FAILED"`; a failure of (d) types
+   `"IDENTITY_UNRESOLVED"`; (a) failing, like every other missing-evidence
+   path, types `"UNESTIMABLE"`. None of these ever falls through to
+   eligibility, and eligibility is NEVER inferred from the family having
+   fired (`aggregate_cell_metrics`'s eligibility universe still never reads
+   `events` for this purpose — unchanged from Ruling 2) or from the null
+   itself.
+5. **A missing registry entry or missing field stays UNESTIMABLE.** Extended
+   from Ruling 2 to cover a genuinely missing `provenance_class` field too
+   (`_family_provenance_class`'s `field_present=False` path) — a missing
+   class is NEVER guessed or defaulted to R/B, which would be exactly the
+   eligibility-widening the ruling forbids. Checked against the real
+   committed registry: all 24 `data/stock_identity/expert_events/
+   family_registry.json` entries carry a `provenance_class` (10 R / 6 B / 8
+   P) — the fail-closed path exists but is currently unexercised in
+   production; no family lacked the field, so no class was invented and
+   nothing needed to be reported as a gap.
+
+**New closed-taxonomy states exercised by this predicate**: `"STRUCTURAL_
+ABSENCE"`, `"SOURCE_FAILED"`, `"IDENTITY_UNRESOLVED"` — all three were
+already members of `AVAILABILITY_TAXONOMY_TOKENS` (§ frozen taxonomy, freeze
+§7) but were never actually PRODUCED by `_episode_family_availability_state`
+before this pass; no new token was added.
+
+**Sol's five required regressions** (`tests/test_stock_identity_ruler.py`):
+
+* **(a)** `test_class_p_family_never_eligible_regardless_of_null_date_confirmation1_regression_a`
+  — a Class-P family with a null bound, and separately with a SET bound
+  (mirroring `amber_early`), both type `STRUCTURAL_ABSENCE`, never
+  `ELIGIBLE`.
+* **(b)** `test_rb_null_bound_family_eligible_with_lawful_source_input_coverage_confirmation1_regression_b`
+  — an R family, null-bound, receipted spec, an EXISTING declared producer
+  store (created under a throwaway `repo_root` so the positive branch is
+  genuinely exercised), full bars coverage, resolvable identity -> `ELIGIBLE`.
+* **(c)** `test_rb_null_bound_family_missing_source_coverage_types_unavailable_confirmation1_regression_c`
+  — the SAME family with an absent declared producer store types
+  `SOURCE_FAILED`; separately, with no `spec_hash` at all, types
+  `UNESTIMABLE`.
+* **(d)** `test_zero_fire_eligible_episode_still_grows_denominator_under_narrowed_law_confirmation1_regression_d`
+  — under the NARROWED predicate, a zero-fire-but-eligible episode still
+  grows `recall_at_tier`'s denominator (1.0 -> 0.5), re-proving Ruling 2's
+  regression (a) still holds after CONFIRMATION-1 narrows eligibility.
+* **(e)** `test_no_fired_on_fallback_under_any_missing_evidence_path_confirmation1_regression_e`
+  — AAA plainly fires, but FOUR distinct missing-evidence paths (no
+  registry; missing `provenance_class`; null-bound R missing `spec_hash`;
+  null-bound R with an absent declared producer store) all leave
+  `recall_at_tier` undefined, never silently read off the fire.
+
+Plus `test_identity_unresolved_symbol_never_eligible_under_null_bound`
+(point 3(d) in isolation, against the real `ABX` `COMPUTE_BLOCKLIST` entry
+and the real `repo_root` default).
+
+Every pre-existing fixture conferring "unrestricted" lawful availability
+(`_unrestricted_registry` in `tests/test_stock_identity_ruler.py`, and the
+two `fam.synthetic` fixtures in `tests/test_stock_identity_w3_calibration.py`)
+was updated to carry an explicit `provenance_class="R"` and a synthetic
+`spec_hash`, matching the precedent Ruling 2 itself set — an "unrestricted"
+fixture now means "a receipted R/B family with no declared producer-store
+dependency and no registered lower bound", not merely "no lower bound".
+
+### Part 2 — cadence-control coverage output (W3B input)
+
+`engine/stock_identity/ruler_nulls.py` gains `build_cadence_control_coverage`
+and `cadence_control_coverage_summary` — a pure, read-only, non-persisted-
+elsewhere rollup of `grain_cadence_null`'s own (byte-untouched) per-fire
+`cadence_null_state` output to one row per `(family_key, symbol, grain)`
+triple, carrying a closed state drawn from `CADENCE_CONTROL_STATES =
+("CONTROLLED", "UNESTIMABLE", "NO_CALENDAR")` — a direct rename of D3b's own
+`"applied"`/`"unestimable"`/`"no_calendar"` values, never a new computation.
+D3b's `cadence_null_state` is uniform per `(family_key, symbol)` group by
+construction (the shared base shift `K` and the lawful/unlawful verdict are
+decided once per group, never per grain), so a group whose fires span
+multiple grains (the real pilot cohort's `sea_event_classes` family) reports
+the SAME state for every grain row it touches — read via `.mode()` rather
+than assumed, so a future change to that invariant would surface as a mixed-
+state group. `scripts/stock_identity_build_ruler.py`'s `--include-nulls`
+path now writes `cadence_control_coverage_v1.parquet` alongside the existing
+null artifacts and adds a `manifest["nulls"]["cadence_control_coverage"]`
+summary block (`n_groups`, `state_counts`, `n_fires_total`).
+
+**Dark-group inference prohibition (verbatim, for W3B/W5).** A group not
+exact-phase-controlled may not support any claim requiring cadence-controlled
+or cross-grain inference, and W3B/W5 must abstain/exclude where the
+preregistered inference requires this control — the power/ABSTAIN law owns
+the consequence. Concretely: a `(family_key, symbol, grain)` triple whose
+`cadence_control_state` is `"UNESTIMABLE"` or `"NO_CALENDAR"` is NOT
+exact-phase-controlled (D3b could not verify or could not even attempt exact
+weekday-phase preservation for it), and any downstream inference that
+requires cadence control or a cross-grain comparison must abstain from or
+exclude that triple rather than silently treating it as controlled. Only
+`"CONTROLLED"` triples are exact-phase-controlled in D3b's own sense. This
+output makes that distinction machine-readable rather than requiring a
+future reader to re-derive it from the raw per-fire null artifact.
+
+Tests (`tests/test_stock_identity_ruler_nulls.py`): empty/missing-column
+handling, each of the three states mapped correctly (`NO_CALENDAR` from a
+symbol with no calendar; `CONTROLLED` from a sparse, well-separated daily
+group that D3b applies cleanly; `UNESTIMABLE` reusing the same dense-Friday-
+cluster seed-search construction §6.11's own discriminating test uses), the
+mixed-grain-group-reports-uniform-state invariant, closed-state-set
+membership, and the summary's state-count/total-fires reporting.
+
+### Pilot smoke re-run (this packet)
+
+Re-run via `python3 scripts/stock_identity_build_ruler.py --pilot
+--include-nulls --output-dir <dir>`: `spec_hash` unchanged
+(`43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb` — this
+repair touches only `ruler.py`/`ruler_nulls.py` logic and docstrings, never
+`RulerSpec`'s geometry or the still-pending `pr3` sentinel, confirmed by
+direct hash comparison before/after). `data/stock_identity/ruler/
+ruler_spec_v1.json`'s `pr3` block and `data/trial_ledger.jsonl` are both
+confirmed byte-identical before/after via `git diff` (zero diff).
+
+**Availability distribution — measured IDENTICAL to §6.12's baseline, row for
+row.** A direct comparison (the repaired predicate vs. an inline
+reconstruction of the pre-CONFIRMATION-1, Ruling-2-only predicate, run over
+the SAME committed pilot events/episodes/registry/bars) produced **zero**
+row-level differences: **4,372 ELIGIBLE, 308 NOT_YET_AVAILABLE**, no
+`STRUCTURAL_ABSENCE`/`SOURCE_FAILED`/`IDENTITY_UNRESOLVED`/`UNESTIMABLE`/
+`NO_COVERAGE` rows in either version, on this pilot cohort. This is an
+honest, expected result, not a sign the narrowing did nothing: Class-P
+families ship zero committed W2 rows by construction, so they never reach
+this frame via the wired `fire_family_keys` path (regression (a) above
+proves the predicate excludes them correctly when called directly, which is
+what makes it correct AS LAW, independent of the current call graph); every
+fired R/B family in the real registry carries a genuine `spec_hash` and
+either no declared producer-store dependency or one that exists on disk
+(`confirmed_buy`/`rebuy`'s `data/signal_archive/track_record.parquet`,
+`sea_event_classes`'s `data/stock_events` — both verified present); and no
+fired episode in this pilot touches the one `COMPUTE_BLOCKLIST` symbol
+(`ABX`). `recall_at_tier_distribution` is therefore unchanged from §6.12: 34/
+50 cells defined, mean 0.0656, median 0.0209, P25 0.0; `family_symbol_
+availability` unchanged: 300 pairs / 20 unavailable, 4,680 rows / 308
+unavailable (all `NOT_YET_AVAILABLE`).
+
+**Cadence-control coverage (new artifact, this packet).** 315
+`(family_key, symbol, grain)` groups over 31,119 total fires: **94
+`CONTROLLED`**, **221 `UNESTIMABLE`**, **0 `NO_CALENDAR`** (every pilot
+symbol carries a trading calendar). Note the granularity difference from
+§6.12 Item 2's `92/285` `(family_key, symbol)`-level figure (no grain in the
+key) — this artifact adds `grain` to the group key, so a `(family_key,
+symbol)` group whose fires span two grains (`sea_event_classes`, observed in
+the real pilot cohort) now contributes two coverage rows both carrying the
+SAME state, which is why `94+221=315` exceeds `92+193=285`: 30 extra rows
+come from mixed-grain groups being counted once per grain they touch, not
+from a different underlying verdict.

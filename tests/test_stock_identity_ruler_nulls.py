@@ -31,11 +31,15 @@ import pandas as pd
 import pytest
 
 from engine.stock_identity.ruler_nulls import (
+    CADENCE_CONTROL_COVERAGE_COLUMNS,
+    CADENCE_CONTROL_STATES,
     GRAIN_CADENCE_NULL_MAX_SESSIONS,
     GRAIN_CADENCE_NULL_MIN_SESSIONS,
     GRAIN_CADENCE_SNAP_BOUND_SESSIONS,
     GRAIN_PERIOD_SESSIONS,
     PROXIMITY_PAIR_COLUMNS,
+    build_cadence_control_coverage,
+    cadence_control_coverage_summary,
     equal_proximity_control,
     grain_cadence_null,
     grain_cadence_null_summary,
@@ -573,3 +577,108 @@ def test_equal_proximity_control_never_pairs_across_grains_m3_minor():
     out, truncated = equal_proximity_control(metrics, tolerance_atr=0.5)
     assert out.empty
     assert truncated == 0
+
+
+# ---------------------------------------------------------------------------
+# Sol CONFIRMATION-2 (SI-W3A-RULER-V1): build_cadence_control_coverage /
+# cadence_control_coverage_summary -- the machine-readable per-(family_key,
+# symbol, grain) cadence-control coverage/state rollup over
+# grain_cadence_null's own (byte-untouched) per-fire output.
+# ---------------------------------------------------------------------------
+def test_cadence_control_coverage_empty_on_empty_or_missing_columns():
+    empty = pd.DataFrame()
+    out = build_cadence_control_coverage(empty)
+    assert out.empty
+    assert list(out.columns) == list(CADENCE_CONTROL_COVERAGE_COLUMNS)
+    assert build_cadence_control_coverage(None).empty
+    no_state_col = pd.DataFrame({"family_key": ["fam.x"], "symbol": ["AAA"], "grain": ["1D"]})
+    assert build_cadence_control_coverage(no_state_col).empty
+
+
+def test_cadence_control_coverage_no_calendar_state_maps_correctly():
+    events = _events_for_symbol(symbol="NOCAL", family_key="fam.x", grain="1D")
+    null_out = grain_cadence_null(events, {}, seed=1)
+    coverage = build_cadence_control_coverage(null_out)
+    assert len(coverage) == 1
+    row = coverage.iloc[0]
+    assert row["family_key"] == "fam.x"
+    assert row["symbol"] == "NOCAL"
+    assert row["grain"] == "1D"
+    assert row["cadence_control_state"] == "NO_CALENDAR"
+    assert row["n_fires"] == len(events)
+
+
+def test_cadence_control_coverage_applied_state_maps_to_controlled():
+    """A sparse, well-separated daily group on a plain trading calendar reads
+    'applied' from D3b and must map to 'CONTROLLED' here."""
+    bars = {"AAA": _trading_calendar_bars(start="2018-01-01", n=1200)}
+    events = _events_for_symbol(symbol="AAA", family_key="fam.d", grain="1D", n=5,
+                                 start="2019-06-03", step_days=20)
+    null_out = grain_cadence_null(events, bars, seed=7)
+    assert (null_out["cadence_null_state"] == "applied").all()
+    coverage = build_cadence_control_coverage(null_out)
+    assert len(coverage) == 1
+    row = coverage.iloc[0]
+    assert row["cadence_control_state"] == "CONTROLLED"
+    assert row["n_fires"] == len(events)
+
+
+def test_cadence_control_coverage_unestimable_state_maps_correctly():
+    """Reuses the same dense-Friday-cluster construction that reliably drives
+    grain_cadence_null to a whole-group 'unestimable' verdict for at least one
+    seed (test_grain_cadence_null_dense_cluster_marks_group_unestimable)."""
+    bars = {"AAA": _trading_calendar_bars_with_holidays(start="2018-01-01", n=1200)}
+    calendar = pd.DatetimeIndex(sorted(bars["AAA"].index))
+    fridays = calendar[calendar.weekday == 4]
+    fridays = fridays[calendar.searchsorted(fridays) < 400][:20]
+    events = pd.DataFrame({
+        "event_id": [f"E{i}" for i in range(len(fridays))],
+        "family_key": ["fam.w"] * len(fridays), "symbol": ["AAA"] * len(fridays),
+        "signal_ts": fridays, "signal_known_ts": fridays, "grain": ["W"] * len(fridays),
+    })
+    found = False
+    for seed in range(60):
+        null_out = grain_cadence_null(events, bars, seed=seed)
+        if (null_out["cadence_null_state"] == "unestimable").all():
+            coverage = build_cadence_control_coverage(null_out)
+            assert len(coverage) == 1
+            assert coverage.iloc[0]["cadence_control_state"] == "UNESTIMABLE"
+            assert coverage.iloc[0]["n_fires"] == len(events)
+            found = True
+            break
+    assert found, "expected at least one seed in range(60) to produce a whole-group unestimable verdict"
+
+
+def test_cadence_control_coverage_mixed_grain_group_reports_group_level_state_per_grain():
+    """D3b's cadence_null_state is uniform per (family_key, symbol) group by
+    construction -- a group whose fires span TWO grains (the real pilot
+    cohort's sea_event_classes shape) must report the SAME state for both
+    grain rows, never a fabricated per-grain distinction D3b never computed."""
+    events = _events_for_symbol(symbol="NOCAL", family_key="fam.mixed", grain="1D", n=3)
+    events2 = _events_for_symbol(symbol="NOCAL", family_key="fam.mixed", grain="W", n=2,
+                                  start="2020-03-01", step_days=7)
+    events = pd.concat([events, events2], ignore_index=True)
+    null_out = grain_cadence_null(events, {}, seed=1)
+    coverage = build_cadence_control_coverage(null_out)
+    assert set(coverage["grain"]) == {"1D", "W"}
+    assert (coverage["cadence_control_state"] == "NO_CALENDAR").all()
+    assert coverage.set_index("grain")["n_fires"].to_dict() == {"1D": 3, "W": 2}
+
+
+def test_cadence_control_coverage_states_are_closed():
+    events = _events_for_symbol(symbol="NOCAL", family_key="fam.x", grain="1D")
+    null_out = grain_cadence_null(events, {}, seed=1)
+    coverage = build_cadence_control_coverage(null_out)
+    assert set(coverage["cadence_control_state"]) <= set(CADENCE_CONTROL_STATES)
+
+
+def test_cadence_control_coverage_summary_reports_state_counts():
+    events = _events_for_symbol(symbol="NOCAL", family_key="fam.x", grain="1D")
+    null_out = grain_cadence_null(events, {}, seed=1)
+    coverage = build_cadence_control_coverage(null_out)
+    summary = cadence_control_coverage_summary(coverage)
+    assert summary["n_groups"] == 1
+    assert summary["state_counts"] == {"NO_CALENDAR": 1}
+    assert summary["n_fires_total"] == len(events)
+    empty_summary = cadence_control_coverage_summary(pd.DataFrame())
+    assert empty_summary == {"n_groups": 0, "state_counts": {}, "n_fires_total": 0}

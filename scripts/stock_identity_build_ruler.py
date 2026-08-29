@@ -39,6 +39,8 @@ from engine.stock_identity.ruler import (  # noqa: E402
     compute_unconditional_block,
 )
 from engine.stock_identity.ruler_nulls import (  # noqa: E402
+    build_cadence_control_coverage,
+    cadence_control_coverage_summary,
     equal_proximity_control,
     grain_cadence_null,
     grain_cadence_null_summary,
@@ -280,9 +282,18 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
         grain_null_events = grain_cadence_null(events, bars, seed=GRAIN_CADENCE_NULL_SEED)
         proximity, proximity_truncated = equal_proximity_control(fire_metrics, EQUAL_PROXIMITY_TOLERANCE_ATR)
 
+        # Sol CONFIRMATION-2 (SI-W3A-RULER-V1): the machine-readable per-
+        # (family_key, symbol, grain) cadence-control coverage/state rollup,
+        # designed as an outcome-independent input for W3B's estimability
+        # census -- a pure, read-only view over grain_null_events, never a
+        # second event/evidence store. D3b mechanics (grain_cadence_null
+        # itself) are byte-untouched by this addition.
+        cadence_coverage = build_cadence_control_coverage(grain_null_events)
+
         _write_parquet(random_null_events, output_dir / "null_random_fire_events_v1.parquet")
         _write_parquet(grain_null_events, output_dir / "null_grain_cadence_events_v1.parquet")
         _write_parquet(proximity, output_dir / "equal_proximity_control_v1.parquet")
+        _write_parquet(cadence_coverage, output_dir / "cadence_control_coverage_v1.parquet")
         # parquet-side summary alongside the pairs artifact (freeze review M2/M3 —
         # any truncation must be emitted, not silently dropped; zero is expected).
         (output_dir / "equal_proximity_summary_v1.json").write_text(
@@ -304,6 +315,11 @@ def build(output_dir: Path, *, include_nulls: bool) -> dict[str, Any]:
             "equal_proximity_tolerance_atr": EQUAL_PROXIMITY_TOLERANCE_ATR,
             "equal_proximity_pairs": int(len(proximity)),
             "equal_proximity_pairs_truncated": proximity_truncated,
+            # Sol CONFIRMATION-2: cadence-control coverage/state summary
+            # (CONTROLLED / UNESTIMABLE / NO_CALENDAR), the same closed states
+            # as grain_cadence_summary's own null output, rolled up to
+            # (family_key, symbol, grain).
+            "cadence_control_coverage": cadence_control_coverage_summary(cadence_coverage),
         }
 
     (output_dir / "manifest.json").write_text(

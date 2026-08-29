@@ -77,16 +77,47 @@ __all__ = [
     "GRAIN_CADENCE_SNAP_BOUND_SESSIONS",
     "GRAIN_CADENCE_NULL_MIN_SESSIONS",
     "GRAIN_CADENCE_NULL_MAX_SESSIONS",
+    "CADENCE_CONTROL_COVERAGE_COLUMNS",
+    "CADENCE_CONTROL_STATES",
     "random_fire_null",
     "grain_cadence_null",
     "grain_cadence_null_summary",
     "equal_proximity_control",
+    "build_cadence_control_coverage",
+    "cadence_control_coverage_summary",
 ]
 
 PROXIMITY_PAIR_COLUMNS: tuple[str, ...] = (
     "left_event_id", "right_event_id", "left_family_key", "right_family_key",
     "left_atr_dist", "right_atr_dist", "atr_dist_gap", "episode_id", "grain",
 )
+
+#: Sol CONFIRMATION-2 (SI-W3A-RULER-V1): the machine-readable per-``(family_key,
+#: symbol, grain)`` cadence-control coverage/state rollup :func:`
+#: build_cadence_control_coverage` emits, designed as an OUTCOME-INDEPENDENT
+#: input for W3B's estimability census (the STATE never reads a fire's own
+#: capture/false_start/anchor outcome, only D3b's own calendar/cadence
+#: structural verdict).
+CADENCE_CONTROL_COVERAGE_COLUMNS: tuple[str, ...] = (
+    "family_key", "symbol", "grain", "cadence_control_state", "n_fires",
+)
+
+#: The closed cadence-control state taxonomy — a direct, renamed reflection of
+#: :func:`grain_cadence_null`'s own three ``cadence_null_state`` values
+#: (D3b mechanics stay byte-untouched; only this rollup's naming differs, to
+#: read as a coverage/estimability verdict rather than an internal null-build
+#: detail): ``"applied"`` -> ``"CONTROLLED"`` (the group's exact-weekday-phase
+#: shift+snap succeeded), ``"unestimable"`` -> ``"UNESTIMABLE"`` (a lawful
+#: same-weekday target could not be found, or the snapped positions collided/
+#: inverted), ``"no_calendar"`` -> ``"NO_CALENDAR"`` (the symbol carried no
+#: trading calendar at all).
+CADENCE_CONTROL_STATES: tuple[str, ...] = ("CONTROLLED", "UNESTIMABLE", "NO_CALENDAR")
+
+_CADENCE_NULL_STATE_TO_CONTROL_STATE: dict[str, str] = {
+    "applied": "CONTROLLED",
+    "unestimable": "UNESTIMABLE",
+    "no_calendar": "NO_CALENDAR",
+}
 
 #: Deterministic seeded circular-shift offset range for the grain/cadence null
 #: (freeze review finding M4) — in TRADING sessions, never calendar days.
@@ -539,3 +570,70 @@ def equal_proximity_control(metrics: pd.DataFrame, tolerance_atr: float) -> tupl
     if not rows:
         return empty, truncated
     return pd.DataFrame(rows)[list(PROXIMITY_PAIR_COLUMNS)], truncated
+
+
+def build_cadence_control_coverage(grain_null_events: pd.DataFrame) -> pd.DataFrame:
+    """Sol CONFIRMATION-2 (SI-W3A-RULER-V1): roll :func:`grain_cadence_null`'s
+    per-fire ``cadence_null_state`` output up to one row per ``(family_key,
+    symbol, grain)`` triple, carrying a closed :data:`CADENCE_CONTROL_STATES`
+    verdict — designed as an OUTCOME-INDEPENDENT input for W3B's estimability
+    census (the state reflects only D3b's own calendar/cadence structural
+    verdict, never a fire's capture/false_start/anchor outcome).
+
+    D3b's ``cadence_null_state`` is uniform across an entire ``(family_key,
+    symbol)`` group by construction (the shared base shift ``K`` and the
+    lawful/unlawful verdict are decided once per group, never per grain) — a
+    group whose fires span multiple ``grain`` values (observed in the real
+    pilot cohort's ``sea_event_classes`` family) therefore reports the SAME
+    state for every grain it touches, which is the correct, honest reflection
+    of an existing group-level verdict, not a new per-grain computation. The
+    per-(family,symbol) invariant is read via ``.mode()`` rather than assumed,
+    so a future change to that invariant would surface as a mixed-state group
+    rather than silently picking an arbitrary row.
+
+    This function builds NO second event/evidence store: it is a pure,
+    non-persisted rollup of ``grain_cadence_null``'s own already-computed
+    output, mirroring the same "derive from existing machinery" discipline as
+    the availability predicate (``engine.stock_identity.ruler``). D3b's own
+    per-fire mechanics (:func:`grain_cadence_null`,
+    :func:`_snap_to_own_weekday`, the ``[63, 252]``-session base-shift range,
+    the 4-session snap bound) are UNTOUCHED by this addition — this is a
+    read-only view over their output.
+    """
+    empty = pd.DataFrame({c: pd.Series(dtype="object") for c in CADENCE_CONTROL_COVERAGE_COLUMNS})
+    if grain_null_events is None or grain_null_events.empty:
+        return empty
+    keys = ["family_key", "symbol", "grain"]
+    if not ({"cadence_null_state", *keys} <= set(grain_null_events.columns)):
+        return empty
+
+    rows: list[dict[str, Any]] = []
+    for (fam, sym, grain), sub in grain_null_events.groupby(keys, dropna=False):
+        modes = sub["cadence_null_state"].mode()
+        state_raw = modes.iloc[0] if not modes.empty else None
+        state = _CADENCE_NULL_STATE_TO_CONTROL_STATE.get(str(state_raw), "UNESTIMABLE")
+        rows.append({
+            "family_key": fam, "symbol": sym, "grain": grain,
+            "cadence_control_state": state, "n_fires": int(len(sub)),
+        })
+    if not rows:
+        return empty
+    return pd.DataFrame(rows, columns=list(CADENCE_CONTROL_COVERAGE_COLUMNS)).sort_values(
+        ["family_key", "symbol", "grain"]
+    ).reset_index(drop=True)
+
+
+def cadence_control_coverage_summary(coverage: pd.DataFrame) -> dict[str, Any]:
+    """Manifest-block summary for :func:`build_cadence_control_coverage`'s
+    output — per-state group counts plus the total fire count, surfaced in the
+    W3A build manifest alongside the null's own row-level output (same
+    pattern as :func:`grain_cadence_null_summary`)."""
+    if coverage is None or coverage.empty:
+        return {"n_groups": 0, "state_counts": {}, "n_fires_total": 0}
+    return {
+        "n_groups": int(len(coverage)),
+        "state_counts": {
+            str(k): int(v) for k, v in coverage["cadence_control_state"].value_counts().items()
+        },
+        "n_fires_total": int(coverage["n_fires"].sum()),
+    }
