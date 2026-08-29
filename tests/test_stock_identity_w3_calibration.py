@@ -1275,7 +1275,7 @@ def test_real_sealed_receipt_status_field_predates_the_rule_form_ruling():
     rule-form ruling (Ruling 1, W3_RULER_REGISTRATION.md §6.11) landed BEFORE
     this seal and the sealed ``rule``/``rule_hash`` fields are exactly Sol's
     ruled forms (Ruling 1(a) for recall_floor, Ruling 1(b) for lambda_fs; the
-    hashes below match §6.11's re-pinned values and
+    hashes below match §3.1's re-pinned values and
     test_rule_hashes_match_the_currently_committed_registration_values above).
     ``RULE_REVIEW_STATUS`` is a single module-level constant the seal path
     never re-derives per constant, so the sealed receipt still carries the

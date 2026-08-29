@@ -23,7 +23,7 @@ changed:
   - {path: scripts/stock_identity_calibration_replay.py, what: "Bounded calibration-fire substrate act (Sol 7-point closed law): drawn-roster-only, frozen 126td cutoff enforced at output level with drop counters + ::warning, typed blockers, sampled-run refusal, provenance receipt with censored-share fields."}
   - {path: scripts/stock_identity_calibrate_w3.py, what: "One-time constant-setting act: Sol-ruled A2/B1 rule forms, fail-closed BLOCKED_DEGENERATE_CALIBRATION, roster-coverage hash gate, masked dry-run, TrialLedger grid/look-budget registration, hash-chained seal receipt incl. ruler implementation byte-hashes."}
   - {path: data/stock_identity/ruler/ruler_spec_v1.json, what: "SEALED 2026-08-29T03:37:58Z: recall_floor=0.05, lambda_fs=0.00027929738756017066, full receipt (roster 2609c8ac, manifest e6b85fd8, W2 registry 1d3902f3, provenance 2ee5d712, ruler.py 42905b81, ruler_nulls.py cd572714, spec 43bb66b0->fda9b825, sealed receipt hash a599ea14)."}
-  - {path: data/trial_ledger.jsonl, what: "6 rows registered pre-execution under family stock_identity_w3_ruler_calibration: +/-20% diagnostic grids for both constants + declared_budget (fit-read look budget 3)."}
+  - {path: data/trial_ledger.jsonl, what: "7 lines appended pre-execution under family stock_identity_w3_ruler_calibration: 6 diagnostic-grid rows (+/-20% for both constants; the receipt's trial_ledger_effective_n=6 counts these) plus 1 declared_budget row (fit-read look budget 3). The seal commit message's '6 rows' undercounts by the budget row — corrected here; the receipt itself is accurate."}
   - {path: research/stock_identity/W3_RULER_REGISTRATION.md, what: "Rule texts + full hash histories, review/repair record (5 adversarial rounds), sealed receipt (section 5) + status-string caveat, null-coverage disclosure, interface deviations for the W3B author."}
   - {path: research/stock_identity/W3_CHANNEL_A_MODEL_CONSTITUTION.md, what: "Frozen Channel-A model constitution registration (with JSON mirror under data/stock_identity/ruler/)."}
   - {path: .github/ci/legacy-jobs.yml, what: "Four W3A test suites appended to the existing stock-identity atlas guards step (house pattern; global-invalidator cost accepted on PR #6638)."}
@@ -31,10 +31,10 @@ changed:
 verified:
   - claim: All targeted suites green in the sealed state, both pre/post-seal branches preserved
     command: "python3 -m pytest tests/test_stock_identity_ruler.py tests/test_stock_identity_ruler_nulls.py tests/test_stock_identity_model_constitution.py tests/test_stock_identity_w3_calibration.py tests/test_stock_identity_atlas.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_partition.py tests/test_stock_identity_replay.py tests/test_stock_identity_replay_leak.py tests/test_stock_identity_state_episodes.py tests/test_gh_annotation_line_start.py -q"
-    result: "PASS — 0 failures post-seal (168 new W3A tests among them); pre-seal invariants remain mutation-killable via pending-variant fixtures."
+    result: "PASS — 0 failures post-seal (172 new W3A tests among them after the state-aware repair added four); pre-seal invariants remain mutation-killable via pending-variant fixtures."
   - claim: The one-time seal ran exactly once on the full lawful substrate under the fail-closed gate
     command: "python3 scripts/stock_identity_calibrate_w3.py --substrate-dir <substrate_759>  # after scripts/stock_identity_calibration_replay.py --manifest data/stock_identity/ruler/calibration_replay_manifest_v1.json"
-    result: "PASS — substrate 759/759 drawn names replayed (429,289 events, 8 zero-fire observations, 2,692 post-cutoff events guard-dropped with ::warning, censored share of eligible 3.04% receipted); numerator/denominator finite and >0; constants sealed with the full hash chain; a second invocation refuses."
+    result: "PASS — substrate 759/759 drawn names replayed (429,289 events, 8 zero-fire observations, 2,692 post-cutoff events guard-dropped with ::warning, censored share of eligible 3.04% receipted); numerator/denominator finite and >0; constants sealed with the full hash chain; a second invocation refuses. Cold-stranger note: the substrate and its provenance receipt are scratch-resident by the manifest's declared storage law, so the event/zero-fire/censored counts and substrate_provenance_hash are receipt-bound to the sealing session, not reproducible from committed bytes; the four committed hash anchors (roster, replay manifest, W2 registry set, implementation bytes) and the sealed values' internal arithmetic ARE independently reproducible and were reproduced by the milestone reviewer."
   - claim: Step-6B acceptance — both graded composites compute on the sealed spec
     command: "python3 scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir <tmp>"
     result: "PASS — composites: computed, pr3_pending: false, 50 cells, spec_hash a599ea14 (receipt-inclusive)."
@@ -79,6 +79,34 @@ discoveries: []
 Return path fixed by plan amendment R1 section 3. This body records the W3A return;
 W3B and W3S append their own sections on their returns rather than minting
 date-variant files.
+
+## The sealed substrate read is a NEAR-NULL on localization signal (lead finding)
+
+Printed first per house law (nulls printed, never hidden). Both halves of the
+sealed PR-3 read are nulls or near-nulls, and the second is derivable from the
+sealed receipt alone:
+
+- recall_floor: the calibration population's P25(recall_at_tier) quantized to
+  0.0 — the sealed 0.05 is ENTIRELY the preregistered substantive clamp and
+  carries zero information from the 759-name substrate.
+- lambda_fs: because false_start_rate is bounded in [0,1], the sealed rule
+  implies median(recall_at_tier x zone_precision) = lambda_fs x P75(fsr)
+  <= 2.793e-4. The median lawful sealed-calibration grading cell carries
+  essentially ZERO localized recall x precision, and the resulting C-LOC-R
+  penalty term is bounded at ~0.028% of the reward term's full scale —
+  numerically inert.
+
+Reading: W3A is an infrastructure/measurement capability release whose first
+sealed read says the preserved expert families, measured on the frozen ruler
+over the sealed calibration partition, show near-zero median episode
+localization. Under the epistemics law this blocks nothing at display tier
+(the gauntlet applies at promotion, not construction) and the constants are
+lawfully sealed — but no reader of this milestone may mistake "the ruler is
+executable and the composites compute" for "the substrate showed localization
+signal." It did not, at the median. Whether tails/cells above the floor carry
+signal is exactly the question the held W3B estimability census and the frozen
+Q1 read exist to answer lawfully; nothing here prejudges them in either
+direction.
 
 ## What exists now
 
