@@ -286,21 +286,73 @@ def test_compute_lambda_fs_raises_typed_blocked_degenerate_on_zero_numerator():
 
 
 def test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback():
-    """Grep-level test (Ruling 1(b)): the rule path carries no epsilon,
+    """AST-level test (Ruling 1(b)): the rule path carries no epsilon,
     clipping, cap, alternate-quantile, or fallback-constant vocabulary that
-    could rescue a degenerate numerator/denominator instead of refusing."""
+    could rescue a degenerate numerator/denominator instead of refusing.
+
+    The REAL guard against a rescue shape is the behavioral trio directly
+    above this test
+    (``test_compute_lambda_fs_raises_typed_blocked_degenerate_on_all_nan_population``,
+    ``..._on_zero_denominator``, ``..._on_zero_numerator``) -- each feeds
+    ``compute_lambda_fs`` a genuinely degenerate input and asserts the typed
+    refusal fires; a rescue shape anywhere in the numerator/denominator path,
+    however it were spelled, would make one of those three fail closed
+    instead of raising. This test is a SECOND, static line of defense: an AST
+    scan (not a plain-string grep) of ``compute_lambda_fs``'s own assignment
+    statements that fails on any ``max``/``min``/``np.maximum``/
+    ``np.minimum``/``np.clip`` call feeding an assignment to ``numerator`` or
+    ``denominator`` -- including a rescue call wrapped around the RAW
+    expression before it is ever bound to one of those names (e.g.
+    ``numerator = max(product.median(), 0.01)``), a shape a plain
+    ``"max(numerator"``-token grep cannot see because the rescued expression
+    is not itself named ``numerator`` at the call site. Mutation-proven: a
+    prior plain-string-token version of this test passed unchanged under
+    exactly that shape."""
     src = Path(calib_w3.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    func = next(
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "compute_lambda_fs"
+    )
+
+    rescue_call_names = {"max", "min"}
+    rescue_attr_names = {"maximum", "minimum", "clip"}
+
+    def _is_rescue_call(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        callee = node.func
+        if isinstance(callee, ast.Name) and callee.id in rescue_call_names:
+            return True
+        if isinstance(callee, ast.Attribute) and callee.attr in rescue_attr_names:
+            return True
+        return False
+
+    violations = []
+    for stmt in ast.walk(func):
+        if not isinstance(stmt, ast.Assign):
+            continue
+        targets = {t.id for t in stmt.targets if isinstance(t, ast.Name)}
+        if not (targets & {"numerator", "denominator"}):
+            continue
+        for sub in ast.walk(stmt.value):
+            if _is_rescue_call(sub):
+                violations.append((sorted(targets), ast.dump(sub)))
+    assert not violations, (
+        "forbidden rescue call (max/min/np.maximum/np.minimum/np.clip) found "
+        f"feeding an assignment to numerator/denominator: {violations}"
+    )
+
+    # eps/fallback vocabulary is never a legitimate identifier this function
+    # would use for any other purpose -- a plain-string scan over the CODE
+    # (never the docstring, which names the prohibition in prose) still
+    # catches it cheaply.
     start = src.index("def compute_lambda_fs(")
     end = src.index("\ndef ", start + 1)
     body = src[start:end]
-    # Strip the function's own docstring (its PROSE deliberately names "no
-    # epsilon/clipping/fallback" as the LAW it upholds) so only the CODE below
-    # it is scanned for an actual rescue mechanism.
     doc_end = body.index('"""', body.index('"""') + 3) + 3
     code = body[doc_end:]
-    banned_code_shapes = ["eps =", "eps=", "+ eps", "clip(", "clip_",
-                           "or 0.01", "max(denominator", "min(denominator",
-                           "max(numerator", "min(numerator", "fallback"]
+    banned_code_shapes = ["eps =", "eps=", "+ eps", "or 0.01", "fallback"]
     for token in banned_code_shapes:
         assert token not in code, f"forbidden rescue shape {token!r} found in compute_lambda_fs's code"
 
@@ -831,7 +883,8 @@ def test_build_seal_receipt_carries_every_m8_field(tmp_path):
     for key in (
         "recall_floor", "lambda_fs", "roster_sha256", "replay_manifest_hash",
         "w2_family_registry_hash", "substrate_provenance_hash",
-        "spec_hash_before_seal", "spec_hash_after_seal", "computed_at",
+        "ruler_implementation_sha256", "spec_hash_before_seal", "spec_hash_after_seal",
+        "computed_at",
     ):
         assert key in receipt, f"missing M8 receipt field: {key}"
     assert receipt["recall_floor"]["value"] == pytest.approx(0.35)
@@ -842,6 +895,37 @@ def test_build_seal_receipt_carries_every_m8_field(tmp_path):
     assert len(receipt["spec_hash_before_seal"]) == 64
     assert len(receipt["spec_hash_after_seal"]) == 64
     assert receipt["spec_hash_before_seal"] != receipt["spec_hash_after_seal"]
+
+
+def test_build_seal_receipt_carries_ruler_implementation_hashes(tmp_path, monkeypatch):
+    """PRE-ACT CONDITION 2 (SI-W3A-RULER-V1 pre-seal fix pass): the receipt's
+    ``ruler_implementation_sha256`` block records the exact sha256 of
+    ``engine/stock_identity/ruler.py`` and ``ruler_nulls.py`` bytes at seal
+    time, so a post-value implementation change is detectable from the
+    receipt alone (the freeze's voiding clause). Proven by pointing the
+    module-level implementation paths at a throwaway fixture copy and showing
+    the recorded hash changes -- and ONLY the changed file's hash changes --
+    when one fixture's bytes change."""
+    ruler_copy = tmp_path / "ruler_fixture.py"
+    nulls_copy = tmp_path / "ruler_nulls_fixture.py"
+    ruler_copy.write_bytes(b"# ruler fixture v1\n")
+    nulls_copy.write_bytes(b"# ruler nulls fixture v1\n")
+    monkeypatch.setattr(calib_w3, "RULER_IMPLEMENTATION_PATH", ruler_copy)
+    monkeypatch.setattr(calib_w3, "RULER_NULLS_IMPLEMENTATION_PATH", nulls_copy)
+
+    receipt_before = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    block_before = receipt_before["ruler_implementation_sha256"]
+    assert set(block_before) == {"ruler_py", "ruler_nulls_py"}
+    assert block_before["ruler_py"] == hashlib.sha256(ruler_copy.read_bytes()).hexdigest()
+    assert block_before["ruler_nulls_py"] == hashlib.sha256(nulls_copy.read_bytes()).hexdigest()
+
+    # change ONE file's bytes -- only ITS recorded hash may move
+    ruler_copy.write_bytes(b"# ruler fixture v2 -- implementation changed\n")
+    receipt_after = calib_w3.build_seal_receipt(**_fixture_seal_inputs(tmp_path))
+    block_after = receipt_after["ruler_implementation_sha256"]
+    assert block_after["ruler_py"] != block_before["ruler_py"]
+    assert block_after["ruler_py"] == hashlib.sha256(ruler_copy.read_bytes()).hexdigest()
+    assert block_after["ruler_nulls_py"] == block_before["ruler_nulls_py"]
 
 
 def test_core_spec_hash_excludes_the_receipt_itself(tmp_path):
@@ -862,6 +946,8 @@ def test_format_seal_receipt_markdown_contains_every_hash(tmp_path):
     assert receipt["replay_manifest_hash"] in block
     assert receipt["w2_family_registry_hash"] in block
     assert receipt["substrate_provenance_hash"] in block
+    assert receipt["ruler_implementation_sha256"]["ruler_py"] in block
+    assert receipt["ruler_implementation_sha256"]["ruler_nulls_py"] in block
     assert receipt["spec_hash_before_seal"] in block
     assert receipt["spec_hash_after_seal"] in block
     assert "0.35" in block
@@ -1075,12 +1161,16 @@ def test_rule_hashes_match_the_currently_committed_registration_values():
     rule-FORM change, so both hashes changed again and are re-recorded in
     W3_RULER_REGISTRATION.md §3.1 with every PRIOR hash (including the two
     pre-Ruling-1 population-wording-only re-pins) retained alongside the new
-    one."""
+    one. recall_floor's hash then moved a FOURTH time (pre-seal fix pass,
+    item 5) -- a TEXT-ONLY clarification naming the quantize_to_nearest_0.05
+    tie convention (Python's round(), banker's rounding/round-half-to-even);
+    the math is unchanged, round() was always the implementation.
+    lambda_fs's hash is untouched by that item."""
     assert calib_w3.rule_hash(calib_w3.LAMBDA_FS_RULE) == (
         "8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366"
     )
     assert calib_w3.rule_hash(calib_w3.RECALL_FLOOR_RULE) == (
-        "b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a63a6a0045"
+        "71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf"
     )
 
 

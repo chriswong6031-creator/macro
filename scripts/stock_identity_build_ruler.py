@@ -136,16 +136,36 @@ def _availability_stats(availability: pd.DataFrame) -> dict[str, Any]:
     of the availability-based recall distribution is reported from ``cells``
     directly by the caller; this helper reports how many (family, symbol)
     pairs carry a typed UNAVAILABLE state (never silently folded into a
-    fired-on read)."""
+    fired-on read).
+
+    RECONCILIATION (SI-W3A-RULER-V1 pre-seal fix pass, item 6): this frame
+    carries one row per ``(family_key, tier-eligible episode)`` pair
+    (:func:`~engine.stock_identity.ruler.build_family_episode_availability`),
+    so it supports TWO distinct, both-correct counts over the SAME data:
+    the ``(family_key, symbol)``-LEVEL count (how many distinct pairs carry
+    at least one non-eligible row) and the raw ROW-LEVEL count (one row per
+    tier-eligible episode). A builder report citing "N pairs / M unavailable"
+    and a reviewer report citing "N rows / M unavailable" were reconciled as
+    exactly these two labeled levels of this one frame, never a discrepancy
+    in the underlying data -- see ``W3_RULER_REGISTRATION.md`` §6.12. Both
+    are reported here, explicitly labeled, so neither reader has to
+    re-derive which level a bare number means."""
     if availability is None or availability.empty:
         return {"n_family_symbol_pairs": 0, "n_family_symbol_pairs_unavailable": 0,
+                "n_availability_rows": 0, "n_availability_rows_unavailable": 0,
                 "unavailable_state_counts": {}}
     pairs = availability[["family_key", "symbol"]].drop_duplicates()
     non_eligible = availability.loc[availability["availability_state"] != "ELIGIBLE"]
     unavailable_pairs = non_eligible[["family_key", "symbol"]].drop_duplicates()
     return {
+        # (family_key, symbol)-LEVEL: distinct pairs, and how many of those
+        # pairs carry >=1 non-eligible (family_key, episode) row.
         "n_family_symbol_pairs": int(len(pairs)),
         "n_family_symbol_pairs_unavailable": int(len(unavailable_pairs)),
+        # (family_key, tier-eligible episode)-LEVEL: the frame's own raw row
+        # count, and how many of those rows are non-eligible.
+        "n_availability_rows": int(len(availability)),
+        "n_availability_rows_unavailable": int(len(non_eligible)),
         "unavailable_state_counts": {
             str(k): int(v) for k, v in non_eligible["availability_state"].value_counts().items()
         },

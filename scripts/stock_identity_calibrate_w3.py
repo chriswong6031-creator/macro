@@ -67,6 +67,16 @@ CALIBRATION_CONSTANTS_PATH = DATA / "constants" / "si_constants_v1.json"
 #: "fired-on" coverage universe). Monkeypatchable like the other module-level
 #: paths above.
 FAMILY_REGISTRY_PATH = DATA / "expert_events" / "family_registry.json"
+#: PRE-ACT CONDITION 2 (SI-W3A-RULER-V1 pre-seal fix pass): the two ruler
+#: implementation modules whose byte-for-byte sha256 is recorded in the seal
+#: receipt below (``build_seal_receipt``'s ``ruler_implementation_sha256``
+#: field) — so a post-value change to either module's implementation is
+#: detectable from the receipt alone, per the freeze's voiding clause (a
+#: value silently computed under different code than what the receipt
+#: describes would otherwise leave no trace in the committed artifacts).
+#: Monkeypatchable like the other module-level paths above.
+RULER_IMPLEMENTATION_PATH = REPO_ROOT / "engine" / "stock_identity" / "ruler.py"
+RULER_NULLS_IMPLEMENTATION_PATH = REPO_ROOT / "engine" / "stock_identity" / "ruler_nulls.py"
 
 TRIAL_FAMILY = "stock_identity_w3_ruler_calibration"
 
@@ -194,6 +204,19 @@ RULE_REVIEW_STATUS = "declared_pending_sol_rule_review"
 #: ``W3_RULER_REGISTRATION.md`` §3.1 with every PRIOR hash retained alongside
 #: the new one (same disclosure pattern as the population-wording re-pins).
 #:
+#: --- one further POST-Ruling-1 rule-TEXT-only clarification (SI-W3A-RULER-V1
+#: pre-seal fix pass, item 5): ``RECALL_FLOOR_RULE`` now names the
+#: ``quantize_to_nearest_0.05`` step's TIE CONVENTION explicitly -- it is
+#: Python's built-in ``round()`` (``round(p25 / 0.05) * 0.05``, exactly what
+#: :func:`compute_recall_floor` has always computed), whose behavior at an
+#: exact ``.5`` tie is banker's rounding (round-half-to-even). The MATH is
+#: unchanged (``round()`` was always the implementation; only the prose now
+#: says so) -- only ``RECALL_FLOOR_RULE``'s hash moves again as a result, and
+#: is re-pinned in ``W3_RULER_REGISTRATION.md`` §3.1 with every prior hash
+#: (including Ruling 1(a)) retained as history, same disclosure pattern as
+#: every re-pin above. ``LAMBDA_FS_RULE`` is untouched by this item; its hash
+#: is unchanged.
+#:
 #: --- history of PRIOR (pre-Ruling-1) rule-TEXT-only changes, retained for
 #: provenance: the §4 repair pass corrected the population-wording clause once
 #: (MINORS finding: "align rule-text population wording with implementation")
@@ -218,7 +241,11 @@ RECALL_FLOOR_RULE = (
     "== 0.0) are NEVER dropped or conditioned out of this population (no A3 "
     "conditioning) -- the P25 is taken over the FULL lawful population including "
     "them. P25 uses numpy.percentile's linear interpolation method, passed "
-    "explicitly. The 0.05 floor is an explicit, PREREGISTERED SUBSTANTIVE floor, "
+    "explicitly. The quantize_to_nearest_0.05 step is Python's built-in round() "
+    "applied to P25/0.05 before rescaling (round(p25 / 0.05) * 0.05); round()'s tie "
+    "convention at an exact .5 boundary is banker's rounding (round-half-to-even), "
+    "named here explicitly rather than left as an unstated default. The 0.05 floor "
+    "is an explicit, PREREGISTERED SUBSTANTIVE floor, "
     "never a rounding artifact: even a population whose quantized P25 lands below "
     "0.05 is clamped up to 0.05, so recall_floor can never be zero. A cell below "
     "this floor is judged too rarely localized for C-LOC-D to be graded. The rule "
@@ -484,10 +511,19 @@ def build_seal_receipt(
 ) -> dict[str, Any]:
     """Assemble the M8 seal receipt: per-constant value + rule hash/status,
     roster hash, replay-manifest hash, W2 family-registry hash, substrate
-    provenance hash, spec hash before/after, timestamp. This is the SAME
-    ``receipt`` dict embedded in ``ruler_spec_v1.json``'s ``pr3.receipt`` field
-    AND rendered into ``W3_RULER_REGISTRATION.md`` (via
-    :func:`append_seal_receipt_to_registration`)."""
+    provenance hash, ruler-implementation hash, spec hash before/after,
+    timestamp. This is the SAME ``receipt`` dict embedded in
+    ``ruler_spec_v1.json``'s ``pr3.receipt`` field AND rendered into
+    ``W3_RULER_REGISTRATION.md`` (via :func:`append_seal_receipt_to_registration`).
+
+    PRE-ACT CONDITION 2 (SI-W3A-RULER-V1 pre-seal fix pass): the receipt also
+    records the exact byte-for-byte sha256 of ``engine/stock_identity/ruler.py``
+    and ``engine/stock_identity/ruler_nulls.py`` AT SEAL TIME
+    (``ruler_implementation_sha256``) — the two modules whose functions compute
+    every value this receipt certifies. A post-value edit to either module's
+    implementation changes its recorded hash, so it is detectable from the
+    receipt alone, satisfying the freeze's voiding clause without requiring any
+    separate provenance channel."""
     replay_manifest_hash = hashlib.sha256(REPLAY_MANIFEST_PATH.read_bytes()).hexdigest()
     substrate_provenance_hash = hashlib.sha256(provenance_path.read_bytes()).hexdigest()
     w2_family_registry_hash = hashlib.sha256(
@@ -495,6 +531,8 @@ def build_seal_receipt(
             provenance.get("spec_hashes_asserted_at_run", {}), sort_keys=True, separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+    ruler_py_sha256 = hashlib.sha256(RULER_IMPLEMENTATION_PATH.read_bytes()).hexdigest()
+    ruler_nulls_py_sha256 = hashlib.sha256(RULER_NULLS_IMPLEMENTATION_PATH.read_bytes()).hexdigest()
     spec_hash_before_seal = core_spec_hash(
         base_spec, recall_floor=None, lambda_fs=None, status=PR3_PENDING_SENTINEL,
     )
@@ -526,6 +564,13 @@ def build_seal_receipt(
         "replay_manifest_hash": replay_manifest_hash,
         "w2_family_registry_hash": w2_family_registry_hash,
         "substrate_provenance_hash": substrate_provenance_hash,
+        # PRE-ACT CONDITION 2: byte-for-byte sha256 of the two ruler
+        # implementation modules at seal time -- a post-value implementation
+        # change is detectable from the receipt alone.
+        "ruler_implementation_sha256": {
+            "ruler_py": ruler_py_sha256,
+            "ruler_nulls_py": ruler_nulls_py_sha256,
+        },
         "spec_hash_before_seal": spec_hash_before_seal,
         "spec_hash_after_seal": spec_hash_after_seal,
         # kept for backward compatibility with the pre-M8 field name
@@ -547,6 +592,10 @@ def format_seal_receipt_markdown(receipt: dict[str, Any]) -> str:
         f"- Replay-manifest hash: `{receipt['replay_manifest_hash']}`",
         f"- W2 family-registry hash: `{receipt['w2_family_registry_hash']}`",
         f"- Substrate provenance hash: `{receipt['substrate_provenance_hash']}`",
+        f"- Ruler implementation hash (`ruler.py`): "
+        f"`{receipt['ruler_implementation_sha256']['ruler_py']}`",
+        f"- Ruler implementation hash (`ruler_nulls.py`): "
+        f"`{receipt['ruler_implementation_sha256']['ruler_nulls_py']}`",
         f"- Spec hash before seal: `{receipt['spec_hash_before_seal']}`",
         f"- Spec hash after seal: `{receipt['spec_hash_after_seal']}`",
         f"- Recent-history guard cutoff: `{receipt['recent_history_guard_cutoff']}`",

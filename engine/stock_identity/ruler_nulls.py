@@ -301,7 +301,15 @@ def grain_cadence_null(
       identical to the prior design's convention).
     * ``phase_preserved`` (nullable boolean) -- ``True`` for every row of an
       ``"applied"`` group (weekday preservation is verified by construction
-      for every such row), ``<NA>`` otherwise.
+      for every such row), ``<NA>`` otherwise. NIT (SI-W3A-RULER-V1 pre-seal
+      fix pass, item 4): "preserved" weekday means the weekday of the trading
+      SESSION the fire's original ``signal_ts`` maps to
+      (``calendar.searchsorted(signal_ts, side="left")``), not necessarily the
+      raw stamp's own calendar-day weekday -- a ``signal_ts`` that itself
+      lands off-session (weekend/holiday) maps forward to the next session,
+      whose weekday is what gets preserved (measured on the real pilot
+      cohort: 36 of 1,661 "applied" rows, ~2.2%, carry a raw ``signal_ts``
+      that is not itself a trading day).
     * ``snap_sessions`` (nullable Int64) -- the signed per-fire snap distance
       (stage 2 only, sessions) for every row of an ``"applied"`` group,
       ``<NA>`` otherwise. :func:`grain_cadence_null_summary` derives the

@@ -101,11 +101,13 @@ computed from partition data). Both rule declarations carry
 Both hashes were re-pinned a SECOND time by the §6 delta-review repair pass
 (RULE-TEXT ITEMS, textual accuracy only) and a THIRD time by Sol's Ruling 1
 (SI-W3A-RULER-V1 PR-3 seal law, §6.11 below) — a genuine rule-FORM change, the
-first of the three re-pins that is. Every prior hash for each constant is
-retained here as history; none was ever computed against real partition data,
-so no value was voided by any re-pin:**
+first of the three re-pins that is. `recall_floor`'s hash was re-pinned a
+FOURTH time by the SI-W3A-RULER-V1 pre-seal fix pass (item 5, §6.12 below) —
+textual clarification only (the quantization tie convention), math unchanged.
+Every prior hash for each constant is retained here as history; none was ever
+computed against real partition data, so no value was voided by any re-pin:**
 
-* `recall_floor` — rule hash `b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a63a6a0045`
+* `recall_floor` — rule hash `71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf`
   (`scripts.stock_identity_calibrate_w3.rule_hash(RECALL_FLOOR_RULE)`; see the module
   constant for the exact literal rule text — Ruling 1(a):
   `max(quantize_to_nearest_0.05(P25(recall_at_tier on the lawful sealed-calibration
@@ -114,7 +116,10 @@ so no value was voided by any re-pin:**
   `0.05` floor is now an explicit PREREGISTERED SUBSTANTIVE floor (never a
   rounding artifact); zero-recall cells are NEVER dropped or conditioned out (no
   A3 conditioning); P25 uses `numpy.percentile`'s `linear` interpolation method,
-  passed explicitly.
+  passed explicitly. The `quantize_to_nearest_0.05` step is Python's built-in
+  `round()` applied as `round(p25 / 0.05) * 0.05`; its tie convention at an exact
+  `.5` boundary is banker's rounding (round-half-to-even), named explicitly in
+  the rule text as of the pre-seal fix pass (item 5, §6.12).
   **Hash history:** Task 3C original
   `7a2dd735ea8f01c5e802adbfb08422b4e722abaedb7e20666b5af79d1f5ae8fb` ->
   §4 repair `671755ddae3e24b34722468d323a25e71bd1a1c174019a6863b1e1341657be69`
@@ -129,7 +134,12 @@ so no value was voided by any re-pin:**
   change; the PRIOR three hashes shared byte-identical selection math with only
   textual accuracy differences, but this one changes the actual formula: the
   0.05 floor is now applied unconditionally, never merely a side-effect of
-  rounding).
+  rounding) -> **pre-seal fix pass, item 5 (text-only)**
+  `71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf` (names the
+  `quantize_to_nearest_0.05` tie convention — Python's built-in `round()`,
+  banker's rounding/round-half-to-even at an exact `.5` tie — explicitly in the
+  rule text; `round()` was always the implementation, so the MATH is
+  unchanged, only the prose now states the convention it has always had).
 * `lambda_fs` — rule hash `8b149a753f5034c737eb0cc0c72d081e56e2d9431dd4adc01ac0cea8cc4ae366`
   (`rule_hash(LAMBDA_FS_RULE)`; Ruling 1(b):
   `median(recall_at_tier * zone_precision) / P75(false_start_rate)`, both over the
@@ -999,3 +1009,169 @@ this is an intentional consequence of Ruling 3's shape, not a defect),
 retained separation assertion
 (`test_grain_cadence_and_random_nulls_separate_from_real_placement`) and the
 pre-existing determinism/no-non-session-landing tests, all unchanged.
+
+## 6.12 Pre-seal fix pass (SI-W3A-RULER-V1) — six bounded mechanical closures
+
+Six items returned by the seal-path delta review as SEAL-PATH-CLEAN with
+bounded pre-act conditions and disclosure minors. All are purely additive or
+textual; the metric/rule-form math frozen by Sol's three rulings (§6.11) is
+untouched, the real substrate/seal act is out of scope, `ruler_spec_v1.json`'s
+`pr3` block stays byte-intact (`pr3.recall_floor`/`pr3.lambda_fs` still
+`null`, `pr3.note` unchanged — verified via `git diff`), and
+`data/trial_ledger.jsonl` is untouched.
+
+**Item 1 — PRE-ACT CONDITION 2, ruler-implementation hash in the seal
+receipt.** `build_seal_receipt` (`scripts/stock_identity_calibrate_w3.py`)
+now records a `ruler_implementation_sha256` block — the exact byte-for-byte
+sha256 of `engine/stock_identity/ruler.py` and `engine/stock_identity/
+ruler_nulls.py` AT SEAL TIME, keyed `ruler_py`/`ruler_nulls_py` — alongside
+the existing replay-manifest/W2-family-registry/substrate-provenance hashes.
+The two new module-level path constants, `RULER_IMPLEMENTATION_PATH` and
+`RULER_NULLS_IMPLEMENTATION_PATH`, are monkeypatchable like every other path
+constant in the module. This closes the freeze's voiding clause for a
+post-value implementation change: a value computed under one version of
+`ruler.py`/`ruler_nulls.py` and then re-served after either module changed is
+now detectable from the receipt alone, without a separate provenance
+channel. Rendered into the registration-doc append block by
+`format_seal_receipt_markdown` alongside the other hashes. Purely additive —
+no existing receipt field's shape or meaning changed.
+
+Test (`tests/test_stock_identity_w3_calibration.py`):
+`test_build_seal_receipt_carries_ruler_implementation_hashes` (fixture-copy
+proof: pointing the two path constants at throwaway files, changing ONE
+file's bytes moves only its recorded hash), plus the pre-existing
+`test_build_seal_receipt_carries_every_m8_field` and
+`test_format_seal_receipt_markdown_contains_every_hash`, both extended to
+require the new field/hashes.
+
+**Item 2 — MILESTONE DISCLOSURE, null #6 coverage on the real pilot.** Stated
+plainly, as a limitation, not folded into the "worked as designed" framing
+above: on the real dense pilot cohort, `grain_cadence_null` (null #6) typed
+**92 of 285** `(family_key, symbol)` groups `"applied"` and **193 of 285**
+`"unestimable"` — **1,661 of 31,119 rows (5.3%)** evaluated under the null,
+**94.7% dark** (left untouched, no cadence-null read available for those
+rows). This is a direct, measured consequence of Ruling 3's per-fire
+weekday-snap-within-a-4-session-bound design on real pilot-scale grain
+groups: a group with fires spread wider than the bound in NO single shared
+base-K position, for enough of its fires, types `"unestimable"` rather than
+forcing a partial or incoherent shift (§6.11 above). **Whether 5.3% coverage
+discharges freeze §4.3 item 6 (the null-#6 requirement) is returned to Sol in
+the milestone packet** — this packet does not adjudicate that question, only
+measures and discloses the real number. (Reproduced via `python3
+scripts/stock_identity_build_ruler.py --pilot --include-nulls --output-dir
+<dir>`; `null_grain_cadence_events_v1.parquet`'s `cadence_null_state` column,
+grouped by `(family_key, symbol)`.)
+
+**Item 3 — MINOR, guard honesty for the no-epsilon/no-fallback test.**
+`test_compute_lambda_fs_never_applies_epsilon_clipping_or_fallback`
+(`tests/test_stock_identity_w3_calibration.py`) was mutation-proven
+non-discriminating for its `max`/`min`-related string tokens: a shape like
+`numerator = float(max(product.median(), 0.01)) if not product.empty else
+float("nan")` rescues the RAW expression before it is ever bound to a
+variable named `numerator`, so a plain `"max(numerator"` token grep never
+sees it, while the plain string check passes unchanged. **Repaired via AST
+strengthening** (the preferred option), not a docstring-only rescope: the
+test now `ast.parse`s the module, walks `compute_lambda_fs`'s own
+`ast.Assign` statements, and fails on ANY `max`/`min`/`np.maximum`/
+`np.minimum`/`np.clip` call appearing ANYWHERE in the RHS subtree of an
+assignment whose target is `numerator` or `denominator` — this catches the
+rescue regardless of whether it wraps the bare variable or the raw
+expression feeding it. Verified two ways before landing: (a) the new AST
+scan flags the `max(product.median(), 0.01)` mutation shape above when
+injected into a parsed copy of the source, and (b) the OLD plain-string-token
+scan does NOT flag that same mutation (confirming the gap was real, not
+theoretical). The remaining plain-string check (`eps =`/`eps=`/`+ eps`/`or
+0.01`/`fallback`) is retained for the vocabulary an AST call-shape scan
+cannot see (bare identifier/literal patterns, not function calls). The
+REAL guard remains the three behavioral degenerate-input tests directly above
+it in the file (`..._on_all_nan_population`, `..._on_zero_denominator`,
+`..._on_zero_numerator`) — this test is a second, static line of defense, and
+its docstring now says so explicitly rather than merely asserting the
+prohibition.
+
+**Item 4 — NIT, `phase_preserved` weekday clarification.** One sentence added
+to `grain_cadence_null`'s docstring (`engine/stock_identity/ruler_nulls.py`):
+"preserved" weekday means the weekday of the trading SESSION a fire's
+original `signal_ts` maps to (`calendar.searchsorted(signal_ts,
+side="left")`), not necessarily the raw stamp's own calendar-day weekday — a
+`signal_ts` that itself lands off-session (weekend/holiday) maps forward to
+the next session, and it is THAT session's weekday the null preserves.
+Measured on the real pilot cohort: **36 of 1,661 "applied" rows (~2.2%)**
+carry a raw `signal_ts` that is not itself a trading day (i.e. its own
+calendar date is absent from that symbol's trading calendar). Documentation
+only — no behavior changes; `_snap_to_own_weekday`'s target weekday was
+always computed this way (`original_weekdays = [calendar[int(p)].weekday()
+for p in positions]`, §"Ruling 3" above), this item only names it.
+
+**Item 5 — NIT, quantization tie convention named in `RECALL_FLOOR_RULE`.**
+The rule text now states the `quantize_to_nearest_0.05` step's tie
+convention explicitly: it is Python's built-in `round()`
+(`round(p25 / 0.05) * 0.05`, exactly what `compute_recall_floor` has always
+computed), whose behavior at an exact `.5` boundary is banker's rounding
+(round-half-to-even) — named here rather than left as an unstated default.
+**Math is unchanged** (`round()` was always the implementation; only the
+prose now says so), so this is a text-clarification-only re-pin, following
+the same disclosure pattern as every prior rule-text-only change in §3.1
+above (the population-wording fixes) rather than the rule-FORM changes
+(Ruling 1). `recall_floor`'s hash moves a FOURTH time as a direct
+consequence — old `b2f1e249d3f96951b1ddcee9eadaaa67d26b40a053f19176355f44a
+63a6a0045` (Ruling 1(a)) -> new
+`71fbf3ff74e344ea7713f07e3615c4be8ce3e4c7a691af60e44eb151320a04cf` — recorded
+in §3.1 above with every prior hash retained as history. `LAMBDA_FS_RULE` is
+untouched; its hash is unchanged. Tests updated to the new literal:
+`test_rule_hashes_match_the_currently_committed_registration_values`
+(hardcoded hash) and the dynamic `test_rule_hashes_match_the_registration_document`
+(asserts the current hash appears somewhere in this file, which the §3.1
+edit above satisfies).
+
+**Item 6 — RECONCILIATION, availability-frame statistics at both levels.**
+A builder report cited "300 (family,symbol) pairs, 20 unavailable
+(NOT_YET_AVAILABLE)"; an independent reviewer measured "4,680 rows, 308
+NOT_YET_AVAILABLE" via the same `build_family_episode_availability` frame.
+Both numbers are CORRECT and RECONCILE EXACTLY — they are two different,
+both-legitimate levels of aggregation over the identical frame produced by
+`scripts/stock_identity_build_ruler.py`'s pilot build (`_family_registry()` +
+the pilot's own `fire_family_keys`), verified by direct re-run:
+
+* **`(family_key, symbol)`-LEVEL** (the builder's number): `availability[
+  ["family_key", "symbol"]].drop_duplicates()` — **300** distinct pairs
+  total, **20** of them carrying at least one non-`ELIGIBLE` row (all
+  `NOT_YET_AVAILABLE` in the current pilot substrate; `NO_COVERAGE`/
+  `UNESTIMABLE` are typed but currently zero here).
+* **`(family_key, tier-eligible episode)`-LEVEL, i.e. the frame's raw row
+  count** (the reviewer's number): **4,680** rows total (one row per
+  `(family_key, episode)` pair the frame enumerates), of which **308** rows
+  are typed `NOT_YET_AVAILABLE`.
+
+The relationship: a `(family_key, symbol)` pair whose family becomes
+available only partway through the pilot window contributes MANY
+`NOT_YET_AVAILABLE` rows (one per tier-eligible episode still before that
+family's `family_first_available` boundary) while being just ONE
+`(family_key, symbol)` pair in the dedup count — exactly why 20 unavailable
+pairs expand to 308 unavailable rows. **Canonical milestone-packet
+statistic** (both levels, explicitly labeled, so no future reader has to
+re-derive which level a bare number means): *300 (family, symbol) pairs, 20
+unavailable at the pair level; 4,680 (family, episode) rows, 308 unavailable
+(all `NOT_YET_AVAILABLE`) at the row level.* `_availability_stats`
+(`scripts/stock_identity_build_ruler.py`) now emits both levels by name in
+`manifest["family_symbol_availability"]`: `n_family_symbol_pairs` /
+`n_family_symbol_pairs_unavailable` (pair-level) alongside the new
+`n_availability_rows` / `n_availability_rows_unavailable` (row-level), plus
+the pre-existing `unavailable_state_counts` (row-level, by typed state).
+Reproduced via `python3 scripts/stock_identity_build_ruler.py --pilot
+--include-nulls --output-dir <dir>` against the committed pilot substrate
+(spec hash unchanged: `43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778
+532d78c626bfb`).
+
+### Pilot smoke re-run (this packet)
+
+Re-run after all six items above: `spec_hash` unchanged
+(`43bb66b06a27a896e27c57c7f08deb1dfbc7b2f22fdd8faa778532d78c626bfb` — these
+items touch disclosure/receipt/test code, never `RulerSpec`'s geometry or the
+still-pending `pr3` sentinel); `recall_at_tier_distribution` unchanged (34/50
+cells defined, mean 0.0656, median 0.0209, P25 0.0); `family_symbol_
+availability` now reports both levels as Item 6 states; cadence-null summary
+unchanged (92/285 applied, 1,661/31,119 rows, `|snap_sessions|` mean
+1.22/median 1.0/max 4.0). `data/stock_identity/ruler/ruler_spec_v1.json`'s
+`pr3` block and `data/trial_ledger.jsonl` confirmed byte-identical
+before/after via `git diff`.
