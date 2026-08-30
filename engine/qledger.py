@@ -32,8 +32,8 @@ import json
 import logging
 import math
 import os
-import sys
 import re
+import sys
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -56,13 +56,10 @@ import pandas as pd
 # below pay one cached sys.modules lookup instead. The module refs are resolved at
 # call time, which also keeps the `ai_desk._close_series` monkeypatch working.
 def _aidesk_mod():
+    """Import engine.ai_desk lazily. Only __getattr__ should call this directly —
+    every call SITE goes through _lazy() so monkeypatching stays effective."""
     from engine import ai_desk  # noqa: PLC0415 — see comment above
     return ai_desk
-
-
-def _ai_desk_scorer_mod():
-    from engine import ai_desk_scorer  # noqa: PLC0415 — see comment above
-    return ai_desk_scorer
 
 
 def _lazy(name: str):
@@ -72,6 +69,14 @@ def _lazy(name: str):
     `monkeypatch.setattr("engine.qledger._level_asof", ...)` still wins (several
     suites rely on exactly that), and falls through to __getattr__ below — which
     imports ai_desk lazily — when nothing has overridden it.
+
+    ORDER NOTE for future test authors: monkeypatch reads the pre-patch value via
+    getattr (resolved here through __getattr__) and restores it with setattr, so a
+    test that patches one of these names leaves the REAL ai_desk object in this
+    module's __dict__ afterwards. Before that happens `_lazy` follows
+    `engine.ai_desk.<name>` dynamically; after it, this module's own binding wins.
+    So do not write a test that patches `engine.ai_desk.<name>` and expects qledger
+    to follow — patch `engine.qledger.<name>` instead, which is order-independent.
     """
     return getattr(sys.modules[__name__], name)
 
@@ -2498,7 +2503,7 @@ def _fill_entry(ticker: str, root: Path,
     """Next-bar fill: (entry_price, fill_ts) = first close STRICTLY AFTER
     entry_date. (None, None) when the series is absent or has no later bar."""
     try:
-        s = _aidesk_mod()._close_series(ticker, root)
+        s = _lazy('_aidesk')._close_series(ticker, root)
         if s is None or s.empty:
             return None, None
         fwd = s[s.index > pd.Timestamp(entry_date)]
@@ -2539,7 +2544,7 @@ def _fwd_ret(ticker: str, root: Path, start_date: str, horizon_d: int,
         e0, fill_ts = _fill_entry(ticker, root, start_date)
         if e0 is None or not e0 or fill_ts is None:
             return None
-        s = _aidesk_mod()._close_series(ticker, root)
+        s = _lazy('_aidesk')._close_series(ticker, root)
         end_ts = fill_ts + pd.Timedelta(days=horizon_d)
         if s.index.max() < end_ts:
             return None            # exit day not covered yet — not matured
@@ -2591,7 +2596,7 @@ def _leg_ret_in_window(ticker: str, root: Path, window: HorizonWindow) -> float 
     None (never a shortened window silently graded) when the series is absent,
     does not yet cover `coverage_date`, or does not hold both endpoint bars."""
     try:
-        s = _aidesk_mod()._close_series(ticker, root)
+        s = _lazy('_aidesk')._close_series(ticker, root)
         if s is None or s.empty:
             return None
         cover_ts = pd.Timestamp(window.coverage_date)

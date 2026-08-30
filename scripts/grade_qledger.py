@@ -698,8 +698,9 @@ def run(root: Path | str | None = None, today: date | None = None,
     """
     if not root:
         from lib import config  # noqa: PLC0415 — see module header
-        root = config.ROOT
-    root = Path(root)
+        root = config.ROOT          # unwrapped, exactly as before
+    else:
+        root = Path(root)
     today_dt = today or date.today()
 
     # W0 Stage B-e (§3.4): backfill missing regime stamps from the persisted
