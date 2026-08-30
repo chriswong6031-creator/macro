@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.2",
   "asof": "2026-08-29",
-  "oldest_component_asof": "2026-08-26",
-  "macro_context_id": "58b61db59691b7f9",
+  "oldest_component_asof": "2026-08-27",
+  "macro_context_id": "c6a06d2f9fe0285f",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -19,7 +19,7 @@
       "us_gamma_regime": "long",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "collapsing (de-risk)",
+      "us_vrp_state": "normal",
       "cross_asset_verdict": "confirm"
     },
     "market": {
@@ -100,11 +100,11 @@
   "sources": {
     "data/regime/latest.json": "2026-08-28",
     "data/market_state/latest.json": "2026-08-28",
-    "data/transmission/latest.json": "2026-08-27",
+    "data/transmission/latest.json": "2026-08-28",
     "data/forex/latest.json": "2026-08-29",
-    "data/bonds/bond_health.json": "2026-08-27",
+    "data/bonds/bond_health.json": "2026-08-28",
     "data/commodity/latest.json": "2026-08-28",
-    "data/china_regime/latest.json": "2026-08-26",
+    "data/china_regime/latest.json": "2026-08-27",
     "data/hk_regime/latest.json": "2026-08-27",
     "data/canada_regime/latest.json": "2026-08-28",
     "data/dispersion/regime.json": "2026-08-29",

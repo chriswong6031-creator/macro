@@ -1,7 +1,7 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 25.2,
+    "pos": 25.1,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
@@ -25,7 +25,7 @@
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 70.7,
+    "pos": 70.5,
     "phase": "Expansion",
     "phase_v2": "Expansion",
     "overdue": true,
@@ -61,7 +61,7 @@
   },
   "platinum": {
     "cycle_ref": "pgms",
-    "pos": 14.2,
+    "pos": 14.3,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,
@@ -73,7 +73,7 @@
   },
   "palladium": {
     "cycle_ref": "pgms",
-    "pos": 14.2,
+    "pos": 14.3,
     "phase": "Recovery",
     "phase_v2": "Expansion",
     "overdue": false,

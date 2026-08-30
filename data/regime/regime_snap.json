@@ -1,18 +1,18 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.987,
+  "roro": 0.8,
   "cap_recent": false,
-  "fear_built": 0.368,
-  "roro_velocity": -0.063,
-  "vel_pctile": 0.325,
+  "fear_built": 0.183,
+  "roro_velocity": -0.198,
+  "vel_pctile": 0.133,
   "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
-    "hy_oas"
+    "copper_gold"
   ],
-  "days_since_last_snap": 54,
-  "fear_rebuilding": false,
+  "days_since_last_snap": 55,
+  "fear_rebuilding": true,
   "vix_term": 0.826,
   "status": "dormant",
   "gates": {
@@ -24,9 +24,9 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "hy_oas",
-      "en": "HY credit spread",
-      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
+      "key": "copper_gold",
+      "en": "Copper/Gold",
+      "zh": "\u94dc\uff0f\u91d1 \u6bd4"
     }
   ],
   "magnitude_band": null
