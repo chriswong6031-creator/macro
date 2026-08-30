@@ -29,7 +29,7 @@
     "DNR:KILL-CN-SUPPLY-ABSORPTION"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "b2b63f50b34dd814ede5910fe7a30c5ac9145079bbf01ddb64472750959ddc44",
+  "content_sha256": "d8c321b0051477b304aace7b68351a13ad5311d8cb341794a36a13a43f97f2c3",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -55,7 +55,7 @@
       "owner_ref": {
         "artifact": "data/earnings/fact_packs.parquet",
         "artifact_schema": "earnings.fact_pack/v1",
-        "owner_program": "earnings-intelligence"
+        "owner_program": "gmi-theme-graph"
       }
     },
     {

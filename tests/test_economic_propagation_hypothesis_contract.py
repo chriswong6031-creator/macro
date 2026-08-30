@@ -8,11 +8,16 @@ contracts/economic_propagation/generator_registry.v1.json).
 Three golden fixtures prove a lawful record validates clean (one
 supported_hypothesis, two typed abstentions) and that compose_hypothesis is
 deterministic (same input -> byte-identical output, including record_id and
-content_sha256). Fourteen hostile fixtures each plant one commissioned
+content_sha256). Seventeen hostile fixtures each plant one commissioned
 defect via the standard technique: compose a lawful record with
 compose_hypothesis, tamper the targeted field(s) directly on the dict, then
 recompute content_sha256 (the one exception, hostile_sha_mismatch, tampers
-and deliberately leaves the hash stale). Incidental cascade findings may
+and deliberately leaves the hash stale). Fourteen come from the original
+kill suite; three more come from the 2026-08-29 Sol-frozen enforcement
+repair (security_id on a RESOLVED target, a generator-admission owner bound
+to the admitting generator's own declared native_owner rather than any
+lawful owner of its construct, and a fail-closed gate requiring
+source_event.source_identity to be RESOLVED). Incidental cascade findings may
 accompany a planted defect -- e.g. tampering a leg's graph/construct pairing
 also perturbs the derived graph_states summary -- so every assertion here
 checks only that the commissioned code is PRESENT in the findings, never
@@ -118,6 +123,23 @@ def _construct_owner_ref(construct):
     return _owner_ref(program, artifact, schema)
 
 
+def _generator_owner_ref(generator_id, construct):
+    """Owner ref for a generator_admissions row, bound to the ADMITTING
+    GENERATOR's own declared native_owner (generator_registry.v1
+    generators[].native_owner) -- never merely a lawful owner of the
+    construct in general (K3D_R024, blocker 2). Keeps the artifact/schema
+    strings from _CONSTRUCT_OWNER (cosmetic only) and swaps only the owner
+    the schema actually enforces."""
+
+    registry = load_generator_registry()
+    row = next((r for r in registry["generators"] if r.get("generator_id") == generator_id), None)
+    native_owner = row.get("native_owner") if row else None
+    _unused_program, artifact, schema = _CONSTRUCT_OWNER.get(
+        construct, ("earnings-intelligence", "data/earnings/fact_packs.parquet", "earnings.fact_pack/v1")
+    )
+    return _owner_ref(native_owner, artifact, schema)
+
+
 def _g1_leg(leg_id="g1_customer", construct="disclosed_customer_supplier", role="customer",
             role_evidence_class="disclosed_role_specific", claim_strength="disclosed",
             usability_state="usable", asof=ASOF, known_at=ASOF):
@@ -152,7 +174,7 @@ def _g3_leg(leg_id="g3_resid", construct="residual_comovement", market_state_bas
 def _admission(generator_id, graph, construct, coverage_state="covered", asof=ASOF, known_at=ASOF):
     return {
         "generator_id": generator_id, "graph": graph, "construct": construct,
-        "owner_ref": _construct_owner_ref(construct), "evidence_refs": ["evidence-ref-admission"],
+        "owner_ref": _generator_owner_ref(generator_id, construct), "evidence_refs": ["evidence-ref-admission"],
         "asof": asof, "known_at": known_at, "coverage_state": coverage_state,
     }
 
@@ -412,6 +434,58 @@ def _build_hostile_disagreeing_derived_summary():
     return _rehash(rec)
 
 
+# ---------------------------------------------------------------------------
+# (15)-(17) Sol-frozen enforcement repair (2026-08-29): three schema-required
+# fields that a prior census found present in propagation_hypothesis.v1
+# and generator_registry.v1 but never actually enforced by the validator.
+# Each fixture starts from an otherwise-lawful composed record and plants
+# exactly the one commissioned defect.
+# ---------------------------------------------------------------------------
+
+
+def _build_hostile_resolved_target_missing_security_id():
+    # (15) Blocker 1: RESOLVED target with a null security_id.
+    # identity_resolution requires issuer_id AND security_id
+    # (propagation_hypothesis.v1.schema.json:358,365-366); K3D_R013 already
+    # binds issuer_id on RESOLVED, but security_id -- the canonical
+    # logical-identity half of the SAME object -- was never bound.
+    rec = copy.deepcopy(_base_min())
+    rec["target"]["resolution"]["security_id"] = None
+    return _rehash(rec)
+
+
+def _build_hostile_admission_owner_not_generator_native():
+    # (16) Blocker 2: gen_disclosed_customer_supplier's OWN registry row
+    # (generator_registry.v1.json generators[]) declares
+    # native_owner=gmi-theme-graph, but this admission's owner_ref claims
+    # earnings-intelligence -- a LAWFUL owner of the disclosed_customer_
+    # supplier CONSTRUCT in general (construct_owners lists both), so the
+    # pre-existing construct-level bind (K3D_R034) stays silent. Only a
+    # bind to the ADMITTING GENERATOR's own declared native_owner catches
+    # this laundering of "some lawful owner" for "the owner that actually
+    # admitted this target."
+    rec = copy.deepcopy(_base_min())
+    rec["generator_admissions"][0]["owner_ref"] = {
+        **rec["generator_admissions"][0]["owner_ref"],
+        "owner_program": "earnings-intelligence",
+    }
+    return _rehash(rec)
+
+
+def _build_hostile_unresolved_source_identity_supported():
+    # (17) Blocker 3: source_event.source_identity is UNRESOLVED while the
+    # record is otherwise a normal supported_hypothesis (abstained=False).
+    # source_identity is schema-required
+    # (propagation_hypothesis.v1.schema.json:59,75) but its only two prior
+    # validator occurrences were the resolution_asof lookahead check --
+    # nothing required the source event's OWN identity to be RESOLVED
+    # before evidence built on top of it could be admitted, in contrast to
+    # the target-side gate at K3D_R010.
+    rec = copy.deepcopy(_build_golden_supported_hypothesis())
+    rec["source_event"]["source_identity"] = _identity(state="UNRESOLVED", issuer=None, security=None)
+    return _rehash(rec)
+
+
 HOSTILE_BUILDERS = {
     "hostile_unresolved_identity_laundered": (_build_hostile_unresolved_identity_laundered, {"K3D_R010", "K3D_R011"}),
     "hostile_relationship_construct_laundering": (_build_hostile_relationship_construct_laundering, {"K3D_R032"}),
@@ -427,6 +501,9 @@ HOSTILE_BUILDERS = {
     "hostile_authority_trading_true": (_build_hostile_authority_trading_true, {"K3D_R070"}),
     "hostile_mechanism_trade_language": (_build_hostile_mechanism_trade_language, {"K3D_R041"}),
     "hostile_disagreeing_derived_summary": (_build_hostile_disagreeing_derived_summary, {"K3D_R051", "K3D_R052", "K3D_R053"}),
+    "hostile_resolved_target_missing_security_id": (_build_hostile_resolved_target_missing_security_id, {"K3D_R014"}),
+    "hostile_admission_owner_not_generator_native": (_build_hostile_admission_owner_not_generator_native, {"K3D_R024"}),
+    "hostile_unresolved_source_identity_supported": (_build_hostile_unresolved_source_identity_supported, {"K3D_R015"}),
 }
 
 ALL_FIXTURE_NAMES = sorted(list(GOLDEN_BUILDERS) + list(HOSTILE_BUILDERS))
@@ -449,6 +526,9 @@ FIXTURE_PURPOSES = {
     "hostile_authority_trading_true": "authority.trading flipped true against the const all-false object.",
     "hostile_mechanism_trade_language": "Trade/price vocabulary ('rally', 'price target') smuggled into mechanism prose.",
     "hostile_disagreeing_derived_summary": "Caller-authored graph_states/hypothesis_state/abstention disagree with the actual derivation.",
+    "hostile_resolved_target_missing_security_id": "RESOLVED target identity_resolution carries a null security_id.",
+    "hostile_admission_owner_not_generator_native": "Admission's owner_ref names a construct-lawful owner that is not the admitting generator's own declared native_owner.",
+    "hostile_unresolved_source_identity_supported": "source_event.source_identity is UNRESOLVED while the record claims a non-abstained supported_hypothesis.",
 }
 
 
@@ -1196,3 +1276,83 @@ def test_unexercised_codes_r000_r037_r062_r082():
     rec3["record_id"] = "eph1:0000000000000000"
     rec3 = _rehash(rec3)
     assert "K3D_R082" in _codes(validate_hypothesis(rec3))
+
+
+# ---------------------------------------------------------------------------
+# K3-D Sol-frozen enforcement repair (2026-08-29): three previously fail-open
+# gaps. Each test below is discriminating on its own fixture (before the
+# repair, validate_hypothesis returns none of these codes for the planted
+# defect) and cross-checked against a legitimate neighboring case that must
+# stay clean.
+# ---------------------------------------------------------------------------
+
+
+def test_r014_resolved_target_requires_non_null_security_id():
+    # Blocker 1: identity_resolution requires issuer_id AND security_id
+    # (propagation_hypothesis.v1.schema.json:358,365-366); only issuer_id
+    # (K3D_R013) was previously bound on a RESOLVED target.
+    codes = _codes(validate_hypothesis(_load_fixture("hostile_resolved_target_missing_security_id")))
+    assert "K3D_R014" in codes
+
+
+def test_compose_raises_for_resolved_target_missing_security_id():
+    # compose_hypothesis self-validates before ever returning a record; a
+    # RESOLVED target with a null security_id must never leave the composer.
+    bad_identity = _identity(security=None)
+    with pytest.raises(EconomicPropagationError):
+        compose_hypothesis(
+            source_event=_source_event(event_id="evt-b1-raise"),
+            target=_target(requested_key="B1RAISE", resolution=bad_identity),
+            asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[_admission("gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier")],
+            relationship_paths=[_g1_leg()], similarity_evidence=[], market_evidence=[],
+            mechanism_proposal=None, alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+
+
+def test_r024_admission_owner_must_match_generator_declared_native_owner():
+    # Blocker 2: generator_registry.v1 carries native_owner per generator
+    # (13 entries) but it was never read by the validator; only the
+    # construct-level lawful-owner set (K3D_R034) was enforced, which is
+    # broader than any one generator's own native owner.
+    codes = _codes(validate_hypothesis(_load_fixture("hostile_admission_owner_not_generator_native")))
+    assert "K3D_R024" in codes
+    # earnings-intelligence IS a lawful owner of disclosed_customer_supplier
+    # in general (construct_owners lists both gmi-theme-graph and
+    # earnings-intelligence) -- the construct-level bind stays silent here,
+    # proving K3D_R024 is a genuinely new gate, not a duplicate of K3D_R034.
+    assert "K3D_R034" not in codes
+
+
+def test_compose_raises_for_admission_owner_not_generator_native():
+    with pytest.raises(EconomicPropagationError):
+        compose_hypothesis(
+            source_event=_source_event(event_id="evt-b2-raise"),
+            target=_target(requested_key="B2RAISE"),
+            asof=ASOF, compiled_at=COMPILED_AT,
+            generator_admissions=[{
+                **_admission("gen_disclosed_customer_supplier", "graph_1", "disclosed_customer_supplier"),
+                "owner_ref": _owner_ref("earnings-intelligence", "data/earnings/fact_packs.parquet", "earnings.fact_pack/v1"),
+            }],
+            relationship_paths=[_g1_leg()], similarity_evidence=[], market_evidence=[],
+            mechanism_proposal=None, alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+        )
+
+
+def test_r015_unresolved_source_identity_cannot_support_a_non_abstained_record():
+    # Blocker 3: source_event.source_identity is schema-required
+    # (propagation_hypothesis.v1.schema.json:59,75); its only two prior
+    # validator occurrences (:834, :837) were the resolution_asof lookahead
+    # check, never a gate on resolution_state itself (in contrast to the
+    # target-side gate at K3D_R010).
+    codes = _codes(validate_hypothesis(_load_fixture("hostile_unresolved_source_identity_supported")))
+    assert "K3D_R015" in codes
+
+
+def test_r015_does_not_fire_when_source_identity_unresolved_is_honestly_abstained():
+    # golden_typed_abstention_unresolved reuses the SAME unresolved identity
+    # object for both target and source -- the record stays clean because it
+    # correctly declares abstained=True rather than composing as supported.
+    record = _load_fixture("golden_typed_abstention_unresolved")
+    assert record["source_event"]["source_identity"]["resolution_state"] != "RESOLVED"
+    assert "K3D_R015" not in _codes(validate_hypothesis(record))

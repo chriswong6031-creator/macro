@@ -1,7 +1,9 @@
 {
   "abstention": {
-    "abstained": false,
-    "reasons": []
+    "abstained": true,
+    "reasons": [
+      "no_mechanism_hypothesized"
+    ]
   },
   "alternatives": [
     {
@@ -30,7 +32,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "760b0dffac6d4f289df5eaefe48eae3b3f067dc4d6b8d6d5166c54fe14c4e8e1",
+  "content_sha256": "562f7b0a74eaf828866d1f6b63f757f434e4611e320d93f8b2088bcb6837d122",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -58,73 +60,23 @@
         "artifact_schema": "earnings.fact_pack/v1",
         "owner_program": "gmi-theme-graph"
       }
-    },
-    {
-      "asof": "2026-08-20",
-      "construct": "theme_membership",
-      "coverage_state": "covered",
-      "evidence_refs": [
-        "evidence-ref-admission"
-      ],
-      "generator_id": "gen_theme_membership",
-      "graph": "graph_2",
-      "known_at": "2026-08-20",
-      "owner_ref": {
-        "artifact": "data/theme_graph/edges.parquet",
-        "artifact_schema": "theme_graph.edges.v1",
-        "owner_program": "gmi-theme-graph"
-      }
-    },
-    {
-      "asof": "2026-08-20",
-      "construct": "residual_comovement",
-      "coverage_state": "covered",
-      "evidence_refs": [
-        "evidence-ref-admission"
-      ],
-      "generator_id": "gen_residual_comovement",
-      "graph": "graph_3",
-      "known_at": "2026-08-20",
-      "owner_ref": {
-        "artifact": "data/baskets/group_pulse.json",
-        "artifact_schema": "group_pulse.v1",
-        "owner_program": "group-reads"
-      }
     }
   ],
   "graph_states": {
     "graph_1": "supported",
-    "graph_2": "present",
-    "graph_3": "present"
+    "graph_2": "absent",
+    "graph_3": "absent"
   },
-  "hypothesis_state": "supported_hypothesis",
-  "market_evidence": [
-    {
-      "asof": "2026-08-20",
-      "construct": "residual_comovement",
-      "evidence_refs": [
-        "evidence-ref-g3"
-      ],
-      "graph": "graph_3",
-      "known_at": "2026-08-20",
-      "leg_id": "g3_resid",
-      "market_state_basis": "residual_comovement",
-      "owner_ref": {
-        "artifact": "data/baskets/group_pulse.json",
-        "artifact_schema": "group_pulse.v1",
-        "owner_program": "group-reads"
-      },
-      "usability_state": "usable"
-    }
-  ],
+  "hypothesis_state": "abstained",
+  "market_evidence": [],
   "mechanism": {
-    "hypothesis_text": "Demand for widgets shifts from Acme to Beta as capacity reallocates toward Beta's line.",
-    "mechanism_class": "demand_transfer",
-    "operating_metric_class": "revenue",
-    "predicted_operating_direction": "improves",
-    "state": "hypothesized"
+    "hypothesis_text": null,
+    "mechanism_class": null,
+    "operating_metric_class": null,
+    "predicted_operating_direction": null,
+    "state": "abstained"
   },
-  "record_id": "eph1:c3a05ed82cbec69c",
+  "record_id": "eph1:e545400879b0570b",
   "relationship_paths": [
     {
       "asof": "2026-08-20",
@@ -135,7 +87,7 @@
       ],
       "graph": "graph_1",
       "known_at": "2026-08-20",
-      "leg_id": "g1_customer",
+      "leg_id": "g1_min",
       "owner_ref": {
         "artifact": "data/earnings/fact_packs.parquet",
         "artifact_schema": "earnings.fact_pack/v1",
@@ -147,28 +99,10 @@
     }
   ],
   "schema": "economic_propagation.propagation_hypothesis/v1",
-  "similarity_evidence": [
-    {
-      "asof": "2026-08-20",
-      "comparability_basis": "shared_theme_vocabulary",
-      "construct": "theme_membership",
-      "evidence_refs": [
-        "evidence-ref-g2"
-      ],
-      "graph": "graph_2",
-      "known_at": "2026-08-20",
-      "leg_id": "g2_theme",
-      "owner_ref": {
-        "artifact": "data/theme_graph/edges.parquet",
-        "artifact_schema": "theme_graph.edges.v1",
-        "owner_program": "gmi-theme-graph"
-      },
-      "usability_state": "usable"
-    }
-  ],
+  "similarity_evidence": [],
   "source_event": {
     "event_class": "filing_8k",
-    "event_id": "evt-8k-0001",
+    "event_id": "evt-min-0001",
     "event_time": "2026-08-18",
     "known_at": "2026-08-18T12:00:00Z",
     "owner_ref": {
@@ -189,7 +123,7 @@
     }
   },
   "target": {
-    "requested_key": "ACME",
+    "requested_key": "MINCO",
     "resolution": {
       "issuer_id": "ISSUER-ACME",
       "owner_ref": {
@@ -199,7 +133,7 @@
       },
       "resolution_asof": "2026-08-20",
       "resolution_state": "RESOLVED",
-      "security_id": "SEC-ACME"
+      "security_id": null
     }
   },
   "version": 1

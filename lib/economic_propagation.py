@@ -399,6 +399,32 @@ def validate_hypothesis(record: Any) -> list[Finding]:
     mechanism = record.get("mechanism") if isinstance(record.get("mechanism"), dict) else {}
     abstention = record.get("abstention") if isinstance(record.get("abstention"), dict) else {}
 
+    # --- K3D_R015: source-identity gate, mirroring the target-side identity
+    # gate below (K3D_R010). source_event.source_identity is schema-required
+    # (propagation_hypothesis.v1.schema.json:59,75) but was previously read
+    # only for its resolution_asof lookahead check (K3D_R061) -- nothing
+    # required the source event's OWN identity to actually be RESOLVED
+    # before a hypothesis could be composed from it. A source event that
+    # cannot itself be pinned to an exact identity is not a lawful base for
+    # anything but a typed abstention.
+    source_event_for_identity = record.get("source_event") if isinstance(record.get("source_event"), dict) else {}
+    source_identity_for_gate = (
+        source_event_for_identity.get("source_identity")
+        if isinstance(source_event_for_identity.get("source_identity"), dict)
+        else {}
+    )
+    source_identity_state = source_identity_for_gate.get("resolution_state")
+    if source_identity_state != "RESOLVED" and abstention.get("abstained") is not True:
+        findings.append(
+            _f(
+                "K3D_R015",
+                "$.source_event.source_identity.resolution_state",
+                f"source_event.source_identity.resolution_state={source_identity_state!r}: a source "
+                "event whose own identity is not RESOLVED cannot support anything but a typed "
+                "abstention — mirrors the target-side identity gate (K3D_R010)",
+            )
+        )
+
     # --- K3D_R010: exact-identity gate precedes every semantic inference.
     if resolution_state != "RESOLVED":
         if abstention.get("abstained") is not True:
@@ -434,6 +460,15 @@ def validate_hypothesis(record: Any) -> list[Finding]:
         if resolution.get("issuer_id") in (None, ""):
             findings.append(
                 _f("K3D_R013", "$.target.resolution.issuer_id", "RESOLVED requires a non-null Data OS/Stock Identity issuer_id")
+            )
+        if resolution.get("security_id") in (None, ""):
+            findings.append(
+                _f(
+                    "K3D_R014",
+                    "$.target.resolution.security_id",
+                    "RESOLVED requires a non-null Data OS/Stock Identity security_id — the canonical "
+                    "logical identity binds both issuer_id and security_id, not issuer_id alone",
+                )
             )
         if not admissions and (abstention.get("abstained") is not True or g1_legs or g2_legs or g3_legs):
             findings.append(
@@ -482,6 +517,29 @@ def validate_hypothesis(record: Any) -> list[Finding]:
                         f"{path}.construct",
                         f"admission construct {admission.get('construct')!r} does not match registry "
                         f"construct {row.get('construct')!r} for generator {gen_id!r}",
+                    )
+                )
+            # K3D_R024: the admission's owner must be the ADMITTING
+            # GENERATOR's own declared native_owner (generator_registry.v1
+            # generators[].native_owner across 13 entries), never merely
+            # some owner that is lawful for the construct in general
+            # (K3D_R034, below, is construct-wide and stays silent here —
+            # a generator can share its construct's lawful-owner set with
+            # another owner that never actually runs this generator).
+            # Fail-closed: a missing/unknown owner_ref never passes by
+            # omission, it compares unequal to the required native_owner.
+            native_owner = row.get("native_owner")
+            owner_ref = admission.get("owner_ref")
+            admission_owner = owner_ref.get("owner_program") if isinstance(owner_ref, dict) else None
+            if admission_owner != native_owner:
+                findings.append(
+                    _f(
+                        "K3D_R024",
+                        f"{path}.owner_ref.owner_program",
+                        f"admission owner {admission_owner!r} does not match generator {gen_id!r}'s "
+                        f"declared native_owner {native_owner!r} in generator_registry.v1 — a "
+                        "construct-lawful owner is not enough; the owner must be the one that "
+                        "actually runs this generator",
                     )
                 )
 
