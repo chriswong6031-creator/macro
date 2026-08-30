@@ -1,15 +1,73 @@
 ---
 workstream: WS:STOCK-IDENTITY
-operation_key: SI-W3AR-REPLAY-ELIGIBILITY-P2-V1
-parent_operation: SI-FABLE-COO-PROGRAM-20260828
-preferred_operator: fable
-status: commissioned_unclaimed
-wave: W3AR
-repository: mastermindx-market-intelligence/macro
-base_sha: 07e63c5877c1638ee533843d4f2b477c9a148176
+session: sol/stock-identity-w3ar-recovery-20260829
+model: codex
+mission: >
+  Commission SI-W3AR-REPLAY-ELIGIBILITY-P2-V1 to determine, without drawing or
+  reading a new calibration partition, whether W2 supports a lawful retrospective
+  replay-eligibility clock distinct from live availability and whether an untouched
+  clean pool can support a fresh PR-3 calibration epoch.
+state_before: >
+  W0-W2 were accepted. W3A Attempt-1 PR #6638 was closed unmerged after its one-time
+  P1 PR-3 seal was rejected for an unlawful availability population; P1 is consumed
+  for that constant family. W3B was held and no lawful W3AR receiver was bound.
+changed:
+  - path: research/stock_identity/W3AR_REPLAY_ELIGIBILITY_P2_RECOVERY_CHARTER_2026-08-29.md
+    what: >
+      Freezes the upstream recovery question, two-clock hypothesis, outcome-free clean-pool
+      census, P2 feasibility requirements, and STOP-before-draw law.
+  - path: agentos/decisions/DEC-SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY.md
+    what: >
+      Records Sol's decision to validate historical replay eligibility separately from live
+      availability rather than assume either the strict single-clock or blanket-history reading.
+  - path: agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3AR-REPLAY-ELIGIBILITY-P2.md
+    what: >
+      Creates the bounded W3AR commission/return packet and hard non-goals for a future lawful receiver.
+prs: [6672]
+verified:
+  - claim: Old W3A Attempt-1 is terminal and cannot lawfully reread P1 for the PR-3 constant family.
+    command: "gh pr view 6638 --repo mastermindx-market-intelligence/macro --json state,isDraft,mergedAt,headRefOid"
+    result: "CLOSED, unmerged; exact failed-attempt head f0b265f82cc7066a4e8d0b87a8fd62a64dd10177."
+  - claim: W2 source law distinguishes stored-ledger extraction, registered recomputation, Class-B locked-spec backcast, and Class-P prospective-only history.
+    command: "open research/stock_identity/W2_EXPERT_REPLAY_REGISTRATION.md and data/stock_identity/expert_events/family_registry.json"
+    result: "The four provenance/replay classes are explicitly registered; Class P has no historical rows."
+  - claim: The recovery packet itself draws no P2 membership and authorizes no P1/blind/outcome read.
+    command: "open research/stock_identity/W3AR_REPLAY_ELIGIBILITY_P2_RECOVERY_CHARTER_2026-08-29.md"
+    result: "Records-only charter; explicit STOP before any P2 draw/read and no P1/blind/outcome authority."
+unverified:
+  - claim: A lawful family-by-family two-clock interpretation leaves enough replay support for a nondegenerate fresh calibration epoch.
+    what_would_verify: >
+      A lawfully bound W3AR principal must perform the source-law audit, clean-pool hash/census,
+      outcome-free coverage analysis, and independent adversarial review, then return one of the
+      three frozen terminal recommendations before any P2 draw.
+decisions:
+  - DEC:SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY
+unresolved:
+  - W3AR still requires a lawful receiver-assignment edge; current state is WAITING_CAPACITY / needs_placement.
+  - The two-clock source-law interpretation is a hypothesis to validate, not an accepted family-eligibility result.
+  - No P2 sample/draw law may be accepted until the outcome-free feasibility packet returns to Sol.
+next_actions:
+  - Bind one eligible principal through an authorized placement/commissioning edge; do not infer assignment from Secretary attention transport.
+  - Re-pin current Skillpack/Macro/source owners and execute only the read-only/source-law feasibility audit first.
+  - Return DECISION_REQUEST SI-W3AR-REPLAY-ELIGIBILITY-P2-V1 with exactly GO_P2_PREREG, NO_GO_CALIBRATION_RECOVERY, or BLOCKED_NEW_SOURCE_LAW; stop before P2 draw.
+do_not_redo:
+  - Do not revive PR #6638 or reread/reseal/overwrite/relabel its P1 Attempt-1 evidence.
+  - Do not use fire occurrence/event min-max as historical availability evidence.
+  - Do not backfill Class-P families or create a second replay/availability/evidence/data plane.
+  - Do not open W3B, Q1, or Prophet authority from this commission.
+danger_areas:
+  - P1 and the blind arm are protected evidence partitions; even per-name inspection can contaminate the recovery design.
+  - Historical research replay eligibility must never be exported as historical live deployment availability.
+  - Generic spec existence is integrity/provenance metadata, not date-specific reconstructibility proof.
+  - Receiver attention/ACK without a lawful commissioning edge is not lifecycle authority.
+ended_because: blocked
 ---
 
 # W3AR — Replay Eligibility / Fresh P2 Feasibility
+
+**Operation:** `SI-W3AR-REPLAY-ELIGIBILITY-P2-V1`  
+**Parent:** `SI-FABLE-COO-PROGRAM-20260828`  
+**Current operational state:** `WAITING_CAPACITY / needs_placement`. Any attention-only or invalid-placement session must stand down with effect NONE; this packet remains the bounded commission for a later lawfully assigned receiver.
 
 ## Observable mission
 
@@ -38,7 +96,7 @@ If newer source law collides, stop and return the exact conflict before changing
 - W3A Attempt-1 PR #6638 is CLOSED UNMERGED; its P1 constants are rejected and P1 is consumed for this constant family.
 - The availability repair itself established 0/14 null-bound R/B families with date-specific historical deployment/source-era evidence under the stricter interpretation.
 - W1 documented universe: 2,781 names; blind arm 229, P1 759; documented arithmetic leaves roughly 1.77k names outside pilot+blind+P1 before later design-touch exclusions. Exact clean pool must be recomputed and hashed; do not rely on the arithmetic as membership truth.
-- W3B held; W3S may proceed independently.
+- W3B held; W3S may proceed independently once lawfully placed.
 
 ## Exact scope
 
@@ -145,7 +203,7 @@ The return must include:
 
 ## Stop condition
 
-STOP before any P2 draw/read. Post `DECISION_REQUEST SI-W3AR-REPLAY-ELIGIBILITY-P2-V1` in the parent Stock Identity Slack thread with exact branch/PR/head and the full evidence packet, then arm the exact-thread temporary watcher. Sol alone decides whether a P2 preregistration wave opens.
+STOP before any P2 draw/read. Post `DECISION_REQUEST SI-W3AR-REPLAY-ELIGIBILITY-P2-V1` in the W3AR Slack child thread with exact branch/PR/head and the full evidence packet, then arm the exact-thread temporary watcher. Sol alone decides whether a P2 preregistration wave opens.
 
 ## Continuation
 
