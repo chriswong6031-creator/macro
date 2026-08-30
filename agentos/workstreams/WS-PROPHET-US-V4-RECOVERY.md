@@ -587,25 +587,25 @@ waves:
       and sets tradable_at NOT_ASSERTED until B4; A9 requires episode_ref to pin the B1
       generation_id. B1 DEPENDENCY CLEARED 2026-08-28: natural run 33147282433 and
       durable main commit a8ee11ba0e48 prove the canonical episode generation. This
-      clears only D5's B1 dependency. PRE-DELIVERY IMPLEMENTATION 2026-08-30: local
-      exact code head e650dbc412a3746894c8ef4e950e775139f0dd1a implements the bounded
+      clears only D5's B1 dependency. PRE-DELIVERY IMPLEMENTATION 2026-08-30: hostile-
+      review fix head 1c5ac27a055df357325d7cab47394912aaf37acc implements the bounded
       Cell F/Earnings contract as one pure revision-chain adapter plus one authenticated
-      existing Prophet Lab episode-detail read. Task 4A's fresh focused battery is
-      438 passed (104 identity + 37 real-reader chain + 297 Prophet Lab/API), the Data
-      OS manifest line is 390 passed, and Agent OS validates with zero errors. This is
-      local proof only: no hosted CI, PR, merge, deploy, or authenticated live receipt
-      exists, and changed-path planning names one unowned modified test path. D6 and
-      every other downstream wave remain gated."
+      existing Prophet Lab episode-detail read. It repairs A7 mixed-clock correction
+      visibility, distinct-source OBSERVED lineage, and the hermetic real-reader suite's
+      executing PR code-gate ownership. Fresh focused proof is 442 passed (104 identity
+      + 38 real-reader chain + 300 Prophet Lab/API); the path-isolated code plan names
+      prophet-lab and no unowned path. This is local proof only: independent re-review,
+      hosted CI, PR, merge, deploy, and authenticated live receipts remain pending. D6
+      and every other downstream wave remain gated."
     status: in_progress
     next_action: >
-      Complete D5 delivery in this carrier without widening scope: finish the independent
-      hostile whole-branch review against the exact base/head; reconcile fresh origin/main;
-      rerun the focused battery and repository-owned CI lines in a checkout that supplies
-      their declared committed inputs; close or explicitly disposition the changed-path
-      ownership gap; then push one PR, wait for concluded hosted CI, squash-merge, verify
-      main/deploy, and collect authenticated covered plus typed unresolved production
-      receipts. Fill the PR/merge/CI/deploy/live placeholders in the 2026-08-30 D5
-      pre-delivery handoff before any `PROVEN_LIVE` claim.
+      Complete D5 delivery in this carrier without widening scope: independently re-review
+      exact hostile-fix head 1c5ac27a055df357325d7cab47394912aaf37acc; reconcile fresh
+      origin/main; rerun the focused battery and repository-owned CI lines in a checkout
+      that supplies their declared committed inputs; then push one PR, wait for concluded
+      hosted CI, squash-merge, verify main/deploy, and collect authenticated covered plus
+      typed unresolved production receipts. Fill the PR/merge/CI/deploy/live placeholders
+      in the 2026-08-30 D5 pre-delivery handoff before any `PROVEN_LIVE` claim.
   - id: d6
     depends_on: [d5]
     title: "V4-D6 — earnings adapter. Premise updated 0B: EIOS E1P is LIVE for the
@@ -644,11 +644,12 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  D5's bounded Earnings implementation is built and locally exact-head verified at
-  e650dbc412a3746894c8ef4e950e775139f0dd1a, but it is not yet hosted-CI accepted,
-  merged, deployed, or live-proven. Continue Task 4 from
+  D5's bounded Earnings implementation is locally exact-head verified through hostile-
+  review fix head 1c5ac27a055df357325d7cab47394912aaf37acc, but it is not yet
+  independently re-review accepted, hosted-CI accepted, merged, deployed, or live-proven.
+  Continue Task 4 from
   agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-30-d5-pre-delivery.md: exact whole-branch
-  hostile review, fresh-main reconciliation, focused and changed-path CI proof, one PR,
+  hostile re-review, fresh-main reconciliation, focused and changed-path CI proof, one PR,
   concluded CI, squash merge, main/deploy verification, and authenticated covered plus
   typed-unresolved endpoint receipts. Radar forward lineage remains
   PROPOSED/STAGED_NOT_ARMED; A2/A3/A4, B2/B3/B4, D6, and every later wave remain separate.

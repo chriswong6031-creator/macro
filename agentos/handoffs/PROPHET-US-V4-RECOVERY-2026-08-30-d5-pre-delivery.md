@@ -55,6 +55,48 @@ verified:
       104 passed; 37 passed; 297 passed with 10 pre-existing deprecation/OpenAPI
       warnings. Total 438 passed, zero failures.
   - claim: >
+      Hostile-review fix round 1 repairs all three P1 findings at one exact local code,
+      test, and CI-manifest head without widening D5 authority or product scope.
+    command: >
+      git show --stat --oneline --decorate --no-renames
+      1c5ac27a055df357325d7cab47394912aaf37acc; git diff --check
+      2460af68cbac027a7d0e56394e279631a3c592bc..1c5ac27a055df357325d7cab47394912aaf37acc
+    result: >
+      Exact fix head 1c5ac27a055df357325d7cab47394912aaf37acc changes five paths:
+      the Earnings projection, its focused/unit and real-reader tests, the code-gate
+      routing test, and the existing prophet-lab manifest job. Mixed-clock corrections
+      now preserve A7's any-clock complement while requiring generated_at after the cut;
+      distinct visible issuer-source hashes emit OBSERVED; and the hermetic real-reader
+      suite has a real executing gate:code owner. Diff check exits 0.
+  - claim: >
+      The repaired D5 focused battery passes freshly at the exact fix head.
+    command: >
+      python3 -m pytest -q -p no:cacheprovider --basetemp /tmp/d5-fix1-identity
+      tests/test_dataos_identity.py; python3 -m pytest -q -p no:cacheprovider
+      --basetemp /tmp/d5-fix1-workspace-full
+      tests/test_company_intelligence_workspace_chain.py; python3 -m pytest -q -p
+      no:cacheprovider --basetemp /tmp/d5-fix1-prophet-api-full
+      tests/test_prophet_lab.py tests/test_prophet_lab_api.py
+    result: >
+      104 passed; 38 passed; 300 passed with 10 pre-existing deprecation/OpenAPI
+      warnings. Total 442 passed, zero failures.
+  - claim: >
+      The repaired PR code-gate ownership is executable, not a path-only declaration.
+    command: >
+      python3 -m pytest -q -p no:cacheprovider --basetemp
+      /tmp/d5-fix1-green-routing-2
+      tests/test_ci_pack.py::test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate;
+      CI_CHANGED_FILES_JSON='["tests/test_company_intelligence_workspace_chain.py"]'
+      python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --gate code
+      --pack-count 12 --scope-mode active --plan-only --emit-plan-json
+      /tmp/d5-fix1-code-plan.json
+    result: >
+      Routing assertion 1 passed. The path-isolated plan validates all 133 code jobs,
+      reports one scoped match and no unowned path, and places prophet-lab in pack 2;
+      prophet-lab's run step executes the workspace-chain file. The real branch-range
+      planner also exits 0 and selects all 133 code jobs because this fix necessarily
+      changes the global CI manifest.
+  - claim: >
       The Data OS manifest-owned job line is green with the new identity seam and all
       sibling Data OS contracts.
     command: >
@@ -141,10 +183,6 @@ unverified:
       observed, produced, and browser/consumer clocks separately.
 unresolved:
   - >
-    Changed-path routing leaves tests/test_company_intelligence_workspace_chain.py
-    unowned and therefore does not select neural-web-core for a test-only change. The
-    parent delivery session must close or explicitly disposition this before merge.
-  - >
     This branch started at eaa2a5bf656d and was 182 commits behind the locally available
     origin/main tracking ref at Task 4A start. Fresh-main reconciliation belongs to the
     parent Task 4 delivery step and was expressly forbidden in this records subtask.
@@ -162,10 +200,11 @@ unresolved:
     result; rerun that fixture in the repository's full hosted environment.
 next_actions:
   - >
-    Complete the independent hostile whole-branch review against the exact final
-    pre-push head and repair any load-bearing finding test-first.
+    Run the independent hostile whole-branch re-review against exact repaired head
+    1c5ac27a055df357325d7cab47394912aaf37acc and repair any further load-bearing
+    finding test-first.
   - >
-    Fetch and reconcile fresh origin/main in the parent session, then rerun the 438-test
+    Fetch and reconcile fresh origin/main in the parent session, then rerun the 442-test
     focused battery and the repository-selected manifest validation/job lines without
     running the repository-wide full suite in a sparse tree.
   - >
@@ -202,10 +241,11 @@ danger_areas:
     trees before failing; they were restored and `git sparse-checkout reapply` returned
     the carrier to clean sparse state. Never stage an unexpected data/site path.
   - >
-    The code implementation head is e650dbc412a3746894c8ef4e950e775139f0dd1a;
-    Task 4A's records commit will be a later head without changing those implementation
-    bytes. Keep code-head, records-head, PR-head, merge-head, and deployed-head receipts
-    distinct.
+    The initial code implementation head is e650dbc412a3746894c8ef4e950e775139f0dd1a;
+    hostile-review fix round 1 is exact code/test/manifest head
+    1c5ac27a055df357325d7cab47394912aaf37acc. The amended records commit is later
+    without changing those fix bytes. Keep initial-code, fix, records, PR, merge, and
+    deployed heads distinct.
 decisions:
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
   - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
@@ -214,16 +254,18 @@ discoveries: []
 
 ## §0 State — what is true right now
 
-D5's first bounded Earnings vertical is built and locally exact-head verified at
-`e650dbc412a3746894c8ef4e950e775139f0dd1a`: one canonical current issuer-to-CIK seam,
-one pure revision-chain projection, and one authenticated existing Prophet Lab detail
-route. It is not hosted-CI accepted, on main, deployed, or proven through a real paid
-production request. The broad local manifest lines remain honestly non-green for the
-named sparse/base reasons, and the changed-path planner exposes one unowned modified test.
+D5's first bounded Earnings vertical is built and locally exact-head verified through
+hostile-review fix head `1c5ac27a055df357325d7cab47394912aaf37acc`: one canonical
+current issuer-to-CIK seam, one pure revision-chain projection, and one authenticated
+existing Prophet Lab detail route. The repaired focused battery is 442 passed, and the
+hermetic real-reader chain suite now has a real executing PR `gate: code` owner. It is
+not independently re-review accepted, hosted-CI accepted, on main, deployed, or proven
+through a real paid production request. The broad local manifest line remains honestly
+non-green for the named sparse/base reasons.
 
 ## §1 What is LEFT — in order
 
-1. Complete the exact-head hostile whole-branch review and repair any load-bearing finding.
+1. Complete the exact-head hostile whole-branch re-review of fix head `1c5ac27a055d`.
 2. Reconcile fresh main and rerun the focused plus repository-owned CI proof in the proper checkout.
 3. Push one PR, wait for concluded hosted CI, squash-merge, and verify exact main ancestry/hashes.
 4. Wait for normal deployment and prove one covered paid request plus one typed unresolved/not-covered request.
@@ -235,8 +277,8 @@ The D5-focused battery is green, but the local carrier is sparse and started fro
 base. The broad Prophet Lab line therefore sees missing committed metadata and the stale
 eight-block Caddy expectation; the broad Neural Web line sees missing committed datasets
 and can write generated artifacts into omitted trees before the data guard stops it. The
-changed-path planner's unowned workspace-chain test is a separate CI-coverage issue and
-must not be confused with those sparse/base failures.
+workspace-chain ownership gap is closed at the fix head; do not confuse that code-gate
+repair with the remaining sparse/base failures.
 
 ## §3 What was decided and found
 
