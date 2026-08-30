@@ -65,7 +65,7 @@ _FAMILY_KEYS = frozenset({
     "point_in_time", "applicability", "coverage", "freshness", "rights",
     "identity_state", "quality", "source_refs", "evidence_roots", "observations",
     "explanation_facts", "trajectory", "correction", "calibration", "fusion_bindings",
-    "authority", "owner_warnings",
+    "authority", "owner_warnings", "owner_lane_dispositions",
 })
 _FORBIDDEN_KEYS = frozenset({
     "score", "rank", "weight", "confidence", "conviction", "evidence_count",
@@ -133,6 +133,12 @@ _DELTA_ABSENCE_REASONS = frozenset({
     "not_available", "consensus_unlicensed", "no_span_addressable_evidence",
     "missing_source", "no_transcript", "not_applicable", "unknown",
 })
+_OWNER_LANES = (
+    "DELTA_REVENUE",
+    "FACT_REVENUE",
+    "GUIDANCE_REVENUE_YOY_PCT",
+)
+_OWNER_LANE_DISPOSITIONS = frozenset({"ABSENT", "PROJECTED", "UNPROJECTABLE"})
 _COVERAGE_QUALITY_VOCABULARY: dict[tuple[str, str], tuple[str, ...]] = {
     ("UNKNOWN", "canonical_identity_ambiguous"): ("identity_ambiguous",),
     ("UNKNOWN", "canonical_identity_unresolved"): ("identity_unresolved",),
@@ -433,6 +439,7 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
             "state_at_decision": "NONE",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_receipts": [],
             "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         },
@@ -440,6 +447,7 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
         "fusion_bindings": [],
         "authority": dict(ALL_FALSE_AUTHORITY),
         "owner_warnings": [],
+        "owner_lane_dispositions": [],
     }
 
 
@@ -572,15 +580,63 @@ def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], 
     return index, delta, document_id
 
 
-def _owner_allowlisted_lane_count(workspace: Mapping[str, Any]) -> int:
-    return sum(
-        candidate is not None
-        for candidate in (
-            _candidate_fact(workspace),
-            _candidate_guidance(workspace),
-            _candidate_delta(workspace),
-        )
-    )
+def _owner_lane_dispositions(
+    workspace: Mapping[str, Any], *, observations: Sequence[Mapping[str, Any]],
+    trajectory: Mapping[str, Any],
+) -> list[dict[str, str]]:
+    projected = {
+        "FACT_REVENUE": any(
+            item.get("value_state") == "PRESENT"
+            and item.get("native_metric_id") == "fact:revenue"
+            for item in observations
+        ),
+        "GUIDANCE_REVENUE_YOY_PCT": any(
+            item.get("value_state") == "PRESENT"
+            and item.get("native_metric_id") == "guidance:revenue_yoy_pct"
+            for item in observations
+        ),
+        "DELTA_REVENUE": any(
+            item.get("native_metric_id") == "metric_delta:revenue"
+            for item in _as_list(trajectory.get("dimensions"))
+            if isinstance(item, Mapping)
+        ),
+    }
+    candidates = {
+        "FACT_REVENUE": _candidate_fact(workspace) is not None,
+        "GUIDANCE_REVENUE_YOY_PCT": _candidate_guidance(workspace) is not None,
+        "DELTA_REVENUE": _candidate_delta(workspace) is not None,
+    }
+    return [{
+        "lane": lane,
+        "disposition": (
+            "PROJECTED" if projected[lane]
+            else ("UNPROJECTABLE" if candidates[lane] else "ABSENT")
+        ),
+    } for lane in _OWNER_LANES]
+
+
+def _later_revision_receipt(
+    item: Mapping[str, Any], *, event_id: str,
+    source_ref_ids: Sequence[str],
+) -> dict[str, Any]:
+    revision = _as_mapping(item.get("revision"))
+    clocks = _as_mapping(item.get("clocks"))
+    semantic = {
+        "owner_subject_id": event_id,
+        "generation_id": str(revision.get("generation_id") or ""),
+        "source_sha256": revision.get("source_sha256"),
+        "source_available_at": clocks.get("source_available_at"),
+        "observed_at": clocks.get("observed_at"),
+        "generated_at": clocks.get("generated_at"),
+        "disposition": (
+            "PROJECTED" if source_ref_ids else "OBSERVED_UNPROJECTABLE"
+        ),
+        "source_ref_ids": sorted(set(source_ref_ids)),
+    }
+    return {
+        "later_revision_receipt_id": _content_id("lrr", semantic),
+        **semantic,
+    }
 
 
 def _adapted_field_paths(workspace: Mapping[str, Any]) -> dict[str, list[str]]:
@@ -959,6 +1015,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "PENDING",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_receipts": [],
             "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         }
@@ -1004,6 +1061,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "PENDING",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_receipts": [],
             "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         }
@@ -1112,6 +1170,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "CONFLICTED",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_receipts": [],
             "later_revision_state": "UNKNOWN",
             "current_state": "CONFLICTED",
         }
@@ -1152,14 +1211,33 @@ def build_earnings_intelligence_vector(
             str(item["revision"].get("generation_id") or ""),
         ),
     )
+    visible_later = [
+        item for item in later
+        if _HASH_RE.fullmatch(
+            str(item["revision"].get("source_sha256") or "")
+        )
+    ]
+    if any(item["parsed"]["generated_at"] <= cut for item in visible_later):
+        raise IntelligenceVectorContractError(
+            "later owner generation must be strictly after the decision cut"
+        )
     later_refs: list[dict[str, Any]] = []
     later_roots: list[dict[str, Any]] = []
-    for item in later:
+    later_revision_receipts: list[dict[str, Any]] = []
+    for item in visible_later:
         revision_refs, revision_roots = _source_refs(
             item["workspace"], str(item["revision"].get("generation_id") or ""),
         )
         later_refs.extend(revision_refs)
         later_roots.extend(revision_roots)
+        later_revision_receipts.append(_later_revision_receipt(
+            item,
+            event_id=event_id,
+            source_ref_ids=[ref["source_ref_id"] for ref in revision_refs],
+        ))
+    later_revision_receipts.sort(
+        key=lambda item: item["later_revision_receipt_id"]
+    )
     all_refs_by_id = {
         ref["source_ref_id"]: ref for ref in decision_refs + later_refs
     }
@@ -1200,24 +1278,26 @@ def build_earnings_intelligence_vector(
         item["value_state"] != "ABSENT" for item in family["observations"]
     ) else [])
     later_ref_ids = sorted({ref["source_ref_id"] for ref in later_refs})
-    later_generation_ids = {
-        ref["version_or_generation"] for ref in later_refs
-    }
-    referenced_later = [
-        item for item in later
-        if item["revision"].get("generation_id") in later_generation_ids
-    ]
     corrected_at = (
         max(
-            referenced_later,
+            visible_later,
             key=lambda item: item["parsed"]["generated_at"],
         )["clocks"]["generated_at"]
-        if referenced_later else None
+        if visible_later else None
     )
-    expected_lane_count = _owner_allowlisted_lane_count(workspace)
-    projected_lane_count = len([
-        item for item in family["observations"] if item["value_state"] == "PRESENT"
-    ]) + (1 if family["trajectory"]["state"] == "PARTIAL" else 0)
+    family["owner_lane_dispositions"] = _owner_lane_dispositions(
+        workspace,
+        observations=family["observations"],
+        trajectory=family["trajectory"],
+    )
+    expected_lane_count = sum(
+        item["disposition"] != "ABSENT"
+        for item in family["owner_lane_dispositions"]
+    )
+    projected_lane_count = sum(
+        item["disposition"] == "PROJECTED"
+        for item in family["owner_lane_dispositions"]
+    )
     if expected_lane_count > 0 and projected_lane_count == expected_lane_count:
         family["coverage"] = {
             "state": "COVERED",
@@ -1247,15 +1327,21 @@ def build_earnings_intelligence_vector(
         "state_at_decision": "NONE",
         "decision_version_ref_ids": sorted(source_ref_ids),
         "later_correction_ref_ids": later_ref_ids,
+        "later_revision_receipts": later_revision_receipts,
         "later_revision_state": (
             "PROJECTED" if later_ref_ids
-            else ("OBSERVED_UNPROJECTABLE" if later else "NONE")
+            else (
+                "OBSERVED_UNPROJECTABLE"
+                if later_revision_receipts else "NONE"
+            )
         ),
         "current_state": (
             "UNKNOWN" if lineage_state == "NOT_OBSERVABLE" or not source_ref_ids
             else (
                 "CORRECTED" if later_ref_ids
-                else ("UNKNOWN" if later else "CURRENT")
+                else (
+                    "UNKNOWN" if later_revision_receipts else "CURRENT"
+                )
             )
         ),
     }
@@ -1713,11 +1799,34 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                 or dimension_item[list_name] != sorted(set(dimension_item[list_name]))
             ):
                 raise IntelligenceVectorContractError("trajectory references must be non-empty canonical lists")
+    owner_lane_dispositions = family["owner_lane_dispositions"]
+    if not isinstance(owner_lane_dispositions, list):
+        raise IntelligenceVectorContractError(
+            "owner lane dispositions must be a list"
+        )
+    if owner_lane_dispositions:
+        if len(owner_lane_dispositions) != len(_OWNER_LANES):
+            raise IntelligenceVectorContractError(
+                "owner lane dispositions must cover every allowlisted lane"
+            )
+        for index, raw_lane in enumerate(owner_lane_dispositions):
+            lane = _require_keys(
+                raw_lane, frozenset({"lane", "disposition"}),
+                name="owner lane disposition",
+            )
+            if (
+                lane["lane"] != _OWNER_LANES[index]
+                or lane["disposition"] not in _OWNER_LANE_DISPOSITIONS
+            ):
+                raise IntelligenceVectorContractError(
+                    "owner lane dispositions are outside the closed vocabulary"
+                )
     correction = _require_keys(
         family["correction"],
         frozenset({
             "state_at_decision", "decision_version_ref_ids",
-            "later_correction_ref_ids", "later_revision_state", "current_state",
+            "later_correction_ref_ids", "later_revision_receipts",
+            "later_revision_state", "current_state",
         }),
         name="correction",
     )
@@ -1737,12 +1846,118 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError("correction references must be sorted and unique")
     if set(correction["decision_version_ref_ids"]) & set(correction["later_correction_ref_ids"]):
         raise IntelligenceVectorContractError("decision and later correction refs must be disjoint")
-    has_projected_later_revision = bool(correction["later_correction_ref_ids"])
-    if has_projected_later_revision != (
-        correction["later_revision_state"] == "PROJECTED"
+    later_revision_receipts = correction["later_revision_receipts"]
+    if (
+        not isinstance(later_revision_receipts, list)
+        or later_revision_receipts != sorted(
+            later_revision_receipts,
+            key=lambda item: item.get("later_revision_receipt_id", "")
+            if isinstance(item, Mapping) else "",
+        )
     ):
         raise IntelligenceVectorContractError(
-            "projected later revision state must exactly match later correction refs"
+            "later revision receipts must be a canonical list"
+        )
+    seen_receipt_ids: set[str] = set()
+    seen_receipt_generations: set[str] = set()
+    receipt_ref_ids: set[str] = set()
+    for raw_later_receipt in later_revision_receipts:
+        later_receipt = _require_keys(
+            raw_later_receipt,
+            frozenset({
+                "later_revision_receipt_id", "owner_subject_id",
+                "generation_id", "source_sha256", "source_available_at",
+                "observed_at", "generated_at", "disposition",
+                "source_ref_ids",
+            }),
+            name="later revision receipt",
+        )
+        receipt_id = later_receipt["later_revision_receipt_id"]
+        generation_id = later_receipt["generation_id"]
+        if (
+            receipt_id in seen_receipt_ids
+            or generation_id in seen_receipt_generations
+        ):
+            raise IntelligenceVectorContractError(
+                "later revision receipt identities and generations must be unique"
+            )
+        seen_receipt_ids.add(receipt_id)
+        seen_receipt_generations.add(generation_id)
+        if (
+            later_receipt["owner_subject_id"] != owner_subject_id
+            or not isinstance(generation_id, str)
+            or _WORKSPACE_GENERATION_RE.fullmatch(generation_id) is None
+            or not isinstance(later_receipt["source_sha256"], str)
+            or _HASH_RE.fullmatch(later_receipt["source_sha256"]) is None
+        ):
+            raise IntelligenceVectorContractError(
+                "later revision receipt must bind the owner source generation"
+            )
+        parsed_later_clocks = {
+            clock_name: _parse_time(later_receipt[clock_name])
+            for clock_name in (
+                "source_available_at", "observed_at", "generated_at",
+            )
+        }
+        if any(value is None for value in parsed_later_clocks.values()):
+            raise IntelligenceVectorContractError(
+                "later revision receipt owner clocks must be valid"
+            )
+        if parsed_later_clocks["generated_at"] <= opened_at:
+            raise IntelligenceVectorContractError(
+                "later owner generation must be strictly after the decision cut"
+            )
+        if later_receipt["disposition"] not in {
+            "PROJECTED", "OBSERVED_UNPROJECTABLE",
+        }:
+            raise IntelligenceVectorContractError(
+                "later revision receipt disposition invalid"
+            )
+        if (
+            not isinstance(later_receipt["source_ref_ids"], list)
+            or later_receipt["source_ref_ids"]
+            != sorted(set(later_receipt["source_ref_ids"]))
+            or (
+                later_receipt["disposition"] == "PROJECTED"
+            ) != bool(later_receipt["source_ref_ids"])
+        ):
+            raise IntelligenceVectorContractError(
+                "later revision receipt disposition must match its source refs"
+            )
+        semantic = {
+            key: deepcopy(value) for key, value in later_receipt.items()
+            if key != "later_revision_receipt_id"
+        }
+        if receipt_id != _content_id("lrr", semantic):
+            raise IntelligenceVectorContractError(
+                "later revision receipt content address mismatch"
+            )
+        receipt_ref_ids.update(later_receipt["source_ref_ids"])
+    has_projected_later_revision = bool(receipt_ref_ids)
+    derived_later_revision_state = (
+        "PROJECTED" if has_projected_later_revision
+        else (
+            "OBSERVED_UNPROJECTABLE"
+            if later_revision_receipts else None
+        )
+    )
+    if (
+        derived_later_revision_state is not None
+        and correction["later_revision_state"] != derived_later_revision_state
+    ):
+        raise IntelligenceVectorContractError(
+            "later revision state must be derived from owner receipts"
+        )
+    if (
+        derived_later_revision_state is None
+        and correction["later_revision_state"] not in {"NONE", "UNKNOWN"}
+    ):
+        raise IntelligenceVectorContractError(
+            "later correction revision state cannot be asserted without an owner receipt"
+        )
+    if set(correction["later_correction_ref_ids"]) != receipt_ref_ids:
+        raise IntelligenceVectorContractError(
+            "later correction refs must exactly equal projected receipt refs"
         )
     if correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE" and (
         correction["later_correction_ref_ids"]
@@ -1908,7 +2123,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         for reason in observation["absence_reasons"]
     }
     not_covered_outcome = coverage["state"] == "NOT_COVERED"
-    if not_covered_outcome != (absence_reasons == {"NOT_COVERED"}):
+    if (
+        not_covered_outcome
+        and absence_reasons != {"NOT_COVERED"}
+    ) or (
+        not not_covered_outcome
+        and "NOT_COVERED" in absence_reasons
+    ):
         raise IntelligenceVectorContractError(
             "NOT_COVERED absence must exactly match NOT_COVERED coverage"
         )
@@ -1951,6 +2172,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         correction["current_state"] != "UNKNOWN"
         or correction["decision_version_ref_ids"]
         or correction["later_correction_ref_ids"]
+        or correction["later_revision_receipts"]
         or any(observation["value_state"] != "ABSENT" for observation in family["observations"])
     ):
         raise IntelligenceVectorContractError(
@@ -1965,6 +2187,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         and not actual_error_types
         and not correction["decision_version_ref_ids"]
         and not correction["later_correction_ref_ids"]
+        and not correction["later_revision_receipts"]
         and all(
             observation["value_state"] == "ABSENT"
             for observation in family["observations"]
@@ -2024,35 +2247,51 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         if root["source_ref_id"] in decision_ref_ids
     }
     corrected_clock = point_in_time["corrected_at"]
-    if later_ref_ids:
+    if later_revision_receipts:
+        corrected_value = _parse_time(corrected_clock["value"])
+        expected_corrected_value = max(
+            later_revision_receipts,
+            key=lambda later_receipt: _parse_time(
+                later_receipt["generated_at"]
+            ),
+        )["generated_at"]
         if (
             corrected_clock["state"] != "ASSERTED"
             or corrected_clock["basis"] != "later_event_workspace.generated_at"
             or set(corrected_clock["source_ref_ids"]) != later_ref_ids
-            or _parse_time(corrected_clock["value"]) is None
+            or corrected_value is None
+            or corrected_value <= opened_at
+            or corrected_clock["value"] != expected_corrected_value
         ):
             raise IntelligenceVectorContractError(
-                "corrected_at must bind the later correction generation refs"
+                "corrected_at must exactly bind post-cut later revision receipts"
             )
         decision_generations = {
             source_refs_by_id[ref_id]["version_or_generation"]
             for ref_id in decision_ref_ids
         }
-        later_generations = {
-            source_refs_by_id[ref_id]["version_or_generation"]
-            for ref_id in later_ref_ids
-        }
+        later_generations = set(seen_receipt_generations)
         if not later_generations or decision_generations & later_generations:
             raise IntelligenceVectorContractError(
                 "decision and correction generations must be distinct"
             )
+        for later_receipt in later_revision_receipts:
+            generation_ref_ids = {
+                ref_id for ref_id in later_ref_ids
+                if source_refs_by_id[ref_id]["version_or_generation"]
+                == later_receipt["generation_id"]
+            }
+            if set(later_receipt["source_ref_ids"]) != generation_ref_ids:
+                raise IntelligenceVectorContractError(
+                    "later revision receipt refs must exactly bind its generation"
+                )
     elif corrected_clock != _clock(
         state="NOT_ASSERTED",
         value=None,
         basis="no_later_visible_source_revision",
     ):
         raise IntelligenceVectorContractError(
-            "corrected_at cannot be asserted without later correction refs"
+            "corrected_at cannot be asserted without a later revision receipt"
         )
     if decision_ref_ids and len({
         source_refs_by_id[ref_id]["version_or_generation"]
@@ -2166,6 +2405,69 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         and point_in_time["decision_admissibility"] == "ADMISSIBLE"
         and not actual_error_types
     )
+    actual_projected_lanes = {
+        "FACT_REVENUE" for observation in present_observations
+        if observation["native_metric_id"] == "fact:revenue"
+    } | {
+        "GUIDANCE_REVENUE_YOY_PCT" for observation in present_observations
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    } | (
+        {"DELTA_REVENUE"} if trajectory["dimensions"] else set()
+    )
+    if owner_lane_dispositions:
+        serialized_projected_lanes = {
+            item["lane"] for item in owner_lane_dispositions
+            if item["disposition"] == "PROJECTED"
+        }
+        if serialized_projected_lanes != actual_projected_lanes:
+            raise IntelligenceVectorContractError(
+                "owner lane dispositions must exactly match projected evidence"
+            )
+        expected_lane_count = sum(
+            item["disposition"] != "ABSENT"
+            for item in owner_lane_dispositions
+        )
+        projected_lane_count = len(serialized_projected_lanes)
+        derived_coverage = (
+            {
+                "state": "COVERED",
+                "basis": "complete_allowlisted_owner_packet",
+            }
+            if expected_lane_count > 0
+            and projected_lane_count == expected_lane_count
+            else (
+                {
+                    "state": "PARTIAL",
+                    "basis": "partial_allowlisted_owner_packet",
+                }
+                if projected_lane_count > 0
+                else {
+                    "state": "UNKNOWN",
+                    "basis": "exact_source_lineage_unavailable",
+                }
+            )
+        )
+        if coverage != derived_coverage:
+            raise IntelligenceVectorContractError(
+                "coverage must be derived from closed owner lane dispositions"
+            )
+        if not (
+            family["identity_state"] == "RESOLVED"
+            and owner_subject_id is not None
+            and point_in_time["decision_admissibility"] == "ADMISSIBLE"
+            and not actual_error_types
+        ):
+            raise IntelligenceVectorContractError(
+                "owner lane evidence dispositions require a selected decision-admissible owner packet"
+            )
+    elif actual_projected_lanes or coverage in (
+        {"state": "COVERED", "basis": "complete_allowlisted_owner_packet"},
+        {"state": "PARTIAL", "basis": "partial_allowlisted_owner_packet"},
+        {"state": "UNKNOWN", "basis": "exact_source_lineage_unavailable"},
+    ):
+        raise IntelligenceVectorContractError(
+            "selected owner evidence packet requires closed owner lane dispositions"
+        )
     if evidence_admitted and (
         not decision_ref_ids
         or not (present_observations or trajectory["dimensions"])
@@ -2180,6 +2482,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         or trajectory["dimensions"]
         or correction["decision_version_ref_ids"]
         or correction["later_correction_ref_ids"]
+        or correction["later_revision_receipts"]
         or item["economic_dependence_groups"]
     ):
         raise IntelligenceVectorContractError(
@@ -2192,6 +2495,8 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         or trajectory["dimensions"]
         or correction["decision_version_ref_ids"]
         or correction["later_correction_ref_ids"]
+        or correction["later_revision_receipts"]
+        or owner_lane_dispositions
         or item["economic_dependence_groups"]
     ):
         raise IntelligenceVectorContractError(
@@ -2204,6 +2509,8 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         or trajectory["dimensions"]
         or correction["decision_version_ref_ids"]
         or correction["later_correction_ref_ids"]
+        or correction["later_revision_receipts"]
+        or owner_lane_dispositions
         or item["economic_dependence_groups"]
     ):
         raise IntelligenceVectorContractError(

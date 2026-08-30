@@ -755,6 +755,7 @@ def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
         "current_state": "UNKNOWN",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_receipts": [],
         "later_revision_state": "UNKNOWN",
     }
     assert all(item["value_state"] == "ABSENT" for item in family["observations"])
@@ -831,6 +832,7 @@ def test_d5_malformed_workspace_substitution_is_receipted_pending_absence(
         "current_state": "UNKNOWN",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_receipts": [],
         "later_revision_state": "UNKNOWN",
     }
     assert family["observations"][0]["value_state"] == "ABSENT"
@@ -894,6 +896,22 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     decision_refs = set(family["correction"]["decision_version_ref_ids"])
     later_refs = set(family["correction"]["later_correction_ref_ids"])
     assert decision_refs and later_refs and decision_refs.isdisjoint(later_refs)
+    later_receipts = family["correction"]["later_revision_receipts"]
+    assert len(later_receipts) == 1
+    assert later_receipts[0]["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in later_receipts[0].items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": EVENT_ID,
+        "generation_id": gen2,
+        "source_sha256": "b" * 64,
+        "source_available_at": "2026-02-01T20:00:00Z",
+        "observed_at": "2026-02-01T20:02:00Z",
+        "generated_at": "2026-02-01T20:03:00Z",
+        "disposition": "PROJECTED",
+        "source_ref_ids": sorted(later_refs),
+    }
     source_refs = {item["source_ref_id"]: item for item in family["source_refs"]}
     assert {source_refs[ref]["version_or_generation"] for ref in decision_refs} == {gen1}
     assert {source_refs[ref]["version_or_generation"] for ref in later_refs} == {gen2}
@@ -952,6 +970,31 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
         ),
     )
 
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=decision_generation,
+        ),
+    )
+    initial_family = _d5_project()["evidence_families"][0]
+    initial_observations = initial_family["observations"]
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
     family = _d5_project()["evidence_families"][0]
     correction = family["correction"]
     assert correction["state_at_decision"] == "NONE"
@@ -959,6 +1002,23 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
     assert correction["later_correction_ref_ids"] == []
     assert correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE"
     assert correction["current_state"] == "UNKNOWN"
+    assert family["observations"] == initial_observations
+    assert len(correction["later_revision_receipts"]) == 1
+    later_receipt = correction["later_revision_receipts"][0]
+    assert later_receipt["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in later_receipt.items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": EVENT_ID,
+        "generation_id": later_generation,
+        "source_sha256": "b" * 64,
+        "source_available_at": "2026-02-01T20:00:00Z",
+        "observed_at": "2026-02-01T20:02:00Z",
+        "generated_at": "2026-02-01T20:03:00Z",
+        "disposition": "OBSERVED_UNPROJECTABLE",
+        "source_ref_ids": [],
+    }
     assert {
         source_ref["version_or_generation"]
         for source_ref in family["source_refs"]
@@ -967,7 +1027,14 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
         observation["correction_lineage_state"]
         for observation in family["observations"]
     } == {"NONE_IN_CHAIN"}
-    assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": "2026-02-01T20:03:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": [],
+    }
 
 
 def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction(
@@ -996,6 +1063,7 @@ def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction
 
     family = _d5_project()["evidence_families"][0]
     assert family["correction"].get("later_revision_state") == "NONE"
+    assert family["correction"]["later_revision_receipts"] == []
     assert all(
         observation["correction_lineage_state"] == "NOT_OBSERVABLE"
         for observation in family["observations"]

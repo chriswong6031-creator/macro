@@ -1715,6 +1715,25 @@ def _readdress_d5(payload: dict) -> dict:
     return payload
 
 
+def _readdress_d5_later_revision_receipts(payload: dict) -> dict:
+    """Recompute hostile later-revision receipt IDs before envelope IDs."""
+    correction = payload["evidence_families"][0]["correction"]
+    for receipt in correction["later_revision_receipts"]:
+        semantic = {
+            key: deepcopy(value)
+            for key, value in receipt.items()
+            if key != "later_revision_receipt_id"
+        }
+        receipt["later_revision_receipt_id"] = (
+            intelligence_vector_mod._content_id("lrr", semantic)
+        )
+    correction["later_revision_receipts"] = sorted(
+        correction["later_revision_receipts"],
+        key=lambda receipt: receipt["later_revision_receipt_id"],
+    )
+    return _readdress_d5(payload)
+
+
 def _readdress_d5_source_refs(payload: dict) -> dict:
     """Readdress every downstream edge after a hostile source-ref mutation."""
     family = payload["evidence_families"][0]
@@ -1847,6 +1866,7 @@ def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritativ
         "identity_state", "quality", "source_refs", "evidence_roots",
         "observations", "explanation_facts", "trajectory", "correction", "calibration",
         "fusion_bindings", "authority", "owner_warnings",
+        "owner_lane_dispositions",
     }
     assert family["evidence_family_id"] == "earnings.event"
     assert family["identity_state"] == "RESOLVED"
@@ -2401,6 +2421,7 @@ def test_validator_rejects_unreceipted_pending_correction_state() -> None:
         "state_at_decision": "PENDING",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_receipts": [],
         "later_revision_state": "UNKNOWN",
         "current_state": "UNKNOWN",
     }
@@ -2736,6 +2757,9 @@ def test_validator_rejects_decision_evidence_relabelled_as_later_correction() ->
         "state_at_decision": "NONE",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": decision_ref_ids,
+        "later_revision_receipts": deepcopy(
+            family["correction"]["later_revision_receipts"]
+        ),
         "later_revision_state": "PROJECTED",
         "current_state": "CORRECTED",
     }
@@ -2933,6 +2957,181 @@ def test_validator_rejects_not_covered_absence_inside_admitted_family() -> None:
         validate_intelligence_vector(payload)
 
 
+def test_validator_rejects_forged_observed_unprojectable_without_owner_receipt() -> None:
+    payload = _build_d5()
+    correction = payload["evidence_families"][0]["correction"]
+    assert correction["later_revision_state"] == "NONE"
+    correction["later_revision_state"] = "OBSERVED_UNPROJECTABLE"
+    correction["current_state"] = "UNKNOWN"
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="receipt|later revision|OBSERVED_UNPROJECTABLE|correction",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_erased_observed_unprojectable_owner_receipt() -> None:
+    payload = _d5_two_generation_payload(later_has_adaptable_evidence=False)
+    correction = payload["evidence_families"][0]["correction"]
+    assert correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE"
+    assert correction["later_revision_receipts"]
+    correction["later_revision_state"] = "NONE"
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="receipt|later revision|NONE|correction",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize("later_has_adaptable_evidence", [True, False])
+@pytest.mark.parametrize(
+    "hostile_corrected_at",
+    ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
+)
+def test_validator_rejects_later_correction_clock_before_or_equal_to_decision_cut(
+    later_has_adaptable_evidence: bool,
+    hostile_corrected_at: str,
+) -> None:
+    payload = _d5_two_generation_payload(
+        later_has_adaptable_evidence=later_has_adaptable_evidence,
+    )
+    family = payload["evidence_families"][0]
+    clock = family["point_in_time"]["corrected_at"]
+    clock.update({
+        "state": "ASSERTED",
+        "value": hostile_corrected_at,
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": family["correction"]["later_correction_ref_ids"],
+    })
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="corrected_at|decision cut|later|receipt",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize("later_has_adaptable_evidence", [True, False])
+@pytest.mark.parametrize(
+    "hostile_generated_at",
+    ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
+)
+def test_validator_rejects_later_owner_generation_before_or_equal_to_decision_cut(
+    later_has_adaptable_evidence: bool,
+    hostile_generated_at: str,
+) -> None:
+    payload = _d5_two_generation_payload(
+        later_has_adaptable_evidence=later_has_adaptable_evidence,
+    )
+    family = payload["evidence_families"][0]
+    correction = family["correction"]
+    assert len(correction["later_revision_receipts"]) == 1
+    correction["later_revision_receipts"][0]["generated_at"] = (
+        hostile_generated_at
+    )
+    family["point_in_time"]["corrected_at"].update({
+        "state": "ASSERTED",
+        "value": hostile_generated_at,
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": correction["later_correction_ref_ids"],
+    })
+    _readdress_d5_later_revision_receipts(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="generated_at|decision cut|strictly after|later",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_mixed_not_covered_reason_inside_covered_family() -> None:
+    payload = _build_d5()
+    not_covered = deepcopy(_build_d5(
+        read_revisions=lambda event_id: [],
+    )["evidence_families"][0]["observations"][0])
+    not_covered["absence_reasons"] = ["NOT_COVERED", "UNKNOWN"]
+    family = payload["evidence_families"][0]
+    family["observations"] = sorted(
+        family["observations"] + [not_covered],
+        key=lambda observation: (
+            observation["native_metric_id"], observation["observation_id"],
+        ),
+    )
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="NOT_COVERED|coverage|absence",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize(
+    ("builder_kind", "hostile_coverage"),
+    [
+        (
+            "partial",
+            {"state": "COVERED", "basis": "complete_allowlisted_owner_packet"},
+        ),
+        (
+            "covered",
+            {"state": "PARTIAL", "basis": "partial_allowlisted_owner_packet"},
+        ),
+    ],
+)
+def test_validator_derives_coverage_from_closed_owner_lane_dispositions(
+    builder_kind: str,
+    hostile_coverage: dict[str, str],
+) -> None:
+    if builder_kind == "partial":
+        workspace = _d5_workspace()
+        workspace["facts"][0]["source_span"]["document_id"] = (
+            "unsafe-owner-locator"
+        )
+        payload = _build_d5(
+            read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+        )
+        expected_dispositions = [
+            {"lane": "DELTA_REVENUE", "disposition": "UNPROJECTABLE"},
+            {"lane": "FACT_REVENUE", "disposition": "UNPROJECTABLE"},
+            {
+                "lane": "GUIDANCE_REVENUE_YOY_PCT",
+                "disposition": "PROJECTED",
+            },
+        ]
+    else:
+        payload = _build_d5()
+        expected_dispositions = [
+            {"lane": "DELTA_REVENUE", "disposition": "PROJECTED"},
+            {"lane": "FACT_REVENUE", "disposition": "PROJECTED"},
+            {
+                "lane": "GUIDANCE_REVENUE_YOY_PCT",
+                "disposition": "PROJECTED",
+            },
+        ]
+    family = payload["evidence_families"][0]
+    assert family["owner_lane_dispositions"] == expected_dispositions
+    assert family["coverage"]["state"] == builder_kind.upper()
+    family["coverage"] = hostile_coverage
+    family["quality"] = {"flags": []}
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="coverage|lane|COVERED|PARTIAL|complete|partial",
+    ):
+        validate_intelligence_vector(payload)
+
+
 def test_validator_rejects_current_state_mutation_across_noncurrent_builder_outcomes() -> None:
     class AmbiguousMaster:
         def cik_of_issuer(self, issuer_id: str) -> str:
@@ -3067,9 +3266,25 @@ def test_correction_clock_is_bound_to_later_generation_refs_and_state() -> None:
         if ref["source_ref_id"] in later_ref_ids
     }
     assert later_generations == {"2" * 24}
+    assert len(family["correction"]["later_revision_receipts"]) == 1
+    receipt = family["correction"]["later_revision_receipts"][0]
+    assert receipt["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in receipt.items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": "evt_cik0000320193_2026q3_results",
+        "generation_id": "2" * 24,
+        "source_sha256": "e" * 64,
+        "source_available_at": "2026-08-01T19:55:00Z",
+        "observed_at": "2026-08-01T20:00:00Z",
+        "generated_at": "2026-08-01T20:01:00Z",
+        "disposition": "PROJECTED",
+        "source_ref_ids": later_ref_ids,
+    }
 
 
-def test_later_generation_without_projectable_lineage_does_not_assert_correction_clock() -> None:
+def test_later_generation_without_projectable_lineage_has_receipted_correction_clock() -> None:
     family = _d5_two_generation_payload(
         later_has_adaptable_evidence=False,
     )["evidence_families"][0]
@@ -3082,8 +3297,30 @@ def test_later_generation_without_projectable_lineage_does_not_assert_correction
         observation["correction_lineage_state"]
         for observation in family["observations"]
     } == {"NONE_IN_CHAIN"}
-    assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
-    assert family["point_in_time"]["corrected_at"]["source_ref_ids"] == []
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": "2026-08-01T20:01:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": [],
+    }
+    receipts = family["correction"]["later_revision_receipts"]
+    assert len(receipts) == 1
+    assert receipts[0]["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in receipts[0].items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": "evt_cik0000320193_2026q3_results",
+        "generation_id": "2" * 24,
+        "source_sha256": "e" * 64,
+        "source_available_at": "2026-08-01T19:55:00Z",
+        "observed_at": "2026-08-01T20:00:00Z",
+        "generated_at": "2026-08-01T20:01:00Z",
+        "disposition": "OBSERVED_UNPROJECTABLE",
+        "source_ref_ids": [],
+    }
 
 
 def test_validator_rejects_readdressed_correction_clock_without_later_refs() -> None:
