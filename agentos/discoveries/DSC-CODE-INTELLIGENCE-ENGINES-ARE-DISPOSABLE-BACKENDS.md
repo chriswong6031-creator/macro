@@ -20,9 +20,9 @@ so_what: >
 kind: architecture
 verified_at: 2026-08-30
 verified_by: >
-  Mastermind PR #276 exact reviewed head eb2cfdd3db4b513e51f9c8276449db0ffb52409c;
-  F0 upstream source/tool census, hostile two-worktree design, benchmark charter and supply-chain
-  amendment.
+  Mastermind PR #276 final candidate e6553b3b640712de4446b0337c291243fde07c61,
+  accepted squash merge 620263090fb9f272f763e420ba103b0ff8dc5f31; F0 upstream source/tool
+  census, hostile two-worktree design, benchmark charter and supply-chain amendment.
 scope:
   - WS:CODE-INTELLIGENCE-FABRIC
   - macro-context-index

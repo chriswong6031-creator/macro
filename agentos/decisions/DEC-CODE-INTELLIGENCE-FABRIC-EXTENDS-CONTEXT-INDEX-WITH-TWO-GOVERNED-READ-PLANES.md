@@ -43,7 +43,7 @@ alternatives:
       Executive Attempt/worktree and global code indexing has separate service/freshness/resource
       behavior. Sharing the semantic parent does not justify collapsing these implementations.
 evidence:
-  - "Mastermind PR #276, exact reviewed head eb2cfdd3db4b513e51f9c8276449db0ffb52409c — records-only F0 architecture, benchmark, rights, current-source, multi-language/deployment and C0/Z0 plans"
+  - "Mastermind PR #276 final candidate e6553b3b640712de4446b0337c291243fde07c61, accepted squash merge 620263090fb9f272f763e420ba103b0ff8dc5f31 — eight records-only F0 architecture, benchmark, rights, current-source, multi-language/deployment and C0/Z0 plan files"
   - "Macro config/mastermind_programs.yml at the Agent OS pickup base — macro-context-index owns governed cross-repository project-context retrieval and changes no source authority"
   - "Mastermind protected mastermind.sol_action_target.v1 — exact Sol action authority composes SessionTargetRegistry and RuntimeBinding; CodeIntel must never elect or transfer it"
   - "F0 hostile design law — negative index results require explicit coverage/freshness/health, and exact worktree semantics reject model-selected roots/projects/Attempts/Workers"
@@ -65,3 +65,10 @@ an Executive Attempt, worktree, capability profile, semantic backend or global c
 not grant CodeIntel authority over CXI ranking, Agent OS retrieval, GitHub source truth or any
 lifecycle. A future semantic-program split requires empirical proof plus a separate registry ruling;
 it is not implied by F0.
+
+## Supersession
+
+Macro PRs #6695 and #6696 preserve the rejected immediate-dedicated-program hypothesis and its
+disposable RED-test transport. They are evidence of the alternative considered, not current
+implementation carriers. This decision supersedes that premise without weakening the requirement
+for a dedicated Code Intelligence workstream or its separate implementation and authority surfaces.

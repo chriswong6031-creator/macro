@@ -14,9 +14,10 @@ state_before: >
 changed:
   - path: mastermind#276
     what: >
-      Protected the records-only F0 source law at exact reviewed head
-      eb2cfdd3db4b513e51f9c8276449db0ffb52409c, including two governed read planes, canonical
-      verification separation, current Sol action-target boundary, supply-chain rights,
+      Protected the records-only F0 source law from final candidate
+      e6553b3b640712de4446b0337c291243fde07c61 as accepted squash merge
+      620263090fb9f272f763e420ba103b0ff8dc5f31, including two governed read planes,
+      canonical verification separation, current Sol action-target boundary, supply-chain rights,
       multi-language/deployment law, benchmark charter and bounded C0/Z0 plans.
   - path: agentos/workstreams/WS-CODE-INTELLIGENCE-FABRIC.md
     what: >
@@ -32,15 +33,16 @@ changed:
       Mastermind contracts and never model-facing authority or source truth.
 verified:
   - claim: >
-      F0's effective Mastermind delta is records only and the exact reviewed carrier contains no
-      CodeIntel runtime, capability-profile, service, host, credential, Slack, Linear or Agent OS
-      implementation path.
+      F0's effective Mastermind delta is records only and the accepted carrier contains no CodeIntel
+      runtime, capability-profile, service, host, credential, Slack, Linear or Agent OS implementation
+      path.
     command: >
-      GitHub compare protected Mastermind base to PR #276 head
-      eb2cfdd3db4b513e51f9c8276449db0ffb52409c and inspect the PR changed-file census.
+      GitHub compare protected Mastermind base a26d0286451d53e78cae96c741ee6e2a51b883ba to
+      final PR #276 candidate e6553b3b640712de4446b0337c291243fde07c61 and inspect the
+      accepted merge 620263090fb9f272f763e420ba103b0ff8dc5f31.
     result: >
-      Seven added research/plan paths only; no production/runtime/config path differs from protected
-      master in the F0 carrier.
+      Exactly eight added research/plan records, 2,041 additions and zero deletions; no
+      production/runtime/config path differs from protected master in the F0 carrier.
   - claim: >
       The existing exact Sol action-target resolver remains the authority owner and CodeIntel cannot
       elect a sister Sol or convert worktree identity into action authority.
@@ -59,6 +61,13 @@ verified:
     result: >
       Parent exists and owns authority-classed context retrieval; no current Code Intelligence,
       Serena or Zoekt workstream existed before this carrier.
+  - claim: >
+      The immediate dedicated semantic-program hypothesis is not the accepted organizational ruling.
+    command: >
+      Reconcile Macro PRs #6695/#6696 against this decision and current semantic ownership.
+    result: >
+      Their test-only premise is superseded; both remain non-implementation evidence and must close
+      unmerged after this carrier lands.
 unverified:
   - claim: >
       A Serena-backed or direct-LSP semantic facade can satisfy exact two-worktree isolation and useful
@@ -103,13 +112,14 @@ do_not_redo:
   - "Do not create a second lifecycle, capability registry, workspace registry, action-target owner, code-truth store, index authority, memory plane, retry plane or central semantic router."
   - "Do not interpret PR #276 merge, green CI, local upstream probes or this Agent OS record as installation, arming, production proof or receiver assignment."
   - "Do not emit unbound Slack OPEN_PICKUP/PRECOMMISSION or ask the Chairman to choose a numbered account for ordinary CAPACITY_SELECTABLE placement."
+  - "Do not revive Macro PR #6695 or #6696 as implementation carriers after this decision becomes durable."
 danger_areas:
   - "Worktree path, Git HEAD and dirty fingerprint are read-scope evidence; they are not Worker, Attempt or Sol authority."
   - "Repository .serena, tsconfig or language-server configuration can supply semantics but may never select commands, plugins, executables or network behavior."
   - "Negative search results must retain coverage/freshness/health/truncation state; plausible empty output is a hard failure."
   - "Terminal TypeScript/TSX is load-bearing; a Python-only semantic backend creates a false-green platform capability."
   - "Control Room may later link evidence, but must not become a code browser, editor, index administrator or another lifecycle surface."
-prs: [276]
+prs: [276, 6695, 6696, 6697]
 decisions:
   - DEC:CODE-INTELLIGENCE-FABRIC-EXTENDS-CONTEXT-INDEX-WITH-TWO-GOVERNED-READ-PLANES
 discoveries:

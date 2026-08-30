@@ -25,9 +25,11 @@ waves:
     status: done
     pr: 276
     next_action: >
-      Protected through Mastermind PR #276 at exact reviewed head
-      eb2cfdd3db4b513e51f9c8276449db0ffb52409c. The PR/merge receipt is the canonical immutable
-      GitHub evidence; F0 made records/source law durable and installed no runtime capability.
+      Protected through Mastermind PR #276 from final candidate
+      e6553b3b640712de4446b0337c291243fde07c61 as accepted squash merge
+      620263090fb9f272f763e420ba103b0ff8dc5f31. The eight-file PR/merge receipt is the
+      canonical immutable GitHub evidence; F0 made records/source law durable and installed no
+      runtime capability.
   - id: C0
     title: Multi-language exact-worktree semantic-backend falsifier
     status: todo
@@ -76,6 +78,7 @@ do_not_redo:
   - "Do not create a second capability registry, workspace registry, semantic router, lifecycle, retry plane, session store or code-truth database."
   - "Do not add a broad GitHub MCP, super-MCP, Sourcebot, SCIP or ast-grep bundle in V1 without a measured benchmark gap and fresh Sol ruling."
   - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from the F0 records merge."
+  - "Do not revive Macro PR #6695 or #6696 as implementation carriers; their immediate-dedicated-program premise is superseded by the accepted organizational-parent decision."
 next_action: >
   Land this records-only Agent OS carrier after exact-head validation. Then place C0 and Z0 as two
   separately keyed, separately carried, production-inert falsifiers; keep both WAITING_CAPACITY
@@ -85,7 +88,7 @@ next_action: >
 ## Current capability truth
 
 ```text
-F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW
+F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW @ 620263090fb9f272f763e420ba103b0ff8dc5f31
 Code Intelligence Fabric overall               NOT_BUILT
 C0 semantic falsifier                          NOT_BUILT
 Z0 global-discovery falsifier                  NOT_BUILT
