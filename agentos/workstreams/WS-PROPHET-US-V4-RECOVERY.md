@@ -588,19 +588,24 @@ waves:
       generation_id. B1 DEPENDENCY CLEARED 2026-08-28: natural run 33147282433 and
       durable main commit a8ee11ba0e48 prove the canonical episode generation. This
       clears only D5's B1 dependency. PRE-DELIVERY IMPLEMENTATION 2026-08-30: hostile-
-      review fix head 1c5ac27a055df357325d7cab47394912aaf37acc implements the bounded
+      review fix-round-2 code/test head 13e36371e2cd49ae790803f3d49c951062aad8a0
+      implements the bounded
       Cell F/Earnings contract as one pure revision-chain adapter plus one authenticated
-      existing Prophet Lab episode-detail read. It repairs A7 mixed-clock correction
-      visibility, distinct-source OBSERVED lineage, and the hermetic real-reader suite's
-      executing PR code-gate ownership. Fresh focused proof is 442 passed (104 identity
-      + 38 real-reader chain + 300 Prophet Lab/API); the path-isolated code plan names
-      prophet-lab and no unowned path. This is local proof only: independent re-review,
+      existing Prophet Lab episode-detail read. The first whole-branch re-review accepted
+      A7 any-clock/generated-receipt behavior and the hermetic real-reader suite's
+      executing PR code-gate ownership, then found the mixed None -> issuer-release SHA
+      transition still falsely NOT_OBSERVABLE at records head 056e529fea8b. Round 2 gives
+      any distinct visible transition OBSERVED precedence while preserving same-hash
+      NONE_IN_CHAIN and homogeneous body-only NOT_OBSERVABLE. Fresh focused proof is
+      443 passed (104 identity + 39 real-reader chain + 300 Prophet Lab/API); the
+      path-isolated code plan names prophet-lab and no unowned path. This is local proof
+      only: independent re-review,
       hosted CI, PR, merge, deploy, and authenticated live receipts remain pending. D6
       and every other downstream wave remain gated."
     status: in_progress
     next_action: >
       Complete D5 delivery in this carrier without widening scope: independently re-review
-      exact hostile-fix head 1c5ac27a055df357325d7cab47394912aaf37acc; reconcile fresh
+      exact hostile-fix head 13e36371e2cd49ae790803f3d49c951062aad8a0; reconcile fresh
       origin/main; rerun the focused battery and repository-owned CI lines in a checkout
       that supplies their declared committed inputs; then push one PR, wait for concluded
       hosted CI, squash-merge, verify main/deploy, and collect authenticated covered plus
@@ -645,7 +650,8 @@ waves:
     status: todo
 next_action: >
   D5's bounded Earnings implementation is locally exact-head verified through hostile-
-  review fix head 1c5ac27a055df357325d7cab47394912aaf37acc, but it is not yet
+  review fix-round-2 code/test head 13e36371e2cd49ae790803f3d49c951062aad8a0,
+  but it is not yet
   independently re-review accepted, hosted-CI accepted, merged, deployed, or live-proven.
   Continue Task 4 from
   agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-30-d5-pre-delivery.md: exact whole-branch

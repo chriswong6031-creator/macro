@@ -55,41 +55,45 @@ verified:
       104 passed; 37 passed; 297 passed with 10 pre-existing deprecation/OpenAPI
       warnings. Total 438 passed, zero failures.
   - claim: >
-      Hostile-review fix round 1 repairs all three P1 findings at one exact local code,
-      test, and CI-manifest head without widening D5 authority or product scope.
+      Hostile-review fix round 2 repairs the sole P1 left by the first whole-branch
+      re-review at one exact local code/test head without disturbing the two accepted
+      former-P1 repairs or widening D5 authority or product scope.
     command: >
       git show --stat --oneline --decorate --no-renames
-      1c5ac27a055df357325d7cab47394912aaf37acc; git diff --check
-      2460af68cbac027a7d0e56394e279631a3c592bc..1c5ac27a055df357325d7cab47394912aaf37acc
+      13e36371e2cd49ae790803f3d49c951062aad8a0; git diff --check
+      056e529fea8be53b642d8cb2ee11a3c41f720505..13e36371e2cd49ae790803f3d49c951062aad8a0
     result: >
-      Exact fix head 1c5ac27a055df357325d7cab47394912aaf37acc changes five paths:
-      the Earnings projection, its focused/unit and real-reader tests, the code-gate
-      routing test, and the existing prophet-lab manifest job. Mixed-clock corrections
-      now preserve A7's any-clock complement while requiring generated_at after the cut;
-      distinct visible issuer-source hashes emit OBSERVED; and the hermetic real-reader
-      suite has a real executing gate:code owner. Diff check exits 0.
+      Re-review head 056e529fea8be53b642d8cb2ee11a3c41f720505 accepted the A7
+      any-clock/generated-receipt repair and executing gate:code ownership, but found
+      that the valid source transition None -> issuer-release SHA still emitted
+      NOT_OBSERVABLE and self-rejected. Exact round-2 code/test head
+      13e36371e2cd49ae790803f3d49c951062aad8a0 changes only the Earnings projection
+      and real-reader test: a distinct visible transition now takes OBSERVED precedence,
+      while homogeneous same-hash and body-only chains retain NONE_IN_CHAIN and
+      NOT_OBSERVABLE. Diff check exits 0.
   - claim: >
       The repaired D5 focused battery passes freshly at the exact fix head.
     command: >
-      python3 -m pytest -q -p no:cacheprovider --basetemp /tmp/d5-fix1-identity
-      tests/test_dataos_identity.py; python3 -m pytest -q -p no:cacheprovider
-      --basetemp /tmp/d5-fix1-workspace-full
-      tests/test_company_intelligence_workspace_chain.py; python3 -m pytest -q -p
-      no:cacheprovider --basetemp /tmp/d5-fix1-prophet-api-full
-      tests/test_prophet_lab.py tests/test_prophet_lab_api.py
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+      --basetemp /tmp/d5-fix2-final-focused tests/test_dataos_identity.py
+      tests/test_company_intelligence_workspace_chain.py tests/test_prophet_lab.py
+      tests/test_prophet_lab_api.py
     result: >
-      104 passed; 38 passed; 300 passed with 10 pre-existing deprecation/OpenAPI
-      warnings. Total 442 passed, zero failures.
+      104 passed; 39 passed; 300 passed with 10 pre-existing deprecation/OpenAPI
+      warnings. Total 443 passed, zero failures. The new constructed real-writer/
+      real-reader mixed transition preserves immutable decision evidence, emits
+      OBSERVED, binds the later generation receipt to corrected_at, passes the closed
+      validator, and returns endpoint status 200 rather than 503.
   - claim: >
       The repaired PR code-gate ownership is executable, not a path-only declaration.
     command: >
       python3 -m pytest -q -p no:cacheprovider --basetemp
-      /tmp/d5-fix1-green-routing-2
+      /tmp/d5-fix2-routing
       tests/test_ci_pack.py::test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate;
       CI_CHANGED_FILES_JSON='["tests/test_company_intelligence_workspace_chain.py"]'
       python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --gate code
       --pack-count 12 --scope-mode active --plan-only --emit-plan-json
-      /tmp/d5-fix1-code-plan.json
+      /tmp/d5-fix2-code-plan.json
     result: >
       Routing assertion 1 passed. The path-isolated plan validates all 133 code jobs,
       reports one scoped match and no unowned path, and places prophet-lab in pack 2;
@@ -201,10 +205,10 @@ unresolved:
 next_actions:
   - >
     Run the independent hostile whole-branch re-review against exact repaired head
-    1c5ac27a055df357325d7cab47394912aaf37acc and repair any further load-bearing
+    13e36371e2cd49ae790803f3d49c951062aad8a0 and repair any further load-bearing
     finding test-first.
   - >
-    Fetch and reconcile fresh origin/main in the parent session, then rerun the 442-test
+    Fetch and reconcile fresh origin/main in the parent session, then rerun the 443-test
     focused battery and the repository-selected manifest validation/job lines without
     running the repository-wide full suite in a sparse tree.
   - >
@@ -243,9 +247,10 @@ danger_areas:
   - >
     The initial code implementation head is e650dbc412a3746894c8ef4e950e775139f0dd1a;
     hostile-review fix round 1 is exact code/test/manifest head
-    1c5ac27a055df357325d7cab47394912aaf37acc. The amended records commit is later
-    without changing those fix bytes. Keep initial-code, fix, records, PR, merge, and
-    deployed heads distinct.
+    1c5ac27a055df357325d7cab47394912aaf37acc; its records head is
+    056e529fea8be53b642d8cb2ee11a3c41f720505; and the sole mixed-transition fix
+    round 2 is exact code/test head 13e36371e2cd49ae790803f3d49c951062aad8a0.
+    Keep initial-code, both fix rounds, records, PR, merge, and deployed heads distinct.
 decisions:
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
   - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
@@ -255,9 +260,9 @@ discoveries: []
 ## §0 State — what is true right now
 
 D5's first bounded Earnings vertical is built and locally exact-head verified through
-hostile-review fix head `1c5ac27a055df357325d7cab47394912aaf37acc`: one canonical
+hostile-review fix-round-2 code head `13e36371e2cd49ae790803f3d49c951062aad8a0`: one canonical
 current issuer-to-CIK seam, one pure revision-chain projection, and one authenticated
-existing Prophet Lab detail route. The repaired focused battery is 442 passed, and the
+existing Prophet Lab detail route. The repaired focused battery is 443 passed, and the
 hermetic real-reader chain suite now has a real executing PR `gate: code` owner. It is
 not independently re-review accepted, hosted-CI accepted, on main, deployed, or proven
 through a real paid production request. The broad local manifest line remains honestly
@@ -265,7 +270,7 @@ non-green for the named sparse/base reasons.
 
 ## §1 What is LEFT — in order
 
-1. Complete the exact-head hostile whole-branch re-review of fix head `1c5ac27a055d`.
+1. Complete the exact-head hostile whole-branch re-review of fix head `13e36371e2cd`.
 2. Reconcile fresh main and rerun the focused plus repository-owned CI proof in the proper checkout.
 3. Push one PR, wait for concluded hosted CI, squash-merge, and verify exact main ancestry/hashes.
 4. Wait for normal deployment and prove one covered paid request plus one typed unresolved/not-covered request.
