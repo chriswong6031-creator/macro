@@ -2401,6 +2401,7 @@ def test_validator_rejects_unreceipted_pending_correction_state() -> None:
         "state_at_decision": "PENDING",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_state": "UNKNOWN",
         "current_state": "UNKNOWN",
     }
     _readdress_d5(payload)
@@ -2590,7 +2591,7 @@ def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> 
         later["facts"] = []
         later["deltas"] = []
         later["guidance"] = []
-        later["sources"] = []
+        later["sources"][0]["source_sha256"] = "e" * 64
     revisions = _d5_revisions(workspace=decision) + [{
         "generation_id": later["generation_id"],
         "source_sha256": "e" * 64,
@@ -2671,34 +2672,40 @@ def test_validator_accepts_every_builder_emitted_correction_outcome() -> None:
         )
 
     payloads = [
-        ("current", _build_d5(), ("NONE", "CURRENT")),
-        ("corrected", _d5_two_generation_payload(), ("NONE", "CORRECTED")),
+        ("current", _build_d5(), ("NONE", "CURRENT", "NONE")),
+        (
+            "corrected",
+            _d5_two_generation_payload(),
+            ("NONE", "CORRECTED", "PROJECTED"),
+        ),
         (
             "unknown",
             _d5_two_generation_payload(later_has_adaptable_evidence=False),
-            ("NONE", "UNKNOWN"),
+            ("NONE", "UNKNOWN", "OBSERVED_UNPROJECTABLE"),
         ),
         (
             "pending",
             _build_d5(read_revisions=integrity_failure),
-            ("PENDING", "UNKNOWN"),
+            ("PENDING", "UNKNOWN", "UNKNOWN"),
         ),
         (
             "identity-conflicted",
             _build_d5(issuer_master=AmbiguousMaster()),
-            ("CONFLICTED", "CONFLICTED"),
+            ("CONFLICTED", "CONFLICTED", "UNKNOWN"),
         ),
         (
             "tie-conflicted",
             _build_d5(read_revisions=lambda event_id: tied_revisions),
-            ("CONFLICTED", "CONFLICTED"),
+            ("CONFLICTED", "CONFLICTED", "UNKNOWN"),
         ),
     ]
 
     for label, payload, expected in payloads:
         correction = payload["evidence_families"][0]["correction"]
         assert (
-            correction["state_at_decision"], correction["current_state"]
+            correction["state_at_decision"],
+            correction["current_state"],
+            correction.get("later_revision_state"),
         ) == expected, label
         validate_intelligence_vector(payload)
 
@@ -2729,6 +2736,7 @@ def test_validator_rejects_decision_evidence_relabelled_as_later_correction() ->
         "state_at_decision": "NONE",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": decision_ref_ids,
+        "later_revision_state": "PROJECTED",
         "current_state": "CORRECTED",
     }
     family["point_in_time"]["corrected_at"] = {
@@ -2800,6 +2808,127 @@ def test_validator_rejects_later_ref_supporting_trajectory_dimension() -> None:
     with pytest.raises(
         IntelligenceVectorContractError,
         match="later|correction|decision|evidence|reference",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_cleared_later_role_with_visible_later_sources() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_ref_ids = set(family["correction"]["later_correction_ref_ids"])
+    assert later_ref_ids
+    assert any(
+        source_ref["source_ref_id"] in later_ref_ids
+        for source_ref in family["source_refs"]
+    )
+    family["correction"]["later_correction_ref_ids"] = []
+    family["correction"]["later_revision_state"] = "NONE"
+    family["correction"]["current_state"] = "CURRENT"
+    family["point_in_time"]["corrected_at"] = {
+        "state": "NOT_ASSERTED",
+        "value": None,
+        "interval": None,
+        "precision": "UNKNOWN",
+        "basis": "no_later_visible_source_revision",
+        "source_ref_ids": [],
+    }
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="partition|unclassified|later|CURRENT|correction",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_later_root_as_dependence_group_basis() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_ref_ids = set(family["correction"]["later_correction_ref_ids"])
+    later_root_id = next(
+        root["evidence_root_id"]
+        for root in family["evidence_roots"]
+        if root["source_ref_id"] in later_ref_ids
+    )
+    group = payload["economic_dependence_groups"][0]
+    old_group_id = group["dependence_group_id"]
+    group["basis_refs"] = sorted(group["basis_refs"] + [later_root_id])
+    group["dependence_group_id"] = intelligence_vector_mod._content_id(
+        "edg",
+        {
+            "relation": group["relation"],
+            "basis": group["basis"],
+            "basis_refs": group["basis_refs"],
+        },
+    )
+    for observation in family["observations"]:
+        observation["economic_dependence_group_ids"] = [
+            group["dependence_group_id"]
+            if group_id == old_group_id else group_id
+            for group_id in observation["economic_dependence_group_ids"]
+        ]
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="dependence|basis|later|decision|root",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_later_ref_on_decision_semantic_clock() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_ref_id = family["correction"]["later_correction_ref_ids"][0]
+    family["point_in_time"]["source_published_at"]["source_ref_ids"] = [
+        later_ref_id,
+    ]
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="clock|later|decision|source",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_covered_admissible_family_without_decision_evidence() -> None:
+    payload = _build_d5(read_revisions=lambda event_id: [])
+    healthy = _build_d5()["evidence_families"][0]
+    family = payload["evidence_families"][0]
+    family["coverage"] = {
+        "state": "COVERED",
+        "basis": "verified_revision_chain",
+    }
+    family["quality"] = {"flags": []}
+    family["point_in_time"] = deepcopy(healthy["point_in_time"])
+    family["observations"][0]["absence_reasons"] = ["UNKNOWN"]
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="admitted|COVERED|evidence|decision.*refs",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_not_covered_absence_inside_admitted_family() -> None:
+    payload = _build_d5()
+    not_covered = _build_d5(
+        read_revisions=lambda event_id: [],
+    )["evidence_families"][0]["observations"][0]
+    family = payload["evidence_families"][0]
+    family["observations"] = sorted(
+        family["observations"] + [not_covered],
+        key=lambda observation: (
+            observation["native_metric_id"], observation["observation_id"],
+        ),
+    )
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="NOT_COVERED|coverage|absence|admitted",
     ):
         validate_intelligence_vector(payload)
 
@@ -2946,10 +3075,13 @@ def test_later_generation_without_projectable_lineage_does_not_assert_correction
     )["evidence_families"][0]
     assert family["correction"]["later_correction_ref_ids"] == []
     assert family["correction"]["current_state"] == "UNKNOWN"
+    assert family["correction"].get("later_revision_state") == (
+        "OBSERVED_UNPROJECTABLE"
+    )
     assert {
         observation["correction_lineage_state"]
         for observation in family["observations"]
-    } == {"NOT_OBSERVABLE"}
+    } == {"NONE_IN_CHAIN"}
     assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
     assert family["point_in_time"]["corrected_at"]["source_ref_ids"] == []
 

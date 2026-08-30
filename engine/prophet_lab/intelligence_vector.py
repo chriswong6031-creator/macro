@@ -433,6 +433,7 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
             "state_at_decision": "NONE",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         },
         "calibration": {"state": "NOT_APPLICABLE", "registration_ref": None},
@@ -958,6 +959,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "PENDING",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         }
         family["observations"] = [_absence_observation(
@@ -1002,6 +1004,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "PENDING",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_state": "UNKNOWN",
             "current_state": "UNKNOWN",
         }
         family["observations"] = [_absence_observation(
@@ -1109,6 +1112,7 @@ def build_earnings_intelligence_vector(
             "state_at_decision": "CONFLICTED",
             "decision_version_ref_ids": [],
             "later_correction_ref_ids": [],
+            "later_revision_state": "UNKNOWN",
             "current_state": "CONFLICTED",
         }
         family["observations"] = [_absence_observation(
@@ -1156,13 +1160,6 @@ def build_earnings_intelligence_vector(
         )
         later_refs.extend(revision_refs)
         later_roots.extend(revision_roots)
-    if later and not later_refs:
-        # A later owner revision exists, but the adapter cannot project any
-        # allowlisted source lineage from it.  Preserve that uncertainty in
-        # the observation semantics so a readdressed packet cannot relabel
-        # this builder-owned UNKNOWN outcome as CURRENT.
-        lineage_state = "NOT_OBSERVABLE"
-
     all_refs_by_id = {
         ref["source_ref_id"]: ref for ref in decision_refs + later_refs
     }
@@ -1250,6 +1247,10 @@ def build_earnings_intelligence_vector(
         "state_at_decision": "NONE",
         "decision_version_ref_ids": sorted(source_ref_ids),
         "later_correction_ref_ids": later_ref_ids,
+        "later_revision_state": (
+            "PROJECTED" if later_ref_ids
+            else ("OBSERVED_UNPROJECTABLE" if later else "NONE")
+        ),
         "current_state": (
             "UNKNOWN" if lineage_state == "NOT_OBSERVABLE" or not source_ref_ids
             else (
@@ -1716,7 +1717,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         family["correction"],
         frozenset({
             "state_at_decision", "decision_version_ref_ids",
-            "later_correction_ref_ids", "current_state",
+            "later_correction_ref_ids", "later_revision_state", "current_state",
         }),
         name="correction",
     )
@@ -1724,6 +1725,10 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("correction state_at_decision invalid")
     if correction["current_state"] not in {"CURRENT", "CORRECTED", "CONFLICTED", "UNKNOWN"}:
         raise IntelligenceVectorContractError("correction current_state invalid")
+    if correction["later_revision_state"] not in {
+        "NONE", "PROJECTED", "OBSERVED_UNPROJECTABLE", "UNKNOWN",
+    }:
+        raise IntelligenceVectorContractError("correction later_revision_state invalid")
     for list_name in ("decision_version_ref_ids", "later_correction_ref_ids"):
         if (
             not isinstance(correction[list_name], list)
@@ -1732,6 +1737,26 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError("correction references must be sorted and unique")
     if set(correction["decision_version_ref_ids"]) & set(correction["later_correction_ref_ids"]):
         raise IntelligenceVectorContractError("decision and later correction refs must be disjoint")
+    has_projected_later_revision = bool(correction["later_correction_ref_ids"])
+    if has_projected_later_revision != (
+        correction["later_revision_state"] == "PROJECTED"
+    ):
+        raise IntelligenceVectorContractError(
+            "projected later revision state must exactly match later correction refs"
+        )
+    if correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE" and (
+        correction["later_correction_ref_ids"]
+        or correction["current_state"] != "UNKNOWN"
+    ):
+        raise IntelligenceVectorContractError(
+            "observable unprojectable later revision requires UNKNOWN without later refs"
+        )
+    if correction["current_state"] == "CURRENT" and (
+        correction["later_revision_state"] != "NONE"
+    ):
+        raise IntelligenceVectorContractError(
+            "CURRENT requires no observed later owner revision"
+        )
     if correction["current_state"] == "CORRECTED" and not correction["later_correction_ref_ids"]:
         raise IntelligenceVectorContractError("CORRECTED requires later correction refs")
     if correction["current_state"] == "CURRENT" and correction["later_correction_ref_ids"]:
@@ -1882,6 +1907,11 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         for observation in family["observations"]
         for reason in observation["absence_reasons"]
     }
+    not_covered_outcome = coverage["state"] == "NOT_COVERED"
+    if not_covered_outcome != (absence_reasons == {"NOT_COVERED"}):
+        raise IntelligenceVectorContractError(
+            "NOT_COVERED absence must exactly match NOT_COVERED coverage"
+        )
     expected_error_types: set[str] = set()
     if absence_reasons & {"UNESTIMABLE", "CORRECTION_PENDING"}:
         expected_error_types.add("WorkspaceChainIntegrityError")
@@ -1978,6 +2008,21 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError("correction references unknown source refs")
     decision_ref_ids = set(correction["decision_version_ref_ids"])
     later_ref_ids = set(correction["later_correction_ref_ids"])
+    if source_ref_ids != decision_ref_ids | later_ref_ids:
+        raise IntelligenceVectorContractError(
+            "source refs require an exhaustive decision-or-later role partition"
+        )
+    root_source_ref_ids = {
+        root["source_ref_id"] for root in family["evidence_roots"]
+    }
+    if root_source_ref_ids != source_ref_ids:
+        raise IntelligenceVectorContractError(
+            "evidence roots require the same exhaustive source-role partition"
+        )
+    decision_root_ids = {
+        root_id for root_id, root in roots_by_id.items()
+        if root["source_ref_id"] in decision_ref_ids
+    }
     corrected_clock = point_in_time["corrected_at"]
     if later_ref_ids:
         if (
@@ -2009,6 +2054,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "corrected_at cannot be asserted without later correction refs"
         )
+    if decision_ref_ids and len({
+        source_refs_by_id[ref_id]["version_or_generation"]
+        for ref_id in decision_ref_ids
+    }) != 1:
+        raise IntelligenceVectorContractError(
+            "decision version refs must bind exactly one owner generation"
+        )
     for root in family["evidence_roots"]:
         if root["source_ref_id"] not in source_ref_ids:
             raise IntelligenceVectorContractError("evidence root references unknown source")
@@ -2018,6 +2070,16 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     ):
         if not set(point_in_time[clock_name]["source_ref_ids"]).issubset(source_ref_ids):
             raise IntelligenceVectorContractError("clock references unknown sources")
+    for clock_name in (
+        "source_effective_at", "source_published_at", "known_at", "captured_at",
+        "computed_at", "decision_at",
+    ):
+        if not set(point_in_time[clock_name]["source_ref_ids"]).issubset(
+            decision_ref_ids
+        ):
+            raise IntelligenceVectorContractError(
+                "decision-semantic clock may reference only decision-version sources"
+            )
     for observation in family["observations"]:
         if not set(observation["source_ref_ids"]).issubset(source_ref_ids):
             raise IntelligenceVectorContractError("observation references unknown sources")
@@ -2104,6 +2166,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         and point_in_time["decision_admissibility"] == "ADMISSIBLE"
         and not actual_error_types
     )
+    if evidence_admitted and (
+        not decision_ref_ids
+        or not (present_observations or trajectory["dimensions"])
+    ):
+        raise IntelligenceVectorContractError(
+            "covered admitted evidence requires a non-empty graph and decision refs"
+        )
     if not evidence_admitted and (
         family["source_refs"]
         or family["evidence_roots"]
@@ -2217,6 +2286,24 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "decision version refs must exactly equal PRESENT decision evidence refs"
         )
+    if correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE" and not (
+        correction["state_at_decision"] == "NONE"
+        and family["identity_state"] == "RESOLVED"
+        and owner_subject_id is not None
+        and evidence_admitted
+        and bool(decision_ref_ids)
+        and decision_ref_ids == decision_evidence_ref_ids
+        and not later_ref_ids
+        and not receipt["errors"]
+        and all(
+            observation["correction_lineage_state"]
+            in {"OBSERVED", "NONE_IN_CHAIN"}
+            for observation in present_observations
+        )
+    ):
+        raise IntelligenceVectorContractError(
+            "observable unprojectable later revision requires coherent decision evidence"
+        )
     if correction["current_state"] == "CURRENT" and not (
         correction["state_at_decision"] == "NONE"
         and family["identity_state"] == "RESOLVED"
@@ -2226,6 +2313,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         and bool(decision_ref_ids)
         and decision_ref_ids == decision_evidence_ref_ids
         and not later_ref_ids
+        and correction["later_revision_state"] == "NONE"
         and not receipt["errors"]
         and all(
             observation["correction_lineage_state"]
@@ -2241,6 +2329,10 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError("dependence group references unknown observations")
         if not set(group["basis_refs"]).issubset(root_ids):
             raise IntelligenceVectorContractError("dependence group references unknown roots")
+        if not set(group["basis_refs"]).issubset(decision_root_ids):
+            raise IntelligenceVectorContractError(
+                "dependence group basis may use only decision-version roots"
+            )
         symmetric_members = {
             observation["observation_id"]
             for observation in family["observations"]

@@ -755,6 +755,7 @@ def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
         "current_state": "UNKNOWN",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_state": "UNKNOWN",
     }
     assert all(item["value_state"] == "ABSENT" for item in family["observations"])
     assert all(
@@ -764,8 +765,11 @@ def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
     assert payload["assembly_receipt"]["errors"][0]["type"] == (
         "WorkspaceChainIntegrityError"
     )
+    assert family["source_refs"] == []
+    assert family["evidence_roots"] == []
+    assert family["trajectory"] == {"state": "NOT_APPLICABLE", "dimensions": []}
+    assert all(item["value"] is None for item in family["observations"])
     serialized = jsonlib.dumps(family, sort_keys=True)
-    assert "999" not in serialized
     assert "dummy_workspace" not in serialized
     assert "b" * 64 not in serialized
 
@@ -827,6 +831,7 @@ def test_d5_malformed_workspace_substitution_is_receipted_pending_absence(
         "current_state": "UNKNOWN",
         "decision_version_ref_ids": [],
         "later_correction_ref_ids": [],
+        "later_revision_state": "UNKNOWN",
     }
     assert family["observations"][0]["value_state"] == "ABSENT"
     assert set(family["observations"][0]["absence_reasons"]) == {
@@ -885,6 +890,7 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     assert corrected_payload["projection_id"] != initial_payload["projection_id"]
     assert family["correction"]["state_at_decision"] == "NONE"
     assert family["correction"]["current_state"] == "CORRECTED"
+    assert family["correction"].get("later_revision_state") == "PROJECTED"
     decision_refs = set(family["correction"]["decision_version_ref_ids"])
     later_refs = set(family["correction"]["later_correction_ref_ids"])
     assert decision_refs and later_refs and decision_refs.isdisjoint(later_refs)
@@ -900,6 +906,68 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
         workspace_url = f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{EVENT_ID}.json"
         assert fetch_calls.count(manifest_url) == 1
         assert fetch_calls.count(workspace_url) == 1
+
+
+def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+    )
+    later = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="b" * 64,
+        fact_value=120,
+    )
+    later["facts"] = []
+    later["deltas"] = []
+    later["guidance"] = []
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: later},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
+    family = _d5_project()["evidence_families"][0]
+    correction = family["correction"]
+    assert correction["state_at_decision"] == "NONE"
+    assert correction["decision_version_ref_ids"]
+    assert correction["later_correction_ref_ids"] == []
+    assert correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE"
+    assert correction["current_state"] == "UNKNOWN"
+    assert {
+        source_ref["version_or_generation"]
+        for source_ref in family["source_refs"]
+    } == {decision_generation}
+    assert {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+    } == {"NONE_IN_CHAIN"}
+    assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
 
 
 def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction(
@@ -927,6 +995,7 @@ def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction
     assert len(revisions) == 1 and revisions[0]["source_sha256"] is None
 
     family = _d5_project()["evidence_families"][0]
+    assert family["correction"].get("later_revision_state") == "NONE"
     assert all(
         observation["correction_lineage_state"] == "NOT_OBSERVABLE"
         for observation in family["observations"]
