@@ -2,7 +2,7 @@
 workstream: WS:PROPHET-US-V4-RECOVERY
 session: sol/prophet-strategy-platform-owner-boundary-hardening-20260830
 model: sol
-ended_because: review_hardening_complete
+ended_because: complete
 mission: >
   Adversarially review PR #6688 against the current Long-Hold, Thesis Funnel,
   Winner Autopsy, candidate-identity and horizon-firewall estate; close duplicate-owner
