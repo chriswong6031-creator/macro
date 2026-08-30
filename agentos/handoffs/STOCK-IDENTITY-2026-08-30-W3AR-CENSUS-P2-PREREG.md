@@ -1,5 +1,72 @@
 ---
 workstream: WS:STOCK-IDENTITY
+session: sol/stock-identity-w3ar-recovery-20260829
+model: codex
+mission: >
+  Preserve the bounded successor W3AR census/P2-prereg execution packet after Sol ratified the
+  two-clock replay-eligibility law, so a later lawfully assigned worker can determine outcome-free
+  clean-pool/source support and return a preregistration recommendation without drawing P2.
+state_before: >
+  W0-W2 were accepted; W3A Attempt-1 #6638 was rejected/closed with P1 consumed for the PR-3 ruler
+  constant family. The old bundled W3AR child was closed effect-NONE after Sol resolved its source-law
+  question. The narrower successor exists but is unbound and remains WAITING_CAPACITY; W3B is HELD.
+changed:
+  - path: agentos/handoffs/STOCK-IDENTITY-2026-08-30-W3AR-CENSUS-P2-PREREG.md
+    what: >
+      Freezes the bounded successor commission, exact outcome-free machine journey, forbidden reads,
+      acceptance mutations, terminal recommendations and STOP-before-P2-draw boundary.
+  - path: research/stock_identity/W3AR_CENSUS_P2_PREREG_CHARTER_2026-08-30.md
+    what: >
+      Freezes deterministic family/source-input support and clean-pool/P2-prereg feasibility law.
+  - path: agentos/decisions/DEC-SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY.md
+    what: >
+      Records Sol's ratified two-clock/source-law ruling that this successor consumes rather than re-adjudicates.
+  - path: agentos/workstreams/WS-STOCK-IDENTITY.md
+    what: >
+      Projects the old W3AR child terminal and the successor as WAITING_CAPACITY / needs_placement.
+prs: [6672]
+verified:
+  - claim: W3A Attempt-1 is terminal and P1 cannot lawfully be reread for this ruler constant family.
+    command: "gh pr view 6638 --repo mastermindx-market-intelligence/macro --json state,mergedAt,headRefOid"
+    result: "CLOSED/unmerged at the rejected Attempt-1 head; P1 remains consumed/rejected evidence."
+  - claim: Sol has ratified separate historical replay-eligibility and live/prospective availability clocks.
+    command: "Read DEC-SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY plus W2 registration."
+    result: "Historical basis is closed to registered W2 methods/PIT inputs; Class P remains prospective-only and fire min/max is not availability."
+  - claim: The successor packet itself performs no P2 draw and authorizes no P1/blind/outcome read.
+    command: "Read W3AR_CENSUS_P2_PREREG_CHARTER_2026-08-30.md and this handoff."
+    result: "The operation stops before P2 membership/seed/draw and requires an unexecuted prereg only."
+unverified:
+  - claim: The current W2 source/input substrate and untouched clean pool are sufficient for a nondegenerate fresh P2 calibration epoch.
+    what_would_verify: >
+      A lawfully bound successor worker must rederive family×era×grain source/input support and the
+      deterministic excluded clean-pool count/hash without protected outcome reads, then undergo adversarial review.
+  - claim: A complete lawful P2 preregistration can be specified without widening source law or inspecting outcomes.
+    what_would_verify: >
+      The successor evidence packet must freeze the draw/sample law before membership reveal and return GO_P2_PREREG to Sol for separate acceptance.
+decisions:
+  - DEC:SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY
+unresolved:
+  - The successor has no current lawful receiver and remains WAITING_CAPACITY / needs_placement.
+  - Exact family/source-input support by era/grain remains to be rederived from byte-current W2/registry/current owners.
+  - Untouched clean-pool size/hash and P2 feasibility remain unknown until the bounded census runs.
+  - Any newly discovered material source-law contradiction must return to Sol as BLOCKED_NEW_SOURCE_LAW.
+next_actions:
+  - Bind one eligible receiver through current lawful placement/commissioning procedure; do not reuse a superseded seat binding or generic pickup spam.
+  - Re-pin current Skillpack, Macro main, W2/masterplan/registry and overlapping Stock Identity/replay/identity PRs before START.
+  - Execute only the family/source-input coverage, clean-pool census and unexecuted P2 prereg work in this packet.
+  - Return exactly GO_P2_PREREG, NO_GO_CALIBRATION_RECOVERY, or BLOCKED_NEW_SOURCE_LAW and stop before any P2 draw/read.
+do_not_redo:
+  - Do not revive the old W3AR operation key or use its unbound session-local scratchpad as scientific evidence.
+  - Do not reread/reseal P1, open blind per-name outcomes, or execute/reveal P2 membership/seed/draw.
+  - Do not backfill Class-P or ledger-only families beyond their registered source/input contract.
+  - Do not use fire/event minmax, current code existence or model output to manufacture historical availability.
+  - Do not create a second replay/availability/evidence/data/identity plane or open W3B/Q1/Prophet authority.
+danger_areas:
+  - Partition/design-touch exclusions must be reconstructed without leaking P1 values, blind outcomes or future P2 membership.
+  - Source coverage must come from required inputs/store vintage/registered methods, not event occurrence or convenient output files.
+  - Ticker reuse, unresolved identity and contaminated price planes can silently corrupt clean-pool/source support joins.
+  - An accidental P2 seed execution or membership materialization would consume the future evidence epoch before Sol acceptance.
+ended_because: blocked
 operation_key: SI-W3AR-CENSUS-P2-PREREG-V1
 parent_operation: SI-FABLE-COO-PROGRAM-20260828
 wave: W3AR-CENSUS
