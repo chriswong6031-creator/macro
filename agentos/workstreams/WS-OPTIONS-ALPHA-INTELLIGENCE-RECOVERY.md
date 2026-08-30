@@ -30,15 +30,29 @@ waves:
       contradiction or new Chairman ruling.
   - id: OA-1T-MACRO
     title: Measured trade+NBBO microstructure on the canonical live event and Flow ML path
-    status: todo
+    status: in_progress
     depends_on: [OA-0]
+    pr: 6585
     next_action: >
-      Implementation plan frozen at
-      docs/superpowers/plans/2026-08-27-oa1t-macro-measured-options-microstructure.md.
-      NOT STARTED. Before any code, re-pin current main and protected Skillpack, census
-      live_flow.event_stage/v1 consumers, collision-check the exact engine/collector paths,
-      and use one bounded implementation carrier. If additive nested event fields are
-      rejected by a current consumer, stop for Sol v2 adjudication instead of weakening v1.
+      BUILT_NOT_PROVEN — natural-RTH production proof OWED. Implementation MERGED
+      2026-08-30 as dbd654edb0fb47449b969b7dcb4fbafc2e0fe3ef (squash of carrier head
+      77f400630d8a47402f0fd71a8c23eec3d6822356, 8 files +1284/-2, patch-identity proven
+      byte-identical against the pre-merge blobs), under Sol conditional-adoption ruling
+      #6585 comment 5459823114 after C3 gates A6 PASS / A2 SAFE_UNDER_FREEZE / A3 green
+      + MERGEABLE / A4 scripts/** authority acknowledged. Status is NOT done: the capability
+      moves BUILT_NOT_PROVEN -> PROVEN_LIVE only on a natural RTH session emitting a real
+      measured event. Do NOT manufacture that proof — historical `--once --date` is
+      explicitly forbidden as a proof path by the live-flow runbook. Consumer census is
+      CLOSED, not owed: no current live_flow.event_stage/v1 consumer hard-enumerates nested
+      event keys, so no v2 adjudication is required (both episode schemas carry zero
+      additionalProperties:false; the poller/episode consumers read via .get() and their
+      "strict" JSON loaders reject duplicate keys only). FS-4 remains frozen with
+      scoring.enabled=false and the FS-5 kill switch intact; this wave armed no scoring,
+      ranking or sizing authority. Two disclosed non-blocking defects carried forward for a
+      separate bounded child, NOT repaired here: _coerce_int is not Infinity-safe on
+      source_print_count/nbbo_valid_print_count (uncaught OverflowError can abort a harvest
+      run), and vol_gt_oi_ratio is the one published measurement with no finite/rounding
+      gate at the producer.
   - id: OA-1T-TERMINAL
     title: Render measured microstructure and separate Attention from probability
     status: todo

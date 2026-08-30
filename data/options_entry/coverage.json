@@ -1,7 +1,7 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-08-29T04:14:04.703588+00:00",
-  "as_of": "2026-08-29",
+  "generated_at": "2026-08-30T02:40:57.969934+00:00",
+  "as_of": "2026-08-30",
   "absent_stores": [],
   "feature_coverage": {
     "n_rows": 419,
@@ -402,7 +402,7 @@
       "cond_hit_share": 0.7143,
       "readiness_forecast": {
         "forecast": "date",
-        "forecast_date": "2026-08-30",
+        "forecast_date": "2026-08-31",
         "basis": "n_cond=0/30 needed; post-W-C cadence=23.400/day \u00d7 cond_hit_share=0.717 \u2192 2 days",
         "post_wc_fires": 1053,
         "post_wc_span_days": 45
@@ -505,18 +505,18 @@
         {
           "source": "options_entry/state.parquet",
           "latest_as_of": "2026-08-13",
-          "age_days_from_today": 16,
+          "age_days_from_today": 17,
           "status": "STALE"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-08-28 13:13 UTC",
+          "latest_as_of": "2026-08-29 12:41 UTC",
           "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "us_board_ledger/retro_grades.parquet",
-          "latest_as_of": "2026-08-19",
+          "latest_as_of": "2026-08-20",
           "age_days_from_today": 10,
           "status": "STALE"
         }
@@ -524,7 +524,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-08-29T04:14:04.629744+00:00",
+      "generated_at": "2026-08-30T02:40:57.902088+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-08-13 (11 NYSE session(s) behind last_session=2026-08-28); threshold=1 \u2014 OI snapshot may have been missed",
@@ -535,8 +535,8 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-08-29T04:14:04.703580+00:00",
-    "as_of": "2026-08-29",
+    "generated_at_utc": "2026-08-30T02:40:57.969927+00:00",
+    "as_of": "2026-08-30",
     "absent_stores": []
   }
 }

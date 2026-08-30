@@ -69,7 +69,7 @@
     {
      "name": "AHRT",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 157d past its 2026-03-23 registry bar; overlap too thin to verify (16 rows)"
+     "detail": "dead-registry name advancing 158d past its 2026-03-23 registry bar; overlap too thin to verify (16 rows)"
     },
     {
      "name": "AMCX",
@@ -89,7 +89,7 @@
     {
      "name": "ANGPY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "APEI",
@@ -274,7 +274,7 @@
     {
      "name": "ECHO",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 1739d past its 2021-11-22 registry bar; overlap corr -0.139"
+     "detail": "dead-registry name advancing 1740d past its 2021-11-22 registry bar; overlap corr -0.139"
     },
     {
      "name": "EGHT",
@@ -294,7 +294,7 @@
     {
      "name": "EQR",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "FBRX",
@@ -374,7 +374,7 @@
     {
      "name": "IMPUY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "INGN",
@@ -604,7 +604,7 @@
     {
      "name": "RHHBY",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "RILY",
@@ -619,7 +619,7 @@
     {
      "name": "RPT",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 972d past its 2023-12-29 registry bar; overlap corr 0.2233"
+     "detail": "dead-registry name advancing 973d past its 2023-12-29 registry bar; overlap corr 0.2233"
     },
     {
      "name": "RYAM",
@@ -654,7 +654,7 @@
     {
      "name": "SPWR",
      "kind": "zombie",
-     "detail": "dead-registry name advancing 748d past its 2024-08-09 registry bar; overlap corr -0.1298"
+     "detail": "dead-registry name advancing 749d past its 2024-08-09 registry bar; overlap corr -0.1298"
     },
     {
      "name": "SSP",
@@ -669,7 +669,7 @@
     {
      "name": "STRS",
      "kind": "delisted_printing",
-     "detail": "fresh bars (2026-08-27) but no current NASDAQ/NYSE listing"
+     "detail": "fresh bars (2026-08-28) but no current NASDAQ/NYSE listing"
     },
     {
      "name": "SVC",
@@ -780,7 +780,7 @@
   }
  ],
  "ledger_identity": {
-  "ledger": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/signal_archive/track_record.parquet",
+  "ledger": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/signal_archive/track_record.parquet",
   "declared_duplicates": [
    {
     "superseded": "SATS",
@@ -801,7 +801,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59804
+  "ledger_rows": 59809
  },
  "grace_days": 30,
  "stale_calendar_days": 7,
@@ -850,8 +850,8 @@
     {
      "ticker": "AHRT",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 16
      },
@@ -862,8 +862,8 @@
     {
      "ticker": "ECHO",
      "registry_last": "2021-11-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1739,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1740,
      "overlap": {
       "n_overlap": 99,
       "ret_corr_full": -0.0318,
@@ -877,8 +877,8 @@
     {
      "ticker": "RPT",
      "registry_last": "2023-12-29",
-     "store_tip": "2026-08-27",
-     "days_past_death": 972,
+     "store_tip": "2026-08-28",
+     "days_past_death": 973,
      "overlap": {
       "n_overlap": 627,
       "ret_corr_full": 0.4074,
@@ -892,8 +892,8 @@
     {
      "ticker": "SPWR",
      "registry_last": "2024-08-09",
-     "store_tip": "2026-08-27",
-     "days_past_death": 748,
+     "store_tip": "2026-08-28",
+     "days_past_death": 749,
      "overlap": {
       "n_overlap": 403,
       "ret_corr_full": 0.0459,
@@ -910,27 +910,27 @@
      "ticker": "CAMP",
      "registry_last": "2022-09-19",
      "store_start": "2024-10-11",
-     "store_tip": "2026-08-27"
+     "store_tip": "2026-08-28"
     },
     {
      "ticker": "NP",
      "registry_last": "2022-07-05",
      "store_start": "2025-10-01",
-     "store_tip": "2026-08-27"
+     "store_tip": "2026-08-28"
     },
     {
      "ticker": "WOLF",
      "registry_last": "2025-07-01",
      "store_start": "2025-09-29",
-     "store_tip": "2026-08-27"
+     "store_tip": "2026-08-28"
     }
    ],
    "registry_mismatch": [
     {
      "ticker": "AAOI",
      "registry_last": "2021-11-09",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1752,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1753,
      "overlap": {
       "n_overlap": 90,
       "ret_corr_full": 1.0,
@@ -942,8 +942,8 @@
     {
      "ticker": "ADTN",
      "registry_last": "2024-06-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 794,
+     "store_tip": "2026-08-28",
+     "days_past_death": 795,
      "overlap": {
       "n_overlap": 747,
       "ret_corr_full": 0.9998,
@@ -955,8 +955,8 @@
     {
      "ticker": "AMCX",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 2742,
       "ret_corr_full": 1.0,
@@ -968,8 +968,8 @@
     {
      "ticker": "ANGI",
      "registry_last": "2026-05-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 98,
+     "store_tip": "2026-08-28",
+     "days_past_death": 99,
      "overlap": {
       "n_overlap": 561,
       "ret_corr_full": 1.0,
@@ -981,8 +981,8 @@
     {
      "ticker": "ANGO",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 555,
       "ret_corr_full": 1.0,
@@ -994,8 +994,8 @@
     {
      "ticker": "APEI",
      "registry_last": "2022-09-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1438,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1439,
      "overlap": {
       "n_overlap": 305,
       "ret_corr_full": 1.0,
@@ -1007,8 +1007,8 @@
     {
      "ticker": "APPS",
      "registry_last": "2024-03-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 892,
+     "store_tip": "2026-08-28",
+     "days_past_death": 893,
      "overlap": {
       "n_overlap": 680,
       "ret_corr_full": 1.0,
@@ -1020,8 +1020,8 @@
     {
      "ticker": "ASIX",
      "registry_last": "2026-02-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 189,
+     "store_tip": "2026-08-28",
+     "days_past_death": 190,
      "overlap": {
       "n_overlap": 1826,
       "ret_corr_full": 1.0,
@@ -1033,8 +1033,8 @@
     {
      "ticker": "ATNI",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1453,
       "ret_corr_full": 1.0,
@@ -1046,8 +1046,8 @@
     {
      "ticker": "AVD",
      "registry_last": "2023-12-01",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1000,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1001,
      "overlap": {
       "n_overlap": 1272,
       "ret_corr_full": 1.0,
@@ -1059,8 +1059,8 @@
     {
      "ticker": "B",
      "registry_last": "2025-03-27",
-     "store_tip": "2026-08-27",
-     "days_past_death": 518,
+     "store_tip": "2026-08-28",
+     "days_past_death": 519,
      "overlap": {
       "n_overlap": 1601,
       "ret_corr_full": 1.0,
@@ -1072,8 +1072,8 @@
     {
      "ticker": "BBBY",
      "registry_last": "2023-05-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1196,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1197,
      "overlap": {
       "n_overlap": 2362,
       "ret_corr_full": 0.9305,
@@ -1085,8 +1085,8 @@
     {
      "ticker": "BDN",
      "registry_last": "2026-01-07",
-     "store_tip": "2026-08-27",
-     "days_past_death": 232,
+     "store_tip": "2026-08-28",
+     "days_past_death": 233,
      "overlap": {
       "n_overlap": 1133,
       "ret_corr_full": 0.99,
@@ -1098,8 +1098,8 @@
     {
      "ticker": "BELFB",
      "registry_last": "2021-08-03",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1850,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1851,
      "overlap": {
       "n_overlap": 21,
       "ret_corr_full": 0.9998,
@@ -1111,8 +1111,8 @@
     {
      "ticker": "BGS",
      "registry_last": "2025-11-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 280,
+     "store_tip": "2026-08-28",
+     "days_past_death": 281,
      "overlap": {
       "n_overlap": 1766,
       "ret_corr_full": 1.0,
@@ -1124,8 +1124,8 @@
     {
      "ticker": "BLMN",
      "registry_last": "2026-05-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 98,
+     "store_tip": "2026-08-28",
+     "days_past_death": 99,
      "overlap": {
       "n_overlap": 1890,
       "ret_corr_full": 1.0,
@@ -1137,8 +1137,8 @@
     {
      "ticker": "BNED",
      "registry_last": "2022-04-04",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1606,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1607,
      "overlap": {
       "n_overlap": 190,
       "ret_corr_full": 1.0,
@@ -1150,8 +1150,8 @@
     {
      "ticker": "BOOM",
      "registry_last": "2023-08-17",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1106,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1107,
      "overlap": {
       "n_overlap": 1198,
       "ret_corr_full": 1.0,
@@ -1163,8 +1163,8 @@
     {
      "ticker": "CAL",
      "registry_last": "2025-11-04",
-     "store_tip": "2026-08-27",
-     "days_past_death": 296,
+     "store_tip": "2026-08-28",
+     "days_past_death": 297,
      "overlap": {
       "n_overlap": 1090,
       "ret_corr_full": 0.9999,
@@ -1176,8 +1176,8 @@
     {
      "ticker": "CARS",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 1184,
       "ret_corr_full": 1.0,
@@ -1202,8 +1202,8 @@
     {
      "ticker": "CCSI",
      "registry_last": "2024-03-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 892,
+     "store_tip": "2026-08-28",
+     "days_past_death": 893,
      "overlap": {
       "n_overlap": 613,
       "ret_corr_full": 1.0,
@@ -1215,8 +1215,8 @@
     {
      "ticker": "CEVA",
      "registry_last": "2026-02-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 189,
+     "store_tip": "2026-08-28",
+     "days_past_death": 190,
      "overlap": {
       "n_overlap": 1826,
       "ret_corr_full": 1.0,
@@ -1228,8 +1228,8 @@
     {
      "ticker": "CHCT",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 1517,
       "ret_corr_full": 1.0,
@@ -1241,8 +1241,8 @@
     {
      "ticker": "CHRS",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 555,
       "ret_corr_full": 1.0,
@@ -1254,8 +1254,8 @@
     {
      "ticker": "CLDT",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1453,
       "ret_corr_full": 1.0,
@@ -1267,8 +1267,8 @@
     {
      "ticker": "CLFD",
      "registry_last": "2023-12-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 983,
+     "store_tip": "2026-08-28",
+     "days_past_death": 984,
      "overlap": {
       "n_overlap": 619,
       "ret_corr_full": 1.0,
@@ -1280,8 +1280,8 @@
     {
      "ticker": "CLW",
      "registry_last": "2024-11-04",
-     "store_tip": "2026-08-27",
-     "days_past_death": 661,
+     "store_tip": "2026-08-28",
+     "days_past_death": 662,
      "overlap": {
       "n_overlap": 840,
       "ret_corr_full": 1.0,
@@ -1293,8 +1293,8 @@
     {
      "ticker": "CMP",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 2742,
       "ret_corr_full": 1.0,
@@ -1306,8 +1306,8 @@
     {
      "ticker": "CPS",
      "registry_last": "2022-03-14",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1627,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1628,
      "overlap": {
       "n_overlap": 175,
       "ret_corr_full": 1.0,
@@ -1319,8 +1319,8 @@
     {
      "ticker": "CRMT",
      "registry_last": "2024-03-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 892,
+     "store_tip": "2026-08-28",
+     "days_past_death": 893,
      "overlap": {
       "n_overlap": 680,
       "ret_corr_full": 1.0,
@@ -1332,8 +1332,8 @@
     {
      "ticker": "CRNC",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1064,
       "ret_corr_full": 1.0,
@@ -1345,8 +1345,8 @@
     {
      "ticker": "CYH",
      "registry_last": "2024-02-15",
-     "store_tip": "2026-08-27",
-     "days_past_death": 924,
+     "store_tip": "2026-08-28",
+     "days_past_death": 925,
      "overlap": {
       "n_overlap": 2548,
       "ret_corr_full": 1.0,
@@ -1358,8 +1358,8 @@
     {
      "ticker": "DAKT",
      "registry_last": "2021-11-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1745,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1746,
      "overlap": {
       "n_overlap": 95,
       "ret_corr_full": 1.0,
@@ -1371,8 +1371,8 @@
     {
      "ticker": "DBI",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 1517,
       "ret_corr_full": 1.0,
@@ -1384,8 +1384,8 @@
     {
      "ticker": "DDD",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 2742,
       "ret_corr_full": 1.0,
@@ -1397,8 +1397,8 @@
     {
      "ticker": "DHC",
      "registry_last": "2022-12-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1347,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1348,
      "overlap": {
       "n_overlap": 369,
       "ret_corr_full": 0.9993,
@@ -1410,8 +1410,8 @@
     {
      "ticker": "DIN",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 1517,
       "ret_corr_full": 1.0,
@@ -1423,8 +1423,8 @@
     {
      "ticker": "DOUG",
      "registry_last": "2023-06-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1168,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1169,
      "overlap": {
       "n_overlap": 368,
       "ret_corr_full": 0.9993,
@@ -1436,8 +1436,8 @@
     {
      "ticker": "EBS",
      "registry_last": "2023-08-25",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1098,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1099,
      "overlap": {
       "n_overlap": 540,
       "ret_corr_full": 1.0,
@@ -1449,8 +1449,8 @@
     {
      "ticker": "EGHT",
      "registry_last": "2023-11-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1015,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1016,
      "overlap": {
       "n_overlap": 1262,
       "ret_corr_full": 1.0,
@@ -1462,8 +1462,8 @@
     {
      "ticker": "EHTH",
      "registry_last": "2022-09-19",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1438,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1439,
      "overlap": {
       "n_overlap": 305,
       "ret_corr_full": 1.0,
@@ -1475,8 +1475,8 @@
     {
      "ticker": "ELME",
      "registry_last": "2026-04-02",
-     "store_tip": "2026-08-27",
-     "days_past_death": 147,
+     "store_tip": "2026-08-28",
+     "days_past_death": 148,
      "overlap": {
       "n_overlap": 1856,
       "ret_corr_full": 1.0,
@@ -1488,8 +1488,8 @@
     {
      "ticker": "FF",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 555,
       "ret_corr_full": 0.9993,
@@ -1501,8 +1501,8 @@
     {
      "ticker": "FI",
      "registry_last": "2025-11-10",
-     "store_tip": "2026-08-27",
-     "days_past_death": 290,
+     "store_tip": "2026-08-28",
+     "days_past_death": 291,
      "overlap": {
       "n_overlap": 610,
       "ret_corr_full": 1.0,
@@ -1514,8 +1514,8 @@
     {
      "ticker": "FLGT",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 1446,
       "ret_corr_full": 1.0,
@@ -1527,8 +1527,8 @@
     {
      "ticker": "FORR",
      "registry_last": "2024-05-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 833,
+     "store_tip": "2026-08-28",
+     "days_past_death": 834,
      "overlap": {
       "n_overlap": 1386,
       "ret_corr_full": 1.0,
@@ -1540,8 +1540,8 @@
     {
      "ticker": "FOSL",
      "registry_last": "2022-11-17",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1379,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1380,
      "overlap": {
       "n_overlap": 2237,
       "ret_corr_full": 1.0,
@@ -1553,8 +1553,8 @@
     {
      "ticker": "FSP",
      "registry_last": "2023-05-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1197,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1198,
      "overlap": {
       "n_overlap": 1136,
       "ret_corr_full": 1.0,
@@ -1566,8 +1566,8 @@
     {
      "ticker": "GCO",
      "registry_last": "2023-08-17",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1106,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1107,
      "overlap": {
       "n_overlap": 1198,
       "ret_corr_full": 1.0,
@@ -1579,8 +1579,8 @@
     {
      "ticker": "GDOT",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 1869,
       "ret_corr_full": 1.0,
@@ -1592,8 +1592,8 @@
     {
      "ticker": "GPRE",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 1640,
       "ret_corr_full": 1.0,
@@ -1605,8 +1605,8 @@
     {
      "ticker": "HAIN",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 2865,
       "ret_corr_full": 1.0,
@@ -1618,8 +1618,8 @@
     {
      "ticker": "HELE",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 1.0,
@@ -1631,8 +1631,8 @@
     {
      "ticker": "HPP",
      "registry_last": "2024-12-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 612,
+     "store_tip": "2026-08-28",
+     "days_past_death": 613,
      "overlap": {
       "n_overlap": 874,
       "ret_corr_full": 0.9984,
@@ -1644,8 +1644,8 @@
     {
      "ticker": "HVT",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 1517,
       "ret_corr_full": 1.0,
@@ -1657,8 +1657,8 @@
     {
      "ticker": "ILPT",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 0.9992,
@@ -1670,8 +1670,8 @@
     {
      "ticker": "INGN",
      "registry_last": "2023-08-17",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1106,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1107,
      "overlap": {
       "n_overlap": 2393,
       "ret_corr_full": 1.0,
@@ -1683,8 +1683,8 @@
     {
      "ticker": "INN",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 1184,
       "ret_corr_full": 0.9985,
@@ -1696,8 +1696,8 @@
     {
      "ticker": "IRWD",
      "registry_last": "2025-04-10",
-     "store_tip": "2026-08-27",
-     "days_past_death": 504,
+     "store_tip": "2026-08-28",
+     "days_past_death": 505,
      "overlap": {
       "n_overlap": 981,
       "ret_corr_full": 1.0,
@@ -1709,8 +1709,8 @@
     {
      "ticker": "IVR",
      "registry_last": "2024-02-15",
-     "store_tip": "2026-08-27",
-     "days_past_death": 924,
+     "store_tip": "2026-08-28",
+     "days_past_death": 925,
      "overlap": {
       "n_overlap": 1323,
       "ret_corr_full": 1.0,
@@ -1722,8 +1722,8 @@
     {
      "ticker": "JACK",
      "registry_last": "2025-09-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 339,
+     "store_tip": "2026-08-28",
+     "days_past_death": 340,
      "overlap": {
       "n_overlap": 1059,
       "ret_corr_full": 0.9995,
@@ -1735,8 +1735,8 @@
     {
      "ticker": "JRVR",
      "registry_last": "2024-02-15",
-     "store_tip": "2026-08-27",
-     "days_past_death": 924,
+     "store_tip": "2026-08-28",
+     "days_past_death": 925,
      "overlap": {
       "n_overlap": 1323,
       "ret_corr_full": 1.0,
@@ -1748,8 +1748,8 @@
     {
      "ticker": "JYNT",
      "registry_last": "2023-03-03",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1273,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1274,
      "overlap": {
       "n_overlap": 722,
       "ret_corr_full": 1.0,
@@ -1761,8 +1761,8 @@
     {
      "ticker": "KELYA",
      "registry_last": "2025-02-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 553,
+     "store_tip": "2026-08-28",
+     "days_past_death": 554,
      "overlap": {
       "n_overlap": 1576,
       "ret_corr_full": 1.0,
@@ -1774,8 +1774,8 @@
     {
      "ticker": "KREF",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 1184,
       "ret_corr_full": 0.984,
@@ -1787,8 +1787,8 @@
     {
      "ticker": "LOCO",
      "registry_last": "2023-08-31",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1092,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1093,
      "overlap": {
       "n_overlap": 1208,
       "ret_corr_full": 1.0,
@@ -1800,8 +1800,8 @@
     {
      "ticker": "MATV",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 1640,
       "ret_corr_full": 1.0,
@@ -1813,8 +1813,8 @@
     {
      "ticker": "MCS",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1453,
       "ret_corr_full": 1.0,
@@ -1826,8 +1826,8 @@
     {
      "ticker": "MED",
      "registry_last": "2024-06-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 794,
+     "store_tip": "2026-08-28",
+     "days_past_death": 795,
      "overlap": {
       "n_overlap": 747,
       "ret_corr_full": 0.9987,
@@ -1839,8 +1839,8 @@
     {
      "ticker": "MEI",
      "registry_last": "2024-06-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 794,
+     "store_tip": "2026-08-28",
+     "days_past_death": 795,
      "overlap": {
       "n_overlap": 747,
       "ret_corr_full": 0.9997,
@@ -1852,8 +1852,8 @@
     {
      "ticker": "MGPI",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 0.9999,
@@ -1865,8 +1865,8 @@
     {
      "ticker": "MLAB",
      "registry_last": "2025-11-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 280,
+     "store_tip": "2026-08-28",
+     "days_past_death": 281,
      "overlap": {
       "n_overlap": 1766,
       "ret_corr_full": 1.0,
@@ -1878,8 +1878,8 @@
     {
      "ticker": "MMC",
      "registry_last": "2026-01-13",
-     "store_tip": "2026-08-27",
-     "days_past_death": 226,
+     "store_tip": "2026-08-28",
+     "days_past_death": 227,
      "overlap": {
       "n_overlap": 1137,
       "ret_corr_full": 0.9993,
@@ -1891,8 +1891,8 @@
     {
      "ticker": "MOV",
      "registry_last": "2024-11-29",
-     "store_tip": "2026-08-27",
-     "days_past_death": 636,
+     "store_tip": "2026-08-28",
+     "days_past_death": 637,
      "overlap": {
       "n_overlap": 1522,
       "ret_corr_full": 1.0,
@@ -1904,8 +1904,8 @@
     {
      "ticker": "MPAA",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 1.0,
@@ -1917,8 +1917,8 @@
     {
      "ticker": "MSTR",
      "registry_last": "2021-09-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1802,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1803,
      "overlap": {
       "n_overlap": 54,
       "ret_corr_full": 1.0,
@@ -1930,8 +1930,8 @@
     {
      "ticker": "MTRX",
      "registry_last": "2021-12-30",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1701,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1702,
      "overlap": {
       "n_overlap": 125,
       "ret_corr_full": 1.0,
@@ -1943,8 +1943,8 @@
     {
      "ticker": "MYE",
      "registry_last": "2025-01-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 580,
+     "store_tip": "2026-08-28",
+     "days_past_death": 581,
      "overlap": {
       "n_overlap": 1558,
       "ret_corr_full": 1.0,
@@ -1956,8 +1956,8 @@
     {
      "ticker": "MYGN",
      "registry_last": "2026-05-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 98,
+     "store_tip": "2026-08-28",
+     "days_past_death": 99,
      "overlap": {
       "n_overlap": 1890,
       "ret_corr_full": 1.0,
@@ -1969,8 +1969,8 @@
     {
      "ticker": "NBR",
      "registry_last": "2025-05-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 462,
+     "store_tip": "2026-08-28",
+     "days_past_death": 463,
      "overlap": {
       "n_overlap": 2865,
       "ret_corr_full": 1.0,
@@ -1995,8 +1995,8 @@
     {
      "ticker": "NKTR",
      "registry_last": "2023-06-02",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1182,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1183,
      "overlap": {
       "n_overlap": 1587,
       "ret_corr_full": 1.0,
@@ -2008,8 +2008,8 @@
     {
      "ticker": "NTGR",
      "registry_last": "2023-11-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1015,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1016,
      "overlap": {
       "n_overlap": 1262,
       "ret_corr_full": 1.0,
@@ -2021,8 +2021,8 @@
     {
      "ticker": "NUS",
      "registry_last": "2024-09-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 703,
+     "store_tip": "2026-08-28",
+     "days_past_death": 704,
      "overlap": {
       "n_overlap": 810,
       "ret_corr_full": 0.9986,
@@ -2034,8 +2034,8 @@
     {
      "ticker": "OFIX",
      "registry_last": "2024-02-15",
-     "store_tip": "2026-08-27",
-     "days_past_death": 924,
+     "store_tip": "2026-08-28",
+     "days_past_death": 925,
      "overlap": {
       "n_overlap": 1323,
       "ret_corr_full": 1.0,
@@ -2047,8 +2047,8 @@
     {
      "ticker": "ONL",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 456,
       "ret_corr_full": 0.9982,
@@ -2060,8 +2060,8 @@
     {
      "ticker": "OPRX",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 1.0,
@@ -2073,8 +2073,8 @@
     {
      "ticker": "ORGO",
      "registry_last": "2023-05-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1197,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1198,
      "overlap": {
       "n_overlap": 771,
       "ret_corr_full": 1.0,
@@ -2086,8 +2086,8 @@
     {
      "ticker": "OSPN",
      "registry_last": "2024-02-15",
-     "store_tip": "2026-08-27",
-     "days_past_death": 924,
+     "store_tip": "2026-08-28",
+     "days_past_death": 925,
      "overlap": {
       "n_overlap": 1323,
       "ret_corr_full": 1.0,
@@ -2099,8 +2099,8 @@
     {
      "ticker": "OSUR",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1453,
       "ret_corr_full": 1.0,
@@ -2112,8 +2112,8 @@
     {
      "ticker": "PKE",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 0.9857,
@@ -2125,8 +2125,8 @@
     {
      "ticker": "PLAY",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 1184,
       "ret_corr_full": 1.0,
@@ -2138,8 +2138,8 @@
     {
      "ticker": "PNTG",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 1.0,
@@ -2151,8 +2151,8 @@
     {
      "ticker": "PUMP",
      "registry_last": "2025-09-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 339,
+     "store_tip": "2026-08-28",
+     "days_past_death": 340,
      "overlap": {
       "n_overlap": 1059,
       "ret_corr_full": 1.0,
@@ -2164,8 +2164,8 @@
     {
      "ticker": "RC",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 0.985,
@@ -2177,8 +2177,8 @@
     {
      "ticker": "RGNX",
      "registry_last": "2025-02-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 553,
+     "store_tip": "2026-08-28",
+     "days_past_death": 554,
      "overlap": {
       "n_overlap": 1576,
       "ret_corr_full": 1.0,
@@ -2190,8 +2190,8 @@
     {
      "ticker": "RGP",
      "registry_last": "2024-08-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 735,
+     "store_tip": "2026-08-28",
+     "days_past_death": 736,
      "overlap": {
       "n_overlap": 1453,
       "ret_corr_full": 1.0,
@@ -2203,8 +2203,8 @@
     {
      "ticker": "RGR",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 0.9899,
@@ -2216,8 +2216,8 @@
     {
      "ticker": "RILY",
      "registry_last": "2024-11-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 644,
+     "store_tip": "2026-08-28",
+     "days_past_death": 645,
      "overlap": {
       "n_overlap": 1185,
       "ret_corr_full": 1.0,
@@ -2242,8 +2242,8 @@
     {
      "ticker": "RYAM",
      "registry_last": "2023-06-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1168,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1169,
      "overlap": {
       "n_overlap": 492,
       "ret_corr_full": 1.0,
@@ -2255,8 +2255,8 @@
     {
      "ticker": "SENEA",
      "registry_last": "2023-07-03",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1151,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1152,
      "overlap": {
       "n_overlap": 502,
       "ret_corr_full": 1.0,
@@ -2268,8 +2268,8 @@
     {
      "ticker": "SITC",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 0.6596,
@@ -2281,8 +2281,8 @@
     {
      "ticker": "SLP",
      "registry_last": "2025-09-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 339,
+     "store_tip": "2026-08-28",
+     "days_past_death": 340,
      "overlap": {
       "n_overlap": 1059,
       "ret_corr_full": 1.0,
@@ -2294,8 +2294,8 @@
     {
      "ticker": "SLQT",
      "registry_last": "2022-10-03",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1424,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1425,
      "overlap": {
       "n_overlap": 315,
       "ret_corr_full": 1.0,
@@ -2307,8 +2307,8 @@
     {
      "ticker": "SPOK",
      "registry_last": "2021-08-04",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1849,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1850,
      "overlap": {
       "n_overlap": 22,
       "ret_corr_full": 1.0,
@@ -2320,8 +2320,8 @@
     {
      "ticker": "SSP",
      "registry_last": "2024-04-03",
-     "store_tip": "2026-08-27",
-     "days_past_death": 876,
+     "store_tip": "2026-08-28",
+     "days_past_death": 877,
      "overlap": {
       "n_overlap": 691,
       "ret_corr_full": 1.0,
@@ -2333,8 +2333,8 @@
     {
      "ticker": "SSTK",
      "registry_last": "2026-06-02",
-     "store_tip": "2026-08-27",
-     "days_past_death": 86,
+     "store_tip": "2026-08-28",
+     "days_past_death": 87,
      "overlap": {
       "n_overlap": 1233,
       "ret_corr_full": 0.9991,
@@ -2346,8 +2346,8 @@
     {
      "ticker": "SVC",
      "registry_last": "2024-12-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 612,
+     "store_tip": "2026-08-28",
+     "days_past_death": 613,
      "overlap": {
       "n_overlap": 874,
       "ret_corr_full": 0.9967,
@@ -2359,8 +2359,8 @@
     {
      "ticker": "SXC",
      "registry_last": "2026-03-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 157,
+     "store_tip": "2026-08-28",
+     "days_past_death": 158,
      "overlap": {
       "n_overlap": 1184,
       "ret_corr_full": 0.9984,
@@ -2372,8 +2372,8 @@
     {
      "ticker": "TBI",
      "registry_last": "2024-03-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 892,
+     "store_tip": "2026-08-28",
+     "days_past_death": 893,
      "overlap": {
       "n_overlap": 680,
       "ret_corr_full": 1.0,
@@ -2385,8 +2385,8 @@
     {
      "ticker": "TCMD",
      "registry_last": "2022-06-21",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1528,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1529,
      "overlap": {
       "n_overlap": 243,
       "ret_corr_full": 1.0,
@@ -2398,8 +2398,8 @@
     {
      "ticker": "TG",
      "registry_last": "2023-06-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1168,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1169,
      "overlap": {
       "n_overlap": 492,
       "ret_corr_full": 0.9973,
@@ -2411,8 +2411,8 @@
     {
      "ticker": "THRY",
      "registry_last": "2025-12-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 248,
+     "store_tip": "2026-08-28",
+     "days_past_death": 249,
      "overlap": {
       "n_overlap": 1123,
       "ret_corr_full": 1.0,
@@ -2424,8 +2424,8 @@
     {
      "ticker": "TREE",
      "registry_last": "2023-06-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1168,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1169,
      "overlap": {
       "n_overlap": 492,
       "ret_corr_full": 1.0,
@@ -2437,8 +2437,8 @@
     {
      "ticker": "TTEC",
      "registry_last": "2024-06-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 794,
+     "store_tip": "2026-08-28",
+     "days_past_death": 795,
      "overlap": {
       "n_overlap": 747,
       "ret_corr_full": 0.9994,
@@ -2450,8 +2450,8 @@
     {
      "ticker": "TTGT",
      "registry_last": "2025-09-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 339,
+     "store_tip": "2026-08-28",
+     "days_past_death": 340,
      "overlap": {
       "n_overlap": 1059,
       "ret_corr_full": 1.0,
@@ -2463,8 +2463,8 @@
     {
      "ticker": "TWI",
      "registry_last": "2026-04-02",
-     "store_tip": "2026-08-27",
-     "days_past_death": 147,
+     "store_tip": "2026-08-28",
+     "days_past_death": 148,
      "overlap": {
       "n_overlap": 1192,
       "ret_corr_full": 1.0,
@@ -2476,8 +2476,8 @@
     {
      "ticker": "UIS",
      "registry_last": "2023-03-20",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1256,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1257,
      "overlap": {
       "n_overlap": 430,
       "ret_corr_full": 1.0,
@@ -2489,8 +2489,8 @@
     {
      "ticker": "USNA",
      "registry_last": "2025-10-31",
-     "store_tip": "2026-08-27",
-     "days_past_death": 300,
+     "store_tip": "2026-08-28",
+     "days_past_death": 301,
      "overlap": {
       "n_overlap": 1088,
       "ret_corr_full": 1.0,
@@ -2502,8 +2502,8 @@
     {
      "ticker": "UVE",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 555,
       "ret_corr_full": 0.9981,
@@ -2515,8 +2515,8 @@
     {
      "ticker": "VNDA",
      "registry_last": "2023-09-18",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1074,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1075,
      "overlap": {
       "n_overlap": 555,
       "ret_corr_full": 1.0,
@@ -2528,8 +2528,8 @@
     {
      "ticker": "VREX",
      "registry_last": "2024-09-23",
-     "store_tip": "2026-08-27",
-     "days_past_death": 703,
+     "store_tip": "2026-08-28",
+     "days_past_death": 704,
      "overlap": {
       "n_overlap": 810,
       "ret_corr_full": 1.0,
@@ -2541,8 +2541,8 @@
     {
      "ticker": "WNC",
      "registry_last": "2025-03-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 521,
+     "store_tip": "2026-08-28",
+     "days_past_death": 522,
      "overlap": {
       "n_overlap": 934,
       "ret_corr_full": 0.9998,
@@ -2554,8 +2554,8 @@
     {
      "ticker": "XPER",
      "registry_last": "2024-06-24",
-     "store_tip": "2026-08-27",
-     "days_past_death": 794,
+     "store_tip": "2026-08-28",
+     "days_past_death": 795,
      "overlap": {
       "n_overlap": 442,
       "ret_corr_full": 0.7569,
@@ -2567,8 +2567,8 @@
     {
      "ticker": "XRX",
      "registry_last": "2025-09-22",
-     "store_tip": "2026-08-27",
-     "days_past_death": 339,
+     "store_tip": "2026-08-28",
+     "days_past_death": 340,
      "overlap": {
       "n_overlap": 1059,
       "ret_corr_full": 0.9977,
@@ -2580,8 +2580,8 @@
     {
      "ticker": "ZUMZ",
      "registry_last": "2023-06-16",
-     "store_tip": "2026-08-27",
-     "days_past_death": 1168,
+     "store_tip": "2026-08-28",
+     "days_past_death": 1169,
      "overlap": {
       "n_overlap": 492,
       "ret_corr_full": 1.0,
@@ -2594,12 +2594,12 @@
    "delisted_printing": [
     {
      "ticker": "ANGPY",
-     "store_tip": "2026-08-27",
+     "store_tip": "2026-08-28",
      "acked": false
     },
     {
      "ticker": "EQR",
-     "store_tip": "2026-08-27",
+     "store_tip": "2026-08-28",
      "acked": false
     },
     {
@@ -2609,7 +2609,7 @@
     },
     {
      "ticker": "IMPUY",
-     "store_tip": "2026-08-27",
+     "store_tip": "2026-08-28",
      "acked": false
     },
     {
@@ -2624,12 +2624,12 @@
     },
     {
      "ticker": "RHHBY",
-     "store_tip": "2026-08-27",
+     "store_tip": "2026-08-28",
      "acked": true
     },
     {
      "ticker": "STRS",
-     "store_tip": "2026-08-27",
+     "store_tip": "2026-08-28",
      "acked": false
     },
     {

@@ -8,7 +8,7 @@
   "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
   "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
   "asof": "2026-08-28",
-  "built": "2026-08-28 12:59 UTC",
+  "built": "2026-08-30 05:29 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -16,7 +16,7 @@
     "inflation_score": 0.0,
     "confidence": 0.167,
     "liquidity": "unknown",
-    "recession_score": 4.0,
+    "recession_score": 3.0,
     "recession_band": "low",
     "data_limited": true
   },
@@ -41,7 +41,7 @@
       "base": 50.0,
       "growth": -7.33,
       "inflation": -0.0,
-      "recession": -0.72,
+      "recession": -0.54,
       "liquidity": 0.0,
       "risk_state": 0.0
     },
@@ -183,13 +183,13 @@
     "index_label": "FTSE 100 / FTSE 250",
     "currency_label": "GBP/USD",
     "equity": {
-      "price": 10812.37,
-      "off_52w_high": -0.9,
+      "price": 10824.3,
+      "off_52w_high": -0.8,
       "above_50d": true,
       "above_200d": true,
       "realvol": 5.2,
-      "rsi": 54.0,
-      "ext_z": -0.98,
+      "rsi": 55.0,
+      "ext_z": -0.94,
       "ext_grade": "intrend",
       "drawdown_risk": 2.0,
       "drawdown_band": "low",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 15,
+    "top_score": 14,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.186,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 14.7,
+      "intensity": 14.5,
       "peak": 80.7,
       "peak_days_ago": 22,
-      "off_peak": 66.0,
-      "velocity": 0.0,
+      "off_peak": 66.2,
+      "velocity": -0.2,
       "phase": "flat",
       "reached_risk": true,
       "state_now": "calm",
@@ -244,17 +244,17 @@
         12.5,
         8.3,
         12.5,
-        9.7,
-        14.7
+        10.3,
+        14.5
       ],
-      "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.6 93.0,21.2",
+      "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.4 93.0,21.3",
       "spark_peak": {
         "x": 6.9,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 21.2
+        "y": 21.3
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -270,13 +270,13 @@
         "band": "watch",
         "firing_legs": [
           {
-            "leg": "ext_etf",
-            "pctile": 0.669,
+            "leg": "ext_idx",
+            "pctile": 0.677,
             "confirmed": false
           },
           {
-            "leg": "ext_idx",
-            "pctile": 0.667,
+            "leg": "ext_etf",
+            "pctile": 0.659,
             "confirmed": false
           }
         ]
@@ -286,7 +286,7 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 36.7,
+        "score": 38.2,
         "band": "calm",
         "firing_legs": []
       },
@@ -295,7 +295,7 @@
         "tier": "A",
         "label_en": "Sterling depreciation / outflows",
         "label_zh": "英镑贬值／资金外流",
-        "score": 25.8,
+        "score": 22.8,
         "band": "calm",
         "firing_legs": []
       }
@@ -361,7 +361,7 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 1.3586,
+      "raw": 1.3597,
       "value": "1.36",
       "unit": "",
       "asof": null
@@ -370,8 +370,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 2.64,
-      "value": "2.64%",
+      "raw": 2.72,
+      "value": "2.72%",
       "unit": "%",
       "asof": null
     },
@@ -379,8 +379,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -0.9,
-      "value": "-0.90%",
+      "raw": -0.8,
+      "value": "-0.80%",
       "unit": "%",
       "asof": null
     },
@@ -543,7 +543,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 545,
+      "age_days": 547,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -551,7 +551,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 239,
+      "age_days": 241,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -559,7 +559,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-04",
-      "age_days": 149,
+      "age_days": 151,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -567,7 +567,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 88,
+      "age_days": 90,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

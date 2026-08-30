@@ -56,32 +56,12 @@
       "data_note": "call price coverage 14% \u2014 low SLD coverage; magnets may be incomplete",
       "magnet_below": true,
       "magnet_above": false,
-      "nearest_magnet_pct": -5.0,
+      "nearest_magnet_pct": -7.0,
       "magnet_clusters": [
         {
-          "bucket": -1,
-          "distance_pct": -1.0,
-          "level_approx": 443.32,
-          "side": "bull",
-          "outstanding_sum": 9475000,
-          "n_contracts": 1,
-          "bull_outstanding": 9475000,
-          "bear_outstanding": 0
-        },
-        {
-          "bucket": -2,
-          "distance_pct": -3.0,
-          "level_approx": 434.37,
-          "side": "bull",
-          "outstanding_sum": 54750000,
-          "n_contracts": 5,
-          "bull_outstanding": 54750000,
-          "bear_outstanding": 0
-        },
-        {
-          "bucket": 1,
-          "distance_pct": 3.0,
-          "level_approx": 461.23,
+          "bucket": 0,
+          "distance_pct": 1.0,
+          "level_approx": 459.75,
           "side": "bear",
           "outstanding_sum": 5850000,
           "n_contracts": 2,
@@ -89,64 +69,84 @@
           "bear_outstanding": 5850000
         },
         {
+          "bucket": -2,
+          "distance_pct": -3.0,
+          "level_approx": 441.54,
+          "side": "bull",
+          "outstanding_sum": 9475000,
+          "n_contracts": 1,
+          "bull_outstanding": 9475000,
+          "bear_outstanding": 0
+        },
+        {
+          "bucket": 1,
+          "distance_pct": 3.0,
+          "level_approx": 468.86,
+          "side": "bear",
+          "outstanding_sum": 6750000,
+          "n_contracts": 3,
+          "bull_outstanding": 0,
+          "bear_outstanding": 6750000
+        },
+        {
           "bucket": -3,
           "distance_pct": -5.0,
-          "level_approx": 425.41,
+          "level_approx": 432.44,
           "side": "bull",
-          "outstanding_sum": 48395000,
-          "n_contracts": 4,
-          "bull_outstanding": 48395000,
+          "outstanding_sum": 64805000,
+          "n_contracts": 6,
+          "bull_outstanding": 64805000,
           "bear_outstanding": 0
         },
         {
           "bucket": 2,
           "distance_pct": 5.0,
-          "level_approx": 470.19,
+          "level_approx": 477.96,
           "side": "bear",
-          "outstanding_sum": 8085000,
+          "outstanding_sum": 7340000,
           "n_contracts": 4,
           "bull_outstanding": 0,
-          "bear_outstanding": 8085000
+          "bear_outstanding": 7340000
         },
         {
           "bucket": -4,
           "distance_pct": -7.0,
-          "level_approx": 416.45,
+          "level_approx": 423.34,
           "side": "bull",
-          "outstanding_sum": 6580000,
-          "n_contracts": 2,
-          "bull_outstanding": 6580000,
+          "outstanding_sum": 38340000,
+          "n_contracts": 3,
+          "bull_outstanding": 38340000,
           "bear_outstanding": 0
         },
         {
           "bucket": 3,
           "distance_pct": 7.0,
-          "level_approx": 479.15,
-          "side": "bear",
-          "outstanding_sum": 6005000,
-          "n_contracts": 3,
-          "bull_outstanding": 0,
-          "bear_outstanding": 6005000
-        },
-        {
-          "bucket": -5,
-          "distance_pct": -9.0,
-          "level_approx": 407.5,
-          "side": "bull",
-          "outstanding_sum": 280000,
-          "n_contracts": 1,
-          "bull_outstanding": 280000,
-          "bear_outstanding": 0
-        },
-        {
-          "bucket": 4,
-          "distance_pct": 9.0,
-          "level_approx": 488.1,
+          "level_approx": 487.06,
           "side": "bear",
           "outstanding_sum": 8655000,
           "n_contracts": 3,
           "bull_outstanding": 0,
           "bear_outstanding": 8655000
+        },
+        {
+          "bucket": -5,
+          "distance_pct": -9.0,
+          "level_approx": 414.23,
+          "side": "bull",
+          "outstanding_sum": 6860000,
+          "n_contracts": 3,
+          "bull_outstanding": 6860000,
+          "bear_outstanding": 0
+        },
+        {
+          "bucket": 4,
+          "distance_pct": 9.0,
+          "level_approx": 496.17,
+          "side": "bear",
+          "outstanding_sum": 5300000,
+          "n_contracts": 2,
+          "bull_outstanding": 0,
+          "bear_outstanding": 5300000
         }
       ],
       "call_level_coverage": 0.136,
@@ -307,9 +307,9 @@
       "nearest_magnet_pct": null,
       "magnet_clusters": [
         {
-          "bucket": 1,
-          "distance_pct": 3.0,
-          "level_approx": 73.44,
+          "bucket": 2,
+          "distance_pct": 5.0,
+          "level_approx": 73.66,
           "side": "bull",
           "outstanding_sum": 0,
           "n_contracts": 1,
@@ -317,9 +317,19 @@
           "bear_outstanding": 0
         },
         {
-          "bucket": 2,
-          "distance_pct": 5.0,
-          "level_approx": 74.87,
+          "bucket": -4,
+          "distance_pct": -7.0,
+          "level_approx": 65.24,
+          "side": "bull",
+          "outstanding_sum": 14310000,
+          "n_contracts": 2,
+          "bull_outstanding": 14310000,
+          "bear_outstanding": 0
+        },
+        {
+          "bucket": 3,
+          "distance_pct": 7.0,
+          "level_approx": 75.06,
           "side": "bear",
           "outstanding_sum": 1700000,
           "n_contracts": 1,
@@ -329,11 +339,11 @@
         {
           "bucket": -5,
           "distance_pct": -9.0,
-          "level_approx": 64.88,
+          "level_approx": 63.84,
           "side": "bull",
-          "outstanding_sum": 14310000,
-          "n_contracts": 2,
-          "bull_outstanding": 14310000,
+          "outstanding_sum": 18315000,
+          "n_contracts": 1,
+          "bull_outstanding": 18315000,
           "bear_outstanding": 0
         }
       ],
@@ -358,9 +368,9 @@
       "nearest_magnet_pct": -9.0,
       "magnet_clusters": [
         {
-          "bucket": 2,
-          "distance_pct": 5.0,
-          "level_approx": 443.31,
+          "bucket": 1,
+          "distance_pct": 3.0,
+          "level_approx": 436.72,
           "side": "bull",
           "outstanding_sum": 0,
           "n_contracts": 1,
@@ -370,7 +380,7 @@
         {
           "bucket": -5,
           "distance_pct": -9.0,
-          "level_approx": 384.2,
+          "level_approx": 385.84,
           "side": "bull",
           "outstanding_sum": 12050000,
           "n_contracts": 1,
@@ -384,8 +394,8 @@
     }
   ],
   "banner": null,
-  "cbbc_total_contracts": 36028,
-  "dw_total_contracts": 43705,
+  "cbbc_total_contracts": 30077,
+  "dw_total_contracts": 36390,
   "sld_call_levels_in_store": 2701,
   "sld_max_issue_date": "2026-08-28",
   "sld_freshness": "fresh",
