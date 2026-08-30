@@ -2467,13 +2467,15 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
-        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
-        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
-        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
-        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
-        # either deletes the R2 credential env vars or injects a fake client
-        # object directly — the real boto3 import is never reached.
-        run: pip install pytest pandas fastapi httpx pyyaml
+        # both (httpx importorskip'd). pandas + pyarrow: the D5 API suite writes
+        # its canonical security-master parquet and app.prophet_lab imports the
+        # B1 episode module, whose parquet owner is unconditional. requests:
+        # D5's company-intelligence reader imports it at module scope. boto3 is
+        # NOT needed: engine.entry_radar.spool imports it LAZILY inside
+        # `_r2_client()`, and every R2 path this suite exercises either deletes
+        # the R2 credential env vars or injects a fake client object directly —
+        # the real boto3 import is never reached.
+        run: pip install pytest pandas pyarrow fastapi httpx pyyaml requests
       - name: Prophet Operator Lab — projection, real-reader chain, transport, timeparse, commissioning-prep
         run: >
           python -m pytest

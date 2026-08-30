@@ -2683,6 +2683,55 @@ def _d5_two_generation_payload(
     return _build_d5(read_revisions=lambda event_id: revisions)
 
 
+def _d5_mixed_source_generation_payload() -> dict:
+    """Body-only decision evidence followed by a projected issuer revision."""
+    decision = _d5_workspace()
+    decision["facts"] = []
+    decision["deltas"] = []
+    decision["guidance"] = [{
+        "metric": "revenue_yoy_pct",
+        "low": 9.0,
+        "high": 11.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "introduced",
+        "source_span": {
+            "document_id": "doc:body:1",
+            "text": "RAW GUIDANCE SPAN MUST NOT LEAK",
+        },
+    }]
+    decision["sources"] = [{
+        "kind": "transcript",
+        "document_id": "doc:body:1",
+        "source_sha256": "d" * 64,
+        "body": "RAW TRANSCRIPT BODY MUST NOT LEAK",
+    }]
+
+    later = _d5_workspace()
+    later["generation_id"] = "2" * 24
+    later["lifecycle"] = {
+        "state": "complete",
+        "source_available_at": "2026-08-01T19:55:00Z",
+        "observed_at": "2026-08-01T20:00:00Z",
+    }
+    later["generated_at"] = "2026-08-01T20:01:00Z"
+    later["facts"][0]["value"] = 110_000_000_000
+    later["deltas"][0]["current"]["value"] = 110_000_000_000
+    later["sources"][0]["source_sha256"] = "e" * 64
+
+    revisions = _d5_revisions(workspace=decision) + [{
+        "generation_id": later["generation_id"],
+        "source_sha256": "e" * 64,
+        "source_available_at": later["lifecycle"]["source_available_at"],
+        "observed_at": later["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace_receipt": _d5_workspace_receipt(later),
+        "workspace": later,
+    }]
+    return _build_d5(read_revisions=lambda event_id: revisions)
+
+
 @pytest.mark.parametrize(
     ("state_at_decision", "current_state", "accepted"),
     [
@@ -3426,6 +3475,32 @@ def test_validator_rejects_distinct_visible_source_relabelled_none_in_chain(
     with pytest.raises(
         IntelligenceVectorContractError,
         match="lineage|OBSERVED|source revision|distinct source",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_readdressed_mixed_lineage_relabelled_none_in_chain() -> None:
+    payload = _d5_mixed_source_generation_payload()
+    family = payload["evidence_families"][0]
+    assert {
+        ref["object_schema"]
+        for ref in family["source_refs"]
+        if ref["source_ref_id"] in family["correction"]["decision_version_ref_ids"]
+    } == {"event_workspace.source/transcript"}
+    assert family["correction"]["later_revision_receipts"]
+    assert {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+        if observation["value_state"] == "PRESENT"
+    } == {"OBSERVED"}
+    for observation in family["observations"]:
+        if observation["value_state"] == "PRESENT":
+            observation["correction_lineage_state"] = "NONE_IN_CHAIN"
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="lineage|OBSERVED|source revision|later revision",
     ):
         validate_intelligence_vector(payload)
 

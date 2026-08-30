@@ -1002,6 +1002,10 @@ def test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate() -> N
         suite in str(step.get("run") or "")
         for step in prophet_lab["steps"]
     )
+    assert {"requests", "pyarrow"} <= _job_pip_packages(prophet_lab), (
+        "prophet-lab's executing D5 suite imports requests and pyarrow in a clean "
+        "Python 3.12 job; keep those dependencies on this owning job's install line"
+    )
 
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     code_jobs = [job for job in jobs if job.gate == "code"]

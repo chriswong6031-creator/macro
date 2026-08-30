@@ -2432,6 +2432,15 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         for observation in family["observations"]
         if observation["value_state"] == "PRESENT"
     }
+    if (
+        later_revision_receipts
+        and present_lineage_states
+        and present_lineage_states != {"OBSERVED"}
+    ):
+        raise IntelligenceVectorContractError(
+            "correction lineage must be OBSERVED when an authenticated later "
+            "owner source revision survives deduplication"
+        )
     if decision_ref_ids and present_lineage_states:
         decision_issuer_hashes = {
             source_refs_by_id[ref_id]["content_hash"]
@@ -2443,13 +2452,10 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             later_receipt["source_sha256"]
             for later_receipt in later_revision_receipts
         }
-        # The serialized vector can prove a correction chain only when it
-        # exposes at least two distinct issuer-source hashes.  A decision
-        # workspace can legitimately project only a transcript lane, leaving
-        # its issuer hash unavailable to this validator even though the
-        # authenticated reader supplied it to the builder.  Do not invent a
-        # negative lineage claim from that absence; do reject any readdressed
-        # payload that suppresses a positively observable distinct chain.
+        # The serialized source refs independently prove a distinct visible
+        # issuer chain when they expose two hashes.  The receipt rule above
+        # covers the mixed body-only -> issuer-release case, whose decision
+        # generation correctly has no serialized issuer hash.
         if (
             len(visible_issuer_hashes) > 1
             and present_lineage_states != {"OBSERVED"}
