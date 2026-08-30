@@ -6,11 +6,13 @@ claim: >
   and Winner Autopsy owners, while the currently proven B1 candidate identity is scoped
   to the accepted U.S. Prophet plane rather than all markets and instruments.
 falsifier: >
-  Disprove by showing that current main contains no Long-Hold horizon firewall,
-  no Thesis Funnel survival projection, no Winner Autopsy case/fingerprint system,
-  no long-horizon labels, and an accepted B1 contract explicitly proven across HK,
-  China, commodity futures, ETFs, producers, miners and crypto with their clocks,
-  basis and correction laws.
+  Run `rg -n "horizon_role|thesis_candidate_shadow|winner_autopsy|candidate_episode" agentos research engine scripts config tests`
+  on current main and inspect the cited accepted contracts. This claim is falsified only
+  if that command and accepted evidence show that current main contains no Long-Hold
+  horizon firewall, no Thesis Funnel survival projection, no Winner Autopsy
+  case/fingerprint system, no long-horizon labels, and an accepted B1 contract explicitly
+  proven across HK, China, commodity futures, ETFs, producers, miners and crypto with
+  their clocks, basis and correction laws.
 so_what: >
   Every Cycle Capture wave must reuse or producer-extend the existing Long-Hold,
   Thesis Funnel, Winner Autopsy, Evaluation, plan and Portfolio owners; CORE_HOLD stays
