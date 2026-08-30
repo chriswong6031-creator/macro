@@ -2,7 +2,7 @@
 workstream: WS:FUNDAMENTAL-FORENSICS
 session: sol/ff-fif-recovery-reconcile-20260829
 model: sol
-ended_because: continuation
+ended_because: ci_handoff
 mission: >
   Reconcile the combined Fundamental Forensics + Financial Intelligence Fabric
   program after the ANGO source-law repair landed, restore current-quarter broad
