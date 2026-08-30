@@ -5129,12 +5129,16 @@ jobs:
     # .claude/hooks/ could otherwise skip the job that owns its contract.
     paths:
       - ".claude/hooks/**"
+      - config/linear_initiative_portfolio.v1.json
       - scripts/agentos.py
       - scripts/ci_authority.py
       - scripts/ci_authority_paths.py
       - scripts/ci_semantic_proof.py
       - scripts/check_self_mod_fence.py
+      - scripts/linear_initiative_plan.py
       - scripts/worktree_gc.py
+      - tests/linear_initiative_plan_cases.py
+      - tests/linear_initiative_plan_live_cases.py
       - tests/test_agent_worktree_roots.py
       - tests/test_agentos_compile.py
       - tests/test_agentos_schema.py
@@ -5261,7 +5265,9 @@ jobs:
           # out would otherwise pass as a skip. This line cannot skip.
           python3 scripts/agentos.py validate
           python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py \
-            tests/test_agentos_compile.py -q
+            tests/test_agentos_compile.py \
+            tests/linear_initiative_plan_cases.py \
+            tests/linear_initiative_plan_live_cases.py -q
 
   capability-broker:
     if: ${{ false }}

@@ -97,9 +97,3 @@ def test_current_repository_plan_is_deterministic_and_emits_ci_receipt(pytestcon
             handle.write("\n## MAS-65 real-checkout projector receipt\n\n```json\n")
             handle.write(json.dumps(proof, ensure_ascii=False, sort_keys=True, indent=2))
             handle.write("\n```\n")
-
-
-# Initiative Task-2 extends the same MAS-65 Agent OS/portfolio CI collection.
-# Keep these cases in the existing ownership plane instead of creating another CI job.
-from tests.linear_initiative_plan_cases import *  # noqa: E402,F401,F403
-from tests.linear_initiative_plan_live_cases import *  # noqa: E402,F401,F403

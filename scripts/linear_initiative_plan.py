@@ -455,7 +455,6 @@ def initiative_drift(
         field_map = {
             "status": "status",
             "priority": "priority",
-            "health": "health",
             "owner_id": "owner_id",
             "lead_team": "lead_team",
             "target_date": "target_date",
@@ -479,6 +478,16 @@ def initiative_drift(
                 )
             if current_value != desired_value:
                 fields.append(desired_field)
+
+        # Health is unset at creation, and only a later formal Sol strategic
+        # update may set On track / At risk / Off track. That lawful later value
+        # is DESCRIPTIVE, not structural drift, so health is compared only when
+        # the approved desired state actually pins one. Creation desired state
+        # keeps health=null, so this stays silent for a normal live Initiative.
+        desired_health = desired.get("health")
+        if desired_health is not None and current.get("health") != desired_health:
+            fields.append("health")
+
         if fields:
             drift.append({
                 "code": "initiative_field_drift",
@@ -569,6 +578,24 @@ def initiative_drift(
         for row in exceptions
         if row.get("identity_kind") == "linear_project_id"
     }
+    # An exact workstream key stays unique even when it is a deliberately
+    # unassigned exception. Those keys never reach the desired-membership loop
+    # above, so the duplicate check has to happen here or two visible Projects
+    # carrying the same exact key both pass silently. Exact key identity only —
+    # never title or fuzzy matching, and a rename must not launder a duplicate.
+    exception_key_counts = Counter(
+        key
+        for key in (project.get("workstream_key") for project in current_projects)
+        if isinstance(key, str) and key in exception_ws
+    )
+    for key, count in sorted(exception_key_counts.items()):
+        if count > 1:
+            drift.append({
+                "code": "project_binding_ambiguous",
+                "workstream_key": key,
+                "count": count,
+            })
+
     for project in current_projects:
         key = project.get("workstream_key")
         project_id = project.get("project_id")

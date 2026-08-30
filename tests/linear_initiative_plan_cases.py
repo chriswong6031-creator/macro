@@ -670,3 +670,56 @@ def test_task2_initiative_suites_are_owned_by_agent_os_record_contract_job():
         "linear_initiative_plan_live_cases import *",
     ):
         assert hack not in portfolio_source, "import aggregation hack must be removed"
+
+
+def test_task2_health_still_drifts_when_desired_state_pins_it():
+    """The health exemption is conditional, not a deletion from the vocabulary.
+
+    Creation desired state pins no health, so live health is descriptive. If an
+    approved desired state ever DID pin one, a mismatch must still be structural
+    drift — otherwise the fix for blocker 1 would silently retire the field.
+    """
+    lip = _lip()
+    desired_key = "legendary-alpha-discovery-timing"
+    desired_name = EXPECTED_INITIATIVES[desired_key][0]
+    desired = {
+        "initiative_key": desired_key,
+        "name": desired_name,
+        "status": "Active",
+        "priority": 1,
+        "health": "onTrack",
+        "owner_id": None,
+        "lead_team": "MastermindX",
+        "target_date": None,
+        "labels": [],
+        "parent_initiative_ids": [],
+    }
+    snapshot = {
+        "schema": "linear_initiative_snapshot.v1",
+        "initiatives": [
+            {
+                "initiative_id": _initiative_id(desired_key),
+                "name": desired_name,
+                "status": "Active",
+                "priority": 1,
+                "health": "offTrack",
+                "owner_id": None,
+                "lead_team": "MastermindX",
+                "target_date": None,
+                "labels": [],
+                "parent_initiative_ids": [],
+            }
+        ],
+        "projects": [],
+    }
+
+    drift = lip.initiative_drift(snapshot, [desired], [], [])
+    rows = [row for row in drift if row["code"] == "initiative_field_drift"]
+    assert len(rows) == 1, "a pinned desired health must still be enforced"
+    assert rows[0]["fields"] == ["health"]
+
+    snapshot["initiatives"][0]["health"] = "onTrack"
+    assert not [
+        row for row in lip.initiative_drift(snapshot, [desired], [], [])
+        if row["code"] == "initiative_field_drift"
+    ], "a matching pinned health must be clean"
