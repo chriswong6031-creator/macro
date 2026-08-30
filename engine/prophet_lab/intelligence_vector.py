@@ -1287,10 +1287,10 @@ def build_earnings_intelligence_vector(
     visible_chain_hashes = decision_hashes | {
         item["revision"].get("source_sha256") for item in visible_later
     }
-    if None in decision_hashes:
-        lineage_state = "NOT_OBSERVABLE"
-    elif len(visible_chain_hashes) > 1:
+    if len(visible_chain_hashes) > 1:
         lineage_state = "OBSERVED"
+    elif None in decision_hashes:
+        lineage_state = "NOT_OBSERVABLE"
     else:
         lineage_state = "NONE_IN_CHAIN"
     later_refs: list[dict[str, Any]] = []

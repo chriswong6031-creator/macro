@@ -35,6 +35,7 @@ from engine.neuralweb import company_intelligence_reader as reader
 from engine.prophet_lab.intelligence_vector import (
     IntelligenceVectorContractError,
     build_earnings_intelligence_vector,
+    validate_intelligence_vector,
 )
 from engine.us_candidate_episode import episode_id as b1_episode_id
 from lib.dataos.identity import IssuerMaster
@@ -1174,6 +1175,179 @@ def test_d5_same_issuer_release_hash_is_none_in_chain_not_observed(
     assert family["correction"]["later_revision_receipts"] == []
     assert family["correction"]["later_revision_state"] == "NONE"
     assert family["correction"]["current_state"] == "CURRENT"
+
+
+def test_d5_body_only_decision_to_issuer_release_is_observed_and_endpoint_200(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    import app.prophet_lab as prophet_lab_api
+
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+        include_issuer_release=False,
+    )
+    decision["facts"] = []
+    decision["guidance"] = [{
+        "metric": "revenue_yoy_pct",
+        "low": 9.0,
+        "high": 11.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "introduced",
+        "source_span": {"document_id": "doc:body:1", "text": "never project"},
+    }]
+    later = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="b" * 64,
+        fact_value=120,
+    )
+    later["guidance"] = [{
+        "metric": "revenue_yoy_pct",
+        "low": 12.0,
+        "high": 14.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "raised",
+        "source_span": {"document_id": "doc:body:2", "text": "never project"},
+    }]
+    later["sources"].append({
+        "kind": "transcript",
+        "document_id": "doc:body:2",
+        "source_sha256": "c" * 64,
+        "receipt_state": "byte_replayed",
+        "body": "later body that must never enter D5",
+    })
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: later},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    chain_objects = _chain_objects(
+        (decision_generation, decision_manifest, decision),
+        (later_generation, later_manifest, later),
+    )
+
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(chain_objects, marker_generation_id=decision_generation),
+    )
+    initial_payload = _d5_project()
+    initial_guidance = next(
+        observation
+        for observation in initial_payload["evidence_families"][0]["observations"]
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    )
+
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(chain_objects, marker_generation_id=later_generation),
+    )
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    assert [revision["source_sha256"] for revision in revisions] == [
+        None,
+        "b" * 64,
+    ]
+    assert [revision["generation_id"] for revision in revisions] == [
+        decision_generation,
+        later_generation,
+    ]
+    assert decision["guidance"][0]["low"] == 9.0
+    assert later["guidance"][0]["low"] == 12.0
+
+    episode = _d5_episode()
+    snapshot = SimpleNamespace(
+        generation_id=_D5_GENERATION_ID,
+        generation=SimpleNamespace(
+            episodes=(episode,),
+            events=({
+                "event_type": "OPENED",
+                "episode_id": episode["episode_id"],
+                "known_at": "2026-01-30T20:05:00Z",
+            },),
+        ),
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "load_candidate_episode_store_snapshot",
+        lambda _root: snapshot,
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_load_issuer_master",
+        lambda _path: _d5_issuer_master(),
+    )
+
+    def _real_projection(**kwargs):
+        return build_earnings_intelligence_vector(
+            **kwargs,
+            find_event_id=lambda _company_id: EVENT_ID,
+            read_revisions=lambda event_id: reader.read_event_source_revisions(
+                event_id, base_url=BASE,
+            ),
+        )
+
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "build_earnings_intelligence_vector",
+        _real_projection,
+    )
+
+    response = prophet_lab_api.episode_intelligence_v1(
+        episode["episode_id"], _user={"id": "u-paid"},
+    )
+
+    assert response.status_code == 200
+    payload = jsonlib.loads(response.body)
+    validate_intelligence_vector(payload)
+    family = payload["evidence_families"][0]
+    guidance = next(
+        observation for observation in family["observations"]
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    )
+    assert {
+        key: value for key, value in guidance.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    } == {
+        key: value for key, value in initial_guidance.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    }
+    assert guidance["observation_id"] != initial_guidance["observation_id"]
+    assert guidance["correction_lineage_state"] == "OBSERVED"
+    correction = family["correction"]
+    assert correction["current_state"] == "CORRECTED"
+    assert correction["later_revision_state"] == "PROJECTED"
+    assert len(correction["later_revision_receipts"]) == 1
+    later_receipt = correction["later_revision_receipts"][0]
+    assert later_receipt["generation_id"] == later_generation
+    assert later_receipt["generated_at"] == "2026-02-01T20:03:00Z"
+    assert later_receipt["source_ref_ids"] == correction[
+        "later_correction_ref_ids"
+    ]
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": later_receipt["generated_at"],
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": correction["later_correction_ref_ids"],
+    }
 
 
 def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction(
