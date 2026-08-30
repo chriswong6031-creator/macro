@@ -7476,6 +7476,46 @@ def test_tampered_pre_entry_failure_identity_never_stays_silent(
     assert "ci_watcher_failure" not in GUARD._load(state_path)
 
 
+def test_rehashed_remote_failure_evidence_with_future_time_cannot_suppress_reclassification(
+    monkeypatch, tmp_path, capsys
+):
+    """A self-digest over writable remote fields is not independent proof."""
+    repo, state_path, _head, _runs, observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": False}
+    monkeypatch.setattr(
+        GUARD, "_watcher_process_alive", lambda _reservation: alive["value"]
+    )
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    state = GUARD._load(state_path)
+    failure = state["ci_watcher_failure"]
+    failure["checks"] = ["trusted-ci / forged-remote-check"]
+    failure["checks_fingerprint"] = "b" * 16
+    failure["authority_fingerprint"] = "c" * 16
+    failure["at"] = GUARD.time.time() + 86_400
+    failure["key"] = GUARD._ci_watcher_failure_key(failure)
+    GUARD._save(state_path, state)
+
+    assert not GUARD._ci_watcher_failure_fast_path(
+        repo, state_path, GUARD._load(state_path)
+    )
+    assert "ci_watcher_failure" not in GUARD._load(state_path)
+
+    alive["value"] = True
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    output = capsys.readouterr().out
+    assert output.count("CI_QUIESCENT:") == 1
+    assert "forged-remote-check" not in output
+    state = GUARD._load(state_path)
+    assert "ci_watcher_failure" not in state
+    assert state["ci_quiescence"]["phase"] == "waiting"
+    assert observed == {"merged": 2, "pull": 2, "runs": 2}
+
+
 def test_same_head_local_branch_drift_reopens_pre_entry_failure(
     monkeypatch, tmp_path, capsys
 ):
@@ -8253,6 +8293,66 @@ def test_authority_receipt_never_hides_a_later_same_head_material_event(
         ) == 1
     else:
         assert GUARD._load(state_path)["ci_quiescence"]["authority_fingerprint"] == "3" * 16
+
+
+@pytest.mark.parametrize("same_snapshot", ["builder_red", "green"])
+def test_check_transition_outranks_new_authority_edge_in_the_same_snapshot(
+    monkeypatch, tmp_path, capsys, same_snapshot
+):
+    """Authority drift cannot consume a simultaneous red/green transition."""
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    authority = {"fingerprint": "1" * 16}
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(
+        GUARD,
+        "_ci_hold_authority_snapshot",
+        lambda *_a: {"fingerprint": authority["fingerprint"]},
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+    alive["value"] = False
+    authority["fingerprint"] = "2" * 16
+    if same_snapshot == "builder_red":
+        runs[:] = _v2_fast_preflight(
+            pending=False,
+            red=("trusted-ci / trusted-executor-pack-7", "failure"),
+        )
+        monkeypatch.setattr(
+            GUARD,
+            "_armed_pull_status",
+            lambda *_a: (
+                GUARD.CI_FAILED_UNMERGED,
+                "Failing CI: trusted-executor-pack-7 (failure).",
+            ),
+        )
+    else:
+        runs[:] = _v2_fast_preflight(pending=False)
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert not any(
+        item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT authority_change")
+        for item in outputs
+    )
+    if same_snapshot == "builder_red":
+        assert len(outputs) == 1
+        assert outputs[0]["decision"] == "block"
+        assert "trusted-executor-pack-7" in outputs[0]["reason"]
+        assert "ci_quiescence" not in GUARD._load(state_path)
+    else:
+        assert sum(
+            item.get("systemMessage", "").startswith("CI_MATERIAL_EVENT green")
+            for item in outputs
+        ) == 1
+        quiescence = GUARD._load(state_path)["ci_quiescence"]
+        assert quiescence["phase"] == "routed"
+        assert quiescence["material_kind"] == "green"
+        assert quiescence["authority_fingerprint"] == "2" * 16
 
 
 def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(

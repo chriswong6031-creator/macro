@@ -210,11 +210,11 @@ CI_PR_WATCH_MAX_REQUESTS_PER_CYCLE = (
 # a lease inside the existing per-session ledger, not a timer or retry loop: it
 # is consulted only if another real Stop/task event already occurs.
 CI_QUIESCENCE_WAKE_LEASE_SECONDS = 120
-# A pre-entry missing-evidence latch is deliberately shorter-lived than a
-# healthy watcher-owned wait. It may suppress duplicate Stops for one union
-# watcher interval, but a recovered authority endpoint or changed liveness must
-# become answerable without a successor watcher or an indefinite local tombstone.
-CI_WATCHER_FAILURE_RECHECK_SECONDS = CI_PR_WATCH_INTERVAL_SECONDS
+# A pre-entry missing-evidence receipt deduplicates its emitted route but cannot
+# suppress bounded remote reclassification. Receipt timestamps come from this
+# process and therefore may be only minimally ahead when the wall clock is
+# adjusted between writes; a larger future value is forged/skewed local state.
+CI_WATCHER_FAILURE_MAX_FUTURE_SKEW_SECONDS = 5
 # These exact control/fabric checks do not diagnose product code. Their red (or
 # missing semantic evidence needed to interpret them) belongs to canonical CI
 # issue #6351, not to every product builder whose PR inherited the symptom.
@@ -3970,18 +3970,9 @@ def _ci_first_entry_classification_claim(
         # second classification claim from the stale caller snapshot.
         if isinstance(latest.get("ci_quiescence"), dict):
             return "silent"
-        failure = latest.get("ci_watcher_failure")
-        if isinstance(failure, dict):
-            try:
-                failure_at = float(failure.get("at") or 0.0)
-            except (TypeError, ValueError):
-                failure_at = 0.0
-            failure_recheck_due = (
-                str(failure.get("authority_state") or "") == "unanswerable"
-                or now >= failure_at + CI_WATCHER_FAILURE_RECHECK_SECONDS
-            )
-            if not failure_recheck_due:
-                return "silent"
+        # A failure receipt deduplicates an already-emitted route; it is not
+        # independent proof of remote checks, authority, or time. Only another
+        # bounded classification may decide that those inputs are unchanged.
         latest_watcher = _ci_watcher_for_pull(latest, number, head)
         if latest_watcher is None:
             return "none"
@@ -4250,12 +4241,13 @@ def _ci_watcher_failure_key(failure: dict[str, Any]) -> str:
 
 
 def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any]) -> bool:
-    """Keep one unchanged pre-entry failure local and silent.
+    """Validate one pre-entry failure receipt without suppressing classification.
 
-    The latch is not authority evidence: it records that the authoritative
-    snapshot was unanswerable (or the admitted watcher was unusable). Only the
-    same local head, watcher identity, and watcher liveness can retain it.
-    Every local change clears the latch and reopens ordinary classification.
+    The ledger and its digest are writable by the same local principal, so they
+    cannot independently prove remote checks, authority, or observation time.
+    Structurally invalid, future-skewed, or locally drifted receipts are cleared;
+    every valid receipt still returns ``False`` so the existing bounded readers
+    and classification claim mechanically re-observe remote evidence.
     """
     failure = state.get("ci_watcher_failure")
     if not isinstance(failure, dict):
@@ -4289,6 +4281,7 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
         number_value = 0
         watcher_pid = 0
         recorded_at = 0.0
+    observed_now = time.time()
     if (
         failure.get("version") != CI_QUIESCENCE_VERSION
         or failure_key != _ci_watcher_failure_key(failure)
@@ -4316,6 +4309,8 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
         or (authority_state == "unanswerable" and bool(authority_fingerprint))
         or route != "#6351/main-integrity"
         or recorded_at <= 0
+        or recorded_at
+        > observed_now + CI_WATCHER_FAILURE_MAX_FUTURE_SKEW_SECONDS
     ):
         clear_failure()
         return False
@@ -4323,10 +4318,6 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
     # unanswerable. Reopen immediately; a valid record still deduplicates its
     # already-emitted event key, but it cannot hide later recovery.
     if authority_state == "unanswerable":
-        return False
-    # Known failure snapshots are duplicate-suppression receipts, not terminal
-    # truth. Bound their local-only lifetime to one watcher observation cadence.
-    if time.time() >= recorded_at + CI_WATCHER_FAILURE_RECHECK_SECONDS:
         return False
     try:
         if (
@@ -4363,7 +4354,10 @@ def _ci_watcher_failure_fast_path(root: Path, path: Path, state: dict[str, Any])
     ):
         clear_failure()
         return False
-    return True
+    # Even an intact local receipt has no independent remote provenance. The
+    # caller must continue through the page-complete check/authority readers;
+    # `_ci_watcher_failure_receipt` keeps the repeated route exact-once.
+    return False
 
 
 def _ci_material_receipt(
@@ -4742,35 +4736,11 @@ def _try_ci_quiescence(
                 "",
             )
         return False, "none", ""
-    if isinstance(existing, dict):
-        old_authority = str(existing.get("authority_fingerprint") or "")
-        if old_authority and old_authority != authority_fingerprint:
-            route = _ci_event_route(
-                "authority_change", pr=number, head=head, checks=red or pending or passed
-            )
-            return (
-                _ci_material_receipt(
-                    path,
-                    state,
-                    existing,
-                    route,
-                    checks_fingerprint=checks_fingerprint,
-                    authority_fingerprint=authority_fingerprint,
-                ),
-                "none",
-                "",
-            )
-        if (
-            str(existing.get("phase") or "") == "routed"
-            and str(existing.get("checks_fingerprint") or "")
-            == checks_fingerprint
-            and old_authority == authority_fingerprint
-        ):
-            # A routed receipt suppresses only its exact material identity.
-            # This comparison happens after a fresh bounded classification, so
-            # an identical event stays exact-once while a later same-head check
-            # generation or authority edge remains visible.
-            return True, "none", ""
+    old_authority = (
+        str(existing.get("authority_fingerprint") or "")
+        if isinstance(existing, dict)
+        else ""
+    )
 
     if red:
         code, detail = _armed_pull_status(owner, repo, branch, head)
@@ -4804,6 +4774,54 @@ def _try_ci_quiescence(
             # the wait before handing the exact failing packet back to builder.
             _ci_quiescence_clear(path, state)
         return False, code, detail
+
+    # A concluded check transition outranks a simultaneous authority edge.
+    # The higher-priority material receipt still consumes the freshly observed
+    # authority fingerprint, so a later Stop exact-matches that red/green event
+    # instead of losing it behind an earlier authority-only receipt.
+    if isinstance(existing, dict) and preflight_green and not pending:
+        route = _ci_event_route("green", pr=number, head=head, checks=passed)
+        return (
+            _ci_material_receipt(
+                path,
+                state,
+                existing,
+                route,
+                checks_fingerprint=checks_fingerprint,
+                authority_fingerprint=authority_fingerprint,
+            ),
+            "none",
+            "",
+        )
+
+    if isinstance(existing, dict):
+        if old_authority and old_authority != authority_fingerprint:
+            route = _ci_event_route(
+                "authority_change", pr=number, head=head, checks=red or pending or passed
+            )
+            return (
+                _ci_material_receipt(
+                    path,
+                    state,
+                    existing,
+                    route,
+                    checks_fingerprint=checks_fingerprint,
+                    authority_fingerprint=authority_fingerprint,
+                ),
+                "none",
+                "",
+            )
+        if (
+            str(existing.get("phase") or "") == "routed"
+            and str(existing.get("checks_fingerprint") or "")
+            == checks_fingerprint
+            and old_authority == authority_fingerprint
+        ):
+            # A routed receipt suppresses only its exact material identity.
+            # This comparison happens after a fresh bounded classification, so
+            # an identical event stays exact-once while a later same-head check
+            # generation or authority edge remains visible.
+            return True, "none", ""
 
     if pending and preflight_green:
         if isinstance(existing, dict):
@@ -4857,20 +4875,6 @@ def _try_ci_quiescence(
             )
         return False, "none", ""
 
-    if isinstance(existing, dict) and preflight_green and not pending:
-        route = _ci_event_route("green", pr=number, head=head, checks=passed)
-        return (
-            _ci_material_receipt(
-                path,
-                state,
-                existing,
-                route,
-                checks_fingerprint=checks_fingerprint,
-                authority_fingerprint=authority_fingerprint,
-            ),
-            "none",
-            "",
-        )
     return False, "none", ""
 
 
