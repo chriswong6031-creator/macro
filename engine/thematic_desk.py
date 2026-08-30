@@ -406,20 +406,25 @@ def _run_panel(state: dict, cfg: dict, call=None) -> dict:
     user = _build_user(state)
 
     def _one(key):
+        # EVERY fallible step stays inside the try. _extract_json is documented
+        # "never raises" but calls .strip()/re.search, which raise on a non-str
+        # reply — and an escape here propagates out of _run_panel and synthesize
+        # (both documented "never raises") into run()'s catch-all, killing the
+        # whole region's brief. One bad role must never outrank a total wipe.
         try:
             reply, reason = fn(_PANEL_SYSTEMS[key], user, cfg)
+            if reply is None:
+                log.warning("thematic_desk panel: role=%s returned no reply (%s)",
+                            key, reason or "absent_reply")
+                return key, None
+            parsed = _ad._extract_json(reply)
+            if not isinstance(parsed, dict):
+                log.warning("thematic_desk panel: role=%s reply unparseable", key)
+                return key, None
+            return key, parsed
         except Exception as exc:  # noqa: BLE001 — one analyst failing must not sink the panel
             log.warning("thematic_desk panel: role=%s failed (exception): %s", key, exc)
             return key, None
-        if reply is None:
-            log.warning("thematic_desk panel: role=%s returned no reply (%s)",
-                        key, reason or "absent_reply")
-            return key, None
-        parsed = _ad._extract_json(reply)
-        if not isinstance(parsed, dict):
-            log.warning("thematic_desk panel: role=%s reply unparseable", key)
-            return key, None
-        return key, parsed
 
     keys = list(_PANEL_SYSTEMS)
     try:
@@ -474,10 +479,16 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         # value yields str — either would raise TypeError on the comparison below,
         # turning a merely-degraded panel into a crashed desk in the nightly.
         _mq = (cfg.get("panel") or {}).get("min_quorum", 2)
+        if isinstance(_mq, bool):        # True would silently mean "quorum of 1"
+            _mq = 2
         try:
             min_quorum = 2 if _mq is None else int(_mq)
         except (TypeError, ValueError):
             min_quorum = 2
+        # Clamp: 0/negative would hand the adjudicator an EMPTY panel (a path the
+        # pre-fix code never had), and a value above the panel size would disable
+        # adjudication permanently on a full, healthy panel.
+        min_quorum = max(1, min(min_quorum, len(_PANEL_SYSTEMS)))
         panel = _run_panel(state, cfg, call)
         brief["panel"] = {k: _slim_stance(v) for k, v in panel.items() if v}
         present = [k for k in _PANEL_SYSTEMS if panel.get(k)]
@@ -503,7 +514,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         return brief
     parsed = _ad._extract_json(reply)
     if not isinstance(parsed, dict):
-        brief["degraded_reason"] = reason or missing_reason or "unparseable_reply"
+        # "unparseable_reply" IS a call-failure reason and outranks panel
+        # availability: masking it sends on-call after a flaky analyst for what
+        # is really an adjudicator output defect.
+        brief["degraded_reason"] = reason or "unparseable_reply"
         return brief
     brief["regime_context"] = parsed.get("regime_context")
     brief["emerging_watch"] = parsed.get("emerging_watch")

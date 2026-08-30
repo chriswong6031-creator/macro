@@ -424,3 +424,78 @@ def test_malformed_min_quorum_never_raises():
         brief = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": bad}}, call)
         assert (brief.get("degraded_reason") or "").startswith("panel_incomplete:"), bad
 
+def test_one_bad_role_reply_never_sinks_the_desk():
+    """A non-str reply from ONE role must degrade that role, not kill the region.
+
+    _extract_json is documented "never raises" but calls .strip()/re.search. If it
+    escapes, it propagates out of _run_panel and synthesize (both documented
+    "never raises") into run()'s catch-all and the region gets no brief at all --
+    one bad role outranking a total wipe, the exact inversion this module repairs.
+    """
+    state = {"asof": "2026-08-29", "region": "us", "ranks": []}
+    good = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
+    adj = '{"regime_context": "x", "emerging_watch": [], "theses": []}'
+
+    for bad_reply in ({"not": "a string"}, b"bytes", 17, ["list"]):
+        def call(system, user, cfg, _b=bad_reply):
+            for role, sp in td._PANEL_SYSTEMS.items():
+                if system is sp:
+                    return (_b, None) if role == "macro_regime" else (good, None)
+            return adj, None
+
+        brief = td.synthesize(dict(state), {"panel": {"enabled": True}}, call)
+        assert brief is not None, bad_reply
+        assert "macro_regime" not in (brief.get("panel") or {}), bad_reply
+        assert len(brief.get("panel") or {}) == 3, bad_reply
+
+
+def test_unparseable_adjudication_is_not_masked_by_panel_incomplete():
+    """A real call failure outranks panel availability at the unparseable path."""
+    state = {"asof": "2026-08-29", "region": "us", "ranks": []}
+    good = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
+
+    def call(system, user, cfg):
+        for role, sp in td._PANEL_SYSTEMS.items():
+            if system is sp:
+                if role == "macro_regime":
+                    raise RuntimeError("down")
+                return good, None
+        return "this is prose, not json", None
+
+    brief = td.synthesize(dict(state), {"panel": {"enabled": True}}, call)
+    assert brief["degraded_reason"] == "unparseable_reply"
+
+
+def test_min_quorum_is_clamped_to_the_panel():
+    """0/negative must not adjudicate an empty panel; oversize must not disable it."""
+    state = {"asof": "2026-08-29", "region": "us", "ranks": []}
+    good = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
+    adj = '{"regime_context": "ADJUDICATED", "emerging_watch": [], "theses": []}'
+
+    fallback = '{"regime_context": "FALLBACK", "emerging_watch": [], "theses": []}'
+
+    def make(alive):
+        # Discriminate on the SYSTEM prompt: the single-analyst fallback is called
+        # with _SYSTEM, the desk-head adjudicator with its own. Returning the same
+        # payload on both branches would make this test unable to tell them apart.
+        def call(system, user, cfg):
+            for role, sp in td._PANEL_SYSTEMS.items():
+                if system is sp:
+                    if role in alive:
+                        return good, None
+                    raise RuntimeError(role)
+            return (fallback, None) if system is td._SYSTEM else (adj, None)
+        return call
+
+    # 0 clamps to 1 -> a TOTAL wipe still falls back, never adjudicates empty
+    b = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": 0}}, make(set()))
+    assert b.get("regime_context") != "ADJUDICATED"
+    # oversize clamps to panel size -> a FULL panel still adjudicates
+    b = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": 99}},
+                      make(set(td._PANEL_SYSTEMS)))
+    assert b.get("regime_context") == "ADJUDICATED"
+    # True must not silently mean "quorum of 1"
+    b = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": True}},
+                      make({"narrative_scout"}))
+    assert b.get("regime_context") != "ADJUDICATED"
+
