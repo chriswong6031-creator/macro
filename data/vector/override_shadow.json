@@ -2,7 +2,7 @@
   "schema": "override_shadow.v1",
   "stub": false,
   "stub_note": "v1: W1 measured overlay merged onto the W3 panel payload (weekly gated-vs-raw series, prior-cycle same-point context, cum gap). Per-cycle attribution + breakeven fan live in data/vector/gate_attribution.json.",
-  "generated_at": "2026-08-29 12:25 UTC",
+  "generated_at": "2026-08-30 05:29 UTC",
   "audience": "owner-only",
   "override": {
     "id": "midterm_blackout",
@@ -40,31 +40,31 @@
     "pivot_fit_note": "IN-SAMPLE: the same pivots also set the 1064/364 parameters \u2014 this is fit quality, not forecast skill."
   },
   "counterfactual": {
-    "asof": "2026-08-29",
+    "asof": "2026-08-30",
     "gated_pct": {
       "conservative": 100.0,
       "moderate": 100.0,
-      "aggressive": 96.8,
+      "aggressive": 97.2,
       "optimal": 100.0
     },
     "raw_pct": {
       "conservative": 100.0,
       "moderate": 100.0,
-      "aggressive": 96.8,
+      "aggressive": 97.2,
       "optimal": 100.0
     },
     "raw_source": "signals.parquet alloc_*_raw (W0 dual series)",
     "parity_ok": true,
-    "ytd_raw_mean_pct": 16.0,
-    "ytd_raw_days_gt0": 112,
-    "ytd_days": 241
+    "ytd_raw_mean_pct": 16.3,
+    "ytd_raw_days_gt0": 113,
+    "ytd_days": 242
   },
   "falsifiers": {
     "items": [
       {
         "key": "dampening",
         "level": "ok",
-        "text": "Drawdown -38% so far vs ~-80% prior-bear avg (bear still developing).",
+        "text": "Drawdown -37% so far vs ~-80% prior-bear avg (bear still developing).",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "Fires only once the projected bottom window opens (2026-10-01) \u2014 a fair-comparison guard, and that date is inside the gate window."
@@ -72,7 +72,7 @@
       {
         "key": "timing",
         "level": "ok",
-        "text": "Pre-bottom: ~33d until the projected window opens (Oct 2026). Scale in, don't lump in.",
+        "text": "Pre-bottom: ~32d until the projected window opens (Oct 2026). Scale in, don't lump in.",
         "evaluability": "in_window",
         "evaluable": true,
         "why": "W2: escalates to WATCH past the halving clock's worst historical case (2026-10-31 \u2014 inside the gate window), ALERT past the peak-anchored trail (2026-12-10)."
@@ -110,8 +110,8 @@
   "current_ungated_alloc": 1.0,
   "current_gated_alloc": 1.0,
   "cum_gap_pct": 0.0,
-  "gated_equity_final": 0.925867,
-  "raw_equity_final": 0.925867,
+  "gated_equity_final": 0.930063,
+  "raw_equity_final": 0.930063,
   "weekly_series": [
     {
       "date": "2026-01-04",
@@ -285,8 +285,8 @@
     },
     {
       "date": "2026-08-30",
-      "gated_equity": 0.925867,
-      "raw_equity": 0.925867
+      "gated_equity": 0.930063,
+      "raw_equity": 0.930063
     }
   ],
   "prior_cycles": {
