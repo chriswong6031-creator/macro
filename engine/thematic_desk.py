@@ -407,11 +407,19 @@ def _run_panel(state: dict, cfg: dict, call=None) -> dict:
 
     def _one(key):
         try:
-            reply, _ = fn(_PANEL_SYSTEMS[key], user, cfg)
-            parsed = _ad._extract_json(reply) if reply is not None else None
-            return key, (parsed if isinstance(parsed, dict) else None)
-        except Exception:  # noqa: BLE001 — one analyst failing must not sink the panel
+            reply, reason = fn(_PANEL_SYSTEMS[key], user, cfg)
+        except Exception as exc:  # noqa: BLE001 — one analyst failing must not sink the panel
+            log.warning("thematic_desk panel: role=%s failed (exception): %s", key, exc)
             return key, None
+        if reply is None:
+            log.warning("thematic_desk panel: role=%s returned no reply (%s)",
+                        key, reason or "absent_reply")
+            return key, None
+        parsed = _ad._extract_json(reply)
+        if not isinstance(parsed, dict):
+            log.warning("thematic_desk panel: role=%s reply unparseable", key)
+            return key, None
+        return key, parsed
 
     keys = list(_PANEL_SYSTEMS)
     try:
@@ -454,23 +462,41 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "passport": _ad._desk_passport(f"thematic_{region}"),
     }
     # adversarial panel (default on) → desk-head adjudication; analyst-only fallback.
+    # A SUB-QUORUM panel (fewer than panel.min_quorum roles survived) takes the same
+    # fallback path a total wipe already takes — a partial panel must never look
+    # "healthier" than a total one (a scout-only survivor cannot yield a lean by
+    # construction: narrative_scout is told to keep theses minimal, and the
+    # adjudicator's own rules assume crowding_skeptic survived to gate longs).
     panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
+    missing: list[str] = []
     if panel_on:
+        min_quorum = (cfg.get("panel") or {}).get("min_quorum", 2)
         panel = _run_panel(state, cfg, call)
         brief["panel"] = {k: _slim_stance(v) for k, v in panel.items() if v}
-        if any(panel.values()):
+        present = [k for k in _PANEL_SYSTEMS if panel.get(k)]
+        missing = [k for k in _PANEL_SYSTEMS if k not in present]
+        if len(present) >= min_quorum:
             reply, reason = _adjudicate(state, panel, cfg, call)
-        else:                                          # whole panel unavailable → single analyst
+        else:                       # sub-quorum (incl. total wipe) → single analyst
+            log.warning(
+                "thematic_desk[%s]: panel sub-quorum (%d/%d present, need %d) — "
+                "missing=%s; falling back to single-analyst",
+                region, len(present), len(_PANEL_SYSTEMS), min_quorum, ",".join(missing))
             reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
     else:
         reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    # degraded_reason precedence: (a) a reason from the model/adjudicator call itself
+    # always wins — it is the more specific, real failure; (b) else, if any panel role
+    # is missing, name it (visible even when the panel met quorum — invisibility was
+    # half the defect); (c) else leave unset.
+    missing_reason = ("panel_incomplete: " + ",".join(missing)) if missing else None
     brief["raw_text"] = reply
     if reply is None:
-        brief["degraded_reason"] = reason
+        brief["degraded_reason"] = reason or missing_reason
         return brief
     parsed = _ad._extract_json(reply)
     if not isinstance(parsed, dict):
-        brief["degraded_reason"] = reason or "unparseable_reply"
+        brief["degraded_reason"] = reason or missing_reason or "unparseable_reply"
         return brief
     brief["regime_context"] = parsed.get("regime_context")
     brief["emerging_watch"] = parsed.get("emerging_watch")
@@ -484,8 +510,9 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         if th is not None:
             theses.append(th)
     brief["theses"] = theses
-    if reason:
-        brief["degraded_reason"] = reason
+    final_reason = reason or missing_reason
+    if final_reason:
+        brief["degraded_reason"] = final_reason
     return brief
 
 

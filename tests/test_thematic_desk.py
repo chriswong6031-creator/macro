@@ -136,6 +136,7 @@ def test_panel_runs_four_roles_then_adjudicates():
     assert set(b["panel"].keys()) == {"trend_rider", "crowding_skeptic",
                                       "narrative_scout", "macro_regime"}     # stances carried
     assert len(b["theses"]) == 1 and b["theses"][0]["dissent"].startswith("crowding_skeptic")
+    assert b["degraded_reason"] is None                    # no-regression: full panel stays clean
 
 
 def test_panel_disabled_uses_single_analyst():
@@ -164,6 +165,94 @@ def test_panel_all_unavailable_falls_back_to_analyst():
 
     b = td.synthesize(_state(), call=call)
     assert b["regime_context"] == "analyst fallback"                         # fell back, not adjudicated
+    # total wipe: all four roles missing, named in _PANEL_SYSTEMS order
+    assert b["degraded_reason"] == "panel_incomplete: trend_rider,crowding_skeptic,narrative_scout,macro_regime"
+
+
+# --------------------------------------------------------------------------- #
+# E1 regression pin — a partial (sub-quorum) panel failure must take the SAME
+# fallback path a total wipe already takes, and the degradation must be named.
+# Before the fix, `if any(panel.values())` let a single surviving analyst (e.g.
+# narrative_scout, prompted to "keep theses minimal") route to the adjudicator,
+# which is exactly backwards: a WORSE panel failure produced MORE output than a
+# total wipe (0 theses on a 3-of-4 failure vs 1 thesis on a total wipe, verified
+# in production three minutes apart). See engine/thematic_desk.py `synthesize`.
+# --------------------------------------------------------------------------- #
+def _role_marker(system: str) -> str | None:
+    if "TREND-RIDER" in system:
+        return "trend_rider"
+    if "CROWDING-SKEPTIC" in system:
+        return "crowding_skeptic"
+    if "NARRATIVE-EMERGENCE" in system:
+        return "narrative_scout"
+    if "MACRO-REGIME" in system:
+        return "macro_regime"
+    return None
+
+
+def _fallback_theses_reply():
+    return json.dumps({"regime_context": "fallback", "theses": [
+        {"subject": "AI Infra", "lean": "overweight", "conviction": "low", "horizon_d": 20,
+         "thesis": "x", "evidence": [], "dissent": "y", "falsifier_text": "z"}],
+        "confidence": "low"}), None
+
+
+def _make_subquorum_call(fail_roles):
+    """A `call` stub: panelists in `fail_roles` raise, surviving panelists return an
+    empty (no-lean) stance, the desk-head adjudicator is FORBIDDEN to run (asserts if
+    it does), and the single-analyst fallback (_SYSTEM, not a `ROLE:` panelist and not
+    the adjudicator) always returns ONE fixed thesis."""
+    def call(system, user, cfg):
+        if "DESK-HEAD adjudicator" in system:
+            raise AssertionError("adjudicator must not run under sub-quorum")
+        role = _role_marker(system)
+        if role is not None:
+            if role in fail_roles:
+                raise RuntimeError(f"{role} analyst unavailable")
+            return json.dumps({"regime_context": role, "theses": [], "confidence": "low"}), None
+        return _fallback_theses_reply()               # single-analyst fallback path
+    return call
+
+
+def test_subquorum_panel_falls_back_and_names_missing_roles():
+    """3 of 4 analysts down (only narrative_scout survives): below default min_quorum=2,
+    so the fallback path runs (not the adjudicator), and degraded_reason names exactly
+    the three absent roles, in _PANEL_SYSTEMS order."""
+    call = _make_subquorum_call({"trend_rider", "crowding_skeptic", "macro_regime"})
+    b = td.synthesize(_state(), call=call)
+    assert b["degraded_reason"] == "panel_incomplete: trend_rider,crowding_skeptic,macro_regime"
+    assert len(b["theses"]) == 1                       # the single-analyst fallback ran
+
+
+def test_subquorum_does_not_produce_fewer_theses_than_total_wipe():
+    """Inversion pin: a 3-of-4 panel failure must not yield FEWER theses than a total
+    (4-of-4) wipe under the identical stub — both must take the identical fallback path."""
+    partial = td.synthesize(_state(), call=_make_subquorum_call(
+        {"trend_rider", "crowding_skeptic", "macro_regime"}))
+    wipe = td.synthesize(_state(), call=_make_subquorum_call(
+        {"trend_rider", "crowding_skeptic", "narrative_scout", "macro_regime"}))
+    assert len(partial["theses"]) >= len(wipe["theses"])
+    assert len(partial["theses"]) == 1 and len(wipe["theses"]) == 1
+
+
+def test_at_quorum_degradation_still_named():
+    """2 of 4 present (== default min_quorum) → adjudicator DOES run (at quorum), but the
+    two missing roles must still be named — degradation must be visible even when the
+    panel is AT or above quorum (invisibility was half the defect)."""
+    seen = {"adjudicated": False}
+
+    def call(system, user, cfg):
+        if "DESK-HEAD adjudicator" in system:
+            seen["adjudicated"] = True
+            return _fallback_theses_reply()
+        role = _role_marker(system)
+        if role in ("trend_rider", "macro_regime"):
+            raise RuntimeError(f"{role} analyst unavailable")
+        return json.dumps({"regime_context": role, "theses": [], "confidence": "low"}), None
+
+    b = td.synthesize(_state(), call=call)
+    assert seen["adjudicated"] is True                  # quorum met → adjudicator ran
+    assert b["degraded_reason"] == "panel_incomplete: trend_rider,macro_regime"
 
 
 def test_macro_narrative_backdrop_in_state(tmp_path):
