@@ -1,5 +1,5 @@
 {
-"applied": "2026-08-22T03:02:28.476444+00:00",
+"applied": "2026-08-29T07:21:29.189312+00:00",
 "rows_flagged": 24,
 "tickers_flagged": 14,
 "by_flag": {
@@ -2628,20 +2628,6 @@
 "med": 348241000.0
 },
 {
-"ticker": "STLN",
-"fy_lo": 2019,
-"fy_hi": 2019,
-"col": "assets",
-"med": 50000.0
-},
-{
-"ticker": "STLN",
-"fy_lo": 2020,
-"fy_hi": 2025,
-"col": "assets",
-"med": 188078000.0
-},
-{
 "ticker": "TBCH",
 "fy_lo": 2011,
 "fy_hi": 2025,
@@ -2703,6 +2689,20 @@
 "fy_hi": 2025,
 "col": "assets",
 "med": 549634500.0
+},
+{
+"ticker": "TOI",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 50000.0
+},
+{
+"ticker": "TOI",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 188078000.0
 },
 {
 "ticker": "TRON",

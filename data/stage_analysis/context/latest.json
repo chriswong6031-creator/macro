@@ -1,8 +1,8 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-28",
+  "asof": "2026-08-29",
   "data_session": "2026-08-27",
-  "built": "2026-08-28T12:27:38Z",
+  "built": "2026-08-29T11:48:40Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -15,17 +15,17 @@
     "target_week_source": "spy_benchmark",
     "spy_stage_week": "2026-08-21",
     "population_modal_week": "2026-08-21",
-    "current": 2713,
-    "stale": 28,
+    "current": 2712,
+    "stale": 29,
     "unknown": 0,
     "total": 2741,
-    "current_coverage_pct": 99.0,
+    "current_coverage_pct": 98.9,
     "data_session": "2026-08-27",
-    "data_session_all": "2026-08-27",
+    "data_session_all": "2026-08-28",
     "week_histogram": [
       {
         "week": "2026-08-21",
-        "n": 2713
+        "n": 2712
       },
       {
         "week": "2026-07-10",
@@ -59,9 +59,9 @@
     "issues": []
   },
   "counts": {
-    "total": 2713,
+    "total": 2712,
     "stage1": 148,
-    "stage2": 1534,
+    "stage2": 1533,
     "stage2_fresh": 340,
     "stage3": 172,
     "stage4": 859,
@@ -184,67 +184,6 @@
       "sata_change_1w": 0,
       "stage_detailed": "2D_extended_run",
       "industry_percentile": 100.0
-    },
-    {
-      "ticker": "PCG",
-      "company": "PG&E Corporation",
-      "sector": "Utilities",
-      "stage_source_asof": "2026-08-27",
-      "stage_week_end": "2026-08-21",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 63,
-      "ma30_slope_pct5w": 2.013,
-      "pct_vs_ma30": 2.35,
-      "mansfield_rs": -3.19,
-      "vol_ratio": 1.27,
-      "event": null,
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.3888888888888889,
-        "performance": 6.25,
-        "tone_word": "confident",
-        "tags": [
-          "wildfire_legislation",
-          "data_center_growth",
-          "rate_case",
-          "affordability",
-          "cost_control",
-          "credit_ratings",
-          "regulated_utility",
-          "electric_transmission",
-          "electric_distribution",
-          "wildfire_risk",
-          "rate_base_growth",
-          "data_center_power",
-          "grid_hardening",
-          "regulatory_environment"
-        ],
-        "quarter": "Q2",
-        "summary": "If the [legislative] framework remains unresolved or insufficient... we would need to reevaluate our capital allocation priorities."
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 0.8617,
-      "atr_ext": 0.47,
-      "atr_pct_price": 0.04896,
-      "sata_score": 5,
-      "sata_change_1w": -1,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": 90.9
     },
     {
       "ticker": "SWKS",
@@ -2149,13 +2088,18 @@
       "blackout": false,
       "arc_pos": 0.375,
       "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
+        "present": true,
+        "sentiment": 0.7,
+        "performance": 8.0,
+        "tone_word": "confident",
+        "tags": [
+          "margin_expansion",
+          "demand_acceleration",
+          "new_product",
+          "buyback_or_dividend"
+        ],
+        "quarter": "Q2",
+        "summary": "MVB Financial reported Q2 FY2026 net income of $12.3M ($0.93 per diluted share), up significantly from both Q1 and Q2 of last year. Core NIM expanded 14 bps to 3.87%, and net interest income rose 13% sequentially to $32.3M, though it included $2.3M of non-recurring income. Loa…"
       },
       "why": [
         "Early in its climb — 10 weeks up so far",
@@ -3001,6 +2945,68 @@
       "sata_change_1w": 0,
       "stage_detailed": "2D_extended_run",
       "industry_percentile": 87.0
+    },
+    {
+      "ticker": "AMBA",
+      "company": "Ambarella Inc",
+      "sector": "Technology",
+      "stage_source_asof": "2026-08-27",
+      "stage_week_end": "2026-08-21",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 3,
+      "fresh": true,
+      "sga_score": 43,
+      "ma30_slope_pct5w": 2.265,
+      "pct_vs_ma30": 9.17,
+      "mansfield_rs": -7.45,
+      "vol_ratio": 1.42,
+      "event": null,
+      "gate_tier": null,
+      "blackout": true,
+      "arc_pos": 0.2875,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.6666666666666666,
+        "performance": 5.0,
+        "tone_word": "confident",
+        "tags": [
+          "lta",
+          "edge_ai",
+          "automotive",
+          "robotics",
+          "design_wins",
+          "hanwha_partnership",
+          "inventory_build",
+          "supply_chain",
+          "semiconductors",
+          "ai_hardware",
+          "edge_computing",
+          "computer_vision",
+          "automotive_tech",
+          "security_surveillance",
+          "iot_devices"
+        ],
+        "quarter": "Q1",
+        "summary": "Our automotive revenue established an all-time revenue record with strong double-digit growth, led by the emergence of AI in commercial vehicle telematics."
+      },
+      "why": [
+        "Early in its climb — 3 weeks up so far",
+        "Trading above its 30-week line — the trend is with it",
+        "Earnings soon — wait, don't chase"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 3 周",
+        "位于 30 周均线之上 — 趋势向好",
+        "财报临近 — 先等待，不要追高"
+      ],
+      "atr_14w": 15.5921,
+      "atr_ext": 0.397,
+      "atr_pct_price": 0.21148,
+      "sata_score": 5,
+      "sata_change_1w": -1,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 22.6
     }
   ],
   "warnings_stage3": [
@@ -3152,8 +3158,8 @@
     },
     {
       "sector": "Real Estate",
-      "n": 154,
-      "pct_stage2": 61.0,
+      "n": 153,
+      "pct_stage2": 60.8,
       "trend": "up"
     },
     {
@@ -13505,10 +13511,6 @@
     "VMD": [
       2,
       35
-    ],
-    "VMRK": [
-      2,
-      14
     ],
     "VNDA": [
       4,

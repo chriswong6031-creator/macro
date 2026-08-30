@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AGYS-BULL-20260818",
-  "asof": "2026-08-28",
+  "asof": "2026-08-29",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 62.2,
-  "raw_confidence": 61.4,
-  "delta_vs_base": 2.2,
+  "management_confidence": 60.8,
+  "raw_confidence": 60.3,
+  "delta_vs_base": 0.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
     "progress": 6.6,
-    "pace": 85.1,
+    "pace": 80.0,
     "retention": 50.0,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.067,
     "dist_to_t1_r": 1.433,
     "dist_to_t2_r": 2.933,
-    "horizon_pct_used": 20.0,
+    "horizon_pct_used": 22.2,
     "p1": 0.0449,
     "p2": 0.0225,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

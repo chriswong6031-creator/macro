@@ -1,7 +1,7 @@
 {
-  "date": "2026-08-28",
-  "regime": "risk-on trends",
-  "breadth": 0.38,
+  "date": "2026-08-29",
+  "regime": "mixed / no clear trend",
+  "breadth": 0.31,
   "favored": [
     "equity_us",
     "equity_sm",
@@ -10,11 +10,11 @@
     "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-08-28",
+  "asof": "2026-08-29",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
-    "regime": "risk-on trends",
+    "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
       "absorption_pctile": 0.54,
@@ -135,7 +135,7 @@
       ],
       "spark_asof": "2026-08-28"
     },
-    "breadth": 0.38,
+    "breadth": 0.31,
     "trend_top": [
       {
         "asset": "equity_us",
@@ -171,26 +171,26 @@
     "trend_summary": {
       "n": 13,
       "n_up": 6,
-      "n_down": 1
+      "n_down": 2
     },
     "intermarket": [
       {
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 50.0
+        "pctile": 55.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 65.338,
+        "ratio": 67.135,
         "trend": "mid",
-        "pctile": 25.0
+        "pctile": 28.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.018,
+        "ratio": 0.019,
         "trend": "mid",
-        "pctile": 30.0
+        "pctile": 36.0
       },
       {
         "pair": "stocks_gold",
@@ -205,7 +205,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.96,
+          "value": 0.98,
           "unit": "%",
           "state": "positive carry"
         },
@@ -296,7 +296,7 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-08-26",
+      "asof": "2026-08-27",
       "state": "calm",
       "score": 38.0,
       "spread_bp": 1.0
@@ -330,7 +330,7 @@
       "fx_stress": {
         "dominant": null,
         "top_key": "carry_unwind",
-        "top_val": 11.8
+        "top_val": 10.9
       }
     },
     "shadow": {

@@ -3,8 +3,10 @@ key: SEAL-ABSTENTION-DISCARDS-ITS-OWN-TRANSCRIPT
 claim: >
   The SPY REST source seal computes a full per-observation transcript
   (transport_error / no_bar / malformed / valid_bar) and then throws it away on the
-  not_eligible path, logging nothing and persisting nothing, so every Market Memory
-  v2 abstention is causally unauditable forever.
+  not_eligible path, logging nothing and persisting nothing, so the CAUSE of every
+  Market Memory v2 abstention is unauditable forever. Scope note: this destroys the
+  cause of an abstention only; it never renders a terminal gate classification
+  unresolvable.
 falsifier: >
   Read scripts/ingest_market_memory_sources_spy.py:474-482 - if the not_eligible
   branch persists or logs seal_state.transcript, this is refuted. Or run
@@ -66,8 +68,13 @@ matches `transport|error|timeout|http|401|403|429|500|exception|retry` **0 times
 surviving line is the summary `reason=no valid bar observation in seal window`, which is emitted
 identically whether the vendor had nothing, the network failed, or the payload was malformed.
 
-This is the mechanism that made the 2026-08-25 W2C M0D gate `RECEIPT_UNRESOLVED`: the gate itself
-is cleanly classifiable as `ABSTAINED` from the experience-v2 store bytes, but the question anyone
-actually wants answered — *why* did it abstain — was destroyed at 04:05:00Z on the day it happened.
+**Keep two layers apart.** This is *not* what made the 2026-08-25 W2C M0D gate
+`RECEIPT_UNRESOLVED`. That state existed because the authentic host/store receipts had not been
+recovered; once they were, the terminal gate classified cleanly as `ABSTAINED` from the
+experience-v2 store bytes, and this landmine did not obstruct that at all.
+
+What this landmine destroys is strictly one layer down: the question anyone actually wants answered
+— *why* did it abstain — was gone at 04:05:00Z on the day it happened. A terminal disposition stays
+recoverable from the store; a cause does not.
 
 Full evidence bundle: `research/MARKET_MEMORY_MM_G0_AUG25_GATE_RECEIPTS_2026-08-27.md` §4.

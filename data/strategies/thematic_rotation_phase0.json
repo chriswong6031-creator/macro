@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-08-28T12:28:37.626021+00:00",
+  "generated_at": "2026-08-29T11:49:49.924321+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -164,8 +164,8 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0756,
-          "ic_t_hac": 1.68,
+          "mean_ic": 0.0755,
+          "ic_t_hac": 1.679,
           "hit": 0.6,
           "n_steps": 25
         },
@@ -198,18 +198,18 @@
         "fwd_days": 63,
         "cohorts": {
           "normal": {
-            "mean_fwd_maxdd": -0.0829,
-            "p05_fwd_maxdd": -0.2613,
-            "n": 19073
+            "mean_fwd_maxdd": -0.083,
+            "p05_fwd_maxdd": -0.2614,
+            "n": 19082
           },
           "stretched": {
             "mean_fwd_maxdd": -0.0913,
-            "p05_fwd_maxdd": -0.2919,
-            "n": 3768
+            "p05_fwd_maxdd": -0.2932,
+            "n": 3759
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.0897,
-            "p05_fwd_maxdd": -0.3047,
+            "mean_fwd_maxdd": -0.09,
+            "p05_fwd_maxdd": -0.3036,
             "n": 1463
           }
         },

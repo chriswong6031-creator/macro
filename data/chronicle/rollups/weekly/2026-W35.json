@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-28",
+  "as_of": "2026-08-29",
   "coverage": {
-    "end": "2026-08-28",
+    "end": "2026-08-29",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W35; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-29"
+    "start": "2026-05-30"
   },
   "iso_week": "2026-W35",
   "schema": "chronicle.rollup.weekly/v1",
@@ -17,7 +17,7 @@
           "top_events": []
         },
         {
-          "n_events": 68,
+          "n_events": 106,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -229,7 +229,7 @@
           "top_events": []
         },
         {
-          "n_events": 3,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -321,13 +321,13 @@
           ]
         },
         {
-          "n_events": 114,
+          "n_events": 115,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 15,
+          "n_events": 35,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -442,7 +442,7 @@
           ]
         },
         {
-          "n_events": 73,
+          "n_events": 138,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -477,7 +477,7 @@
     {
       "clusters": [
         {
-          "n_events": 48,
+          "n_events": 49,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -530,7 +530,7 @@
     {
       "clusters": [
         {
-          "n_events": 7,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -553,7 +553,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 10,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
