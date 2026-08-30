@@ -33,6 +33,7 @@ EXPECTED_MEMBERSHIPS = {
     "WS:EVAL-OS-EVIDENCE-VIEW": "canonical-intelligence-substrate-learning",
     "WS:EVAL-OS-T1-ENGINE-REGISTRY": "canonical-intelligence-substrate-learning",
     "WS:EVAL-OS-OUTPUT-HEALTH": "canonical-intelligence-substrate-learning",
+    "WS:CROSS-REPO-CONTRACT-GOVERNANCE": "canonical-intelligence-substrate-learning",
     "WS:ADVANCED-DATA-OPTIONS": "legendary-alpha-discovery-timing",
     "WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY": "legendary-alpha-discovery-timing",
     "WS:INTRADAY-FLOW-P0-RECOVERY": "legendary-alpha-discovery-timing",
@@ -47,6 +48,7 @@ EXPECTED_MEMBERSHIPS = {
     "WS:LIVE-ENTRY-RADAR": "legendary-alpha-discovery-timing",
     "WS:BREATHING-PLATFORM": "legendary-alpha-discovery-timing",
     "WS:TOP-ANATOMY": "legendary-alpha-discovery-timing",
+    "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE": "legendary-alpha-discovery-timing",
     "WS:EARNINGS-EVENT-INTELLIGENCE-COMPILER": "institutional-company-event-intelligence",
     "WS:FINANCIAL-INTELLIGENCE-FABRIC": "institutional-company-event-intelligence",
     "WS:CALCBENCH-FILING-FORENSICS-PARITY": "institutional-company-event-intelligence",
@@ -236,15 +238,15 @@ def test_strategy_file_has_frozen_v1_shape():
 
     counts = Counter(strategy["memberships"].values())
     assert counts == {
-        "canonical-intelligence-substrate-learning": 9,
-        "legendary-alpha-discovery-timing": 14,
+        "canonical-intelligence-substrate-learning": 10,
+        "legendary-alpha-discovery-timing": 15,
         "institutional-company-event-intelligence": 11,
         "global-markets-regimes-risk-command": 5,
         "personal-institutional-desk": 3,
         "trusted-production-customer-platform": 5,
         "autonomous-ai-organization": 3,
     }
-    assert len(strategy["memberships"]) == 50
+    assert len(strategy["memberships"]) == 52
     assert "WS:WATCHLIST-PORTFOLIO-CEO" not in strategy["memberships"]
 
 
@@ -305,7 +307,7 @@ def test_task2_compile_is_deterministic_and_complete(tmp_path):
 
     assert plan["schema"] == "linear_initiative_plan.v1"
     assert len(plan["desired_initiatives"]) == 7
-    assert len(plan["desired_memberships"]) == 50
+    assert len(plan["desired_memberships"]) == 52
     assert len(plan["unassigned_exceptions"]) == 2
     assert plan["semantic_hash"] == repeat["semantic_hash"]
     assert plan["drift"] == []

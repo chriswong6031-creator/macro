@@ -15,10 +15,10 @@ SNAPSHOT_REL = Path(
 )
 EXPECTED_GROUP_COUNTS = {
     "autonomous-ai-organization": 3,
-    "canonical-intelligence-substrate-learning": 9,
+    "canonical-intelligence-substrate-learning": 10,
     "global-markets-regimes-risk-command": 5,
     "institutional-company-event-intelligence": 11,
-    "legendary-alpha-discovery-timing": 14,
+    "legendary-alpha-discovery-timing": 15,
     "personal-institutional-desk": 3,
     "trusted-production-customer-platform": 5,
 }
@@ -52,7 +52,7 @@ def test_current_repository_initiative_plan_is_deterministic_and_emits_ci_receip
     assert lpp.semantic_json(first) == lpp.semantic_json(second)
     assert first["schema"] == lip.PLAN_SCHEMA
     assert len(first["desired_initiatives"]) == 7
-    assert len(first["desired_memberships"]) == 50
+    assert len(first["desired_memberships"]) == 52
     assert len(first["unassigned_exceptions"]) == 2
     assert first["summary"]["group_counts"] == EXPECTED_GROUP_COUNTS
     assert receipt["initiative_plan_semantic_hash"] == first["semantic_hash"]

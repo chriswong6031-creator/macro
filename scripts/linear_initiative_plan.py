@@ -190,10 +190,10 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
             })
 
     memberships = _membership_mapping(strategy.get("memberships"), failures)
-    if len(memberships) != 50:
+    if len(memberships) != 52:
         failures.append({
             "code": "strategy_membership_count_mismatch",
-            "expected": 50,
+            "expected": 52,
             "actual": len(memberships),
         })
 
