@@ -382,6 +382,29 @@
       };
     } catch (e) { return null; }
   }
+  // Intelligence Hub emits inert <span class="tk">SYMBOL</span>. Promote those
+  // labels to canonical analyzer anchors so the existing terminalTarget()
+  // pointerover/touch/click router consumes them. Do not open Terminal here.
+  function initHubTerminalTickerLinks() {
+    if (!document.body || !document.body.classList.contains('page-hub')) return;
+    var interactive = 'a,button,input,select,textarea,[role="button"],[role="link"]';
+    var ok = /^[A-Z0-9][A-Z0-9.-]{0,15}$/;
+    var nodes = document.body.querySelectorAll('.tk');
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (el.closest(interactive)) continue;
+      var ticker = (el.textContent || '').trim();
+      if (!ok.test(ticker)) continue;
+      var a = document.createElement('a');
+      a.className = 'mm-terminal-ticker-link';
+      a.href = 'stock.html#' + encodeURIComponent(ticker);
+      a.style.color = 'inherit';
+      a.style.textDecoration = 'none';
+      el.parentNode.insertBefore(a, el);
+      a.appendChild(el);
+    }
+  }
+  initHubTerminalTickerLinks();
   // Warm the SPECIFIC destination on hover / touch intent so the click navigation lands
   // on an already-fetched document (the origin is pre-connected above; this adds the
   // ?sym= page itself). Deduped per ticker; a failed/uncacheable prefetch is a silent no-op.
