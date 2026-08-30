@@ -2017,7 +2017,8 @@
       'zone_kind': 'note',
       'zone_note_en': 'Momentum screen — no entry zone',
       'zone_note_zh': '动量筛选 — 无买入区',
-      'date': (setups.get('as_of') if setups else none),
+      'date': none,
+      'added_date': b.get('board_since'),
       'flags': _fl.rows
     }) }}
     {% endfor %}

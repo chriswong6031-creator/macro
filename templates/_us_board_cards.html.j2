@@ -271,12 +271,12 @@
              whose Tier-2 hover also carries this signal-bucket date — at board level,
              where it is true.
 
-             DO NOT restore a date here. If a future artifact ever makes signal.asof
-             genuinely per-card, it still would not be the ZONE's vintage, and it would
-             need its own labelled slot rather than this bare one. `date` is kept as an
-             explicit `none` rather than a deleted key so the slot reads as a decision
-             rather than an oversight. The shared macro keeps full `date` support for
-             _us_prophet_plan_cards.html.j2, whose dates ARE per-plan and honest. -#}
+             DO NOT restore signal.asof / setups.as_of here. A later labelled slot
+             (`added_date` / `board_since`) is the per-candidate membership age — the
+             first session of the current continuous visible-board streak — not a
+             revert of this removal. `date` stays an explicit `none`. The shared
+             macro keeps full `date` support for _us_prophet_plan_cards.html.j2,
+             whose dates ARE per-plan and honest. -#}
         {{ pv.pv_card({
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
@@ -298,6 +298,7 @@
           'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
           'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
           'date': none,
+          'added_date': n.get('board_since'),
           'flags': _fl.rows, 'triage': (_is_triage and not _feat),
           'featured': _feat, 'stage_key': (n.get('stage') if sg_any else none),
           'marks': _mk_slot,

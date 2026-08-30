@@ -521,6 +521,13 @@ def main(alpha: dict | None = None) -> dict | None:
         setups["buy"] = signal_gate.blend_sorted(
             setups.get("buy") or [], base_of=lambda r: r.get("alpha"),
             verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
+        try:
+            from engine.prophet_board_since import stamp_setups_fail_open
+            _root = Path(__file__).resolve().parent.parent
+            setups = stamp_setups_fail_open(
+                "intl", setups, data_dir=config.data_dir(), repo_root=_root, log=log)
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("intl board_since stamp failed (%s)", _bse)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "intl_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))

@@ -50,6 +50,7 @@ this is a static-source proof, not a rendered/executed one.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -91,14 +92,18 @@ def _origin_main_text(rel_path: str) -> str:
     ).decode()
 
 
-def test_non_us_page_templates_are_untouched():
-    """Confirms no file besides _prophet_card.html.j2 in this packet's diff
-    can reach hk/china/canada/intl's rendered bytes at all."""
-    out = subprocess.check_output(
-        ["git", "diff", "--stat", _MERGE_BASE, "HEAD", "--", *NON_US_TEMPLATES],
-        cwd=str(ROOT),
-    ).decode()
-    assert out.strip() == "", f"non-US template(s) changed:\n{out}"
+def test_non_us_page_templates_keep_legacy_lifecycle_default():
+    """P-MP1: non-US candidate callers still omit lifecycle/id/life/lane_mark.
+    They may pass the new labelled Added slot (`added_date` / `board_since`);
+    that is a shared-card membership chip, not a US lifecycle leak."""
+    for rel in NON_US_TEMPLATES:
+        src = (ROOT / rel).read_text()
+        calls = re.findall(r"\{\{\s*pv\.pv_card\(\{(.*?)\}\)\s*\}\}", src, flags=re.DOTALL)
+        assert calls, rel
+        for call in calls:
+            assert "'lifecycle'" not in call, rel
+            assert "'lane_mark'" not in call, rel
+            assert "'life':" not in call, rel
 
 
 def _macros():
@@ -108,10 +113,23 @@ def _macros():
     return env.from_string(orig_src).module, env.from_string(cur_src).module
 
 
-def test_pv_css_is_byte_identical():
-    """The shared <style> block every non-US page renders once via pv.pv_css()."""
+def test_pv_css_added_chip_is_quiet_metadata():
+    """Shared CSS may grow `.pv-added` (labelled membership age). It must stay
+    muted metadata and must not reintroduce a US-only lifecycle rule into pv_css."""
     orig, cur = _macros()
-    assert str(orig.pv_css()) == str(cur.pv_css())
+    orig_css, cur_css = str(orig.pv_css()), str(cur.pv_css())
+    added = (
+        ".pv-added{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;"
+        "padding-left:5px;cursor:help}"
+    )
+    sibling = ".pv-dt + .pv-added{margin-left:5px}"
+    assert added in cur_css
+    assert sibling in cur_css
+    assert ".pv-life{" not in cur_css
+    stripped = cur_css.replace(added, "", 1).replace(sibling, "", 1)
+    stripped = re.sub(r"\n{2,}", "\n", stripped)
+    orig_norm = re.sub(r"\n{2,}", "\n", orig_css)
+    assert stripped == orig_norm
 
 
 def _base_cx(**overrides) -> dict:
@@ -191,6 +209,13 @@ def test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards():
     hunk count and content rather than a line-subsequence check — the dropdown
     hunk is a genuine one-line MODIFICATION (a `+`/`-` pair), not an insertion,
     so a pure-subsequence check is the wrong shape for this diff."""
+    orig = _origin_main_text("templates/stocktable.js")
+    cur = (ROOT / "templates" / "stocktable.js").read_text()
+    if "cfg.stageFilter !== false && stageOpts.length > 0" in orig:
+        # The P-MP1 stocktable packet has merged; the hunk-vs-base pin is spent.
+        assert "cfg.stageFilter !== false && stageOpts.length > 0" in cur
+        assert "cfg.stageFilter === false" in cur
+        return
     diff = subprocess.check_output(
         ["git", "diff", "-U0", _MERGE_BASE, "--", "templates/stocktable.js"],
         cwd=str(ROOT),

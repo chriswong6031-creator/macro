@@ -2466,7 +2466,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       'zone_kind': _zk,
       'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
       'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
-      'date': (s.get('signal') or {}).get('asof') or setups.get('as_of'),
+      'date': none,
+      'added_date': s.get('board_since'),
       'flags': _fl.rows
     }) }}
     {% endfor %}

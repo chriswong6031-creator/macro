@@ -10,7 +10,10 @@
      · identity: ticker + name on one line, sector alone underneath
      · 4-stage lifecycle tracker: Bottoming → Turning → Ready → Trend (stage 0 = all muted)
      · contextual zone footer: ZONE range / muted pending range / "sets on confirmation" /
-       RE-ADD range / "no zone" — plus the signal as-of date pinned right
+       RE-ADD range / "no zone" — plus an optional labelled Added / 入榜 membership
+       chip (`.pv-added`, `added_date` / `board_since`) and the legacy per-row `date`
+       chip (`.pv-dt`) for callers whose date is actually per-row (US plan cards).
+       Candidate boards must not feed the old unlabelled `date` slot.
      · one hue per card: glow edge, chart, chip, score, tracker and zone label all follow the
        verb via --pvh. Hues are the dedicated --pv-* tokens (theme.css): green-up/red-down
        in English and red-up/green-down under html[data-lang="zh"].
@@ -422,6 +425,8 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
 .pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
+.pv-added{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px;cursor:help}
+.pv-dt + .pv-added{margin-left:5px}
 .pv-trg{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 9%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 45%,transparent)}
 .pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
 .pv-cau{position:relative;display:inline-flex}
@@ -588,6 +593,8 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
     {%- endif -%}
     {%- set _d = cx.get('date') -%}
     {%- if _d and _d|length >= 10 %}<span class="pv-dt">{{ t(_MN.get(_d[5:7], _d[5:7]) ~ ' ' ~ (_d[8:10]|int), _d[5:10]) }}</span>{% endif %}
+    {%- set _ad = cx.get('added_date') or cx.get('board_since') -%}
+    {%- if _ad and _ad|length == 10 and _ad[4] == '-' and _ad[7] == '-' %}<span class="pv-added" data-added="{{ _ad|e }}" data-tip-en="On the Prophet board continuously since this date. If the name leaves and later returns, this date resets." data-tip-zh="该股自该日起连续出现在 Prophet 榜上。若离榜后再入榜，此日期会重置。">{{ t('Added ' ~ _MN.get(_ad[5:7], _ad[5:7]) ~ ' ' ~ (_ad[8:10]|int), '入榜 ' ~ _ad[5:10]) }}</span>{% endif %}
   </div>
 </a>
 {% endmacro %}

@@ -4712,6 +4712,14 @@ def _attach_board_display_chips(site: Path, doc: "dict | None") -> "dict | None"
                   "— no receipt rendered", flush=True)
     except Exception as _bse:  # noqa: BLE001 — additive, never fatal
         log.warning("W-L1 board state attach failed (%s)", _bse)
+    # Per-candidate Added date: current continuous visible-board membership start.
+    # Display-only; reads existing snapshots.jsonl. Same path as the other attaches
+    # so the post-build_library re-render cannot silently drop the chip.
+    try:
+        from engine.prophet_board_since import stamp_setups_fail_open
+        doc = stamp_setups_fail_open("us", doc, data_dir=config.data_dir(), log=log)
+    except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+        log.warning("us board_since stamp failed (%s)", _bse)
     return doc
 
 

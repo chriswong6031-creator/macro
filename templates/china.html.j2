@@ -3596,12 +3596,10 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
            words, on the page header (#stocks-header .stk-status), whose Tier-2 hover also
            carries the entry-signal bucket date — at board level, where it is true.
 
-           DO NOT restore a date here. If a future artifact ever makes signal.asof
-           genuinely per-card, it still would not be the ZONE's vintage, and it would need
-           its own labelled slot rather than this bare one. `date` is kept as an explicit
-           `none` rather than a deleted key so the slot reads as a decision rather than an
-           oversight. The shared macro keeps full `date` support for the callers whose
-           dates ARE per-row and honest. -#}
+           DO NOT restore signal.asof / setups.as_of here. `added_date` / `board_since`
+           is the labelled per-candidate membership age, not a revert of this removal.
+           `date` stays an explicit `none`. The shared macro keeps full `date` support
+           for callers whose dates ARE per-row and honest. -#}
       {{ pv.pv_card({
         'href': 'china_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'cn',
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
@@ -3618,6 +3616,7 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
         'date': none,
+        'added_date': n.get('board_since'),
         'flags': _fl.rows
       }) }}
     {% endfor %}
@@ -3722,6 +3721,7 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
         'zone_note_en': 'Entry passed — wait for the pullback; do not chase',
         'zone_note_zh': '入场已过 — 等待回调，不要追涨',
         'date': none,
+        'added_date': n.get('board_since'),
         'flags': _fl.rows
       }) }}
     {% endfor %}

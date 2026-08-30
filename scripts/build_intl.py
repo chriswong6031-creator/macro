@@ -899,6 +899,15 @@ def main() -> int:
             "bench_note":     bench_note,
         }
 
+        try:
+            from engine.prophet_board_since import stamp_setups_fail_open
+            setups = stamp_setups_fail_open(
+                "intl", setups, data_dir=config.data_dir(),
+                repo_root=Path(__file__).resolve().parent.parent, log=log)
+            vm["setups"] = setups
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("intl board_since stamp failed (%s)", _bse)
+
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
         env = Environment(loader=FileSystemLoader(

@@ -1943,6 +1943,13 @@ def main() -> int:
             log.warning("china radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
             vm["radar_dlg"] = {}
 
+        try:
+            from engine.prophet_board_since import stamp_setups_fail_open
+            vm["setups"] = stamp_setups_fail_open(
+                "cn", vm.get("setups"), data_dir=config.data_dir(), log=log)
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("cn board_since stamp failed (%s)", _bse)
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n
