@@ -64,10 +64,16 @@ unresolved:
     Production attested issuer admission remains blocked/unproven; FIF-3A4R is
     accepted architecture only and production issuer service remains NOT_BUILT.
   - >
-    Fable remains the Chairman-preferred sustained COO for the combined program,
-    but contemporaneous placement census found no unambiguous idle Fable
-    principal capacity. Terra/CTO capacity was also fully occupied. Sol therefore
-    retained principal CEO control and used only bounded low-ambiguity child work.
+    Chairman-authorized placement resolved the earlier capacity gap. The
+    sustained combined FF/FIF principal is BOUND to Claude4 / U0BSXSXQ39B,
+    native session local_fa6b1bd0-1fa9-45fe-8053-77b18ead75a6, on the exact
+    principal carrier thread; that receiver ACKed and STARTed, so this program
+    has a concrete active principal and Sol is no longer its only active
+    principal. Two things stay genuinely open: the Chairman-preferred Fable
+    tier was unavailable on that seat, so the lane runs claude-opus-5 at extra
+    effort rather than Fable; and continuation is watcher-enabled Slack
+    transport hot state whose current watcher identity and cadence must be read
+    from the carrier thread, never treated as Agent OS lifecycle authority.
 next_actions:
   - >
     Sol reviews and lands this records-only reconciliation on its single carrier.

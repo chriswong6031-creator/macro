@@ -80,7 +80,11 @@ waves:
       32604043860 / run_4e7970fb7cb841b6671d established the canonical
       current-quarter baseline for 2,841 parquet-derived issuers. Run B
       32605564919 / run_8583eb7ce7476290c0b2 proved the quiet incremental
-      path. The later scheduled run 33247138975 exercised the intended bounded
+      path: baseline=false, one index acquisition, 2,627 unchanged relevant
+      rows, zero affected issuers, zero Submissions or Company Facts fanout,
+      canonical=true, issuer/ticker/CIK=2,841/2,841/2,841,
+      expected/observed/failed=2,841/2,841/0, failures=[], and complete
+      publication. The later scheduled run 33247138975 exercised the intended bounded
       partial-replay law on 2,842 issuers: attempts 1-4 persisted lawful issuer
       evidence while refusing latest-complete, and attempt 5 / job 99190103903 /
       run_0e66732e4f506b25446a completed 2,842/2,842 with zero failures,
