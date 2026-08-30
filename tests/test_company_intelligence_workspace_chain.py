@@ -921,9 +921,16 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     family = corrected_payload["evidence_families"][0]
     fact = next(item for item in family["observations"] if item["native_metric_id"] == "fact:revenue")
     assert fact["value"] == 100
-    assert fact == initial_fact
-    assert fact["observation_id"] == initial_fact["observation_id"]
-    assert fact["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert {
+        key: value for key, value in fact.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    } == {
+        key: value for key, value in initial_fact.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    }
+    assert fact["observation_id"] != initial_fact["observation_id"]
+    assert initial_fact["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert fact["correction_lineage_state"] == "OBSERVED"
     assert corrected_payload["projection_id"] != initial_payload["projection_id"]
     assert family["correction"]["state_at_decision"] == "NONE"
     assert family["correction"]["current_state"] == "CORRECTED"
@@ -1053,7 +1060,23 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
     assert correction["later_correction_ref_ids"] == []
     assert correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE"
     assert correction["current_state"] == "UNKNOWN"
-    assert family["observations"] == initial_observations
+    assert [
+        {
+            key: value for key, value in observation.items()
+            if key not in {"observation_id", "correction_lineage_state"}
+        }
+        for observation in family["observations"]
+    ] == [
+        {
+            key: value for key, value in observation.items()
+            if key not in {"observation_id", "correction_lineage_state"}
+        }
+        for observation in initial_observations
+    ]
+    assert {
+        observation["correction_lineage_state"]
+        for observation in initial_observations
+    } == {"NONE_IN_CHAIN"}
     assert len(correction["later_revision_receipts"]) == 1
     later_receipt = correction["later_revision_receipts"][0]
     assert later_receipt["later_revision_receipt_id"].startswith("lrr:")
@@ -1085,7 +1108,7 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
     assert {
         observation["correction_lineage_state"]
         for observation in family["observations"]
-    } == {"NONE_IN_CHAIN"}
+    } == {"OBSERVED"}
     assert family["point_in_time"]["corrected_at"] == {
         "state": "ASSERTED",
         "value": "2026-02-01T20:03:00Z",
@@ -1094,6 +1117,63 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
         "basis": "later_event_workspace.generated_at",
         "source_ref_ids": [],
     }
+
+
+def test_d5_same_issuer_release_hash_is_none_in_chain_not_observed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+    )
+    carry_forward = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=120,
+    )
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: carry_forward},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, carry_forward),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    assert [revision["generation_id"] for revision in revisions] == [
+        decision_generation,
+    ]
+    family = _d5_project()["evidence_families"][0]
+    revenue = next(
+        observation for observation in family["observations"]
+        if observation["native_metric_id"] == "fact:revenue"
+    )
+    assert revenue["value"] == 100
+    assert revenue["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert family["correction"]["later_revision_receipts"] == []
+    assert family["correction"]["later_revision_state"] == "NONE"
+    assert family["correction"]["current_state"] == "CURRENT"
 
 
 def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction(

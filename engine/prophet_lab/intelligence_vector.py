@@ -1253,15 +1253,6 @@ def build_earnings_intelligence_vector(
     source_ref_ids = sorted(ref["source_ref_id"] for ref in decision_refs)
     root_ids = sorted(root["evidence_root_id"] for root in decision_roots)
 
-    decision_hashes = {
-        item["revision"].get("source_sha256") for item in admissible
-    }
-    if None in decision_hashes:
-        lineage_state = "NOT_OBSERVABLE"
-    elif len(decision_hashes) > 1:
-        lineage_state = "OBSERVED"
-    else:
-        lineage_state = "NONE_IN_CHAIN"
     later = sorted(
         [
             item for item in normalized
@@ -1280,17 +1271,28 @@ def build_earnings_intelligence_vector(
             str(item["revision"].get("source_sha256") or "")
         )
     ]
-    invalid_later_clocks = sorted({
-        clock_name
+    invalid_later_generations = sorted(
+        str(item["revision"].get("generation_id") or "")
         for item in visible_later
-        for clock_name, clock_value in item["parsed"].items()
-        if clock_value <= cut
-    })
-    if invalid_later_clocks:
+        if item["parsed"]["generated_at"] <= cut
+    )
+    if invalid_later_generations:
         raise IntelligenceVectorContractError(
-            "later owner receipt clocks must all be strictly after the "
-            f"decision cut: {invalid_later_clocks!r}"
+            "later owner receipt generated_at must be strictly after the "
+            f"decision cut: {invalid_later_generations!r}"
         )
+    decision_hashes = {
+        item["revision"].get("source_sha256") for item in admissible
+    }
+    visible_chain_hashes = decision_hashes | {
+        item["revision"].get("source_sha256") for item in visible_later
+    }
+    if None in decision_hashes:
+        lineage_state = "NOT_OBSERVABLE"
+    elif len(visible_chain_hashes) > 1:
+        lineage_state = "OBSERVED"
+    else:
+        lineage_state = "NONE_IN_CHAIN"
     later_refs: list[dict[str, Any]] = []
     later_roots: list[dict[str, Any]] = []
     later_revision_receipts: list[dict[str, Any]] = []
@@ -2029,14 +2031,10 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError(
                 "later revision receipt owner clocks must be valid"
             )
-        pre_cut_clocks = [
-            clock_name for clock_name, clock_value in parsed_later_clocks.items()
-            if clock_value <= opened_at
-        ]
-        if pre_cut_clocks:
+        if parsed_later_clocks["generated_at"] <= opened_at:
             raise IntelligenceVectorContractError(
-                "later owner receipt clocks must all be strictly after the "
-                f"decision cut: {sorted(pre_cut_clocks)!r}"
+                "later owner receipt generated_at must be strictly after the "
+                "decision cut"
             )
         if later_receipt["disposition"] not in {
             "PROJECTED", "OBSERVED_UNPROJECTABLE",
@@ -2429,6 +2427,36 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "corrected_at cannot be asserted without a later revision receipt"
         )
+    present_lineage_states = {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+        if observation["value_state"] == "PRESENT"
+    }
+    if decision_ref_ids and present_lineage_states:
+        decision_issuer_hashes = {
+            source_refs_by_id[ref_id]["content_hash"]
+            for ref_id in decision_ref_ids
+            if source_refs_by_id[ref_id]["object_schema"]
+            == "event_workspace.source/issuer_release"
+        }
+        visible_issuer_hashes = decision_issuer_hashes | {
+            later_receipt["source_sha256"]
+            for later_receipt in later_revision_receipts
+        }
+        # The serialized vector can prove a correction chain only when it
+        # exposes at least two distinct issuer-source hashes.  A decision
+        # workspace can legitimately project only a transcript lane, leaving
+        # its issuer hash unavailable to this validator even though the
+        # authenticated reader supplied it to the builder.  Do not invent a
+        # negative lineage claim from that absence; do reject any readdressed
+        # payload that suppresses a positively observable distinct chain.
+        if (
+            len(visible_issuer_hashes) > 1
+            and present_lineage_states != {"OBSERVED"}
+        ):
+            raise IntelligenceVectorContractError(
+                "correction lineage must reflect distinct visible owner source revisions"
+            )
     if decision_ref_ids and len({
         source_refs_by_id[ref_id]["version_or_generation"]
         for ref_id in decision_ref_ids

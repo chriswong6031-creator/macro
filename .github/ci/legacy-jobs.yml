@@ -2444,6 +2444,10 @@ jobs:
       - "scripts/prophet_lab_baseline.py"
       - "tests/test_prophet_lab.py"
       - "tests/test_prophet_lab_api.py"
+      # D5 A7's manifest-authenticated N/N+1 correction chain is hermetic and
+      # load-bearing for the Prophet Lab adapter, so its PR owner must be this
+      # gate:code job rather than only neural-web-core's nightly data lane.
+      - "tests/test_company_intelligence_workspace_chain.py"
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
@@ -2470,11 +2474,12 @@ jobs:
         # either deletes the R2 credential env vars or injects a fake client
         # object directly — the real boto3 import is never reached.
         run: pip install pytest pandas fastapi httpx pyyaml
-      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+      - name: Prophet Operator Lab — projection, real-reader chain, transport, timeparse, commissioning-prep
         run: >
           python -m pytest
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
+          tests/test_company_intelligence_workspace_chain.py
           tests/test_prophet_lab_timeparse.py
           tests/test_prophet_lab_commissioning.py
           tests/test_caddy_hub_boundary.py -q

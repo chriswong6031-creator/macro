@@ -3378,7 +3378,7 @@ def test_later_generation_without_projectable_lineage_has_receipted_correction_c
     assert {
         observation["correction_lineage_state"]
         for observation in family["observations"]
-    } == {"NONE_IN_CHAIN"}
+    } == {"OBSERVED"}
     assert family["point_in_time"]["corrected_at"] == {
         "state": "ASSERTED",
         "value": "2026-08-01T20:01:00Z",
@@ -3405,6 +3405,29 @@ def test_later_generation_without_projectable_lineage_has_receipted_correction_c
         "disposition": "OBSERVED_UNPROJECTABLE",
         "source_ref_ids": [],
     }
+
+
+@pytest.mark.parametrize("later_has_adaptable_evidence", [True, False])
+def test_validator_rejects_distinct_visible_source_relabelled_none_in_chain(
+    later_has_adaptable_evidence: bool,
+) -> None:
+    payload = _d5_two_generation_payload(
+        later_has_adaptable_evidence=later_has_adaptable_evidence,
+    )
+    family = payload["evidence_families"][0]
+    assert {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+    } == {"OBSERVED"}
+    for observation in family["observations"]:
+        observation["correction_lineage_state"] = "NONE_IN_CHAIN"
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="lineage|OBSERVED|source revision|distinct source",
+    ):
+        validate_intelligence_vector(payload)
 
 
 def test_validator_rejects_complete_forged_unprojectable_receipt_after_readdress() -> None:
@@ -3497,46 +3520,76 @@ def test_validator_derives_healthy_no_later_revision_as_none_not_unknown() -> No
 
 @pytest.mark.parametrize("clock_name", ["source_available_at", "observed_at"])
 @pytest.mark.parametrize(
-    "hostile_value",
+    "pre_cut_value",
     ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
 )
-def test_validator_requires_every_later_receipt_clock_strictly_post_cut(
+def test_validator_accepts_later_receipt_when_any_owner_clock_crosses_cut(
     clock_name: str,
-    hostile_value: str,
+    pre_cut_value: str,
 ) -> None:
     payload = _d5_two_generation_payload()
     receipt = payload["evidence_families"][0]["correction"][
         "later_revision_receipts"
     ][0]
-    receipt[clock_name] = hostile_value
+    receipt[clock_name] = pre_cut_value
     _readdress_d5_later_revision_receipts(payload)
 
-    with pytest.raises(
-        IntelligenceVectorContractError,
-        match=f"{clock_name}|decision cut|strictly after|later",
-    ):
-        validate_intelligence_vector(payload)
+    validate_intelligence_vector(payload)
 
 
+@pytest.mark.parametrize("clock_name", ["source_available_at", "observed_at"])
 @pytest.mark.parametrize(
-    "clock_name",
-    ["source_available_at", "observed_at", "generated_at"],
-)
-@pytest.mark.parametrize(
-    "hostile_value",
+    "pre_cut_value",
     ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
 )
-def test_builder_requires_every_later_receipt_clock_strictly_post_cut(
+def test_builder_accepts_later_generation_when_any_owner_clock_crosses_cut(
     clock_name: str,
-    hostile_value: str,
+    pre_cut_value: str,
+) -> None:
+    payload = _d5_two_generation_payload(
+        later_clock_overrides={clock_name: pre_cut_value},
+    )
+
+    validate_intelligence_vector(payload)
+    correction = payload["evidence_families"][0]["correction"]
+    assert correction["later_revision_state"] == "PROJECTED"
+    assert correction["current_state"] == "CORRECTED"
+
+
+@pytest.mark.parametrize(
+    "generated_at",
+    ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
+)
+def test_builder_rejects_later_revision_without_post_cut_generation(
+    generated_at: str,
 ) -> None:
     with pytest.raises(
         IntelligenceVectorContractError,
-        match=f"{clock_name}|decision cut|strictly after|later",
+        match="generated_at|decision cut|strictly after|later",
     ):
         _d5_two_generation_payload(
-            later_clock_overrides={clock_name: hostile_value},
+            later_clock_overrides={"generated_at": generated_at},
         )
+
+
+def test_builder_does_not_classify_revision_as_later_when_no_clock_crosses_cut() -> None:
+    payload = _d5_two_generation_payload(later_clock_overrides={
+        "source_available_at": "2026-07-30T20:01:00Z",
+        "observed_at": "2026-07-30T20:04:00Z",
+        "generated_at": "2026-07-30T20:04:00Z",
+    })
+
+    validate_intelligence_vector(payload)
+    family = payload["evidence_families"][0]
+    correction = family["correction"]
+    assert correction["later_revision_receipts"] == []
+    assert correction["later_revision_state"] == "NONE"
+    assert correction["current_state"] == "CURRENT"
+    revenue = next(
+        observation for observation in family["observations"]
+        if observation["native_metric_id"] == "fact:revenue"
+    )
+    assert revenue["value"] == 110_000_000_000
 
 
 @pytest.mark.parametrize("erasure", ["partial_promotion", "all_unprojectable"])

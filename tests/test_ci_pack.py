@@ -987,6 +987,29 @@ def test_a_named_suite_edit_does_not_select_peer_pytest_jobs() -> None:
     assert len(nonempty) < 12, nonempty
 
 
+def test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate() -> None:
+    """D5's hermetic real-reader chain suite must run before a PR can merge.
+
+    A path-only owner is insufficient: the selected ``gate: code`` job must
+    also name the suite in an executing ``run:`` step.
+    """
+    manifest = _yaml(MANIFEST)
+    prophet_lab = manifest["jobs"]["prophet-lab"]
+    suite = "tests/test_company_intelligence_workspace_chain.py"
+    assert prophet_lab["gate"] == "code"
+    assert suite in prophet_lab["paths"]
+    assert any(
+        suite in str(step.get("run") or "")
+        for step in prophet_lab["steps"]
+    )
+
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    code_jobs = [job for job in jobs if job.gate == "code"]
+    selected, reason = PACK.select_jobs(code_jobs, [suite])
+    assert "prophet-lab" in {job.job_id for job in selected}, reason
+    assert "unowned path" not in reason, reason
+
+
 def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
     """PR #5488 shape: `.claude/hooks/gh_quota_guard.py` used to mint 187/187 jobs.
 
