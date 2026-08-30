@@ -1,0 +1,1341 @@
+{
+  "audit_scope": "C0 104-row source-audit metadata only; no private excerpts or audit logs",
+  "audited_repositories": {
+    "macro-dashboard": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+    "mastermind": "e2092cb62355",
+    "terminal": "b1b21a17f843"
+  },
+  "operation": "macro-context-index-c0-recovery-20260828-sol-002",
+  "rows": [
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-001"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "scripts/build_active_build_map.py",
+        "docs/ACTIVE_BUILD_MAP.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-002"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "engine/market_drivers.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-003"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "scripts/build_spine_index.py",
+        "memory://kernel-panel-frozen-spine-dtype.md"
+      ],
+      "checked_required_paths": [
+        "engine/neuralweb/query.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-004"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "templates/theme.css"
+      ],
+      "checked_required_paths": [
+        "memory://nav-aurora-glass-system.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-005"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "engine/systematic_flows.py",
+        "scripts/build_market_structure_page.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-006"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "config/compiled_kill_registry.yml",
+        "scripts/check_blocklist_drift.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-007"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-008"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-009"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_ADJUDICATED_CXI_R17C",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "STATUS_DRIFT",
+      "project": "macro-dashboard",
+      "row_id": "CTX-010"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md",
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-011"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_SUPERSEDED_STATUS",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "STATUS_DRIFT",
+      "project": "macro-dashboard",
+      "row_id": "CTX-012"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-013"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-014"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/RATES_INFLATION_COMMAND_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-015"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-016"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "docs/ACTIVE_BUILD_MAP.md",
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-017"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/PROPHET_MASTERPLAN_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "memory://prophet-program.md",
+        "docs/ACTIVE_BUILD_MAP.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-018"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "docs/ACTIVE_BUILD_MAP.md",
+        "research/IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-019"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://mm-data-guard-lessons.md"
+      ],
+      "checked_required_paths": [
+        "tests/conftest.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-020"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://prophet-program.md"
+      ],
+      "checked_required_paths": [
+        "docs/SIGNAL_BUS.md",
+        "config/synapse.yml"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-021"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://basket-ohlcv-membership-lane-freeze.md"
+      ],
+      "checked_required_paths": [
+        "scripts/fetch_basket_ohlcv.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-022"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "engine/codex_lane/runner.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-023"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-024"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md",
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-025"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "memory://nw-lobe-terminology-map-vs-observatory.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-026"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/neuralweb/query.py"
+      ],
+      "checked_required_paths": [
+        "memory://kernel-panel-frozen-spine-dtype.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-027"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://mm-data-guard-lessons.md",
+        "tests/conftest.py"
+      ],
+      "checked_required_paths": [
+        "memory://render-guards-pytest9-misdiagnosis.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-028"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "scripts/fetch_basket_ohlcv.py"
+      ],
+      "checked_required_paths": [
+        "memory://basket-ohlcv-membership-lane-freeze.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-029"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://mx5-hash-open-heatmap-race.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-030"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://macro-page-load-perf.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-031"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://mm-data-guard-lessons.md",
+        "tests/conftest.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-032"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://nav-aurora-glass-system.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-033"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/PROPHET_MASTERPLAN_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "memory://prophet-program.md",
+        "docs/ACTIVE_BUILD_MAP.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-034"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://nw-lobe-terminology-map-vs-observatory.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-035"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-036"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-037"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://prophet-program.md"
+      ],
+      "checked_required_paths": [
+        "scripts/build_track_record_page.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-038"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "docs/ACTIVE_BUILD_MAP.md",
+        "scripts/build_active_build_map.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-039"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "memory://gbp-sonia-splice-fred-tripwire.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-040"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-041"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-042"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "docs/ACTIVE_BUILD_MAP.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-043"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md",
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-044"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-045"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md",
+        "memory://prophet-program.md"
+      ],
+      "checked_required_paths": [
+        "config/synapse.yml",
+        "docs/SIGNAL_BUS.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-046"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "scripts/check_template_site_sync.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-047"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "scripts/check_validated_claims.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-048"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "scripts/check_blocklist_drift.py",
+        "research/DO_NOT_REBUILD.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-049"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-050"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-051"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/IVORY_HILL_MARKET_STRUCTURE_MASTERPLAN_BY_FABLE.md",
+        "engine/risk_radar.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-052"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md",
+        "engine/market_drivers.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-053"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-054"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/POLICY_SHOCK_REGIME_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-055"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/CAUSAL_HYPOTHESIS_FACTORY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-056"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/NARRATIVE_IGNITION_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-057"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-058"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-059"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/CONTAGION_SENSING_PROPAGATION_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-060"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/ORACLE_ROTATION_TM_CODEX_ADJUDICATION.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-061"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "docs/SIGNAL_BUS.md"
+      ],
+      "checked_required_paths": [
+        "memory://prophet-program.md",
+        "config/synapse.yml"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-062"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "engine/metabolism/recall.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-063"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "engine/neuralweb/research_queue.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-064"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/synapse.yml"
+      ],
+      "checked_required_paths": [
+        "memory://marketing-lobe-genesis.md"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-065"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-066"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_STALE_NEGATIVE_REGOLD",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/context_index.yml",
+        "research/context_index/README.md",
+        "CLAUDE.md"
+      ],
+      "checked_required_paths": [
+        "scripts/context_index_query.py"
+      ],
+      "outcome_class": "STALE_NEGATIVE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-067"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-068"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_STALE_NEGATIVE_REGOLD",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md",
+        "research/context_index/README.md"
+      ],
+      "checked_required_paths": [
+        "config/context_index.yml"
+      ],
+      "outcome_class": "STALE_NEGATIVE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-069"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-070"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-071"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-072"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-073"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-074"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-075"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-076"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-077"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/MACRO_CONTEXT_INDEX_BUILD_DOCKET_FOR_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-078"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_DEFERRED_TO_PRE_C3_CXI_4",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "memory://prophet-program.md",
+        "config/synapse.yml"
+      ],
+      "checked_required_paths": [
+        "engine/neuralweb/prophet_governor.py"
+      ],
+      "outcome_class": "MEMORY_SOURCE",
+      "project": "macro-dashboard",
+      "row_id": "CTX-079"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/LONG_HOLD_LOBE_BRAINSTORM_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "collectors/edgar_8k.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-080"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "config/compiled_kill_registry.yml"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/RISK_RADAR_EXPANSION_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-081"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE_ADJUDICATED_CXI_R17C",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "research/DO_NOT_REBUILD.md",
+        "research/UNIFIED_WATCHLIST_PORTFOLIO_MASTERPLAN_BY_FABLE.md"
+      ],
+      "outcome_class": "STATUS_DRIFT",
+      "project": "macro-dashboard",
+      "row_id": "CTX-082"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [
+        "repo://terminal/terminal/lib/pine-engine/index.ts"
+      ],
+      "checked_required_paths": [
+        "repo://terminal/indicator_engine/README.md"
+      ],
+      "outcome_class": "OK",
+      "project": "terminal",
+      "row_id": "CTX-083"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [
+        "repo://terminal/hub/README.md"
+      ],
+      "checked_required_paths": [
+        "repo://terminal/hub/hub.js"
+      ],
+      "outcome_class": "OK",
+      "project": "terminal",
+      "row_id": "CTX-084"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "repo://mastermind/brain/key_rotor.py"
+      ],
+      "checked_required_paths": [
+        "engine/neuralweb/key_pool.py"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-085"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [
+        "research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md"
+      ],
+      "checked_required_paths": [
+        "repo://terminal/contracts/indicator.v1.schema.json",
+        "repo://terminal/contracts/backtest_result.v1.schema.json"
+      ],
+      "outcome_class": "OK",
+      "project": "terminal",
+      "row_id": "CTX-086"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_LINE_CITATION_REFRESH",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://terminal/signal_layer/contracts.py"
+      ],
+      "outcome_class": "AMBIGUOUS",
+      "project": "terminal",
+      "row_id": "CTX-087"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "e2092cb62355",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://mastermind/docs/design/rotation/ROTATION_CALLS_CONTRACT.md",
+        "repo://mastermind/brain/rotation_intake.py"
+      ],
+      "outcome_class": "OK",
+      "project": "mastermind",
+      "row_id": "CTX-088"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://terminal/indicator_engine/README.md"
+      ],
+      "outcome_class": "OK",
+      "project": "terminal",
+      "row_id": "CTX-089"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "e2092cb62355",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://mastermind/brain/key_rotor.py"
+      ],
+      "outcome_class": "OK",
+      "project": "mastermind",
+      "row_id": "CTX-090"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_REQUIRED_SOURCE_REGOLD",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://terminal/ingest/pull_macro_intel.py"
+      ],
+      "outcome_class": "PATH_MISSING",
+      "project": "terminal",
+      "row_id": "CTX-091"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "e2092cb62355",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://mastermind/docs/case_studies/2026-06-22-avgo-nvda-override-postmortem.md"
+      ],
+      "outcome_class": "OK",
+      "project": "mastermind",
+      "row_id": "CTX-092"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "e2092cb62355",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [
+        "repo://mastermind/MAINTENANCE.md"
+      ],
+      "outcome_class": "OK",
+      "project": "mastermind",
+      "row_id": "CTX-093"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [
+        "repo://terminal/contracts/samples/AAPL.backtest.json"
+      ],
+      "checked_required_paths": [
+        "repo://terminal/contracts/samples/NVDA.backtest.json"
+      ],
+      "outcome_class": "OK",
+      "project": "terminal",
+      "row_id": "CTX-094"
+    },
+    {
+      "amendment_or_no_change": "AMENDED_V1_6_TWO_PART_POSITIONS_AND_FILLS_TRUTH",
+      "audited_repo_sha": "b1b21a17f843",
+      "checked_acceptable_paths": [
+        "repo://terminal/supabase/migrations/0007_portfolio_positions.sql",
+        "repo://terminal/terminal/components/PositionModal.tsx"
+      ],
+      "checked_required_paths": [
+        "repo://terminal/terminal/lib/portfolio.ts"
+      ],
+      "outcome_class": "STALE_NEGATIVE",
+      "project": "terminal",
+      "row_id": "CTX-095"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "e2092cb62355",
+      "checked_acceptable_paths": [],
+      "checked_required_paths": [],
+      "outcome_class": "OK",
+      "project": "mastermind",
+      "row_id": "CTX-096"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/china_standout_track.py",
+        "docs/site_semantics/china_stocks.md"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/china.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-097"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/market_state.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/macro.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-098"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/stock_score.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/us_stocks.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-099"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/playbook.py",
+        "engine/run.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/us_stocks.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-100"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/signal_gate.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/china_stocks.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-101"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/risk_radar.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/macro.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-102"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/china_internals.py",
+        "engine/china_liquidity.py",
+        "scripts/build_china.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/china.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-103"
+    },
+    {
+      "amendment_or_no_change": "NO_CHANGE",
+      "audited_repo_sha": "24ccea3fe482ab97c415db387f272b34c4852ed3",
+      "checked_acceptable_paths": [
+        "engine/name_score.py"
+      ],
+      "checked_required_paths": [
+        "docs/site_semantics/china_stocks.md"
+      ],
+      "outcome_class": "OK",
+      "project": "macro-dashboard",
+      "row_id": "CTX-104"
+    }
+  ],
+  "schema": "macro.context_index.c0_source_audit_manifest.v1"
+}
