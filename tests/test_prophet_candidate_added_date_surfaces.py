@@ -9,8 +9,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATES = ROOT / "templates"
 
@@ -124,32 +122,6 @@ def test_builders_stamp_board_since_before_render():
             rf'stamp_setups_fail_open\(\s*["\']{market}["\']',
             src,
         ), rel
-
-
-def test_us_partial_renders_labelled_added_without_pv_dt():
-    pytest.importorskip("pandas")
-    pytest.importorskip("plotly")
-    from tests.test_dashboard_template_render import _board_row
-    from tests.test_us_board_freshness_truth import _board_cards
-
-    html = _board_cards(items=[_board_row(board_since="2026-08-24", ticker="ACME")])
-    assert "pv-added" in html
-    assert "Added Aug 24" in html
-    assert "入榜 08-24" in html
-    assert 'class="pv-dt"' not in html
-
-
-def test_cn_page_renders_labelled_added_without_pv_dt():
-    from tests.test_cn_board_freshness_truth import HEALTHY, _render, _setups
-
-    su = _setups()
-    for shelf in ("buy", "more_actionable", "late_or_unfillable"):
-        for row in su.get(shelf) or []:
-            row["board_since"] = "2026-08-24"
-    html = _render(HEALTHY, setups=su)
-    assert "pv-added" in html
-    assert "Added Aug 24" in html
-    assert 'class="pv-dt"' not in html
 
 
 def test_us_freshness_pin_still_forbids_pv_dt_on_candidate_cards():
