@@ -392,7 +392,7 @@
     { g: ["SIGNALS", "信号"], rows: [
       { l: ["Daily buy signals", "每日买入信号"], v: [["3 / list", "每列表 3 条"], ["Full book", "完整名册"], ["Full book", "完整名册"]] },
       { l: ["Track record & autopsies", "公开战绩 & 复盘"], v: [1, 1, 1] },
-      { l: ["Daily AI morning brief", "每日 AI 晨间简报"],  v: [0, 1, 1] }
+      { l: ["Daily AI market brief", "每日 AI 市场简报"],  v: [0, 1, 1] }
     ] },
     { g: ["TERMINAL", "TERMINAL"], rows: [
       { l: ["Live charting", "实时图表"],                  v: [1, 1, 1] },
