@@ -70,6 +70,7 @@ unverified:
   - claim: "That the 04:32:00 UTC experience-v2 timer is the authentic M0D natural-gate writer."
     what_would_verify: "Sol confirming the gate definition against the M0C/M0D freeze. Taken here from the recharter's own 04:00-04:32Z window statement; it is falsifier #3 in the evidence record."
 unresolved:
+  - "RELEASE-CONTROL VIOLATION, 2026-08-28. Sol posted a REQUEST_REPAIR hold on PR #6583 at 01:51:06Z (do not merge; disarm automatic release; hold HOLD-FOR-SOL). The PR merged at 02:08:03Z - 17 minutes later - via the merge-on-green label armed at ~01:09Z, before the hold existed. Root cause: an armed automatic release combined with an hourly thread-watch tick, so the hold could not reach the session before its own automation fired. Not repairable by history rewrite; corrected forward by this repair carrier. Standing rule adopted: never arm merge-on-green or any auto-release on a carrier whose content the commissioning authority has not explicitly accepted, and never let a watch cadence be slower than the automation it is supposed to be able to interrupt."
   - "Sol must adjudicate the proposed ABSTAINED classification before WS-MARKET-MEMORY-W2C durable state is reconciled. This wave deliberately did not touch that workstream's status/waves/next_action."
   - "Defect D1 (seal discards its transcript) is established but NOT repaired - it needs its own modifying child operation and carrier from Sol."
   - "Defect D2 (technicals-v2 exits 1 on a lawful no-admit) is established but NOT repaired - same."
@@ -77,7 +78,7 @@ unresolved:
   - "This handoff is filed against WS:MARKET-MEMORY-W2C, not the parent WS:MARKET-MEMORY, because Agent OS joins are FAIL-CLOSED and both WS-MARKET-MEMORY.md and DEC-MARKET-MEMORY-CEO-RECHARTER-AND-NO-REBUILD-FREEZE.md exist only on unmerged DRAFT PR #6528. Filing against W2C does not broaden W2C - the M0D gate is inside its existing producer/technical scope. Re-point this handoff at WS:MARKET-MEMORY and restore the DEC citation once #6528 merges."
 next_actions:
   - "Sol: adjudicate ABSTAINED vs any alternative reading, using the four falsifiers in the evidence record section 7."
-  - "Sol: decide whether D1 is opened as the next modifying child wave. Recommended - it is small, it is the direct cause of this gate being unresolvable, and it is a precondition for any honest MM-S1 source-plane work."
+  - "Sol: decide whether D1 is opened as the next modifying child wave. Recommended - it is small, and it is a precondition for any honest MM-S1 source-plane work. Scope it precisely: D1 did NOT cause the gate's prior RECEIPT_UNRESOLVED state - unrecovered host/store receipts did, and MM-G0 has now resolved the terminal gate to ABSTAINED. D1 destroys the CAUSE of an abstention, one layer down."
   - "Sol: decide whether D2 rides with D1 (same file family, same lawful-no-admit semantics) or gets its own carrier."
   - "After the RULING, reconcile WS-MARKET-MEMORY-W2C: retire the stale future-dated 2026-08-25 gate projection and record the adjudicated disposition."
   - "MM-S1 must not begin source-plane cause analysis before D1 lands - it would be guesswork against destroyed evidence."
@@ -90,6 +91,7 @@ do_not_redo:
   - "Do not read current /opt/macro HEAD as the gate revision - it resets to FETCH_HEAD every ~3 minutes; use the reflog entry in force at the instant."
   - "Do not assume a missed timer fire would have been made up later - all three timers are Persistent=no."
 danger_areas:
+  - "Conflating the terminal gate classification with the causal diagnosis. These are two layers: the gate was RECEIPT_UNRESOLVED because host/store receipts had not been recovered (now resolved to ABSTAINED), whereas D1 destroys the CAUSE of an abstention. The first version of these records merged the two and had to be repaired; do not reintroduce it."
   - "sources-spy-rest-v1/ and technicals-v2/ being empty looks like a broken deploy. It is not - it is the correct on-disk consequence of a chain that has never admitted, because both stores are written only on the eligible path."
   - "The abstention is byte-identical across causes. Any future session that reads a Market Memory v2 abstention as a market fact will be wrong roughly as often as it is right, until D1 lands."
   - "technicals-v2 is red at the systemd layer on every real trading session. A standing red camouflages a genuine breakage - do not tune it out, fix D2."
@@ -105,19 +107,26 @@ discoveries:
 
 **Verdict: `ABSTAINED`.** High confidence, two independent evidence classes, four named falsifiers.
 
-The gate was never unresolvable. It was unresolved because every prior search looked at GitHub,
-Slack, Linear and Agent OS — none of which the writer posts to. The writer posts to
+The gate's prior `RECEIPT_UNRESOLVED` state was a recovery gap — not a property of the gate, and
+not a consequence of any defect below it. Every prior search looked at GitHub, Slack, Linear and
+Agent OS, none of which the writer posts to. The writer posts to
 `/var/lib/macro-market-memory/state/experience-v2/records/` and to the systemd journal, and both
-have said `abstained` since `2026-08-25T04:32:03Z`.
+have said `abstained` since `2026-08-25T04:32:03Z`. Recovering those receipts is the whole of what
+moved the terminal classification.
 
 What is genuinely unrecoverable is one level down. The seal that caused the abstention computed a
 complete per-observation transcript, evaluated it, logged a one-line summary, and returned without
 persisting any of it. So we can prove *that* the chain abstained and *that* the abstention was
 lawful, and we cannot prove *why* — not now, and not ever for this date.
 
-That distinction is the whole value of this wave, and it inverts the natural next step: the
-interesting question is a source-plane question, but source-plane archaeology is currently
-impossible. Fix the receipt first, then the next abstention answers the question by itself.
+That distinction is the whole value of this wave, and it separates two layers that must never be
+collapsed: the **terminal gate classification** is settled (`ABSTAINED`, from recovered receipts),
+while the **causal diagnosis** beneath it is permanently destroyed for every date already covered.
+D1 belongs wholly to the second layer and has no bearing on the first.
+
+It also inverts the natural next step: the interesting question is a source-plane question, but
+source-plane archaeology is currently impossible. Fix the receipt first, then the next abstention
+answers the question by itself.
 
 Full bundle, with verbatim payloads, digests and reproducible commands:
 `research/MARKET_MEMORY_MM_G0_AUG25_GATE_RECEIPTS_2026-08-27.md`.

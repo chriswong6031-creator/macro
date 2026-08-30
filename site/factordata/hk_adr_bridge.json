@@ -10,9 +10,9 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "JD": {
-      "asof": "2026-08-28",
-      "lag_days": 0,
+    "BABA": {
+      "asof": "2026-08-27",
+      "lag_days": 1,
       "state": "fresh"
     },
     "TCOM": {
@@ -25,14 +25,14 @@
       "lag_days": 0,
       "state": "fresh"
     },
-    "FXI": {
+    "JD": {
       "asof": "2026-08-28",
       "lag_days": 0,
       "state": "fresh"
     },
-    "BABA": {
-      "asof": "2026-08-27",
-      "lag_days": 1,
+    "FXI": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
       "state": "fresh"
     }
   },
