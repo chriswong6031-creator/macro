@@ -541,11 +541,11 @@
       }
     ],
     "now": {
-      "level": 10812.37,
+      "level": 10824.3,
       "asOf": "2026-08-28",
       "ath": 10910.6,
       "athDate": "2026-02",
-      "pctFromATH": -0.9,
+      "pctFromATH": -0.8,
       "ytd": 6,
       "ret1y": 20.5,
       "pos": 68,
@@ -736,11 +736,11 @@
       }
     ],
     "now": {
-      "level": 654.63,
+      "level": 655.16,
       "asOf": "2026-08-28",
       "ath": 660.51,
       "athDate": "2026-08",
-      "pctFromATH": -0.9,
+      "pctFromATH": -0.8,
       "ytd": 7.4,
       "ret1y": 13,
       "pos": 78,
@@ -1590,11 +1590,11 @@
       }
     ],
     "now": {
-      "level": 24110.7,
+      "level": 24175.65,
       "asOf": "2026-08-28",
       "ath": 26328.55,
       "athDate": "2026-01",
-      "pctFromATH": -8.4,
+      "pctFromATH": -8.2,
       "ytd": -7.9,
       "ret1y": -4.4,
       "pos": 48,

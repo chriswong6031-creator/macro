@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -5929,9 +5929,9 @@
       "subject": "KRMN",
       "direction": 1,
       "horizon": "21.0",
-      "persistence_streak": 1,
+      "persistence_streak": 0,
       "strength_slope": null,
-      "state": "new",
+      "state": "gone",
       "last_as_of": "2026-08-29",
       "n_sessions_in_tape": 1,
       "n_independent_confirming_latest": 2.0
@@ -5948,11 +5948,11 @@
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 4,
+      "persistence_streak": 5,
       "strength_slope": 0.0,
       "state": "stable",
-      "last_as_of": "2026-08-29",
-      "n_sessions_in_tape": 35
+      "last_as_of": "2026-08-30",
+      "n_sessions_in_tape": 36
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -5979,9 +5979,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 1314,
+  "n_tape_rows": 1315,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-29T12:44:26Z",
+  "produced_at": "2026-08-30T05:47:11Z",
   "authority_check": []
 }

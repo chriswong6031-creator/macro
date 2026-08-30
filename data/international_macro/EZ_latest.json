@@ -8,7 +8,7 @@
   "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
   "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
   "asof": "2026-08-28",
-  "built": "2026-08-29 12:25 UTC",
+  "built": "2026-08-30 05:29 UTC",
   "regime": {
     "quad": "Q1",
     "name": "Goldilocks",
@@ -183,13 +183,13 @@
     "index_label": "Euro STOXX / Europe context",
     "currency_label": "EUR/USD",
     "equity": {
-      "price": 654.63,
-      "off_52w_high": -0.9,
+      "price": 655.16,
+      "off_52w_high": -0.8,
       "above_50d": true,
       "above_200d": true,
-      "realvol": 5.7,
-      "rsi": 54.0,
-      "ext_z": 0.17,
+      "realvol": 5.8,
+      "rsi": 55.0,
+      "ext_z": 0.21,
       "ext_grade": "intrend",
       "drawdown_risk": 2.0,
       "drawdown_band": "low",
@@ -266,12 +266,12 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 67.8,
-        "band": "watch",
+        "score": 68.1,
+        "band": "caution",
         "firing_legs": [
           {
             "leg": "ext_idx",
-            "pctile": 0.74,
+            "pctile": 0.746,
             "confirmed": false
           },
           {
@@ -379,8 +379,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -0.9,
-      "value": "-0.90%",
+      "raw": -0.8,
+      "value": "-0.80%",
       "unit": "%",
       "asof": null
     },
@@ -388,8 +388,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 5.7,
-      "value": "5.70%",
+      "raw": 5.8,
+      "value": "5.80%",
       "unit": "%",
       "asof": null
     }
@@ -530,7 +530,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2026-07",
-      "age_days": 59,
+      "age_days": 60,
       "state": "fresh",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -538,7 +538,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 150,
+      "age_days": 151,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -546,7 +546,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-06",
-      "age_days": 89,
+      "age_days": 90,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -554,7 +554,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-01",
-      "age_days": 240,
+      "age_days": 241,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"
