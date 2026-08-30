@@ -1,104 +1,266 @@
-# Critic receipt (RIG V1 §6) — Reviewer B (r3 cycle), visual/taste.
-# Fresh critic; no participation in the r1 or r2 cycles.
+# Critic receipt (RIG V1 §6) — visual / art direction, R3 REVIEW-ORDER RE-RUN.
 #
-# PROVENANCE DEFECT: identical to the note at the head of
-# reviews/product_regression.yml and equally binding here. The pass-1 review
-# was genuinely quarantined (the commission carried no rationale and forbade
-# every RIG record, the templates/site trees and all git history; the packet
-# was returned before any reveal existed), but the coordinator omitted the
-# on-disk freeze commit that r1 and r2 both had, so this receipt was written
-# after the reveal from the critic's returned packet. Reviewer B raised the
-# same defect independently (its GAPS 1) and recorded that it therefore
-# reconstructed its own ten findings from the coordinator's paraphrase. The
-# design authority rules on admissibility.
+# Replaces the earlier r3 visual_taste receipt, whose review ORDER could not be
+# proven: its pass-1 findings were never committed before the rationale reveal.
+# The superseded receipt is preserved verbatim at reviews/superseded_review_order/
+# and every one of its findings is carried in continuity.yml — nothing evaporates.
+#
+# Run under Sol CONTINUE (carrier theme-parity-tp1-canada-20260828-sol-001, ts
+# 1788118073.730499) with a genuinely fresh critic that had never seen the
+# surface, the prior verdicts, the RIG records, or any repair narrative. THIS
+# FILE IS THE FIRST-PASS FREEZE: committed BEFORE any rationale or constraint is
+# revealed. Git ancestry, not the coordinator's word, proves the ordering.
 schema: mastermind.rig_review.v1
 reference_id: canada-stock-dashboard-tp1-r3
 role: visual_taste
 artifact_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
 
 reviewer:
-  identity: "rig-r3-critic-b-slate-heron-4417"
+  identity: "rig-r3rr-critic-b-verdigris-lark-2264"
   model: opus
   independent_of_author: true
 
 quarantine:
   first_pass_inputs:
-    - user/business job (r3 baseline.yml)
-    - production-before artifact (baseline shots + pre-change source copies)
-    - proposed-after artifact (18 rendered images at 2d463e7c4e8f + comment-redacted source)
-    - capability ledger (r3 baseline.yml)
-    - design law (DESIGN_DOCTRINE.md; MASTER_PRODUCT_DESIGN_SYSTEM_V1.md)
+    - user/business job (redacted packet)
+    - capability ledger (redacted packet)
+    - production-before artifact (comment-redacted composer at c819f6428f91)
+    - proposed-after artifact (comment-redacted source at the frozen SHA + 24 rendered cells)
   rationale_received_after_first_pass: true
-  on_disk_freeze_commit: null   # see the PROVENANCE DEFECT note above
+  packet_construction: >
+    Same redacted packet as the product-regression role — all code comments
+    stripped, the baseline's chronology note and design_lineage constraints
+    removed, every TP-1 string scrubbed, automated leakage scan clean before any
+    critic was spawned.
+  critic_declaration: >
+    Honored in full, on both sweeps. The critic states it read nothing under
+    research/reference_integrity/ (any cycle), no THEME_PARITY docs, no plans, no
+    design doctrine, no acceptance record, no PR or Slack content and no other
+    reviewer's output; ran no git history command; did not open the repository
+    templates/ or site/ trees; and cited every source claim to the packet copies.
 
 first_pass:
-  # Judged frozen SHA 2d463e7c4e8f (the pre-repair R3 head).
+  frozen_at: "2026-08-30T22:20:00Z"
   verdict: PASS_WITH_CONDITIONS
+  coverage: >
+    Both sweeps. The coordinator refused a first pass that left ZH and 390
+    unadjudicated on a theme-and-locale parity change and sent the critic back
+    for them; ZH desktop, both 390 locales, the isolated breadth cells and the
+    remaining state cells were then opened. Three gaps remain that cannot be
+    closed because the evidence does not exist in the matrix — those are the
+    subject of VTB-409.
   findings:
-    - {id: VTC-301, severity: major, finding: "The breadth gauge's bounding track is drawn below perceptibility in BOTH themes (measured 1.37:1 dark, 1.34:1 light) and carries no border or end cap, so at full value — two of five rows in every shipped shot — the bounded instrument is visually identical to a plain rule; the proportion only reads at mid values."}
-    - {id: VTC-302, severity: major, finding: "The gauge is positioned left:0 inside a row whose content padding is 14px, so the track starts flush against the panel border ~13px left of every other element in the row, and its 200px length terminates near where the ticker string above it ends while sharing that text's muted ink — it reads as an accidental underline of the ticker list rather than a measurement belonging to the row."}
-    - {id: VTC-303, severity: major, finding: "The EN mobile lane selector truncates all four stance names, but lane names ARE the stances under ratified case law and the self-labeling chip strip requires full display names; ZH mobile proves the geometry is not forcing it, so at 390 the EN subscriber loses the plain-word stance that is the panel's whole point."}
-    - {id: VTC-304, severity: major, finding: "ZH is not yet a native composition: the English word 'Theme' prints untranslated before every ZH theme name, and the Prophet card sector subtitles stay English on the same screen where the lanes render those same sectors in Chinese — one datum in two languages on one page."}
-    - {id: VTC-305, severity: minor, finding: "In the leadership modal every column header is left-aligned while numeric cells are right-aligned, so across a 16-row scan the Rank head sits ~100px left of the values it labels and Names is offset from its column — two of five columns have no visual anchor."}
-    - {id: VTC-306, severity: minor, finding: "The active-filter row highlight stops at the dashed divider and excludes the route-arrow cell, leaving a notch at the right end of the marked row, and the light tint is --link 12% against the doctrine's ≤8% ceiling for light highlight rows; the 3px rail is correct and is the important half of the callout idiom."}
-    - {id: VTC-307, severity: minor, finding: "The active filter chip prints with no space after the colon and the dismiss glyph glued to the final word in both themes — the one control that says 'your population is filtered' is the least typographically finished control on the row."}
-    - {id: VTC-308, severity: minor, finding: "The gauge fill is unclamped and leader-normalized, with nothing pinning breadth ≤ 100, so the top row always paints a full track by construction and an out-of-range value would silently overrun the track and still read as full."}
-    - {id: VTC-309, severity: minor, finding: "Tier-1 jargon rides into the ratified reference in the table view ('await confluence' filling the Entry column, 'Mom Screen' heading a column); likely inherited product copy rather than presentation, but ratifying this set as canonical law ratifies the copy with it."}
-    - {id: VTC-310, severity: minor, finding: "(critic severity: nit; recorded at the schema floor) The gauge encodes exactly the datum already printed as the NAMES figure at the opposite end of the same ~1300px row with no label joining them, where the ratified shared-scale-bar idiom pairs a bar with its number adjacently — the strongest available cue for what the bar means sits 1200px away from it."}
-  strengths:
-    - Light is authored as a second art direction, not a token swap — ~40
-      light-scoped rules turn lane cards into hairline columns with inset rails
-      and 4% state tints, give the top pick a 1px ring instead of a bloom,
-      recess the segmented track, and scrim the modal with a cool text-derived
-      wash; it passes the stranger test.
-    - Colour-law discipline is exemplary — zero raw hex literals in 30.5KB of
-      CSS, every value a token or a color-mix on one.
-    - Breadth legibility is materially better than production (from an
-      effectively invisible ~1.3:1 full-row hairline to a measured ~3.8:1 bar).
-    - Dark identity is preserved without drift outside the leadership row.
-    - The states are honest and calm as designs — filter-miss shows the count,
-      a plain-word explanation and a real recovery, with no refutation
-      vocabulary anywhere.
-    - Table view is a real second archetype rather than a squeezed grid.
-    - Mobile is deliberate re-composition, with the gauge unit re-scaled for
-      390 rather than inherited at desktop size.
-    - ZH direction rebinding is internally consistent across the whole board
-      while the breadth gauge stays achromatic, so no directional meaning is
-      accidentally minted.
-
-second_pass:
-  # Judged the REPAIRED artifact e509db03ee5f; all evidence re-taken at that head.
-  verdict: PASS_WITH_CONDITIONS
-  continuation_note: >
-    Executed by a continuation context of the same reviewer identity, seeded
-    from the coordinator's description because the receipt did not yet exist;
-    it received the rationale before reading evidence and declared the
-    pass-1/pass-2 firewall not intact for its own pass. It verified the
-    closures on measured pixels and frozen bytes rather than on assertions,
-    and correctly reviewed via `git show <frozen sha>` after finding that the
-    records worktree is not the product branch.
-  amendments:
-    - {finding: VTC-301, action: downgraded, note: "Repair real and measured: track --line 55% → --muted 38% and 3px → 5px, giving 1.90:1 dark / 1.83:1 light, and at FULL value a 3px shoulder plus a 1px halo above and below survive in both themes. Residual minor: the terminus is a bare 3px sub-3:1 nub, so on a full row the bound reads mainly by cross-row comparison."}
-    - {finding: VTC-302, action: withdrawn, note: "Falsified by re-measurement — track now starts on the row's 14px content edge and the fill on its 17px ink column, with 6px measured clearance to the next row's hairline; at 206px of a ~1300px row it can no longer read as a divider."}
-    - {finding: VTC-303, action: downgraded, note: "Out-of-boundary — composer chip markup frozen for r3 and the composition pre-existing V3.8. The truncation cost is unchanged and stays owed against the estate, not against r3."}
-    - {finding: VTC-304, action: downgraded, note: "Out-of-boundary — composer-emitted copy, byte-identical to the deployed build, already referred as ZH-nativeness debt. The surface is still not natively authored; the debt does not clear by being explained."}
-    - {finding: VTC-305, action: withdrawn, note: "Closed by repair — th:last-child right-aligns the trailing Count header at both column counts and th:first-child:nth-last-child(5) matches Rank only in the 5-column layout, leaving Name left-aligned at 4 columns. Positionally rather than semantically keyed, forced by the frozen unclassed th emission."}
-    - {finding: VTC-306, action: downgraded, note: "Tint half closed and re-verified — light rows now declare their own 7% wash while dark keeps 12%, so the planes carry plane-appropriate intensities. The route-arrow notch is composer-structural and was deliberately not touched, so the finding drops rather than clears."}
-    - {finding: VTC-307, action: downgraded, note: "Out-of-boundary — composer/engine-emitted copy under the same frozen fence; real vocabulary debt owed to the banned-vocab ratchet whose whitelist has not reached this route."}
-    - {finding: VTC-308, action: withdrawn, note: "Closed by repair and re-verified at both scales — a 200px clamp against a 206px track on desktop and 110px against 116px on mobile, so an out-of-range breadth cannot reach the track's end."}
-    - {finding: VTC-309, action: downgraded, note: "Same fence as VTC-307 — engine-emitted column titles with no presentation-only repair available."}
-    - {finding: VTC-310, action: upheld, note: "Unrepaired and unchanged in kind — the measure terminates at x=220 while the count it encodes sits at the right extreme of the row; the repair moved the gauge 14px right, so the two still never share an axis. Recording it for the authority is an acknowledgment, not a closure."}
+    - id: VTB-401
+      severity: major
+      finding: >
+        The leadership breadth bar encodes basket size but reads as leadership
+        strength, and contradicts the rank beside it. Unlabelled, neutral grey,
+        no legend, axis, tick or "out of what". Measured fills identical in both
+        themes — 79.1 / 27.7 / 98.5 / 59.7 / 98.5 percent, i.e. names over
+        max-names-in-view. Inside a table headed THEME RANK, directly beneath the
+        Theme #1..#5 ordinal, the LONGEST bars belong to rank #3 and rank #5 and
+        the shortest to rank #2. A subscriber doing the stated job scans the
+        strongest pre-attentive mark in the section and reads the wrong themes as
+        leaders; the disambiguating digit is 1,082px away at 11.7px. The isolated
+        breadth cells make it worse, not better — cropped to the ranking, the
+        five grey bars are the only graphic and the contradiction is the whole
+        picture. At 390 it degrades further: the bar underlines an
+        ellipsis-truncated ticker list, so it reads unambiguously as a text rule.
+    - id: VTB-402
+      severity: major
+      finding: >
+        The denominator is the visible-five maximum, is never stated, and the
+        extremes are unevidenced. max is computed over the first five themes, so
+        the bar answers "share of the largest of the five currently shown" — a
+        denominator that appears nowhere on screen and moves when the top five
+        move. The Expand-leadership modal renders the full list from the same
+        data with no bar at all, so the same theme has a length in one surface
+        and nothing in the other. At the top of the scale the fill cannot reach
+        its own track (200px max-width in a 206px track; 203/206 measured in both
+        themes, 113/116 at 390) — the true maximum never looks maximal. The
+        isolated breadth cells do NOT close the extremes: all 24 cells carry the
+        same 12/4/15/9/15 dataset, so no zero-count and no null-count theme
+        appears anywhere, and that behaviour is verified from source only.
+    - id: VTB-403
+      severity: major
+      finding: >
+        The IN FAVOUR blue is the one accent that never adapts — not to theme,
+        not to locale. Across all four theme x locale desktop cells, lanes 1 and
+        4 flip for CJK convention and lanes 1, 3, 4 are all re-inked for the
+        white canvas, while lane 2 is rgb(41,90,234) in BOTH light locales and
+        rgb(122,167,224) in both dark ones. At saturation ~0.82 against a white
+        panel it is the highest-chroma mark in the light Act-Now band, where its
+        three siblings sit at ~0.475-0.483. The stance ladder is Buy Now → In
+        Favour → Bottoming Watch → Reduce, so in light the SECOND rung is the
+        loudest and first-second triage is pulled to the weaker stance. Root
+        cause visible in source: the near lane resolves through --ink-link while
+        its three siblings resolve through --ink-pv-*.
+    - id: VTB-404
+      severity: minor
+      finding: >
+        Light lane columns have no bottom edge, so ragged lane lengths read as an
+        unfinished panel. In light the four lanes are open columns divided by
+        three 1px verticals and nothing else; the shorter lanes leave 60-100px of
+        unbounded white below their last row. In dark the same lanes are enclosed
+        cards, so the empty tail reads as padding. Light makes the shorter lanes
+        look truncated — the opposite of what the lane counts are asserting.
+    - id: VTB-405
+      severity: minor
+      finding: >
+        The light Act-Now header wash is below perceptual threshold — rgb(247,249,248)
+        on rgb(255,255,255), an 8/255 step — so light carries stance on a 2px rule
+        alone, where dark carries it twice (accent rule plus a distinct header
+        band). For a red/green-deficient reader the light lanes are separated by
+        a 2px rule and an 11px uppercase label only. This matters more in ZH,
+        where the rule's meaning has inverted.
+    - id: VTB-406
+      severity: minor
+      status: WITHDRAWN_IN_FIRST_PASS
+      finding: >
+        Withdrawn with resolving evidence, not silently dropped. The 119px EN→ZH
+        mobile height delta is benign CJK compaction, not a dropped element: band
+        analysis shows identical structure and gap signatures, with the delta
+        accumulating in three places rather than at one missing block, and the
+        51px step is the Prophet control row wrapping to two rows in EN and
+        fitting on one in ZH. Both locales show both segmented controls, all four
+        options, correct selected state.
+    - id: VTB-407
+      severity: major
+      finding: >
+        The leadership rank label is hardcoded English and appears untranslated
+        on the ZH board. Every ZH leadership row reads "Theme #1 / 白银与特许权金"
+        etc., while the column header, basis chip, stance chips, section title
+        and theme names are all translated. Source confirms it is not a rendering
+        accident — the string is built outside the bilingual helper, and the same
+        hardcoded string is reused in the modal, so it reproduces in the expanded
+        view. Present in both dark ZH and light ZH. The themes-only-rank
+        capability requires the rank basis to be VISIBLE; on the ZH board its
+        label is the one word a ZH reader cannot read, on the highest-value row
+        element. A small, unambiguous repair with no design judgement in it.
+    - id: VTB-408
+      severity: major
+      finding: >
+        Under ZH the same hue means opposite things in the same visual field. The
+        stance palette flips for CJK convention (red = buy, green = avoid), but
+        the direction ink does not: the LIVE dot measures byte-identical green
+        between EN and ZH, and the stylesheet pins up to --ok and down to --act
+        with !important, which the ledger names as precisely the mechanism for
+        keeping Western green-up under ZH. Both halves are individually
+        defensible; together they put, on one ZH screen, green = "reduce / avoid
+        this group" AND green = "price up / feed live", red = "buy this group"
+        AND red = "price down", with nothing signalling which system a given
+        green belongs to. ATTRIBUTION NOTE FROM THE CRITIC: with no ZH baseline
+        in the matrix it cannot tell whether this proposal introduced the
+        collision or inherited it, and it deliberately did not go looking. Judged
+        on the artifact alone it is a real defect needing an owner's ruling.
+    - id: VTB-409
+      severity: minor
+      classification: evidence-matrix defect
+      finding: >
+        The evidence matrix is asymmetric on exactly the axes under review. Three
+        concrete holes. (a) The filter-miss cell has no dark counterpart, so a
+        named core capability is evidenced in one theme only. (b) ZH has NO state
+        cells at all — no ZH filtered, filter-miss, all-candidates, table-view,
+        modal or breadth cell — so every interactive state was judged for EN and
+        then assumed for ZH. (c) There is no ZH baseline, which is what makes
+        VTB-408 unattributable. This is the reason two findings carry attribution
+        caveats rather than verdicts.
+    - id: VTB-410
+      severity: minor
+      classification: evidence-matrix defect
+      finding: >
+        Several cells are partly occluded by transient site chrome, including
+        over the region under review. The theme-toggle sun/moon animation is
+        mid-flight in both baselines and in four ZH/mobile cells, sitting over
+        the Act-Now band; in the EN mobile cells it covers the BUY NOW lane's
+        first row so the group name is unreadable — the one lane row visible at
+        390. Separately a floating widget overlaps a card's rank badge in the
+        all-candidates cell and the last table row in the table-view cell.
+        Neither is a product defect, but a cell that hides the surface it is
+        filed to prove is weak evidence.
+    - id: VTB-411
+      severity: minor
+      finding: >
+        Grid and Table use different stance vocabularies for the same tickers.
+        The population is preserved correctly, but one ticker is BUY in the card
+        grid and ENTRY OPEN in the table, and four others are NEAR in the grid
+        and SETTING UP in the table. A user who learns the grid's stance ladder
+        cannot find those words after toggling to Table — the one interaction the
+        toggle exists to support.
+    - id: VTB-412
+      severity: minor
+      finding: >
+        The table's Off High column spends the page's avoid-red on a quantity
+        that is negative by construction. All five values render in the exact
+        colour of the light REDUCE/AVOID lane accent, so the colour carries zero
+        information in that column while diluting red's meaning elsewhere on the
+        same screen. The neighbouring momentum column, where sign IS informative,
+        gets the same treatment — correct there, which makes the Off-High usage
+        look deliberate rather than incidental.
+    - id: VTB-413
+      severity: minor
+      finding: >
+        Card sector labels stay English on the ZH board while the same sector is
+        translated one section above — the Act-Now lanes render Chinese sector
+        names while the Prophet cards for those same sectors render English. The
+        population-filter capability asks the user to filter by sector and then
+        read the filtered cards; in ZH the filter chip and the card label are in
+        different languages, so the match cannot be made by name. Attribution:
+        the card body is legacy markup the composer restyles rather than authors,
+        so this is very likely inherited — recorded as minor for that reason.
   dual_theme_adjudication:
-    dark: {treatment: "luminance-depth instrument, achromatic track/fill, no glow", track_contrast: "1.90:1", bound_at_full_value: "3px shoulder + 1px halo present"}
-    light: {treatment: "same achromatic instrument on white material, hairline discipline", track_contrast: "1.83:1", bound_at_full_value: "3px shoulder + 1px halo present"}
-    parity_judgment: >
-      Genuine art-direction parity for this component, not token substitution
-      alone — both planes measured independently at partial and full value and
-      landing within 0.07 of each other on track contrast, with identical
-      geometry and identical shoulder.
-    responsive: "mobile rescale preserves the shoulder ratio (110px clamp inside a 116px track)"
-  conditions:
-    - "VTC-310 is unrepaired and is a composition ruling for the design authority, not a closure of this cycle."
-    - "VTC-301 residual: any future breadth touch must give the track a designed terminus, not a 3px shoulder."
-    - "VTC-303 / VTC-304 / VTC-306-notch / VTC-307 / VTC-309 must land on the estate ledger as named open debt and must not be absorbed by an r3 PASS."
-    - "The r3 pass-1 frozen receipt must exist before this verdict is ratified — see the PROVENANCE DEFECT note at the head of this file."
+    claim_tested: "light is a genuine second art direction, not a token substitution"
+    result: SURVIVES_FALSIFICATION
+    mechanisms_differing_in_kind:
+      - "lane containment: dark keeps enclosed cards; light deletes the enclosure for open hairline-divided columns (verified in pixels — three full-height 1px verticals, no lane outline)"
+      - "accent delivery: dark border-top flush with the card edge; light a detached ::before rule with 10px of white above it"
+      - "semantic ink: light re-authors stance colours through --ink-pv-* rather than inverting dark hues; measured hue/chroma sets are different families in both locales"
+      - "elevation: light re-specifies panel and card surfaces separately and replaces the dark light-emitting ring with its own card rule — glow to shadow, made explicitly"
+      - "responsive: light carries its OWN breakpoint corrections for the new column model, behaviour that exists only because light chose a different material model — the strongest single evidence that light was designed rather than derived"
+    dark_independently: >
+      Sound. Cards on a deeper gradient field, stance colour held at mid-luminance
+      so no accent burns, five distinct type steps each doing one job, vertical
+      rhythm tightened against baseline with no row below a 32px hit target.
+    mobile_390: >
+      Re-composes rather than shrinking — four-lane row becomes a one-lane view
+      with a working segmented switcher, single-column cards, and a meter
+      re-scaled by a deliberate responsive unit rather than a percentage hack.
+      Both locales hold.
+    conclusion: >
+      Light's failures are not "dark inverted" — they are one token left behind
+      (VTB-403), one edge condition (VTB-404) and one wash below threshold
+      (VTB-405).
+  strengths:
+    - The whole presentation moved out of a runtime-injected string into a real
+      stylesheet; the JS that remains sets state classes and one genuinely
+      data-dependent inline value. The correct division, and the most valuable
+      thing in the packet.
+    - Missing is not rendered as zero — null count yields no bar, no class and an
+      em-dash, on exactly the axis the ledger flags.
+    - >-
+      The meter's mobile behaviour is properly authored — a responsive unit
+      reduction yields a 116px track with proportions preserved. Whatever is
+      wrong with what the bar MEANS, its responsive engineering is right.
+    - Sparkline colour is stance-coded, not decorative, and consistent — the
+      critic went looking for a dishonest chart colour and did not find one.
+    - >-
+      Filter states are honest — the population is never silently narrowed, and
+      both the filtered count and the filter-miss escape are bilingual in source.
+    - The light lane band is the best-authored region in the packet.
+    - Type sits on a real scale with tabular numerals wherever numbers are
+      compared down a column.
+  critic_verdict_reasoning: >
+    Held at PASS_WITH_CONDITIONS rather than escalating to BLOCK, with the
+    reasoning made visible: VTB-407 is a one-line repair with no design judgement
+    in it, and VTB-408 — the only finding with blocker-shaped consequences —
+    rests on an inference chain rather than a photographed up-tick, and may be
+    inherited site convention. Escalating on an unphotographed contradiction
+    would violate the commission's own "no claim may rest on assumption" rule.
+  gaps:
+    - "green-up/red-down under ZH is never directly shown — every price chip in all 24 cells renders flat, so the up/down rules are not exercised in any cell in either locale"
+    - "breadth zero and missing extremes remain source-only; no zero-count or null-count theme appears in any cell"
+    - "ZH interactive states do not exist in the matrix; those states were judged in EN and deliberately NOT extrapolated to ZH — unjudged, not passed"
+    - "VTB-408 unattributable without a ZH baseline"
+    - "no WCAG ratios — the token file is not in the packet, so colour findings are about hue/chroma family and material step, not compliance thresholds"
+    - "motion, hover, focus-visible and keyboard traversal are specified but uncaptured; modal focus and Escape handling were read, not exercised"
+    - "entitled/authenticated behaviour is out of the matrix by the packet's own declaration"
