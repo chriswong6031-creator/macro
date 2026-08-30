@@ -1,27 +1,21 @@
-# CYCLE CAPTURE / WASHOUT CW0 - ESTATE, SOURCE, AND SCIENCE CHARTER
+# CYCLE CAPTURE / WASHOUT CW0 — ESTATE, SOURCE, AND SCIENCE CHARTER
 
 **Date:** 2026-08-30  
-**Parent architecture operation:** `prophet-strategy-platform-architecture-20260830-sol-001`  
+**Parent operation:** `prophet-strategy-platform-architecture-20260830-sol-001`  
 **Future child operation:** `prophet-cycle-capture-cw0-estate-science-20260830-sol-001`  
-**Canonical workstream:** `WS:PROPHET-US-V4-RECOVERY`  
-**Capability state:** `SPEC_ONLY` / execution-ready research charter  
-**Execution state:** `NOT STARTED`  
-**Receiver binding:** `CAPACITY_SELECTABLE`  
-**Placement state:** `WAITING_CAPACITY / needs_placement`  
+**Workstream:** `WS:PROPHET-US-V4-RECOVERY`  
+**State:** `SPEC_ONLY / NOT STARTED`  
+**Binding mode:** `CAPACITY_SELECTABLE`  
+**Placement:** `WAITING_CAPACITY / needs_placement`  
 **Preferred avenue:** `CTO Sol`  
-**Why:** difficult but bounded cross-market estate archaeology, data/clock adjudication, and preregistered strategy science after Sol architecture freeze  
-**Why not Fable:** the platform and authority boundary are frozen; CW0 must return evidence and a bounded design, not continuously adjudicate a multi-repository implementation program  
-**This file is not a worker assignment, START receipt, or permission to modify production. No receiver-specific watcher is armed.**
+**Why not Fable:** architecture and authority are frozen; this is bounded evidence/science work, not a sustained cross-repository build  
+**Transport:** no delivery, ACK, START, or watcher
 
----
+## 0. Mission
 
-## 0. Observable mission
+Determine which existing Mastermind washout/cycle capabilities and lawful point-in-time data can support a genuinely new Cyclical Washout Accumulation / Cycle Capture experiment, in which first market and instrument class, under what state/entry/hold/failure law, and with what untouched evidence boundary.
 
-Return one current, point-in-time, rights-aware answer to:
-
-> Which existing Mastermind washout/cycle capabilities and lawful data can support a serious first Cyclical Washout Accumulation experiment, in which market/instrument class, under what frozen state/entry/hold/failure law, and with what untouched evidence boundary?
-
-CW0 completes when Sol can choose exactly one of:
+Return exactly one verdict:
 
 - `GO_CW1_<MARKET_AND_INSTRUMENT_CLASS>`;
 - `HOLD_SOURCE_OR_CLOCK_GAP`;
@@ -29,112 +23,70 @@ CW0 completes when Sol can choose exactly one of:
 - `NO_GO_CURRENT_METHOD`;
 - `REROUTE_TO_EXISTING_OWNER_CAPABILITY`.
 
-CW0 does not fit a model, tune a threshold, run a promotion-bearing backtest, change Prophet, or originate a trade.
+Stop before model fitting, threshold tuning, holdout opening, promotion-bearing backtests, production changes, or trade origination.
 
----
+## 1. Binding negative evidence
 
-## 1. Why this is the next scientific step
+`DNR:KILL-WASHOUT-TURN` remains terminal for the exact two-week Washout x Turn operator seed. CW0 may reproduce it as a negative/control baseline where lawful, but may not retune, retime, reverse, rename, wrap, or launder it into Cycle Capture.
 
-Mastermind already contains substantial washout-related machinery and artifacts, including:
+Also binding:
 
-- broad `TURN_WATCH` / `WASHOUT_TURN` observations;
-- basket washout state;
-- Mag7 washout state and shadow state;
-- Hong Kong washout-watch history;
-- Oracle washout counterread;
-- TURN WATCH basket and stock artifacts;
-- candidate-episode intake;
-- existing Prophet plans, doors, board and outcome ledgers;
-- technical catalog, Setup Species, Signal Foundry, Radar and TOI foundations;
-- market, sector, theme, flow, earnings, balance-sheet and policy owners of varying maturity.
+- `DNR:KILL-ROTATION-CYCLE-CONFLUENCE`;
+- `DNR:KILL-REGIME-SCORECARD`;
+- `DNR:KILL-FUSED-COMPOSITE`;
+- `DNR:KILL-PROPHET-POP-MERGE`;
+- `DNR:KILL-DIRECTIONAL-SHORTING`;
+- `DNR:KILL-LLM-ORIGINATION`;
+- `DNR:KILL-OFFHORIZON-VERDICTS`;
+- the existing PSS F1/F2/F3/F4/F4-repair/SR1/SR2/SR3 construction kills.
 
-The missing capability is not another detector. It is a governed strategy architecture that knows:
+CW0 must produce a DNR collision matrix classifying each proposed mechanism as:
 
-- when a washout observation is economically relevant;
-- which markets/instruments are eligible;
-- whether a pivot is lawful and available;
-- when a core hold differs from a tactical trade;
-- which failure paths destroy the thesis;
-- how to measure cycle capture without selecting only famous winners;
-- whether a later risk budget is supported.
+- exact killed construction;
+- retime/relabel/near-duplicate;
+- dependent evidence only;
+- genuinely new testable species;
+- already owned elsewhere and rerouted.
 
-CW0 must determine whether the current estate can answer those questions before code is commissioned.
+No `GO_CW1` is valid without that matrix.
 
----
+## 2. Current estate to census
 
-## 2. Authority and document precedence
+At minimum inspect:
 
-Use current sources in this order:
+- `data/washout_turn/ledger.jsonl`;
+- `site/factordata/basket_washout_state.json`;
+- `data/mag7_washout/latest.json` and `shadow_state.json`;
+- `data/hk_impulse/washout_watch_ledger.jsonl`;
+- `site/oracledata/washout_counterread.json`;
+- TURN WATCH stock/basket artifacts;
+- Prophet candidates, plans, doors, live state, grades and ledgers;
+- technical catalog, Setup Species, Signal Foundry, Radar and TOI;
+- market, sector, theme, policy, earnings, balance-sheet, flow, commodity and Evaluation owners.
 
-1. current Chairman directive and protected Sol procedure;
-2. `PROPHET_STRATEGY_PLATFORM_AND_CYCLE_CAPTURE_ARCHITECTURE_FREEZE_2026-08-30.md` and its Agent OS decision;
-3. current `WS:PROPHET-US-V4-RECOVERY`, V4 architecture, owner map and wave graph;
-4. current TOI, Radar, Setup Species, Entry Timing, GMI, Evaluation OS, Stock Identity, Availability, Earnings and market-data owner records;
-5. current default-branch implementation and data artifacts;
-6. accepted historical research/PR receipts;
-7. Linear and Slack only as projections/transport evidence.
+For every material capability record owner, path/content identity, schema, market/instrument coverage, clocks, completed-bar law, adjustment/basis, corrections, rights, capability state, real consumer, authority consequence, duplicate/dependency relationships, historical/prospective availability, B1 attachment feasibility, and governing DNR/DEC.
 
-If a newer accepted source collides with CW0, stop and return the exact conflict. Do not resolve ownership by creating a new owner.
+A file that exists is not automatically a live capability.
 
----
+## 3. Semantic owner crosswalk
 
-## 3. Exact scope
+Crosswalk:
 
-### 3.1 Estate census
+- descriptive `TURN_WATCH` / `WASHOUT_TURN`;
+- TOI `FORMING -> ARMED -> TRIGGERED -> CONFIRMED -> EXTENDED -> EXHAUSTED` and adverse branches;
+- V4 episode, emergence, maturity and Availability;
+- current plan/live vocabularies;
+- proposed Cycle Capture states.
 
-Inventory every current material surface that names or computes concepts such as:
+Each mapping must be one of:
 
-```text
-washout
-capitulation
-bottom watch
-turn watch
-washout turn
-reversal
-reset
-compression
-reclaim
-higher low
-pivot
-breadth thrust
-sector turn
-cycle state
-momentum regime
-distribution
-blowoff
-```
+`SAME_SEMANTIC`, `OWNER_INPUT_TO`, `CORRELATED_NOT_EQUIVALENT`, `DIFFERENT_QUESTION`, `CONFLICTING_CURRENT_SEMANTIC`, or `UNMAPPED`.
 
-For each item record:
+Do not rename owner states for convenience.
 
-- canonical owner/workstream;
-- repository path and current commit/blob identity;
-- schema/version and row identity;
-- market/instrument coverage;
-- clock, bar completion and as-of semantics;
-- adjustment/corporate-action basis;
-- revision/correction behavior;
-- rights and publication class;
-- current capability state;
-- real consumer and authority consequence;
-- duplicate/equivalent/dependent mechanisms;
-- whether it can lawfully attach to B1 candidate episodes;
-- whether it has historical, current, or prospective evidence.
+## 4. Asset-class feasibility
 
-### 3.2 Semantic crosswalk
-
-Build an explicit crosswalk among:
-
-- existing `TURN_WATCH` / `WASHOUT_TURN` observations;
-- TOI `FORMING -> ARMED -> TRIGGERED -> CONFIRMED -> EXTENDED -> EXHAUSTED` occurrence states;
-- V4 episode, emergence, maturity and Availability states;
-- existing plan and live-state vocabularies;
-- proposed Cycle Capture strategy states.
-
-The crosswalk must identify what is equivalent, what is merely correlated, and what is a different question. It must not rename the owner state to make the diagram neat.
-
-### 3.3 Asset-class feasibility
-
-Evaluate at least these candidate domains independently:
+Evaluate separately:
 
 1. liquid U.S. common equities and sector/industry ETFs;
 2. U.S.-listed commodity producers and miners;
@@ -143,143 +95,50 @@ Evaluate at least these candidate domains independently:
 5. commodity futures or lawful liquid proxies;
 6. crypto only as `HELD_FOR_SEPARATE_MARKET_STRUCTURE` unless current owner/data law proves readiness.
 
-For each domain determine:
+For each domain determine identity quality, universe, survivorship/delistings/suspensions, history depth, corrections, corporate actions/roll/basis, required intraday coverage, benchmarks/controls, realistic costs, liquidity, macro/sector/theme/cycle evidence, survivability/supply-demand evidence, cycle count/effective N, contaminated examples, transfer rationale, and net-new infrastructure.
 
-- lawful universe and identity quality;
-- survivorship and delisting coverage;
-- price-history depth and corrections;
-- corporate-action/roll/basis handling;
-- intraday availability if required;
-- benchmark and control availability;
-- liquidity and transaction-cost observability;
-- macro/sector/theme/cycle evidence coverage;
-- fundamental or supply-demand survivability evidence;
-- sample size, cycle count and likely effective N;
-- previously exposed examples/periods that can no longer serve as untouched evidence;
-- first-principles reason the strategy could or could not transfer.
+Do not collapse domains into one score. Recommend exactly one first proving market/instrument class. A follower is allowed only when genuinely disjoint and useful for external validity.
 
-Do not average domains into one readiness score. A market either clears its named gates or it does not.
+## 5. Contamination law
 
-### 3.4 First proving universe recommendation
+All previously discussed, researched, displayed, or manually inspected cases are development-visible, including Chairman-cited EXK, BABA, HK/China, commodity/miner and broad-market examples, existing dashboards, and prior PSS/washout studies.
 
-Recommend one first proving market/instrument class, plus one disjoint external-validity follower only if the data and clocks support it.
+They may support semantics, casebooks, product compositions, and debugging. They may not be called untouched OOS evidence.
 
-Selection criteria:
-
-- clear economic and product value;
-- enough lawful point-in-time history and independent cycles;
-- survivorship and correction safety;
-- realistic costs and risk facts;
-- existing owner compatibility;
-- ability to preserve an untouched holdout and prospective sample;
-- minimal new infrastructure;
-- direct relevance to the Chairman's strategy.
-
-The recommendation must not simply choose the domain whose visible historical winners look largest.
-
----
-
-## 4. Contamination and evidence law
-
-### 4.1 Development-visible examples
-
-Every example already discussed, researched, displayed, or used to motivate the system is development-visible. This includes any well-known or Chairman-cited washout/cycle cases, existing research-factory examples, current dashboards, and previously inspected EXK/BABA/HK/commodity episodes.
-
-They may be used for:
-
-- semantic design;
-- failure-case design;
-- product reference composition;
-- debugging;
-- illustrating why the capability matters.
-
-They may not be represented as untouched OOS proof.
-
-### 4.2 Frozen evidence partitions
-
-CW0 must propose a deterministic partition before any new outcome-bearing experiment:
+Freeze before outcome-bearing work:
 
 ```text
 DESIGN / DEVELOPMENT
-CALIBRATION, if scientifically needed
+CALIBRATION, only if justified
 UNTOUCHED OOS / HOLDOUT
 PROSPECTIVE NATURAL-TIME SHADOW
 ```
 
-Partition law must account for:
+Partition law must address issuer/name disjointness, date/cycle/macro clustering, common sector/commodity shocks, several securities representing one exposure, repeated events inside an episode, prior studies, known examples, and current-era coverage.
 
-- issuer/name disjointness where necessary;
-- date and cycle clustering;
-- shared commodity/sector/macro shocks;
-- multiple securities representing one economic exposure;
-- repeated observations inside one candidate episode;
-- asset-class and regime concentration;
-- known historical examples;
-- current-era coverage.
+No market, threshold, horizon, feature set, hold law, exit law, cost assumption, or risk rule may be selected from final-sample performance. When no honest holdout remains, return `HOLD_INSUFFICIENT_POWER` or prospective-only design.
 
-If no honest untouched sample remains, return `HOLD_INSUFFICIENT_POWER` or a prospective-only design. Do not relabel a contaminated sample.
+## 6. Strategy semantics to freeze
 
-### 4.3 Outcome-audition prohibition
+A future CW1 contract must include:
 
-No threshold, market, horizon, indicator combination, hold rule, exit rule, or leverage rule may be selected because it looks best on the final evaluation sample.
+- exact instrument/security/issuer identity and epoch;
+- market/instrument class and active/tradable state;
+- adjustment, corporate-action, contract, roll and basis law;
+- liquidity/fillability and data/rights states;
+- liquidation depth/path evidence;
+- base and pivot semantics;
+- economic survivability and sustaining mechanism;
+- price-incorporation and residual-opportunity state;
+- deterministic B4 Availability;
+- core-hold, tactical-add, maturity, distribution and invalidation semantics;
+- all source, observed, available, recorded, correction and staleness clocks.
 
-CW0 may inspect existing published findings to understand contamination and prior evidence. It must separately state what was known before the new preregistration and what remains untouched.
-
----
-
-## 5. Required strategy semantics to freeze
-
-CW0 must return a machine-testable candidate contract for later CW1, covering at least:
-
-### 5.1 Instrument eligibility
-
-- exact security/instrument identity;
-- market and instrument class;
-- active/tradable state;
-- adjustment, basis and roll semantics;
-- liquidity/fillability facts;
-- short-history or data-unavailable refusal;
-- entity/vehicle distinctions;
-- source and rights status.
-
-### 5.2 Washout observation
-
-Candidate observable families may include, but are not limited to:
-
-- drawdown depth and duration;
-- cross-sectional depth percentile;
-- realized and implied volatility where lawful;
-- breadth and participation;
-- volume/capitulation and failed-rally structure;
-- momentum and oscillator state;
-- distance from trend and long-term range;
-- dispersion and correlation;
-- forced-selling or positioning evidence;
-- sector/basket synchronization;
-- commodity/asset supply-demand state.
-
-CW0 does not assume any one family is sufficient.
-
-### 5.3 Pivot and base formation
-
-Freeze the distinction among:
-
-- still falling / washout deepening;
-- stabilization/base formation;
-- preliminary pivot;
-- confirmed pivot;
-- failed pivot;
-- later trend confirmation;
-- normal pullback inside an active cycle;
-- distribution or structural failure.
-
-### 5.4 Strategy state
-
-Return the proposed deterministic strategy projection and exact owner mapping for:
+Proposed strategy states:
 
 ```text
 OBSERVING
-WASHOUT_DEEPENING
+LIQUIDATION_DEEPENING
 BASE_FORMING
 PIVOT_ELIGIBLE
 ACCUMULATION_OPEN
@@ -289,228 +148,72 @@ DISTRIBUTION_REVIEW
 TERMINAL
 ```
 
-plus typed adverse and unavailable states.
-
-### 5.5 Availability and hold separation
-
-The contract must prove that:
-
-- B4 alone owns current entry availability;
-- `CORE_HOLD` can remain valid when a new add is `RAN_DONT_CHASE` or `WAIT_PULLBACK`;
-- tactical add/trim state cannot silently liquidate or resize the core;
-- structural invalidation can terminate the core regardless of short-term technical attractiveness;
-- every state transition cites new owner evidence and an as-of clock.
-
-### 5.6 Leverage and sizing boundary
-
-All leverage, size, capital-at-risk and portfolio effects are const-false/non-authoritative in CW0/CW1/CW2/CW3. The contract may expose downstream risk facts only.
-
----
-
-## 6. Source and clock matrix
-
-For every proposed feature, CW0 must state:
+Typed adverse/unavailable states:
 
 ```text
-owner
-native object/schema/version
-identity grain
-source time
-effective/event time
-observed/available time
-system recorded time
-correction/revision lineage
-maximum lawful staleness
-rights/publication class
-missing/null state
-historical reconstructibility
-prospective availability
+FAILED_PIVOT
+STRUCTURAL_INVALIDATION
+FUNDAMENTAL_IMPAIRMENT
+CYCLE_THESIS_BROKEN
+LIQUIDITY_UNAVAILABLE
+IDENTITY_OR_BASIS_UNRESOLVED
+DATA_UNAVAILABLE
+RIGHTS_BLOCKED
+THESIS_EXPIRED
 ```
 
-Hard requirements:
+This is a read-model projection over existing owners, not a new lifecycle store.
 
-- no current snapshot may masquerade as historical belief;
-- no close-only series may manufacture intraday pivots;
-- no weekend/holiday/global-last-row artifact may contaminate a market clock;
-- no later filing, earnings revision, constituent list, identity correction, or theme membership may leak backward;
-- commodity futures require explicit contract/continuous-series/roll/basis law;
-- ETF and producer equity observations cannot be treated as the same economic instrument;
-- missing is not zero, stale is not missing, and unavailable is not benign.
+The contract must prove that B4 alone owns current entry/add geometry; `CORE_HOLD` can coexist with `WAIT_PULLBACK` or `RAN_DONT_CHASE` for a new add; tactical add/trim state cannot silently liquidate the core; structural invalidation can terminate the core; every transition cites new owner evidence; and price rising is not itself independent evidence.
 
----
+All size, leverage, capital-at-risk and portfolio authority remain false through CW0-CW3.
 
-## 7. Proposed measurement preregistration
+## 7. Draft preregistration
 
-CW0 must produce a complete draft preregistration, but it must stop before executing the promotion-bearing experiment.
+CW0 drafts but does not execute the experiment.
 
-### 7.1 Primary questions
+Primary questions must test whether a genuinely new species adds useful lead time, reward-to-invalidation, cycle capture, controlled false-pivot behavior, and incremental value beyond price-only washout evidence, and in which markets it is estimable.
 
-At minimum:
+Freeze exact definitions for lead time, hit-before-invalidation, MFE/MAE, false-pivot rate, cycle-capture ratio, holding efficiency, time to confirmation/failure/maturity, benchmark excess, costs, drawdown/tail/gap loss, missed-major-cycle rate, abstention quality, effective N, and cluster concentration.
 
-1. Does the frozen cycle-capture candidate state identify future cycle advances with useful lead time relative to simple trend/confirmation controls?
-2. Does entry near the pivot improve reward-to-invalidation and path risk without an unacceptable false-pivot rate?
-3. Does the core-hold law capture more of the available cycle than tactical oscillator exits after realistic costs?
-4. Which asset classes, if any, show estimable and transferable behavior?
-5. Does sector/theme/commodity-cycle context add incremental value beyond price-only washout state?
-6. Can risk scaling improve path control without erasing the strategy's positive skew?
-7. Which negative or abstention conditions prevent the largest failures?
+Mandatory controls:
 
-### 7.2 Frozen targets
-
-Recommend exact definitions for:
-
-- lead time;
-- hit-before-invalidation;
-- MFE and MAE;
-- false-pivot rate;
-- cycle-capture ratio;
-- holding efficiency;
-- time to confirmation/failure/maturity;
-- benchmark and sector/asset excess;
-- turnover and costs;
-- max drawdown, tail loss and gap loss;
-- missed-major-cycle rate;
-- abstention and correct-ignore quality;
-- effective N and cluster concentration.
-
-### 7.3 Controls
-
-Include:
-
-- current Prophet V3 same-tape output where applicable;
-- current washout observation alone;
-- simple moving-average/time-series trend;
-- simple breakout/reclaim;
-- buy-and-hold asset/sector benchmark;
-- late-confirmation entry;
+- current Prophet V3 where applicable;
+- exact killed Washout x Turn seed if lawfully reconstructible;
+- descriptive washout observation alone;
+- simple trend/moving-average and breakout/reclaim;
+- benchmark buy-and-hold;
 - anchor/drawdown/volatility-matched random controls;
-- core-only versus tactical-add variants;
-- unlevered and frozen risk-scaled variants;
-- explicit no-trade/abstention control.
+- late-confirmation entry;
+- core-only versus tactical-add;
+- unlevered versus frozen risk-scaled;
+- no-trade/abstention.
 
-### 7.4 Cost and failure treatment
+Predefine spreads, commissions, slippage, roll, financing, gap-through-stop, suspensions, delistings, dilution, corporate actions, partial fills, common exposures, unestimable outcomes, and multiple-testing budget.
 
-Predefine:
+Research display, strategy shadow, priority influence, entry integration, sizing consideration, and leverage consideration are separate promotion gates. No result may jump directly to leverage.
 
-- spread, commissions, slippage, roll and financing where applicable;
-- gap-through-stop behavior;
-- delisting, suspension and stale quotes;
-- dilution and corporate actions;
-- partial fills/liquidity refusal;
-- overlapping exposures and common shocks;
-- missing data and unestimable outcomes;
-- multiple testing and model-selection budget.
-
-### 7.5 Promotion boundary
-
-CW0 must state what evidence would allow:
-
-```text
-research display
-strategy eligibility shadow
-priority influence
-entry integration
-portfolio sizing consideration
-leverage consideration
-```
-
-These are separate gates. No result can skip directly to leverage.
-
----
-
-## 8. Reference and failure casebook
-
-Produce a balanced casebook containing at least:
-
-- true deep washout followed by durable bull-cycle maturation;
-- early pivot that fails and makes a lower low;
-- technical recovery with permanent fundamental impairment;
-- commodity price recovery but producer dilution/operating failure;
-- broad market washout with quality leader recovery;
-- crowded rebound that quickly exhausts;
-- policy-induced HK/China turn with later reversal;
-- washout signal on a non-cyclical defensive asset;
-- stale/corrected/identity-broken observation;
-- suspended, delisted, renamed or corporate-action-distorted instrument;
-- core-hold valid while tactical add is unavailable;
-- strong tactical bounce with no long-horizon cycle case;
-- cycle thesis valid but liquidity/risk blocks action;
-- correct abstention that misses a later winner;
-- development-famous winner excluded from OOS proof.
-
-Each case must state exact data/source limitations and whether it is design, calibration, holdout, synthetic, or prospective.
-
----
-
-## 9. Required deliverables
-
-CW0 returns exactly these durable outputs or a typed blocker:
+## 8. Required deliverables
 
 1. `CYCLE_CAPTURE_CURRENT_ESTATE_LEDGER_<date>.md`
 2. `cycle_capture_estate_matrix.v1.json`
-3. `CYCLE_CAPTURE_SEMANTIC_OWNER_CROSSWALK_<date>.md`
-4. `cycle_capture_asset_class_feasibility.v1.json`
-5. `CYCLE_CAPTURE_SOURCE_CLOCK_RIGHTS_MATRIX_<date>.md`
-6. `CYCLE_CAPTURE_FIRST_PROVING_UNIVERSE_RULING_<date>.md`
-7. `cycle_capture_preregistration.v1.json`
-8. `CYCLE_CAPTURE_REFERENCE_AND_FAILURE_CASEBOOK_<date>.md`
-9. one continuation handoff naming `GO`, `HOLD`, `NO_GO`, or `REROUTE` and the exact next bounded mission.
+3. `CYCLE_CAPTURE_DNR_COLLISION_MATRIX_<date>.md`
+4. `CYCLE_CAPTURE_SEMANTIC_OWNER_CROSSWALK_<date>.md`
+5. `cycle_capture_asset_class_feasibility.v1.json`
+6. `CYCLE_CAPTURE_SOURCE_CLOCK_RIGHTS_MATRIX_<date>.md`
+7. `CYCLE_CAPTURE_FIRST_PROVING_UNIVERSE_RULING_<date>.md`
+8. `cycle_capture_preregistration.v1.json`
+9. `CYCLE_CAPTURE_REFERENCE_AND_FAILURE_CASEBOOK_<date>.md`
+10. one Agent OS continuation handoff with `GO`, `HOLD`, `NO_GO`, or `REROUTE` and the exact next mission.
 
-Machine artifacts must be schema-validated, deterministic, source-hashed where appropriate, and contain zero rank/size/leverage/trade authority.
+Machine artifacts must be deterministic, validated, source-hashed where appropriate, and carry zero rank/size/leverage/trade authority.
 
----
+The casebook must include durable cycles, failed pivots, permanent impairment, producer dilution, crowded relief rallies, policy reversals, non-cyclical false positives, identity/basis failures, delistings/suspensions, core-valid/add-unavailable cases, tactical bounces without cycle thesis, risk-blocked valid theses, correct abstentions, famous-development winners, and the exact killed seed as negative evidence.
 
-## 10. Explicit non-goals
+## 9. Explicit non-goals and stop
 
-CW0 may not:
+CW0 may not modify detectors, thresholds, rankers, gates, Availability, plans, boards, production artifacts, or any canonical owner; execute the final experiment; open holdouts; rebuild any DNR; test rotation x cycle confluence; create a regime scorecard; create a new truth store/control plane; select only famous winners; infer leverage from hindsight; copy U.S. constants; merge or repair PR #6264; or absorb D5/B2/B3/B4/TOI/Radar/GMI/Stock Identity/Evaluation implementation.
 
-- modify a detector, threshold, ranker, gate, Availability, plan, board or production artifact;
-- execute a promotion-bearing historical backtest;
-- read a frozen holdout outcome before the preregistration and selection law are accepted;
-- create a new candidate, episode, washout, strategy, market-data, graph, identity, plan, evidence, outcome, evaluation, portfolio or risk store;
-- build a broad regime router;
-- select only famous winners or successful markets;
-- infer leverage from historical upside;
-- copy U.S. constants into another market;
-- merge or repair PR #6264;
-- absorb D5, B2/B3/B4, TOI, Radar, GMI, Stock Identity or Evaluation OS implementation.
+Return a typed stop for owner/path collision, DNR collision, rights failure, unreconstructible clocks, inadequate survivorship, unresolved identity/basis, concentrated/underpowered sample, no untouched evidence, unmeasurable costs, duplicate infrastructure requirement, or an existing owner already satisfying the job.
 
----
-
-## 11. Failure states
-
-Return a typed stop rather than improvising when:
-
-- ownership is ambiguous or duplicated;
-- the current open carrier touches the same paths or authority;
-- data rights do not support the required use;
-- point-in-time clocks cannot be reconstructed;
-- survivorship/delisting coverage is inadequate;
-- instrument identity or corporate-action basis is unresolved;
-- the apparent sample is dominated by one era, commodity, issuer or macro event;
-- no untouched holdout or prospective-only path remains;
-- effective N is too small;
-- costs/liquidity cannot be measured honestly;
-- the proposed first market requires a new owner plane;
-- existing owner capability already satisfies the job and should be adopted instead.
-
----
-
-## 12. Stop condition and return to Sol
-
-Stop after the nine deliverables and one typed recommendation. Do not begin CW1, fit a
-model, open a holdout, create a PR that changes runtime code, or publish a strategy.
-
-The return packet must include:
-
-- exact current main and protected procedure pins;
-- operation key and actual receiver identity;
-- changed paths and immutable head/PR;
-- source and owner collision census;
-- tests and deterministic reproduction receipts;
-- contamination ledger;
-- what was and was not inspected;
-- recommended first market/instrument class;
-- power/readiness verdict;
-- exact next mission and explicit non-goals;
-- any new decision required from Sol.
+Stop after the ten deliverables and one verdict. Do not begin CW1, fit a model, open a holdout, change runtime code, publish a strategy, or dispatch a successor.
