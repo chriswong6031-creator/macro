@@ -508,3 +508,165 @@ def test_task2_hard_apply_blockers_are_explicit(tmp_path):
     blocker_codes = {row["code"] for row in plan["hard_blockers"]}
     assert "initiative_name_ambiguous" in blocker_codes
     assert "unmapped_visible_project" in blocker_codes
+
+
+WATCHLIST_EXCEPTION_KEY = "WS:WATCHLIST-PORTFOLIO-CEO"
+CI_MANIFEST_PATH = REPO / ".github" / "ci" / "legacy-jobs.yml"
+AGENT_OS_OWNER_JOB = "self-mod-fence"
+AGENT_OS_RECORD_STEP_PREFIX = "agent-os record contract"
+INITIATIVE_OWNED_PATHS = (
+    "scripts/linear_initiative_plan.py",
+    "config/linear_initiative_portfolio.v1.json",
+    "tests/linear_initiative_plan_cases.py",
+    "tests/linear_initiative_plan_live_cases.py",
+)
+
+
+def _agent_os_owner_job():
+    import yaml
+
+    manifest = yaml.safe_load(CI_MANIFEST_PATH.read_text(encoding="utf-8"))
+    return manifest, manifest["jobs"][AGENT_OS_OWNER_JOB]
+
+
+@pytest.mark.parametrize("live_health", ["onTrack", "atRisk", "offTrack"])
+def test_task2_lawful_later_health_update_is_not_structural_drift(tmp_path, live_health):
+    """Health is unset at creation; a later formal Sol update may set it.
+
+    Blocker 1: the compiler compared live `health` to the strategy's creation-time
+    `null`, so any lawful later On track / At risk / Off track update surfaced as
+    `initiative_field_drift`. Health is descriptive, not structural.
+    """
+    lip = _lip()
+    snapshot = _snapshot()
+    desired_key = "legendary-alpha-discovery-timing"
+    desired_name = EXPECTED_INITIATIVES[desired_key][0]
+    live = next(row for row in snapshot["initiatives"] if row["name"] == desired_name)
+    assert live["health"] is None, "fixture must start from the creation-time null"
+    live["health"] = live_health
+
+    plan, _ = lip.compile_initiative_plan(
+        project_plan=_full_project_plan(),
+        strategy_path=STRATEGY_PATH,
+        snapshot_path=_write_snapshot(tmp_path, snapshot),
+    )
+
+    desired = next(
+        row for row in plan["desired_initiatives"]
+        if row["initiative_key"] == desired_key
+    )
+    assert desired["health"] is None, "creation desired state must still emit health=null"
+
+    assert not any(
+        row["code"] == "initiative_field_drift" and row.get("initiative_key") == desired_key
+        for row in plan["drift"]
+    ), f"lawful later health={live_health!r} must not read as structural drift"
+
+
+def test_task2_health_exemption_does_not_blind_real_field_drift(tmp_path):
+    """Discriminating proof: exempting health must not exempt its neighbours."""
+    lip = _lip()
+    snapshot = _snapshot()
+    desired_key = "legendary-alpha-discovery-timing"
+    desired_name = EXPECTED_INITIATIVES[desired_key][0]
+    live = next(row for row in snapshot["initiatives"] if row["name"] == desired_name)
+    live["health"] = "atRisk"
+    live["priority"] = 4
+
+    plan, _ = lip.compile_initiative_plan(
+        project_plan=_full_project_plan(),
+        strategy_path=STRATEGY_PATH,
+        snapshot_path=_write_snapshot(tmp_path, snapshot),
+    )
+
+    rows = [
+        row for row in plan["drift"]
+        if row["code"] == "initiative_field_drift" and row.get("initiative_key") == desired_key
+    ]
+    assert len(rows) == 1, "a real structural change must still be reported"
+    assert rows[0]["fields"] == ["priority"], "health must not appear in structural fields"
+
+
+def test_task2_duplicate_watchlist_exception_is_hard_binding_ambiguity(tmp_path):
+    """Blocker 2: exact WS identity stays unique even for an unassigned exception.
+
+    The exception loop consumed each visible project independently, so two Projects
+    carrying the exact same exception workstream key both passed silently.
+    """
+    lip = _lip()
+
+    clean_plan, _ = lip.compile_initiative_plan(
+        project_plan=_full_project_plan(),
+        strategy_path=STRATEGY_PATH,
+        snapshot_path=_write_snapshot(tmp_path, _snapshot()),
+    )
+    assert not any(
+        row["code"] == "project_binding_ambiguous"
+        and row.get("workstream_key") == WATCHLIST_EXCEPTION_KEY
+        for row in clean_plan["drift"]
+    ), "a single lawful watchlist redirect must stay clean"
+
+    snapshot = _snapshot()
+    duplicate = deepcopy(
+        next(
+            row for row in snapshot["projects"]
+            if row["workstream_key"] == WATCHLIST_EXCEPTION_KEY
+        )
+    )
+    duplicate["project_id"] = "watchlist-project-duplicate"
+    # Deliberately a different display name: identity is the exact workstream key,
+    # never the title, so a rename must not launder the duplicate.
+    duplicate["name"] = "Watchlist (CEO) — second copy"
+    snapshot["projects"].append(duplicate)
+
+    plan, _ = lip.compile_initiative_plan(
+        project_plan=_full_project_plan(),
+        strategy_path=STRATEGY_PATH,
+        snapshot_path=_write_snapshot(tmp_path, snapshot),
+    )
+
+    rows = [
+        row for row in plan["drift"]
+        if row["code"] == "project_binding_ambiguous"
+        and row.get("workstream_key") == WATCHLIST_EXCEPTION_KEY
+    ]
+    assert len(rows) == 1, "duplicate exact watchlist identity must refuse exactly once"
+    assert rows[0]["count"] == 2
+    assert rows[0] in plan["hard_blockers"], "exact-binding ambiguity must fail closed"
+
+
+def test_task2_initiative_suites_are_owned_by_agent_os_record_contract_job():
+    """Blocker 3: durable CI ownership, not incidental aggregate collection."""
+    manifest, job = _agent_os_owner_job()
+
+    owned = set(job["paths"])
+    missing = [path for path in INITIATIVE_OWNED_PATHS if path not in owned]
+    assert not missing, f"no durable CI path ownership for: {missing}"
+
+    step = next(
+        row for row in job["steps"]
+        if isinstance(row.get("name"), str)
+        and row["name"].startswith(AGENT_OS_RECORD_STEP_PREFIX)
+    )
+    run = step["run"]
+    for suite in (
+        "tests/linear_initiative_plan_cases.py",
+        "tests/linear_initiative_plan_live_cases.py",
+    ):
+        assert suite in run, f"{suite} is not invoked by the Agent OS record-contract step"
+
+    # The record-contract step is ordered last on purpose: it must never be able to
+    # return nonzero ahead of a fence step and blind the self-mod fence.
+    assert job["steps"][-1] is step, "record-contract step must remain ordered last"
+
+    # One CI plane only — no Initiative-specific job may be introduced.
+    assert not [key for key in manifest["jobs"] if "initiative" in key.lower()]
+
+    portfolio_source = (REPO / "tests" / "linear_portfolio_plan_live_cases.py").read_text(
+        encoding="utf-8"
+    )
+    for hack in (
+        "linear_initiative_plan_cases import *",
+        "linear_initiative_plan_live_cases import *",
+    ):
+        assert hack not in portfolio_source, "import aggregation hack must be removed"
