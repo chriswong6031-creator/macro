@@ -25,33 +25,22 @@ changed:
       boundaries, and the next lawful operation for a fresh Sol/COO session.
 verified:
   - claim: ANGO representational-equivalence source law is merged on main.
-    evidence: >
-      Macro PR #6391 merged as a8075391fa895ec706976cd9cb9238c7e4cbdaea;
-      DEC:FF-1-ACCEPTANCE-DATETIME-COMPARES-BY-INSTANT is present on current main.
+    command: >
+      gh api repos/mastermindx-market-intelligence/macro/pulls/6391 --jq
+      '{state:.state,merged_at:.merged_at,merge_commit_sha:.merge_commit_sha}'
   - claim: Current-quarter incremental FF-1 returned to a complete production head without raising caps.
-    evidence: >
-      GitHub Actions run 33247138975 drained only typed aggregate Company Facts
-      queue_overflow partials on the same workflow carrier: run_f14d89994239f7cd7583
-      backlog 42; run_c6059aa15979d46bc4e7 backlog 32;
-      run_3923c15f657b40a64afa backlog 20; run_13bf80ca9b8550495053
-      backlog 8; final attempt-5 job 99190103903 / run_0e66732e4f506b25446a
-      SUCCESS with expected/observed 2842/2842, failed=0,
-      companyfacts_deferred=0, recovery_backlog=0, failures=[] and
-      latest-complete advanced. Latest relevant SEC accepted_at was
-      2026-08-28T20:28:19.000Z.
+    command: >
+      gh run view 33247138975 --repo mastermindx-market-intelligence/macro
+      --attempt 5 --log
   - claim: The aggregate Company Facts failures were bounded-resource partials, not source conflicts.
-    evidence: >
-      Frozen per-run aggregate budget remained 32 MiB and per-object limit 64 MiB.
-      CRWD, HQY, OKTA and TECH were refused only when their lawful current snapshot
-      would exceed the remaining aggregate run envelope. Existing broad-SEC tests
-      require durable issuer commits, refusal to advance latest-complete on partial,
-      and next-poll reuse until backlog zero.
+    command: >
+      for a in 1 2 3 4; do gh run view 33247138975
+      --repo mastermindx-market-intelligence/macro --attempt "$a" --log; done
   - claim: The July historical recovery state was not modified by current-quarter recovery.
-    evidence: >
-      No historical recovery workflow_dispatch was issued after #6391 landing.
-      Plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
-      recovery_from=2026-07-12T11:23:15Z, cursor/completed 0, backlog 2,571 and
-      null last-successful recovery receipt remain the governing checkpoint.
+    command: >
+      gh api 'repos/mastermindx-market-intelligence/macro/actions/runs?event=workflow_dispatch&per_page=100'
+      --jq '.workflow_runs[] | select(.name == "filing-forensics-broad-sec") |
+      [.id,.created_at,.conclusion] | @tsv'
 unverified:
   - claim: Protected attested-history writer credential is ready.
     what_would_verify: >
