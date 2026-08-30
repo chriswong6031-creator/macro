@@ -62,7 +62,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from engine import qledger as q
-from lib import config
+# lib/config is DEFERRED to call time on purpose: this module is a seed of the
+# admin panel's load-time closure (the Intelligence OS evidence view calls
+# compute_promotion_readiness per request), and lib/config is a declared
+# non-admin lane — see ADMIN_MUST_NOT_RESTART in
+# tests/test_deploy_update_self_heal.py. A module-level import here would
+# restart the admin panel on every API/site-build config change.
 
 log = logging.getLogger("grade_qledger")
 
@@ -691,7 +696,10 @@ def run(root: Path | str | None = None, today: date | None = None,
     dict with keys: n_open, n_graded_today, n_blocked_by_coverage,
                     n_ungradeable, n_already_graded, generated_at.
     """
-    root = Path(root) if root else config.ROOT
+    if not root:
+        from lib import config  # noqa: PLC0415 — see module header
+        root = config.ROOT
+    root = Path(root)
     today_dt = today or date.today()
 
     # W0 Stage B-e (§3.4): backfill missing regime stamps from the persisted
