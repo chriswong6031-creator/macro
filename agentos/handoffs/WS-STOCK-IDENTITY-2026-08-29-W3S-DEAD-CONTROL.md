@@ -3,7 +3,7 @@ workstream: "WS:STOCK-IDENTITY"
 session: "claude/si-w3s-dead-control (worktree stock-identity-w3s-control-46d8fa)"
 model: opus
 ended_because: blocked
-prs: [6673]
+prs: [6678]
 mission: >
   Operation SI-W3S-DEAD-CONTROL-V1 (packet commit 0e65358a3e15707f1f769720bce195a99078c6bf,
   blob 421638c488dfa7c44a36608e1e1fbf3b07c96714). Produce either >=5 identity-resolved
