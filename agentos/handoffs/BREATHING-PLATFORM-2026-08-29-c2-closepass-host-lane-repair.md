@@ -1,5 +1,54 @@
 ---
 workstream: "WS:BREATHING-PLATFORM"
+session: sol/breathing-c2a-restart-20260829
+model: sol
+ended_because: blocked
+mission: >
+  Preserve one bounded C2-A restart carrier for recovery of the Mac Studio close-pass host lane whose
+  Git worktree registration remains locked while the canonical lane path is absent, keep the child
+  WAITING_CAPACITY until a lawful concrete CTO Sol receiver is bound, and require reviewed repair plus
+  actual installer/bootstrap/lane preflight before Sol can accept the child.
+state_before: >
+  Breathing C0 is terminal and accepted and isolates the first causal gap to the host-native close-pass
+  lane. PR #6675 is the sole records-only restart carrier. C2-A is NOT_BUILT and WAITING_CAPACITY /
+  needs_placement with no concrete eligible CTO Sol receiver currently bound. Accepted C0 evidence still
+  leaves the host-native close clock BROKEN; C2-B, D12/permanence, W-L2, browser acceptance and C6 remain
+  separate downstream obligations.
+changed:
+  - path: agentos/workstreams/WS-BREATHING-PLATFORM.md
+    what: "Restarted the parent organizational record at C2-A while preserving C0 terminal truth and keeping later waves separate."
+  - path: agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md
+    what: "Added the bounded C2-A durable handoff packet, safe-recovery contract and capacity-selectable routing constraints."
+verified:
+  - claim: "Accepted C0 evidence isolates the first causal gap to the missing-but-locked Mac Studio close-pass host lane."
+    command: "Read Slack parent 1787900341.502549 together with scripts/close_pass_host_runner.py and tests/test_close_pass_host_runner.py."
+    result: "PASS — the host-native close clock remains BROKEN at restart and the existing partial prune path does not cover the accepted locked registration state."
+  - claim: "PR #6675 is a records-only restart carrier limited to exactly two Agent OS files."
+    command: "GitHub PR #6675 changed-file census at head 54974a34427e15be099ea979759bc7dd8659ee43."
+    result: "PASS — only agentos/workstreams/WS-BREATHING-PLATFORM.md and this handoff are changed."
+  - claim: "C2-A has no lawful concrete CTO Sol receiver at this handoff state."
+    command: "Read Slack census C0BSBM78V1N/1788054732.245009 and this agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md packet."
+    result: "PASS — census returned NO_ELIGIBLE_CAPACITY with effect NONE and Sol terminally stopped only the census; C2-A remains WAITING_CAPACITY."
+unverified:
+  - claim: "The exact safe Git command sequence for missing-plus-locked worktree recovery and all adversarial refusal boundaries."
+    what_would_verify: "Assigned C2-A worker real temporary-repository reproduction, RED-before regression, GREEN implementation and adversarial/mutation proof."
+  - claim: "Actual Mac Studio installer/bootstrap/lane readiness after a reviewed C2-A implementation merges."
+    what_would_verify: "Installer receipt, installed digest against merged main, launchd identity and a non-publishing host preflight on the actual Mac Studio."
+unresolved:
+  - "Lawful concrete CTO Sol placement for the NEW C2-A child."
+  - "Exact smallest implementation for targeted missing-plus-locked worktree reconciliation."
+next_actions:
+  - "Keep C2-A WAITING_CAPACITY until a concrete eligible CTO Sol receiver is lawfully proven; do not convert it to OPEN_PICKUP or Chairman numbered-account scheduling."
+  - "After direct-target assignment, require PICKUP_ACK, full current-source/thread read, WATCH_ARMED and separate START before implementation."
+  - "Return the reviewed implementation plus actual-host installer/bootstrap/lane preflight to Sol without widening into downstream waves."
+do_not_redo:
+  - "Do not create another Breathing lifecycle, placement plane, retry daemon, scheduler or second C2-A operation key."
+  - "Do not infer C2-A production proof from CI, merge state or Slack silence."
+  - "Do not widen this child into C2-B, D12/permanence, W-L2, Live Entry Radar, browser acceptance or C6."
+danger_areas:
+  - "A locked missing worktree is intentionally retained by git worktree prune; broad prune/unlock/remove can damage unrelated worktrees."
+  - "The installed close-pass bootstrap is frozen by design; merged code alone does not prove Mac Studio production readiness."
+  - "Freshness and acceptance remain multi-plane; a repaired host lane does not itself make a natural close session green."
 program_key: "breathing-completion-program-20260828-sol-001"
 operation_key: "breathing-c2-closepass-host-lane-repair-20260829-sol-001"
 wave: "C2-A"
