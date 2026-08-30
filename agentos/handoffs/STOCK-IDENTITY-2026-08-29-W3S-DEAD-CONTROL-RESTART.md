@@ -1,15 +1,82 @@
 ---
 workstream: WS:STOCK-IDENTITY
-operation_key: SI-W3S-DEAD-CONTROL-V1
-parent_operation: SI-FABLE-COO-PROGRAM-20260828
-preferred_avenue: terra
-status: commissioned_unclaimed
-wave: W3S
-repository: mastermindx-market-intelligence/macro
-base_sha: 07e63c5877c1638ee533843d4f2b477c9a148176
+session: sol/stock-identity-w3ar-recovery-20260829
+model: codex
+mission: >
+  Commission SI-W3S-DEAD-CONTROL-V1 as the independent survivorship predecessor:
+  deterministically produce at least five identity-resolved terminated U.S. instruments
+  with lawful full adjusted OHLCV compatible with existing Stock Identity machinery, or
+  return BLOCKED_NO_LAWFUL_DATA without widening providers or criteria.
+state_before: >
+  W1 had proven the original allowed planes could not supply a five-name terminated
+  control cohort, and W2 registered W3S as a hard predecessor to W5/Q1. The prior W3S
+  inventory returned NEEDS_BOUNDED_SOURCE_ACT; Sol allowed only deterministic terminated-
+  ledger extension plus reuse of the existing Polygon/dead-name owner. No lawful W3S
+  receiver was bound.
+changed:
+  - path: agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3S-DEAD-CONTROL-RESTART.md
+    what: >
+      Creates the bounded W3S commission packet, deterministic sampling/data law, receipt
+      requirements, failure states, and STOP boundaries for a later lawful receiver.
+  - path: agentos/workstreams/WS-STOCK-IDENTITY.md
+    what: >
+      Restores W3S as an independent W2-dependent predecessor while keeping W3B/W5 gates closed.
+prs: [6672]
+verified:
+  - claim: W3S is independent of W3A/W3AR and remains a hard predecessor to W5/Q1.
+    command: "open agentos/workstreams/WS-STOCK-IDENTITY.md and research/stock_identity/W2_EXPERT_REPLAY_REGISTRATION.md"
+    result: "W3S depends on W2; W5P depends on W3S and W4B."
+  - claim: The accepted bounded source law does not authorize a second market-data platform.
+    command: "open agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3S-DEAD-CONTROL-RESTART.md"
+    result: "Only deterministic terminated-ledger extension plus reuse of the existing Polygon/dead-name owner is permitted."
+  - claim: An invalid-placement W3S session created PR #6678 but reversed all mainline risk after Sol's no-start reconciliation.
+    command: "gh pr view 6678 --repo mastermindx-market-intelligence/macro --json state,isDraft,mergedAt,headRefOid"
+    result: "CLOSED, DRAFT, unmerged at e98a6e593f9d786478d0076cb33878c6d1c2da28; no commit reached main."
+  - claim: AVB's registered stocks-plane heal was followed by a later commit touching data/stocks/AVB.parquet.
+    command: "gh api 'repos/mastermindx-market-intelligence/macro/commits?path=data/stocks/AVB.parquet&per_page=10'"
+    result: >
+      Heal commit 21f6a9867ad2165c88158c75865ae8e064a67a41 explicitly truncated AVB at 2026-08-14;
+      later daily collection commit 27aebb3606cb3b2095f808de917516ae31b7ea35 modified the same parquet on 2026-08-29.
+unverified:
+  - claim: The current AVB parquet still contains successor bars after its registered last_session.
+    what_would_verify: >
+      Independently read the current main parquet and compare its maximum real-volume session and
+      adjusted basis against config/delisted_symbols.yml last_session=2026-08-14 and the #6623
+      healed blob. The unauthorized W3S session's value-level claim is not accepted as proof.
+  - claim: A lawful currently authorized W3S rerun can obtain at least five controls.
+    what_would_verify: >
+      A lawfully bound receiver must commit the candidate/sampling law before tape-dependent
+      inclusion, re-derive the full candidate/exclusion ledger, and prove >=5 compatible tapes or
+      return the typed blocker under current owners and current identity evidence.
+unresolved:
+  - W3S still requires a lawful receiver-assignment edge; current state is WAITING_CAPACITY / needs_placement.
+  - PR #6678 is inert audit evidence only; none of its cohort/verdict outputs are accepted as W3S scientific results.
+  - AVB requires independent current-file verification because a daily collection commit touched it after the explicit successor-splice heal.
+  - Existing open delisted/security-identity PRs must be reconciled before extending any terminated ledger owner.
+next_actions:
+  - Keep PR #6678 closed/unmerged and preserve its branch as inert evidence; do not reuse its verdict as a shortcut.
+  - Bind one eligible W3S receiver through an authorized placement/commissioning edge.
+  - Before any cohort build, reconcile current delisted/security-identity owners and independently verify/quarantine the AVB post-heal regression if present.
+  - Commit the deterministic candidate/sampling/exclusion law before tape-dependent inclusion, then return RESULT or BLOCKED_NO_LAWFUL_DATA with exact evidence.
+do_not_redo:
+  - Do not infer death from index exit, vendor absence, stale tape, or OTC directory absence.
+  - Do not hand-pick five names after inspecting tapes, paths, episodes, returns, expert fires, or outcomes.
+  - Do not create a second market-data/identity plane or use unproven AVB/close-only substitutes.
+  - Do not treat the unauthorized #6678 result as accepted evidence or reopen/merge it without fresh lawful authority.
+  - Do not open W5/Q1/Prophet work from this commission.
+danger_areas:
+  - Delisted/rename/key-migration owners are collision-prone; current open identity PRs may touch the same ledger paths.
+  - A successor splice on a registered adjusted price plane can corrupt every downstream behavioral consumer while looking fresh.
+  - A finished tape must be distinguished from flat-forward vendor padding and from a different successor security's continuing tape.
+  - Receiver attention/ACK without a lawful commissioning edge is not lifecycle authority.
+ended_because: blocked
 ---
 
 # W3S Restart — Dead Instrument Control Set
+
+**Operation:** `SI-W3S-DEAD-CONTROL-V1`  
+**Parent:** `SI-FABLE-COO-PROGRAM-20260828`  
+**Current operational state:** `WAITING_CAPACITY / needs_placement`. Invalid Secretary placement produced an unauthorized branch/PR #6678; Sol contained it, the PR is closed unmerged, and its scientific verdict is not accepted. It remains inert audit evidence only.
 
 ## Observable mission
 
@@ -17,7 +84,7 @@ Produce either (a) a preregistered, identity-resolved cohort of at least five te
 
 ## Why now
 
-W3S depends on W2, not on W3A. It was unnecessarily stalled behind the failed W3A calibration attempt. Restarting it now burns down an independent hard predecessor while W3AR resolves the calibration science.
+W3S depends on W2, not on W3A. It was unnecessarily stalled behind the failed W3A calibration attempt. Restarting it now can burn down an independent hard predecessor once lawful capacity is available.
 
 ## Authority / precedence
 
@@ -31,15 +98,16 @@ W3S depends on W2, not on W3A. It was unnecessarily stalled behind the failed W3
 
 ## Verified starting truth
 
-- `config/delisted_symbols.yml` was historically too sparse for W1: two rows and no compatible price files.
+- `config/delisted_symbols.yml` was historically too sparse for W1 and the original W1 planes could not produce the required dead cohort.
 - W1 substitution over ceased tapes found no lawful dead cohort on its allowed planes.
 - The prior W3S inventory concluded `NEEDS_BOUNDED_SOURCE_ACT` rather than pretending survivors were controls.
 - Prior Sol ruling permits one minimum source act: extend the terminated-instrument ledger deterministically and reuse the existing Polygon/dead-name collection owner to persist the OHLCV fields it already receives.
 - Any AVB tail/other unproven fallback is not trusted merely because it has close history.
+- Current AVB durability is specifically suspect: #6623 says `data/stocks/AVB.parquet` was healed/truncated to 2026-08-14, but a later daily collection commit touched that same parquet. A lawful W3S receiver must independently verify current bytes before using AVB.
 
 ## Exact scope
 
-Fresh branch/carrier under operation `SI-W3S-DEAD-CONTROL-V1`.
+Fresh branch/carrier under operation `SI-W3S-DEAD-CONTROL-V1` only after a lawful receiver assignment.
 
 Expected ownership surfaces only after fresh archaeology confirms current paths:
 
@@ -112,4 +180,4 @@ Return `RESULT SI-W3S-DEAD-CONTROL-V1` (or typed `BLOCKED_NO_LAWFUL_DATA`) with 
 
 ## Routing
 
-Preferred avenue: **Terra / CTO Sol-class bounded engineering**; Chairman selects the concrete quota account. Fable remains parent COO and may coordinate/review but should not consume scarce principal capacity for the mechanical owner-extension/build once the contract above is clear.
+Preferred avenue: **Terra / CTO Sol-class bounded engineering**. A concrete receiver must be bound by an authorized placement/commissioning principal; Secretary attention transport or an unbound ACK is not assignment. Fable remains parent COO and may coordinate/review but should not consume scarce principal capacity for the mechanical owner-extension/build once the contract above is clear.
