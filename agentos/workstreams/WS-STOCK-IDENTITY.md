@@ -56,7 +56,7 @@ waves:
       recomputation, Class-B locked-spec backcast and Class-P prospective-only families.
   - id: W3A
     title: Episode localization ruler Attempt-1 — rejected scientific carrier
-    status: blocked
+    status: dropped
     pr: 6638
     depends_on: [W2]
     next_action: >
@@ -72,13 +72,12 @@ waves:
     status: todo
     depends_on: [W2]
     next_action: >
-      COMMISSIONED / UNCLAIMED as SI-W3AR-REPLAY-ELIGIBILITY-P2-V1. Reconcile the
-      original W2 historical replay contract against the later availability ruling,
-      separating retrospective replay eligibility from live availability only if source
-      law supports it. Build an outcome-free clean-pool/coverage census. STOP before any
-      P2 draw/read and return GO_P2_PREREG, NO_GO_CALIBRATION_RECOVERY, or
-      BLOCKED_NEW_SOURCE_LAW to Sol. Preferred principal: Fable; mechanical census may
-      delegate to Terra/Codex.
+      WAITING_CAPACITY / needs_placement as SI-W3AR-REPLAY-ELIGIBILITY-P2-V1. The
+      prior Secretary placement was non-operative; the unbound Claude3 seat stood down
+      with effect NONE. A later authorized commissioning principal must bind an eligible
+      receiver before source-law work resumes. Then reconcile W2 replay law, build the
+      outcome-free clean-pool/coverage census, STOP before any P2 draw/read, and return
+      GO_P2_PREREG, NO_GO_CALIBRATION_RECOVERY, or BLOCKED_NEW_SOURCE_LAW to Sol.
   - id: W3B
     title: Fit estimability + dependence/effective-N census (no fit read)
     status: todo
@@ -91,13 +90,12 @@ waves:
     status: todo
     depends_on: [W2]
     next_action: >
-      RESTART COMMISSION READY as SI-W3S-DEAD-CONTROL-V1, independent of W3AR after a
-      fresh changed-path collision check. Prior inventory returned NEEDS_BOUNDED_SOURCE_ACT;
-      accepted law permits deterministic terminated-ledger extension + reuse of the existing
-      Polygon/dead-name owner to persist OHLCV it already receives, never a second market-data
-      plane. Result must be >=5 lawful full-adjusted terminated tapes or BLOCKED_NO_LAWFUL_DATA.
-      Preferred implementation avenue: Terra / CTO-Sol-class bounded engineering; Chairman
-      selects concrete quota account.
+      WAITING_CAPACITY / needs_placement as SI-W3S-DEAD-CONTROL-V1. Invalid Secretary
+      placement produced unauthorized PR #6678; Sol contained it and it is CLOSED UNMERGED,
+      inert evidence only, not an accepted W3S result. A later authorized receiver must
+      re-derive the cohort under current source law. Before using AVB, independently verify
+      current `data/stocks/AVB.parquet`: #6623 healed/truncated it, but daily collection
+      commit 27aebb3606cb3b2095f808de917516ae31b7ea35 touched it again afterward.
   - id: W4A
     title: Identity epoch detector v1 — synthetic/stationary calibration + knowable-from clock
     status: todo
@@ -150,6 +148,7 @@ landmines:
   - "A fresh P2, if ever authorized, must be disjoint from pilot/B, blind, P1 and all design-touched names; blind remains untouched."
   - "Live Entry Radar owns prospective events. Stock Identity consumes the canonical durable owner path and never writes a second event store."
   - "Dead Instrument Control Set remains a HARD predecessor to W5P/Q1; survivor-only evidence may not be silently upgraded."
+  - "AVB registered-plane durability is suspect: #6623 explicitly healed/truncated data/stocks/AVB.parquet to 2026-08-14, but later daily collection commit 27aebb3606cb3b2095f808de917516ae31b7ea35 modified the same parquet. Independently verify current bytes before any Stock Identity use."
   - "data/massive_stock_day remains raw/unadjusted for behavioral math unless canonical adjustment law proves otherwise."
   - "Reused-ticker/instrument identity hygiene and known-at/correction clocks precede every join."
   - "W1-A1 GOLD/Barrick correction remains binding: GOLD is dealer history; B is design-touched/nonconfirmatory."
@@ -160,6 +159,7 @@ landmines:
 do_not_redo:
   - "Do not re-test per-name outcome audition under any ruler/model/family label."
   - "Do not revive PR #6638 or reuse SI-W3A-RULER-V1; its child is terminal."
+  - "Do not accept, reopen, merge, or inherit PR #6678 as a W3S result; it arose from an invalid receiver placement and remains inert audit evidence."
   - "Do not silently build a parallel replay harness; W2 historical replay owners remain canonical."
   - "Do not create another event store, qledger/evidence clock, grader, lifecycle, queue, identity plane, availability store or data platform."
   - "Do not backfill Class-P families."
@@ -176,11 +176,12 @@ artifacts:
   - agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3AR-REPLAY-ELIGIBILITY-P2.md
   - agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3S-DEAD-CONTROL-RESTART.md
 next_action: >
-  Parent SI-FABLE-COO-PROGRAM-20260828 remains active. Close/ACK the terminal old W3A
-  child, then claim fresh W3AR operation SI-W3AR-REPLAY-ELIGIBILITY-P2-V1 on its own
-  carrier and return the outcome-free feasibility/prereg DECISION_REQUEST before any P2
-  draw. Independently, start SI-W3S-DEAD-CONTROL-V1 on a fresh disjoint carrier through
-  Terra/CTO-Sol-class bounded engineering. W3B stays HELD until Sol accepts a recovered
+  Keep W3AR and W3S in WAITING_CAPACITY / needs_placement until an authorized
+  commissioning principal binds eligible receivers; do not ask the Chairman to choose numbered
+  accounts or reuse invalid Secretary placements. In parallel, finish PR #6672 records repair and
+  exact-head CI. Once W3AR is lawfully placed, return its outcome-free feasibility/prereg packet
+  before any P2 draw. Once W3S is lawfully placed, independently verify AVB/current identity-owner
+  collisions before rebuilding the dead-control cohort. W3B stays HELD until Sol accepts a recovered
   W3A ruler/support schema.
 ---
 
