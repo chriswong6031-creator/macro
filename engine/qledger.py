@@ -53,15 +53,10 @@ import pandas as pd
 # so hoisting these would drag the nightly brain into the panel's sys.modules and
 # force app/deploy/update.sh to restart admin on nightly-only changes — the exact
 # over-broad closure tests/test_deploy_update_self_heal.py forbids. Grading paths
-# below pay one cached sys.modules lookup instead. The module refs are resolved at
-# call time, which also keeps the `ai_desk._close_series` monkeypatch working.
-def _aidesk_mod():
-    """Import engine.ai_desk lazily. Only __getattr__ should call this directly —
-    every call SITE goes through _lazy() so monkeypatching stays effective."""
-    from engine import ai_desk  # noqa: PLC0415 — see comment above
-    return ai_desk
-
-
+# below pay one cached sys.modules lookup instead. Every call site goes through
+# `_lazy()`, which resolves through THIS module's namespace and falls through to
+# `__getattr__` below, so both `qledger.<name>` and `ai_desk._close_series`
+# monkeypatches keep working.
 def _lazy(name: str):
     """Resolve one deferred ai_desk helper THROUGH this module's own namespace.
 
