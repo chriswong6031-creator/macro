@@ -193,3 +193,150 @@ first_pass:
     - Selected state is finally distinguishable from hover — the before collapsed
       both into an identical 6% wash, so a user could not tell which group was
       filtering the board.
+
+second_pass:
+  # Run AFTER the freeze commit above and after the rationale/constraints reveal.
+  verdict: PASS_WITH_CONDITIONS
+  continuation_note: >
+    DISCLOSED CONTINUATION. The host purged the pass-1 critic context after the
+    freeze, so this pass was executed by a continuation of the same reviewer
+    identity rather than the original process. It reconstructed the position from
+    the COMMITTED pass-1 receipt (frozen in d075b8b95ec3 before any reveal), the
+    unchanged packet and the committed evidence. Quarantine ORDERING therefore
+    remains provable by git ancestry — the findings existed in the tree before the
+    reveal — but CONTINUITY OF REASONING between passes does not: the critic
+    re-derived each mechanism from bytes rather than recalling why it was written,
+    and states that any weight placed on "the same mind judged twice" should be
+    discounted accordingly. This is a material improvement on the superseded
+    cycle, where the receipt did not exist and the critic worked from the
+    coordinator's paraphrase; it is not equivalent to an unbroken context.
+  method_note: >
+    All byte checks were re-run against the frozen artifact SHA via git show, NOT
+    the working tree. The critic flags this as load-bearing: the records-branch
+    worktree lacks the modal alignment rules entirely, so a working-tree check
+    would have reported the PRA-404 rules as absent from the repo. Reviewers on
+    this reference must pin to the artifact SHA.
+  amendments:
+    - finding: PRA-401
+      action: upheld
+      severity: major
+      basis: re-verified-evidence
+      note: >
+        Ratification accepted and the earlier reviewer's reading conceded as
+        defensible — the legacy page does survive, and the fail-soft omission is
+        deliberate and documented in an authored comment plus a ledger, which a
+        comment-stripped packet could not show. Severity holds anyway on two
+        checked grounds. The pass-1 clearing condition offered two exits: a
+        terminal onReady(), or ratify "no CSS implies no dashboard" AND add the
+        missing failure signal. The reveal supplies the ratification; bytes show
+        NO signal — no console, no beacon, no degraded-mode class — so half the
+        condition is unmet. And ratification does not touch the asymmetry: a
+        contract written when the composer owned its CSS cannot pre-authorise a
+        dependency that did not then exist. The finding was never "the clause is
+        violated"; it is "the change enlarges the failure set of a frozen surface
+        and the new failure mode is unsignalled".
+    - finding: PRA-402
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      note: >
+        The ordered-repair history is corroborated in the artifact's own comments
+        and the DOM premise independently confirmed. The finding was never that
+        the combinator is wrong; it is that combinator plus fail-closed base makes
+        a future shell change silently FATAL rather than degrading — the opener
+        lives inside the scoped family while the unconditional display:none is
+        page-global, so if adjacency breaks the modal stays hidden with no error.
+        Added evidence for the same finding: the file cites "no bare page-global
+        selectors" nine lines before authoring one. Carried as forward debt for
+        TP-2; the clean fix is a composer data attribute, outside the frozen
+        boundary.
+    - finding: PRA-403
+      action: downgraded
+      severity: minor
+      critic_severity_word: nit
+      basis: mixed
+      severity_note: >
+        The critic downgraded to "nit", which is not a legal RIG severity;
+        recorded at the schema floor "minor" with the critic's word preserved, the
+        same treatment applied elsewhere in this estate.
+      note: >
+        Re-verification FALSIFIED the critic's own pass-1 wording: "unmarked trap"
+        is wrong — the artifact carries an explicit KNOWN LIMIT naming the
+        single-caller constraint, the multi-caller listener-death mechanism, TP-2
+        and HK as the trigger, and the remedy. The HK-scope half rests on
+        AUTHORITY CONTEXT ALONE and is labelled as such; the critic did not read
+        the boundary document. The global-leak half survives on bytes and the
+        reveal does not address it: the loader is the sole top-level declaration
+        outside every IIFE, and is loaded by at least six route families, so it
+        publishes on routes that never load this stylesheet. Disclosure is not
+        enforcement — nothing mechanically stops TP-2 adding the second caller.
+    - finding: PRA-404
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      premise_rejected: true
+      note: >
+        THE REVEALED PREMISE DID NOT SURVIVE RE-VERIFICATION, and the coordinator
+        records that against itself. The reveal stated this was an ordered repair
+        of modal headers misaligned from their values. Production-before bytes
+        show otherwise: the accepted V3.8 modal-table rule set gives td NO
+        text-align at all, and an exhaustive grep for text-align right in the
+        before stylesheet returns exactly one hit, the inline lane count — no
+        modal-table rule. In accepted V3.8 both the numeric cells and the headers
+        rendered left-aligned and the table was internally consistent. The AFTER
+        build adds an explicit td text-align left and a NEW td.num text-align
+        right, and only then right-aligns the headers. The mismatch "repaired" at
+        R3 was therefore CREATED by an earlier step of this same TP-1 chain, and
+        the repair propagated a new presentation decision rather than reverting
+        it. This matters beyond taste: the stylesheet asserts the work "restores
+        the ACCEPTED V3.8 production rendering; it is not a new dark decision" —
+        for this table that claim is FALSE, in both themes, on a core capability.
+        Status upgraded from "over-reach" to "introduced regression against the
+        frozen rendering". Needs an authority decision: revert td.num
+        right-alignment for Rank (restoring V3.8 and removing the need for the
+        positional header selector entirely), or ratify the new alignment as a
+        deliberate change to the frozen surface.
+    - finding: PRA-405
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      disposition: named-debt-not-blocking
+      note: >
+        Artifact half re-confirmed equivalent in intent to the before build. The
+        critic answers the coordinator's question plainly: NAMED DEBT, and it must
+        not be recorded as verified. The gap keeps its teeth — live quotes is a
+        CORE capability, its requirement is Western green-up/red-down EVEN UNDER
+        ZH, and the ZH cells show every surrounding semantic colour correctly
+        inverting to the CJK convention, so the one element required to RESIST
+        that inversion is the one element the matrix cannot show. The capability
+        is declaration-verified and render-unverified, and the acceptance record
+        must say so in those words.
+    - finding: PRA-406
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      disposition: blocking-condition-on-this-verdict
+      note: >
+        Re-confirmed by directory listing. NOT a symmetric omission waivable by
+        inheritance: the filter-miss surface is composed substantially of
+        light-specific rules with no dark twin in evidence, so in dark the empty
+        state renders on a different surface with a different button treatment and
+        no elevation — a materially different composition that no committed cell
+        shows. Under the house theme law both themes must be adjudicated as
+        designs. "Inherited and unlikely to be broken" is a prediction, not a
+        cell. This is why the pass-2 verdict is PASS_WITH_CONDITIONS and not PASS;
+        it is not BLOCK because surrounding dark evidence is dense (10 dark cells)
+        and this is a single derived state. Clearing condition: one
+        proposal-filtermiss-dark-en-1440.png.
+  open_carried_as_named_debt:
+    - "PRA-401 major — ratification on record; the failure-signal half of the clearing condition is unmet on bytes. Needs a terminal onReady() or an explicit failure signal, plus an authority ruling on the two-reviewer split."
+    - "PRA-402 minor — forward debt for TP-2; the composer data attribute is outside the frozen boundary."
+    - "PRA-403 minor (critic word: nit) — HK seam remedy disclosed but not enforced; the top-level global remains."
+    - "PRA-404 minor — authority decision required: revert to V3.8 alignment, or ratify a deliberate change to the frozen surface. The artifact's own restoration claim is false for this table."
+    - "PRA-405 minor — declaration-verified, render-unverified; must not appear as passed."
+    - "PRA-406 minor — the blocking condition on this verdict; one dark filter-miss cell."
+  observations_not_findings:
+    - "The hand-stamped cache token makes the cache key hand-maintained: an edit to the stylesheet without bumping the constant serves stale CSS to warm caches, and the site immutable list makes that durable. No test pins the two together."
+    - "A bare page-global modal display none is authored nine lines after the file cites an architecture rule forbidding bare page-global selectors."
+    - "The existing-link branch can silently never resolve: a listener attached to a link that already errored never fires, the same terminal-branch shape as PRA-401 on a different path. Unreachable today given the loader guard."
+    - "A declared capture manifest in the packet — which cells were attempted and why any were skipped — would let a blind first pass distinguish 'the artifact lacks this state' from 'the coordinator did not capture this state', without revealing rationale."
