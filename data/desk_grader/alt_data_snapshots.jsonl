@@ -2881,3 +2881,8 @@
 {"date":"2026-08-29","ticker":"GSK","departed":true,"left_desk":"2026-08-29","last_rank":null,"last_score":13}
 {"date":"2026-08-29","ticker":"MLM","departed":true,"left_desk":"2026-08-29","last_rank":null,"last_score":29}
 {"date":"2026-08-29","ticker":"TMO","departed":true,"left_desk":"2026-08-29","last_rank":15,"last_score":40}
+{"date":"2026-08-29","ticker":"COIN","rank":22,"score":35,"lean":1,"broken":false}
+{"date":"2026-08-29","ticker":"MKTX","rank":30,"score":32,"lean":1,"broken":false}
+{"date":"2026-08-29","ticker":"IREN","rank":null,"score":16,"lean":1,"broken":true}
+{"date":"2026-08-29","ticker":"BAH","rank":18,"score":38,"lean":1,"broken":false}
+{"date":"2026-08-29","ticker":"MLM","rank":22,"score":35,"lean":1,"broken":false}

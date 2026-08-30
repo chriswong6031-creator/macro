@@ -326,12 +326,12 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 85.1,
+            "score": 84.8,
             "band": "elevated",
             "firing_legs": [
               {
                 "leg": "ext_etf",
-                "pctile": 0.891,
+                "pctile": 0.886,
                 "confirmed": true
               },
               {
@@ -756,7 +756,7 @@
       "inflation_score": 0.0,
       "confidence": 0.167,
       "liquidity": "unknown",
-      "recession_score": 34.0,
+      "recession_score": 33.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 6.89,
@@ -773,8 +773,8 @@
         "m2_yoy": null,
         "fx": 95.4704,
         "fx_strength_3m": -1.23,
-        "realvol": 8.0,
-        "drawdown": -8.4
+        "realvol": 8.1,
+        "drawdown": -8.2
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -783,15 +783,15 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 24110.7,
-        "off_52w_high": -8.4,
+        "price": 24175.65,
+        "off_52w_high": -8.2,
         "above_50d": false,
         "above_200d": false,
-        "realvol": 8.0,
-        "rsi": 44.0,
-        "ext_z": -0.46,
+        "realvol": 8.1,
+        "rsi": 47.0,
+        "ext_z": -0.4,
         "ext_grade": "intrend",
-        "drawdown_risk": 47.0,
+        "drawdown_risk": 46.0,
         "drawdown_band": "watch",
         "bubble_flag": false
       },
@@ -817,20 +817,20 @@
             "firing_legs": []
           },
           {
+            "scare": "extension",
+            "tier": "A",
+            "label_en": "Parabolic extension / exhaustion",
+            "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
+            "score": 19.7,
+            "band": "calm",
+            "firing_legs": []
+          },
+          {
             "scare": "capital_flow",
             "tier": "A",
             "label_en": "Rupee depreciation / outflows",
             "label_zh": "\u5362\u6bd4\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
             "score": 19.6,
-            "band": "calm",
-            "firing_legs": []
-          },
-          {
-            "scare": "extension",
-            "tier": "A",
-            "label_en": "Parabolic extension / exhaustion",
-            "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 19.2,
             "band": "calm",
             "firing_legs": []
           }
@@ -1206,7 +1206,7 @@
       "inflation_score": 0.0,
       "confidence": 0.167,
       "liquidity": "unknown",
-      "recession_score": 4.0,
+      "recession_score": 3.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.8,
@@ -1221,10 +1221,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": 0.0,
         "m2_yoy": -3.66,
-        "fx": 1.3537,
-        "fx_strength_3m": 2.27,
+        "fx": 1.3597,
+        "fx_strength_3m": 2.72,
         "realvol": 5.2,
-        "drawdown": -0.9
+        "drawdown": -0.8
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -1233,13 +1233,13 @@
         "yield_10y": "2026-06"
       },
       "equity": {
-        "price": 10812.37,
-        "off_52w_high": -0.9,
+        "price": 10824.3,
+        "off_52w_high": -0.8,
         "above_50d": true,
         "above_200d": true,
         "realvol": 5.2,
-        "rsi": 54.0,
-        "ext_z": -0.98,
+        "rsi": 55.0,
+        "ext_z": -0.94,
         "ext_grade": "intrend",
         "drawdown_risk": 2.0,
         "drawdown_band": "low",
@@ -1252,7 +1252,7 @@
         "market": "gb",
         "state": "calm",
         "state_ungated": "calm",
-        "top_score": 18,
+        "top_score": 14,
         "dominant_scare": "extension",
         "dominant_label_en": "Calm \u2014 no driver elevated",
         "dominant_label_zh": "\u5e73\u9759 \u2014 \u65e0\u9a71\u52a8\u5347\u9ad8",
@@ -1262,12 +1262,12 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 66.3,
+            "score": 66.8,
             "band": "watch",
             "firing_legs": [
               {
                 "leg": "ext_idx",
-                "pctile": 0.667,
+                "pctile": 0.677,
                 "confirmed": false
               },
               {
@@ -1291,7 +1291,7 @@
             "tier": "A",
             "label_en": "Sterling depreciation / outflows",
             "label_zh": "\u82f1\u9551\u8d2c\u503c\uff0f\u8d44\u91d1\u5916\u6d41",
-            "score": 30.8,
+            "score": 22.8,
             "band": "calm",
             "firing_legs": []
           }
@@ -1307,12 +1307,12 @@
           "measure": ">=5% index pullback within h business days (measured on this market's own history)"
         },
         "trajectory": {
-          "intensity": 17.9,
+          "intensity": 14.5,
           "peak": 80.7,
           "peak_days_ago": 22,
-          "off_peak": 62.8,
-          "velocity": 3.2,
-          "phase": "rising",
+          "off_peak": 66.2,
+          "velocity": -0.2,
+          "phase": "flat",
           "reached_risk": true,
           "state_now": "calm",
           "odds_now": 0.186,
@@ -1342,16 +1342,16 @@
             8.3,
             12.5,
             10.3,
-            17.9
+            14.5
           ],
-          "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.4 93.0,20.3",
+          "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.4 93.0,21.3",
           "spark_peak": {
             "x": 6.9,
             "y": 3.0
           },
           "spark_last": {
             "x": 93.0,
-            "y": 20.3
+            "y": 21.3
           },
           "spark_w": 96,
           "spark_h": 26,
@@ -1452,8 +1452,8 @@
         "m2_yoy": 5.1,
         "fx": 1.1587,
         "fx_strength_3m": 1.89,
-        "realvol": 5.7,
-        "drawdown": -0.9
+        "realvol": 5.8,
+        "drawdown": -0.8
       },
       "macro_asof": {
         "cpi_yoy": "2026-07",
@@ -1462,13 +1462,13 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 654.63,
-        "off_52w_high": -0.9,
+        "price": 655.16,
+        "off_52w_high": -0.8,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 5.7,
-        "rsi": 54.0,
-        "ext_z": 0.17,
+        "realvol": 5.8,
+        "rsi": 55.0,
+        "ext_z": 0.21,
         "ext_grade": "intrend",
         "drawdown_risk": 2.0,
         "drawdown_band": "low",
@@ -1491,12 +1491,12 @@
             "tier": "A",
             "label_en": "Parabolic extension / exhaustion",
             "label_zh": "\u629b\u7269\u7ebf\u4f38\u5c55\uff0f\u900f\u652f",
-            "score": 67.8,
-            "band": "watch",
+            "score": 68.1,
+            "band": "caution",
             "firing_legs": [
               {
                 "leg": "ext_idx",
-                "pctile": 0.74,
+                "pctile": 0.746,
                 "confirmed": false
               },
               {
@@ -1658,7 +1658,7 @@
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": 34.0
+          "value": 33.0
         },
         {
           "cc": "AU",
@@ -1682,7 +1682,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 4.0
+          "value": 3.0
         },
         {
           "cc": "EZ",
@@ -1707,7 +1707,7 @@
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": 47.0
+          "value": 46.0
         },
         {
           "cc": "JP",
@@ -1845,16 +1845,16 @@
           "value": 1.89
         },
         {
-          "cc": "GB",
-          "flag": "\ud83c\uddec\ud83c\udde7",
-          "name": "United Kingdom",
-          "value": 2.27
-        },
-        {
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
           "value": 2.56
+        },
+        {
+          "cc": "GB",
+          "flag": "\ud83c\uddec\ud83c\udde7",
+          "name": "United Kingdom",
+          "value": 2.72
         },
         {
           "cc": "KR",
