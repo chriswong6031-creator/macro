@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-08-30T09:03:49+00:00",
+  "checked_at": "2026-08-30T12:36:02+00:00",
   "expected_session": "2026-08-28",
   "stores": {
     "cache": {
@@ -18,8 +18,8 @@
       "state": "fresh"
     },
     "regime": {
-      "asof": "2026-08-27",
-      "lag_days": 1,
+      "asof": "2026-08-28",
+      "lag_days": 0,
       "state": "fresh"
     },
     "southbound": {
@@ -31,9 +31,9 @@
   "coherence": {
     "ok": true,
     "standouts_asof": "2026-08-28",
-    "regime_date": "2026-08-27",
-    "gap_sessions": 1,
-    "note": "regime read is one session behind the stock scan \u2014 catches up after the next Asia close"
+    "regime_date": "2026-08-28",
+    "gap_sessions": 0,
+    "note": null
   },
   "regression": {
     "ok": true,
