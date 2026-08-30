@@ -111,7 +111,7 @@ terminal-event record. Ordering is fixed before screening and is never re-derive
 | S7 | **History horizon** | ≥ **252** sessions at or before the terminal date. | `E5_INSUFFICIENT_HISTORY` |
 | S8 | **Terminal tape integrity** | The tape ends at the terminal date. Post-termination bars are permitted **only** as the documented zero-volume flat-forward padding tell and must be truncated to `last_session`. Any successor-series splice or basis rebase that cannot be provably restored to the true pre-termination basis fails. | `E8_TAPE_CONTAMINATED` |
 | S9 | **Rights** | The source entitlement permits persisting and using this tape in-repo for this purpose. | `E7_RIGHTS_UNRESOLVED` |
-| S10 | **Real, provably-adjusted provider** | Every retained bar comes from the Polygon `adjusted=true` aggregates leg. `imputed_*` / synthetic rows are never a control. A leg whose adjustment semantics the repo does not assert (Stooq) and a leg that cannot serve dead names (yfinance) may not supply an accepted tape. | `ADJUSTMENT_UNPROVEN` |
+| S10 | **Real, provably-adjusted source leg** | Every retained bar comes from a source leg whose split+dividend adjustment the repo asserts in code. `imputed_*` / synthetic rows are never a control. A leg whose adjustment semantics are not asserted anywhere (Stooq) may not supply an accepted tape. | `ADJUSTMENT_UNPROVEN` |
 
 ### 4.1 Blinding rule (the core of the preregistration)
 
@@ -177,3 +177,35 @@ having already been satisfied. The screens above are unchanged by it.
 - Every source read is recorded with path and content hash in the run receipt.
 - Hostile fixtures that must FAIL: a reused-ticker tape; a live or merely index-exited name
   relabeled dead; a raw/unadjusted plane; a close-only tape; a successor-spliced tape.
+
+
+## 9. Amendment A1 — S10 scope correction (recorded BEFORE any tape was read)
+
+**When:** immediately after §2/§3 archaeology, before the builder screened a single tape.
+No price series had been loaded, no row counts compared, no candidate accepted or rejected.
+
+**What changed:** S10 originally read "every retained bar comes from the Polygon `adjusted=true`
+aggregates leg", and named yfinance as barred.
+
+**Why it was wrong:** S10 was drafted while the presumed source was the dead-name price store
+(`collectors/edgar_deadname_prices.py`), whose Polygon leg is the only adjusted leg *in that
+module*. That scoping silently excluded an existing, registered, code-asserted adjusted owner:
+`data/baskets/ohlcv` (`baskets_ohlcv_v1`) is built by `scripts/fetch_basket_ohlcv.py:563` with
+`yf.download(..., auto_adjust=True)` and carries full `[open,high,low,close,volume]`
+(`scripts/fetch_basket_ohlcv.py:1-14`, `engine/stock_identity/plane.py:47-61`). Barring it would
+have excluded lawful data on a provider-name technicality rather than on adjustment provenance,
+which is the property S10 exists to protect.
+
+**What did NOT change:** the requirement itself. A bar must still come from a leg whose
+split+dividend adjustment is asserted in repo code; synthetic/imputed rows are still barred; the
+unasserted Stooq leg is still barred. S1-S9, the blinding rule, the ordering, the 252-session
+floor, and the no-hand-picking rule are untouched.
+
+**Why this is not law-tuning:** the amendment is provider-scope, not outcome-scope. It was made
+with zero knowledge of which names would pass, because no tape had been read. It widens the set of
+*owners* whose adjustment is provable; it does not widen the *universe*, relax adjustment, relax
+history, or relax identity — all of which remain barred without a Sol act.
+
+**Standing constraint this does not touch:** yfinance is the documented source of the AVB
+successor-splice contamination. Being an adjusted leg does not make a yfinance tape clean; every
+such tape must still pass S8 terminal-tape integrity on its own evidence.
