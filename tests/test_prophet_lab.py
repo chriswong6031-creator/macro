@@ -2703,6 +2703,222 @@ def test_validator_accepts_every_builder_emitted_correction_outcome() -> None:
         validate_intelligence_vector(payload)
 
 
+def test_validator_requires_decision_refs_to_equal_present_evidence_refs() -> None:
+    payload = _build_d5()
+    family = payload["evidence_families"][0]
+    transcript_ref_id = next(
+        source_ref["source_ref_id"]
+        for source_ref in family["source_refs"]
+        if source_ref["object_schema"] == "event_workspace.source/transcript"
+    )
+    family["correction"]["decision_version_ref_ids"].remove(transcript_ref_id)
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="decision|correction|evidence|reference",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_decision_evidence_relabelled_as_later_correction() -> None:
+    payload = _build_d5()
+    family = payload["evidence_families"][0]
+    decision_ref_ids = family["correction"]["decision_version_ref_ids"]
+    family["correction"] = {
+        "state_at_decision": "NONE",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": decision_ref_ids,
+        "current_state": "CORRECTED",
+    }
+    family["point_in_time"]["corrected_at"] = {
+        "state": "ASSERTED",
+        "value": "2026-08-01T20:01:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": decision_ref_ids,
+    }
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="decision|correction|evidence|reference",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_later_ref_supporting_present_observation() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_ref = next(
+        source_ref
+        for source_ref in family["source_refs"]
+        if source_ref["version_or_generation"] == "2" * 24
+        and source_ref["object_schema"] == "event_workspace.source/transcript"
+    )
+    later_root = next(
+        root
+        for root in family["evidence_roots"]
+        if root["source_ref_id"] == later_ref["source_ref_id"]
+    )
+    guidance = next(
+        observation
+        for observation in family["observations"]
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    )
+    guidance["source_ref_ids"] = sorted(
+        guidance["source_ref_ids"] + [later_ref["source_ref_id"]]
+    )
+    guidance["evidence_root_ids"] = sorted(
+        guidance["evidence_root_ids"] + [later_root["evidence_root_id"]]
+    )
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="later|correction|decision|evidence|reference",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_later_ref_supporting_trajectory_dimension() -> None:
+    payload = _d5_two_generation_payload()
+    family = payload["evidence_families"][0]
+    later_release_ref_id = next(
+        source_ref["source_ref_id"]
+        for source_ref in family["source_refs"]
+        if source_ref["version_or_generation"] == "2" * 24
+        and source_ref["object_schema"] == "event_workspace.source/issuer_release"
+    )
+    dimension = family["trajectory"]["dimensions"][0]
+    dimension["source_ref_ids"] = sorted(
+        dimension["source_ref_ids"] + [later_release_ref_id]
+    )
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="later|correction|decision|evidence|reference",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_current_state_mutation_across_noncurrent_builder_outcomes() -> None:
+    class AmbiguousMaster:
+        def cik_of_issuer(self, issuer_id: str) -> str:
+            raise IdentityError(
+                f"conflicting current issuer CIK observations for {issuer_id}"
+            )
+
+    def discovery_source_failure(company_id: str):
+        raise intelligence_vector_mod.CompanyIntelligenceReadError(
+            "dummy discovery source unavailable"
+        )
+
+    def discovery_integrity_failure(company_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError(
+            "dummy discovery workspace receipt mismatch"
+        )
+
+    def reader_source_failure(event_id: str):
+        raise intelligence_vector_mod.CompanyIntelligenceReadError(
+            "dummy revision source unavailable"
+        )
+
+    def reader_integrity_failure(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError(
+            "dummy revision workspace receipt mismatch"
+        )
+
+    missing_clock_workspace = _d5_workspace()
+    missing_clock_workspace["lifecycle"]["source_available_at"] = None
+
+    after_cut_workspace = _d5_workspace()
+    after_cut_workspace["lifecycle"] = {
+        "state": "complete",
+        "source_available_at": "2026-07-30T20:06:00Z",
+        "observed_at": "2026-07-30T20:07:00Z",
+    }
+    after_cut_workspace["generated_at"] = "2026-07-30T20:08:00Z"
+
+    no_lineage_workspace = _d5_workspace()
+    no_lineage_workspace["sources"] = []
+
+    tie_first = _d5_workspace()
+    tie_second = deepcopy(tie_first)
+    tie_second["generation_id"] = "2" * 24
+    tie_second["sources"][0]["source_sha256"] = "e" * 64
+    tied_revisions = _d5_revisions(workspace=tie_first) + [{
+        "generation_id": tie_second["generation_id"],
+        "source_sha256": "e" * 64,
+        "source_available_at": tie_second["lifecycle"]["source_available_at"],
+        "observed_at": tie_second["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace": tie_second,
+    }]
+
+    payloads = [
+        ("identity-unresolved", _build_d5(issuer_master=_d5_master(include_cik=False))),
+        ("identity-conflicted", _build_d5(issuer_master=AmbiguousMaster())),
+        ("discovery-source-failed", _build_d5(find_event_id=discovery_source_failure)),
+        ("discovery-integrity-pending", _build_d5(find_event_id=discovery_integrity_failure)),
+        ("event-not-covered", _build_d5(find_event_id=lambda company_id: None)),
+        ("reader-source-failed", _build_d5(read_revisions=reader_source_failure)),
+        ("reader-integrity-pending", _build_d5(read_revisions=reader_integrity_failure)),
+        ("no-verified-revisions", _build_d5(read_revisions=lambda event_id: [])),
+        (
+            "missing-decision-clock",
+            _build_d5(
+                read_revisions=lambda event_id: _d5_revisions(
+                    workspace=missing_clock_workspace,
+                ),
+            ),
+        ),
+        (
+            "after-decision-cut",
+            _build_d5(
+                read_revisions=lambda event_id: _d5_revisions(
+                    workspace=after_cut_workspace,
+                ),
+            ),
+        ),
+        (
+            "exact-lineage-unavailable",
+            _build_d5(
+                read_revisions=lambda event_id: _d5_revisions(
+                    workspace=no_lineage_workspace,
+                ),
+            ),
+        ),
+        (
+            "later-lineage-unprojectable",
+            _d5_two_generation_payload(later_has_adaptable_evidence=False),
+        ),
+        (
+            "clock-tie-conflicted",
+            _build_d5(read_revisions=lambda event_id: tied_revisions),
+        ),
+        ("corrected", _d5_two_generation_payload()),
+    ]
+
+    for label, payload in payloads:
+        correction = payload["evidence_families"][0]["correction"]
+        assert correction["current_state"] in {
+            "UNKNOWN", "CONFLICTED", "CORRECTED",
+        }, label
+        validate_intelligence_vector(payload)
+
+        correction["current_state"] = "CURRENT"
+        _readdress_d5(payload)
+        with pytest.raises(
+            IntelligenceVectorContractError,
+            match="CURRENT|current|correction|PENDING|CONFLICTED|later",
+        ):
+            validate_intelligence_vector(payload)
+
+
 def test_correction_clock_is_bound_to_later_generation_refs_and_state() -> None:
     payload = _d5_two_generation_payload()
     family = payload["evidence_families"][0]
@@ -2730,6 +2946,10 @@ def test_later_generation_without_projectable_lineage_does_not_assert_correction
     )["evidence_families"][0]
     assert family["correction"]["later_correction_ref_ids"] == []
     assert family["correction"]["current_state"] == "UNKNOWN"
+    assert {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+    } == {"NOT_OBSERVABLE"}
     assert family["point_in_time"]["corrected_at"]["state"] == "NOT_ASSERTED"
     assert family["point_in_time"]["corrected_at"]["source_ref_ids"] == []
 

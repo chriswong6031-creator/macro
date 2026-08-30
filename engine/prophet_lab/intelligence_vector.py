@@ -1156,6 +1156,12 @@ def build_earnings_intelligence_vector(
         )
         later_refs.extend(revision_refs)
         later_roots.extend(revision_roots)
+    if later and not later_refs:
+        # A later owner revision exists, but the adapter cannot project any
+        # allowlisted source lineage from it.  Preserve that uncertainty in
+        # the observation semantics so a readdressed packet cannot relabel
+        # this builder-owned UNKNOWN outcome as CURRENT.
+        lineage_state = "NOT_OBSERVABLE"
 
     all_refs_by_id = {
         ref["source_ref_id"]: ref for ref in decision_refs + later_refs
@@ -2194,6 +2200,42 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                 raise IntelligenceVectorContractError(
                     "trajectory delta source lineage is not exact"
                 )
+    decision_evidence_ref_ids = {
+        source_ref_id
+        for observation in present_observations
+        for source_ref_id in observation["source_ref_ids"]
+    } | {
+        source_ref_id
+        for dimension in trajectory["dimensions"]
+        for source_ref_id in dimension["source_ref_ids"]
+    }
+    if later_ref_ids & decision_evidence_ref_ids:
+        raise IntelligenceVectorContractError(
+            "later correction refs are audit-only and cannot support decision evidence"
+        )
+    if evidence_admitted and decision_ref_ids != decision_evidence_ref_ids:
+        raise IntelligenceVectorContractError(
+            "decision version refs must exactly equal PRESENT decision evidence refs"
+        )
+    if correction["current_state"] == "CURRENT" and not (
+        correction["state_at_decision"] == "NONE"
+        and family["identity_state"] == "RESOLVED"
+        and owner_subject_id is not None
+        and evidence_admitted
+        and bool(present_observations)
+        and bool(decision_ref_ids)
+        and decision_ref_ids == decision_evidence_ref_ids
+        and not later_ref_ids
+        and not receipt["errors"]
+        and all(
+            observation["correction_lineage_state"]
+            in {"OBSERVED", "NONE_IN_CHAIN"}
+            for observation in present_observations
+        )
+    ):
+        raise IntelligenceVectorContractError(
+            "CURRENT requires resolved admitted owner evidence with exact decision refs and compatible lineage"
+        )
     for group in item["economic_dependence_groups"]:
         if not set(group["member_observation_refs"]).issubset(observation_ids):
             raise IntelligenceVectorContractError("dependence group references unknown observations")
