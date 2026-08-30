@@ -2026,91 +2026,154 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   .fbm-row-state{min-width:82px;font-size:11.5px;}
 }
 
-/* ══ RISK CLUSTER — dlg-risk rebuild (rkc-* = Risk Cluster) ═══════════════════
-   The 10+ session complaint: crowded text fatigue. Wave C kills the stacks with
-   ONE visual anchor per zone, coherent with Wave B's fbm family (glance rows,
-   ? tips, chart draw-in gated on .mx5-dlg-in). Signature = the Overseas severity
-   ring (conic-gradient 0-100 arc — a non-verbal encoding, doctrine-canon). Accent
-   = --isle-risk. All animation reduced-motion guarded. Scoped to #dlg-risk so the
-   SHARED radar-card partial keeps its default look on every other consumer. */
+/* ══ RISK RADAR MODAL — Sol freeze (verdict → why → watch → context) ════════
+   Scoped to #dlg-risk. Shared _risk_radar_card / country clones are untouched.
+   rlx-* stay global because LENS clones live on body. No parallel :root tokens. */
 
-/* The dialog is also embedded in narrow Moon Check shells. Its layout therefore
-   responds to the panel, not the browser viewport. This prevents desktop media
-   queries from leaving mobile-width content in a desktop-shaped layout. */
 #dlg-risk .mx5-dlg-panel{
   container: risk-dialog / inline-size;
-  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+  font-family:var(--font-ui);
+  max-width:min(900px, calc(100vw - 48px));
+  width:calc(100% - 48px);
+  max-height:min(88vh, 900px);
+  overflow-x:hidden;
 }
 #dlg-risk .mx5-dlg-body,#dlg-risk .mx5-dlg-body *{min-width:0;}
-#dlg-risk .mx5-dlg-title,#dlg-risk .mx5-dlg-eyebrow,#dlg-risk .mx5-dlg-driver-label{
-  font-family:var(--font-ui,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+#dlg-risk .mx5-dlg-title{
+  font-family:var(--font-ui);
+  font-size:var(--fs-md);font-weight:650;letter-spacing:0;text-transform:none;
+  color:var(--ink-2);
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
 }
-
-/* — 1. Radar card: pullback-odds mini bar chart (dlg-risk-scoped OVERRIDE only) —
-   The .rrx partial is shared; these overrides restyle its odds ramp into a proper
-   labelled bar chart WITHOUT touching its default (china/hk/canada/stocks) look. */
-#dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 5%,var(--panel));border-color:color-mix(in srgb,var(--rc) 22%,var(--line));
-  box-shadow:none;border-left-width:3px;}
-[data-theme="light"] #dlg-risk .rrx{background:color-mix(in srgb,var(--rc) 6%,var(--panel));border-color:color-mix(in srgb,var(--rc) 24%,var(--line));}
-#dlg-risk .rrx .rrx-ramp{padding-top:24px;gap:14px;max-width:none;}
-#dlg-risk .rrx .rrx-tk{height:78px;max-width:60px;}
-#dlg-risk .rrx .rrx-fill{background:linear-gradient(180deg,var(--rc),color-mix(in srgb,var(--rc) 42%,transparent));
-  box-shadow:0 0 12px -3px color-mix(in srgb,var(--rc) 70%,transparent);}
-#dlg-risk .rrx .rrx-v{font-size:13px;}
-/* "vs normal" ghost caption above the ramp */
-#dlg-risk .rrx .rrx-leg{top:6px;font-size:10px;}
-/* The partial's stacked prose rows (Leading / Do / cycle / audit / overseas / correlation /
-   track) are the "six text signals" complaint. In dlg-risk they are REBUILT below the card as
-   the .rkc-sig tile grid (plain words + full sentence on hover), so suppress the partial's own
-   copies here ONLY — the shared default (china/hk/canada/stocks) is untouched. */
-#dlg-risk .rrx .rrx-side{display:none;}
-#dlg-risk .rrx .rrx-ev,#dlg-risk .rrx .rrx-do{display:none;}
-/* draw-in: bars grow from the baseline when the dialog settles */
+#dlg-risk .riskdlg-asof{
+  font:500 var(--fs-label)/1 var(--font-ui);letter-spacing:0;text-transform:none;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;
+}
+#dlg-risk .mx5-dlg-close{width:44px;height:44px;font-size:22px;}
+#dlg-risk .mx5-dlg-header{padding:14px 22px 12px;}
+#dlg-risk .mx5-dlg-body{padding:6px 22px 22px;}
+@media(max-width:899px){
+  #dlg-risk .mx5-dlg-panel{max-width:calc(100vw - 32px);width:calc(100vw - 32px);}
+}
+@media(max-width:700px){
+  #dlg-risk .mx5-dlg-header{padding:14px 16px 10px;}
+  #dlg-risk .mx5-dlg-body{padding:4px 16px 20px;}
+}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:scaleY(0);transform-origin:50% 100%;
-    transition:transform 640ms cubic-bezier(.22,.9,.26,1.02);}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-fill{transition-delay:.28s;}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-norm{transition-delay:.18s;}
-  #dlg-risk.mx5-dlg-in .rrx .rrx-fill,#dlg-risk.mx5-dlg-in .rrx .rrx-norm{transform:scaleY(1);}
+  #dlg-risk .mx5-dlg-body > *{opacity:1;transform:none;transition:none;}
 }
+[data-theme="light"] #dlg-risk .mx5-dlg-title{color:var(--ink-2);}
+[data-theme="light"] #dlg-risk .riskdlg-asof{color:var(--ink-3);}
 
-/* — 2. Signal-tile grid (the six stacked prose rows → 2-col icon tiles) — */
-.rkc-sig-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px;}
-.rkc-sig{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;border-radius:11px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
-  min-width:0;transition:border-color .2s ease,transform .16s ease,background .2s ease;}
-[data-theme="light"] .rkc-sig{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
-.rkc-sig[data-tip-en]{cursor:help;}
-.rkc-sig:hover{border-color:color-mix(in srgb,var(--isle-risk,#e05c5c) 34%,var(--line,rgba(255,255,255,.1)));
-  transform:translateY(-1px);background:rgba(255,255,255,.045);}
-[data-theme="light"] .rkc-sig:hover{background:rgba(0,0,0,.035);}
-.rkc-sig-ico{flex:0 0 auto;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
-  color:var(--rkc-c,var(--isle-risk,#e05c5c));background:color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 12%,transparent);}
+/* — Risk Brief (one hero) — */
+#dlg-risk .riskdlg-brief{
+  padding:14px 16px 12px;border-radius:var(--r-card);
+  background:color-mix(in srgb, var(--text) 4%, transparent);
+  border:1px solid var(--line);
+  border-left:2px solid var(--rkc-c,var(--ok));
+}
+#dlg-risk .riskdlg-brief[data-rk-state="calm"],
+#dlg-risk .riskdlg-brief[data-rk-state="unknown"]{--rkc-c:var(--ok);}
+#dlg-risk .riskdlg-brief[data-rk-state="watch"]{--rkc-c:var(--info);}
+#dlg-risk .riskdlg-brief[data-rk-state="elevated"],
+#dlg-risk .riskdlg-brief[data-rk-state="caution"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-brief[data-rk-state="risk-off"],
+#dlg-risk .riskdlg-brief[data-rk-state="high"]{--rkc-c:var(--down);}
+[data-theme="light"] #dlg-risk .riskdlg-brief{background:var(--panel);}
+#dlg-risk .riskdlg-brief-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+#dlg-risk .riskdlg-state{
+  font:700 var(--fs-sm)/1 var(--font-ui);letter-spacing:.02em;text-transform:none;
+  color:var(--rkc-c,var(--ok));
+}
+#dlg-risk .riskdlg-score{
+  font:800 var(--fs-h1)/.9 var(--font-ui);font-variant-numeric:tabular-nums;
+  color:var(--ink-1);letter-spacing:-.02em;
+}
+#dlg-risk .riskdlg-score small{font-size:var(--fs-sm);font-weight:600;color:var(--ink-3);margin-left:2px;}
+#dlg-risk .riskdlg-domain{font:650 var(--fs-md)/1.35 var(--font-ui);color:var(--ink-1);margin-top:6px;}
+#dlg-risk .riskdlg-stance{font:500 var(--fs-body)/1.45 var(--font-ui);color:var(--ink-2);margin-top:4px;}
+#dlg-risk .riskdlg-authority{font:500 var(--fs-label)/1.4 var(--font-ui);color:var(--ink-3);margin-top:6px;}
+#dlg-risk .riskdlg-odds{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);}
+#dlg-risk .riskdlg-odds-k{font:600 var(--fs-label)/1.2 var(--font-ui);color:var(--ink-3);margin-bottom:6px;}
+#dlg-risk .riskdlg-odds-h{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;}
+#dlg-risk .riskdlg-odds-h span{font:500 var(--fs-sm)/1 var(--font-ui);color:var(--ink-2);}
+#dlg-risk .riskdlg-odds-h b{font-weight:750;font-variant-numeric:tabular-nums;margin-left:4px;color:var(--ink-1);}
+#dlg-risk .riskdlg-odds-h .is-lead{font-size:var(--fs-body);color:var(--ink-1);}
+#dlg-risk .riskdlg-odds-h .is-lead b{font-size:var(--fs-num-lg);font-weight:800;}
+#dlg-risk .riskdlg-odds-rail{position:relative;height:10px;margin-top:8px;}
+#dlg-risk .riskdlg-odds-track{display:block;height:2px;border-radius:0;position:absolute;left:0;right:0;top:4px;
+  background:var(--line);}
+#dlg-risk .riskdlg-odds-dot{position:absolute;top:1px;width:8px;height:8px;border-radius:var(--r-pill);
+  background:var(--ink-3);transform:translateX(-50%);}
+#dlg-risk .riskdlg-odds-dot.is-lead{width:10px;height:10px;top:0;background:var(--rkc-c,var(--ok));}
+#dlg-risk .riskdlg-odds-norm{position:absolute;top:-1px;width:1px;height:12px;opacity:.55;
+  background:var(--ink-3);transform:translateX(-50%);}
+#dlg-risk .riskdlg-odds-note{font:500 var(--fs-label)/1.3 var(--font-ui);color:var(--ink-3);margin-top:6px;font-variant-numeric:tabular-nums;}
+#dlg-risk .riskdlg-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+#dlg-risk .riskdlg-chip{
+  font:600 var(--fs-label)/1 var(--font-ui);padding:5px 8px;border-radius:var(--r-btn);
+  border:1px solid var(--line);color:var(--ink-2);
+  background:transparent;
+}
+#dlg-risk .riskdlg-chip.is-accent{color:var(--rkc-c);border-color:color-mix(in srgb,var(--rkc-c) 32%,transparent);}
+#dlg-risk .riskdlg-chip[data-fed="hawkish"],
+#dlg-risk .riskdlg-chip[data-fed="very-hawkish"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-chip[data-fed="dovish"],
+#dlg-risk .riskdlg-chip[data-fed="very-dovish"]{--rkc-c:var(--up);}
+#dlg-risk .riskdlg-chip[data-fed="neutral"]{--rkc-c:var(--warn);}
+
+#dlg-risk .riskdlg-sec-h{
+  font:650 var(--fs-body)/1.3 var(--font-ui);color:var(--ink-1);
+  margin:16px 0 8px;letter-spacing:0;text-transform:none;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+#dlg-risk .riskdlg-sec-h small{font:500 var(--fs-label)/1 var(--font-ui);color:var(--ink-3);text-transform:none;letter-spacing:0;}
+
+#dlg-risk .riskdlg-drv-list{
+  border:1px solid var(--line);border-radius:var(--r-card);
+  background:color-mix(in srgb, var(--text) 3%, transparent);overflow:hidden;
+}
+[data-theme="light"] #dlg-risk .riskdlg-drv-list{background:var(--panel);}
+#dlg-risk .riskdlg-drv{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;min-height:40px;
+  border-bottom:1px solid var(--line);min-width:0;
+}
+#dlg-risk .riskdlg-drv:last-child{border-bottom:none;}
+#dlg-risk .riskdlg-drv[data-tip-en]{cursor:help;}
+#dlg-risk .riskdlg-drv[data-isle="risk"]{--rkc-c:var(--isle-risk);}
+#dlg-risk .riskdlg-drv[data-isle="events"]{--rkc-c:var(--isle-events);}
+#dlg-risk .riskdlg-drv[data-isle="markets"]{--rkc-c:var(--isle-markets);}
+#dlg-risk .riskdlg-drv[data-isle="news"]{--rkc-c:var(--isle-news);}
+#dlg-risk .riskdlg-drv[data-pressure="high"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-drv[data-pressure="moderate"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-drv[data-pressure="low"]{--rkc-c:var(--up);}
+#dlg-risk .riskdlg-drv .rlx-viz{--rlx-c:var(--rkc-c);}
+#dlg-risk .riskdlg-drv .lens-ill{color:var(--rkc-c);}
+#dlg-risk .riskdlg-drv .rkc-sig-ico{
+  width:20px;height:20px;border-radius:0;background:transparent;
+}
+#dlg-risk .riskdlg-drv .rkc-sig-ico svg{width:16px;height:16px;}
+#dlg-risk .riskdlg-drv .rkc-sig-body{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+#dlg-risk .riskdlg-drv .rkc-sig-lbl{font:650 var(--fs-label)/1.25 var(--font-ui);color:var(--ink-3);flex:0 0 auto;min-width:4.6em;}
+#dlg-risk .riskdlg-drv .rkc-sig-state{margin:0;font-size:var(--fs-sm);flex:1;min-width:0;}
+#dlg-risk .riskdlg-drv .rkc-sig-tip{width:44px;height:44px;border-radius:var(--r-pill);}
+.rkc-sig-ico{flex:0 0 auto;width:26px;height:26px;border-radius:var(--r-btn);display:flex;align-items:center;justify-content:center;
+  color:var(--rkc-c,var(--isle-risk));background:color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 12%,transparent);}
 .rkc-sig-ico svg{width:15px;height:15px;display:block;}
 .rkc-sig-body{min-width:0;flex:1;}
-.rkc-sig-lbl{font:700 12px/1.25 var(--font-ui,inherit);color:var(--ink-1,rgba(255,255,255,.9));}
-.rkc-sig-state{font-size:11px;line-height:1.45;color:var(--ink-2,rgba(255,255,255,.62));margin-top:2px;
+.rkc-sig-lbl{font:700 12px/1.25 var(--font-ui);color:var(--ink-1);}
+.rkc-sig-state{font-size:11px;line-height:1.45;color:var(--ink-2);margin-top:2px;
   display:flex;align-items:baseline;flex-wrap:wrap;gap:5px;}
-.rkc-sig-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-ui,inherit);
-  letter-spacing:.03em;padding:2px 6px;border-radius:5px;white-space:nowrap;
-  color:var(--rkc-c,var(--isle-risk,#e05c5c));
-  background:color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 13%,transparent);
-  border:1px solid color-mix(in srgb,var(--rkc-c,var(--isle-risk,#e05c5c)) 32%,transparent);}
+.rkc-sig-chip{display:inline-flex;align-items:center;font:700 10px/1 var(--font-ui);
+  letter-spacing:.03em;padding:2px 6px;border-radius:var(--r-ctl);white-space:nowrap;
+  color:var(--rkc-c,var(--isle-risk));
+  background:color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 13%,transparent);
+  border:1px solid color-mix(in srgb,var(--rkc-c,var(--isle-risk)) 32%,transparent);}
 .rkc-sig-tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;flex:0 0 auto;
-  border-radius:50%;border:1px solid rgba(255,255,255,.22);color:var(--ink-3,rgba(255,255,255,.5));
-  font:700 10px/1 var(--font-ui,inherit);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
-.rkc-sig-tip:hover{border-color:var(--isle-risk,#e05c5c);color:var(--isle-risk,#e05c5c);}
-[data-theme="light"] .rkc-sig-tip{border-color:rgba(0,0,0,.2);color:rgba(0,0,0,.62);}
-@media(prefers-reduced-motion:no-preference){
-  #dlg-risk .rkc-sig{opacity:0;transform:translateY(6px);transition:opacity .4s ease,transform .4s cubic-bezier(.22,.9,.26,1.02),border-color .2s ease,background .2s ease;}
-  #dlg-risk.mx5-dlg-in .rkc-sig{opacity:1;transform:translateY(0);}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(1){transition-delay:.10s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(2){transition-delay:.16s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(3){transition-delay:.22s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(4){transition-delay:.28s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(5){transition-delay:.34s;}
-  #dlg-risk.mx5-dlg-in .rkc-sig:nth-child(n+6){transition-delay:.40s;}
-}
+  border-radius:var(--r-pill);border:1px solid var(--line);color:var(--ink-3);
+  font:700 10px/1 var(--font-ui);cursor:help;user-select:none;margin-left:auto;transition:border-color .2s,color .2s;}
+.rkc-sig-tip:hover{border-color:var(--isle-risk);color:var(--isle-risk);}
+[data-theme="light"] .rkc-sig-tip{border-color:var(--line);color:var(--ink-2);}
 
 /* ── rlx-* : rich-lens popover anatomy (Tier-2 rework 2026-07-20) ────────────
    Illustrated hover cards for the six dlg-risk signal tiles (+ any heavy tip).
@@ -2126,6 +2189,7 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
   background:color-mix(in srgb,var(--lens-text,#d7dce3) 4%,transparent);
   border:1px solid color-mix(in srgb,var(--lens-text,#d7dce3) 9%,transparent);}
 .rlx-viz-cap{font:600 10px/1.4 var(--font-ui,Inter,sans-serif);color:var(--lens-mut,#8b93a1);margin-top:8px;}
+.rlx-viz.is-news{--rlx-c:var(--isle-news);}
 /* comparison bars — a label ABOVE each full-width bar. (Was a 64px label column, which
    crushed descriptive leg names like "Cyclicals fading vs defensives" into 4-line,
    mid-word-broken wraps — the "bad layout". Stacking gives the name full width and the
@@ -2280,41 +2344,46 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-tx-verdict.v-warn{color:var(--ink-warn, var(--warn,#f59e0b));background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn,#f59e0b) 30%,transparent);}
 .rkc-tx-verdict.v-ok{color:var(--ink-up, var(--up,#22c55e));background:color-mix(in srgb,var(--up,#22c55e) 12%,transparent);border:1px solid color-mix(in srgb,var(--up,#22c55e) 30%,transparent);}
 
-/* — 5. Risk ladder: leading stroke glyph + gradient severity bar (restyle) — */
-body.page-macro #dlg-risk .scare-ladder{gap:7px;}
-body.page-macro #dlg-risk .scare-row{grid-template-columns:26px minmax(130px,1fr) 1.1fr 46px 62px;padding:10px 13px;
-  background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);}
-[data-theme="light"] body.page-macro #dlg-risk .scare-row{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06);}
-.rkc-sc-ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center;
-  color:var(--rkc-c,var(--muted));}
-.rkc-sc-ico svg{width:18px;height:18px;display:block;}
-body.page-macro #dlg-risk .sc-bar-track{height:8px;background:rgba(255,255,255,.06);}
-[data-theme="light"] body.page-macro #dlg-risk .sc-bar-track{background:rgba(0,0,0,.06);}
-body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
+/* — 5. Scare ladder: one flat instrument, not seven cards — */
+#dlg-risk .riskdlg-scare-list.scare-ladder{
+  gap:0;margin:0;border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;
+}
+#dlg-risk .riskdlg-scare{
+  display:grid;grid-template-columns:minmax(0,1.5fr) minmax(72px,1fr) 40px 58px;
+  align-items:center;gap:10px;min-height:34px;padding:4px 12px;
+  background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;
+}
+#dlg-risk .riskdlg-scare:last-child{border-bottom:0;}
+#dlg-risk .riskdlg-scare[data-band="sc-band-high"]{--rkc-c:var(--down);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-watch"]{--rkc-c:var(--warn);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-elev"]{--rkc-c:var(--info);}
+#dlg-risk .riskdlg-scare[data-band="sc-band-calm"]{--rkc-c:var(--muted);}
+#dlg-risk .rkc-sc-ico{display:none;}
+#dlg-risk .sc-name{font-size:var(--fs-sm);font-weight:650;}
+#dlg-risk .sc-score{font-size:var(--fs-body);font-weight:750;}
+#dlg-risk .sc-bar-track{height:5px;background:color-mix(in srgb, var(--text) 8%, transparent);}
+#dlg-risk .sc-bar-fill{height:5px;transform-origin:0 50%;
   background:linear-gradient(90deg,color-mix(in srgb,var(--rkc-c,var(--muted)) 45%,transparent),var(--rkc-c,var(--muted)))!important;}
 @media(prefers-reduced-motion:no-preference){
-  #dlg-risk .sc-bar-fill{transform:scaleX(0);transition:transform 620ms cubic-bezier(.22,.9,.26,1.02);}
+  #dlg-risk .sc-bar-fill{transform:scaleX(0);transition:transform 420ms cubic-bezier(.22,.9,.26,1.02);}
   #dlg-risk.mx5-dlg-in .sc-bar-fill{transform:scaleX(1);}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(2) .sc-bar-fill{transition-delay:.05s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(3) .sc-bar-fill{transition-delay:.10s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(4) .sc-bar-fill{transition-delay:.15s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(5) .sc-bar-fill{transition-delay:.20s;}
-  #dlg-risk.mx5-dlg-in .scare-row:nth-child(n+6) .sc-bar-fill{transition-delay:.25s;}
+}
+@media(prefers-reduced-motion:reduce){
+  #dlg-risk .sc-bar-fill{transform:none;}
 }
 @container risk-dialog (max-width:700px){
-  body.page-macro #dlg-risk .scare-row{grid-template-columns:24px minmax(0,1fr) 42px 58px;}
-  body.page-macro #dlg-risk .scare-row .sc-bar-track{display:none;}
+  #dlg-risk .riskdlg-scare{grid-template-columns:minmax(0,1fr) 40px 58px;}
+  #dlg-risk .riskdlg-scare .sc-bar-track{display:none;}
 }
 @container risk-dialog (max-width:390px){
-  body.page-macro #dlg-risk .scare-row{
-    grid-template-columns:24px minmax(0,1fr) auto;
-    grid-template-areas:"icon copy score" "icon copy band";
-    align-items:start;gap:3px 9px;padding:10px;
+  #dlg-risk .riskdlg-scare{
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:"copy score" "copy band";
+    align-items:start;gap:2px 8px;padding:8px 12px;min-height:44px;
   }
-  body.page-macro #dlg-risk .rkc-sc-ico{grid-area:icon;}
-  body.page-macro #dlg-risk .sc-name{grid-area:copy;}
-  body.page-macro #dlg-risk .sc-score{grid-area:score;text-align:right;}
-  body.page-macro #dlg-risk .sc-band{grid-area:band;justify-self:end;}
+  #dlg-risk .sc-name{grid-area:copy;}
+  #dlg-risk .sc-score{grid-area:score;text-align:right;}
+  #dlg-risk .sc-band{grid-area:band;justify-self:end;}
 }
 
 /* — 6. Mood check: two independent instruments.
@@ -2353,8 +2422,7 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 }
 @media(prefers-reduced-motion:reduce){
   #dlg-risk .rkc-mood-pin{left:var(--rkc-pos,50%);}
-  #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill,#dlg-risk .rrx .rrx-fill,#dlg-risk .rrx .rrx-norm{transform:none;}
-  #dlg-risk .rkc-sig{opacity:1;transform:none;}
+  #dlg-risk .rkc-ldr-fill,#dlg-risk .sc-bar-fill{transform:none;}
   #dlg-risk .rkc-ov-ring{--rkc-anim:var(--rkc-v,0);}
 }
 
@@ -2365,15 +2433,58 @@ body.page-macro #dlg-risk .sc-bar-fill{height:8px;transform-origin:0 50%;
 .rsx-froth-score{font:850 20px/.9 var(--font-ui,inherit);font-variant-numeric:tabular-nums;letter-spacing:-.02em;}
 .rsx-froth-provisional{font:600 9px/1 var(--font-ui,inherit);color:var(--ink-3,rgba(255,255,255,.4));}
 
+/* — Leadership rows + method disclosure — */
+#dlg-risk .rkc-rot-head{
+  font:650 var(--fs-sm)/1.3 var(--font-ui);letter-spacing:0;text-transform:none;
+  color:var(--ink-2);
+}
+#dlg-risk .rkc-mood-lens-name{letter-spacing:0;text-transform:none;font:650 var(--fs-label)/1.25 var(--font-ui);}
+#dlg-risk .riskdlg-rot{
+  display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;
+}
+#dlg-risk .riskdlg-theme{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:7px 12px;min-height:34px;text-decoration:none;
+  color:var(--ink-2);background:transparent;
+  border-bottom:1px solid var(--line);
+}
+#dlg-risk .riskdlg-theme:last-child,#dlg-risk .riskdlg-rot > .riskdlg-fold{border-bottom:0;}
+#dlg-risk .riskdlg-tn{font:650 var(--fs-sm)/1.3 var(--font-ui);min-width:0;}
+#dlg-risk .riskdlg-tm{font:700 var(--fs-label)/1 var(--font-mono);font-variant-numeric:tabular-nums;color:var(--ink-3);flex:0 0 auto;}
+#dlg-risk .riskdlg-theme.up .riskdlg-tm{color:var(--ink-up,var(--up));}
+#dlg-risk .riskdlg-theme.down .riskdlg-tm{color:var(--ink-down,var(--down));}
+#dlg-risk .riskdlg-ldr-caveat{font:500 var(--fs-sm)/1.45 var(--font-ui);color:var(--ink-3);margin:8px 0 4px;}
+#dlg-risk .riskdlg-fold > summary,
+#dlg-risk .riskdlg-method > summary{
+  cursor:pointer;list-style:none;font:600 var(--fs-sm)/1.3 var(--font-ui);
+  color:var(--ink-2);padding:8px 12px;min-height:44px;
+  display:flex;align-items:center;gap:6px;
+}
+#dlg-risk .riskdlg-fold > summary::-webkit-details-marker,
+#dlg-risk .riskdlg-method > summary::-webkit-details-marker{display:none;}
+#dlg-risk .riskdlg-fold > summary::before,
+#dlg-risk .riskdlg-method > summary::before{content:"+";font-weight:700;color:var(--ink-3);width:1em;}
+#dlg-risk .riskdlg-fold[open] > summary::before,
+#dlg-risk .riskdlg-method[open] > summary::before{content:"–";}
+#dlg-risk .riskdlg-method{
+  margin-top:14px;border:1px solid var(--line);border-radius:var(--r-card);
+}
+#dlg-risk .riskdlg-method-note{font:500 var(--fs-sm)/1.45 var(--font-ui);color:var(--ink-3);padding:0 12px 12px;margin:0;}
+#dlg-risk .rsx-dlg-footer{font:500 var(--fs-label)/1.5 var(--font-ui);color:var(--ink-3);margin-top:10px;}
+#dlg-risk .riskdlg-rot > .riskdlg-fold{padding:0;}
+#dlg-risk .riskdlg-rot > .riskdlg-fold > summary{border-top:1px solid var(--line);}
+
 /* — narrow embedded-panel bleed checks — */
 @container risk-dialog (max-width:520px){
-  .rkc-sig-grid{grid-template-columns:1fr;}
   .rkc-mood-board{grid-template-columns:1fr;}
   .rkc-ov-grid{grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:6px;}
   .rkc-ov-ring{width:46px;height:46px;}
   .rkc-ov-val{font-size:14px;}
   .rkc-ldr-row{grid-template-columns:46px 1fr 42px;gap:7px;}
   #dlg-risk .rsx-froth-bar-lbl{width:92px;}
+  #dlg-risk .riskdlg-drv .rkc-sig-body{flex-direction:column;gap:2px;align-items:flex-start;}
+  #dlg-risk .riskdlg-odds-h{gap:12px;}
 }
 @container risk-dialog (max-width:340px){
   .rkc-mood-axis span:nth-child(2),.rkc-mood-axis span:nth-child(4){visibility:hidden;}
