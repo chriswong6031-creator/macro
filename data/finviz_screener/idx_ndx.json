@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-08-29 04:00 UTC",
+"as_of":"2026-08-30 02:28 UTC",
 "n":102,
 "total_reported":102,
 "unmapped_industries":[],
@@ -22,20 +22,20 @@
 "market_cap_b":4665.76
 },
 {
-"ticker":"GOOGL",
-"company":"Alphabet Inc",
-"industry":"Internet Content & Information",
-"sector":"Communication Services",
-"country":"USA",
-"market_cap_b":4222.26
-},
-{
 "ticker":"GOOG",
 "company":"Alphabet Inc",
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4213.43
+"market_cap_b":4218.29
+},
+{
+"ticker":"GOOGL",
+"company":"Alphabet Inc",
+"industry":"Internet Content & Information",
+"sector":"Communication Services",
+"country":"USA",
+"market_cap_b":4218.29
 },
 {
 "ticker":"MSFT",
@@ -162,7 +162,7 @@
 "company":"Applied Materials Inc",
 "industry":"Semiconductor Equipment & Materials",
 "sector":"Technology",
-"country":"USA",
+"country":"Japan",
 "market_cap_b":366.38
 },
 {
@@ -227,7 +227,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":222.39
+"market_cap_b":223.63
 },
 {
 "ticker":"SNDK",
@@ -630,20 +630,20 @@
 "market_cap_b":51.46
 },
 {
-"ticker":"WDAY",
-"company":"Workday Inc",
-"industry":"Software - Application",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":50.36
-},
-{
 "ticker":"ALAB",
 "company":"Astera Labs Inc",
 "industry":"Semiconductors",
 "sector":"Technology",
 "country":"USA",
 "market_cap_b":50.22
+},
+{
+"ticker":"WDAY",
+"company":"Workday Inc",
+"industry":"Software - Application",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":49.34
 },
 {
 "ticker":"MSTR",

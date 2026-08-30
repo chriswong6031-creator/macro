@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-08-29",
+ "as_of": "2026-08-30",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -210,11 +210,11 @@
      "name": "Figs Inc"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -1812,10 +1812,6 @@
     {
      "ticker": "ANAB",
      "name": "AnaptysBio Inc"
-    },
-    {
-     "ticker": "FBRX",
-     "name": "Forte Biosciences Inc"
     },
     {
      "ticker": "BCAX",
@@ -3702,6 +3698,10 @@
      "name": "Caledonia Mining Corp Plc"
     },
     {
+     "ticker": "GORO",
+     "name": "Goldgroup Mining Inc"
+    },
+    {
      "ticker": "VGZ",
      "name": "Vista Gold Corp"
     },
@@ -3750,12 +3750,12 @@
      "name": "BrightSpring Health Services Inc"
     },
     {
-     "ticker": "HQY",
-     "name": "Healthequity Inc"
-    },
-    {
      "ticker": "TXG",
      "name": "10x Genomics Inc"
+    },
+    {
+     "ticker": "HQY",
+     "name": "Healthequity Inc"
     },
     {
      "ticker": "HNGE",
@@ -4706,6 +4706,10 @@
      "name": "SI-BONE Inc"
     },
     {
+     "ticker": "AVR",
+     "name": "Anteris Technologies Global Corp"
+    },
+    {
      "ticker": "AHCO",
      "name": "AdaptHealth Corp"
     },
@@ -4862,10 +4866,6 @@
     {
      "ticker": "STAA",
      "name": "Staar Surgical Co"
-    },
-    {
-     "ticker": "AVR",
-     "name": "Anteris Technologies Global Corp"
     },
     {
      "ticker": "ANGO",
@@ -5244,10 +5244,6 @@
    "sector": "Energy",
    "members": [
     {
-     "ticker": "KNTK",
-     "name": "Kinetik Holdings Inc"
-    },
-    {
      "ticker": "GLNG",
      "name": "Golar Lng"
     },
@@ -5258,6 +5254,10 @@
     {
      "ticker": "EE",
      "name": "Excelerate Energy Inc"
+    },
+    {
+     "ticker": "KNTK",
+     "name": "Kinetik Holdings Inc"
     },
     {
      "ticker": "STNG",
@@ -5388,10 +5388,6 @@
     {
      "ticker": "MUX",
      "name": "McEwen Inc"
-    },
-    {
-     "ticker": "GORO",
-     "name": "Goldgroup Mining Inc"
     },
     {
      "ticker": "VOXR",
@@ -8644,11 +8640,11 @@
      "name": "Monarch Casino & Resort Inc"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -8796,12 +8792,12 @@
      "name": "Gentherm Inc"
     },
     {
-     "ticker": "BH",
-     "name": "Biglari Holdings Inc"
-    },
-    {
      "ticker": "WINA",
      "name": "Winmark Corp"
+    },
+    {
+     "ticker": "BH",
+     "name": "Biglari Holdings Inc"
     },
     {
      "ticker": "TRIP",
@@ -9436,10 +9432,6 @@
    "name_zh": "能源",
    "members": [
     {
-     "ticker": "KNTK",
-     "name": "Kinetik Holdings Inc"
-    },
-    {
      "ticker": "SM",
      "name": "SM Energy Co"
     },
@@ -9526,6 +9518,10 @@
     {
      "ticker": "EE",
      "name": "Excelerate Energy Inc"
+    },
+    {
+     "ticker": "KNTK",
+     "name": "Kinetik Holdings Inc"
     },
     {
      "ticker": "HP",
@@ -10714,12 +10710,12 @@
      "name": "AlTi Global Inc"
     },
     {
-     "ticker": "OPFI",
-     "name": "OppFi Inc"
-    },
-    {
      "ticker": "CRD-A",
      "name": "Crawford & Co"
+    },
+    {
+     "ticker": "OPFI",
+     "name": "OppFi Inc"
     },
     {
      "ticker": "CBNK",
@@ -11292,12 +11288,12 @@
      "name": "TG Therapeutics Inc"
     },
     {
-     "ticker": "HQY",
-     "name": "Healthequity Inc"
-    },
-    {
      "ticker": "TXG",
      "name": "10x Genomics Inc"
+    },
+    {
+     "ticker": "HQY",
+     "name": "Healthequity Inc"
     },
     {
      "ticker": "SYRE",
@@ -11838,10 +11834,6 @@
     {
      "ticker": "ANIP",
      "name": "ANI Pharmaceuticals Inc"
-    },
-    {
-     "ticker": "FBRX",
-     "name": "Forte Biosciences Inc"
     },
     {
      "ticker": "AGL",
@@ -13598,12 +13590,12 @@
      "name": "Pangaea Logistics Solutions Ltd"
     },
     {
-     "ticker": "QUAD",
-     "name": "Quad/Graphics Inc"
-    },
-    {
      "ticker": "CMCO",
      "name": "Columbus Mckinnon Corp"
+    },
+    {
+     "ticker": "QUAD",
+     "name": "Quad/Graphics Inc"
     },
     {
      "ticker": "ULH",
@@ -14670,10 +14662,6 @@
      "name": "PagSeguro Digital Ltd"
     },
     {
-     "ticker": "VISN",
-     "name": "Vistance Networks Inc"
-    },
-    {
      "ticker": "NCNO",
      "name": "Ncino Inc"
     },
@@ -14838,6 +14826,10 @@
      "name": "BigBear.ai Holdings Inc"
     },
     {
+     "ticker": "VISN",
+     "name": "Vistance Networks Inc"
+    },
+    {
      "ticker": "AMBQ",
      "name": "Ambiq Micro Inc"
     },
@@ -14906,12 +14898,12 @@
      "name": "Aeva Technologies Inc"
     },
     {
-     "ticker": "AIP",
-     "name": "Arteris Inc"
-    },
-    {
      "ticker": "PD",
      "name": "Pagerduty Inc"
+    },
+    {
+     "ticker": "AIP",
+     "name": "Arteris Inc"
     },
     {
      "ticker": "MNTN",
@@ -14986,12 +14978,12 @@
      "name": "Ceva Inc"
     },
     {
-     "ticker": "LPTH",
-     "name": "Lightpath Technologies Inc"
-    },
-    {
      "ticker": "AOSL",
      "name": "Alpha & Omega Semiconductor Ltd"
+    },
+    {
+     "ticker": "LPTH",
+     "name": "Lightpath Technologies Inc"
     },
     {
      "ticker": "PAYS",
@@ -15194,16 +15186,16 @@
      "name": "One Stop Systems Inc"
     },
     {
-     "ticker": "AVNW",
-     "name": "Aviat Networks Inc"
-    },
-    {
      "ticker": "SMRT",
      "name": "SmartRent Inc"
     },
     {
      "ticker": "RELL",
      "name": "Richardson Electronics Ltd"
+    },
+    {
+     "ticker": "AVNW",
+     "name": "Aviat Networks Inc"
     },
     {
      "ticker": "IMMR",
@@ -15214,16 +15206,16 @@
      "name": "Aeluma Inc"
     },
     {
+     "ticker": "LTRX",
+     "name": "Lantronix Inc"
+    },
+    {
      "ticker": "III",
      "name": "Information Services Group Inc"
     },
     {
      "ticker": "KLTR",
      "name": "Kaltura Inc"
-    },
-    {
-     "ticker": "LTRX",
-     "name": "Lantronix Inc"
     },
     {
      "ticker": "SVCO",

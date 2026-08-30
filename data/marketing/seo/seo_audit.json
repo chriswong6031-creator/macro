@@ -1,9 +1,9 @@
 {
   "schema": "seo_audit.v1",
-  "as_of": "2026-08-23T15:21:51Z",
+  "as_of": "2026-08-30T18:25:47Z",
   "health_score": 90,
   "census": {
-    "total_pages": 2339,
+    "total_pages": 2390,
     "by_family": {
       "core": {
         "pages": 152,
@@ -38,10 +38,10 @@
         "in_sitemap": 0
       },
       "report": {
-        "pages": 6,
-        "with_canonical": 6,
-        "with_desc": 6,
-        "with_og": 6,
+        "pages": 7,
+        "with_canonical": 7,
+        "with_desc": 7,
+        "with_og": 7,
         "with_jsonld": 0,
         "in_sitemap": 0
       },
@@ -54,7 +54,7 @@
         "in_sitemap": 0
       },
       "stocks": {
-        "pages": 2074,
+        "pages": 2124,
         "sampled": 25,
         "with_canonical": 25,
         "with_title": 25,
@@ -66,10 +66,10 @@
     }
   },
   "sitemap": {
-    "total_urls": 3719,
-    "core": 1756,
+    "total_urls": 3924,
+    "core": 1914,
     "products": 5,
-    "stocks": 1958,
+    "stocks": 2005,
     "host_ok": true,
     "bad_host_count": 0,
     "apex_host_count": 0,
@@ -80,7 +80,7 @@
       "unsubscribe.html"
     ],
     "excluded_public_count": 1,
-    "non_public_absent_count": 236,
+    "non_public_absent_count": 237,
     "duplicates": []
   },
   "crawl_infra": {
@@ -88,7 +88,7 @@
     "robots_sitemap_host_ok": true,
     "llms_txt_present": true,
     "brand_facts_present": true,
-    "brand_facts_age_days": 27
+    "brand_facts_age_days": 34
   },
   "issues": [
     {
