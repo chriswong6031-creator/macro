@@ -1,209 +1,195 @@
-# Critic receipt (RIG V1 §6) — Reviewer A (r3 cycle), product regression.
-# Fresh critic; no participation in the r1 or r2 cycles.
+# Critic receipt (RIG V1 §6) — product regression, R3 REVIEW-ORDER RE-RUN.
 #
-# PROVENANCE DEFECT, DISCLOSED IN FULL (coordinator error, found by BOTH r3
-# critics in pass 2, not by the coordinator):
-#   The r1 and r2 cycles each committed their pass-1 receipts BEFORE the
-#   rationale reveal, and that freeze commit is the on-disk proof of the
-#   quarantine. For r3 the coordinator omitted that step: pass-1 packets were
-#   returned, then the repair and the rationale reveal were dispatched, and the
-#   receipts were only written to disk afterwards — from the returned packets,
-#   verbatim. So:
-#     * The pass-1 REVIEW itself was genuinely quarantined. The spawn
-#       commissions carried no rationale, forbade every RIG record and the
-#       templates/site trees, and both critics returned their findings before
-#       any reveal message existed. That is checkable in the session record.
-#     * The on-disk FREEZE ARTIFACT that would let a stranger verify the above
-#       without trusting the coordinator DOES NOT EXIST for r3.
-#   The distinction is load-bearing and is not smoothed over here. Both critics
-#   flagged it independently (Reviewer A COND-B; Reviewer B GAPS 1) and both
-#   noted the consequence: in pass 2 they amended findings whose only surviving
-#   statement was the coordinator's paraphrase. The design authority should rule
-#   on whether the r3 critic evidence is admissible on that basis or whether the
-#   cycle must be re-run behind a real freeze. The coordinator's recommendation
-#   is that the authority decide, not the coordinator.
+# This receipt replaces the earlier r3 product_regression receipt, whose review
+# ORDER could not be proven: its pass-1 findings were never committed before the
+# rationale reveal, so no stranger could verify the quarantine. The superseded
+# receipt is preserved verbatim at reviews/superseded_review_order/ and every one
+# of its findings is carried in continuity.yml — nothing evaporates.
+#
+# This cycle was run under Sol CONTINUE (carrier
+# theme-parity-tp1-canada-20260828-sol-001, ts 1788118073.730499) with a
+# genuinely fresh critic that had never seen the surface, the prior verdicts, the
+# RIG records, or any repair narrative. THIS FILE IS THE FIRST-PASS FREEZE: it is
+# committed BEFORE any rationale or constraint is revealed, and git ancestry —
+# not the coordinator's word — is the proof of that ordering.
 schema: mastermind.rig_review.v1
 reference_id: canada-stock-dashboard-tp1-r3
 role: product_regression
 artifact_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
 
 reviewer:
-  identity: "rig-r3-critic-a-halyard-quartz-8831"
+  identity: "rig-r3rr-critic-a-bramble-cobalt-5107"
   model: opus
   independent_of_author: true
 
 quarantine:
   first_pass_inputs:
-    - user/business job (r3 baseline.yml)
-    - production-before artifact (baseline shots + pre-change source copies)
-    - proposed-after artifact (comment-redacted frozen copies at 2d463e7c4e8f + rendered proposal PNGs)
-    - capability ledger (r3 baseline.yml)
+    - user/business job (redacted packet: job, core interactions, information hierarchy)
+    - capability ledger (redacted packet)
+    - production-before artifact (comment-redacted composer at c819f6428f91)
+    - proposed-after artifact (comment-redacted source at the frozen SHA + 24 rendered cells)
   rationale_received_after_first_pass: true
-  on_disk_freeze_commit: null   # see the PROVENANCE DEFECT note above
-  notes: >
-    Pass-1 commission forbade every RIG record of every cycle, the templates/
-    and site/ trees, the theme-parity docs, all PR/Slack/prior-review material
-    and all git history commands; the critic declared the quarantine honoured
-    and its pass-1 findings were returned before any rationale existed.
+  packet_construction: >
+    The critic was handed a purpose-built packet, not the repository. All CSS and
+    JS comments were stripped (the stylesheet carries its rationale as a comment
+    ledger); the baseline's chronology note, its design_lineage constraints and
+    every TP-1 string were removed. An automated leakage scan over the packet for
+    rationale, prior verdicts, repair framing and legal-enum words returned clean
+    before any critic was spawned.
+  forbidden_and_declared_unread: >
+    research/reference_integrity/ (every cycle), the repository templates/ and
+    site/ trees, research/THEME_PARITY*, docs/superpowers/plans/*,
+    docs/DESIGN_DOCTRINE.md, every acceptance record, all PR and Slack content,
+    every git history command, and the other reviewer's output.
+  critic_declaration: >
+    Honored in full. The critic states it read only the four packet files, the
+    evidence PNGs named in its commission, a directory listing of that folder,
+    PIL reads of those PNGs and two scratchpad crops derived from them; and that
+    it ran no git log/show/diff/blame. Nothing about the author's reasoning,
+    prior verdicts or repair narrative entered the review.
 
 first_pass:
-  # Judged frozen SHA 2d463e7c4e8f (the pre-repair R3 head).
-  verdict: BLOCK
-  findings:
-    - id: PRC-301
-      severity: blocker
-      capability: "leadership.expand_modal, prophet.population_filters, prophet.grid_table_xor, prophet.top_picks_projection (evidence integrity)"
-      finding: >
-        Nine of eleven named state cells depict a build that is not the frozen
-        artifact: the Uranium leadership gauge measures 355px (27% of the row,
-        the old percentage geometry, byte-identical to the baseline) in the
-        modal, filtered, filter-miss, tableview and all-candidates shots, while
-        the frozen code can only draw a fixed ~200px track — so the modal,
-        active-filter, filter-miss, table-view and all-candidates states carry
-        no valid dark-or-light evidence for the artifact under review.
-    - id: PRC-302
-      severity: major
-      capability: leadership.expand_modal
-      finding: >
-        Modal presentation is gated on a general-sibling accident: an
-        unconditional display:none plus every reveal rule scoped
-        .mx-stockdash--ca ~ .ca-v36-modal, while the composer inserts the root
-        after the nav and appends the modal to body — the day .site-nav is not
-        a direct body child, the match fails, display:none wins, and "Expand
-        leadership" becomes a silently dead button with no fallback.
-    - id: PRC-303
-      severity: minor
-      capability: leadership.expand_modal
-      finding: >
-        The modal loses header/value alignment agreement: td.num is
-        right-aligned while every th stays left-aligned, so Rank and Names
-        headers float away from the values they label.
-    - id: PRC-304
-      severity: minor
-      capability: "leadership.themes_only_rank, platform.theme_lang"
-      finding: >
-        The gauge's reference track is materially weaker in light (~1.2:1 off
-        white) than dark, so at partial value the light reader sees a bare bar
-        with no visible "out of what" — the one thing the track exists to supply.
-    - id: PRC-305
-      severity: minor
-      capability: leadership.themes_only_rank
-      finding: >
-        The gauge is anchored left:0, 200px long, sitting under the leaders
-        ticker list while the count it encodes sits at the far right of the
-        row — it reads as an underline of the ticker string rather than as a
-        measurement belonging to the row.
-    - id: PRC-306
-      severity: minor
-      capability: "platform.fail_soft_legacy, platform.two_fetch_degrade"
-      finding: >
-        Time-to-board regresses: the composer is serialized behind an
-        un-preloaded stylesheet round-trip, and on a flaky response the user
-        holds on the legacy page through 1500ms + 3000ms of silent backoff.
-    - id: PRC-307
-      severity: minor
-      capability: platform.fail_soft_legacy
-      finding: >
-        The stylesheet is fetched at a hand-pinned ?v= token, cache-coupling
-        two files that must move together; a CSS change shipped without a bump
-        serves warm caches a stylesheet that no longer matches the class
-        contract — styled-wrong rather than fail-soft.
-    - id: PRC-308
-      severity: minor
-      capability: "platform.theme_lang, leadership.themes_only_rank"
-      finding: >
-        The rank token is hard-coded English and never routed through bi() —
-        "Theme #" + rank at both the at-rest and modal sites — so ZH users read
-        an English rank label inside otherwise localized copy whose own header
-        correctly reads 排名. Byte-identical to production, so not a
-        regression, but ratifying this file ratifies the defect.
-    - id: PRC-309
-      severity: minor   # critic severity: nit; recorded at the schema floor
-      capability: platform.fail_soft_legacy
-      finding: >
-        ensureStockDashCss is declared at file top level outside any IIFE, so
-        the shared site-wide icon asset leaks a global onto every page.
-  strengths:
-    - Breadth gauge tells the truth about three membership states — null yields
-      no marker class and no track, a known zero an empty track, a positive
-      count a proportional fill; production's Math.max(8, …) floor painted a
-      false 8% tick on exactly the case the missing-is-not-zero law protects.
-    - It reads as a measure at partial and full value, fill-vs-track luminance
-      separation production's 1px 50%-opacity hairline never had.
-    - Active vs hover finally differ (production collapsed both into one 6%
-      wash, making the filter state nearly invisible).
-    - Light is a second art direction, not a token swap — lanes drop the card
-      for hairline-divided columns, the flush border becomes an inset header
-      rail over a 4% semantic tint, the Prophet grid becomes a recessed well
-      with white shadowed cards.
-    - Raw non-token colour is eliminated; radii move to the canonical scale;
-      measured dark hues improve contrast while light hues are unchanged.
-    - Product semantics survive where the lineage binds them — the Canada
-      Western quote exception verbatim, per-group membership nulls, the count
-      and filter-affordance gating, the non-switching empty state, the honest
-      "N shown · M on board" count, the .sm-hidden rescue, and the two fetches
-      with their 2.5s degrade are byte-identical.
-    - >
-      The runtime injectCss() stylesheet is genuinely gone, and the loader's
-      failure path is correct — after three attempts the composer never runs
-      and the legacy page stays visible and functional.
-
-second_pass:
-  # Judged the REPAIRED artifact e509db03ee5f (the SHA advanced between passes
-  # in direct response to pass 1; all 22 evidence images re-taken at the new head).
+  # FROZEN BEFORE REVEAL. frozen_commit is this file's own freeze commit; see
+  # manifest.yml and the RESULT returned to Sol for the ancestry proof.
+  frozen_at: "2026-08-30T22:05:00Z"
   verdict: PASS_WITH_CONDITIONS
-  continuation_note: >
-    Executed by a continuation context of the same reviewer identity; it
-    received the rationale before reading evidence (inverting the intended
-    ordering) and could not read its own frozen text because the receipt did
-    not yet exist. Mitigation applied by the critic: the four withdrawals rest
-    on its own pixel and byte re-verification, never on the coordinator's
-    assertions, and each amendment states which basis it used.
-  amendments:
-    - {finding: PRC-301, action: withdrawn, note: "Re-verified and closed: all 22 images re-taken at the new head; the bounded gauge measures x[73..274] (~206px track) on every row of every previously-stale state, and mobile rescales to ~116px. The 355px geometry is not reproducible anywhere in the current evidence."}
-    - {finding: PRC-302, action: downgraded, note: "Downgraded on the authority ground ONLY — the fail-closed base was expressly ordered after an earlier cycle found the opposite (combinator break exposing unstyled content), and a composer data attribute was outside the fence. NOT closed: the dead-button residual survives and must be carried by name."}
-    - {finding: PRC-303, action: withdrawn, note: "Re-verified against the composer's actual emission: th:last-child hits Count at both column counts and th:first-child:nth-last-child(5) matches Rank only in the 5-column rk-true layout. Residual noted: the selector encodes a literal column count, so a future composer column change would un-align it silently."}
-    - {finding: PRC-304, action: withdrawn, note: "Re-verified on pixels: track renders [187,192,199] on white and [66,71,81] on the dark panel — perceptible on both planes — and at full value the fill terminates 3px inside a track that is 1px taller above and below. The bound is legible at 100% in both themes."}
-    - {finding: PRC-305, action: withdrawn, note: "Re-verified: track and fill now start at the row's 14px/17px content edge (measured x=15/x=18 in the panel crop), so the gauge sits under the content column instead of spanning to the row edge."}
-    - {finding: PRC-306, action: downgraded, note: "Out-of-boundary authority-ruled named debt; accepted as stated, NOT re-verified and NOT closed — the defect is still live in production bytes."}
-    - {finding: PRC-307, action: downgraded, note: "Same ground and same limits as PRC-306 — accepted as stated, not re-verified, not closed."}
-    - {finding: PRC-308, action: downgraded, note: "Downgraded, NOT closed, and re-verified live: the frozen composer still emits an unwrapped English rank label beside its own bilingual header. Carried as estate ZH-nativeness debt."}
-    - {finding: PRC-309, action: downgraded, note: "Same ground and same limits as PRC-306/307 — accepted as stated, not re-verified, not closed."}
-  sibling_repairs_verified_unprompted:
-    - "max-width clamp present; measured fill never exceeds 200px, so an out-of-range breadth cannot overrun the track."
-    - "Light active-row tint lowered 12% → 7% at both sites while dark retains 12% — respects the light doctrine's ≤8% ceiling."
-  breadth_truth_measurement:
-    method: fill-vs-track pixel classification on both breadth crops
-    measured_fill_px: {Silver: 160, Uranium: 54, Gold: 200, BaseMetals: 120, OilGas: 200}
-    counts_of_max: {Silver: "12/15", Uranium: "4/15", Gold: "15/15", BaseMetals: "9/15", OilGas: "15/15"}
-    result: "exactly linear count/15 × 200px on both planes — the 8% floor is gone and dark/light geometry is pixel-identical."
-  conditions:
-    - id: COND-A
+  coverage: >
+    13 of 24 evidence cells opened or measured; the mobile 390 axis was closed on
+    a second sweep after the coordinator refused a first pass that left it
+    unverified. Cells not fully read are named under gaps rather than passed.
+  findings:
+    - id: PRA-401
       severity: major
-      text: >
-        proposal.yml asserted the composer was byte-identical to origin/main
-        with a verified 0-line diff. Measurement refutes it (16 insertions / 2
-        deletions at the frozen SHA). The change is IN SCOPE — it is the
-        authorized breadth repair — but the false statement was the entire
-        stated warrant for the no-new-claims authority delta.
-        COORDINATOR DISPOSITION: accepted and corrected in proposal.yml before
-        return; the warrant now rests on the true statement (the delta is the
-        authorized presentation-only repair and strictly reduces claimed
-        authority). The critic found this; the coordinator did not.
-    - id: COND-B
-      severity: major
-      text: >
-        Restore the pass-1 frozen receipt; manifest.yml points at a file that
-        does not exist, so no reader can check these amendments against the
-        findings they claim to amend.
-        COORDINATOR DISPOSITION: this file is that restoration, written from
-        the critic's returned pass-1 packet verbatim, with the provenance
-        defect disclosed at the head of the file rather than papered over. The
-        design authority rules on admissibility.
-    - id: COND-C
+      capability: "platform.fail_soft_legacy (and by consequence every core capability)"
+      finding: >
+        The composer is injected only from inside the stylesheet's success
+        callback. ensureStockDashCss(inject) calls inject() from link.onload;
+        link.onerror retries and, after 3 attempts, falls through with NO
+        terminal branch — onReady is never invoked, so the composer is never
+        appended. The before build carried its own stylesheet and could not be
+        blocked by an asset failure. Anything that makes the stylesheet fail
+        three times (stale ?v= against a purged edge object, CDN 5xx, cache
+        partition miss, CSP style-src tightening) silently deletes the entire
+        board for that user, who gets the legacy page with no act-now lanes, no
+        Top Picks/All Candidates switch, no filter counts and no leadership
+        modal, with no console assertion, beacon or degraded-mode chip. It is
+        fail-soft, hence major and not blocker — but it converts one static asset
+        into a single point of failure for a surface that previously had none,
+        and it inverts the degrade contract, since two_fetch_degrade guarantees a
+        render in 2.5s when DATA is slow while the board cannot render at all
+        when the STYLESHEET is slow past the ladder.
+      clearing_condition: >
+        Either give attemptLoad a terminal branch calling onReady() after the
+        last failed attempt (composer mounts unstyled-but-functional, matching
+        the before guarantee), or explicitly ratify "no CSS implies no dashboard"
+        and add the missing failure signal.
+      evidence: "after dashboard-icons.js:215-228 and :248; contrast before canada-stock-v36.js:139-184 and :394"
+    - id: PRA-402
       severity: minor
-      text: >
-        Carry PRC-302 (dead-button residual), PRC-306/307/309 (loader) and
-        PRC-308 (ZH rank label) into the named-debt register verbatim — five of
-        nine findings are downgraded-not-closed, and a cycle that reads as
-        "nine findings answered" would overstate what was repaired.
+      capability: "leadership.expand_modal, leadership.themes_only_rank"
+      finding: >
+        All modal styling, plus the modal's stance and rank chips, hangs off a
+        general-sibling combinator scoped .mx-stockdash--ca ~ .ca-v36-modal,
+        while the composer inserts main after the nav and appends the modal to
+        body. Combined with the unconditional .ca-v36-modal display:none, a
+        future shell change that wraps .site-nav in a header does not degrade the
+        modal — it makes it permanently unopenable, Expand-leadership becomes a
+        dead control, and nothing surfaces an error. The before styled the modal
+        position-independently. Resilience finding; it works today in both themes.
+      evidence: "after stock-dashboard.css:292, :294-299, :43-48, :169-183, :451-463; DOM assembly after canada-stock-v36.js:362 and :370"
+    - id: PRA-403
+      severity: minor
+      capability: "platform.fail_soft_legacy, cross-route hygiene"
+      finding: >
+        ensureStockDashCss is declared at file top level, outside any IIFE and
+        outside "use strict", unlike the three sibling blocks in the same file,
+        so the site-wide icon decorator publishes a global on every route that
+        loads it. Separately the HK loader calls inject() with no CSS gate while
+        the CA loader gates on the stylesheet; if the HK composer ever adopts the
+        .mx-stockdash family it mounts against a stylesheet nobody loaded.
+        Harmless today, unmarked trap.
+      evidence: "after dashboard-icons.js:193 vs IIFE form at :2, :231, :251; HK gate absent at :268"
+    - id: PRA-404
+      severity: minor
+      capability: "leadership.themes_only_rank (modal reading)"
+      finding: >
+        th:first-child:nth-last-child(5) plus td.num right-align the Rank column
+        — a left-edge identifier, not a quantity. In the light modal the Rank
+        header's right edge sits at x~273 while the table's left content edge is
+        x~148, leaving a ~110px dead gutter down the left of the dialog with
+        "Theme #1" jammed against the Name column it must be distinguished from.
+        The inline leadership list left-aligns the same value, and the 390 crop
+        confirms the inconsistency persists at mobile. One quantity aligned two
+        ways, one click apart. Right-aligning the trailing Names count is
+        correct; extending it to Rank is over-reach.
+      evidence: "after stock-dashboard.css:321 and :323-326; proposal-modal-light-en-1440.png"
+    - id: PRA-405
+      severity: minor
+      capability: prophet.live_quotes
+      classification: evidence-matrix defect (not an artifact defect)
+      finding: >
+        Every change cell in all 24 images renders an em-dash — no live tick at
+        capture time — so no .up or .down pixel exists anywhere in the matrix.
+        The ledger marks live quotes core and states the requirement as Western
+        green-up/red-down even under ZH. That clause is UNFALSIFIABLE from this
+        evidence: the declarations demonstrably survive, but the rendered result
+        cannot be confirmed, and this is precisely where it matters — the ZH
+        cells show every surrounding semantic colour correctly inverting to the
+        CJK convention, so the one element required to RESIST that inversion is
+        the one element the matrix cannot show. Minor because the declarations
+        are byte-equivalent in intent to the before build and regression risk is
+        low, not because the gap is unimportant.
+      clearing_condition: "one cell captured during a live session, ZH, with at least one non-flat change value"
+      evidence: "after stock-dashboard.css:237-240; before canada-stock-v36.js:172; all 24 images"
+    - id: PRA-406
+      severity: minor
+      capability: "prophet.population_filters (honest filter-miss state), platform.theme_lang"
+      classification: evidence-matrix defect (not an artifact defect)
+      finding: >
+        The filter-miss cell exists in LIGHT ONLY. This is not a symmetric
+        omission: the filter-miss surface is composed largely of light-specific
+        rules with no dark twin in evidence — the empty region sits on a
+        light-only card-grid background override, and the escape control gets a
+        light-only panel background and card shadow. In dark neither applies, so
+        the empty state renders on the panel surface with a different button
+        treatment and no elevation: a materially different composition that no
+        committed cell shows. Under the house theme law both themes must be
+        adjudicated as designs; the dark filter-miss state has not been. The dark
+        rules are inherited unchanged and unlikely to be broken, but "unlikely"
+        is not evidence.
+      clearing_condition: "one proposal-filtermiss-dark-en-1440.png"
+      evidence: "after stock-dashboard.css:390 and :414-416; directory listing shows exactly one filtermiss cell, light"
+  mobile_390_resolution:
+    verdict: VERIFIED, no finding
+    detail: >
+      All four sub-claims hold across all four theme x locale mobile cells plus
+      the lane-switch cell. The segmented lane control is a real control (tab 2
+      selected switches the body to IN FAVOUR with its own accent and rows, same
+      DOM position). Exactly one lane body renders. The card grid is 1-up. The
+      reduced gauge encodes honestly at small size — track measured 116px exactly
+      against calc(100 * 1.1 * 1px + 6px), fills 88/30/110/66/110px against
+      counts 12/4/15/9/15 of max 15, i.e. 80/27/100/60/100 percent, exact in all
+      20 measurements, so the encoding is viewport-independent.
+    inherited_not_introduced: >
+      EN tab labels truncate at 390 ("Buy N…", "Botto…", "Redu…"). The before
+      build carries byte-identical rules, so this is inherited estate debt, not a
+      TP-1 regression; the after actually improves light by tinting unselected
+      tabs.
+  strengths:
+    - Breadth is honest and legible at both viewports. The before floored every
+      group at 8% of row width, so a near-zero group still drew a bar — the
+      encoding lied at the low end. The after emits no bar and no track when
+      membership is unknown, extending the missing-is-not-zero discipline to
+      leadership, and the new track finally supplies a denominator where the
+      before had an essentially unreadable 1px hairline at half opacity.
+    - Light is designed as a different material, not a token swap. The before's
+      light was the dark composition with variables changed. The after gives
+      light its own act-now grammar — lanes lose card chrome for one continuous
+      hairline-divided surface, the accent moves to an inset rule over a 4%
+      header tint, divider logic is re-derived at 2-up and 1-up, and card depth
+      switches from glow to shadow.
+    - Hardcoded non-token colours are gone; radii moved to the canonical scale
+      with the old literals kept as fallbacks.
+    - Selected state is finally distinguishable from hover — the before collapsed
+      both into an identical 6% wash, so a user could not tell which group was
+      filtering the board.
