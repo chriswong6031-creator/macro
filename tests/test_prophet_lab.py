@@ -2603,6 +2603,106 @@ def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> 
     return _build_d5(read_revisions=lambda event_id: revisions)
 
 
+@pytest.mark.parametrize(
+    ("state_at_decision", "current_state", "accepted"),
+    [
+        ("NONE", "CURRENT", True),
+        ("NONE", "CORRECTED", False),
+        ("NONE", "UNKNOWN", True),
+        ("NONE", "CONFLICTED", False),
+        ("NONE", "RETRACTED", False),
+        ("PENDING", "CURRENT", False),
+        ("PENDING", "CORRECTED", False),
+        ("PENDING", "UNKNOWN", False),
+        ("PENDING", "CONFLICTED", False),
+        ("PENDING", "RETRACTED", False),
+        ("CONFLICTED", "CURRENT", False),
+        ("CONFLICTED", "CORRECTED", False),
+        ("CONFLICTED", "UNKNOWN", False),
+        ("CONFLICTED", "CONFLICTED", False),
+        ("CONFLICTED", "RETRACTED", False),
+    ],
+)
+def test_validator_correction_state_matrix_for_healthy_present_evidence(
+    state_at_decision: str,
+    current_state: str,
+    accepted: bool,
+) -> None:
+    payload = _build_d5()
+    correction = payload["evidence_families"][0]["correction"]
+    correction["state_at_decision"] = state_at_decision
+    correction["current_state"] = current_state
+    _readdress_d5(payload)
+
+    if accepted:
+        validate_intelligence_vector(payload)
+    else:
+        with pytest.raises(
+            IntelligenceVectorContractError,
+            match="correction|CONFLICTED|RETRACTED|PENDING|CORRECTED",
+        ):
+            validate_intelligence_vector(payload)
+
+
+def test_validator_accepts_every_builder_emitted_correction_outcome() -> None:
+    class AmbiguousMaster:
+        def cik_of_issuer(self, issuer_id: str) -> str:
+            raise IdentityError(
+                f"conflicting current issuer CIK observations for {issuer_id}"
+            )
+
+    tie_first = _d5_workspace()
+    tie_second = deepcopy(tie_first)
+    tie_second["generation_id"] = "2" * 24
+    tie_second["sources"][0]["source_sha256"] = "e" * 64
+    tied_revisions = _d5_revisions(workspace=tie_first) + [{
+        "generation_id": tie_second["generation_id"],
+        "source_sha256": "e" * 64,
+        "source_available_at": tie_second["lifecycle"]["source_available_at"],
+        "observed_at": tie_second["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace": tie_second,
+    }]
+
+    def integrity_failure(event_id: str):
+        raise intelligence_vector_mod.WorkspaceChainIntegrityError(
+            "dummy workspace receipt mismatch"
+        )
+
+    payloads = [
+        ("current", _build_d5(), ("NONE", "CURRENT")),
+        ("corrected", _d5_two_generation_payload(), ("NONE", "CORRECTED")),
+        (
+            "unknown",
+            _d5_two_generation_payload(later_has_adaptable_evidence=False),
+            ("NONE", "UNKNOWN"),
+        ),
+        (
+            "pending",
+            _build_d5(read_revisions=integrity_failure),
+            ("PENDING", "UNKNOWN"),
+        ),
+        (
+            "identity-conflicted",
+            _build_d5(issuer_master=AmbiguousMaster()),
+            ("CONFLICTED", "CONFLICTED"),
+        ),
+        (
+            "tie-conflicted",
+            _build_d5(read_revisions=lambda event_id: tied_revisions),
+            ("CONFLICTED", "CONFLICTED"),
+        ),
+    ]
+
+    for label, payload, expected in payloads:
+        correction = payload["evidence_families"][0]["correction"]
+        assert (
+            correction["state_at_decision"], correction["current_state"]
+        ) == expected, label
+        validate_intelligence_vector(payload)
+
+
 def test_correction_clock_is_bound_to_later_generation_refs_and_state() -> None:
     payload = _d5_two_generation_payload()
     family = payload["evidence_families"][0]

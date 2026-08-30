@@ -146,13 +146,17 @@ def _server(objects: dict[str, dict], *, marker_generation_id: str | None, fetch
                     break
                 for event_id, ws in bundle["workspaces"].items():
                     if url == f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json":
-                        body = (
-                            canonical_json_bytes(ws)
-                            if bundle.get("serve_workspace_overrides") is True
-                            else _MINTED_WORKSPACE_BYTES.get(
-                                (generation_id, event_id), canonical_json_bytes(ws),
+                        byte_overrides = bundle.get("workspace_byte_overrides")
+                        if isinstance(byte_overrides, dict) and event_id in byte_overrides:
+                            body = byte_overrides[event_id]
+                        else:
+                            body = (
+                                canonical_json_bytes(ws)
+                                if bundle.get("serve_workspace_overrides") is True
+                                else _MINTED_WORKSPACE_BYTES.get(
+                                    (generation_id, event_id), canonical_json_bytes(ws),
+                                )
                             )
-                        )
                         break
                 if body is not None:
                     break
@@ -764,6 +768,73 @@ def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
     assert "999" not in serialized
     assert "dummy_workspace" not in serialized
     assert "b" * 64 not in serialized
+
+
+def test_revision_reader_authenticates_malformed_workspace_bytes_before_decoding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    receipted = _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    malformed = b"!" * len(receipted)
+    objects = _chain_objects((generation_id, manifest, workspace))
+    objects[generation_id]["workspace_byte_overrides"] = {EVENT_ID: malformed}
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    with pytest.raises(
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*sha256.*manifest receipt",
+    ):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_d5_malformed_workspace_substitution_is_receipted_pending_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    receipted = _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    malformed = b"!" * len(receipted)
+    objects = _chain_objects((generation_id, manifest, workspace))
+    objects[generation_id]["workspace_byte_overrides"] = {EVENT_ID: malformed}
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    payload = _d5_project()
+    family = payload["evidence_families"][0]
+    assert family["coverage"] == {
+        "state": "UNKNOWN",
+        "basis": "correction_chain_integrity",
+    }
+    assert family["quality"] == {"flags": ["correction_chain_integrity"]}
+    assert family["correction"] == {
+        "state_at_decision": "PENDING",
+        "current_state": "UNKNOWN",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": [],
+    }
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert set(family["observations"][0]["absence_reasons"]) == {
+        "UNESTIMABLE", "CORRECTION_PENDING",
+    }
+    assert payload["assembly_receipt"]["errors"][0]["type"] == (
+        "WorkspaceChainIntegrityError"
+    )
 
 
 def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_lineage(

@@ -978,15 +978,14 @@ def _fetch_generation_manifest_raw(
 
 def _fetch_raw_workspace_bytes(
     event_id: str, generation_id: str, *, base_url: str | None = None,
-) -> tuple[bytes, dict[str, Any]]:
+) -> bytes:
     """Fetch one generation-addressed workspace once, retaining exact bytes."""
     resolved = _public_base_url(base_url, require_public_host=False)
     url = _workspace_object_url(resolved, f"generations/{generation_id}/workspaces/{event_id}.json")
     body = _fetch_bytes(url, limit=_MAX_WORKSPACE_BYTES, allow_404=True)
     if body is None:
         raise WorkspaceChainNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
-    payload = _json_object(body, name=f"{event_id} workspace")
-    return body, payload
+    return body
 
 
 def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
@@ -998,10 +997,10 @@ def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | No
 
     Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
     exception on a genuine fetch failure."""
-    _body, payload = _fetch_raw_workspace_bytes(
+    body = _fetch_raw_workspace_bytes(
         event_id, generation_id, base_url=base_url,
     )
-    return payload
+    return _json_object(body, name=f"{event_id} workspace")
 
 
 def load_current_workspace(event_id: str, *, base_url: str | None = None) -> dict[str, Any]:
@@ -1133,7 +1132,7 @@ def _event_revision_from_generation(
         raise WorkspaceChainIntegrityError(
             f"generation {generation_id} workspace manifest receipt is invalid"
         )
-    body, workspace = _fetch_raw_workspace_bytes(
+    body = _fetch_raw_workspace_bytes(
         event_id, generation_id, base_url=base_url,
     )
     actual_sha256 = sha256(body).hexdigest()
@@ -1141,7 +1140,7 @@ def _event_revision_from_generation(
         raise WorkspaceChainIntegrityError(
             f"generation {generation_id} workspace bytes or sha256 do not match manifest receipt"
         )
-    return workspace
+    return _json_object(body, name=f"{event_id} workspace")
 
 
 def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -> dict[str, Any]:

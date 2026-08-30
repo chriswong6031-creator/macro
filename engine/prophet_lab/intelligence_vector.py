@@ -1716,7 +1716,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     )
     if correction["state_at_decision"] not in {"NONE", "PENDING", "CONFLICTED"}:
         raise IntelligenceVectorContractError("correction state_at_decision invalid")
-    if correction["current_state"] not in {"CURRENT", "CORRECTED", "RETRACTED", "CONFLICTED", "UNKNOWN"}:
+    if correction["current_state"] not in {"CURRENT", "CORRECTED", "CONFLICTED", "UNKNOWN"}:
         raise IntelligenceVectorContractError("correction current_state invalid")
     for list_name in ("decision_version_ref_ids", "later_correction_ref_ids"):
         if (
@@ -1919,6 +1919,45 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     ):
         raise IntelligenceVectorContractError(
             "PENDING correction requires the receipted integrity absence outcome"
+        )
+    claims_conflict = (
+        correction["state_at_decision"] == "CONFLICTED"
+        or correction["current_state"] == "CONFLICTED"
+    )
+    conflict_outcome = (
+        absence_reasons == {"CONFLICTED"}
+        and not actual_error_types
+        and not correction["decision_version_ref_ids"]
+        and not correction["later_correction_ref_ids"]
+        and all(
+            observation["value_state"] == "ABSENT"
+            for observation in family["observations"]
+        )
+        and (
+            (
+                family["identity_state"] == "AMBIGUOUS"
+                and coverage == {
+                    "state": "UNKNOWN",
+                    "basis": "canonical_identity_ambiguous",
+                }
+                and point_in_time["decision_admissibility"] == "UNKNOWN"
+            )
+            or (
+                family["identity_state"] == "RESOLVED"
+                and coverage == {
+                    "state": "UNKNOWN",
+                    "basis": "unresolved_clock_tie",
+                }
+                and point_in_time["decision_admissibility"] == "UNVERIFIABLE"
+            )
+        )
+    )
+    if claims_conflict != conflict_outcome or claims_conflict and (
+        correction["state_at_decision"] != "CONFLICTED"
+        or correction["current_state"] != "CONFLICTED"
+    ):
+        raise IntelligenceVectorContractError(
+            "CONFLICTED correction requires the exact typed ambiguity or clock-tie outcome"
         )
 
     source_ref_ids = {ref["source_ref_id"] for ref in family["source_refs"]}
