@@ -18,6 +18,25 @@ REGISTRY = REPO_ROOT / "config" / "mastermind_programs.yml"
 SYNAPSE = REPO_ROOT / "config" / "synapse.yml"
 LOBE_CHARTERS = REPO_ROOT / "config" / "lobe_charters.yml"
 GENERATED_MAP = REPO_ROOT / "docs" / "MASTERMIND_SYSTEM_MAP.md"
+CODEINTEL_WORKSTREAM = REPO_ROOT / "agentos" / "workstreams" / "WS-CODE-INTELLIGENCE-FABRIC.md"
+CODEINTEL_DECISION = (
+    REPO_ROOT
+    / "agentos"
+    / "decisions"
+    / "DEC-CODEINTEL-TWO-GOVERNED-READ-PLANES-PLUS-CANONICAL-VERIFICATION.md"
+)
+CODEINTEL_DISCOVERY = (
+    REPO_ROOT
+    / "agentos"
+    / "discoveries"
+    / "DSC-CODEINTEL-HAS-NO-LAWFUL-EXISTING-SEMANTIC-PARENT.md"
+)
+CODEINTEL_HANDOFF = (
+    REPO_ROOT
+    / "agentos"
+    / "handoffs"
+    / "CODE-INTELLIGENCE-FABRIC-2026-08-30-F0-ACCEPTED-AND-SEMANTIC-REGISTRATION.md"
+)
 
 
 @pytest.fixture(scope="module")
@@ -57,13 +76,23 @@ def _all_keys(value: object) -> set[str]:
     return set()
 
 
+def _frontmatter(path: Path) -> dict[str, object]:
+    raw = path.read_text(encoding="utf-8")
+    assert raw.startswith("---\n"), f"{path} must start with YAML frontmatter"
+    _opening, payload, _body = raw.split("---", 2)
+    parsed = yaml.safe_load(payload)
+    assert isinstance(parsed, dict)
+    return parsed
+
+
 def test_real_registry_is_valid_and_covers_the_complete_census(model):
     registry = model.registry
     assert registry["schema"] == "mastermind_programs.v1"
     assert set(registry["repositories"]) == {"macro", "terminal", "mastermind"}
-    # 59 -> 60: Grey Deer GD-0A (#5963) landed grey-deer-risk-intelligence
-    # (records-only program registration; freeze research/grey_deer/, 2026-08-19).
-    assert len(registry["programs"]) == 60
+    # 59 -> 60: Grey Deer GD-0A (#5963) landed grey-deer-risk-intelligence.
+    # 60 -> 61: CodeIntel F0 (#276 / 620263090fb9) requires a dedicated project
+    # program rather than being misfiled under the document/context retrieval owner.
+    assert len(registry["programs"]) == 61
     assert len(registry["product_surfaces"]) == 16
     assert len(registry["cross_repo_contracts"]) == 17
     assert {
@@ -427,3 +456,52 @@ def test_context_index_existing_globs_cover_all_new_durable_artifacts():
         "docs/ACTIVE_BUILD_MAP.md",
         "docs/PROJECT_ACTIVE_BUILD_MAP.md",
     }
+
+
+def test_codeintel_has_a_dedicated_project_program_not_a_context_index_alias(model):
+    programs = model.registry["programs"]
+    codeintel = programs["code-intelligence-fabric"]
+
+    assert codeintel["name"] == "Mastermind Code Intelligence Fabric"
+    assert codeintel["category"] == "project_infrastructure"
+    assert codeintel["kind"] == "project_infrastructure"
+    assert codeintel["lifecycle_state"] == "building"
+    assert codeintel["scope"] == "project"
+    assert codeintel["decision_boundary"]["authority_class"] == "advisory_only"
+    assert "macro-context-index" in codeintel["relationships"]["coordinates_with"]
+    assert "code-intelligence-fabric" not in programs["macro-context-index"][
+        "relationships"
+    ].get("contains", [])
+
+    markdown = system_map.render_markdown(model)
+    assert "Mastermind Code Intelligence Fabric" in markdown
+    assert "exact Attempt-local worktree semantics" in markdown
+    assert "canonical Git and GitHub verification" in markdown
+
+
+def test_codeintel_agentos_home_binds_the_accepted_f0_merge():
+    required_paths = (
+        CODEINTEL_WORKSTREAM,
+        CODEINTEL_DECISION,
+        CODEINTEL_DISCOVERY,
+        CODEINTEL_HANDOFF,
+    )
+    missing = [str(path.relative_to(REPO_ROOT)) for path in required_paths if not path.is_file()]
+    assert not missing, f"CodeIntel durable Agent OS home is incomplete: {missing}"
+
+    workstream = _frontmatter(CODEINTEL_WORKSTREAM)
+    assert workstream["key"] == "CODE-INTELLIGENCE-FABRIC"
+    assert workstream["program"] == "code-intelligence-fabric"
+    assert workstream["owner"] == "ceo-sol"
+    assert workstream["status"] == "active"
+    assert any(
+        wave.get("id") == "F0" and wave.get("status") == "done" and wave.get("pr") == 276
+        for wave in workstream["waves"]
+    )
+
+    handoff = _frontmatter(CODEINTEL_HANDOFF)
+    verified = handoff["verified"]
+    assert any(
+        item.get("result") == "620263090fb9f272f763e420ba103b0ff8dc5f31"
+        for item in verified
+    )
