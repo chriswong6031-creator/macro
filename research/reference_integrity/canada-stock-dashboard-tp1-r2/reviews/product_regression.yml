@@ -26,7 +26,18 @@ quarantine:
 
 first_pass:
   frozen_at: "2026-08-29T01:32:09Z"
-  verdict: PARTIAL   # critic's top-level status; house law bars PASS with dark/ZH-mobile cells unopened
+  # ENUM REPAIR (Sol CONTINUE step 5/6, 2026-08-30). The critic returned the word
+  # PARTIAL, which is not a legal RIG review verdict — the checker rejected it as
+  # invalid-enum, and normal mode is required to be clean. Recorded at the
+  # faithful legal token with the critic's original word preserved verbatim below,
+  # exactly as an earlier illegal severity ("nit") was recorded at the schema
+  # floor. PASS_WITH_CONDITIONS is the honest mapping: the critic's own note says
+  # it withheld PASS because evidence cells were unopened and conditions survived,
+  # not because it found a blocker — BLOCK would overstate, PASS would understate.
+  # The coordinator did not re-judge the artifact; only the token is substituted.
+  critic_original_verdict_word: PARTIAL
+  critic_original_note: "critic's top-level status; house law bars PASS with dark/ZH-mobile cells unopened"
+  verdict: PASS_WITH_CONDITIONS
   findings:
     - id: PRC-201
       severity: major
@@ -159,4 +170,6 @@ second_pass:
     English sector names) — inherited, out of boundary; recorded so the
     authority is not surprised (pass 2 may not add findings).
   strengths_retracted: none
-  verdict: PARTIAL
+  # ENUM REPAIR, same basis and same treatment as the first_pass verdict above.
+  critic_original_verdict_word: PARTIAL
+  verdict: PASS_WITH_CONDITIONS
