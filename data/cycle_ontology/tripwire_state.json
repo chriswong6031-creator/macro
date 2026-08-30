@@ -124,7 +124,7 @@
     "state": "FIRED",
     "fired_on": "2026-07-29",
     "latched": true,
-    "current_leg": false,
+    "current_leg": true,
     "as_of": "2026-08-29"
   },
   "dollar.bear_cycle.v1": {

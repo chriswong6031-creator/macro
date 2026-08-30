@@ -1,33 +1,29 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-08-29T10:15:24+00:00",
-  "summary": "Context-only shadow memo: the measured tape is Risk-on (77) with a calm radar, broad 200-day participation (70.5%), healthy credit, and no recession signal. That benign surface is less secure than the label implies: the confirmed US regime remains Q2 Reflation, but its own axes now read growth -0.33 and inflation +0.24, consistent with a pending Q3 transition at 2 of 7 confirmation sessions. Liquidity is contracting in an orderly drain, while real yields remain restrictive. No signal, trade, ranking, sizing change, or escalation is originated here.",
+  "as_of": "2026-08-30T07:07:52+00:00",
+  "summary": "Context-only committee read: measured market conditions remain risk-on and calm, but the confirmed US Q2/Reflation label is weakly supported and currently disagrees with its own raw axes, which read Q3 after 2 of 7 required confirmation sessions. Breadth and credit remain healthy, volatility is normalizing, and the risk radar's measured 21-day pullback rate is below its base rate, so the evidence does not support originating or escalating a defensive claim. Liquidity is contracting in an orderly, non-stress-confirmed drain. Factor intelligence is immature: only 10 panel dates, no Pair G ledger, no factor-attention history, and no tradeable composite. This memo changes no ranking, sizing, signal, or trade surface.",
   "what_fired": [
-    "US regime-label transition watch: confirmed Q2 is unsupported by current axes; raw Q3 signs are pending confirmation.",
-    "Confluence tension: 35 ticker-level demand-versus-supply divergences are reported in briefing-divergences.",
-    "Master-brain ledger conflict: simultaneous overdue China overweight and underweight theses remain open against current China/HK Q4, contracting-liquidity, weak-side-peg context.",
-    "Conditional tension: Risk-on tape and healthy credit coexist with a 20-day net-liquidity contraction of about $79.5bn.",
-    "Factor Pair G did not fire: the ledger is dormant because the panel has only 10 dates, below the 60-date floor."
+    "US regime label-axis mismatch: confirmed Q2 versus raw/pending Q3, 2 of 7 sessions.",
+    "Briefing contradiction: 34 ticker-level demand-versus-supply directional oppositions.",
+    "ADB-W3 thesis conflict: the still-open China-equities overweight thesis conflicts with current China Q4 growth-scare, contracting liquidity, and weak-side HK peg context."
   ],
-  "contradictions_review": "The active graph contradiction is briefing demand versus ticker-level tape/supply, severity tension, with examples IBM, VSAT, RKLB, and APH; examples are not ranked. Options contradiction count is zero and cannot be read as positive evidence. Factor contradictions are unavailable rather than absent in substance: Pair G is dormant pending sufficient panel history. The master-brain thesis ledger itself contains a governance contradiction\u2014opposed China theses remain open beyond their check-by dates. The current US Q2 label also conflicts with its raw Q3 axis signs, though the label's persistence rule has not yet completed.",
+  "contradictions_review": "Two current graph contradictions were reviewed. The broad briefing-divergence tension spans 34 names and deserves persistence testing rather than interpretation as a signal. The options contradiction is limited to KDP with rising five-day OTM-put skew; prior evidence says bullish skew deceleration is unsupported, so this is de-escalation context only. Pair G factor contradictions are absent because the factor panel has not reached its 60-date activation floor. Among open master-brain theses, the July 9 China-equities overweight thesis conflicts with current China/HK regime context. Semiconductor-underweight theses are not contradicted by the current thematic deterioration and broken semiconductor leadership context. Several theses are past their check-by dates but remain open, which weakens ledger hygiene and should be resolved by the authorized scorer.",
   "decaying_families": [
-    "Radar directional claims: Q2 signed excess is negative at 5d and 21d despite high sample counts; all rows remain unarmed.",
-    "US-board claims: Q2 signed excess is negative at 5d and 10d and pooled out-of-sample performance loses; unarmed.",
-    "Policy claims: negative signed excess across available 5d, 21d, and sparse 63d observations; unarmed.",
-    "Thematic-desk claims: negative 63d signed excess in Q1 and Q2; unarmed.",
-    "Stock-desk and AI-desk 63d claims: negative signed excess; unarmed.",
-    "Factor composite: non-tradeable; investment, low-vol, low-beta, and composite legs have negative IC, while the panel history floor is unmet."
+    "Radar directional claims: negative signed excess across 5-, 21-, and 63-day kernel rows; all remain unarmed.",
+    "US-board claims in Q2: negative five- and ten-day signed excess and held out of sample; unarmed.",
+    "Policy claims: negative signed excess across available horizons with small samples; unarmed.",
+    "AI, stock, and thematic desk 63-day claims: negative signed excess; unarmed.",
+    "Factor composite: survivorship-biased scorecard, negative composite IC, and explicitly non-tradeable."
   ],
   "deserves_operator": [
-    "Review the pending US Q2\u2192Q3 label transition only if growth remains negative and inflation positive through the remaining five confirmation sessions; otherwise resolve the flag.",
-    "Score or retire the overdue, mutually opposed China theses. De-escalate the adverse-context concern if China exits Q4/contracting and HK peg pressure leaves weak-side outflow.",
-    "Recheck briefing-divergences on the next two builds; retain attention only if directional opposition persists across both.",
-    "Monitor the orderly liquidity drain without escalating it: retain only if contraction persists and either breadth above the 200-day average falls below 60% or HY OAS rises above 3.0%.",
-    "Do not infer factor confirmation or contradiction until the panel reaches its 60-date activation floor."
+    "Watch the Q2-versus-Q3 regime mismatch only through its pre-existing 7-session confirmation rule; it is not an escalation.",
+    "Resolve or formally score the overdue China-equities overweight thesis, which conflicts with current Q4/contracting/weak-peg context.",
+    "Check whether the 34 briefing divergences persist across two committed builds; persistence below 10 names clears the flag.",
+    "Repair overdue open-thesis ledger states, including check-by dates already passed, without changing any ranked surface."
   ],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "as_of": "2026-08-28",
+    "as_of": "2026-08-29",
     "granted": false,
     "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=8 < min_n=25",
@@ -39,8 +35,8 @@
       "n": 8,
       "hits": 0,
       "base_rate": 0.5,
-      "ungradeable": 18,
-      "total_rows": 26
+      "ungradeable": 24,
+      "total_rows": 32
     },
     "is_context_only": true
   },
@@ -107,6 +103,6 @@
     "individual_tool_calls": 9,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-08-29T09:51:17Z"
+    "context_as_of": "2026-08-30T06:06:49Z"
   }
 }

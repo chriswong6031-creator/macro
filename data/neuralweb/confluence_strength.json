@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_strength.v1",
   "artifact_id": "confluence-strength",
-  "asof": "2026-08-26",
+  "asof": "2026-08-29",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -14904,6 +14904,19 @@
       "regime_bucket": "Q2"
     },
     {
+      "subject": "KRMN",
+      "as_of": "2026-08-29",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata_conv",
+        "intel_hub"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
       "subject": "CB",
       "as_of": "2026-06-15",
       "direction": 1,
@@ -15719,6 +15732,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-08-29T09:31:46Z",
+  "produced_at": "2026-08-30T05:45:43Z",
   "authority_check": []
 }

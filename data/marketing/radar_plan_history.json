@@ -2,6 +2,35 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-30",
+      "tickers": [
+        "ACN",
+        "AEO",
+        "AESI",
+        "ALV",
+        "AMR",
+        "EFC",
+        "INVA",
+        "KDP",
+        "KMPR",
+        "MPT",
+        "MTDR",
+        "OHI",
+        "PIPR",
+        "PWR",
+        "QUBT",
+        "RGNX",
+        "RHI",
+        "RNAQ",
+        "RNR",
+        "SAH",
+        "STC",
+        "TDC",
+        "TMUS",
+        "YUM"
+      ]
+    },
+    {
       "as_of": "2026-08-20",
       "tickers": [
         "AGNT",
@@ -127,16 +156,6 @@
         "FTI",
         "GTES",
         "PRCT",
-        "WFC"
-      ]
-    },
-    {
-      "as_of": "2026-08-10",
-      "tickers": [
-        "ADAM",
-        "FSS",
-        "SDGR",
-        "UEC",
         "WFC"
       ]
     }
