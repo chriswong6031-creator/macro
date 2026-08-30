@@ -340,6 +340,45 @@ def _feature_columns(cfg: dict, bucket: str) -> list[str]:
     return cols
 
 
+# OA-1T — event-time measurements the live serving cohort must actually carry.
+# Presence only. Adequacy (how many, how well calibrated) belongs to FS-5.
+MEASURED_LIVE_FIELDS = (
+    "at_ask_share",
+    "at_bid_share",
+    "aggression_share",
+    "vol_gt_oi_ratio",
+)
+
+
+def _assert_live_feed_measured_features(
+    df: pd.DataFrame, feature_cols: list[str],
+) -> None:
+    """Refuse to train when the live serving cohort carries no measured truth.
+
+    ``_build_features`` fills an absent column with NaN. That is right for a
+    sparse observation and dangerous for a whole cohort: the model trains, the
+    metrics look ordinary, and the very features the config declares were never
+    present. This is a structural presence check — no minimum N, percentage,
+    AUC or ECE, and it enables nothing.
+    """
+    if "source" not in df.columns:
+        return
+    live = df[df["source"] == "live_feed"]
+    if live.empty:
+        return
+    required = [name for name in MEASURED_LIVE_FIELDS if name in feature_cols]
+    missing = [name for name in required if name not in live.columns]
+    all_null = [
+        name for name in required
+        if name in live.columns and live[name].notna().sum() == 0
+    ]
+    if missing or all_null:
+        raise ValueError(
+            "ops_train: live_feed measured feature preflight failed "
+            f"missing={missing} all_null={all_null}"
+        )
+
+
 def _build_features(df: pd.DataFrame, feature_cols: list[str]) -> pd.DataFrame:
     """Build feature matrix from DataFrame.
 
@@ -679,6 +718,10 @@ def train_bucket(
 
     # ── build features (amendment §3.4) ──────────────────────────────────────
     feature_cols = _feature_columns(cfg, bucket)
+    # Serving cohort and population filter are settled by here; nothing has been
+    # turned into a model feature yet. Halt before that if the live cohort has no
+    # measured truth to learn from.
+    _assert_live_feed_measured_features(labeled, feature_cols)
     X_all = _build_features(labeled, feature_cols)
 
     # ── n floor check — raw count (amendment §7) ──────────────────────────────

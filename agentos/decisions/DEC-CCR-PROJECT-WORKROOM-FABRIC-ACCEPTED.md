@@ -32,14 +32,17 @@ alternatives:
       may refuse a channel Canvas. A failed downgrade would leave one unsafe remote object and blind
       fallback would create a second. Automatic deletion is irreversible and can be ambiguous.
 evidence:
-  - "Protected Mastermind b8f7414e9906d6b5853640a18de68c3b91ffb44b; Skillpack v1.0.1/bootstrap 1."
-  - "Current release owner SOL-DIR-RECOVERY/recovery-002; predecessor pro-001 terminal and exact hourly automation disabled."
-  - "Mastermind #240 exact current head a29b4911e0d6d808cc7f06737d15c088d279cd30; five records-only files."
-  - "Mastermind #242 exact current head 20516f82f51128f7fc19bb14a79881a259577c78; zero-behind #240 and exactly seven research/fixture files."
+  - "Current outer Chairman directive continues end-to-end Workroom leadership and lawful bounded fanout."
+  - "Protected Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5; Skillpack v1.0.1/bootstrap 1."
+  - "Watcher procedure #248 is protected as 0604158caca9e3b8a43ec57dd36ca4dadf05198b; draft #245 is history."
+  - "AD-DLG2 #253 is protected as e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5 at BUILT_NOT_PROVEN / PRODUCTION_DISARMED."
+  - "Executive Steward #228 remains open at 48307d714e155ac7e96c3918e3dba59aa17f132a with one existing exact TRACE repair child."
+  - "Mastermind #240 exact current head a4712dbb3391b1d5d467f9f32244402bfcaf54dc; current-base and exactly five records-only files."
+  - "Mastermind #242 exact current head b2b9d26a20eaad3b889341bd7111a464fd68edea; zero-behind #240 and exactly seven research/fixture files."
   - "Fresh Linear read: 0 Initiatives / 50 Projects / 0 Initiative memberships."
-  - "Macro #6662 merged; #6658 remains open with health, duplicate-Watchlist and durable-CI blockers."
+  - "Macro #6662 is merged; #6658 remains open with health, duplicate-Watchlist and durable-CI blockers."
   - "Exact Slack channel C0BTQ71QEA0 exists but is inert/unmanaged/not a Workroom."
-  - "WR-R0 repaired six reconstructed-looking Linear URLs with exact live object URLs and digest 4464bdf459e3d795aaca6305baad016ecbbf03511d58704ea9748eb75aaef18a."
+  - "WR-R0 uses exact live Linear Project URLs and the existing linear_portfolio_plan canonical-byte owner."
   - "Slack documents channel_id Canvas creation with write permission and canvas_not_found as a possible channel-Canvas access-set result."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
@@ -81,8 +84,9 @@ than guessed or sourced from private provider/chat bindings.
 The initial six candidates are `SHADOW` and never apply-eligible. BioCatalyst is a required negative
 control: canonical Agent OS `parked` defeats Linear `In Progress` and emits zero normal Workroom actions.
 
-Release order remains #245 watcher procedure, #228 Steward, #240 architecture, #242 research, #6661
-organizational records, then #6658 plus live Initiative apply/readback before WR-P0.
+Current release order is #228 exact repair/release, #240 architecture, #242 research, #6661 durable
+records, then #6658 plus live Initiative apply/readback before WR-P0. Protected #248 and #253 are
+prerequisites, not remaining release blockers.
 
 Do not create `WS:PROJECT-WORKROOMS`, Slack OS, Workroom OS, another lifecycle, project/task database,
 queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router.

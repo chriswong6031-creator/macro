@@ -4,105 +4,99 @@ session: sol/project-workroom-fabric-pro-continuation-20260829
 model: sol-pro
 ended_because: continuation
 mission: >
-  Establish one canonical current-source Project Workroom architecture family; preserve unique
-  planner/provenance law; close duplicate carriers/projections; reconcile exact Slack effects;
-  freeze the WR-P0 identity, eligibility, Initiative, Slack and safe-navigation contracts; and make
-  Home Canvas creation fail closed without creating duplicate or write-exposed remote objects.
+  Keep the Federated Project Workroom architecture, research corpus and organizational records current
+  against protected Mastermind; recover exact predecessor lanes instead of duplicating them; and leave
+  the next implementation boundary recoverable without creating another control plane.
 state_before: >
-  #240/#242 existed but surrounding source facts had drifted. The current release owner changed to
-  recovery-002; live Linear still had no Initiatives; #245/#228 remained stale-base predecessors;
-  the first WR-R0 resource fixture carried reconstructed-looking Linear URLs; and the Canvas flow
-  proposed attached write-enabled creation before read-only access was proven, with unsafe fallback.
+  #240/#242 were internally coherent but three protected commits behind current Mastermind. Their
+  current-source record still treated draft #245 as an open blocker and did not include protected
+  watcher procedure #248 or AD-DLG2 #253. #228 had an existing exact TRACE repair child but no final
+  child ACK after rebind. Live Linear still contained no Initiatives or memberships. #6661 was behind
+  current Macro main and carried stale source/carrier/dependency facts.
 changed:
   - path: mastermind:PR #240 / sol/project-workroom-fabric-20260829
     what: >
-      Preserve the sole architecture/rollout carrier. Exact current head is
-      a29b4911e0d6d808cc7f06737d15c088d279cd30. Its exact five records now carry current protected,
-      director, prerequisite and Canvas-safety law. Production Home is standalone-first; attached
-      channel-tab creation is canary-only; failed/ambiguous effects forbid a second create.
+      History-preservingly merge protected Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5
+      into the same architecture branch. Exact current head is
+      a4712dbb3391b1d5d467f9f32244402bfcaf54dc. Fresh compare is ahead-only/behind_by=0 and exactly
+      five records-only files. Only the current-source record changed; the four frozen architecture,
+      rollout and amendment blobs were preserved.
   - path: mastermind:PR #242 / sol/project-workroom-wr-r0-20260829
     what: >
-      Preserve the sole WR-R0 child. Exact current head is
-      20516f82f51128f7fc19bb14a79881a259577c78. It is zero-behind #240 and exactly seven
-      research/fixture paths. Machine/adversarial contracts now encode standalone-first Home,
-      canary-only attached Canvas and exact no-retry/no-rollback effect handling.
-  - path: mastermind:PR #242 resource fixture
+      History-preservingly restack the same WR-R0 child onto #240 current head. Exact current head is
+      b2b9d26a20eaad3b889341bd7111a464fd68edea. Fresh parent-to-child compare is behind_by=0 and
+      exactly seven research/fixture files, with all child blob identities preserved.
+  - path: mastermind:PR #248
     what: >
-      Reject six reconstructed-looking Linear URLs and replace them with exact live object-return
-      URLs. Observation hash is 4464bdf459e3d795aaca6305baad016ecbbf03511d58704ea9748eb75aaef18a
-      using the existing `linear_portfolio_plan.canonical_bytes` owner.
-  - path: slack:T0BRD2AQXQV/C0BTQ71QEA0
+      Record watcher continuation procedure as protected at
+      0604158caca9e3b8a43ec57dd36ca4dadf05198b. Draft #245 is historical metadata/evidence only and
+      no longer an open Workroom release predecessor.
+  - path: mastermind:PR #253
     what: >
-      Preserve exact read-only reconciliation: the prior channel create committed; the object remains
-      inert, unmanaged and not a Workroom. No follow-on mutation occurred.
-  - path: mastermind:PR #212 / Autonomy Principal Director automation
+      Record AD-DLG2 canonical dialogue-parent source as protected at
+      e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5. Capability remains
+      BUILT_NOT_PROVEN / PRODUCTION_DISARMED pending live Slack and return-projection integration.
+  - path: mastermind:PR #228
     what: >
-      Preserve recovery-002 as current release owner, terminal predecessor pro-001 and later exact
-      watcher shutdown readback `is_enabled=false` without touching unrelated aggregate watchers.
+      Preserve the existing exact two-file Steward carrier at
+      48307d714e155ac7e96c3918e3dba59aa17f132a and exact TRACE repair child
+      `ocr6-steward-filter-integrity-repair-20260829-trace-001` on parent
+      C0BSBM78V1N/1788046478.879279. No replacement child, receiver, branch or PR was created.
+  - path: linear live estate
+    what: >
+      Fresh connected read still proves zero Initiatives, 50 visible Projects and zero Initiative
+      memberships. Workrooms therefore remain held; desired Initiative policy is not live readback.
   - path: macro:PR #6661 / sol/project-workroom-fabric-agentos-20260829
     what: >
-      Reconcile the same three-file Agent OS carrier to latest Macro main and refresh the decision and
-      handoff with exact Canvas/resource/current-source findings. Keep the inert-channel discovery.
+      Reconcile the same three-file Agent OS carrier to current Macro main and refresh the decision
+      and this handoff with exact protected, #240/#242, #228, Linear and #6658 facts. Preserve the
+      inert-channel discovery byte-identically.
 verified:
-  - claim: One canonical Workroom source family remains.
-    command: Read #240/#242/#233/#232 and selected Linear Workroom issues; compare operation keys and laws.
+  - claim: Current protected procedure is atomically pinned.
+    command: >
+      Read protected Mastermind master and INDEX/COLD_START/RECONCILE_STATE/COMMISSION_WAVE/
+      WORKER_AVENUE_ROUTING/WATCHER_ACTION_LOOP/REVIEW_RETURN/CLOSEOUT plus universal source laws at
+      one exact SHA.
     result: >
-      #240 is sole architecture/rollout source, #242 sole WR-R0 research child, #233/#232 historical;
-      MAS-220/MAS-221 Duplicate; unique planner/provenance clauses retained.
-  - claim: Protected procedure and release owner are exact.
-    command: Read protected Mastermind Skillpack and immutable #212 handoff/terminal receipts.
+      Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5; Skillpack
+      mastermind.sol_skillpack.v1 v1.0.1/bootstrap-major 1.
+  - claim: #240 is current-base and records-only.
+    command: Compare protected e3d1fe6 to #240 a4712dbb and enumerate files.
     result: >
-      Protected source b8f7414e9906d6b5853640a18de68c3b91ffb44b, Skillpack v1.0.1/bootstrap 1;
-      SOL-DIR-RECOVERY/recovery-002 current; predecessor automation disabled in place.
-  - claim: #240 remains records-only.
-    command: Compare protected master to #240 exact head and enumerate changed files.
+      ahead-only, behind_by=0, exactly five Workroom records; no runtime/config/app/credential effect.
+  - claim: #242 is zero-behind exact #240 and research-only.
+    command: Compare #240 a4712dbb to #242 b2b9d26a.
     result: >
-      Exactly five added Workroom records; protected-only movement is disjoint AD-CHILD1 #246.
-  - claim: #242 consumes current #240 without surface inflation.
-    command: Compare #240 a29b4911 to #242 20516f82.
+      ahead-only, behind_by=0, exactly seven WR-R0 research/fixture paths.
+  - claim: Protected movement is understood.
+    command: Read #248/#253 and compare protected b8f7414e to e3d1fe6.
     result: >
-      behind_by=0; exactly seven WR-R0 research/fixture paths.
-  - claim: Attached-first Canvas flow is unsafe.
-    command: Re-read current Slack canvases.create, canvases.access.set and canvases.delete contracts.
+      Protected movement is watcher procedure/bootstrap plus AD-DLG2 source/test paths. Neither makes
+      exact wake, live Agent Relay, return projection or a Project Workroom PROVEN_LIVE.
+  - claim: #228 has one recoverable existing repair carrier.
+    command: Read #228, exact child thread 1788046478.879279 and TRACE principal lane.
     result: >
-      channel_id creation starts with write permission; channel-Canvas access mutation may return
-      canvas_not_found; deletion is irreversible and may itself fail/ambiguously apply.
-  - claim: Corrected Canvas law prevents duplicate effects.
-    command: Review #240 WR-R0 amendment and #242 machine/adversarial contracts.
-    result: >
-      Standalone-first production path; attached canary-only; ambiguous create/access/delete blocks
-      replacement; no automatic rollback; unavailable standalone is a typed surface failure.
-  - claim: Navigation resources are exact observed values.
-    command: Re-read six live Linear Project objects and recompute fixture digest.
-    result: >
-      All URL/ID/source-ref pairs agree; safe URL checks pass; digest matches existing canonical byte
-      owner including trailing newline.
+      Same two-file branch/head remains; exact TRACE task is alive with aggregate watcher; final child
+      rebind exists but child ACK/WATCH_ARMED/START remains unobserved. Replacement is forbidden.
   - claim: Current Linear Initiative state is exact.
-    command: List all Initiatives and all 50 Projects with Initiative parents.
+    command: List all Initiatives and all 50 visible Projects with Initiative parents.
     result: Zero Initiative objects; 50 Projects; every Project has no Initiative membership.
-  - claim: Existing Slack create effect is exact.
-    command: Read exact channel metadata/history for C0BTQ71QEA0.
+  - claim: Existing Slack remote effect is unchanged.
+    command: Preserve prior exact channel readback for C0BTQ71QEA0.
     result: >
-      Public unarchived channel, empty topic/purpose, creator-join only; APPLIED but
-      INERT/UNMANAGED/NOT A WORKROOM.
-  - claim: Macro prerequisite truth is current.
-    command: Read #6662/#6658 and current main ancestry.
-    result: >
-      #6662 merged and ancestor; #6658 remains open with health, duplicate-Watchlist and durable-CI
-      blockers; no live Initiative apply/readback.
+      Channel create APPLIED; object remains public, unarchived, empty and INERT/UNMANAGED/NOT A
+      WORKROOM. No mutation occurred in this continuation.
 unverified:
-  - claim: #245 watcher procedure is protected/current.
+  - claim: #228 filtered-ambiguity repair is complete and protected.
     what_would_verify: >
-      Same branch reconciles protected b8f, preserves exact five procedure/bootstrap blobs, obtains
-      fresh exact-head/current-base proof/review and recovery-002 expected-head release.
-  - claim: #228 Steward read core is protected/current.
+      Exact TRACE child ACK/WATCH_ARMED/START, RED-first regressions, minimal same-two-file repair,
+      current-base exact-head CI/security, independent review, RESULT, explicit Sol STOP and expected-
+      head release.
+  - claim: #240 is protected source law.
     what_would_verify: >
-      After #245, same branch reconciles then-current protected master, preserves exact two files,
-      obtains fresh proof/review and recovery-002 expected-head release.
-  - claim: #240 is protected/current.
-    what_would_verify: >
-      After #245/#228: atomically reload then-current Skillpack, reconcile same #240 branch, update
-      final current-source identities, run fresh exact-head/current-base test and expected-head release.
+      #228 protects; then-current Skillpack is reloaded; #240 remains current-base or reconciles only
+      later material movement; exact five-file CI and final Sol source-law review pass; functional
+      non-draft same-branch release merges exact accepted head.
   - claim: #242 WR-R0 is accepted/protected.
     what_would_verify: >
       #240 protects; same #242 branch retargets to protected master; exact seven-file current-base CI,
@@ -113,31 +107,33 @@ unverified:
       final review and expected-head merge pass.
   - claim: Initiative inputs are ready for WR-P0.
     what_would_verify: >
-      #6658 same-carrier blockers close/land and a separately authorized Initiative apply returns
-      normalized post-apply readback with exact IDs, memberships and semantic hashes.
+      #6658 same-carrier health, duplicate-Watchlist and CI-owner blockers close/land and a separately
+      authorized Initiative apply returns normalized post-apply readback with exact IDs, memberships
+      and semantic hashes.
   - claim: Any live Workroom product exists.
     what_would_verify: >
-      Separately commissioned and accepted WR-P0, Projector/app, inert canary, Home/Radar, dialogue,
-      Linear/Steward joins and real multi-operator production proof.
+      Separately admitted and accepted WR-P0, Projector/app, exact channel canary, Home/Radar,
+      multi-Workroom Relay, dialogue/Linear/Steward joins and real multi-operator production proof.
 unresolved:
-  - "#245 remains OPEN/DRAFT/stale-base and must release first."
-  - "#228 remains OPEN/stale-base and follows #245."
-  - "#240/#242 remain DRAFT/HOLD behind those predecessor releases."
-  - "#6658 remains not accepted; live Linear has no Initiatives or memberships."
+  - "#228 exact TRACE repair child remains the live predecessor and has not yet produced final child ACK/START."
+  - "#240 is current-base and CI-running but remains DRAFT/HOLD until #228 protects and final source-law review passes."
+  - "#242 is zero-behind #240 and CI-running but remains stacked/DRAFT/HOLD."
+  - "#6658 remains unaccepted and no current worker ownership was proven; live Linear has no Initiatives or memberships."
   - "Slack public-channel census remains incomplete; authoritative create is illegal."
   - "No Workroom-safe Control Room URL exists."
-  - "Standalone Canvas/app/paid-plan/access readback remains unproven until dedicated canary."
+  - "Standalone Canvas/app/paid-plan/access readback remains unproven until a dedicated canary."
   - "Channel C0BTQ71QEA0 must not be retried, adopted or cleaned without new exact WR-C0 authority."
 next_actions:
-  - "Recovery-002 reconciles/releases #245 on same carrier, then #228 on same carrier."
-  - "After both settle, load final protected Skillpack and reconcile/prove #240 once."
-  - "Retarget/prove #242; validate exact Canvas effect contract and resource fixtures."
+  - "Recover the existing exact #228 TRACE child; do not mint a replacement."
+  - "After #228 protects, reload then-current Skillpack and complete final #240 exact-current-base review/release."
+  - "Retarget/prove #242 and validate exact Canvas/effect/resource contracts."
   - "Finalize #6661 with accepted #240/#242 SHAs."
-  - "Repair/accept #6658 on same carrier; then run separately authorized Initiative apply/readback."
+  - "Reconcile the existing #6658 owner; if no lawful existing owner remains, place one fresh bounded Terra-class child on the same PR only after authority/collision gates."
+  - "After #6658 acceptance, run separately authorized Initiative apply/readback."
   - "Keep WR-P0 Todo/NOT_BUILT/WAITING_DEPENDENCY until every prerequisite is accepted."
-  - "When gates clear, route deterministic WR-P0 implementation to Terra; Fable is unnecessary."
 do_not_redo:
-  - "Do not reopen #232/#233, reuse old Workroom operation or create another source carrier."
+  - "Do not reopen #232/#233/#245, reuse old Workroom operation or create another source carrier."
+  - "Do not replace #228 TRACE child while its exact carrier remains recoverable."
   - "Do not create another workstream, Slack OS, Workroom OS, lifecycle, queue, DB, retry/session/memory plane or synchronizer."
   - "Do not make Agent Relay a presentation superbot."
   - "Do not create channels, Initiatives or memberships from WR-P0."
@@ -146,13 +142,14 @@ do_not_redo:
   - "Do not retry ambiguous Canvas/channel effects or use deletion as automatic rollback."
   - "Do not retry/fail over known inert channel mutation."
 danger_areas:
+  - "Filtered projections must never hide duplicate canonical identities and manufacture uniqueness."
   - "Attached Canvas creation is effect-bearing and write-exposed before access proof."
   - "Linear/chat/local receipts can false-green unmerged work; GitHub remains implementation truth."
   - "Incomplete channel census cannot prove absence."
   - "Slack identity/membership is not Worker or Sol authority."
   - "Source merge is not host installation, transport or product proof."
-  - "Procedure changes on #245 are material; final Workroom modification must use then-current same-SHA Skillpack."
-prs: [240, 242, 233, 6661, 6662, 6658, 238, 239, 245, 246, 228]
+  - "Final Workroom modification must use then-current same-SHA Skillpack, not this handoff alone."
+prs: [240, 242, 233, 6661, 6662, 6658, 238, 239, 248, 246, 253, 228]
 linear: [MAS-231, MAS-233, MAS-235, MAS-236, MAS-220, MAS-221]
 decisions:
   - DEC:CCR-PROJECT-WORKROOM-FABRIC-ACCEPTED
@@ -162,13 +159,15 @@ decisions:
 
 # Return point
 
-Canonical architecture is #240 at `a29b4911e0d6d808cc7f06737d15c088d279cd30`; WR-R0 is #242 at
-`20516f82f51128f7fc19bb14a79881a259577c78`, zero-behind and exactly seven files. The prior Slack
-channel effect is applied but inert/unmanaged. The corrected resource fixture uses exact Linear URLs.
-The Canvas contract is standalone-first and effect-safe; no Canvas/app/canary exists.
+Canonical architecture is #240 at `a4712dbb3391b1d5d467f9f32244402bfcaf54dc`, exact-current-base
+and five records only. WR-R0 is #242 at `b2b9d26a20eaad3b889341bd7111a464fd68edea`,
+zero-behind #240 and exactly seven research/fixture paths. #248 and #253 are protected; #228 exact
+TRACE repair is the current predecessor. Live Linear remains 0/50/0. The prior Slack channel effect
+is applied but inert/unmanaged.
 
-Capability remains `SPEC_ONLY / RECORDS_ONLY`; WR-R0 is research only and every implementation wave
-is `NOT_BUILT`.
+Capability remains `SPEC_ONLY / RECORDS_ONLY`; WR-R0 is research only and every Workroom
+implementation/actuator/runtime wave is `NOT_BUILT`.
 
-Next: recovery-002 releases #245 then #228; final Skillpack reload; reconcile/prove #240; retarget/prove
-#242; finalize #6661. WR-P0 cannot START until #6658 and live Initiative readback are accepted.
+Next: finish the existing #228 child and release; final Skillpack reload; prove/release #240;
+retarget/prove #242; finalize #6661. WR-P0 cannot START until #6658 and live Initiative post-apply
+readback are accepted.
