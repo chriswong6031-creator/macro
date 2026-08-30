@@ -1715,6 +1715,92 @@ def _readdress_d5(payload: dict) -> dict:
     return payload
 
 
+def _readdress_d5_source_refs(payload: dict) -> dict:
+    """Readdress every downstream edge after a hostile source-ref mutation."""
+    family = payload["evidence_families"][0]
+    changed_source_ids: dict[str, str] = {}
+    for source_ref in family["source_refs"]:
+        old_id = source_ref["source_ref_id"]
+        semantic = {
+            key: deepcopy(value)
+            for key, value in source_ref.items()
+            if key != "source_ref_id"
+        }
+        source_ref["source_ref_id"] = intelligence_vector_mod._content_id(
+            "src", semantic,
+        )
+        changed_source_ids[old_id] = source_ref["source_ref_id"]
+    family["source_refs"] = sorted(
+        family["source_refs"], key=lambda item: item["source_ref_id"],
+    )
+
+    changed_root_ids: dict[str, str] = {}
+    for root in family["evidence_roots"]:
+        old_id = root["evidence_root_id"]
+        root["source_ref_id"] = changed_source_ids.get(
+            root["source_ref_id"], root["source_ref_id"],
+        )
+        semantic = {
+            key: deepcopy(value)
+            for key, value in root.items()
+            if key != "evidence_root_id"
+        }
+        root["evidence_root_id"] = intelligence_vector_mod._content_id(
+            "er", semantic,
+        )
+        changed_root_ids[old_id] = root["evidence_root_id"]
+    family["evidence_roots"] = sorted(
+        family["evidence_roots"], key=lambda item: item["evidence_root_id"],
+    )
+
+    for observation in family["observations"]:
+        observation["source_ref_ids"] = sorted(
+            changed_source_ids.get(ref_id, ref_id)
+            for ref_id in observation["source_ref_ids"]
+        )
+        observation["evidence_root_ids"] = sorted(
+            changed_root_ids.get(root_id, root_id)
+            for root_id in observation["evidence_root_ids"]
+        )
+    for clock in family["point_in_time"].values():
+        if isinstance(clock, dict) and "source_ref_ids" in clock:
+            clock["source_ref_ids"] = sorted(
+                changed_source_ids.get(ref_id, ref_id)
+                for ref_id in clock["source_ref_ids"]
+            )
+    for name in ("decision_version_ref_ids", "later_correction_ref_ids"):
+        family["correction"][name] = sorted(
+            changed_source_ids.get(ref_id, ref_id)
+            for ref_id in family["correction"][name]
+        )
+    for dimension in family["trajectory"]["dimensions"]:
+        dimension["source_ref_ids"] = sorted(
+            changed_source_ids.get(ref_id, ref_id)
+            for ref_id in dimension["source_ref_ids"]
+        )
+    for group in payload["economic_dependence_groups"]:
+        group["basis_refs"] = sorted(
+            changed_root_ids.get(root_id, root_id)
+            for root_id in group["basis_refs"]
+        )
+        group_semantic = {
+            "relation": group["relation"],
+            "basis": group["basis"],
+            "basis_refs": group["basis_refs"],
+        }
+        group["dependence_group_id"] = intelligence_vector_mod._content_id(
+            "edg", group_semantic,
+        )
+    group_ids = [
+        group["dependence_group_id"]
+        for group in payload["economic_dependence_groups"]
+    ]
+    for observation in family["observations"]:
+        if observation["economic_dependence_group_ids"]:
+            observation["economic_dependence_group_ids"] = group_ids
+    return _readdress_d5(payload)
+
+
 def test_earnings_vector_is_closed_pinned_content_addressed_and_non_authoritative() -> None:
     payload = _build_d5()
     validate_intelligence_vector(payload)
@@ -2191,6 +2277,214 @@ def test_private_locator_shaped_object_ids_are_never_projected(object_id: str) -
     assert object_id not in json.dumps(family, sort_keys=True)
     assert family["observations"][0]["value_state"] == "ABSENT"
     assert family["observations"][0]["absence_reasons"] == ["UNKNOWN"]
+
+
+@pytest.mark.parametrize("clock_name", ["source_available_at", "observed_at"])
+def test_adapter_rejects_revision_receipt_clock_drift_from_owner_lifecycle(
+    clock_name: str,
+) -> None:
+    workspace = _d5_workspace()
+    revision = _d5_revisions(workspace=workspace)[0]
+    revision[clock_name] = "2026-07-29T12:00:00Z"
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="lifecycle.*clock|clock.*lifecycle",
+    ):
+        _build_d5(read_revisions=lambda event_id: [revision])
+
+
+def test_adapter_rejects_non_owner_workspace_schema_even_when_ids_match() -> None:
+    workspace = _d5_workspace()
+    workspace["schema"] = "dummy.foreign_workspace/v1"
+
+    with pytest.raises(IntelligenceVectorContractError, match="workspace schema"):
+        _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=workspace))
+
+
+@pytest.mark.parametrize(
+    ("surface", "mutation"),
+    [
+        (
+            "applicability",
+            lambda family: family.__setitem__(
+                "applicability",
+                {"state": "NOT_APPLICABLE", "basis": "earnings_results_event"},
+            ),
+        ),
+        (
+            "coverage",
+            lambda family: family.__setitem__(
+                "coverage",
+                {"state": "NOT_COVERED", "basis": "no_verified_revisions"},
+            ),
+        ),
+        (
+            "decision admissibility",
+            lambda family: family["point_in_time"].__setitem__(
+                "decision_admissibility", "AFTER_DECISION_CUT",
+            ),
+        ),
+    ],
+)
+def test_validator_rejects_present_evidence_under_inadmissible_family_state(
+    surface: str, mutation,
+) -> None:
+    payload = _build_d5()
+    mutation(payload["evidence_families"][0])
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match=f"PRESENT|evidence|{surface.split()[0]}",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_present_evidence_retained_under_source_error() -> None:
+    def source_unavailable(event_id: str):
+        raise intelligence_vector_mod.CompanyIntelligenceReadError(
+            "dummy source unavailable"
+        )
+
+    payload = _build_d5(read_revisions=source_unavailable)
+    healthy = _build_d5()
+    family = payload["evidence_families"][0]
+    healthy_family = healthy["evidence_families"][0]
+    source_absence = deepcopy(family["observations"][0])
+    for name in (
+        "source_refs", "evidence_roots", "trajectory", "correction",
+        "point_in_time",
+    ):
+        family[name] = deepcopy(healthy_family[name])
+    family["observations"] = sorted(
+        deepcopy(healthy_family["observations"]) + [source_absence],
+        key=lambda observation: (
+            observation["native_metric_id"], observation["observation_id"],
+        ),
+    )
+    payload["economic_dependence_groups"] = deepcopy(
+        healthy["economic_dependence_groups"]
+    )
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="source error|PRESENT|evidence",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_earnings_source_effective_at_named_null() -> None:
+    payload = _build_d5()
+    payload["evidence_families"][0]["point_in_time"]["source_effective_at"] = {
+        "state": "ASSERTED",
+        "value": "2026-07-30T19:59:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "earnings_owner_asserts_no_effective_clock_for_results",
+        "source_ref_ids": [],
+    }
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="source_effective_at|named-null|invented",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_rejects_unreceipted_pending_correction_state() -> None:
+    payload = _build_d5()
+    family = payload["evidence_families"][0]
+    family["correction"] = {
+        "state_at_decision": "PENDING",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": [],
+        "current_state": "UNKNOWN",
+    }
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="PENDING|integrity|receipt",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_complete_exact_guidance_field_lineage() -> None:
+    payload = _build_d5()
+    transcript_ref = next(
+        source_ref
+        for source_ref in payload["evidence_families"][0]["source_refs"]
+        if source_ref["object_schema"] == "event_workspace.source/transcript"
+    )
+    transcript_ref["field_paths"] = ["guidance[0].metric"]
+    _readdress_d5_source_refs(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="guidance.*lineage|lineage.*guidance",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_requires_complete_exact_delta_field_lineage() -> None:
+    payload = _build_d5()
+    release_ref = next(
+        source_ref
+        for source_ref in payload["evidence_families"][0]["source_refs"]
+        if source_ref["object_schema"] == "event_workspace.source/issuer_release"
+    )
+    release_ref["field_paths"] = [
+        path
+        for path in release_ref["field_paths"]
+        if path.startswith("facts[") or path == "deltas[0].metric"
+    ]
+    _readdress_d5_source_refs(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="delta.*lineage|lineage.*delta|trajectory.*lineage",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize(
+    ("surface", "mutate"),
+    [
+        (
+            "applicability",
+            lambda family: family["applicability"].__setitem__(
+                "basis", "file:///private/dummy-applicability.json",
+            ),
+        ),
+        (
+            "coverage",
+            lambda family: family["coverage"].__setitem__(
+                "basis", r"\\DUMMY-SERVER\private\coverage.json",
+            ),
+        ),
+        (
+            "quality",
+            lambda family: family["quality"].__setitem__(
+                "flags", ["s3://dummy-private-bucket/quality.json"],
+            ),
+        ),
+    ],
+)
+def test_validator_rejects_locator_shaped_non_clock_semantic_vocabulary(
+    surface: str, mutate,
+) -> None:
+    payload = _build_d5()
+    mutate(payload["evidence_families"][0])
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match=f"{surface}|vocabulary|locator|basis|flags",
+    ):
+        validate_intelligence_vector(payload)
 
 
 def test_builder_and_validator_close_episode_temporal_and_freshness_claims() -> None:

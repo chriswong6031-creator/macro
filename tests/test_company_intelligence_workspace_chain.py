@@ -41,6 +41,7 @@ from lib.dataos.identity import IssuerMaster
 
 BASE = "https://company-intelligence-chain.example/company_intelligence"
 EVENT_ID = "evt_cik0000320193_2026q3_results"
+_MINTED_WORKSPACE_BYTES: dict[tuple[str, str], bytes] = {}
 
 
 def _raw_workspace(
@@ -114,6 +115,10 @@ def _mint(
         previous_manifest_sha256=previous_manifest_sha256,
     )
     manifest = jsonlib.loads((generation_dir / "manifest.json").read_text(encoding="utf-8"))
+    for event_id in workspaces:
+        _MINTED_WORKSPACE_BYTES[(generation_dir.name, event_id)] = (
+            generation_dir / "workspaces" / f"{event_id}.json"
+        ).read_bytes()
     return generation_dir.name, manifest
 
 
@@ -141,7 +146,13 @@ def _server(objects: dict[str, dict], *, marker_generation_id: str | None, fetch
                     break
                 for event_id, ws in bundle["workspaces"].items():
                     if url == f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json":
-                        body = canonical_json_bytes(ws)
+                        body = (
+                            canonical_json_bytes(ws)
+                            if bundle.get("serve_workspace_overrides") is True
+                            else _MINTED_WORKSPACE_BYTES.get(
+                                (generation_id, event_id), canonical_json_bytes(ws),
+                            )
+                        )
                         break
                 if body is not None:
                     break
@@ -622,7 +633,7 @@ def _chain_objects(*bundles: tuple[str, dict, dict]) -> dict[str, dict]:
     }
 
 
-def test_d5_rejects_foreign_body_returned_by_the_real_revision_reader(
+def test_real_revision_reader_rejects_foreign_body_at_the_receipted_address(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     requested = _raw_workspace(
@@ -638,20 +649,121 @@ def test_d5_rejects_foreign_body_returned_by_the_real_revision_reader(
         event_id="evt_cik9999999999_2026q3_results",
     )
     foreign["issuer"]["company_id"] = "cik:9999999999"
+    objects = _chain_objects((generation_id, manifest, foreign))
+    objects[generation_id]["serve_workspace_overrides"] = True
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    with pytest.raises(
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*(bytes|sha256).*manifest receipt",
+    ):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_revision_reader_rejects_same_address_workspace_byte_substitution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipted = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        fact_value=100,
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: receipted}, generated_at="2026-01-30T20:03:00Z",
+    )
+    substituted = jsonlib.loads(
+        _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    )
+    substituted["facts"] = [dict(receipted["facts"][0], value=999)]
+    substituted["schema"] = "dummy_workspace.v1"
+    substituted["sources"][0]["source_sha256"] = "b" * 64
+    assert len(canonical_json_bytes(substituted)) == manifest["files"][
+        f"workspaces/{EVENT_ID}.json"
+    ]["bytes"]
     monkeypatch.setattr(
         reader,
         "_fetch_bytes",
         _server(
-            _chain_objects((generation_id, manifest, foreign)),
+            {
+                generation_id: {
+                    "manifest": manifest,
+                    "workspaces": {EVENT_ID: substituted},
+                    "serve_workspace_overrides": True,
+                },
+            },
             marker_generation_id=generation_id,
         ),
     )
 
     with pytest.raises(
-        IntelligenceVectorContractError,
-        match="owner workspace event binding|resolved CIK",
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*sha256.*manifest receipt",
     ):
-        _d5_project()
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipted = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        fact_value=100,
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: receipted}, generated_at="2026-01-30T20:03:00Z",
+    )
+    substituted = jsonlib.loads(
+        _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    )
+    substituted["facts"] = [dict(receipted["facts"][0], value=999)]
+    substituted["schema"] = "dummy_workspace.v1"
+    substituted["sources"][0]["source_sha256"] = "b" * 64
+    assert len(canonical_json_bytes(substituted)) == manifest["files"][
+        f"workspaces/{EVENT_ID}.json"
+    ]["bytes"]
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            {
+                generation_id: {
+                    "manifest": manifest,
+                    "workspaces": {EVENT_ID: substituted},
+                    "serve_workspace_overrides": True,
+                },
+            },
+            marker_generation_id=generation_id,
+        ),
+    )
+
+    payload = _d5_project()
+    family = payload["evidence_families"][0]
+    assert family["coverage"] == {
+        "state": "UNKNOWN",
+        "basis": "correction_chain_integrity",
+    }
+    assert family["correction"] == {
+        "state_at_decision": "PENDING",
+        "current_state": "UNKNOWN",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": [],
+    }
+    assert all(item["value_state"] == "ABSENT" for item in family["observations"])
+    assert all(
+        set(item["absence_reasons"]) == {"UNESTIMABLE", "CORRECTION_PENDING"}
+        for item in family["observations"]
+    )
+    assert payload["assembly_receipt"]["errors"][0]["type"] == (
+        "WorkspaceChainIntegrityError"
+    )
+    serialized = jsonlib.dumps(family, sort_keys=True)
+    assert "999" not in serialized
+    assert "dummy_workspace" not in serialized
+    assert "b" * 64 not in serialized
 
 
 def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_lineage(
@@ -708,7 +820,7 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     source_refs = {item["source_ref_id"]: item for item in family["source_refs"]}
     assert {source_refs[ref]["version_or_generation"] for ref in decision_refs} == {gen1}
     assert {source_refs[ref]["version_or_generation"] for ref in later_refs} == {gen2}
-    assert family["point_in_time"]["corrected_at"]["value"] == "2026-02-01T20:00:00Z"
+    assert family["point_in_time"]["corrected_at"]["value"] == "2026-02-01T20:03:00Z"
 
     # The adapter calls the real reader ONCE. The reader in turn fetches each
     # immutable manifest and workspace exactly once per verified chain hop.
@@ -786,17 +898,17 @@ def test_d5_unknown_clock_is_typed_and_names_the_missing_clock(
         served_workspace["generated_at"] = None
     else:
         served_workspace["lifecycle"][missing_clock] = None
-    objects = {
-        generation_id: {
-            "manifest": manifest,
-            "workspaces": {EVENT_ID: served_workspace},
-        },
+    revision = {
+        "generation_id": generation_id,
+        "source_sha256": "d" * 64,
+        "source_available_at": served_workspace["lifecycle"]["source_available_at"],
+        "observed_at": served_workspace["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace": served_workspace,
     }
-    monkeypatch.setattr(
-        reader, "_fetch_bytes", _server(objects, marker_generation_id=generation_id),
-    )
 
-    family = _d5_project()["evidence_families"][0]
+    family = _d5_project(read_revisions=lambda event_id: [revision])["evidence_families"][0]
     assert family["coverage"]["state"] == "UNKNOWN"
     assert family["point_in_time"]["decision_admissibility"] == "UNKNOWN"
     assert family["point_in_time"]["missing_clocks"] == [missing_clock]

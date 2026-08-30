@@ -133,6 +133,21 @@ _DELTA_ABSENCE_REASONS = frozenset({
     "not_available", "consensus_unlicensed", "no_span_addressable_evidence",
     "missing_source", "no_transcript", "not_applicable", "unknown",
 })
+_COVERAGE_QUALITY_VOCABULARY: dict[tuple[str, str], tuple[str, ...]] = {
+    ("UNKNOWN", "canonical_identity_ambiguous"): ("identity_ambiguous",),
+    ("UNKNOWN", "canonical_identity_unresolved"): ("identity_unresolved",),
+    ("UNKNOWN", "current_manifest_integrity_failure"): ("correction_chain_integrity",),
+    ("UNKNOWN", "source_fetch_failed"): ("source_unavailable",),
+    ("NOT_COVERED", "no_current_generation_event"): ("current_event_not_published",),
+    ("UNKNOWN", "correction_chain_integrity"): ("correction_chain_integrity",),
+    ("NOT_COVERED", "no_verified_revisions"): ("revision_history_empty",),
+    ("UNKNOWN", "missing_decision_clock"): ("missing_decision_clock",),
+    ("COVERED", "verified_revision_chain"): (),
+    ("UNKNOWN", "unresolved_clock_tie"): ("unresolved_clock_tie",),
+    ("COVERED", "complete_allowlisted_owner_packet"): (),
+    ("PARTIAL", "partial_allowlisted_owner_packet"): (),
+    ("UNKNOWN", "exact_source_lineage_unavailable"): (),
+}
 _MAX_REVENUE = 1_000_000_000_000_000
 _MIN_GUIDANCE_PCT = -100.0
 _MAX_GUIDANCE_PCT = 1_000.0
@@ -279,6 +294,10 @@ def _validate_owner_workspace_binding(
         raise IntelligenceVectorContractError(
             "owner workspace binding requires a workspace body"
         )
+    if workspace.get("schema") != "event_workspace.v1":
+        raise IntelligenceVectorContractError(
+            "owner workspace schema must be event_workspace.v1"
+        )
     expected_cik = _EARNINGS_COMPANY_ID_RE.fullmatch(earnings_company_id)
     requested_event = _EVENT_CIK_RE.match(event_id)
     workspace_event_id = str(workspace.get("event_id") or "")
@@ -305,6 +324,14 @@ def _validate_owner_workspace_binding(
     ):
         raise IntelligenceVectorContractError(
             "owner workspace generation binding disagrees with revision receipt"
+        )
+    lifecycle = workspace.get("lifecycle")
+    if not isinstance(lifecycle, Mapping) or any(
+        revision.get(clock_name) != lifecycle.get(clock_name)
+        for clock_name in ("source_available_at", "observed_at")
+    ):
+        raise IntelligenceVectorContractError(
+            "owner revision receipt clock disagrees with workspace lifecycle clock"
         )
     return workspace
 
@@ -1584,6 +1611,13 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         basis="per_source_system_recorded_at_not_exposed_by_revision_receipt",
     ):
         raise IntelligenceVectorContractError("captured_at cannot be invented without owner clock")
+    if point_in_time["source_effective_at"] != _clock(
+        state="NOT_ASSERTED", value=None,
+        basis="earnings_owner_asserts_no_effective_clock_for_results",
+    ):
+        raise IntelligenceVectorContractError(
+            "Earnings source_effective_at is a named-null and cannot be invented"
+        )
     if point_in_time["decision_at"]["value"] != decision_cut["opened_at"]:
         raise IntelligenceVectorContractError("family decision_at disagrees with decision cut")
     if point_in_time["decision_admissibility"] == "ADMISSIBLE":
@@ -1594,11 +1628,16 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     applicability = _require_keys(
         family["applicability"], frozenset({"state", "basis"}), name="applicability",
     )
-    if applicability["state"] not in {"APPLICABLE", "NOT_APPLICABLE", "UNKNOWN"}:
-        raise IntelligenceVectorContractError("applicability state invalid")
+    if applicability != {"state": "APPLICABLE", "basis": "earnings_results_event"}:
+        raise IntelligenceVectorContractError(
+            "applicability is outside the closed Earnings vocabulary"
+        )
     coverage = _require_keys(family["coverage"], frozenset({"state", "basis"}), name="coverage")
-    if coverage["state"] not in {"COVERED", "PARTIAL", "NOT_COVERED", "UNKNOWN"}:
-        raise IntelligenceVectorContractError("coverage state invalid")
+    coverage_key = (coverage["state"], coverage["basis"])
+    if coverage_key not in _COVERAGE_QUALITY_VOCABULARY:
+        raise IntelligenceVectorContractError(
+            "coverage is outside the closed Earnings vocabulary"
+        )
     if family["identity_state"] == "RESOLVED" and owner_subject_id is None:
         if coverage not in (
             {"state": "NOT_COVERED", "basis": "no_current_generation_event"},
@@ -1623,9 +1662,11 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     if (
         not isinstance(quality["flags"], list)
         or quality["flags"] != sorted(set(quality["flags"]))
-        or any(not isinstance(flag, str) or len(flag) > 96 for flag in quality["flags"])
+        or tuple(quality["flags"]) != _COVERAGE_QUALITY_VOCABULARY[coverage_key]
     ):
-        raise IntelligenceVectorContractError("quality flags invalid")
+        raise IntelligenceVectorContractError(
+            "quality flags are outside the closed coverage vocabulary"
+        )
     if family["explanation_facts"] != []:
         raise IntelligenceVectorContractError("Earnings v1 emits no explanation_facts")
     trajectory = _require_keys(family["trajectory"], frozenset({"state", "dimensions"}), name="trajectory")
@@ -1861,6 +1902,24 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "integrity error receipt requires an integrity-failure coverage outcome"
         )
+    pending = correction["state_at_decision"] == "PENDING"
+    pending_receipt = (
+        actual_error_types == {"WorkspaceChainIntegrityError"}
+        and absence_reasons == {"UNESTIMABLE", "CORRECTION_PENDING"}
+        and coverage in (
+            {"state": "UNKNOWN", "basis": "current_manifest_integrity_failure"},
+            {"state": "UNKNOWN", "basis": "correction_chain_integrity"},
+        )
+    )
+    if pending != pending_receipt or pending and (
+        correction["current_state"] != "UNKNOWN"
+        or correction["decision_version_ref_ids"]
+        or correction["later_correction_ref_ids"]
+        or any(observation["value_state"] != "ABSENT" for observation in family["observations"])
+    ):
+        raise IntelligenceVectorContractError(
+            "PENDING correction requires the receipted integrity absence outcome"
+        )
 
     source_ref_ids = {ref["source_ref_id"] for ref in family["source_refs"]}
     root_ids = {root["evidence_root_id"] for root in family["evidence_roots"]}
@@ -1966,10 +2025,52 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                         raise IntelligenceVectorContractError(
                             "fact basis must participate in exact source lineage"
                         )
+                else:
+                    guidance_paths = {
+                        path for path in source_ref["field_paths"]
+                        if path.startswith("guidance[")
+                    }
+                    guidance_indices = {
+                        path.split("[", 1)[1].split("]", 1)[0]
+                        for path in guidance_paths
+                    }
+                    if len(guidance_indices) != 1:
+                        raise IntelligenceVectorContractError(
+                            "guidance observation source lineage is not exact"
+                        )
+                    guidance_index = next(iter(guidance_indices))
+                    if guidance_paths != {
+                        f"guidance[{guidance_index}].high",
+                        f"guidance[{guidance_index}].low",
+                        f"guidance[{guidance_index}].metric",
+                        f"guidance[{guidance_index}].status",
+                        f"guidance[{guidance_index}].unit",
+                    }:
+                        raise IntelligenceVectorContractError(
+                            "guidance observation source lineage is not exact"
+                        )
     present_observations = [
         observation for observation in family["observations"]
         if observation["value_state"] == "PRESENT"
     ]
+    evidence_admitted = (
+        applicability == {"state": "APPLICABLE", "basis": "earnings_results_event"}
+        and coverage["state"] in {"COVERED", "PARTIAL"}
+        and point_in_time["decision_admissibility"] == "ADMISSIBLE"
+        and not actual_error_types
+    )
+    if not evidence_admitted and (
+        family["source_refs"]
+        or family["evidence_roots"]
+        or present_observations
+        or trajectory["dimensions"]
+        or correction["decision_version_ref_ids"]
+        or correction["later_correction_ref_ids"]
+        or item["economic_dependence_groups"]
+    ):
+        raise IntelligenceVectorContractError(
+            "PRESENT evidence graph requires applicable, covered, admissible, error-free state"
+        )
     if family["identity_state"] != "RESOLVED" and (
         family["source_refs"]
         or family["evidence_roots"]
@@ -1999,16 +2100,61 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError("trajectory references unknown observations")
         if not set(dimension["source_ref_ids"]).issubset(source_ref_ids):
             raise IntelligenceVectorContractError("trajectory references unknown sources")
-        if any(
-            source_refs_by_id[source_ref_id]["object_schema"]
-            != "event_workspace.source/issuer_release"
-            or not any(
-                path.startswith("deltas[")
-                for path in source_refs_by_id[source_ref_id]["field_paths"]
-            )
-            for source_ref_id in dimension["source_ref_ids"]
-        ):
-            raise IntelligenceVectorContractError("trajectory source lineage is not exact")
+        for source_ref_id in dimension["source_ref_ids"]:
+            source_ref = source_refs_by_id[source_ref_id]
+            delta_paths = {
+                path for path in source_ref["field_paths"]
+                if path.startswith("deltas[")
+            }
+            delta_indices = {
+                path.split("[", 1)[1].split("]", 1)[0]
+                for path in delta_paths
+            }
+            if (
+                source_ref["object_schema"]
+                != "event_workspace.source/issuer_release"
+                or len(delta_indices) != 1
+            ):
+                raise IntelligenceVectorContractError(
+                    "trajectory delta source lineage is not exact"
+                )
+            delta_index = next(iter(delta_indices))
+            required = {
+                f"deltas[{delta_index}].basis_match",
+                f"deltas[{delta_index}].current.basis",
+                f"deltas[{delta_index}].current.unit",
+                f"deltas[{delta_index}].current.value",
+                f"deltas[{delta_index}].metric",
+            }
+            for side in ("prior", "consensus"):
+                side_paths = {
+                    path for path in delta_paths
+                    if path.startswith(f"deltas[{delta_index}].{side}.")
+                }
+                allowed_side_paths = (
+                    {
+                        f"deltas[{delta_index}].{side}.reason",
+                        f"deltas[{delta_index}].{side}.state",
+                    },
+                    {
+                        f"deltas[{delta_index}].{side}.reason",
+                        f"deltas[{delta_index}].{side}.schema",
+                    },
+                    {
+                        f"deltas[{delta_index}].{side}.reason",
+                        f"deltas[{delta_index}].{side}.schema",
+                        f"deltas[{delta_index}].{side}.state",
+                    },
+                )
+                if side_paths not in allowed_side_paths:
+                    raise IntelligenceVectorContractError(
+                        "trajectory delta source lineage is not exact"
+                    )
+                required.update(side_paths)
+            if delta_paths != required:
+                raise IntelligenceVectorContractError(
+                    "trajectory delta source lineage is not exact"
+                )
     for group in item["economic_dependence_groups"]:
         if not set(group["member_observation_refs"]).issubset(observation_ids):
             raise IntelligenceVectorContractError("dependence group references unknown observations")

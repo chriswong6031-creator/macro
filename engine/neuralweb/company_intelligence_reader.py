@@ -976,20 +976,31 @@ def _fetch_generation_manifest_raw(
     return body, manifest
 
 
-def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
-    """One workspace object, addressed by its OWN generation (no manifest
-    receipt cross-check here — callers that need hash verification against
-    a generation manifest's own ``files`` receipt do that themselves, e.g.
-    :func:`_load_event_workspace` above for the model-facing path).
-
-    Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
-    exception on a genuine fetch failure."""
+def _fetch_raw_workspace_bytes(
+    event_id: str, generation_id: str, *, base_url: str | None = None,
+) -> tuple[bytes, dict[str, Any]]:
+    """Fetch one generation-addressed workspace once, retaining exact bytes."""
     resolved = _public_base_url(base_url, require_public_host=False)
     url = _workspace_object_url(resolved, f"generations/{generation_id}/workspaces/{event_id}.json")
     body = _fetch_bytes(url, limit=_MAX_WORKSPACE_BYTES, allow_404=True)
     if body is None:
         raise WorkspaceChainNotPublished(f"{event_id}: workspace 404 in generation {generation_id}")
     payload = _json_object(body, name=f"{event_id} workspace")
+    return body, payload
+
+
+def fetch_raw_workspace(event_id: str, generation_id: str, *, base_url: str | None = None) -> dict[str, Any]:
+    """One workspace object, addressed by its OWN generation.
+
+    This low-level address reader has no manifest argument and therefore cannot
+    authenticate an immutable receipt. Revision-chain callers use
+    :func:`_event_revision_from_generation`, which owns that verification.
+
+    Raises ``WorkspaceChainNotPublished`` on a clean 404. Raises any other
+    exception on a genuine fetch failure."""
+    _body, payload = _fetch_raw_workspace_bytes(
+        event_id, generation_id, base_url=base_url,
+    )
     return payload
 
 
@@ -1104,7 +1115,33 @@ def _event_revision_from_generation(
     relative = f"workspaces/{event_id}.json"
     if relative not in files:
         return None
-    return fetch_raw_workspace(event_id, generation_id, base_url=base_url)
+    expected = files[relative]
+    if not isinstance(expected, Mapping):
+        raise WorkspaceChainIntegrityError(
+            f"generation {generation_id} workspace manifest receipt is not an object"
+        )
+    expected_sha256 = expected.get("sha256")
+    expected_bytes = expected.get("bytes")
+    if (
+        not isinstance(expected_sha256, str)
+        or len(expected_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in expected_sha256)
+        or type(expected_bytes) is not int
+        or expected_bytes <= 0
+        or expected_bytes > _MAX_WORKSPACE_BYTES
+    ):
+        raise WorkspaceChainIntegrityError(
+            f"generation {generation_id} workspace manifest receipt is invalid"
+        )
+    body, workspace = _fetch_raw_workspace_bytes(
+        event_id, generation_id, base_url=base_url,
+    )
+    actual_sha256 = sha256(body).hexdigest()
+    if len(body) != expected_bytes or actual_sha256 != expected_sha256:
+        raise WorkspaceChainIntegrityError(
+            f"generation {generation_id} workspace bytes or sha256 do not match manifest receipt"
+        )
+    return workspace
 
 
 def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -> dict[str, Any]:
