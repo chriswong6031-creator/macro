@@ -13,9 +13,11 @@
   runtime lifecycle, Agent OS for organizational workstreams/decisions/handoffs,
   GitHub for implementation/evidence, and current accepted repository authority for
   architecture. Slack/Canvas prose is never self-authorizing.
-- **Current Sol Skillpack pin:** Mastermind protected `master`
+- **Sol handoff/pickup Skillpack pin (historical):** Mastermind protected `master`
   `e2092cb6235519ac7f50fb3aa50ec1c1a6f627c0`, schema `mastermind.sol_skillpack.v1`,
-  v1.0.0, bootstrap major 1.
+  v1.0.0, bootstrap major 1. This is the immutable pin used at the 2026-08-28
+  handoff/pickup, **not current procedure**. Every Sol/worker action must re-pin the
+  current protected Skillpack before modifying work.
 - **Macro pickup base observed by Sol immediately before handoff:**
   `24ccea3fe482ab97c415db387f272b34c4852ed3`. Workers re-pin fresh `origin/main`
   before editing and before push.
