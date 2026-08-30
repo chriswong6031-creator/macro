@@ -801,6 +801,41 @@ def test_revision_reader_authenticates_malformed_workspace_bytes_before_decoding
         reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
 
 
+def test_revision_reader_propagates_authenticated_workspace_manifest_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    fetch_calls: list[str] = []
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects((generation_id, manifest, workspace)),
+            marker_generation_id=generation_id,
+            fetch_calls=fetch_calls,
+        ),
+    )
+
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+    expected = manifest["files"][f"workspaces/{EVENT_ID}.json"]
+    assert revisions[0]["workspace_receipt"] == {
+        "sha256": expected["sha256"],
+        "bytes": expected["bytes"],
+    }
+    workspace_url = (
+        f"{BASE}/event_workspaces/generations/{generation_id}/"
+        f"workspaces/{EVENT_ID}.json"
+    )
+    assert fetch_calls.count(workspace_url) == 1
+
+
 def test_d5_malformed_workspace_substitution_is_receipted_pending_absence(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -893,6 +928,18 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     assert family["correction"]["state_at_decision"] == "NONE"
     assert family["correction"]["current_state"] == "CORRECTED"
     assert family["correction"].get("later_revision_state") == "PROJECTED"
+    lane_assessment = family["owner_lane_dispositions"]
+    assert lane_assessment["owner_subject_id"] == EVENT_ID
+    assert lane_assessment["generation_id"] == gen1
+    assert lane_assessment["workspace_receipt"] == {
+        "sha256": man1["files"][f"workspaces/{EVENT_ID}.json"]["sha256"],
+        "bytes": man1["files"][f"workspaces/{EVENT_ID}.json"]["bytes"],
+    }
+    assert lane_assessment["owner_lane_assessment_id"].startswith("ola:")
+    assert all(
+        lane["owner_lane_receipt_id"].startswith("olr:")
+        for lane in lane_assessment["lanes"]
+    )
     decision_refs = set(family["correction"]["decision_version_ref_ids"])
     later_refs = set(family["correction"]["later_correction_ref_ids"])
     assert decision_refs and later_refs and decision_refs.isdisjoint(later_refs)
@@ -905,6 +952,10 @@ def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_line
     } == {
         "owner_subject_id": EVENT_ID,
         "generation_id": gen2,
+        "workspace_receipt": {
+            "sha256": man2["files"][f"workspaces/{EVENT_ID}.json"]["sha256"],
+            "bytes": man2["files"][f"workspaces/{EVENT_ID}.json"]["bytes"],
+        },
         "source_sha256": "b" * 64,
         "source_available_at": "2026-02-01T20:00:00Z",
         "observed_at": "2026-02-01T20:02:00Z",
@@ -1012,6 +1063,14 @@ def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
     } == {
         "owner_subject_id": EVENT_ID,
         "generation_id": later_generation,
+        "workspace_receipt": {
+            "sha256": later_manifest["files"][
+                f"workspaces/{EVENT_ID}.json"
+            ]["sha256"],
+            "bytes": later_manifest["files"][
+                f"workspaces/{EVENT_ID}.json"
+            ]["bytes"],
+        },
         "source_sha256": "b" * 64,
         "source_available_at": "2026-02-01T20:00:00Z",
         "observed_at": "2026-02-01T20:02:00Z",
@@ -1113,6 +1172,10 @@ def test_d5_unknown_clock_is_typed_and_names_the_missing_clock(
         "observed_at": served_workspace["lifecycle"]["observed_at"],
         "lifecycle_state": "complete",
         "form": "8-K",
+        "workspace_receipt": {
+            "sha256": sha256(canonical_json_bytes(served_workspace)).hexdigest(),
+            "bytes": len(canonical_json_bytes(served_workspace)),
+        },
         "workspace": served_workspace,
     }
 

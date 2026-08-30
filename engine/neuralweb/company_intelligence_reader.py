@@ -1105,7 +1105,7 @@ def find_current_event_id_for_company(
 
 def _event_revision_from_generation(
     manifest: Mapping[str, Any], event_id: str, *, generation_id: str, base_url: str | None,
-) -> dict[str, Any] | None:
+) -> tuple[dict[str, Any], dict[str, Any]] | None:
     """The event's workspace body in *manifest*'s own generation, or None if
     this generation's manifest carries no entry for the event at all (a
     carried-forward nest that predates this event's first appearance, or an
@@ -1140,16 +1140,24 @@ def _event_revision_from_generation(
         raise WorkspaceChainIntegrityError(
             f"generation {generation_id} workspace bytes or sha256 do not match manifest receipt"
         )
-    return _json_object(body, name=f"{event_id} workspace")
+    workspace = _json_object(body, name=f"{event_id} workspace")
+    return workspace, {
+        "sha256": expected_sha256,
+        "bytes": expected_bytes,
+    }
 
 
-def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -> dict[str, Any]:
+def _receipt_from_revision(
+    revision: Mapping[str, Any], *, generation_id: str,
+    workspace_receipt: Mapping[str, Any],
+) -> dict[str, Any]:
     """One event's workspace body, at one generation, as the receipt dict
     both walk functions below return: ``generation_id``, ``source_sha256``
     (the workspace's own issuer_release source row hash, or ``None`` if
     absent), ``source_available_at``, ``observed_at``, ``lifecycle_state``,
-    ``form`` (the issuer_release source row's SEC form), and ``workspace``
-    (the full body)."""
+    ``form`` (the issuer_release source row's SEC form), the exact
+    manifest-authenticated ``workspace_receipt`` (SHA-256 and byte count),
+    and ``workspace`` (the full body)."""
     lifecycle = revision.get("lifecycle") if isinstance(revision.get("lifecycle"), Mapping) else {}
     source_sha256 = None
     form = None
@@ -1165,6 +1173,7 @@ def _receipt_from_revision(revision: Mapping[str, Any], *, generation_id: str) -
         "observed_at": lifecycle.get("observed_at"),
         "lifecycle_state": lifecycle.get("state"),
         "form": form,
+        "workspace_receipt": dict(workspace_receipt),
         "workspace": revision,
     }
 
@@ -1248,11 +1257,16 @@ def read_all_event_source_revisions(
         # ONE manifest fetch above serves EVERY requested event_id at this
         # hop — the fix's whole point (was one fetch per event PER hop).
         for event_id in ids:
-            revision = _event_revision_from_generation(
+            revision_result = _event_revision_from_generation(
                 manifest, event_id, generation_id=generation_id, base_url=base_url,
             )
-            if revision is not None:
-                newest_first[event_id].append(_receipt_from_revision(revision, generation_id=generation_id))
+            if revision_result is not None:
+                revision, workspace_receipt = revision_result
+                newest_first[event_id].append(_receipt_from_revision(
+                    revision,
+                    generation_id=generation_id,
+                    workspace_receipt=workspace_receipt,
+                ))
 
         schema = manifest.get("schema")
         if schema == "event_workspace_manifest.v1":

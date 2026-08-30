@@ -331,6 +331,7 @@ def _validate_owner_workspace_binding(
         raise IntelligenceVectorContractError(
             "owner workspace generation binding disagrees with revision receipt"
         )
+    _validated_workspace_receipt(revision.get("workspace_receipt"))
     lifecycle = workspace.get("lifecycle")
     if not isinstance(lifecycle, Mapping) or any(
         revision.get(clock_name) != lifecycle.get(clock_name)
@@ -339,7 +340,34 @@ def _validate_owner_workspace_binding(
         raise IntelligenceVectorContractError(
             "owner revision receipt clock disagrees with workspace lifecycle clock"
         )
+    issuer_source_sha256 = None
+    for source in _as_list(workspace.get("sources")):
+        if isinstance(source, Mapping) and source.get("kind") == "issuer_release":
+            issuer_source_sha256 = source.get("source_sha256")
+            break
+    if revision.get("source_sha256") != issuer_source_sha256:
+        raise IntelligenceVectorContractError(
+            "owner revision source sha256 disagrees with workspace issuer source"
+        )
     return workspace
+
+
+def _validated_workspace_receipt(value: Any) -> dict[str, Any]:
+    receipt = _require_keys(
+        value,
+        frozenset({"sha256", "bytes"}),
+        name="owner workspace manifest receipt",
+    )
+    if (
+        not isinstance(receipt["sha256"], str)
+        or _HASH_RE.fullmatch(receipt["sha256"]) is None
+        or type(receipt["bytes"]) is not int
+        or receipt["bytes"] <= 0
+    ):
+        raise IntelligenceVectorContractError(
+            "owner workspace manifest receipt is invalid"
+        )
+    return {"sha256": receipt["sha256"], "bytes": receipt["bytes"]}
 
 
 def _clock(
@@ -447,7 +475,7 @@ def _base_family(*, episode: Mapping[str, Any], identity_state: str, earnings_co
         "fusion_bindings": [],
         "authority": dict(ALL_FALSE_AUTHORITY),
         "owner_warnings": [],
-        "owner_lane_dispositions": [],
+        "owner_lane_dispositions": {},
     }
 
 
@@ -582,8 +610,14 @@ def _accepted_delta(workspace: Mapping[str, Any]) -> tuple[int, dict[str, Any], 
 
 def _owner_lane_dispositions(
     workspace: Mapping[str, Any], *, observations: Sequence[Mapping[str, Any]],
-    trajectory: Mapping[str, Any],
-) -> list[dict[str, str]]:
+    trajectory: Mapping[str, Any], revision: Mapping[str, Any], event_id: str,
+) -> dict[str, Any]:
+    """Bind candidate existence to the authenticated decision workspace.
+
+    The owner reader authenticates the raw JSON bytes.  This adapter emits no
+    body or source span; it carries only that byte receipt plus one closed,
+    content-addressed assessment row per allowlisted D5 lane.
+    """
     projected = {
         "FACT_REVENUE": any(
             item.get("value_state") == "PRESENT"
@@ -606,13 +640,39 @@ def _owner_lane_dispositions(
         "GUIDANCE_REVENUE_YOY_PCT": _candidate_guidance(workspace) is not None,
         "DELTA_REVENUE": _candidate_delta(workspace) is not None,
     }
-    return [{
-        "lane": lane,
-        "disposition": (
-            "PROJECTED" if projected[lane]
-            else ("UNPROJECTABLE" if candidates[lane] else "ABSENT")
-        ),
-    } for lane in _OWNER_LANES]
+    workspace_receipt = _validated_workspace_receipt(
+        revision.get("workspace_receipt")
+    )
+    generation_id = str(revision.get("generation_id") or "")
+    lanes: list[dict[str, Any]] = []
+    for lane in _OWNER_LANES:
+        candidate_state = "PRESENT" if candidates[lane] else "ABSENT"
+        row_semantic = {
+            "owner_subject_id": event_id,
+            "generation_id": generation_id,
+            "workspace_receipt": workspace_receipt,
+            "lane": lane,
+            "candidate_state": candidate_state,
+        }
+        lanes.append({
+            "owner_lane_receipt_id": _content_id("olr", row_semantic),
+            "lane": lane,
+            "candidate_state": candidate_state,
+            "disposition": (
+                "PROJECTED" if projected[lane]
+                else ("UNPROJECTABLE" if candidates[lane] else "ABSENT")
+            ),
+        })
+    semantic = {
+        "owner_subject_id": event_id,
+        "generation_id": generation_id,
+        "workspace_receipt": workspace_receipt,
+        "lanes": lanes,
+    }
+    return {
+        "owner_lane_assessment_id": _content_id("ola", semantic),
+        **semantic,
+    }
 
 
 def _later_revision_receipt(
@@ -624,6 +684,9 @@ def _later_revision_receipt(
     semantic = {
         "owner_subject_id": event_id,
         "generation_id": str(revision.get("generation_id") or ""),
+        "workspace_receipt": _validated_workspace_receipt(
+            revision.get("workspace_receipt")
+        ),
         "source_sha256": revision.get("source_sha256"),
         "source_available_at": clocks.get("source_available_at"),
         "observed_at": clocks.get("observed_at"),
@@ -1217,9 +1280,16 @@ def build_earnings_intelligence_vector(
             str(item["revision"].get("source_sha256") or "")
         )
     ]
-    if any(item["parsed"]["generated_at"] <= cut for item in visible_later):
+    invalid_later_clocks = sorted({
+        clock_name
+        for item in visible_later
+        for clock_name, clock_value in item["parsed"].items()
+        if clock_value <= cut
+    })
+    if invalid_later_clocks:
         raise IntelligenceVectorContractError(
-            "later owner generation must be strictly after the decision cut"
+            "later owner receipt clocks must all be strictly after the "
+            f"decision cut: {invalid_later_clocks!r}"
         )
     later_refs: list[dict[str, Any]] = []
     later_roots: list[dict[str, Any]] = []
@@ -1289,14 +1359,16 @@ def build_earnings_intelligence_vector(
         workspace,
         observations=family["observations"],
         trajectory=family["trajectory"],
+        revision=revision,
+        event_id=event_id,
     )
     expected_lane_count = sum(
         item["disposition"] != "ABSENT"
-        for item in family["owner_lane_dispositions"]
+        for item in family["owner_lane_dispositions"]["lanes"]
     )
     projected_lane_count = sum(
         item["disposition"] == "PROJECTED"
-        for item in family["owner_lane_dispositions"]
+        for item in family["owner_lane_dispositions"]["lanes"]
     )
     if expected_lane_count > 0 and projected_lane_count == expected_lane_count:
         family["coverage"] = {
@@ -1800,27 +1872,80 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             ):
                 raise IntelligenceVectorContractError("trajectory references must be non-empty canonical lists")
     owner_lane_dispositions = family["owner_lane_dispositions"]
-    if not isinstance(owner_lane_dispositions, list):
+    if not isinstance(owner_lane_dispositions, Mapping):
         raise IntelligenceVectorContractError(
-            "owner lane dispositions must be a list"
+            "owner lane dispositions must be a closed assessment bundle"
         )
+    owner_lane_rows: list[Mapping[str, Any]] = []
+    decision_workspace_receipt: dict[str, Any] | None = None
+    decision_workspace_generation: str | None = None
     if owner_lane_dispositions:
-        if len(owner_lane_dispositions) != len(_OWNER_LANES):
+        lane_assessment = _require_keys(
+            owner_lane_dispositions,
+            frozenset({
+                "owner_lane_assessment_id", "owner_subject_id",
+                "generation_id", "workspace_receipt", "lanes",
+            }),
+            name="owner lane assessment",
+        )
+        decision_workspace_receipt = _validated_workspace_receipt(
+            lane_assessment["workspace_receipt"]
+        )
+        decision_workspace_generation = lane_assessment["generation_id"]
+        if (
+            lane_assessment["owner_subject_id"] != owner_subject_id
+            or not isinstance(decision_workspace_generation, str)
+            or _WORKSPACE_GENERATION_RE.fullmatch(
+                decision_workspace_generation
+            ) is None
+            or not isinstance(lane_assessment["lanes"], list)
+            or len(lane_assessment["lanes"]) != len(_OWNER_LANES)
+        ):
             raise IntelligenceVectorContractError(
-                "owner lane dispositions must cover every allowlisted lane"
+                "owner lane assessment must bind the authenticated owner workspace"
             )
-        for index, raw_lane in enumerate(owner_lane_dispositions):
+        for index, raw_lane in enumerate(lane_assessment["lanes"]):
             lane = _require_keys(
-                raw_lane, frozenset({"lane", "disposition"}),
+                raw_lane,
+                frozenset({
+                    "owner_lane_receipt_id", "lane", "candidate_state",
+                    "disposition",
+                }),
                 name="owner lane disposition",
             )
             if (
                 lane["lane"] != _OWNER_LANES[index]
+                or lane["candidate_state"] not in {"PRESENT", "ABSENT"}
                 or lane["disposition"] not in _OWNER_LANE_DISPOSITIONS
             ):
                 raise IntelligenceVectorContractError(
                     "owner lane dispositions are outside the closed vocabulary"
                 )
+            row_semantic = {
+                "owner_subject_id": owner_subject_id,
+                "generation_id": decision_workspace_generation,
+                "workspace_receipt": decision_workspace_receipt,
+                "lane": lane["lane"],
+                "candidate_state": lane["candidate_state"],
+            }
+            if lane["owner_lane_receipt_id"] != _content_id(
+                "olr", row_semantic,
+            ):
+                raise IntelligenceVectorContractError(
+                    "owner lane receipt content address mismatch"
+                )
+            owner_lane_rows.append(lane)
+        assessment_semantic = {
+            key: deepcopy(value)
+            for key, value in lane_assessment.items()
+            if key != "owner_lane_assessment_id"
+        }
+        if lane_assessment["owner_lane_assessment_id"] != _content_id(
+            "ola", assessment_semantic,
+        ):
+            raise IntelligenceVectorContractError(
+                "owner lane assessment content address mismatch"
+            )
     correction = _require_keys(
         family["correction"],
         frozenset({
@@ -1866,9 +1991,9 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raw_later_receipt,
             frozenset({
                 "later_revision_receipt_id", "owner_subject_id",
-                "generation_id", "source_sha256", "source_available_at",
-                "observed_at", "generated_at", "disposition",
-                "source_ref_ids",
+                "generation_id", "workspace_receipt", "source_sha256",
+                "source_available_at", "observed_at", "generated_at",
+                "disposition", "source_ref_ids",
             }),
             name="later revision receipt",
         )
@@ -1883,6 +2008,7 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             )
         seen_receipt_ids.add(receipt_id)
         seen_receipt_generations.add(generation_id)
+        _validated_workspace_receipt(later_receipt["workspace_receipt"])
         if (
             later_receipt["owner_subject_id"] != owner_subject_id
             or not isinstance(generation_id, str)
@@ -1903,9 +2029,14 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             raise IntelligenceVectorContractError(
                 "later revision receipt owner clocks must be valid"
             )
-        if parsed_later_clocks["generated_at"] <= opened_at:
+        pre_cut_clocks = [
+            clock_name for clock_name, clock_value in parsed_later_clocks.items()
+            if clock_value <= opened_at
+        ]
+        if pre_cut_clocks:
             raise IntelligenceVectorContractError(
-                "later owner generation must be strictly after the decision cut"
+                "later owner receipt clocks must all be strictly after the "
+                f"decision cut: {sorted(pre_cut_clocks)!r}"
             )
         if later_receipt["disposition"] not in {
             "PROJECTED", "OBSERVED_UNPROJECTABLE",
@@ -1938,22 +2069,14 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         "PROJECTED" if has_projected_later_revision
         else (
             "OBSERVED_UNPROJECTABLE"
-            if later_revision_receipts else None
+            if later_revision_receipts
+            else ("NONE" if owner_lane_dispositions else "UNKNOWN")
         )
     )
-    if (
-        derived_later_revision_state is not None
-        and correction["later_revision_state"] != derived_later_revision_state
-    ):
+    if correction["later_revision_state"] != derived_later_revision_state:
         raise IntelligenceVectorContractError(
-            "later revision state must be derived from owner receipts"
-        )
-    if (
-        derived_later_revision_state is None
-        and correction["later_revision_state"] not in {"NONE", "UNKNOWN"}
-    ):
-        raise IntelligenceVectorContractError(
-            "later correction revision state cannot be asserted without an owner receipt"
+            "later revision state must be derived from the selected owner "
+            "workspace outcome and later owner receipts"
         )
     if set(correction["later_correction_ref_ids"]) != receipt_ref_ids:
         raise IntelligenceVectorContractError(
@@ -2285,6 +2408,19 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
                 raise IntelligenceVectorContractError(
                     "later revision receipt refs must exactly bind its generation"
                 )
+            issuer_source_hashes = {
+                source_refs_by_id[ref_id]["content_hash"]
+                for ref_id in generation_ref_ids
+                if source_refs_by_id[ref_id]["object_schema"]
+                == "event_workspace.source/issuer_release"
+            }
+            if issuer_source_hashes and issuer_source_hashes != {
+                later_receipt["source_sha256"]
+            }:
+                raise IntelligenceVectorContractError(
+                    "later revision source sha256 must equal its owner issuer "
+                    "source ref content hash"
+                )
     elif corrected_clock != _clock(
         state="NOT_ASSERTED",
         value=None,
@@ -2416,16 +2552,31 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
     )
     if owner_lane_dispositions:
         serialized_projected_lanes = {
-            item["lane"] for item in owner_lane_dispositions
+            item["lane"] for item in owner_lane_rows
             if item["disposition"] == "PROJECTED"
         }
         if serialized_projected_lanes != actual_projected_lanes:
             raise IntelligenceVectorContractError(
                 "owner lane dispositions must exactly match projected evidence"
             )
+        for lane in owner_lane_rows:
+            derived_disposition = (
+                "ABSENT"
+                if lane["candidate_state"] == "ABSENT"
+                else (
+                    "PROJECTED"
+                    if lane["lane"] in actual_projected_lanes
+                    else "UNPROJECTABLE"
+                )
+            )
+            if lane["disposition"] != derived_disposition:
+                raise IntelligenceVectorContractError(
+                    "owner lane disposition must be derived from the "
+                    "content-addressed candidate assessment and projected graph"
+                )
         expected_lane_count = sum(
-            item["disposition"] != "ABSENT"
-            for item in owner_lane_dispositions
+            item["candidate_state"] == "PRESENT"
+            for item in owner_lane_rows
         )
         projected_lane_count = len(serialized_projected_lanes)
         derived_coverage = (
@@ -2459,6 +2610,14 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         ):
             raise IntelligenceVectorContractError(
                 "owner lane evidence dispositions require a selected decision-admissible owner packet"
+            )
+        if decision_ref_ids and {
+            source_refs_by_id[ref_id]["version_or_generation"]
+            for ref_id in decision_ref_ids
+        } != {decision_workspace_generation}:
+            raise IntelligenceVectorContractError(
+                "owner lane assessment must bind the exact authenticated "
+                "decision workspace generation"
             )
     elif actual_projected_lanes or coverage in (
         {"state": "COVERED", "basis": "complete_allowlisted_owner_packet"},
@@ -2611,15 +2770,17 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
         raise IntelligenceVectorContractError(
             "observable unprojectable later revision requires coherent decision evidence"
         )
-    if correction["current_state"] == "CURRENT" and not (
+    derived_current_outcome = (
         correction["state_at_decision"] == "NONE"
         and family["identity_state"] == "RESOLVED"
         and owner_subject_id is not None
+        and bool(owner_lane_dispositions)
         and evidence_admitted
         and bool(present_observations)
         and bool(decision_ref_ids)
         and decision_ref_ids == decision_evidence_ref_ids
         and not later_ref_ids
+        and not later_revision_receipts
         and correction["later_revision_state"] == "NONE"
         and not receipt["errors"]
         and all(
@@ -2627,9 +2788,12 @@ def validate_intelligence_vector(payload: Mapping[str, Any]) -> None:
             in {"OBSERVED", "NONE_IN_CHAIN"}
             for observation in present_observations
         )
-    ):
+    )
+    if (correction["current_state"] == "CURRENT") != derived_current_outcome:
         raise IntelligenceVectorContractError(
-            "CURRENT requires resolved admitted owner evidence with exact decision refs and compatible lineage"
+            "CURRENT must exactly match resolved admitted owner evidence with "
+            "an authenticated workspace receipt, exact decision refs, no later "
+            "revision, and compatible lineage"
         )
     for group in item["economic_dependence_groups"]:
         if not set(group["member_observation_refs"]).issubset(observation_ids):

@@ -1615,15 +1615,26 @@ def _d5_workspace(*, secret: bool = False) -> dict:
     }
 
 
+def _d5_workspace_receipt(workspace: dict) -> dict[str, object]:
+    body = intelligence_vector_mod._canonical_bytes(workspace)
+    return {"sha256": sha256(body).hexdigest(), "bytes": len(body)}
+
+
 def _d5_revisions(*, workspace: dict | None = None) -> list[dict]:
     workspace = workspace or _d5_workspace()
+    issuer_source_sha256 = next((
+        source.get("source_sha256")
+        for source in workspace.get("sources", [])
+        if source.get("kind") == "issuer_release"
+    ), None)
     return [{
         "generation_id": workspace["generation_id"],
-        "source_sha256": "c" * 64,
+        "source_sha256": issuer_source_sha256,
         "source_available_at": workspace["lifecycle"]["source_available_at"],
         "observed_at": workspace["lifecycle"]["observed_at"],
         "lifecycle_state": "complete",
         "form": "8-K",
+        "workspace_receipt": _d5_workspace_receipt(workspace),
         "workspace": workspace,
     }]
 
@@ -1730,6 +1741,31 @@ def _readdress_d5_later_revision_receipts(payload: dict) -> dict:
     correction["later_revision_receipts"] = sorted(
         correction["later_revision_receipts"],
         key=lambda receipt: receipt["later_revision_receipt_id"],
+    )
+    return _readdress_d5(payload)
+
+
+def _readdress_d5_owner_lane_assessment(payload: dict) -> dict:
+    """Readdress a hostile owner-lane bundle before envelope IDs."""
+    assessment = payload["evidence_families"][0]["owner_lane_dispositions"]
+    for lane in assessment["lanes"]:
+        row_semantic = {
+            "owner_subject_id": assessment["owner_subject_id"],
+            "generation_id": assessment["generation_id"],
+            "workspace_receipt": deepcopy(assessment["workspace_receipt"]),
+            "lane": lane["lane"],
+            "candidate_state": lane["candidate_state"],
+        }
+        lane["owner_lane_receipt_id"] = intelligence_vector_mod._content_id(
+            "olr", row_semantic,
+        )
+    semantic = {
+        key: deepcopy(value)
+        for key, value in assessment.items()
+        if key != "owner_lane_assessment_id"
+    }
+    assessment["owner_lane_assessment_id"] = (
+        intelligence_vector_mod._content_id("ola", semantic)
     )
     return _readdress_d5(payload)
 
@@ -2261,14 +2297,26 @@ def test_validator_rejects_present_observation_without_source_or_root_lineage() 
         validate_intelligence_vector(payload)
 
 
-def test_semantically_identical_source_order_has_identical_content_ids() -> None:
+def test_authenticated_workspace_receipt_distinguishes_source_byte_order() -> None:
     forward = _d5_workspace()
     reverse = deepcopy(forward)
     reverse["sources"] = list(reversed(reverse["sources"]))
     first = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=forward))
     second = _build_d5(read_revisions=lambda event_id: _d5_revisions(workspace=reverse))
-    assert second["projection_id"] == first["projection_id"]
-    assert second["evidence_families"][0] == first["evidence_families"][0]
+    first_receipt = first["evidence_families"][0]["owner_lane_dispositions"][
+        "workspace_receipt"
+    ]
+    second_receipt = second["evidence_families"][0]["owner_lane_dispositions"][
+        "workspace_receipt"
+    ]
+    assert second_receipt != first_receipt
+    assert second["projection_id"] != first["projection_id"]
+    for field in (
+        "source_refs", "evidence_roots", "observations", "trajectory",
+    ):
+        assert second["evidence_families"][0][field] == (
+            first["evidence_families"][0][field]
+        )
 
 
 @pytest.mark.parametrize("object_id", [
@@ -2374,7 +2422,7 @@ def test_validator_rejects_present_evidence_retained_under_source_error() -> Non
     source_absence = deepcopy(family["observations"][0])
     for name in (
         "source_refs", "evidence_roots", "trajectory", "correction",
-        "point_in_time",
+        "point_in_time", "owner_lane_dispositions",
     ):
         family[name] = deepcopy(healthy_family[name])
     family["observations"] = sorted(
@@ -2390,7 +2438,7 @@ def test_validator_rejects_present_evidence_retained_under_source_error() -> Non
 
     with pytest.raises(
         IntelligenceVectorContractError,
-        match="source error|PRESENT|evidence",
+        match="source error|PRESENT|evidence|coverage|lane",
     ):
         validate_intelligence_vector(payload)
 
@@ -2594,7 +2642,11 @@ def test_validator_requires_symmetric_economic_dependence_membership() -> None:
         validate_intelligence_vector(payload)
 
 
-def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> dict:
+def _d5_two_generation_payload(
+    *,
+    later_has_adaptable_evidence: bool = True,
+    later_clock_overrides: dict[str, str] | None = None,
+) -> dict:
     decision = _d5_workspace()
     later = deepcopy(decision)
     later["generation_id"] = "2" * 24
@@ -2604,6 +2656,11 @@ def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> 
         "observed_at": "2026-08-01T20:00:00Z",
     }
     later["generated_at"] = "2026-08-01T20:01:00Z"
+    for clock_name, clock_value in (later_clock_overrides or {}).items():
+        if clock_name == "generated_at":
+            later[clock_name] = clock_value
+        else:
+            later["lifecycle"][clock_name] = clock_value
     if later_has_adaptable_evidence:
         later["facts"][0]["value"] = 110_000_000_000
         later["deltas"][0]["current"]["value"] = 110_000_000_000
@@ -2620,6 +2677,7 @@ def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> 
         "observed_at": later["lifecycle"]["observed_at"],
         "lifecycle_state": "complete",
         "form": "8-K",
+        "workspace_receipt": _d5_workspace_receipt(later),
         "workspace": later,
     }]
     return _build_d5(read_revisions=lambda event_id: revisions)
@@ -2630,7 +2688,7 @@ def _d5_two_generation_payload(*, later_has_adaptable_evidence: bool = True) -> 
     [
         ("NONE", "CURRENT", True),
         ("NONE", "CORRECTED", False),
-        ("NONE", "UNKNOWN", True),
+        ("NONE", "UNKNOWN", False),
         ("NONE", "CONFLICTED", False),
         ("NONE", "RETRACTED", False),
         ("PENDING", "CURRENT", False),
@@ -2661,7 +2719,10 @@ def test_validator_correction_state_matrix_for_healthy_present_evidence(
     else:
         with pytest.raises(
             IntelligenceVectorContractError,
-            match="correction|CONFLICTED|RETRACTED|PENDING|CORRECTED",
+            match=(
+                "correction|CONFLICTED|RETRACTED|PENDING|CORRECTED|"
+                "CURRENT|authenticated"
+            ),
         ):
             validate_intelligence_vector(payload)
 
@@ -2684,6 +2745,7 @@ def test_validator_accepts_every_builder_emitted_correction_outcome() -> None:
         "observed_at": tie_second["lifecycle"]["observed_at"],
         "lifecycle_state": "complete",
         "form": "8-K",
+        "workspace_receipt": _d5_workspace_receipt(tie_second),
         "workspace": tie_second,
     }]
 
@@ -2744,7 +2806,7 @@ def test_validator_requires_decision_refs_to_equal_present_evidence_refs() -> No
 
     with pytest.raises(
         IntelligenceVectorContractError,
-        match="decision|correction|evidence|reference",
+        match="decision|correction|evidence|reference|later revision|outcome",
     ):
         validate_intelligence_vector(payload)
 
@@ -2775,7 +2837,7 @@ def test_validator_rejects_decision_evidence_relabelled_as_later_correction() ->
 
     with pytest.raises(
         IntelligenceVectorContractError,
-        match="decision|correction|evidence|reference",
+        match="decision|correction|evidence|reference|later revision|outcome",
     ):
         validate_intelligence_vector(payload)
 
@@ -3109,7 +3171,12 @@ def test_validator_derives_coverage_from_closed_owner_lane_dispositions(
             },
         ]
     else:
-        payload = _build_d5()
+        workspace = _d5_workspace()
+        payload = _build_d5(
+            read_revisions=lambda event_id: _d5_revisions(
+                workspace=workspace,
+            ),
+        )
         expected_dispositions = [
             {"lane": "DELTA_REVENUE", "disposition": "PROJECTED"},
             {"lane": "FACT_REVENUE", "disposition": "PROJECTED"},
@@ -3119,7 +3186,18 @@ def test_validator_derives_coverage_from_closed_owner_lane_dispositions(
             },
         ]
     family = payload["evidence_families"][0]
-    assert family["owner_lane_dispositions"] == expected_dispositions
+    assessment = family["owner_lane_dispositions"]
+    assert assessment["owner_lane_assessment_id"].startswith("ola:")
+    assert assessment["workspace_receipt"] == _d5_workspace_receipt(workspace)
+    assert [
+        {"lane": row["lane"], "disposition": row["disposition"]}
+        for row in assessment["lanes"]
+    ] == expected_dispositions
+    assert all(
+        row["candidate_state"] == "PRESENT"
+        and row["owner_lane_receipt_id"].startswith("olr:")
+        for row in assessment["lanes"]
+    )
     assert family["coverage"]["state"] == builder_kind.upper()
     family["coverage"] = hostile_coverage
     family["quality"] = {"flags": []}
@@ -3184,6 +3262,7 @@ def test_validator_rejects_current_state_mutation_across_noncurrent_builder_outc
         "observed_at": tie_second["lifecycle"]["observed_at"],
         "lifecycle_state": "complete",
         "form": "8-K",
+        "workspace_receipt": _d5_workspace_receipt(tie_second),
         "workspace": tie_second,
     }]
 
@@ -3269,9 +3348,12 @@ def test_correction_clock_is_bound_to_later_generation_refs_and_state() -> None:
     assert len(family["correction"]["later_revision_receipts"]) == 1
     receipt = family["correction"]["later_revision_receipts"][0]
     assert receipt["later_revision_receipt_id"].startswith("lrr:")
+    assert set(receipt["workspace_receipt"]) == {"sha256", "bytes"}
+    assert len(receipt["workspace_receipt"]["sha256"]) == 64
+    assert receipt["workspace_receipt"]["bytes"] > 0
     assert {
         key: value for key, value in receipt.items()
-        if key != "later_revision_receipt_id"
+        if key not in {"later_revision_receipt_id", "workspace_receipt"}
     } == {
         "owner_subject_id": "evt_cik0000320193_2026q3_results",
         "generation_id": "2" * 24,
@@ -3308,9 +3390,11 @@ def test_later_generation_without_projectable_lineage_has_receipted_correction_c
     receipts = family["correction"]["later_revision_receipts"]
     assert len(receipts) == 1
     assert receipts[0]["later_revision_receipt_id"].startswith("lrr:")
+    assert len(receipts[0]["workspace_receipt"]["sha256"]) == 64
+    assert receipts[0]["workspace_receipt"]["bytes"] > 0
     assert {
         key: value for key, value in receipts[0].items()
-        if key != "later_revision_receipt_id"
+        if key not in {"later_revision_receipt_id", "workspace_receipt"}
     } == {
         "owner_subject_id": "evt_cik0000320193_2026q3_results",
         "generation_id": "2" * 24,
@@ -3321,6 +3405,177 @@ def test_later_generation_without_projectable_lineage_has_receipted_correction_c
         "disposition": "OBSERVED_UNPROJECTABLE",
         "source_ref_ids": [],
     }
+
+
+def test_validator_rejects_complete_forged_unprojectable_receipt_after_readdress() -> None:
+    payload = _build_d5()
+    family = payload["evidence_families"][0]
+    correction = family["correction"]
+    semantic = {
+        "owner_subject_id": family["subject_binding"]["owner_subject_id"],
+        "generation_id": "f" * 24,
+        "source_sha256": "f" * 64,
+        "source_available_at": "2026-08-02T19:55:00Z",
+        "observed_at": "2026-08-02T20:00:00Z",
+        "generated_at": "2026-08-02T20:01:00Z",
+        "disposition": "OBSERVED_UNPROJECTABLE",
+        "source_ref_ids": [],
+    }
+    correction["later_revision_receipts"] = [{
+        "later_revision_receipt_id": intelligence_vector_mod._content_id(
+            "lrr", semantic,
+        ),
+        **semantic,
+    }]
+    correction["later_revision_state"] = "OBSERVED_UNPROJECTABLE"
+    correction["current_state"] = "UNKNOWN"
+    family["point_in_time"]["corrected_at"] = {
+        "state": "ASSERTED",
+        "value": semantic["generated_at"],
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": [],
+    }
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="workspace|manifest|owner.*receipt|authenticated",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize("mutation", ["missing", "bad_sha256", "zero_bytes"])
+def test_adapter_requires_closed_owner_workspace_manifest_receipt(
+    mutation: str,
+) -> None:
+    revision = _d5_revisions()[0]
+    if mutation == "missing":
+        revision.pop("workspace_receipt")
+    elif mutation == "bad_sha256":
+        revision["workspace_receipt"]["sha256"] = "f" * 63
+    else:
+        revision["workspace_receipt"]["bytes"] = 0
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="workspace.*manifest.*receipt|closed keys|sha256|bytes",
+    ):
+        _build_d5(read_revisions=lambda event_id: [revision])
+
+
+def test_validator_rejects_projected_receipt_source_hash_drift_after_readdress() -> None:
+    payload = _d5_two_generation_payload()
+    receipt = payload["evidence_families"][0]["correction"][
+        "later_revision_receipts"
+    ][0]
+    receipt["source_sha256"] = "f" * 64
+    _readdress_d5_later_revision_receipts(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="source.*sha|issuer.*source|owner.*receipt|workspace",
+    ):
+        validate_intelligence_vector(payload)
+
+
+def test_validator_derives_healthy_no_later_revision_as_none_not_unknown() -> None:
+    payload = _build_d5()
+    family = payload["evidence_families"][0]
+    assert family["correction"]["later_revision_state"] == "NONE"
+    family["correction"]["later_revision_state"] = "UNKNOWN"
+    family["correction"]["current_state"] = "UNKNOWN"
+    _readdress_d5(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="later revision|NONE|healthy|owner.*receipt|outcome",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize("clock_name", ["source_available_at", "observed_at"])
+@pytest.mark.parametrize(
+    "hostile_value",
+    ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
+)
+def test_validator_requires_every_later_receipt_clock_strictly_post_cut(
+    clock_name: str,
+    hostile_value: str,
+) -> None:
+    payload = _d5_two_generation_payload()
+    receipt = payload["evidence_families"][0]["correction"][
+        "later_revision_receipts"
+    ][0]
+    receipt[clock_name] = hostile_value
+    _readdress_d5_later_revision_receipts(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match=f"{clock_name}|decision cut|strictly after|later",
+    ):
+        validate_intelligence_vector(payload)
+
+
+@pytest.mark.parametrize(
+    "clock_name",
+    ["source_available_at", "observed_at", "generated_at"],
+)
+@pytest.mark.parametrize(
+    "hostile_value",
+    ["2026-07-01T00:00:00Z", "2026-07-30T20:05:00Z"],
+)
+def test_builder_requires_every_later_receipt_clock_strictly_post_cut(
+    clock_name: str,
+    hostile_value: str,
+) -> None:
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match=f"{clock_name}|decision cut|strictly after|later",
+    ):
+        _d5_two_generation_payload(
+            later_clock_overrides={clock_name: hostile_value},
+        )
+
+
+@pytest.mark.parametrize("erasure", ["partial_promotion", "all_unprojectable"])
+def test_validator_rejects_owner_lane_candidate_erasure_after_readdress(
+    erasure: str,
+) -> None:
+    workspace = _d5_workspace()
+    workspace["facts"][0]["source_span"]["document_id"] = (
+        "unsafe-owner-locator"
+    )
+    if erasure == "all_unprojectable":
+        workspace["guidance"][0]["source_span"]["document_id"] = (
+            "unsafe-guidance-locator"
+        )
+    payload = _build_d5(
+        read_revisions=lambda event_id: _d5_revisions(workspace=workspace),
+    )
+    family = payload["evidence_families"][0]
+    lanes = family["owner_lane_dispositions"]["lanes"]
+    assert any(
+        lane["disposition"] == "UNPROJECTABLE"
+        for lane in lanes
+    )
+    for lane in lanes:
+        if lane["disposition"] == "UNPROJECTABLE":
+            lane["disposition"] = "ABSENT"
+    if erasure == "partial_promotion":
+        family["coverage"] = {
+            "state": "COVERED",
+            "basis": "complete_allowlisted_owner_packet",
+        }
+        family["quality"] = {"flags": []}
+    _readdress_d5_owner_lane_assessment(payload)
+
+    with pytest.raises(
+        IntelligenceVectorContractError,
+        match="lane|candidate|assessment|ABSENT|UNPROJECTABLE|coverage",
+    ):
+        validate_intelligence_vector(payload)
 
 
 def test_validator_rejects_readdressed_correction_clock_without_later_refs() -> None:
