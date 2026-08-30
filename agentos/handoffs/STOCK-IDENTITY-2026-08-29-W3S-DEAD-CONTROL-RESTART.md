@@ -1,5 +1,68 @@
 ---
 workstream: WS:STOCK-IDENTITY
+session: sol/stock-identity-w3ar-recovery-20260829
+model: codex
+mission: >
+  Preserve the bounded W3S dead-instrument-control restart contract, current canonical owner
+  collision law, AVB quarantine, and truthful WAITING_CAPACITY state so a later lawfully assigned
+  worker can re-derive at least five lawful terminated controls or return the frozen typed blocker.
+state_before: >
+  W2 had registered the Dead Instrument Control Set as a hard W5/Q1 predecessor, but no lawful W3S
+  receiver had started. Invalid Secretary placement produced unauthorized PR #6678 before the
+  no-start edge was consumed; Sol contained it, rejected its cohort verdict, and returned W3S to
+  PRE-START / WAITING_CAPACITY / needs_placement.
+changed:
+  - path: agentos/handoffs/STOCK-IDENTITY-2026-08-29-W3S-DEAD-CONTROL-RESTART.md
+    what: >
+      Freezes current W3S mission, receiver/routing state, identity-owner collision law, deterministic
+      candidate/exclusion law, AVB quarantine and future acceptance/stop contract.
+  - path: agentos/workstreams/WS-STOCK-IDENTITY.md
+    what: >
+      Projects W3S as waiting capacity, #6678 as inert/unaccepted evidence, and AVB as quarantined.
+prs: [6672, 6678]
+verified:
+  - claim: Unauthorized W3S PR #6678 is closed, draft, unmerged and does not modify main.
+    command: "gh pr view 6678 --repo mastermindx-market-intelligence/macro --json state,isDraft,mergedAt,headRefOid"
+    result: "CLOSED/DRAFT/unmerged; preserved only as inert audit evidence."
+  - claim: Canonical delisting/security-master owner work overlaps W3S identity authority.
+    command: "Inspect current PRs #6668, #6643 and #6659 and their changed paths."
+    result: "They own delisted-symbol/security-master identity changes; W3S must consume, not duplicate, that authority."
+  - claim: AVB's registered last-session heal is not durably assumed after a later collector write.
+    command: "Compare #6623 heal history with later commit 27aebb3606cb3b2095f808de917516ae31b7ea35 on data/stocks/AVB.parquet."
+    result: "A later daily collection modified the tape after the heal; AVB remains quarantined pending independent current-byte proof."
+unverified:
+  - claim: At least five lawful identity-resolved terminated U.S. tapes are available through accepted current owners.
+    what_would_verify: >
+      A lawfully bound W3S worker must freeze the identity-only candidate/exclusion law first, then
+      re-derive the cohort from current canonical identity/source owners and return complete receipts.
+  - claim: Current AVB parquet bytes are clean or contaminated after the later collector write.
+    what_would_verify: >
+      Independent exact-file verification against canonical identity/last-session and collector behavior,
+      including the hostile successor-bar regression required by this packet.
+decisions:
+  - DEC:SI-REPLAY-ELIGIBILITY-SEPARATE-FROM-LIVE-AVAILABILITY
+unresolved:
+  - W3S has no current lawful receiver and remains WAITING_CAPACITY / needs_placement.
+  - Current identity/delisting owner PRs must be re-reconciled at actual pickup; unmerged rows do not count.
+  - AVB is quarantined until independent current-source durability proof closes the registered-plane hazard.
+  - The >=5-control feasibility question remains scientifically unresolved because #6678's unauthorized verdict is not accepted.
+next_actions:
+  - Bind one eligible receiver through current lawful placement/commissioning procedure; do not use generic pickup spam.
+  - Re-pin current Skillpack, Macro main, canonical identity/data owners and all overlapping PRs before START.
+  - Freeze the deterministic candidate/exclusion law before any tape-dependent acceptance decision.
+  - Re-derive the cohort, verify AVB independently, reuse only accepted owners, and return >=5 complete controls or the precise typed blocker.
+do_not_redo:
+  - Do not reopen, merge, inherit or cite #6678's cohort verdict as accepted W3S science.
+  - Do not write a parallel delisting/security-master identity authority or count unmerged owner rows as canonical.
+  - Do not widen providers or create another generalized market-data plane if accepted owners cannot supply five controls.
+  - Do not use outcome, episode, expert, localization or fit information to hand-pick controls.
+  - Do not open W3AR/P2/W3B/Q1 or Prophet authority from this wave.
+danger_areas:
+  - Reused tickers, renames, OTC-live names and index exits can masquerade as termination without canonical identity hygiene.
+  - AVB may contain a successor-security splice after its registered terminal session; a derived truncation cannot hide an unsafe canonical owner plane.
+  - Active #6668/#6643/#6659-style owner work can move identity truth during W3S and requires fresh reconciliation before acceptance.
+  - Raw/unadjusted or close-only history is not lawful fingerprint/episode control data.
+ended_because: blocked
 operation_key: SI-W3S-DEAD-CONTROL-V1
 parent_operation: SI-FABLE-COO-PROGRAM-20260828
 wave: W3S
