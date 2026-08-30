@@ -3,6 +3,7 @@ workstream: "WS:GREY-DEER-RISK-INTELLIGENCE"
 session: "claude/gd-compact-risk-context-20260830"
 model: local
 ended_because: complete
+prs: [6685]
 mission: >
   Chairman-direct: replace the full-width Grey Deer / Risk Envelope panel on
   Macro macro.html with a compact Market Reads rail inside the regime hero,
@@ -63,7 +64,7 @@ unresolved:
   - "Sol product/taste/semantic review of the HOLD-FOR-SOL draft. Do not merge until Sol releases the hold."
   - "Hero moon/sun watermark can visually overlap the open #dlg-risk panel (pre-existing decorative stacking, not introduced by engine changes)."
 next_actions:
-  - "Sol reviews the draft PR titled HOLD-FOR-SOL on claude/gd-compact-risk-context-20260830."
+  - "Sol reviews draft PR #6685 (HOLD-FOR-SOL: compact Grey Deer Market Reads into the regime hero)."
   - "On Sol release: squash-merge, wait for the covering render or VPS pull, then verify live macro.html. This session must not self-merge."
 do_not_redo:
   - "Do not edit engine/risk_envelope.py, live cadence, schema, or templates/risk_envelope_live.js for this presentation wave — hook IDs were kept unique so the overlay needs no JS change."

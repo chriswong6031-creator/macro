@@ -283,7 +283,8 @@ waves:
     # one new row each, zero dups, commit 927fb6a78046).
   - id: GD-UX-COMPACT-L1
     title: Compact Market Reads rail in the regime hero; Grey Deer projection in #dlg-risk
-    status: in_progress
+    status: awaiting_ci
+    pr: 6685
     depends_on: [GD-2]
     # Chairman-direct 2026-08-30 (no Slack thread). Presentation only.
     # GD-2 dedicated full-width L1 is overruled for presentation; semantic freeze
@@ -346,11 +347,10 @@ waves:
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
   2026-08-30: Chairman-direct compact Market Reads (GD-UX-COMPACT-L1) is
-  review-ready on branch claude/gd-compact-risk-context-20260830. Sol reviews
-  the HOLD-FOR-SOL draft PR (product/taste/semantics) and either releases the
-  hold to merge or names the change. Do not self-merge. GD-8A/GD-8B/GD-9A
-  remain unstarted pending an explicit new commission; GD-5A/B/C stay closed;
-  this wave does not reopen GD-3 live-window work.
+  PARKED on draft PR #6685 (HOLD-FOR-SOL). Sol reviews product/taste/semantics
+  and either releases the hold to merge or names the change. Do not self-merge.
+  GD-8A/GD-8B/GD-9A remain unstarted pending an explicit new commission;
+  GD-5A/B/C stay closed; this wave does not reopen GD-3 live-window work.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
