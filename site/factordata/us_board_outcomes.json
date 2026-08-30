@@ -1,5 +1,5 @@
 {
- "as_of": "2026-08-25",
+ "as_of": "2026-08-28",
  "rows": [
   {
    "ticker": "U",
@@ -25,19 +25,6 @@
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "TTD",
-   "sector": "Communication Services",
-   "first_surfaced": "2026-07-28",
-   "surfaced_price": 19.09,
-   "last_price": 13.8,
-   "pct_since": -27.7,
-   "days_on_board": 4,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -112,7 +99,7 @@
    "surfaced_price": 25.72,
    "last_price": 22.12,
    "pct_since": -14.0,
-   "days_on_board": 1,
+   "days_on_board": 2,
    "exit_date": "2026-08-07",
    "mark_date": "2026-08-07",
    "status": "stopped",
@@ -197,19 +184,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "T",
-   "sector": "Communication Services",
-   "first_surfaced": "2026-07-17",
-   "surfaced_price": 21.95,
-   "last_price": 24.13,
-   "pct_since": 9.9,
-   "days_on_board": 3,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
    "ticker": "ANET",
    "sector": "Information Technology",
    "first_surfaced": "2026-08-07",
@@ -258,32 +232,6 @@
    "days_on_board": 4,
    "exit_date": "2026-08-18",
    "mark_date": "2026-08-18",
-   "status": "running",
-   "lane": "buy"
-  },
-  {
-   "ticker": "STAA",
-   "sector": "Health Care",
-   "first_surfaced": "2026-07-15",
-   "surfaced_price": 28.98,
-   "last_price": 26.44,
-   "pct_since": -8.8,
-   "days_on_board": 1,
-   "exit_date": "2026-07-17",
-   "mark_date": "2026-07-17",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
-   "ticker": "HAS",
-   "sector": "Consumer Discretionary",
-   "first_surfaced": "2026-07-17",
-   "surfaced_price": 80.98,
-   "last_price": 88.13,
-   "pct_since": 8.8,
-   "days_on_board": 3,
-   "exit_date": "2026-07-24",
-   "mark_date": "2026-07-24",
    "status": "running",
    "lane": "buy"
   },
@@ -392,19 +340,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "EU",
-   "sector": "Energy",
-   "first_surfaced": "2026-08-07",
-   "surfaced_price": 1.31,
-   "last_price": 1.21,
-   "pct_since": -7.6,
-   "days_on_board": 3,
-   "exit_date": "2026-08-14",
-   "mark_date": "2026-08-14",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "USAR",
    "sector": "Materials",
    "first_surfaced": "2026-08-12",
@@ -441,6 +376,19 @@
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
    "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "AEIS",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-07",
+   "surfaced_price": 314.38,
+   "last_price": 337.2,
+   "pct_since": 7.3,
+   "days_on_board": 1,
+   "exit_date": "2026-08-12",
+   "mark_date": "2026-08-12",
+   "status": "running",
    "lane": "buy"
   },
   {
@@ -493,6 +441,19 @@
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
    "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "FCFS",
+   "sector": "Financials",
+   "first_surfaced": "2026-08-21",
+   "surfaced_price": 236.43,
+   "last_price": 219.82,
+   "pct_since": -7.0,
+   "days_on_board": 3,
+   "exit_date": "2026-08-26",
+   "mark_date": "2026-08-26",
+   "status": "stopped",
    "lane": "buy"
   },
   {
@@ -557,6 +518,19 @@
    "days_on_board": 2,
    "exit_date": "2026-08-12",
    "mark_date": "2026-08-12",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "IT",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-07-21",
+   "surfaced_price": 132.1,
+   "last_price": 140.5,
+   "pct_since": 6.4,
+   "days_on_board": 1,
+   "exit_date": "2026-07-24",
+   "mark_date": "2026-07-24",
    "status": "running",
    "lane": "buy"
   },
@@ -704,19 +678,6 @@
    "lane": "buy"
   },
   {
-   "ticker": "VIRT",
-   "sector": "Financials",
-   "first_surfaced": "2026-07-29",
-   "surfaced_price": 59.16,
-   "last_price": 55.85,
-   "pct_since": -5.6,
-   "days_on_board": 3,
-   "exit_date": "2026-08-07",
-   "mark_date": "2026-08-07",
-   "status": "stopped",
-   "lane": "buy"
-  },
-  {
    "ticker": "URG",
    "sector": "Energy",
    "first_surfaced": "2026-08-07",
@@ -780,32 +741,71 @@
    "mark_date": "2026-08-07",
    "status": "running",
    "lane": "buy"
+  },
+  {
+   "ticker": "SITM",
+   "sector": "Information Technology",
+   "first_surfaced": "2026-08-13",
+   "surfaced_price": 711.91,
+   "last_price": 749.44,
+   "pct_since": 5.3,
+   "days_on_board": 2,
+   "exit_date": "2026-08-17",
+   "mark_date": "2026-08-17",
+   "status": "running",
+   "lane": "buy"
+  },
+  {
+   "ticker": "LUNR",
+   "sector": "Industrials",
+   "first_surfaced": "2026-08-14",
+   "surfaced_price": 20.38,
+   "last_price": 19.31,
+   "pct_since": -5.3,
+   "days_on_board": 2,
+   "exit_date": "2026-08-18",
+   "mark_date": "2026-08-18",
+   "status": "stopped",
+   "lane": "buy"
+  },
+  {
+   "ticker": "NVST",
+   "sector": "Health Care",
+   "first_surfaced": "2026-07-27",
+   "surfaced_price": 26.96,
+   "last_price": 28.37,
+   "pct_since": 5.2,
+   "days_on_board": 3,
+   "exit_date": "2026-07-29",
+   "mark_date": "2026-07-29",
+   "status": "running",
+   "lane": "buy"
   }
  ],
  "summary": {
-  "n_running": 77,
-  "n_stopped": 89,
-  "n_flat": 303,
-  "n_total": 469,
+  "n_running": 79,
+  "n_stopped": 83,
+  "n_flat": 299,
+  "n_total": 461,
   "n_shown": 60,
   "median_pct": 0.0,
   "n_skipped_no_price": 12,
   "skipped_no_price": [
-   "AM",
    "BRX",
    "CAR",
    "CE",
    "DAR",
    "EGP",
    "ELS",
-   "EZPW",
    "FCN",
    "MAT",
    "NYT",
-   "RRX"
+   "OHI",
+   "REXR",
+   "SLGN"
   ],
-  "win_rate": 0.164,
-  "avg_pct": 0.0,
+  "win_rate": 0.171,
+  "avg_pct": 0.2,
   "conventions": {
    "entry": "next session's close after first_surfaced (the surfaced bar is the bar the board is computed from \u2014 unbuyable)",
    "mark": "close on the date the name left the buy board, not today's",

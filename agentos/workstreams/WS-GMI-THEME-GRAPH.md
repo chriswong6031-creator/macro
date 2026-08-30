@@ -2,8 +2,11 @@
 key: GMI-THEME-GRAPH
 title: Global Market Intelligence theme graph
 objective: >
-  Connect global themes, evidence, transmission, and contagion into a governed graph.
-  Done = the graph answers transmission questions with cited evidence at display tier.
+  Own one canonical theme/local-theme semantic graph with exact identity, PIT/correction,
+  curated ontology/probation, measurement eligibility, one ThemeState authority and
+  read-only U.S./China selection-cohort context. Development done = D2C/D2D/D2E/W3B/W3C
+  are production-proven and downstream F04 can consume the canonical readers without a
+  duplicate theme/state/graph truth plane.
 status: active
 program: gmi-theme-graph
 repos: [macro]
@@ -15,47 +18,115 @@ owns_paths:
   - engine/theme_graph/
   - data/theme_graph/
   - config/theme_sources.yml
+decisions:
+  - DEC:GMI-THEME-GRAPH-END-TO-END-COMPLETION-OWNERSHIP-SEQUENCING
+artifacts:
+  - research/theme_graph/THEME_GRAPH_END_TO_END_COMPLETION_FREEZE_2026-08-27.md
+  - research/theme_graph/CEO_W3_CONTINUATION_DIRECTIVE_2026-08-14.md
+  - research/prophet_v4/V4_D2_ONTOLOGY_AND_PROBATION_HANDOFF.md
+  - research/prophet_v4/D1_D3_W3B_MERGE_ORDER_RECOMMENDATION.md
+  - docs/superpowers/plans/2026-08-28-gmi-theme-f04-end-to-end-completion.md
 waves:
   - id: W0
     title: Graph scaffolding
     status: done
   - id: R1
-    title: "R1 answered (#5402)"
+    title: "Exposure decomposition R1 answered (#5402)"
     status: done
     pr: 5402
   - id: W3A
-    title: "Local theme plane — rights-gated Finviz/THS ltheme nodes (268+373), PIT
-      MEMBER_OF memberships, capability sidecar, probation mapping; engine/theme_graph/*
-      + data/theme_graph/*. No ThemeState, no ranking authority, no user surface."
+    title: >
+      Local theme plane — rights-gated Finviz/THS local-theme nodes, PIT MEMBER_OF
+      memberships, capability sidecar and probation substrate. No ThemeState or
+      selection/ranking authority.
     status: done
     pr: 5718
-  - id: TRANSMISSION
-    title: Transmission/contagion layer
+  - id: D2C
+    title: "PIT vintage completion — gmi-theme-pit-d2c-20260827-sol-001"
     status: todo
-    depends_on: [R1]
     next_action: >
-      Reconcile with W3B ThemeState sequencing (Prophet V4 D-lane consumes it; see
-      research/prophet_v4/WAVE_GRAPH_AND_MERGE_ORDER.md §3 — a merge-order ruling is
-      required before ThemeState work starts anywhere).
+      First executable GMI child. Under the claimed F04 sustained principal, refresh
+      current main/open carriers and make required current-snapshot membership planes
+      forward-replayable without backfilling later knowledge.
+  - id: D2D
+    title: "Ontology + probation breadth — gmi-theme-ontology-d2d-20260827-sol-001"
+    status: todo
+    next_action: >
+      First executable GMI child. Under the claimed F04 sustained principal, complete
+      curated probation/adjudication breadth and navigability across local concepts and
+      existing owner structural classifications. Unmapped remains legal; no fuzzy mapping.
+  - id: D2E
+    title: "Rights / coverage / D2 acceptance — gmi-theme-accept-d2e-20260827-sol-001"
+    status: todo
+    depends_on: [D2C, D2D]
+    next_action: >
+      Held until D2C+D2D. Reconcile D2B3 natural proof, run coverage/eligibility census,
+      close required rights/display-tier decisions, strict guards and natural-nightly proof.
+  - id: W3B
+    title: "Sole local + canonical ThemeState — gmi-theme-state-w3b-20260827-sol-001"
+    status: todo
+    depends_on: [D2E]
+    next_action: >
+      Held until accepted D2. Eligibility precedes state; named legs only; reconcile the
+      existing Neural Web thematic-state lineage so one owner producer/truth remains.
+  - id: W3C
+    title: "Selection Cohort Intelligence — gmi-theme-cohort-w3c-20260827-sol-001"
+    status: todo
+    depends_on: [W3B]
+    next_action: >
+      Held until W3B. Read already-finalized U.S./China selections unchanged and attach
+      PIT local memberships, ThemeState, canonical relations and descriptive overlap.
+      Zero upstream selection/ranking authority.
+  - id: TRANSMISSION-FOLD
+    title: "Legacy Transmission/Contagion frontier folded into current owners"
+    status: done
+    next_action: >
+      NO GMI TRANSMISSION ENGINE BUILD. Theme-native semantic truth stays in GMI;
+      Graph-1/2/3 propagation hypotheses stay with K3-D/current relationship owners;
+      TXI/incorporation/dislocation stay with native owners; downstream Transmission Gap,
+      second-order/opportunity and explanation product composition stays with canonical
+      MarketOntology F04 operation marketontology-f04-ontology-transmission-20260826-fable-001.
 landmines:
   - >-
-    Wave ids other than W0 were MINTED by the Phase 0 seeding session, not taken from
-    research/GLOBAL_MARKET_INTELLIGENCE_MASTERPLAN_BY_FABLE.md, which names only W0
-    (verified: grep -noE '\bW[0-9]\b' over that file returns one hit, line 167). Do not
-    cite them back to the masterplan; reconcile with the program owner before treating
-    this decomposition as the program's own.
-next_action: Wait for the 2026-08-15 scrape; then start the transmission layer.
+    The old next_action waiting for the 2026-08-15 scrape is superseded permanently.
+    Natural graph data has accrued through belief_time 2026-08-27.
+  - >-
+    D2C/D2D/D2E were not completed as distinct waves. W3B must not leapfrog them.
+  - >-
+    Existing data/neuralweb/theme_state.json is useful predecessor context, not a second
+    future authority. W3B must reconcile it; no third ThemeState producer/store.
+  - >-
+    K3-D PR #6514 is a separate held Graph-1/2/3 hypothesis-composition carrier. GMI
+    cannot clone it or infer economic causality from theme membership/similarity.
+  - >-
+    MarketOntology PR #6504 is merged. F04 is now the canonical downstream ontology /
+    transmission / opportunity product-composition lane. Do not mint a rival GMI W4/W5/W6.
+  - >-
+    The prior standalone GMI W4 relationship and W5 Sensorium commissions are
+    REJECTED_BY_DESIGN as separate builds. Their useful jobs survive under current owners.
+  - >-
+    Watchers and Slack are attention/transport only. Every watcher-enabled child requires
+    explicit CONTINUE/STOP semantics; terminal STOP disarms both temporary watchers and
+    does not authorize the next child.
+next_action: >
+  Claim the existing F04 parent operation marketontology-f04-ontology-transmission-20260826-fable-001
+  through one explicit Fable principal pickup. That principal performs a fresh collision census
+  and starts D2C plus D2D concurrently only if their modifying write surfaces are genuinely
+  disjoint; otherwise it sequences them. D2E/W3B/W3C remain dependency-held. Sol is not a routine
+  per-PR hop; return only at frozen executive gates, milestone bundles or final acceptance.
 ---
 
-## Context
+## Current production substrate
 
-Scaffolding is complete and R1 is answered in #5402. The transmission/contagion layer
-needs the Saturday scrape as input. This is a healthy external wait, not a stall — the
-distinction matters because the CEO brief separates "blocked and on time" from "blocked
-and rotting".
+Natural GMI receipt at current reconciliation: belief_time 2026-08-27, computed_at
+2026-08-27T09:15:04Z, 3,881 nodes, 12,172 append-only edge rows / 8,292 latest-belief
+edges, 2,806 identity-resolution rows, 268 Finviz subthemes, 375 THS concepts,
+499 measurement candidates and 144 semantic-only local capability rows. The strategic
+crosswalk remains 18 canonical themes with 61 THS mappings and 314 unmapped concepts.
 
-## Provenance of this decomposition
+## Development closeout law
 
-Only `W0` is attested by the masterplan. `R1` and `TRANSMISSION` were minted here so the
-work has ids at all; they are named descriptively rather than as `W1`/`W2`/`W3` precisely
-so nobody reads them as the masterplan's own numbering. See the landmine above.
+Mark the unfinished GMI development frontier complete only after D2C/D2D/D2E/W3B/W3C
+are accepted with real producer/reader evidence, the Neural Web state authority is reconciled,
+and downstream F04 can consume the canonical outputs. The parent F04 product program may remain
+active after GMI development closes.

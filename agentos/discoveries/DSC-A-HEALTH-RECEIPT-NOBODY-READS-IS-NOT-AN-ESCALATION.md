@@ -14,24 +14,34 @@ claim: >
   liveness instrument stayed green while the lane produced nothing. Two further traps:
   (a) `data/quality/options_accrual_audit.json` HAS carried `ok:false` +
   "CHAINS STALE" nightly since the outage began and is committed to the repo each night
-  — an artifact nobody reads is not an alert either; (b) the receipt's own existence is
-  the diagnosis, because `accrue()` returns `{"status": "no_key"}` and writes NO receipt
-  when the key is absent — so a receipt carrying 401/403 PROVES the key is present and
-  the vendor is rejecting it, distinguishing "expired/de-entitled at the vendor" from
-  "secret missing from the runner", which the reason code alone conflates
-  (a missing key sends `apiKey=None` and also returns 401).
+  — an artifact nobody reads is not an alert either; (b) CORRECTED 2026-08-27 by the
+  operator — this was never a credential outage. THETADATA is the canonical Mastermind
+  options source (Chairman ruling 2026-08-22,
+  DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA); Massive/Polygon is a STOCK-data source
+  whose options entitlement 403'd on 2026-08-13/14, and the blocker asking for it back
+  was RETIRED by that same ruling. THERE IS NO OPTIONS-ENTITLED KEY TO ROTATE. The key
+  that looks "present and rejected" is the STOCK key — stock/news kept returning 200,
+  which is why `accrue()` files receipts instead of returning its `no_key` status. So
+  `auth_or_entitlement_failure` across the whole probe set is the EXPECTED steady state
+  of a source that is dead by ruling, and the nightly annotation for that case is a
+  `::notice`, not an `::error` — an error every night for a decided-dead lane is alarm
+  fatigue and buries the real reds in this file.
 falsifier: >
-  `python3 -m scripts.audit_options_accrual` exiting 0 with `ok:true`, or
-  `ls data/polygon_gex/chains/` showing a file newer than 2026-08-13, or a
-  data/polygon_gex_health/*.json attempt whose `failure_reasons` is not dominated by
-  `auth_or_entitlement_failure`. Any of these means the vendor credential was rotated
-  and the lane recovered. The escalation half is falsified by
-  tests/test_polygon_gex.py::test_zero_capture_emits_a_line_start_error_annotation
-  failing, or by `grep -n '::error title=polygon-accrual-dark'
+  A superseding Sol / WS:ADVANCED-DATA-OPTIONS decision that repoints the flow lane at
+  the ThetaData spine or retires the boards would end this record's relevance; so would
+  `ls data/polygon_gex/chains/` showing a file newer than 2026-08-13 (which would mean
+  the retired estate came back, contradicting the 2026-08-22 ruling). The escalation half
+  is falsified by the `_annotate_zero_capture` tests in tests/test_polygon_gex.py
+  failing, or by `grep -n 'polygon-options-estate-retired\|polygon-accrual-dark'
   scripts/build_polygon_gex.py` returning nothing.
 so_what: >
-  Do NOT re-audit board logic when a downstream book shows all-zero fires. Walk the
-  chain first — site/flowleaders/leaders.json `stale:true` is a FAIL-CLOSED refusal, not
+  FIRST: read the owning workstream and its DEC records before calling any dark lane an
+  incident. This record exists because a session diagnosed a SETTLED, ADJUDICATED,
+  RETIRED source condition as a fresh 13-day credential outage and shipped a "rotate the
+  key" remediation — the ruling was already in agentos/decisions/ and in that session's
+  own recalled memory. THETADATA is canonical for options; full options data is also
+  available via Terminal. Then: do NOT re-audit board logic when a downstream book shows
+  all-zero fires. Walk the chain — site/flowleaders/leaders.json `stale:true` is a FAIL-CLOSED refusal, not
   a bug, and `fire_a=0` on every row is its consequence (stale gates off the recurrence
   block, nulling A1_flow_recur and collapsing K_a). The 2026-08-26 experiments audit
   correctly flagged the artifact but its "possibly the two Leader Radar books / same

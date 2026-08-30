@@ -32,23 +32,73 @@ waves:
       to implement Executive placement or new providers.
   - id: CF2-F
     title: Freeze Executive claim-time capacity evidence and acquisition against landed schema v4
-    status: todo
+    status: done
+    pr: 150
     depends_on: [CF1]
     next_action: >
-      Sol must now freeze and independently review the smallest typed capacity-evidence extension
-      to the existing atomic JOB_CLAIMED receipt plus one secret-free Provider Control acquisition
-      seam consuming accepted `mastermind.provider_capacity.v1`. Preserve the closed schema-v4
-      placement snapshot byte-for-byte; create no second event, table, service, daemon or schema v5.
-      Stop after accepted source law; CF2-I remains a separate implementation wave.
+      COMPLETED_DO_NOT_REPEAT. Mastermind PR #150 accepted the CF2-F source law and merged as
+      e9cb5cbd745b36dc51f54bd83238ec38ef0c80c7. Do not reopen CF2-F merely because the production
+      host later refused P0; that refusal correctly created the H0 host-preparation gate.
+  - id: CF2-H0
+    title: Grounded CF1 source and inert three-realm host preparation
+    status: in_progress
+    depends_on: [CF2-F]
+    next_action: >
+      SOURCE_REPAIR_RELEASED_DO_NOT_REPEAT. Mastermind PR #213 repaired the current-carrier versus
+      immutable-repair provenance split on the single canonical H0 carrier and source-released the
+      final authenticated v3 H0 material as protected
+      229aebce5e8d0c1c7372f5fead9c24516b027cc1 after full repository test, CodeQL/static and exact-head
+      Sol review. That SHA remains the immutable REPAIR_MERGE_SHA unless a later separately accepted
+      H0 source-repair release supersedes it. Source transport is BUILT_NOT_PROVEN / PRODUCTION_INERT,
+      not native acceptance. At every native attempt re-pin CURRENT protected Mastermind rather than
+      freezing the historical release as the carrier. At this reconciliation protected master is
+      dfd69451dce5e186ce05f65446023fbe21f07a58; its only movement after #213 is records-only #205,
+      which changes no authenticated H0 path. Thus the current candidate CARRIER_COMMIT_SHA is
+      dfd69451dce5e186ce05f65446023fbe21f07a58 while REPAIR_MERGE_SHA remains
+      229aebce5e8d0c1c7372f5fead9c24516b027cc1. Before any v3 build or root action, re-prove the current
+      carrier is a protected descendant of the immutable repair and that all five authenticated H0
+      Git mode/blob rows are exactly equal at both pins. If protected master advances again, advance
+      only CARRIER_COMMIT_SHA after that same reproof; never relabel the immutable repair. Then use
+      accepted Macro dcdd939c45b23abce5ba04f95e330ac914a3904b, build the final v3 carrier and run
+      exactly one bounded administrator ceremony from the reviewed runbook. Require source-repair PASS,
+      two verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable
+      root-carrier absence and all three broker labels disabled/unloaded with sockets absent. STOP for
+      independent CF2-P0. No OAuth/device login, provider call, routing, services, workers or CF2-I is
+      authorized by H0.
+  - id: CF2-P0
+    title: Independent post-H0 installed-host acquisition census
+    status: todo
+    depends_on: [CF2-H0]
+    next_action: >
+      After exact H0 installed-host PASS under the repaired/current runbook, rerun the accepted read-only
+      CF2-P0 census. Only an exact accepted P0 result may release capacity-aware Executive composition.
+      If P0 again refuses, preserve the refusal and return to Sol; do not bypass it with a user checkout,
+      stale socket, anonymous fetch or new acquisition service.
   - id: CF2-I
     title: Executive capacity-aware placement using the reviewed claim receipt
     status: todo
-    depends_on: [CF2-F]
+    depends_on: [CF2-P0]
     next_action: >
-      After CF2-F is accepted, consume `mastermind.provider_capacity.v1` only after Model Router and
-      Executive hard eligibility filters, rank eligible candidates deterministically, persist the
-      accepted capacity evidence atomically with JOB_CLAIMED, and prove one existing-provider /
-      multi-account canary. Do not start before CF2-F acceptance.
+      Only after CF2-P0 accepts the grounded acquisition path, consume
+      `mastermind.provider_capacity.v1` after Model Router and Executive hard eligibility filters,
+      rank eligible candidates deterministically, persist accepted capacity evidence atomically
+      with JOB_CLAIMED, and prove one existing-provider / multi-account canary. Do not start before
+      P0 acceptance.
+  - id: OCR-2C
+    title: Native Claude realm to canonical Provider Control capacity identity
+    status: in_progress
+    depends_on: [CF1]
+    next_action: >
+      Family A same-subscription-twin proof has returned a successful falsifier refusal at the evidence-
+      vocabulary gate: current native Claude auth evidence does not expose a documented, provider-supported,
+      secret-free stable subscription/enrollment identity suitable for equality, and the existing Macro
+      claude_code_oauth_N capability IDs are static owner slot identities whose credential replacement does
+      not itself change the capability ID or publish a non-secret enrollment generation. Therefore record
+      FAMILY_A_NO_SAFE_EQUALITY_WITNESS and FAMILY_A_NO_ROTATION_INVALIDATION; do not run a guessed one-realm
+      binding and never equate native realm labels to numbered Macro OAuth slots. Family B architecture may
+      be designed in parallel, but because it is a new cross-repository contract it must be explicitly
+      reviewed/approved and frozen before any runtime implementation. Preserve provider_capacity.v1 and the
+      current H0/P0/CF2-I contract unchanged while that architecture is developed.
   - id: RF1
     title: Provider-neutral Model Router suitability equivalence
     status: todo
@@ -87,8 +137,14 @@ waves:
       effect-unknown reconciliation, local-only provider credentials and zero remote queue/scheduler.
 decisions:
   - DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT
+  - DEC:AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION
 artifacts:
   - agentos/decisions/DEC-EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT.md
+  - agentos/decisions/DEC-AUTONOMY-V1-DISPATCH-DIALOGUE-RUNTIME-SEPARATION.md
+  - agentos/discoveries/DSC-AGENT-DISPATCH-CURRENTLY-HAS-NO-WORKER-RECEIVER.md
+  - agentos/handoffs/AUTONOMY-V1-2026-08-26-sol-operational-reconciliation.md
+  - agentos/handoffs/OPERATOR-CONTINUITY-2026-08-28-SOL-CONTINUATION-CHECKPOINT.md
+  - agentos/handoffs/EXECUTIVE-CAPACITY-FABRIC-2026-08-29-CF2-H0-SOURCE-RELEASED.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_ARCHITECTURE_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_PLACEMENT_AMENDMENT_2026-08-22.md
   - research/MASTERMIND_EXECUTIVE_CAPACITY_FABRIC_F0_SEMANTIC_IDENTITY_AMENDMENT_2026-08-22.md
@@ -98,6 +154,8 @@ artifacts:
   - docs/superpowers/plans/2026-08-25-mas-126-cf1-reconciliation.md
 landmines:
   - "Macro `shared-ai-provider-control` already owns provider availability, auth pools, cooling and quota state; do not create ProviderAccount/QuotaHorizon truth tables in Executive OS."
+  - "Current native Claude realm identity and Macro claude_code_oauth_N capability IDs are not equivalent by ordinal/name/config path/plan type. Family A failed closed because no supported rotation-safe secret-free enrollment equality witness currently exists. Do not resurrect ordinal binding."
+  - "A protected-master descendant that leaves H0 authenticated material unchanged is not automatically the H0 source-closure repair identity. Current carrier identity and immutable repair provenance are separate concepts; do not falsify one to satisfy the other."
   - "`usage_snapshot()` is a display aggregate, not a normalized truth contract. Its numeric defaults and fail-soft joins cannot be mapped 1:1 into provider_capacity.v1."
   - "Current Claude `discover_present_keys()` applies enablement filtering/fallback, so `usage_snapshot().present` can hide a disabled-but-installed credential. CF1 obtained unfiltered secret-free presence through the existing Provider Control owner; do not regress to the display field as source truth."
   - "Current Codex `available_accounts()` intentionally returns only usable accounts and therefore combines provider enablement, executable presence and credential presence. Preserve the CF1 source-owned observation seam that separates those dimensions without changing Codex dispatch semantics."
@@ -108,6 +166,7 @@ landmines:
   - "Provider/account presence is not authentication success, and Slack/GitHub/provider process presence is not Executive execution evidence."
   - "Host matters: attached subscription capacity is bound to an opaque reviewed host identity; do not assume accounts on different Macs are globally interchangeable."
   - "Capacity host_ref is observational identity only; it is not an authenticated endpoint or remote execution credential."
+  - "ChatGPT1/2/3 Slack principals are Sol CEO communication identities, not Executive Worker IDs. The corresponding paid subscriptions may supply codex-pro worker realms, but Executive OS must claim the concrete realm rather than routing by Slack username."
   - "Current Executive control/broker path is local AF_UNIX with one configured worker. Multi-host transport remains MH1/V1.x and must not create a second Runtime/queue/scheduler or generic SSH executor."
   - "Model Router suitability and provider capacity are separate filters. Provider health/cost may rank eligible workers but may not redefine model quality, authority or required independence."
   - "Current Model Router routes are ordered concrete model aliases. Before heterogeneous providers share a route, RF1 must define provider-neutral equivalence tiers/classes so alias/file order cannot silently become provider priority."
@@ -120,7 +179,7 @@ landmines:
   - "Capacity decision evidence belongs in the existing atomic claim receipt only after CF2-F source-law acceptance; if that seam proves insufficient, return to Sol rather than inventing a second event/ledger or schema v5."
   - "Whole-repository Macro commit identity is audit provenance only. High-churn unrelated repo commits must not change provider-capacity semantic snapshot_hash; material provider-source bytes must."
   - "snapshot_hash and generated_at are distinct: Executive claim evidence must bind both, because identical semantic contents can have different freshness."
-  - "CF1 stdout proves the contract, not the future Executive acquisition transport. CF2-F must freeze one secret-free bounded acquisition seam; Executive may not import floating Macro Python or read raw provider ledgers/secrets."
+  - "CF1 stdout proves the contract, not the future Executive acquisition transport. CF2-F froze one secret-free bounded acquisition seam; Executive may not import floating Macro provider internals or read raw provider ledgers/secrets."
   - "The provider-capacity normalizer receives only secret-free typed observations. Existing Provider Control helpers may continue their already-reviewed credential-presence mechanics internally; that authority is not transferred to the normalizer or Executive OS."
   - "Subscription headroom should reduce marginal API spend for routine eligible work, but policy may reserve scarce frontier capacity for critical/interactive work."
   - "Never expose auth tokens, cookies, API keys, raw auth files, provider-home contents, email/account PII, remote endpoint credentials or private host addresses in the capacity projection."
@@ -137,23 +196,54 @@ do_not_redo:
   - "Do not widen Phase 1F-C placement_snapshot_json for Capacity Fabric."
   - "Do not disguise Alibaba/Z.AI/Grok/Cursor behind a `codex_home` field or copy Codex-only secret-canary semantics into the common harness contract."
   - "Do not reopen CF1 implementation absent a concrete defect or material-source change."
+  - "Do not reopen CF2-F; Mastermind #150 is the accepted source law."
+  - "Do not patch `mastermind.provider_capacity.v1` in place to add native Claude realm semantics. OCR-2C Family B, if approved, is a new versioned Provider Control evolution."
   - "Do not widen Capacity Fabric into Wake, Slack dispatch, Control Room, browser/devserver resources, host arming, merge/deploy authority or capital/trading authority."
 next_action: >
-  Commission and execute `WS:EXECUTIVE-CAPACITY-FABRIC::CF2-F — Freeze Executive claim-time
-  capacity evidence and acquisition` against current protected Mastermind plus accepted Macro CF1.
-  The wave is source-law/architecture only and stops before CF2-I implementation. Worker Browser /
-  DevServer Resource Fabric architecture and existing C1/S0-R1/ASD/host-readiness lanes may proceed
-  independently in parallel because their authority and changed-path surfaces are disjoint.
+  At native execution time, re-pin CURRENT protected Mastermind and the immutable H0 repair release
+  229aebce5e8d0c1c7372f5fead9c24516b027cc1 plus accepted Macro
+  dcdd939c45b23abce5ba04f95e330ac914a3904b. As of this reconciliation the current protected carrier
+  is dfd69451dce5e186ce05f65446023fbe21f07a58 and the repair pin remains 229aebce5e8d0c1c7372f5fead9c24516b027cc1.
+  Before building, require repair ancestry and exact mode/blob equality for all five authenticated H0
+  paths; if protected master advances, move only the carrier pin after the same reproof. Then execute the
+  final v3 build and one bounded native administrator ceremony, require repair PASS plus two verify-only
+  H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable root-carrier absence and
+  disabled/unloaded broker state with sockets absent, and STOP for independent CF2-P0. OCR-1 Task 4 and
+  OCR-3 Task 1 may proceed separately on their own lawful carriers; OCR-2C Family B remains a separate
+  architecture gate.
 ---
 
 ## Capability state
 
 CF1 is accepted and merged in Macro as `dcdd939c45b23abce5ba04f95e330ac914a3904b`.
-The strict no-write `mastermind.provider_capacity.v1` producer and machine/operator JSON consumer are
-`BUILT_NOT_PROVEN` as an always-on production placement capability: the contract is implemented and
-exact-head tested, but Executive OS still does not consume it at claim time. CF2-F is the next source-law
-dependency; CF2-I capacity-aware placement, RF1 provider-neutral suitability, HF1 common harness, PF1
-first real non-Codex worker and MH1 multi-host transport remain not built / held by their dependencies.
+CF2-F is accepted and merged in Mastermind as `e9cb5cbd745b36dc51f54bd83238ec38ef0c80c7`.
+OCR-1 Tasks 1–2 provider-work-free Claude preflight is accepted and merged in Mastermind #184 as
+`1d5ad1249172e8b93882f0dff157fc13636dd62d`; it remains `BUILT_NOT_PROVEN` / production-inert and
+proves no live realm, capacity identity or routing. OCR-1 Task 4 is separately commissioned RED-first.
+
+The first independent P0 census correctly refused with `NO_SAFE_CF1_ACQUISITION_PATH`; H0 code then
+merged in Mastermind #157 and source-closure repair #200 merged as `e53f524230ffc4e8730c844f6fc319d50a2050f3`.
+Subsequent protected-master movement exposed a runbook provenance collision between exact current carrier
+and immutable repair identity. Mastermind #213 repaired that split on the single canonical H0 carrier and
+released the bounded v3 source transport as protected `229aebce5e8d0c1c7372f5fead9c24516b027cc1`
+after full required repository test, CodeQL/static and exact-head Sol review. Protected master later advanced
+to `dfd69451dce5e186ce05f65446023fbe21f07a58` through records-only watcher-resource design #205; the
+single-commit compare changes no authenticated H0 path, so the immutable repair remains `229aebce...` while
+the current carrier axis advances to `dfd69451...` pending the runbook's exact five-path reproof at action
+time. Source law is no longer the H0 blocker, but the implementation remains `BUILT_NOT_PROVEN` /
+production-inert until the final native v3 build and administrator ceremony produce the required
+installed-host receipts. Capacity-aware placement, real multi-account routing/fan-out, RF1 provider-neutral
+suitability, HF1 common harness, PF1 first real non-Codex worker and MH1 multi-host transport are not
+production-proven.
+
+OCR-2C Family A has returned `FAMILY_A_NO_SAFE_EQUALITY_WITNESS` and
+`FAMILY_A_NO_ROTATION_INVALIDATION`: current native Claude evidence plus existing Provider Control slot
+identity cannot safely prove that a native realm and `claude_code_oauth_N` are the same paid subscription
+across rotation without forbidden account/secret coupling. This refusal is a successful falsifier result,
+not permission to weaken identity. Family B architecture is the next design gate and must preserve the
+real underlying native Claude realm capacity identity rather than collapsing it into a synthetic ordinal.
+
+The program remains `PARTIAL`.
 
 ## 10/10 end-state
 

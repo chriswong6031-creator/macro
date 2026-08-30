@@ -246,6 +246,37 @@
         {% set _trg_prov_zh = '（暂定：基于未完成的K线推算 — 约十分之一会在K线完成后消失。）' if (_trg_kind == 'imminent' and _tsg.get('provisional')) else '' %}
         {% set _trg_tip_en = ('Fresh entry trigger — it fired in the last few days and momentum is still building. A conviction card plus a fresh trigger is the strongest read on this board — but the main chip still rules: if this card says Wait, price has already run past the zone; don\'t chase.') if _trg_kind == 'fired' else ('Entry trigger is close — it should fire within the next day or two.' ~ _trg_prov ~ ' The main chip still rules the stance.') %}
         {% set _trg_tip_zh = ('新的入场触发 — 最近几天刚刚触发，动量还在往上走。信念卡片加上新触发，是本板最强的组合 — 但主标签仍然是最终判断：如果卡片写的是「等待」，说明价格已经冲过买点区，不要追。') if _trg_kind == 'fired' else ('入场触发快到了 — 预计一两天内触发。' ~ _trg_prov_zh ~ '主标签仍然是最终判断。') %}
+        {#- ── NO DATE IN THE ZONE ROW (2026-08-26, PR-2 of the US permanence program).
+             The `date` slot below used to carry `(n.signal or {}).get('asof')`, which put
+             a bare date immediately after the buy-zone numbers — and a date pinned against
+             numbers reads as the vintage OF those numbers. It is not. Two measurements,
+             two clocks, and the shipped artifacts settle which is which:
+
+               · buy_zone is recomputed EVERY session. Comparing the 2026-08-24 board
+                 (be061c6d49e9) against the 2026-08-25 board, 101 of 101 common tickers
+                 carrying a zone had `low`/`high` MOVE overnight; zero held still.
+               · signal.asof is a 3-session bucket clock and is BOARD-WIDE, not per-card:
+                 on the 2026-08-25 board all 133 carded rows (buy + watch + leaders +
+                 laggards) read the identical `2026-08-21`.
+
+             So the chip printed ONE board constant, 133 times, against numbers four days
+             newer than it — and on 2026-08-26 it was read off the board as proof the board
+             was five days stale. It was not: `as_of` had advanced nightly throughout.
+
+             Two doctrine rules land on the same answer (DESIGN_DOCTRINE Law 4): "one as-of
+             stamp per panel", and "no per-row repetition of a constant — a constant belongs
+             in the footer, once". Nothing per-card is lost by removing it, because nothing
+             per-card was ever in it. The board's real vintage is now stated ONCE, in plain
+             words, on the page header (#stocks-header .stk-status, dashboard.html.j2),
+             whose Tier-2 hover also carries this signal-bucket date — at board level,
+             where it is true.
+
+             DO NOT restore a date here. If a future artifact ever makes signal.asof
+             genuinely per-card, it still would not be the ZONE's vintage, and it would
+             need its own labelled slot rather than this bare one. `date` is kept as an
+             explicit `none` rather than a deleted key so the slot reads as a decision
+             rather than an oversight. The shared macro keeps full `date` support for
+             _us_prophet_plan_cards.html.j2, whose dates ARE per-plan and honest. -#}
         {{ pv.pv_card({
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
           'name': n.name, 'sec': n.sector, 'sec_zh': tr(n.sector),
@@ -266,7 +297,7 @@
           'zone_kind': _zk,
           'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
           'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
-          'date': (n.signal or {}).get('asof'),
+          'date': none,
           'flags': _fl.rows, 'triage': (_is_triage and not _feat),
           'featured': _feat, 'stage_key': (n.get('stage') if sg_any else none),
           'marks': _mk_slot,

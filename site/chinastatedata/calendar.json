@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-26",
-  "generated_at_utc": "2026-08-26T10:05:19.184578+00:00",
+  "asof": "2026-08-27",
+  "generated_at_utc": "2026-08-29T15:40:31.713464+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-26",
+      "date": "2026-08-27",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -15,18 +15,6 @@
       "source_class": "feed",
       "source": "china_earnings.calendar",
       "approx": false
-    },
-    {
-      "date": "2026-08-26",
-      "window_end": null,
-      "etype": "HK_TRADE",
-      "label_en": "HK external trade",
-      "label_zh": "香港对外商品贸易",
-      "region": "hk",
-      "impact": "medium",
-      "source_class": "static",
-      "source": "engine.hk_event_calendar",
-      "approx": true
     },
     {
       "date": "2026-08-31",

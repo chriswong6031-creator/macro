@@ -380,6 +380,26 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 	fi
 fi
 
+# BEGIN CONTROL_ROOM_ACTIVE_BUILDS_PUBLISH
+# The Control Room projection has no credentials and cannot query GitHub.  The
+# existing trusted update lane therefore publishes the canonical three-repo
+# advisory document into the installer-owned source directory on every tick.
+# This is a best-effort observation only: every pre-commit failure leaves the
+# last-good file untouched; a post-commit durability ambiguity is separately
+# reported as effect-unknown. Neither outcome may stop Macro deployment or
+# authorize execution.
+if /usr/bin/python3 "$APP_DIR/scripts/publish_control_room_active_builds.py"; then
+	:
+else
+	CONTROL_ROOM_SOURCE_STATUS=$?
+	if [ "$CONTROL_ROOM_SOURCE_STATUS" -eq 3 ]; then
+		echo "macro-update: project active-build source publication effect unknown" >&2
+	else
+		echo "macro-update: project active-build source publication deferred" >&2
+	fi
+fi
+# END CONTROL_ROOM_ACTIVE_BUILDS_PUBLISH
+
 # Codex CLI: keep the provider runtime pinned and self-healing just like the
 # reviewed systemd units below. Authentication is durable VPS state under the
 # root-only /var/lib/macro-codex* stores and is never copied into git.

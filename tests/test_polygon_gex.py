@@ -903,15 +903,19 @@ def test_accrue_zero_capture_reports_empty_status_with_health_and_census(tmp_pat
         "auth_or_entitlement_failure": ["A", "B", "C"]}
 
 
-def test_zero_capture_emits_a_line_start_error_annotation(tmp_path, monkeypatch, capsys):
-    """A total zero-capture must ALARM, not just file a receipt.
+def test_retired_source_auth_failure_is_a_notice_not_an_error(tmp_path, monkeypatch, capsys):
+    """The Massive/Polygon options estate is DEAD BY RULING — say so quietly.
 
-    Regression pin for the 2026-08-13→08-26 outage: the vendor key went
-    401/403, every night filed a correct `nothing_captured`/`failed` receipt,
-    and the lane stayed dark thirteen days because this branch only called
-    log.warning(). capsys (not caplog) is deliberate — a logger cannot produce
-    a GitHub annotation, so asserting on log records would re-green the exact
-    defect. The `startswith("::")` check pins the DEFECT (Actions drops an
+    DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA (Chairman, 2026-08-22) made
+    ThetaData canonical for options and RETIRED the blocker asking for this
+    entitlement back; Massive/Polygon is a stock-data source and there is no
+    options key to rotate. So an all-`auth_or_entitlement_failure` capture is
+    this lane's expected steady state, and an ::error every night for it is
+    alarm fatigue that buries a genuine red in the same file.
+
+    capsys (not caplog) is deliberate — a logger cannot produce a GitHub
+    annotation, so asserting on log records would re-green the original
+    escalation defect. `startswith("::")` pins the DEFECT (Actions drops an
     annotation that does not start its line), never the wording."""
     import scripts.build_polygon_gex as bpg
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
@@ -925,13 +929,38 @@ def test_zero_capture_emits_a_line_start_error_annotation(tmp_path, monkeypatch,
     monkeypatch.setattr(bpg, "PolygonOptions",
                         lambda: _FakeClient(pd.DataFrame(), census=census))
     bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+    out = capsys.readouterr().out.splitlines()
 
-    ann = [ln for ln in capsys.readouterr().out.splitlines()
-           if ln.startswith("::error title=polygon-accrual-dark::")]
-    assert len(ann) == 1, "zero-capture must emit exactly one line-start ::error"
-    # The dominant reason is the operator's whole diagnosis — without it the
-    # alarm says "dark" but not "your vendor key is rejected".
-    assert "auth_or_entitlement_failure" in ann[0]
+    ann = [ln for ln in out if ln.startswith("::notice title=polygon-options-estate-retired::")]
+    assert len(ann) == 1, "retired-source zero-capture must emit one line-start ::notice"
+    assert "ThetaData" in ann[0], "the notice must name the canonical source"
+    # The whole point: no nightly ::error for a lane that is dead by ruling.
+    assert not [ln for ln in out if ln.startswith("::error")]
+
+
+def test_unexpected_zero_capture_still_errors(tmp_path, monkeypatch, capsys):
+    """A zero-capture that is NOT the retired-entitlement case is a real red.
+
+    Downgrading the auth case must not mute the failures this lane could still
+    legitimately hit (network, parse, throttle) — those keep the ::error."""
+    import scripts.build_polygon_gex as bpg
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _mock_baskets(monkeypatch)
+    census = {
+        "attempted_underlyings": 40, "successful_underlyings": 0,
+        "failure_reasons": {"vendor_or_network_error": 40},
+        "failure_examples": {"vendor_or_network_error": ["SPY", "QQQ", "IWM"]},
+        "aborted_early": False,
+    }
+    monkeypatch.setattr(bpg, "PolygonOptions",
+                        lambda: _FakeClient(pd.DataFrame(), census=census))
+    bpg.accrue(ASOF.date(), _now=SAME_DAY_NOW)
+    out = capsys.readouterr().out.splitlines()
+
+    ann = [ln for ln in out if ln.startswith("::error title=polygon-accrual-dark::")]
+    assert len(ann) == 1, "an unexpected zero-capture must still emit one ::error"
+    assert "vendor_or_network_error" in ann[0]
+    assert not [ln for ln in out if ln.startswith("::notice title=polygon-options-estate-retired")]
 
 
 def test_dominant_failure_reason_is_deterministic_on_ties():

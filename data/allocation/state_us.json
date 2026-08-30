@@ -18,19 +18,18 @@
     "mag7",
     "managed_care",
     "memory_storage",
+    "non_ai_software",
     "non_ai_tech",
     "obesity_glp1",
     "quantum_computing",
     "regional_banks",
     "reshoring",
-    "retail",
     "robotics_automation",
     "semicap_equipment",
     "silver_miners",
     "space_economy",
     "travel",
     "us_sector_comm",
-    "us_sector_discretionary",
     "us_sector_energy",
     "us_sector_financials",
     "us_sector_health",
@@ -41,12 +40,12 @@
     "us_sector_tech"
   ],
   "held": [
+    "silver_miners",
     "memory_storage",
-    "gold_miners",
     "ai_infra",
-    "big_pharma"
+    "cybersecurity"
   ],
-  "leader": "memory_storage",
+  "leader": "silver_miners",
   "names": {
     "ai_agents": "AI Agents & Applications",
     "ai_infra": "AI Infrastructure",

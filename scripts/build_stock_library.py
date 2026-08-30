@@ -6312,18 +6312,16 @@ def main() -> int:
         # forward shadow book — freeze the live score at build time so it can be graded on
         # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
         # Additive + display-only + append-only; never fatal.
+        # Rec building is shared with the standalone producer (scripts/snapshot_shadow_book
+        # .rows_from_board) so `percentile` has exactly ONE definition: the cross-sectional
+        # pct rank within this snapshot's universe, stamped pct_basis="xs_rank". The two
+        # call sites used to each write the raw score into `percentile`.
         try:
             from engine import shadow_book as _sb
-            _asof = wide.get("as_of")
-            if _asof:
-                def _reg(c):
-                    rg = (c or {}).get("regime")
-                    return rg.get("state") if isinstance(rg, dict) else None
-                _recs = [{"ticker": r.get("ticker"), "score": (r.get("conviction") or {}).get("score"),
-                          "percentile": (r.get("conviction") or {}).get("score"),
-                          "regime": _reg(r.get("conviction"))}
-                         for b in ("buy", "watch", "laggards") for r in wide.get(b, [])]
-                _n = _sb.snapshot(_asof, [r for r in _recs if r["score"] is not None])
+            from scripts.snapshot_shadow_book import rows_from_board as _sb_rows
+            _asof, _recs = _sb_rows(wide)
+            if _asof and _recs:
+                _n = _sb.snapshot(_asof, _recs)
                 log.info("shadow book: snapshotted %d frozen scores for %s", _n, _asof)
         except Exception as e:  # noqa: BLE001
             log.debug("shadow snapshot skipped (%s)", e)

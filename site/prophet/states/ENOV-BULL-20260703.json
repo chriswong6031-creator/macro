@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENOV-BULL-20260703",
-  "asof": "2026-08-25",
+  "asof": "2026-08-29",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 40.4,
@@ -10,27 +10,27 @@
   "recommended_action": "trim",
   "human_state": "Window Elapsed \u2014 Awaiting Close",
   "components": {
-    "validity": 100.0,
-    "progress": 6.3,
-    "pace": 28.7,
-    "retention": 7.1,
-    "overlay": 67.0
+    "validity": 91.0,
+    "progress": 0.0,
+    "pace": 23.3,
+    "retention": 0.0,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.062,
-    "dist_to_t1_r": 1.438,
-    "dist_to_t2_r": 2.938,
-    "horizon_pct_used": 102.2,
-    "p1": 0.0415,
-    "p2": 0.0208,
+    "dist_to_stop_r": 0.933,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 111.1,
+    "p1": -0.045,
+    "p2": -0.0225,
     "p3": null,
-    "move_r": 0.062,
+    "move_r": -0.067,
     "mfe_r": 0.872,
     "mae_r": -0.17
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Window Elapsed \u2014 Awaiting Close",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-14",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 46,
-  "tau": 1.0222
+  "days_elapsed": 50,
+  "tau": 1.1111
 }

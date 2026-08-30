@@ -1690,15 +1690,47 @@ def test_stk_limit_zero_up_down_limits_are_treated_as_absent(tmp_path):
     assert bool(row["source_limits_present"]) is False
 
 
-def test_stk_limit_zero_pre_close_with_published_limits_raises_contradiction(tmp_path):
-    """U3 (S2): pre_close 0 (the non-trading sentinel) together with
-    PUBLISHED up/down limits is a legal band with no anchor -- a
-    contradiction that must keep raising, not be silently accepted.
+def test_stk_limit_unanchored_band_lands_instead_of_raising(tmp_path):
+    """U3, CORRECTED 2026-08-27 by canary run 33037449419.
+
+    This test used to assert that pre_close 0 with PUBLISHED up/down limits was
+    a contradiction that must raise. The live vendor disproved that model: on
+    2018-01-02 it is the dominant shape and it destroyed the entire 3,466-row
+    unit. The exchange still announces a legal band for an instrument that did
+    not trade, while the vendor spells the un-republished prior close as 0.
+
+    The row now LANDS with a null anchor and a real band. What makes this safe
+    rather than fail-open is the substrate guard, pinned separately below: a
+    security that actually TRADED may never have a null stk_limit.pre_close.
     """
     _seed_spine(tmp_path)
     raw = _limit_rows("20240102")
     raw.loc[raw["ts_code"] == "600519.SH", "pre_close"] = 0
-    with pytest.raises(spine.SpineError, match="without an anchoring pre_close"):
+    result = spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
+    row = result.landed_a.set_index("ticker").loc["600519.SS"]
+    assert pd.isna(row["pre_close_cents"])
+    assert row["up_limit_cents"] > row["down_limit_cents"]
+    # The band is real, so limits ARE present -- eligibility is then decided by
+    # positive_volume, which a non-trading instrument does not have.
+    assert bool(row["source_limits_present"]) is True
+    assert result.quarantined_unknown.empty
+
+
+def test_stk_limit_unanchored_band_with_inverted_ordering_still_raises(tmp_path):
+    """The anchor may be absent; the band's own ordering may not be nonsense.
+
+    Without this, dropping the anchor check would have removed the LAST
+    structural check on a row whose three-way invariant can no longer run.
+    """
+    _seed_spine(tmp_path)
+    raw = _limit_rows("20240102")
+    mask = raw["ts_code"] == "600519.SH"
+    raw.loc[mask, "pre_close"] = 0
+    up = float(raw.loc[mask, "up_limit"].iloc[0])
+    down = float(raw.loc[mask, "down_limit"].iloc[0])
+    raw.loc[mask, "up_limit"] = down
+    raw.loc[mask, "down_limit"] = up
+    with pytest.raises(spine.SpineError, match="band ordering is inconsistent"):
         spine.normalise_daily_endpoint("stk_limit", raw, "20240102", tmp_path)
 
 

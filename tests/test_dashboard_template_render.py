@@ -419,19 +419,54 @@ def test_both_modes_render_with_no_standouts():
 # to assert the same retirement.
 # --------------------------------------------------------------------------- #
 
+def _setups_section(html: str) -> str:
+    """The Setups grid region ONLY — from its own marker up to the Candidates
+    section that follows it.
+
+    Scoping repair 2026-08-27.  These assertions used to grep the WHOLE page,
+    which was correct only for as long as `nb-lane-hd` appeared nowhere on it.
+    #6243 (shipping #6185) re-added `{% include "_us_board_cards.html.j2" %}`
+    and with it a DELIBERATE lane rail — but in the *Candidates* section
+    BELOW the migrated grid, not in the grid.  A page-wide grep cannot tell
+    the retired rail from the restored one, so it read the restoration as a
+    regression and this suite has been red on main ever since (invisibly: it
+    was named by no `run:` step, wired in the same PR as this repair).
+    tests/test_p0_prophet_candidate_board.py:282 pins that Candidates rail as
+    REQUIRED, so a page-wide absence assertion here is not merely over-broad,
+    it directly contradicts a live sibling contract.
+
+    The retirement property MP-1 §12 item 4 actually claims is about the
+    Setups grid, and slicing to it proves exactly that and nothing weaker.
+    Both markers are asserted present so the slice can never silently become
+    empty and turn every absence proof below into a vacuous pass.
+    """
+    start = html.find('id="us-life-grid"')
+    assert start != -1, "Setups grid marker missing — absence proof would be vacuous"
+    end = html.find('id="us-candidates"', start)
+    assert end != -1, "Candidates section marker missing — slice would swallow it"
+    return html[start:end]
+
+
 def test_candidate_stage_rail_absent_from_setups_grid():
     """rail-absence proof (MP-1 §12 item 4): neither artifact shape — legacy
     `lane` (the default fixture) nor priority `stage` (the overlay) — puts a
-    stage/lane heading or filter bar on the page anymore, however the
+    stage/lane heading or filter bar in the SETUPS GRID anymore, however the
     candidate board is shaped. `us_standouts` data is still read elsewhere
-    (data-ticker sanity below), just never rendered as cards."""
+    (data-ticker sanity below), just never rendered as cards there.
+
+    Scoped to the grid, not the page: the Candidates section below it carries
+    its own lane rail on purpose (#6185/#6243) — see `_setups_section`."""
     from tests.test_us_board_priority_ui import priority_overlay, ran_overlay  # noqa: PLC0415
 
     # legacy-lane shape (the default _base_vm fixture)
     html_legacy = _render("stocks")
-    assert '<div class="nb-lane-hd"' not in html_legacy
-    assert '<div class="nb-stage-hd sg-' not in html_legacy
-    assert '<div class="pbf-bar" id="us-stage-filter"' not in html_legacy
+    setups_legacy = _setups_section(html_legacy)
+    assert '<div class="nb-lane-hd"' not in setups_legacy
+    assert '<div class="nb-stage-hd sg-' not in setups_legacy
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in setups_legacy
+    # the filter bar's id is unique page-wide, so this one stays a whole-page
+    # assertion: the rail's controls must not exist ANYWHERE, only its headings
+    # moved to the Candidates section.
     assert 'id="us-stage-filter"' not in html_legacy
 
     # priority-stage shape (the overlaid fixture)
@@ -446,15 +481,19 @@ def test_candidate_stage_rail_absent_from_setups_grid():
     board = priority_overlay(rows)
     vm["us_standouts"] = {"buy": board, "ran": ran_overlay(board[-1:]), "eligible": 3}
     html_priority = _env().get_template("dashboard.html.j2").render(**vm, mode="stocks")
-    assert '<div class="nb-lane-hd"' not in html_priority
-    assert '<div class="nb-stage-hd sg-' not in html_priority
-    assert '<div class="pbf-bar" id="us-stage-filter"' not in html_priority
+    setups_priority = _setups_section(html_priority)
+    assert '<div class="nb-lane-hd"' not in setups_priority
+    assert '<div class="nb-stage-hd sg-' not in setups_priority
+    assert '<div class="pbf-bar" id="us-stage-filter"' not in setups_priority
     # the "Recently fired" ran-lane display (unaffected by the grid re-source —
     # it reads us_standouts.ran independently) still renders off this same data.
+    # Page-wide on purpose: it lives OUTSIDE the grid, so slicing would make
+    # this presence assertion fail for the wrong reason.
     assert '<div class="pbr" data-stage="ran">' in html_priority
-    # candidate rows are simply not cards on this page anymore: no data-ticker
-    # for a name that exists ONLY in us_standouts.buy, not in us_prophet_book.
-    assert 'data-ticker="NXE"' not in html_priority
+    # candidate rows are simply not cards IN THE SETUPS GRID anymore: no
+    # data-ticker for a name that exists ONLY in us_standouts.buy, not in
+    # us_prophet_book. (NXE is still a legitimate Candidates-section card.)
+    assert 'data-ticker="NXE"' not in setups_priority
 
 
 def test_lifecycle_ladder_present_with_data_life_grid_marker():

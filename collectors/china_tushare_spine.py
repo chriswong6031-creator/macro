@@ -2740,12 +2740,26 @@ def normalise_daily_endpoint(
                 raw_down_limit, field="stk_limit.down_limit", allow_missing=True,
             )
             if pre_close_cents is None and up_limit_cents is not None:
-                # Contradiction: a published upper/lower band with no anchoring
-                # pre_close is a legal band with no anchor -- this is NOT the
-                # non-trading case S1 exists for, so it stays a hard failure.
-                raise SpineError(
-                    "stk_limit published upper/lower limits without an anchoring pre_close"
-                )
+                # MEASURED CORRECTION 2026-08-27, canary run 33037449419.
+                # This branch used to raise, on the theory that a published band
+                # with no anchoring pre_close was a contradiction. The live
+                # vendor says otherwise: on 2018-01-02 it is the DOMINANT shape,
+                # and it killed the whole 3,466-row unit. The exchange still
+                # announces a legal band for an instrument that did not trade
+                # while the vendor spells the un-republished prior close as 0 --
+                # the third instance of that zero-as-null idiom.
+                #
+                # So the row LANDS. What is still checkable is still checked:
+                # the band's own ordering below, and the full three-way
+                # invariant whenever the anchor IS present. The case that
+                # actually matters -- a security that TRADED whose pre_close is
+                # absent -- stays FAIL-CLOSED in build_canonical_event_substrate,
+                # which raises when any positive-volume daily row lacks a
+                # non-null stk_limit.pre_close. That guard is what makes landing
+                # here safe rather than fail-open, so the two must never be
+                # separated.
+                if down_limit_cents is not None and up_limit_cents <= down_limit_cents:
+                    raise SpineError("stk_limit upper/lower band ordering is inconsistent")
             if (
                 pre_close_cents is not None
                 and up_limit_cents is not None

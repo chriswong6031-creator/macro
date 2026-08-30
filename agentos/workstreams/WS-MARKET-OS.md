@@ -46,29 +46,32 @@ waves:
       protections remain intact.
   - id: A1B
     title: Portfolio Fast Start Import
-    status: in_progress
+    status: done
     depends_on: [A1A]
     next_action: >
-      MERGED AND DEPLOYED 2026-08-26: Sol FINAL REVIEW PASS (PR #6335 comment
-      5417266507) accepted exact head 2bf5d335e5adf742486e0c2aca50b0765617da2d; after a
-      clean final collision check it squash-merged with an exact-head guard as
-      dd66f934e35a4629281656e854c6cc028dbd66d7 and the A1B assets are live on
-      production watchlist.html (VPS + HTTP receipts). The bounded anonymous
-      production vertical passed with exact cleanup (one canonical mdash.pf.v1
-      whole-book write, duplicate lot preserved, UUID ids, zero Watchlist mutation,
-      before-state restored). Capability remains BUILT_NOT_PROVEN: the authenticated
-      vertical stopped at PRODUCTION_WRITE_AUTH_REQUIRED because no authorized
-      production test/write identity was available. Next: operator supplies the
-      authorized test identity vehicle; a session then runs the authenticated
-      paste->review->portfolio_positions batch write->authoritative reread vertical
-      with temporary rows and exact cleanup, then advances A1B to DONE / PROVEN_LIVE.
-      See agentos/handoffs/MARKET-OS-2026-08-26-a1b-merged-deployed.md. Do not start
-      A2-A6 from this closure.
+      ACCEPTED IN PRODUCTION by Sol on 2026-08-26 under
+      DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION. PR #6335 exact semantic head
+      2bf5d335e5adf742486e0c2aca50b0765617da2d landed as squash
+      dd66f934e35a4629281656e854c6cc028dbd66d7; the assets were deployed; the
+      anonymous production vertical passed with exact cleanup; and authenticated
+      operation market-os-a1b-auth-accept-20260826-sol-001 passed the real
+      paste->review->canonical portfolio_positions write->authoritative Macro reread
+      ->Terminal conformance->exact cleanup journey on a designated disposable TEST
+      identity. Closeout PR #6508 landed as fcbafecaa2636a5bba103d704bdc1c0d4d47d117.
+      A1B is PROVEN_LIVE / DONE. Do not repeat either production acceptance vertical
+      absent contradictory evidence or explicit recommission. The transient same-page
+      Portfolio mode-tab count lag is NONBLOCKING follow-up #6510 and does not reopen
+      A1B. A2-A6 are now dependency-eligible but remain unstarted and separately gated.
   - id: A2-A6
     title: Persistent sizing assumptions, CSV import, My Market rail, universal add, and Watchlist workspace
     status: todo
     depends_on: [A1B]
-    next_action: Commission one independently useful vertical at a time; no broad My Market rewrite.
+    next_action: >
+      A1B is now PROVEN_LIVE / DONE, so this bundle is dependency-eligible. Sol must
+      still refresh current Macro/Terminal truth and commission one independently useful
+      vertical at a time; no broad My Market rewrite and no inference that eligibility
+      equals start. The separate #6510 mode-tab count-lag repair may proceed independently
+      if its fresh owner/path collision census remains clean.
   - id: B1A
     title: security_state.v1 golden AAPL product vertical (contract + compiler + producer + dossier Decision Spine)
     status: done
@@ -158,6 +161,7 @@ decisions:
   - "DEC:MARKET-OS-A1A-RESTORATION-EQUALITY-EXCLUDES-SERVER-TIMESTAMPS"
   - "DEC:MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED"
   - "DEC:MARKET-OS-A1A-ACCEPTED-IN-PRODUCTION"
+  - "DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION"
 discoveries:
   - "DSC:MARKET-OS-PASTE-FLOW-WRITES-WATCHLIST-NOT-PORTFOLIO"
   - "DSC:MARKET-OS-AUTHENTICATED-PORTFOLIO-FAILS-OPEN-TO-LOCAL"
@@ -189,6 +193,13 @@ landmines:
     semantic fields, multiplicity, Watchlists, Macro-Terminal agreement, or the
     separately sealed ordered row-id sequence; the exception changes no product or
     database semantics for either timestamp.
+  - >-
+    A1B production acceptance found a transient same-page presentation lag: after an
+    authenticated import the authoritative Portfolio body/table and Terminal showed the
+    new canonical count while the small Portfolio mode-tab badge still showed the old
+    count until a fresh reread. This is NONBLOCKING issue #6510, not a persistence or
+    authority failure. Repair only the existing render/update seam; never create a
+    second count/state store or Watchlist-derived fallback.
 do_not_redo:
   - Do not create another Portfolio, Watchlist, event, identity, risk, or brief store.
   - Do not merge Watchlist attention membership into Portfolio ownership semantics.
@@ -203,6 +214,7 @@ do_not_redo:
   - Do not repeat the passed semantic-v2 temporary-row restoration probe; its exact cleanup receipt is durable in the latest handoff.
   - Do not repeat the passed final authenticated A1A production matrix unless new contradictory production evidence appears or Sol explicitly recommissions it.
   - Do not reopen Scene 9 as hidden A1A debt; it was prohibited by the later specific matrix authorities and Sol accepted A1A without it.
+  - Do not repeat either passed A1B production acceptance vertical absent contradictory production evidence or explicit recommission.
   - Do not treat merged PR #6125's pre-production-proof BUILT_NOT_PROVEN state as the current gate; preserve it as historical reconciliation evidence.
 artifacts:
   - research/market_os/MASTERMIND_MARKET_OS_ARCHITECTURE_FREEZE_AND_A1A_COMMISSIONING_2026-08-20.md
@@ -215,15 +227,19 @@ artifacts:
   - agentos/handoffs/MARKET-OS-2026-08-23-a1a-sol-acceptance.md
   - agentos/handoffs/MARKET-OS-2026-08-23-a1b-implementation.md
   - agentos/handoffs/MARKET-OS-2026-08-24-a1b-sol-review-repair.md
+  - agentos/handoffs/MARKET-OS-2026-08-26-a1b-merged-deployed.md
+  - agentos/handoffs/MARKET-OS-2026-08-26-a1b-sol-acceptance.md
   - agentos/handoffs/MARKET-OS-2026-08-20-a1a-merge-reconciliation.md
   - agentos/decisions/DEC-MARKET-OS-A1A-MERGED-PRODUCTION-ACCEPTANCE-REQUIRED.md
+  - agentos/decisions/DEC-MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION.md
 next_action: >
-  PRIMARY: Return the reconciled A1B repair head on DRAFT PR #6335 with exact-head
-  CI/fence/authority and browser receipts for Sol re-review. The carrier must remain
-  unmerged, undeployed, and production-unrun until Sol explicitly authorizes the next
-  action; do not absorb A2-A6. PARALLEL:
-  RCTX-1 remains bound to merged #6300 and its existing Fable DELIVERY_ONLY transport;
-  reconcile only when real ACK/branch/PR/return evidence appears and do not auto-failover.
+  PRIMARY PRODUCT: A1B is PROVEN_LIVE / DONE. Before any A2-A6 implementation,
+  Sol refreshes current Macro/Terminal truth and commissions one independently useful
+  vertical; eligibility is not execution. MAINTENANCE: #6510 may proceed independently
+  as a bounded Portfolio mode-tab count synchronization repair if fresh collision
+  census remains clean. PARALLEL ORGANIZATIONAL WORK: the separate Market Ontology
+  parity/fanout carrier remains independent and must preserve its own current authority,
+  claim, and proof gates; do not infer that this workstream sync lands or dispatches it.
 ---
 
 ## Current state
@@ -238,11 +254,14 @@ is the proven foundation for the import wave: authenticated users do not fail op
 to local Portfolio state; Watchlists and temporary baskets do not enter Portfolio count,
 market membership, weighting, book or risk; weighting assumptions and abstention are
 explicit; and Macro/Terminal agreement has been demonstrated across the frozen live
-matrix. A1B is implemented and its two bounded Sol review blockers are repaired on the
-same locally verified review carrier, but the new exact head still requires Sol re-review
-and remains unmerged, undeployed, production-unproven, and unaccepted. It writes canonical
-Portfolio positions rather than relabeling the existing Watchlist/ENTERED paste path;
-the next authority is Sol code review of the exact draft head.
+matrix. A1B is also accepted in production under
+DEC:MARKET-OS-A1B-ACCEPTED-IN-PRODUCTION. Its anonymous and authenticated fast-start
+journeys both passed with exact cleanup; authenticated canonical persistence moved the
+designated TEST identity from 13 to 16 positions, Macro and Terminal agreed, Watchlists
+were unchanged, and immediate plus delayed cleanup restored 13 positions with no
+temporary residue. A1B is PROVEN_LIVE / DONE. The transient same-page Portfolio mode-tab
+count lag is tracked separately as nonblocking issue #6510 and does not reopen A1B.
+A2-A6 are dependency-eligible but remain unstarted pending separate bounded commissions.
 
 ## Program-parent note
 

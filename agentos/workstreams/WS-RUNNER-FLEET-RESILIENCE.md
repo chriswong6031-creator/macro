@@ -105,6 +105,8 @@ decisions:
 discoveries:
   - DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER
   - DSC:PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD
+  - DSC:REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES
+  - DSC:SEALED-PC-CI-REPLAY-AND-PORTABILITY-NEED-EXPLICIT-RUNTIME-BINDINGS
 artifacts:
   - research/RUNNER_FLEET_RESILIENCE_ARCHITECTURE_FREEZE_2026-08-20.md
   - research/RUNNER_FLEET_RESILIENCE_M0_ADVERSARIAL_AMENDMENT_2026-08-20.md
@@ -113,6 +115,7 @@ artifacts:
   - .github/workflows/merge-control-hosted-canary.yml
   - agentos/discoveries/DSC-PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.md
   - agentos/discoveries/DSC-PERSISTENT-RUNNER-TEMP-PACKS-CAN-BREACH-THE-HOST-DISK-GUARD.md
+  - agentos/discoveries/DSC-REUSABLE-WORKFLOW-CALL-AND-HOST-HOOK-USE-DIFFERENT-REF-SHAPES.md
 landmines:
   - >
     pc-render-1 (the W3-accepted runner identity) is no longer in the repo
@@ -197,12 +200,25 @@ next_action: >
   fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); P0R MERGED and baseline-green;
   P1 ACCEPTED on pc-ci-1; P2/P2R ACCEPTED with three concurrent PC CI slots,
   independent render reservation, exact hosted/self-hosted fragment parity and a
-  safe resource envelope. P3A main-defined executor merged through PR #6481 and
-  keeps production_enabled=false. Its selected-workflow server mutation and drained
-  three-root admission deployment are complete. First dispatch 33024021850 exposed
-  candidate-control displacement before PC pickup; P3A-R freezes the main-owned
-  control bundle and must pass before one repaired dispatch proof.
-  P3B production route and P4 natural PR proofs are NOT_BUILT. Macro private
+  safe resource envelope. P3A/P3A-R main-defined executor is accepted through
+  PR #6487 and direct proof run 33030976647. P3B-A call capability merged through
+  PR #6496 as 904863dabc490ee95ac50153048c25dee048d90b; its exact-head hosted
+  run 33035115527 passed all twelve packs and recorded about 180.7 hosted
+  pack-minutes. P3B-B PR #6505 reached the real PC hooks in run 33039532309 but
+  failed closed before steps because job `env` is unavailable to pre-job hooks;
+  contract-delta separately caught its unwired route suite. The same carrier now
+  uses the GitHub event payload and root-owned wrapper pass-through. Drained
+  pc-ci-1/2/3 carry post-restart Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002
+  and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee;
+  Exact-head run 33043922465 then exercised all twelve packs on pc-ci-1/2/3:
+  nine passed and only packs 5/6/9 failed. The complete set is sealed-host
+  portability, not listener-version drift: RestrictSUIDSGID blocks a real set-ID
+  fixture, a scrubbed subprocess/replay loses the dynamic 3.12.13 library path,
+  Git 2.43 cannot demonstrate a newer poisoning result, and detached execution
+  needs explicit PR branch metadata. The same #6505 carrier owns all four narrow
+  repairs; no service hardening, label, WSL sizing, render route or runner identity
+  changes. Repaired P3B-B exact execution and P4 natural PR proofs remain unaccepted.
+  Macro private
   visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3
   plus an independent pc-render lane; the M1 has no generic CI listener and remains
   reserved for its live Theta/options/research estate while W4 measures one possible
