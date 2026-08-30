@@ -1,33 +1,47 @@
 {
-  "appended": 0,
+  "appended": 5,
   "asof": "2026-08-28",
   "candidates": {
-    "R": 2,
-    "T": 3,
-    "W": 32
+    "R": 4,
+    "T": 4,
+    "W": 12
   },
   "deduped": {
     "R": 2,
     "T": 3,
-    "W": 32
+    "W": 10
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "consulted": false
+      "asof": "2026-08-30",
+      "consulted": true,
+      "n_keys": 27,
+      "n_themes": 18,
+      "ok": true,
+      "reason": null,
+      "source": "site/basketdata/foresight_cascade.json"
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": false,
-      "null_reasons": {},
+      "consulted": true,
+      "null_reasons": {
+        "ohlcv_absent": 15
+      },
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {},
+      "themes_read": {
+        "Software": {
+          "theme_thrust_frac": 0.2889,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        }
+      },
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 0,
-      "tickers_read": 0
+      "tickers_ok": 46,
+      "tickers_read": 61
     },
     "keys": [
       "relay_count_3d",
@@ -45,17 +59,33 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": false
+      "consulted": true,
+      "high_lookback": 63,
+      "members_indexed": 103,
+      "n_covered": 62,
+      "reason": null,
+      "window_sessions": 21
     },
     "turnover": {
-      "consulted": false
+      "consulted": true,
+      "last_session": "2026-08-28",
+      "n_tickers": 1544,
+      "ok": true,
+      "reason": null,
+      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
+      "window_max": 60
     }
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": false,
-      "n_asked": 0,
-      "n_covered": 0
+      "consulted": true,
+      "direction": "bull",
+      "grid": "W",
+      "horizon": "13w",
+      "n_asked": 2,
+      "n_covered": 2,
+      "reason": null,
+      "source": "engine.event_atlas.receipt"
     },
     "enabled": true,
     "keys": [
@@ -76,9 +106,17 @@
     ]
   },
   "flag_tickers": {
-    "R": [],
-    "T": [],
-    "W": []
+    "R": [
+      "DT",
+      "NEO"
+    ],
+    "T": [
+      "GOOGL"
+    ],
+    "W": [
+      "ALM",
+      "KR"
+    ]
   },
   "n_universe": 1496,
   "overflow": {
@@ -86,8 +124,8 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-29 15:39:24",
-  "runtime_s": 115.8,
+  "run_utc": "2026-08-30 07:18:31",
+  "runtime_s": 117.3,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": 0,
@@ -98,27 +136,27 @@
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.264,
+        "emerging_score": 2.198,
         "rank": 1,
-        "theme": "Mega-Cap"
-      },
-      {
-        "emerging_score": 2.173,
-        "rank": 2,
         "theme": "Software"
       },
       {
-        "emerging_score": 1.86,
+        "emerging_score": 1.928,
+        "rank": 2,
+        "theme": "Mega-Cap"
+      },
+      {
+        "emerging_score": 1.881,
         "rank": 3,
         "theme": "Big Data"
       },
       {
-        "emerging_score": 1.821,
+        "emerging_score": 1.848,
         "rank": 4,
         "theme": "Cybersecurity"
       },
       {
-        "emerging_score": 1.667,
+        "emerging_score": 1.678,
         "rank": 5,
         "theme": "Biometrics"
       }
@@ -129,19 +167,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 32,
-    "asof_max": "2026-08-27",
-    "asof_mismatch": 32,
+    "aligned": 12,
+    "asof_max": "2026-08-28",
+    "asof_mismatch": 0,
     "asof_run": "2026-08-28",
     "evaluated": 712,
-    "fresh": 34,
+    "fresh": 12,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.4,
+    "runtime_s": 20.9,
     "skipped": 5,
     "source": "baskets/membership.json",
-    "state_turn": 97,
+    "state_turn": 89,
     "universe_n": 717
   }
 }
