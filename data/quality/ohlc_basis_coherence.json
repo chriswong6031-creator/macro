@@ -347,7 +347,7 @@
     "russell_breadth": {
       "status": "coherent",
       "split_tickers": 0,
-      "noise_tickers": 50,
+      "noise_tickers": 48,
       "findings": [
         {
           "ticker": "APC",
@@ -750,16 +750,6 @@
           "inverted_bars": 0
         },
         {
-          "ticker": "SOC",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.001114,
-          "worst_date": "2026-08-28",
-          "inverted_bars": 0
-        },
-        {
           "ticker": "GLNG",
           "verdict": "noise",
           "bad_bars": 1,
@@ -817,16 +807,6 @@
           "bad_share": 0.0019,
           "worst_excess": 0.000629,
           "worst_date": "2026-07-27",
-          "inverted_bars": 0
-        },
-        {
-          "ticker": "FRBA",
-          "verdict": "noise",
-          "bad_bars": 1,
-          "bars": 524,
-          "bad_share": 0.0019,
-          "worst_excess": 0.000559,
-          "worst_date": "2026-08-28",
           "inverted_bars": 0
         },
         {
@@ -1011,5 +991,5 @@
   },
   "splits": 0,
   "status": "coherent",
-  "noise_tickers": 98
+  "noise_tickers": 96
 }
