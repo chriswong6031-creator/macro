@@ -977,3 +977,95 @@ class TestMakeScoreRow:
         row = _bfs._make_score_row(123, status="no_model")
         assert isinstance(row["event_id"], str)
         assert row["event_id"] == "123"
+
+
+# ── OA-1T: live_feed measured-feature preflight ───────────────────────────────
+
+class TestLiveFeedMeasuredFeaturePreflight:
+    """The feature builder deliberately fills absent columns with NaN. That is
+    right for a sparse observation and wrong for an entire serving cohort that
+    lacks the measurements this wave exists to supply — a technically complete,
+    information-starved model. This preflight is structural, never statistical:
+    it asks whether the truth is present at all, not whether there is enough of
+    it. Adequacy belongs to FS-5.
+    """
+
+    FEATURE_COLS = ["premium_z", "at_ask_share", "at_bid_share",
+                    "aggression_share", "vol_gt_oi_ratio"]
+
+    @staticmethod
+    def _frame(rows: list[dict]) -> pd.DataFrame:
+        return pd.DataFrame(rows)
+
+    def _live_row(self, **overrides) -> dict:
+        row = {
+            "event_id": "e1",
+            "source": "live_feed",
+            "premium_z": 3.0,
+            "at_ask_share": None,
+            "at_bid_share": None,
+            "aggression_share": None,
+            "vol_gt_oi_ratio": None,
+        }
+        row.update(overrides)
+        return row
+
+    def test_live_feed_preflight_rejects_all_null_measured_features(self):
+        from scripts.ops_train_flow_score import _assert_live_feed_measured_features
+
+        df = self._frame([self._live_row(event_id="e1"), self._live_row(event_id="e2")])
+        with pytest.raises(ValueError, match="measured feature preflight failed"):
+            _assert_live_feed_measured_features(df, self.FEATURE_COLS)
+
+    def test_live_feed_preflight_rejects_missing_measured_columns(self):
+        from scripts.ops_train_flow_score import _assert_live_feed_measured_features
+
+        df = self._frame([{"event_id": "e1", "source": "live_feed", "premium_z": 3.0}])
+        with pytest.raises(ValueError, match="measured feature preflight failed"):
+            _assert_live_feed_measured_features(df, self.FEATURE_COLS)
+
+    def test_live_feed_preflight_accepts_mixed_historical_nulls_once_real_measured_rows_exist(self):
+        """Old rows may stay null forever. One real measured row per required
+        field is enough for a structural presence check — this wave does not get
+        to invent an N or a percentage threshold."""
+        from scripts.ops_train_flow_score import _assert_live_feed_measured_features
+
+        df = self._frame([
+            self._live_row(event_id="historical"),
+            self._live_row(
+                event_id="measured",
+                at_ask_share=0.6, at_bid_share=0.2,
+                aggression_share=0.8, vol_gt_oi_ratio=1.5,
+            ),
+        ])
+        _assert_live_feed_measured_features(df, self.FEATURE_COLS)
+
+    def test_tape_recon_only_training_is_not_redefined_by_live_feed_schema_guard(self):
+        """A cohort with no live_feed rows keeps its existing legal role."""
+        from scripts.ops_train_flow_score import _assert_live_feed_measured_features
+
+        df = self._frame([
+            {"event_id": "t1", "source": "tape_recon", "premium_z": 2.0},
+            {"event_id": "t2", "source": "tape_recon", "premium_z": 2.5},
+        ])
+        _assert_live_feed_measured_features(df, self.FEATURE_COLS)
+        # And a frame with no source column at all is not this guard's business.
+        _assert_live_feed_measured_features(
+            self._frame([{"event_id": "x", "premium_z": 1.0}]), self.FEATURE_COLS,
+        )
+
+    def test_preflight_ignores_measured_fields_the_config_does_not_use(self):
+        """Only fields the running config actually declares are required."""
+        from scripts.ops_train_flow_score import _assert_live_feed_measured_features
+
+        df = self._frame([self._live_row(event_id="e1")])
+        _assert_live_feed_measured_features(df, ["premium_z"])
+
+
+def test_flow_score_kill_switch_remains_off():
+    """OA-1T measures; it does not promote. The pre-gate law is unchanged."""
+    import yaml
+
+    repo = Path(__file__).resolve().parent.parent
+    cfg = yaml.safe_load((repo / "config/flow_score.yml").read_text())
+    assert cfg["scoring"]["enabled"] is False

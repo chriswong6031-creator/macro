@@ -811,6 +811,58 @@ python -m pytest -q -p no:cacheprovider \
   tests/test_options_signal_episode.py tests/test_live_flow.py
 ```
 
+## OA-1T measured microstructure production proof
+
+Proving OA-1T-Macro is an **observational** task. Nothing here starts a writer:
+the only processes that write are the ones launchd already runs. Do not invoke
+the poller, and do not create a proof store — the receipt is assembled by
+reading artifacts the normal cycle produced.
+
+Rules, all of them binding:
+
+- Run only during a **normal current NYSE session**. The measurement lives on
+  live RTH prints; there is nothing to read outside one.
+- **Never** use `--once --date <past>` to conjure an event. Per *Manual
+  single-cycle smoke* above, that mutates live R2 replay surfaces and cannot
+  satisfy the same-exchange-date observation/decision/availability contract.
+- Do **not** re-arm the retired Studio fleet to produce a session.
+- Read only the existing date-keyed event stage / R2 output and the existing
+  Flow ML ledger. Do not append a ledger row by hand.
+
+Capture, for **one untouched natural event**:
+
+```text
+production checkout SHA / running producer identity
+session date
+one untouched natural event_id
+event ts / observed_at / decision_at / available_at
+microstructure.schema
+source_print_count / nbbo_valid_print_count
+nbbo_print_coverage / nbbo_premium_coverage
+at_ask / at_bid / inside / outside shares
+aggression_share / aggression_balance
+spread and quote-age summaries
+vol_gt_oi / vol_gt_oi_ratio / oi_vintage
+matching Flow ML ledger event_id and flattened values
+matching options.signal_episode/v1 source_event_id after normal nightly advance,
+  if the event is eligible
+flow_score.yml scoring.enabled=false
+flow_signals.gate/v2 scored=false and scoring.enabled=false
+```
+
+Reading the shares: `at_ask_share` and `at_bid_share` are **execution
+locations** measured against the NBBO. They are not buyer identity, not
+institutional intent, not opening intent, and not a direction. `aggression_share`
+is their sum and nothing more. The coverage fields state how much of the source
+premium actually supports those shares; a low coverage means the shares rest on
+a thin base, not that the flow was quiet.
+
+**A session with no notable event is not a failure and must not be
+manufactured.** Do not lower the premium floor, do not widen the selection rule,
+and do not stage a fixture in production to close the proof. Until a normal
+event occurs, OA-1T-Macro stays `BUILT_NOT_PROVEN`; that is an accurate state,
+and a fabricated receipt is worse than an honest wait.
+
 ## Scheduled R2 public verification
 
 After the next normal launchd RTH cycle—not after a manual invocation—verify R2 public GET:
