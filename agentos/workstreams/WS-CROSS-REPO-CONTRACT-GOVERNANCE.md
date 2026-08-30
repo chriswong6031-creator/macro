@@ -18,9 +18,8 @@ ambiguity: scoped
 waves:
   - id: R0
     title: Durable home and architecture freeze
-    status: complete
+    status: done
     pr: 6596
-    merge_sha: 2a45075ddb1139d3bcab6c6402f483040e0f6378
     next_action: >
       R0 is terminal and durable on Macro main via accepted squash merge
       2a45075ddb1139d3bcab6c6402f483040e0f6378. It created the Agent OS home,
