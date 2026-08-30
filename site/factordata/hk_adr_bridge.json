@@ -5,22 +5,7 @@
   "expected_hk_session": "2026-08-28",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "BIDU": {
-      "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
-    },
     "BABA": {
-      "asof": "2026-08-27",
-      "lag_days": 1,
-      "state": "fresh"
-    },
-    "TCOM": {
-      "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "KWEB": {
       "asof": "2026-08-28",
       "lag_days": 0,
       "state": "fresh"
@@ -30,7 +15,32 @@
       "lag_days": 0,
       "state": "fresh"
     },
+    "BIDU": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "TCOM": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
     "FXI": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "KWEB": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "FXI": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "TCOM": {
       "asof": "2026-08-28",
       "lag_days": 0,
       "state": "fresh"
@@ -44,15 +54,15 @@
       "adr_ticker": "BABA",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": null,
-      "adr_move_pct": null,
+      "implied_open_gap_pct": 2.23,
+      "adr_move_pct": 2.23,
       "hk_last_move_pct": -1.39,
-      "gap_context": "unknown",
-      "disconnect_flag": false,
-      "missing_reason": "ADR BABA bar missing for 2026-08-28",
+      "gap_context": "up",
+      "disconnect_flag": true,
+      "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-27",
-        "lag_days": 1,
+        "asof": "2026-08-28",
+        "lag_days": 0,
         "state": "fresh"
       }
     },
@@ -210,10 +220,10 @@
     }
   ],
   "composite": {
-    "bellwether_implied_open_pct": 0.91,
-    "gap_context": "flat",
+    "bellwether_implied_open_pct": 1.24,
+    "gap_context": "up",
     "composite_source": "direct_average",
-    "n_direct": 3,
+    "n_direct": 4,
     "n_proxy": 5,
     "etf_composite_pct": 0.8,
     "etf_gap_context": "flat"

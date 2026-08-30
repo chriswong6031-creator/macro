@@ -10869,6 +10869,7 @@ jobs:
       - "tests/test_dashboard_template_render.py"
       - "tests/test_grade_us_board.py"
       - "tests/test_heal_stage_forward_ledger.py"
+      - "tests/test_macro_risk_dialog.py"
       - "tests/test_opportunity_timeline.py"
       - "tests/test_pick_lab_book.py"
       - "tests/test_pick_lab_cn_runner.py"
@@ -10998,7 +10999,7 @@ jobs:
       # No dependency widened: it renders Jinja templates only — jinja2 is already on
       # the install line above.  Measured 54s against this job's 245s body and 12m cap.
       - name: dashboard.html.j2 rendered-HTML contract (unrun backfill 2026-08-27)
-        run: python -m pytest tests/test_dashboard_template_render.py -q
+        run: python -m pytest tests/test_dashboard_template_render.py tests/test_macro_risk_dialog.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
