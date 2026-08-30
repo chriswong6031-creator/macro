@@ -209,3 +209,81 @@ history, or relax identity — all of which remain barred without a Sol act.
 **Standing constraint this does not touch:** yfinance is the documented source of the AVB
 successor-splice contamination. Being an adjusted leg does not make a yfinance tape clean; every
 such tape must still pass S8 terminal-tape integrity on its own evidence.
+
+## 10. Execution result — `BLOCKED_NO_LAWFUL_DATA`
+
+Builder: `scripts/stock_identity_build_dead_control.py` (exit **3**), logic in
+`engine/stock_identity/dead_control.py`, receipt
+`data/stock_identity/control/dead_control_cohort.json`. Deterministic: two consecutive
+builds hash identically.
+
+| | |
+|---|---|
+| Population `P` | **223** |
+| Accepted | **0** |
+| `E1_NOT_TERMINATED` | 100 |
+| `E3_NOT_US_LISTED` | 119 |
+| `E6_NO_LAWFUL_ADJUSTED_OHLCV` | 2 |
+| `E8_TAPE_CONTAMINATED` | 2 |
+
+### 10.1 The blocker is the terminated-instrument LEDGER, not the OHLCV
+
+The two halves a control needs — proven termination, and a lawful full adjusted tape —
+exist in this repo but **not on the same names**:
+
+- **Names with committed primary termination evidence have no lawful tape.**
+  `CTRA`/`TPH` carry resolved ledger rows but sit on **no** registered price plane at all
+  (`E6`). `AVB` carries a resolved row *and* a plane tape, but that tape prints **6 real
+  bars after its own `last_session=2026-08-14`** — the documented successor splice. Because
+  `plane.load_symbol` does not truncate at `last_session`, those bars would reach the
+  behavioral layer as if they were AvalonBay (`E8`).
+- **Names with a lawful full adjusted tape have no committed termination evidence.**
+  `FBRX`, `TWO`, `LEG`, `EQR`, `ISSC`, `STRS` all sit on `baskets_ohlcv_v1` with full
+  `open/high/low/close/volume`, long history, and have vanished from the exchange symbol
+  directory — but at this base **no committed store records a terminal event for them**,
+  so they fail `S1` on evidence, not on data.
+- The 119 `E3` exclusions are the structural trap this cohort exists to avoid:
+  `dead_universe()` closes on an **index exit**, not a death, and absence from an exchange
+  directory is an OTC ADR's normal **live** state.
+
+### 10.2 Quantified counterfactuals (probes — NOT cohort members, NOT evidence)
+
+Run against the same committed ladder, changing only the ledger input:
+
+- **With open PR #6668's exit ledger merged: 2 accepted** — `FBRX`
+  (2,355 sessions, 2017-04-13→2026-08-26) and `TWO` (3,179 sessions, 2014-01-02→2026-08-24).
+  `AVB` still fails `E8`; `CTRA`/`TPH` still fail `E6`. **2 of 5.**
+- **Feasibility probe** (hypothetical rows for plane-resident names, explicitly *not*
+  evidence and never accepted): **6** names clear the tape screens `S5`–`S10`
+  (`FBRX`, `TWO`, `EQR`, `LEG`, `ISSC`, `RMAX`). `STRS` and `BBBY` still fail `S8`
+  because their series is still being fed.
+
+So the tape side is **sufficient** and the evidence side is **short**. The shortfall is
+three additional *adjudications*, not three additional data fetches — and `ISSC` is a
+known key migration that real evidence would reject at `S2`, so the true adjudication
+target is narrower than the probe's six.
+
+### 10.3 Compatibility smoke — the machinery is proven, not assumed
+
+Real compute through the current inputs, using the sealed `si_constants_v1.json`:
+
+| symbol | plane | sessions | fingerprint metrics | non-null | episodes |
+|---|---|---|---|---|---|
+| FBRX | `baskets_ohlcv_v1` | 2,355 | 64 | 52 | 50 |
+| TWO | `baskets_ohlcv_v1` | 3,179 | 64 | 52 | 46 |
+
+`engine.stock_identity.fingerprint.compute_raw` and `episodes.build_catalog` both run
+clean on a terminated tape. Nothing about the W3S pipeline is unproven — the moment
+termination evidence lands for five qualifying names, the cohort builds.
+
+### 10.4 What was NOT done, deliberately
+
+No provider was added, no second price plane created, no criteria relaxed, and the cohort
+was **not** padded to five. The bounded source act Sol authorized — persisting the
+`o/h/l/v` that `collectors/edgar_deadname_prices.py` already receives from its
+`adjusted=true` Polygon call but discards (`:132-142`) — was **not executed**, because no
+Polygon credential is resolvable in this environment (`POLYGON_API_KEY` absent from env and
+from `lib.config`), so it could not have been verified end-to-end. It remains available and
+correctly scoped for a session that holds the key; note that it would extend the
+**close-only** dead-name store, which is a different plane from the one that actually
+supplied the qualifying tapes here.

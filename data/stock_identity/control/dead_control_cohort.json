@@ -1,0 +1,3810 @@
+{
+  "accepted": [],
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "compatibility_smoke": [],
+  "directory_window": [
+    "2026-07-13",
+    "2026-08-29"
+  ],
+  "exclusions_by_code": {
+    "E1_NOT_TERMINATED": 100,
+    "E3_NOT_US_LISTED": 119,
+    "E6_NO_LAWFUL_ADJUSTED_OHLCV": 2,
+    "E8_TAPE_CONTAMINATED": 2
+  },
+  "ledger": [
+    {
+      "accepted": false,
+      "code": "E6_NO_LAWFUL_ADJUSTED_OHLCV",
+      "reason": "absent from every registered price plane \u2014 missing is an exclusion, never a partial control.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "exchange": null,
+        "hygiene_flags": [
+          "delisted_ledger_row"
+        ],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "curated exit ledger row (reason=acquisition, receipts=True)"
+        },
+        "security_name": null
+      },
+      "screen": "S5",
+      "sources": [
+        "S-A"
+      ],
+      "ticker": "CTRA"
+    },
+    {
+      "accepted": false,
+      "code": "E6_NO_LAWFUL_ADJUSTED_OHLCV",
+      "reason": "absent from every registered price plane \u2014 missing is an exclusion, never a partial control.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "exchange": null,
+        "hygiene_flags": [
+          "delisted_ledger_row"
+        ],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "curated exit ledger row (reason=acquisition, receipts=True)"
+        },
+        "security_name": null
+      },
+      "screen": "S5",
+      "sources": [
+        "S-A"
+      ],
+      "ticker": "TPH"
+    },
+    {
+      "accepted": false,
+      "code": "E8_TAPE_CONTAMINATED",
+      "reason": "tape runs to the plane's current tip (2026-08-27) after stripping 0 padding bar(s): this series is still being fed, which is a live/stale feed, not a terminated tape.",
+      "receipt": {
+        "adjustment_mode": "scripts/fetch_basket_ohlcv.py:563 yf.download(auto_adjust=True)",
+        "directory_last_listed": "2026-08-10",
+        "directory_snapshot_latest": "2026-08-29",
+        "exchange": "N",
+        "flat_forward_bars_stripped": 0,
+        "has_open": true,
+        "hygiene_flags": [],
+        "plane_tip": "2026-08-27",
+        "price_plane_id": "baskets_ohlcv_v1",
+        "s1_evidence": {
+          "directory": "listed through 2026-08-10, absent by 2026-08-29 (exit observed in-window)",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-23-111754)"
+        },
+        "security_name": "Bed Bath & Beyond, Inc. Common Stock",
+        "sessions": 3182,
+        "tape_first": "2014-01-02",
+        "tape_last": "2026-08-27"
+      },
+      "screen": "S8",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BBBY"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-10",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "EQR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-10",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "ISSC"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-10",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "STRS"
+    },
+    {
+      "accepted": false,
+      "code": "E8_TAPE_CONTAMINATED",
+      "reason": "6 real bar(s) after the curated ledger's last_session=2026-08-14. The ledger is the resolved terminal truth; bars past it are not this security.",
+      "receipt": {
+        "adjustment_mode": "collectors/_stock_ohlc.py:83 fetch_ohlc(auto_adjust=True) \u2014 dividend/split-adjusted total return",
+        "bars_after_ledger_last_session": 6,
+        "directory_last_listed": "2026-08-10",
+        "directory_snapshot_latest": "2026-08-29",
+        "exchange": "N",
+        "flat_forward_bars_stripped": 0,
+        "has_open": false,
+        "hygiene_flags": [
+          "delisted_ledger_row"
+        ],
+        "plane_tip": "2026-08-28",
+        "price_plane_id": "stocks_tr_v1",
+        "s1_evidence": {
+          "directory": "listed through 2026-08-10, absent by 2026-08-29 (exit observed in-window)",
+          "filing": "curated exit ledger row (reason=acquisition, receipts=True)"
+        },
+        "security_name": "AvalonBay Communities, Inc. Common Stock",
+        "sessions": 8167,
+        "tape_first": "1994-03-11",
+        "tape_last": "2026-08-24"
+      },
+      "screen": "S8",
+      "sources": [
+        "S-A"
+      ],
+      "ticker": "AVB"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-25",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RMAX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-25",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "TWO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-27",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "LEG"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-28",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "FBRX"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "not common equity (etf=True, test=False, preferred=False).",
+      "receipt": {
+        "directory_last_listed": "2026-08-28",
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "listed through 2026-08-28, absent by 2026-08-29 (exit observed in-window)",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LMNX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AMCX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ANGI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ASIX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ATNI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AVD"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "B"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BGS"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BLMN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BOOM"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BRKL"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CAMP"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CATO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CEVA"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CHCT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CLDT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CMP"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CRNC"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CSRA"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CYH"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DBI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DDD"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DIN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EGHT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ELME"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FLGT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FORR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FOSL"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FSP"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GCO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GDOT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GENZ"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GPRE"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HAIN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HVT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "INGN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "IRWD"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "IVR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "JRVR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "JYNT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KELYA"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LESL"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LOCO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LPSN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MATV"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MCS"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MERC"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MLAB"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MOV"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MYE"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MYGN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NBR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NFX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NKTR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NSI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NTGR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NVRI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "OFIX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ORGO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "OSPN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "OSUR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PLCE"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "QURE"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RGNX"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "still exchange-listed in the latest directory snapshot (2026-08-29) \u2014 alive, not terminated.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RGP"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RGS"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": "2026-08-29",
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RILY"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AAWW"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ABMD"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0000950170-24-039674)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ACOR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AET"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AGTI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ALXN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AMAG"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AMWD"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ANDW"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "ANGPY"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001301063-15-000052)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ANR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ANSS"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ANTM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "AOL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "APCC"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "APLS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ARG"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ATML"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ATVI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ATW"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BCR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BGEN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0000014195-20-000046)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BGG"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BIVV"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BMC"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BOBE"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BRCD"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BRCM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "BWLD"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CBSS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CDK"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CDMO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CERN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CHUY"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CMA"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CNSL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CONE"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "COV"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CSGS"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CTL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CTLT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CTXS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-25-046217)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CUTR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CVET"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CVGW"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CVH"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "CYT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DJ"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DNB"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DNKN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DST"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DVAX"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "DWA"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-23-298190)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EBIX"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ECOL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EDS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-22-222687)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ENDP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EQY"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ETFC"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ETRN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001144204-18-018645)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EV"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "EXTN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FARO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FBF"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FLIR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FNFG"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FRGI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001104659-15-051260)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "FST"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GDEN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GHL"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GLK"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GMS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GRUB"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "GWB"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HAYN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HBI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HES"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HNGR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HNZ"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-21-080407)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HPR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HSII"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HSKA"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "HSP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "IDTI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "IGT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ILG"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "IMPUY"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-25-318337)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "IRBT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ISBC"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "ISIL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "JNPR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KAMN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KLG"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KLXI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KRFT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "KSU"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LDL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LNCE"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LOGM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LPNT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LPS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LTHM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001870997-23-000010)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "LYLT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MCW"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001193125-20-011391)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MDR"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MDSO"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MFE"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MGLN"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_1.03 (reason=bankruptcy, bankruptcy=0001437749-25-027478)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MODV"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MOLX"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MRO"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "MXIM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NARI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NATI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NBL"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NFB"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NTUS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NUVA"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NVLS"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NXGN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='none' reason='unknown' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NXTL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "NYX"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "OA"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PACW"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PCP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PDCO"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PETM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PGTI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PLCM"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PRFT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PRXL"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PSFT"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "PXP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "QCP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "QEP"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "QLGC"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RAI"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "REGI"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method=None reason=None carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-B"
+      ],
+      "ticker": "RHHBY"
+    },
+    {
+      "accepted": false,
+      "code": "E3_NOT_US_LISTED",
+      "reason": "no evidence of U.S. exchange common-equity listing: never present in any directory snapshot (2026-07-13..2026-08-29) and no curated ledger row declaring an exchange. Absence from an exchange directory is the normal live state of an OTC/ADR line.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29",
+        "hygiene_flags": [],
+        "s1_evidence": {
+          "directory": "absent from the current directory (2026-08-29); exit predates the archive window opening 2026-07-13, so the date is not directory-witnessed",
+          "filing": "EDGAR 8k_item_5.01 (reason=acquisition, bankruptcy=None)"
+        }
+      },
+      "screen": "S3",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RHT"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "RTN"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "TIF"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "VAR"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "WLTW"
+    },
+    {
+      "accepted": false,
+      "code": "E1_NOT_TERMINATED",
+      "reason": "no primary terminal-event evidence: not in the curated exit ledger and EDGAR method='seed' reason='acquisition' carries no Form-25-equivalent or bankruptcy accession. Index-exit membership alone is not a death.",
+      "receipt": {
+        "directory_last_listed": null,
+        "directory_snapshot_latest": "2026-08-29"
+      },
+      "screen": "S1",
+      "sources": [
+        "S-C"
+      ],
+      "ticker": "XLNX"
+    }
+  ],
+  "min_sessions": 252,
+  "n_accepted": 0,
+  "n_compatible": 0,
+  "n_population": 223,
+  "operation_key": "SI-W3S-DEAD-CONTROL-V1",
+  "plane_tips": {
+    "baskets_ohlcv_v1": "2026-08-27",
+    "stock_identity_ohlcv_v1": null,
+    "stocks_tr_v1": "2026-08-28"
+  },
+  "registration": "research/stock_identity/W3_DEAD_INSTRUMENT_CONTROL_REGISTRATION.md",
+  "schema": "stock_identity.dead_control_cohort.v1",
+  "source_hashes": {
+    "S-A:config/delisted_symbols.yml": "ca8abe457647409c4809e7ae4d8c1a2b6bd3c4be2b44ac205d7e543fa6a6a580",
+    "S-B:data/quality/reused_tickers_audit.json": "d8189c4b0bef1b20c0108533ae4874db6d8f8b187ec9358e80004d393f6b604c",
+    "S-C:data/edgar/dead_name_cik.json": "786b6c4a2978930980ae8f8842bde288be5ab1eb5ec128566d517f5bffa1037e",
+    "S-C:data/edgar/dead_name_delisting.json": "3d0ddf60f00898aa0b1e47d5701292b97a49b5cdff17797db1163f3d6cb4f5be"
+  },
+  "terminal_state": "BLOCKED_NO_LAWFUL_DATA"
+}
