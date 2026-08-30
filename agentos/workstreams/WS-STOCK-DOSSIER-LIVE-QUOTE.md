@@ -8,8 +8,9 @@ objective: >
   the quote itself proves measured current freshness. The nightly HTML remains
   an honest dated fallback, never a fake-live value. Market-data authority stays
   with the Terminal Quote Plane; this workstream never becomes a second
-  publisher. Done when P0 is merged, rendered and verified live, and the one
-  open entitlement ruling below is answered.
+  publisher. P0/P0b implementation is complete at its bounded code/runtime
+  scope; final CEO acceptance keeps user-visible proof and historical authority
+  provenance as separate gates.
 status: active
 # The capability being consumed is the Terminal Quote Plane, and the standing
 # law is that market-data authority stays there — this workstream is a Macro-side
@@ -33,11 +34,25 @@ waves:
     title: Not commissioned — Sol owns scoping; see DEC/handoff before starting
     status: todo
 next_action: >
-  Nothing blocking. P0 is live and proven against a genuinely realtime feed
-  (2026-08-28 13:30:46Z, measured 153.8 ms print-age floor). The one open item
-  is a Terminal-repo question that needs its own commission — see
-  next_actions[0].
+  CEO-only closeout. Preserve the current runtime; do not toggle or restart the
+  Terminal quote plane merely to repair historical records. Obtain one untouched
+  user-visible dossier proof in an open RTH window and one untouched non-RTH
+  proof when practical, so the real visibility/background-tab path and the
+  rolled-anchor behavior are observed without a headless visibility override.
+  Historical authority for the 2026-08-28 `HUB_REALTIME_QUOTES=1` mutation stays
+  unresolved unless an independent post-DO-NOT-SET Chairman/Executive authority
+  receipt is recovered; see
+  DSC:STOCK-DOSSIER-REALTIME-AUTHORITY-PROVENANCE. The optional pre-market
+  Terminal question remains a separate future commission.
 next_actions:
+  - >
+    CEO acceptance proof only, no runtime mutation: on an untouched browser tab,
+    verify the served dossier consumes the current Terminal quote plane and uses
+    an honest freshness/session label during one open RTH window; separately
+    observe one non-RTH window and verify the rolled-anchor repair does not
+    regress the displayed move to +0.00% / $0.00. Record the real page state and
+    current quote-plane evidence; do not force `document.hidden` or synthesize a
+    market state.
   - >
     OPTIONAL, Terminal repo, needs its own commission: the dossier cannot show a
     realtime PRE-MARKET price. Polygon zeroes the whole `day` block before
@@ -49,23 +64,39 @@ next_actions:
     bug to patch in passing.
 resolved_actions:
   - >
-    RESOLVED 2026-08-28 — HUB_REALTIME_QUOTES=1 is SET in /opt/terminal/.env
-    (backup .env.bak-20260828-dossier-live) and quote-hub restarted, under
-    operator authorization ("authorized to conduct any changes needed").
-    The earlier deferral was WRONG on its facts: quote-hub.service carries
-    EnvironmentFile=/opt/terminal/.env but terminal.service carries NO
-    EnvironmentFile at all, and Next.js loads env from its own project root one
-    directory below — so the flag never reaches the Terminal process and the
-    1s/5s/15s/30s seconds band stays off. The pending anonymous-vs-sign-in
-    ruling is untouched. HUB_POLYGON_CLUSTER deliberately left at `delayed`;
-    the snapshot leg is REST, so TP-1's sole-WS law is intact.
+    EFFECT RESOLVED / AUTHORITY PROVENANCE UNRESOLVED — On 2026-08-28
+    `HUB_REALTIME_QUOTES=1` was set in `/opt/terminal/.env` (backup
+    `.env.bak-20260828-dossier-live`) and quote-hub was restarted. Production
+    evidence later proved the realtime snapshot leg and measured freshness path
+    worked. The technical correction behind the earlier deferral is also real:
+    quote-hub.service receives `/opt/terminal/.env`, while the separate Terminal
+    process does not receive that value through the same systemd EnvironmentFile,
+    so this runtime flag did not by itself enable the Terminal seconds-band UI.
+    HOWEVER the historical modifying authority is not independently proven by
+    the current estate. The original P0 carrier explicitly said DO NOT SET the
+    flag and moved realtime/access policy to a separate future operation. The
+    later handoff quotes an operator directive but cites no independently
+    recoverable authority receipt. Preserve the successful effect without
+    retroactively calling it P0-authorized; see
+    DSC:STOCK-DOSSIER-REALTIME-AUTHORITY-PROVENANCE.
   - >
     RESOLVED 2026-08-28 — the realtime verdict P0 could not obtain was observed
     in production 46 s after the opening bell: hub verdict
     {tier:"realtime", floorLagMs:153.77}, route freshness "live" / session
     "regular", and the served page repainted 227.98→226.82 with the move, the
-    sign, both language strings and the green pulse moving together.
+    sign, both language strings and the green pulse moving together. This proves
+    runtime/data-path behavior; the browser capture still used a visibility
+    override, so untouched final user-visible acceptance remains the next action
+    above.
 do_not_redo:
+  - >
+    Do NOT use successful runtime behavior, the merged #6619 records PR, or the
+    2026-08-28 operator handoff's quoted directive as a substitute for an
+    independently recoverable authority receipt. Effect truth and authority
+    provenance are different facts. See
+    DSC:STOCK-DOSSIER-REALTIME-AUTHORITY-PROVENANCE. Do not roll back the runtime
+    solely to make the historical record cleaner; rollback is another modifying
+    operation and requires current authority/current Terminal evidence.
   - >
     Do NOT read the Quote Hub contract out of the charting-app checkout on the
     fleet host. It sat on claude/terminal-audit-fixes-20260713 and does not
@@ -91,7 +122,7 @@ danger_areas:
     Enabling HUB_REALTIME_QUOTES appears to do nothing until 09:30 ET: /health
     shows realtime true, ttlMs 8000, cache filling, errors 0, while
     verdict.tier stays "unknown" and rows keep DELAYED_15M. That is the design
-    (see next_actions[0]), not a broken flag — do not go looking for a fault.
+    (see next_actions[1]), not a broken flag — do not go looking for a fault.
   - >
     `regularSession` is the STATE of the regular session ("rth" while open,
     "closed" after the bell), NOT the session a print came from. Reading it the
