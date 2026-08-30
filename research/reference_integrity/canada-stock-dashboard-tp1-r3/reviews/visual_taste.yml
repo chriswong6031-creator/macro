@@ -264,3 +264,258 @@ first_pass:
     - "no WCAG ratios — the token file is not in the packet, so colour findings are about hue/chroma family and material step, not compliance thresholds"
     - "motion, hover, focus-visible and keyboard traversal are specified but uncaptured; modal focus and Escape handling were read, not exercised"
     - "entitled/authenticated behaviour is out of the matrix by the packet's own declaration"
+
+second_pass:
+  # Run AFTER freeze commit a26efe0336dd and after the rationale/constraints reveal.
+  verdict: PASS_WITH_CONDITIONS
+  continuation_note: >
+    DISCLOSED CONTINUATION. The host purged the pass-1 critic context after the
+    freeze. The critic read the frozen first_pass block AS AN ARTIFACT — as the
+    review standard required it to attack — and re-derived every amendment from
+    the packet, the CSS bytes and the pixels. It records that this cut both ways:
+    it could not consult pass-1 working (so VTB-406 rests on its recorded evidence
+    rather than fresh measurement), but it also re-measured VTB-401 and VTB-402
+    from scratch instead of trusting figures it would otherwise have remembered
+    writing — which is HOW BOTH OF ITS OWN ERRORS SURFACED.
+  severity_token_note: >
+    The critic used "nit" for four downgrades (VTB-410, VTB-411, VTB-412,
+    VTB-413). That is not a legal RIG severity; per the critic's own instruction
+    ("read all four as minor, out of boundary") they are recorded at the schema
+    floor "minor" with the critic's word preserved.
+  self_corrections_not_prompted_by_the_reveal: >
+    Two amendments correct the critic's OWN pass-1 evidence, found by
+    re-measurement and prompted neither by the coordinator nor by the reveal. This
+    is flagged so the counts are not misread as a critic softening under
+    disclosure.
+  amendments:
+    - finding: VTB-401
+      action: upheld
+      severity: major
+      basis: re-verified-evidence
+      note: >
+        The reveal is correct that the bar is the authorized repair and that the
+        repair made the encoding truthful; that is orthogonal to this finding.
+        CORRECTION OF RECORD against the critic's own pass-1 numbers: measured
+        against the correct 200px inner channel the fills are exactly
+        80.0/27.0/100.0/60.0/100.0 percent, not the 79.1/27.7/98.5/59.7/98.5
+        filed in pass 1, which used the 206px outer track as denominator. The
+        correction SHARPENS the finding — the longest bars still belong to rank #3
+        and rank #5 and the shortest to rank #2, and they are now exactly
+        full-length, so the contradiction with the ordinal is at maximum strength
+        on the two rows where the ordinal is weakest. Second correction: the
+        pass-1 phrase "the strongest pre-attentive mark" overclaims; measured, the
+        bold theme names and outlined stance chips are stronger. The bar is the
+        only MAGNITUDE-encoded mark, and length is the channel that reads as
+        ranking. The defect survives both corrections. At 390 it degrades further,
+        underlining an ellipsis-truncated ticker list and reading as a text rule.
+    - finding: VTB-402
+      action: downgraded
+      severity: minor
+      basis: re-verified-evidence
+      self_refuted: true
+      note: >
+        ENTIRELY THE CRITIC'S OWN ERROR, refuted on bytes and pixels. The pass-1
+        allegation that "the fill cannot reach its own track, the true maximum
+        never looks maximal" is FALSE. Track left:14px width:206px; fill
+        left:17px max-width:200px — a symmetric 3px inset, the standard inset
+        progress-bar idiom. At breadth 100 the fill measures exactly 200px, 100.0
+        percent of the inner channel, in both themes. The pass-1 figure of 203/206
+        came from using the outer track as denominator. What SURVIVES on
+        re-verified composer bytes: the denominator is the max over the visible
+        five, appears nowhere on screen, and MOVES when the top five move, so a
+        theme's bar can change length with no change to its own data; and the
+        modal renders the same themes from the same data with no bar at all.
+        Real, but secondary to an already achromatic low-authority mark whose
+        disambiguating count sits in the NAMES column.
+    - finding: VTB-403
+      action: upheld
+      severity: major
+      basis: re-verified-evidence
+      note: >
+        Direct answer to the coordinator's question: the ratified rebinding does
+        NOT change severity for light. The reveal establishes authority for the
+        BINDING — near moved off the stance family because the tokens derive near
+        from buy and collapsed BUY with IN-FAVOUR — and the critic accepts the
+        collapse was real and breaking it correct. But the finding is about what
+        the binding LEFT BEHIND on the white canvas, and ratifying a mechanism
+        does not ratify the resulting light value. Measured: in dark, near is
+        chromatically ordinary (spread 102, mid-pack behind BOTTOMING at 176). In
+        light, the re-authoring pulled all three sibling inks into a muted 71-118
+        spread family and left near at 193 with saturation 0.825 against siblings
+        at 0.644-0.652 — making the SECOND rung of the stance ladder the loudest
+        mark in the band. A theme-specific regression existing only in light,
+        exactly the class the dark/light art-direction law exists to catch. NOT a
+        legibility problem — contrast 5.30, tied with siblings — but a chroma-rank
+        problem. CORRECTION OF RECORD: the pass-1 headline "never adapts, not to
+        theme, not to locale" is wrong on the theme half and self-refutes in its
+        own body; near does differ between dark and light. What it never does is
+        adapt to LOCALE, and its light value was never re-authored into the light
+        stance family.
+    - finding: VTB-404
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      note: >
+        Re-verified on light EN desktop — four open columns divided by hairline
+        verticals, no lane outline, no bottom rule; shorter lanes leave unbounded
+        white below their last row. The reveal has no bearing: this is light's own
+        material model, neither inherited nor out of boundary.
+    - finding: VTB-405
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      note: >
+        Re-verified. Light lane-header band rgb(247,249,248) on a white panel, an
+        8/255 step; ZH light equivalent rgb(250,247,248). Light carries lane stance
+        on the 2px accent rule plus the coloured label; dark carries it twice.
+    - finding: VTB-406
+      action: withdrawn
+      severity: minor
+      basis: pass-1-evidence-not-re-run
+      note: >
+        Withdrawal confirmed. The critic re-read its recorded resolving evidence,
+        found nothing in the reveal touching it, and states plainly that it did
+        NOT re-measure the 119px delta in this pass.
+    - finding: VTB-407
+      action: downgraded
+      severity: minor
+      basis: mixed
+      note: >
+        Defect CONFIRMED IN BYTES on both surfaces — the rank string is built
+        outside the bilingual helper and the identical literal is repeated in the
+        modal row builder, while name, stance, column header and basis pill on the
+        same row all route through it. Not a rendering accident, and it reproduces
+        in the expanded view. Severity moves for a STATED reason: the critic
+        accepts ON AUTHORITY CONTEXT ALONE that the string is byte-identical to
+        deployed production and the composer was frozen, and did not diff against
+        deployed bytes. Given that, it is inherited estate debt this change was
+        forbidden to touch, and holding a presentation extraction to a repair it
+        was not permitted to make is not defensible. DOWNGRADED, NOT WITHDRAWN —
+        inherited and out of boundary changes who owes the fix and when, but does
+        not make an untranslated word on the highest-value row of a bilingual
+        board acceptable, and the capability explicitly requires the rank basis to
+        be VISIBLE.
+    - finding: VTB-408
+      action: downgraded
+      severity: minor
+      basis: mixed
+      note: >
+        Direct answer to the coordinator's question: THIS IS A CRITICISM OF THE
+        RATIFIED LAW, NOT A DEFECT IN THIS CHANGE. The collision is real and
+        tighter than pass 1 could show — on one ZH light screen the LIVE dot
+        measures rgb(47,138,82), byte-identical to EN, while REDUCE/AVOID stance
+        ink measures rgb(37,117,83): two greens within ~10-21 per channel, one
+        meaning "live / price up", one meaning "reduce, avoid". Same in dark. The
+        reveal supplies what the pass-1 attribution note said was missing, closing
+        the gap and REMOVING THE BLOCKER SHAPE. What does not close: nothing on
+        the surface signals which colour system a given green belongs to. The law
+        is defensible in the abstract — quote inks must not flip, stance must flip
+        for a CJK reader — but is implemented with no disambiguating cue, in
+        near-identical greens rather than visibly different families. Carried as a
+        minor observation for the authority's docket, not a condition on this
+        change.
+    - finding: VTB-409
+      action: upheld
+      severity: minor
+      basis: re-verified-evidence
+      note: >
+        Direct answer: CARRY AS NAMED DEBT, DO NOT BLOCK — but one clause is a
+        live constraint on what this cycle may claim. Three holes re-confirmed in
+        the manifest: filter-miss is light-only with no dark twin; every ZH entry
+        is a default-state cell, so there is NO ZH filtered, filter-miss,
+        all-candidates, table-view, modal or breadth cell; and the baseline
+        declares the ZH locale axis a gap outright. It should not block because
+        the missing cells evidence product states this change did not touch —
+        composer frozen, filter/table/modal logic byte-identical — so the gap
+        BOUNDS what may be claimed rather than concealing a likely regression. The
+        bounding must be written down verbatim: every ZH interactive state was
+        judged in EN and not extrapolated; those states are UNJUDGED, NOT PASSED,
+        and that clause must travel with any acceptance record.
+    - finding: VTB-410
+      action: downgraded
+      severity: minor
+      critic_severity_word: nit
+      basis: re-verified-evidence
+      note: >
+        Downgraded on a provenance note unavailable in pass 1: the proposal record
+        documents and bounds the artifact — named full-page shots use a >=1500ms
+        settle and are orb-free and authoritative, and only the harness cells
+        (400ms hardcoded) can carry it. A harness artifact with a clean
+        authoritative alternative for every EN desktop claim, which is why the
+        critic measured the light EN band from the full-page shot without touching
+        an occluded cell. It bites only where the harness cell is the SOLE
+        evidence, i.e. the ZH axis — already carried under VTB-409.
+    - finding: VTB-411
+      action: downgraded
+      severity: minor
+      critic_severity_word: nit
+      basis: re-verified-evidence
+      note: >
+        Boundary verified by the critic's OWN grep, not asserted: the table
+        vocabulary returns zero matches across both changed files, so it is
+        legacy/engine-emitted copy the composer restyles rather than authors. The
+        user-facing problem stands but is unreachable from this change.
+    - finding: VTB-412
+      action: downgraded
+      severity: minor
+      critic_severity_word: nit
+      basis: authority-context-alone
+      note: >
+        Boundary accepted on authority context alone, corroborated by the same
+        zero-match grep; the critic did not verify which upstream file emits it.
+    - finding: VTB-413
+      action: downgraded
+      severity: minor
+      critic_severity_word: nit
+      basis: authority-context-alone
+      note: >
+        Accepted on authority context alone, consistent with the critic's pass-1
+        attribution note which reached the same conclusion independently; not
+        re-verified in this pass. The critic notes the consequence is worse than
+        the severity suggests: the population-filter capability asks a ZH user to
+        match a Chinese filter chip against an English card label.
+  dual_theme_adjudication_restated:
+    claim_tested: "light is a genuine second art direction, not a token substitution"
+    result: SURVIVES_FALSIFICATION
+    strongest_evidence: >
+      Light carries its own breakpoint corrections for a column model that exists
+      only because light chose a different material model — a token-substitution
+      light cannot need its own responsive corrections.
+    revision_for_the_record: >
+      Pass 1 called VTB-403 "one token left behind". Re-measurement shows worse: it
+      INVERTS THE INTENDED STANCE RANKING IN LIGHT ONLY, because the light
+      re-inking lowered the other three lanes' chroma while leaving this one at
+      full value. Category unchanged; consequence is a rank error at glance tier.
+    light_failures_characterised: >
+      Light's failures are the residue of an INCOMPLETE LIGHT RE-AUTHORING, not
+      "dark inverted" — a token the light stance family left behind, an edge
+      condition the open-column model introduced and did not finish, and a wash
+      specified below its own threshold. All three light-only, all three
+      consequences of light having genuinely chosen a different material system.
+    en_zh_parity: >
+      Re-confirmed on pixels in both themes — stance flip present and correct in
+      light ZH and dark ZH, structure and density hold. The only locale-axis
+      defects are VTB-407 and VTB-413, both inherited.
+  open_carried_as_named_debt:
+    - "VTB-401 major, OPEN, IN BOUNDARY — the one finding attached as an actual condition. Unlabelled magnitude encoding contradicting the adjacent ordinal; degrades further at 390. Fixable in the governed stylesheet."
+    - "VTB-403 major, OPEN, IN BOUNDARY — light link-token lane ink out-ranking BUY NOW by chroma. Fixable in tokens; the authority should rule, since the rebinding that caused it was theirs."
+    - "VTB-402 minor, OPEN, in boundary — undeclared moving denominator; inline-vs-modal encoding disagreement."
+    - "VTB-404 and VTB-405 minor, OPEN, in boundary — light-only material defects."
+    - "VTB-407 minor, OPEN, out of boundary — inherited untranslated rank label; needs an estate owner and a date, not silent closure."
+    - "VTB-408 minor, OPEN as criticism of ratified law — authority docket, not a condition on this cycle."
+    - "VTB-409 minor, OPEN as evidence debt, with its live clause: ZH interactive states are UNJUDGED, NOT PASSED, and that must travel with any acceptance record."
+    - "VTB-411, VTB-412, VTB-413 minor (critic word: nit), OPEN, out of boundary — engine/legacy copy debt."
+    - "VTB-410 minor (critic word: nit) — harness settle artifact; residual folded into VTB-409."
+    - "VTB-406 — closed (withdrawn), not carried."
+  observations_not_findings:
+    - "A contrast-ratio gate would PASS VTB-403: light near sits at 5.30, tied with siblings at 5.29-5.32. The defect lives entirely in the chroma channel, so any accessibility check on this surface reports clean. Catching this class needs a chroma-rank or saturation-budget check per semantic band, not a contrast check."
+    - "The near-to-link rebinding has a second consequence the critic saw but did not scope: the leadership HOLD stance chip renders in the same link-blue, so on the leadership panel a wayfinding token also carries a stance. Whether the ratified rebinding intended that is for the authority."
+    - "The breadth denominator is UNSTABLE, not merely undeclared — a theme's bar can change length with no change to its own membership. If the bar is kept, that argues for a fixed denominator over a legend."
+    - "No zero-count and no null-count theme appears in any of the 24 cells; all carry the same dataset. The missing-is-not-zero law the repair exists to serve is verified in SOURCE ONLY, never photographed. The critic names this the gap it would most want closed before the next cycle."
+    - "PROCESS: two of thirteen pass-1 findings contained a measurement error and a self-contradicting headline that survived a full first pass; both were caught only because pass 2 re-measured rather than re-read. A two-pass structure permitting pass 2 to reason from pass 1's numbers would have propagated both."
+  bounding_note: >
+    The critic did not exercise the surface. All measurements come from committed
+    PNGs and committed source bytes. Motion, hover, focus-visible, keyboard
+    traversal, modal focus and Escape remain uncaptured; ZH interactive states are
+    absent from the matrix entirely. The verdict is bounded by that and must not
+    be read as covering them.
