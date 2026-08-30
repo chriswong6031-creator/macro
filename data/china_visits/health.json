@@ -1,7 +1,7 @@
 {
  "status": "upstream_degraded",
  "detail": "derived over a same-run china_filings TRANSPORT degradation (sse: HTTP 504 from CNInfo exchange=sse) \u2014 this run contributes no absence evidence",
- "last_attempt_utc": "2026-08-29T14:51:42.140941+00:00",
+ "last_attempt_utc": "2026-08-30T11:54:11.260972+00:00",
  "last_success_utc": "2026-08-26T09:10:55.658242+00:00",
  "candidate_accounting": {
   "eligible": 611,
