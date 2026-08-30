@@ -154,3 +154,126 @@ predecessors:
           - tests/test_stock_dashboard_css.py
           - tests/test_canada_v36_composer.py
           - mockups/evidence/theme-parity/tp1-canada/manifest.json
+
+# ---------------------------------------------------------------------------
+# SUPERSEDED-REVIEW CLOSURE (added under Sol CONTINUE, 2026-08-30).
+# These findings come from the r3 receipts whose REVIEW ORDER could not be
+# proven, now preserved verbatim at reviews/superseded_review_order/. They are
+# not a predecessor REFERENCE, so they are recorded here rather than forced into
+# the predecessors schema, which would misdescribe them. Every id is accounted
+# for; nothing evaporates.
+#
+# The striking result: the two genuinely fresh critics, working blind from a
+# redacted packet with no access to these records, INDEPENDENTLY RE-DERIVED most
+# of them. That convergence is itself evidence the superseded findings were real
+# observations rather than artifacts of a compromised review order.
+# ---------------------------------------------------------------------------
+superseded_reviews:
+  source: reviews/superseded_review_order/
+  reason: >
+    Review ORDER unprovable — pass-1 findings were never committed before the
+    rationale reveal, so no stranger could verify the quarantine. The findings
+    themselves were never impeached, which is why they are carried rather than
+    discarded.
+  closure:
+    - id: PRC-301
+      disposition: RESOLVED_BY_CHANGE
+      note: "Stale-evidence integrity blocker: nine named state shots depicted a pre-repair build. Closed by full no-exceptions recapture; all 22 images re-taken at the frozen head, and the fresh cycle measured the current geometry independently."
+    - id: PRC-302
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: PRA-402
+      note: "Modal reachability resting on a general-sibling accident. Re-found blind by the fresh product critic and upheld on re-verified bytes."
+    - id: PRC-303
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: PRA-404
+      note: "Modal header/value alignment. The fresh critic went FURTHER and refuted the coordinator's premise — the mismatch was introduced by the TP-1 chain, not inherited from V3.8."
+    - id: PRC-304
+      disposition: RESOLVED_BY_CHANGE
+      note: "Light gauge track materially weaker than dark. Superseded by the bounded-gauge repair; the fresh cycle re-measured the track in both themes and raised no legibility finding against it."
+    - id: PRC-305
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: VTB-401
+      note: "Gauge reads as an underline of the ticker string rather than a row measurement. Re-found blind; the fresh critic upheld it at desktop and showed it degrades further at 390."
+    - id: PRC-306
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: PRA-401
+      note: "Time-to-board regression behind an un-preloaded stylesheet round-trip. The fresh critic sharpened it into the terminal-branch finding and upheld it at major after ratification."
+    - id: PRC-307
+      disposition: CARRIED_AS_NAMED_DEBT
+      note: "Hand-pinned cache token couples two files that must move together. Re-raised by the fresh critic as an observation: no test pins the stylesheet to its version constant."
+    - id: PRC-308
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: VTB-407
+      note: "Hardcoded English rank label never routed through the bilingual helper. THIRD independent sighting — r2 recorded it as an observation, the superseded r3 critic found it, and the fresh visual critic found it blind and rated it major on the ZH axis. Inherited and out of boundary, but the corroboration is now strong enough that continued deferral needs an owner and a date, not another cycle of silent carry."
+    - id: PRC-309
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: PRA-403
+      note: "Loader leaks a global onto every route. Re-found blind; downgraded only after re-verification showed the artifact carries an explicit KNOWN LIMIT the superseded critic could not see."
+    - id: VTC-301
+      disposition: RESOLVED_BY_CHANGE
+      note: "Bounding track drawn below perceptibility in both themes. Closed by the track repair; the fresh cycle measured it and raised no equivalent finding."
+    - id: VTC-302
+      disposition: RESOLVED_BY_CHANGE
+      note: "Gauge anchored flush to the panel border rather than the content edge. Closed by the anchor repair and re-verified by the fresh critic at the 14px/17px content edge."
+    - id: VTC-303
+      disposition: CARRIED_AS_NAMED_DEBT
+      note: "EN mobile lane selector truncates stance names. The fresh product critic re-found it at 390 and established it is INHERITED — the before build carries byte-identical rules — so it is estate debt, not a TP-1 regression."
+    - id: VTC-304
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: "VTB-407, VTB-413"
+      note: "ZH is not yet a native composition. Re-found blind and split into the rank label and the card sector labels, both inherited."
+    - id: VTC-305
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: PRA-404
+      note: "Modal column headers misaligned from their values. Same underlying defect as PRC-303."
+    - id: VTC-306
+      disposition: PARTIALLY_RESOLVED
+      note: "Light active-row tint lowered to the doctrine ceiling and re-verified. The route-arrow notch half is composer-structural and remains out of boundary."
+    - id: VTC-307
+      disposition: CARRIED_AS_NAMED_DEBT
+      note: "Active filter chip spacing. Composer-emitted copy under the frozen fence; the fresh critic independently confirmed the boundary by grep."
+    - id: VTC-308
+      disposition: RESOLVED_BY_CHANGE
+      note: "Gauge fill unclamped. Closed by the clamp, and the fresh critic re-verified the clamp works — refuting its own contrary pass-1 claim in the process."
+    - id: VTC-309
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: "VTB-411, VTB-412"
+      note: "Tier-1 jargon riding into the table view. Re-found blind and confirmed engine-emitted by the fresh critic's own grep."
+    - id: VTC-310
+      disposition: RE_DERIVED_INDEPENDENTLY
+      now_tracked_as: VTB-401
+      note: "The measure and the number it encodes never share an axis. Upheld across two INDEPENDENT cycles by critics who never saw each other's work — the single most corroborated open design finding on this surface."
+
+new_cycle_open_items:
+  note: >
+    Findings raised by the fresh critics that have no predecessor. Carried into
+    the authority's docket with the rest.
+  items:
+    - id: PRA-405
+      severity: minor
+      note: "EVIDENCE: no live tick exists in any of 24 cells, so the ZH green-up/red-down clause is declaration-verified and render-unverified. Must not be recorded as passed."
+    - id: PRA-406
+      severity: minor
+      note: "EVIDENCE: filter-miss captured in light only; the dark composition uses light-only rules with no dark twin, so it is materially different and unadjudicated. The blocking condition on critic A's verdict."
+    - id: VTB-402
+      severity: minor
+      note: "Breadth denominator is the visible-five max: unstated, and UNSTABLE — a theme's bar changes length with no change to its own data. The modal shows the same data with no bar."
+    - id: VTB-403
+      severity: major
+      note: "Light near-lane ink out-ranks BUY NOW by chroma, inverting the stance ladder in light only. Caused by the ratified link-token rebinding; a contrast gate cannot catch it."
+    - id: VTB-404
+      severity: minor
+      note: "Light lane columns have no bottom edge; ragged lanes read as an unfinished panel."
+    - id: VTB-405
+      severity: minor
+      note: "Light Act-Now header wash is an 8/255 step, below perceptual threshold; light carries stance once where dark carries it twice."
+    - id: VTB-408
+      severity: minor
+      note: "Under ZH, stance green and direction green sit within ~10-21 per channel with no cue distinguishing the two colour systems. Adjudicated as a criticism of RATIFIED LAW, not a defect in this change."
+    - id: VTB-409
+      severity: minor
+      note: "Evidence matrix asymmetric. LIVE CLAUSE that must travel with any acceptance record: ZH interactive states were judged in EN and NOT extrapolated — unjudged, not passed."
+    - id: VTB-410
+      severity: minor
+      note: "Transient theme-toggle chrome occludes the reviewed region in harness cells. Bounded by the proposal record: full-page shots use a >=1500ms settle and are authoritative; it bites only where a harness cell is the sole evidence, i.e. the ZH axis."
+
