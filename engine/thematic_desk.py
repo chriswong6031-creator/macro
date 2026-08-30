@@ -406,11 +406,15 @@ def _run_panel(state: dict, cfg: dict, call=None) -> dict:
     user = _build_user(state)
 
     def _one(key):
-        # EVERY fallible step stays inside the try. _extract_json is documented
-        # "never raises" but calls .strip()/re.search, which raise on a non-str
-        # reply — and an escape here propagates out of _run_panel and synthesize
-        # (both documented "never raises") into run()'s catch-all, killing the
-        # whole region's brief. One bad role must never outrank a total wipe.
+        # Every fallible step of THIS role's call stays inside the try.
+        # _extract_json is documented "never raises" but calls .strip()/re.search,
+        # which raise on a non-str reply — and an escape here propagates out of
+        # _run_panel and synthesize into run()'s catch-all, killing the whole
+        # region's brief. One bad role must never outrank a total wipe.
+        # NOT closed here (pre-existing, same at base, out of this seam): the
+        # adjudicator/fallback _extract_json call and the _slim_stance() call in
+        # synthesize are still unguarded, so a non-str reply from the desk head,
+        # or a stance dict whose "theses" is non-iterable, still raises.
         try:
             reply, reason = fn(_PANEL_SYSTEMS[key], user, cfg)
             if reply is None:
@@ -483,7 +487,10 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
             _mq = 2
         try:
             min_quorum = 2 if _mq is None else int(_mq)
-        except (TypeError, ValueError):
+        except Exception:  # noqa: BLE001 — int() raises OverflowError (an
+            # ArithmeticError, not TypeError/ValueError) on float/Decimal
+            # infinity, and propagates whatever a custom __int__ raises. A
+            # defensive default must not have a hole its own purpose forbids.
             min_quorum = 2
         # Clamp: 0/negative would hand the adjudicator an EMPTY panel (a path the
         # pre-fix code never had), and a value above the panel size would disable

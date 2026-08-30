@@ -403,26 +403,36 @@ def test_scored_spine_lets_the_placebo_pair_outcomes_exactly(monkeypatch, tmp_pa
     assert res["by_kind"]["theme_rel_return"]["n"] == 3
 
 def test_malformed_min_quorum_never_raises():
-    """A bare ``min_quorum:`` in YAML yields None; a quoted one yields str.
+    """Malformed ``min_quorum`` must default, never raise.
 
-    Either must fall back to the default rather than raising — a degraded panel
-    must never become a crashed desk in the nightly.
+    Discriminates on the SYSTEM prompt: a stub returning one payload on both the
+    adjudicator and fallback paths cannot tell them apart, and would pass with the
+    coercion deleted. Covers infinity explicitly -- int() raises OverflowError
+    there, which is an ArithmeticError and is NOT caught by (TypeError, ValueError).
     """
+    import decimal
+
     state = {"asof": "2026-08-29", "region": "us", "ranks": []}
-    stance = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
-    adj = '{"regime_context": "x", "emerging_watch": [], "theses": []}'
+    good = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
+    adj = '{"regime_context": "ADJUDICATED", "emerging_watch": [], "theses": []}'
+    fallback = '{"regime_context": "FALLBACK", "emerging_watch": [], "theses": []}'
 
     def call(system, user, cfg):
         for role, sp in td._PANEL_SYSTEMS.items():
             if system is sp:
                 if role == "narrative_scout":
-                    return stance, None
+                    return good, None
                 raise RuntimeError(role)
-        return adj, None
+        return (fallback, None) if system is td._SYSTEM else (adj, None)
 
-    for bad in (None, "2", 2.5, "garbage", object()):
+    bad_values = (None, "2", 2.5, "garbage", object(), [], {},
+                  float("inf"), float("-inf"), float("nan"),
+                  decimal.Decimal("Infinity"), b"2")
+    for bad in bad_values:
         brief = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": bad}}, call)
-        assert (brief.get("degraded_reason") or "").startswith("panel_incomplete:"), bad
+        # defaulted to 2, so a 1-of-4 panel must FALL BACK, not adjudicate
+        assert brief.get("regime_context") == "FALLBACK", bad
+
 
 def test_one_bad_role_reply_never_sinks_the_desk():
     """A non-str reply from ONE role must degrade that role, not kill the region.
