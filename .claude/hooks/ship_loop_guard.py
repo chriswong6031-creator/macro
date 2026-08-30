@@ -4686,6 +4686,28 @@ def _try_ci_quiescence(
     checks_fingerprint = _ci_checks_fingerprint(runs)
     passed_names = set(passed)
     preflight_green = CI_QUIESCENCE_FAST_PREFLIGHT.issubset(passed_names)
+    red_classification: tuple[str, str, bool, bool, bool] | None = None
+    if red:
+        code, detail = _armed_pull_status(owner, repo, branch, head)
+        pairs = _red_pairs(runs)
+        inherited = code == "unmerged" and "inherited" in detail.lower()
+        missing_evidence = _ci_missing_evidence_only(detail, pairs)
+        infrastructure = _ci_infrastructure_red(pairs)
+        red_classification = (
+            code,
+            detail,
+            inherited,
+            missing_evidence,
+            infrastructure,
+        )
+        if not (inherited or missing_evidence or infrastructure):
+            # Candidate-owned red is mechanically known from the exact-head
+            # checks and ordinary red classifier. It outranks authority-page
+            # availability: never let an unrelated pagination outage turn this
+            # builder block into the cheap central missing-evidence route.
+            if isinstance(existing, dict):
+                _ci_quiescence_clear(path, state)
+            return False, code, detail
     try:
         authority_fingerprint = str(
             _ci_hold_authority_snapshot(owner, repo, pull)["fingerprint"]
@@ -4743,11 +4765,8 @@ def _try_ci_quiescence(
     )
 
     if red:
-        code, detail = _armed_pull_status(owner, repo, branch, head)
-        pairs = _red_pairs(runs)
-        inherited = code == "unmerged" and "inherited" in detail.lower()
-        missing_evidence = _ci_missing_evidence_only(detail, pairs)
-        infrastructure = _ci_infrastructure_red(pairs)
+        assert red_classification is not None
+        code, detail, inherited, missing_evidence, infrastructure = red_classification
         if isinstance(existing, dict) and (inherited or missing_evidence or infrastructure):
             kind = (
                 "inherited_main"
@@ -4769,10 +4788,6 @@ def _try_ci_quiescence(
                 "none",
                 "",
             )
-        if isinstance(existing, dict):
-            # Candidate-owned red is the explicit anti-escape boundary: discard
-            # the wait before handing the exact failing packet back to builder.
-            _ci_quiescence_clear(path, state)
         return False, code, detail
 
     # A concluded check transition outranks a simultaneous authority edge.

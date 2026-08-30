@@ -8355,6 +8355,56 @@ def test_check_transition_outranks_new_authority_edge_in_the_same_snapshot(
         assert quiescence["authority_fingerprint"] == "2" * 16
 
 
+def test_unanswerable_authority_cannot_hide_an_exact_head_candidate_red(
+    monkeypatch, tmp_path, capsys
+):
+    """Known own-red classification outranks an unanswerable authority page."""
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    authority_reads = {"count": 0}
+
+    def authority(*_args):
+        authority_reads["count"] += 1
+        if authority_reads["count"] == 1:
+            return {"fingerprint": "1" * 16}
+        raise RuntimeError("GitHub authority pagination is unanswerable")
+
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(GUARD, "_ci_hold_authority_snapshot", authority)
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    alive["value"] = False
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (
+            GUARD.CI_FAILED_UNMERGED,
+            "Failing CI: trusted-executor-pack-7 (failure).",
+        ),
+    )
+
+    for _ in range(3):
+        GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert len(outputs) == 3
+    assert all(item.get("decision") == "block" for item in outputs)
+    assert all("trusted-executor-pack-7" in item["reason"] for item in outputs)
+    assert all(
+        "CI_MATERIAL_EVENT missing_evidence" not in item.get("systemMessage", "")
+        for item in outputs
+    )
+    assert authority_reads == {"count": 1}
+    assert "ci_quiescence" not in GUARD._load(state_path)
+
+
 def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(
     monkeypatch, tmp_path, capsys
 ):
