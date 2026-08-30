@@ -401,3 +401,26 @@ def test_scored_spine_lets_the_placebo_pair_outcomes_exactly(monkeypatch, tmp_pa
     assert res["mix_source"] == "scored"
     assert res["n"] == res["n_decided"] == 3 and res["available"] is True
     assert res["by_kind"]["theme_rel_return"]["n"] == 3
+
+def test_malformed_min_quorum_never_raises():
+    """A bare ``min_quorum:`` in YAML yields None; a quoted one yields str.
+
+    Either must fall back to the default rather than raising — a degraded panel
+    must never become a crashed desk in the nightly.
+    """
+    state = {"asof": "2026-08-29", "region": "us", "ranks": []}
+    stance = json.dumps({"stance": "neutral", "leans": [], "watch": {}})
+    adj = '{"regime_context": "x", "emerging_watch": [], "theses": []}'
+
+    def call(system, user, cfg):
+        for role, sp in td._PANEL_SYSTEMS.items():
+            if system is sp:
+                if role == "narrative_scout":
+                    return stance, None
+                raise RuntimeError(role)
+        return adj, None
+
+    for bad in (None, "2", 2.5, "garbage", object()):
+        brief = td.synthesize(dict(state), {"panel": {"enabled": True, "min_quorum": bad}}, call)
+        assert (brief.get("degraded_reason") or "").startswith("panel_incomplete:"), bad
+

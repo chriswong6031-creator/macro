@@ -470,7 +470,14 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
     panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
     missing: list[str] = []
     if panel_on:
-        min_quorum = (cfg.get("panel") or {}).get("min_quorum", 2)
+        # Coerce defensively: a bare `min_quorum:` in YAML yields None and a quoted
+        # value yields str — either would raise TypeError on the comparison below,
+        # turning a merely-degraded panel into a crashed desk in the nightly.
+        _mq = (cfg.get("panel") or {}).get("min_quorum", 2)
+        try:
+            min_quorum = 2 if _mq is None else int(_mq)
+        except (TypeError, ValueError):
+            min_quorum = 2
         panel = _run_panel(state, cfg, call)
         brief["panel"] = {k: _slim_stance(v) for k, v in panel.items() if v}
         present = [k for k in _PANEL_SYSTEMS if panel.get(k)]
