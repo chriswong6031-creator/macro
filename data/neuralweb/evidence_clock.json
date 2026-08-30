@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-08-29",
-  "generated_utc": "2026-08-29T09:55:24Z",
+  "generated_utc": "2026-08-29T13:06:16Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 312,
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3250,
+        "n_open": 3266,
         "n_past_check_by": 2292
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3250,
+        "n_open": 3266,
         "n_past_check_by": 2292
       },
       "allowed_actions": [
@@ -229,7 +229,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 23626,
+        "n_open": 23860,
         "n_past_check_by": 16939
       },
       "allowed_actions": [
@@ -277,7 +277,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 23626,
+        "n_open": 23860,
         "n_past_check_by": 16939
       },
       "allowed_actions": [
@@ -917,7 +917,7 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 72505,
+        "n_claims": 73013,
         "n_with_falsifier": 679,
         "falsifier_coverage": "0.9%",
         "blocking_reason": "falsifier coverage 0.9%; not a promotion-grade substrate"
@@ -9544,7 +9544,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 12048,
+        "n_open": 12056,
         "n_past_check_by": 0
       },
       "allowed_actions": [
