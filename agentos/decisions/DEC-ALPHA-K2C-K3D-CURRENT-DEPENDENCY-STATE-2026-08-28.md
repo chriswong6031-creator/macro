@@ -3,7 +3,7 @@ key: ALPHA-K2C-K3D-CURRENT-DEPENDENCY-STATE-2026-08-28
 question: >
   What is the truthful current K2-C/K3-D state for Alpha/MarketOntology K5, and what
   is the lawful continuation now that K2-C implementation/proof carriers are already
-  merged while K3-D has an existing open repair carrier whose prior receiver never STARTed?
+  merged while K3-D has an existing open repair carrier and a newly ACKed pre-START receiver?
 answer: >
   K2-C and K3-D are both real implementation evidence, but neither is Sol-accepted.
   K2-C must not be recommissioned as if NOT_BUILT: #6533 implemented the adapter and
@@ -14,21 +14,26 @@ answer: >
   be a fresh bounded repair child under the SAME K2-C parent outcome, not a replacement
   parent operation or second institutional system. K3-D #6514 remains the sole existing
   implementation carrier; its architecture is frozen and its three current blockers are
-  not grounds for a new commission. Because the prior receiver never ACKed or STARTed and
-  no current lawful RuntimeBinding is proven, K3-D is truthfully PARKED / WAITING_CAPACITY
-  with needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT. Its preferred execution
-  avenue is CTO Sol, but that avenue label is not an account/session binding. K5 remains
-  dependency-held until K2-C and K3-D are separately accepted.
+  not grounds for a new commission. The earlier unavailable Claude4 placement never ACKed
+  or STARTed and closed pre-START with effect=NONE. A later lawful PRESTART_REBIND assigned
+  the SAME operation/carrier to Claude5 U0BT20ZL77C; that receiver has now ACKed and armed
+  one consolidated exact-thread watcher, but has not STARTed and reports effect=NONE.
+  Therefore K3-D is no longer WAITING_CAPACITY, but it is also not executing and has no
+  started RuntimeBinding. Its truthful attention state is RECEIVER_BOUND / PRESTART,
+  awaiting the promised fresh #6514/current-main collision census and a distinct START.
+  K5 remains dependency-held until K2-C and K3-D are separately accepted.
 rationale: >
   Current Agent OS contains stale language saying to commission K2-C/K3-D as if neither
   implementation existed. GitHub and accepted reconciliation evidence disagree: K2-C's
   code and production acquisition proof are already on main, while exact Sol review
   explicitly refused full semantic acceptance; K3-D is built on open #6514 and has an
-  exact repair request but its direct-targeted receiver never ACKed or STARTed. Current
-  protected organizational-continuity law additionally requires frozen unbound work to
-  surface as WAITING_CAPACITY / EXECUTIVE_PLACEMENT rather than turning the Chairman into
-  a routine quota-account dispatcher. Leaving either stale clause in force risks duplicate
-  work and leaves K5 parked without a truthful executable correction path.
+  exact repair request. Earlier receiver attempts did not start, but current live recovery
+  has now lawfully placed Claude5 pre-START and received ACK + WATCH_ARMED. Current protected
+  routing law distinguishes receiver assignment and ACK/attention proof from START/effect:
+  the operation must not be projected as WAITING_CAPACITY after a lawful receiver has ACKed,
+  and it must not be projected as executing before distinct START. Leaving either stale
+  clause in force risks duplicate work or false execution state and leaves K5 without a
+  truthful executable correction path.
 alternatives:
   - option: Treat #6533/#6547 merge and production reads as K2-C acceptance.
     why_not: >
@@ -43,17 +48,16 @@ alternatives:
     why_not: >
       Rejected. Closed merge commits are immutable evidence. Changed post-merge work
       needs a new bounded child identity after explicit adjudication.
-  - option: Fork or recommission K3-D because the old receiver went silent.
+  - option: Fork or recommission K3-D because earlier receiver placement failed.
     why_not: >
-      Rejected. #6514 is still the sole live Git carrier. The old receiver never ACKed or
-      STARTed, so there is no started effect to fail over; only current placement remains
-      unresolved and the existing operation/carrier identity must be preserved.
-  - option: Ask the Chairman to choose a quota-bearing account merely because K3-D is unbound.
+      Rejected. #6514 is still the sole live Git carrier. Earlier placement failed cleanly
+      before START/effect, and current Claude5 placement now lawfully continues the SAME
+      operation/carrier. A replacement operation would duplicate ownership and lifecycle.
+  - option: Treat ACK + WATCH_ARMED as K3-D execution proof.
     why_not: >
-      Rejected as the routine path. Current protected continuity law projects this state as
-      WAITING_CAPACITY / needs_placement with turn_owner=EXECUTIVE_PLACEMENT. A bounded
-      manual receiver binding may be consumed if independently supplied or explicitly
-      delegated, but Sol must not manufacture Chairman dispatch labor.
+      Rejected. Current protected dialogue law makes ACK/WATCH_ARMED nonterminal pre-START
+      transport/attention states. A distinct START after current-source/collision preflight
+      is required before modification or execution may be claimed.
 evidence:
   - "Macro #6533 K2-C implementation merged as 0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e."
   - "Macro #6547 proof receipts merged as 1725aef27b26da337d342fdf9d44324f55f430cd; production raw owner-read/refusal path evidenced, full semantic positive not accepted."
@@ -61,9 +65,11 @@ evidence:
   - "K2-C design states no authoritative CUSIP->Data OS bridge existed and carries Data OS security identity as unresolved."
   - "Current institutional catalog exposes filer/manager relationship evidence including manager_cik, manager_name, CRD and SEC file numbers, but these rows do not by themselves prove a canonical manager-complex/vehicle epoch, vehicle class or decision mode."
   - "lib/institutional_13f_adapter.py derives vehicle/decision semantics from row-level investment_discretion; the design itself records this as a residual honesty gap."
-  - "Macro #6514 remains the sole K3-D carrier; prior direct-targeted repair delivery received no worker ACK/WATCH_ARMED/START or worker return."
-  - "Repair-time protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1 preserved CAPACITY_SELECTABLE pre-START semantics while Organizational Continuity & Attention Recovery projected a frozen child with no lawful receiver as WAITING_CAPACITY / needs_placement, turn_owner=EXECUTIVE_PLACEMENT. Current protected law is re-verified separately at final adjudication rather than mutating this historical receipt on every unrelated protected-master move."
-  - "Mastermind #213 / 229aebce5e8d0c1c7372f5fead9c24516b027cc1 source-released the bounded CF2-H0 transport, but explicitly leaves that capability BUILT_NOT_PROVEN / PRODUCTION_INERT pending a separate native administrator ceremony and grants no CF2-P0/provider/routing/worker/fan-out authority; therefore it is not a live placement edge for K3-D."
+  - "Macro #6514 remains the sole K3-D carrier at pre-repair head aaaff0a9415337797c6fc917a06a3a2bd9a3010c; the three Sol repair blockers remain canonical resolved-target logical identity, generator native-owner authority, and exact fail-closed source_event.source_identity admission."
+  - "The prior Claude4- placement was proven unavailable and closed before ACK/START with effect=NONE; no started RuntimeBinding or EFFECT_UNKNOWN was created."
+  - "Current PRESTART_REBIND assigns the same K3-D operation/carrier to Claude5 U0BT20ZL77C. Claude5 posted ACK and WATCH_ARMED under protected Mastermind@0604158caca9e3b8a43ec57dd36ca4dadf05198b, reports effect=NONE, and explicitly owes a fresh collision census before distinct START."
+  - "Repair-time protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1 preserved CAPACITY_SELECTABLE pre-START semantics while Organizational Continuity & Attention Recovery projected a frozen child with no lawful receiver as WAITING_CAPACITY / needs_placement. Current protected law is re-verified separately at final adjudication rather than mutating this historical receipt on every unrelated protected-master move."
+  - "Mastermind #213 / 229aebce5e8d0c1c7372f5fead9c24516b027cc1 source-released bounded CF2-H0 transport but left it BUILT_NOT_PROVEN / PRODUCTION_INERT; the current K3-D receiver exists through the later lawful manual PRESTART_REBIND, not through production-live CF2-I placement."
 affects:
   - "WS:ALPHA-INTELLIGENCE-INTEGRATION"
   - "alpha-k2c-institutional-adapter-20260826-sol-001"
@@ -73,9 +79,10 @@ confidence: high
 reversibility: easy
 decided_by: sol
 source_authority: >
-  Current live Chairman directive plus current protected Mastermind routing and organizational-
-  continuity law. This decision freezes truthful dependency and placement state only; it does
-  not grant product, data, identity, provider, lifecycle, rank, gate, size or trading authority.
+  Current live Chairman recovery directive plus current protected Mastermind routing,
+  watcher and organizational-continuity law. This decision freezes truthful dependency
+  and placement state only; it does not grant product, data, identity, provider, lifecycle,
+  rank, gate, size or trading authority.
 decided_at: 2026-08-28
 ---
 
@@ -137,33 +144,45 @@ concrete account/session assignment. Fable is reserved for an actual cross-owner
 State: `PARTIAL` / built carrier #6514 / three exact Sol blockers / `NOT SOL-ACCEPTED`.
 
 Do not say `NOT_BUILT`, do not commission a second implementation and do not edit closed sibling carriers.
-The only lawful continuation is the existing #6514 repair operation. The prior receiver never ACKed or
-STARTed, and no current lawful RuntimeBinding is proven, so current attention state is:
+The only lawful continuation is the existing #6514 repair operation.
 
-- `PARKED / WAITING_CAPACITY`;
-- `needs_placement=true`;
-- `turn_owner=EXECUTIVE_PLACEMENT`;
-- `PREFERRED_AVENUE: CTO Sol` as capability preference only.
+Current placement/attention truth:
 
-Do not broadcast a broad OPEN_PICKUP, create a replacement operation, create a per-operation watcher with
-no receiver, or ask the Chairman to act as routine quota allocator. If a lawful receiver binding is later
-supplied through current canonical placement or an independently supplied bounded manual directive, the
-same #6514 operation/carrier proceeds through current ACK/read/communication/START discipline before any
-write. Post-START binding remains sticky under RuntimeBinding law.
+- earlier Claude4- pre-START placement is closed as unavailable with `effect=NONE`;
+- current receiver is Claude5 `U0BT20ZL77C` on the SAME operation and SAME #6514 carrier;
+- receiver `ACK` has been received;
+- one consolidated exact-thread `WATCH_ARMED` receipt has been received;
+- no distinct `START`, modifying effect, worker RESULT/BLOCKED/DECISION_REQUEST, or started RuntimeBinding exists yet;
+- attention state is `RECEIVER_BOUND / PRESTART`, awaiting the fresh #6514/current-main collision census and then a distinct START if gates are clear.
+
+ACK and WATCH_ARMED are not execution proof. Do not mark K3-D executing, do not merge #6514, and do not
+start K5 from placement state. Before any write, the current receiver must finish current-source/current-main
+and collision reconciliation and post distinct START. Until START, a genuine pre-START invalidation may be
+reconciled without a new operation/carrier; after START the RuntimeBinding becomes sticky under current law.
+
+Frozen repair scope remains exactly three blockers:
+
+1. canonical resolved-target logical record identity, never raw `requested_key`;
+2. generator-level exact native-owner / closed allowed-owner authority enforcement;
+3. exact fail-closed `source_event.source_identity` semantic admission.
+
+Preserve both honest real abstention receipts, all four DNR kills, and zero fourth graph/store/grader/ranker/
+scalar/K5/Prophet/Fusion/trade authority.
 
 ## K5
 
 State: `NOT_BUILT / DEPENDENCY_HELD`.
 
 K5 may not start from merged K2-C raw proof, from K3-D synthetic-positive proof, from Slack delivery,
-from placement state, or from this decision. Release requires separate Sol acceptance of repaired K2-C
-and K3-D under their own completion laws.
+from ACK/WATCH_ARMED, from placement state, or from this decision. Release requires separate Sol acceptance
+of repaired K2-C and K3-D under their own completion laws.
 
 # Supersession
 
 Where older Alpha/MarketOntology handoffs say the next action is to 'commission K2-C and K3-D' as if both
 were absent, this decision supersedes only that stale current-state/continuation clause. Where transition-
-era wording makes routine Chairman account selection or broad OPEN_PICKUP the default for these unbound
-children, current protected organizational-continuity law supersedes that placement wording with
-WAITING_CAPACITY / EXECUTIVE_PLACEMENT. It does not rewrite the original missions, DNRs, owner boundaries
-or K5 gate.
+era wording makes routine Chairman account selection or broad OPEN_PICKUP the default for unbound children,
+current protected organizational-continuity law supersedes that placement wording. Where this decision's
+own earlier revision projected K3-D as WAITING_CAPACITY after the receiver gap was later lawfully resolved,
+this revision supersedes that attention projection only: K3-D is now receiver-bound pre-START, not executing.
+It does not rewrite the original missions, DNRs, owner boundaries or K5 gate.
