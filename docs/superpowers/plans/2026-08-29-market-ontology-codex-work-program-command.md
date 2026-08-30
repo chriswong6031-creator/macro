@@ -7,7 +7,8 @@
 **Protected procedure pin for this command freeze:** `mastermindx-market-intelligence/Mastermind@75b90cfeb4752d2a356a463b351382c1e0c25cb1`  
 **Macro authoring base:** `mastermindx-market-intelligence/macro@3ca224511354d73cdf9203c9a5b19368331b3109`  
 **Temporary parent command carrier:** Slack `#marketontology`, channel `C0BTG1BMY8K`, parent message `1788065181.284389`  
-**Authority:** Chairman-approved program command and execution architecture. It does not itself start a child implementation, grant a technical credential, create an Executive Job, promote trading authority or prove production parity.
+**Authority:** Chairman-approved program command and execution architecture. It does not itself start a child implementation, grant a technical credential, create an Executive Job, promote trading authority or prove production parity.  
+**Hierarchy addendum:** `docs/superpowers/plans/2026-08-29-market-ontology-meta-ceo-program-ceo-manual-orchestration-addendum.md` has specific precedence for the Main Meta-CEO → Codex Work Program CEO → Project CEO/Integrator/Auditor Sol → COO/worker hierarchy, the three-browser principal pool, manual Slack/Computer Use delivery, reciprocal watcher mesh and exact-session Meta-CEO escalation.
 
 ---
 
@@ -17,38 +18,50 @@ Market Ontology is no longer a research-only effort and is no longer allowed to 
 of unclaimed lane packets, records-only reconciliations and provider-specific sessions.
 
 The Chairman has authorized one selected **ChatGPT Codex Work session** to act as the sustained
-**Delegated Program CEO / Implementation Commander** for the complete Market Ontology program.
+**Program CEO Sol / on-the-ground Implementation Commander** for the complete Market Ontology program.
+The active Personal-Pro Sol session remains the **Main Meta-CEO Sol** and owns overall direction,
+architecture, topology, red lines, milestone acceptance and reporting to Chairman Chris. Program CEO
+Codex Work is responsible for making that direction operational through Project CEO Sol sessions,
+Integrator/Auditor Sol roles and bounded COO/worker waves.
 
 Its job is to turn the existing architecture and evidence into a continuous sequence of independently
 useful, production-proven Mastermind capabilities until the complete lawful Market Ontology feature/job
 space has been absorbed and then surpassed.
 
-The operating hierarchy is:
+The controlling operating hierarchy is:
 
 ```text
 Chairman Chris
     final authority
 
-Sol
-    executive sponsor
-    product/system/intelligence architecture governor
-    authority and owner-boundary adjudicator
-    milestone/final acceptance
+Main Meta-CEO Sol
+    current ChatGPT Personal-Pro Sol session
+    direction, product/system/intelligence architecture, topology,
+    red-line adjudication, milestone/final acceptance, Chairman reporting
 
-Codex Work Delegated Program CEO
-    sustained day-to-day program command
-    current-state recovery and sequencing
-    bounded child commissioning and orchestration
-    implementation/review/landing coordination
-    Agent OS + Linear continuity
+Codex Work Program CEO Sol
+    sustained day-to-day implementation/orchestration command
+    Slack + Computer Use operation, current-state recovery,
+    Project CEO placement, integration and execution continuity
 
-bounded builders and reviewers
-    Codex / Terra / Luna / Claude / Opus / Fable / Cursor / Warp / other authorized surfaces
+Project CEO Sols / Integrator Sol / Auditor Sol / specialist Sol councils
+    operation-scoped ChatGPT Pro browser sessions
+    coherent bounded product/program reasoning and worker delegation
+
+COO/operators and workers
+    Codex / Terra / Luna / Claude / Opus / Fable / Cursor / Warp /
+    Grok / GLM / Alibaba models / mechanical agents / other authorized surfaces
 ```
 
-This is **CEO-by-exception** rather than CEO-as-message-router. Codex Work has freedom to operate inside
-the frozen architecture. Sol is pulled in at genuine architecture, authority, rights, destructive-change,
-owner-collision and milestone boundaries—not for routine reversible engineering.
+The three ChatGPT browser environments are a principal reasoning capacity pool, not three permanent
+organizational identities. Program CEO should actively use them for coherent Project CEO missions and
+independent integration/audit, while limiting concurrency to what can actually be watched and
+integrated.
+
+This is **Meta-CEO by exception and milestone**, not Meta-CEO as routine dispatcher. Program CEO has
+freedom to operate inside the frozen architecture. Main Meta-CEO is pulled in at genuine architecture,
+authority, rights, destructive-change, owner-collision and milestone boundaries—not for routine
+reversible engineering.
 
 ---
 
@@ -117,7 +130,7 @@ Mastermind reaches three distinct milestones:
 3. **`BEYOND_PARITY_RATCHET_ACTIVE`** — every parity family has been reviewed for Mastermind-native
    combination, hardening, expansion, instrumentation and moat creation.
 
-Only Sol/Chairman may declare these milestones after adversarial proof review.
+Only Main Meta-CEO Sol/Chairman may declare these milestones after adversarial proof review.
 
 ---
 
@@ -209,10 +222,18 @@ Those blockers must remain honest, but they do not justify pausing independent F
 ### 3.5 Too many transitions required a Sol/Chairman relay
 
 The system correctly protected architecture and authority, but ordinary reversible implementation
-became overly dependent on manual routing and review ceremony. Codex Work now owns the continuous
-translation from plan to child waves and from child returns to bounded next actions.
+became overly dependent on manual routing and review ceremony. Program CEO Codex Work now owns the
+continuous translation from Meta-CEO direction to Project CEO missions, from Project CEO plans to
+worker children and from child returns to bounded next actions.
 
-### 3.6 Feature families risked becoming checklists instead of journeys
+### 3.6 One principal risked becoming the intelligence bottleneck
+
+The initial command framing could be interpreted as Codex Work directly supervising all bounded
+workers. That would move the bottleneck rather than remove it. The corrected architecture uses the
+three browser environments as Project CEO/Integrator/Auditor principal capacity, allowing Codex Work
+to orchestrate several coherent reasoning programs while remaining the integration commander.
+
+### 3.7 Feature families risked becoming checklists instead of journeys
 
 Parity rows are necessary for coverage, but the product moat comes from coherent continuation:
 `event -> research -> implication -> expression -> monitor -> revision`, not isolated screens.
@@ -225,7 +246,8 @@ Parity rows are necessary for coverage, but the product moat comes from coherent
 
 After this command freeze, no additional meta/topology/coordination PR is justified unless it resolves
 a real canonical disagreement or immediately unlocks a named capability. Program control belongs in
-this masterplan, Agent OS, the selective Linear projection and the existing runtime planes.
+this masterplan, the specific hierarchy addendum, Agent OS, the selective Linear projection and the
+existing runtime planes.
 
 ### 4.2 Preserve active carriers
 
@@ -248,20 +270,29 @@ edge, not the company.
 Every product tranche must create a complete, independently useful workflow. The row ledger records
 which source rows it closes; the user journey determines whether the capability is real.
 
-### 4.5 One child, one capability, one proof packet
+### 4.5 Layer principal reasoning before routine implementation
+
+Program CEO should normally assign a coherent tranche or product organism to a Project CEO Sol before
+routing routine implementation. Project CEO owns product/experience/intelligence coherence and
+worker review; workers own bounded delivery. Program CEO may bypass an extra Project CEO only for
+small, already-frozen mechanical or straightforward engineering work where an additional principal
+layer would add no value.
+
+### 4.6 One child, one capability, one proof packet
 
 No mega-branch, mega-PR or hidden subagent swarm may mutate the same shared surface without explicit
-ownership. Program breadth is achieved through many bounded vertical children, not one unreviewable
-implementation burst.
+ownership. Program breadth is achieved through coherent Project CEO programs and many bounded worker
+verticals, not one unreviewable implementation burst.
 
-### 4.6 Bureaucracy budget
+### 4.7 Bureaucracy budget
 
 Use the minimum durable ceremony required for recoverability and safety:
 
 - one parent command thread;
 - one parent Linear command issue;
-- one current Agent OS handoff;
-- one stable operation key and carrier per child;
+- one current Agent OS handoff plus the hierarchy amendment;
+- one Project CEO carrier per coherent principal mission;
+- one stable operation key and carrier per worker child;
 - semantic messages only at `ACK`, `WATCH_ARMED`/`WATCH_UNAVAILABLE`, `START`, material `BLOCKED` or
   `DECISION_REQUEST`, `RESULT`, `CONTINUE`/repair and terminal `STOP`;
 - no repetitive status essays or duplicate projections;
@@ -271,20 +302,44 @@ Use the minimum durable ceremony required for recoverability and safety:
 
 ## 5. Authority model
 
-### Codex Work owns without routine Sol approval
+### Main Meta-CEO Sol owns
+
+- overall program/company direction and value thesis;
+- major product/system/experience/intelligence architecture;
+- major tranche topology and no-rebuild boundaries;
+- cross-program owner/authority adjudication;
+- high-level priority/resource rulings;
+- milestone and final acceptance;
+- Chairman reporting.
+
+### Program CEO Codex Work owns without routine Meta-CEO approval
 
 - current-state archaeology and collision census;
-- tranche prioritization inside this plan;
-- bounded child definition and least-scarce worker routing;
+- execution sequencing inside this plan;
+- bounded Project CEO mission definition and browser placement;
+- Integrator/Auditor/specialist council use;
+- least-scarce COO/worker routing under Project CEO plans;
 - worktree/branch/PR creation and test orchestration;
-- computer-assisted implementation on actually available authorized sessions;
+- authorized Computer Use across actual available browser/app sessions;
 - independent reviewer selection;
 - reversible repairs that preserve accepted contracts;
 - product/browser/production proof collection;
+- cross-project integration;
 - Agent OS discoveries/handoffs and Linear projection after canonical evidence;
-- reversible authority-neutral merges when the repository's current hold/release law permits them.
+- reversible authority-neutral merges when current repository hold/release law permits them.
 
-### Mandatory Sol checkpoint
+### Project CEO Sol owns inside its mission
+
+- exact intent/user/machine job recovery;
+- competitor-job and current-estate archaeology;
+- experience/data/intelligence architecture inside frozen parent boundaries;
+- decomposition into bounded worker verticals;
+- worker commissioning and review;
+- integration of accepted child results;
+- durable project decisions/discoveries/handoff;
+- one coherent result returned to Program CEO.
+
+### Mandatory Main Meta-CEO checkpoint
 
 - new canonical durable object/truth/store/identity/control architecture;
 - owner-boundary changes or unresolved cross-program collision;
@@ -302,7 +357,7 @@ Use the minimum durable ceremony required for recoverability and safety:
 - material commercial or rights commitment;
 - credential/account policy outside existing authorization;
 - destructive business/product decision;
-- final company acceptance when Sol escalates.
+- final company acceptance when Main Meta-CEO escalates.
 
 ---
 
@@ -317,8 +372,8 @@ Use the minimum durable ceremony required for recoverability and safety:
 | Communication, pickup and hot state | Slack |
 | Strategy/product architecture | Declared repository authority |
 
-Codex Work must not create a private program database, local JSON queue, hidden spreadsheet or Slack
-thread index that becomes the real program truth.
+Program CEO and Project CEOs must not create a private program database, local JSON queue, hidden
+spreadsheet or Slack thread index that becomes the real program truth.
 
 A lightweight derived report is allowed only if it is reproducible from canonical sources and clearly
 non-authoritative.
@@ -327,7 +382,7 @@ non-authoritative.
 
 ## 7. Immediate current-state recovery sequence
 
-The delegated CEO begins by reconciling—not duplicating—the following carriers.
+The Program CEO begins by reconciling—not duplicating—the following carriers.
 
 ### RC-1 — Land F00B durability carrier
 
@@ -356,7 +411,7 @@ The delegated CEO begins by reconciling—not duplicating—the following carrie
 ### RC-4 — Retire stale topology assumptions
 
 - #6595's historical Fable-root/provider-seat model is superseded in substance by current account-neutral
-  routing and this delegated Codex command architecture.
+  routing and this layered command architecture.
 - Do not merge it as current topology.
 - After this command decision becomes durable, close or explicitly supersede #6595 without deleting
   useful historical evidence.
@@ -364,10 +419,18 @@ The delegated CEO begins by reconciling—not duplicating—the following carrie
 ### RC-5 — Repair Linear projection
 
 - Keep MAS-141 as the parent complete-parity projection.
-- Add one command issue for Codex Work leadership.
+- Add/update one command issue for Main Meta-CEO/Codex Program CEO/Project CEO leadership.
 - Repair MAS-157 to current F00A `BLOCKED SOURCE_BYTES_UNAVAILABLE / PRE-START / effect NONE` truth.
 - Preserve MAS-170 as F00B deliverable done but PR landing not yet complete.
-- Do not mark any F01-F13 lane in progress without a real child operation/receiver/start.
+- Do not mark any F01-F13 lane or new project in progress without a real operation/receiver/START.
+
+### RC-6 — Measure principal capacity and launch the first hierarchy cycle
+
+- Inspect the three browser environments through authorized Computer Use.
+- Record only actual eligible capacity and active-session collisions.
+- Prefer two disjoint Project CEO builders plus one Integrator/Auditor for the first consequential cycle.
+- Create exact Project CEO packets/carriers and deliberately deliver them to selected browser sessions.
+- Require ACK -> WATCH -> START before counting any principal operation active.
 
 These recovery items are program-control work. They do not count as product parity.
 
@@ -386,7 +449,7 @@ raw files, together with the authoritative Turn-6 manifest/per-member receipts. 
 - JSON: 957,866 bytes; SHA-256 `785f83ca2e92e070d41174b2a6e28834019517d6c845351771eb261fde766d59`.
 
 No model, browser extraction, parsed File Library text or reconstructed serialization may substitute
-for raw-byte proof. Codex Work may coordinate the unblock but must not create a replacement F00A
+for raw-byte proof. Program CEO may coordinate the unblock but must not create a replacement F00A
 operation or repeat host-wide searches without new source evidence.
 
 ### F00C — zero-loss granular reconciliation
@@ -430,8 +493,9 @@ rather than disappearing.
 
 ## 9. Product implementation tranches
 
-F00A/F00C do not need to finish before every obvious unblocked product wave. Codex Work may run
-collision-free tranches in parallel, while every child records the coarse/granular rows it closes.
+F00A/F00C do not need to finish before every obvious unblocked product wave. Program CEO may run
+collision-free Project CEO tranches in parallel, while every worker child records the coarse/granular
+rows it closes.
 
 ### Tranche A — Security research and research continuity
 
@@ -605,52 +669,65 @@ Instrumentation may accompany each product wave rather than waiting for a final 
 
 ---
 
-## 10. Selecting the next child
+## 10. Selecting Project CEO missions and worker children
 
-Codex Work maintains a current candidate stack, not a frozen multi-month queue. Before creating a
-child, score candidate verticals against:
+Program CEO maintains a current candidate stack, not a frozen multi-month queue. Before creating a
+Project CEO mission, score candidates against:
 
 1. independent user/machine value;
 2. number and importance of parity jobs closed;
 3. shared substrate unlocked for later waves;
 4. dependency readiness;
-5. ability to prove through a real consumer quickly;
+5. ability to prove through real consumers quickly;
 6. rights/data readiness;
 7. current PR/path collision risk;
 8. architecture/authority risk;
 9. reversibility;
-10. availability of an independent reviewer.
+10. value of a dedicated principal reasoning layer;
+11. availability of an independent Integrator/Auditor.
 
-The first new product child after command recovery should be the highest-value **unblocked** vertical
-that does not collide with F00A, F00B, F04, K2-C, K3-D or another active program. Codex Work must post
-the chosen mission, rejected alternatives and collision evidence to the parent command thread before
-START. It does not need routine Sol approval unless the choice crosses a mandatory checkpoint.
+The first principal cycle after command recovery should use the highest-value **unblocked** disjoint
+missions and normally reserve one browser environment for integration/audit. Program CEO posts chosen
+missions, rejected alternatives and collision evidence to the parent command thread before delivery.
+It does not need routine Main Meta-CEO approval unless a mission crosses a mandatory checkpoint.
+
+Within each Project CEO mission, worker child selection follows the same value/readiness/collision law
+but each child must close one independently useful implementation or research vertical.
 
 ---
 
-## 11. Child-wave contract
+## 11. Project CEO and child-wave contracts
 
-Every child packet contains:
+Every Project CEO packet contains:
 
-- one observable mission;
-- why it matters to the end-state journey;
+- one coherent observable product/program mission;
+- why it matters to the Chairman and overall Market Ontology end state;
 - current protected procedure and architecture precedence;
-- exact parent/child operation identities and carrier;
-- verified current state and relevant recent PRs;
-- exact repository/path scope and protected no-edit surfaces;
-- explicit non-goals;
-- complete positive and degraded user/machine journeys;
+- exact parent/project operation identities and carrier;
+- verified current state and materially relevant recent PRs;
+- exact repository/owner boundaries and no-edit surfaces;
+- complete positive/degraded user and machine journeys;
 - data identity, clocks, freshness, null, conflict, replay and correction behavior;
 - deterministic vs statistical vs model-generated method and authority ceiling;
-- failure states;
-- ordered implementation sequence and parallelism boundaries;
-- discriminating tests and hostile mutations;
-- real browser/production/machine proof;
-- stop condition;
-- exact return packet;
-- continuation watcher/wait behavior and terminal shutdown law.
+- Project CEO child-delegation envelope;
+- mandatory Main Meta-CEO checkpoints;
+- integration/audit expectations;
+- acceptance and milestone proof;
+- stop/continuation/watcher contract.
 
-No child says “finish F07,” “build the whole suite” or “improve Market Ontology.”
+Every COO/worker child contains the same core fields but is constrained to one independently useful
+vertical:
+
+```text
+real producer/source
+-> canonical contract/state
+-> real consumer/projection
+-> failure states
+-> discriminating tests
+-> real proof
+```
+
+No Project CEO packet says “finish F07” and no worker packet says “build the whole feature suite.”
 
 ---
 
@@ -698,37 +775,45 @@ Data/learning work requires natural-time or accepted production receipts at the 
 
 ### 12.6 Builder/reviewer separation
 
-Consequential children use an independent reviewer where practical. Prefer cross-model or
-cross-provider review for architecture-sensitive, rights-sensitive or data-sensitive waves.
+Consequential worker children use an independent reviewer where practical. Consequential Project CEO
+tranches use an Integrator or Auditor Sol independent of the main builder Project CEO where capacity
+allows. Prefer cross-model or cross-provider review for architecture-sensitive, rights-sensitive or
+data-sensitive waves.
 
 ---
 
-## 13. Program cadence and communication
+## 13. Program cadence, communication and watchers
 
 ### Parent `#marketontology` thread
 
 Use for:
 
-- Codex Work pickup ACK/WATCH/START;
-- tranche selection and parent-level decisions;
-- milestone/blocker/result summaries;
-- requests for Sol architecture or authority adjudication;
-- cross-child collision decisions;
-- program STOP or milestone acceptance.
+- Program CEO pickup ACK/WATCH/START;
+- Main Meta-CEO direction and rulings;
+- principal topology/tranche selection;
+- cross-project integration/collision decisions;
+- major blockers and milestone returns;
+- parent terminal STOP.
 
 Do not use it as the sole implementation record or paste every child log into it.
 
-### Child carriers
+### Project CEO carriers
 
-Each child has its own exact thread or accepted native task carrier. Existing children stay where
-they are. Parent messages reference child operation keys and immutable PR/head receipts.
+Each Project CEO/Integrator/Auditor operation receives a separate top-level thread in
+`#marketontology`, unless preserving an existing lawful carrier. Program CEO deliberately delivers
+the packet into the selected browser session through authorized Computer Use and requires receiver ACK.
+
+### Worker carriers
+
+Each worker child has its own exact thread or accepted native task carrier. Existing children stay
+where they are. Parent messages reference child operation keys and immutable PR/head receipts.
 
 ### Linear
 
 Linear shows:
 
-- current command owner;
-- active tranches;
+- Main Meta-CEO/Program CEO command relationship;
+- active Project CEO missions and tranches;
 - explicit external/architecture gates;
 - accepted production capability state;
 - exact next action.
@@ -740,19 +825,22 @@ It does not duplicate Agent OS prose or infer completion from a merged architect
 Record only material decisions, discoveries, workstream state and handoffs needed by a fresh session.
 Do not create one handoff per routine commit.
 
-### Watchers
+### Reciprocal watchers
 
-- Codex Work watches the parent thread while the parent operation is nonterminal.
-- Every active child lead watches its child carrier.
+- Program CEO watches the parent thread while the parent operation is nonterminal.
+- Program CEO and each Project CEO both watch their exact project carrier.
+- Project CEO and each active worker both watch the child carrier.
 - Nonterminal events advance the baseline and keep/re-arm the watcher.
 - `BLOCKED`, `DECISION_REQUEST` and `RESULT` require a same-carrier ruling, not a notification-only stop.
 - Terminal `STOP` closes only that child source, not an aggregate seat/principal watcher.
 - Class-M reasoning polling defaults to 60 minutes, hard floor 15 minutes, with unchanged-event backoff.
 - Watchers own no lifecycle, retry, merge, authority or next-wave right.
 
-Current Sol-side truth: this interactive surface has no available Task/Automation/condition-watch
-creation action, so parent `WATCH_UNAVAILABLE` is recorded honestly. Codex Work must use its actual
-host capability or return the concrete unavailability result.
+Current Main Meta-CEO-side truth: this interactive surface has no available
+Task/Automation/condition-watch creation action, so parent `WATCH_UNAVAILABLE` is recorded honestly.
+For mandatory checkpoints Program CEO must post in Slack and use Computer Use to open the exact
+current Main Meta-CEO Sol project conversation. That conversation is `EXACT_SESSION_REQUIRED`; if it
+cannot be found, return `BLOCKED META_CEO_SESSION_NOT_FOUND` rather than selecting a random Sol chat.
 
 ---
 
@@ -760,11 +848,12 @@ host capability or return the concrete unavailability result.
 
 The manual phase must be intentionally disposable as transport but durable as identity.
 
-Every parent/child operation records:
+Every parent/project/child operation records:
 
 ```text
 parent operation key
-child operation key
+project/child operation key
+organizational role
 canonical workstream/owner
 capability rows/family IDs
 repository / PR / exact head
@@ -784,21 +873,22 @@ When Business Premium and the production-proven Executive/Agent orchestration pa
 4. preserve Agent OS decisions/discoveries/handoffs;
 5. keep GitHub PR/SHA proof identities;
 6. update Linear projections;
-7. retire temporary manual watcher sources only after explicit handoff/STOP.
+7. retire temporary manual watcher sources only after explicit handoff/STOP;
+8. stop using Computer Use and Slack as the normal placement/wake plane.
 
 Forbidden migration behavior:
 
 - bulk converting Slack history into new Jobs;
-- recreating every child under a new ID;
+- recreating every operation under a new ID;
 - blind-resending started operations;
 - creating a second queue, watcher registry, memory or retry plane;
-- interpreting Slack delivery as execution.
+- interpreting Slack or typed GUI delivery as execution.
 
 ---
 
 ## 15. Program metrics
 
-Codex Work maintains a compact, evidence-derived scorecard:
+Program CEO maintains a compact, evidence-derived scorecard:
 
 ### Coverage
 
@@ -815,9 +905,19 @@ Codex Work maintains a compact, evidence-derived scorecard:
 - user journeys completed vs disconnected;
 - number of duplicate systems prevented/retired.
 
+### Principal orchestration
+
+- active Project CEO/Integrator/Auditor sessions with real ACK/WATCH/START;
+- browser capacity actually available vs assumed;
+- Project CEO missions with complete worker decomposition;
+- worker returns awaiting Project CEO action;
+- Project CEO returns awaiting Program CEO integration;
+- mandatory Meta-CEO checkpoints awaiting ruling;
+- watcher failures and session-continuation events.
+
 ### Delivery
 
-- active bounded children;
+- active bounded worker children;
 - children awaiting external evidence;
 - PRs awaiting exact-head proof;
 - median transition count from child result to next lawful edge;
@@ -845,6 +945,7 @@ The program is not complete because:
 - pages with similar names exist;
 - a model can summarize the same topics;
 - Slack/Linear says Done;
+- three browser sessions are busy;
 - a competitor subscription is no longer needed.
 
 Completion requires:
@@ -868,12 +969,17 @@ failure states.
 Instrumentation showing whether the capability improves research, discovery, retention, monitoring
 or decisions, without confusing product usefulness with trading authority.
 
-Final acceptance is a Sol adversarial review against the complete Chairman intent, followed by
-Chairman acceptance where required.
+### Organizational recoverability
+
+The hierarchy can survive Program CEO, Project CEO and browser-session turnover through Agent OS,
+GitHub and stable operation/carrier identities, without this chat or a hidden manual queue.
+
+Final acceptance is a Main Meta-CEO Sol adversarial review against the complete Chairman intent,
+followed by Chairman acceptance where required.
 
 ---
 
-# Appendix A — Codex Work pickup protocol
+# Appendix A — Program CEO pickup protocol
 
 The durable packet is not self-assigning merely because a session finds it in GitHub or Slack.
 Chairman Chris's deliberate live delivery of this packet to the selected Codex Work session with
@@ -888,33 +994,38 @@ receiver=<actual Codex Work session identity>
 
 It must then:
 
-1. read the entire parent thread and this plan;
+1. read the entire parent thread, this plan and the controlling hierarchy addendum;
 2. load the current protected Skillpack, not only the authoring pin;
 3. refresh Macro and all materially relevant repositories/PRs/Agent OS/Linear state;
 4. reconcile open reciprocal children before creating replacements;
-5. arm an exact-thread continuation watcher and post `WATCH_ARMED`, or post the concrete
+5. inspect actual three-browser capacity and active session collisions;
+6. arm an exact-thread continuation watcher and post `WATCH_ARMED`, or post the concrete
    `WATCH_UNAVAILABLE` result after checking the actual host surface;
-6. post a distinct `START marketontology-codex-work-ceo-transition-20260829-sol-001` only after
+7. post a distinct `START marketontology-codex-work-ceo-transition-20260829-sol-001` only after
    current collision and authority gates are clear;
-7. execute the immediate recovery sequence and select the first new bounded product child;
-8. keep the parent thread alive until explicit terminal Sol/Chairman STOP.
+8. execute the immediate recovery sequence;
+9. select and commission the first principal topology, normally two disjoint Project CEO builders
+   plus one Integrator/Auditor if all three browser environments are eligible;
+10. use Computer Use for deliberate live delivery and verify ACK/WATCH/START on every Project CEO carrier;
+11. keep the parent thread and exact Main Meta-CEO escalation bridge alive until explicit terminal STOP.
 
-# Appendix B — First return packet
+# Appendix B — First Program CEO return packet
 
-Codex Work's first material parent return should contain:
+Program CEO's first material parent return should contain:
 
 - current protected Skillpack SHA;
 - current repo/default-branch pins;
-- ACK/WATCH/START receipts;
+- parent ACK/WATCH/START receipts;
+- actual three-browser capacity census;
 - current-state corrections to this authoring snapshot;
 - disposition of #6609, #6631, #6632, #6514 and #6595;
 - F00A state and exact external unblock owner;
-- selected first unblocked product vertical and why alternatives lost;
-- child operation key, owner, carrier and exact scope;
-- collision census;
+- selected first-cycle Project CEO/Integrator/Auditor topology and why alternatives lost;
+- each project operation key, carrier, mission, receiver and collision census;
+- first Computer Use delivery/ACK receipts or exact blockers;
 - Linear/Agent OS projection repairs;
-- any Sol checkpoint required;
+- any Main Meta-CEO checkpoint required;
 - explicit `CONTINUE` request or terminal state.
 
 The parent does not STOP after this return. It continues until the program receives an explicit
-terminal Sol/Chairman edge.
+terminal Main Meta-CEO/Chairman edge.
