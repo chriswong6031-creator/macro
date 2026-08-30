@@ -6,7 +6,7 @@ objective: >
   Mastermind a production-grade incremental broad SEC source plane (FF-1) so
   later waves can see which issuers have new SEC information without a rerender
   minting freshness. FF-2 must not start until FF-1 is production-proven live.
-status: parked
+status: active
 program: fundamental-forensics
 repos: [macro]
 owner: coo-fable
@@ -55,12 +55,20 @@ waves:
     title: Incremental Broad SEC Source Plane
     status: in_progress
     depends_on: [FF-0]
-    pr: [5820, 5864, 5898, 6285, 6318]
+    pr: [5820, 5864, 5898, 6285, 6318, 6391]
     next_action: >
-      FF-1P2R is PROVEN_LIVE, but FF-1 remains PARTIAL / in progress. FF-1R
-      recovery is a separately commissioned capability and previous-quarter
-      weekly reconciliation remains SPEC_ONLY / NOT_BUILT. Do not infer
-      recovery, a universe expansion, or FF-2 authorization from P2R.
+      PARTIAL / IN_PROGRESS. FF-1P2R current-quarter discovery remains
+      PROVEN_LIVE. Scheduled run 33247138975 on 2026-08-29/30 then proved the
+      bounded partial/replay path against a larger 2,842-issuer live universe:
+      aggregate Company Facts exhaustion drained on the same workflow carrier
+      from backlog 42 -> 32 -> 20 -> 8 -> 0 without changing source law or the
+      frozen 32 MiB per-run cap. Final attempt-5 job 99190103903 /
+      run_0e66732e4f506b25446a was complete with expected/observed 2,842/2,842,
+      failed=0, companyfacts_deferred=0, failures=[] and latest-complete
+      advanced; latest relevant SEC accepted_at was 2026-08-28T20:28:19.000Z.
+      FF-1 is still not globally correction-safe: July FF-1R remains unexecuted
+      after the #6391 source-law landing and previous-quarter weekly
+      reconciliation remains SPEC_ONLY / NOT_BUILT. FF-2 stays locked.
   - id: FF-1P2R
     title: Current-quarter EDGAR-index discovery
     status: done
@@ -72,24 +80,33 @@ waves:
       32604043860 / run_4e7970fb7cb841b6671d established the canonical
       current-quarter baseline for 2,841 parquet-derived issuers. Run B
       32605564919 / run_8583eb7ce7476290c0b2 proved the quiet incremental
-      path: baseline=false, one index acquisition, 2,627 unchanged relevant
-      rows, zero affected issuers, zero Submissions or Company Facts fanout,
-      canonical=true, issuer/ticker/CIK=2,841/2,841/2,841,
-      expected/observed/failed=2,841/2,841/0, failures=[], and complete
-      publication. This closes current-quarter discovery only.
+      path. The later scheduled run 33247138975 exercised the intended bounded
+      partial-replay law on 2,842 issuers: attempts 1-4 persisted lawful issuer
+      evidence while refusing latest-complete, and attempt 5 / job 99190103903 /
+      run_0e66732e4f506b25446a completed 2,842/2,842 with zero failures,
+      zero deferred Company Facts and backlog zero. This proves current-quarter
+      discovery/replay only; it does not close historical or previous-quarter
+      correction coverage.
   - id: FF-1R
     title: July recovery engine
     status: in_progress
     depends_on: [FF-1P2R]
     pr: [6285, 6318, 6391]
     next_action: >
-      PARKED / BUILT_NOT_PROVEN. Sol adjudicated only canonical duplicate
-      acceptance_datetime comparison: exact source text remains first-bound, and
-      valid UTC strings may reconcile only when their frozen _iso_order_key values
-      match. Held PR #6391 is not production authority. Preserve
-      plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
-      cursor/completed 0, backlog 2,571 and null last-successful recovery receipt.
-      Do not dispatch, retry, skip ANGO, advance the cursor, or start FF-2.
+      BUILT_NOT_PROVEN / READY_FOR_NEW_POST_RULING_OPERATION. PR #6391 merged
+      as a8075391fa895ec706976cd9cb9238c7e4cbdaea and placed
+      DEC:FF-1-ACCEPTANCE-DATETIME-COMPARES-BY-INSTANT on main: exact source
+      text remains first-bound, while two valid UTC acceptance_datetime strings
+      may reconcile only when the frozen _iso_order_key proves the same instant.
+      No historical recovery operation has been dispatched after that source-law
+      landing. Preserve plan
+      e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
+      recovery_from=2026-07-12T11:23:15Z, cursor/completed 0, backlog 2,571 and
+      null last-successful recovery receipt. The next lawful recovery is a NEW
+      workflow_dispatch operation from that frozen cursor, not a rerun of
+      32626273461 or 32708350406. ANGO remains first; do not skip it, regenerate
+      the plan, move the cursor by hand, weaken conflicts, or call the new
+      operation tranche B.
   - id: FF-2
     title: Broad workbench rebuild from the FF-1 source plane
     status: todo
@@ -97,8 +114,8 @@ waves:
     next_action: >
       FORBIDDEN / NOT_STARTED. No workbench rebuild, detectors, findings
       publish, Prophet, Neural Web, attested history, or Calcbench work until
-      the entire FF-1 source-plane scope, including separately commissioned
-      FF-1R where applicable, is complete and production-proven.
+      the entire FF-1 source-plane scope, including historical FF-1R and
+      previous-quarter correction coverage, is complete and production-proven.
 landmines:
   - "composed-state generated_at is the EDGAR/source clock, reported as broad_source_at only. It is never composed_state_at, last_successful_build_at, last_publication_at, or private_object_at."
   - "Source freshness SLA is 4 days (daily pipeline + weekend + one missed night). Do not reuse PUBLIC_SUMMARY_MAX_AGE_DAYS (30) as a freshness claim."
@@ -109,6 +126,7 @@ landmines:
   - "recorded_at must not default to poll_started_at. Submissions and Company Facts each carry their own retrieved_at stamped after exact bytes. poll_completed_at is sampled only after issuer attempts conclude."
   - "An empty FF-1 index snapshot makes incremental a discovery baseline: persist the current-quarter relevant set, emit a complete census, and fetch zero per-issuer Submissions or Company Facts. Do not treat quarter-to-date index rows as new events on that first run."
   - "Partial polls may persist successful issuer evidence but must not advance latest-complete. Scheduled lane exits non-zero on partial. latest-complete is a compact pointer and commits last."
+  - "Aggregate Company Facts run-budget exhaustion is resumable partial-poll behavior, not authority to raise MAX_COMPANYFACTS_BYTES_PER_RUN. Reconcile each typed queue_overflow effect, retain already-committed issuer evidence, and continue only on the same logical workflow carrier until backlog zero or a different failure class appears."
   - "FF-1 shares concurrency group filing-forensics-sec with Wave-2. Do not give it a second group."
   - "Live data/edgar/fundamentals.parquet can exceed an outdated MAX_UNIVERSE_ISSUERS. Measure unique issuer count against the cap before dispatching recovery. Do not shrink the parquet to fit the cap."
   - "Broad FF-1 discovery is the official EDGAR full-index master ZIP. Do not fan a per-issuer data.sec.gov census over the canonical parquet population. Do not download submissions.zip nightly. The actual universe is parquet-derived per run and the 4,000 bind cap remains fail-closed. Wave-2 stays per-issuer/realtime. Never purge fundamental_forensics/broad-sec/v1/."
@@ -123,7 +141,7 @@ landmines:
   - "A partial FF-1R tranche may write immutable observations, receipts and its compact continuation, but never latest-complete. Only a backlog-zero final composition may advance latest-complete, and it must preserve newer current-incremental evidence."
   - "POINTER_MAX_BYTES=16 KiB governs compact mutable heads and pointers only. Full immutable issuer manifests use their separately measured 128 KiB finite envelope in both recovery and incremental paths (DSC:FF-1-IMMUTABLE-MANIFEST-IS-NOT-A-COMPACT-POINTER)."
   - "FF-1R run 32626273461 / run_382b4fbf26bb0fe3e298 is a fail-closed transport witness, not tranche progress: ANGO was refused at 20,779 > 16,384 before cursor movement. Do not label its retry tranche B."
-  - "Corrective tranche-A run 32708350406 / run_56830b4a74bd82a33d19 proved the immutable-manifest transport repair, then failed closed before progress because ANGO accession 0001628280-26-048138 conflicts on acceptance_datetime. failures is nonempty, cursor remains 0, and the operation is not an accepted checkpoint."
+  - "Corrective tranche-A run 32708350406 / run_56830b4a74bd82a33d19 proved the immutable-manifest transport repair, then failed closed before progress because ANGO accession 0001628280-26-048138 conflicted on acceptance_datetime. That production failure remains immutable evidence; #6391 later changed only the duplicate-comparison law for valid same-instant representations and did not move recovery state."
 do_not_redo:
   - "Do not modify FF-0 (app/forensics.py, engine/fundamental_forensics/health.py, templates/fundamental_forensics*, site/fundamental_forensics*, scripts/build_fundamental_forensics.py)."
   - "Do not start FF-2: no workbench rebuild, detectors, findings publish, Prophet/Neural Web, attested-history, or Calcbench."
@@ -146,16 +164,19 @@ do_not_redo:
   - "Do not move the 03:15 UTC schedule merely because submissions.zip rebuilds around 03:00 ET. Q3 master.zip Last-Modified was 02:02 UTC."
   - "Do not make recovery chase a live index, materialize a full pending-CIK list in continuation, refetch already committed CIKs, or use all historical filings.files shards. FF-1R binds a frozen plan and advances its compact cursor only after an issuer outcome is durable."
   - "Do not raise POINTER_MAX_BYTES to admit issuer manifests, rewrite existing immutable manifests, regenerate plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, or advance the recovery cursor to bypass the ANGO refusal."
-  - "Do not rerun 32626273461 or 32708350406, dispatch another cursor-zero recovery, skip ANGO, or call the next operation tranche B. The one corrective tranche-A release was consumed by run 32708350406 and stopped on historical_submissions_conflict."
+  - "Do not rerun 32626273461 or 32708350406. The next lawful cursor-zero recovery must be a NEW workflow_dispatch operation against the frozen plan after #6391's source law, with ANGO still first. Do not skip ANGO, regenerate the plan, move the cursor manually, or call the new operation tranche B."
 next_action: >
-  PARKED / HOLD-FOR-SOL on PR #6391 pending review of its exact candidate head.
-  The held FF-1R comparator repair admits only representationally equal valid UTC
-  acceptance_datetime strings at canonical duplicate reconciliation, retaining the
-  first exact text. It authorizes no recovery operation. Preserve plan
+  ACTIVE / HOLD-FOR-SOL RECORDS RECONCILIATION. Current-quarter FF-1 is again
+  complete in production at run_0e66732e4f506b25446a after bounded same-carrier
+  backlog drain 42 -> 32 -> 20 -> 8 -> 0. PR #6391 is ON_MAIN as
+  a8075391fa895ec706976cd9cb9238c7e4cbdaea, so the ANGO representational
+  source-comparison blocker is closed in code. Preserve July plan
   e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4,
-  cursor/completed 0, backlog 2,571, null last-successful recovery receipt and
-  the current incremental latest-complete. Previous-quarter reconciliation is
-  SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.
+  recovery_from=2026-07-12T11:23:15Z, cursor/completed 0, backlog 2,571 and
+  null last-successful recovery receipt. After this records correction is
+  accepted/landed, the exact next source operation is a NEW FF-1R
+  workflow_dispatch from cursor 0. Previous-quarter weekly reconciliation stays
+  SPEC_ONLY / NOT_BUILT and FF-2 remains FORBIDDEN / NOT_STARTED.
 ---
 
 ## Context
@@ -187,7 +208,7 @@ and commissioned the bounded July recovery engine. Production run
 closed on its first issuer, ANGO, because a valid 20,779-byte immutable
 manifest was read through the 16 KiB compact-pointer envelope. It made one
 current-Submissions request, zero Company Facts requests, and no recovery
-progress. Recovery is frozen at plan
+progress. Recovery froze at plan
 `e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4`,
 cursor 0, completed total 0 and null last-successful recovery receipt.
 
@@ -199,10 +220,34 @@ Sol-released corrective tranche-A run `32708350406` /
 `run_56830b4a74bd82a33d19` selected the same cursor-zero 64-CIK slice and read
 the valid 20,779-byte legacy ANGO manifest without the former transport error.
 It then failed closed on ANGO accession `0001628280-26-048138` because duplicate
-evidence conflicts on `acceptance_datetime`: failures=1, current Submissions=1,
+evidence conflicted on `acceptance_datetime`: failures=1, current Submissions=1,
 historical Submissions=0, Company Facts=0, completed=0 and backlog=2,571.
 latest-complete, ANGO and the recovery continuation remained byte-identical;
 only the immutable failed receipt/observations and latest-observation head were
-published. This is not an accepted recovery checkpoint. Do not retry or skip
-ANGO; return the exact conflict to Sol. Previous-quarter weekly reconciliation
-remains SPEC_ONLY / NOT_BUILT. Do not mark FF-1 done. FF-2 remains forbidden.
+published. That run remains a negative production witness, not a recovery
+checkpoint.
+
+Sol subsequently adjudicated the conflict as representational, not substantive:
+`2026-07-14T19:42:40Z` and `2026-07-14T19:42:40.000Z` are equal instants under
+the existing frozen `_iso_order_key`, while exact SEC text stays immutable.
+PR #6391 landed the bounded comparator repair as
+`a8075391fa895ec706976cd9cb9238c7e4cbdaea`; it did not move the July recovery
+plan, cursor or continuation. No historical recovery workflow has been
+dispatched after that landing.
+
+The scheduled 2026-08-29 broad-SEC incremental run `33247138975` then found 57
+new relevant Q3 accessions across 53 affected issuers in the now 2,842-issuer
+canonical universe. Its first four attempts intentionally failed closed only at
+the 32 MiB aggregate Company Facts run budget, with immutable committed issuer
+evidence preserved and latest-complete held: receipts
+`run_f14d89994239f7cd7583` (backlog 42), `run_c6059aa15979d46bc4e7`
+(backlog 32), `run_3923c15f657b40a64afa` (backlog 20), and
+`run_13bf80ca9b8550495053` (backlog 8). Sol reconciled each known effect before
+continuing the same workflow carrier and never raised a cap or changed source
+law. Attempt 5 / job `99190103903` / `run_0e66732e4f506b25446a` completed with
+expected/observed=2,842/2,842, failed=0, companyfacts_deferred=0, backlog=0,
+failures=[] and latest-complete advanced; latest relevant SEC accepted_at is
+`2026-08-28T20:28:19.000Z`. Current-quarter discovery is therefore healthy and
+production-proven again. Historical July recovery and previous-quarter weekly
+reconciliation remain the outstanding FF-1 truth gaps; do not mark FF-1 done or
+start FF-2.
