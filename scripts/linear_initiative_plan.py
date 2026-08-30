@@ -8,10 +8,14 @@ validates the static strategic classification layered above its emitted plan.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from scripts import linear_portfolio_plan as lpp
+_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_ROOT))
+
+from scripts import linear_portfolio_plan as lpp  # noqa: E402
 
 STRATEGY_SCHEMA = "linear_initiative_portfolio_strategy.v1"
 PLAN_SCHEMA = "linear_initiative_plan.v1"
