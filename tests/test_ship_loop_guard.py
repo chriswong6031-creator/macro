@@ -8405,6 +8405,62 @@ def test_unanswerable_authority_cannot_hide_an_exact_head_candidate_red(
     assert "ci_quiescence" not in GUARD._load(state_path)
 
 
+@pytest.mark.parametrize(
+    ("red_code", "red_detail"),
+    [
+        (
+            "unmerged",
+            "Pull request #4242 is unmerged; exact-head semantic evidence is clear.",
+        ),
+        ("none", ""),
+    ],
+)
+def test_non_owned_red_codes_cannot_bypass_an_answerable_authority_change(
+    monkeypatch, tmp_path, capsys, red_code, red_detail
+):
+    """Only ci_failed_unmerged proves own red before the authority read."""
+    repo, state_path, _head, runs, _observed = _v2_pending_session(
+        monkeypatch, tmp_path
+    )
+    alive = {"value": True}
+    authority = {"fingerprint": "1" * 16, "reads": 0}
+
+    def authority_snapshot(*_args):
+        authority["reads"] += 1
+        return {"fingerprint": authority["fingerprint"]}
+
+    monkeypatch.setattr(GUARD, "_watcher_process_alive", lambda _r: alive["value"])
+    monkeypatch.setattr(GUARD, "_ci_hold_authority_snapshot", authority_snapshot)
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+    capsys.readouterr()
+
+    alive["value"] = False
+    authority["fingerprint"] = "2" * 16
+    runs[:] = _v2_fast_preflight(
+        pending=False,
+        red=("trusted-ci / trusted-executor-pack-7", "failure"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_armed_pull_status",
+        lambda *_a: (red_code, red_detail),
+    )
+
+    GUARD._stop(repo, state_path, {"stop_hook_active": False})
+
+    outputs = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert authority["reads"] == 2
+    assert len(outputs) == 1
+    assert outputs[0]["systemMessage"].startswith(
+        "CI_MATERIAL_EVENT authority_change"
+    )
+    assert outputs[0].get("decision") != "block"
+    quiescence = GUARD._load(state_path)["ci_quiescence"]
+    assert quiescence["phase"] == "routed"
+    assert quiescence["material_kind"] == "authority_change"
+    assert quiescence["authority_fingerprint"] == "2" * 16
+
+
 def test_routed_receipt_does_not_hide_a_later_same_head_builder_red(
     monkeypatch, tmp_path, capsys
 ):

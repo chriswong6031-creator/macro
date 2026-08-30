@@ -4700,7 +4700,9 @@ def _try_ci_quiescence(
             missing_evidence,
             infrastructure,
         )
-        if not (inherited or missing_evidence or infrastructure):
+        if code == CI_FAILED_UNMERGED and not (
+            inherited or missing_evidence or infrastructure
+        ):
             # Candidate-owned red is mechanically known from the exact-head
             # checks and ordinary red classifier. It outranks authority-page
             # availability: never let an unrelated pagination outage turn this
@@ -4788,13 +4790,12 @@ def _try_ci_quiescence(
                 "none",
                 "",
             )
-        return False, code, detail
 
     # A concluded check transition outranks a simultaneous authority edge.
     # The higher-priority material receipt still consumes the freshly observed
     # authority fingerprint, so a later Stop exact-matches that red/green event
     # instead of losing it behind an earlier authority-only receipt.
-    if isinstance(existing, dict) and preflight_green and not pending:
+    if isinstance(existing, dict) and not red and preflight_green and not pending:
         route = _ci_event_route("green", pr=number, head=head, checks=passed)
         return (
             _ci_material_receipt(
@@ -4837,6 +4838,13 @@ def _try_ci_quiescence(
             # an identical event stays exact-once while a later same-head check
             # generation or authority edge remains visible.
             return True, "none", ""
+
+    if red:
+        assert red_classification is not None
+        code, detail, _inherited, _missing_evidence, _infrastructure = (
+            red_classification
+        )
+        return False, code, detail
 
     if pending and preflight_green:
         if isinstance(existing, dict):
