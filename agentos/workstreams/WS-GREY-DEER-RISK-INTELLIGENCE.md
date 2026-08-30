@@ -23,7 +23,10 @@ owns_paths:
   - site/riskdata/risk_envelope.json
   - site/live/risk_envelope.json
   - templates/risk_envelope/
+  - templates/_risk_envelope_band.html.j2
+  - templates/_risk_envelope_band.css.j2
   - tests/test_risk_envelope
+  - tests/test_risk_envelope_presentation.py
   - agentos/handoffs/GREY-DEER-
 discoveries:
   - DSC:GD1-LC-EMISSION-LOG-STARTS-BROKEN
@@ -278,6 +281,14 @@ waves:
     # "cn_ledger=2026-08-20(0) hk_ledger=2026-08-20(0)"; next-day organic
     # confirmation: ledgers advanced to asof 2026-08-21 (CN 14 / HK 13 rows,
     # one new row each, zero dups, commit 927fb6a78046).
+  - id: GD-UX-COMPACT-L1
+    title: Compact Market Reads rail in the regime hero; Grey Deer projection in #dlg-risk
+    status: in_progress
+    depends_on: [GD-2]
+    # Chairman-direct 2026-08-30 (no Slack thread). Presentation only.
+    # GD-2 dedicated full-width L1 is overruled for presentation; semantic freeze
+    # is unchanged. Carrier claude/gd-compact-risk-context-20260830. Do not
+    # self-merge — HOLD-FOR-SOL draft for Sol product/taste/semantic review.
   - id: GD-4B
     title: China Prophet board-health observation (display only)
     status: todo
@@ -334,14 +345,12 @@ waves:
     status: todo
     depends_on: [GD-5A, GD-6A, GD-8A]
 next_action: >
-  2026-08-27: GD-3 DONE. The authenticated-browser four-clock production
-  acceptance passed on the first natural qualifying US-session source event;
-  the complete receipt is
-  agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27-GD3-DONE.md. This
-  acceptance seat does not commission follow-on work: GD-8A/GD-8B/GD-9A remain
-  unstarted pending an explicit new commission; GD-5A/B/C stay closed;
-  GD-4B/4C open and uncommissioned; GD-6/7 and Portfolio cutover are not
-  authorized.
+  2026-08-30: Chairman-direct compact Market Reads (GD-UX-COMPACT-L1) is
+  review-ready on branch claude/gd-compact-risk-context-20260830. Sol reviews
+  the HOLD-FOR-SOL draft PR (product/taste/semantics) and either releases the
+  hold to merge or names the change. Do not self-merge. GD-8A/GD-8B/GD-9A
+  remain unstarted pending an explicit new commission; GD-5A/B/C stay closed;
+  this wave does not reopen GD-3 live-window work.
 ---
 
 # Grey Deer Risk Intelligence & Capital Protection
