@@ -1,124 +1,85 @@
 ---
 workstream: "WS:ADVANCED-DATA-OPTIONS"
-session: claude/options-intelligence-c0-program-control
-model: fable
+session: sol/options-intelligence-c0-final-reconciliation
+model: sol
 ended_because: complete
 mission: >
-  Options Intelligence C0 (operation key
-  options-intelligence-c0-consolidated-program-control-20260828-sol-001,
-  Slack carrier C0BSBM78V1N/1787900289.577559): create the single consolidated
-  Options Intelligence masterplan and program-control freeze from current
-  canonical truth, reconcile every active Options owner/collision, repair stale
-  organizational sequencing, and return the first lawful bounded execution
-  packets. Records/research only; one HOLD-FOR-SOL Macro PR; no runtime.
-  This handoff is the sustained-COO continuation record for the whole
-  consolidated program (anchored here because ADVANCED-DATA-OPTIONS is the
-  program spine; it equally serves WS:INTRADAY-FLOW-P0-RECOVERY,
-  WS:OPTIONS-CONTEXT-AUDIT-PREREG-V2, WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY).
+  Finalize the existing Options Intelligence C0 program-control carrier after
+  downstream current truth moved beyond the original branch snapshot. Preserve
+  the durable consolidated masterplan/decision/no-rebuild law, remove stale
+  copied workstream state from the release delta, and hand the next fresh Sol
+  session the exact current dependencies without creating a new program owner or
+  implementation wave.
 state_before: >
-  Four active Options workstreams with no shared program-control record and one
-  materially stale owner: WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY still gated
-  everything on Chairman written-spec review, recorded none of #6573 (merged
-  OA-0), #6576 (open plan), or #6585 (out-of-order implementation, MAS-175 per
-  #6593), and had never produced a handoff. AD-1T0's next_action presented a
-  resolved spine-cadence decision as an open Sol decision. No consolidated
-  capability ledger, ownership matrix, dependency freeze, naming concordance,
-  or child packets existed. Base: Macro main afe173f6f46cb2ddd2de9fa5843fc31ab8eabe26.
+  Macro #6604 was still OPEN/DRAFT/HOLD at reconciliation head
+  5a848cda5d47287647e313aa39ef64111b1ddb3f. Its unique C0 masterplan,
+  decision, handoff and semantic-registry pointer were not on main, so the
+  carrier was not wholly superseded. But four copied workstream blobs were stale:
+  most importantly the branch still described #6585 as PARK/CONDITIONAL-ADOPT
+  and OA-1T-MACRO todo, while current main records the C3-adjudicated #6585 merge
+  and OA-1T-MACRO BUILT_NOT_PROVEN/natural-RTH proof owed. Merging the original
+  eight blobs would reverse accepted organizational truth.
 changed:
   - path: research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
     what: >
-      NEW - the consolidated masterplan and program-control freeze: capability
-      ledger (24 rows, 8-state vocabulary), value model, ownership/no-rebuild
-      matrix, clocks/nulls/corrections/rights/authority ladder, naming
-      concordance, collision ledger, frozen A-Q dependency graph with
-      parallel-now lanes (B/C + C4/C5; lane A additionally waits on ruling R3),
-      #6585 RECOMMENDED-ADOPT adjudication (§10, conditions A0-A6 including
-      the unsatisfied Chairman written-spec gate and a mandatory line-level
-      diff review), FS-4 preflight docket (§11), five bounded child packets
-      with routes and WHY (§12), durable program-control rules (§13), ten
-      preserved disagreements (§14), requested rulings R1-R4 (§15), and the
-      Sol dispatch clauses quoted verbatim (§16).
+      Reconciled C0 into one current program-control freeze. Preserves the four
+      owner boundaries, ThetaData source authority, one-store/one-lifecycle/no-
+      duplicate-plane rules, historic #6585 no-lawful-START deviation, accepted
+      C3 adoption, natural-RTH proof debt, FS-4 darkness, AD-1T2 dependency and
+      downstream promotion boundaries. Historical authoring-state detail stays
+      in Git history rather than masquerading as current status.
   - path: agentos/decisions/DEC-OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL.md
     what: >
-      NEW - canonical ownership/sequencing decision binding the four owners to
-      the masterplan; records the #6585 recommendation (deciding seat ceo-sol),
-      the rejected alternatives (replacement carrier, fifth workstream,
-      registry edit, foreign validate-red repair), and review_by 2026-09-11.
-  - path: agentos/workstreams/WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md
+      Reconciled decision to current truth: #6585 is merged and
+      BUILT_NOT_PROVEN; no retroactive START; current workstream records own live
+      status; C0 owns cross-workstream sequencing/no-rebuild law.
+  - path: agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md
     what: >
-      Sol-D3-authorized conflict weave (after #6576 merged first and
-      invalidated the C0-first sequencing): main's #6576 plan-frozen/merged
-      base with OA-0 done + the D1 Chairman approval receipt
-      (macro#6573 issuecomment-5446772413) cited in-row; #6585's out-of-order
-      history (no lawful START, SOL STOP, MAS-175) preserved and composed
-      into OA-1T-MACRO with the R1 park re-gated on A2-A6; the three
-      pre-#6576 gate texts still reproduced VERBATIM in the body with a D1
-      status note (discharged by receipt — status changed, history not);
-      C0 DEC + masterplan + this handoff linked.
-  - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
-    what: >
-      Truth repair: AD-1T0 next_action's open "Sol decision on a spine-cadence
-      wave" marked RESOLVED by AD-1T1 (PROVEN_LIVE 08-25, coverage 0.9467),
-      historical text preserved; DEC + masterplan linked. No other row touched;
-      AD-1T2 remains the next product gate.
-  - path: agentos/workstreams/WS-INTRADAY-FLOW-P0-RECOVERY.md
-    what: "Links only: DEC + masterplan added. Wave rows and next_action untouched (already truthful)."
-  - path: agentos/workstreams/WS-OPTIONS-CONTEXT-AUDIT-PREREG-V2.md
-    what: >
-      Links + one body note: independent of the AD chain (not an AD-1 blocker),
-      charter parallelizable now as child C4. Wave rows untouched.
+      Replaced the stale pre-adoption handoff with this final C0 continuation.
+      The next session no longer needs the 2026-08-28 chat to recover why #6585
+      was adopted or why the old workstream copies must not land.
   - path: config/mastermind_programs.yml
     what: >
-      The ONE Sol-authorized scope widening (ruling R2, ts 1787917578.265239):
-      added research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
-      as an additional options-intelligence.canonical_docs pointer; the two
-      existing historical canonical docs preserved unchanged.
+      Preserve the already-Sol-authorized additive canonical_docs pointer to
+      research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md; keep
+      the existing Options historical canonical docs unchanged.
 verified:
-  - claim: "Base tree carries exactly 7 pre-existing agentos validate errors, all in agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md (none in the four owners)"
-    command: "python3 scripts/agentos.py validate (on afe173f6f46c before any C0 edit)"
-    result: "902 records - 7 error(s), 53 warning(s); all 7 errors name the BREATHING-PLATFORM file"
-  - claim: "Sol's observed Macro pin ba270c60c1fe is an ancestor of the C0 working base afe173f6f46c"
-    command: "git merge-base --is-ancestor ba270c60c1fe825f2e9fce1fcf507b7272a67b63 afe173f6f46cb2ddd2de9fa5843fc31ab8eabe26"
-    result: "exit 0 (ancestor confirmed); reverse check exits 1"
-  - claim: "Terminal master matches the dispatch pin exactly"
-    command: "git -C /Users/chriswong/Documents/Cluade/charting-app ls-remote origin refs/heads/master"
-    result: "b1b21a17f843d23e6e77d2abf0cc7e3dfd28ccea"
-  - claim: "Protected Skillpack pin is current Mastermind remote HEAD at version 1.0.1"
-    command: "git -C /Users/chriswong/Documents/Cluade/Mastermind ls-remote origin | head -1; git grep -n '1\\.0\\.1' 038d1271b98e88b24e039c1ce4127d6503945845 -- '*skill*'"
-    result: "038d1271... is HEAD; docs/sol_skills/*.md frontmatter skillpack_version: 1.0.1"
-  - claim: "Collision PRs at census: #6576 OPEN 2becc23a87c8 non-draft; #6585 OPEN DRAFT 77f400630d8a; #6593 OPEN DRAFT 66a214d2dcdf; no other open Options/Theta/Flow carrier among 42 open Macro PRs"
-    command: "gh pr view 6576/6585/6593 --json number,state,isDraft,headRefOid; gh pr list --state open --limit 60 --json number,title,isDraft"
-    result: "states/heads as recorded in masterplan §8; title sweep found only #6576/#6585 options-scoped"
-  - claim: "#6593 does not collide with the four C0 owners"
-    command: "gh pr view 6593 --repo mastermindx-market-intelligence/macro --json files --jq '.files[].path'"
-    result: "edits WS-RATES-INFLATION-COMMAND.md, WS-STOCK-DOSSIER-LIVE-QUOTE.md, one new AGENT-OS handoff"
+  - claim: "Current main's Options Alpha owner is newer than the #6604 branch and records #6585 merged / BUILT_NOT_PROVEN / natural-RTH proof owed."
+    command: "GitHub exact-file read on current Macro main vs #6604 head"
+    result: "Confirmed; old branch says todo/PARK while main says in_progress/BUILT_NOT_PROVEN with merge dbd654ed..."
+  - claim: "The unique C0 decision and consolidated masterplan are not already on current main."
+    command: "GitHub exact-file read on current Macro main"
+    result: "Both paths return 404 before this final carrier lands."
+  - claim: "The config registry has no unrelated edits after the branch's pre-C0 source baseline; the desired delta remains the authorized additive C0 canonical-doc pointer."
+    command: "GitHub path history + exact current/branch content reads"
+    result: "Last main modification predates C0; branch adds only the C0 canonical-doc entry relative to current content."
+  - claim: "No replacement C0 operation or fifth Options workstream is required."
+    command: "Current owner/workstream census + existing #6604 carrier reconciliation"
+    result: "Four existing owners remain sufficient; #6604 remains the one logical C0 records carrier."
 unverified:
-  - claim: "C0 carrier introduces zero new agentos validate errors"
-    what_would_verify: "python3 scripts/agentos.py validate on the C0 head - run before PR open; error count must remain 7 with the same single-file attribution"
-  - claim: "Exact-head hosted CI/fences green on the C0 carrier"
-    what_would_verify: "ci.yml + fences.yml concluded green at the pushed C0 head (recorded on the PR at RESULT time)"
-  - claim: "Terminal IV plane (ingest/collect_options.py) runtime state and rights posture"
-    what_would_verify: "child C5 census: launchd/cron presence, output freshness, yfinance/CBOE terms review"
+  - claim: "Fresh exact-head hosted CI/fences on the final reconciled #6604 head are green."
+    what_would_verify: "Push the current-main-based four-artifact tree, run fresh exact-head hosted checks, then perform final Sol release review."
+  - claim: "AD-1T2 production entrance remains clear at the moment C0 lands."
+    what_would_verify: "Fresh Runner-Fleet/M1 collision/admission census at the future AD-1T2 operation; do not infer from this records carrier."
 unresolved:
-  - "Sol TERMINAL acceptance/STOP of the C0 carrier (all rulings through ts 1787943642.701729 encoded: R1-R4, then D1 A0-satisfied receipt macro#6573 issuecomment-5446772413, D2 #6576-merge-stands, D3 weave executed)"
-  - "Children C1 (AD-1T2 — dispatch after C0 lands, entrance gate satisfied per R3), C2 (PR-4 dossier), C4 (context-audit v2 charter), C5 (IV plane) await Sol dispatch with fresh keys/threads/watchers"
+  - "OA-1T-MACRO natural untouched-RTH production proof remains owed; no historical replay can satisfy it."
+  - "AD-1T2 remains the next Advanced Data product dependency after C0, but requires a fresh operation and action-time Runner-Fleet/M1 gates."
+  - "Intraday PR-4 current-session dossier, Options Context Audit v2 charter, OA downstream product/evaluation waves, FS-5 promotion and exact-option outcome work remain separate child operations."
 next_actions:
-  - "Await Sol terminal acceptance/STOP on the woven carrier (thread C0BSBM78V1N/1787900289.577559); watcher stays armed"
-  - "After the C0 merge: dispatch C1 (AD-1T2, per R3 the exact next AD product child), C2, C4, C5 per masterplan §12, each with fresh operation key + thread + reciprocal watcher"
-  - "C3 (OA-1T carrier sequencing) executes ONLY after a future explicit Sol adoption ruling; remaining gates A2-A6 (A0/A1 satisfied per D1/D2) — A6 line-level diff review first, a FAIL voids the recommendation"
+  - "Run fresh exact-head CI/fences on the final current-main-based #6604 tree and release only that immutable records head if green/review-clean."
+  - "After C0 is canonical, do not auto-start children. Commission AD-1T2 only under a fresh operation after action-time host/collision checks; handle Intraday/Context/OA proof lanes independently."
+  - "Use the four current workstream records for live status; never restore the discarded old #6604 copies."
 do_not_redo:
-  - "Do not re-run the three C0 censuses (owners / specs / PR+code reality) - their receipts are in masterplan §3/§8 and this handoff; re-census only on new evidence"
-  - "Do not mint a replacement implementation carrier for OA-1T-MACRO - forbidden by the Sol C0 ledger; #6585 adjudication is §10"
-  - "Do not mint a retroactive START for #6585 under any ruling"
-  - "Do not create a consolidated OPTIONS-INTELLIGENCE workstream; do not edit config/mastermind_programs.yml BEYOND the one Sol-authorized additive canonical_docs pointer already in this carrier (ruling R2)"
-  - "Do not touch BREATHING-PLATFORM-2026-08-28-completion-commission.md — resolved by its owner via #6605 (ruling R4, historical)"
-  - "Do not touch config/flow_score.yml scoring.enabled or any FS-4 enablement path - §11 docket can only conclude safe-or-blocked, never amend the freeze"
+  - "Do not recreate the consolidated C0 program-control workstream or replacement PR."
+  - "Do not merge the original eight stale #6604 blobs or overwrite later owner records."
+  - "Do not mint a retroactive START for #6585; its out-of-order provenance remains permanent history."
+  - "Do not create a second ThetaData store, options collector, live-flow plane, episode/campaign/outcome ledger, score-control plane, Issue Desk, queue, ranker or Prophet authority."
+  - "Do not enable FS-4 merely because #6585 merged; scoring.enabled=false remains the freeze until separate promotion law is satisfied."
 danger_areas:
-  - "WS-OPTIONS-ALPHA-INTELLIGENCE-RECOVERY.md is edited by BOTH this carrier and open #6576 - a guaranteed rebase; merge C0 first (masterplan §8-2)"
-  - "#6585 touches scripts/ops_train_flow_score.py = CI-authority scripts/** family; its merging session inherits authority_changed ship-loop semantics"
-  - "Sparse worktrees: data/ and site/ are omitted here by design; never git add an unexpected data/ or site/ diff, and do not run the full suite in a sparse tree"
-  - "The two proof lanes (C1 theta lane, C2 liveflow lane) share the M1 host - different launchd families, but concurrent proof windows can distort host-load-sensitive receipts; stagger if either shows load artifacts"
-prs: [6573, 6576, 6585, 6593, 6267, 6105]
+  - "Macro main is high-churn from nightly/data commits. Re-pin immediately before final #6604 release and preserve current owner blobs unchanged."
+  - "Natural-RTH proof is a real product gate; code/CI/merge cannot substitute for it."
+  - "AD-1T2 and Intraday proof share M1-related infrastructure; their future proof windows must respect current Runner-Fleet ownership and load."
+prs: [6573, 6576, 6585, 6604]
 decisions:
   - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
   - "DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE"
@@ -130,25 +91,14 @@ discoveries:
   - "DSC:OPTIONS-CONTEXT-AUDIT-V1-TIMEOUT-PRECEDES-4096-REFUSAL"
 ---
 
-## Reading `ended_because: complete`
+## Final continuation
 
-The enum offers no closer value: `complete` here means the C0 records work is
-complete and review-ready — NOT that the carrier is accepted. The carrier is
-PARKED / HOLD-FOR-SOL. The independent adversarial review (Opus reviewer,
-2026-08-28) returned FAIL with 2 blockers / 6 majors / 7 minors, all repaired
-in the same session before the carrier went to Sol; findings and dispositions
-are recorded on the PR. Sol's first ruling (REQUEST_REPAIR/CONTINUE, ts
-1787917578.265239) judged the content PASS in substance and its four rulings
-R1-R4 are encoded throughout this carrier; the carrier now awaits Sol FINAL
-acceptance/STOP.
+C0 is records/program-control only. A fresh session should read, in order:
+1. this handoff;
+2. `DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL`;
+3. the consolidated C0 masterplan;
+4. the four CURRENT owner workstreams on Macro main.
 
-## Continuation shape
-
-C0 is a records/program-control wave: it froze the consolidated masterplan and
-returned the first lawful child packets without moving runtime. The program now
-proceeds as a chain of short, separately keyed child sessions (masterplan §12,
-§13) under Sol rulings on the single C0 operation thread. A cold successor
-session needs: this handoff, the masterplan, the DEC, and the four owner
-records — in that order. The Slack carrier and its WATCH_ARMED reciprocity are
-the live control surface; agentos remains the knowledge plane and gates
-nothing (I1).
+If any status statement in historical C0 Git history conflicts with a current owner
+record, the current owner record wins unless a later explicit Sol/Chairman ruling says
+otherwise. No Slack archaeology is required to reconstruct the accepted #6585 outcome.

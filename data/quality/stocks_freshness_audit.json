@@ -37,7 +37,7 @@
     {
      "name": "AVB",
      "kind": "stale_dead",
-     "detail": "last bar 2026-08-14 \u2014 delisted (config/delisted_symbols.yml, last session 2026-08-14), not alarmed"
+     "detail": "last bar 2026-08-24 \u2014 delisted (config/delisted_symbols.yml, last session 2026-08-14), not alarmed"
     },
     {
      "name": "EA",
@@ -78,11 +78,11 @@
  "stale_dead": [
   {
    "ticker": "AVB",
-   "last_bar": "2026-08-14",
-   "lag_days": 15,
+   "last_bar": "2026-08-24",
+   "lag_days": 5,
    "in_union": false,
    "delisted_ledger": true,
-   "contradiction": false
+   "contradiction": true
   }
  ],
  "missing": [],

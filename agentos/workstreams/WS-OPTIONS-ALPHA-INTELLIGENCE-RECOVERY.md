@@ -25,36 +25,34 @@ waves:
     next_action: >
       ACCEPTED/MERGED 2026-08-27 as d84468e41f40f8dfb2404b2f51be557aade8f0ec
       after Chairman written-spec approval plus exact-head fences #14056 and CI #13809
-      SUCCESS. Chairman written-spec approval receipt: macro PR #6573
-      issuecomment-5446772413 (2026-08-28T00:18:17Z; gate closure recorded in
-      issuecomment-5446829936) — cited per Sol C0 ruling D1, which corrected the
-      earlier mistaken R1 finding that no receipt existed. Records/source law only;
-      OA-0 armed no runtime, UI, model, signal or execution authority. Do not reopen
-      OA-0 without a direct architecture/source-law contradiction or new Chairman ruling.
+      SUCCESS. Records/source law only; OA-0 armed no runtime, UI, model, signal or
+      execution authority. Do not reopen OA-0 without a direct architecture/source-law
+      contradiction or new Chairman ruling.
   - id: OA-1T-MACRO
     title: Measured trade+NBBO microstructure on the canonical live event and Flow ML path
-    status: todo
+    status: in_progress
     depends_on: [OA-0]
+    pr: 6585
     next_action: >
-      Implementation plan frozen at
-      docs/superpowers/plans/2026-08-27-oa1t-macro-measured-options-microstructure.md;
-      plan carrier #6576 MERGED as b0205e58f973 (Sol C0 ruling D2: the merge stands,
-      plan/records only — it starts no implementation; C0 §10 condition A1 satisfied).
-      The wave itself is NOT STARTED and no lawful historical START exists:
-      implementation PR #6585 (OPEN/DRAFT/HOLD-FOR-SOL at 77f400630d8a) was built
-      out-of-order BEFORE the plan-merge gate; the prior worker received terminal
-      SOL STOP and #6593 flags it as MAS-175 Unmapped Execution — that history is
-      preserved and never re-papered. Sol C0 ruling: #6585 = PARK / CONDITIONAL-ADOPT
-      ONLY, adoption NOT recorded, now gated on the remaining masterplan §10
-      conditions A2–A6 (FS-4 preflight docket; exact-head CI+mergeability;
-      authority-path acknowledgment; BUILT_NOT_PROVEN + natural-RTH proof owed;
-      independent line-level diff review whose FAIL voids the recommendation) —
-      A0/A1 are satisfied, a future explicit Sol adoption ruling is still required.
-      Before any code, re-pin current main and protected Skillpack, census
-      live_flow.event_stage/v1 consumers, collision-check the exact engine/collector
-      paths, and use one bounded implementation carrier. If additive nested event
-      fields are rejected by a current consumer, stop for Sol v2 adjudication
-      instead of weakening v1.
+      BUILT_NOT_PROVEN — natural-RTH production proof OWED. Implementation MERGED
+      2026-08-30 as dbd654edb0fb47449b969b7dcb4fbafc2e0fe3ef (squash of carrier head
+      77f400630d8a47402f0fd71a8c23eec3d6822356, 8 files +1284/-2, patch-identity proven
+      byte-identical against the pre-merge blobs), under Sol conditional-adoption ruling
+      #6585 comment 5459823114 after C3 gates A6 PASS / A2 SAFE_UNDER_FREEZE / A3 green
+      + MERGEABLE / A4 scripts/** authority acknowledged. Status is NOT done: the capability
+      moves BUILT_NOT_PROVEN -> PROVEN_LIVE only on a natural RTH session emitting a real
+      measured event. Do NOT manufacture that proof — historical `--once --date` is
+      explicitly forbidden as a proof path by the live-flow runbook. Consumer census is
+      CLOSED, not owed: no current live_flow.event_stage/v1 consumer hard-enumerates nested
+      event keys, so no v2 adjudication is required (both episode schemas carry zero
+      additionalProperties:false; the poller/episode consumers read via .get() and their
+      "strict" JSON loaders reject duplicate keys only). FS-4 remains frozen with
+      scoring.enabled=false and the FS-5 kill switch intact; this wave armed no scoring,
+      ranking or sizing authority. Two disclosed non-blocking defects carried forward for a
+      separate bounded child, NOT repaired here: _coerce_int is not Infinity-safe on
+      source_print_count/nbbo_valid_print_count (uncaught OverflowError can abort a harvest
+      run), and vol_gt_oi_ratio is the one published measurement with no finite/rounding
+      gate at the producer.
   - id: OA-1T-TERMINAL
     title: Render measured microstructure and separate Attention from probability
     status: todo
@@ -113,7 +111,6 @@ waves:
 decisions:
   - "DEC:OPTIONS-ALPHA-CAMPAIGN-CALIBRATION-ARCHITECTURE"
   - "DEC:AD-OPTIONS-CANONICAL-SOURCE-THETADATA"
-  - "DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL"
 discoveries:
   - "DSC:OPTIONS-ALPHA-DEAD-UI-MASKS-LIVE-EVIDENCE-ESTATE"
 landmines:
@@ -150,21 +147,14 @@ artifacts:
   - research/momoedge/MOMOEDGE_COMPLETION_BENCHMARK_PREREG_2026-08-11.md
   - research/FLOW_SIGNAL_ML_MASTERPLAN_BY_FABLE.md
   - research/OPTIONS_ALPHA_FLOW_SCORE_AMENDMENT.md
-  - research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md
-  - agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md
   - data/flow_signals/gate.json
   - data/options_signal_campaign/checkpoint.json
 next_action: >
-  The plan carrier #6576 is merged (Sol D2; §10-A1 satisfied) and the Chairman
-  written-spec gate is discharged with the #6573 receipt (Sol D1; §10-A0
-  satisfied). OA-1T-MACRO stays NOT STARTED with no lawful historical START.
-  #6585 remains PARK / CONDITIONAL-ADOPT ONLY, gated on masterplan §10 A2–A6 —
-  a future explicit Sol adoption ruling on the C0 operation thread is required
-  before child C3 executes the remaining carrier sequencing (A6 line-level diff
-  review → FS-4 docket receipts (A2) → hold release → #6585 merge (A3/A4) →
-  records closeout at BUILT_NOT_PROVEN with the natural-RTH proof still owed
-  (A5)). No FS-4 enablement, no other wave movement; every independent child
-  needs a fresh operation key, Slack thread, and reciprocal watcher.
+  Review/land the OA-1T-Macro implementation-plan carrier, then choose one execution mode for
+  that bounded wave. Recommended: subagent-driven/operator execution with one worker carrier,
+  explicit pickup ACK before work, and a separate START receipt if a gate delays execution.
+  OA-1T-Macro remains NOT STARTED until that commission is actually acknowledged; later OA waves
+  remain closed.
 ---
 
 ## Context
@@ -177,42 +167,3 @@ The first bounded implementation plan now targets only measured ThetaData trade+
 existing Macro live-flow/event-stage/Flow-ML path. It deliberately does not include Terminal UI,
 research-candidate composition, model promotion, exact-option outcome lifecycle, or Issue Desk
 integration. Those remain separately gated waves.
-
-**C0 reconciliation (2026-08-28, updated after Sol rulings).** The C0
-program-control freeze
-(`research/OPTIONS_INTELLIGENCE_CONSOLIDATED_MASTERPLAN_2026-08-28.md`,
-`DEC:OPTIONS-INTELLIGENCE-C0-PROGRAM-CONTROL`, operation key
-`options-intelligence-c0-consolidated-program-control-20260828-sol-001`)
-recorded that this workstream had drifted from its carriers (#6573 merged,
-#6576 open, #6585 out-of-order — none recorded here at the time, and no handoff
-had ever been produced). Sol's C0 rulings then adjudicated the sequence: D1
-found the Chairman approval receipt (cited in the OA-0 row) and corrected the
-earlier R1 no-receipt finding; D2 accepted the #6576 merge as the plan carrier
-(concurrent records movement, not an implementation START and not authority to
-erase #6585 history); D3 authorized this composed record. The continuation
-record is
-`agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-28-options-intelligence-c0-program-control.md`.
-
-**Verbatim originals of the pre-#6576 gate text** (preserved so the
-out-of-order history is never laundered by paraphrase; the gate these texts
-enforced was later discharged by the #6573 approval receipt per Sol D1, which
-changes their status, not their history):
-
-- OA-0 `next_action`, original: "Chairman reviews the written architecture
-  spec on the single OA-0 records carrier. Until written-spec approval, do not
-  create an implementation plan, commission Fable/Codex, mutate Terminal/Macro
-  runtime, run a new scoring family, or arm any options lane."
-- OA-1T-MACRO `next_action`, original: "CLOSED until the written spec is
-  approved and a bounded implementation plan is accepted. Entrance gate must
-  census live_flow.event_stage/v1 consumers before an additive event-shape
-  change and must preserve the existing collector/event identity."
-- Workstream footer `next_action`, original: "Chairman reviews
-  docs/superpowers/specs/2026-08-27-options-alpha-intelligence-recovery-design.md
-  on the single OA-0 records carrier and either requests corrections or
-  explicitly approves the written spec. Do not transition to implementation
-  planning until that approval exists."
-
-#6585 was built while those gates were unreceipted in the record and before the
-plan merge — the no-lawful-START finding, the worker's terminal SOL STOP, and
-the #6593 MAS-175 flag stand permanently regardless of the gate's later
-discharge.
