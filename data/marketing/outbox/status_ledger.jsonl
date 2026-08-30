@@ -4246,3 +4246,4 @@
 {"id":"ob-2026-08-29-5e334bc6fc","from":"queued","to":"approved","at":"2026-08-29T17:15:05Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-08-29-5e334bc6fc","from":"approved","to":"posting","at":"2026-08-29T17:15:24Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-29-5e334bc6fc","from":"posting","to":"posted","at":"2026-08-29T17:15:24Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a9313ac73b542df4ddf1670","external_url":null,"at":"2026-08-29T17:15:05Z","booked_at":"2026-08-29T17:15:05Z"}}
+{"id":"ob-2026-08-29-e32869f4b0","from":"queued","to":"quarantined","at":"2026-08-30T00:07:14Z","actor":"wire_expiry","note":"expired_stale_wire: breaking sat untouched 4.3h (ttl 3h) — the moment it was written about is gone","receipt":null}
