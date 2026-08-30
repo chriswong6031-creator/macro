@@ -1,89 +1,88 @@
 ---
 key: ALPHA-K2C-K3D-CURRENT-DEPENDENCY-STATE-2026-08-28
 question: >
-  What is the truthful current K2-C/K3-D state for Alpha/MarketOntology K5, and what
-  is the lawful continuation now that K2-C implementation/proof carriers are already
-  merged while K3-D has an existing open repair carrier and a newly ACKed pre-START receiver?
+  What is the truthful current K2-C/K3-D dependency state for Alpha/MarketOntology K5,
+  and what continuation is lawful after K3-D actually STARTed, returned a repaired
+  #6514 head, and received a same-carrier Sol REQUEST_REPAIR for current-base proof?
 answer: >
-  K2-C and K3-D are both real implementation evidence, but neither is Sol-accepted.
-  K2-C must not be recommissioned as if NOT_BUILT: #6533 implemented the adapter and
-  #6547 proved the raw institutional acquisition/refusal path in production, but the
-  positive semantic receipt remains invalid because canonical security identity and
-  manager-complex/vehicle identity/class are not proven. Its closed merged carriers are
-  immutable evidence and cannot be silently 'repaired in place'. Further K2-C work must
-  be a fresh bounded repair child under the SAME K2-C parent outcome, not a replacement
-  parent operation or second institutional system. K3-D #6514 remains the sole existing
-  implementation carrier; its architecture is frozen and its three current blockers are
-  not grounds for a new commission. The earlier unavailable Claude4 placement never ACKed
-  or STARTed and closed pre-START with effect=NONE. A later lawful PRESTART_REBIND assigned
-  the SAME operation/carrier to Claude5 U0BT20ZL77C; that receiver has now ACKed and armed
-  one consolidated exact-thread watcher, but has not STARTed and reports effect=NONE.
-  Therefore K3-D is no longer WAITING_CAPACITY, but it is also not executing and has no
-  started RuntimeBinding. Its truthful attention state is RECEIVER_BOUND / PRESTART,
-  awaiting the promised fresh #6514/current-main collision census and a distinct START.
-  K5 remains dependency-held until K2-C and K3-D are separately accepted.
+  K2-C and K3-D both have real implementation evidence, but neither is Sol-accepted.
+  K2-C remains PARTIAL: #6533 implementation and #6547 production raw-acquisition proof
+  are on main, while the positive semantic receipt still lacks accepted canonical
+  security binding and truthful manager-complex/vehicle epoch/class/decision-mode proof.
+  Its merged carriers remain immutable; any changed work must use the already-adjudicated
+  bounded repair child alpha-k2c-semantic-owner-repair-20260828-sol-001 after this decision
+  lands and Sol repeats current owner/path/open-PR archaeology. K3-D remains PARTIAL on the
+  sole open carrier #6514. The earlier unavailable Claude4 placement closed before START
+  with effect=NONE. Claude5 U0BT20ZL77C was lawfully rebound pre-START, ACKed, armed the
+  consolidated exact-thread watcher, posted a distinct START, repaired the three frozen
+  semantic blockers on #6514, and returned RESULT at a01f38078765452a4383c842c5b2069807a228fe.
+  The semantic repair itself is not rejected, including the disclosed regeneration of
+  14 previously unlawful fixtures through the sanctioned fixture writer. Acceptance is
+  nevertheless still withheld because exact-head hosted fences were RED on the ancestry/
+  current-base proof: the bounded checkout could not establish PR ancestry for the very
+  stale carrier. Sol consumed that RESULT with one same-carrier REQUEST_REPAIR. K3-D is
+  therefore STARTED / REPAIR_IN_FLIGHT, receiver-sticky to Claude5 on the SAME operation
+  and #6514 carrier, owing history-preserving forward reconciliation to current main and
+  fresh exact-head/current-base green proof. K5 remains dependency-held until separate
+  K2-C and K3-D Sol acceptance.
 rationale: >
-  Current Agent OS contains stale language saying to commission K2-C/K3-D as if neither
-  implementation existed. GitHub and accepted reconciliation evidence disagree: K2-C's
-  code and production acquisition proof are already on main, while exact Sol review
-  explicitly refused full semantic acceptance; K3-D is built on open #6514 and has an
-  exact repair request. Earlier receiver attempts did not start, but current live recovery
-  has now lawfully placed Claude5 pre-START and received ACK + WATCH_ARMED. Current protected
-  routing law distinguishes receiver assignment and ACK/attention proof from START/effect:
-  the operation must not be projected as WAITING_CAPACITY after a lawful receiver has ACKed,
-  and it must not be projected as executing before distinct START. Leaving either stale
-  clause in force risks duplicate work or false execution state and leaves K5 without a
-  truthful executable correction path.
+  The prior revision became stale when Claude5 crossed the distinct START boundary and
+  produced a modifying RESULT. Current protected dialogue/routing law makes START the
+  binding transition: after START the receiver/carrier is sticky, and a nonterminal RESULT
+  must receive exactly one Sol continuation/ruling/repair edge. That edge already exists:
+  Sol REQUEST_REPAIR preserved the three semantic fixes, rejected false acceptance on the
+  red hosted fence, and ordered same-carrier current-base reconciliation rather than a
+  new operation, failover, CI-infrastructure widening, or K5 release. Keeping PRESTART /
+  effect=NONE language after that event would invite duplicate placement and false lifecycle
+  state. K2-C truth is unchanged by the K3-D movement.
 alternatives:
-  - option: Treat #6533/#6547 merge and production reads as K2-C acceptance.
+  - option: Treat #6533/#6547 as K2-C semantic acceptance.
     why_not: >
-      Rejected. The real positive still carries unresolved security identity and derives
-      manager/vehicle semantics from evidence that does not establish them. Merge/proof
-      of raw acquisition does not waive the semantic acceptance law.
-  - option: Recommission K2-C from scratch on a new parent operation.
+      Rejected. Raw acquisition and adapter implementation do not prove canonical security
+      identity or manager-complex/vehicle epoch/class/decision-mode semantics.
+  - option: Recommission K2-C from scratch or edit its closed merge carriers.
     why_not: >
-      Rejected. The implementation and raw proof already exist; a new parent would
-      duplicate the logical operation and encourage a second owner/adapter plane.
-  - option: Modify the closed merged K2-C carriers as if they were still open.
+      Rejected. Existing implementation/proof are durable evidence; changed work belongs in
+      the bounded post-merge child under the same parent outcome.
+  - option: Treat K3-D RESULT a01f3807 as accepted because the three focused fixes pass.
     why_not: >
-      Rejected. Closed merge commits are immutable evidence. Changed post-merge work
-      needs a new bounded child identity after explicit adjudication.
-  - option: Fork or recommission K3-D because earlier receiver placement failed.
+      Rejected. The exact-head hosted fence is binding and was terminal RED on ancestry/
+      current-base proof. Focused green cannot substitute for the release gate.
+  - option: Fail over K3-D to another receiver or create a second carrier after the red fence.
     why_not: >
-      Rejected. #6514 is still the sole live Git carrier. Earlier placement failed cleanly
-      before START/effect, and current Claude5 placement now lawfully continues the SAME
-      operation/carrier. A replacement operation would duplicate ownership and lifecycle.
-  - option: Treat ACK + WATCH_ARMED as K3-D execution proof.
+      Rejected. Claude5 STARTed this operation and is receiver-sticky. The red is a lawful
+      same-carrier repair condition, not authority for duplicate lifecycle or carrier state.
+  - option: Widen K3-D into CI checkout infrastructure to make the fence pass.
     why_not: >
-      Rejected. Current protected dialogue law makes ACK/WATCH_ARMED nonterminal pre-START
-      transport/attention states. A distinct START after current-source/collision preflight
-      is required before modification or execution may be claimed.
+      Rejected. Sol ordered forward reconciliation of the existing stale carrier to current
+      main. CI infrastructure is outside this bounded repair unless separately proven broken.
 evidence:
   - "Macro #6533 K2-C implementation merged as 0758de6b9a7e9e920a6f44e4c1abcd62dbf8074e."
   - "Macro #6547 proof receipts merged as 1725aef27b26da337d342fdf9d44324f55f430cd; production raw owner-read/refusal path evidenced, full semantic positive not accepted."
-  - "agentos/handoffs/MARKET-ONTOLOGY-2026-08-27-k2c-proof-transport-reconciliation.md records K2-C NOT SOL-ACCEPTED after exact-head reviews."
-  - "K2-C design states no authoritative CUSIP->Data OS bridge existed and carries Data OS security identity as unresolved."
-  - "Current institutional catalog exposes filer/manager relationship evidence including manager_cik, manager_name, CRD and SEC file numbers, but these rows do not by themselves prove a canonical manager-complex/vehicle epoch, vehicle class or decision mode."
-  - "lib/institutional_13f_adapter.py derives vehicle/decision semantics from row-level investment_discretion; the design itself records this as a residual honesty gap."
-  - "Macro #6514 remains the sole K3-D carrier at pre-repair head aaaff0a9415337797c6fc917a06a3a2bd9a3010c; the three Sol repair blockers remain canonical resolved-target logical identity, generator native-owner authority, and exact fail-closed source_event.source_identity admission."
-  - "The prior Claude4- placement was proven unavailable and closed before ACK/START with effect=NONE; no started RuntimeBinding or EFFECT_UNKNOWN was created."
-  - "Current PRESTART_REBIND assigns the same K3-D operation/carrier to Claude5 U0BT20ZL77C. Claude5 posted ACK and WATCH_ARMED under protected Mastermind@0604158caca9e3b8a43ec57dd36ca4dadf05198b, reports effect=NONE, and explicitly owes a fresh collision census before distinct START."
-  - "Repair-time protected Mastermind@229aebce5e8d0c1c7372f5fead9c24516b027cc1 / Skillpack v1.0.1 preserved CAPACITY_SELECTABLE pre-START semantics while Organizational Continuity & Attention Recovery projected a frozen child with no lawful receiver as WAITING_CAPACITY / needs_placement. Current protected law is re-verified separately at final adjudication rather than mutating this historical receipt on every unrelated protected-master move."
-  - "Mastermind #213 / 229aebce5e8d0c1c7372f5fead9c24516b027cc1 source-released bounded CF2-H0 transport but left it BUILT_NOT_PROVEN / PRODUCTION_INERT; the current K3-D receiver exists through the later lawful manual PRESTART_REBIND, not through production-live CF2-I placement."
+  - "agentos/handoffs/MARKET-ONTOLOGY-2026-08-27-k2c-proof-transport-reconciliation.md records K2-C NOT SOL-ACCEPTED after exact-head review."
+  - "K2-C security binding remains owned by Data OS / Stock Identity; row-level investment_discretion is not proof of vehicle class or manager decision mode."
+  - "Macro #6514 remains the sole K3-D carrier. Claude5 U0BT20ZL77C ACKed, armed one consolidated exact-thread watcher, and STARTed alpha-k3d-economic-propagation-20260826-sol-001 after a clean collision census."
+  - "K3-D RESULT head a01f38078765452a4383c842c5b2069807a228fe closes the three frozen fail-open seams with K3D_R014/K3D_R024/K3D_R015 and reports 83 focused tests passing plus Agent OS validation clean."
+  - "The RESULT disclosed that 14 existing fixtures encoded generator owner earnings-intelligence for gen_disclosed_customer_supplier although generator_registry native_owner is gmi-theme-graph; they were regenerated through the sanctioned fixture writer, updating owner_program and dependent content_sha256."
+  - "Hosted fences run 33286178971 failed because self-mod-fence could not establish exact PR ancestry inside fetch-depth 256 on the historically stale #6514 carrier; the self-mod test suite itself passed 74/74 and capability/grader checks passed."
+  - "Sol REQUEST_REPAIR on the exact Slack carrier consumed the RESULT and ordered same operation/receiver/branch/#6514 forward reconciliation to current main, fresh collision census, local proof, fresh hosted fences + semantic CI, behind_by=0, and terminal green before another RESULT."
+  - "Current protected release adjudication for this source-law repair: mastermindx-market-intelligence/Mastermind@e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5, Skillpack v1.0.1 / bootstrap-major 1. AD-DLG2 remains BUILT_NOT_PROVEN / PRODUCTION_DISARMED and changes no K2-C/K3-D product authority."
+  - "Current Macro base at this decision repair: 4965128139e43bf6aafc3fa998fc4921f2b0ad0f; movement since the prior #6632 base is collision-clear against this sole decision path."
 affects:
   - "WS:ALPHA-INTELLIGENCE-INTEGRATION"
   - "alpha-k2c-institutional-adapter-20260826-sol-001"
+  - "alpha-k2c-semantic-owner-repair-20260828-sol-001"
   - "alpha-k3d-economic-propagation-20260826-sol-001"
+  - "Macro #6514"
   - "K5 OpportunityCase / Prophet integration gate"
 confidence: high
 reversibility: easy
 decided_by: sol
 source_authority: >
-  Current live Chairman recovery directive plus current protected Mastermind routing,
-  watcher and organizational-continuity law. This decision freezes truthful dependency
-  and placement state only; it does not grant product, data, identity, provider, lifecycle,
-  rank, gate, size or trading authority.
-decided_at: 2026-08-28
+  Current live Chairman directive plus protected Mastermind routing, watcher, reconciliation
+  and dialogue law. This decision freezes dependency/execution truth only; it grants no new
+  data, identity, provider, lifecycle, rank, gate, size, trading or product authority.
+decided_at: 2026-08-29
 ---
 
 # Current capability truth
@@ -92,97 +91,83 @@ decided_at: 2026-08-28
 
 State: `PARTIAL` / implementation + production raw-acquisition proof on main / `NOT SOL-ACCEPTED`.
 
-What exists now:
+What exists:
 
 - one read-only K2-C adapter over canonical institutional 13F owner reads;
 - K1/K2-B composition and typed refusal machinery;
 - real production raw-receipt/catalog/row acquisition evidence;
 - zero second institutional store or scheduler.
 
-What remains false:
+What remains unresolved for an accepted positive:
 
-- no accepted canonical CUSIP -> Data OS/security-master resolution primitive for the real positive;
-- no accepted manager-complex/vehicle epoch + class/decision-mode proof for the real positive;
-- row-level `investment_discretion` is position/reporting authority evidence, not proof of the vehicle's strategy/class or the manager complex's decision mode;
-- therefore the real positive cannot yet support `MANAGER_RESEARCH_INTENT_ELIGIBLE_CONTEXT` as acceptance proof.
+- exact canonical CUSIP/security binding from Data OS / Stock Identity;
+- truthful manager-complex / vehicle epoch / class / decision-mode evidence from canonical institutional/K2-B owners;
+- `investment_discretion` alone may never select vehicle class or prove decision mode;
+- unresolved owner seams remain typed non-positive rather than inferred.
 
 ### Lawful post-merge repair shape
 
 The original K2-C parent outcome remains `alpha-k2c-institutional-adapter-20260826-sol-001`.
-Its merged carriers remain immutable evidence. Changed post-merge repair work uses a fresh child:
+Its merged carriers are immutable evidence. Changed post-merge work uses the bounded child:
 
 `alpha-k2c-semantic-owner-repair-20260828-sol-001`
 
 This decision does not itself commission that child. After this source-law decision is main-canonical,
-Sol must first perform current owner/path/open-PR archaeology and prove that the repair extends existing
-owners instead of creating local identity planes. If the child is then lawfully admitted but no receiver
-is available, current protected continuity law requires WAITING_CAPACITY / needs_placement rather than a
-fabricated pickup or Chairman-account request.
+Sol must first perform fresh owner/path/open-PR archaeology and prove that the repair extends canonical
+Data OS / Stock Identity and institutional/K2-B owners instead of creating a local CUSIP map, manager
+identity plane, second store, or duplicate institutional system. The architecture-sensitive bounded
+repair prefers CTO Sol; frozen owner-specific mechanical/source work may route to Terra.
 
-1. **Security identity seam**
-   - Data OS / Stock Identity remains canonical security/listing identity authority.
-   - A positive K2-C observation requires an owner-approved exact CUSIP binding or another exact owner-native bridge with explicit source/rights/clocks.
-   - If no lawful exact bridge exists for a row, the adapter must remain typed unresolved/non-positive; it may not infer from issuer name, display ticker, fuzzy matching or a private local map.
-
-2. **Manager-complex / vehicle seam**
-   - Institutional owner evidence may expose filer and other-manager relationships, CIK/name/CRD/SEC-file identifiers and filing lineage.
-   - Those facts are inputs, not a license to fabricate K2-B complex/vehicle epochs or strategy class.
-   - The K2-B/institutional owner must either provide a truthful resolved epoch/class/decision-mode primitive from source-backed evidence, or the K2-C observation stays unresolved/non-positive.
-   - `investment_discretion` alone may never select `vehicle_class` or prove `decision_mode=discretionary`.
-
-3. **Adapter recomposition**
-   - K2-C may become positive only when both security and manager/vehicle owner identities are resolved at the required clocks and rights tier.
-   - Missing owner primitives produce typed abstention/non-positive context, never invented eligibility.
-   - Acceptance still owes one real two-period positive owner -> K1 -> K2-B -> K2-C receipt plus a real adverse/refusal case under the repaired semantics.
-
-The repair is architecture-sensitive but bounded; `PREFERRED_AVENUE: CTO Sol`, with owner-specific
-mechanical/source work eligible for Terra where frozen. This is an avenue recommendation only, never a
-concrete account/session assignment. Fable is reserved for an actual cross-owner architecture deadlock.
+Acceptance still owes one real two-period positive owner -> K1 -> K2-B -> K2-C receipt plus a real
+adverse/refusal case under the repaired semantics.
 
 ## K3-D
 
-State: `PARTIAL` / built carrier #6514 / three exact Sol blockers / `NOT SOL-ACCEPTED`.
+State: `PARTIAL / STARTED / REPAIR_IN_FLIGHT` on sole Macro #6514 / `NOT SOL-ACCEPTED`.
 
-Do not say `NOT_BUILT`, do not commission a second implementation and do not edit closed sibling carriers.
-The only lawful continuation is the existing #6514 repair operation.
+Lifecycle truth:
 
-Current placement/attention truth:
+- prior unavailable Claude4 placement closed pre-START with `effect=NONE`;
+- current receiver Claude5 `U0BT20ZL77C` is post-START sticky on the SAME operation and SAME #6514 carrier;
+- ACK + consolidated WATCH_ARMED occurred before START;
+- distinct START occurred after a clean current owner/path/open-PR collision census;
+- worker RESULT produced exact head `a01f38078765452a4383c842c5b2069807a228fe`;
+- Sol consumed that RESULT with exactly one `SOL REQUEST_REPAIR` because hosted fences were red on stale ancestry/current-base proof;
+- no STOP has been issued; the child remains nonterminal and STARTED;
+- the existing consolidated exact-thread watcher is to remain armed; do not create a second watcher.
 
-- earlier Claude4- pre-START placement is closed as unavailable with `effect=NONE`;
-- current receiver is Claude5 `U0BT20ZL77C` on the SAME operation and SAME #6514 carrier;
-- receiver `ACK` has been received;
-- one consolidated exact-thread `WATCH_ARMED` receipt has been received;
-- no distinct `START`, modifying effect, worker RESULT/BLOCKED/DECISION_REQUEST, or started RuntimeBinding exists yet;
-- attention state is `RECEIVER_BOUND / PRESTART`, awaiting the fresh #6514/current-main collision census and then a distinct START if gates are clear.
+Semantic repair on `a01f3807...`:
 
-ACK and WATCH_ARMED are not execution proof. Do not mark K3-D executing, do not merge #6514, and do not
-start K5 from placement state. Before any write, the current receiver must finish current-source/current-main
-and collision reconciliation and post distinct START. Until START, a genuine pre-START invalidation may be
-reconciled without a new operation/carrier; after START the RuntimeBinding becomes sticky under current law.
+1. canonical resolved-target identity is fail-closed (`K3D_R014` for missing resolved security identity);
+2. generator-level exact `native_owner` authority is enforced (`K3D_R024`) while the separate construct-level owner check remains intact;
+3. non-RESOLVED `source_event.source_identity` is fail-closed for semantic admission (`K3D_R015`) except lawful typed abstention;
+4. 14 prior fixtures with unlawful generator-owner binding were regenerated through the sanctioned fixture writer; this is disclosed repair fallout, not hidden scope expansion;
+5. both honest real abstention receipts and all four DNR kills remain preserved.
 
-Frozen repair scope remains exactly three blockers:
+Current return gate:
 
-1. canonical resolved-target logical record identity, never raw `requested_key`;
-2. generator-level exact native-owner / closed allowed-owner authority enforcement;
-3. exact fail-closed `source_event.source_identity` semantic admission.
+- re-pin current protected procedure and current Macro main;
+- rerun current owner/path/open-PR collision census;
+- if clear, history-preservingly forward-reconcile SAME `claude/k3d-economic-propagation` carrier to current main without force/reset/rebase/fork/replacement;
+- preserve the exact semantic repair delta and all four DNR kills;
+- run focused/local proof, Agent OS validation, fresh exact-head/current-base hosted fences and semantic/full CI;
+- return RESULT only on an immutable head with `behind_by=0` and all binding checks terminal green;
+- do not merge #6514 from worker state; Sol review remains required.
 
-Preserve both honest real abstention receipts, all four DNR kills, and zero fourth graph/store/grader/ranker/
-scalar/K5/Prophet/Fusion/trade authority.
+No fourth graph/store/grader/ranker/scalar score, Prophet/Fusion wiring, UI, K5, gate, size or trading authority is admitted by this repair.
 
 ## K5
 
 State: `NOT_BUILT / DEPENDENCY_HELD`.
 
-K5 may not start from merged K2-C raw proof, from K3-D synthetic-positive proof, from Slack delivery,
-from ACK/WATCH_ARMED, from placement state, or from this decision. Release requires separate Sol acceptance
-of repaired K2-C and K3-D under their own completion laws.
+K5 may not start from K2-C merge/raw proof, from K3-D focused semantic green, from Slack delivery,
+from START, or from this decision. Release requires separate Sol acceptance of repaired K2-C and K3-D
+under their own completion laws.
 
 # Supersession
 
-Where older Alpha/MarketOntology handoffs say the next action is to 'commission K2-C and K3-D' as if both
-were absent, this decision supersedes only that stale current-state/continuation clause. Where transition-
-era wording makes routine Chairman account selection or broad OPEN_PICKUP the default for unbound children,
-current protected organizational-continuity law supersedes that placement wording. Where this decision's
-own earlier revision projected K3-D as WAITING_CAPACITY after the receiver gap was later lawfully resolved,
-this revision supersedes that attention projection only: K3-D is now receiver-bound pre-START, not executing.
-It does not rewrite the original missions, DNRs, owner boundaries or K5 gate.
+Where older Alpha/MarketOntology records say K2-C or K3-D are absent, commission both from scratch,
+project K3-D as WAITING_CAPACITY, or project the current Claude5 binding as PRESTART/effect=NONE,
+this decision supersedes only those stale current-state/continuation clauses. It does not rewrite the
+original missions, owner boundaries, DNRs, proof requirements, or K5 gate. The authoritative current
+K3-D continuation is the already-issued same-carrier Sol REQUEST_REPAIR after RESULT `a01f3807...`.
