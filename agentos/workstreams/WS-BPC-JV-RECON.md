@@ -28,21 +28,17 @@ waves:
       Done. #5909 merged 2026-08-19T19:51:49Z as 9711c60d3067. Do not start
       SNAPSHOT-ONBOARD from that PR; commissioning is a separate Sol act.
   - id: SNAPSHOT-ONBOARD
-    title: Licensed snapshot corpus onboarding
-    status: todo
+    title: Licensed snapshot corpus onboarding — bounded Historical Event History vertical
+    status: in_progress
+    pr: 6389
     depends_on: [RECON-0]
     next_action: >
-      #5909 is merged; commissioning is now owed to Sol (bundled with the
-      post-soak sequencing adjudication in
-      research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
-      §11). Do not start until Sol commissions the first bounded
-      SNAPSHOT-ONBOARD vertical. When
-      commissioned and W1–W4 bytes are in the implementation environment, census
-      each workbook (SHA-256 → ordered sheet set → dimensions → content hashes →
-      pair class ADDITIVE_SHEET_EXPORT_IDENTICAL_COMMON_CONTENT |
-      COMMON_SHEET_CONTENT_CHANGED | DISTINCT_CAPTURE | UNRESOLVED). Do not
-      invent predecessor SHA-256 from File Library metadata. Preserve unique
-      predecessor rows if found.
+      SNAPSHOT-ONBOARD A is commissioned by Macro issue #6374 and implemented in
+      HOLD-FOR-SOL PR #6389. Sol reviews the exact held head.
+      Only an explicit Sol release may merge it, publish the private R2 snapshot,
+      deploy the public projection, and begin real entitled production acceptance.
+      This bounded vertical grants no CONTINUOUS-RECON, source-registry, cohort,
+      cadence, or successor-wave authority.
   - id: CONTINUOUS-RECON
     title: Continuous source reconstruction
     status: todo
@@ -107,10 +103,10 @@ do_not_redo:
   - >-
     Do not re-count the Historical FDA 28.1% left-shift (4404/15700).
   - >-
-    Do not call W4 a proven superset of W1–W3, and do not call W1–W3 lost.
-    Relationship is UNRESOLVED_PENDING_SNAPSHOT_ONBOARD_CENSUS. The open
-    question is whether W4 is a superset of W1–W3 with identical common-sheet
-    content.
+    The Chairman identified the nine-sheet W4 workbook as the canonical/latest
+    complete export for SNAPSHOT-ONBOARD A. W2/W3 are archaeology only and W1 is
+    not required. Parenthetical upload collision suffixes are not version or
+    capture chronology. Do not reopen a W1–W4 admission dependency in this wave.
   - >-
     Do not treat W1→W4 as four temporal vintages or as evidence of BPC row
     revisions unless a later census proves time-varying common-sheet content.
@@ -128,34 +124,35 @@ do_not_redo:
   - >-
     Do not describe CI ZIP replay as production proof.
   - >-
-    Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON, RECON-1, device/CDRH,
-    PDUFA NLP, or snapshot ingestion from PR #5909.
+    Do not expand SNAPSHOT-ONBOARD A into CONTINUOUS-RECON, RECON-1, live
+    device/CDRH collection, PDUFA NLP, or any continuous BPC ingestion.
   - >-
     Do not mutate the soak-bound predecessor source registry or add
     machine-enforced JV source-registry tests during the active soak. Runtime
     registration waits for the post-soak successor registry / successor
     launch-manifest transition.
 next_action: >
-  RECON-0 merged (#5909, 2026-08-19). Return to Sol for commissioning of the
-  first bounded SNAPSHOT-ONBOARD vertical — bundled with the post-soak
-  sequencing adjudication proposed in
-  research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md
-  §11. Runtime biopharmcatalyst_jv_snapshot registration remains prohibited
-  until the post-soak successor-registry / successor-launch-manifest
-  transition.
+  Sol reviews the exact HOLD-FOR-SOL head of PR #6389 for commissioned
+  SNAPSHOT-ONBOARD A.
+  Only explicit Sol approval releases the same lane to merge, publish the
+  private R2 snapshot, deploy its pointer-bound public projection, and run real
+  entitled production acceptance. Runtime biopharmcatalyst_jv_snapshot registry
+  insertion, CONTINUOUS-RECON, cohort/cadence expansion, and successor waves are
+  not commissioned.
 artifacts:
   - research/BPC_RECON_0_JV_SNAPSHOT_ARCHAEOLOGY_AND_SOURCE_SYSTEM_RECONSTRUCTION_FREEZE_2026-08-18.md
+  - research/BIOCATALYST_SNAPSHOT_ONBOARD_A_CORPUS_AND_CONTRACT_FREEZE_2026-08-24.md
+  - agentos/handoffs/BPC-JV-RECON-2026-08-24-SNAPSHOT-ONBOARD-A.md
 ---
 
 ## Context
 
 RECON-0 is Sol-accepted architecture, merged 2026-08-19 (PR #5909, squash
-`9711c60d3067f1908a7822008ffd7a8b23171854`).
-Canonical identity `biopharmcatalyst_jv_snapshot` is frozen; live registry
-insertion is deferred until the post-soak successor source-registry /
-successor launch-manifest transition. The program continues (`status: active`).
-SNAPSHOT-ONBOARD and CONTINUOUS-RECON remain todo. The matcher-only RECON-1
-wave stays dropped. Do not start SNAPSHOT-ONBOARD, CONTINUOUS-RECON,
-Drugs@FDA work, device/CDRH, PDUFA work, or any runtime implementation from
-this PR. After merge, return to Sol to commission the first bounded
-SNAPSHOT-ONBOARD vertical.
+`9711c60d3067f1908a7822008ffd7a8b23171854`). Canonical identity
+`biopharmcatalyst_jv_snapshot` is frozen; the live source registry remains
+untouched. Macro issue #6374 separately commissioned SNAPSHOT-ONBOARD A: the
+Chairman-authorized W4 nine-sheet workbook plus four CSVs become a finite,
+private R2 snapshot and a pointer-bound public Historical Event History
+projection. That implementation is in a HOLD-FOR-SOL delivery lane and is not
+merged, deployed, or production accepted. CONTINUOUS-RECON remains todo and
+uncommissioned; matcher-only RECON-1 stays dropped.

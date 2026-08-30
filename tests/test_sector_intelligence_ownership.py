@@ -262,6 +262,20 @@ def test_shared_company_document_and_capital_lanes_are_not_faked() -> None:
     }
 
 
+def test_trial_read_adapter_excludes_non_nct_historical_snapshot_semantics() -> None:
+    trial = _registry()["read_adapters"]["biocatalyst_trial_read_api.v1"]
+
+    assert trial["input_identity"] == "source_native_nct_id"
+    assert trial["point_in_time_scope"] == "committed_current_public_generation"
+    assert "current_record_facts_only" in trial["limitations"]
+    assert "no_issuer_or_security_identity" in trial["limitations"]
+
+    assert "/api/biocatalyst/v1/historical-events" not in trial["routes"]
+    assert (
+        "biocatalyst_historical_event_record.v1" not in trial["output_contracts"]
+    )
+
+
 def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eligible() -> None:
     registry = _registry()
     adapters = registry["read_adapters"]
@@ -293,13 +307,15 @@ def test_f0_read_adapter_slots_are_exact_and_only_declared_facts_readers_are_eli
     } <= set(trial["output_contracts"])
     assert set(trial["output_contracts"]) <= set(ContractRegistry(ROOT).contract_ids)
 
-    # This is the sole eligible adapter. Import only its deliberately light
-    # serving module, then inspect the actual mounted router rather than trusting
-    # a fixture string or static route declaration.
+    # Import the deliberately light serving module and prove every route claimed
+    # by the NCT/current-record adapter is actually mounted. The router may host
+    # separately governed surfaces that are not compatible with this adapter's
+    # identity or point-in-time contract.
     imported_trial = importlib.import_module(trial["module"])
     trial_router = getattr(imported_trial, trial["callable"])
     runtime_trial_paths = {route.path for route in trial_router.routes}
-    assert runtime_trial_paths == set(trial["routes"])
+    assert set(trial["routes"]) <= runtime_trial_paths
+    assert "/api/biocatalyst/v1/historical-events" in runtime_trial_paths
     assert all(path.startswith(f"{trial['route_prefix']}/") for path in runtime_trial_paths)
 
     transcript = adapters["biocatalyst_earnings_transcript_span_adapter.v1"]

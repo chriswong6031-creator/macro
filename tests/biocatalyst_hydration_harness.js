@@ -322,6 +322,24 @@ workspace.appendChild(inspector);
 workspace.appendChild(attach(makeNode('div', { id: 'bci-scrim' })));
 body.appendChild(workspace);
 
+var historyPanel = attach(makeNode('section', { id: 'bci-history' }));
+historyPanel.dataset.state = 'loading';
+historyPanel.setAttribute('data-state', 'loading');
+var historyForm = attach(makeNode('form', { id: 'bci-history-form' }));
+['search', 'family', 'from', 'to', 'stage', 'asset'].forEach(function (name) {
+  var tag = name === 'family' ? 'select' : 'input';
+  var control = attach(makeNode(tag, { id: 'bci-history-' + name }));
+  if (name === 'family') control.value = 'all';
+  historyForm.appendChild(control);
+});
+historyForm.appendChild(attach(makeNode('button', { id: 'bci-history-clear' })));
+historyPanel.appendChild(historyForm);
+historyPanel.appendChild(textNode('div', { id: 'bci-history-meta' }, ''));
+historyPanel.appendChild(textNode('p', { id: 'bci-history-status' }, ''));
+historyPanel.appendChild(attach(makeNode('div', { id: 'bci-history-rows' })));
+historyPanel.appendChild(attach(makeNode('button', { id: 'bci-history-load-more', hidden: true })));
+body.appendChild(historyPanel);
+
 var documentListeners = {};
 var document = {
   documentElement: html,
@@ -419,12 +437,15 @@ function snapshot() {
     subtitle: byId['bci-queue-subtitle'].textContent,
     stance: byId['bci-decision-stance'].textContent,
     why: byId['bci-decision-why'].textContent,
+    historyState: historyPanel.dataset.state || historyPanel.getAttribute('data-state'),
+    historyStatus: byId['bci-history-status'].textContent,
+    historyRows: byId['bci-history-rows'].textContent,
     fetchCalls: fetchCalls.slice()
   };
 }
 
 function settled(state) {
-  return ['locked', 'empty', 'ready', 'integrity_block', 'source_outage', 'unavailable', 'generation-restarted', 'withheld'].indexOf(state) >= 0;
+  return ['locked', 'empty', 'ready', 'partial', 'integrity_block', 'source_outage', 'unavailable', 'generation-restarted', 'withheld'].indexOf(state) >= 0;
 }
 
 function waitFor(predicate, leftover) {
@@ -440,7 +461,10 @@ function waitFor(predicate, leftover) {
   });
 }
 
-waitFor(function () { return settled(workspace.dataset.state || workspace.getAttribute('data-state')); }).then(function () {
+waitFor(function () {
+  return settled(workspace.dataset.state || workspace.getAttribute('data-state')) &&
+    settled(historyPanel.dataset.state || historyPanel.getAttribute('data-state'));
+}).then(function () {
   var first = snapshot();
   if (scenario.secondRoutes) scenario.routes = scenario.secondRoutes;
   if (scenario.clickRefresh) {

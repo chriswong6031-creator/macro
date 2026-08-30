@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/historical_event_record.v1.schema.json",
+  "title": "Entitled BioCatalyst historical event record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "event_id", "source", "company", "event", "asset", "historical_market", "normalization", "unsafe_fields", "authority"],
+  "properties": {
+    "contract_id": {"const": "biocatalyst_historical_event_record.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"type": "string", "pattern": "^bpcjv_event_[0-9a-f]{24}$"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["provider", "source_id", "license_class", "family", "source_ordinal", "capture_observed_at", "source_published_at", "source_published_at_state"],
+      "properties": {
+        "provider": {"const": "BioPharmCatalyst"},
+        "source_id": {"const": "biopharmcatalyst_jv_snapshot"},
+        "license_class": {"const": "licensed_finite_snapshot"},
+        "family": {"enum": ["historical_fda", "device_history", "device_pipeline_history"]},
+        "source_ordinal": {"type": "integer", "minimum": 1},
+        "capture_observed_at": {"type": "string", "format": "date-time"},
+        "source_published_at": {"type": ["string", "null"], "format": "date-time"},
+        "source_published_at_state": {"enum": ["observed", "unknown"]}
+      }
+    },
+    "company": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticker_evidence", "name_evidence", "resolution_state", "security_id", "issuer_id", "resolution_basis", "issuer_relationship_state"],
+      "properties": {
+        "ticker_evidence": {"type": ["string", "null"], "maxLength": 32},
+        "name_evidence": {"type": ["string", "null"], "maxLength": 240},
+        "resolution_state": {"enum": ["resolved", "unresolved", "ambiguous", "stale_ticker"]},
+        "security_id": {"type": ["string", "null"]},
+        "issuer_id": {"type": ["string", "null"]},
+        "resolution_basis": {"enum": ["time_scoped_alias", "current_catalog_only", "none", "ambiguous"]},
+        "issuer_relationship_state": {"enum": ["current_only", "unavailable"]}
+      }
+    },
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["date", "date_precision", "family", "stage", "description", "source_available_at", "observed_at"],
+      "properties": {
+        "date": {"type": "string", "format": "date"},
+        "date_precision": {"const": "day"},
+        "family": {"enum": ["regulatory", "device"]},
+        "stage": {"type": ["string", "null"], "maxLength": 160},
+        "description": {"type": ["string", "null"], "maxLength": 600},
+        "source_available_at": {"type": "null"},
+        "observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "asset": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "label", "indication"],
+      "properties": {
+        "kind": {"enum": ["drug", "device", "unknown"]},
+        "label": {"type": ["string", "null"], "maxLength": 240},
+        "indication": {"type": ["string", "null"], "maxLength": 320}
+      }
+    },
+    "historical_market": {
+      "type": "object", "additionalProperties": false,
+      "required": ["price_at_event", "price_movement"],
+      "properties": {
+        "price_at_event": {"type": ["string", "null"], "maxLength": 64},
+        "price_movement": {"type": ["string", "null"], "maxLength": 64}
+      }
+    },
+    "normalization": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "repair"],
+      "properties": {
+        "state": {"const": "deterministic"},
+        "repair": {"enum": ["none", "missing_row_index_unshifted"]}
+      }
+    },
+    "unsafe_fields": {"type": "array", "uniqueItems": true, "items": {"type": "string", "maxLength": 120}},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "licensed_historical_context"},
+        "decision_authority": {"const": false},
+        "allowed_uses": {"const": ["display", "context", "explain"]},
+        "forbidden_uses": {"const": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"company": {"properties": {"resolution_state": {"const": "resolved"}}}}},
+      "then": {
+        "properties": {
+          "company": {
+            "properties": {
+              "security_id": {"type": "string", "minLength": 1, "maxLength": 240},
+              "resolution_basis": {"enum": ["time_scoped_alias", "current_catalog_only"]}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "company": {
+            "properties": {
+              "security_id": {"type": "null"},
+              "issuer_id": {"type": "null"},
+              "issuer_relationship_state": {"const": "unavailable"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

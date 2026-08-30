@@ -6887,6 +6887,7 @@ jobs:
       - "research/US_BOARD_MEASUREMENT.md"
       - "scripts/__init__.py"
       - "scripts/biocatalyst_worker.py"
+      - "scripts/biocatalyst_snapshot_onboard.py"
       - "scripts/build_biocatalyst.py"
       - "scripts/build_capital_structure_page.py"
       - "scripts/build_chart_data.py"
@@ -6943,6 +6944,11 @@ jobs:
       - "tests/test_biocatalyst_deploy.py"
       - "tests/test_biocatalyst_hydration.py"
       - "tests/biocatalyst_hydration_harness.js"
+      - "tests/test_biocatalyst_historical_event_api.py"
+      - "tests/test_biocatalyst_historical_event_ui.py"
+      - "tests/test_biocatalyst_historical_events.py"
+      - "tests/test_biocatalyst_jv_snapshot.py"
+      - "tests/test_biocatalyst_snapshot_onboard.py"
       - "tests/test_biocatalyst_page.py"
       - "tests/test_biocatalyst_catalyst_radar.py"
       - "tests/test_biocatalyst_catalyst_radar_api.py"
@@ -6966,7 +6972,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install BioCatalyst test deps
-        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3
+        run: pip install pytest fastapi httpx requests pyyaml jsonschema jinja2 boto3 openpyxl pandas pyarrow
       - name: BioCatalyst serving, UI, and deployment-isolation contracts
         run: >
           python -m pytest
@@ -6977,7 +6983,12 @@ jobs:
           tests/test_biocatalyst_catalyst_radar.py
           tests/test_biocatalyst_catalyst_radar_api.py
           tests/test_biocatalyst_d0b_ui.py
-          tests/test_biocatalyst_hydration.py -q
+          tests/test_biocatalyst_hydration.py
+          tests/test_biocatalyst_historical_event_api.py
+          tests/test_biocatalyst_historical_event_ui.py
+          tests/test_biocatalyst_historical_events.py
+          tests/test_biocatalyst_jv_snapshot.py
+          tests/test_biocatalyst_snapshot_onboard.py -q
 
   biocatalyst-evidence:
     if: ${{ false }}
