@@ -40,12 +40,19 @@ verified:
   - claim: "No CRG principal was already executing."
     command: "Slack exact-operation search for crg-fable-principal-20260828-sol-001."
     result: "PASS — no prior Slack carrier/ACK/START/RESULT found for the principal operation."
+  - claim: "No concrete eligible Fable receiver existed at the post-R0 placement census."
+    command: "Grok Secretary read-only Mac provider/session census crg-fable-placement-census-20260829-sol-001 plus Sol carrier reconciliation."
+    result: >
+      PASS — NO_ELIGIBLE_CAPACITY / effect=NONE. Claude5 and Claude6 were live with active work;
+      Claude3, Claude4 and Claude8 retained existing parked/exact-session obligations and were not
+      lawful new-work receivers; no unambiguous idle Fable-designated RuntimeBinding existed.
+      The census child received terminal SOL ACCEPTED / STOP and created no principal delivery.
 unverified:
-  - claim: "A concrete eligible Fable receiver is currently available."
+  - claim: "A concrete eligible Fable receiver is currently available after the last census."
     what_would_verify: >
-      Live provider/session placement evidence yielding one unambiguous eligible receiver,
-      followed by deliberate lawful delivery and that receiver's ACK/readback; until then the
-      principal operation is UNCLAIMED / WAITING_CAPACITY.
+      A fresh provider/session placement census after material capacity movement yielding one
+      unambiguous eligible receiver, followed by deliberate lawful delivery and that receiver's
+      ACK/readback; until then the principal operation remains UNCLAIMED / WAITING_CAPACITY.
   - claim: "CRG-01 is repaired."
     what_would_verify: >
       A separately commissioned CRG-NW-AUTHORITY-V1 child, accepted code/contracts/conformance
@@ -55,17 +62,19 @@ unresolved:
     The canonical Executive worker route remains production_armed=false, so no Executive Job/Worker
     claim may be invented for CRG principal placement.
   - >-
-    Live Fable placement is being reconciled separately; do not ask the Chairman to allocate a routine
-    numbered account when no automated placement owner can currently do so.
+    The last live Fable placement census found NO_ELIGIBLE_CAPACITY. Keep the parent active with
+    capacity re-entry attention; do not double-book an occupied/exact-session Claude seat and do not
+    ask the Chairman to allocate a routine numbered account.
   - >-
     CRG-02 imported Macro generation identity, CRG-03 reverse publication ownership, Prophet proof,
     Terminal washout authority, older Terminal formal contract gaps and the final production dossier
     remain open after CRG-01 in the bounded wave order.
 next_actions:
   - >-
-    Sol: complete live Fable placement reconciliation for crg-fable-principal-20260828-sol-001.
-    If exactly one eligible concrete session is lawfully identified, deliberately deliver the existing
-    principal handoff, require ACK/read/watch/START, and keep Slack delivery distinct from execution.
+    Sol: watch for material Fable-capacity movement and perform a fresh bounded placement census only
+    when one of the current seat obligations changes materially. If exactly one eligible concrete
+    session is then lawfully identified, deliberately deliver the existing principal handoff, require
+    ACK/read/watch/START, and keep Slack delivery distinct from execution.
   - >-
     After actual principal claim, perform a fresh collision census and commission only
     CRG-NW-AUTHORITY-V1 as the first R1 implementation child.
@@ -85,5 +94,7 @@ do_not_redo:
 Before this recovery, the accepted R0 carrier existed but was stuck behind a Draft-only GitHub UI gate,
 and Agent OS could not truthfully say that the durable CRG execution home had landed. After this recovery,
 R0 is durable on Macro main at `2a45075ddb1139d3bcab6c6402f483040e0f6378` and the organizational
-continuation can move to actual principal placement. This is a records-only capability delta: it makes
-CRG recoverable and governed across sessions, but repairs zero production seams.
+continuation can move to actual principal placement. The first post-R0 live placement census found no
+eligible Fable capacity, so the principal remains explicitly unclaimed rather than silently orphaned.
+This is a records-only capability delta: it makes CRG recoverable and governed across sessions, but
+repairs zero production seams.
