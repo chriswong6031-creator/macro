@@ -4,14 +4,17 @@ The composer (site/canada-stock-v36.js, entitled-only, no template pair) hides
 grid cards and the grid container with the HTML ``hidden`` attribute
 (``card.hidden = !show``).  The UA sheet's ``[hidden]{display:none}`` loses to
 ANY author display rule, and both hidden targets carry one: the page stylesheet
-sets ``.pvcard{display:flex}`` and the composer's own style sets
-``.ca-v36-card-grid{display:grid}``.  Production consequence (found in the
+sets ``.pvcard{display:flex}`` and the (now governed) stock-dashboard stylesheet
+sets ``.ca-v36-card-grid{display:grid}``.  Production consequence (found in the
 2026-08-25 entitled acceptance matrix): the Top Picks segment, the leadership
 filter's grid hiding, and the grid/table view switch were all visually inert —
 state, counters, aria and the empty-state message updated while every card
 stayed painted.  The repair scopes explicit ``[hidden]`` overrides into the
-composer's injected style; these tests pin that the overrides ship and that
-the hide mechanism they cover is still the one the composer uses.
+governed stylesheet (tests/test_stock_dashboard_css.py); this file pins that
+the hide mechanism THOSE overrides depend on is still the one the composer
+uses, and that the composer itself owns no runtime CSS at all (TP-1: theme
+parity moved every presentation rule out of injectCss() into
+templates/stock-dashboard.css + site/stock-dashboard.css).
 """
 
 import re
@@ -21,13 +24,6 @@ import pytest
 
 COMPOSER = Path(__file__).resolve().parents[1] / "site" / "canada-stock-v36.js"
 
-REQUIRED_HIDDEN_OVERRIDES = [
-    # container: grid pane must actually vanish when the Table view is active
-    ".ca-v36-card-grid[hidden]{display:none!important}",
-    # cards: Top Picks segment + leadership filter hide via card.hidden
-    ".ca-v36-card-grid .pvcard[hidden]{display:none!important}",
-]
-
 
 def _composer_text() -> str:
     if not COMPOSER.exists():
@@ -35,14 +31,83 @@ def _composer_text() -> str:
     return COMPOSER.read_text(encoding="utf-8")
 
 
-def test_hidden_attribute_overrides_ship_in_composer_style():
+# ---------------------------------------------------------------------------
+# TP-1 (theme-parity-tp1-canada-20260828-sol-001) — extraction contracts.
+# research/THEME_PARITY_RATCHET_PRESENTATION_CONVERGENCE_ARCHITECTURE.md §4-5.
+# ---------------------------------------------------------------------------
+
+FORBIDDEN_RUNTIME_CSS_TOKENS = (
+    'createElement("style")',
+    "createElement('style')",
+    "style.textContent",
+    "css.textContent",
+    "function injectCss",
+    "insertRule",
+    "adoptedStyleSheets",
+)
+
+
+def test_composer_never_authors_runtime_css():
+    """No substantive product styling may be authored as an opaque runtime
+    stylesheet system inside the composer (theme-parity ratchet law, house
+    CLAUDE.md 'Theme art direction — required'). Presentation now lives
+    entirely in the governed templates/stock-dashboard.css pair."""
     text = _composer_text()
-    for rule in REQUIRED_HIDDEN_OVERRIDES:
-        assert rule in text, (
-            f"composer style lost the {rule!r} override; the hidden attribute "
-            "is defeated by author display rules (.pvcard{display:flex} / "
-            ".ca-v36-card-grid{display:grid}) and the Top Picks segment, "
-            "leadership filter and grid/table switch go visually inert"
+    for token in FORBIDDEN_RUNTIME_CSS_TOKENS:
+        assert token not in text, (
+            f"composer still authors runtime CSS via {token!r}; this must be "
+            "deleted — presentation belongs in the governed "
+            "templates/stock-dashboard.css pair, not composer JS strings"
+        )
+
+
+def test_composer_mounts_canonical_stockdash_classes():
+    """The composer's mount point carries both the shared stock-dashboard
+    family class and the Canada variant modifier, so the governed stylesheet
+    (scoped under .mx-stockdash / .mx-stockdash--ca) actually applies."""
+    text = _composer_text()
+    assert "mx-stockdash" in text
+    assert "mx-stockdash--ca" in text
+
+
+def test_canada_loader_gates_composer_on_shared_stylesheet_seam():
+    """TP-1 Task 2: the Canada loader must call one shared, idempotent
+    ensureStockDashCss() seam before it injects the composer script, and
+    that seam's link.onload must be what starts the composer while
+    link.onerror leaves the legacy page untouched (fail-soft: an entitled
+    visitor who hits a stylesheet 404 must never be left on a half-styled
+    composer mount)."""
+    loader_path = Path(__file__).resolve().parents[1] / "templates" / "dashboard-icons.js"
+    site_loader_path = loader_path.parents[1] / "site" / "dashboard-icons.js"
+    for path in [loader_path, site_loader_path]:
+        if not path.exists():
+            continue  # sparse checkout omits site/; templates/ always present
+        text = path.read_text(encoding="utf-8")
+        assert text.count("function ensureStockDashCss(") == 1, (
+            f"{path.name}: expected exactly one shared ensureStockDashCss() "
+            "seam definition, not a per-composer copy"
+        )
+        loader_start = text.find("__mmCanadaStockV36Loader")
+        assert loader_start != -1, f"{path.name}: Canada loader guard flag missing"
+        hk_start = text.find("__mmHKStockV36Loader")
+        canada_block = text[loader_start:hk_start] if hk_start != -1 else text[loader_start:]
+        assert "ensureStockDashCss(" in canada_block, (
+            f"{path.name}: the Canada composer's bounded retry no longer "
+            "gates script injection on ensureStockDashCss()"
+        )
+        seam = re.search(r"function ensureStockDashCss\b.*?\n\}", text, re.S)
+        assert seam, f"{path.name}: could not locate the ensureStockDashCss() body"
+        seam_body = seam.group(0)
+        assert "link.onload" in seam_body and "onReady" in seam_body, (
+            f"{path.name}: ensureStockDashCss() must start the composer via "
+            "link.onload calling onReady()"
+        )
+        onerror = re.search(r"link\.onerror\s*=\s*function\s*\([^)]*\)\s*\{.*?\};", seam_body, re.S)
+        assert onerror, f"{path.name}: ensureStockDashCss() lost its onerror handler"
+        assert "onReady(" not in onerror.group(0), (
+            f"{path.name}: link.onerror must NOT call onReady() — a "
+            "stylesheet load failure must fail soft (legacy page stays "
+            "visible), never start the composer half-styled"
         )
 
 
@@ -206,46 +271,326 @@ def test_no_new_fetch_urls_and_no_track_ledger_fetch():
     )
 
 
-def test_group_action_band_uses_owner_lanes_and_existing_modal_activation():
-    """Change 4: the Expand-leadership modal gets a group-action band above
-    the two ranking panes, partitioned into the same four owner lanes, with
-    rows reusing the existing data-ca-modal-kind/data-ca-modal-id activation
-    (never a new click-handler path).
-
-    The interpolation-shape assertion below kills a mutation that a bare
-    `"data-ca-modal-kind" in text` check would miss: stripping the data
-    attributes out of laneItemHtml() (so group-action rows silently stop
-    being clickable) while leaving delegation selectors like
-    `[data-ca-modal-kind][data-ca-modal-id]` and this docstring's prose
-    untouched — the bare token would still be present in the file, but the
-    live `data-ca-modal-kind="' + x.kind` interpolation would only appear
-    once (in modalRows()) instead of twice.
-    """
+def test_act_now_panel_renders_at_rest_above_prophet_never_modal_only():
+    """V3.8 (§13.1): the owner-lane group-action map renders AT REST above
+    Prophet — never (only) inside the Expand-leadership modal. Pins (a) the
+    #ca-v36-actnow section inside buildShell()'s composition BEFORE
+    #ca-v36-prophet; (b) renderActNow() actually called on the mount path;
+    (c) the V3.7 modal group-action band (ca-v36-modal-lanes) is GONE — the
+    at-rest panel is the one home; (d) at-rest action rows reuse the SAME
+    data-ca-lead-kind/-id activation the leadership rows use (one path,
+    activate() only — never a parallel mechanism)."""
     text = _composer_text()
-    assert "ca-v36-modal-lanes" in text, "group-action band container missing"
-    assert "LANE_DEFS" in text, (
-        "lane labels for the group-action band must come from the same "
-        "LANE_DEFS source collectSectors() uses — never a second, "
-        "independently-invented lane vocabulary"
+    m = re.search(r"main\.innerHTML = .*?researchToolsHtml\(\)|main\.innerHTML = .*?</section>';", text, re.S)
+    assert m, "could not locate buildShell()'s main.innerHTML composition"
+    shell = m.group(0)
+    actnow_idx = shell.find('id="ca-v36-actnow"')
+    prophet_idx = shell.find('id="ca-v36-prophet"')
+    assert actnow_idx != -1, "buildShell() no longer composes #ca-v36-actnow at rest"
+    assert prophet_idx != -1, "buildShell() lost the #ca-v36-prophet section"
+    assert actnow_idx < prophet_idx, (
+        "What to Act On Now must render ABOVE Prophet (§4 page grammar)"
     )
-    # modalRows() and laneItemHtml() must BOTH build the same live
-    # data-ca-modal-kind="' + x.kind interpolation — not just contain the
-    # bare attribute name somewhere (e.g. in a delegation selector string).
-    live_kind_interpolations = text.count('data-ca-modal-kind="\' + x.kind')
-    assert live_kind_interpolations >= 2, (
-        "expected the live `data-ca-modal-kind=\"' + x.kind` interpolation "
-        "in both modalRows() and laneItemHtml() (found "
-        f"{live_kind_interpolations}); group-action rows must reuse the "
-        "SAME activation attributes as modalRows(), not a parallel "
-        "mechanism, and stripping them from laneItemHtml() must fail this "
-        "test even though the bare 'data-ca-modal-kind' token still "
-        "appears elsewhere (e.g. the click-delegation selector)"
+    assert "renderActNow()" in text.split("main.innerHTML")[1], (
+        "renderActNow() is never called after the shell mounts"
     )
-    live_id_interpolations = text.count('data-ca-modal-id="\' + esc(x.id)')
-    assert live_id_interpolations >= 2, (
-        "expected the live `data-ca-modal-id=\"' + esc(x.id)` interpolation "
-        "in both modalRows() and laneItemHtml() (found "
-        f"{live_id_interpolations})"
+    assert "ca-v36-modal-lanes" not in text, (
+        "the V3.7 modal group-action band is back — the at-rest panel is "
+        "the one home for group action"
+    )
+    m2 = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate anRowHtml() function body via regex"
+    an_body = m2.group(0)
+    assert 'data-ca-lead-kind="sector" data-ca-lead-id="\' + esc(x.id)' in an_body, (
+        "at-rest action rows no longer carry the data-ca-lead-kind/-id pair "
+        "— they must reuse the one existing activation path (activate() via "
+        "bind()'s delegation), never a parallel click mechanism"
+    )
+
+
+def test_sector_rank_is_never_lane_traversal_and_theme_rank_is_owner_only():
+    """DEC:V38-ACTION-IS-NOT-LEADERSHIP / architecture §8.2: the V3.7
+    presentation-minted sector rank (`rank: out.length + 1`) is deleted and
+    must never return; sectors carry rank: null. Themes keep ONLY the
+    owner-published rank — the V3.7 `th.rank || idx + 1` sort-position
+    fallback is likewise a minted number and must not return. leadRow()
+    renders `Theme #N` for an owner-ranked theme and an em dash otherwise;
+    no sector ever renders a number."""
+    text = _composer_text()
+    assert "out.length + 1" not in text, (
+        "the lane-traversal sector rank (out.length + 1) is back — lane "
+        "traversal is never rank"
+    )
+    m = re.search(r"function collectSectors\b.*?(?=\n\n|\n  function tone)", text, re.S)
+    assert m, "could not locate collectSectors() function body via regex"
+    # Every rank: assignment in collectSectors must be the literal null —
+    # scan all occurrences rather than merely requiring one null somewhere
+    # (adversarial review 2026-08-27, finding 4: the earlier disjunct form
+    # was a tautology).
+    rank_values = re.findall(r"rank\s*:\s*([^,]+),", m.group(0))
+    assert rank_values and all(v.strip() == "null" for v in rank_values), (
+        f"collectSectors() assigns rank values {rank_values!r} — sectors "
+        "must always carry rank: null (no canonical sector-rank owner)"
+    )
+    m2 = re.search(r"function collectThemes\b.*?(?=\n\n  function )", text, re.S)
+    assert m2, "could not locate collectThemes() function body via regex"
+    th_body = m2.group(0)
+    assert "th.rank != null ? th.rank : null" in th_body, (
+        "collectThemes() no longer restricts theme rank to the owner's own "
+        "value — a positional fallback (idx + 1) mints a rank the owner "
+        "never published"
+    )
+    assert "idx + 1" not in th_body, (
+        "the positional theme-rank fallback (idx + 1) is back in "
+        "collectThemes()"
+    )
+    m3 = re.search(r"function leadRow\b.*?(?=\n  function )", text, re.S)
+    assert m3, "could not locate leadRow() function body via regex"
+    assert 'x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—"' in m3.group(0), (
+        "leadRow() no longer renders rank as owner-only `Theme #N` with the "
+        "em-dash fallback — either sectors gained a number or the "
+        "no-synthesized-rank guard was dropped"
+    )
+    assert "padStart" not in text, (
+        "a padStart rank formatter reappeared — the bare zero-padded rank "
+        "cell is the V3.7 presentation this correction removes"
+    )
+
+
+def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
+    """V3.8 §6.2/§6.3: rank language (the Theme-rank basis chip, the modal
+    Rank column) renders only while an owner-ranked theme exists
+    (state.hasThemeRank); the at-rest count chip is labelled Prophet/候选
+    (the ambiguous BOARD label is gone everywhere) and counts render only
+    when canonical membership is known — unknown membership must never
+    render as zero (members stays null, count stays null, renderers branch
+    on count != null)."""
+    text = _composer_text()
+    assert "state.hasThemeRank = themes.some(function (x) { return x.rank != null; })" in text, (
+        "collectThemes() no longer derives state.hasThemeRank"
+    )
+    m = re.search(r"function renderLeadership\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate renderLeadership() function body via regex"
+    col_body = m.group(0)
+    assert "state.hasThemeRank ?" in col_body and 'bi("Theme rank", "主题排名")' in col_body, (
+        "the Theme-rank basis chip is missing or unconditional in "
+        "renderLeadership() — a bare number without a visible basis (or a "
+        "basis with no owner) is the V3.7 confusion V3.8 corrects"
+    )
+    assert 'bi("Board", "榜单")' not in text, (
+        "the ambiguous Board/榜单 count label is back somewhere in the file"
+    )
+    man = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert man, "could not locate anRowHtml() function body via regex"
+    assert 'bi("Prophet", "候选")' in man.group(0), (
+        "the at-rest count chip is no longer labelled Prophet/候选"
+    )
+    mo = re.search(r"function modalPane\b.*?(?=\n  function )", text, re.S)
+    assert mo, "could not locate modalPane() function body via regex"
+    assert "rk ? '<th>' + bi(\"Rank\", \"排名\")" in mo.group(0), (
+        "the modal Rank column is unconditional again — it must render only "
+        "under state.hasThemeRank"
+    )
+    mr = re.search(r"function modalRows\b.*?(?=\n  function )", text, re.S)
+    assert mr, "could not locate modalRows() function body via regex"
+    assert '"Theme #" + x.rank : "—"' in mr.group(0), (
+        "modalRows() lost the owner-only Theme # rank cell"
+    )
+    # Membership knowledge is PER GROUP via the board's own sector
+    # vocabulary — a lane name outside that vocabulary must stay null
+    # (adversarial review 2026-08-27, finding 1: a global flag rendered
+    # false '0 · Prophet' rows for every lane whose taxonomy differs from
+    # the board's, e.g. lane 'Communication Services' vs board
+    # 'Communication').
+    m2 = re.search(r"function collectSectors\b.*?(?=\n\n|\n  function tone)", text, re.S)
+    assert m2, "could not locate collectSectors() function body via regex"
+    sec_body = m2.group(0)
+    assert re.search(r"var sectorVocab = new Set\(state\.rows\.map", sec_body), (
+        "collectSectors() no longer builds the board's sector vocabulary"
+    )
+    assert "sectorVocab.has(name.en) ? sectorMembers(name.en) : null" in sec_body, (
+        "collectSectors() no longer gates membership per group on the "
+        "board's own sector vocabulary — a lane name outside the board "
+        "taxonomy would render a false 0 · Prophet"
+    )
+    assert "state.membershipKnown" not in text, (
+        "the page-global membershipKnown flag is back — membership "
+        "knowledge must stay per group"
+    )
+    for fn, snippet in [
+        ("leadRow", 'x.count != null ? x.count : "—"'),
+        ("modalRows", 'x.count != null ? x.count : "—"'),
+        ("anRowHtml", "var countHtml = x.count != null ? '"),
+    ]:
+        mf = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
+        assert mf, f"could not locate {fn}() function body via regex"
+        assert snippet in mf.group(0), (
+            f"{fn}() no longer branches on count != null — unknown "
+            "membership would render as zero, and missing ≠ zero"
+        )
+
+
+def test_leadership_surface_is_themes_only_no_covert_sector_ordering():
+    """Adversarial review 2026-08-27, finding 2 (MAJOR) + architecture
+    §8.2.4: Canada has no sector-rank owner, so the Leadership & Rotation
+    surface renders THEMES ONLY — an action-ordered, truncated sector list
+    would be §6.2's 'numbering rows because they happen to be rendered
+    first' with the digit removed. Sectors stay fully useful through What
+    to Act On Now and their group pages. Pins: renderLeadership() consumes
+    state.themes and never state.sectors; the modal composes exactly one
+    (theme) pane and the 'Sector Leadership' pane title is gone; the
+    surviving empty copy names the THEME axis."""
+    text = _composer_text()
+    m = re.search(r"function renderLeadership\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert m, "could not locate renderLeadership() function body via regex"
+    body = m.group(0)
+    assert "state.themes.slice(0, 5)" in body, (
+        "renderLeadership() no longer renders the top-5 owner-ranked themes"
+    )
+    assert "state.sectors" not in body, (
+        "renderLeadership() consumes state.sectors again — an action-"
+        "ordered sector list on the leadership surface is a covert rank"
+    )
+    assert "Theme ranking unavailable" in body, (
+        "the leadership empty state no longer names the theme axis"
+    )
+    mo = re.search(r"function openModal\b.*?(?=\n  /\*|\n  function )", text, re.S)
+    assert mo, "could not locate openModal() function body via regex"
+    assert "state.sectors" not in mo.group(0), (
+        "openModal() composes a sector pane again — no sector-rank owner "
+        "means no sector leadership surface at any depth"
+    )
+    assert 'bi("Sector Leadership", "板块领先")' not in text, (
+        "the Sector Leadership pane title is back"
+    )
+
+
+def test_activation_affordance_requires_canonical_membership():
+    """Adversarial review 2026-08-27, findings 1+3: a group with unknown
+    membership must not offer a filter at all — activating it would no-op
+    allowed() and paint the whole board as if it matched. Every activation
+    surface (at-rest rows, leadership rows, modal rows) renders its
+    data-ca-* activation attributes ONLY when x.members is non-null; the
+    unknown-membership row keeps the group-research route as its
+    affordance."""
+    text = _composer_text()
+    for fn, gate in [
+        ("anRowHtml", "var act = x.members != null ? ' data-ca-lead-kind=\"sector\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
+        ("leadRow", "var act = x.members != null ? ' data-ca-lead-kind=\"' + x.kind + '\" data-ca-lead-id=\"' + esc(x.id) + '\"' : ' disabled';"),
+        ("modalRows", "var act = x.members != null ? ' tabindex=\"0\" data-ca-modal-kind=\"' + x.kind + '\" data-ca-modal-id=\"' + esc(x.id) + '\"' : '';"),
+    ]:
+        m = re.search(r"function " + fn + r"\b.*?(?=\n  function )", text, re.S)
+        assert m, f"could not locate {fn}() function body via regex"
+        assert gate in m.group(0), (
+            f"{fn}() no longer gates its activation attributes on "
+            "x.members != null — an unknown-membership group would offer a "
+            "filter that no-ops and claims the full board matches"
+        )
+
+
+def test_at_rest_lane_rows_capped_at_three_with_view_all():
+    """V3.8 §5.2 density law: ≤3 group rows per lane at rest; more only via
+    the explicit View-all expansion."""
+    text = _composer_text()
+    assert re.search(r"var AN_AT_REST = 3;", text), (
+        "AN_AT_REST is no longer exactly 3 — the at-rest density pin is broken"
+    )
+    m = re.search(r"function anLaneHtml\b.*?(?=\n  function )", text, re.S)
+    assert m, "could not locate anLaneHtml() function body via regex"
+    body = m.group(0)
+    assert "items.slice(0, AN_AT_REST)" in body, (
+        "anLaneHtml() no longer caps the collapsed lane at AN_AT_REST rows"
+    )
+    assert "items.length > AN_AT_REST" in body and "data-ca-an-view" in body, (
+        "anLaneHtml() lost the View-all control or its threshold"
+    )
+
+
+def test_act_now_presentation_controls_never_touch_population_or_filter():
+    """V3.8 §5.5: switching the visible mobile lane / expanding View all is
+    presentation-only. setAnLane()/toggleAnLane() must not call setSource/
+    activate/applyFilter or assign state.source/state.filter, and the
+    default-lane election runs ONLY while no lane is chosen (an OR on the
+    chosen lane's emptiness would hijack a user's empty-lane tap — HK
+    adversarial-review finding 1)."""
+    text = _composer_text()
+    for fn in ("setAnLane", "toggleAnLane"):
+        m = re.search(r"function " + fn + r"\b.*?\n  \}", text, re.S)
+        assert m, f"could not locate {fn}() function body via regex"
+        body = m.group(0)
+        for forbidden in ("setSource(", "activate(", "applyFilter(",
+                          "state.source", "state.filter"):
+            assert forbidden not in body, (
+                f"{fn}() references {forbidden!r} — Act-Now presentation "
+                "controls must never mutate the Prophet population or filter"
+            )
+    m2 = re.search(r"function renderActNow\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate renderActNow() function body via regex"
+    body2 = m2.group(0)
+    assert "if (state.anLane == null) {" in body2, (
+        "renderActNow() lost the null-only default-lane election guard"
+    )
+    assert not re.search(r"state\.anLane == null\s*\|\|", body2), (
+        "the default-lane election guard is an OR — a chosen-but-empty lane "
+        "would be silently overridden on every render"
+    )
+
+
+def test_known_zero_group_keeps_research_route_and_lane_order_is_owner_order():
+    """V3.8 §5.4/§10: a known-zero group stays useful — at-rest rows carry
+    the owner's sectors/<id>.html route and the known-zero empty state uses
+    quiet copy + the route, never filter-miss language. And the at-rest
+    lane order is the ACTION owner's own DOM order (laneIdx), never the
+    theme/leadership axis."""
+    text = _composer_text()
+    m = re.search(r"function anRowHtml\b.*?(?=\n  function )", text, re.S)
+    assert "x.href" in m.group(0) and "ca-v36-an-go" in m.group(0), (
+        "anRowHtml() no longer renders the owner group-research route"
+    )
+    m2 = re.search(r"function emptyStateHtml\b.*?(?=\n  function )", text, re.S)
+    assert m2, "could not locate emptyStateHtml() function body via regex"
+    e_body = m2.group(0)
+    assert "item.members.size === 0" in e_body, (
+        "emptyStateHtml() lost its known-zero branch"
+    )
+    assert "No current Prophet names in this group." in e_body, (
+        "the quiet §10 known-zero copy is gone"
+    )
+    assert "该组别暂无 Prophet 候选。" in e_body, "ZH known-zero copy is gone"
+    assert "item.href" in e_body and "ca-v36-empty-go" in e_body, (
+        "the known-zero state no longer offers the group-research route"
+    )
+    assert "laneIdx: out.length" in text, (
+        "collectSectors() no longer stamps the action owner's row order"
+    )
+    m3 = re.search(r"function anLaneItems\b.*?(?=\n  function )", text, re.S)
+    assert re.search(r"a\.laneIdx \|\| 0\) - \(b\.laneIdx \|\| 0", m3.group(0)), (
+        "anLaneItems() no longer sorts by laneIdx — the leadership axis "
+        "would order/gate the action surface"
+    )
+
+
+def test_fresh_cue_lives_in_prophet_header_and_is_absent_when_zero():
+    """The absorbed Leading Now strip's one surviving datum — the owner
+    .pv-mk-new fresh-signal count — renders in the Prophet header (it
+    describes Prophet cards) and is absent when zero; the strip itself
+    (ca-v36-leading) must not return."""
+    text = _composer_text()
+    assert "ca-v36-leading" not in text, (
+        "the standalone Leading Now strip is back — V3.8 absorbs it (§4)"
+    )
+    m = re.search(r"function renderFresh\b.*?(?=\n\n)", text, re.S)
+    assert m, "could not locate renderFresh() function body via regex"
+    body = m.group(0)
+    assert "pv-mk-new" in body, (
+        "renderFresh() no longer counts the owner's .pv-mk-new markers"
+    )
+    assert "host.hidden = !fresh" in body, (
+        "renderFresh() no longer hides the cue at zero — an empty "
+        "placeholder is forbidden"
+    )
+    assert 'id="ca-v36-fresh"' in text, (
+        "the Prophet-header fresh-cue slot is gone from buildShell() markup"
     )
 
 

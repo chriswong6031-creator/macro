@@ -1,0 +1,36 @@
+{
+  "schema": "tfg0.development_corpus_qna_presence.v1",
+  "operation_key": "tfg0-transcript-format-census-20260827-v1",
+  "selection_receipt": "research/earnings_intelligence/e3/tfg0_transcript_format_development_corpus_selection.json",
+  "source_census_receipt": "research/earnings_intelligence/e3/tfg0_transcript_format_census_receipt.json",
+  "method": "post-freeze source-only named Operator/host handoff census; no compiler output used for admission and no model calls",
+  "selected_revision_count": 16,
+  "byte_replayed_count": 16,
+  "with_explicit_named_analyst_handoff": 16,
+  "admission_pass": true,
+  "note": "Every deterministic development slot contains at least one explicit source-level named analyst question handoff. This validates the 16-call denominator for transcript-format hardening: the unchanged compiler's 0/16 result is not explained by prepared-remarks-only calls. These examples are source-presence evidence, not canonical qa_exchange.v1 extraction or gold labels.",
+  "examples": [
+    {"pair":"OCSL/2026Q3","segment_index":35,"text":"Your next question comes from the line of Finian O'Shea with Wells Fargo Securities. Your line is open. Please go ahead."},
+    {"pair":"MBLY/2026Q2","segment_index":31,"text":"Our next question is from Joe Spak with UBS. Please proceed."},
+    {"pair":"GEF/2026Q3","segment_index":30,"text":"Our next question will be coming from the line of Ghansham Panjabi of Baird. Your line is open."},
+    {"pair":"ARQQ/2026Q2","segment_index":22,"text":"Our first question comes from the line of Troy Jensen from Cantor Fitzgerald. Your question, please."},
+    {"pair":"TRVI/2026Q2","segment_index":25,"text":"Our next question comes from the line of Annabel Samimy from Stifel. Your line is now open."},
+    {"pair":"CTRE/2026Q2","segment_index":24,"text":"Your next question comes from Austin Wurschmidt with KeyBanc Capital Markets. Please go ahead."},
+    {"pair":"LTH/2026Q2","segment_index":18,"text":"Our next question is coming from John Heinbockel from Guggenheim Partners. Your line is now live."},
+    {"pair":"UPBD/2026Q2","segment_index":44,"text":"Our next question comes from the line of Brad Thomas of KeyBanc Capital Markets. Your line is now open."},
+    {"pair":"SCCO/2026Q2","segment_index":66,"text":"Our next question is from Emerson Vieira with Goldman Sachs. Please proceed."},
+    {"pair":"AGM/2026Q2","segment_index":36,"text":"Your next question comes from Bill Ryan with Seaport Research Partners. Your line is open."},
+    {"pair":"BANR/2026Q2","segment_index":34,"text":"The next question comes from the line of Jeff Rulis from D.A. Davidson. Your line is now live."},
+    {"pair":"FANG/2026Q2","segment_index":31,"text":"Our next question comes from the line of Scott Hanold from RBC Capital Markets. Your line is live."},
+    {"pair":"HTGC/2026Q2","segment_index":33,"text":"We will take our first question from Crispin Love with Piper Sandler. Please go ahead. Your line is now open."},
+    {"pair":"COF/2026Q2","segment_index":33,"text":"Our next question comes from Sanjay Sakhrani with KBW. You may proceed."},
+    {"pair":"ARRY/2026Q2","segment_index":36,"text":"Your next question comes from the line of Brian Lee from Goldman Sachs. Please go ahead."},
+    {"pair":"KREF/2026Q2","segment_index":25,"text":"The next question comes from Jade Rahmani with KBW. Your line is open."}
+  ],
+  "evidence": {
+    "structural_census_run_id": 33043092699,
+    "structural_census_job_id": 98420881749,
+    "structural_census_artifact_id": 9634595572,
+    "structural_census_artifact_sha256": "688f7c70bb97c31cf35227c317e7516c89f3ebf0e0bbb17cf994d9e121df5bf5"
+  }
+}

@@ -915,6 +915,16 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
         "engine/*",                     # single-level subset of engine/**
+        # SINGLE-LEVEL SUFFIX GLOB (2026-08-26).  SUFFIX_NARROWED_RE requires a
+        # `**/` before the suffix, and the bare-`/*` test does not fire on a
+        # pattern ending `*.py`, so these fell through to False despite being as
+        # strictly contained in `engine/**` as `engine/*` is.  `defense-rail-laws`
+        # derived exactly this shape and reported an unstartable gap against a
+        # trigger list carrying `engine/**`.  ci-pack is path-scoped, so only a PR
+        # touching .github/ci/ ever ran the test that noticed.
+        "engine/*.py",
+        "data/*.parquet",
+        "data/smart_money/*.py",        # ancestor proof: ⊂ data/smart_money/** ⊂ data/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -923,6 +933,8 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
         "app/*",                        # single-level, but app/** is not a trigger
+        "app/*.py",                     # same, suffixed — must NOT be relaxed
+        "*/engine/*.py",                # a glob in the PARENT proves nothing
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -1478,6 +1490,94 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
     assert json.loads(failed.split("=", 1)[1]) == ["unrun-government-revenue"]
 
 
+def test_execution_timing_observations_do_not_change_semantic_fragment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Timing is useful evidence, never an input to semantic proof authority."""
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
+    job = PACK.LegacyJob("demo", definition, 0, 1, ("engine/**",))
+    monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(PACK, "_dependency_environment", lambda *_args, **_kwargs: {})
+
+    def fake_run(current, **_kwargs):
+        specs = PACK.semantic_step_specs(current)
+        return PACK.JobExecution(
+            logical_job_id=current.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(current),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=None,
+        )
+
+    monkeypatch.setattr(PACK, "_run_job", fake_run)
+    without_timing = tmp_path / "without-timing.json"
+    with_timing = tmp_path / "with-timing.json"
+    observations = tmp_path / "timing-observations.jsonl"
+    blocked_parent = tmp_path / "not-a-directory"
+    blocked_parent.write_text("not a directory\n", encoding="utf-8")
+    unwritable_observations = blocked_parent / "timing-observations.jsonl"
+    with_unwritable_timing = tmp_path / "with-unwritable-timing.json"
+
+    assert PACK.execute_pack([job], emit_semantic_fragment=without_timing) == 0
+    ticks = iter((1_000, 1_100, 1_200, 1_500, 1_600, 1_700, 1_800, 2_100))
+    monkeypatch.setattr(PACK.time, "monotonic_ns", lambda: next(ticks))
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_timing,
+            emit_timing_observations=observations,
+        )
+        == 0
+    )
+    assert (
+        PACK.execute_pack(
+            [job],
+            emit_semantic_fragment=with_unwritable_timing,
+            emit_timing_observations=unwritable_observations,
+        )
+        == 0
+    )
+
+    assert with_timing.read_bytes() == without_timing.read_bytes()
+    assert with_unwritable_timing.read_bytes() == without_timing.read_bytes()
+    assert not unwritable_observations.exists()
+    assert "::warning title=ci timing telemetry degraded::" in capsys.readouterr().out
+    assert [
+        json.loads(line)
+        for line in observations.read_text(encoding="utf-8").splitlines()
+    ] == [
+        {
+            "duration_ns": 100,
+            "ended_monotonic_ns": 1_100,
+            "logical_job_id": "demo",
+            "phase": "dependency_install",
+            "started_monotonic_ns": 1_000,
+            "status": "observed",
+        },
+        {
+            "duration_ns": 300,
+            "ended_monotonic_ns": 1_500,
+            "logical_job_id": "demo",
+            "phase": "test",
+            "started_monotonic_ns": 1_200,
+            "status": "observed",
+        },
+    ]
+
+
 def test_packs_stay_balanced_over_the_selected_subset() -> None:
     """Balance must be computed on the SELECTION, not the full manifest.
 
@@ -1774,6 +1874,10 @@ def test_runner_contract_is_the_v2_linux_x86_64_string() -> None:
 
 def test_diagnostic_canary_workflow_constant_names_the_exact_workflow() -> None:
     assert PACK.DIAGNOSTIC_CANARY_WORKFLOW == "infrastructure-selfhosted-ci-canary"
+    assert PACK.TRUSTED_EXECUTOR_WORKFLOW == "trusted-ci-executor"
+    assert PACK.DIAGNOSTIC_PR_WORKFLOWS == frozenset(
+        {PACK.DIAGNOSTIC_CANARY_WORKFLOW, PACK.TRUSTED_EXECUTOR_WORKFLOW}
+    )
 
 
 def test_runner_contract_v2_participates_in_the_job_semantic_digest(
@@ -1833,6 +1937,29 @@ def test_build_plan_admits_the_diagnostic_pair_only_for_its_exact_workflow_name(
                 subject_head_sha="c" * 40,
                 base_sha=base,
             )
+
+
+def test_p3a_executor_uses_the_same_closed_diagnostic_plan_admission(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    base = "b" * 40
+    plan = PACK.build_plan(
+        [_plan_job("demo", 0)],
+        ["engine/example.py"],
+        changed_from=base,
+        scope_mode="active",
+        pack_count=1,
+        workflow=PACK.TRUSTED_EXECUTOR_WORKFLOW,
+        event="workflow_dispatch",
+        role="pr_head",
+        tested_tree_sha="a" * 40,
+        subject_head_sha="c" * 40,
+        base_sha=base,
+    )
+    assert plan.workflow == PACK.TRUSTED_EXECUTOR_WORKFLOW
+    assert plan.role == "pr_head"
+    assert plan.event == "workflow_dispatch"
 
 
 def test_build_plan_still_requires_every_pr_head_invariant_for_the_diagnostic_pair(
@@ -1900,12 +2027,11 @@ def test_build_plan_refuses_the_old_broken_main_dispatch_with_changed_from(
         )
 
 
-def test_attest_execution_profile_refuses_on_this_real_non_linux_host() -> None:
-    """Real, un-mocked function on the real (macOS) host — the frozen spec
-    requires at least one test exercising the genuine refusal path via
-    faked ``platform`` attrs, never by actually running on Linux. This one
-    needs no faking at all: this Mac is not Linux.
-    """
+def test_attest_execution_profile_refuses_on_a_non_linux_host(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The real guard refuses a deterministically simulated non-Linux host."""
+    monkeypatch.setattr(PACK.platform, "system", lambda: "Darwin")
     with pytest.raises(PACK.ExecutionProfileError, match="Linux"):
         PACK.attest_execution_profile(None)
 
@@ -2747,7 +2873,7 @@ def test_pack_command_folds_to_exactly_one_shell_command() -> None:
         assert command.rstrip().endswith("--execute")
 
 
-def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
+def test_ci_pack_uses_twelve_balanced_hosted_anchors_or_fork_packs() -> None:
     workflow = _yaml(WORKFLOW)
     # This job set was EXACTLY {"ci-pack"} until Wave B (2026-08-11) added the
     # planner and the aggregate. Pinned as a subset, not as equality: the
@@ -2765,14 +2891,24 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     # scripts/check_contract_delta.py's module docstring). Adding it here is
     # the same class of change as ci-plan/ci-gate joining originally; it does
     # not reopen the 86-VM fan-out this test exists to prevent.
-    assert set(workflow["jobs"]) <= {"ci-plan", "ci-pack", "contract-delta", "ci-gate"}
+    # `trusted-ci` (P3B-B) is one protected-main reusable call, not another
+    # planner, pack fan-out or scheduler. Its PC jobs are defined only by the
+    # called main workflow; the caller's ci-pack matrix remains the stable hosted
+    # anchor set and retains the full implementation only for forks.
+    assert set(workflow["jobs"]) <= {
+        "ci-plan",
+        "trusted-ci",
+        "ci-pack",
+        "contract-delta",
+        "ci-gate",
+    }
     assert "ci-pack" in workflow["jobs"]
     pack = workflow["jobs"]["ci-pack"]
     # The pack COUNT tunes (2 -> 4 -> 12 as hosted capacity increased); the
-    # SHAPE is the contract: a small ordered matrix of balanced packs on hosted
-    # runners, never one job per legacy suite (86 VMs), and the matrix must
-    # agree with the --pack-count handed to the runner or some packs' jobs
-    # would execute nowhere.
+    # SHAPE is the contract: a small ordered matrix of stable hosted anchors
+    # (or full hosted fork packs), never one job per legacy suite (86 VMs), and
+    # the matrix must agree with the --pack-count handed to the runner or some
+    # packs' jobs would execute nowhere.
     #
     # Wave B made the matrix the PLANNER's, so the list of indices is no longer
     # in this file — `--pack-count 12` below is now the only place the twelve-way
@@ -2820,7 +2956,12 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
         "reintroducing max-parallel only slows main's proof; the hosted concurrency "
         "ceiling is account-wide and this key cannot raise it"
     )
-    assert pack["if"] == "needs.ci-plan.outputs.has_work == 'true'"
+    assert pack["if"] == (
+        "always() && needs.ci-plan.result == 'success' && "
+        "needs.ci-plan.outputs.has_work == 'true' && "
+        "(github.event.pull_request.head.repo.full_name != github.repository || "
+        "needs.trusted-ci.result == 'success')"
+    )
     run_text = "\n".join(
         str(step.get("run", "")) for step in pack["steps"] if isinstance(step, dict)
     )
@@ -3377,6 +3518,19 @@ CURATED_EXCLUSIVE = {
     # this file's pin does not drift from the manifest (no fix required, the
     # job's own paths: already cover its full closure).
     "dislocation-p0-a1-blind-harvest",
+    # 2026-08-26 (PR #6454): the D6-A + D6-B1 defense rail batteries moved
+    # onto the merge gate (they sat in gate:data unrun-government-revenue,
+    # which ci.yml never plans, so both commissioned merge-binding suites
+    # were dark). tests/test_fms_ui.py imports app.government_revenue for
+    # its route-boundary tests, whose closure's opaque edges smear whole-tree
+    # fallback claims (app/**, templates/**, site/**) — measured
+    # fallback-matching all four probes below and pushing
+    # templates/index.html to 130 > 129. Curated at the source, same
+    # treatment as stock-dossiers / cn-standout-audit / govrev-company-bridge:
+    # the declaration names the earned 563-file closure (flat engine/*.py +
+    # the read subpackages, deliberately not engine/**), the frozen fixture
+    # trees, and the sha-frozen staged goldens.
+    "defense-rail-laws",
 }
 
 
@@ -3641,12 +3795,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     5,600 and 10 packs): weights are 5,420 / 5,173 / 5,175, and a fallback-
     tier regression is still ~1,550 weight-seconds above them, so the bound
     this file exists to hold is untouched.
+
+    JOB COUNTS RE-BASED to 131/127/122 (wave 8, 2026-08-28, TP-1 repair edge
+    theme-parity-tp1-canada-20260828-sol-001). Measured on main a8075391fa89,
+    diffing selected-job NAME sets per probe against the wave-7 green
+    baseline manifest (48bfd3c97e8a):
+
+        templates/index.html          130 jobs / 5,560 weight (was ceiling 129)
+          entrants: regwall-boundary (declared — wave 7's own funded entrant),
+                    design-governance (fallback, w16),
+                    board-shadow-substrate (fallback, w7)
+        scripts/build_free_content.py 126 jobs / 5,313 weight (was ceiling 125)
+          entrants: design-governance, board-shadow-substrate,
+                    reference-integrity (all fallback)
+        engine/prophet/plan_book.py   121 jobs / 5,299 weight (AT ceiling —
+          the zero-headroom defect again)
+          entrants: board-shadow-substrate, reference-integrity
+
+    Every unfunded entrant is a DELIBERATELY-UNSCOPED always-on gate, i.e.
+    the ``reference-integrity`` class wave 6 already adjudicated ("ratcheting
+    the ceiling is the correct-risk response, not curation"):
+    ``design-governance`` is TP-0's forward-only design ratchet (#6579) —
+    a diff gate over user-facing templates/site whose entire purpose is to
+    run on exactly the PRs these probes model, so its match on
+    templates/index.html is its subject, not smear; ``board-shadow-substrate``
+    documents itself "Left UNSCOPED … always-on is correct for this job, not
+    lazy" (its K6 kill is a repo-wide string walk inference cannot narrow);
+    ``reference-integrity``'s breadth was adjudicated in wave 6 and its
+    growth onto build_free_content.py is the same mockups/research/registry
+    namespace closure firing as designed. Curating any of the three
+    ``scope: exclusive`` would lie about coverage or degenerate back to
+    fallback breadth — the dataos-identity-seams rejection, verbatim. The
+    non-smear finding is affirmative: TP-1's own manifest edit (adding
+    tests/test_stock_dashboard_css.py to the render-guard step, merge
+    e2091032ad1f) adds ZERO probe matches — the selected-name-set delta
+    across that merge is empty on all three probes, so the earned Canada CSS
+    coverage rides a job that already owned-matched its subjects and costs
+    these ceilings nothing.
+
+    Ceilings are set at measurement + 1 per the wave-3 rule (131/127/122),
+    re-funding the headroom promise on all three axes — plan_book.py sat AT
+    its ceiling again, the exact silent-main-red mechanism the wave-7 note
+    describes. WEIGHT and PACK ceilings stay unmoved (5,800 / 5,600 / 5,600
+    and 10 packs): measured weights are 5,560 / 5,313 / 5,299 and a
+    fallback-tier regression is still ~1,550 weight-seconds above them.
+    The companion test below pins all three always-on gates so the OPPOSITE
+    regression — a future curation silently narrowing a deliberate whole-tree
+    gate off its subject — reds loudly instead of shipping a false green.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
-        ("scripts/build_free_content.py", 125, 5_600),
-        ("engine/prophet/plan_book.py", 121, 5_600),
+        ("templates/index.html", 131, 5_800),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 122, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
@@ -3657,6 +3858,59 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
         # runner cut. Twelve packs per shape was the pre-curation measurement.
         packs = max(1, min(12, -(-weight // PACK.PACK_TARGET_SECONDS)))
         assert packs <= 10, (probe, packs, weight, reason)
+
+
+def test_deliberately_unscoped_gates_stay_always_on() -> None:
+    """The wave-8 entrants are always-on BY DESIGN — pin both directions.
+
+    Each of these gates carries a header comment documenting deliberate
+    unscoped breadth (a repo-wide walk, a diff ratchet over user-facing
+    trees, a namespace-closure gate). Two regressions would be silent
+    without this pin: (a) someone declares ``scope: exclusive``/``paths:``
+    on one of them to buy back a probe ceiling — the job stops running on
+    the PRs that are its actual subject, a false green the wave-2/wave-6
+    notes reject by name; (b) inference drift stops selecting one of them
+    on an ordinary user-facing PR. Both now red here, with the probe named.
+    """
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+    scoped_jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    # Measured membership at wave 8 (main a8075391fa89): each gate pinned on
+    # the probes that are its SUBJECT. design-governance is a user-facing
+    # diff ratchet, so it rides the template and site-builder probes but has
+    # no claim on engine internals; the other two walk trees that include
+    # engine/**, so they ride all three.
+    expected = {
+        "design-governance": ("templates/index.html",
+                              "scripts/build_free_content.py"),
+        "board-shadow-substrate": ("templates/index.html",
+                                   "scripts/build_free_content.py",
+                                   "engine/prophet/plan_book.py"),
+        "reference-integrity": ("templates/index.html",
+                                "scripts/build_free_content.py",
+                                "engine/prophet/plan_book.py"),
+    }
+    problems: list[str] = []
+    for job_id in expected:
+        job = jobs.get(job_id)
+        if job is None:
+            problems.append(f"{job_id}: missing from manifest")
+            continue
+        if job.exclusive:
+            problems.append(
+                f"{job_id}: gained scope:exclusive — deliberate always-on "
+                "breadth curated away; see the wave-8 note")
+    selected_names = {}
+    for probe in ("templates/index.html", "scripts/build_free_content.py",
+                  "engine/prophet/plan_book.py"):
+        sel, _ = PACK.select_jobs(scoped_jobs, [probe])
+        selected_names[probe] = {job.job_id for job in sel}
+    for job_id, probes in expected.items():
+        if job_id not in jobs:
+            continue
+        for probe in probes:
+            if job_id not in selected_names[probe]:
+                problems.append(f"{job_id}: no longer selected for {probe}")
+    assert not problems, problems
 
 
 def test_inline_js_owns_the_rendered_tree_it_lints() -> None:

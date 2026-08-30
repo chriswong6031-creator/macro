@@ -1,37 +1,37 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-08-25",
-  "generated_at": "2026-08-25T09:53:29.400585+00:00",
+  "as_of": "2026-08-29",
+  "generated_at": "2026-08-29T15:40:30.795882+00:00",
   "is_context_only": true,
-  "n_snapshots": 4101,
+  "n_snapshots": 4489,
   "horizons": {
     "5": {
-      "n_matured": 597,
-      "opportunity_ic_pooled": 0.0655,
+      "n_matured": 631,
+      "opportunity_ic_pooled": 0.0734,
       "opportunity_ic_daily": {
-        "mean_ic": 0.0132,
-        "ic_vol": 0.3449,
-        "ic_ir": 0.038,
-        "ic_ir_ann": 0.121,
-        "t_hac": 0.17,
-        "p_hac": 0.8651,
-        "hit": 0.429,
-        "n": 35,
+        "mean_ic": 0.0089,
+        "ic_vol": 0.3378,
+        "ic_ir": 0.026,
+        "ic_ir_ann": 0.084,
+        "t_hac": 0.12,
+        "p_hac": 0.9042,
+        "hit": 0.432,
+        "n": 37,
         "hac_lags": 5,
         "hac_lags_requested": 5
       },
-      "opportunity_ic": 0.0132,
-      "edge_ic_pooled": 0.036,
+      "opportunity_ic": 0.0089,
+      "edge_ic_pooled": 0.0411,
       "by_stage": {
         "consensus": {
-          "n": 15,
-          "mean_fwd_rel": -0.0076,
+          "n": 18,
+          "mean_fwd_rel": -0.0006,
           "hit_rate": null
         },
         "distribution": {
-          "n": 212,
-          "mean_fwd_rel": -0.0039,
-          "hit_rate": 0.495
+          "n": 222,
+          "mean_fwd_rel": -0.0023,
+          "hit_rate": 0.477
         },
         "exhausted": {
           "n": 55,
@@ -39,47 +39,47 @@
           "hit_rate": 0.436
         },
         "faltering": {
-          "n": 34,
-          "mean_fwd_rel": 0.0018,
+          "n": 35,
+          "mean_fwd_rel": 0.0029,
           "hit_rate": null
         },
         "early": {
-          "n": 265,
-          "mean_fwd_rel": -0.0074,
-          "hit_rate": 0.464
+          "n": 283,
+          "mean_fwd_rel": -0.0047,
+          "hit_rate": 0.477
         },
         "quiet": {
-          "n": 16,
-          "mean_fwd_rel": -0.0033,
+          "n": 18,
+          "mean_fwd_rel": -0.0027,
           "hit_rate": null
         }
       },
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3627,
-        "n_matured": 597,
-        "coverage_pct": 16.46,
+        "n_eligible": 4010,
+        "n_matured": 631,
+        "coverage_pct": 15.74,
         "below_floor": true
       }
     },
     "10": {
       "n_matured": 548,
-      "opportunity_ic_pooled": 0.2168,
+      "opportunity_ic_pooled": 0.2165,
       "opportunity_ic_daily": {
-        "mean_ic": 0.1595,
-        "ic_vol": 0.3623,
-        "ic_ir": 0.44,
-        "ic_ir_ann": 1.968,
-        "t_hac": 1.3,
-        "p_hac": 0.1935,
+        "mean_ic": 0.1588,
+        "ic_vol": 0.3614,
+        "ic_ir": 0.439,
+        "ic_ir_ann": 1.965,
+        "t_hac": 1.298,
+        "p_hac": 0.1943,
         "hit": 0.625,
         "n": 32,
         "hac_lags": 10,
         "hac_lags_requested": 10
       },
-      "opportunity_ic": 0.1595,
-      "edge_ic_pooled": 0.1398,
+      "opportunity_ic": 0.1588,
+      "edge_ic_pooled": 0.1396,
       "by_stage": {
         "consensus": {
           "n": 13,
@@ -115,29 +115,29 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 3334,
+        "n_eligible": 3525,
         "n_matured": 548,
-        "coverage_pct": 16.44,
+        "coverage_pct": 15.55,
         "below_floor": true
       }
     },
     "21": {
-      "n_matured": 375,
-      "opportunity_ic_pooled": 0.412,
+      "n_matured": 406,
+      "opportunity_ic_pooled": 0.3502,
       "opportunity_ic_daily": {
-        "mean_ic": 0.3103,
-        "ic_vol": 0.3243,
-        "ic_ir": 0.957,
-        "ic_ir_ann": 6.201,
-        "t_hac": 4.588,
-        "p_hac": 0.0,
-        "hit": 0.818,
-        "n": 22,
+        "mean_ic": 0.2299,
+        "ic_vol": 0.4133,
+        "ic_ir": 0.556,
+        "ic_ir_ann": 3.606,
+        "t_hac": 1.964,
+        "p_hac": 0.0495,
+        "hit": 0.75,
+        "n": 24,
         "hac_lags": 21,
         "hac_lags_requested": 21
       },
-      "opportunity_ic": 0.3103,
-      "edge_ic_pooled": 0.3668,
+      "opportunity_ic": 0.2299,
+      "edge_ic_pooled": 0.3047,
       "by_stage": {
         "consensus": {
           "n": 10,
@@ -145,24 +145,24 @@
           "hit_rate": null
         },
         "distribution": {
-          "n": 127,
-          "mean_fwd_rel": -0.0468,
-          "hit_rate": 0.74
+          "n": 143,
+          "mean_fwd_rel": -0.0363,
+          "hit_rate": 0.671
         },
         "exhausted": {
-          "n": 41,
-          "mean_fwd_rel": -0.007,
-          "hit_rate": 0.463
+          "n": 44,
+          "mean_fwd_rel": -0.0045,
+          "hit_rate": 0.432
         },
         "faltering": {
-          "n": 25,
-          "mean_fwd_rel": 0.0537,
+          "n": 27,
+          "mean_fwd_rel": 0.0542,
           "hit_rate": null
         },
         "early": {
-          "n": 156,
-          "mean_fwd_rel": 0.024,
-          "hit_rate": 0.66
+          "n": 166,
+          "mean_fwd_rel": 0.0214,
+          "hit_rate": 0.645
         },
         "quiet": {
           "n": 16,
@@ -173,9 +173,9 @@
       "by_source": {},
       "by_regime": {},
       "coverage": {
-        "n_eligible": 2479,
-        "n_matured": 375,
-        "coverage_pct": 15.13,
+        "n_eligible": 2856,
+        "n_matured": 406,
+        "coverage_pct": 14.22,
         "below_floor": true
       }
     },
@@ -198,16 +198,16 @@
       }
     }
   },
-  "lead_time_d": 21,
-  "peak_opportunity_ic": 0.3103,
+  "lead_time_d": null,
+  "peak_opportunity_ic": null,
   "proven": {
     "5": false,
     "10": false,
-    "21": true,
+    "21": false,
     "63": false
   },
   "any_matured": true,
-  "note": "Opportunity IC peaks at the 21d horizon (measured). Context-only.",
+  "note": "Measuring \u2014 accruing forward observations; the hub's edge is not yet statistically proven. Early numbers are provisional, context-only.",
   "benchmark": "CSI300",
   "accrual_gaps": {
     "approximate": true,
@@ -220,25 +220,25 @@
     "n_missing": 1,
     "note": "Expected dates are pandas business days \u2014 NYSE market holidays inside the window are counted as gaps, so this over-reports rather than under-reports.",
     "first_snapshot": "2026-07-07",
-    "last_snapshot": "2026-08-25"
+    "last_snapshot": "2026-08-29"
   },
   "coverage_pct": {
     "5": {
-      "n_eligible": 3627,
-      "n_matured": 597,
-      "coverage_pct": 16.46,
+      "n_eligible": 4010,
+      "n_matured": 631,
+      "coverage_pct": 15.74,
       "below_floor": true
     },
     "10": {
-      "n_eligible": 3334,
+      "n_eligible": 3525,
       "n_matured": 548,
-      "coverage_pct": 16.44,
+      "coverage_pct": 15.55,
       "below_floor": true
     },
     "21": {
-      "n_eligible": 2479,
-      "n_matured": 375,
-      "coverage_pct": 15.13,
+      "n_eligible": 2856,
+      "n_matured": 406,
+      "coverage_pct": 14.22,
       "below_floor": true
     },
     "63": {

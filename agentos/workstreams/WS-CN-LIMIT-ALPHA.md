@@ -200,13 +200,16 @@ waves:
       BULK_HISTORICAL_BACKFILL_READY = False in
       collectors/china_tushare_spine.py is a TECHNICAL readiness gate (live
       canary parity, sustained throughput, range/completeness correctness) and
-      must never be re-read as a licensing gate; no live canary has ever run
-      (manifest cap_fallback.live_canary_complete false); no sanitized
+      must never be re-read as a licensing gate; bounded live canary windows HAVE
+      now run (2026-08-26: 84 request receipts, 32,932 source rows, ~1.3 s/request,
+      the full 1992..2023 reference calendar landed) but NO canary has yet reached
+      stage=complete — pit_universe, name_history and all five daily endpoints have
+      still never executed against the vendor; no sanitized
       completeness manifest exists because the private store has never been
       built; the dispatch-only lane .github/workflows/tushare-spine-backfill.yml
       is wired (modes plan | canary | backfill) and TUSHARE_TOKEN is alive; a red
       mode=backfill run while the technical gate is shut is the gate working.
-      EXACT NEXT TECHNICAL ACTION: dispatch .github/workflows/tushare-spine-backfill.yml with mode=plan (network-free), then mode=canary -- a REAL but hard-bounded window that collect(canary=True) permits while BULK_HISTORICAL_BACKFILL_READY is still False (<=12 requests, <=5 calendar days, never allow_bulk, and a documented row cap refuses instead of starting the unproven ticker-range campaign). The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. Only on canary parity/throughput/error-taxonomy receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
+      The canary is runnable BEFORE the gate opens by design: the gate waits on canary evidence, so gating the canary on the gate would be circular. The bounded envelope (<=12 requests, <=5 calendar days, never allow_bulk, documented row cap refusing rather than starting the unproven ticker-range campaign) has held on every run. EXACT NEXT TECHNICAL ACTION (2026-08-26, executing Sol's calendar-epoch ruling): the mainland session axis is now frozen at the definition-versioned epoch mainland-joint-complete-v1 / 1992-01-01, established by outcome-blind census (scripts/research/cn_limit_calendar_epoch_census.py) and superseding the 1991-01-01 anchor that had blocked collect_calendars; pre-epoch history is typed PRE_EPOCH_SOURCE_UNSUPPORTED and never imputed. The CLEAN REBUILD IS DONE (2026-08-26): the trade_cal plane was deleted and re-collected under the frozen epoch rather than repaired in place, reaching 66/66 terminal units with zero 1991 units, and compile_market_sessions yields 7,807 sessions from 1992-01-02. The identity generation was preserved, so no identity call was re-bought. SOL RULED return-gate 10 on 2026-08-26 (DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION): historical PIT construction is source-UNION, never current-snapshot intersection. The current stock_basic snapshot is a lifecycle/reference WITNESS, not exhaustive historical membership authority -- intersecting a CURRENT snapshot against HISTORICAL sessions is a survivorship filter whose error points one way, so a security the vendor later stops publishing became unclassifiable on every past date it actually traded (measured: 300114.SZ, demonstrably trading 2024-01-02, absent from the current snapshot). A well-formed A-share bak_basic PIT observation now LANDS carrying current_stock_basic_witness_missing=true; it grants NO trading/event and NO canonical-identity authority. Positive volume PLUS exact legal-band evidence is what proves historical trading; without it a PIT row is source-accounted but non-event-eligible, and 'never listed' may not be inferred without an explicit lifecycle source. PIT-only keys propagate into downstream acquisition including name_history. Data OS/GMI stays canonical identity owner -- no historical CN-Limit identity master. Omission rate is TELEMETRY, never an exclusion threshold. Fail-closed is unchanged for malformed/conflicting keys, incomplete responses, unresolved source contradictions, positive-volume rows lacking exact legal-band evidence, and any unknown disposition. EXECUTION FINDING: the filter was encoded at THREE layers, not one -- the row classifier (normalise_bak_basic), the PIT/lifecycle reconciliation (_pit_lifecycle_reconciliation, whose complete flag required pit subset-of lifecycle and is a term in the completeness manifest's own complete conjunction), and the daily coverage expectation (build_daily_security_coverage, where a landed PIT row that never traded becomes eligible with no daily row and lands in unexplained_missing_n, also a manifest term). Fixing only the first would have moved the failure two stages later. Two further conjunction terms (_lifecycle_edge_reconciliation, canonical_event_substrate) were traced and need no change. The rest of the plane was already union-shaped: _eligible_tickers_with_pit already returns lifecycle|pit, _instrument_scope_maps already folds landed PIT tickers into known_a, and event_eligible = positive_volume & source_limits_present already IS the graded authority test. Next after the ruling: implement it, then ONE acceptance window (pit 1 + name <=5 + daily 5 = <=11 vs the cap of 12) reaching stage=complete. Only on that complete canary's request/schema/source-row/accounting/cap/refusal/throughput receipts may a SEPARATE reviewed change flip BULK_HISTORICAL_BACKFILL_READY; mode=backfill (the full range campaign) stays refused until then. After the flip the
       range-shard campaign runs and the sanitized completeness manifest closes
       this row. The identity half of the eligibility substrate exists
       (984 CN + 147 HK canonical, see DEP-CAI); the PIT
@@ -217,6 +220,58 @@ waves:
       name; no gate-constant edit without reviewed technical evidence; no
       public redistribution of raw vendor data.
       DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT untouched.
+      RETURN-GATE 10 SHIPPED 2026-08-27 (PR #6486, squash a636c7bcefdb): the
+      source-union ruling is merged and PROVEN on the live vendor -- bak_basic
+      20240102 went from failed to status=complete at 5344 = 5344 + 0 + 0,
+      quarantine 0 where it was 2, witness_missing_row_count 2, with 300114.SZ
+      and 603361.SS landing flagged. pit_universe, name_history, daily and
+      daily_basic all executed against TuShare for the first time. Follow-up PR
+      #6494 (squash fab40e11940c) fixed DSC:CNLI-STK-LIMIT-ZERO-PRE-CLOSE-SENTINEL,
+      the vendor's second zero-as-null spelling: stk_limit publishes rows for
+      non-trading instruments with pre_close 0, which raised and destroyed a
+      whole unit's accounting (3,466 source rows, 0 landed). Sentinel is scoped to
+      stk_limit only, and its load-bearing half is a fail-open GUARD -- the
+      daily/stk_limit previous-close cross-check compares only rows where both
+      values are non-null, so nulling a zero would have silently dropped that
+      ticker from the audit; every positive-volume daily row must now have a
+      non-null stk_limit.pre_close or the substrate raises.
+      SOL RULED return-gate 10B on 2026-08-27
+      (DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY): a valid namechange row
+      is ITSELF sufficient source evidence and needs no external witness to exist
+      in the name-history plane. External-witness-as-completeness is replaced by
+      deterministic row disposition -- externally corroborated, NAMECHANGE_ONLY,
+      or explicit conflict/quarantine. NAMECHANGE_ONLY is TERMINAL SOURCE
+      COMPLETENESS with ZERO PIT membership, trading, exact-event,
+      canonical-identity, rank or score authority. No pre-2016 special case and
+      the witness-missing percentage is NOT an admission threshold; row by row
+      across the frozen epoch, rate is telemetry. Manifest complete now requires
+      all source rows deterministically reconciled with zero unresolved
+      conflicts, NOT 100% external corroboration. EXECUTION FINDINGS: (1)
+      name_history is a LEAF -- nothing reads store/name_history but its own
+      receipt builder, so unlike the PIT case there is no second-stage filter to
+      repair; the zero-authority clause is pinned by a negative proof that a
+      namechange-only ticker never enters _all_known_a_tickers, which is the
+      inversion that would otherwise let a name assertion bootstrap universe
+      membership. (2) TWO of the four fail-closed conditions Sol required to be
+      PRESERVED did not exist and had to be BUILT: normalise_name_history carried
+      no lifecycle-interval validation at all, and because KEY_COLUMNS
+      ['name_history'] includes `name`, two rows asserting different names
+      effective the same day did not trip the duplicate check. The single
+      compound witness condition had been masking both, so removing it without
+      building them would have turned a fail-closed plane fail-open while
+      appearing to preserve fail-closed behaviour. (3) known_a membership was
+      also doing double duty as the only A-share scope filter, so an explicit
+      _is_a_share_identity gate replaces that half. BULK READINESS (Sol 10B): a
+      clean canary is NOT required to exercise the ticker-range campaign, since
+      that capability is deliberately held behind BULK_HISTORICAL_BACKFILL_READY;
+      exact-head canary plus range-shard ADVERSARIAL TESTS may justify the
+      separate technical readiness PR, and the first post-promotion bounded range
+      execution is its production proof. DEP-EXACT stays OPEN until the complete
+      range campaign and the sanitized completeness manifest. Note the row cap is
+      already binding on recent sessions: stk_limit returned >=5,800 rows for a
+      2024 session against a 6,000 cap that daily/daily_basic cleared only
+      narrowly, so the range campaign is REQUIRED for recent dates, not an
+      optimisation.
   - id: DEP-ID-ELIG
     title: Canonical China identity, PIT membership, eligibility overlay
     status: todo

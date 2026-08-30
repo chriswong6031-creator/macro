@@ -370,3 +370,79 @@ def test_main_crash_exits_two(monkeypatch):
 
     monkeypatch.setattr(asf, "run", boom)
     assert asf.main([]) == 2
+
+
+# ---------------------------------------------------------------------------
+# Exit-ledger awareness (config/delisted_symbols.yml) — the AVB 2026-08 incident:
+# a delisted tape that keeps ADVANCING read as "fresh" to the lag check, so the
+# vendor's successor-splice ran 6 nights unseen. A ledger name is never fresh
+# (its tape is finished), and a tip past its recorded last session shouts.
+# ---------------------------------------------------------------------------
+
+from lib import delisted_symbols as _ds  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _empty_exit_ledger(monkeypatch):
+    """Hermetic default: no test here reads the real config/delisted_symbols.yml.
+    Ledger-specific tests below install their own rows over this."""
+    monkeypatch.setattr(_ds, "ledger", lambda: {})
+
+
+def test_delisted_ledger_tape_is_finished_never_fresh(data_dir, monkeypatch, capsys):
+    d = data_dir / "stocks"
+    d.mkdir(parents=True)
+    _write_stock(d, "EEE", "2026-08-01")  # lag 2d — would read "fresh" by lag alone
+    monkeypatch.setattr(asf, "top10_union", lambda: [])
+    monkeypatch.setattr(_ds, "ledger", lambda: {"EEE": {"last_session": "2026-08-01"}})
+
+    doc = _run(data_dir)
+
+    assert doc["totals"]["fresh"] == 0
+    assert doc["totals"]["stale_dead"] == 1
+    rec = doc["stale_dead"][0]
+    assert rec["ticker"] == "EEE"
+    assert rec["delisted_ledger"] is True
+    assert rec["contradiction"] is False
+    assert _annotations(capsys.readouterr().out, "::warning") == []
+    assert asf.exit_code(doc, strict=True) == 0
+
+
+def test_delisted_store_advancing_past_last_session_shouts(data_dir, monkeypatch, capsys):
+    d = data_dir / "stocks"
+    d.mkdir(parents=True)
+    _write_stock(d, "EEE", "2026-08-01")
+    monkeypatch.setattr(asf, "top10_union", lambda: [])
+    monkeypatch.setattr(_ds, "ledger", lambda: {"EEE": {"last_session": "2026-07-15"}})
+
+    doc = _run(data_dir)
+
+    out = capsys.readouterr().out
+    lines = _annotations(out, "::warning")
+    assert len(lines) == 1
+    assert lines[0].startswith("::warning title=stocks store audit delisted contradiction::")
+    assert "EEE store tip 2026-08-01 is AFTER its recorded last session 2026-07-15" in lines[0]
+    rec = doc["stale_dead"][0]
+    assert rec["contradiction"] is True
+    # still muted from the freshness classes — the contradiction annotation IS the alarm
+    assert doc["totals"]["stale_live"] == 0
+    assert asf.exit_code(doc, strict=True) == 0
+
+
+def test_delisted_ledger_name_in_union_still_classified_normally(data_dir, monkeypatch, capsys):
+    """Union-aware mute, same rule as the dead-registry branch: a ledger name back
+    in today's union is a reused symbol being actively fetched — it keeps the
+    normal fresh/stale classes (here: fresh), while the contradiction still shouts."""
+    d = data_dir / "stocks"
+    d.mkdir(parents=True)
+    _write_stock(d, "EEE", "2026-08-01")
+    monkeypatch.setattr(asf, "top10_union", lambda: ["EEE"])
+    monkeypatch.setattr(_ds, "ledger", lambda: {"EEE": {"last_session": "2026-07-15"}})
+
+    doc = _run(data_dir)
+
+    assert doc["totals"]["fresh"] == 1
+    assert doc["totals"]["stale_dead"] == 0
+    lines = _annotations(capsys.readouterr().out, "::warning")
+    assert len(lines) == 1
+    assert "delisted contradiction" in lines[0]

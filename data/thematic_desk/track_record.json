@@ -1,30 +1,30 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-08-26",
-  "scored_total": 131,
-  "open": 109,
+  "as_of": "2026-08-29",
+  "scored_total": 146,
+  "open": 88,
   "unscored_soft": 40,
   "overall": {
-    "n": 131,
-    "hits": 69,
-    "misses": 62,
+    "n": 146,
+    "hits": 77,
+    "misses": 69,
     "hit_rate": 0.527,
-    "dir_accuracy": 0.359
+    "dir_accuracy": 0.336
   },
   "by_market": {
     "us": {
-      "n": 37,
-      "hits": 20,
-      "misses": 17,
-      "hit_rate": 0.541,
-      "dir_accuracy": 0.378
+      "n": 40,
+      "hits": 22,
+      "misses": 18,
+      "hit_rate": 0.55,
+      "dir_accuracy": 0.35
     },
     "china": {
-      "n": 44,
-      "hits": 17,
+      "n": 45,
+      "hits": 18,
       "misses": 27,
-      "hit_rate": 0.386,
-      "dir_accuracy": 0.318
+      "hit_rate": 0.4,
+      "dir_accuracy": 0.311
     },
     "hk": {
       "n": 7,
@@ -34,20 +34,20 @@
       "dir_accuracy": 0.857
     },
     "canada": {
-      "n": 43,
-      "hits": 25,
-      "misses": 18,
-      "hit_rate": 0.581,
-      "dir_accuracy": 0.302
+      "n": 54,
+      "hits": 30,
+      "misses": 24,
+      "hit_rate": 0.556,
+      "dir_accuracy": 0.278
     }
   },
   "by_conviction": {
     "low": {
-      "n": 130,
-      "hits": 69,
-      "misses": 61,
+      "n": 145,
+      "hits": 77,
+      "misses": 68,
       "hit_rate": 0.531,
-      "dir_accuracy": 0.362
+      "dir_accuracy": 0.338
     },
     "medium": {
       "n": 1,
@@ -64,127 +64,127 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "131 scored, hit-rate 0.527 (directional accuracy 0.359). Chance alone would land a hit-rate near 0.8531 (directional accuracy near 0.5151) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
+  "calibration_note": "146 scored, hit-rate 0.527 (directional accuracy 0.336). Chance alone would land a hit-rate near 0.8544 (directional accuracy near 0.5131) on these exact conditions \u2014 judge the numbers above against that bar, not one-half.",
   "recent": [
     {
-      "id": "us-2026-07-14-1",
-      "market": "us",
-      "subject": "Memory, HBM & Storage",
-      "lean": "overweight",
+      "id": "canada-2026-07-17-3",
+      "market": "canada",
+      "subject": "Technology",
+      "lean": "avoid",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.0732,
-      "check_by": "2026-08-25"
+      "realized": 0.0683,
+      "check_by": "2026-08-28"
     },
     {
-      "id": "us-2026-07-28-1",
-      "market": "us",
-      "subject": "Memory, HBM & Storage",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0157,
-      "check_by": "2026-08-25"
-    },
-    {
-      "id": "china-2026-07-28-1",
-      "market": "china",
-      "subject": "Semiconductors",
-      "lean": "underweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0543,
-      "check_by": "2026-08-25"
-    },
-    {
-      "id": "canada-2026-07-28-1",
+      "id": "canada-2026-07-31-1",
       "market": "canada",
       "subject": "Big Banks",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.0631,
-      "check_by": "2026-08-25"
+      "realized": -0.0634,
+      "check_by": "2026-08-28"
     },
     {
-      "id": "canada-2026-07-28-2",
+      "id": "canada-2026-07-31-3",
       "market": "canada",
-      "subject": "Gold Miners",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.3781,
-      "check_by": "2026-08-25"
-    },
-    {
-      "id": "canada-2026-07-28-3",
-      "market": "canada",
-      "subject": "Silver & Royalties",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.3781,
-      "check_by": "2026-08-25"
-    },
-    {
-      "id": "canada-2026-07-13-2",
-      "market": "canada",
-      "subject": "Telecom",
-      "lean": "avoid",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0256,
-      "check_by": "2026-08-24"
-    },
-    {
-      "id": "china-2026-07-27-1",
-      "market": "china",
-      "subject": "Semiconductors",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0961,
-      "check_by": "2026-08-24"
-    },
-    {
-      "id": "hk-2026-07-27-2",
-      "market": "hk",
-      "subject": "China Tech & Internet",
+      "subject": "Technology",
       "lean": "underweight",
       "conviction": "low",
       "outcome": "hit",
-      "realized": -0.0383,
-      "check_by": "2026-08-24"
+      "realized": 0.0302,
+      "check_by": "2026-08-28"
     },
     {
-      "id": "canada-2026-07-27-1",
+      "id": "canada-2026-07-31-20260804022734-1",
       "market": "canada",
       "subject": "Big Banks",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.0772,
-      "check_by": "2026-08-24"
+      "realized": -0.0634,
+      "check_by": "2026-08-28"
     },
     {
-      "id": "china-2026-07-10-1",
-      "market": "china",
-      "subject": "AI Compute & Optics",
+      "id": "canada-2026-07-31-20260804022734-2",
+      "market": "canada",
+      "subject": "Oil & Gas Producers",
+      "lean": "underweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0294,
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "canada-2026-07-31-20260804022734-3",
+      "market": "canada",
+      "subject": "Technology",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0302,
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "canada-2026-07-31-20260805075935-1",
+      "market": "canada",
+      "subject": "Big Banks",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.1418,
-      "check_by": "2026-08-21"
+      "realized": -0.0634,
+      "check_by": "2026-08-28"
     },
     {
-      "id": "china-2026-07-10-2",
-      "market": "china",
-      "subject": "Semiconductors",
+      "id": "canada-2026-07-31-20260805075935-2",
+      "market": "canada",
+      "subject": "Technology",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0302,
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "canada-2026-07-31-20260805150635-1",
+      "market": "canada",
+      "subject": "Big Banks",
       "lean": "overweight",
       "conviction": "low",
       "outcome": "miss",
-      "realized": -0.2067,
-      "check_by": "2026-08-21"
+      "realized": -0.0634,
+      "check_by": "2026-08-28"
+    },
+    {
+      "id": "us-2026-07-30-1",
+      "market": "us",
+      "subject": "Financials (Equal-Weight)",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0242,
+      "check_by": "2026-08-27"
+    },
+    {
+      "id": "us-2026-07-30-2",
+      "market": "us",
+      "subject": "Non-AI Software",
+      "lean": "avoid",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.1426,
+      "check_by": "2026-08-27"
+    },
+    {
+      "id": "canada-2026-07-30-1",
+      "market": "canada",
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0615,
+      "check_by": "2026-08-27"
     }
   ]
 }

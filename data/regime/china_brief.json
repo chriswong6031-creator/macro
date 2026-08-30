@@ -2,21 +2,40 @@
   "schema": "master_brief.v2",
   "lens": "china",
   "is_context_only": true,
-  "generated_at": "2026-08-26T05:38:12.022232+00:00",
-  "model": "deepseek-v4-pro",
-  "state_asof": "2026-08-25",
-  "tldr": [],
-  "summary": null,
-  "regime_read": null,
-  "conflicts": [],
-  "rotation_check": null,
-  "transmission": [],
-  "watch_items": [],
-  "confidence": "low",
+  "generated_at": "2026-08-29T12:29:25.537568+00:00",
+  "model": "gpt-5.6-sol",
+  "served_by": "codex",
+  "state_asof": "2026-08-26",
+  "tldr": [
+    "China: Growth is still weak, though it has improved as liquidity shrinks.",
+    "Hong Kong: Global optimism helps, but outflow pressure and high excitement raise risk.",
+    "Leaders: Coal and banks look stretched as money flows fade.",
+    "What to do: Watch \u2014 don't chase"
+  ],
+  "summary": "China is healing slowly, but scarce money blocks policy support while Hong Kong remains exposed to global mood swings.",
+  "regime_read": "Mainland China remains in a growth scare, but growth is improving. The next destination is unclear because the transition signal is missing. Shrinking system liquidity is today's main driver.\n\nHong Kong also remains in a growth scare. Global risk appetite is supportive, but outflow pressure and a crowded mood make that support fragile.",
+  "conflicts": [
+    "Policy pipes: Earlier easing says support, shrinking liquidity says money remains scarce \u2014 the help has not fully reached markets.",
+    "Hong Kong split: Global appetite says risk-on, the currency peg shows outflows \u2014 outside support is meeting local strain.",
+    "Sector warning: Coal and banks lead on price, money flows are fading \u2014 their recent strength looks stretched."
+  ],
+  "rotation_check": "The sequence moved backwards: broker money flows weakened while easing still has not reached the wider market.",
+  "transmission": [
+    "If shrinking mainland liquidity keeps up \u2192 policy support stays trapped and rate-sensitive shares struggle.",
+    "If Hong Kong outflows keep up \u2192 global optimism offers less protection from a pullback."
+  ],
+  "watch_items": [
+    "Monday factory surveys: improvement would confirm China's growth repair.",
+    "Mainland liquidity turns supportive: easing is finally reaching the system.",
+    "Hong Kong outflows deepen: global support is losing the tug-of-war.",
+    "Coal leadership fades: short-term reversal is taking hold."
+  ],
+  "confidence": "medium",
   "theses": [],
-  "raw_text": null,
-  "degraded_reason": "llm_error",
+  "raw_text": "{\"tldr\":[\"China: Growth is still weak, though it has improved as liquidity shrinks.\",\"Hong Kong: Global optimism helps, but outflow pressure and high excitement raise risk.\",\"Leaders: Coal and banks look stretched as money flows fade.\",\"What to do: Watch \u2014 don't chase\"],\"summary\":\"China is healing slowly, but scarce money blocks policy support while Hong Kong remains exposed to global mood swings.\",\"regime_read\":\"Mainland China remains in a growth scare, but growth is improving. The next destination is unclear because the transition signal is missing. Shrinking system liquidity is today's main driver.\\n\\nHong Kong also remains in a growth scare. Global risk appetite is supportive, but outflow pressure and a crowded mood make that support fragile.\",\"conflicts\":[\"Policy pipes: Earlier easing says support, shrinking liquidity says money remains scarce \u2014 the help has not fully reached markets.\",\"Hong Kong split: Global appetite says risk-on, the currency peg shows outflows \u2014 outside support is meeting local strain.\",\"Sector warning: Coal and banks lead on price, money flows are fading \u2014 their recent strength looks stretched.\"],\"transmission\":[\"If shrinking mainland liquidity keeps up \u2192 policy support stays trapped and rate-sensitive shares struggle.\",\"If Hong Kong outflows keep up \u2192 global optimism offers less protection from a pullback.\"],\"rotation_check\":\"The sequence moved backwards: broker money flows weakened while easing still has not reached the wider market.\",\"watch_items\":[\"Monday factory surveys: improvement would confirm China's growth repair.\",\"Mainland liquidity turns supportive: easing is finally reaching the system.\",\"Hong Kong outflows deepen: global support is losing the tug-of-war.\",\"Coal leadership fades: short-term reversal is taking hold.\"],\"confidence\":\"medium\"}",
+  "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
+  "style_flags": [],
   "nw_context_used": true,
   "cortex_status": "absent",
   "refresh_days": 1,
@@ -69,5 +88,31 @@
       "value_zh": "Innovative Drugs",
       "tone": "info"
     }
-  ]
+  ],
+  "zh": {
+    "summary": "\u4e2d\u56fd\u6b63\u5728\u7f13\u6162\u4fee\u590d\uff0c\u4f46\u8d44\u91d1\u7d27\u5f20\u9650\u5236\u4e86\u653f\u7b56\u652f\u6301\uff0c\u540c\u65f6\u9999\u6e2f\u4ecd\u6613\u53d7\u5168\u7403\u60c5\u7eea\u6ce2\u52a8\u5f71\u54cd\u3002",
+    "regime_read": "\u4e2d\u56fd\u5185\u5730\u4ecd\u5904\u4e8e\u589e\u957f\u62c5\u5fe7\u4e4b\u4e2d\uff0c\u4f46\u589e\u957f\u6b63\u5728\u6539\u5584\u3002\u7531\u4e8e\u7f3a\u5c11\u8f6c\u578b\u4fe1\u53f7\uff0c\u4e0b\u4e00\u9636\u6bb5\u65b9\u5411\u5c1a\u4e0d\u660e\u786e\u3002\u7cfb\u7edf\u6d41\u52a8\u6027\u6536\u7f29\u662f\u4eca\u65e5\u7684\u4e3b\u8981\u9a71\u52a8\u56e0\u7d20\u3002\n\n\u9999\u6e2f\u4e5f\u4ecd\u5904\u4e8e\u589e\u957f\u62c5\u5fe7\u4e4b\u4e2d\u3002\u5168\u7403\u98ce\u9669\u504f\u597d\u5e26\u6765\u652f\u6491\uff0c\u4f46\u8d44\u91d1\u5916\u6d41\u538b\u529b\u548c\u62e5\u6324\u60c5\u7eea\u4f7f\u8fd9\u79cd\u652f\u6491\u8f83\u4e3a\u8106\u5f31\u3002",
+    "rotation_check": "\u4f20\u5bfc\u6b21\u5e8f\u51fa\u73b0\u5012\u9000\uff1a\u5238\u5546\u8d44\u91d1\u6d41\u8d70\u5f31\uff0c\u800c\u5bbd\u677e\u4ecd\u672a\u60e0\u53ca\u66f4\u5e7f\u6cdb\u7684\u5e02\u573a\u3002",
+    "tldr": [
+      "\u4e2d\u56fd\uff1a\u589e\u957f\u4f9d\u7136\u75b2\u5f31\uff0c\u4f46\u968f\u7740\u6d41\u52a8\u6027\u6536\u7f29\u5df2\u6709\u6240\u6539\u5584\u3002",
+      "\u9999\u6e2f\uff1a\u5168\u7403\u4e50\u89c2\u60c5\u7eea\u5e26\u6765\u652f\u6491\uff0c\u4f46\u8d44\u91d1\u5916\u6d41\u538b\u529b\u548c\u5e02\u573a\u60c5\u7eea\u9ad8\u6da8\u52a0\u5927\u4e86\u98ce\u9669\u3002",
+      "\u9886\u6da8\u677f\u5757\uff1a\u968f\u7740\u8d44\u91d1\u6d41\u5165\u51cf\u5f31\uff0c\u7164\u70ad\u548c\u94f6\u884c\u677f\u5757\u4f3c\u4e4e\u5df2\u6da8\u5e45\u8fc7\u5927\u3002",
+      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u8981\u8ffd\u6da8"
+    ],
+    "conflicts": [
+      "\u653f\u7b56\u4f20\u5bfc\uff1a\u6b64\u524d\u7684\u5bbd\u677e\u91ca\u653e\u652f\u6301\u4fe1\u53f7\uff0c\u4f46\u6d41\u52a8\u6027\u6536\u7f29\u8868\u660e\u8d44\u91d1\u4f9d\u7136\u7d27\u5f20\u2014\u2014\u652f\u6301\u5c1a\u672a\u5145\u5206\u4f20\u5bfc\u81f3\u5e02\u573a\u3002",
+      "\u9999\u6e2f\u5206\u5316\uff1a\u5168\u7403\u98ce\u9669\u504f\u597d\u91ca\u653e\u98ce\u9669\u5f00\u542f\u4fe1\u53f7\uff0c\u4f46\u8054\u7cfb\u6c47\u7387\u5236\u5ea6\u663e\u793a\u8d44\u91d1\u5916\u6d41\u2014\u2014\u5916\u90e8\u652f\u6491\u6b63\u906d\u9047\u672c\u5730\u538b\u529b\u3002",
+      "\u677f\u5757\u9884\u8b66\uff1a\u7164\u70ad\u548c\u94f6\u884c\u9886\u6da8\uff0c\u4f46\u8d44\u91d1\u6d41\u6b63\u5728\u51cf\u5f31\u2014\u2014\u8fd1\u671f\u5f3a\u52bf\u5df2\u6709\u900f\u652f\u8ff9\u8c61\u3002"
+    ],
+    "transmission": [
+      "\u82e5\u5185\u5730\u6d41\u52a8\u6027\u6301\u7eed\u6536\u7f29 \u2192 \u653f\u7b56\u652f\u6301\u4ecd\u96be\u4ee5\u4f20\u5bfc\uff0c\u5229\u7387\u654f\u611f\u578b\u80a1\u7968\u627f\u538b\u3002",
+      "\u82e5\u9999\u6e2f\u5e02\u573a\u8d44\u91d1\u6301\u7eed\u6d41\u51fa \u2192 \u5168\u7403\u4e50\u89c2\u60c5\u7eea\u5bf9\u56de\u8c03\u7684\u7f13\u51b2\u4f5c\u7528\u51cf\u5f31\u3002"
+    ],
+    "watch_items": [
+      "\u5468\u4e00\u5236\u9020\u4e1a\u8c03\u67e5\uff1a\u82e5\u6570\u636e\u6539\u5584\uff0c\u5c06\u786e\u8ba4\u4e2d\u56fd\u7ecf\u6d4e\u589e\u957f\u6b63\u5728\u4fee\u590d\u3002",
+      "\u5185\u5730\u6d41\u52a8\u6027\u8f6c\u5411\u652f\u6301\uff1a\u5bbd\u677e\u653f\u7b56\u7ec8\u4e8e\u5f00\u59cb\u4f20\u5bfc\u81f3\u91d1\u878d\u4f53\u7cfb\u3002",
+      "\u9999\u6e2f\u5e02\u573a\u8d44\u91d1\u6d41\u51fa\u52a0\u5267\uff1a\u5168\u7403\u8d44\u91d1\u652f\u6301\u5728\u62c9\u952f\u4e2d\u9010\u6e10\u843d\u8d25\u3002",
+      "\u7164\u70ad\u677f\u5757\u9886\u6da8\u52bf\u5934\u6d88\u9000\uff1a\u77ed\u671f\u53cd\u8f6c\u6b63\u5728\u5f62\u6210\u3002"
+    ]
+  }
 }

@@ -7,9 +7,9 @@ objective: >
   Prophet board is user-visible within minutes of the close (product SLO 16:15 ET,
   first-usable target ~16:05-16:10); post-close inputs revise it in place; the
   nightly settles the canonical record; no unrelated collector failure can dark
-  today's board; stale state never masquerades as current. Done = replay + chaos
-  acceptance passed AND three consecutive real sessions measured green on the
-  close→candidate→visible ruler.
+  today's board; stale or empty state never masquerades as current. Done = the
+  2026-08-28 completion masterplan's truth/product/reliability/browser gates plus
+  three consecutive genuine post-change NYSE sessions green on the close→candidate→reader ruler.
 status: active
 program: prophet-us
 p0: PROPHET_FRESHNESS
@@ -19,9 +19,14 @@ class: build
 blast_radius: reversible
 ambiguity: specified
 next_action: >
-  Land the revival wave (PR-A Massive close truth, PR-B launchd primary clock,
-  PR-C liveness ruler), deploy the launchd agent on the Mac Studio, run replay
-  acceptance, then hold for Monday's live session measurement.
+  Execute child C0 from
+  agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md:
+  Chairman assigns the recommended Fable principal COO in the program-control
+  Slack thread; receiver ACKs, arms the exact-thread watcher, and performs
+  read-only production-truth recovery for Aug-26/Aug-27 plus the current
+  post-#6554/#6569/#6534 state. Do not modify code until C0 names one causal gap.
+  Architecture and completion law are frozen in
+  research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md.
 owns_paths:
   - scripts/close_pass_publish.py
   - scripts/close_pass_mirror.py
@@ -39,67 +44,82 @@ waves:
   - id: W-L0
     title: Truth fixes (append semantics, fade hysteresis, price basis, sentinel surface, dormant honesty)
     status: done
-    next_action: "Shipped 2026-08-08..09 (#4978 #4982 #5088 #5089, sentinel b278a3f9b)."
+    next_action: "Shipped 2026-08-08..09 (#4978 #4982 #5088 #5089, sentinel b278a3f9b); not reopened by completion program."
   - id: W-L1
     title: Evening SLA — close-pass provisional board, cards, receipt, reader-measured sentinel
     status: done
     next_action: >
-      Shipped #5148 #5154 #5217 #5220 #5222 #5223; lane first green 2026-08-13 after
-      #5495. The 5-consecutive-green-session SLA clock ACCRUES from 2026-08-13.
+      Shipped #5148 #5154 #5217 #5220 #5222 #5223. Historical pre-revival
+      greens do not satisfy the final post-change three-session acceptance ruler.
   - id: W-L1R
     title: Revival wave — coverage + latency + ruler (Chairman directive 2026-08-15)
     status: done
     next_action: >
-      ALL MERGED + DEPLOYED 2026-08-16: #5746 (coverage 253→1,684 measured),
-      #5760 (com.macro.closepass installed, kickstart rc=0 with receipt),
-      #5761 (armed-pack watchdog live-verified on production staleness.json).
-      Replay acceptance done on receipts. Program completion now rides
-      W-ACCEPT alone.
+      Merged/deployed foundation: #5746 coverage path, #5760 host-native close
+      clock, #5761 ruler/watchdog. Replay acceptance is historical foundation;
+      current natural acceptance is W-ACCEPT.
   - id: W-L2
-    title: Breathing board — full-universe arming coverage + alerts
+    title: Current valid armed-level breadth outcome
     status: todo
     depends_on: [W-L1R]
     next_action: >
-      Raise/parallelize the nightly arming budget: measured 2026-08-15, the armed pack
-      covers 91 of 1,761 names with levels (probe_cap_cross cut 1,535). Masterplan
-      W-L2 gates apply (precision floor before send-enable, 2-tick debounce).
+      Use completion masterplan C3. Do not execute the old "raise/parallelize +
+      alerts" packet. #6554 now owns D12 correctness as BUILT_NOT_PROVEN;
+      process fan-out already exists; Availability/permanence owns publication
+      alerts; LIVE-ENTRY-RADAR owns tactical alerts. After D12 natural proof,
+      census current verified armed-level breadth and timing. Close by evidence
+      if the old gap is superseded; otherwise commission one measured bottleneck
+      repair without weakening parity/edge verification or inflating resources arbitrarily.
   - id: W-ACCEPT
     title: Live-session acceptance — three consecutive green sessions on the ruler
-    status: todo
+    status: in_progress
     depends_on: [W-L1R]
     next_action: >
-      Monday 2026-08-17 first live measurement: close_observed_at → first_candidate_at
-      → first_user_visible_at via scripts/close_pass_slo_report.py; repeat 3 sessions.
+      Final acceptance follows completion masterplan C0/C1/C5/C6. Recover exact
+      Aug-26/Aug-27 receipts first. Aug-27 cannot be treated as a healthy whole
+      product merely from a fresh pass clock: #6569 proves the independent
+      Prophet-Live plane was fresh-empty/global-dark while the sentinel stayed
+      green. After the last relevant production-changing merge, accrue three
+      consecutive natural sessions with close_observed_at, first_candidate_at,
+      first_user_visible_at <=16:15 ET, >=95% same-session evaluable coverage,
+      100% universe accounting, truthful independent live/board clocks and real
+      desktop+narrow browser proof.
 landmines:
-  - "The board universe store lacks most today-bars at close time — the keyless Yahoo heal refreshes the INDEX group only; without the Massive fill the evening board is a ~14% sample (measured 2026-08-14: 253/1,763 evaluated, 1,508 no_todays_bar)."
-  - "The client paints board_state ONLY off the real evaluator document — a bare {board_state: ...} artifact is refused upstream of the qualify chain. Any replay/rescue writer must annotate the evaluator doc the way close_pass_mirror does, never mint a shell."
-  - "The vendor ticker space is case-sensitive (TPC≠TpC, BCPC≠BCpC) — upper-casing before a join is last-row-wins across two different securities (DSC:MASSIVE-TICKER-CASE-IS-IDENTITY); massive_close matches case-exact, the corp-action guard darks both spellings by design."
-  - "GitHub cron is not a product clock: close-pass cron drift measured 27-45 min, queue waits to 95 min, board landed 19:20 ET (2026-08-14); estate-wide 90min-3h12m gaps (DEC:LER-LIVE-LANE-VPS-5MIN-REST)."
-  - "Two writers share live/prophet_live.json via CAS (mirror annotates board_state into the evaluator's artifact) — every failure direction must stay dark, never wrong; do not add a third writer."
-  - "Never splice a raw same-day close onto a store series that had a same-session split/dividend — dark the name (skipped.corp_action_today); the nightly settles it. BYND 30:1 on 2026-08-14 is the live exemplar."
-  - "The provisional board carries 40/100 score weight (signal+runway) BY RULING — never renormalise, never impute the omitted legs (board.py header)."
-  - "close_pass_publish session guard uses is_session(), NOT expected_last_session() (fires before the 17:00 ET settle buffer)."
+  - "Completion architecture is research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md. Do not implement from the older 2026-08-08 W-L2 wording without reconciling this freeze."
+  - "Freshness is a vector, not one timestamp: board as_of, reader first visibility, Prophet-Live pass/quote/non-vacuity, armed-pack as_of/completed_through, nightly source_asof and sentinel heartbeat are independent clocks."
+  - "Aug-27 production proved a fresh pass clock can coexist with states={} and stale_pack darkness. #6569 is merged but natural post-merge proof remains owed."
+  - "D12 is BUILT_NOT_PROVEN on #6554: malformed/non-session/not-yet-completed last bars are quarantined before BOTH pack-tip selection and gate admission. Do not re-open with a stamp-only fix."
+  - "The last durable exact close-pass same-session breadth proof is 1,684/1,763 (95.5%) from the 2026-08-14 replay. Never relabel it as a current natural-session census."
+  - "The board universe store lacks many same-day bars without the Massive fill; source/session identity and corporate-action darking remain load-bearing."
+  - "The client paints board_state ONLY off the real evaluator document and only when _bsQualify identity/freshness checks pass. A bare board_state shell is not the product."
+  - "Board freshness and Prophet-Live freshness are separate: a fresh board may coexist with a degraded live strip only if the browser and monitors say so truthfully."
+  - "Two writers share live/prophet_live.json via CAS (evaluator + close-pass annotation). Never add a third writer."
+  - "Never manually dispatch prophet-live.yml while the VPS primary timer can publish; that can create a second live writer."
+  - "Vendor ticker identity is case-sensitive at the Massive seam (TPC≠TpC, BCPC≠BCpC)."
+  - "GitHub cron is not a product clock; host-native close scheduling remains primary."
+  - "Never splice a raw same-day close through a same-session split/dividend ambiguity; dark the name and let nightly settle it."
+  - "The provisional board carries only the score evidence it can stand behind; never renormalise or impute omitted legs."
 do_not_redo:
-  - "Do not move the board onto closing-bell.yml's render spine — measured 109 min behind an 81-min spine; close-pass.yml's header carries the full reasoning."
-  - "Do not resurrect the workflow_run reconcile job — the receipt is computed inside the nightly build that renders it (close-pass.yml header, 'no receipt is better than a wrong one')."
-  - "Do not open a Massive WebSocket for this lane — single-slot evict-oldest hazard; TP-1 owns any future socket (DEC:LER-LIVE-LANE-VPS-5MIN-REST, Massive masterplan §3.1b)."
-  - "Do not build a VPS-side board compute tier — the canonical store + canonical gate live on the Mac; the VPS is transport/serving (DEC:BREATHING-HOST-NATIVE-CLOSE-CLOCK)."
-  - "Do not weaken the client identity guard (_bsQualify) to make anything paint — fix payloads, not the guard."
+  - "No third live/prophet_live writer."
+  - "No new Massive WebSocket for Breathing."
+  - "No VPS-side canonical board compute tier."
+  - "No weakening _bsQualify or the board-to-card identity gate."
+  - "No second ranker, signal gate, availability semantic, alert product, monitor registry, retry daemon or liveness control plane."
+  - "No Prophet rank/gate/entry-timing retune to solve delivery latency."
+  - "No reconstruction of missing first_user_visible_at from candidate/R2/file timestamps."
+  - "No arbitrary timeout/memory inflation standing in for measured causality."
 ---
 
-## State (2026-08-15, revival session)
+## State — 2026-08-28 completion architecture freeze
 
-The W-L1 machinery is real and merged end-to-end: publisher → R2 → VPS mirror
-(5-min systemd) → `board_state` CAS-annotated onto `live/prophet_live.json` →
-identity-guarded client card renderer → reader-measured 18:30 SLA in the
-freshness sentinel. The lane went green for the first time 2026-08-13 (#5495)
-and published Friday's board.
+Procedural pin: protected `mastermindx-market-intelligence/Mastermind@038d1271b98e88b24e039c1ce4127d6503945845`, `mastermind.sol_skillpack.v1` 1.0.1.
+Macro archaeology base: `ba270c60c1fe825f2e9fce1fcf507b7272a67b63`.
 
-What the revival fixes is the two measured product defects: coverage (the store
-has today's bar for ~14% of the universe at pass time) and clock (GitHub cron +
-contended macstudio pool ⇒ ~19:20 ET delivery). Architecture ruling:
-DEC:BREATHING-HOST-NATIVE-CLOSE-CLOCK. Close-semantics evidence:
-DSC:MASSIVE-SNAPSHOT-DAY-IS-RTH-CLOSE.
+Material current changes since the 2026-08-27 forensic return:
 
-Real-session acceptance CANNOT begin before Monday 2026-08-17 (commissioned on a
-Saturday); replay/chaos acceptance is this session's exit bar.
+- #6554 merged D12 producer hardening. D12 is **BUILT_NOT_PROVEN**, not NOT_BUILT and not yet PROVEN_LIVE.
+- #6562 merged the adjacent B1 natural-intake crash repair; it remains an owner boundary, not Breathing scope.
+- #6569 merged after real Aug-27 production showed a fresh `prophet_live` pass clock with an empty state population while `stale_pack` darkened the live evaluator and the sentinel stayed green. The new repeated-empty and ahead-pack grader fences are **BUILT_NOT_PROVEN** until natural post-merge proof.
+- #6532 freshness-language/browser semantics and #6534 permanence net are merged; their natural/browser production acceptance is part of the completion program.
+
+The final completion program is C0 current production truth → C1 natural Availability/D12/permanence proof → conditional causal repair only when observed → C3 W-L2 current breadth census/conditional repair → C5 browser truth/degraded-state proof → C6 three consecutive natural ruler greens → durable closeout.

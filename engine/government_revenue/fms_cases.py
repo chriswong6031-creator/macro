@@ -196,10 +196,16 @@ def _build_one_case(case_key: str, observations: Sequence[Mapping[str, Any]]) ->
         for row in primary
     )
 
+    # Precedence is a FALL-THROUGH, not a surface election (spec §5:
+    # title-prefix -> FR purchaser -> determination sentence -> null): a web
+    # observation whose own parse yielded no country must not shadow a real
+    # FR purchaser. Production 26-13 proved the `elif` form wrong -- its
+    # DSCA certification press release parses no title-prefix country, and
+    # the FR annex's "Kingdom of Saudi Arabia" was silently discarded.
     customer_country = None
     if latest_web is not None:
         customer_country = latest_web.get("customer_country")
-    elif latest_fr is not None:
+    if customer_country is None and latest_fr is not None:
         customer_country = latest_fr.get("customer_country")
     # mis-key guard across surfaces sharing this case key (honorific-stripped
     # comparison: "Sweden" title-prefix vs "Government of Sweden" FR
@@ -377,6 +383,7 @@ def build_fms_case_graph(
     fr_docs_scanned: int,
     fr_amendments_excluded: int,
     fr_corrections: int,
+    fr_out_of_scope_originals: int = 0,
     fr_status: str,
     state_listing_pages: int,
     state_qualifying_articles: int,
@@ -405,6 +412,20 @@ def build_fms_case_graph(
     whose population clock falls outside the population window is excluded
     from the graph entirely (§2/§11b.4): "nothing outside the window is
     built in v1".
+
+    ``fr_denominator_transmittals`` MUST already be pre-filtered by the
+    caller to the same delivered-date membership predicate this function
+    applies to cases (spec §2 "originals DELIVERED in the window") — the
+    live collector (``collectors/fms_notifications_live.py``) enforces this
+    before ever appending to its denominator list. A denominator built from
+    a wider window (e.g. every FR original the publication-date QUERY
+    returned, including pre-population-window FR-lag originals) would
+    disagree with the population filter above and refuse every real
+    production run via ``denominator_unbuilt`` (measured live, run
+    32940175991: 123 FR-lag originals delivered before 2026-01-01).
+    ``fr_out_of_scope_originals`` is the caller's own honest count of
+    originals it excluded for exactly this reason (or for lacking a
+    parseable delivered date at all).
     """
     denominator = sorted({str(t) for t in fr_denominator_transmittals})
 
@@ -462,10 +483,16 @@ def build_fms_case_graph(
                 "originals": len(denominator),
                 "amendments_excluded": fr_amendments_excluded,
                 "corrections": fr_corrections,
+                "out_of_scope_originals": fr_out_of_scope_originals,
                 "status": fr_status,
             },
             "state_pm_bureau": {
-                "role": "current_presentation",
+                # §6b (2026-08-26): CI replays a sha-frozen residential
+                # capture -- the live listing serves datacenter runners
+                # bytes that parse to zero (run 32952963771), so "staged"
+                # in the role is a truthful transport disclosure, exactly
+                # like dsca_press below.
+                "role": "current_presentation_staged",
                 "listing_pages": state_listing_pages,
                 "qualifying_articles": state_qualifying_articles,
                 "status": state_status,

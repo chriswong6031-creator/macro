@@ -20,3 +20,4 @@
 {"ts": "2026-07-22T07:22:57+00:00", "event": "sf_harness_run", "authored_by": "run_signal_foundry_brainstorm", "evidence": {"ok": true, "admitted_ids": ["SF-0018", "SF-0019", "SF-0020", "SF-0021", "SF-0022"]}}
 {"ts": "2026-07-22T11:52:19+00:00", "event": "sf_batch_complete", "authored_by": "run_signal_foundry_harness", "evidence": {"iso_week": "2026-W30", "n_registered": 0, "n_run": 0, "n_skipped": 0, "n_failed": 0, "specs_run": [], "dry_run": false}}
 {"ts": "2026-08-05T12:18:55+00:00", "event": "sf_batch_complete", "authored_by": "run_signal_foundry_harness", "evidence": {"iso_week": "2026-W32", "n_registered": 0, "n_run": 0, "n_skipped": 0, "n_failed": 0, "specs_run": [], "dry_run": false}}
+{"ts": "2026-08-26T10:31:18+00:00", "event": "sf_batch_complete", "authored_by": "run_signal_foundry_harness", "evidence": {"iso_week": "2026-W35", "n_registered": 0, "n_run": 0, "n_skipped": 0, "n_failed": 0, "specs_run": [], "dry_run": false}}

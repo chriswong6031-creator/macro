@@ -45,6 +45,8 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from scripts.workflow_run_source import resolve_run_source  # noqa: E402
+
 DAILY = ROOT / ".github/workflows/daily.yml"
 DAG = ROOT / "config/dag.yml"
 
@@ -86,7 +88,9 @@ def job(daily) -> dict:
 
 
 def _runs(step: dict) -> str:
-    return str(step.get("run") or "")
+    # 512KB-cap diet: some bodies live in scripts/ci/ — resolve the effective
+    # source so step-body assertions keep seeing what the step actually runs.
+    return resolve_run_source(str(step.get("run") or ""), ROOT)
 
 
 # --------------------------------------------------------------------------- #

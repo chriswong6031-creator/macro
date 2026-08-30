@@ -12,7 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from admin import analytics_first_party as fp
-from admin.server import Handler, _clear_response_cache, _host_only, _int_param
+from admin.server import (Handler, _api_cache_ttl, _cacheable_api_get,
+                          _clear_response_cache, _host_only, _int_param)
 
 
 def _server():
@@ -483,3 +484,19 @@ def test_analytics_guard_still_returns_json_shaped_errors():
 if __name__ == "__main__":
     for fn in [v for k, v in sorted(globals().items()) if k.startswith("test_")]:
         fn(); print("PASS", fn.__name__)
+
+
+def test_analytics_panels_get_a_longer_response_cache_than_other_apis():
+    """The fp panels are window snapshots, not live readings — 15s was shorter than
+    the time it takes to read one, so every trip back to a tab re-folded the panel."""
+    assert _api_cache_ttl("/api/analytics/fp/visitors") == 60.0
+    assert _api_cache_ttl("/api/analytics/fp/overview") == 60.0
+    assert _api_cache_ttl("/api/health") == 15.0
+    assert _api_cache_ttl("/api/users") == 15.0
+
+
+def test_the_one_live_analytics_reading_is_still_never_cached():
+    """The "N active" pill polls /fp/realtime. It is the only number on that screen
+    the operator watches for freshness, so the longer TTL above must not reach it."""
+    assert not _cacheable_api_get("/api/analytics/fp/realtime", {})
+    assert _cacheable_api_get("/api/analytics/fp/visitors", {})

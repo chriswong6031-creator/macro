@@ -1,0 +1,171 @@
+{
+  "schema": "linear_portfolio_plan_real_main_receipt.v1",
+  "authority": "evidence_only_not_canonical",
+  "capability": "MAS-65 Linear Projector P0 deterministic report-only desired-state compiler",
+  "workstream": "WS:AGENT-OS",
+  "linear_issue": "MAS-65",
+  "repository": "mastermindx-market-intelligence/macro",
+  "pull_request": 6182,
+  "skillpack": {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "commit_sha": "d3499f8bd5dd4ecc0c172c82146acf4e8733ddec",
+    "skillpack_version": "1.0.1",
+    "bootstrap_major": 1,
+    "role": "same-carrier_reconciliation_procedure_pin_not_projector_input"
+  },
+  "proof_identity": {
+    "pre_reconciliation_pr_head_sha": "ce37ba599cf502eb275bb82eee28cbe5f1cd2386",
+    "tested_base_main_sha": "b9b2ca239acae338421d92ef84602a6da165b17b",
+    "tested_source_tree_sha": "bf5db3f8b92aa2dadaf9d955425e3d343527b7e4",
+    "tested_source_tree_scope": "Current-main reconciliation with refreshed Linear witness and all semantic source/test changes staged; the final merge tree differs only by this evidence-only receipt.",
+    "changed_file_count": 6,
+    "changed_files_sha256": "8f023afbcee667366c658623847d7764167e198e4e1e15c3e1f2e02a42824a96",
+    "changed_files": [
+      "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
+      "research/linear_portfolio_p0/real_main_drift_receipt_2026-08-26.json",
+      "scripts/linear_portfolio_plan.py",
+      "tests/linear_portfolio_plan_cases.py",
+      "tests/linear_portfolio_plan_live_cases.py",
+      "tests/test_agentos_compile.py"
+    ]
+  },
+  "current_main_repin": {
+    "initial_main_sha": "57029e4d4c89419a6a1eea7a080e18fa64e30957",
+    "final_main_sha": "b9b2ca239acae338421d92ef84602a6da165b17b",
+    "intervening_commit_count": 3,
+    "intervening_commit_subject": "#6621 CI probe ceilings plus record-only #6582 Evaluation OS and #6597 TOPA architecture freezes",
+    "intervening_paths": [
+      "agentos/decisions/DEC-EVAL-OS-RECOVERY-ARCHITECTURE-FREEZE.md",
+      "agentos/decisions/DEC-TOPA-OOT-COMPLETION-ARCHITECTURE.md",
+      "agentos/handoffs/TOP-ANATOMY-2026-08-28.md",
+      "agentos/workstreams/WS-EVAL-OS-MEASUREMENT-LAW.md",
+      "agentos/workstreams/WS-EVAL-OS-OUTPUT-HEALTH.md",
+      "agentos/workstreams/WS-TOP-ANATOMY.md",
+      "research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md",
+      "research/top_anatomy/TOPA_OOT_COMPLETION_MASTERPLAN_2026-08-28.md",
+      "tests/test_ci_pack.py"
+    ],
+    "owned_path_overlap": [],
+    "reconciliation": "The direct-child main change was restored exactly into the merge index and the final merge parent was re-pinned to current main."
+  },
+  "current_estate_observation": {
+    "observed_at": "2026-08-28T22:10:57.118Z",
+    "canonical_agent_os_revision": "b9b2ca239acae338421d92ef84602a6da165b17b",
+    "generated_state_revision": "b9b2ca239acae338421d92ef84602a6da165b17b",
+    "linear_witness": {
+      "path": "research/linear_portfolio_p0/linear_snapshot_2026-08-25.json",
+      "schema": "linear_portfolio_snapshot.v1",
+      "authority": "witness_only_not_canonical",
+      "query": "list_projects(limit=50, orderBy=createdAt, includeArchived=true, fields=id,name,status)",
+      "has_next_page": false,
+      "project_count": 49
+    },
+    "agent_os_census": {
+      "workstreams": 53,
+      "decisions": 269,
+      "discoveries": 230,
+      "handoffs": 376,
+      "total_records": 928,
+      "validator_warning_count": 59,
+      "validator_error_count": 0
+    },
+    "desired_state_summary": {
+      "active_projects": 43,
+      "review_candidates": 0,
+      "excluded_projects": 10,
+      "warnings_with_linear_witness": 57
+    },
+    "without_linear_witness": {
+      "schema": "linear_portfolio_plan_receipt.v1",
+      "status": "compiled",
+      "semantic_hash": "6bf3ed1be7498e28a12167d4afbbc7a9cccd973cb838c3006321a73e9ce0917d",
+      "warning_counts": {
+        "generated_state_disagrees_with_direct_record": 4,
+        "generated_state_missing_workstream": 1,
+        "github_snapshot_unavailable": 1,
+        "linear_snapshot_unavailable": 1,
+        "typed_gate_source_missing": 1
+      }
+    },
+    "with_linear_witness": {
+      "schema": "linear_portfolio_plan_receipt.v1",
+      "status": "compiled",
+      "semantic_hash": "90ef0bb351426c8423d9140f29581ffacd1378bd8966769e25e8233b422a9c83",
+      "warning_counts": {
+        "existing_project_binding_missing": 1,
+        "generated_state_disagrees_with_direct_record": 4,
+        "generated_state_missing_workstream": 1,
+        "github_snapshot_unavailable": 1,
+        "project_lifecycle_drift": 3,
+        "project_name_drift": 42,
+        "project_status_drift": 4,
+        "typed_gate_source_missing": 1
+      }
+    }
+  },
+  "local_proof": {
+    "red_first": {
+      "result": "PASS",
+      "claim": "The pre-repair aggregator failed because it imported tests.agentos_compile_legacy_cases and relocated the canonical current-main suite."
+    },
+    "focused_refresh": {
+      "result": "PASS",
+      "tests_passed": 6,
+      "tests_deselected": 58,
+      "coverage": [
+        "canonical suite remains in place",
+        "one-field change is bounded",
+        "missing external witnesses are typed unknown",
+        "exact Linear witness reports missing, ambiguous, drift and extra",
+        "Linear status classes distinguish historical health from stale live state",
+        "real current repository plan is deterministic and emits the receipt"
+      ]
+    },
+    "deterministic_replay": {
+      "result": "PASS",
+      "comparisons": [
+        "plan JSON byte-identical across two runs",
+        "Markdown report byte-identical across two runs",
+        "machine receipt byte-identical across two runs"
+      ]
+    },
+    "current_base_p0_matrix": {
+      "result": "PASS",
+      "base_main_sha": "b9b2ca239acae338421d92ef84602a6da165b17b",
+      "tests_passed": 18,
+      "emitted_linear_projects": 49,
+      "agent_os_records_validated": 928,
+      "agent_os_validation_errors": 0
+    },
+    "pre_final_base_broader_local_matrix": {
+      "result": "PASS_WITH_SPARSE_ENVIRONMENT_EXCLUSION",
+      "base_main_sha": "39fca7303f7e629d7feafce0f447fc1ecbcaa291",
+      "tests_passed": 169,
+      "excluded_failure": "tests/test_agentos_schema.py::test_cross_repo_path_is_unchecked_when_that_checkout_is_absent",
+      "reason": "The mandated sparse carrier omits verify_shots and sibling-repository artifacts inspected by that current-main test. scripts/agentos.py, agentos records, and schema/status tests are byte-identical to current main; hosted full-checkout proof remains required."
+    }
+  },
+  "compatibility": {
+    "scripts_agentos_blob_main": "385e2465e0d0fb8b061c56b77d23d312e15ce834",
+    "scripts_agentos_blob_candidate": "385e2465e0d0fb8b061c56b77d23d312e15ce834",
+    "canonical_compile_test_blob_main": "7b3ab0f5f2fd5976383a2a07644f507aa402f141",
+    "canonical_compile_test_blob_candidate": "f7d82c81091cd9d1609f5f7484e94a245f9b5884",
+    "ruling": "The current parser and canonical Agent OS suite are preserved. The candidate compile-test blob differs only by the two P0 case-module imports and their scope comment; the redundant legacy relocation is absent."
+  },
+  "runtime_authority": {
+    "deterministic_only": true,
+    "network_calls_in_compiler": 0,
+    "linear_mutations_in_p0": 0,
+    "github_mutations_by_compiler": 0,
+    "slack_mutations_by_compiler": 0,
+    "issue_creation_instructions": false,
+    "executive_authority": false
+  },
+  "cold_start_command": "python3 scripts/linear_portfolio_plan.py --root agentos --generated-state data/governance/agent_os_state.json --linear-snapshot research/linear_portfolio_p0/linear_snapshot_2026-08-25.json --json-output /tmp/linear_portfolio_plan.json --report-output /tmp/linear_portfolio_plan.md --receipt-output /tmp/linear_portfolio_plan_receipt.json",
+  "receipt_finalization_law": {
+    "this_file_is_projector_input": false,
+    "source_tree_receipt_is_exact": true,
+    "required_final_check": "After this evidence-only file is committed, the exact final PR head must pass current hosted fences, semantic CI, contract-delta and ci-gate before Sol acceptance.",
+    "non_recursive_proof_record": "Final head/tree and hosted run identities belong in the PR evidence body, avoiding a self-referential receipt commit."
+  }
+}

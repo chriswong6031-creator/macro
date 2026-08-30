@@ -179,16 +179,33 @@ waves:
     status: in_progress
     depends_on: [k1]
     next_action: >
-      K2-B's third hostile repair is locally green on the existing PR #6370
-      carrier and awaiting a pushed exact-head/root review. The repaired compiler
-      validates full K1 EvidenceRefs; enforces PIT freshness and interval clocks;
-      computes normalization, residual, theme comparison, saturation population,
-      campaigns, counts and prospective reliability; binds actor/epoch lineages;
-      and remains contract-only with no K2-C adapter authority.
+      K2-B contract/fixture freeze is DONE / ON_MAIN: PR #6370 merged from exact
+      source head d36c131e7124643c6feab505c87775f2611fcf39 as
+      7211d0cd2a21372e35b6fe4d1da09dd1904127f5. That release was contract-only;
+      it authorized no K2-C adapter, persistence, live flow, rank/gate/size,
+      origination, entry action or deployment. K2 remains IN_PROGRESS until a
+      separately commissioned K2-C adapter pilot proves a bounded owner-reader,
+      source/rights, PIT/lineage and correction path without duplicating an
+      institutional owner or store.
   - id: k3
     title: K3 Opportunity Semantics — propagation contract (D), opportunity evidence vector (E)
-    status: todo
+    status: in_progress
     depends_on: [k1]
+    next_action: >
+      K3-E Opportunity Evidence Vector v1 contract freeze is DONE / ON_MAIN.
+      Sol ACCEPTED source head e724fa68383f458225ded5fdea1a7c01a78f3ed3
+      clause-by-clause against freeze §§7.2–7.4 and §12; Chairman then released
+      the hold and PR #6417 squash-merged as
+      a1bdf2a2ad051cc63a9a5070da11057fe9ddb6fc. Post-merge fences run
+      33028017342 concluded SUCCESS. Integration-baseline push run 33028017394
+      was cancelled while still pending when scheduled keepalive run 33028047201
+      for the same main SHA entered the workflow concurrency group; no baseline
+      job failed. This is a contract-only on-main capability, not a producer,
+      consumer, store, product surface, deployment or PROVEN_LIVE claim. K3
+      remains IN_PROGRESS because K3-D Economic Propagation is still NOT_BUILT
+      and requires its own commission. This canonical K3-E remains distinct from
+      the K3E Expectation-Market-Dynamics child program
+      (DEC:K3E-EXPECTATION-MARKET-DYNAMICS-FREEZE); neither replaces the other.
   - id: k4
     title: K4 Path/Event Intelligence — holdability extension (F), earnings event-clock waves (G)
     status: todo
@@ -206,20 +223,18 @@ waves:
     status: todo
     depends_on: [k6]
 next_action: >
-  Push the locally green K2-B third hostile repair to the existing PR #6370,
-  bind hosted checks and root's independent hostile review to that exact SHA,
-  and keep the carrier unarmed/unmerged in the builder lane. The packet has no
-  adapter, persistence, rank/gate/size/origination/entry authority, or deployment
-  obligation. A later K2-C adapter requires a separate commission and bounded
-  owner-reader/source/rights/PIT proof.
-
-  K1 Evidence Foundation v1.0.0 is ACCEPTED / DONE at exact source head
-  b7b861a288491ba776dda0087b6153c346e9aabc and merge
-  696afbb57483577770ac48c57f7eeafd5344cf17. Preserve the adverse physical-store
-  verdict: the four-owner AAPL recipe remains honestly REFUSED without a validated
-  cross-type identity bridge, and no store/index was built. The separate Chairman
-  commission now covers K2-B's contract-only repair on PR #6370; it does not cover
-  K2-C, K3, K4, K5, B1A, D5-EARNINGS, runtime, product, or another dependent wave.
+  Next dependency is to commission K3-D Economic Propagation and K2-C
+  Institutional adapter pilot as two separate bounded waves after a fresh
+  path/authority collision census. They may proceed in parallel only if those
+  surfaces remain genuinely disjoint. K3-D must inherit the c0 D0 rulings,
+  including the four named DNR kills, Data OS exact-identity authority, typed
+  abstention for unresolved identities, no fourth graph/store, and no new
+  grader/ranker. K2-C must adopt K2-B/K1 contracts and prove owner-reader,
+  source/rights, PIT/lineage and correction behavior without creating an
+  institutional aggregation truth store. Do not start K5 OpportunityCase /
+  Prophet integration until BOTH K2 and K3 are complete. K3-E merge itself
+  authorizes no consumer wiring, Market OS UI, rank, gate, size, trade or
+  deployment.
 ---
 
 # Alpha Intelligence Expansion — integration workstream

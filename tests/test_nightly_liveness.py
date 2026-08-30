@@ -583,7 +583,8 @@ def test_only_the_mainland_carries_a_calendar_day_floor():
     cn board's floor (same table, same phantom-session exposure); hk_ledger mirrors hk's
     lack of one."""
     floors = {s["market"]: s["min_calendar_days"] for s in MARKET_BOARDS}
-    assert floors == {"us": None, "cn": 11, "hk": None, "ca": None, "intl": None,
+    assert floors == {"us": None, "us_premium": None, "cn": 11, "hk": None,
+                       "ca": None, "intl": None,
                        "cn_ledger": 11, "hk_ledger": None}
 
 
@@ -661,10 +662,11 @@ def test_check_d_is_silent_when_not_requested():
 
 # ── registry + wiring: the ways this check can ship dead ───────────────────
 def test_registry_covers_the_five_markets_and_two_ledgers():
-    """The five site/factordata boards, in their original order, plus the two GD-4A.1
-    risk-forward ledgers appended at the end."""
+    """The five site/factordata boards, in their original order, plus the entitled US
+    twin beside its free board, plus the two GD-4A.1 risk-forward ledgers appended at
+    the end."""
     assert [spec["market"] for spec in MARKET_BOARDS] == [
-        "us", "cn", "hk", "ca", "intl", "cn_ledger", "hk_ledger",
+        "us", "us_premium", "cn", "hk", "ca", "intl", "cn_ledger", "hk_ledger",
     ]
     paths = [spec["path"] for spec in MARKET_BOARDS]
     assert len(set(paths)) == len(paths), paths
@@ -710,6 +712,83 @@ def test_every_market_board_is_in_the_sparse_checkout():
         "file path, so every graded artifact would be absent and every market would "
         "read INDETERMINATE while the lane stayed green"
     )
+
+
+# ── the entitled US payload (site/premiumdata/us_stocks.json) ──────────────────
+def test_the_entitled_us_payload_is_graded():
+    """POSITIVE COVERAGE. site/premiumdata/us_stocks.json is the paid twin of the
+    us_standouts board: build_site.py's _write_us_payload renders the withheld
+    remainder of the US board into it, and the page splices those cards into the same
+    `.nbgrid` post-auth. It was consumed by the board template chain while NO monitor
+    named its exact path, so a freeze in the half that subscribers pay for was
+    invisible to every instrument in this file.
+
+    Both halves are asserted, because either one alone can rot into a vacuous pass: the
+    consumer premise (templates still read the payload) and the coverage claim (a
+    grader still names it). If the templates stop naming it this test must be revisited
+    rather than silently kept green."""
+    consumers = sorted(
+        p.name for p in (REPO_ROOT / "templates").glob("*.j2")
+        if "premiumdata/us_stocks.json" in p.read_text(encoding="utf-8")
+    )
+    assert consumers, "fixture premise moved — no template names the premium payload"
+
+    graded = {spec["path"] for spec in MARKET_BOARDS}
+    assert "site/premiumdata/us_stocks.json" in graded, (
+        f"the premium US payload is read by {consumers} but named by no grader"
+    )
+
+
+def test_premium_payload_older_than_the_free_board_pages():
+    """THE load-bearing paired-vintage test, and the one no sessions-behind budget can
+    replace. Both rows carry a 1-session budget, so free@08-17 with paid@08-16 leaves
+    BOTH individually inside budget — nothing else in this file can see it — while the
+    paying tier is served a strictly older board than the free preview beside it."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW,
+                      boards=_boards(us_premium={"as_of": "2026-08-16"}))
+    assert report["ok"] is False, report
+    split = [f for f in report["fail_reasons"] if "PREMIUM PAYLOAD VINTAGE SPLIT" in f]
+    assert len(split) == 1, report["fail_reasons"]
+    assert "2026-08-16" in split[0] and "2026-08-17" in split[0]
+    # and it is NOT reached by the ordinary staleness grader: one session behind is
+    # inside this row's own budget, so no STALE BOARD fires for it.
+    assert not any("STALE BOARD [US premium payload]" in f
+                   for f in report["fail_reasons"]), report
+
+
+def test_premium_payload_newer_than_the_free_board_does_not_page():
+    """Direction matters. A paid half AHEAD of the free half harms no subscriber, so it
+    warns instead of manufacturing a page — this module's standing rule against false
+    positives. Whether the FREE board has itself fallen behind is the US row's job."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW,
+                      boards=_boards(us={"as_of": "2026-08-16"}))
+    assert not any("PREMIUM PAYLOAD VINTAGE SPLIT" in f
+                   for f in report["fail_reasons"]), report
+    assert any("INDETERMINATE [US premium payload]" in w and "NEWER" in w
+               for w in report["warnings"]), report
+
+
+@pytest.mark.parametrize("payload,channel,marker", [
+    # Unreadable/absent — we genuinely cannot see it. Blindness, so a warning.
+    (None, "warnings", "INDETERMINATE [US premium payload]"),
+    # Readable but refuses to say which session it is for. NOT blindness: a positive
+    # observation that the producer broke, so it fails (``stamp_known_absent`` is False
+    # for this row). Pinned here because the two look alike and must not be conflated.
+    ({"as_of": None}, "fail_reasons",
+     "BOARD PUBLISHED WITHOUT A STAMP [US premium payload]"),
+])
+def test_premium_vintage_split_adds_nothing_when_a_side_has_no_usable_stamp(
+        payload, channel, marker):
+    """No double-reporting. Each of these faults is already reported ONCE by the per-row
+    loop; the pairing check must add nothing on top of it rather than inventing a
+    second, differently-worded fault about the same artifact."""
+    report = evaluate(D_RUNS, D_INDEX, D_NOW, boards=_boards(us_premium=payload))
+    assert not any("PREMIUM PAYLOAD VINTAGE SPLIT" in f
+                   for f in report["fail_reasons"]), report
+    assert any(marker in m for m in report[channel]), report
+    mentions = [m for m in report["warnings"] + report["fail_reasons"]
+                if "[US premium payload]" in m]
+    assert len(mentions) == 1, mentions
 
 
 def test_main_grades_every_market(tmp_path, capsys):

@@ -112,10 +112,20 @@ Required behaviors:
   grade can be re-derived against the exact calendar that produced it.
 
 Under the exact plane the calendar must additionally reconcile with the substrate contract's
-canonical market clock (fixed 1991-01-01 anchor, exact SSE/SZSE calendar-day and
-open-session equality, `pretrade_date` adjacency, one immutable `market_session_position`),
+canonical market clock (frozen definition-versioned epoch `mainland-joint-complete-v1` at
+`1992-01-01`, exact SSE/SZSE calendar-day and open-session equality, `pretrade_date`
+adjacency, one immutable `market_session_position` counted from that epoch),
 with BSE inheriting the documented consensus from launch. Where the attested artifact and
 the spine clock disagree, the run fails; it does not pick a winner.
+
+The epoch supersedes the previous fixed 1991-01-01 anchor; history before it is typed
+`PRE_EPOCH_SOURCE_UNSUPPORTED` and carries no session position. This costs the frozen
+evaluation nothing: the adopted split begins at train 2011, whose deepest lookback is the
+21-session reset window reaching late 2010 — nineteen years after the epoch — so no frozen
+construction requires an authority-grade outcome dated before it. Because re-anchoring
+shifts every ordinal by a constant, window and horizon boundaries must be expressed as
+session-position DIFFERENCES; no construction may attach economic or target meaning to an
+absolute ordinal magnitude.
 
 ### §2.2 Monthly-partitioned Parquet with atomic installation
 
@@ -255,8 +265,14 @@ The ledger may be built only on the exact plane defined by
    `completeness_manifest.json` must close on its own terms — the operational-backfill code
    gate separately promoted on canary/throughput/correctness evidence; reference
    generation, exact calendar, and every required source unit request-bound and complete;
-   zero unknown and zero name-orphan counts; post-2016 `bak_basic` witnesses with lifecycle
-   and PIT sets reconciling exactly; duplicate-key, dense-key, lifecycle, exact-session,
+   zero unknown counts, and every `namechange` source row deterministically reconciled with
+   zero unresolved conflicts — NOT 100% external corroboration, since a valid namechange row
+   is its own source evidence and `NAMECHANGE_ONLY` is terminal source completeness
+   (`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`); post-2016 `bak_basic` witnesses with lifecycle
+   and PIT sets reconciling under the source-union law (every lifecycle-eligible security
+   witnessed in PIT and no PIT row contradicting its own master lifecycle window; a PIT row
+   the current `stock_basic` snapshot omits is a legal union member counted as telemetry —
+   `DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`); duplicate-key, dense-key, lifecycle, exact-session,
    suspension, and daily security coverage checks closing; and the canonical exact-price event
    join closing. Manifest artifacts are private and must not be committed; only the
    contract's sanitized hash/date/scope fields propagate.
@@ -269,6 +285,29 @@ The ledger may be built only on the exact plane defined by
 suspended-to-delisting, and never-listed-yet names must be present in the PIT universe for
 every date they were actually listed. Any cohort statistic computed later must name who is
 missing before its means are trusted.
+
+This is enforced at the collector, not merely asserted here. The current `stock_basic`
+snapshot is a lifecycle/reference witness, not exhaustive historical membership authority,
+so historical PIT construction is **source-union, never current-snapshot intersection**
+(`DEC:CNLI-HISTORICAL-PIT-IS-SOURCE-UNION`). Intersecting a current snapshot against
+historical sessions is precisely the survivorship filter this section forbids, and its error
+points one way: a security the vendor later stops publishing would become unclassifiable on
+every past date it actually traded. A security with a complete same-session positive-volume
+observation and the required exact legal-band evidence is in the historical exact universe
+whether or not the current snapshot still carries it. The current-snapshot omission rate is
+the "name who is missing" telemetry this section demands — it is reported, never thresholded.
+
+The same law governs the name-history plane, where the PIT witness cannot reach: it begins
+2016-01-01, so requiring corroboration for an earlier `namechange` row would restore the
+current snapshot as sole authority for exactly the securities most likely to have vanished
+from it. A valid `namechange` row is therefore **its own sufficient source evidence**
+(`DEC:CNLI-NAMECHANGE-IS-ITS-OWN-SOURCE-AUTHORITY`). It lands as `NAMECHANGE_ONLY` with zero
+PIT membership, trading, exact-event, canonical-identity, rank or score authority — existence
+in the source plane and authority over the universe are granted separately. The rule is
+applied row by row across the frozen epoch: pre-2016 is not special-cased and the
+witness-missing percentage is not an admission threshold, because a threshold would make a
+row's disposition depend on its neighbours rather than on its own evidence, which is the
+survivorship filter re-entering as a tunable.
 
 ---
 

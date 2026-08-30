@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-26",
+  "as_of": "2026-08-29",
   "coverage": {
-    "end": "2026-08-26",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W35; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-27"
+    "end": "2026-08-29",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W35; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-05-30"
   },
   "iso_week": "2026-W35",
   "schema": "chronicle.rollup.weekly/v1",
@@ -17,9 +17,33 @@
           "top_events": []
         },
         {
-          "n_events": 10,
+          "n_events": 106,
+          "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 16,
           "source": "prophet_ledger",
           "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "pce_headline",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "pce_core",
+          "top_events": []
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
           "top_events": []
         },
         {
@@ -87,7 +111,7 @@
     {
       "clusters": [
         {
-          "n_events": 446,
+          "n_events": 447,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -146,7 +170,7 @@
     {
       "clusters": [
         {
-          "n_events": 1177,
+          "n_events": 1179,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
@@ -202,6 +226,12 @@
           "n_events": 6,
           "source": "prophet_ledger",
           "theme": null,
+          "top_events": []
+        },
+        {
+          "n_events": 5,
+          "source": "earnings",
+          "theme": "earnings",
           "top_events": []
         },
         {
@@ -291,8 +321,14 @@
           ]
         },
         {
-          "n_events": 112,
+          "n_events": 115,
           "source": "earnings_call",
+          "theme": "earnings",
+          "top_events": []
+        },
+        {
+          "n_events": 35,
+          "source": "earnings",
           "theme": "earnings",
           "top_events": []
         },
@@ -306,12 +342,6 @@
           "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
-          "top_events": []
-        },
-        {
-          "n_events": 2,
-          "source": "earnings",
-          "theme": "earnings",
           "top_events": []
         },
         {
@@ -412,7 +442,7 @@
           ]
         },
         {
-          "n_events": 22,
+          "n_events": 138,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -447,7 +477,7 @@
     {
       "clusters": [
         {
-          "n_events": 31,
+          "n_events": 49,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -500,7 +530,7 @@
     {
       "clusters": [
         {
-          "n_events": 6,
+          "n_events": 8,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -523,7 +553,7 @@
     {
       "clusters": [
         {
-          "n_events": 8,
+          "n_events": 10,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -556,7 +586,7 @@
     {
       "clusters": [
         {
-          "n_events": 18,
+          "n_events": 19,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
@@ -579,30 +609,13 @@
           "top_events": []
         },
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []
         }
       ],
       "iso_week": "2026-W23"
-    },
-    {
-      "clusters": [
-        {
-          "n_events": 46,
-          "source": "earnings",
-          "theme": "earnings",
-          "top_events": []
-        },
-        {
-          "n_events": 2,
-          "source": "earnings_call",
-          "theme": "earnings",
-          "top_events": []
-        }
-      ],
-      "iso_week": "2026-W22"
     }
   ]
 }

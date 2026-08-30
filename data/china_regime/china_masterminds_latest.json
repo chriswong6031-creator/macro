@@ -1,94 +1,94 @@
 {
   "schema": "china_masterminds.latest.v2",
   "n": 3,
-  "built": "2026-08-25 09:48 UTC",
-  "asof": "2026-08-25",
+  "built": "2026-08-29 15:34 UTC",
+  "asof": "2026-08-27",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "cnmm_conservative",
       "name": "China Mastermind \u2014 Conservative",
-      "cagr": 7.08,
+      "cagr": 7.1,
       "sharpe": 1.37,
       "maxdd": -6.2,
-      "asof": "2026-08-25",
-      "gross_now": 0.56,
+      "asof": "2026-08-27",
+      "gross_now": 0.57,
       "alloc": [
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 24.3
+          "weight": 25.5
         },
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 24.3
+          "weight": 25.5
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 7.0
+          "weight": 6.2
         }
       ]
     },
     {
       "key": "cnmm_moderate",
       "name": "China Mastermind \u2014 Moderate",
-      "cagr": 10.28,
+      "cagr": 10.31,
       "sharpe": 1.19,
       "maxdd": -12.1,
-      "asof": "2026-08-25",
-      "gross_now": 1.1,
+      "asof": "2026-08-27",
+      "gross_now": 1.12,
       "alloc": [
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 48.8
+          "weight": 50.9
         },
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 48.8
+          "weight": 50.9
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 12.3
+          "weight": 10.8
         }
       ]
     },
     {
       "key": "cnmm_aggressive",
       "name": "China Mastermind \u2014 Aggressive",
-      "cagr": 14.52,
+      "cagr": 14.58,
       "sharpe": 1.12,
       "maxdd": -22.3,
-      "asof": "2026-08-25",
+      "asof": "2026-08-27",
       "gross_now": 1.8,
       "alloc": [
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 81.7
+          "weight": 83.0
         },
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 81.7
+          "weight": 83.0
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 16.5
+          "weight": 14.0
         }
       ]
     }

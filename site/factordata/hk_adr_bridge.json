@@ -1,38 +1,38 @@
 {
   "display_only": true,
-  "hk_session_date": "2026-08-25",
-  "adr_date": "2026-08-25",
-  "expected_hk_session": "2026-08-25",
+  "hk_session_date": "2026-08-28",
+  "adr_date": "2026-08-28",
+  "expected_hk_session": "2026-08-28",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "BABA": {
-      "asof": "2026-08-25",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "TCOM": {
-      "asof": "2026-08-25",
-      "lag_days": 0,
-      "state": "fresh"
-    },
     "BIDU": {
-      "asof": "2026-08-25",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "KWEB": {
-      "asof": "2026-08-25",
+      "asof": "2026-08-28",
       "lag_days": 0,
       "state": "fresh"
     },
     "JD": {
-      "asof": "2026-08-25",
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "TCOM": {
+      "asof": "2026-08-28",
+      "lag_days": 0,
+      "state": "fresh"
+    },
+    "KWEB": {
+      "asof": "2026-08-28",
       "lag_days": 0,
       "state": "fresh"
     },
     "FXI": {
-      "asof": "2026-08-25",
+      "asof": "2026-08-28",
       "lag_days": 0,
+      "state": "fresh"
+    },
+    "BABA": {
+      "asof": "2026-08-27",
+      "lag_days": 1,
       "state": "fresh"
     }
   },
@@ -44,15 +44,15 @@
       "adr_ticker": "BABA",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": 0.82,
-      "adr_move_pct": 0.82,
-      "hk_last_move_pct": 1.51,
-      "gap_context": "flat",
+      "implied_open_gap_pct": null,
+      "adr_move_pct": null,
+      "hk_last_move_pct": -1.39,
+      "gap_context": "unknown",
       "disconnect_flag": false,
-      "missing_reason": null,
+      "missing_reason": "ADR BABA bar missing for 2026-08-28",
       "freshness": {
-        "asof": "2026-08-25",
-        "lag_days": 0,
+        "asof": "2026-08-27",
+        "lag_days": 1,
         "state": "fresh"
       }
     },
@@ -63,14 +63,14 @@
       "adr_ticker": "BIDU",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": 1.36,
-      "adr_move_pct": 1.36,
-      "hk_last_move_pct": 0.06,
-      "gap_context": "up",
+      "implied_open_gap_pct": 0.19,
+      "adr_move_pct": 0.19,
+      "hk_last_move_pct": 0.0,
+      "gap_context": "flat",
       "disconnect_flag": false,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -82,14 +82,14 @@
       "adr_ticker": "JD",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": 0.55,
-      "adr_move_pct": 0.55,
-      "hk_last_move_pct": -0.26,
+      "implied_open_gap_pct": 0.88,
+      "adr_move_pct": 0.88,
+      "hk_last_move_pct": -1.43,
       "gap_context": "flat",
       "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -101,14 +101,14 @@
       "adr_ticker": "TCOM",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": -0.09,
-      "adr_move_pct": -0.09,
-      "hk_last_move_pct": -1.11,
-      "gap_context": "flat",
-      "disconnect_flag": false,
+      "implied_open_gap_pct": 1.66,
+      "adr_move_pct": 1.66,
+      "hk_last_move_pct": -1.75,
+      "gap_context": "up",
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -120,14 +120,14 @@
       "adr_ticker": "KWEB",
       "adr_source": "proxy",
       "proxy_note": "proxy, no direct ADR; Tencent OTC (TCEHY) too thin",
-      "implied_open_gap_pct": 0.61,
-      "adr_move_pct": 0.61,
-      "hk_last_move_pct": 0.45,
+      "implied_open_gap_pct": 0.84,
+      "adr_move_pct": 0.84,
+      "hk_last_move_pct": 1.65,
       "gap_context": "flat",
       "disconnect_flag": false,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -139,14 +139,14 @@
       "adr_ticker": "KWEB",
       "adr_source": "proxy",
       "proxy_note": "proxy, no direct ADR",
-      "implied_open_gap_pct": 0.61,
-      "adr_move_pct": 0.61,
-      "hk_last_move_pct": -6.65,
+      "implied_open_gap_pct": 0.84,
+      "adr_move_pct": 0.84,
+      "hk_last_move_pct": 0.0,
       "gap_context": "flat",
-      "disconnect_flag": true,
+      "disconnect_flag": false,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -158,14 +158,14 @@
       "adr_ticker": "KWEB",
       "adr_source": "proxy",
       "proxy_note": "proxy, no direct ADR",
-      "implied_open_gap_pct": 0.61,
-      "adr_move_pct": 0.61,
-      "hk_last_move_pct": -0.22,
+      "implied_open_gap_pct": 0.84,
+      "adr_move_pct": 0.84,
+      "hk_last_move_pct": 1.24,
       "gap_context": "flat",
-      "disconnect_flag": true,
+      "disconnect_flag": false,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -177,14 +177,14 @@
       "adr_ticker": "KWEB",
       "adr_source": "proxy",
       "proxy_note": "proxy, no direct ADR",
-      "implied_open_gap_pct": 0.61,
-      "adr_move_pct": 0.61,
-      "hk_last_move_pct": 0.73,
+      "implied_open_gap_pct": 0.84,
+      "adr_move_pct": 0.84,
+      "hk_last_move_pct": -0.59,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
@@ -196,26 +196,26 @@
       "adr_ticker": "FXI",
       "adr_source": "proxy",
       "proxy_note": "proxy, no direct ADR; ADR delisted",
-      "implied_open_gap_pct": 0.03,
-      "adr_move_pct": 0.03,
-      "hk_last_move_pct": 1.65,
+      "implied_open_gap_pct": 0.77,
+      "adr_move_pct": 0.77,
+      "hk_last_move_pct": -1.61,
       "gap_context": "flat",
-      "disconnect_flag": false,
+      "disconnect_flag": true,
       "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-25",
+        "asof": "2026-08-28",
         "lag_days": 0,
         "state": "fresh"
       }
     }
   ],
   "composite": {
-    "bellwether_implied_open_pct": 0.66,
+    "bellwether_implied_open_pct": 0.91,
     "gap_context": "flat",
     "composite_source": "direct_average",
-    "n_direct": 4,
+    "n_direct": 3,
     "n_proxy": 5,
-    "etf_composite_pct": 0.32,
+    "etf_composite_pct": 0.8,
     "etf_gap_context": "flat"
   },
   "banner": null,

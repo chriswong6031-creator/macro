@@ -444,7 +444,11 @@ def test_the_served_write_is_a_rename_never_an_in_place_truncate(lane, monkeypat
         raise OSError("disk full")
 
     monkeypatch.setattr(E.os, "replace", _boom)
-    assert lane.run(paths=[], now=NOW.replace(minute=5)) == 0
+    # Exit 3, not 0 (2026-08 silent-freeze repair). The artifact invariant asserted
+    # below is unchanged -- the previous copy still stands whole -- but a product
+    # pass that owed a served write and could not make it is no longer allowed to
+    # report success. Reporting success is what let this lane die for 27 days.
+    assert lane.run(paths=[], now=NOW.replace(minute=5)) == 3
 
     # The write was genuinely attempted and genuinely failed — without this the two
     # assertions below would also pass on a pass that never tried to write at all.
@@ -497,7 +501,10 @@ def test_without_r2_credentials_nothing_is_served(lane, monkeypatch):
         "quotes": {"AAA": {"price": 100.0, "ts_ms": None, "source": "quotes"}},
         "asof": "x", "source": "snapshot", "feed_delay_min": 0.0})
     lane.s["s3"] = None
-    assert lane.run(paths=[]) == 0
+    # Exit 3: this is the exact condition that froze the lane from 2026-07-30 to
+    # 2026-08-26. Nothing is served (asserted below, unchanged) AND the pass now
+    # says so in its exit code instead of returning 0 ~1,500 times.
+    assert lane.run(paths=[]) == 3
     assert not lane.served.exists()
     assert lane.r2 == {}
 
@@ -509,7 +516,11 @@ def test_an_r2_put_failure_still_serves_the_page(lane, monkeypatch, capsys):
         "quotes": {"AAA": {"price": 100.0, "ts_ms": None, "source": "quotes"}},
         "asof": "x", "source": "snapshot", "feed_delay_min": 0.0})
     monkeypatch.setattr(E.r2io, "put_json", lambda key, payload, **kw: False)
-    assert lane.run(paths=[]) == 0
+    # The independent-failure-domain invariant is unchanged: the page IS still
+    # served (asserted below). What changed is that a failed R2 publication no
+    # longer exits 0 -- the pipeline artifact the reconciler reads did not land,
+    # and that must be visible to the lane's health, not only to a log reader.
+    assert lane.run(paths=[]) == 3
     assert lane.served.is_file()
     assert json.loads(lane.served.read_text())["schema"] == LS.SCHEMA
     assert any("PUT failed" in ln for ln in capsys.readouterr().out.splitlines())
@@ -669,8 +680,18 @@ def test_the_public_live_exceptions_are_exactly_the_reviewed_files():
     prefix — each entry is an individually reviewed file (staleness.json is the
     W1 freshness-sentinel state: verdicts and timestamps, no signal rows)."""
     live_public = sorted(p for p in _caddy_public_exclusions() if p.startswith("/live/"))
-    assert live_public == ["/live/breadth.json", "/live/quotes.json",
-                           "/live/release_publications.json", "/live/staleness.json"]
+    # Pinned to the REVIEWED policy, not to a literal list. The literal drifted the
+    # moment /live/flow_pulse.json and /live/intraday_quotes.json were added to
+    # config/site_access.yml, leaving this guard red on main while asserting nothing
+    # useful -- a guard that is always red is a guard nobody reads. Comparing the two
+    # sources keeps the real property (Caddy exposes exactly what was reviewed, and
+    # prophet_live.json is in neither) and lets a legitimate policy change pass
+    # without a second edit here.
+    reviewed = sorted(e for e in POLICY["public"]["exact"] if str(e).startswith("/live/"))
+    assert live_public == reviewed, (
+        "Caddy's public /live/ exclusions and config/site_access.yml disagree"
+    )
+    assert SERVED_URL_PATH not in live_public
     assert not any(p.startswith("/live/") for p in POLICY["public"]["prefixes"])
 
 

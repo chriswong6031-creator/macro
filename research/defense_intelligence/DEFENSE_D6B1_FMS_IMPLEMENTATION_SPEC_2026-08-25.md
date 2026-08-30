@@ -464,3 +464,52 @@ opus review; these are frozen law equal to the sections they amend)
    award/backlog/revenue aggregate.
 4. Closing handoff + Sol return with the full receipt packet (Sol comment §"Production
    proof packet"). D6-C+ / D7+ remain UNAUTHORIZED.
+
+## §11c — Production amendments (2026-08-26, post-merge production proof)
+
+Frozen by the commissioning session after the first two production dispatches.
+Each amendment carries its live exemplar; none relaxes a refusal.
+
+1. **§6b — State acquires via STAGED REPLAY in CI (supersedes the §6 live
+   CLI leg and the §11b.6 `empty_valid` law).** Production runs 32952963771
+   and 32953625355 (the published graph, commit 9e777ad2145c):
+   the same `https://www.state.gov/arms-sales-congressional-notifications`
+   listing that presents 10-11 qualifying articles to a residential fetch
+   served the hosted runner bytes parsing to ZERO qualifying entries, and
+   the empty_valid law published `state_pm_bureau: {status: ok,
+   qualifying_articles: 0}` with **no byte receipt** — an unseen surface
+   encoded as a seen-and-empty one. CI therefore never fetches state.gov:
+   it replays the sha-frozen residential capture
+   (`data/government_revenue/fms_staged_objects/state_manifest.json` +
+   bytes), with R2 put + strict readback per article, transport
+   `cli_residential_staged` (additive `TRANSPORTS`/schema-enum extension).
+   Refusals (all fail the whole run, mirroring the frozen B10/B11 DSCA
+   law): missing manifest, any sha mismatch, a staged listing parsing to
+   zero qualifying entries, a listing entry with no staged bytes. The
+   capture lever is `python3 -m collectors.fms_notifications_live
+   stage-state`, run from a residential network; it refuses to stage an
+   empty capture, and records its User-Agent in the manifest (state.gov's
+   edge serves the python-requests UA the challenge page even
+   residentially). Coverage discloses `role:
+   current_presentation_staged`. **Consequences for the battery:** T6/T14
+   take their staged forms (integrity failure / absent manifest are the
+   typed refusals), old B6 ("State unavailable still publishes") is
+   superseded — a live outage is impossible in CI and an integrity failure
+   fails closed — and M5 becomes the ok-with-zero impossibility proof.
+   New C2/C3 pin the incomplete-capture and empty-capture refusals.
+
+2. **§5 country precedence is a FALL-THROUGH, not a surface election.**
+   Production 26-13: the DSCA certification press release parses no
+   title-prefix country, and the engine's `elif` discarded the FR annex's
+   "Kingdom of Saudi Arabia", publishing `customer_country: null` on the
+   flagship canary. A higher-precedence surface's None now falls through
+   to the next surface (new C1 test). `capability_title` remains
+   web-only per §4.
+
+3. **Push-race note (lane design, unchanged):** `fms-acquire.yml`'s
+   commit-back step (a faithful mirror of `dod-budget-acquire.yml`) lost
+   `git push HEAD:main` once to the wire lanes' cadence (run 32952963771,
+   non-fast-forward rejection; the re-dispatch 32953625355 landed
+   9e777ad2145c). No retry loop was added — that would be a two-lane
+   design change; re-dispatch after a diagnosed race is the house remedy.
+   Flagged in the Sol return.

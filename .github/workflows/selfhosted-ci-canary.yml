@@ -80,6 +80,21 @@ jobs:
           cp scripts/resolve_ci_canary_ref.py \
              scripts/select_ci_canary_packs.py \
              "$RUNNER_TEMP/ci-canary-control/"
+          mkdir -p "$RUNNER_TEMP/ci-canary-compare-control/scripts"
+          cp scripts/__init__.py \
+             scripts/compare_ci_canary_receipts.py \
+             scripts/ci_semantic_proof.py \
+             "$RUNNER_TEMP/ci-canary-compare-control/scripts/"
+      # Publish the immutable main-defined comparator before checking out or
+      # executing any candidate-authored code. The package-shaped bundle is
+      # runtime-complete without a repository checkout in the compare jobs.
+      - name: publish trusted receipt comparator
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-compare-control
+          path: ${{ runner.temp }}/ci-canary-compare-control
+          if-no-files-found: error
+          retention-days: 14
       - id: ref
         name: resolve an immutable trusted candidate
         env:
@@ -582,12 +597,13 @@ jobs:
             test "$NEGATIVE" = success
             test "$CONTAMINATION" = success
           fi
-      - uses: actions/checkout@v4
+      # Receipt comparison needs one trusted helper, not a multi-gigabyte
+      # repository worktree. The planner published this helper from the
+      # main-defined control checkout in the same run.
+      - uses: actions/download-artifact@v4
         with:
-          ref: ${{ needs.plan.outputs.control_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+          name: ci-canary-compare-control
+          path: ${{ runner.temp }}/control
       - uses: actions/download-artifact@v4
         with:
           name: ci-canary-hosted-${{ matrix.pack }}
@@ -611,7 +627,7 @@ jobs:
       # itself.
       - name: compare logical jobs, failures, receipts, and semantic fragments
         run: |
-          python3 scripts/compare_ci_canary_receipts.py \
+          python3 "$RUNNER_TEMP/control/scripts/compare_ci_canary_receipts.py" \
             --hosted "$RUNNER_TEMP/hosted/hosted-receipt.json" \
             --selfhosted "$RUNNER_TEMP/selfhosted/selfhosted-${{ matrix.pack }}.json" \
             --hosted-fragment "$RUNNER_TEMP/hosted/hosted-fragment.json" \

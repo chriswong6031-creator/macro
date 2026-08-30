@@ -13,6 +13,8 @@ from pathlib import Path
 
 import yaml
 
+from scripts.workflow_run_source import resolve_run_source
+
 ROOT = Path(__file__).resolve().parents[1]
 DAILY = ROOT / ".github" / "workflows" / "daily.yml"
 PROPHET_STEP = "Prophet nightly (plan refresh + ledger advancement; R2 after checkpoint)"
@@ -32,7 +34,13 @@ HEATMAP_CAP_STEP = "S&P 500 heatmap real-cap reference (weekly Polygon refresh; 
 
 def _engine_steps() -> list[dict]:
     doc = yaml.safe_load(DAILY.read_text(encoding="utf-8"))
-    return doc["jobs"]["engine"]["steps"]
+    steps = doc["jobs"]["engine"]["steps"]
+    # 512KB-cap diet: some bodies live in scripts/ci/ — resolve the effective
+    # source so these assertions keep reading what the step actually runs.
+    for step in steps:
+        if isinstance(step.get("run"), str):
+            step["run"] = resolve_run_source(step["run"], ROOT)
+    return steps
 
 
 def _step(name: str) -> dict:

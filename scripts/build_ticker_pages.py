@@ -1910,7 +1910,15 @@ def _range52(price: Any, bars: list) -> dict | None:
         if hi <= lo:
             return None
         pos = max(0.0, min(100.0, (p - lo) / (hi - lo) * 100.0))
-        return {"lo": _px(lo), "hi": _px(hi), "pos_pct": round(pos, 1)}
+        # lo_raw/hi_raw are the unformatted bounds. The hero price now repaints
+        # from a live quote, and a bar left at its baked position would place
+        # the NEW price at the OLD point on the scale — the one element whose
+        # whole job is "where in the range are we" answering it wrong. The
+        # client needs numbers to recompute against; lo/hi are display strings.
+        return {
+            "lo": _px(lo), "hi": _px(hi), "pos_pct": round(pos, 1),
+            "lo_raw": round(lo, 4), "hi_raw": round(hi, 4),
+        }
     except Exception:  # noqa: BLE001
         return None
 

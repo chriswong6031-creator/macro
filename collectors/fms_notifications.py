@@ -44,7 +44,7 @@ OBSERVATION_KINDS = (
     "listing_article", "certification_pdf", "fr_raw_text",
     "fr_correction", "retraction_observed",
 )
-TRANSPORTS = ("cli", "browser_in_page_fetch_staged")
+TRANSPORTS = ("cli", "browser_in_page_fetch_staged", "cli_residential_staged")
 
 
 # ---------------------------------------------------------------------------

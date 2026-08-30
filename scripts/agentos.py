@@ -96,6 +96,7 @@ _BRIEF_MARK = _ROOT / "data" / "governance" / ".ceo_brief_last"
 STATE_SCHEMA = "agent_os_state.v1"
 BRIEF_SCHEMA = "ceo_brief.v1"
 READINESS_SCHEMA = "agentos.readiness.v1"
+PROGRAM_REGISTRY_SCHEMA = "agentos.program_registry.v1"
 
 # Sibling checkouts, resolved by walking up from this repo.  Macro is this checkout; the
 # other two are separate clones under the shared project home.  Absent is NORMAL (I4).
@@ -116,6 +117,10 @@ WAVE_STATUS = {"todo", "in_progress", "awaiting_ci", "done", "dropped"}
 CLASSES = {"research", "build", "design", "adjudication", "mechanical"}
 BLAST = {"reversible", "user_facing", "irreversible"}
 AMBIGUITY = {"specified", "scoped", "open"}
+# A typed intentional wait (R8-B1).  CLOSED on purpose: an open vocabulary would let
+# each author mint a private reason, and "why is this still" would need a parser again.
+WAIT_KINDS = {"natural_evidence", "external_dependency", "calendar_window", "external_action"}
+WAIT_FIELDS = {"kind", "review_after", "condition"}
 CONFIDENCE_DEC = {"high", "medium", "low"}
 CONFIDENCE_DSC = {"verified", "probable", "suspected"}
 REVERSIBILITY = {"easy", "costly", "one_way"}
@@ -204,6 +209,68 @@ def _load_programs() -> set[str] | None:
     return None
 
 
+def _load_program_registry(path: Path = _PROGRAMS) -> dict[str, Any]:
+    """Return the bounded semantic-program projection without changing legacy joins."""
+    source = "config/mastermind_programs.yml"
+
+    def unavailable(reason: str) -> dict[str, Any]:
+        return {
+            "schema": PROGRAM_REGISTRY_SCHEMA,
+            "available": False,
+            "reason": reason,
+            "source": source,
+            "programs": [],
+        }
+
+    if not path.exists():
+        return unavailable("program_registry_unavailable")
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except UnicodeDecodeError:
+        return unavailable("program_registry_malformed")
+    except OSError:
+        return unavailable("program_registry_unavailable")
+    except yaml.YAMLError:
+        return unavailable("program_registry_malformed")
+
+    if not isinstance(doc, dict) or doc.get("schema") != "mastermind_programs.v1":
+        return unavailable("program_registry_malformed")
+    ontology = doc.get("ontology")
+    programs = doc.get("programs")
+    if not isinstance(ontology, dict) or not isinstance(programs, dict):
+        return unavailable("program_registry_malformed")
+    if any(not isinstance(key, str) or not key.strip() or key != key.strip() for key in programs):
+        return unavailable("program_registry_malformed")
+    lifecycle_values = ontology.get("lifecycle_states")
+    if not isinstance(lifecycle_values, list) or not lifecycle_values:
+        return unavailable("program_registry_malformed")
+    if any(not isinstance(value, str) or not value.strip() for value in lifecycle_values):
+        return unavailable("program_registry_malformed")
+    lifecycle = set(lifecycle_values)
+
+    rows: list[dict[str, str]] = []
+    for key in sorted(programs):
+        row = programs[key]
+        if not isinstance(row, dict):
+            return unavailable("program_registry_malformed")
+        projected: dict[str, str] = {}
+        for field in ("name", "lifecycle_state", "scope", "kind", "category"):
+            value = row.get(field)
+            if not isinstance(value, str) or not value.strip():
+                return unavailable("program_registry_malformed")
+            projected[field] = value
+        if projected["lifecycle_state"] not in lifecycle:
+            return unavailable("program_registry_malformed")
+        rows.append({"key": key, **projected})
+
+    return {
+        "schema": PROGRAM_REGISTRY_SCHEMA,
+        "available": True,
+        "source": source,
+        "programs": rows,
+    }
+
+
 # ---------------------------------------------------------------- helpers
 
 
@@ -248,6 +315,103 @@ def _date(rec: dict[str, Any], field: str, path: Path, out: list[Problem]) -> No
                 hard=True,
             )
         )
+
+
+def _is_review_date(value: Any) -> bool:
+    """``review_after`` is date-ONLY.  A timestamp reads as an instant something fires;
+    this is the date a HUMAN looks again, so the finer resolution would be a lie."""
+    if isinstance(value, _dt.datetime):
+        return False
+    if isinstance(value, _dt.date):
+        return True
+    if not isinstance(value, str) or not ISO_DATE_RE.match(value):
+        return False
+    try:
+        # Shape is not enough: '2026-13-45' matches the pattern and is not a day.
+        _dt.date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _check_wait(rec: dict[str, Any], where: str, path: Path, out: list[Problem]) -> None:
+    """Validate one authored ``wait`` — the same contract at workstream and wave scope.
+
+    A wait says inactivity here is DELIBERATE and names the date its author will look
+    again.  It is testimony, not machinery: nothing in this file schedules, wakes, gates
+    or completes on it (I1), and ``condition`` is never parsed — it is opaque human
+    context, read only by a reader.  Absence is never inferred to mean anything.
+    """
+    wait = rec.get("wait")
+    if wait is None:
+        return
+    if not isinstance(wait, dict):
+        out.append(Problem(path, "bad-wait", f"{where}'wait' must be a mapping", hard=True))
+        return
+    unknown = sorted(set(wait) - WAIT_FIELDS, key=str)
+    if unknown:
+        out.append(
+            Problem(
+                path,
+                "bad-wait",
+                f"{where}'wait' carries unknown field(s) "
+                f"{', '.join(repr(name) for name in unknown)}; the contract is closed to "
+                f"{', '.join(sorted(WAIT_FIELDS))}",
+                hard=True,
+            )
+        )
+    kind = wait.get("kind")
+    if not isinstance(kind, str) or kind not in WAIT_KINDS:
+        out.append(
+            Problem(
+                path,
+                "bad-wait",
+                f"{where}'wait.kind' is {kind!r}; allowed: {', '.join(sorted(WAIT_KINDS))}",
+                hard=True,
+            )
+        )
+    review_after = wait.get("review_after")
+    if not _is_review_date(review_after):
+        out.append(
+            Problem(
+                path,
+                "bad-wait",
+                f"{where}'wait.review_after' must be a date-only YYYY-MM-DD next-review "
+                f"date, got {review_after!r}",
+                hard=True,
+            )
+        )
+    condition = wait.get("condition")
+    if not isinstance(condition, str) or not condition.strip():
+        out.append(
+            Problem(
+                path,
+                "bad-wait",
+                f"{where}'wait.condition' must be a non-empty string saying what the "
+                f"author will look at",
+                hard=True,
+            )
+        )
+
+
+def _wait_row(rec: dict[str, Any]) -> dict[str, Any] | None:
+    """Project an authored wait for JSON, or None when absent.
+
+    YAML hands back ``review_after`` as a ``date`` OBJECT, which ``json.dumps`` refuses;
+    normalizing to ISO text here is the whole transformation — no clock is read, no
+    remaining time is computed, and nothing is re-derived from the condition.
+    """
+    wait = rec.get("wait")
+    if not isinstance(wait, dict):
+        return None
+    review_after = wait.get("review_after")
+    if isinstance(review_after, _dt.date):
+        review_after = review_after.isoformat()
+    return {
+        "kind": str(wait.get("kind") or ""),
+        "review_after": str(review_after or ""),
+        "condition": str(wait.get("condition") or "").strip(),
+    }
 
 
 def _as_date(value: Any) -> _dt.date | None:
@@ -508,6 +672,7 @@ def check_workstream(rec: dict[str, Any], path: Path, programs: set[str] | None)
     _enum(rec, "ambiguity", AMBIGUITY, path, out)
     _date(rec, "created", path, out)
     _date(rec, "updated", path, out)
+    _check_wait(rec, "", path, out)
 
     repos = rec.get("repos")
     if isinstance(repos, list):
@@ -578,6 +743,7 @@ def check_workstream(rec: dict[str, Any], path: Path, programs: set[str] | None)
                             f"{where} ({wid}) status {wstatus!r}; allowed: "
                             f"{', '.join(sorted(WAVE_STATUS))}", hard=True)
                 )
+            _check_wait(wave, f"{where} ({wid}) ", path, out)
             deps = wave.get("depends_on") or []
             wave_graph[wid] = [d for d in deps if isinstance(d, str)]
         for wid, deps in wave_graph.items():
@@ -1414,6 +1580,7 @@ def build_records(
                 "next_action": wave.get("next_action"),
                 "prs": wave_prs,
                 "done_at": done_at,
+                "wait": _wait_row(wave),
             })
 
         if status == "active" and waves and all(
@@ -1500,6 +1667,7 @@ def build_records(
             "depends_on": _refs(rec.get("depends_on"), "WS"),
             "blocked_by": blocked_by,
             "waves": rollup,
+            "wait": _wait_row(rec),
             "wave_detail": wave_detail,
             "prs": pr_rows,
             "claim": claim_row,
@@ -1762,6 +1930,8 @@ def build_state(
         if not problem.hard:
             warnings.append(problem.render(_ROOT))
 
+    program_registry = _load_program_registry(_PROGRAMS)
+
     age_hours: float | None = None
     stamp: str | None = None
     if builds:
@@ -1792,6 +1962,7 @@ def build_state(
             "degraded": degraded.items,
         },
         # ---- pure function of the authored records + join inputs ----
+        "program_registry": program_registry,
         "workstreams": records,
         "needs_ceo": [
             # `workstream`, matching blocked/finished/readiness and the documented
@@ -1811,7 +1982,9 @@ def build_state(
     }
 
 
-PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "warnings")
+PURE_SECTIONS = (
+    "schema", "generator", "program_registry", "workstreams", "needs_ceo", "warnings"
+)
 
 
 def pure_section(state: dict[str, Any]) -> dict[str, Any]:
@@ -3090,6 +3263,12 @@ def _wave_line(wave: dict[str, Any], prs: dict[int, dict[str, Any]]) -> str:
         # Fail-OPEN on the PR join: "unknown" is an honest answer, and it is the normal
         # one in a sparse worktree where data/governance/ was never checked out.
         bits.append(f"PR #{number} {joined['state'].upper() if joined else 'unknown'}")
+    wait = _wait_row(wave)
+    if wait:
+        bits.append(
+            f"wait: {wait['kind']} · review_after: {wait['review_after']} · "
+            f"condition: {_flat(wait['condition'])}"
+        )
     if wave.get("next_action"):
         bits.append("next: " + _flat(wave["next_action"]))
     return " · ".join(bits)
@@ -3115,6 +3294,16 @@ def _workstream_excerpt(
         lines.extend(f"  {_wave_line(wave, prs)}" for wave in waves)
     if rec.get("blocked_by"):
         lines.append(f"blocked_by: {_flat(rec.get('blocked_by'))}")
+    wait = _wait_row(rec)
+    if wait:
+        # DECLARED, never inferred, and never executed: the reader is told this quiet is
+        # deliberate and when its author looks again.  `condition` is reproduced as
+        # authored (flattened to one line, never parsed) — reading it is a human's job.
+        lines.append(
+            f"wait (DECLARED INTENTIONAL INACTIVITY — schedules nothing, gates nothing): "
+            f"{wait['kind']} · review_after: {wait['review_after']} · "
+            f"condition: {_flat(wait['condition'])}"
+        )
     needs = rec.get("needs_ceo")
     if isinstance(needs, dict):
         lines.append(f"needs_ceo: {_flat(needs.get('question'))}")
@@ -3173,6 +3362,9 @@ def compile_bundle(
             "task": task,
             "resolution": target["resolution"],
             "candidates": target["candidates"],
+            # Additive, and null when the target declares none — absence of a wait is
+            # never read as a claim that the work is unattended.
+            "wait": None,
         },
         "generated_at": _iso_z(now),
         "repo_sha": _repo_sha(),
@@ -3195,6 +3387,7 @@ def compile_bundle(
     dsc_all = store.of_type("DSC")
     hnd_all = store.of_type("HND")
     rec = ws_all[key]
+    envelope["target"]["wait"] = _wait_row(rec)
     ws_path = store.paths[f"WS/{key}"]
     program = rec.get("program") if isinstance(rec.get("program"), str) else None
     prs = _pr_index(builds)
