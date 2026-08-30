@@ -1,156 +1,154 @@
 ---
 workstream: WS:CHAIRMAN-CONTROL-ROOM
-session: sol/project-workroom-fabric-pro-continuation-20260829
+session: sol/ai-operating-hub-project-workroom-continuation-20260830
 model: sol-pro
 ended_because: continuation
 mission: >
-  Keep the Federated Project Workroom architecture, research corpus and organizational records current
-  against protected Mastermind; recover exact predecessor lanes instead of duplicating them; and leave
-  the next implementation boundary recoverable without creating another control plane.
+  Advance the Federated Project Workroom / AI Operating Hub program from protected architecture into
+  accepted research, current durable memory and the first pure implementation prerequisite, without
+  creating another lifecycle, task/project database, queue, retry/session registry, watcher plane,
+  synchronizer or SaaS/runtime authority.
 state_before: >
-  #240/#242 were internally coherent but three protected commits behind current Mastermind. Their
-  current-source record still treated draft #245 as an open blocker and did not include protected
-  watcher procedure #248 or AD-DLG2 #253. #228 had an existing exact TRACE repair child but no final
-  child ACK after rebind. Live Linear still contained no Initiatives or memberships. #6661 was behind
-  current Macro main and carried stale source/carrier/dependency facts.
+  Protected architecture #273 existed, but WR-R0 still lived on closed-draft lineage and lacked a
+  current protected release. Agent OS PR #6661 still named draft #240/#242 and obsolete predecessor
+  order. Executive Steward #228 had green implementation bytes but incomplete discriminating evidence
+  and an unexplained third test path. Initiative compiler #6658 had a valid hosted-green 7/52/2 result
+  but remained stale against Macro main. Linear remained 0 Initiatives / 50 Projects / 0 memberships.
 changed:
-  - path: mastermind:PR #240 / sol/project-workroom-fabric-20260829
+  - path: mastermind:PR #285 / sol/project-workroom-wr-r0-20260829
     what: >
-      History-preservingly merge protected Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5
-      into the same architecture branch. Exact current head is
-      a4712dbb3391b1d5d467f9f32244402bfcaf54dc. Fresh compare is ahead-only/behind_by=0 and exactly
-      five records-only files. Only the current-source record changed; the four frozen architecture,
-      rollout and amendment blobs were preserved.
-  - path: mastermind:PR #242 / sol/project-workroom-wr-r0-20260829
+      Reconciled closed draft #242 into one non-draft same-operation release transport. Preserved the
+      same branch and all seven WR-R0 research/fixture blobs byte-identically across protected-source
+      movement. Accepted exact head 324f5889ade509adcd430448b6e264a21914b129 and merged as
+      e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9 on protected Mastermind
+      e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9 after fresh current-base CI and immutable-head Sol review.
+  - path: mastermind:PR #242
     what: >
-      History-preservingly restack the same WR-R0 child onto #240 current head. Exact current head is
-      b2b9d26a20eaad3b889341bd7111a464fd68edea. Fresh parent-to-child compare is behind_by=0 and
-      exactly seven research/fixture files, with all child blob identities preserved.
-  - path: mastermind:PR #248
-    what: >
-      Record watcher continuation procedure as protected at
-      0604158caca9e3b8a43ec57dd36ca4dadf05198b. Draft #245 is historical metadata/evidence only and
-      no longer an open Workroom release predecessor.
-  - path: mastermind:PR #253
-    what: >
-      Record AD-DLG2 canonical dialogue-parent source as protected at
-      e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5. Capability remains
-      BUILT_NOT_PROVEN / PRODUCTION_DISARMED pending live Slack and return-projection integration.
+      Closed unmerged as draft metadata history after the connector Draft-to-Ready attempt was
+      read-back reconciled to effect NONE. No retry, duplicate research operation or replacement
+      evidence corpus was created.
   - path: mastermind:PR #228
     what: >
-      Preserve the existing exact two-file Steward carrier at
-      48307d714e155ac7e96c3918e3dba59aa17f132a and exact TRACE repair child
-      `ocr6-steward-filter-integrity-repair-20260829-trace-001` on parent
-      C0BSBM78V1N/1788046478.879279. No replacement child, receiver, branch or PR was created.
+      Reviewed exact head 77e227ca42d45a6f62e2d10485f39a1a5d7ecf7c. The full-family grouping
+      correction is directionally correct, but release remains blocked by incomplete symmetric /
+      unfiltered / mutation evidence and a third test path outside the accepted two-path commission.
+      Posted GitHub REQUEST_CHANGES review 5061720061 and returned the exact repair to ORION's existing
+      principal carrier C0BSBM78V1N/1788021396.660909 at message 1788119179.417839. No old TRACE child
+      was revived.
+  - path: macro:PR #6658 / sol/linear-initiative-plan-task2-20260829
+    what: >
+      Consumed the valid Claude3 RESULT on exact sticky session
+      929cd922-5c25-409b-a9a5-2617b397c88e. Because current Macro main advanced beyond exact head
+      7d704742201c7d96bcab39b36908110439f0eeab, posted one same-thread SOL REQUEST_REPAIR /
+      CONTINUE at C0BSBM78V1N/1788070851.103079 message 1788119481.184509. The worker must
+      history-preservingly reconcile the same five-path carrier to action-time main and return fresh
+      exact-head hosted proof. No new PR, worker or operation was created.
   - path: linear live estate
     what: >
-      Fresh connected read still proves zero Initiatives, 50 visible Projects and zero Initiative
-      memberships. Workrooms therefore remain held; desired Initiative policy is not live readback.
+      Fresh connected read still proves zero Initiative objects, 50 visible Projects and zero
+      Initiative memberships. The accepted desired strategy is seven Initiatives, 52 strategic
+      memberships and two unassigned exceptions; live apply remains a separate future operation.
+  - path: slack:T0BRD2AQXQV/C0BTQ71QEA0
+    what: >
+      Fresh readback preserves the existing discovery: effect APPLIED, product INERT / UNMANAGED /
+      NOT A WORKROOM; one creator member and creator-join event only. No retry, adoption, marker,
+      surface or cleanup mutation occurred.
   - path: macro:PR #6661 / sol/project-workroom-fabric-agentos-20260829
     what: >
-      Reconcile the same three-file Agent OS carrier to current Macro main and refresh the decision
-      and this handoff with exact protected, #240/#242, #228, Linear and #6658 facts. Preserve the
-      inert-channel discovery byte-identically.
+      Preserve the same three-record Agent OS carrier. Rewrite only the stale decision and handoff
+      against final protected #273/#285 identities and current #228/#6658/Linear facts; preserve the
+      inert-channel discovery blob 30e9600818e57f851c9047f138add80999fe7f67 byte-identically.
 verified:
-  - claim: Current protected procedure is atomically pinned.
-    command: >
-      Read protected Mastermind master and INDEX/COLD_START/RECONCILE_STATE/COMMISSION_WAVE/
-      WORKER_AVENUE_ROUTING/WATCHER_ACTION_LOOP/REVIEW_RETURN/CLOSEOUT plus universal source laws at
-      one exact SHA.
+  - claim: Protected Workroom architecture is canonical.
+    command: Read protected Mastermind design/rollout and PR #273.
     result: >
-      Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5; Skillpack
-      mastermind.sol_skillpack.v1 v1.0.1/bootstrap-major 1.
-  - claim: #240 is current-base and records-only.
-    command: Compare protected e3d1fe6 to #240 a4712dbb and enumerate files.
+      #273 merged as 8f0babf473e6e4e8efce697014bd48c594227d94; capability remains SPEC_ONLY /
+      RECORDS_ONLY.
+  - claim: WR-R0 exact release is current-base and research-only.
+    command: Compare protected e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9 to accepted #285 head 324f5889ade509adcd430448b6e264a21914b129, enumerate paths and read CI.
     result: >
-      ahead-only, behind_by=0, exactly five Workroom records; no runtime/config/app/credential effect.
-  - claim: #242 is zero-behind exact #240 and research-only.
-    command: Compare #240 a4712dbb to #242 b2b9d26a.
+      behind_by=0; exactly seven research/fixture paths; exact-head required CI 33331875033 SUCCESS;
+      immutable-head Sol review 5061768085 PASS; expected-head squash merge e19ef1c54 landed; no
+      production code/app/credential/runtime/Slack/Linear writer.
+  - claim: WR-R0 deterministic/resource invariants still hold.
+    command: Recompute Workroom refs and resource hash; re-read direct Linear/Slack/Agent OS facts.
     result: >
-      ahead-only, behind_by=0, exactly seven WR-R0 research/fixture paths.
-  - claim: Protected movement is understood.
-    command: Read #248/#253 and compare protected b8f7414e to e3d1fe6.
+      Six refs match the frozen domain rule; digest
+      4464bdf459e3d795aaca6305baad016ecbbf03511d58704ea9748eb75aaef18a;
+      six exact Linear URLs match; Control Room URLs remain null; BioCatalyst canonical parked defeats
+      Linear In Progress; oracle remains 6 policy / 0 planning / 0 apply / 6 shadow / 6 held / 0 actions.
+  - claim: #228 is not release-ready despite green CI.
+    command: Review exact diff, source grouping order and focused tests at head 77e227ca.
     result: >
-      Protected movement is watcher procedure/bootstrap plus AD-DLG2 source/test paths. Neither makes
-      exact wake, live Agent Relay, return projection or a Project Workroom PROVEN_LIVE.
-  - claim: #228 has one recoverable existing repair carrier.
-    command: Read #228, exact child thread 1788046478.879279 and TRACE principal lane.
+      Grouping correction exists, but required symmetric/unfiltered/mutation matrix is incomplete and
+      path scope widened from two to three without an explicit ruling. REQUEST_CHANGES remains
+      controlling.
+  - claim: #6658 has one exact recoverable worker/carrier.
+    command: Read complete Slack thread C0BSBM78V1N/1788070851.103079 and current GitHub PR.
     result: >
-      Same two-file branch/head remains; exact TRACE task is alive with aggregate watcher; final child
-      rebind exists but child ACK/WATCH_ARMED/START remains unobserved. Replacement is forbidden.
-  - claim: Current Linear Initiative state is exact.
-    command: List all Initiatives and all 50 visible Projects with Initiative parents.
-    result: Zero Initiative objects; 50 Projects; every Project has no Initiative membership.
-  - claim: Existing Slack remote effect is unchanged.
-    command: Preserve prior exact channel readback for C0BTQ71QEA0.
+      Original Claude3 sticky session returned a valid hosted-green RESULT on exact same branch; new
+      nonterminal repair edge requires only current-main reconciliation/fresh proof on that carrier.
+  - claim: WR-P0 direct prerequisites are correctly separated from downstream Steward.
+    command: Read protected Workroom rollout dependency graph and MAS-235.
     result: >
-      Channel create APPLIED; object remains public, unarchived, empty and INERT/UNMANAGED/NOT A
-      WORKROOM. No mutation occurred in this continuation.
+      WR-P0 depends on accepted WR-R0 plus accepted/landed Initiative compiler and normalized
+      post-apply readback. OCR-6 is a downstream WR-STEW/pilot prerequisite, not a pure-planner
+      start prerequisite.
 unverified:
-  - claim: #228 filtered-ambiguity repair is complete and protected.
+  - claim: #228 repair is accepted/protected.
     what_would_verify: >
-      Exact TRACE child ACK/WATCH_ARMED/START, RED-first regressions, minimal same-two-file repair,
-      current-base exact-head CI/security, independent review, RESULT, explicit Sol STOP and expected-
-      head release.
-  - claim: #240 is protected source law.
+      Same-carrier two-path reconciliation, complete symmetric/unfiltered tests, discriminating
+      mutation proof, current-base exact-head CI/security, final Sol review and expected-head merge.
+  - claim: #6658 is current-main accepted/landed.
     what_would_verify: >
-      #228 protects; then-current Skillpack is reloaded; #240 remains current-base or reconciles only
-      later material movement; exact five-file CI and final Sol source-law review pass; functional
-      non-draft same-branch release merges exact accepted head.
-  - claim: #242 WR-R0 is accepted/protected.
+      Original sticky Claude3 session returns a new same-carrier immutable head, exact five-path
+      current-main comparison, focused/owner/trigger/unrun proof and hosted pack evidence; then final
+      Sol review and merge.
+  - claim: Linear Initiative architecture is live.
     what_would_verify: >
-      #240 protects; same #242 branch retargets to protected master; exact seven-file current-base CI,
-      JSON/method/scope/effect/resource review and Sol acceptance pass.
-  - claim: #6661 Agent OS records are protected.
+      Separately authorized write operation creates/reconciles seven exact Initiatives, required
+      Projects and 52 exact memberships while preserving two exceptions, then returns normalized
+      idempotent readback and zero-mutation second plan.
+  - claim: WR-P0 pure planner is built.
     what_would_verify: >
-      Final accepted #240/#242 SHAs and then-current Macro main are read; Agent OS validate, fences/CI,
-      final review and expected-head merge pass.
-  - claim: Initiative inputs are ready for WR-P0.
+      After #6658 and Initiative post-apply readback are accepted, one fresh bounded Macro carrier
+      delivers the frozen four-file-or-minimal-CI planner with RED-first, deterministic, hostile and
+      current-estate proof.
+  - claim: Any real Slack Project Workroom exists.
     what_would_verify: >
-      #6658 same-carrier health, duplicate-Watchlist and CI-owner blockers close/land and a separately
-      authorized Initiative apply returns normalized post-apply readback with exact IDs, memberships
-      and semantic hashes.
-  - claim: Any live Workroom product exists.
-    what_would_verify: >
-      Separately admitted and accepted WR-P0, Projector/app, exact channel canary, Home/Radar,
-      multi-Workroom Relay, dialogue/Linear/Steward joins and real multi-operator production proof.
+      Separately accepted Projector/app/credential, exact channel canary, Home/Radar, Relay/Linear/
+      Steward joins and real multi-operator production proof.
 unresolved:
-  - "#228 exact TRACE repair child remains the live predecessor and has not yet produced final child ACK/START."
-  - "#240 is current-base and CI-running but remains DRAFT/HOLD until #228 protects and final source-law review passes."
-  - "#242 is zero-behind #240 and CI-running but remains stacked/DRAFT/HOLD."
-  - "#6658 remains unaccepted and no current worker ownership was proven; live Linear has no Initiatives or memberships."
-  - "Slack public-channel census remains incomplete; authoritative create is illegal."
+  - "#228 is release-blocked and belongs to its current ORION repair lineage."
+  - "#6658 is awaiting the original sticky Claude3 session's same-carrier current-main repair result."
+  - "Linear remains 0/50/0; no Initiative or membership write is authorized from this records work."
+  - "Authoritative Slack public-channel absence is still unproven; WR-P0 must fail closed."
   - "No Workroom-safe Control Room URL exists."
-  - "Standalone Canvas/app/paid-plan/access readback remains unproven until a dedicated canary."
-  - "Channel C0BTQ71QEA0 must not be retried, adopted or cleaned without new exact WR-C0 authority."
+  - "Standalone Canvas/app/paid-plan/access behavior remains unproven until dedicated later canaries."
+  - "Channel C0BTQ71QEA0 must not be retried, adopted or cleaned without explicit WR-C0 authority."
 next_actions:
-  - "Recover the existing exact #228 TRACE child; do not mint a replacement."
-  - "After #228 protects, reload then-current Skillpack and complete final #240 exact-current-base review/release."
-  - "Retarget/prove #242 and validate exact Canvas/effect/resource contracts."
-  - "Finalize #6661 with accepted #240/#242 SHAs."
-  - "Reconcile the existing #6658 owner; if no lawful existing owner remains, place one fresh bounded Terra-class child on the same PR only after authority/collision gates."
-  - "After #6658 acceptance, run separately authorized Initiative apply/readback."
-  - "Keep WR-P0 Todo/NOT_BUILT/WAITING_DEPENDENCY until every prerequisite is accepted."
+  - "Reconcile/finalize Macro #6661 on then-current main, preserving the discovery blob exactly."
+  - "Consume the #6658 repair return, final-review/merge the accepted current-main compiler, then run a separate live Initiative apply/readback operation."
+  - "Start WR-P0 only after the Initiative post-apply snapshot/hash gate and a fresh collision-free carrier/receiver."
+  - "Continue #228 repair independently for WR-STEW and the later real pilot; do not make it a false WR-P0 blocker."
 do_not_redo:
-  - "Do not reopen #232/#233/#245, reuse old Workroom operation or create another source carrier."
-  - "Do not replace #228 TRACE child while its exact carrier remains recoverable."
+  - "Do not reopen #232/#233/#240/#242 or create another Workroom architecture/research carrier."
+  - "Do not replace or duplicate the current #228 ORION or #6658 Claude3 operation."
   - "Do not create another workstream, Slack OS, Workroom OS, lifecycle, queue, DB, retry/session/memory plane or synchronizer."
-  - "Do not make Agent Relay a presentation superbot."
-  - "Do not create channels, Initiatives or memberships from WR-P0."
+  - "Do not create Initiatives, memberships or Workrooms from WR-P0 or Agent OS records."
   - "Do not reconstruct URLs or use private provider/chat locators."
   - "Do not use attached write-exposed Canvas as fallback."
-  - "Do not retry ambiguous Canvas/channel effects or use deletion as automatic rollback."
-  - "Do not retry/fail over known inert channel mutation."
+  - "Do not retry ambiguous channel/Canvas effects or use deletion as automatic rollback."
 danger_areas:
   - "Filtered projections must never hide duplicate canonical identities and manufacture uniqueness."
   - "Attached Canvas creation is effect-bearing and write-exposed before access proof."
   - "Linear/chat/local receipts can false-green unmerged work; GitHub remains implementation truth."
   - "Incomplete channel census cannot prove absence."
   - "Slack identity/membership is not Worker or Sol authority."
-  - "Source merge is not host installation, transport or product proof."
-  - "Final Workroom modification must use then-current same-SHA Skillpack, not this handoff alone."
-prs: [240, 242, 233, 6661, 6662, 6658, 238, 239, 248, 246, 253, 228]
-linear: [MAS-231, MAS-233, MAS-235, MAS-236, MAS-220, MAS-221]
+  - "Architecture/research merge is not app installation, live transport or product proof."
+  - "Moving protected/default branches invalidate old release CI until same-carrier current-base proof is renewed."
+prs: [273, 285, 242, 240, 228, 6661, 6658, 6662, 248, 253]
+linear: [MAS-231, MAS-235, MAS-236, MAS-220]
 decisions:
   - DEC:CCR-PROJECT-WORKROOM-FABRIC-ACCEPTED
   - DEC:CHAIRMAN-CONTROL-ROOM-P0-ARCHITECTURE-ACCEPTED
@@ -159,15 +157,13 @@ decisions:
 
 # Return point
 
-Canonical architecture is #240 at `a4712dbb3391b1d5d467f9f32244402bfcaf54dc`, exact-current-base
-and five records only. WR-R0 is #242 at `b2b9d26a20eaad3b889341bd7111a464fd68edea`,
-zero-behind #240 and exactly seven research/fixture paths. #248 and #253 are protected; #228 exact
-TRACE repair is the current predecessor. Live Linear remains 0/50/0. The prior Slack channel effect
-is applied but inert/unmanaged.
+Protected #273 is the canonical Project Workroom architecture/rollout release. WR-R0 is protected
+through #285 at accepted head 324f5889ade509adcd430448b6e264a21914b129 / merge
+e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9. Capability remains architecture
+`SPEC_ONLY / RECORDS_ONLY` plus WR-R0 `RESEARCH / RECORDS_ONLY`; every live Workroom wave remains
+`NOT_BUILT`.
 
-Capability remains `SPEC_ONLY / RECORDS_ONLY`; WR-R0 is research only and every Workroom
-implementation/actuator/runtime wave is `NOT_BUILT`.
-
-Next: finish the existing #228 child and release; final Skillpack reload; prove/release #240;
-retarget/prove #242; finalize #6661. WR-P0 cannot START until #6658 and live Initiative post-apply
-readback are accepted.
+The direct WR-P0 gate is now: accepted/landed #6658 -> separately authorized 7/52/2 Initiative
+apply/readback -> fresh collision-free WR-P0 carrier. #228 continues independently as the downstream
+Steward/pilot prerequisite. Live Linear is still 0/50/0 and exact canary channel C0BTQ71QEA0 remains
+applied but inert/unmanaged.

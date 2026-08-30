@@ -1,5 +1,5 @@
 {
-  "date": "2026-08-29",
+  "date": "2026-08-30",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
@@ -10,17 +10,17 @@
     "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.54,
+      "absorption_pctile": 0.53,
       "n_markets": 6,
-      "absorption_ratio": 0.369,
-      "mean_abs_corr": 0.237,
+      "absorption_ratio": 0.367,
+      "mean_abs_corr": 0.235,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -131,7 +131,7 @@
         0.392,
         0.396,
         0.369,
-        0.369
+        0.367
       ],
       "spark_asof": "2026-08-28"
     },
@@ -178,25 +178,25 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 55.0
+        "pctile": 54.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 67.135,
+        "ratio": 66.842,
         "trend": "mid",
-        "pctile": 28.0
+        "pctile": 27.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.019,
         "trend": "mid",
-        "pctile": 36.0
+        "pctile": 37.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.167,
+        "ratio": 0.172,
         "trend": "mid",
-        "pctile": 34.0
+        "pctile": 40.0
       }
     ],
     "carry": {
@@ -251,8 +251,8 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.292,
-          "t": 4.589,
+          "r": 0.296,
+          "t": 4.576,
           "q": 0.0
         },
         {
@@ -260,23 +260,23 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.306,
-          "t": 4.133,
+          "t": 4.125,
           "q": 0.0
         },
         {
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.263,
-          "t": 3.96,
+          "r": 0.262,
+          "t": 3.951,
           "q": 0.005
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.245,
-          "t": 3.568,
+          "r": 0.244,
+          "t": 3.566,
           "q": 0.015
         }
       ],
@@ -334,7 +334,7 @@
       }
     },
     "shadow": {
-      "pressure_pctile": 0.54,
+      "pressure_pctile": 0.53,
       "incumbent_state": "calm",
       "shadow_state": "calm",
       "escalated": false

@@ -9,8 +9,9 @@ answer: >
   internal Slack Workroom. Linear remains Initiative/Project/selected-Issue human projection; Slack
   remains collaboration and exact dialogue transport; Agent OS remains organizational truth;
   Executive OS remains Job/Attempt/Worker/Event authority; GitHub remains implementation/proof;
-  OCR-6 Steward/Control Room remains present-tense composition. Mastermind PR #240 is the sole
-  architecture/rollout carrier and #242 is its sole WR-R0 research child.
+  OCR-6 Steward/Control Room remains present-tense composition. Protected Mastermind PR #273 is the
+  canonical architecture/rollout release. Mastermind PR #285 is the same-operation WR-R0 research
+  release transport; closed draft #242 is metadata history only.
 rationale: >
   The company problem is blurred ownership and unusable collaboration topology, not a lack of apps.
   #agent-dispatch became a global visual queue, project board and session monitor, while Slack and
@@ -20,8 +21,8 @@ rationale: >
   private Workrooms, fuzzy adoption, write-exposed Home surfaces and broad automatic Linear channel
   creation are not accepted first-wave behavior.
 alternatives:
-  - option: Keep #233 and #240 active
-    why_not: Duplicate operation keys, V1 rules, planner contracts and implementation owner maps.
+  - option: Reopen or retain draft architecture/research carriers #240/#242 as canonical
+    why_not: Their accepted bytes were released through protected #273 and same-branch release #285; reviving drafts creates duplicate metadata/carrier authority.
   - option: Replace Slack/Linear with another project OS
     why_not: Creates another task/project/memory/workflow truth plane beside Agent OS and Executive OS.
   - option: Make Agent Relay a Slack superbot
@@ -32,27 +33,26 @@ alternatives:
       may refuse a channel Canvas. A failed downgrade would leave one unsafe remote object and blind
       fallback would create a second. Automatic deletion is irreversible and can be ambiguous.
 evidence:
-  - "Current outer Chairman directive continues end-to-end Workroom leadership and lawful bounded fanout."
-  - "Protected Mastermind e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5; Skillpack v1.0.1/bootstrap 1."
-  - "Watcher procedure #248 is protected as 0604158caca9e3b8a43ec57dd36ca4dadf05198b; draft #245 is history."
-  - "AD-DLG2 #253 is protected as e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5 at BUILT_NOT_PROVEN / PRODUCTION_DISARMED."
-  - "Executive Steward #228 remains open at 48307d714e155ac7e96c3918e3dba59aa17f132a with one existing exact TRACE repair child."
-  - "Mastermind #240 exact current head a4712dbb3391b1d5d467f9f32244402bfcaf54dc; current-base and exactly five records-only files."
-  - "Mastermind #242 exact current head b2b9d26a20eaad3b889341bd7111a464fd68edea; zero-behind #240 and exactly seven research/fixture files."
-  - "Fresh Linear read: 0 Initiatives / 50 Projects / 0 Initiative memberships."
-  - "Macro #6662 is merged; #6658 remains open with health, duplicate-Watchlist and durable-CI blockers."
-  - "Exact Slack channel C0BTQ71QEA0 exists but is inert/unmanaged/not a Workroom."
-  - "WR-R0 uses exact live Linear Project URLs and the existing linear_portfolio_plan canonical-byte owner."
-  - "Slack documents channel_id Canvas creation with write permission and canvas_not_found as a possible channel-Canvas access-set result."
+  - "Current outer Chairman directive continues end-to-end Workroom leadership and lawful bounded execution."
+  - "Current protected Mastermind e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9; Skillpack v1.0.1/bootstrap-major 1."
+  - "Protected architecture release #273 merged as 8f0babf473e6e4e8efce697014bd48c594227d94."
+  - "WR-R0 release #285 accepted exact head 324f5889ade509adcd430448b6e264a21914b129 and merged as e19ef1c54cc6f2b7bfc652a78bf94a209fcb42b9; exact protected delta is seven research/fixture files."
+  - "Exact-head required CI 33331875033 succeeded and immutable-head Sol review 5061768085 passed before expected-head squash merge."
+  - "Closed draft #240/#242 carriers are metadata history and must not be revived."
+  - "Mastermind #228 exact head 77e227ca42d45a6f62e2d10485f39a1a5d7ecf7c remains BUILT_NOT_PROVEN / RELEASE_BLOCKED after Sol review 5061720061; it is a downstream WR-STEW prerequisite, not a WR-P0 code-start prerequisite."
+  - "Macro #6658 exact head 7d704742201c7d96bcab39b36908110439f0eeab is a hosted-green 7-Initiative/52-membership/2-exception compiler candidate but is stale against current main and has an explicit same-carrier Sol repair continuation."
+  - "Fresh Linear read remains 0 Initiatives / 50 Projects / 0 Initiative memberships."
+  - "Exact Slack channel C0BTQ71QEA0 exists but remains inert/unmanaged/not a Workroom."
+  - "WR-R0 resource digest 4464bdf459e3d795aaca6305baad016ecbbf03511d58704ea9748eb75aaef18a recomputes through the existing canonical-byte owner."
 affects:
   - WS:CHAIRMAN-CONTROL-ROOM
   - MAS-231
-  - MAS-233
   - MAS-235
   - MAS-236
   - mastermind-project-workroom-fabric-20260829-sol-001
-  - mastermindx-market-intelligence/Mastermind#240
-  - mastermindx-market-intelligence/Mastermind#242
+  - mastermind-project-workroom-wr-r0-20260829-sol-001
+  - mastermindx-market-intelligence/Mastermind#273
+  - mastermindx-market-intelligence/Mastermind#285
   - Mastermind Agent Relay / AD-DLG2 / OCR-6 / Linear projector integration boundaries
 confidence: high
 reversibility: costly
@@ -62,9 +62,9 @@ decided_at: 2026-08-29
 
 ## Operational consequence
 
-Use Mastermind #240 as the sole Workroom source-law/rollout carrier and #242 only as its bounded WR-R0
-research child. Do not reopen #232/#233, reuse `project-workroom-convergence-20260829-sol-001`, or
-start code from MAS-220/MAS-221.
+Use protected #273 as the sole Workroom architecture/rollout source and protected #285 as the bounded
+WR-R0 platform/estate research release. Do not reopen #232/#233/#240/#242, reuse
+`project-workroom-convergence-20260829-sol-001`, or start code from MAS-220/MAS-221.
 
 The canonical V1 is projector-created `PUBLIC_INTERNAL` Workrooms, exact marker/channel identity,
 flat bounded bookmarks, standalone-first app-owned channel-read-only static Home when proven,
@@ -75,18 +75,21 @@ access readback binds to the exact Canvas and forbids a second create. `canvases
 canary/accepted-cleanup-only, never automatic rollback. If standalone creation is unavailable, Home is
 a typed unavailable surface; write exposure is not fallback.
 
-WR-P0 remains `NOT_BUILT`. It lives in Macro and consumes accepted `linear_portfolio_plan.v1`, accepted
-Initiative plan plus normalized live readback, complete Slack snapshot, static policy and read-only
-navigation-resource snapshot. Exact observed Linear URLs require Project-ID agreement and strict
-safe-URL validation. No Workroom-safe Control Room URL exists, so its bookmark remains missing rather
-than guessed or sourced from private provider/chat bindings.
+WR-P0 remains `NOT_BUILT`. Under the protected rollout dependency graph it may start only after WR-R0
+is protected, Macro #6658 is accepted/landed, the separately authorized Initiative apply returns an
+accepted normalized post-apply snapshot/readback, current Macro paths are collision-free and a fresh
+bounded WR-P0 carrier/receiver is established. WR-P0 consumes accepted `linear_portfolio_plan.v1`,
+accepted Initiative plan plus normalized live readback, complete Slack snapshot, static policy and
+read-only navigation-resource snapshot. It does not reimplement Project/Initiative ownership or write
+Slack/Linear.
 
-The initial six candidates are `SHADOW` and never apply-eligible. BioCatalyst is a required negative
-control: canonical Agent OS `parked` defeats Linear `In Progress` and emits zero normal Workroom actions.
+The initial six candidates remain `SHADOW` and never apply-eligible. BioCatalyst is the required
+negative control: canonical Agent OS `parked` defeats Linear `In Progress` and emits zero normal
+Workroom actions.
 
-Current release order is #228 exact repair/release, #240 architecture, #242 research, #6661 durable
-records, then #6658 plus live Initiative apply/readback before WR-P0. Protected #248 and #253 are
-prerequisites, not remaining release blockers.
+OCR-6 Steward #228 is a downstream prerequisite for WR-STEW and the real pilot/current-state
+composition. It must be repaired and released on its same carrier, but it is not a reason to keep the
+pure WR-P0 compiler unbuilt once its own direct prerequisites are satisfied.
 
 Do not create `WS:PROJECT-WORKROOMS`, Slack OS, Workroom OS, another lifecycle, project/task database,
 queue, watcher store, retry plane, session registry, memory plane, synchronizer or provider router.

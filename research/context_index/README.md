@@ -2,11 +2,57 @@
 
 ## Version
 
-v1.5 — question set extended 2026-07-20, 104 questions (CTX-001..CTX-104); 8 new
-comprehension rows (CTX-097..CTX-104) per CXI-R18 site-semantics glossary charter.
-Prior rows and grading rules unchanged.
+v1.6 — C0 Benchmark Truth Recovery source-audit pass 2026-08-28 (Sol operation
+`macro-context-index-completion-20260828-sol-001`); 104 questions (CTX-001..CTX-104),
+6 rows amended with receipts below, no rows added or removed.
 
 ### Amendment log
+
+- **v1.6 (2026-08-28, adjudicated, C0 Benchmark Truth Recovery — full 104-row
+  source audit + metric repair):** all 104 rows audited against current sources
+  (macro `24ccea3fe482`; terminal `b1b21a17f843` and mastermind `e2092cb62355` via
+  clean detached worktrees at fresh origin heads — the occupied local checkouts
+  were stale/dirty and were not used as truth). Six rows amended:
+  **CTX-067** and **CTX-069** (stale negatives — CXI-W1 shipped what they declared
+  nonexistent: `scripts/context_index_query.py` and `config/context_index.yml`;
+  regolded to positive `current_state`/`location` rows requiring those sources);
+  **CTX-095** (stale negative — Terminal gained a committed positions ledger
+  2026-08-13 (#408): `portfolio_positions` migration + `terminal/lib/portfolio.ts`
+  CRUD + `/portfolio` route; regolded to `current_state` requiring `portfolio.ts`;
+  execution-level fills do not exist — the required two-part answer is "positions
+  ledger yes; execution fills no");
+  **CTX-012** (`forbidden`→`superseded`: the CXI-R12 KILL-PARALLEL-KNOWLEDGE-BASE
+  kill was OVERRULED/LIFTED by Chairman ruling 2026-08-12, row retained in §1 as
+  history with "do not cite it to reject a proposal"; presence-only per CXI-R17c);
+  **CTX-091** (required source was a terminal doc that was NEVER merged to master —
+  exists only on archival branch `claude/root-recovery-20260809`; regolded to the
+  surviving in-corpus authority `ingest/pull_macro_intel.py`, which carries the
+  manifest-ETag root cause and fix); **CTX-087** (notes-only: `model_slice()` line
+  citation 306→622 against current terminal head). Adjudicated NO-CHANGE:
+  CTX-010/CTX-082 (the `superseded`-label-vs-§1-section layering is exactly what
+  CXI-R17c ratified — presence-only grading; `superseded` is a benchmark enum
+  value, not a DO_NOT_REBUILD section name). The 15 memory-overlay rows
+  (`visibility: private`, project macro-dashboard, `memory://` sources) are
+  untouched: the CXI-4 memory overlay is NOT_BUILT, so they fail/degrade honestly
+  in private runs — failures are never counted as pass. Family-count correction:
+  the v1.5 Families table was stale (CTX-094's v1.2 negative→contract regold was
+  never reflected); true pre-amendment counts were negative_control 12/contract 8.
+  Post-v1.6 histogram: 70 active / 14 forbidden / 8 killed / 3 superseded /
+  9 no_answer. Negative-control family is now 9 rows (12→9 via the three stale-
+  negative corrections); authoring replacement negatives is deferred to Sol.
+  **Metric repair (same pass, evaluator only — no retrieval change):** the gate
+  formerly labelled "Governance A0/A1 precision" was governance-family row
+  pass-rate; it is now reported as an ungated informational line "Governance
+  recall (row pass-rate)", and the ≥95% gate binds to TRUE micro-averaged
+  precision of A0/A1 results (TP = top-10 A0/A1 result matching the row's
+  required/acceptable sources; NOT-MET when zero A0/A1 results). A new explicit
+  gate "Negative-control (no-answer) accuracy ≥90%" is added. Rows whose owning
+  project DB is missing are NOT-EVALUATED (never pass, no_answer rows included)
+  and force the global promotion gate plus any covering adjudication, governance,
+  or negative-control gate to NOT-MET; rows outside the requested run scope do
+  not trigger that rule;
+  each row is evaluated against exactly its owning project's DB (CXI-R16); run
+  headers now record repo SHA + dirty flag alongside index SHA per project.
 
 - **v1.5 (2026-07-20, CXI-R18 — site-semantics glossary + comprehension family):** 8 new
   comprehension rows (CTX-097..CTX-104) appended covering the four highest-traffic pages
@@ -138,8 +184,16 @@ Promotion gates (from research/MACRO_CONTEXT_INDEX_ADJUDICATION_BY_FABLE.md CXI-
 
 - Global: >=90% Recall@10 across all 104 rows (shared-visibility rows only for the baseline run).
 - Adjudication-replay family: >=90% Recall@10 on rows with `family: adjudication_replay`.
-- Governance precision: >=95% precision on A0/A1 governance answers (A0 = CLAUDE.md; A1 = configs/ruling-graph/kill-registry).
-- Cross-repo block (CTX-082..CTX-096): evaluated separately with Terminal and Mastermind projects opted-in; reported as a distinct family block in the eval report (CXI-R16).
+- Governance A0/A1 precision (true, v1.6 metric repair): >=95% micro-averaged
+  precision of A0/A1 results returned for governance-family rows (TP = top-10
+  A0/A1 result matching the row's required/acceptable sources; A0 = CLAUDE.md;
+  A1 = configs/ruling-graph/kill-registry). NOT-MET when zero A0/A1 results are
+  returned. The pre-v1.6 "precision" number was governance row pass-rate; it is
+  still reported as the ungated informational line "Governance recall (row
+  pass-rate)".
+- Negative-control (no-answer) accuracy (explicit gate since v1.6): >=90%
+  pass-rate over `family: negative_control` rows in scope.
+- Cross-repo block (CTX-082..CTX-096): evaluated separately with Terminal and Mastermind projects opted-in; reported as a distinct family block in the eval report (CXI-R16). Rows whose owning project DB is missing are NOT-EVALUATED and never counted as pass; any intended in-scope NOT-EVALUATED row forces the global promotion gate and its covering adjudication, governance, or negative-control gate to NOT-MET. Rows omitted because the caller did not request private scope are not intended in-scope rows.
 
 ## Append-only policy
 
@@ -151,20 +205,23 @@ records a new version tag; prior runs remain unchanged.
 
 ## Families
 
+*(counts as of v1.6, 2026-08-28; the v1.5 table had never absorbed CTX-094's v1.2
+negative→contract regold)*
+
 | Family | Count | Description |
 |---|---|---|
-| `location` | 11 | Where does X live? |
+| `location` | 12 | Where does X live? |
 | `code` | 8 | What does function/file X do? |
 | `governance` | 11 | Is X allowed? What ruling applies? |
-| `current_state` | 4 | What is the current status of X? |
+| `current_state` | 6 | What is the current status of X? |
 | `gotcha` | 10 | What trap/failure mode exists for X? |
 | `architecture` | 8 | How does system X fit together? |
-| `contract` | 7 | What schema/contract governs X? |
+| `contract` | 8 | What schema/contract governs X? |
 | `research` | 6 | What is the finding/verdict on X? |
 | `freshness` | 1 | How stale is artifact X allowed to be? |
 | `operations` | 1 | Operational question |
 | `adjudication_replay` | 16 | Does the repo already cover this proposed work? |
-| `negative_control` | 13 | Negative controls (no_answer expected) |
+| `negative_control` | 9 | Negative controls (no_answer expected) |
 | `comprehension` | 8 | User-facing stat/panel explanation — what does X mean and how is it computed? |
 
 v1.2 cross-repo note: rows CTX-082..CTX-096 reference Terminal (charting-app) and
