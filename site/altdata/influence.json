@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-29T12:45:51.076432+00:00",
+  "generated_utc": "2026-08-30T01:04:08.194652+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1226,11 +1226,10 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.4,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
-        "lobbying",
         "patent_cluster",
         "special_situation"
       ],
@@ -1360,10 +1359,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.65,
+      "alt_score": 3,
+      "alt_weighted": 0.95,
       "alt_channels": [
         "affiliation",
+        "lobbying",
         "stocktwits_bull"
       ],
       "top_holder": {
