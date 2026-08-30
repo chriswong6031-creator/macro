@@ -8657,12 +8657,12 @@ def chat(
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
-        None if images or mode == "research"
+        None if images or mode == "research" or source_attachment is not None
         else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
-        None if images or _native_plan_hit is not None
+        None if images or source_attachment is not None or _native_plan_hit is not None
         else _instant_route(clean_msg, context)
     )
 
@@ -9138,12 +9138,12 @@ def chat_stream(
     _instant_t0 = time.monotonic()
     _native_plan_t0 = time.monotonic()
     _native_plan_hit = (
-        None if images or mode == "research"
+        None if images or mode == "research" or source_attachment is not None
         else _native_facts.plan_native_facts(clean_msg, context, envelope=_ctx_envelope)
     )
     _native_route_decision_ms = _ms_since(_native_plan_t0)
     _instant_route_hit = (
-        None if images or _native_plan_hit is not None
+        None if images or source_attachment is not None or _native_plan_hit is not None
         else _instant_route(clean_msg, context)
     )
 
