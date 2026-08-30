@@ -18,12 +18,30 @@ rationale: >
   deployment date as the only historical research clock would retroactively erase accepted W2
   research objects; treating all current specs as historically available would repeat Attempt-1's
   overreach. The two-clock model preserves both contracts without touching outcomes.
+alternatives:
+  - option: Treat actual live deployment/source availability as the sole clock for all historical research replay.
+    why_not: >
+      That would erase W2's explicitly registered ledger/recompute/locked-spec historical research
+      substrate instead of enforcing its PIT input contract.
+  - option: Treat every current W2 Class-R/B specification as historically available whenever price history exists.
+    why_not: >
+      That repeats Attempt-1's overreach: current code/spec existence is not date-specific source/input
+      coverage, ledger-only families gain no backcast path, and Class P remains prospective-only.
+  - option: Re-read or reseal the consumed P1 partition after repairing availability semantics.
+    why_not: >
+      P1's one-time PR-3 look was consumed before population-determining logic changed; a second look
+      would contaminate the scientific record and violate the accepted seal law.
+evidence:
+  - "research/stock_identity/W2_EXPERT_REPLAY_REGISTRATION.md registers ledger extraction, PIT recomputation, Class-B locked-spec backcast, and Class-P prospective-only history."
+  - "research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md requires stored-ledger or era-pinned leak-tested replay and prospective accrual where legitimate history does not exist."
+  - "PR #6638 is CLOSED UNMERGED at f0b265f82cc7066a4e8d0b87a8fd62a64dd10177 after its P1 Attempt-1 population was rejected; P1 may not be reread for the ruler constant family."
+  - "research/stock_identity/W3AR_CENSUS_P2_PREREG_CHARTER_2026-08-30.md freezes the outcome-free successor census and STOP-before-P2-draw boundary."
 affects:
   - WS:STOCK-IDENTITY
   - research/stock_identity/W3AR_CENSUS_P2_PREREG_CHARTER_2026-08-30.md
   - agentos/handoffs/STOCK-IDENTITY-2026-08-30-W3AR-CENSUS-P2-PREREG.md
 confidence: high
-reversibility: moderate
+reversibility: costly
 decided_by: ceo-sol
 decided_at: 2026-08-30
 ---
