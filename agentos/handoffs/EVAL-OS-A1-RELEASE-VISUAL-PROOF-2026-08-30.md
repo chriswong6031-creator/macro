@@ -5,10 +5,11 @@ model: sol
 ended_because: waiting_capacity
 mission: >
   Close the remaining A1 release gate without reopening either terminal A1 worker child: adopt
-  Macro PR #6651 as the sole implementation carrier, prove the binding dual-theme UI law on the
-  existing Intelligence OS admin evidence view, repair only a demonstrated A1-owned visual defect
-  on that same carrier if required, and return one immutable release candidate for separate
-  Sol-controlled merge, deploy, authenticated production proof, and durable closeout.
+  Macro PR #6651 as the sole implementation carrier, reconcile it against then-current Macro main,
+  prove the binding dual-theme UI law on the existing Intelligence OS admin evidence view, repair only
+  a demonstrated A1-owned visual or current-base integration defect on that same carrier if required,
+  and return one immutable release candidate for separate Sol-controlled merge, deploy, authenticated
+  production proof, and durable closeout.
 state_before: >
   The fresh A1 recovery child eval-os-a1-pr6651-recovery-20260829-sol-001 is terminal via explicit
   SOL ACCEPTED / STOP. Its repository effect is banked at PR #6651 head
@@ -16,10 +17,18 @@ state_before: >
   PRODUCTION_INERT. Exact-head hosted CI and independent code review converged, but the worker
   explicitly proved that admin/static is outside the current UI visual-evidence checker and no
   required dark/light evidence matrix exists. Macro AGENTS.md makes that omission PARTIAL/BLOCKED
-  for a material user-facing surface, so release is not yet lawful.
+  for a material user-facing surface, so release is not yet lawful. Since this release scope was
+  frozen, Macro main advanced to 0a803de5d6c5c03877b32d433a0be84ab8dc2ebd and now overlaps #6651
+  in .github/ci/legacy-jobs.yml through main commit cd1561752f6c58cfabdf60166016b610fd93f4bb
+  / PR #6684. Main adds tests/test_macro_risk_dialog.py to the legacy_restored pytest command while
+  #6651 adds tests/test_admin_intelligence_os_ui.py to that same command. No semantic conflict is
+  inferred from the additive intent; explicit current-base reconciliation preserving both targets is
+  now a binding release gate before visual proof or merge.
 changed:
   - path: agentos/handoffs/EVAL-OS-A1-RELEASE-VISUAL-PROOF-2026-08-30.md
     what: "Froze the fresh A1 release/visual-proof scope and placement/release gates without touching PR #6651."
+  - path: agentos/handoffs/EVAL-OS-A1-RELEASE-VISUAL-PROOF-2026-08-30.md
+    what: "Reconciled post-freeze current-main movement: #6684 now overlaps #6651 in .github/ci/legacy-jobs.yml, requiring preservation of both additive pytest targets before release."
 verified:
   - claim: "PR #6651 is still the sole A1 implementation carrier and remains OPEN/DRAFT/HOLD at exact head 036d5bc01606fc8cb8349094d05c47fb98b6cf7b."
     result: "PASS — GitHub current PR metadata; unmerged and undeployed."
@@ -29,21 +38,27 @@ verified:
     result: "PASS — current Macro AGENTS.md Theme art direction law."
   - claim: "The returned A1 candidate has no such visual evidence receipt; its green UI-evidence check is silent for admin/static by path scope."
     result: "PASS — terminal worker return and PR #6651 body explicitly disclose the gap."
+  - claim: "Current Macro main has a post-freeze same-file overlap with #6651 in .github/ci/legacy-jobs.yml."
+    result: "PASS — current main 0a803de5d6c5c03877b32d433a0be84ab8dc2ebd includes #6684 / cd1561752f6c58cfabdf60166016b610fd93f4bb adding tests/test_macro_risk_dialog.py to legacy_restored; #6651 adds tests/test_admin_intelligence_os_ui.py to the same pytest command."
 unverified:
   - claim: "A1 panel is visually acceptable in both art directions, both languages, and both required viewport classes."
     what_would_verify: "Authenticated or faithful current-candidate render evidence reviewed under the binding design law."
-  - claim: "Final A1 candidate remains exact-head green after any visual repair and current-main movement."
+  - claim: "PR #6651 reconciles cleanly onto then-current main while preserving both the current-main risk-dialog CI target and the A1 admin-intelligence CI target."
+    what_would_verify: "Fresh current-base compare/reconciliation on the assigned worker turn, followed by exact resulting file content and hosted CI evidence."
+  - claim: "Final A1 candidate remains exact-head green after any visual or current-base repair and current-main movement."
     what_would_verify: "Fresh current-base reconciliation, complete exact-head hosted CI/fences/security, and independent final-head review."
   - claim: "A1 is PROVEN_LIVE."
     what_would_verify: "Separate Sol-controlled merge/deploy plus authenticated admin.mastermind-x.com API/UI production proof and durable Agent OS/Linear reconciliation."
 next_actions:
   - "Await lawful concrete Opus-capable placement; this file is scope only and assigns no receiver."
   - "Once assigned, worker must PICKUP_ACK -> current-source re-pin/read -> exact-thread WATCH_ARMED -> collision census -> separate START."
-  - "First produce/adjudicate the complete required visual evidence matrix without changing code. If it passes, return the unchanged #6651 head. If it fails because of A1-owned styling/composition, make only the smallest same-carrier UI repair and re-prove."
+  - "Before visual adjudication or any merge-oriented action, reconcile then-current Macro main with #6651 and preserve both additions in .github/ci/legacy-jobs.yml: tests/test_macro_risk_dialog.py from current main and tests/test_admin_intelligence_os_ui.py from A1. Do not mutate if the merge is already clean."
+  - "Then produce/adjudicate the complete required visual evidence matrix without changing code. If it passes, preserve the reconciled #6651 head. If it fails because of an A1-owned styling/composition defect, make only the smallest same-carrier UI repair and re-prove."
   - "After immutable release candidate returns, Sol separately adjudicates Ready/merge/deploy/authenticated production acceptance."
 do_not_redo:
   - "Do not reopen eval-os-a1-evidence-view-20260828-sol-001 or eval-os-a1-pr6651-recovery-20260829-sol-001."
   - "Do not create a sibling A1 implementation PR or rebuild the evidence view."
+  - "Do not overwrite or drop the #6684 tests/test_macro_risk_dialog.py current-main CI addition while reconciling #6651; preserve both additive test targets."
   - "Do not change qledger/evidence/promotion semantics merely to satisfy presentation proof."
   - "Do not merge, deploy, mark Ready, or claim PROVEN_LIVE from this records-only scope."
   - "Do not absorb P1, E1 thematic production proof, or unrelated site-wide design migration work."
@@ -51,6 +66,7 @@ danger_areas:
   - "Token substitution alone is explicitly not proof of a light-mode design under current Macro law."
   - "A green check_ui_visual_evidence.py result does not cover admin/static and must not be misread as evidence."
   - "PR #6651 currently also changes engine/qledger.py and scripts/grade_qledger.py; keep P1 implementation held until A1 release resolves that live collision."
+  - "Current-main and #6651 both edit .github/ci/legacy-jobs.yml. Treat this as an explicit release-base reconciliation gate even though the observed edits are additive; never resolve it by dropping either test target."
 ---
 
 # Eval OS A1 — release + dual-theme visual proof
@@ -71,9 +87,10 @@ receiver assignment; it is not continuation of the old worker/session.
 Return PR #6651 as one immutable, current-main-reconciled release candidate for which the existing A1
 admin evidence view has been deliberately adjudicated in both dark and light art directions, English
 and Chinese, desktop 1440 and mobile 390, including truthful empty/null/degraded/incomplete states.
-No code change is required if the existing candidate already satisfies the law. If the evidence proves
-an A1-owned visual defect, repair only that defect on the same #6651 branch and re-run the full release
-proof. Worker stops before Ready/merge/deploy.
+No code change is required if the existing candidate already satisfies the law and reconciles cleanly
+with then-current main. If current-base evidence proves an A1-owned integration defect or the visual
+evidence proves an A1-owned design defect, repair only that defect on the same #6651 branch and re-run
+the full release proof. Worker stops before Ready/merge/deploy.
 
 ## Canonical carrier and banked truth
 
@@ -86,6 +103,11 @@ proof. Worker stops before Ready/merge/deploy.
   second admin product, queue, or router may be introduced.
 - The recovery child already repaired and reviewed the A1-introduced admin import-closure defect. Do
   not reopen that debugging wave unless a current-base regression actually disproves the banked result.
+- Post-freeze current-main movement now overlaps #6651 in `.github/ci/legacy-jobs.yml`: #6684 / main
+  commit `cd1561752f6c58cfabdf60166016b610fd93f4bb` adds `tests/test_macro_risk_dialog.py`, while A1 adds
+  `tests/test_admin_intelligence_os_ui.py` to the same `legacy_restored` pytest command. This does not
+  authorize an edit by itself; it makes current-base reconciliation and preservation of both targets
+  an explicit release gate.
 
 ## Binding design proof
 
@@ -120,21 +142,30 @@ After lawful placement, on one fresh Slack carrier:
    #6651, current design law, and current A1 workstream.
 3. Actually arm the exact-thread continuation source and emit truthful `WATCH_ARMED`.
 4. Perform a fresh current-main/open-PR/path/source-law collision census, including all 13 #6651 paths.
+   Explicitly reconcile `.github/ci/legacy-jobs.yml` against then-current main and preserve both the
+   current-main `tests/test_macro_risk_dialog.py` target and A1 `tests/test_admin_intelligence_os_ui.py`
+   target if both remain authoritative.
 5. Emit separate `START` only if gates are clean.
 
 ## Execution / acceptance boundary
 
-1. Reproduce the candidate faithfully enough to adjudicate the required matrix before touching code.
-2. If all cells pass, preserve the existing head; do not create cosmetic churn.
-3. If a material A1-owned design failure is proven, make the smallest styling/composition repair on
+1. Reconcile the candidate against then-current Macro main before visual adjudication. If the current
+   merge is clean, do not create churn. If the same-file CI overlap requires a history-preserving
+   repair, make only the smallest reconciliation on the SAME #6651 branch and preserve both test
+   targets; do not drop foreign current-main coverage to make A1 mergeable.
+2. Reproduce the candidate faithfully enough to adjudicate the required visual matrix before touching
+   UI code.
+3. If all visual cells pass, preserve the reconciled head; do not create cosmetic churn.
+4. If a material A1-owned design failure is proven, make the smallest styling/composition repair on
    the SAME #6651 branch. Preserve information architecture, evidence semantics, state meaning,
    interactions, density law, and all authority boundaries. Do not turn this into a site-wide design
    migration.
-4. After any head move, repeat the full matrix, current-base collision census, complete hosted
+5. After any head move, repeat the full matrix, current-base collision census, complete hosted
    exact-head CI/fences/security and an independent exact-head review. Do not rely on proof from a
    superseded SHA.
-5. Return immutable head, exact changed-file census, visual evidence receipt, CI/review receipts,
-   inherited-vs-A1 attribution, and any remaining gate as `RESULT / HOLD-FOR-SOL`.
+6. Return immutable head, exact changed-file census, visual evidence receipt, CI/review receipts,
+   current-main reconciliation evidence, inherited-vs-A1 attribution, and any remaining gate as
+   `RESULT / HOLD-FOR-SOL`.
 
 Worker acceptance is still `BUILT_NOT_PROVEN`. Separate Sol-controlled release remains required:
 Ready/merge/deploy, then authenticated `admin.mastermind-x.com` API/UI proof that covers the same
