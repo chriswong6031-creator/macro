@@ -7,7 +7,7 @@ objective: >
   AM-v2 same-tape verdicts, execute the only remaining untouched out-of-time question when its
   preregistered maturity gates naturally clear, adjudicate tier-local libraries/provenance, and
   leave a real production product plus durable learning loop with zero unauthorized action authority.
-status: active
+status: blocked
 program: top-anatomy
 repos: [macro]
 owner: coo-fable
@@ -27,17 +27,30 @@ owns_paths:
   - data/top_maturation/
   - templates/winner_health.html.j2
   - site/winner_health.html
+blocked_by:
+  - >-
+    R0 is START-bound to the exact Claude5 receiver on Slack
+    C0BSBM78V1N/1787897388.518689 but is parked at the provider-local
+    EXECUTION_GATE_REQUIRED boundary. Sol and Chairman program authority are already sufficient;
+    the bound runtime's human execute-confirmation remains unresolved. Effect is NONE: no R0
+    branch, PR, commit, local modification or unpublished work is evidenced.
 decisions:
   - DEC:TOPA-OOT-COMPLETION-ARCHITECTURE
 waves:
   - id: R0
     title: Current-store read restoration + roster/exemplar census + OOT prereg/maturity receipt
-    status: todo
+    status: in_progress
     next_action: >
-      Await Chairman assignment of one Fable/Opus-class COO to the exact Slack carrier. Receiver
-      must ACK the operation and read the full thread before any work. Read-only preflight may then
-      begin. Canonical modifying START remains gated on the records architecture carrier landing
-      and a fresh Macro-main/open-PR collision census.
+      Preserve existing operation topa-r0-refresh-winner-health-20260828-sol-001 and its sticky
+      Claude5 receiver on Slack C0BSBM78V1N/1787897388.518689. Do not re-place, fail over, create a
+      second operation or mint a carrier while the provider-local execute gate remains closed.
+      When that exact gate clears, the bound receiver must fresh-read the carrier, current protected
+      procedure and Macro main, rerun the shared-path collision census, then continue the already
+      authorized sequence: one implementation carrier; RED ordering regression; minimal reuse/hoist
+      of the existing guarded massive_stock_day R2 restore before Top Maturation; real Winner Health
+      vertical proof; refreshed roster/exemplar census; untouched post-2026-07-02 OOT prereg freeze
+      before confirmatory estimates; deterministic maturity receipt. Return PROGRESS as soon as the
+      single carrier exists. If floors are immature, the verdict is exactly OOT_ACCRUING_NO_VERDICT.
   - id: R1
     title: Minimal prospective OOT accrual rail, only if existing daily evidence is insufficient
     status: todo
@@ -88,9 +101,9 @@ landmines:
   - "The inherited outcome ruler can require up to 250 sessions and the inferential floors include distinct peak-month/matched-episode protection. Several weeks of new tape cannot support a fabricated final verdict."
   - "Current Winner Health is BROKEN with `panel: no readable tickers in the store` despite a populated source vintage; repair the real seam, not the symptom."
   - "Massive Stock Day is R2-canonical and separately owned. A Top Anatomy read defect may be fixed; a publication/atomicity owner defect must be returned to WS:MASSIVE-STOCK-DAY-R2-COHERENCE."
-  - "A likely workflow-order/R2-restore hypothesis exists, but it is not yet proven and must not be converted into a second scheduler/store."
+  - "Root cause is proven on nightly run 33232322255 / engine job 99066153702: Top Maturation saw zero source files, then the same job restored 21,452 Massive Stock Day tickers 43 minutes later. The authorized repair is ordering reuse, not another scheduler, store or publisher."
   - "The primary/R63/ATRZ libraries are intentionally tier-local; never borrow thresholds across tiers."
-  - "Current canonical Worker Presence/Turn-Watcher is not yet PROVEN_LIVE; any temporary condition watch is attention-only and must be torn down at terminal completion."
+  - "Current canonical Worker Presence/Turn-Watcher is not yet PROVEN_LIVE; the bound Claude5 temporary aggregate watcher remains attention-only and this exact child source must be removed only after terminal Sol STOP."
 do_not_redo:
   - "Do not create another market-history/OHLCV store."
   - "Do not rebuild Winner Health as a separate dashboard; fix/extend the existing product."
@@ -107,10 +120,11 @@ artifacts:
   - research/top_anatomy/TOPA_OOT_COMPLETION_MASTERPLAN_2026-08-28.md
   - data/top_maturation/latest.json
 next_action: >
-  Start R0 only: post the exact bounded handoff to one Chairman-assigned Fable/Opus-class COO,
-  require pre-work ACK plus full-thread read, keep modification gated until the architecture PR
-  lands, require a separate START receipt with fresh pickup SHA/collision census, and run reciprocal
-  exact-thread watches until R0 returns to Sol or blocks.
+  Keep R0 on the existing sticky Claude5 operation and exact Slack carrier. The only current gate is
+  the provider-local EXECUTION_GATE_REQUIRED confirmation; effect remains NONE. When it clears, that
+  same receiver continues without another Sol/Chairman authorization after fresh carrier/procedure/
+  main/path reads. Until then, do not create a branch, PR, commit, replacement receiver or second
+  operation. R1-R6 remain dependency-gated and no next wave is authorized.
 ---
 
 ## Program boundary
