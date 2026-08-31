@@ -519,63 +519,60 @@ def test_modal_fail_closed_base_exists():
     )
 
 
-def test_modal_table_name_column_left_numeric_columns_right():
-    """theme-parity-tp1-canada-20260828-sol-001 R3: the Leadership modal's
-    table (modalRows(), site/canada-stock-v36.js) renders Rank and Count as
-    ``<td class="num">`` and Name/Action/Leaders as plain ``<td>``. Pin the
-    alignment split: every plain td (including Name) is left-aligned text,
-    and only td.num carries the right-aligned tabular-figure treatment —
-    under the sibling-scoped modal selector, not the descendant one."""
+def test_modal_table_alignment_is_the_literal_v38_baseline():
+    """Sol REQUEST_REPAIR / PRA-404: the modal table's column alignment must be
+    the accepted V3.8 baseline, NOT the alignment this ratchet had introduced.
+
+    An independent critic found that the R3 build shipped `td { text-align:
+    left }`, `td.num { text-align: right }` and a positional `th` right-align
+    pair, while the stylesheet simultaneously claimed to restore accepted V3.8
+    rendering. Sol ruled: preserve the baseline, remove the claim, and restore
+    literal V3.8 behaviour unless higher source law independently requires
+    otherwise. It does not — MASTER_PRODUCT_DESIGN_SYSTEM_V1 mandates tabular
+    FIGURES (.tnum) for numeral columns, a numeral-rendering law rather than an
+    alignment law.
+
+    Literal V3.8, measured rather than assumed: the composer's only modal-table
+    alignment declaration was `th { text-align: left }`. Cell alignment came
+    from the page's own assets/css/f03170b9.css (`th,td { text-align:right }`
+    with `th:first-child,td:first-child { text-align:left }`), which reaches
+    this modal because the composer appends it to <body>. So V3.8 rendered every
+    th LEFT, td:first-child LEFT, and every other td RIGHT.
+
+    Restoring that means declaring nothing here beyond the th rule and letting
+    the page cascade govern the cells again. This test pins the ruling so a
+    later wave cannot silently reintroduce the reverted decision."""
     text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
     normalized = re.sub(r"\s+", " ", text)
+
     assert re.search(
-        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+td\s*\{[^}]*text-align:\s*left",
+        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+th\s*\{[^}]*text-align:\s*left",
         normalized,
     ), (
-        "the sibling-scoped .ca-v36-modal-table td rule must set "
-        "text-align: left (Name and every other non-numeric column)"
-    )
-    assert re.search(
-        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+td\.num\s*\{[^}]*text-align:\s*right",
-        normalized,
-    ), (
-        "the sibling-scoped .ca-v36-modal-table td.num rule must set "
-        "text-align: right (Rank + Count, the two numeric columns)"
+        "V3.8's own modal-table rule `th { text-align: left }` must survive — "
+        "it is the one alignment declaration the accepted baseline carried"
     )
 
-
-def test_modal_table_numeric_headers_align_over_their_num_columns():
-    """theme-parity-tp1-canada-20260828-sol-001 R3 repair: modalPane()
-    (site/canada-stock-v36.js) emits every <th> unclassed — there is no
-    th.num to key off, and the composer is frozen (out of scope for a CSS
-    packet) — so previously every header stayed left-aligned while the two
-    numeric columns' <td class="num"> cells (modalRows()) were right-
-    aligned, floating the Rank/count-title headers away from their digits.
-
-    modalRows()'s td.num cells are always the FIRST column when the
-    composer's `rk` flag is true (5 total columns: Rank/Name/Action/
-    Leaders/Count) and always the LAST column regardless of rk (4 total
-    columns when rk is false: Name/Action/Leaders/Count) — confirmed
-    directly against modalRows()'s and modalPane()'s matching template-
-    literal column order in site/canada-stock-v36.js. The CSS fix is
-    purely structural/positional (no composer class needed):
-    `th:last-child` always matches the trailing (Count) header regardless
-    of column count, and `th:first-child:nth-last-child(5)` matches a
-    first-child only when the row has exactly 5 total children (rk true) —
-    exactly the case where the first column is the numeric Rank header."""
-    text = re.sub(r"/\*.*?\*/", " ", _css_text(), flags=re.S)
-    normalized = re.sub(r"\s+", " ", text)
-    assert re.search(
-        r"\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+th:last-child\s*,"
-        r"\s*\.mx-stockdash--ca\s*~\s*\.ca-v36-modal\s+\.ca-v36-modal-table\s+"
-        r"th:first-child:nth-last-child\(5\)\s*\{[^}]*text-align:\s*right",
+    assert not re.search(
+        r"\.ca-v36-modal-table\s+td\s*\{[^}]*text-align",
         normalized,
     ), (
-        "the sibling-scoped .ca-v36-modal-table th:last-child / "
-        "th:first-child:nth-last-child(5) rule must set text-align: right "
-        "— th:last-child covers the trailing Count header at any column "
-        "count, and th:first-child:nth-last-child(5) covers the leading "
-        "Rank header only when the row has 5 columns (rk true)"
+        "the modal-table td rule must NOT declare text-align — V3.8 declared "
+        "none, and the page cascade (f03170b9.css) is what aligns the cells. "
+        "Re-adding it reintroduces the alignment Sol reverted under PRA-404"
+    )
+
+    assert not re.search(
+        r"\.ca-v36-modal-table\s+td\.num\s*\{[^}]*text-align",
+        normalized,
+    ), (
+        "no td.num right-align rule may exist — it was introduced by this "
+        "ratchet, not inherited from V3.8, and Sol reverted it"
+    )
+
+    assert "nth-last-child(5)" not in normalized, (
+        "the positional th right-align selector must be gone — it existed only "
+        "to chase the td.num alignment this ratchet had introduced"
     )
 
 

@@ -473,8 +473,15 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
    leadership" dialog never overlaid, and its 16 rows rendered as a stray block
    at the foot of the page. `.mx-stockdash--ca ~ .ca-v36-modal` keeps the
    governed namespace root (architecture §4.2 — no bare page-global selectors)
-   while actually matching the shipped DOM. This restores the ACCEPTED V3.8
-   production rendering; it is not a new dark decision. */
+   while actually matching the shipped DOM.
+
+   SCOPE OF THIS CLAIM (corrected under Sol REQUEST_REPAIR, PRA-404): what is
+   restored here is the modal's OVERLAY RENDERING — position, stacking and
+   scrim — which the extraction had killed. That restoration is real and is
+   what "not a new dark decision" refers to. It does NOT extend to column
+   alignment, and an independent critic was right to read the unscoped wording
+   as covering it. Alignment is governed separately below, and is now a literal
+   V3.8 restoration rather than a new decision. */
 
 /* Fail-closed base, independent of the sibling combinator below
    (theme-parity-tp1-canada-20260828-sol-001 R2). If a future wrapper change
@@ -506,33 +513,34 @@ body.page-canada.ca-v36-mounted > .panel { display: none !important; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-pane h4 { margin: 0; padding: 11px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table { width: 100%; border-collapse: collapse; font-size: 12.8px; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th { padding: 9px 10px; color: var(--muted); font-size: 10.8px; text-align: left; border-bottom: 1px solid var(--line); }
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); text-align: left; }
+.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td { padding: 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr { cursor: pointer; }
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table tbody tr:hover { background: color-mix(in srgb, var(--link) 6%, transparent); }
-/* Rank + count columns (modalRows()'s two td.num cells) stay right-aligned
-   tabular figures; every other column — including Name — is left-aligned
-   text (theme-parity-tp1-canada-20260828-sol-001 R3). */
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table td.num { text-align: right; }
-/* Numeric HEADER alignment (R3 repair): modalPane() (site/canada-stock-v36.js)
-   emits every <th> unclassed — there is no th.num to key off, and the
-   composer is frozen — so the header row instead right-aligned every column,
-   floating "Rank"/the trailing count-title header away from the right-aligned
-   digits below them. modalRows()'s <td class="num"> cells are always the
-   FIRST column when the composer's rk flag is true (Theme #N rank) and
-   always the LAST column (the count), regardless of rk — the table has 5
-   columns when rk is true (Rank/Name/Action/Leaders/Count) and 4 when it is
-   false (Name/Action/Leaders/Count), confirmed against modalRows()'s
-   template-literal column order and modalPane()'s matching <thead> order.
-   `th:last-child` always matches the trailing (count) header in both column
-   counts. `th:first-child:nth-last-child(5)` matches a first-child ONLY when
-   it is simultaneously the 5th-from-last child — i.e. only when the row has
-   exactly 5 columns (rk true) — which is exactly when the first column is
-   the numeric Rank header; at 4 columns (rk false) no th is 5th-from-last,
-   so the selector matches nothing and the Name header stays left-aligned. */
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th:last-child,
-.mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table th:first-child:nth-last-child(5) {
-  text-align: right;
-}
+/* MODAL COLUMN ALIGNMENT — literal V3.8 restoration (Sol REQUEST_REPAIR, PRA-404).
+   The R3 build had added `td { text-align: left }`, `td.num { text-align: right }`
+   and a positional `th` right-align pair. Sol ruled: preserve the accepted V3.8
+   baseline rather than ratify a newly introduced alignment in this ratchet, and
+   restore literal V3.8 behaviour unless higher source law independently requires
+   otherwise. It does not — MASTER_PRODUCT_DESIGN_SYSTEM_V1 requires tabular
+   FIGURES (.tnum) for numeral columns, which is a numeral-rendering law, not an
+   alignment law — so no DECISION_REQUEST was owed and the added rules are gone.
+
+   WHAT LITERAL V3.8 ACTUALLY RENDERED, measured rather than assumed. The
+   reviewing critic inferred "V3.8 rendered everything left" from the composer
+   stylesheet alone, and honestly flagged that it could not verify cascade
+   position because the page shell was quarantined. That inference is wrong. The
+   page loads assets/css/f03170b9.css, which carries `th,td { text-align:right }`
+   together with `th:first-child,td:first-child { text-align:left }`, and it
+   reaches this modal because the composer appends it to <body>. With V3.8's only
+   modal-table alignment rule being `th { text-align:left }`, the rendered result
+   was: every th LEFT; td:first-child (Rank) LEFT; every other td RIGHT.
+
+   Restoring that means declaring NOTHING here beyond the `th` rule above and
+   letting the original cascade govern the cells again. Consequence recorded
+   honestly: this reinstates the header/value offset that earlier cycles logged
+   as PRC-303 / VTC-305 — Sol has ruled that preserving the frozen baseline
+   outranks correcting it inside this ratchet, and any correction is a separate
+   authorized change, not a side effect of an extraction. */
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .num,
 .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-modal-table .leaders { color: var(--muted); }
 
