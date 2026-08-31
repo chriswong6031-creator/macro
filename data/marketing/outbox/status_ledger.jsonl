@@ -4411,3 +4411,11 @@
 {"id":"ob-2026-08-31-9e2f7cad12","from":"approved","to":"posting","at":"2026-08-31T19:50:31Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-31-9e2f7cad12","from":"posting","to":"posted","at":"2026-08-31T19:50:32Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a95db08bc8169016aeb4c41","external_url":null,"at":"2026-08-31T19:50:15Z","booked_at":"2026-08-31T19:50:15Z"}}
 {"id":"ob-2026-08-31-e0ef6495bf","from":"approved","to":"quarantined","at":"2026-08-31T19:50:32Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-31-597b39dd08","from":"queued","to":"approved","at":"2026-08-31T19:55:54Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-31-61d460a101","from":"queued","to":"approved","at":"2026-08-31T19:55:54Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-31-fb3b0583d5","from":"queued","to":"approved","at":"2026-08-31T19:55:54Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-08-31-597b39dd08","from":"approved","to":"posting","at":"2026-08-31T19:56:02Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-31-597b39dd08","from":"posting","to":"posted","at":"2026-08-31T19:56:03Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a95dc5326fd9f053586a22a","external_url":null,"at":"2026-08-31T19:55:54Z","booked_at":"2026-08-31T19:55:54Z"}}
+{"id":"ob-2026-08-31-61d460a101","from":"approved","to":"quarantined","at":"2026-08-31T19:56:03Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-08-31-fb3b0583d5","from":"approved","to":"posting","at":"2026-08-31T19:56:09Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
+{"id":"ob-2026-08-31-fb3b0583d5","from":"posting","to":"posted","at":"2026-08-31T19:56:10Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a95dc5ad114a43f9e9f863b","external_url":null,"at":"2026-08-31T19:55:54Z","booked_at":"2026-08-31T19:55:54Z"}}
