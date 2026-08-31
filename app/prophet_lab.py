@@ -50,8 +50,11 @@ from fastapi.responses import JSONResponse, Response
 
 from engine.prophet_lab import LabRoots, build_lab_response
 from engine.prophet_lab.contracts import KILL_SWITCH_ENV
-from engine.prophet_lab.intelligence_vector import build_earnings_intelligence_vector
-from engine.us_candidate_episode import EpisodeContractError, load_candidate_episode_store_snapshot
+from engine.prophet_lab.intelligence_vector import (
+    IntelligenceVectorContractError,
+    build_earnings_intelligence_vector,
+    load_candidate_episode_store_snapshot,
+)
 from lib.dataos.identity import IssuerMaster
 
 router = APIRouter()
@@ -271,7 +274,7 @@ def episode_intelligence_v1(
             "PROPHET_LAB_SECURITY_MASTER_PATH", _SECURITY_MASTER_PATH,
         )
         if episode_store_root is None or security_master_path is None:
-            raise EpisodeContractError("D5 read roots must be configured")
+            raise IntelligenceVectorContractError("D5 read roots must be configured")
 
         snapshot = load_candidate_episode_store_snapshot(episode_store_root)
         matching_episodes = [
@@ -282,7 +285,7 @@ def episode_intelligence_v1(
         if not matching_episodes:
             return _response({"error": "prophet_episode_not_found"}, status_code=404)
         if len(matching_episodes) != 1:
-            raise EpisodeContractError("B1 generation contains duplicate episode identity")
+            raise IntelligenceVectorContractError("B1 generation contains duplicate episode identity")
 
         opened_events = [
             event
@@ -290,10 +293,10 @@ def episode_intelligence_v1(
             if event.get("episode_id") == episode_id and event.get("event_type") == "OPENED"
         ]
         if len(opened_events) != 1:
-            raise EpisodeContractError("B1 episode must have exactly one OPENED event")
+            raise IntelligenceVectorContractError("B1 episode must have exactly one OPENED event")
         episode_known_at = opened_events[0].get("known_at")
         if not isinstance(episode_known_at, str):
-            raise EpisodeContractError("B1 OPENED event known_at is invalid")
+            raise IntelligenceVectorContractError("B1 OPENED event known_at is invalid")
 
         payload = build_earnings_intelligence_vector(
             episode=matching_episodes[0],
@@ -302,7 +305,7 @@ def episode_intelligence_v1(
             issuer_master=_load_issuer_master(security_master_path),
         )
         if _source_integrity_failed(payload):
-            raise EpisodeContractError("D5 source integrity receipt is not admissible")
+            raise IntelligenceVectorContractError("D5 source integrity receipt is not admissible")
     except Exception as exc:  # noqa: BLE001 — corrupt read chains must not 500 blind
         log.warning(
             "prophet_lab: episode intelligence failed (%s: %s)",

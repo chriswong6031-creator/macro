@@ -29,10 +29,6 @@ from engine.neuralweb.company_intelligence_reader import (
     find_current_event_id_for_company,
     read_event_source_revisions,
 )
-from engine.us_candidate_episode import (
-    EpisodeContractError,
-    episode_id as b1_episode_id,
-)
 from lib.dataos.identity import (
     IdentityError as IssuerIdentityError,
     parse_id as parse_dataos_id,
@@ -167,6 +163,13 @@ class IntelligenceVectorContractError(ValueError):
     """The D5 projection is not the closed, all-false v1 contract."""
 
 
+def load_candidate_episode_store_snapshot(root: Any) -> Any:
+    """Load the canonical B1 snapshot without widening API import dependencies."""
+    from engine.us_candidate_episode import load_candidate_episode_store_snapshot as load
+
+    return load(root)
+
+
 def _canonical_bytes(value: Any) -> bytes:
     return json.dumps(
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
@@ -255,6 +258,15 @@ def _episode_known_at(episode: Mapping[str, Any]) -> str | None:
 
 
 def _validate_b1_episode_identity(episode: Mapping[str, Any]) -> None:
+    # Keep the B1 runtime (and its pyarrow dependency) outside macro-api's
+    # import-time closure.  D5 calls this seam only for an authenticated
+    # intelligence-vector request, so loading the canonical B1 constructor
+    # here preserves the thin adapter's optional-dependency boundary.
+    from engine.us_candidate_episode import (
+        EpisodeContractError,
+        episode_id as b1_episode_id,
+    )
+
     raw_episode_id = str(episode.get("episode_id") or "")
     match = _B1_EPISODE_ID_RE.fullmatch(raw_episode_id)
     if match is None:
