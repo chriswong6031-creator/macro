@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CRC-BULL-20260805",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 46.2,
-  "raw_confidence": 45.3,
-  "delta_vs_base": -13.8,
+  "management_confidence": 42.1,
+  "raw_confidence": 39.9,
+  "delta_vs_base": -17.9,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 87.5,
+    "validity": 71.6,
     "progress": 0.0,
-    "pace": 35.3,
+    "pace": 29.9,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.906,
+    "dist_to_stop_r": 0.781,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 37.8,
-    "p1": -0.0625,
-    "p2": -0.0313,
+    "horizon_pct_used": 40.0,
+    "p1": -0.1463,
+    "p2": -0.0732,
     "p3": null,
-    "move_r": -0.094,
+    "move_r": -0.219,
     "mfe_r": 0.057,
     "mae_r": -0.319
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 17,
-  "tau": 0.3778
+  "days_elapsed": 18,
+  "tau": 0.4
 }

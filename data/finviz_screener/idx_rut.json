@@ -1,8 +1,8 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-08-29 06:04 UTC",
-"n":1947,
-"total_reported":1947,
+"as_of":"2026-08-31 02:42 UTC",
+"n":1946,
+"total_reported":1946,
 "unmapped_industries":[],
 "rows":[
 {
@@ -204,14 +204,6 @@
 "sector":"Real Estate",
 "country":"USA",
 "market_cap_b":8.82
-},
-{
-"ticker":"KNTK",
-"company":"Kinetik Holdings Inc",
-"industry":"Oil & Gas Midstream",
-"sector":"Energy",
-"country":"USA",
-"market_cap_b":8.74
 },
 {
 "ticker":"SM",
@@ -1922,6 +1914,14 @@
 "company":"Celcuity Inc",
 "industry":"Biotechnology",
 "sector":"Healthcare",
+"country":"USA",
+"market_cap_b":4.33
+},
+{
+"ticker":"KNTK",
+"company":"Kinetik Holdings Inc",
+"industry":"Oil & Gas Midstream",
+"sector":"Energy",
 "country":"USA",
 "market_cap_b":4.33
 },
@@ -4422,10 +4422,10 @@
 "market_cap_b":2.45
 },
 {
-"ticker":"VISN",
-"company":"Vistance Networks Inc",
-"industry":"Communication Equipment",
-"sector":"Technology",
+"ticker":"VVX",
+"company":"V2X Inc",
+"industry":"Aerospace & Defense",
+"sector":"Industrials",
 "country":"USA",
 "market_cap_b":2.44
 },
@@ -5638,14 +5638,6 @@
 "market_cap_b":1.88
 },
 {
-"ticker":"SHAZ",
-"company":"SharonAI Holdings Inc",
-"industry":"Information Technology Services",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":1.88
-},
-{
 "ticker":"STRA",
 "company":"Strategic Education Inc",
 "industry":"Education & Training Services",
@@ -5665,6 +5657,14 @@
 "ticker":"ATEN",
 "company":"A10 Networks Inc",
 "industry":"Software - Infrastructure",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":1.87
+},
+{
+"ticker":"SHAZ",
+"company":"SharonAI Holdings Inc",
+"industry":"Information Technology Services",
 "sector":"Technology",
 "country":"USA",
 "market_cap_b":1.87
@@ -6294,14 +6294,6 @@
 "market_cap_b":1.63
 },
 {
-"ticker":"FBRX",
-"company":"Forte Biosciences Inc",
-"industry":"Biotechnology",
-"sector":"Healthcare",
-"country":"USA",
-"market_cap_b":1.63
-},
-{
 "ticker":"RVLV",
 "company":"Revolve Group Inc",
 "industry":"Internet Retail",
@@ -6915,7 +6907,7 @@
 "industry":"Communication Equipment",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":1.39
+"market_cap_b":1.4
 },
 {
 "ticker":"AMBQ",
@@ -9120,7 +9112,7 @@
 {
 "ticker":"AVR",
 "company":"Anteris Technologies Global Corp",
-"industry":"Medical Instruments & Supplies",
+"industry":"Medical Devices",
 "sector":"Healthcare",
 "country":"USA",
 "market_cap_b":0.8518
@@ -11376,7 +11368,7 @@
 {
 "ticker":"GORO",
 "company":"Goldgroup Mining Inc",
-"industry":"Other Precious Metals & Mining",
+"industry":"Gold",
 "sector":"Basic Materials",
 "country":"Canada",
 "market_cap_b":0.4924
@@ -13110,12 +13102,12 @@
 "market_cap_b":0.3116
 },
 {
-"ticker":"MLP",
-"company":"Maui Land & Pineapple Co Inc",
-"industry":"Real Estate Services",
+"ticker":"NHP",
+"company":"National Healthcare Properties Inc",
+"industry":"REIT - Healthcare Facilities",
 "sector":"Real Estate",
 "country":"USA",
-"market_cap_b":0.313
+"market_cap_b":0.3106
 },
 {
 "ticker":"JACK",

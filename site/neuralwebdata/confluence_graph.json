@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-08-26",
+  "asof": "2026-08-28",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -15,11 +15,19 @@
       }
     },
     {
+      "id": "engine:altdata_conv",
+      "type": "engine",
+      "label": "altdata_conv",
+      "meta": {
+        "n_spine_rows": 2
+      }
+    },
+    {
       "id": "engine:basket_turn.v1",
       "type": "engine",
       "label": "basket_turn.v1",
       "meta": {
-        "n_spine_rows": 8
+        "n_spine_rows": 9
       }
     },
     {
@@ -27,7 +35,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 2056
+        "n_spine_rows": 2144
       }
     },
     {
@@ -43,7 +51,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 98
+        "n_spine_rows": 104
       }
     },
     {
@@ -51,7 +59,7 @@
       "type": "engine",
       "label": "cn_board",
       "meta": {
-        "n_spine_rows": 748
+        "n_spine_rows": 872
       }
     },
     {
@@ -59,7 +67,7 @@
       "type": "engine",
       "label": "cn_importance_v0",
       "meta": {
-        "n_spine_rows": 4281
+        "n_spine_rows": 4323
       }
     },
     {
@@ -67,7 +75,7 @@
       "type": "engine",
       "label": "cn_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 4281
+        "n_spine_rows": 4323
       }
     },
     {
@@ -107,7 +115,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 137
+        "n_spine_rows": 146
       }
     },
     {
@@ -115,7 +123,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 2388
+        "n_spine_rows": 2480
       }
     },
     {
@@ -123,7 +131,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 4186
+        "n_spine_rows": 4308
       }
     },
     {
@@ -131,7 +139,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 415
+        "n_spine_rows": 426
       }
     },
     {
@@ -139,7 +147,7 @@
       "type": "engine",
       "label": "narrative",
       "meta": {
-        "n_spine_rows": 946
+        "n_spine_rows": 949
       }
     },
     {
@@ -171,7 +179,7 @@
       "type": "engine",
       "label": "radar",
       "meta": {
-        "n_spine_rows": 20817
+        "n_spine_rows": 21191
       }
     },
     {
@@ -179,7 +187,7 @@
       "type": "engine",
       "label": "reflex.commodity_shock",
       "meta": {
-        "n_spine_rows": 5
+        "n_spine_rows": 7
       }
     },
     {
@@ -187,7 +195,7 @@
       "type": "engine",
       "label": "reflex.cortex_attention",
       "meta": {
-        "n_spine_rows": 106
+        "n_spine_rows": 128
       }
     },
     {
@@ -195,7 +203,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 452
+        "n_spine_rows": 492
       }
     },
     {
@@ -203,7 +211,15 @@
       "type": "engine",
       "label": "reflex.regime_stale_selfheal",
       "meta": {
-        "n_spine_rows": 19
+        "n_spine_rows": 20
+      }
+    },
+    {
+      "id": "engine:stock_desk",
+      "type": "engine",
+      "label": "stock_desk",
+      "meta": {
+        "n_spine_rows": 2
       }
     },
     {
@@ -227,7 +243,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 298935
+        "n_spine_rows": 298985
       }
     },
     {
@@ -235,7 +251,7 @@
       "type": "engine",
       "label": "us_board",
       "meta": {
-        "n_spine_rows": 6183
+        "n_spine_rows": 6202
       }
     },
     {
@@ -243,7 +259,7 @@
       "type": "engine",
       "label": "us_importance_v0",
       "meta": {
-        "n_spine_rows": 29348
+        "n_spine_rows": 30966
       }
     },
     {
@@ -251,7 +267,7 @@
       "type": "engine",
       "label": "us_importance_v0_pit",
       "meta": {
-        "n_spine_rows": 29348
+        "n_spine_rows": 30966
       }
     },
     {
@@ -259,7 +275,7 @@
       "type": "engine",
       "label": "whitehouse",
       "meta": {
-        "n_spine_rows": 162
+        "n_spine_rows": 167
       }
     },
     {
@@ -2182,6 +2198,69 @@
       }
     },
     {
+      "id": "thesis:2026-08-28-radar-space_economy",
+      "type": "thesis",
+      "label": "2026-08-28-radar-space_economy",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-semicap_equipment",
+      "type": "thesis",
+      "label": "2026-08-28-radar-semicap_equipment",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-us_sector_comm",
+      "type": "thesis",
+      "label": "2026-08-28-radar-us_sector_comm",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-us_sector_staples",
+      "type": "thesis",
+      "label": "2026-08-28-radar-us_sector_staples",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-ai_infra",
+      "type": "thesis",
+      "label": "2026-08-28-radar-ai_infra",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-ai_semiconductors",
+      "type": "thesis",
+      "label": "2026-08-28-radar-ai_semiconductors",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-08-28-radar-ai_software",
+      "type": "thesis",
+      "label": "2026-08-28-radar-ai_software",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
       "id": "macro:fx_dollar",
       "type": "macro",
       "label": "FX / Dollar",
@@ -2190,7 +2269,7 @@
         "regime": "US growth premium",
         "risk": "risk-on",
         "usd_trend": "down",
-        "asof": "2026-08-28",
+        "asof": "2026-08-29",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "rates-driven",
@@ -2198,7 +2277,7 @@
         "regime_radar_dominant": null,
         "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 8
+        "days_in_regime": 9
       }
     },
     {
@@ -2212,10 +2291,10 @@
             "real_10y": 2.34,
             "real_10y_pctile": 0.96,
             "real_10y_chg_63d_bp": 27.0,
-            "nominal_10y": 4.66,
+            "nominal_10y": 4.67,
             "curve_2s10s": 0.47,
             "curve_tp_adj": 1.34,
-            "policy_gap": 0.56,
+            "policy_gap": 0.57,
             "regime": "restrictive",
             "direction": "rising",
             "real_10y_chg_22d_bp": -7.0,
@@ -2244,7 +2323,7 @@
             "breakeven_10y": 2.33,
             "breakeven_5y5y": 2.35,
             "model_5y": 2.48,
-            "survey_1y": 4.6,
+            "survey_1y": 4.2,
             "market_minus_model_bp": -13.0,
             "anchoring": "anchored",
             "label": {
@@ -2288,7 +2367,7 @@
           "Gold",
           "Silver"
         ],
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -2303,7 +2382,7 @@
         "regime": "mixed / no clear trend",
         "correlation_verdict": "converging",
         "state_text": "mixed / no clear trend",
-        "asof": "2026-08-28",
+        "asof": "2026-08-29",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -2318,7 +2397,7 @@
         "quad_name": "Reflation",
         "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2348,7 +2427,7 @@
         "quad_name": "Growth-scare",
         "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-26",
+        "asof": "2026-08-27",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2363,7 +2442,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -2388,7 +2467,7 @@
         "regime": "long",
         "agreement": "split",
         "cor1m_regime": "dispersion",
-        "asof": "2026-08-27",
+        "asof": "2026-08-28",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
       }
@@ -20743,29 +20822,29 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=31 ticker-level demand-vs-supply divergences b=n_divergences=31, top tickers=['IBM', 'VSAT', 'RKLB', 'NET',"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=34 ticker-level demand-vs-supply divergences b=n_divergences=34, top tickers=['IBM', 'VSAT', 'RKLB', 'GOOG'"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:intel_hub",
       "edge_type": "confirms",
       "n": 39,
-      "lift": 0.00753,
+      "lift": 0.00762,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0075 n=39 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0076 n=39 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 147,
-      "lift": -0.03597,
+      "lift": -0.0357,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0360 n=147 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0357 n=147 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20783,11 +20862,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 34,
-      "lift": -0.00971,
+      "lift": -0.00963,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0097 n=34 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0096 n=34 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:altdata",
@@ -20804,12 +20883,12 @@
       "src": "engine:intel_hub",
       "dst": "engine:radar",
       "edge_type": "confirms",
-      "n": 1116,
-      "lift": -0.00145,
+      "n": 1134,
+      "lift": -0.0013,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0014 n=1116 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0013 n=1134 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20827,11 +20906,11 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 61,
-      "lift": -0.02999,
+      "lift": -0.02991,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0300 n=61 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0299 n=61 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:intel_hub",
@@ -20849,11 +20928,11 @@
       "dst": "engine:radar",
       "edge_type": "confirms",
       "n": 18,
-      "lift": -0.02406,
+      "lift": -0.02383,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0241 n=18 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0238 n=18 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
@@ -20871,22 +20950,22 @@
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 150,
-      "lift": -0.00375,
+      "lift": -0.00349,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=-0.0037 n=150 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=-0.0035 n=150 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:radar",
       "dst": "engine:whitehouse",
       "edge_type": "confirms",
-      "n": 5,
+      "n": 8,
       "lift": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "n=5 < MIN_N=10 — lift=null (insufficient sample; display-only)"
+      "note": "n=8 < MIN_N=10 — lift=null (insufficient sample; display-only)"
     },
     {
       "src": "engine:track_record",
@@ -20903,11 +20982,11 @@
       "src": "options.skew_rising",
       "dst": "us_board.buy_lane",
       "edge_type": "contradicts",
-      "n": 2,
+      "n": 1,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-08-19); e.g. DHI, KDP. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
+      "note": "buy-lane names with 5d-rising OTM-put skew (as_of 2026-08-20); e.g. KDP. Display-only de-escalation context; W-E1 prior: bullish skew-decel UNSUPPORTED on sector history."
     },
     {
       "src": "options.skew_decel",
@@ -20917,17 +20996,17 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-08-19); e.g. DUK, JNJ, SO. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
+      "note": "buy-lane names with top-tercile skew now falling (as_of 2026-08-20); e.g. JNJ, SO, WH. Display-only; S-SKEW_DECEL gate building_history, W-E1 sector-history prior is SKEPTICAL."
     },
     {
       "src": "options.ivspread_positive_call_doi",
       "dst": "us_board.watch_lane",
       "edge_type": "confirms",
-      "n": 3,
+      "n": 4,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-08-19); e.g. CL, FIX, TJX. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-08-20); e.g. AMAT, CL, FORM, TJX. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -20947,7 +21026,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.311 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
+      "note": "rates headwind: asset=XLB net=-0.315 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
     },
     {
       "src": "macro:rates_transmission",
@@ -20957,7 +21036,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.276 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
+      "note": "rates headwind: asset=XLF net=-0.277 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
     },
     {
       "src": "macro:rates_transmission",
@@ -20967,7 +21046,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.253 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
+      "note": "rates headwind: asset=XLK net=-0.256 verdict=headwind source_lobe=rates_transmission asof=2026-08-27"
     }
   ],
   "contradiction_summary": {
@@ -20984,23 +21063,23 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "31 ticker-level demand-vs-supply divergences"
+        "reading": "34 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=31, top tickers=['IBM', 'VSAT', 'RKLB', 'NET', 'COST']"
+        "reading": "n_divergences=34, top tickers=['IBM', 'VSAT', 'RKLB', 'GOOG', 'COST']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-08-28",
-      "note": "31 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: IBM, VSAT, RKLB, NET, COST.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-30",
+      "note": "34 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: IBM, VSAT, RKLB, GOOG, COST.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 31,
+    "n_lobes_total": 33,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -21015,7 +21094,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-28T13:15:35Z",
-  "inputs_hash": "sha256:75d0c81acddc670819a3f00495300f1d2eb451fe263a5bb56e990fadb85460af",
+  "produced_at": "2026-08-30T05:45:43Z",
+  "inputs_hash": "sha256:547f5e9c842af95e114c344d2a35b8a05648e65d2126312d510f7d084fc1e974",
   "tier": "display"
 }

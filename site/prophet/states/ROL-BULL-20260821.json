@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ROL-BULL-20260821",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 46.3,
-  "raw_confidence": 44.6,
-  "delta_vs_base": -13.7,
+  "management_confidence": 49.2,
+  "raw_confidence": 50.1,
+  "delta_vs_base": -10.8,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 40.0,
+    "validity": 65.5,
     "progress": 0.0,
-    "pace": 85.8,
+    "pace": 81.1,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.508,
+    "dist_to_stop_r": 0.731,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 17.8,
-    "p1": -0.3283,
-    "p2": -0.1641,
+    "horizon_pct_used": 20.0,
+    "p1": -0.1794,
+    "p2": -0.0897,
     "p3": null,
-    "move_r": -0.492,
+    "move_r": -0.269,
     "mfe_r": 0.178,
     "mae_r": -0.492
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-24",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 9,
+  "tau": 0.2
 }

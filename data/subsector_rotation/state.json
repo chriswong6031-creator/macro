@@ -851,7 +851,7 @@
     "name": "Utilities",
     "quadrant": "improving",
     "theme": "Energy Renewable",
-    "turn_state": "bottoming"
+    "turn_state": "range"
   },
   "energycleanwind": {
     "emerging": false,
@@ -1444,7 +1444,7 @@
   "roboticsmachinevision": {
     "emerging": false,
     "name": "Machine Vision",
-    "quadrant": "lagging",
+    "quadrant": "improving",
     "theme": "Robotics",
     "turn_state": "range"
   },

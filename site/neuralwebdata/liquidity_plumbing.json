@@ -67,8 +67,8 @@
     "mechanical": true,
     "stress_confirming": false,
     "stress_overlay": {
-      "hy_oas_pct": 2.67,
-      "hy_oas_z": -0.87,
+      "hy_oas_pct": 2.63,
+      "hy_oas_z": -1.07,
       "nfci": -0.566,
       "nfci_trend": "loose",
       "confirming_stress": false
@@ -394,7 +394,7 @@
   "degraded": false,
   "schema_version": 1,
   "produced_by": "scripts/build_liquidity_plumbing.py",
-  "produced_at": "2026-08-29T09:42:34Z",
-  "inputs_hash": "sha256:f587c683daf8cc4b8a227d40dde13e7c47351ad9beb9f49db9bc3e1b59edbab0",
+  "produced_at": "2026-08-31T06:03:22Z",
+  "inputs_hash": "sha256:f249cb18974cd4bec498bdd1a74d168ff1c68eed854116c9f04a14b27a519085",
   "tier": "shadow"
 }

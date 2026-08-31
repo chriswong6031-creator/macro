@@ -1,15 +1,15 @@
 {
   "appended": 0,
-  "asof": "2026-08-27",
+  "asof": "2026-08-28",
   "candidates": {
-    "R": 2,
-    "T": 3,
-    "W": 33
+    "R": 4,
+    "T": 4,
+    "W": 12
   },
   "deduped": {
-    "R": 2,
-    "T": 3,
-    "W": 33
+    "R": 4,
+    "T": 4,
+    "W": 12
   },
   "dry_run": false,
   "feature_source": {
@@ -86,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-28 14:26:53",
-  "runtime_s": 114.3,
+  "run_utc": "2026-08-31 07:02:33",
+  "runtime_s": 109.2,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": -1,
+    "age_days": 0,
     "asof": "2026-08-28",
-    "n_members": 134,
+    "n_members": 103,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 2.962,
+        "emerging_score": 2.198,
         "rank": 1,
-        "theme": "Cybersecurity"
+        "theme": "Software"
       },
       {
-        "emerging_score": 2.734,
+        "emerging_score": 1.928,
         "rank": 2,
-        "theme": "Commodities Metals"
-      },
-      {
-        "emerging_score": 1.776,
-        "rank": 3,
         "theme": "Mega-Cap"
       },
       {
-        "emerging_score": 1.77,
-        "rank": 4,
-        "theme": "Biometrics"
+        "emerging_score": 1.881,
+        "rank": 3,
+        "theme": "Big Data"
       },
       {
-        "emerging_score": 1.333,
+        "emerging_score": 1.848,
+        "rank": 4,
+        "theme": "Cybersecurity"
+      },
+      {
+        "emerging_score": 1.678,
         "rank": 5,
-        "theme": "Software"
+        "theme": "Biometrics"
       }
     ]
   },
@@ -129,19 +129,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 33,
-    "asof_max": "2026-08-27",
+    "aligned": 12,
+    "asof_max": "2026-08-28",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-27",
+    "asof_run": "2026-08-28",
     "evaluated": 712,
-    "fresh": 35,
+    "fresh": 12,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 21.6,
+    "runtime_s": 19.3,
     "skipped": 5,
     "source": "baskets/membership.json",
-    "state_turn": 97,
+    "state_turn": 89,
     "universe_n": 717
   }
 }

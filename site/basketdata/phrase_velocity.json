@@ -1,8 +1,8 @@
 {
   "schema": "edgar_phrase_velocity.v1",
   "vocab_version": 1,
-  "as_of": "2026-08-29",
-  "generated_at": "2026-08-29T07:31:12.077639+00:00",
+  "as_of": "2026-08-30",
+  "generated_at": "2026-08-31T03:23:34.634167+00:00",
   "authority": {
     "may_rank": false,
     "may_gate": false,
@@ -213,12 +213,12 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 21,
-          "prior_count": 8,
-          "recent_filers": 21,
-          "prior_filers": 7,
-          "velocity_z": 1.625,
+          "phrase": "record backlog",
+          "recent_count": 26,
+          "prior_count": 9,
+          "recent_filers": 25,
+          "prior_filers": 9,
+          "velocity_z": 1.8888888888888888,
           "is_affinity_phrase": false
         }
       ],
@@ -273,13 +273,13 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 21,
-          "prior_count": 8,
-          "recent_filers": 21,
-          "prior_filers": 7,
-          "velocity_z": 1.625,
-          "is_affinity_phrase": true
+          "phrase": "record backlog",
+          "recent_count": 26,
+          "prior_count": 9,
+          "recent_filers": 25,
+          "prior_filers": 9,
+          "velocity_z": 1.8888888888888888,
+          "is_affinity_phrase": false
         }
       ],
       "coverage_note": "0 basket tickers; 30d/60d PIT windows.",
@@ -326,12 +326,12 @@
           "is_affinity_phrase": false
         },
         {
-          "phrase": "supply constrained",
-          "recent_count": 21,
-          "prior_count": 8,
-          "recent_filers": 21,
-          "prior_filers": 7,
-          "velocity_z": 1.625,
+          "phrase": "record backlog",
+          "recent_count": 26,
+          "prior_count": 9,
+          "recent_filers": 25,
+          "prior_filers": 9,
+          "velocity_z": 1.8888888888888888,
           "is_affinity_phrase": false
         }
       ],
@@ -383,30 +383,20 @@
     {
       "phrase": "record backlog",
       "recent_count": 18,
-      "prior_count": 8,
+      "prior_count": 7,
       "recent_filers": 17,
-      "prior_filers": 8,
-      "velocity_z": 1.25,
+      "prior_filers": 7,
+      "velocity_z": 1.5714285714285714,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
     {
       "phrase": "extended lead times",
-      "recent_count": 18,
-      "prior_count": 8,
-      "recent_filers": 18,
-      "prior_filers": 8,
-      "velocity_z": 1.25,
-      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
-      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
-    },
-    {
-      "phrase": "supply constrained",
       "recent_count": 17,
-      "prior_count": 8,
+      "prior_count": 9,
       "recent_filers": 17,
-      "prior_filers": 7,
-      "velocity_z": 1.125,
+      "prior_filers": 9,
+      "velocity_z": 0.8888888888888888,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },
@@ -417,6 +407,16 @@
       "recent_filers": 11,
       "prior_filers": 5,
       "velocity_z": 0.8333333333333334,
+      "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
+      "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
+    },
+    {
+      "phrase": "supply constrained",
+      "recent_count": 16,
+      "prior_count": 9,
+      "recent_filers": 16,
+      "prior_filers": 8,
+      "velocity_z": 0.7777777777777778,
       "discovery_note": "Phrase accelerating among tickers with NO current theme home. Candidate discovery cluster — needs curated review, not auto-promotion.",
       "discovery_note_zh": "该短语在无当前主题归属的成员中加速出现，属于发现候选集合——需人工审核，不自动晋升。"
     },

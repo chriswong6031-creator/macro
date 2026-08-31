@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "LKFN-BULL-20260716",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 29.5,
-  "raw_confidence": 29.4,
-  "delta_vs_base": -30.5,
+  "management_confidence": 30.5,
+  "raw_confidence": 30.9,
+  "delta_vs_base": -29.5,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 55.0,
+    "validity": 60.1,
     "progress": 0.0,
     "pace": 0.0,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.642,
+    "dist_to_stop_r": 0.685,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 95.6,
-    "p1": -0.2384,
-    "p2": -0.1192,
+    "horizon_pct_used": 97.8,
+    "p1": -0.2097,
+    "p2": -0.1048,
     "p3": null,
-    "move_r": -0.358,
+    "move_r": -0.315,
     "mfe_r": 0.105,
     "mae_r": -0.358
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 43,
-  "tau": 0.9556
+  "days_elapsed": 44,
+  "tau": 0.9778
 }

@@ -4,7 +4,7 @@
  "index": "Russell-2000",
  "benchmark": "IWM",
  "benchmark_label": "Russell-2000 (IWM)",
- "as_of": "2026-08-29",
+ "as_of": "2026-08-31",
  "source": "finviz idx_rut (1889 names); sub-industry subsectors + sector amalgamations",
  "subsectors": {
   "advertising-agencies": {
@@ -210,11 +210,11 @@
      "name": "Figs Inc"
     },
     {
-     "ticker": "UAA",
+     "ticker": "UA",
      "name": "Under Armour Inc"
     },
     {
-     "ticker": "UA",
+     "ticker": "UAA",
      "name": "Under Armour Inc"
     },
     {
@@ -1812,10 +1812,6 @@
     {
      "ticker": "ANAB",
      "name": "AnaptysBio Inc"
-    },
-    {
-     "ticker": "FBRX",
-     "name": "Forte Biosciences Inc"
     },
     {
      "ticker": "BCAX",
@@ -3702,6 +3698,10 @@
      "name": "Caledonia Mining Corp Plc"
     },
     {
+     "ticker": "GORO",
+     "name": "Goldgroup Mining Inc"
+    },
+    {
      "ticker": "VGZ",
      "name": "Vista Gold Corp"
     },
@@ -3750,12 +3750,12 @@
      "name": "BrightSpring Health Services Inc"
     },
     {
-     "ticker": "HQY",
-     "name": "Healthequity Inc"
-    },
-    {
      "ticker": "TXG",
      "name": "10x Genomics Inc"
+    },
+    {
+     "ticker": "HQY",
+     "name": "Healthequity Inc"
     },
     {
      "ticker": "HNGE",
@@ -4706,6 +4706,10 @@
      "name": "SI-BONE Inc"
     },
     {
+     "ticker": "AVR",
+     "name": "Anteris Technologies Global Corp"
+    },
+    {
      "ticker": "AHCO",
      "name": "AdaptHealth Corp"
     },
@@ -4862,10 +4866,6 @@
     {
      "ticker": "STAA",
      "name": "Staar Surgical Co"
-    },
-    {
-     "ticker": "AVR",
-     "name": "Anteris Technologies Global Corp"
     },
     {
      "ticker": "ANGO",
@@ -5244,10 +5244,6 @@
    "sector": "Energy",
    "members": [
     {
-     "ticker": "KNTK",
-     "name": "Kinetik Holdings Inc"
-    },
-    {
      "ticker": "GLNG",
      "name": "Golar Lng"
     },
@@ -5258,6 +5254,10 @@
     {
      "ticker": "EE",
      "name": "Excelerate Energy Inc"
+    },
+    {
+     "ticker": "KNTK",
+     "name": "Kinetik Holdings Inc"
     },
     {
      "ticker": "STNG",
@@ -5388,10 +5388,6 @@
     {
      "ticker": "MUX",
      "name": "McEwen Inc"
-    },
-    {
-     "ticker": "GORO",
-     "name": "Goldgroup Mining Inc"
     },
     {
      "ticker": "VOXR",
@@ -9436,10 +9432,6 @@
    "name_zh": "能源",
    "members": [
     {
-     "ticker": "KNTK",
-     "name": "Kinetik Holdings Inc"
-    },
-    {
      "ticker": "SM",
      "name": "SM Energy Co"
     },
@@ -9526,6 +9518,10 @@
     {
      "ticker": "EE",
      "name": "Excelerate Energy Inc"
+    },
+    {
+     "ticker": "KNTK",
+     "name": "Kinetik Holdings Inc"
     },
     {
      "ticker": "HP",
@@ -11292,10 +11288,6 @@
      "name": "TG Therapeutics Inc"
     },
     {
-     "ticker": "HQY",
-     "name": "Healthequity Inc"
-    },
-    {
      "ticker": "TXG",
      "name": "10x Genomics Inc"
     },
@@ -11842,10 +11834,6 @@
     {
      "ticker": "ANIP",
      "name": "ANI Pharmaceuticals Inc"
-    },
-    {
-     "ticker": "FBRX",
-     "name": "Forte Biosciences Inc"
     },
     {
      "ticker": "AGL",
@@ -13610,10 +13598,6 @@
      "name": "Quad/Graphics Inc"
     },
     {
-     "ticker": "CMCO",
-     "name": "Columbus Mckinnon Corp"
-    },
-    {
      "ticker": "ULH",
      "name": "Universal Logistics Holdings Inc"
     },
@@ -14678,8 +14662,8 @@
      "name": "PagSeguro Digital Ltd"
     },
     {
-     "ticker": "VISN",
-     "name": "Vistance Networks Inc"
+     "ticker": "NCNO",
+     "name": "Ncino Inc"
     },
     {
      "ticker": "PAYO",
@@ -14912,10 +14896,6 @@
     {
      "ticker": "AEVA",
      "name": "Aeva Technologies Inc"
-    },
-    {
-     "ticker": "AIP",
-     "name": "Arteris Inc"
     },
     {
      "ticker": "PD",
@@ -15230,8 +15210,8 @@
      "name": "Lantronix Inc"
     },
     {
-     "ticker": "LTRX",
-     "name": "Lantronix Inc"
+     "ticker": "III",
+     "name": "Information Services Group Inc"
     },
     {
      "ticker": "KLTR",
