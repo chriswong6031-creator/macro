@@ -1,6 +1,6 @@
 {
 "filter":"idx_rut",
-"as_of":"2026-08-30 02:30 UTC",
+"as_of":"2026-08-31 02:42 UTC",
 "n":1946,
 "total_reported":1946,
 "unmapped_industries":[],
@@ -5638,14 +5638,6 @@
 "market_cap_b":1.88
 },
 {
-"ticker":"SHAZ",
-"company":"SharonAI Holdings Inc",
-"industry":"Information Technology Services",
-"sector":"Technology",
-"country":"USA",
-"market_cap_b":1.88
-},
-{
 "ticker":"STRA",
 "company":"Strategic Education Inc",
 "industry":"Education & Training Services",
@@ -5665,6 +5657,14 @@
 "ticker":"ATEN",
 "company":"A10 Networks Inc",
 "industry":"Software - Infrastructure",
+"sector":"Technology",
+"country":"USA",
+"market_cap_b":1.87
+},
+{
+"ticker":"SHAZ",
+"company":"SharonAI Holdings Inc",
+"industry":"Information Technology Services",
 "sector":"Technology",
 "country":"USA",
 "market_cap_b":1.87
