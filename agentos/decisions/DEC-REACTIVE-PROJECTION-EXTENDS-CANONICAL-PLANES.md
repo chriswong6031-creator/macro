@@ -58,7 +58,7 @@ affects:
   - "docs/superpowers/specs/2026-08-30-reactive-projection-platform-design.md"
   - "docs/superpowers/plans/2026-08-30-reactive-projection-r1a-intelligence-hub.md"
 confidence: high
-reversibility: moderate
+reversibility: costly
 decided_by: chairman
 decided_at: 2026-08-30
 ---
