@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-30T12:31:17.286710+00:00",
+  "generated_utc": "2026-08-30T23:54:28.708064+00:00",
   "as_of": "2026-08-30",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26484,14 +26484,6 @@
           "sellers": 12
         },
         {
-          "ticker": "MDLN",
-          "buy_usd": 170750.0,
-          "sell_usd": 3761016566.0,
-          "net_usd": -3760845816.0,
-          "buyers": 1,
-          "sellers": 20
-        },
-        {
           "ticker": "IHT",
           "buy_usd": 0.0,
           "sell_usd": 2860658213.0,
@@ -26586,6 +26578,14 @@
           "net_usd": -981879142.0,
           "buyers": 1,
           "sellers": 12
+        },
+        {
+          "ticker": "ANET",
+          "buy_usd": 0.0,
+          "sell_usd": 844708243.0,
+          "net_usd": -844708243.0,
+          "buyers": 0,
+          "sellers": 288
         }
       ]
     },
