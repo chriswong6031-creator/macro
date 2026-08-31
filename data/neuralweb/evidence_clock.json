@@ -1,20 +1,20 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-08-30",
-  "generated_utc": "2026-08-30T06:10:51Z",
+  "as_of": "2026-08-31",
+  "generated_utc": "2026-08-31T06:13:17Z",
   "authority": "display_only",
   "summary": {
-    "n_rows": 313,
+    "n_rows": 314,
     "by_state": {
       "overdue": 15,
-      "due": 4,
+      "due": 6,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 290
+      "accruing": 289
     },
     "n_acknowledged": 0,
     "top_due": {
@@ -22,7 +22,7 @@
       "due_at": "2026-06-22",
       "owner_program": "qualitative-intelligence"
     },
-    "morning_line": "19 due/overdue, 1 missing, 290 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+    "morning_line": "21 due/overdue, 1 missing, 289 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
     {
@@ -133,7 +133,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3266,
+        "n_open": 3284,
         "n_past_check_by": 2292
       },
       "allowed_actions": [
@@ -181,7 +181,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3266,
+        "n_open": 3284,
         "n_past_check_by": 2292
       },
       "allowed_actions": [
@@ -229,7 +229,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 23860,
+        "n_open": 24702,
         "n_past_check_by": 16939
       },
       "allowed_actions": [
@@ -277,7 +277,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 23860,
+        "n_open": 24702,
         "n_past_check_by": 16939
       },
       "allowed_actions": [
@@ -418,7 +418,7 @@
       "date_state": "overdue",
       "readiness": {
         "n_open": 160,
-        "n_past_check_by": 130
+        "n_past_check_by": 134
       },
       "allowed_actions": [
         "inspect",
@@ -465,7 +465,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 3614,
+        "n_open": 3676,
         "n_past_check_by": 2205
       },
       "allowed_actions": [
@@ -513,7 +513,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 82,
+        "n_open": 84,
         "n_past_check_by": 52
       },
       "allowed_actions": [
@@ -577,7 +577,7 @@
       "state": "overdue",
       "date_state": "overdue",
       "readiness": {
-        "n_open": 1306,
+        "n_open": 1312,
         "n_past_check_by": 393
       },
       "allowed_actions": [
@@ -662,13 +662,77 @@
       "packet": null
     },
     {
+      "clock_id": "experiments:spvector-overlay",
+      "source_system": "experiments",
+      "subject_id": "spvector-overlay",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-31",
+      "as_of": "2026-06-20",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "regime_ledger appends daily {regime,vector_state,realized_5d_return}; resolve forward outcomes; per-regime forward Sharpe + hit-rate.",
+        "cadence": "daily",
+        "status": "accruing",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:vector-btc-impulse",
+      "source_system": "experiments",
+      "subject_id": "vector-btc-impulse",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-31",
+      "as_of": "2026-06-25",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "gated by fire-rarity not row count; ~15 matured live act-tier fires for a meaningful DOWN hit-rate; regime falsifier needs >=8 graded 90d quarters.",
+        "cadence": "daily (hourly signals)",
+        "status": "measuring",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
       "clock_id": "rule_experiments:disp_gate_1",
       "source_system": "rule_experiments",
       "subject_id": "disp_gate_1",
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-30",
+      "due_at": "2026-08-31",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -700,7 +764,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-30",
+      "due_at": "2026-08-31",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -732,7 +796,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-30",
+      "due_at": "2026-08-31",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -764,7 +828,7 @@
       "subject_type": "experiment",
       "owner_program": "engine-fix",
       "clock_type": "awaiting_execution",
-      "due_at": "2026-08-30",
+      "due_at": "2026-08-31",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -917,8 +981,8 @@
       "state": "blocked",
       "date_state": "accruing",
       "readiness": {
-        "n_claims": 73032,
-        "n_with_falsifier": 683,
+        "n_claims": 75082,
+        "n_with_falsifier": 690,
         "falsifier_coverage": "0.9%",
         "blocking_reason": "falsifier coverage 0.9%; not a promotion-grade substrate"
       },
@@ -934,68 +998,6 @@
       "evidence_refs": [
         "data/qledger/claims.jsonl"
       ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:spvector-overlay",
-      "source_system": "experiments",
-      "subject_id": "spvector-overlay",
-      "subject_type": "track_record",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-31",
-      "as_of": "2026-06-20",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "regime_ledger appends daily {regime,vector_state,realized_5d_return}; resolve forward outcomes; per-regime forward Sharpe + hit-rate.",
-        "cadence": "daily",
-        "status": "accruing"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "experiments:vector-btc-impulse",
-      "source_system": "experiments",
-      "subject_id": "vector-btc-impulse",
-      "subject_type": "calibration",
-      "owner_program": null,
-      "clock_type": "come_back_on",
-      "due_at": "2026-08-31",
-      "as_of": "2026-06-25",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "maturation": "gated by fire-rarity not row count; ~15 matured live act-tier fires for a meaningful DOWN hit-rate; regime falsifier needs >=8 graded 90d quarters.",
-        "cadence": "daily (hourly signals)",
-        "status": "measuring"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
@@ -9544,7 +9546,7 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 12056,
+        "n_open": 12313,
         "n_past_check_by": 0
       },
       "allowed_actions": [
@@ -9576,7 +9578,39 @@
       "state": "accruing",
       "date_state": "accruing",
       "readiness": {
-        "n_open": 2,
+        "n_open": 4,
+        "n_past_check_by": 0
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:thematic_desk",
+      "source_system": "qledger",
+      "subject_id": "thematic_desk",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": null,
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_open": 1,
         "n_past_check_by": 0
       },
       "allowed_actions": [

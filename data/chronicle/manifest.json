@@ -43,18 +43,18 @@
       "retracted_by_authority": 0
     }
   },
-  "as_of": "2026-08-30",
+  "as_of": "2026-08-31",
   "coverage": {
     "end": "2026-08-28",
     "note": "9222 events across 616 distinct date(s)",
     "start": "2013-05-21"
   },
-  "elapsed_s": 2.382,
+  "elapsed_s": 2.275,
   "gap_notes": [
     "earnings: coverage: 961/2021 tickers carried reported surprises; 1 event(s) retained after their source row left the current snapshot (union-merge, never deleted)",
     "macro_release: 19/19 release event(s) joined to a scored actual print"
   ],
-  "inputs_hash": "sha256:b8452bf26cacdc4d0657548f8cf9af2a3525390fc35aba321dd9eb5ee2dd66f6",
+  "inputs_hash": "sha256:d7917908989741fd777add708f4eaa2212af902aa39a49dc20c67423eca596cc",
   "ledgers": {
     "earnings_calls": {
       "path": "data/chronicle/earnings_call_events.jsonl",
@@ -75,7 +75,7 @@
       "sha256": "sha256:2da89002b22d1c7bf8944154943ae2c9b55ed4e823bbec5f6ae7cd113f757adc"
     }
   },
-  "produced_at": "2026-08-30T06:10:18Z",
+  "produced_at": "2026-08-31T06:12:57Z",
   "produced_by": "scripts/build_chronicle.py",
   "schema": "chronicle.manifest/v1",
   "schema_version": 1,
@@ -90,7 +90,7 @@
     },
     "data/earnings/earnings.parquet": {
       "present": true,
-      "sha256": "sha256:d611476ea848d67e2751fc541920173aa0c38879af5f388d2f061c184051cf9b"
+      "sha256": "sha256:36b21ba23fcf815cd3c20fe1c38e023fd95312a236698914220feabb615f4ad0"
     },
     "data/prophet/ledger.jsonl": {
       "present": true,
@@ -106,11 +106,11 @@
     },
     "data/release_forecast/forward_ledger.jsonl": {
       "present": true,
-      "sha256": "sha256:93254e86ba7c642df75708dbdf3b23e4a576e73d4198c4b093a866ef73977424"
+      "sha256": "sha256:6f3aeff51c03bff84cccedcaabfcd6124cb3fe360de76503f0173c978a36bb1d"
     },
     "data/research_vault/catalog.json": {
       "present": true,
-      "sha256": "sha256:6a9a5765d34b97d251715053f34c1dd8e9fdba82b58d3cde56519c15e3442799"
+      "sha256": "sha256:4e92f45af06386933fe8f2173068720ac378eb3b4d2fade8bdf7b06d7021a6b7"
     },
     "data/risk_radar/forward_log.jsonl": {
       "present": true,

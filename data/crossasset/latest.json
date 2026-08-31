@@ -1,5 +1,5 @@
 {
-  "date": "2026-08-30",
+  "date": "2026-08-31",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
@@ -10,7 +10,7 @@
     "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-08-30",
+  "asof": "2026-08-31",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
@@ -178,11 +178,11 @@
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 54.0
+        "pctile": 55.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 66.842,
+        "ratio": 66.972,
         "trend": "mid",
         "pctile": 27.0
       },
@@ -190,7 +190,7 @@
         "pair": "oil_gold",
         "ratio": 0.019,
         "trend": "mid",
-        "pctile": 37.0
+        "pctile": 38.0
       },
       {
         "pair": "stocks_gold",
@@ -306,7 +306,7 @@
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-27"
+      "asof": "2026-08-28"
     },
     "dollar": {
       "usd_dir": "weakening",
@@ -328,9 +328,9 @@
       ],
       "unstable_n": 0,
       "fx_stress": {
-        "dominant": null,
+        "dominant": "carry_unwind",
         "top_key": "carry_unwind",
-        "top_val": 10.9
+        "top_val": 65.8
       }
     },
     "shadow": {
