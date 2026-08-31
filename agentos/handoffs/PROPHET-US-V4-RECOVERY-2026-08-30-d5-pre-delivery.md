@@ -1,19 +1,18 @@
 ---
 workstream: WS:PROPHET-US-V4-RECOVERY
-session: codex/d5-earnings-20260829-task4a-records
+session: codex/d5-earnings-20260829-post-reconcile
 model: codex
 ended_because: complete
 mission: >
-  Execute D5 Task 4A in the existing governed carrier: run the complete focused
-  battery and repository-owned changed-path checks, record the exact pre-delivery
-  state, and stop before push, PR, merge, deploy, or live acceptance.
+  Execute D5 post-reconciliation verification in the existing governed carrier: prove
+  the exact merge-parent relationship, run the full commissioned local battery, refresh
+  only the three D5 records, and stop before push, PR, deploy, merge, or live acceptance.
 state_before: >
-  D5 Tasks 1-3 were committed at exact implementation head
-  e650dbc412a3746894c8ef4e950e775139f0dd1a on branch
-  claude/d5-earnings-20260829. Task-scoped reviews had accepted the bounded pure
-  Earnings projection and the single authenticated existing-router endpoint, but the
-  program records still described D5 as todo/unbuilt and no integrated Task 4 evidence
-  had been recorded.
+  Independent whole-branch hostile re-review 4 had passed final reviewed head
+  f48c8d1598c49aa0f3b1eba85922c9e633dd114d. Fresh-main head
+  b7b3938aec35372dc32229981b4f3159f2b5faf2 had been reconciled into exact merge head
+  bb34c575f58879f4944ca353e17ca6a6fa4512ca, but the complete post-reconciliation
+  local battery and the corresponding records refresh were still owed.
 changed:
   - path: .github/ci/legacy-jobs.yml
     what: >
@@ -250,18 +249,92 @@ verified:
       guard named four generated data/site writes, which were restored from HEAD and
       sparse rules reapplied before record edits. The three Prophet companion paths
       are byte-identical from the branch base through the D5 implementation head.
-  - claim: Agent OS was schema-clean before the records edit.
+  - claim: Agent OS was schema-clean before the historical Task 4A records edit.
     command: python3 scripts/agentos.py validate
     result: "936 records; 0 errors; 60 pre-existing warnings."
-  - claim: Agent OS remains schema-clean after the three narrow records edits.
+  - claim: Agent OS remained schema-clean after the historical Task 4A records edit.
     command: python3 scripts/agentos.py validate
     result: "937 records; 0 errors; 32 pre-existing warnings in the full checkout."
+  - claim: >
+      The post-reconciliation carrier starts at the exact commissioned merge head, whose
+      two parents preserve the final independently reviewed D5 head and fresh main.
+    command: >
+      git show -s --format='%H%n%P%n%s' HEAD; git merge-base
+      eaa2a5bf656d2883fa77382755f833969bed35bd HEAD; git diff --name-status
+      b7b3938aec35372dc32229981b4f3159f2b5faf2..HEAD; git diff --quiet
+      b7b3938aec35372dc32229981b4f3159f2b5faf2..HEAD -- app/deploy/Caddyfile
+      tests/test_caddy_hub_boundary.py
+    result: >
+      HEAD is bb34c575f58879f4944ca353e17ca6a6fa4512ca with exact parents
+      f48c8d1598c49aa0f3b1eba85922c9e633dd114d and
+      b7b3938aec35372dc32229981b4f3159f2b5faf2; the original branch base remains ancestor
+      eaa2a5bf656d2883fa77382755f833969bed35bd. The fresh-main range is exactly the 14
+      commissioned D5 files. Caddyfile and its boundary test are byte-identical to fresh
+      main, so the historical stale-base failures are absent.
+  - claim: >
+      The full commissioned D5, hostile, complete CI-pack, exact route/closure, exact
+      Prophet Lab manifest, and clean declared-dependency Python 3.12 batteries are green
+      at exact merge head bb34c575f58879f4944ca353e17ca6a6fa4512ca.
+    command: >
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider --basetemp
+      /private/tmp/d5-post-reconcile.q9Y7hF/focused tests/test_dataos_identity.py
+      tests/test_company_intelligence_workspace_chain.py tests/test_prophet_lab.py
+      tests/test_prophet_lab_api.py; PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p
+      no:cacheprovider --basetemp /private/tmp/d5-post-reconcile.q9Y7hF/hostile
+      tests/test_company_intelligence_workspace_chain.py tests/test_prophet_lab_api.py -k
+      '<22 exact lineage/PIT selectors>'; PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q
+      -p no:cacheprovider --basetemp /private/tmp/d5-post-reconcile.q9Y7hF/full-cipack
+      tests/test_ci_pack.py; PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p
+      no:cacheprovider --basetemp /private/tmp/d5-post-reconcile.q9Y7hF/routing
+      tests/test_ci_pack.py::test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate
+      tests/test_ci_pack.py::test_d5_route_closure_keeps_affected_curated_jobs_selecting_dependencies
+      tests/test_ci_pack.py::test_curated_exclusive_scopes_cover_their_own_import_closure;
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider --basetemp
+      /private/tmp/d5-post-reconcile.q9Y7hF/prophet-manifest tests/test_prophet_lab.py
+      tests/test_prophet_lab_api.py tests/test_company_intelligence_workspace_chain.py
+      tests/test_prophet_lab_timeparse.py tests/test_prophet_lab_commissioning.py
+      tests/test_caddy_hub_boundary.py; /private/tmp/d5-rereview4-py312.xbItvx/bin/pip
+      check; /private/tmp/d5-rereview4-py312.xbItvx/bin/python -m pytest -q -p
+      no:cacheprovider --basetemp /private/tmp/d5-post-reconcile.q9Y7hF/py312
+      tests/test_prophet_lab.py tests/test_prophet_lab_api.py
+      tests/test_company_intelligence_workspace_chain.py tests/test_prophet_lab_timeparse.py
+      tests/test_prophet_lab_commissioning.py
+    result: >
+      Focused 444 passed; exact hostile lineage/PIT 22 passed with 270 deselected;
+      complete tests/test_ci_pack.py 117 passed; route/closure selectors 3 passed; exact
+      six-suite Prophet Lab manifest line 453 passed; clean Python 3.12.13 environment has
+      no broken requirements and the exact five-suite line is 435 passed. Only 10 known
+      FastAPI/deprecation warnings appear on the relevant suites; there are zero failures.
+  - claim: >
+      Both path-isolated and whole-range semantic routing plans are fully receipted against
+      the exact merge and fresh-main heads without an unowned-path or empty selected-job
+      result.
+    command: >
+      CI_EVENT_NAME=pull_request CI_WORKFLOW_NAME=ci CI_HEAD_ROLE=pr_head
+      CI_HEAD_SHA=bb34c575f58879f4944ca353e17ca6a6fa4512ca
+      CI_BASE_SHA=b7b3938aec35372dc32229981b4f3159f2b5faf2
+      CI_CHANGED_FILES_JSON='["tests/test_company_intelligence_workspace_chain.py"]'
+      python3 scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --gate code
+      --pack-count 12 --scope-mode active --plan-only --emit-plan-json
+      /private/tmp/d5-post-reconcile.q9Y7hF/path-plan.json; CI_EVENT_NAME=pull_request
+      CI_WORKFLOW_NAME=ci CI_HEAD_ROLE=pr_head
+      CI_HEAD_SHA=bb34c575f58879f4944ca353e17ca6a6fa4512ca
+      CI_BASE_SHA=b7b3938aec35372dc32229981b4f3159f2b5faf2 python3
+      scripts/run_ci_pack.py --workflow .github/ci/legacy-jobs.yml --gate code
+      --pack-count 12 --scope-mode active --changed-from
+      b7b3938aec35372dc32229981b4f3159f2b5faf2 --plan-only --emit-plan-json
+      /private/tmp/d5-post-reconcile.q9Y7hF/whole-plan.json
+    result: >
+      Path-isolated selection is 3/133, including prophet-lab, with changed-files hash
+      cad089b975a11d15962bb40ca630b7eb830dc5e92f2091b9592605a442856ced and plan hash
+      179a8fde50a3647cba6779dbdf781379dcbc9a6ea8b1c19214f312d4198bf896. The complete
+      14-file range sets authority_changed=true and selects 133/133 across all 12 packs,
+      with changed-files hash 7aec8c18111b3714544d9091a845b8d1281b03edce725e64732665c636afa636
+      and plan hash 8740f42f6b48b70142dc044eebf6c8ea16771a893c98aa34cb6d5890a5e86bd9.
+  - claim: Agent OS is schema-clean after the post-reconciliation records refresh.
+    command: python3 scripts/agentos.py validate
+    result: "967 records; 0 errors; 40 pre-existing warnings in the full checkout."
 unverified:
-  - claim: The final D5 branch head is independently hostile-review clean.
-    what_would_verify: >
-      A fresh reviewer PASS against exact code/test/manifest head
-      1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 and the later records head, full range
-      changed-file census, Cell F contract/amendments, and prohibited-state checklist.
   - claim: The D5 branch is accepted by hosted CI and merged on main.
     what_would_verify: >
       Fill PR number, exact source head, every concluded binding check/run, squash merge
@@ -273,39 +346,17 @@ unverified:
       observed, produced, and browser/consumer clocks separately.
 unresolved:
   - >
-    This branch started at eaa2a5bf656d and was 182 commits behind the locally available
-    origin/main tracking ref at Task 4A start. Fresh-main reconciliation belongs to the
-    parent Task 4 delivery step and was expressly forbidden in this records subtask.
-  - >
-    After opting this carrier into its full tracked checkout, the clean Python 3.12
-    Prophet Lab line has no omitted-data or dependency failure. Its only two failures
-    are the unchanged stale-branch Caddy 8-versus-7 proxy pins; do not translate 451/453
-    into full-job green. Fresh-main reconciliation and the hosted lane still owe the
-    integrated verdict. The earlier complete CI-pack closure red was a separate
-    D5-induced defect, not part of this stale-Caddy class; it is repaired at
-    1dfc8aab4cf2 and the complete local file is now 117 passed. The earlier broad Neural
-    Web sparse result remains historical.
-  - >
-    The optional local Agent OS pytest sweep returned 180 passed and one failure in
-    `test_cross_repo_path_is_unchecked_when_that_checkout_is_absent`: its assertion
-    requires zero phantom-artifact warnings. At the time of that historical sweep the
-    carrier omitted a Macro `verify_shots/` artifact, and the host also had an
-    independently stale Mastermind sibling checkout. This does not alter the
-    schema-clean `agentos.py validate` result; rerun that fixture in the repository's
-    full hosted environment.
+    Local reconciliation and exact-head verification are complete. Only external
+    delivery states remain unresolved: the exact records head has not been pushed or
+    opened as a PR, hosted CI has not concluded, no squash merge exists on main, the
+    normal deploy has not incorporated D5, and no authenticated covered plus
+    typed-unresolved production receipt has been captured.
 next_actions:
   - >
-    Run the independent hostile whole-branch re-review against exact repaired head
-    1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 and repair any further load-bearing
-    finding test-first.
-  - >
-    Fetch and reconcile fresh origin/main in the parent session, including the named
-    Caddy seven-block test correction, then rerun the 444-test focused battery and the
-    repository-selected manifest validation/job lines.
-  - >
-    Push claude/d5-earnings-20260829; open one PR; record the exact PR/source head and
-    concluded hosted checks; squash-merge; verify the merge SHA, main ancestry, and exact
-    file hashes. PR: PENDING. Hosted CI: PENDING. Merge: PENDING.
+    Push the exact records-only child of merge head
+    bb34c575f58879f4944ca353e17ca6a6fa4512ca; open one PR; record the exact PR/source
+    head and concluded hosted checks; squash-merge; verify the merge SHA, main ancestry,
+    and exact file hashes. PR: PENDING. Hosted CI: PENDING. Merge: PENDING.
   - >
     Wait for the normal deploy lane and capture authenticated paid covered plus typed
     unresolved/not-covered endpoint receipts with separate clocks and a negative-field
@@ -317,9 +368,8 @@ do_not_redo:
   - >
     Do not rerun the broad Neural Web or full repository suite merely to repeat the
     historical sparse result; that run already proved omitted committed data makes the
-    exercise destructive/noisy. This carrier is now temporarily full for the clean
-    Python 3.12 job proof. Use the focused suite here and the proper hosted lane for the
-    integrated manifest verdict.
+    exercise destructive/noisy. This carrier is now full, and the exact local Prophet
+    Lab manifest line is green at 453 passed. The next integration verdict is hosted CI.
   - >
     Do not widen D5 into Context Vector, another identity reader, a cache, store, queue,
     scheduler, ranker, lifecycle owner, Fusion binding, execution authority, or another
@@ -330,7 +380,7 @@ do_not_redo:
 danger_areas:
   - >
     agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md is concurrently edited by other
-    waves. Re-diff it against fresh main before merge; a stale auto-resolution can delete
+    waves. Re-diff it against the PR base before delivery; a stale auto-resolution can delete
     ratified safety boundaries.
   - >
     The carrier was initially sparse. A broad test wrote four guard-named files inside
@@ -346,8 +396,12 @@ danger_areas:
     round 2 is exact code/test head 13e36371e2cd49ae790803f3d49c951062aad8a0.
     Fix round 3 is exact code/test/manifest head
     917b7eaef81b2a286551ede3ede0209c00f233e3; fix round 4 is exact
-    code/test/manifest head 1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25. Keep initial-code, all fix rounds,
-    records, PR, merge, and deployed heads distinct.
+    code/test/manifest head 1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25; final independently reviewed head is
+    f48c8d1598c49aa0f3b1eba85922c9e633dd114d; fresh-main parent is
+    b7b3938aec35372dc32229981b4f3159f2b5faf2; and the reconciliation merge head is
+    bb34c575f58879f4944ca353e17ca6a6fa4512ca. Keep initial-code, all fix rounds,
+    reviewed, fresh-main, reconciliation, records, PR, squash-merge, and deployed heads
+    distinct.
 decisions:
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
   - DEC:PROPHET-D5-PRESERVES-CONTEXT-VECTOR-AND-SEPARATES-EVIDENCE-AUTHORITY
@@ -356,38 +410,32 @@ discoveries: []
 
 ## §0 State — what is true right now
 
-D5's first bounded Earnings vertical is built and locally exact-head verified through
-hostile-review fix-round-4 code/test/manifest head `1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25`: one canonical
-current issuer-to-CIK seam, one pure revision-chain projection, and one authenticated
-existing Prophet Lab detail route. Whole-branch re-review 3 corrected the earlier false
-attribution of the complete CI-pack red: D5's imports had expanded five curated jobs'
-actual closure without updating their exclusive declarations. Fix round 4 adds only the
-exact measured paths; its selector regression is strict RED -> GREEN and the complete
-CI-pack file is 117 passed. The repaired focused battery remains 444 passed; the exact
-hostile selector set is 20 passed; and the clean Python 3.12 declared-dependency D5 job
-subset is 435 passed. The separate exact six-suite manifest line reaches 451/453, with only the
-unreconciled branch's two stale Caddy pins remaining. It is
-not independently re-review accepted, hosted-CI accepted, on main, deployed, or proven
-through a real paid production request. The broad local manifest line remains honestly
-non-green only for the named stale-base Caddy expectations; the broader Neural Web
-sparse-data failures are separate historical evidence and are not current D5 job failures.
+D5's first bounded Earnings vertical is built, independently hostile-review accepted, and
+locally exact-head verified after fresh-main reconciliation: final reviewed head
+`f48c8d1598c49aa0f3b1eba85922c9e633dd114d` and fresh-main head
+`b7b3938aec35372dc32229981b4f3159f2b5faf2` are the exact parents of merge head
+`bb34c575f58879f4944ca353e17ca6a6fa4512ca`. At that merge head, the focused battery is
+444 passed, the exact hostile lineage/PIT selector set is 22 passed, complete CI-pack is
+117 passed, route/closure is 3 passed, the exact Prophet Lab six-suite manifest line is
+453 passed, the clean Python 3.12 five-suite is 435 passed, and both semantic routing
+plans are receipted. The prior stale Caddy mismatch is gone because the reconciled files
+are byte-identical to fresh main. D5 is not hosted-CI accepted, on main, deployed, or
+proven through a real paid production request.
 
 ## §1 What is LEFT — in order
 
-1. Complete the exact-head hostile whole-branch re-review of fix head `1dfc8aab4cf2`.
-2. Reconcile fresh main and rerun the focused plus repository-owned CI proof in the proper checkout.
-3. Push one PR, wait for concluded hosted CI, squash-merge, and verify exact main ancestry/hashes.
-4. Wait for normal deployment and prove one covered paid request plus one typed unresolved/not-covered request.
-5. Replace every pending receipt in this handoff through the narrow records closeout chain.
+1. Push the exact records-only child of merge head `bb34c575f588` and open one PR.
+2. Wait for concluded hosted CI, squash-merge, and verify exact main ancestry/hashes.
+3. Wait for normal deployment and prove one covered paid request plus one typed unresolved/not-covered request.
+4. Replace every pending receipt in this handoff through the narrow records closeout chain.
 
 ## §2 What will bite you
 
-The D5-focused battery, complete CI-pack file, and clean declared-dependency five-suite line are green, but this
-carrier started from an old base. The exact Prophet Lab manifest line therefore still sees
-the stale eight-block Caddy expectation; the historical broad Neural Web sparse line saw missing committed datasets
-and can write generated artifacts into omitted trees before the data guard stops it. The
-workspace-chain ownership gap and the D5-induced curated closure gap are closed at the
-fix head; do not confuse either code-gate repair with the remaining sparse/base failures.
+The local proof is now green and reconciled, but it is still only local proof. Hosted CI,
+the PR and squash merge, fresh-main ancestry after that merge, the normal deployment, and
+authenticated production receipts remain separate states. Do not infer any of them from
+the exact merge-head battery. The historical broad Neural Web sparse run remains historical
+and is not a current D5 verdict.
 
 ## §3 What was decided and found
 
