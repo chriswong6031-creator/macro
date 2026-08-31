@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
-  "as_of": "2026-08-30",
-  "generated_at": "2026-08-30T06:09:52Z",
+  "as_of": "2026-08-31",
+  "generated_at": "2026-08-31T06:12:37Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -34,7 +34,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.305,
+          "value": 0.298,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -42,8 +42,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.26 → tightness=0.30",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.26，综合紧张度=0.30"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.23 → tightness=0.30",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.23，综合紧张度=0.30"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -130,7 +130,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.405,
+          "value": 0.401,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -138,8 +138,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.70 → tightness=0.40",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.70，综合紧张度=0.40"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.68 → tightness=0.40",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.68，综合紧张度=0.40"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -234,8 +234,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.46 → tightness=0.49",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.46，综合紧张度=0.49"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.54 → tightness=0.49",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.54，综合紧张度=0.49"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -323,7 +323,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.621,
+          "value": 0.623,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -331,8 +331,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.02 → tightness=0.62",
-          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.02，综合紧张度=0.62"
+          "note_en": "bottleneck_band=band=TIGHTENING, accel=1.03 → tightness=0.62",
+          "note_zh": "瓶颈波段=band=TIGHTENING，活动加速=accel=1.03，综合紧张度=0.62"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -420,16 +420,16 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.506,
-          "band": "med",
+          "value": 0.656,
+          "band": "high",
           "inputs": [
             "foresight_cascade:bottleneck_band",
             "foresight_cascade:tightness",
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=0.62 → tightness=0.51",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=0.62，综合紧张度=0.51"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.23 → tightness=0.66",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.23，综合紧张度=0.66"
         },
         "stale_consensus_gap": {
           "value": 0.85,
@@ -612,7 +612,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.585,
+          "value": 0.583,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -620,8 +620,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=2.14 → tightness=0.58",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=2.14，综合紧张度=0.58"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.99 → tightness=0.58",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.99，综合紧张度=0.58"
         },
         "stale_consensus_gap": {
           "value": 0.15,
@@ -708,7 +708,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.394,
+          "value": 0.392,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -716,8 +716,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.16 → tightness=0.39",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.16，综合紧张度=0.39"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=1.15 → tightness=0.39",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=1.15，综合紧张度=0.39"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -1092,7 +1092,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.85,
+          "value": 0.845,
           "band": "high",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1100,8 +1100,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHT (text), accel=2.01 → tightness=0.85",
-          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=2.01，综合紧张度=0.85"
+          "note_en": "bottleneck_band=band=TIGHT (text), accel=1.98 → tightness=0.84",
+          "note_zh": "瓶颈波段=band=TIGHT (text)，活动加速=accel=1.98，综合紧张度=0.84"
         },
         "stale_consensus_gap": {
           "value": 0.35,
@@ -1200,8 +1200,8 @@
           "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.29，综合紧张度=0.17"
         },
         "stale_consensus_gap": {
-          "value": 0.15,
-          "band": "low",
+          "value": 0.35,
+          "band": "med",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -1210,8 +1210,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.213); no gap. no_dispersion_data",
-          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.213）；无差距。no_dispersion_data"
+          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.213); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.213）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.241,
@@ -1474,7 +1474,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.377,
+          "value": 0.38,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1482,8 +1482,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.77 → tightness=0.38",
-          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.77，综合紧张度=0.38"
+          "note_en": "bottleneck_band=band=TIGHTENING (fingerprint), accel=0.78 → tightness=0.38",
+          "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.78，综合紧张度=0.38"
         },
         "stale_consensus_gap": {
           "value": 0.85,
@@ -1751,14 +1751,17 @@
     }
   ],
   "stale_legs": [
+    "divergence_log[robotics_automation]: stale (as_of=2026-08-26)",
     "divergence_log[ai_semiconductors]: stale (as_of=2026-08-05)",
+    "divergence_log[semicap_equipment]: stale (as_of=2026-08-26)",
     "divergence_log[memory_storage]: stale (as_of=2026-08-05)",
     "divergence_log[space_satellite]: stale (as_of=2026-08-08)",
+    "divergence_log[data_center_power]: stale (as_of=2026-08-26)",
     "finnhub_recs: parquet absent — per-member revision dispersion unavailable"
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-30T06:09:52Z",
-  "inputs_hash": "sha256:7330ddeef009f233b689071149f21c2adcfe25dc56bcb74b8f46de79a3f460d9",
+  "produced_at": "2026-08-31T06:12:37Z",
+  "inputs_hash": "sha256:ffde2dcd7cacf7e060d9d190ff7ed86a938ae5a0dfecc76e5f07f75214ecb780",
   "tier": "display"
 }

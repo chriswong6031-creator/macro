@@ -2031,7 +2031,7 @@
     ]
   },
   "dollar_channel": {
-    "asof": "2026-08-29",
+    "asof": "2026-08-31",
     "usd_dir": "weakening",
     "roc_pct": null,
     "state": {
@@ -2085,7 +2085,14 @@
       "CL=F": 0.15,
       "UST10": -0.13
     },
-    "scenario": null,
+    "scenario": {
+      "key": "carry_unwind",
+      "label": {
+        "en": "Carry unwind",
+        "zh": "套息平仓"
+      },
+      "n_active": 2
+    },
     "display_only": true
   },
   "hero": {

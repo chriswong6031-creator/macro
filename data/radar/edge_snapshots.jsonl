@@ -12346,3 +12346,6 @@
 {"date":"2026-08-28","kind":"ticker","subject":"KLAC","ticker":"KLAC","edge_score":1,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
 {"date":"2026-08-28","kind":"ticker","subject":"EQX","ticker":"EQX","edge_score":0,"state":"CONFIRMED_UP","era":2,"source":"basket_attributed"}
 {"date":"2026-08-28","kind":"ticker","subject":"CSCO","ticker":"CSCO","edge_score":0,"state":"CONFIRMED_DOWN","era":2,"source":"basket_attributed"}
+{"date":"2026-08-28","kind":"ticker","subject":"BAC","ticker":"BAC","edge_score":37,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-28","kind":"ticker","subject":"KO","ticker":"KO","edge_score":31,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
+{"date":"2026-08-28","kind":"ticker","subject":"UBER","ticker":"UBER","edge_score":19,"state":"NEGATIVE_DIVERGENCE","era":2,"source":"signal"}
