@@ -663,8 +663,34 @@ html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.buy {
 /* Near rebinds to the link ink (see the dark rule above), so its tint
    follows suit — the same 4% wash, of the link token instead of the stance
    family. */
+/* LIGHT NEAR CHROMA — VTB-403 repair (Sol REQUEST_REPAIR item 3).
+   Binding Near to the link/wayfinding ink is the ratified fix for the dark
+   Buy-vs-Near collapse (DARK DELTA item 1) and is NOT disturbed: the dark plane
+   below is untouched and keeps its separation. But ratifying the MECHANISM did
+   not ratify what it produced on white. An independent critic measured the four
+   light lane inks and found this one alone out of family — the light
+   re-authoring pulled Buy/Wait/Avoid into an HSV-saturation band of
+   0.644-0.652, while Near inherited --ink-link at 0.825, making the SECOND rung
+   of the stance ladder the loudest mark in the Act-Now band. Light-only, which
+   is exactly the class the dark/light art-direction law exists to catch, and
+   invisible to a contrast gate: Near measures 5.30 against siblings at
+   5.29-5.85, so the defect lives in the chroma channel, not luminance.
+
+   Repair holds hue (Near stays the blue wayfinding ink, semantics unchanged)
+   and lowers only chroma, by mixing toward --muted rather than --text so
+   luminance stays in the siblings' iso-contrast range instead of darkening.
+   Light --ink-link resolves to about R39 G88 B230 (S 0.83); mixing 54% toward
+   --muted yields about R63 G96 B182 at S 0.651 — the same value as BUY NOW and
+   inside the 0.644-0.652 band. Ratio derived from the measurement, not chosen
+   by eye. (Channel values written longhand on purpose: this file is guarded
+   token-clean, and the guard reads comments too.) */
 html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.near {
   background: color-mix(in srgb, var(--ink-link, var(--link)) 4%, transparent);
+  color: color-mix(in srgb, var(--ink-link, var(--link)) 54%, var(--muted));
+}
+html[data-theme=light] .mx-stockdash--ca .ca-v36-stance.near,
+html[data-theme=light] .mx-stockdash--ca ~ .ca-v36-modal .ca-v36-stance.near {
+  color: color-mix(in srgb, var(--ink-link, var(--link)) 54%, var(--muted));
 }
 html[data-theme=light] .mx-stockdash--ca .ca-v36-an-hd.wait {
   background: color-mix(in srgb, var(--ink-pv-wait, var(--pv-wait)) 4%, transparent);
