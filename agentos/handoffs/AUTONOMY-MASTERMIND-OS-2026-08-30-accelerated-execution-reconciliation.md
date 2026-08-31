@@ -3,7 +3,7 @@ workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-mastermind-os-accelerated-reconciliation-20260830
 model: sol
 status: active_checkpoint
-ended_because: active_dependencies
+ended_because: blocked
 mission: >
   Continue the Chairman-authorized Autonomy, Executive OS, Agent OS and Mastermind OS
   program without replacing the exact principal CTO sessions. Keep Slack, GitHub, Linear
@@ -39,29 +39,50 @@ changed:
       START, worker return or modifying effect.
 verified:
   - claim: Current protected Mastermind and Skillpack are compatible.
+    command: >
+      GitHub protected-branch read of mastermindx-market-intelligence/Mastermind master,
+      followed by exact-SHA fetch of docs/sol_skills/INDEX.md at
+      dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c and compatibility-field inspection.
     result: >
       Protected master is dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c. Same-SHA
       Skillpack schema mastermind.sol_skillpack.v1, version 1.0.1 and bootstrap-major 1
       are compatible.
   - claim: Steward protected readback is the exact reviewed capability.
+    command: >
+      GitHub exact protected-tree and blob reads for control_plane/executive_steward.py,
+      tests/test_executive_steward.py and tests/test_executive_steward_filter_integrity.py,
+      compared with accepted head 579bef66e4098f3cad84de43d0a9be027882d030 and protected
+      merge tree d2286fbe2bbfe635ad69825cd4ad901900f150a2.
     result: >
       Protected blobs are executive_steward.py=90ecd34cdd79ec8685b86f21420519e82ff5e147,
       test_executive_steward.py=090c2de9b92f92bea336a451e1f4a93ef226bc06 and
       test_executive_steward_filter_integrity.py=1b42bb557eae35d35c7641c45e7d5a2655b42721.
       The protected tree equals the candidate tree.
   - claim: Steward exact-head evidence discriminates the repaired law.
+    command: >
+      GitHub Actions and check-run reads for hosted RED run 33308735336, exact-head
+      repository CI run 33405101684 / test check 99530730782, CodeQL check 99530789131,
+      and the actions, JavaScript/TypeScript and Python analysis checks on accepted head
+      579bef66e4098f3cad84de43d0a9be027882d030.
     result: >
       Hosted RED run 33308735336 failed on the old implementation in the five intended
       filter-integrity cases. Exact-head repository test 99530730782 / CI 33405101684,
       CodeQL 99530789131 and actions/JavaScript/Python analyses are terminal SUCCESS with
       no new changed-code alerts.
   - claim: Steward remains a pure read core rather than a new authority plane.
+    command: >
+      Exact protected-source and changed-path review of control_plane/executive_steward.py
+      plus its two filter-integrity test files at protected merge dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c.
     result: >
       Complete canonical responsibility_ref and attention_id families are grouped before
       presentation filtering and join pruning; ambiguous facts preserve source evidence and
       select no winner. No gatherer, persistence, provider I/O, router, lifecycle mutation,
       UI, Wake action or host behavior was added.
   - claim: Existing Autonomy carriers and RuntimeBindings remain singular.
+    command: >
+      Fresh exact-carrier Slack thread reads and GitHub PR/branch reads for TRACE #153,
+      SENTINEL #255, ORION #265 and FORGE #250, compared with their recorded native-task
+      identities and operation carriers.
     result: >
       TRACE remains on #153, SENTINEL on #255, ORION on #265 and FORGE on #250. No
       replacement task, branch, PR, watcher, retry or lifecycle owner was created.
