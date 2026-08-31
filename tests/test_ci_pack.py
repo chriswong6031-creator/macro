@@ -3603,6 +3603,70 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
     )
 
 
+def test_d5_route_closure_keeps_affected_curated_jobs_selecting_dependencies() -> None:
+    """D5's Prophet Lab route closure must not become a five-job false green.
+
+    These are the concrete dependencies introduced through ``app/prophet_lab.py``.
+    The generic closure audit above re-derives the complete graph; this regression
+    independently pins the exact five-job D5 repair so a future inference change
+    cannot silently erase the manifest ownership that this branch requires.
+    """
+    required = {
+        "biocatalyst-history": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "biocatalyst-serving": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "defense-rail-laws": (
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+        ),
+        "flow-surface": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "unrun-government-revenue-grader": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+    }
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+
+    for job_id, dependencies in required.items():
+        job = jobs[job_id]
+        assert job.exclusive, job_id
+        for dependency in dependencies:
+            selected, reason = PACK.select_jobs([job], [dependency])
+            assert [item.job_id for item in selected] == [job_id], (
+                job_id,
+                dependency,
+                reason,
+            )
+            match = PACK._job_diff_match(job, [dependency])
+            assert match and match[1] == "declared", (job_id, dependency, match)
+
+
 def test_curated_exclusivity_drops_only_the_opaque_fallback_tier() -> None:
     """Every job the curation stops selecting was selected by smear, not evidence.
 

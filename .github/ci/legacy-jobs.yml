@@ -1588,6 +1588,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -6524,6 +6534,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -7081,6 +7101,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -9098,6 +9128,14 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "engine/theme_graph/**"
+      # D5's app/prophet_lab route extends this curated app closure through the
+      # canonical issuer reader. Keep the measured stock-identity package files
+      # explicit; path-risk and the B1 episode reader are not in this job's
+      # derived closure and are intentionally not declared here.
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
@@ -12135,6 +12173,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/theme_graph/identity.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
