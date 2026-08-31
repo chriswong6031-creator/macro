@@ -96,6 +96,11 @@ absent from the later source or may have been suppressed during canonical intake
 That distinction is scientifically useful but not release-relevant: accepted episode
 overlap is zero either way.
 
+The first-three table above is preserved historical evidence. The live hold condition
+as of 2026-08-30 is that **every currently committed natural generation** has zero
+accepted overlap. A later non-empty natural generation falsifies that current
+condition and triggers re-census; it does not rewrite the first-three observation.
+
 ### 3. Earnings event-workspace coverage
 
 The Earnings owner registers five issuer profiles in
@@ -180,22 +185,42 @@ chain exists. This does not weaken the contract, but it changes acceptance evide
 
 ## Failure states
 
-A future implementation must preserve these states separately:
+A future implementation must preserve Cell F A10's closed `absence_reasons[]`
+register as the only emitted evidence-family absence vocabulary. The list below
+keeps failure modes distinct so they are not collapsed into zero or a weak
+score. It is not a license to mint new Earnings `absence_reasons[]`. Preserve
+A7 clock conjunction, A10 vocabulary separation, A13 identity law, and all-false
+authority boundaries.
+
+Emitted A10 / evidence-family states:
 
 - `NOT_COVERED`: accepted episode resolves lawfully, but the Earnings owner has no
   workspace coverage for the issuer;
-- `IDENTITY_UNRESOLVED`: B1 security cannot resolve to one canonical economic issuer;
-- `CIK_UNAVAILABLE`: issuer resolves, but the owner-native CIK bridge is unavailable;
-- `NO_EVENT_AT_CUT`: issuer is covered but no event revision is admissible at the
-  episode decision cut;
+- `IDENTITY_UNRESOLVED`: B1 security cannot resolve to one canonical economic issuer.
+  This is also the emitted absence when the issuer-CIK join cannot be completed;
+  the readiness diagnostic may name CIK unavailability as the reason;
 - `NOT_CAPTURED_AT_DECISION`: source was available but the owner observed it only
   after the decision cut;
-- `UNKNOWN_CLOCK`: required clock is null, malformed or unknown;
+- `UNKNOWN`: required clock is null, malformed or unknown. `UNKNOWN_CLOCK` is the
+  readiness/control name for this condition and maps to A10 `UNKNOWN`;
 - `CONFLICTED`: admissible evidence ties under the owner's deterministic selection
   law;
-- `CORRECTION_NOT_CAPTURED_LIVE`: no real multi-generation revision chain exists;
 - `UNBUILT`: adapter code does not exist and therefore emits no evidence-family
   envelope.
+
+External readiness / control diagnostics (not emitted `absence_reasons[]`):
+
+- `CIK_UNAVAILABLE`: issuer resolves, but the owner-native CIK bridge is unavailable.
+  Readiness/join diagnostic only; emitted absence remains `IDENTITY_UNRESOLVED`
+  with the CIK reason named;
+- `UNKNOWN_CLOCK`: required clock is null, malformed or unknown. Maps to A10
+  `UNKNOWN`; do not emit `UNKNOWN_CLOCK` as an absence reason;
+- `CORRECTION_NOT_CAPTURED_LIVE`: no real multi-generation revision chain exists.
+  Proof/readiness state only; never an evidence-family absence reason;
+- `NO_EVENT_AT_CUT`: issuer is covered but no event revision is admissible at the
+  episode decision cut. Diagnostic only; the eventual adapter must map from owner
+  disposition/clocks to an existing lawful state such as `NOT_COVERED` or
+  `NOT_CAPTURED_AT_DECISION`. Do not mint `NO_EVENT_AT_CUT` as an enum.
 
 None of these states may be averaged, filled with zero, translated into a weak score,
 or used to widen coverage.
