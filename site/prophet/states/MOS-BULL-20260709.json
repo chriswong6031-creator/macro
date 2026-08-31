@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MOS-BULL-20260709",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 44.2,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 100.0,
     "progress": 26.1,
-    "pace": 28.7,
+    "pace": 27.3,
     "retention": 61.4,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.419,
     "dist_to_t1_r": 1.081,
     "dist_to_t2_r": 2.581,
-    "horizon_pct_used": 102.2,
+    "horizon_pct_used": 104.4,
     "p1": 0.2792,
     "p2": 0.1396,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-28",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 46,
-  "tau": 1.0222
+  "days_elapsed": 47,
+  "tau": 1.0444
 }
