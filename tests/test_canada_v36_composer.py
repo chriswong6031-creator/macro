@@ -346,7 +346,20 @@ def test_sector_rank_is_never_lane_traversal_and_theme_rank_is_owner_only():
     )
     m3 = re.search(r"function leadRow\b.*?(?=\n  function )", text, re.S)
     assert m3, "could not locate leadRow() function body via regex"
-    assert 'x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—"' in m3.group(0), (
+    # ZHC-512 (Sol REQUEST_REPAIR item 3): the rank is now localized through the
+    # bi() seam already accepted on this surface, using the vocabulary already
+    # accepted on this same panel (主题). The invariants this test exists to
+    # protect are UNCHANGED and still asserted below — rank is owner-only, gated
+    # on kind == "theme" AND a non-null owner rank, with the em-dash fallback —
+    # so a future wave can drop neither the guard nor the localization.
+    assert 'x.kind === "theme" && x.rank != null ?' in m3.group(0), (
+        "leadRow() lost the owner-only rank guard (kind theme AND non-null owner rank)"
+    )
+    assert 'bi("Theme #" + x.rank, "主题 #" + x.rank)' in m3.group(0), (
+        "leadRow() rank is no longer localized through the accepted bi() seam — "
+        "a ZH reader would see an English rank label beside a Chinese theme name"
+    )
+    assert 'x.rank != null ? bi("Theme #" + x.rank, "主题 #" + x.rank) : esc("—")' in m3.group(0), (
         "leadRow() no longer renders rank as owner-only `Theme #N` with the "
         "em-dash fallback — either sectors gained a number or the "
         "no-synthesized-rank guard was dropped"
@@ -393,8 +406,12 @@ def test_theme_rank_language_gated_on_owner_and_prophet_count_label():
     )
     mr = re.search(r"function modalRows\b.*?(?=\n  function )", text, re.S)
     assert mr, "could not locate modalRows() function body via regex"
-    assert '"Theme #" + x.rank : "—"' in mr.group(0), (
-        "modalRows() lost the owner-only Theme # rank cell"
+    # ZHC-512: same seam, same preserved invariant — see leadRow() above.
+    assert 'bi("Theme #" + x.rank, "主题 #" + x.rank)' in mr.group(0), (
+        "modalRows() rank is no longer localized through the accepted bi() seam"
+    )
+    assert '(x.rank != null ? bi("Theme #" + x.rank, "主题 #" + x.rank) : "—")' in mr.group(0), (
+        "modalRows() lost the owner-only Theme # rank cell or its em-dash fallback"
     )
     # Membership knowledge is PER GROUP via the board's own sector
     # vocabulary — a lane name outside that vocabulary must stay null

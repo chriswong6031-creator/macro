@@ -206,9 +206,18 @@
     var breadth = x.count == null ? null : Math.round(((x.count || 0) / Math.max(1, max)) * 100);
     var breadthStyle = breadth == null ? '' : ' style="--breadth:' + breadth + '"';
     var breadthCls = breadth == null ? '' : ' ca-v36-has-breadth';
-    var rankTxt = x.kind === "theme" && x.rank != null ? "Theme #" + x.rank : "—";
+    /* ZHC-512 (Sol REQUEST_REPAIR item 3): the rank label was the one value on
+       this row still authored English-only, so a ZH reader saw "Theme 白银与特许权金".
+       Closed through the seam already accepted on this surface — bi(), which every
+       other value on this same row already uses — and the vocabulary already
+       accepted on this same panel, 主题 (see bi("Themes","主题"),
+       bi("Theme rank","主题排名"), bi("Theme Leadership","主题领先")). No new
+       wording is minted. NOTE bi() RETURNS MARKUP and escapes internally, so this
+       is html and must NOT be wrapped in esc() below — that is why the consumer
+       changed too. */
+    var rankHtml = x.kind === "theme" && x.rank != null ? bi("Theme #" + x.rank, "主题 #" + x.rank) : esc("—");
     var act = x.members != null ? ' data-ca-lead-kind="' + x.kind + '" data-ca-lead-id="' + esc(x.id) + '"' : ' disabled';
-    return '<button class="ca-v36-lead-row' + breadthCls + '" type="button"' + act + breadthStyle + '><span class="ca-v36-rank">' + esc(rankTxt) + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
+    return '<button class="ca-v36-lead-row' + breadthCls + '" type="button"' + act + breadthStyle + '><span class="ca-v36-rank">' + rankHtml + '</span><span><span class="ca-v36-lead-name">' + bi(x.name.en, x.name.zh) + '</span><span class="ca-v36-leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</span></span><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span><span class="ca-v36-count">' + (x.count != null ? x.count : "—") + '</span></button>';
   }
   function renderLeadership() {
     var host = qs("#ca-v36-lead-cols");
@@ -394,7 +403,7 @@
      attributes render only under canonical membership (same §10 law as the
      at-rest rows). Counts render "—" when membership is unknown. */
   function modalRows(items, rk) {
-    return items.length ? items.map(function (x) { var act = x.members != null ? ' tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '"' : ''; return '<tr' + act + '>' + (rk ? '<td class="num">' + esc(x.rank != null ? "Theme #" + x.rank : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 5 : 4) + '">—</td></tr>';
+    return items.length ? items.map(function (x) { var act = x.members != null ? ' tabindex="0" data-ca-modal-kind="' + x.kind + '" data-ca-modal-id="' + esc(x.id) + '"' : ''; return '<tr' + act + '>' + (rk ? '<td class="num">' + (x.rank != null ? bi("Theme #" + x.rank, "主题 #" + x.rank) : "—") + '</td>' : '') + '<td><b>' + bi(x.name.en, x.name.zh) + '</b></td><td><span class="ca-v36-stance ' + x.tone + '">' + bi(x.stance.en, x.stance.zh) + '</span></td><td class="leaders">' + esc(x.leaders.length ? x.leaders.join(" · ") : "—") + '</td><td class="num">' + (x.count != null ? x.count : "—") + '</td></tr>'; }).join("") : '<tr><td colspan="' + (rk ? 5 : 4) + '">—</td></tr>';
   }
   function modalPane(items, title, count, rk) {
     return '<div class="ca-v36-modal-pane"><h4>' + title + '</h4><table class="ca-v36-modal-table"><thead><tr>' + (rk ? '<th>' + bi("Rank", "排名") + '</th>' : '') + '<th>' + bi("Name", "名称") + '</th><th>' + bi("Action", "操作状态") + '</th><th>' + bi("Leaders", "领先个股") + '</th><th>' + count + '</th></tr></thead><tbody>' + modalRows(items, rk) + '</tbody></table></div>';
