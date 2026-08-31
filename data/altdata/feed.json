@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-30T05:48:25.649907+00:00",
-  "as_of": "2026-08-30",
+  "generated_utc": "2026-08-31T05:56:19.566432+00:00",
+  "as_of": "2026-08-31",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -3458,183 +3458,183 @@
       "emoji": "\ud83e\udd8d",
       "label_en": "WallStreetBets",
       "label_zh": "WSB\u70ed\u5ea6",
-      "rows": 17806,
-      "last_seen": "2026-08-30",
+      "rows": 18113,
+      "last_seen": "2026-08-31",
       "recent": [
         {
           "Ticker": "VC",
           "Count": "1",
           "Sentiment": "0.1093",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "LIVE",
           "Count": "1",
           "Sentiment": "0.7359",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "ANET",
           "Count": "15",
           "Sentiment": "0.14191333333333336",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "OKLO",
           "Count": "21",
           "Sentiment": "-0.04873333333333334",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "EU",
           "Count": "9",
           "Sentiment": "0.06314444444444448",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "SE",
           "Count": "4",
           "Sentiment": "0.2897",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "EPS",
           "Count": "5",
           "Sentiment": "0.6384799999999999",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "SEDG",
           "Count": "6",
           "Sentiment": "-0.04284999999999999",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "GO",
           "Count": "6",
           "Sentiment": "-0.06998333333333333",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "FSLR",
           "Count": "2",
           "Sentiment": "0.2673",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "PR",
           "Count": "1",
           "Sentiment": "-0.34",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "BOIL",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "HR",
           "Count": "4",
           "Sentiment": "-0.030925000000000008",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "XLV",
           "Count": "1",
           "Sentiment": "-0.8074",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "TDOC",
           "Count": "2",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "HOOD",
           "Count": "19",
           "Sentiment": "-0.039557894736842104",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "DIS",
           "Count": "3",
           "Sentiment": "-0.11896666666666667",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "NKLA",
           "Count": "11",
           "Sentiment": "-0.02502727272727273",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "ETSY",
           "Count": "5",
           "Sentiment": "0.3463",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "BKSY",
           "Count": "6",
           "Sentiment": "0.16961666666666667",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "PPT",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "DJT",
           "Count": "6",
           "Sentiment": "-0.013500000000000007",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "AB",
           "Count": "1",
           "Sentiment": "-0.3182",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "WELL",
           "Count": "3",
           "Sentiment": "0.6257333333333333",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Ticker": "DATS",
           "Count": "1",
           "Sentiment": "0.0",
-          "_first_seen": "2026-08-30T01:29:34.186289+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:25.772071+00:00",
+          "_collected": "2026-08-31"
         }
       ]
     },
@@ -3665,258 +3665,258 @@
       "emoji": "\ud83d\udd2c",
       "label_en": "US patents",
       "label_zh": "\u7f8e\u56fd\u4e13\u5229",
-      "rows": 9899,
-      "last_seen": "2026-08-18",
+      "rows": 11030,
+      "last_seen": "2026-08-25",
       "recent": [
         {
-          "Date": "2026-08-18",
-          "IPC": "g01n030/88",
-          "Title": "managing a heat transfer characteristic in a temperature control chamber",
-          "Claims": "20.0",
-          "Abstract": "a temperature control chamber includes a heat impact unit configured for heat impacting a sensor unit in accordance with a heat profile, the sensor unit configured for sensing heat impact response data over time in re\u2026",
+          "Date": "2026-08-25",
+          "IPC": "f16d001/112",
+          "Title": "shaft coupling",
+          "Claims": "19.0",
+          "Abstract": "a shaft coupling system may include a first shaft including a disc that is engageable by a second shaft to retain the second shaft with the first shaft when the second shaft is rotated in a first direction, and releas\u2026",
           "Ticker": "A",
-          "PatentNumber": "12710407",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "PatentNumber": "12716456",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "h04l009/40",
-          "Title": "network graph analysis",
+          "Date": "2026-08-25",
+          "IPC": "h04b007/06",
+          "Title": "channel state information triggering and reporting",
+          "Claims": "34.0",
+          "Abstract": "methods related to wireless communication systems and scheduling channel state information operations and transmissions. a user equipment (ue) receives, from a base station (bs), a channel state information (csi) comp\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719539",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "b60w050/08",
+          "Title": "advanced driver assistance system sensitivity adjustments",
+          "Claims": "27.0",
+          "Abstract": "a user equipment (ue) may obtain an indication of a first gaze pattern of a driver of a vehicle from at least one memory. the ue may obtain a second gaze pattern of the driver of the vehicle based on a first set of se\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12715461",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "b60w060/00",
+          "Title": "backup trajectory converter for controlling a vehicle",
+          "Claims": "27.0",
+          "Abstract": "systems and techniques control one or more operations of a vehicle. for example, according to some aspects, a process may include determining a path associated with the vehicle and determining at least two points on t\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12715466",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04l001/18",
+          "Title": "machine learning assisted predictive retransmission feedback",
+          "Claims": "29.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. the method includes transmitting, to a base station, a capability parameter indicating one or more predictive retransmission feedback capabiliti\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719612",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04l001/00",
+          "Title": "parallel qdm encoding",
+          "Claims": "30.0",
+          "Abstract": "certain aspects of the present disclosure provide a technique for parallel distribution matching (dm) encoding. a user equipment (ue) implements the technique to perform a first round of parallel dm encoding using k i\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719608",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04b017/336",
+          "Title": "cross link interference resource reporting",
+          "Claims": "23.0",
+          "Abstract": "certain aspects of the present disclosure provide techniques for cross link interference (cli) resource reporting. an example method, performed at a first network entity, includes receiving a report, from a first user\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719594",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04b017/309",
+          "Title": "factors affecting measurement period formulation for positioning",
+          "Claims": "23.0",
+          "Abstract": "disclosed are techniques for wireless positioning. in an aspect, a user equipment (ue) receives a request location information message from the network entity, the request location information message including one or\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719593",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04b007/06",
+          "Title": "waveform specific closed-loop antenna selection",
           "Claims": "20.0",
-          "Abstract": "a computer-implemented method comprising: obtaining an asset graph representing a network, the asset graph comprising a plurality of nodes representing assets of the network and edges representing relationships betwee\u2026",
-          "Ticker": "MSFT",
-          "PatentNumber": "12712907",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Abstract": "methods, systems, and devices for wireless communication are described. various aspects relate to waveform specific closed-loop antenna selection. some aspects more specifically relate to mechanisms according to which\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719537",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "a61b008/00",
-          "Title": "ultrasound imaging system having digital ultrasonic imaging devices",
-          "Claims": "17.0",
-          "Abstract": "an ultrasound (us) imaging system ( 100 ) is disclosed. the us imaging system ( 100 ) includes an ultrasound imaging device ( 110 ) comprising a transducer; and a digital transducer interface (dti ( 206 )). the dti ( \u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12708346",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Date": "2026-08-25",
+          "IPC": "h04w072/02",
+          "Title": "sidelink resource selection based on an exclusion of sidelink feedback channel slots",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a first user equipment (ue) may receive, by a first radio access technology (rat) sidelink module from a second ra\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720501",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "h02j050/60",
-          "Title": "foreign object detection in a wireless power transfer system",
-          "Claims": "28.0",
-          "Abstract": "a power transmitter comprises a transmitter coil generating an electromagnetic field. a set of balanced detection coils comprises detection coils in series and compensating each other. a foreign object detector perfor\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12712395",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Date": "2026-08-25",
+          "IPC": "h04b001/04",
+          "Title": "adaptive pa order modeling based on instantaneous snr and rx diversity order",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a component of a user equipment (ue) may experience non-linearity behavior. using a digital post distortion (dpod) process, the ue may estimate \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719515",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "g01r033/36",
-          "Title": "magnetic resonance receiver coil array with sensor node",
-          "Claims": "15.0",
-          "Abstract": "the invention relates to the field of magnetic resonance (mr) receiver coil arrays ( 1 ), and in particular to a magnetic receiver coil array ( 1 ) with an additional sensor node ( 3 ). the sensor node ( 3 ) comprises\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12710493",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Date": "2026-08-25",
+          "IPC": "h04b001/04",
+          "Title": "robust low complexity digital post distortion technique",
+          "Claims": "29.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive a configuration for receiving or calculating an interference parameter based, at\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719514",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "g01r033/36",
-          "Title": "radio frequency coil assembly with signal adjustment circuit, related method and computer program product",
-          "Claims": "14.0",
-          "Abstract": "in the case of a radio frequency (rf) coil assembly for a magnetic resonance (mr) imaging system, interference in a galvanic transmission line ( 1 ) configured to transmit a digital signal should be avoided. this is a\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12710495",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "g06k007/14",
-          "Title": "multiple application qr code",
-          "Claims": "17.0",
-          "Abstract": "the present invention relates to a multiple application qr code capable of storing information of a plurality of data containers in such a way that a respective information can be retrieved for an application program \u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12711339",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "f16k031/00",
-          "Title": "independent dual actuation piezo valve for magnetic resonance environments",
-          "Claims": "11.0",
-          "Abstract": "electrically-controllable piezo valves comprising independent, dual actuation piezo elements, systems incorporating such valves, and methods of controlling a fluid flow using such valves are described herein. these va\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12710107",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "h02j050/12",
-          "Title": "wireless power transfer",
-          "Claims": "26.0",
-          "Abstract": "a power receiver ( 105 ) communicates to a power transmitter ( 101 ) using load modulation data symbols modulated by a chip sequence being a combination of two binary sequences. the power transmitter ( 101 ) comprises\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12712393",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "h01r013/52",
-          "Title": "electronic connection module",
-          "Claims": "14.0",
-          "Abstract": "according to an aspect, there is provided an electronic connection module for mounting within an electronic device, the electronic connection module comprising: a connection port comprising a connector and a first sea\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12712315",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "g06t007/70",
-          "Title": "object keypoint detection",
+          "Date": "2026-08-25",
+          "IPC": "g05f001/575",
+          "Title": "voltage regulator with skewed current mirror",
           "Claims": "16.0",
-          "Abstract": "a system for obtaining object keypoints for an object in a medical scanner, wherein the object keypoints are three dimensional, 3d, coordinates with respect to the medical scanner of pre-determined object parts. the s\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12711646",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Abstract": "techniques and apparatus for supplying power with offset voltage generation are provided. one example power supply circuit generally includes a first transistor including a source coupled to an input voltage (vin) nod\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719432",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "b26b019/14",
-          "Title": "electric shavers",
-          "Claims": "17.0",
-          "Abstract": "an electric shaver includes a first hair-cutting unit that includes a first internal cutting member; and a first external cutting member arranged to cover the first internal cutting member, where the first internal cu\u2026",
-          "Ticker": "PHG",
-          "PatentNumber": "12709034",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "b08b003/02",
-          "Title": "apparatus for removing foreign matter on hot-rolled steel strip",
-          "Claims": "15.0",
-          "Abstract": "provided is an apparatus of removing foreign substances from a hot-rolled steel strip, including a reverse direction injection unit provided to inject high-pressure water in the reverse direction of a moving direction\u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12708931",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "b60n002/16",
-          "Title": "seat frame",
-          "Claims": "11.0",
-          "Abstract": "the present invention provides a seat frame comprising: a cushion part for supporting a cushion; a height-adjusting part which is provided below the cushion part, and which adjusts the height of the cushion part by me\u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12709200",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "c23c002/02",
-          "Title": "high-strength galvannealed steel sheet having excellent powdering resistance and manufacturing method therefor",
-          "Claims": "8.0",
-          "Abstract": "provided is a galvannealed steel sheet having excellent powdering resistance, and a manufacturing method therefor. the galvannealed steel sheet includes: base iron; and an alloying hot-dip galvanized layer provided on\u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12709791",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "h01m050/242",
-          "Title": "side frame for battery case",
-          "Claims": "7.0",
-          "Abstract": "the present invention relates to a side frame for a battery case, which can achieve lightweight and cost reduction simultaneously while sufficiently protecting battery cells against the external shock, and the side fr\u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12712230",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "c01b003/04",
-          "Title": "method for preparing hydrogen from ammonia by using pressure swing adsorption",
-          "Claims": "3.0",
-          "Abstract": "a method for preparing hydrogen from ammonia by using pressure swing adsorption (psa) is provided. the method for preparing hydrogen from ammonia, of the present invention, comprises the steps of: generating hydrogen \u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12708871",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "g03g015/00",
-          "Title": "metal material printing equipment and printing method, and printed metal material obtained therefrom",
-          "Claims": "13.0",
-          "Abstract": "the present invention relates to printing equipment for printing images such as letters, pictures and the like on the surface of metal such as a steel plate, that may stably print images on the surface of metal at hig\u2026",
-          "Ticker": "PKX",
-          "PatentNumber": "12710719",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "h01b017/20",
-          "Title": "insulator support pins",
+          "Date": "2026-08-25",
+          "IPC": "g09g003/20",
+          "Title": "hardware efficient interpolation",
           "Claims": "20.0",
-          "Abstract": "an insulator support pin includes a strength member and a non-conductive sheath surrounding the strength member. the non-conductive sheath extends between a first end and a second end. the insulator support pin also i\u2026",
-          "Ticker": "PLPC",
-          "PatentNumber": "12712099",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Abstract": "this disclosure provides systems, devices, apparatus, and methods, including computer programs encoded on storage media, for interpolating a color for an interpolation point. a graphics processor may select a set of k\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12718728",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "g02b006/44",
-          "Title": "grommet for a splice enclosure and a splice enclosure including a grommet",
+          "Date": "2026-08-25",
+          "IPC": "g06v040/13",
+          "Title": "acoustic sensor systems with different heights",
+          "Claims": "18.0",
+          "Abstract": "acoustic sensor systems with different heights, as well as methods for configuring and operating such sensor systems are disclosed. in some embodiments, a sensor system described herein may include an acoustic receive\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12718614",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "g06v020/58",
+          "Title": "depth image data structure for storing image depth information",
           "Claims": "20.0",
-          "Abstract": "a grommet for sealing a first aperture formed in a splice enclosure includes a body that is receivable within the first aperture, and is subjected to a compressive force exerted by a sidewall of the splice enclosure d\u2026",
-          "Ticker": "PLPC",
-          "PatentNumber": "12710608",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Abstract": "the present disclosure provide techniques for processing image depth information. a method may include obtaining a depth image data structure representative of depth information for pixels in an image corresponding to\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12718587",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "g06f009/4401",
-          "Title": "systems and methods for developing digital experience applications",
+          "Date": "2026-08-25",
+          "IPC": "h04l001/1829",
+          "Title": "strategies for deferring semi-persistent scheduling uplink control channel transmissions",
+          "Claims": "30.0",
+          "Abstract": "methods, systems, and devices for wireless communications are described. a user equipment (ue) may generate first and second sets of feedback bits associated with first and second downlink transmissions, respectively,\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719617",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04l001/1829",
+          "Title": "performing uplink transmissions according to codebook timespans",
+          "Claims": "26.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may receive, from a network entity, a physical downlink shared channel (pdsch) transmission \u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12719618",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04w052/02",
+          "Title": "network power saving and rf sensing",
+          "Claims": "28.0",
+          "Abstract": "a method of wireless communication at a network entity is disclosed herein. the network entity obtains an indication of an nes mode, where the nes mode is supported by at least one of a set of network nodes or a ue. t\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720431",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04n021/262",
+          "Title": "deadline signaling for streaming of media data",
+          "Claims": "19.0",
+          "Abstract": "a client device includes a memory comprising a buffer for buffering data having real-time constraints and a hardware-based processor comprising digital logic circuitry. the processor is configured to execute a real-ti\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720137",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04w028/18",
+          "Title": "selection of open radio unit capabilities based on configured features",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a network entity may transmit, to an open distributed unit (o-du), a first set of capabilities of the network enti\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720368",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04w028/02",
+          "Title": "communicating protocol data unit set traffic information",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may generate a signaling message that includes information associated with protocol data uni\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720359",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04w028/02",
+          "Title": "delay budgets associated with delay status reporting",
+          "Claims": "30.0",
+          "Abstract": "various aspects of the present disclosure generally relate to wireless communication. in some aspects, a user equipment (ue) may transmit a delay status report indicating a remaining time, the remaining time comprisin\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720358",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
+        },
+        {
+          "Date": "2026-08-25",
+          "IPC": "h04w024/10",
+          "Title": "signal measurement difference reporting",
           "Claims": "20.0",
-          "Abstract": "in one implementation, systems and methods are provided for developing a computer-implemented digital experience application having a first and a second micro-application. each micro-application includes a front end i\u2026",
-          "Ticker": "PNC",
-          "PatentNumber": "12710965",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Abstract": "this disclosure provides methods, components, devices and systems for signal measurement difference reporting. a user equipment (ue) may report, to a network entity, a measurement difference, or a difference between m\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720356",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         },
         {
-          "Date": "2026-08-18",
-          "IPC": "g06v030/418",
-          "Title": "systems and methods for identifying duplicate documents and detecting misrepresentation",
-          "Claims": "20.0",
-          "Abstract": "systems, methods, and non-transitory computer readable media configured for identifying duplicate and misrepresented documents are provided. at least one processor may retrieve, from a first source, a first document, \u2026",
-          "Ticker": "PNC",
-          "PatentNumber": "12711799",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "g06f016/22",
-          "Title": "system and method for providing a consolidated data hub",
-          "Claims": "17.0",
-          "Abstract": "the present disclosure is directed to a system for data consolidation. the system may include processors, servers, and/or storage devices. processors in the system may be configurable to perform operations like import\u2026",
-          "Ticker": "PNC",
-          "PatentNumber": "12711121",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "a61m005/172",
-          "Title": "adaptation of automatic insulin delivery (aid) for users with basal to bolus mismatch",
-          "Claims": "20.0",
-          "Abstract": "exemplary embodiments provide more customized basal insulin amounts for users to better regulate blood glucose (bg) concentration levels. the exemplary embodiments do not statically assume that the daily basal amount \u2026",
-          "Ticker": "PODD",
-          "PatentNumber": "12708709",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
-        },
-        {
-          "Date": "2026-08-18",
-          "IPC": "g06n003/08",
-          "Title": "feature extraction techniques",
-          "Claims": "20.0",
-          "Abstract": "techniques are disclosed for generating multiple different types of new features from a network graph and training a machine learning model using the newly generated features. a server system generates, from electroni\u2026",
-          "Ticker": "PYPL",
-          "PatentNumber": "12711378",
-          "_first_seen": "2026-08-23T23:45:39.366837+00:00"
+          "Date": "2026-08-25",
+          "IPC": "h04n023/85",
+          "Title": "regions of interest in autofocus processing",
+          "Claims": "18.0",
+          "Abstract": "one or more processors of a computing device may receive image data obtained via an image sensor of a camera. the one or more processors may apply one or more horizontal filters to the image data to generate horizonta\u2026",
+          "Ticker": "QCOM",
+          "PatentNumber": "12720213",
+          "_first_seen": "2026-08-31T01:37:24.994378+00:00"
         }
       ]
     },
@@ -4108,358 +4108,358 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 3178,
-      "last_seen": "2026-08-23",
+      "rows": 3517,
+      "last_seen": "2026-08-30",
       "recent": [
-        {
-          "BioGuideID": "S001231",
-          "CandidateName": null,
-          "CompanyCMTENM": "BIOMARIN PHARMACEUTICAL INC. POLITICAL ACTION COMMITTEE AKA BIOMARIN PAC",
-          "TransactionDate": "2026-07-01",
-          "TransactionAmount": "2500",
-          "Ticker": "BMRN",
-          "CommitteeName": "LATEEFAH FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00543371",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "MATSON, INC. FEDERAL ELECTION COMMITTEE",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "75000",
-          "Ticker": "MATX",
-          "CommitteeName": "FUTURE PROGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00024752",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "F000480",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "2500",
-          "Ticker": "EIX",
-          "CommitteeName": "VINCE FONG FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "M001225",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "2500",
-          "Ticker": "EIX",
-          "CommitteeName": "KEVIN MULLIN FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "B001300",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "4000",
-          "Ticker": "EIX",
-          "CommitteeName": "BARRAGAN FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "V000129",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "2000",
-          "Ticker": "EIX",
-          "CommitteeName": "VALADAO FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "M001177",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "2500",
-          "Ticker": "EIX",
-          "CommitteeName": "MCCLINTOCK FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "C001112",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "4000",
-          "Ticker": "EIX",
-          "CommitteeName": "SALUD CARBAJAL FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "L000571",
-          "CandidateName": "LUMMIS, CYNTHIA MARIE MRS.",
-          "CompanyCMTENM": "PINNACLE WEST CAPITAL CORPORATION PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "-2500",
-          "Ticker": "PNW",
-          "CommitteeName": "LUMMIS FOR WYOMING INC.",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00015933",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "R000620",
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "2000",
-          "Ticker": "EIX",
-          "CommitteeName": "LUZ RIVAS FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "P000048",
-          "CandidateName": "PFLUGER, AUGUST LEE II",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-07-22",
-          "TransactionAmount": "2500",
-          "Ticker": "GM",
-          "CommitteeName": "AUGUST PFLUGER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "B001313",
-          "CandidateName": "BROWN, M SHONTEL",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-07-22",
-          "TransactionAmount": "1500",
-          "Ticker": "GM",
-          "CommitteeName": "SHONTEL BROWN FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "T000193",
-          "CandidateName": "THOMPSON, BENNIE G.",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-07-22",
-          "TransactionAmount": "1500",
-          "Ticker": "GM",
-          "CommitteeName": "FRIENDS OF BENNIE THOMPSON",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "C001101",
-          "CandidateName": "CLARK, KATHERINE",
-          "CompanyCMTENM": "PINNACLE WEST CAPITAL CORPORATION PAC",
-          "TransactionDate": "2026-07-22",
-          "TransactionAmount": "-2500",
-          "Ticker": "PNW",
-          "CommitteeName": "KATHERINE CLARK FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00015933",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
         {
           "BioGuideID": "L000557",
           "CandidateName": "LARSON, JOHN B",
-          "CompanyCMTENM": "BLOOM ENERGY CORPORATION PAC (BE PAC)",
+          "CompanyCMTENM": "NEXTERA ENERGY, INC. POLITICAL ACTION COMMITTEE",
           "TransactionDate": "2026-07-22",
-          "TransactionAmount": "1500",
-          "Ticker": "BE",
+          "TransactionAmount": "2500",
+          "Ticker": "NEE",
           "CommitteeName": "LARSON FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00764290",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00064774",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": "L000590",
-          "CandidateName": "LEE, SUSIE",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-07-22",
-          "TransactionAmount": "1000",
-          "Ticker": "GM",
-          "CommitteeName": "SUSIE LEE FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
-        },
-        {
-          "BioGuideID": "S001223",
-          "CandidateName": "SYKES, EMILIA",
-          "CompanyCMTENM": "GENERAL MOTORS COMPANY POLITICAL ACTION COMMITTEE (GM PAC)",
-          "TransactionDate": "2026-07-22",
+          "BioGuideID": "L000582",
+          "CandidateName": "LIEU, TED",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
           "TransactionAmount": "1500",
-          "Ticker": "GM",
-          "CommitteeName": "EMILIA SYKES FOR CONGRESS",
+          "Ticker": "SAIC",
+          "CommitteeName": "TED LIEU FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00076810",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "UNUM GROUP POLITICAL ACTION COMMITTEE (UNUMPAC)",
-          "TransactionDate": "2026-07-23",
-          "TransactionAmount": "5000",
-          "Ticker": "UNM",
-          "CommitteeName": "GRANITE VALUES PAC",
+          "BioGuideID": "C001039",
+          "CandidateName": "CAMMACK, KAT",
+          "CompanyCMTENM": "T-MOBILE US, INC.  POLITICAL ACTION COMMITTEE (T-PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "TMUS",
+          "CommitteeName": "KAT FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00177436",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00361758",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "EDISON INTERNATIONAL PAC",
-          "TransactionDate": "2026-07-23",
+          "BioGuideID": "L000582",
+          "CandidateName": "LIEU, TED",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "SAIC",
+          "CommitteeName": "TED LIEU FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "E000298",
+          "CandidateName": "ESTES, RON",
+          "CompanyCMTENM": "SEMPRA ENERGY EMPLOYEES POLITICAL ACTION COMMITTEE- FEDERAL",
+          "TransactionDate": "2026-07-30",
           "TransactionAmount": "2500",
-          "Ticker": "EIX",
-          "CommitteeName": "SAC PAC",
+          "Ticker": "SRE",
+          "CommitteeName": "RON ESTES FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00019653",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00008748",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": "S001229",
-          "CandidateName": "SHREVE, JEFFERSON",
-          "CompanyCMTENM": "GENERAL DYNAMICS CORPORATION POLITICAL ACTION COMMITTEE (GENERAL DYNAMICS EMPLOYEE PAC)",
-          "TransactionDate": "2026-07-28",
+          "BioGuideID": "F000470",
+          "CandidateName": "FISCHBACH, MICHELLE",
+          "CompanyCMTENM": "SEMPRA ENERGY EMPLOYEES POLITICAL ACTION COMMITTEE- FEDERAL",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "SRE",
+          "CommitteeName": "FISCHBACH FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00008748",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "B001315",
+          "CandidateName": "BUDZINSKI, NIKKI",
+          "CompanyCMTENM": "T-MOBILE US, INC.  POLITICAL ACTION COMMITTEE (T-PAC)",
+          "TransactionDate": "2026-07-30",
           "TransactionAmount": "1000",
-          "Ticker": "GD",
-          "CommitteeName": "SHREVE FOR CONGRESS",
+          "Ticker": "TMUS",
+          "CommitteeName": "NIKKI FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00078451",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00361758",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": "M001243",
-          "CandidateName": "MCCORMICK, DAVE",
-          "CompanyCMTENM": "SUNRUN INC POLITICAL ACTION COMMITTEE (SUNRUN PAC)",
-          "TransactionDate": "2026-07-24",
-          "TransactionAmount": "2000",
-          "Ticker": "RUN",
-          "CommitteeName": "FRIENDS OF DAVE MCCORMICK",
+          "BioGuideID": "J000294",
+          "CandidateName": "JEFFRIES, HAKEEM",
+          "CompanyCMTENM": "T-MOBILE US, INC.  POLITICAL ACTION COMMITTEE (T-PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "TMUS",
+          "CommitteeName": "JEFFRIES FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00489302",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00361758",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": "S001220",
-          "CandidateName": "STRONG, DALE WHITNEY",
-          "CompanyCMTENM": "GENERAL DYNAMICS CORPORATION POLITICAL ACTION COMMITTEE (GENERAL DYNAMICS EMPLOYEE PAC)",
-          "TransactionDate": "2026-07-28",
+          "BioGuideID": "A000371",
+          "CandidateName": "AGUILAR, PETE",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
           "TransactionAmount": "1000",
-          "Ticker": "GD",
-          "CommitteeName": "DALE STRONG FOR CONGRESS",
+          "Ticker": "SAIC",
+          "CommitteeName": "PETE AGUILAR FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00078451",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
-          "BioGuideID": "T000469",
-          "CandidateName": "TONKO, PAUL DAVID",
-          "CompanyCMTENM": "ENTERGY CORPORATION EMPLOYEE POLITICAL ACTION COMMITTEE (ENPAC)",
-          "TransactionDate": "2026-07-28",
-          "TransactionAmount": "-1000",
-          "Ticker": "ETR",
-          "CommitteeName": "PAUL TONKO FOR CONGRESS",
+          "BioGuideID": "W000795",
+          "CandidateName": "WILSON, JOE THE HON.",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "SAIC",
+          "CommitteeName": "JOE WILSON FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00363879",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "F000480",
+          "CandidateName": "FONG, VINCE",
+          "CompanyCMTENM": "T-MOBILE US, INC.  POLITICAL ACTION COMMITTEE (T-PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "TMUS",
+          "CommitteeName": "VINCE FONG FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00361758",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "B001287",
+          "CandidateName": "BERA, AMERISH",
+          "CompanyCMTENM": "COMCAST CORPORATION & NBCUNIVERSAL POLITICAL ACTION COMMITTEE - FEDERAL",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "CMCSV",
+          "CommitteeName": "BERA FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00248716",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
           "BioGuideID": null,
           "CandidateName": null,
-          "CompanyCMTENM": "GENERAL DYNAMICS CORPORATION POLITICAL ACTION COMMITTEE (GENERAL DYNAMICS EMPLOYEE PAC)",
-          "TransactionDate": "2026-07-28",
-          "TransactionAmount": "3500",
-          "Ticker": "GD",
-          "CommitteeName": "MPAC",
+          "CompanyCMTENM": "THE BANK OF NEW YORK MELLON CORPORATION BIPARTISAN PAC (BNY BIPAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "BK",
+          "CommitteeName": "PEOPLE HELPING PEOPLE",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00078451",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00017558",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         },
         {
           "BioGuideID": "F000466",
           "CandidateName": "FITZPATRICK, BRIAN",
-          "CompanyCMTENM": "GENERAL DYNAMICS CORPORATION POLITICAL ACTION COMMITTEE (GENERAL DYNAMICS EMPLOYEE PAC)",
-          "TransactionDate": "2026-07-28",
-          "TransactionAmount": "1500",
-          "Ticker": "GD",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "5000",
+          "Ticker": "SAIC",
           "CommitteeName": "BRIAN FITZPATRICK FOR ALL OF US",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00078451",
-          "Uploaded": "2026-08-23 23:34:14.039835",
-          "_first_seen": "2026-08-23T23:46:00.329899+00:00"
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "O000019",
+          "CandidateName": "OBERNOLTE, JAY",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "SAIC",
+          "CommitteeName": "JAY OBERNOLTE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "H001072",
+          "CandidateName": "HILL, JAMES FRENCH",
+          "CompanyCMTENM": "T-MOBILE US, INC.  POLITICAL ACTION COMMITTEE (T-PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1500",
+          "Ticker": "TMUS",
+          "CommitteeName": "FRENCH HILL FOR ARKANSAS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00361758",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "G000574",
+          "CandidateName": "GALLEGO, RUBEN",
+          "CompanyCMTENM": "NASDAQ, INC. PAC (NASDAQ PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "NDAQ",
+          "CommitteeName": "GALLEGO FOR ARIZONA",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00366013",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "G000583",
+          "CandidateName": "GOTTHEIMER, JOSH",
+          "CompanyCMTENM": "NASDAQ, INC. PAC (NASDAQ PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "NDAQ",
+          "CommitteeName": "JOSH FOR JERSEY",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00366013",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "T000490",
+          "CandidateName": "TAYLOR, DAVID",
+          "CompanyCMTENM": "NASDAQ, INC. PAC (NASDAQ PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2500",
+          "Ticker": "NDAQ",
+          "CommitteeName": "DAVE TAYLOR FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00366013",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "L000590",
+          "CandidateName": "LEE, SUSIE",
+          "CompanyCMTENM": "COMCAST CORPORATION & NBCUNIVERSAL POLITICAL ACTION COMMITTEE - FEDERAL",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "CMCSV",
+          "CommitteeName": "SUSIE LEE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00248716",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "L000560",
+          "CandidateName": "LARSEN, RICK",
+          "CompanyCMTENM": "UNITED AIRLINES, INC. POLITICAL ACTION COMMITTEE (UAPAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "UAL",
+          "CommitteeName": "CITIZENS TO ELECT RICK LARSEN",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00101766",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "C001035",
+          "CandidateName": "COLLINS, SUSAN M.",
+          "CompanyCMTENM": "CENTENE CORPORATION POLITICAL ACTION COMMITTEE (CENTENE PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "2000",
+          "Ticker": "CNC",
+          "CommitteeName": "COLLINS FOR SENATOR",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00397851",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "L000597",
+          "CandidateName": "LEE, LAUREL",
+          "CompanyCMTENM": "SCIENCE APPLICATIONS INTERNATIONAL CORPORATION VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1000",
+          "Ticker": "SAIC",
+          "CommitteeName": "LAUREL LEE FOR CONGRESS, INC.",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00300418",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": null,
+          "CandidateName": null,
+          "CompanyCMTENM": "KRATOS DEFENSE & SECURITY SOLUTIONS, INC. POLITICAL ACTION COMMITTEE (KRATOS PAC)",
+          "TransactionDate": "2026-07-30",
+          "TransactionAmount": "1500",
+          "Ticker": "KTOS",
+          "CommitteeName": "FLORIDA LEADS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00686709",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
+        },
+        {
+          "BioGuideID": "S001198",
+          "CandidateName": "SULLIVAN, DAN",
+          "CompanyCMTENM": "ABBVIE POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-07-31",
+          "TransactionAmount": "2500",
+          "Ticker": "ABBV",
+          "CommitteeName": "ALASKANS FOR DAN SULLIVAN",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00536573",
+          "Uploaded": "2026-08-30 23:34:20.665399",
+          "_first_seen": "2026-08-31T01:37:38.585345+00:00"
         }
       ]
     },
@@ -4467,9 +4467,135 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 2156,
-      "last_seen": "2026-08-30",
+      "rows": 2170,
+      "last_seen": "2026-08-31",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/HUTCHMED+Reports+Positive+Phase+III+SANOVO+Results+for+ORPATHYS+Plus+TAGRISSO+in+First-Line+EGFR-Mutated+NSCLC+with+MET+Overexpression",
+          "time": "2026-08-31 00:10:19",
+          "headline": "HUTCHMED Reports Positive Phase III SANOVO Results for ORPATHYS Plus TAGRISSO in First-Line EGFR-Mutated NSCLC with MET Overexpression",
+          "category": "press_release_summary",
+          "summary": "<p>HUTCHMED reports successful SANOVO trial results, combining ORPATHYS\u00ae and TAGRISSO\u00ae for advanced non-small cell lung cancer treatment.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>HUTCHMED (China) Limite\u2026",
+          "image": "https://www.quiverquant.com/images/hcm_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lauren+Underwood+announces+more+than+%2435+million+in+federal+funding+for+northern+Illinois+projects",
+          "time": "2026-08-30 22:20:41",
+          "headline": "Press Release: Lauren Underwood announces more than $35 million in federal funding for northern Illinois projects",
+          "category": "legislation_automated",
+          "summary": "<p>Representative Underwood announced over $35 million in federal funding for education, health care, child care, airports, research, and quantum manufacturing.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>\u2026",
+          "image": "https://www.quiverquant.com/images/U000040_congress.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pablo+Jos%C3%A9+Hern%C3%A1ndez+Rivera+Unveils+Five-Point+Agenda+on+Puerto+Rico+Water+and+Energy+Issues",
+          "time": "2026-08-30 20:20:30",
+          "headline": "Press Release: Pablo Jos\u00e9 Hern\u00e1ndez Rivera Unveils Five-Point Agenda on Puerto Rico Water and Energy Issues",
+          "category": "legislation_automated",
+          "summary": "<p>Hern\u00e1ndez outlined a five-point congressional agenda targeting Puerto Rico\u2019s water and energy crises, oversight, and disaster relief efforts.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"c\u2026",
+          "image": "https://www.quiverquant.com/images/H001103_congress.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Atlassian+Stock+%28TEAM%29+Opinions+on+Earnings+Beat+and+Analyst+Upgrade",
+          "time": "2026-08-30 17:33:22",
+          "headline": "Atlassian Stock (TEAM) Opinions on Earnings Beat and Analyst Upgrade",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Momentum:</strong> Social media buzz highlights Atlassian's recent quarterly results that surpassed estimates, fueled by strong cloud subscription growth and expandin\u2026",
+          "image": "https://www.quiverquant.com/images/team_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/NuScale+Power+Stock+%28SMR%29+Opinions+on+Small+Modular+Reactor+Momentum",
+          "time": "2026-08-30 17:33:22",
+          "headline": "NuScale Power Stock (SMR) Opinions on Small Modular Reactor Momentum",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nuclear interest surges:</strong> Social media chatter around NuScale Power has highlighted its position among small modular reactor developers, with traders comparing it to p\u2026",
+          "image": "https://www.quiverquant.com/images/smr_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Taiwan+Semiconductor+Manufacturing+Company+Stock+%28TSM%29+Opinions+on+July+Revenue+Surge+and+AI+Demand",
+          "time": "2026-08-30 17:33:22",
+          "headline": "Taiwan Semiconductor Manufacturing Company Stock (TSM) Opinions on July Revenue Surge and AI Demand",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Revenue Surge:</strong> Social media users highlighted Taiwan Semiconductor Manufacturing Company's July sales jumping 45% year-over-year to $14.5 billion, fueled by surging d\u2026",
+          "image": "https://www.quiverquant.com/images/tsm_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/BridgeBio+Pharma+Presents+Long-Term+Acoramidis+Data+Showing+Potential+Cardiac+Reversal+and+Extended+Survival+Benefits+in+ATTR-CM+at+ESC+Congress+2026",
+          "time": "2026-08-30 14:10:18",
+          "headline": "BridgeBio Pharma Presents Long-Term Acoramidis Data Showing Potential Cardiac Reversal and Extended Survival Benefits in ATTR-CM at ESC Congress 2026",
+          "category": "press_release_summary",
+          "summary": "<p>Acoramidis shows potential to reverse cardiac disease progression in ATTR-CM, improving survival and heart function in patients.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>BridgeBio Pharma, Inc. announ\u2026",
+          "image": "https://www.quiverquant.com/images/bbio_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Broadcom+Stock+%28AVGO%29+Opinions+on+Upcoming+Earnings+and+AI+Chip+Developments",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Broadcom Stock (AVGO) Opinions on Upcoming Earnings and AI Chip Developments",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings spotlight:</strong> Market participants on social media are zeroing in on Broadcom's upcoming quarterly results, with particular attention to its AI semiconductor rev\u2026",
+          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Amazon+Stock+%28AMZN%29+Opinions+on+AI+Infrastructure+Investments+and+Market+Performance",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Amazon Stock (AMZN) Opinions on AI Infrastructure Investments and Market Performance",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Hyperscaler Capex Outlook:</strong> Social media chatter highlighted Nvidia's comments on surging capital expenditures at major cloud providers, with projections rising sharpl\u2026",
+          "image": "https://www.quiverquant.com/images/amzn_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Bloom+Energy+Stock+%28BE%29+Opinions+on+Data+Center+Power+Demand+Surge",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Bloom Energy Stock (BE) Opinions on Data Center Power Demand Surge",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Data Center Demand:</strong> Social media chatter highlights Bloom Energy's positioning in the surge of power needs for AI infrastructure. Analysts note the company's unique f\u2026",
+          "image": "https://www.quiverquant.com/images/be_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Alphabet+Stock+%28GOOGL%29+Opinions+on+AI+Growth+Prospects",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Alphabet Stock (GOOGL) Opinions on AI Growth Prospects",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Push Intensifies:</strong> Social media conversations center on Alphabet's accelerated AI development, including plans for monthly model releases and the training of Gemini\u2026",
+          "image": "https://www.quiverquant.com/images/googl_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Optimum+Communications+Stock+%28OPTU%29+Opinions+on+Insider+Buying",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Optimum Communications Stock (OPTU) Opinions on Insider Buying",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Major Insider Acquisition:</strong> Social media chatter centers on a significant open-market purchase of Optimum Communications shares by a 10% owner, totaling around $2.5 mi\u2026",
+          "image": "https://www.quiverquant.com/images/optu_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Destiny+Tech100+Stock+%28DXYZ%29+Opinions+on+Quarterly+Earnings+Release",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Destiny Tech100 Stock (DXYZ) Opinions on Quarterly Earnings Release",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Update Issued:</strong> Destiny Tech100 released its second-quarter 2026 financial results on August 29, prompting investors to reassess the fund's portfolio of high-\u2026",
+          "image": "https://www.quiverquant.com/images/dxyz_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Tempus+AI+Stock+%28TEM%29+Opinions+on+Moderna+Merck+Cancer+Vaccine+News",
+          "time": "2026-08-30 14:03:49",
+          "headline": "Tempus AI Stock (TEM) Opinions on Moderna Merck Cancer Vaccine News",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Vaccine Breakthrough Impact:</strong> Social media conversations have intensified around Tempus AI after the Phase 3 success reported by Moderna and Merck in personalized canc\u2026",
+          "image": "https://www.quiverquant.com/images/tem_rect_new.png",
+          "_first_seen": "2026-08-31T01:37:39.196744+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Hakeem+Jeffries+discusses+affordability%2C+tariffs+and+voting+rights+on+MS+NOW",
           "time": "2026-08-30 00:20:24",
@@ -4480,21 +4606,21 @@
           "_first_seen": "2026-08-30T01:29:47.107840+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/PYXIS+TANKERS+Q2+2026+Earnings+Preview%3A+Recent+%24PXS+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
-          "time": "2026-08-29 21:05:11",
-          "headline": "PYXIS TANKERS Q2 2026 Earnings Preview: Recent $PXS Insider Trading, Hedge Fund Activity, and More",
-          "category": "earnings_automated",
-          "summary": "<p>PYXIS TANKERS (<a href=\"https://www.quiverquant.com/stock/PXS/\">$PXS</a>) is expected to release its quarterly earnings data on Monday, August 31st after market close, per Finnhub. Analysts are expecting revenue of\u2026",
-          "image": "https://www.quiverquant.com/images/pxs_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/CANGO+Q2+2026+Earnings+Preview%3A+Recent+%24CANG+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
           "time": "2026-08-29 21:05:11",
           "headline": "CANGO Q2 2026 Earnings Preview: Recent $CANG Insider Trading, Hedge Fund Activity, and More",
           "category": "earnings_automated",
           "summary": "<p>CANGO (<a href=\"https://www.quiverquant.com/stock/CANG/\">$CANG</a>) is expected to release its quarterly earnings data on Monday, August 31st after market close, per Finnhub. Analysts are expecting revenue of $104,\u2026",
           "image": "https://www.quiverquant.com/images/cang_rect_new.png",
+          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/PYXIS+TANKERS+Q2+2026+Earnings+Preview%3A+Recent+%24PXS+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
+          "time": "2026-08-29 21:05:11",
+          "headline": "PYXIS TANKERS Q2 2026 Earnings Preview: Recent $PXS Insider Trading, Hedge Fund Activity, and More",
+          "category": "earnings_automated",
+          "summary": "<p>PYXIS TANKERS (<a href=\"https://www.quiverquant.com/stock/PXS/\">$PXS</a>) is expected to release its quarterly earnings data on Monday, August 31st after market close, per Finnhub. Analysts are expecting revenue of\u2026",
+          "image": "https://www.quiverquant.com/images/pxs_rect_new.png",
           "_first_seen": "2026-08-30T01:29:47.107840+00:00"
         },
         {
@@ -4525,21 +4651,21 @@
           "_first_seen": "2026-08-30T01:29:47.107840+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Apple+Stock+%28AAPL%29+Opinions+on+Tim+Cook%27s+CEO+Transition",
-          "time": "2026-08-29 17:33:15",
-          "headline": "Apple Stock (AAPL) Opinions on Tim Cook's CEO Transition",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">CEO Transition Buzz:</strong> Social media chatter intensified around the upcoming leadership shift at Apple as Tim Cook prepares to step down. Participants highlighted his lo\u2026",
-          "image": "https://www.quiverquant.com/images/aapl_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Rivian+Automotive+Stock+%28RIVN%29+Opinions+on+R2+Reviews+and+Analyst+Ratings",
           "time": "2026-08-29 17:33:15",
           "headline": "Rivian Automotive Stock (RIVN) Opinions on R2 Reviews and Analyst Ratings",
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">R2 Model Excels in Tests:</strong> Social media chatter highlights Rivian\u2019s R2 SUV outperforming rivals in a MotorTrend comparison, praised for its blend of style, space, and \u2026",
           "image": "https://www.quiverquant.com/images/rivn_rect_new.png",
+          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Apple+Stock+%28AAPL%29+Opinions+on+Tim+Cook%27s+CEO+Transition",
+          "time": "2026-08-29 17:33:15",
+          "headline": "Apple Stock (AAPL) Opinions on Tim Cook's CEO Transition",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">CEO Transition Buzz:</strong> Social media chatter intensified around the upcoming leadership shift at Apple as Tim Cook prepares to step down. Participants highlighted his lo\u2026",
+          "image": "https://www.quiverquant.com/images/aapl_rect_new.png",
           "_first_seen": "2026-08-30T01:29:47.107840+00:00"
         },
         {
@@ -4568,132 +4694,6 @@
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Trial Results:</strong> Social media chatter around BioVie centers on the recent Phase 2 SUNRISE-PD trial data for its Parkinson's treatment, with observers noting the potenti\u2026",
           "image": "https://www.quiverquant.com/images/bivi_rect_new.png",
           "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Innodata+Stock+%28INOD%29+Opinions+on+Recent+Earnings+and+Valuation",
-          "time": "2026-08-29 17:33:15",
-          "headline": "Innodata Stock (INOD) Opinions on Recent Earnings and Valuation",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Valuation scrutiny intensifies:</strong> Social media chatter around Innodata has turned sharply critical following the company's latest quarterly results, with analysts highl\u2026",
-          "image": "https://www.quiverquant.com/images/inod_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Pinterest+Stock+%28PINS%29+Opinions+on+Recent+Earnings+and+AI+Strategies",
-          "time": "2026-08-29 17:33:15",
-          "headline": "Pinterest Stock (PINS) Opinions on Recent Earnings and AI Strategies",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Cost Advantages:</strong> Social media chatter highlights Pinterest's use of open-source models post-trained on proprietary data, which executives claim cuts costs signific\u2026",
-          "image": "https://www.quiverquant.com/images/pins_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24AMAT+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$AMAT stock fell 7% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$AMAT stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/amat_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24ASTS+stock+fell+16%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$ASTS stock fell 16% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$ASTS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 16%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
-          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24TSLA+stock+fell+4%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$TSLA stock fell 4% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$TSLA stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 4%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/tsla_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24SNDK+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$SNDK stock fell 7% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$SNDK stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/sndk_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24NBIS+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$NBIS stock fell 5% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$NBIS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24RXRX+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$RXRX stock fell 5% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$RXRX stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/rxrx_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24RGTI+stock+fell+13%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$RGTI stock fell 13% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$RGTI stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 13%</strong> this week, according to our price data from Polygon.<p>It has \u2026",
-          "image": "https://www.quiverquant.com/images/rgti_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24MRNA+stock+fell+5%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$MRNA stock fell 5% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$MRNA stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 5%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/mrna_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24TEM+stock+fell+12%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$TEM stock fell 12% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$TEM stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 12%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/tem_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24APLD+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$APLD stock fell 7% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$APLD stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/apld_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24OPEN+stock+fell+7%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$OPEN stock fell 7% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$OPEN stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 7%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/open_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/%24CBRS+stock+fell+9%25+this+week.+Here%27s+what+we+see+in+our+data.",
-          "time": "2026-08-29 16:38:05",
-          "headline": "$CBRS stock fell 9% this week. Here's what we see in our data.",
-          "category": "prices_automated",
-          "summary": "<p>$CBRS stock <strong style=\"color: rgb(237, 97, 92); background-color: rgba(237, 97, 92, 0.15); padding: 2px 4px; border-radius: 4px;\">fell 9%</strong> this week, according to our price data from Polygon.<p>It has b\u2026",
-          "image": "https://www.quiverquant.com/images/cbrs_rect_new.png",
-          "_first_seen": "2026-08-30T01:29:47.107840+00:00"
         }
       ]
     },
@@ -4701,183 +4701,183 @@
       "emoji": "\ud83d\udcc1",
       "label_en": "Congress holdings",
       "label_zh": "\u56fd\u4f1a\u6301\u4ed3",
-      "rows": 12006,
-      "last_seen": "2026-08-30",
+      "rows": 12213,
+      "last_seen": "2026-08-31",
       "recent": [
         {
           "Politician": "Zoe Lofgren",
           "Holdings": "{\"MMM\": -8000, \"BABA\": 0, \"CB\": 0, \"CMA\": 0, \"ECL\": -8000, \"TXN\": -8000, \"ACN\": 16000, \"ADBE\": 0, \"ALLY\": 16000, \"AMZN\": 0, \"AEP\": 0, \"AWK\": 0, \"AON\": 32000, \"AMAT\": 8000, \"ARCC\": 0, \"ASML\": 8000, \"T\": 0, \"AGR\": 0, \"B\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Kathy Manning",
           "Holdings": "{\"APD\": 40500, \"GOOGL\": -16000, \"GOOG\": -8000, \"AMGN\": -16000, \"AAPL\": -16000, \"CAT\": 8000, \"CNC\": 16000, \"CB\": 16000, \"CFG\": -8000, \"CME\": 8000, \"EL\": 8000, \"EXPD\": 8000, \"GIS\": 8000, \"HD\": 8000, \"INTC\": -40500, \"INT\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Greg Steube",
           "Holdings": "{\"SNV\": 56500}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Greg Murphy",
           "Holdings": "{\"NYMX\": -75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Greg Gianforte",
           "Holdings": "{\"ATLKY\": 92000, \"FMX\": 292500, \"OSW\": 553000, \"PEGA\": 742000, \"TSM\": -422500, \"YNDX\": -67500, \"CSGP\": -408000, \"GDDY\": 250000, \"NSRGY\": -315000, \"PRLB\": 0, \"RBA\": -183000, \"FIVE\": -75000, \"IAC\": 175000, \"IFF\": -10000\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Grace Meng",
           "Holdings": "{\"LHX\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Gilbert Cisneros",
           "Holdings": "{\"ADBE\": 40500, \"LNT\": 40000, \"AMZN\": 49000, \"AAPL\": 232000, \"CRNC\": 8000, \"CNS\": 0, \"CYRX\": 8000, \"EBS\": 32000, \"DAVA\": 32000, \"ERIC\": 65000, \"FIVE\": -24000, \"GDDY\": 122500, \"HELE\": -8000, \"INTU\": 0, \"IQV\": -64500, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Gerald E. Connolly",
           "Holdings": "{\"PG\": -8000, \"DIS\": -8000, \"D\": -49000, \"LDOS\": -64500, \"SAIC\": -24000, \"CI\": -16000, \"ERH\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Gary Palmer",
           "Holdings": "{\"ABBV\": 16000, \"AMZN\": 0, \"CTL\": 0, \"EL\": -8000, \"IDTI\": -16000, \"NTRS\": 0, \"REGN\": -8000, \"TJX\": 48000, \"GOOGL\": -8000, \"UHAL\": 16000, \"AMP\": 8000, \"AMGN\": 0, \"AAPL\": -8000, \"APTV\": 8000, \"ASND\": 8000, \"ASML\": 8000,\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Garret Graves",
           "Holdings": "{\"CRNC\": -8000, \"NUAN\": -8000, \"C\": -8000, \"DDD\": -8000, \"GOLD\": 8000, \"PSTH\": 8000, \"ABNB\": 16000, \"AMZN\": 8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Frank Pallone Jr.",
           "Holdings": "{\"CVX\": -8000, \"C\": -8000, \"D\": -8000, \"PM\": -24000, \"EL\": -32500, \"GE\": -16000, \"TXN\": -32500, \"DIS\": -8000, \"MO\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Frank A. Lobiondo",
           "Holdings": "{\"BLK\": 8000, \"AAPL\": 16000, \"IBM\": -8000, \"QCOM\": -16000, \"GIS\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Feinstein, Dianne",
           "Holdings": "{\"ALLO\": -3000000, \"NVS\": 575000, \"GOOGL\": 400000, \"AMAT\": -175000, \"BA\": 25000, \"BAM\": 57500, \"CHTR\": 575000, \"CCI\": 275500, \"DHR\": -725000, \"DLR\": -350000, \"FDX\": -267500, \"FEYE\": -175000, \"INFO\": -575000, \"MSFT\": -\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Enzi, Michael B.",
           "Holdings": "{\"KEY\": -8000}",
           "Type": "Senator",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Elizabeth Fletcher",
           "Holdings": "{\"MMM\": -8000, \"ABT\": -8000, \"ACN\": -16000, \"ANTM\": 8000, \"BDX\": -24000, \"CACI\": 0, \"CCL\": 0, \"CERN\": -16000, \"CTSH\": -16000, \"COST\": -8000, \"DRI\": 0, \"DLTR\": -16000, \"ECL\": -8000, \"FDX\": 0, \"FISV\": -32000, \"HD\": -800\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Elaine Luria",
           "Holdings": "{\"BABA\": -625000, \"QS\": 8000, \"TSLA\": 8000, \"UBER\": 625000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Ed Perlmutter",
           "Holdings": "{\"BABA\": 0, \"AMZN\": 8000, \"COST\": 0, \"MSFT\": 0, \"NEM\": -8000, \"KR\": 0, \"BRK.B\": 8000, \"COIN\": 8000, \"GOOG\": 0, \"VZ\": 8000, \"AAPL\": -8000, \"GILD\": 0, \"KMI\": 0, \"HD\": -8000, \"WBA\": 0, \"SWK\": -48500, \"USB\": -81000, \"FB\":\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Ed Case",
           "Holdings": "{\"MRIN\": 8000, \"MO\": -75000, \"GE\": -8000, \"KMI\": -8000, \"MSFT\": 75000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Earl Blumenauer",
           "Holdings": "{\"ERJ\": 24000, \"F\": 16000, \"ICE\": 16000, \"NWN\": 37000, \"POR\": 8000, \"USB\": 0, \"DANOY\": 0, \"KR\": -8000, \"ALL\": 8000, \"AAPL\": 0, \"FDX\": 16000, \"GILD\": 16000, \"HHC\": -16000, \"TEL\": 16000, \"BRK.B\": 8000, \"CAT\": 8000, \"CBS\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Dwight Evans",
           "Holdings": "{\"APO\": 16000, \"HII\": -16000, \"KMI\": -8000, \"CG\": 16000, \"BABA\": 16000, \"GOOGL\": 16500, \"AMZN\": -48500, \"AEP\": 0, \"T\": 0, \"BRK.B\": -16000, \"DEO\": 8000, \"HASI\": -8000, \"INTC\": 0, \"TMO\": -8000, \"AWK\": 0, \"XOM\": 8000, \"N\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Duckworth, Tammy",
           "Holdings": "{\"DVMT\": -8000, \"BBL\": 0, \"DWDP\": -16000, \"ABT\": -8000, \"JNJ\": -8000, \"CC\": -8000, \"GME\": -8000, \"CAT\": -16000, \"POT\": -8000, \"MCD\": -8000, \"NEE\": -32500, \"VZ\": -32500, \"ITW\": -8000, \"DIS\": -8000, \"GS\": -8000, \"SOUHY\"\u2026",
           "Type": "Senator",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Donna Shalala",
           "Holdings": "{\"TGNA\": -105500, \"AOS\": 8000, \"ABM\": -8000, \"AYI\": -16000, \"ADUS\": -8000, \"ADDYY\": 0, \"AMD\": 0, \"AGCO\": -8000, \"AAGIY\": -40500, \"ALK\": -16000, \"ALFVY\": -8000, \"ALLE\": 16000, \"AGN\": 0, \"AZSEY\": -32500, \"AIMC\": -8000, \u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr.",
           "Holdings": "{\"AAGIY\": -8000, \"CVS\": 8000, \"FVRR\": -8000, \"GH\": -8000, \"IXJ\": 8000, \"IYZ\": 8000, \"NDAQ\": 8000, \"NVS\": -8000, \"BBH\": 8000, \"VZ\": -8000}",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Donald Sternoff Beyer Jr",
           "Holdings": "{\"CONE\": -8000, \"DAIUF\": -8500, \"MSFT\": -24500, \"MSCI\": -32500, \"TDOC\": -16500, \"PEP\": 0, \"ASML\": 0, \"FLIR\": 24000, \"ACN\": 24000, \"GOOG\": -500, \"AMZN\": -24500, \"AAPL\": 40000, \"BRK.B\": 0, \"C\": -16500, \"CGNX\": 16000, \"C\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         },
         {
           "Politician": "Donald Sternoff  Beyer Jr",
           "Holdings": "{\"GOOG\": 8000, \"AAPL\": -16000, \"ASML\": 16000, \"BRK.B\": 24000, \"DAIUF\": -24000, \"ECL\": 0, \"FNV\": 8000, \"MSFT\": -16000, \"NEE\": -32500, \"REGN\": 24000, \"TDOC\": -32000, \"AAIGF\": 8000, \"EL\": 0, \"FVRR\": -8000, \"GS\": 56000, \"\u2026",
           "Type": "Representative",
-          "_first_seen": "2026-08-30T01:29:47.578503+00:00",
-          "_collected": "2026-08-30"
+          "_first_seen": "2026-08-31T01:37:39.671979+00:00",
+          "_collected": "2026-08-31"
         }
       ]
     },
@@ -5219,48 +5219,18 @@
       "emoji": "\ud83d\udcf1",
       "label_en": "App ratings",
       "label_zh": "\u5e94\u7528\u8bc4\u5206",
-      "rows": 142565,
-      "last_seen": "2026-08-29",
+      "rows": 144390,
+      "last_seen": "2026-08-30",
       "recent": [
         {
-          "Ticker": "TMO",
-          "App": "Aspire Member Program",
-          "Created": "2022-03-08",
-          "Publisher": "Thermo Fisher Scientific",
-          "Rating": "4.43158",
-          "Count": "190",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
-        },
-        {
-          "Ticker": "FVRR",
-          "App": "Fiverr - Freelance Services",
-          "Created": "2011-12-11",
-          "Publisher": "Fiverr International Ltd.",
-          "Rating": "4.9169",
-          "Count": "571374",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "HIV Answers",
-          "Created": "2014-04-23",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "4.33333",
-          "Count": "3",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
-        },
-        {
-          "Ticker": "GILD",
-          "App": "Gilead Event App",
-          "Created": "2022-12-14",
-          "Publisher": "Gilead Sciences, Inc.",
-          "Rating": "0.0",
-          "Count": "0",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Ticker": "WMT",
+          "App": "Me@Sams",
+          "Created": "2021-04-15",
+          "Publisher": "Walmart Stores Inc.",
+          "Rating": "4.78791",
+          "Count": "18063",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GIL",
@@ -5269,18 +5239,8 @@
           "Publisher": "Gildan Activewear Inc",
           "Rating": "4.72727",
           "Count": "33",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
-        },
-        {
-          "Ticker": "GIGM",
-          "App": "New TW MJ",
-          "Created": "2013-01-08",
-          "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
-          "Rating": "3.5",
-          "Count": "8",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GIGM",
@@ -5289,8 +5249,8 @@
           "Publisher": "Hoshin GigaMedia Center Inc., FunTown Branch.",
           "Rating": "4.06667",
           "Count": "60",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GH",
@@ -5299,8 +5259,8 @@
           "Publisher": "Guardant Health, Inc",
           "Rating": "2.8",
           "Count": "5",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5309,8 +5269,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.33333",
           "Count": "6",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5319,8 +5279,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "3.66667",
           "Count": "3",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GGG",
@@ -5329,8 +5289,8 @@
           "Publisher": "Graco Inc.",
           "Rating": "4.7",
           "Count": "10",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GE",
@@ -5339,58 +5299,58 @@
           "Publisher": "Portland General Electric Company",
           "Rating": "4.18103",
           "Count": "580",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GE",
           "App": "General Electric Credit Union",
           "Created": "2017-07-03",
           "Publisher": "General Electric Credit Union",
-          "Rating": "4.77728",
+          "Rating": "4.77769",
           "Count": "7377",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Walmart MoneyCard\u00ae",
           "Created": "2025-05-17",
           "Publisher": "Green Dot Corporation",
-          "Rating": "4.22008",
-          "Count": "6893",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "4.22011",
+          "Count": "6901",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Amazon Flex Debit Card",
           "Created": "2020-11-02",
           "Publisher": "Green Dot Corporation",
-          "Rating": "4.71949",
-          "Count": "11365",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "4.71983",
+          "Count": "11379",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GDOT",
           "App": "Green Dot - Mobile Banking",
           "Created": "2011-05-17",
           "Publisher": "Green Dot Corporation",
-          "Rating": "3.42665",
-          "Count": "11942",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "3.42653",
+          "Count": "11943",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GDDY",
           "App": "GoDaddy: Websites & Marketing",
           "Created": "2012-07-05",
           "Publisher": "GoDaddy Mobile LLC",
-          "Rating": "4.82748",
-          "Count": "106777",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "4.82749",
+          "Count": "106780",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCP",
@@ -5399,8 +5359,8 @@
           "Publisher": "GCP Applied Technologies Inc.",
           "Rating": "0.0",
           "Count": "0",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCO",
@@ -5409,18 +5369,18 @@
           "Publisher": "Genesco Inc.",
           "Rating": "2.25",
           "Count": "8",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCI",
           "App": "Cincinnati Sports",
           "Created": "2010-09-23",
           "Publisher": "Gannett",
-          "Rating": "4.53842",
-          "Count": "4060",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "4.53831",
+          "Count": "4059",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5429,8 +5389,8 @@
           "Publisher": "Gannett",
           "Rating": "4.54539",
           "Count": "7237",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5439,18 +5399,18 @@
           "Publisher": "Gannett",
           "Rating": "4.34408",
           "Count": "5769",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCI",
           "App": "azcentral",
           "Created": "2014-03-11",
           "Publisher": "Gannett",
-          "Rating": "4.34747",
-          "Count": "6602",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Rating": "4.34752",
+          "Count": "6601",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GCI",
@@ -5458,9 +5418,9 @@
           "Created": "2014-09-18",
           "Publisher": "Gannett",
           "Rating": "4.5727",
-          "Count": "12674",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Count": "12675",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         },
         {
           "Ticker": "GAIA",
@@ -5469,8 +5429,48 @@
           "Publisher": "Gaia Interactive Inc.",
           "Rating": "1.66391",
           "Count": "363",
-          "Time": "2026-08-29",
-          "_first_seen": "2026-08-30T01:29:54.099726+00:00"
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
+        },
+        {
+          "Ticker": "GAIA",
+          "App": "Gaia: Streaming Consciousness",
+          "Created": "2014-02-27",
+          "Publisher": "Gaia, Inc",
+          "Rating": "4.83036",
+          "Count": "139991",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
+        },
+        {
+          "Ticker": "GABC",
+          "App": "German American Mobile Banking",
+          "Created": "2014-02-10",
+          "Publisher": "German American Bancorp, Inc.",
+          "Rating": "4.7928",
+          "Count": "9691",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
+        },
+        {
+          "Ticker": "FWRD",
+          "App": "Forward Ten4",
+          "Created": "2020-08-24",
+          "Publisher": "Forward Air Corporation",
+          "Rating": "2.44444",
+          "Count": "18",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
+        },
+        {
+          "Ticker": "FVRR",
+          "App": "Fiverr - Freelance Services",
+          "Created": "2011-12-11",
+          "Publisher": "Fiverr International Ltd.",
+          "Rating": "4.91688",
+          "Count": "571419",
+          "Time": "2026-08-30",
+          "_first_seen": "2026-08-31T01:37:43.340046+00:00"
         }
       ]
     },
@@ -5478,183 +5478,183 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 289819,
-      "last_seen": "2026-08-30",
+      "rows": 294752,
+      "last_seen": "2026-08-31",
       "recent": [
         {
-          "ticker": "CRM",
-          "owner_name": "State of Tennessee, Department of Treasury",
-          "owner_title": "Institution",
-          "shares": "322527",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "1258935",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
-          "owner_title": "Institution",
-          "shares": "1325594",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
-          "owner_title": "Institution",
-          "shares": "1316311",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Capital World Investors",
-          "owner_title": "Institution",
-          "shares": "1301143",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CIBC Bancorp USA Inc.",
-          "owner_title": "Institution",
-          "shares": "1294192",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "W1M Asset Management Ltd",
-          "owner_title": "Institution",
-          "shares": "1282430",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "SEI INVESTMENTS CO",
-          "owner_title": "Institution",
-          "shares": "1280571",
-          "_collected": "2026-08-30"
+          "ticker": "COR",
+          "owner_name": "Mauch Robert P.",
+          "owner_title": "President & CEO",
+          "shares": "65393",
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "PRUDENTIAL FINANCIAL INC",
           "owner_title": "Institution",
           "shares": "1276465",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "COATUE MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "1239043",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "CANTOR FITZGERALD, L. P.",
-          "owner_title": "Institution",
-          "shares": "1114253",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "NEOS Investment Management LLC",
-          "owner_title": "Institution",
-          "shares": "1237396",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Raymond James Financial Services Advisors, Inc.",
-          "owner_title": "Institution",
-          "shares": "1230972",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "BESSEMER GROUP INC",
-          "owner_title": "Institution",
-          "shares": "1191421",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Eurizon Capital SGR S.p.A.",
-          "owner_title": "Institution",
-          "shares": "1187497",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Korea Investment CORP",
-          "owner_title": "Institution",
-          "shares": "1156752",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "DANSKE BANK A/S",
-          "owner_title": "Institution",
-          "shares": "1156291",
-          "_collected": "2026-08-30"
-        },
-        {
-          "ticker": "AMD",
-          "owner_name": "Tidal Investments LLC",
-          "owner_title": "Institution",
-          "shares": "1155920",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "TD ASSET MANAGEMENT INC",
           "owner_title": "Institution",
           "shares": "1343134",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
+          "owner_title": "Institution",
+          "shares": "1325594",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
+          "owner_title": "Institution",
+          "shares": "1316311",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Capital World Investors",
+          "owner_title": "Institution",
+          "shares": "1301143",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "CIBC Bancorp USA Inc.",
+          "owner_title": "Institution",
+          "shares": "1294192",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "W1M Asset Management Ltd",
+          "owner_title": "Institution",
+          "shares": "1282430",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "SEI INVESTMENTS CO",
+          "owner_title": "Institution",
+          "shares": "1280571",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
+          "owner_title": "Institution",
+          "shares": "1258935",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "CANTOR FITZGERALD, L. P.",
+          "owner_title": "Institution",
+          "shares": "1114253",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "COATUE MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "1239043",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "NEOS Investment Management LLC",
+          "owner_title": "Institution",
+          "shares": "1237396",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Raymond James Financial Services Advisors, Inc.",
+          "owner_title": "Institution",
+          "shares": "1230972",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "BESSEMER GROUP INC",
+          "owner_title": "Institution",
+          "shares": "1191421",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Eurizon Capital SGR S.p.A.",
+          "owner_title": "Institution",
+          "shares": "1187497",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Korea Investment CORP",
+          "owner_title": "Institution",
+          "shares": "1156752",
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "Tidal Investments LLC",
+          "owner_title": "Institution",
+          "shares": "1155920",
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "Focus Partners Wealth",
           "owner_title": "Institution",
           "shares": "1359656",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "TWO SIGMA INVESTMENTS, LP",
           "owner_title": "Institution",
           "shares": "1372004",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
           "owner_title": "Institution",
           "shares": "1390861",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
+        },
+        {
+          "ticker": "AMD",
+          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
+          "owner_title": "Institution",
+          "shares": "1407261",
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "Hudson Bay Capital Management LP",
           "owner_title": "Institution",
           "shares": "1622810",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "NATIONAL BANK OF CANADA /FI/",
           "owner_title": "Institution",
           "shares": "1607891",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         },
         {
           "ticker": "AMD",
           "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
           "shares": "1606963",
-          "_collected": "2026-08-30"
+          "_collected": "2026-08-31"
         }
       ]
     },
@@ -5976,15 +5976,6 @@
           "parties": "R"
         },
         {
-          "ticker": "BEP",
-          "net": 8,
-          "buys": 8,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 113004.0,
-          "parties": "R"
-        },
-        {
           "ticker": "ENTG",
           "net": 8,
           "buys": 8,
@@ -5992,6 +5983,15 @@
           "members": 1,
           "est_usd": 64004.0,
           "parties": "D"
+        },
+        {
+          "ticker": "BEP",
+          "net": 6,
+          "buys": 6,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 97003.0,
+          "parties": "R"
         },
         {
           "ticker": "BWXT",
@@ -6077,15 +6077,6 @@
           "parties": "D"
         },
         {
-          "ticker": "MKL",
-          "net": -12,
-          "buys": 0,
-          "sells": 12,
-          "members": 2,
-          "est_usd": 0.0,
-          "parties": "D/R"
-        },
-        {
           "ticker": "SCI",
           "net": -12,
           "buys": 0,
@@ -6104,6 +6095,15 @@
           "parties": "R"
         },
         {
+          "ticker": "MKL",
+          "net": -10,
+          "buys": 0,
+          "sells": 10,
+          "members": 2,
+          "est_usd": 0.0,
+          "parties": "D/R"
+        },
+        {
           "ticker": "STE",
           "net": -10,
           "buys": 0,
@@ -6111,15 +6111,6 @@
           "members": 2,
           "est_usd": 0.0,
           "parties": "D"
-        },
-        {
-          "ticker": "MSFT",
-          "net": -8,
-          "buys": 6,
-          "sells": 14,
-          "members": 9,
-          "est_usd": 48003.0,
-          "parties": "D/Democratic/R"
         },
         {
           "ticker": "CCI",
@@ -6131,13 +6122,13 @@
           "parties": "D/R"
         },
         {
-          "ticker": "LYV",
-          "net": -8,
-          "buys": 0,
-          "sells": 8,
-          "members": 1,
-          "est_usd": 0.0,
-          "parties": "D"
+          "ticker": "MSFT",
+          "net": -6,
+          "buys": 6,
+          "sells": 12,
+          "members": 8,
+          "est_usd": 48003.0,
+          "parties": "D/Democratic/R"
         },
         {
           "ticker": "AAPL",
@@ -6186,6 +6177,15 @@
         },
         {
           "ticker": "CLH",
+          "net": -6,
+          "buys": 0,
+          "sells": 6,
+          "members": 1,
+          "est_usd": 0.0,
+          "parties": "D"
+        },
+        {
+          "ticker": "LYV",
           "net": -6,
           "buys": 0,
           "sells": 6,
@@ -6399,48 +6399,57 @@
     "hf": [
       {
         "ticker": "MSFT",
-        "downloads_30d": 32271236.0,
-        "wow_pct": -2.0
-      },
-      {
-        "ticker": "BABA",
-        "downloads_30d": 190994406.0,
-        "wow_pct": -5.5
+        "downloads_30d": 33249737.0,
+        "wow_pct": 1.2,
+        "hot": true
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 2216323.0,
-        "wow_pct": -5.9
+        "downloads_30d": 2274025.0,
+        "wow_pct": -2.1,
+        "hot": false
+      },
+      {
+        "ticker": "BABA",
+        "downloads_30d": 195280769.0,
+        "wow_pct": -2.8,
+        "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 11745925.0,
-        "wow_pct": -7.2
+        "downloads_30d": 11998702.0,
+        "wow_pct": -5.7,
+        "hot": false
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 35696902.0,
-        "wow_pct": -8.5
-      },
-      {
-        "ticker": "META",
-        "downloads_30d": 81211976.0,
-        "wow_pct": -9.0
+        "downloads_30d": 36179413.0,
+        "wow_pct": -5.8,
+        "hot": false
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 229190633.0,
-        "wow_pct": -10.3
+        "downloads_30d": 233246256.0,
+        "wow_pct": -8.1,
+        "hot": false
+      },
+      {
+        "ticker": "META",
+        "downloads_30d": 81521468.0,
+        "wow_pct": -8.2,
+        "hot": false
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 41798839.0,
-        "wow_pct": -11.0
+        "downloads_30d": 41768412.0,
+        "wow_pct": -10.0,
+        "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 4702215.0,
-        "wow_pct": -13.2
+        "downloads_30d": 4673212.0,
+        "wow_pct": -13.2,
+        "hot": false
       }
     ],
     "material_8k": [
@@ -7877,6 +7886,14 @@
       },
       {
         "ticker": "EVO",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
+      },
+      {
+        "ticker": "JOB",
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
@@ -14540,6 +14557,22 @@
         "detail": "M&A / Divestitures"
       },
       {
+        "ticker": "DCBO",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
+      },
+      {
+        "ticker": "ELUT",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "SVRN",
         "category": "Divestitures",
         "confidence": "high",
@@ -16178,6 +16211,14 @@
         "activist": false,
         "filer": null,
         "detail": "M&A / Divestitures"
+      },
+      {
+        "ticker": "DDL",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "ESAB",
@@ -18228,14 +18269,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "RUMBW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "SEQC",
         "category": "Deal Terminations",
         "confidence": "high",
@@ -18282,14 +18315,6 @@
         "activist": false,
         "filer": null,
         "detail": "Divestitures"
-      },
-      {
-        "ticker": "AIIOW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "TCMFF",
@@ -18434,6 +18459,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BSTR",
+        "category": "Deal Terminations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Deal Terminations"
       },
       {
         "ticker": "BHM",
@@ -18722,14 +18755,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "FITB-PK",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "FGRS",
@@ -20404,14 +20429,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "SKYE",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "SSM",
         "category": "Divestitures",
         "confidence": "high",
@@ -20429,14 +20446,6 @@
       },
       {
         "ticker": "ERNAW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "FFAI",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -20573,11 +20582,11 @@
       },
       {
         "ticker": "APUS",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Acquisitions",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "CMBMF",
@@ -21693,6 +21702,14 @@
       },
       {
         "ticker": "CCTG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CRMLW",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -23332,14 +23349,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "USDEW",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "NIMUD",
         "category": "Acquisitions",
         "confidence": "high",
@@ -23661,14 +23670,6 @@
       },
       {
         "ticker": "HKPD",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "SUGP",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -24143,6 +24144,14 @@
         "ticker": "CHAI",
         "category": "Delistings",
         "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "UFG",
+        "category": "Delistings",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
@@ -24780,12 +24789,28 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SBMT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "AIHS",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "TSN",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "NBND",
@@ -25102,7 +25127,7 @@
         "ticker": "AMZN",
         "net_up_30d": 34,
         "breadth": 0.77,
-        "est_chg_30d": 4.94,
+        "est_chg_30d": 4.36,
         "n_analysts": 44,
         "bull_ratio": 0.89,
         "rising": true,
@@ -25135,7 +25160,7 @@
         "ticker": "AMD",
         "net_up_30d": 31,
         "breadth": 0.89,
-        "est_chg_30d": 14.78,
+        "est_chg_30d": 12.69,
         "n_analysts": 35,
         "bull_ratio": 0.94,
         "rising": true,
@@ -25676,9 +25701,9 @@
       },
       {
         "ticker": "NFLX",
-        "bull_ratio": 0.92,
+        "bull_ratio": 0.87,
         "messages": 30,
-        "watchers": 521195,
+        "watchers": 521212,
         "hot": true
       },
       {
@@ -25690,16 +25715,16 @@
       },
       {
         "ticker": "GOOG",
-        "bull_ratio": 0.81,
+        "bull_ratio": 0.73,
         "messages": 30,
-        "watchers": 311420,
+        "watchers": 311445,
         "hot": true
       },
       {
         "ticker": "DIS",
-        "bull_ratio": 0.92,
+        "bull_ratio": 1.0,
         "messages": 30,
-        "watchers": 290128,
+        "watchers": 290125,
         "hot": true
       },
       {
@@ -25707,6 +25732,13 @@
         "bull_ratio": 1.0,
         "messages": 30,
         "watchers": 213009,
+        "hot": true
+      },
+      {
+        "ticker": "F",
+        "bull_ratio": 0.75,
+        "messages": 30,
+        "watchers": 186269,
         "hot": true
       },
       {
@@ -25739,9 +25771,9 @@
       },
       {
         "ticker": "NKE",
-        "bull_ratio": 0.87,
+        "bull_ratio": 0.93,
         "messages": 30,
-        "watchers": 138832,
+        "watchers": 138862,
         "hot": true
       },
       {
@@ -25749,13 +25781,6 @@
         "bull_ratio": 0.9,
         "messages": 30,
         "watchers": 138814,
-        "hot": true
-      },
-      {
-        "ticker": "COIN",
-        "bull_ratio": 0.8,
-        "messages": 30,
-        "watchers": 138260,
         "hot": true
       }
     ],
@@ -26020,92 +26045,92 @@
     ],
     "github": [
       {
-        "ticker": "NVDA",
-        "stars": 18354,
-        "wow_pct": 0.61,
-        "hot": true
-      },
-      {
         "ticker": "NET",
-        "stars": 15413,
-        "wow_pct": 0.48,
-        "hot": true
-      },
-      {
-        "ticker": "IBM",
-        "stars": 7754,
-        "wow_pct": 0.3,
+        "stars": 15443,
+        "wow_pct": 0.55,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 189757,
-        "wow_pct": 0.25,
+        "stars": 190068,
+        "wow_pct": 0.29,
+        "hot": true
+      },
+      {
+        "ticker": "NVDA",
+        "stars": 18360,
+        "wow_pct": 0.27,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 197767,
-        "wow_pct": 0.22,
+        "stars": 198073,
+        "wow_pct": 0.26,
+        "hot": true
+      },
+      {
+        "ticker": "IBM",
+        "stars": 7755,
+        "wow_pct": 0.19,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 248016,
-        "wow_pct": 0.15,
+        "stars": 248328,
+        "wow_pct": 0.19,
         "hot": true
       },
       {
-        "ticker": "DDOG",
-        "stars": 3715,
-        "wow_pct": 0.11,
+        "ticker": "AMD",
+        "stars": 6816,
+        "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "TWLO",
-        "stars": 2077,
+        "stars": 2078,
         "wow_pct": 0.1,
         "hot": false
       },
       {
-        "ticker": "PLTR",
-        "stars": 22021,
+        "ticker": "DDOG",
+        "stars": 3715,
         "wow_pct": 0.08,
         "hot": false
       },
       {
-        "ticker": "AMD",
-        "stars": 6813,
-        "wow_pct": 0.07,
-        "hot": false
-      },
-      {
         "ticker": "GTLB",
-        "stars": 24546,
-        "wow_pct": 0.04,
+        "stars": 24549,
+        "wow_pct": 0.06,
         "hot": false
       },
       {
         "ticker": "MDB",
-        "stars": 28513,
-        "wow_pct": 0.04,
+        "stars": 28520,
+        "wow_pct": 0.06,
+        "hot": false
+      },
+      {
+        "ticker": "PLTR",
+        "stars": 22020,
+        "wow_pct": 0.06,
         "hot": false
       },
       {
         "ticker": "U",
         "stars": 19653,
-        "wow_pct": 0.04,
+        "wow_pct": 0.06,
         "hot": false
       },
       {
         "ticker": "ESTC",
-        "stars": 77877,
+        "stars": 77881,
         "wow_pct": 0.03,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "stars": 11262,
+        "stars": 11261,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -26124,46 +26149,11 @@
     ],
     "lobbying": [
       {
-        "ticker": "GM",
-        "spend_usd": 4150000.0,
-        "filings": 18,
-        "spike_x": null,
-        "top_issue": "Automotive Industry"
-      },
-      {
-        "ticker": "MRK",
-        "spend_usd": 2970000.0,
-        "filings": 14,
-        "spike_x": null,
-        "top_issue": "Trade (domestic/foreign)"
-      },
-      {
-        "ticker": "DUK",
-        "spend_usd": 2890000.0,
-        "filings": 10,
-        "spike_x": null,
-        "top_issue": "Taxation/Internal Revenue Code"
-      },
-      {
         "ticker": "V",
         "spend_usd": 2360000.0,
-        "filings": 8,
+        "filings": 7,
         "spike_x": null,
         "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "HON",
-        "spend_usd": 2220000.0,
-        "filings": 11,
-        "spike_x": null,
-        "top_issue": "Defense"
-      },
-      {
-        "ticker": "TM",
-        "spend_usd": 2170500.0,
-        "filings": 5,
-        "spike_x": null,
-        "top_issue": "Transportation"
       },
       {
         "ticker": "MA",
@@ -26173,46 +26163,11 @@
         "top_issue": "Banking"
       },
       {
-        "ticker": "UBER",
-        "spend_usd": 1825000.0,
-        "filings": 11,
-        "spike_x": null,
-        "top_issue": "Transportation"
-      },
-      {
-        "ticker": "COIN",
-        "spend_usd": 1800000.0,
-        "filings": 9,
-        "spike_x": null,
-        "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "PSKY",
-        "spend_usd": 1790000.0,
-        "filings": 5,
-        "spike_x": null,
-        "top_issue": "Communications/Broadcasting/Radio/TV"
-      },
-      {
         "ticker": "C",
         "spend_usd": 1750000.0,
         "filings": 7,
         "spike_x": null,
         "top_issue": "Financial Institutions/Investments/Securities"
-      },
-      {
-        "ticker": "INTU",
-        "spend_usd": 1700000.0,
-        "filings": 18,
-        "spike_x": null,
-        "top_issue": "Consumer Issues/Safety/Products"
-      },
-      {
-        "ticker": "FOXA",
-        "spend_usd": 1620000.0,
-        "filings": 6,
-        "spike_x": null,
-        "top_issue": "Telecommunications"
       },
       {
         "ticker": "HMC",
@@ -26227,6 +26182,76 @@
         "filings": 4,
         "spike_x": null,
         "top_issue": "Fuel/Gas/Oil"
+      },
+      {
+        "ticker": "KO",
+        "spend_usd": 1450000.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Transportation"
+      },
+      {
+        "ticker": "THC",
+        "spend_usd": 1410000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Health Issues"
+      },
+      {
+        "ticker": "XYZ",
+        "spend_usd": 1330000.0,
+        "filings": 6,
+        "spike_x": null,
+        "top_issue": "Financial Institutions/Investments/Securities"
+      },
+      {
+        "ticker": "CAT",
+        "spend_usd": 1312000.0,
+        "filings": 4,
+        "spike_x": null,
+        "top_issue": "Copyright/Patent/Trademark"
+      },
+      {
+        "ticker": "PEP",
+        "spend_usd": 1280000.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Food Industry (safety, labeling, etc.)"
+      },
+      {
+        "ticker": "BIIB",
+        "spend_usd": 1220000.0,
+        "filings": 4,
+        "spike_x": null,
+        "top_issue": "Medicare/Medicaid"
+      },
+      {
+        "ticker": "MH",
+        "spend_usd": 1220000.0,
+        "filings": 5,
+        "spike_x": null,
+        "top_issue": "Education"
+      },
+      {
+        "ticker": "FICO",
+        "spend_usd": 1150000.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Banking"
+      },
+      {
+        "ticker": "SOLS",
+        "spend_usd": 1090000.0,
+        "filings": 2,
+        "spike_x": null,
+        "top_issue": "Environment/Superfund"
+      },
+      {
+        "ticker": "GS",
+        "spend_usd": 1060000.0,
+        "filings": 7,
+        "spike_x": null,
+        "top_issue": "Economics/Economic Development"
       }
     ],
     "offexchange": [
@@ -26484,14 +26509,6 @@
           "sellers": 12
         },
         {
-          "ticker": "MDLN",
-          "buy_usd": 170750.0,
-          "sell_usd": 3761016566.0,
-          "net_usd": -3760845816.0,
-          "buyers": 1,
-          "sellers": 20
-        },
-        {
           "ticker": "IHT",
           "buy_usd": 0.0,
           "sell_usd": 2860658213.0,
@@ -26586,6 +26603,14 @@
           "net_usd": -981879142.0,
           "buyers": 1,
           "sellers": 12
+        },
+        {
+          "ticker": "ANET",
+          "buy_usd": 0.0,
+          "sell_usd": 844708243.0,
+          "net_usd": -844708243.0,
+          "buyers": 0,
+          "sellers": 288
         }
       ]
     },
@@ -27476,9 +27501,9 @@
       },
       {
         "ticker": "HON",
-        "total_usd": 434000.0,
-        "donations": 109,
-        "politicians": 80
+        "total_usd": 449500.0,
+        "donations": 119,
+        "politicians": 84
       },
       {
         "ticker": "HGTY",
@@ -27493,22 +27518,28 @@
         "politicians": 57
       },
       {
+        "ticker": "BA",
+        "total_usd": 205000.0,
+        "donations": 151,
+        "politicians": 105
+      },
+      {
         "ticker": "GD",
         "total_usd": 189000.0,
         "donations": 91,
         "politicians": 59
       },
       {
-        "ticker": "BA",
-        "total_usd": 164500.0,
-        "donations": 117,
-        "politicians": 86
+        "ticker": "CMCSV",
+        "total_usd": 172500.0,
+        "donations": 39,
+        "politicians": 29
       },
       {
-        "ticker": "CMCSV",
-        "total_usd": 149000.0,
-        "donations": 31,
-        "politicians": 24
+        "ticker": "LMT",
+        "total_usd": 134000.0,
+        "donations": 84,
+        "politicians": 65
       },
       {
         "ticker": "MATX",
@@ -27529,34 +27560,28 @@
         "politicians": 29
       },
       {
+        "ticker": "SAIC",
+        "total_usd": 106000.0,
+        "donations": 47,
+        "politicians": 31
+      },
+      {
         "ticker": "GM",
         "total_usd": 105000.0,
         "donations": 59,
         "politicians": 44
       },
       {
-        "ticker": "LMT",
-        "total_usd": 92000.0,
-        "donations": 60,
-        "politicians": 47
+        "ticker": "HII",
+        "total_usd": 101000.0,
+        "donations": 55,
+        "politicians": 41
       },
       {
         "ticker": "T",
         "total_usd": 90500.0,
         "donations": 67,
         "politicians": 51
-      },
-      {
-        "ticker": "LUV",
-        "total_usd": 89500.0,
-        "donations": 39,
-        "politicians": 25
-      },
-      {
-        "ticker": "SAIC",
-        "total_usd": 89500.0,
-        "donations": 37,
-        "politicians": 24
       }
     ],
     "news": [],
@@ -27893,34 +27918,34 @@
       {
         "ticker": "UBER",
         "rating": 4.84,
-        "reviews": 30118957,
+        "reviews": 30131128,
         "apps": 6,
         "top_app": "Uber - Request a ride",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
         "ticker": "GOOGL",
         "rating": 4.71,
-        "reviews": 26311964,
+        "reviews": 26321474,
         "apps": 5,
         "top_app": "Google Drive",
-        "review_velocity": 0.0009,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
         "ticker": "MSFT",
         "rating": 4.77,
-        "reviews": 20036363,
+        "reviews": 20041095,
         "apps": 9,
         "top_app": "Microsoft Outlook",
-        "review_velocity": 0.0007,
+        "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
         "ticker": "WMT",
         "rating": 4.82,
-        "reviews": 19091527,
+        "reviews": 19100677,
         "apps": 5,
         "top_app": "Walmart: Shopping & Savings",
         "review_velocity": 0.0005,
@@ -27929,34 +27954,34 @@
       {
         "ticker": "LYFT",
         "rating": 4.91,
-        "reviews": 17960472,
+        "reviews": 17966159,
         "apps": 3,
         "top_app": "Lyft",
-        "review_velocity": 0.0006,
+        "review_velocity": 0.0003,
         "lean": "strong"
       },
       {
         "ticker": "SBUX",
         "rating": 4.89,
-        "reviews": 8216624,
+        "reviews": 8219559,
         "apps": 4,
         "top_app": "Starbucks",
-        "review_velocity": 0.001,
+        "review_velocity": 0.0004,
         "lean": "strong"
       },
       {
         "ticker": "ETSY",
         "rating": 4.92,
-        "reviews": 7311141,
+        "reviews": 7312830,
         "apps": 2,
         "top_app": "Etsy: Shop from Real People",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0002,
         "lean": "strong"
       },
       {
         "ticker": "Z",
         "rating": 4.8,
-        "reviews": 7638286,
+        "reviews": 7638402,
         "apps": 4,
         "top_app": "Zillow Real Estate & Rentals",
         "review_velocity": 0.0,
@@ -27965,16 +27990,16 @@
       {
         "ticker": "LUV",
         "rating": 4.84,
-        "reviews": 7172629,
+        "reviews": 7173517,
         "apps": 1,
         "top_app": "Southwest Airlines: Travel App",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0001,
         "lean": "strong"
       },
       {
         "ticker": "SHOP",
         "rating": 4.81,
-        "reviews": 7165629,
+        "reviews": 7167771,
         "apps": 4,
         "top_app": "Shop: Track, Pay, Discover",
         "review_velocity": 0.0003,
@@ -27986,136 +28011,136 @@
         "reviews": 7004250,
         "apps": 3,
         "top_app": "Fly Delta",
-        "review_velocity": -0.0,
+        "review_velocity": 0.0,
         "lean": "strong"
       },
       {
         "ticker": "NFLX",
         "rating": 4.75,
-        "reviews": 7158160,
+        "reviews": 7164643,
         "apps": 2,
         "top_app": "Netflix",
-        "review_velocity": 0.0018,
+        "review_velocity": 0.0009,
         "lean": "strong"
       },
       {
         "ticker": "ROKU",
         "rating": 4.73,
-        "reviews": 6054459,
+        "reviews": 6058772,
         "apps": 1,
         "top_app": "The Roku App (Official)",
-        "review_velocity": 0.0014,
+        "review_velocity": 0.0007,
         "lean": "strong"
       },
       {
         "ticker": "PINS",
         "rating": 4.78,
-        "reviews": 5752303,
+        "reviews": 5753162,
         "apps": 1,
         "top_app": "Pinterest",
-        "review_velocity": 0.0004,
+        "review_velocity": 0.0001,
         "lean": "strong"
       },
       {
         "ticker": "SNAP",
         "rating": 4.51,
-        "reviews": 5918119,
+        "reviews": 5919229,
         "apps": 1,
         "top_app": "Snapchat",
-        "review_velocity": 0.0005,
+        "review_velocity": 0.0002,
         "lean": "strong"
       }
     ],
     "patents": [
       {
         "ticker": "QCOM",
-        "patents": 866,
-        "ipc_classes": 43,
+        "patents": 991,
+        "ipc_classes": 45,
         "sample_title": "modulation and coding scheme table change based on constellation and code rate"
       },
       {
         "ticker": "TSM",
-        "patents": 713,
-        "ipc_classes": 50,
+        "patents": 803,
+        "ipc_classes": 52,
         "sample_title": "backside contact"
       },
       {
         "ticker": "IBM",
-        "patents": 502,
-        "ipc_classes": 51,
+        "patents": 550,
+        "ipc_classes": 52,
         "sample_title": "double-sided integrated circuit with electrostatic guard ring"
       },
       {
         "ticker": "AAPL",
-        "patents": 492,
-        "ipc_classes": 62,
+        "patents": 535,
+        "ipc_classes": 64,
         "sample_title": "method and system for generating at least one image of a real environment"
       },
       {
         "ticker": "INTC",
-        "patents": 400,
-        "ipc_classes": 47,
+        "patents": 464,
+        "ipc_classes": 48,
         "sample_title": "viewport switch latency reduction in live streaming"
       },
       {
         "ticker": "MSFT",
-        "patents": 362,
-        "ipc_classes": 42,
+        "patents": 407,
+        "ipc_classes": 44,
         "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
       },
       {
         "ticker": "MU",
-        "patents": 329,
-        "ipc_classes": 25,
+        "patents": 369,
+        "ipc_classes": 26,
         "sample_title": "advanced interconnection for wafer on wafer packaging"
       },
       {
         "ticker": "LPL",
-        "patents": 257,
+        "patents": 284,
         "ipc_classes": 19,
         "sample_title": "display apparatus having a light-emitting device"
       },
       {
-        "ticker": "TXN",
-        "patents": 215,
-        "ipc_classes": 41,
-        "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
-      },
-      {
         "ticker": "AMAT",
-        "patents": 206,
-        "ipc_classes": 44,
+        "patents": 234,
+        "ipc_classes": 47,
         "sample_title": "patterning layer modification using directional radical ribbon beam"
       },
       {
-        "ticker": "HMC",
-        "patents": 188,
-        "ipc_classes": 65,
-        "sample_title": "courteous mode for adjusting vehicle functions"
+        "ticker": "TXN",
+        "patents": 234,
+        "ipc_classes": 44,
+        "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
       },
       {
         "ticker": "SONY",
-        "patents": 186,
-        "ipc_classes": 45,
+        "patents": 211,
+        "ipc_classes": 49,
         "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
       },
       {
         "ticker": "NVDA",
-        "patents": 186,
-        "ipc_classes": 21,
+        "patents": 206,
+        "ipc_classes": 23,
         "sample_title": "highlight determination using one or more neural networks"
       },
       {
+        "ticker": "HMC",
+        "patents": 204,
+        "ipc_classes": 66,
+        "sample_title": "courteous mode for adjusting vehicle functions"
+      },
+      {
         "ticker": "BA",
-        "patents": 181,
-        "ipc_classes": 79,
+        "patents": 192,
+        "ipc_classes": 80,
         "sample_title": "wind tunnel turbulent airflow laser sensor system"
       },
       {
-        "ticker": "SLB",
-        "patents": 159,
-        "ipc_classes": 26,
-        "sample_title": "monitoring an industrial facilty employing industrial internet of things (iiot) sensors using a tactical compute application"
+        "ticker": "BAC",
+        "patents": 171,
+        "ipc_classes": 11,
+        "sample_title": "pre-authorized, encrypted and secured qr code-based wallet to share money with authorized recipients"
       }
     ],
     "bills": [
@@ -28302,804 +28327,804 @@
     ],
     "congress_holdings": {
       "ICE": {
-        "position_usd": 2767383000.0,
-        "holders": 696
+        "position_usd": 2815096500.0,
+        "holders": 708
       },
       "MSFT": {
-        "position_usd": 1241577000.0,
-        "holders": 4002
+        "position_usd": 1262983500.0,
+        "holders": 4071
       },
       "AAPL": {
-        "position_usd": 1030660000.0,
-        "holders": 4582
+        "position_usd": 1048430000.0,
+        "holders": 4661
       },
       "AMZN": {
-        "position_usd": 575099000.0,
-        "holders": 3248
+        "position_usd": 585014500.0,
+        "holders": 3304
       },
       "SPY": {
-        "position_usd": 483459000.0,
-        "holders": 522
+        "position_usd": 491794500.0,
+        "holders": 531
       },
       "FB": {
-        "position_usd": 470525000.0,
-        "holders": 2030
+        "position_usd": 478637500.0,
+        "holders": 2065
       },
       "GOOGL": {
-        "position_usd": 306704000.0,
-        "holders": 2204
+        "position_usd": 311992000.0,
+        "holders": 2242
       },
       "V": {
-        "position_usd": 223184000.0,
-        "holders": 1914
+        "position_usd": 227032000.0,
+        "holders": 1947
       },
       "NFLX": {
-        "position_usd": 217297000.0,
-        "holders": 1102
+        "position_usd": 221043500.0,
+        "holders": 1121
       },
       "CHTR": {
-        "position_usd": 216427000.0,
-        "holders": 464
+        "position_usd": 220158500.0,
+        "holders": 472
       },
       "NVDA": {
-        "position_usd": 194706000.0,
-        "holders": 1624
+        "position_usd": 198063000.0,
+        "holders": 1652
       },
       "PYPL": {
-        "position_usd": 188471000.0,
-        "holders": 1392
+        "position_usd": 191720500.0,
+        "holders": 1416
       },
       "CRM": {
-        "position_usd": 183773000.0,
-        "holders": 986
+        "position_usd": 186941500.0,
+        "holders": 1003
       },
       "DDOG": {
-        "position_usd": 175885000.0,
-        "holders": 116
+        "position_usd": 178917500.0,
+        "holders": 118
       },
       "XON": {
-        "position_usd": 174464000.0,
-        "holders": 174
+        "position_usd": 177472000.0,
+        "holders": 177
       },
       "BRP": {
-        "position_usd": 174464000.0,
-        "holders": 116
+        "position_usd": 177472000.0,
+        "holders": 118
       },
       "BXS": {
-        "position_usd": 174116000.0,
-        "holders": 174
+        "position_usd": 177118000.0,
+        "holders": 177
       },
       "ALLO": {
-        "position_usd": 174000000.0,
-        "holders": 58
+        "position_usd": 177000000.0,
+        "holders": 59
       },
       "XOM": {
-        "position_usd": 168403000.0,
-        "holders": 2320
+        "position_usd": 171306500.0,
+        "holders": 2360
       },
       "JPM": {
-        "position_usd": 155005000.0,
-        "holders": 2552
+        "position_usd": 157677500.0,
+        "holders": 2596
       },
       "JNJ": {
-        "position_usd": 154686000.0,
-        "holders": 2552
+        "position_usd": 157353000.0,
+        "holders": 2596
       },
       "TFX": {
-        "position_usd": 150684000.0,
-        "holders": 232
+        "position_usd": 153282000.0,
+        "holders": 236
       },
       "T": {
-        "position_usd": 145348000.0,
-        "holders": 2552
+        "position_usd": 147854000.0,
+        "holders": 2596
       },
       "DIS": {
-        "position_usd": 140534000.0,
-        "holders": 2726
+        "position_usd": 142957000.0,
+        "holders": 2773
       },
       "TRUP": {
-        "position_usd": 137750000.0,
-        "holders": 116
+        "position_usd": 140125000.0,
+        "holders": 118
       },
       "A": {
-        "position_usd": 136706000.0,
-        "holders": 290
+        "position_usd": 139063000.0,
+        "holders": 295
       },
       "ET": {
-        "position_usd": 133690000.0,
-        "holders": 580
+        "position_usd": 135995000.0,
+        "holders": 590
       },
       "AB": {
-        "position_usd": 130500000.0,
-        "holders": 58
+        "position_usd": 132750000.0,
+        "holders": 59
       },
       "MA": {
-        "position_usd": 130355000.0,
-        "holders": 1450
+        "position_usd": 132602500.0,
+        "holders": 1475
       },
       "LHCG": {
-        "position_usd": 120263000.0,
-        "holders": 290
+        "position_usd": 122336500.0,
+        "holders": 295
       },
       "VZ": {
-        "position_usd": 117943000.0,
-        "holders": 1914
+        "position_usd": 119976500.0,
+        "holders": 1947
       },
       "SHLX": {
-        "position_usd": 110229000.0,
-        "holders": 290
+        "position_usd": 112129500.0,
+        "holders": 295
       },
       "NEE": {
-        "position_usd": 106952000.0,
-        "holders": 1276
+        "position_usd": 108796000.0,
+        "holders": 1298
       },
       "FDX": {
-        "position_usd": 105531000.0,
-        "holders": 1334
+        "position_usd": 107350500.0,
+        "holders": 1357
       },
       "USAC": {
-        "position_usd": 104081000.0,
-        "holders": 116
+        "position_usd": 105875500.0,
+        "holders": 118
       },
       "LEN": {
-        "position_usd": 103414000.0,
-        "holders": 116
+        "position_usd": 105197000.0,
+        "holders": 118
       },
       "BABA": {
-        "position_usd": 102776000.0,
-        "holders": 1508
+        "position_usd": 104548000.0,
+        "holders": 1534
       },
       "CAPL": {
-        "position_usd": 101964000.0,
-        "holders": 174
+        "position_usd": 103722000.0,
+        "holders": 177
       },
       "WMT": {
-        "position_usd": 101848000.0,
-        "holders": 1972
+        "position_usd": 103604000.0,
+        "holders": 2006
       },
       "AM": {
-        "position_usd": 101674000.0,
-        "holders": 406
+        "position_usd": 103427000.0,
+        "holders": 413
       },
       "HD": {
-        "position_usd": 101297000.0,
-        "holders": 1856
+        "position_usd": 103043500.0,
+        "holders": 1888
       },
       "ENBL": {
-        "position_usd": 98368000.0,
-        "holders": 116
+        "position_usd": 100064000.0,
+        "holders": 118
       },
       "GE": {
-        "position_usd": 95120000.0,
-        "holders": 2378
+        "position_usd": 96760000.0,
+        "holders": 2419
       },
       "CVX": {
-        "position_usd": 91959000.0,
-        "holders": 1914
+        "position_usd": 93544500.0,
+        "holders": 1947
       },
       "TXN": {
-        "position_usd": 91321000.0,
-        "holders": 986
+        "position_usd": 92895500.0,
+        "holders": 1003
       },
       "UNH": {
-        "position_usd": 89407000.0,
-        "holders": 1740
+        "position_usd": 90948500.0,
+        "holders": 1770
       },
       "UBS": {
-        "position_usd": 87928000.0,
-        "holders": 290
+        "position_usd": 89444000.0,
+        "holders": 295
       },
       "DFS": {
-        "position_usd": 87725000.0,
-        "holders": 638
+        "position_usd": 89237500.0,
+        "holders": 649
       },
       "RGC": {
-        "position_usd": 87464000.0,
-        "holders": 116
+        "position_usd": 88972000.0,
+        "holders": 118
       },
       "COST": {
-        "position_usd": 86536000.0,
-        "holders": 1856
+        "position_usd": 88028000.0,
+        "holders": 1888
       },
       "PG": {
-        "position_usd": 83491000.0,
-        "holders": 1914
+        "position_usd": 84930500.0,
+        "holders": 1947
       },
       "INFO": {
-        "position_usd": 81229000.0,
-        "holders": 406
+        "position_usd": 82629500.0,
+        "holders": 413
       },
       "LIN": {
-        "position_usd": 80823000.0,
-        "holders": 986
+        "position_usd": 82216500.0,
+        "holders": 1003
       },
       "CRWD": {
-        "position_usd": 80707000.0,
-        "holders": 522
+        "position_usd": 82098500.0,
+        "holders": 531
       },
       "HON": {
-        "position_usd": 79721000.0,
-        "holders": 1160
+        "position_usd": 81095500.0,
+        "holders": 1180
       },
       "WFC": {
-        "position_usd": 79692000.0,
-        "holders": 1508
+        "position_usd": 81066000.0,
+        "holders": 1534
       },
       "BAYRY": {
-        "position_usd": 79199000.0,
-        "holders": 232
+        "position_usd": 80564500.0,
+        "holders": 236
       },
       "BAC": {
-        "position_usd": 78532000.0,
-        "holders": 1682
+        "position_usd": 79886000.0,
+        "holders": 1711
       },
       "ALK": {
-        "position_usd": 75777000.0,
-        "holders": 290
+        "position_usd": 77083500.0,
+        "holders": 295
       },
       "MCD": {
-        "position_usd": 75632000.0,
-        "holders": 1392
+        "position_usd": 76936000.0,
+        "holders": 1416
       },
       "SPG": {
-        "position_usd": 75487000.0,
-        "holders": 696
+        "position_usd": 76788500.0,
+        "holders": 708
       },
       "BRK.B": {
-        "position_usd": 73109000.0,
-        "holders": 1566
+        "position_usd": 74369500.0,
+        "holders": 1593
       },
       "SBUX": {
-        "position_usd": 72036000.0,
-        "holders": 1972
+        "position_usd": 73278000.0,
+        "holders": 2006
       },
       "PBFX": {
-        "position_usd": 70673000.0,
-        "holders": 116
+        "position_usd": 71891500.0,
+        "holders": 118
       },
       "LUV": {
-        "position_usd": 70296000.0,
-        "holders": 928
+        "position_usd": 71508000.0,
+        "holders": 944
       },
       "AMZA": {
-        "position_usd": 69600000.0,
-        "holders": 116
+        "position_usd": 70800000.0,
+        "holders": 118
       },
       "ACN": {
-        "position_usd": 68933000.0,
-        "holders": 1334
+        "position_usd": 70121500.0,
+        "holders": 1357
       },
       "FTAI": {
-        "position_usd": 68585000.0,
-        "holders": 58
+        "position_usd": 69767500.0,
+        "holders": 59
       },
       "INTC": {
-        "position_usd": 67483000.0,
-        "holders": 2146
+        "position_usd": 68646500.0,
+        "holders": 2183
       },
       "PODD": {
-        "position_usd": 66613000.0,
-        "holders": 232
+        "position_usd": 67761500.0,
+        "holders": 236
       },
       "EMR": {
-        "position_usd": 66381000.0,
-        "holders": 812
+        "position_usd": 67525500.0,
+        "holders": 826
       },
       "CSCO": {
-        "position_usd": 66352000.0,
-        "holders": 1798
+        "position_usd": 67496000.0,
+        "holders": 1829
       },
       "ZAYO": {
-        "position_usd": 66207000.0,
-        "holders": 174
+        "position_usd": 67348500.0,
+        "holders": 177
       },
       "CAT": {
-        "position_usd": 64177000.0,
-        "holders": 1508
+        "position_usd": 65283500.0,
+        "holders": 1534
       },
       "DHR": {
-        "position_usd": 64177000.0,
-        "holders": 1160
+        "position_usd": 65283500.0,
+        "holders": 1180
       },
       "WMB": {
-        "position_usd": 64090000.0,
-        "holders": 580
+        "position_usd": 65195000.0,
+        "holders": 590
       },
       "CEQP": {
-        "position_usd": 62988000.0,
-        "holders": 174
+        "position_usd": 64074000.0,
+        "holders": 177
       },
       "QCOM": {
-        "position_usd": 62582000.0,
-        "holders": 1740
+        "position_usd": 63661000.0,
+        "holders": 1770
       },
       "RCKY": {
-        "position_usd": 62350000.0,
-        "holders": 58
+        "position_usd": 63425000.0,
+        "holders": 59
       },
       "TSLA": {
-        "position_usd": 61654000.0,
-        "holders": 1334
+        "position_usd": 62717000.0,
+        "holders": 1357
       },
       "MMM": {
-        "position_usd": 61364000.0,
-        "holders": 1218
+        "position_usd": 62422000.0,
+        "holders": 1239
       },
       "RPM": {
-        "position_usd": 61161000.0,
-        "holders": 348
+        "position_usd": 62215500.0,
+        "holders": 354
       },
       "BKCC": {
-        "position_usd": 60900000.0,
-        "holders": 58
+        "position_usd": 61950000.0,
+        "holders": 59
       },
       "BMY": {
-        "position_usd": 60581000.0,
-        "holders": 1044
+        "position_usd": 61625500.0,
+        "holders": 1062
       },
       "ZBRA": {
-        "position_usd": 59885000.0,
-        "holders": 174
+        "position_usd": 60917500.0,
+        "holders": 177
       },
       "AJRD": {
-        "position_usd": 58464000.0,
-        "holders": 116
+        "position_usd": 59472000.0,
+        "holders": 118
       },
       "PEP": {
-        "position_usd": 58000000.0,
-        "holders": 1856
+        "position_usd": 59000000.0,
+        "holders": 1888
       },
       "ABBV": {
-        "position_usd": 57478000.0,
-        "holders": 1334
+        "position_usd": 58469000.0,
+        "holders": 1357
       },
       "PM": {
-        "position_usd": 56869000.0,
-        "holders": 812
+        "position_usd": 57849500.0,
+        "holders": 826
       },
       "TMO": {
-        "position_usd": 56463000.0,
-        "holders": 1218
+        "position_usd": 57436500.0,
+        "holders": 1239
       },
       "RTX": {
-        "position_usd": 56231000.0,
-        "holders": 580
+        "position_usd": 57200500.0,
+        "holders": 590
       },
       "IBM": {
-        "position_usd": 56144000.0,
-        "holders": 1508
+        "position_usd": 57112000.0,
+        "holders": 1534
       },
       "CB": {
-        "position_usd": 56028000.0,
-        "holders": 1160
+        "position_usd": 56994000.0,
+        "holders": 1180
       },
       "ADBE": {
-        "position_usd": 55535000.0,
-        "holders": 812
+        "position_usd": 56492500.0,
+        "holders": 826
       },
       "IHRT": {
-        "position_usd": 54085000.0,
-        "holders": 58
+        "position_usd": 55017500.0,
+        "holders": 59
       },
       "DGRO": {
-        "position_usd": 53882000.0,
-        "holders": 116
+        "position_usd": 54811000.0,
+        "holders": 118
       },
       "REZI": {
-        "position_usd": 53360000.0,
-        "holders": 406
+        "position_usd": 54280000.0,
+        "holders": 413
       },
       "VEEV": {
-        "position_usd": 52606000.0,
-        "holders": 232
+        "position_usd": 53513000.0,
+        "holders": 236
       },
       "UPS": {
-        "position_usd": 51591000.0,
-        "holders": 986
+        "position_usd": 52480500.0,
+        "holders": 1003
       },
       "LLY": {
-        "position_usd": 51504000.0,
-        "holders": 696
+        "position_usd": 52392000.0,
+        "holders": 708
       },
       "CVS": {
-        "position_usd": 50721000.0,
-        "holders": 1740
+        "position_usd": 51595500.0,
+        "holders": 1770
       },
       "KO": {
-        "position_usd": 50112000.0,
-        "holders": 1624
+        "position_usd": 50976000.0,
+        "holders": 1652
       },
       "BIDU": {
-        "position_usd": 49300000.0,
-        "holders": 464
+        "position_usd": 50150000.0,
+        "holders": 472
       },
       "MCHP": {
-        "position_usd": 49097000.0,
-        "holders": 290
+        "position_usd": 49943500.0,
+        "holders": 295
       },
       "MIC": {
-        "position_usd": 48749000.0,
-        "holders": 174
+        "position_usd": 49589500.0,
+        "holders": 177
       },
       "NSRGY": {
-        "position_usd": 48691000.0,
-        "holders": 1044
+        "position_usd": 49530500.0,
+        "holders": 1062
       },
       "PXD": {
-        "position_usd": 48604000.0,
-        "holders": 348
+        "position_usd": 49442000.0,
+        "holders": 354
       },
       "ULTI": {
-        "position_usd": 47792000.0,
-        "holders": 116
+        "position_usd": 48616000.0,
+        "holders": 118
       },
       "LH": {
-        "position_usd": 47299000.0,
-        "holders": 290
+        "position_usd": 48114500.0,
+        "holders": 295
       },
       "UBER": {
-        "position_usd": 46197000.0,
-        "holders": 522
+        "position_usd": 46993500.0,
+        "holders": 531
       },
       "CTSH": {
-        "position_usd": 45907000.0,
-        "holders": 580
+        "position_usd": 46698500.0,
+        "holders": 590
       },
       "LOW": {
-        "position_usd": 45124000.0,
-        "holders": 1160
+        "position_usd": 45902000.0,
+        "holders": 1180
       },
       "NS": {
-        "position_usd": 44950000.0,
-        "holders": 116
+        "position_usd": 45725000.0,
+        "holders": 118
       },
       "PEGA": {
-        "position_usd": 44921000.0,
-        "holders": 116
+        "position_usd": 45695500.0,
+        "holders": 118
       },
       "HALO": {
-        "position_usd": 44892000.0,
-        "holders": 174
+        "position_usd": 45666000.0,
+        "holders": 177
       },
       "ROK": {
-        "position_usd": 44805000.0,
-        "holders": 348
+        "position_usd": 45577500.0,
+        "holders": 354
       },
       "TIP": {
-        "position_usd": 44776000.0,
-        "holders": 174
+        "position_usd": 45548000.0,
+        "holders": 177
       },
       "GOOG": {
-        "position_usd": 44515000.0,
-        "holders": 1566
+        "position_usd": 45282500.0,
+        "holders": 1593
       },
       "TSM": {
-        "position_usd": 44399000.0,
-        "holders": 928
+        "position_usd": 45164500.0,
+        "holders": 944
       },
       "ABT": {
-        "position_usd": 44312000.0,
-        "holders": 1276
+        "position_usd": 45076000.0,
+        "holders": 1298
       },
       "DD": {
-        "position_usd": 44080000.0,
-        "holders": 870
+        "position_usd": 44840000.0,
+        "holders": 885
       },
       "STT": {
-        "position_usd": 44080000.0,
-        "holders": 870
+        "position_usd": 44840000.0,
+        "holders": 885
       },
       "PFE": {
-        "position_usd": 43848000.0,
-        "holders": 1914
+        "position_usd": 44604000.0,
+        "holders": 1947
       },
       "TWOU": {
-        "position_usd": 43500000.0,
-        "holders": 58
+        "position_usd": 44250000.0,
+        "holders": 59
       },
       "RNR": {
-        "position_usd": 43500000.0,
-        "holders": 58
+        "position_usd": 44250000.0,
+        "holders": 59
       },
       "AMLP": {
-        "position_usd": 43500000.0,
-        "holders": 58
+        "position_usd": 44250000.0,
+        "holders": 59
       },
       "EFA": {
-        "position_usd": 43500000.0,
-        "holders": 58
+        "position_usd": 44250000.0,
+        "holders": 59
       },
       "NVS": {
-        "position_usd": 42775000.0,
-        "holders": 870
+        "position_usd": 43512500.0,
+        "holders": 885
       },
       "CL": {
-        "position_usd": 42572000.0,
-        "holders": 870
+        "position_usd": 43306000.0,
+        "holders": 885
       },
       "AMGN": {
-        "position_usd": 42427000.0,
-        "holders": 1218
+        "position_usd": 43158500.0,
+        "holders": 1239
       },
       "LMT": {
-        "position_usd": 41992000.0,
-        "holders": 1102
+        "position_usd": 42716000.0,
+        "holders": 1121
       },
       "DEO": {
-        "position_usd": 41180000.0,
-        "holders": 986
+        "position_usd": 41890000.0,
+        "holders": 1003
       },
       "BA": {
-        "position_usd": 40774000.0,
-        "holders": 1508
+        "position_usd": 41477000.0,
+        "holders": 1534
       },
       "NGL": {
-        "position_usd": 40629000.0,
-        "holders": 174
+        "position_usd": 41329500.0,
+        "holders": 177
       },
       "XLE": {
-        "position_usd": 40484000.0,
-        "holders": 116
+        "position_usd": 41182000.0,
+        "holders": 118
       },
       "MO": {
-        "position_usd": 40368000.0,
-        "holders": 1218
+        "position_usd": 41064000.0,
+        "holders": 1239
       },
       "F": {
-        "position_usd": 40078000.0,
-        "holders": 1392
+        "position_usd": 40769000.0,
+        "holders": 1416
       },
       "IWN": {
-        "position_usd": 39556000.0,
-        "holders": 290
+        "position_usd": 40238000.0,
+        "holders": 295
       },
       "PAA": {
-        "position_usd": 39527000.0,
-        "holders": 290
+        "position_usd": 40208500.0,
+        "holders": 295
       },
       "ORCL": {
-        "position_usd": 38860000.0,
-        "holders": 812
+        "position_usd": 39530000.0,
+        "holders": 826
       },
       "TJX": {
-        "position_usd": 38193000.0,
-        "holders": 1508
+        "position_usd": 38851500.0,
+        "holders": 1534
       },
       "RMD": {
-        "position_usd": 38106000.0,
-        "holders": 290
+        "position_usd": 38763000.0,
+        "holders": 295
       },
       "AMAT": {
-        "position_usd": 37671000.0,
-        "holders": 812
+        "position_usd": 38320500.0,
+        "holders": 826
       },
       "NKE": {
-        "position_usd": 37642000.0,
-        "holders": 812
+        "position_usd": 38291000.0,
+        "holders": 826
       },
       "MDY": {
-        "position_usd": 37178000.0,
-        "holders": 116
+        "position_usd": 37819000.0,
+        "holders": 118
       },
       "VMC": {
-        "position_usd": 37004000.0,
-        "holders": 464
+        "position_usd": 37642000.0,
+        "holders": 472
       },
       "KHC": {
-        "position_usd": 36859000.0,
-        "holders": 1102
+        "position_usd": 37494500.0,
+        "holders": 1121
       },
       "TTWO": {
-        "position_usd": 36714000.0,
-        "holders": 116
+        "position_usd": 37347000.0,
+        "holders": 118
       },
       "EPD": {
-        "position_usd": 36366000.0,
-        "holders": 406
+        "position_usd": 36993000.0,
+        "holders": 413
       },
       "AMN": {
-        "position_usd": 36366000.0,
-        "holders": 116
+        "position_usd": 36993000.0,
+        "holders": 118
       },
       "VTV": {
-        "position_usd": 36250000.0,
-        "holders": 58
+        "position_usd": 36875000.0,
+        "holders": 59
       },
       "GLP": {
-        "position_usd": 36047000.0,
-        "holders": 116
+        "position_usd": 36668500.0,
+        "holders": 118
       },
       "MRK": {
-        "position_usd": 35902000.0,
-        "holders": 1566
+        "position_usd": 36521000.0,
+        "holders": 1593
       },
       "CCI": {
-        "position_usd": 35844000.0,
-        "holders": 928
+        "position_usd": 36462000.0,
+        "holders": 944
       },
       "PRU": {
-        "position_usd": 35583000.0,
-        "holders": 754
+        "position_usd": 36196500.0,
+        "holders": 767
       },
       "MDLZ": {
-        "position_usd": 35380000.0,
-        "holders": 812
+        "position_usd": 35990000.0,
+        "holders": 826
       },
       "DXCM": {
-        "position_usd": 35148000.0,
-        "holders": 464
+        "position_usd": 35754000.0,
+        "holders": 472
       },
       "IWD": {
-        "position_usd": 34394000.0,
-        "holders": 116
+        "position_usd": 34987000.0,
+        "holders": 118
       },
       "SQ": {
-        "position_usd": 34017000.0,
-        "holders": 696
+        "position_usd": 34603500.0,
+        "holders": 708
       },
       "HHC": {
-        "position_usd": 33698000.0,
-        "holders": 232
+        "position_usd": 34279000.0,
+        "holders": 236
       },
       "D": {
-        "position_usd": 33466000.0,
-        "holders": 986
+        "position_usd": 34043000.0,
+        "holders": 1003
       },
       "ARNA": {
-        "position_usd": 33147000.0,
-        "holders": 174
+        "position_usd": 33718500.0,
+        "holders": 177
       },
       "DAL": {
-        "position_usd": 33118000.0,
-        "holders": 754
+        "position_usd": 33689000.0,
+        "holders": 767
       },
       "TTD": {
-        "position_usd": 32828000.0,
-        "holders": 174
+        "position_usd": 33394000.0,
+        "holders": 177
       },
       "DOCU": {
-        "position_usd": 32799000.0,
-        "holders": 232
+        "position_usd": 33364500.0,
+        "holders": 236
       },
       "CUTR": {
-        "position_usd": 32364000.0,
-        "holders": 58
+        "position_usd": 32922000.0,
+        "holders": 59
       },
       "KEYS": {
-        "position_usd": 32306000.0,
-        "holders": 290
+        "position_usd": 32863000.0,
+        "holders": 295
       },
       "C": {
-        "position_usd": 32103000.0,
-        "holders": 1160
+        "position_usd": 32656500.0,
+        "holders": 1180
       },
       "OSW": {
-        "position_usd": 32074000.0,
-        "holders": 116
+        "position_usd": 32627000.0,
+        "holders": 118
       },
       "TCEHY": {
-        "position_usd": 32016000.0,
-        "holders": 348
+        "position_usd": 32568000.0,
+        "holders": 354
       },
       "PNR": {
-        "position_usd": 31900000.0,
-        "holders": 174
+        "position_usd": 32450000.0,
+        "holders": 177
       },
       "CTL": {
-        "position_usd": 31813000.0,
-        "holders": 464
+        "position_usd": 32361500.0,
+        "holders": 472
       },
       "ADP": {
-        "position_usd": 31610000.0,
-        "holders": 522
+        "position_usd": 32155000.0,
+        "holders": 531
       },
       "TFC": {
-        "position_usd": 31088000.0,
-        "holders": 870
+        "position_usd": 31624000.0,
+        "holders": 885
       },
       "PGR": {
-        "position_usd": 30827000.0,
-        "holders": 754
+        "position_usd": 31358500.0,
+        "holders": 767
       },
       "IFNNY": {
-        "position_usd": 30305000.0,
-        "holders": 174
+        "position_usd": 30827500.0,
+        "holders": 177
       },
       "AVGO": {
-        "position_usd": 29899000.0,
-        "holders": 754
+        "position_usd": 30414500.0,
+        "holders": 767
       },
       "MSM": {
-        "position_usd": 29870000.0,
-        "holders": 174
+        "position_usd": 30385000.0,
+        "holders": 177
       },
       "SLB": {
-        "position_usd": 29783000.0,
-        "holders": 1682
+        "position_usd": 30296500.0,
+        "holders": 1711
       },
       "BRK-B": {
-        "position_usd": 29783000.0,
-        "holders": 290
+        "position_usd": 30296500.0,
+        "holders": 295
       },
       "IR": {
-        "position_usd": 29725000.0,
-        "holders": 406
+        "position_usd": 30237500.0,
+        "holders": 413
       },
       "AZO": {
-        "position_usd": 29638000.0,
-        "holders": 464
+        "position_usd": 30149000.0,
+        "holders": 472
       },
       "UNP": {
-        "position_usd": 29493000.0,
-        "holders": 986
+        "position_usd": 30001500.0,
+        "holders": 1003
       },
       "BBVA": {
-        "position_usd": 29493000.0,
-        "holders": 232
+        "position_usd": 30001500.0,
+        "holders": 236
       },
       "CMCSA": {
-        "position_usd": 29377000.0,
-        "holders": 1566
+        "position_usd": 29883500.0,
+        "holders": 1593
       },
       "SU": {
-        "position_usd": 29203000.0,
-        "holders": 522
+        "position_usd": 29706500.0,
+        "holders": 531
       },
       "USB": {
-        "position_usd": 29000000.0,
-        "holders": 1218
+        "position_usd": 29500000.0,
+        "holders": 1239
       },
       "MIDD": {
-        "position_usd": 28913000.0,
-        "holders": 174
+        "position_usd": 29411500.0,
+        "holders": 177
       },
       "GS": {
-        "position_usd": 28391000.0,
-        "holders": 1044
+        "position_usd": 28880500.0,
+        "holders": 1062
       },
       "DG": {
-        "position_usd": 28130000.0,
-        "holders": 638
+        "position_usd": 28615000.0,
+        "holders": 649
       },
       "MPLX": {
-        "position_usd": 28101000.0,
-        "holders": 348
+        "position_usd": 28585500.0,
+        "holders": 354
       },
       "MS": {
-        "position_usd": 28043000.0,
-        "holders": 870
+        "position_usd": 28526500.0,
+        "holders": 885
       },
       "TDOC": {
-        "position_usd": 27927000.0,
-        "holders": 290
+        "position_usd": 28408500.0,
+        "holders": 295
       },
       "GLW": {
-        "position_usd": 27782000.0,
-        "holders": 348
+        "position_usd": 28261000.0,
+        "holders": 354
       },
       "RAND": {
-        "position_usd": 27753000.0,
-        "holders": 58
+        "position_usd": 28231500.0,
+        "holders": 59
       },
       "CSGP": {
-        "position_usd": 27347000.0,
-        "holders": 290
+        "position_usd": 27818500.0,
+        "holders": 295
       },
       "CME": {
-        "position_usd": 27260000.0,
-        "holders": 696
+        "position_usd": 27730000.0,
+        "holders": 708
       },
       "BP": {
-        "position_usd": 27144000.0,
-        "holders": 580
+        "position_usd": 27612000.0,
+        "holders": 590
       },
       "UTX": {
-        "position_usd": 26912000.0,
-        "holders": 1160
+        "position_usd": 27376000.0,
+        "holders": 1180
       },
       "OKE": {
-        "position_usd": 26651000.0,
-        "holders": 522
+        "position_usd": 27110500.0,
+        "holders": 531
       }
     },
     "flights": [
@@ -29313,133 +29338,133 @@
       {
         "ticker": "SAIC",
         "next_date": "2026-08-31",
-        "days_to": 1,
+        "days_to": 0,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-01",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-01",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 4.72,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-01",
-        "days_to": 2,
+        "days_to": 1,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-02",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": 0.82,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 3,
+        "days_to": 2,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "ZS",
         "next_date": "2026-09-03",
-        "days_to": 4,
+        "days_to": 3,
         "eps_forecast": 0.06,
         "last_surprise_pct": 25.0
       },
       {
         "ticker": "ORCL",
         "next_date": "2026-09-08",
-        "days_to": 9,
+        "days_to": 8,
         "eps_forecast": 1.4,
         "last_surprise_pct": 13.3
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-09",
-        "days_to": 10,
+        "days_to": 9,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "ADBE",
         "next_date": "2026-09-10",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": 4.86,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "FIZZ",
         "next_date": "2026-09-10",
-        "days_to": 11,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": null
       },
       {
         "ticker": "FDS",
         "next_date": "2026-09-17",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 4.3,
         "last_surprise_pct": 2.0
       },
       {
         "ticker": "LEN",
         "next_date": "2026-09-17",
-        "days_to": 18,
+        "days_to": 17,
         "eps_forecast": 1.31,
         "last_surprise_pct": 6.5
       }
@@ -29538,19 +29563,6 @@
     ],
     "convergence": [
       {
-        "ticker": "MRK",
-        "score": 5,
-        "weighted_score": 1.9,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion",
-          "lobbying",
-          "special_situation",
-          "trump"
-        ],
-        "why": "clinical_phase3_start: 11 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 lobbying: $2,970,000 lobbied \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
-      },
-      {
         "ticker": "MU",
         "score": 4,
         "weighted_score": 1.9,
@@ -29560,7 +29572,7 @@
           "patent_cluster",
           "stocktwits_bull"
         ],
-        "why": "congress_cluster: 4 members net +4 \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 329 grants, 25 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
+        "why": "congress_cluster: 4 members net +4 \u00b7 insider_mspr: MSPR 100.0 \u00b7 patent_cluster: 369 grants, 26 IPC classes \u00b7 stocktwits_bull: 100% bull \u00b7 213,009 watching"
       },
       {
         "ticker": "AMAT",
@@ -29571,7 +29583,7 @@
           "patent_cluster",
           "unusual_options"
         ],
-        "why": "congress_cluster: 3 members net +4 \u00b7 patent_cluster: 206 grants, 44 IPC classes \u00b7 unusual_options: 4.12\u00d7 vol/OI, balanced"
+        "why": "congress_cluster: 3 members net +4 \u00b7 patent_cluster: 234 grants, 47 IPC classes \u00b7 unusual_options: 4.12\u00d7 vol/OI, balanced"
       },
       {
         "ticker": "T",
@@ -29597,6 +29609,43 @@
         "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 gov_contract: $20,939,958 awarded \u00b7 retail_buzz: 91 WSB mentions \u00b7 stocktwits_bull: 100% bull \u00b7 324,401 watching \u00b7 trump: PALANTIR TECHNOLOGIES INC CL A"
       },
       {
+        "ticker": "MRK",
+        "score": 4,
+        "weighted_score": 1.6,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_label_expansion",
+          "special_situation",
+          "trump"
+        ],
+        "why": "clinical_phase3_start: 11 new Phase-3, 4 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers \u00b7 trump: MERCK & COMPANY INC"
+      },
+      {
+        "ticker": "AMD",
+        "score": 5,
+        "weighted_score": 1.5,
+        "channel_list": [
+          "analyst_upgrade_cluster",
+          "github_momentum",
+          "material_8k",
+          "retail_buzz",
+          "stocktwits_bull"
+        ],
+        "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 github_momentum: +0.12% stars \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
+      },
+      {
+        "ticker": "MSFT",
+        "score": 4,
+        "weighted_score": 1.45,
+        "channel_list": [
+          "app_demand",
+          "github_momentum",
+          "hf_model_momentum",
+          "patent_cluster"
+        ],
+        "why": "app_demand: 4.77\u2605 \u00d7 20,041,095 reviews \u00b7 github_momentum: +0.29% stars \u00b7 hf_model_momentum: +1.2% model downloads \u00b7 patent_cluster: 407 grants, 44 IPC classes"
+      },
+      {
         "ticker": "SPCX",
         "score": 3,
         "weighted_score": 1.4,
@@ -29616,19 +29665,18 @@
           "gov_grant",
           "patent_cluster"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +32 revision delta \u00b7 gov_grant: $9,339,294 federal grant/loan \u00b7 patent_cluster: 400 grants, 47 IPC classes"
+        "why": "analyst_upgrade_cluster: net upgrades +32 revision delta \u00b7 gov_grant: $9,339,294 federal grant/loan \u00b7 patent_cluster: 464 grants, 48 IPC classes"
       },
       {
-        "ticker": "AMD",
-        "score": 4,
-        "weighted_score": 1.2,
+        "ticker": "CAT",
+        "score": 3,
+        "weighted_score": 1.25,
         "channel_list": [
-          "analyst_upgrade_cluster",
-          "material_8k",
-          "retail_buzz",
-          "stocktwits_bull"
+          "13f_add",
+          "insider_mspr",
+          "lobbying"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +31 revision delta \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02, 7.01) \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 84% bull \u00b7 563,282 watching"
+        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0 \u00b7 lobbying: $1,312,000 lobbied"
       },
       {
         "ticker": "MLM",
@@ -29670,18 +29718,7 @@
           "app_demand",
           "material_8k"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 app_demand: 4.84\u2605 \u00d7 7,172,629 reviews \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02)"
-      },
-      {
-        "ticker": "MSFT",
-        "score": 3,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "app_demand",
-          "github_momentum",
-          "patent_cluster"
-        ],
-        "why": "app_demand: 4.77\u2605 \u00d7 20,036,363 reviews \u00b7 github_momentum: +0.25% stars \u00b7 patent_cluster: 362 grants, 42 IPC classes"
+        "why": "activist_13d: 13D activist campaign \u00b7 app_demand: 4.84\u2605 \u00d7 7,173,517 reviews \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02)"
       },
       {
         "ticker": "ACM",
@@ -29722,7 +29759,7 @@
           "cnbc_pick",
           "patent_cluster"
         ],
-        "why": "13f_add: ARROWSTREET CAPITAL, LIMITED PARTNERSHIP +$3,022,607,684 \u00b7 cnbc_pick: Jim Cramer \u00b7 patent_cluster: 492 grants, 62 IPC classes"
+        "why": "13f_add: ARROWSTREET CAPITAL, LIMITED PARTNERSHIP +$3,022,607,684 \u00b7 cnbc_pick: Jim Cramer \u00b7 patent_cluster: 535 grants, 64 IPC classes"
       },
       {
         "ticker": "CEG",
@@ -29784,7 +29821,7 @@
           "app_demand",
           "special_situation"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,216,624 reviews \u00b7 special_situation: Strategic Reviews"
+        "why": "analyst_upgrade_cluster: net upgrades +24 revision delta \u00b7 app_demand: 4.89\u2605 \u00d7 8,219,559 reviews \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "VST",
@@ -29796,16 +29833,6 @@
           "special_situation"
         ],
         "why": "insider_mspr: MSPR 100.0 \u00b7 news_sentiment: 0.9 bullish news (50 art) \u00b7 special_situation: Spin-Offs"
-      },
-      {
-        "ticker": "CAT",
-        "score": 2,
-        "weighted_score": 0.95,
-        "channel_list": [
-          "13f_add",
-          "insider_mspr"
-        ],
-        "why": "13f_add: Ascentis Wealth Management, LLC +$2,679,146,768 \u00b7 insider_mspr: MSPR 100.0"
       }
     ]
   }

@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-08-29",
+  "as_of": "2026-08-30",
   "desks": [
     {
       "name": "AI Desk",
@@ -88,7 +88,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 111,
-      "open": 433,
+      "open": 435,
       "hit_rate": 0.685,
       "dir_accuracy": 0.477,
       "null_hit_rate": 0.735,
@@ -153,38 +153,38 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 142,
-      "open": 41,
-      "hit_rate": 0.697,
-      "dir_accuracy": 0.437,
-      "null_hit_rate": 0.7608,
-      "null_dir_rate": 0.5085,
+      "scored": 161,
+      "open": 43,
+      "hit_rate": 0.671,
+      "dir_accuracy": 0.422,
+      "null_hit_rate": 0.7618,
+      "null_dir_rate": 0.5095,
       "p_hit": null,
       "p_hit_holm": null,
       "p_dir": null,
       "p_dir_holm": null,
       "independent_blocks": 3,
-      "placebo_coverage": 0.993,
+      "placebo_coverage": 0.9938,
       "placebo_available": false,
-      "placebo_note": "reconstructed 141 graded predicates but the track record has 142 \u2014 cannot pair observed outcomes to their nulls",
+      "placebo_note": "reconstructed 160 graded predicates but the track record has 161 \u2014 cannot pair observed outcomes to their nulls",
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "rel_return": {
-          "n": 141,
-          "null_hit_rate": 0.7608,
-          "null_dir_rate": 0.5085
+          "n": 160,
+          "null_hit_rate": 0.7618,
+          "null_dir_rate": 0.5095
         }
       },
       "conviction_monotone": true,
-      "conviction_note": "conviction ordering holds (medium 81% \u2265 low 67%; medium n=21, low n=119)",
+      "conviction_note": "conviction ordering holds (medium 73% \u2265 low 65%; medium n=26, low n=133)",
       "conviction_tiers": {
         "high": 2,
-        "medium": 21,
-        "low": 119
+        "medium": 26,
+        "low": 133
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 70% vs 76% of these same falsifiers go untriggered by chance (the 141 of 142 graded we could price, 3 independent windows); direction called right 44% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 81% \u2265 low 67%; medium n=21, low n=119)."
+      "health_note": "not-falsified 67% vs 76% of these same falsifiers go untriggered by chance (the 160 of 161 graded we could price, 3 independent windows); direction called right 42% vs 51% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 73% \u2265 low 65%; medium n=26, low n=133)."
     },
     {
       "name": "Demand Chain",
@@ -256,7 +256,7 @@
       "name": "Narrative Brain",
       "slug": "narrative_brain",
       "scored": 0,
-      "open": 38,
+      "open": 39,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,

@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "VCYT-BULL-20260821",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "between_t1_t2",
   "detection_phase": "post_t1_failed_hold",
   "management_confidence": 64.5,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.632,
     "dist_to_t1_r": 0.868,
     "dist_to_t2_r": 2.368,
-    "horizon_pct_used": 17.8,
+    "horizon_pct_used": 20.0,
     "p1": 0.4213,
     "p2": 0.2106,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-21",
   "_first_t1_ts": "2026-08-27",
   "_first_t2_ts": null,
-  "days_elapsed": 8,
-  "tau": 0.1778
+  "days_elapsed": 9,
+  "tau": 0.2
 }

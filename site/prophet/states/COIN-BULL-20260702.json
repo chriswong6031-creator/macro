@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "COIN-BULL-20260702",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "at_t1",
   "detection_phase": "at_t1",
   "management_confidence": 60.2,
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 2.151,
     "dist_to_t1_r": 0.349,
     "dist_to_t2_r": 1.849,
-    "horizon_pct_used": 117.8,
+    "horizon_pct_used": 120.0,
     "p1": 0.7671,
     "p2": 0.3836,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Phase: between_t1_t2 \u2192 at_t1",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-21",
   "_first_t1_ts": "2026-08-21",
   "_first_t2_ts": null,
-  "days_elapsed": 53,
-  "tau": 1.1778
+  "days_elapsed": 54,
+  "tau": 1.2
 }

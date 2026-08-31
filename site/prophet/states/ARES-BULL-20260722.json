@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ARES-BULL-20260722",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
   "management_confidence": 56.9,
-  "raw_confidence": 56.9,
+  "raw_confidence": 56.8,
   "delta_vs_base": -3.1,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
     "progress": 28.5,
-    "pace": 29.3,
+    "pace": 28.9,
     "retention": 50.0,
     "overlay": 64.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.469,
     "dist_to_t1_r": 1.031,
     "dist_to_t2_r": 2.531,
-    "horizon_pct_used": 77.8,
+    "horizon_pct_used": 80.0,
     "p1": 0.3129,
     "p2": 0.1565,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 35,
-  "tau": 0.7778
+  "days_elapsed": 36,
+  "tau": 0.8
 }

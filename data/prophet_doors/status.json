@@ -1,5 +1,5 @@
 {
-  "appended": 5,
+  "appended": 0,
   "asof": "2026-08-28",
   "candidates": {
     "R": 4,
@@ -7,41 +7,27 @@
     "W": 12
   },
   "deduped": {
-    "R": 2,
-    "T": 3,
-    "W": 10
+    "R": 4,
+    "T": 4,
+    "W": 12
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-30",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
-      "null_reasons": {
-        "ohlcv_absent": 15
-      },
+      "consulted": false,
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Software": {
-          "theme_thrust_frac": 0.2889,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 46,
-      "tickers_read": 61
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -59,33 +45,17 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 103,
-      "n_covered": 62,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-28",
-      "n_tickers": 1544,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
     "atlas": {
-      "consulted": true,
-      "direction": "bull",
-      "grid": "W",
-      "horizon": "13w",
-      "n_asked": 2,
-      "n_covered": 2,
-      "reason": null,
-      "source": "engine.event_atlas.receipt"
+      "consulted": false,
+      "n_asked": 0,
+      "n_covered": 0
     },
     "enabled": true,
     "keys": [
@@ -106,17 +76,9 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "DT",
-      "NEO"
-    ],
-    "T": [
-      "GOOGL"
-    ],
-    "W": [
-      "ALM",
-      "KR"
-    ]
+    "R": [],
+    "T": [],
+    "W": []
   },
   "n_universe": 1496,
   "overflow": {
@@ -124,8 +86,8 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-30 07:18:31",
-  "runtime_s": 117.3,
+  "run_utc": "2026-08-31 07:02:33",
+  "runtime_s": 109.2,
   "schema": "prophet_doors/v1",
   "theme_source": {
     "age_days": 0,
@@ -176,7 +138,7 @@
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 20.9,
+    "runtime_s": 19.3,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 89,

@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-08-30T06:09:49Z",
+  "generated_at": "2026-08-31T06:12:34Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -2070,10 +2070,10 @@
   },
   "watch": {
     "available": true,
-    "as_of": "2026-08-29",
+    "as_of": "2026-08-30",
     "state_counts": {
-      "breakaway": 142,
-      "emerging": 2103,
+      "breakaway": 143,
+      "emerging": 2102,
       "digestion": 98,
       "continuation": 202,
       "failed": 319
@@ -9578,25 +9578,6 @@
         }
       },
       {
-        "ticker": "CHOW",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 78.64,
-        "excess_42d_pp": 56.71,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.14,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "SHPW.WS",
         "sector": "",
         "benchmark": "SPY",
@@ -10085,6 +10066,25 @@
         "excess_42d_pp": 70.18,
         "new_high_63d": false,
         "dollar_vol_z21": -0.33,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "extended_after_vertical_move"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CHOW",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 72.24,
+        "excess_42d_pp": 62.43,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.14,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
@@ -18197,23 +18197,6 @@
         }
       },
       {
-        "ticker": "SOL-USD",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 39.76,
-        "excess_42d_pp": 42.3,
-        "new_high_63d": false,
-        "dollar_vol_z21": 1.76,
-        "days_in_state": 5,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "CELZ",
         "sector": "",
         "benchmark": "SPY",
@@ -19914,6 +19897,23 @@
         "hazards": [
           "chase_risk_elevated"
         ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "SOL-USD",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": 36.1,
+        "excess_42d_pp": 38.6,
+        "new_high_63d": false,
+        "dollar_vol_z21": 1.45,
+        "days_in_state": 5,
+        "gex_state": null,
+        "hazards": [],
         "context": {
           "context_only": true,
           "note": ""
@@ -26354,23 +26354,6 @@
         }
       },
       {
-        "ticker": "ETH-USD",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 26.58,
-        "excess_42d_pp": 56.16,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.65,
-        "days_in_state": 7,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "MSTR",
         "sector": "",
         "benchmark": "SPY",
@@ -26726,6 +26709,25 @@
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CC_F",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": 26.08,
+        "excess_42d_pp": 29.64,
+        "new_high_63d": true,
+        "dollar_vol_z21": 2.2,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "chase_risk_elevated"
+        ],
         "context": {
           "context_only": true,
           "note": ""
@@ -28687,25 +28689,6 @@
         }
       },
       {
-        "ticker": "CC_F",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 23.95,
-        "excess_42d_pp": 27.46,
-        "new_high_63d": true,
-        "dollar_vol_z21": -1.32,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "LC",
         "sector": "",
         "benchmark": "SPY",
@@ -28940,6 +28923,23 @@
         "new_high_63d": false,
         "dollar_vol_z21": -0.37,
         "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ETH-USD",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "continuation",
+        "excess_21d_pp": 23.66,
+        "excess_42d_pp": 52.59,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.5,
+        "days_in_state": 7,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -33301,23 +33301,6 @@
         }
       },
       {
-        "ticker": "BTC-USD",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 19.54,
-        "excess_42d_pp": 33.22,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.59,
-        "days_in_state": 4,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "CETH",
         "sector": "",
         "benchmark": "SPY",
@@ -34585,6 +34568,23 @@
         "new_high_63d": false,
         "dollar_vol_z21": -0.73,
         "days_in_state": 54,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "BTC-USD",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": 16.52,
+        "excess_42d_pp": 29.89,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.61,
+        "days_in_state": 4,
         "gex_state": null,
         "hazards": [],
         "context": {

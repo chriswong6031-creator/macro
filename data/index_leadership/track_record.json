@@ -1,9 +1,9 @@
 {
   "schema": "index_leadership.track_record.v1",
   "as_of": "2026-08-28",
-  "generated_at": "2026-08-30T04:27:36.883791+00:00",
+  "generated_at": "2026-08-31T04:34:04.032241+00:00",
   "is_context_only": true,
-  "n_snapshots": 530,
+  "n_snapshots": 535,
   "n_days": 18,
   "horizons": {
     "5": {
@@ -49,8 +49,8 @@
           "hit_rate": 0.85
         }
       },
-      "running_ic": 0.0077,
-      "running_ic_t_hac": 0.206,
+      "running_ic": 0.0095,
+      "running_ic_t_hac": 0.253,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
@@ -73,7 +73,7 @@
           "hit_rate": 0.625
         }
       },
-      "running_ic": -0.175,
+      "running_ic": -0.1745,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
