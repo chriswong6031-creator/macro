@@ -588,26 +588,28 @@ waves:
       generation_id. B1 DEPENDENCY CLEARED 2026-08-28: natural run 33147282433 and
       durable main commit a8ee11ba0e48 prove the canonical episode generation. This
       clears only D5's B1 dependency. PRE-DELIVERY IMPLEMENTATION 2026-08-30: hostile-
-      review fix-round-3 code/test/manifest head
-      917b7eaef81b2a286551ede3ede0209c00f233e3 implements the bounded Cell
-      F/Earnings contract as one pure revision-chain adapter plus one authenticated
-      existing Prophet Lab episode-detail read. Whole-branch re-review 2 accepted the
-      round-2 builder/endpoint repair but found two remaining P1s at records head
-      3e21c99b2a6a: the closed validator still accepted a fully readdressed mixed-lineage
-      relabel, and the Python 3.12 PR job omitted requests/pyarrow. Round 3 makes every
-      authenticated later owner receipt surviving dedupe require OBSERVED and adds both
-      dependencies to the owning job. Fresh proof is 18 hostile plus 444 focused passed
-      (104 identity + 39 real-reader chain + 301 Prophet Lab/API); a clean declared-deps
-      Python 3.12 environment runs the five Prophet/D5 suites at 435 passed with no import
-      failure. The exact six-suite manifest line reaches 451 passed and only the two
-      unchanged stale-base Caddy pins fail; path-isolated planning names prophet-lab with
-      no unowned path. This is local proof only: independent re-review,
+      review fix-round-4 code/test/manifest head
+      1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 preserves the bounded Cell
+      F/Earnings adapter and closes the final D5-induced CI scope defect found by
+      whole-branch re-review 3 at records head 6c7dc87dbd23. That review corrected the
+      earlier false attribution of `115 passed / 1 failed` as unrelated: D5's module-level
+      Prophet Lab imports extend five curated exclusive jobs' real app closure through
+      canonical B1/Stock Identity dependencies. Round 4 declares exactly the six measured
+      files on biocatalyst-history, biocatalyst-serving, flow-surface, and
+      unrun-government-revenue-grader, and exactly the four measured Stock Identity files
+      on defense-rail-laws, with no wildcard or exclusivity/guard weakening. Strict
+      targeted RED -> GREEN is followed by complete tests/test_ci_pack.py `117 passed`;
+      fresh proof also preserves 20 hostile and 444 focused passed, clean declared-deps
+      Python 3.12 `435 passed`, routing `1 passed`, path-isolated `114/133` with
+      prophet-lab, whole-range `133/133`, and Agent OS `0 errors`. The separate exact
+      six-suite manifest line remains historically 451/453 only on the two unchanged
+      stale-base Caddy pins. This is local proof only: fresh independent re-review,
       hosted CI, PR, merge, deploy, and authenticated live receipts remain pending. D6
       and every other downstream wave remain gated."
     status: in_progress
     next_action: >
       Complete D5 delivery in this carrier without widening scope: independently re-review
-      exact hostile-fix head 917b7eaef81b2a286551ede3ede0209c00f233e3; reconcile fresh
+      exact hostile-fix head 1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25; reconcile fresh
       origin/main and the named Caddy base delta; rerun the focused battery and
       repository-owned CI lines; then push one PR, wait for concluded
       hosted CI, squash-merge, verify main/deploy, and collect authenticated covered plus
@@ -652,8 +654,8 @@ waves:
     status: todo
 next_action: >
   D5's bounded Earnings implementation is locally exact-head verified through hostile-
-  review fix-round-3 code/test/manifest head
-  917b7eaef81b2a286551ede3ede0209c00f233e3,
+  review fix-round-4 code/test/manifest head
+  1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25,
   but it is not yet
   independently re-review accepted, hosted-CI accepted, merged, deployed, or live-proven.
   Continue Task 4 from

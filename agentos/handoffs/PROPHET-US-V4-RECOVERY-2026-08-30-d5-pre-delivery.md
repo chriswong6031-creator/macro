@@ -15,6 +15,15 @@ state_before: >
   program records still described D5 as todo/unbuilt and no integrated Task 4 evidence
   had been recorded.
 changed:
+  - path: .github/ci/legacy-jobs.yml
+    what: >
+      Fix round 4 widens only the five D5-affected curated exclusive jobs to their
+      exact measured B1/Stock Identity import closure; it adds no wildcard and does
+      not weaken or bypass exclusivity.
+  - path: tests/test_ci_pack.py
+    what: >
+      Adds the strict RED -> GREEN five-job selector regression and preserves the
+      repository's complete re-derived curated-closure guard.
   - path: research/prophet_v4/CAPABILITY_LEDGER.md
     what: >
       Corrects Context Vector's D5 disposition to preserve-and-reference, and adds one
@@ -153,6 +162,28 @@ verified:
       path. The whole branch range validates all 133 jobs because the CI manifest is a
       global invalidator. Both commands exit 0.
   - claim: >
+      Whole-branch re-review 3 correctly reattributed the final CI-pack P1 to D5, and
+      fix round 4 closes it without weakening the curated exclusive-scope law.
+    command: >
+      git show --stat --oneline 1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25;
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+      --basetemp /tmp/d5-fix4-full-cipack tests/test_ci_pack.py;
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+      --basetemp /tmp/d5-fix4-hostile <20 exact hostile selectors>;
+      PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider
+      --basetemp /tmp/d5-fix4-focused tests/test_dataos_identity.py
+      tests/test_company_intelligence_workspace_chain.py tests/test_prophet_lab.py
+      tests/test_prophet_lab_api.py
+    result: >
+      Review head 6c7dc87dbd23 showed the earlier `115 passed / 1 failed` result was
+      D5-induced: five curated jobs could silently skip true dependencies reached by
+      D5's Prophet Lab imports. Exact code/test/manifest head
+      1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 adds six concrete paths to four jobs and
+      four concrete Stock Identity paths to defense-rail-laws. The new selector pin was
+      observed failing before the manifest repair and then passing; the re-derived
+      isolated guard passed, complete tests/test_ci_pack.py is 117 passed, hostile
+      lineage is 20 passed, and the focused D5 battery remains 444 passed.
+  - claim: >
       The Data OS manifest-owned job line is green with the new identity seam and all
       sibling Data OS contracts.
     command: >
@@ -174,8 +205,10 @@ verified:
       tests/test_company_intelligence_workspace_chain.py as one unowned path and does
       not select neural-web-core, the manifest job that executes that test.
   - claim: >
-      The broader repository job-line failures are outside the D5 delta and are exactly
-      attributable to sparse/base state, not hidden as a green integrated pack.
+      The historical Prophet Lab and Neural Web job-line failures in this receipt are
+      outside the D5 delta and are exactly attributable to sparse/base state, not hidden
+      as a green integrated pack; this claim does not include the D5-induced CI-pack
+      closure defect repaired in fix round 4.
     command: >
       python3 -m pytest -p no:cacheprovider --basetemp /tmp/d5-task4-prophet-job
       tests/test_prophet_lab.py tests/test_prophet_lab_api.py
@@ -227,7 +260,7 @@ unverified:
   - claim: The final D5 branch head is independently hostile-review clean.
     what_would_verify: >
       A fresh reviewer PASS against exact code/test/manifest head
-      917b7eaef81b2a286551ede3ede0209c00f233e3 and the later records head, full range
+      1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 and the later records head, full range
       changed-file census, Cell F contract/amendments, and prohibited-state checklist.
   - claim: The D5 branch is accepted by hosted CI and merged on main.
     what_would_verify: >
@@ -248,7 +281,10 @@ unresolved:
     Prophet Lab line has no omitted-data or dependency failure. Its only two failures
     are the unchanged stale-branch Caddy 8-versus-7 proxy pins; do not translate 451/453
     into full-job green. Fresh-main reconciliation and the hosted lane still owe the
-    integrated verdict. The earlier broad Neural Web sparse result remains historical.
+    integrated verdict. The earlier complete CI-pack closure red was a separate
+    D5-induced defect, not part of this stale-Caddy class; it is repaired at
+    1dfc8aab4cf2 and the complete local file is now 117 passed. The earlier broad Neural
+    Web sparse result remains historical.
   - >
     The optional local Agent OS pytest sweep returned 180 passed and one failure in
     `test_cross_repo_path_is_unchecked_when_that_checkout_is_absent`: its assertion
@@ -260,7 +296,7 @@ unresolved:
 next_actions:
   - >
     Run the independent hostile whole-branch re-review against exact repaired head
-    917b7eaef81b2a286551ede3ede0209c00f233e3 and repair any further load-bearing
+    1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25 and repair any further load-bearing
     finding test-first.
   - >
     Fetch and reconcile fresh origin/main in the parent session, including the named
@@ -309,7 +345,8 @@ danger_areas:
     056e529fea8be53b642d8cb2ee11a3c41f720505; and the sole mixed-transition fix
     round 2 is exact code/test head 13e36371e2cd49ae790803f3d49c951062aad8a0.
     Fix round 3 is exact code/test/manifest head
-    917b7eaef81b2a286551ede3ede0209c00f233e3. Keep initial-code, all fix rounds,
+    917b7eaef81b2a286551ede3ede0209c00f233e3; fix round 4 is exact
+    code/test/manifest head 1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25. Keep initial-code, all fix rounds,
     records, PR, merge, and deployed heads distinct.
 decisions:
   - DEC:PROPHET-B1-CANONICAL-EPISODE-BINDINGS
@@ -320,11 +357,15 @@ discoveries: []
 ## §0 State — what is true right now
 
 D5's first bounded Earnings vertical is built and locally exact-head verified through
-hostile-review fix-round-3 code/test/manifest head `917b7eaef81b2a286551ede3ede0209c00f233e3`: one canonical
+hostile-review fix-round-4 code/test/manifest head `1dfc8aab4cf2a6dd5aff1d90af39f110fc6e0b25`: one canonical
 current issuer-to-CIK seam, one pure revision-chain projection, and one authenticated
-existing Prophet Lab detail route. The repaired focused battery is 444 passed; the exact
-hostile selector set is 18 passed; and the clean Python 3.12 declared-dependency D5 job
-subset is 435 passed. The exact six-suite manifest line reaches 451/453, with only the
+existing Prophet Lab detail route. Whole-branch re-review 3 corrected the earlier false
+attribution of the complete CI-pack red: D5's imports had expanded five curated jobs'
+actual closure without updating their exclusive declarations. Fix round 4 adds only the
+exact measured paths; its selector regression is strict RED -> GREEN and the complete
+CI-pack file is 117 passed. The repaired focused battery remains 444 passed; the exact
+hostile selector set is 20 passed; and the clean Python 3.12 declared-dependency D5 job
+subset is 435 passed. The separate exact six-suite manifest line reaches 451/453, with only the
 unreconciled branch's two stale Caddy pins remaining. It is
 not independently re-review accepted, hosted-CI accepted, on main, deployed, or proven
 through a real paid production request. The broad local manifest line remains honestly
@@ -333,7 +374,7 @@ sparse-data failures are separate historical evidence and are not current D5 job
 
 ## §1 What is LEFT — in order
 
-1. Complete the exact-head hostile whole-branch re-review of fix head `917b7eaef81b`.
+1. Complete the exact-head hostile whole-branch re-review of fix head `1dfc8aab4cf2`.
 2. Reconcile fresh main and rerun the focused plus repository-owned CI proof in the proper checkout.
 3. Push one PR, wait for concluded hosted CI, squash-merge, and verify exact main ancestry/hashes.
 4. Wait for normal deployment and prove one covered paid request plus one typed unresolved/not-covered request.
@@ -341,12 +382,12 @@ sparse-data failures are separate historical evidence and are not current D5 job
 
 ## §2 What will bite you
 
-The D5-focused battery and clean declared-dependency five-suite line are green, but this
+The D5-focused battery, complete CI-pack file, and clean declared-dependency five-suite line are green, but this
 carrier started from an old base. The exact Prophet Lab manifest line therefore still sees
 the stale eight-block Caddy expectation; the historical broad Neural Web sparse line saw missing committed datasets
 and can write generated artifacts into omitted trees before the data guard stops it. The
-workspace-chain ownership gap is closed at the fix head; do not confuse that code-gate
-repair with the remaining sparse/base failures.
+workspace-chain ownership gap and the D5-induced curated closure gap are closed at the
+fix head; do not confuse either code-gate repair with the remaining sparse/base failures.
 
 ## §3 What was decided and found
 
