@@ -1,0 +1,175 @@
+# ZH interactive-state adjudication (Sol REQUEST_REPAIR item 5).
+#
+# Supplementary receipt, not one of the two canonical RIG roles — the checker
+# resolves reviews by manifest-declared role name, so this file is additional
+# evidence rather than a third role. It exists because Sol ordered "actual ZH
+# interactive-state adjudication" and ruled that UNJUDGED must remain unpassed
+# and EN must not be extrapolated.
+#
+# Before this cycle the matrix contained NO ZH state cells at all. Thirteen were
+# captured (commits 03acfa836471, 0e4d86ef2593) and then judged by an
+# independent reviewer that read no RIG record and ran no git history command.
+schema: mastermind.rig_review.v1
+reference_id: canada-stock-dashboard-tp1-r3
+role: zh_interactive_states
+artifact_sha: e509db03ee5f7bb5b2ef1140935d57706c858370
+
+reviewer:
+  identity: "rig-r3zh-critic-cinder-marlin-6620"
+  model: opus
+  independent_of_author: true
+  continuation_disclosed: >
+    Executed across two contexts. The first judged 2 of 12 cells and correctly
+    made its OWN incomplete coverage the blocking finding rather than passing on
+    thin coverage. The second judged 6 more in the commissioned priority order.
+    8 of 12 judged; 4 named unjudged and carried as unpassed, which is the state
+    Sol's ruling explicitly permits.
+
+first_pass:
+  frozen_at: "2026-08-31T04:40:00Z"
+  verdict: BLOCK
+  coverage: "8 of 12 ZH interactive-state cells judged; 4 named and carried as UNJUDGED, NOT PASSED"
+  findings:
+    - id: ZHC-509
+      severity: blocker
+      finding: >
+        The Entry column is 100 percent English on an otherwise-Chinese table.
+        All five rows read extended / await confluence / wait pullback / buy soon
+        / await confluence, in both themes, while the column header itself is
+        Chinese and adjacent columns localise correctly in the same scan line.
+        This is the "so what do I do" column, not a decorative label, and one
+        value carries semantic colour: extended renders green, which under the
+        ratified CJK flip means avoid or do-not-chase. A Chinese-only reader is
+        shown a green English word they cannot read, in the column that tells
+        them whether to act. The colour is right and the word is unreadable.
+    - id: ZHC-510
+      severity: major
+      finding: >
+        The commission's priority question — whether a reader can tell which
+        colour system a given green or red belongs to — is UNANSWERABLE from the
+        committed evidence, and the reviewer declined to certify by inference.
+        The quote-change slot renders an em-dash on 5 of 5 rows in ZH and
+        identically in EN, so the deliberately NON-flipping Western direction
+        colour never paints. Null data in both locales, not a ZH defect. The two
+        populated numeric columns flip cleanly and consistently, so nothing in
+        these cells reads ambiguously — but the cell was commissioned to prove
+        two systems are distinguishable and contains only one. Latent risk named
+        rather than asserted: a negative rendered green in one column beside a
+        negative rendered red in another would put opposite semantics for the
+        same sign on one surface.
+    - id: ZHC-511
+      severity: major
+      classification: coordinator capture defect
+      finding: >
+        The ZH modal cells were captured with the Prophet panel left in TABLE
+        view while the EN modal cell was captured in CARD/GRID view, so the two
+        cannot be compared as compositions and the ZH scrim over the card grid —
+        the default state a user would actually be in — has no evidence in this
+        matrix. Proven three independent ways: the ZH modal backdrop shows a
+        45px-pitch badge column matching the ZH table view; ZH modal heights
+        equal ZH table-view heights to the pixel in both themes; and 1860 minus
+        1713 equals 147, exactly the card-grid-minus-table-view delta, so the
+        modal never shrank anything. This also RESOLVES the 147px anomaly that
+        was open coming in. Mine, not the artifact's.
+    - id: ZHC-512
+      severity: major
+      finding: >
+        The rank column is fully English in the modal — 15 of 15 rows read
+        Theme #1 through Theme #15 — while the header, every theme name and
+        every badge are Chinese. Recorded separately from the leadership-row
+        instance already carried, because scale and role differ: there it is a
+        superscript above a Chinese name, here it is the entire content of a
+        primary column, fifteen rows deep, in a focused dialog.
+    - id: ZHC-513
+      severity: minor
+      finding: >
+        The ZH filter chip is an unchunked 84px glyph run whose only recovery
+        control is typographically indistinguishable from its label. Internal
+        gaps measure 1px throughout and 2px at the colon, and the dismiss glyph
+        sits 1px from the last character — the same spacing as between two
+        characters inside one word. The EN counterpart gives the colon 13px
+        before and 19px after, producing word-level chunking ZH lacks: a 9.5x
+        difference in largest internal gap. Cause is a halfwidth colon with no
+        space where CJK convention wants a fullwidth one. ZH-specific regression
+        at identical widths, not inherited.
+    - id: ZHC-514
+      severity: minor
+      finding: >
+        The ZH light filter-chip dismiss glyph measures 3.83:1. That clears the
+        3:1 non-text floor but fails 4.5:1 read as text, which an x character is,
+        and it lands on a control rather than prose. The chip label beside it
+        passes at 5.01:1 and dark is untroubled at 6.30:1, so this is a
+        borderline light-only instance rather than a systemic contrast failure.
+    - id: ZHC-515
+      severity: minor
+      finding: >
+        The empty-state message names neither the filter that caused it nor the
+        filter's own vocabulary — it says "this group" while the control that
+        produced the state is labelled "sector", and the group noun appears
+        nowhere else on the ZH surface. EN carries the same generic-noun
+        mismatch, so the defect is inherited rather than introduced by
+        translation, but it costs more in Chinese where the reader cannot bridge
+        the two by cognate.
+    - id: ZHC-516
+      severity: minor
+      finding: >
+        Backdrop blur differs between the ZH and EN modal captures — ZH heavily
+        blurred, EN essentially sharp. Most likely build drift, since EN was
+        captured on an older build, and flagged only so it is not later mistaken
+        for a ZH-specific treatment. The blur itself is good.
+  observed_not_adjudicated:
+    - "In both ZH modals the last visible row is sliced horizontally by the modal's bottom edge. NOT called a defect: a half-row at a scroll boundary is a standard content-continues affordance, and the reviewer declined to grade it without a panel-height measurement it could not obtain reliably. Recorded as observed."
+  anomaly_resolutions:
+    modal_147px_drop: "RESOLVED — capture-state defect, see ZHC-511. Not layout, not locale."
+    allcands_181px_shortfall: >
+      UNRESOLVED, explicitly. The reviewer did not open those cells and refused
+      to speculate. One narrowing contributed: the shortfall is 181px in dark and
+      181px in light, identical to the pixel, which makes a theme-specific cause
+      very unlikely and points at candidate-population row drift or a view-state
+      slip. It is a DIFFERENT mechanism from the modal anomaly, since 181 is not
+      147. Anyone resuming should check candidate row count first.
+  dark_vs_light_zh_parity:
+    verdict: HOLDS
+    detail: >
+      Across all six cells judged in the second pass: identical information
+      architecture, column order, density, component semantics and state
+      meanings, differing in material treatment as the theme law requires. Dark
+      uses luminance depth with a near-black table field and glowing badge
+      strokes; light uses white material with hairline row rules and a pale-blue
+      selection wash instead of grey — different mechanism, same meaning. The
+      empty-state message measures 4.88:1 dark and 4.70:1 light, so neither
+      theme was an afterthought. Every finding except the two light-only ones
+      reproduces in both themes at the same severity, and that symmetry is itself
+      evidence the themes were built as one system with two treatments rather
+      than one skinned twice.
+  strengths:
+    - >-
+      The stance flip is correct and complete everywhere measurable, including
+      places earlier review had not looked — in the modal, accumulate renders red
+      and avoid green against EN's green accumulate, a clean inversion, while
+      hold stays blue in both locales, correctly declining to flip a neutral
+      state.
+    - >-
+      The empty state is honest rather than merely translated — it tells the user
+      the board is not empty, their filter is, the distinction most empty states
+      get wrong — and it survives translation with correct CJK punctuation and
+      two independent recoveries.
+    - Card-level ZH translation is thorough where it exists.
+    - No Chinese string in any judged cell is clipped, ellipsised or overflowing.
+      The only truncations are Latin company names truncated identically in EN,
+      i.e. source-data truncation, not CJK wrapping failure.
+    - >-
+      Noted against the coordinator's own evidence discipline, in the reviewer's
+      favour — the ZH captures are MORE controlled than the EN ones they are
+      compared against, since ZH dark and light filter-miss are a genuinely
+      matched pair whereas the EN dark and light filter-miss cells are not
+      matched with each other.
+  unjudged_carried_as_unpassed:
+    - proposal-allcands-dark-zh-1440.png
+    - proposal-allcands-light-zh-1440.png
+    - proposal-breadth-dark-zh-1440.png
+    - proposal-breadth-light-zh-1440.png
+  unjudged_consequence: >
+    Breadth was the remaining place the non-flipping Western quote colour might
+    have appeared, so ZHC-510's "the second colour system never paints" is
+    established for the table-view cells only, not for the full matrix.
