@@ -1,9 +1,12 @@
 ---
 key: PROPHET-D5-CANONICAL-B1-EARNINGS-OVERLAP-ABSENT
 claim: >
-  The first three committed natural B1 generations contain zero accepted
-  prophet.candidate_episode/v1 episodes for any Earnings-covered listed security
-  in {AAPL, DHI, PHM, KBH, TOL}, so the earlier upstream-input overlap observation
+  As of 2026-08-30, every currently committed natural B1 generation contains zero
+  accepted prophet.candidate_episode/v1 episodes for any Earnings-covered listed
+  security in {AAPL, DHI, PHM, KBH, TOL}. The historical first-three generation
+  table remains the original evidence; a later non-empty natural generation
+  falsifies this current hold condition and triggers re-census without rewriting
+  that first-three observation. The earlier upstream-input overlap observation
   never established a lawful real B1-to-Earnings D5 vertical.
 falsifier: >
   From the macro repository root run `python3 -c 'import json,pathlib,sys;
@@ -27,7 +30,9 @@ verified_by: >
   and peg:881d604cc56968cfe921188f59e992c1652329416fa2bb2b4e9059a46616acc2/all_candidates.json;
   exact searches for AAPL, DHI, PHM, KBH and TOL returned no row in each 467-episode
   generation. The corresponding latest_receipt.json files record natural publication
-  at 2026-08-28T14:28:48Z, 2026-08-29T15:41:20Z and 2026-08-30T07:20:29Z.
+  at 2026-08-28T14:28:48Z, 2026-08-29T15:41:20Z and 2026-08-30T07:20:29Z. The claim
+  is the current committed-generation condition as of that verification date, not a
+  freeze of the hold to those three generations alone.
 scope:
   - macro
   - WS:PROPHET-US-V4-RECOVERY
@@ -50,3 +55,10 @@ The historical 2026-08-25 TURN WATCH observation remains useful archaeology. It 
 not current product evidence because all three natural B1 generations were built
 from the later 2026-08-26 source and the owner-issued episode generation is the D5
 join boundary.
+
+The first-three generation table in
+`research/prophet_v4/D5_EARNINGS_ENTRANCE_HOLD_2026-08-30.md` is preserved historical
+evidence. The live claim above is the as-of-2026-08-30 condition over **all currently
+committed** natural generations. A future non-empty `peg:*` generation falsifies the
+current hold condition and triggers re-census; it does not rewrite that first-three
+observation.
