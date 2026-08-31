@@ -16,34 +16,45 @@ state_before: >
 changed:
   - path: agentos/discoveries/DSC-PROPHET-D5-EARNINGS-COVERAGE-OVERLAPS-B1-CANDIDATE-POOL.md
     what: >
-      Preserved the historical input-pool observation, marked it superseded, and
-      recorded that its consecutive-natural-generation falsifier fired.
+      Preserved the historical input-pool observation and marked it superseded as
+      an implementation-readiness conclusion. The 2026-08-30 note that its
+      consecutive-natural-generation absence falsifier fired is withdrawn.
   - path: agentos/discoveries/DSC-PROPHET-D5-CANONICAL-B1-EARNINGS-OVERLAP-ABSENT.md
     what: >
-      Added the canonical episode-level absence discovery with a runnable falsifier.
+      Added the canonical episode-level census discovery; 2026-08-31 repaired the
+      falsifier to parse the all_candidates.json .episodes envelope and withdrew
+      the zero-overlap claim after AAPL/KBH/PHM/TOL hits persisted.
   - path: research/prophet_v4/D5_EARNINGS_ENTRANCE_HOLD_2026-08-30.md
     what: >
       Froze HOLD / NO_LAWFUL_REAL_VERTICAL, the capability ledger, failure states,
       identity-owner blocker, PIT/correction law and conjunctive reopen gates.
+      2026-08-31 correction: ticker_at_observation overlap is OBSERVED 4/5;
+      zero-overlap is not a present gate; CIK bridge remains blocking.
   - path: agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-30-d5-entrance-hold.md
     what: >
       Recorded this cross-session continuation packet.
   - path: agentos/workstreams/WS-PROPHET-US-V4-RECOVERY.md
     what: >
       Keeps D5 todo, adds the intentional natural-evidence wait, indexes the new
-      records, and replaces immediate implementation with the bounded re-census gate.
+      records, and replaces immediate implementation with the bounded re-census
+      gate. 2026-08-31 correction withdraws zero-overlap as a present gate.
 verified:
   - claim: >
       The first three committed natural B1 generations each contain 467 accepted
-      episodes and zero AAPL, DHI, PHM, KBH or TOL episode rows.
+      ACTIVE prophet.candidate_episode/v1 episodes. Envelope-aware reads of
+      .episodes find ticker_at_observation overlap for AAPL, KBH, PHM and TOL in
+      every generation; DHI is absent. The 2026-08-30 zero-overlap receipt is
+      withdrawn as a structural false negative.
     command: >
-      python3 -c 'import json,pathlib; covered={"AAPL","DHI","PHM","KBH","TOL"};
-      root=pathlib.Path("data/us_prophet_rank/episodes/generations");
-      print({p.parent.name:sorted(covered & {str(r.get("ticker_at_observation") or "").upper()
-      for r in json.loads(p.read_text())}) for p in root.glob("peg:*/all_candidates.json")})'
+      python3 -c 'import json,pathlib,sys;
+      covered={"AAPL","DHI","PHM","KBH","TOL"}; root=pathlib.Path("data/us_prophet_rank/episodes/generations");
+      unwrap=lambda d: (d.get("episodes") if isinstance(d, dict) else d); hits={};
+      [hits.setdefault(p.parent.name, sorted(covered & {str(r.get("ticker_at_observation") or "").upper()
+      for r in (lambda e: e if isinstance(e, list) else sys.exit("unrecognized all_candidates envelope"))(unwrap(json.loads(p.read_text())))}))
+      for p in sorted(root.glob("peg:*/all_candidates.json"))]; print(hits); sys.exit(0 if any(hits.values()) else 1)'
     result: >
-      peg:c025bb50...=[], peg:9afeb4f8...=[], peg:881d604c...=[]; receipts
-      recorded 2026-08-28T14:28:48Z, 2026-08-29T15:41:20Z and
+      Each generation maps to ['AAPL','KBH','PHM','TOL']; command exit 0.
+      Receipts remain 2026-08-28T14:28:48Z, 2026-08-29T15:41:20Z and
       2026-08-30T07:20:29Z.
   - claim: >
       The three natural generation receipts all bind the same 1,903-row TURN WATCH
@@ -78,12 +89,13 @@ verified:
       signal, entry, holding, sizing, leverage, trade or publication path changed.
 unverified:
   - claim: >
-      The exact stage at which PHM, KBH and TOL disappeared between the historical
-      2026-08-25 source observation and the accepted natural B1 generations.
+      The overlapping AAPL/KBH/PHM/TOL accepted episodes resolve through the Data
+      OS identity spine to the Earnings owner CIKs without a ticker join.
     what_would_verify: >
-      Compare exact 2026-08-25 and 2026-08-26 TURN WATCH rows for the five covered
-      tickers, then inspect their canonical suppression rows and Data OS identity
-      receipts at each natural generation.
+      An owner-native issuer-to-CIK read of the episode security_id values
+      SEC:US-XNAS-AAPL, SEC:US-XNYS-KBH, SEC:US-XNYS-PHM and SEC:US-XNYS-TOL that
+      returns the registered Earnings CIKs. Ticker_at_observation equality is not
+      that proof.
   - claim: >
       A real production correction chain exists for an Earnings event.
     what_would_verify: >
@@ -92,7 +104,8 @@ unverified:
       two-generation chain through the real reader only.
 unresolved:
   - >
-    No current accepted B1 episode resolves to an Earnings-covered listed security.
+    Ticker_at_observation overlap exists for AAPL/KBH/PHM/TOL and is not a lawful
+    D5 join. DHI remains absent from the accepted episode plane.
   - >
     Data OS does not expose the owner-native issuer-to-CIK read seam required by D5
     amendment A13.
@@ -101,10 +114,11 @@ unresolved:
     complete published revision.
 next_actions:
   - >
-    After 2026-09-01, re-census only when a new natural B1 generation or an accepted
-    owner-native issuer-CIK reader lands.
+    After 2026-09-01, re-census when an accepted owner-native issuer-CIK reader
+    lands, or when a new natural B1 generation changes the overlap set.
   - >
-    Require both natural accepted overlap and the canonical CIK bridge before Sol
+    Do not treat ticker_at_observation overlap as a lawful join. Require the
+    canonical CIK bridge and remaining Cell F identity/evidence gates before Sol
     considers a D5 implementation commission.
   - >
     On reopen, prove one real positive case, one real NOT_COVERED case, unknown/null
@@ -151,7 +165,7 @@ product state is `NOT_BUILT`; the architecture is `SPEC_ONLY`; B1 remains
 `PROVEN_LIVE`. A fresh session should start from the workstream's D5 wait and this
 handoff, not from the older immediate-build next action.
 
-The absence finding is sufficient to hold D5 even though upstream attribution remains
-open. Investigating whether the covered names vanished from the later source or were
-suppressed is useful intake science, but it must not become a pretext to force the
-names into the canonical episode population.
+The 2026-08-30 absence finding is withdrawn. Ticker_at_observation overlap is now
+observed and is still insufficient to hold D5 open: the owner-native CIK bridge is
+unbuilt and ticker join remains forbidden. Do not restore zero-overlap as a present
+gate, and do not treat the four overlapping names as a license to implement.

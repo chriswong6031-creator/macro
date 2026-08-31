@@ -595,16 +595,19 @@ waves:
       clears only D5's B1 dependency; d5 remains todo and bounded to the Cell F/Earnings
       contract, the revision-chain PIT reader, authority-false outputs, generation-pinned
       episode_ref, and tradable_at NOT_ASSERTED. D6 and every other downstream wave remain gated.
-      ENTRANCE RULING 2026-08-30: no lawful real Earnings vertical. As of
-      2026-08-30 every currently committed natural B1 generation has zero accepted
-      overlap with covered Earnings issuers AAPL/DHI/PHM/KBH/TOL
-      (DSC:PROPHET-D5-CANONICAL-B1-EARNINGS-OVERLAP-ABSENT); the first-three
-      generation table is preserved historical evidence. Implementation is not
-      authorized."
+      ENTRANCE RULING 2026-08-30: no lawful real Earnings vertical. CORRECTED
+      2026-08-31: envelope-aware reads of all_candidates.json .episodes show
+      accepted ticker_at_observation overlap for AAPL/KBH/PHM/TOL in every
+      currently committed natural B1 generation; DHI remains absent
+      (DSC:PROPHET-D5-CANONICAL-B1-EARNINGS-OVERLAP-ABSENT). Zero-overlap is not
+      a present gate. Ticker overlap is not a lawful join. The remaining blocker
+      is the owner-native issuer-CIK bridge plus the frozen no-ticker-join
+      identity law. Implementation is not authorized."
     status: todo
     next_action: >
-      HOLD / NO_LAWFUL_REAL_VERTICAL. Both a natural accepted B1×Earnings overlap
-      and an owner-native issuer-CIK bridge are required before implementation.
+      HOLD / NO_LAWFUL_REAL_VERTICAL. Ticker_at_observation overlap exists for
+      AAPL/KBH/PHM/TOL and is not a lawful join. An owner-native issuer-CIK
+      bridge is required before implementation.
     wait:
       kind: natural_evidence
       review_after: 2026-09-01
@@ -649,9 +652,10 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  HOLD / NO_LAWFUL_REAL_VERTICAL for D5. Re-census only after a new natural accepted
-  B1×Earnings overlap and an owner-native issuer-CIK bridge exist; neither event
-  authorizes D5 implementation alone. B1 remains accepted / PROVEN_LIVE from natural
+  HOLD / NO_LAWFUL_REAL_VERTICAL for D5. Canonical B1 generations now show accepted
+  ticker_at_observation overlap for AAPL/KBH/PHM/TOL; that is not a lawful join.
+  Re-census when an owner-native issuer-CIK bridge exists; that event does not
+  authorize D5 implementation alone. B1 remains accepted / PROVEN_LIVE from natural
   run 33147282433 and durable main commit a8ee11ba0e48; its exact evidence packet is
   indexed by agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-28-b1-acceptance.md.
   Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner freezes and

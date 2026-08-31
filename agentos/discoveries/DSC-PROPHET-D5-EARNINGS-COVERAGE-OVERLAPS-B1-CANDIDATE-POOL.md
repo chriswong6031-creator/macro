@@ -70,21 +70,22 @@ acceptance plan, never as something the D5 wave may widen: expanding issuer cove
 is the Earnings owner's operation, and doing it to improve a D5 demo would be a
 cross-owner authority hop.
 
-## Supersession — 2026-08-30
+## Supersession — 2026-08-30, corrected 2026-08-31
 
 The historical 2026-08-25 upstream-input observation is preserved above, including
-its disclosed limitation that Data OS identity resolution was not simulated. It no
-longer supports the conclusion that a real D5 vertical is presently reachable.
+its disclosed limitation that Data OS identity resolution was not simulated. It
+still does not support the conclusion that a real D5 vertical is presently
+reachable.
 
-The first three committed natural B1 generations were all built from the later
-1,903-row `2026-08-26.json` TURN WATCH source. Their owner-issued
-`all_candidates.json` files each contain 467 accepted episodes and none contains
-AAPL, DHI, PHM, KBH or TOL. This satisfies the discovery's own consecutive-natural-
-generation falsifier at the canonical episode boundary.
+The 2026-08-30 overlay that treated consecutive natural generations as empty of
+AAPL, DHI, PHM, KBH and TOL is withdrawn. That reading iterated the
+`all_candidates.json` envelope instead of `.episodes`. Envelope-aware census of
+the same three generations finds accepted `ticker_at_observation` rows for AAPL,
+KBH, PHM and TOL; DHI remains absent. See
+`DSC:PROPHET-D5-CANONICAL-B1-EARNINGS-OVERLAP-ABSENT`.
 
-The exact upstream disappearance stage remains unverified: the covered names may be
-absent from the later source or may have been suppressed by canonical intake. That
-attribution does not change the D5 entrance verdict. Source-input presence is not an
-accepted episode identity, so D5 remains `HOLD / NO_LAWFUL_REAL_VERTICAL` until the
-reopen gates in
+Source-input presence and ticker_at_observation presence are both weaker than a
+canonical economic-identity plus owner-native CIK join. Ticker overlap does not
+restore this discovery as an implementation-readiness conclusion. D5 remains
+`HOLD / NO_LAWFUL_REAL_VERTICAL` until the remaining reopen gates in
 `research/prophet_v4/D5_EARNINGS_ENTRANCE_HOLD_2026-08-30.md` are all satisfied.

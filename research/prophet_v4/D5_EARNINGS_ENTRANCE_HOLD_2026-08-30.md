@@ -9,11 +9,13 @@ CAPABILITY STATE: SPEC_ONLY / NOT_BUILT
 ```
 
 The D5 contract is architecturally ready to govern an Earnings evidence adapter,
-but the first implementation vertical is not presently lawful. The canonical B1
-episode owner and the Earnings workspace owner have no accepted real issuer/security
-overlap in any of the first three natural B1 generations. Independently, the
-canonical Data OS identity reader does not expose the issuer CIK required by D5
-amendment A13.
+but the first implementation vertical is not presently lawful. Envelope-aware
+reads of the canonical B1 episode plane now show accepted
+`ticker_at_observation` overlap for AAPL, KBH, PHM and TOL in every currently
+committed natural generation; DHI remains absent. That ticker overlap is not a
+lawful join. Independently, the canonical Data OS identity reader does not expose
+the issuer CIK required by D5 amendment A13. Zero accepted overlap is not a
+present gate.
 
 Building now would require at least one forbidden substitution:
 
@@ -75,31 +77,31 @@ D5 may join only from the owner-issued `prophet.candidate_episode/v1` plane, pin
 `episode_ref` and the exact B1 generation. An upstream candidate that never becomes an
 accepted episode is not a null D5 vector; it is outside the legal join population.
 
-The first three committed natural generations are:
+The first three committed natural generations, read through `.episodes`, are:
 
 | B1 generation | Recorded at | Episodes | Covered listed-security overlap |
 |---|---:|---:|---:|
-| `peg:c025bb50c45f319f989a4848249b8a85b65354143e3262f2ad09d07841311b08` | `2026-08-28T14:28:48Z` | 467 | 0 / 5 |
-| `peg:9afeb4f89ecc434c119f563424990d7b10b58bc75a30a0f275c74cf73465cfcc` | `2026-08-29T15:41:20Z` | 467 | 0 / 5 |
-| `peg:881d604cc56968cfe921188f59e992c1652329416fa2bb2b4e9059a46616acc2` | `2026-08-30T07:20:29Z` | 467 | 0 / 5 |
+| `peg:c025bb50c45f319f989a4848249b8a85b65354143e3262f2ad09d07841311b08` | `2026-08-28T14:28:48Z` | 467 | 4 / 5 (AAPL, KBH, PHM, TOL; DHI absent) |
+| `peg:9afeb4f89ecc434c119f563424990d7b10b58bc75a30a0f275c74cf73465cfcc` | `2026-08-29T15:41:20Z` | 467 | 4 / 5 (AAPL, KBH, PHM, TOL; DHI absent) |
+| `peg:881d604cc56968cfe921188f59e992c1652329416fa2bb2b4e9059a46616acc2` | `2026-08-30T07:20:29Z` | 467 | 4 / 5 (AAPL, KBH, PHM, TOL; DHI absent) |
 
-Exact searches of each `all_candidates.json` found no AAPL, DHI, PHM, KBH or TOL
-`ticker_at_observation`. The current `HEAD.json` selects the third generation.
+The 2026-08-30 table that printed `0 / 5` for each generation is withdrawn. Those
+counts came from iterating the `prophet.all_candidates/v1` envelope dict rather
+than `.episodes`. They are not historical zero-overlap evidence.
+
+Envelope-aware reads find ACTIVE `prophet.candidate_episode/v1` rows whose
+`ticker_at_observation` is AAPL, KBH, PHM or TOL. `identity_epoch_state` on those
+rows is `provisional`. The current `HEAD.json` selects the third generation.
 
 All three receipts bind the same 1,903-row TURN WATCH source dated 2026-08-26. The
-older 1,790-row 2026-08-25 input is not the source of any accepted natural generation
-above. The old discovery's own falsifier—continued natural absence—has therefore
-fired.
+older 1,790-row 2026-08-25 input is not the source of any accepted natural
+generation above. The old discovery's consecutive-natural-absence falsifier did
+**not** fire; the 2026-08-30 overlay that said it had fired is a structural false
+negative.
 
-The stage at which the covered names disappeared is not yet attributed. They may be
-absent from the later source or may have been suppressed during canonical intake.
-That distinction is scientifically useful but not release-relevant: accepted episode
-overlap is zero either way.
-
-The first-three table above is preserved historical evidence. The live hold condition
-as of 2026-08-30 is that **every currently committed natural generation** has zero
-accepted overlap. A later non-empty natural generation falsifies that current
-condition and triggers re-census; it does not rewrite the first-three observation.
+Ticker_at_observation overlap is present. It is not a lawful D5 join. D5 may not
+treat these four names as a license to join on ticker, parse `issuer_id` as a CIK,
+read identity parquet, or copy the Earnings issuer registry.
 
 ### 3. Earnings event-workspace coverage
 
@@ -149,9 +151,8 @@ It does not expose an issuer-CIK accessor. D5 may not compensate by:
 - copying Earnings issuer-profile logic into the adapter.
 
 An owner-native CIK reader is a separate bounded Data OS capability. Its eventual
-existence does not by itself reopen D5; a natural accepted overlap is still required.
-Conversely, a future overlapping episode does not authorize a ticker join while the
-CIK bridge is absent.
+existence does not by itself reopen D5. Conversely, the now-observed overlapping
+episodes do not authorize a ticker join while the CIK bridge is absent.
 
 ## Decision-time and correction law remain binding
 
@@ -177,7 +178,7 @@ chain exists. This does not weaken the contract, but it changes acceptance evide
 | D5 architecture and epistemic law | `SPEC_ONLY` | Cell F contracts + A7-A13 amendments |
 | Canonical B1 episode plane | `PROVEN_LIVE` | three natural committed generations; B1 acceptance |
 | Earnings workspace owner | `PROVEN_LIVE` for its registered events | narrow five-issuer profile boundary; not broad coverage |
-| Real B1 × Earnings episode overlap | `NOT_BUILT` as a usable vertical / currently absent | 0/5 across three natural generations |
+| Real B1 × Earnings episode overlap | `OBSERVED` at `ticker_at_observation` (4/5: AAPL/KBH/PHM/TOL; DHI absent); `NOT_BUILT` as a lawful join | envelope-aware `.episodes` census; ticker join remains forbidden |
 | Data OS issuer-to-CIK read seam | `NOT_BUILT` for D5 consumption | no owner-native accessor in `IssuerMaster` |
 | D5 Earnings adapter | `NOT_BUILT` | no lawful real input pair; no code authorized |
 | D5 correction proof | `PARTIAL` | contract frozen; live chain absent; constructed reader-path proof owed |
@@ -233,8 +234,10 @@ fresh canonical evidence:
 ### Gate 1 — natural accepted overlap
 
 A current naturally published B1 generation contains at least one accepted episode
-for an Earnings-covered listed security. Fixture-only or upstream-source membership
-does not count.
+whose `ticker_at_observation` is an Earnings-covered listed security. Fixture-only
+or upstream-source membership does not count. This gate is now **OBSERVED** for
+AAPL, KBH, PHM and TOL on all three committed natural generations. Observation of
+ticker overlap does not authorize a ticker join and does not by itself reopen D5.
 
 ### Gate 2 — canonical economic identity
 
@@ -257,7 +260,8 @@ The bounded vertical can demonstrate:
 5. all authority false, `fusion_bindings=[]`, and `tradable_at=NOT_ASSERTED`.
 
 A new natural B1 generation or a merged CIK reader is only a reason to **re-census**.
-Neither event independently authorizes implementation.
+Neither event independently authorizes implementation. Ticker_at_observation
+overlap already observed on current generations is not that authorization.
 
 ## Exact next action
 
