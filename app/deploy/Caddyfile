@@ -787,6 +787,56 @@ bot.mastermind-x.com {
 	tls internal
 }
 
+# ---- control.mastermind-x.com — operator-only remote Control Room -----------
+# Macro verifies the existing shared Supabase session against the immutable
+# operator UUID. Only a successful bodyless subrequest continues to the
+# projection-only Mastermind service, whose sole origin is a restricted Unix
+# socket. Browser credentials and caller-supplied identity headers stop here.
+control.mastermind-x.com {
+	route {
+		@health path /healthz
+		respond @health 404
+
+		@mutation not method GET HEAD
+		respond @mutation 405
+
+		reverse_proxy 127.0.0.1:8787 {
+			method GET
+			rewrite /api/auth-check
+			header_up Host admin.mastermind-x.com
+			@operator status 2xx
+			handle_response @operator {
+			}
+		}
+		reverse_proxy unix//run/mastermind-control-room/remote.sock {
+			header_up -Cookie
+			header_up -Authorization
+			header_up -X-CCR-Token
+			header_up -X-Authenticated-User
+			header_up -X-Original-Uri
+			header_up -X-Original-Method
+			header_up -X-Forwarded-For
+			header_up -X-Forwarded-Host
+			header_up -X-Forwarded-Proto
+			header_up Host control.mastermind-x.com
+		}
+	}
+
+	header {
+		Cache-Control "private, no-store"
+		Vary "Cookie"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors https://admin.mastermind-x.com"
+		-X-Frame-Options
+		-Server
+	}
+
+	# EdgeOne terminates public TLS and accepts this encrypted origin hop.
+	tls internal
+}
+
 # ---- admin.mastermind-x.com — the Admin console (python -m admin :8787) -------
 # Authenticated control + observability console (admin.service on 127.0.0.1:8787).
 # The app enforces password + signed-session auth (ADMIN_PASSWORD in

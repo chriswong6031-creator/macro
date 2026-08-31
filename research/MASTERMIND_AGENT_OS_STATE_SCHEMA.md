@@ -73,6 +73,7 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `runtime_ref` | ◻ | object | `{service, deployed_sha, freshness_artifact}`. Interface to the runtime-truth program; Agent OS never discovers these itself. |
 | `claim` | ◻ | object | `{by, at, expires}`. **Advisory only — blocks nothing.** |
 | `needs_ceo` | ◻ | object | `{question, options, recommendation, by_when}`. Presence promotes it into the CEO brief. |
+| `wait` | ◻ | object | `{kind, review_after, condition}`. **Declared intentional inactivity — schedules nothing, gates nothing.** See §1.2. Also valid per wave. |
 | `next_action` | ✅ | string | The single next concrete action. Not a goal — a command, a file, or a decision. |
 | `created` / `updated` | ✖ | — | **DERIVED, never authored.** The generator computes them from `git log` over the record file. Writing them by hand made every session touching a record rewrite the same line — the one verified concurrent-edit conflict site in this schema — and made staleness circular, since the field asserting freshness was typed by the session claiming it. |
 
@@ -86,10 +87,41 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `pr` | ◻ | int \| list[int] | Joined to `active_builds.v1` at generation. |
 | `depends_on` | ◻ | list[wave id] | Within this workstream. |
 | `next_action` | ◻ | string | Overrides the workstream-level one while `in_progress`. |
+| `wait` | ◻ | object | Same closed contract as the workstream-scope field. See §1.2. |
 
 **Waves exist so there is no Task store.** They carry the two things a PR genuinely cannot
 (`depends_on`, `next_action`) at ~4 fields instead of 20, and they match the W0/W1/W2 decomposition
 every masterplan in this repo already uses. See architecture §3 and conflict C1.
+
+### §1.2 Typed intentional wait (`wait`) — optional, at workstream OR wave scope
+
+A workstream can be quiet for two entirely different reasons: it was abandoned, or its author
+decided that waiting IS the correct next move — the sample has to mature, an operator has to act,
+a counterparty has to answer, a calendar window has to arrive. Nothing in the record distinguished
+those, so the only way to tell was to read `next_action` prose and guess. `wait` is the author
+saying which one it is, in a shape a reader can trust without parsing English.
+
+| Field | Req | Type | Notes |
+|---|---|---|---|
+| `kind` | ✅ | enum | `natural_evidence` · `external_dependency` · `calendar_window` · `external_action`. |
+| `review_after` | ✅ | date | Date-only `YYYY-MM-DD`. The date a **human looks again** — not a predicted resolution, not an expiry, not a timer. |
+| `condition` | ✅ | string | Non-empty opaque human context. **Never parsed** for authority, action, or completion. |
+
+**The contract is CLOSED.** Unknown fields are a hard `bad-wait` error at both scopes, validated by
+one shared rule. An open vocabulary would let each author mint a private reason, and "why is this
+still sitting here" would need a parser again — which is the thing this field exists to remove.
+
+**It executes nothing (I1).** No scheduler, no queue, no wake, no timer, no status transition, no
+completion, no gate reads this field. It is testimony carried into `agent_os_state.v1` and
+`context_bundle.v1` for a reader, and that is its entire reach.
+
+**A past `review_after` stays schema-valid.** It is an OVERDUE REVIEW, not an expired lease —
+degrading it automatically would be this file deciding something, and a review nobody performed is
+exactly the fact a reader needs to see.
+
+**Absence is never inferred.** A record with no `wait` is making no claim at all — it is not
+thereby "abandoned", and a record WITH one is not thereby "alive". Like `claim`, presence is an
+author's note in git, never evidence that anyone is working now.
 
 ### Example — a real, current workstream
 
@@ -350,12 +382,28 @@ command produced it.
     "worktrees": 31,
     "degraded": ["terminal repo not checked out — terminal workstreams show stale PR state"]
   },
+  "program_registry": {
+    "schema": "agentos.program_registry.v1",
+    "available": true,
+    "source": "config/mastermind_programs.yml",
+    "programs": [
+      {
+        "key": "prophet-us",
+        "name": "US Prophet",
+        "lifecycle_state": "building",
+        "scope": "project",
+        "kind": "intelligence_program",
+        "category": "market_intelligence"
+      }
+    ]
+  },
   "workstreams": [
     {
       "key": "PROPHET-US-ENTRY-TIMING",
       "status": "active", "program": "prophet-us", "p0": "US_PROPHET_ENTRY_TIMING",
       "owner": "coo-fable", "next_action": "Verify the 22:30Z bake (W1).",
       "waves": {"done": 1, "in_progress": 1, "todo": 1},
+      "wait": null,
       "prs": [{"number": 5370, "state": "merged"}],
       "claim": {"by": "claude/prophet-bake-verify-7f3a21", "expires": "2026-08-15T00:00:00Z", "stale": false},
       "needs_ceo": null,
@@ -386,6 +434,13 @@ command produced it.
 `degraded` and `warnings` are first-class: a view that silently omits a missing input reads as
 "everything is fine," which is the failure I4 exists to prevent.
 
+`program_registry` is a read-only bounded projection of `config/mastermind_programs.yml` for
+exact semantic key joins. Macro's registry remains the owner of program identity, lifecycle
+ontology, and metadata; projecting it does not make Agent OS the owner of runtime or program
+execution state. `available: false` is explicit and semantically distinct from an available
+registry containing zero programs. An unavailable rich projection does not fail `status` or alter
+the legacy key-membership validation join.
+
 The two degradation scopes are intentionally different. Parent `inputs.degraded` reports all
 missing or stale auxiliary joins used by the broader status view. `readiness.degraded` reports
 only hard workstream-authoring problems that excluded or made ambiguous a readiness identity;
@@ -402,7 +457,8 @@ same with the unavailable canonical ref named.
 **Envelope vs pure section.** `generated_at`, `inputs.worktrees`,
 `inputs.active_builds_age_hours`, and `inputs.degraded` are the volatile ENVELOPE and are
 excluded from the byte-identity guarantee. `workstreams`, `needs_ceo`, the complete
-`readiness` envelope, and `warnings` are a pure function of the authored records plus the join
+`program_registry` projection, `readiness` envelope, and `warnings` are a pure function of the
+authored records plus the join
 inputs, and are
 compared byte-for-byte across runs by `tests/test_agentos_status.py`. The split is what
 makes the test meaningful: a byte-identity test that required a frozen clock to pass at

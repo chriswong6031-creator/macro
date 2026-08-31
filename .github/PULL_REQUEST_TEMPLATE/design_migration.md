@@ -62,6 +62,42 @@ Reference page:
 - [ ] **11. Perf budget respected:** the packet's page-weight/perf line (packet §I.5 pattern) holds,
   and generated-family packets carry a render-budget line — render budget is repo law.
 
+## Theme art direction — required
+
+Dark and light are **two art directions of one semantic system**, not a design and
+its skin. Token substitution alone is not proof of a light design. Prose here is
+binding: a reviewer judges the light plane as a design, not merely as renderable.
+
+**Dark treatment** — the material mechanism this surface uses in dark (depth,
+elevation, glow/tint discipline, how selection and stance read):
+
+> _(describe)_
+
+**Light treatment** — the material mechanism in light. It is not "dark with the
+tokens swapped": name the canvas/material relationship, the elevation step,
+shadow-vs-glow, and how hue stays reserved for meaning:
+
+> _(describe)_
+
+**Intentional theme differences** — every mechanism that deliberately differs
+between themes, and why the shared recipe would have been visually wrong:
+
+> _(describe, or state "none — the same material recipe is correct in both" and
+> justify it)_
+
+- [ ] **Light was judged as a design**, not only as "the page opens and functions"
+  — hierarchy, material depth, semantic color, responsive composition and EN/ZH
+  parity were each adjudicated in light.
+- [ ] **No runtime stylesheet bypass was introduced** — no substantive product
+  styling authored as an opaque runtime CSS system in page/composer JavaScript
+  (multi-kilobyte `style.textContent`, parallel palette/token family, or
+  duplicated light/dark branches invisible to the design-system checker).
+- [ ] **Dark regression budget respected** — dark visual changes outside the named
+  convergence surface are declared here, or there are none.
+- [ ] An `EVIDENCE.yml` receipt (`schema: mastermind.page_evidence_receipt.v1`)
+  maps this PR's changed presentation paths to the committed
+  `mastermind.p0_evidence.v2` manifest below.
+
 ## Evidence matrix (gate §0.2) — committed files, never prose
 
 Replace `<packet>` with this packet's slug. Paths must exist in the diff; a link to a

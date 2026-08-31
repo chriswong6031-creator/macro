@@ -1,26 +1,26 @@
 {
-  "date": "2026-08-27",
+  "date": "2026-08-31",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
     "equity_us",
     "equity_sm",
     "credit_hy",
-    "equity_intl",
-    "equity_em"
+    "copper",
+    "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-08-27",
+  "asof": "2026-08-31",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.55,
+      "absorption_pctile": 0.53,
       "n_markets": 6,
-      "absorption_ratio": 0.37,
-      "mean_abs_corr": 0.239,
+      "absorption_ratio": 0.367,
+      "mean_abs_corr": 0.235,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -131,7 +131,7 @@
         0.392,
         0.396,
         0.369,
-        0.37
+        0.367
       ],
       "spark_asof": "2026-08-28"
     },
@@ -153,6 +153,11 @@
         "z": 1.0
       },
       {
+        "asset": "copper",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
         "asset": "equity_intl",
         "trend": "up",
         "z": 1.0
@@ -161,42 +166,37 @@
         "asset": "equity_em",
         "trend": "up",
         "z": 1.0
-      },
-      {
-        "asset": "gold",
-        "trend": "mixed",
-        "z": 0.33
       }
     ],
     "trend_summary": {
       "n": 13,
-      "n_up": 5,
-      "n_down": 1
+      "n_up": 6,
+      "n_down": 2
     },
     "intermarket": [
       {
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 49.0
+        "pctile": 55.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 67.632,
-        "trend": "mid",
-        "pctile": 29.0
-      },
-      {
-        "pair": "oil_gold",
-        "ratio": 0.017,
+        "ratio": 66.972,
         "trend": "mid",
         "pctile": 27.0
       },
       {
-        "pair": "stocks_gold",
-        "ratio": 0.163,
+        "pair": "oil_gold",
+        "ratio": 0.019,
         "trend": "mid",
-        "pctile": 29.0
+        "pctile": 38.0
+      },
+      {
+        "pair": "stocks_gold",
+        "ratio": 0.172,
+        "trend": "mid",
+        "pctile": 40.0
       }
     ],
     "carry": {
@@ -205,7 +205,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.93,
+          "value": 0.98,
           "unit": "%",
           "state": "positive carry"
         },
@@ -251,8 +251,8 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.289,
-          "t": 4.611,
+          "r": 0.296,
+          "t": 4.576,
           "q": 0.0
         },
         {
@@ -260,7 +260,7 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.306,
-          "t": 4.147,
+          "t": 4.125,
           "q": 0.0
         },
         {
@@ -268,7 +268,7 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.262,
-          "t": 3.973,
+          "t": 3.951,
           "q": 0.005
         },
         {
@@ -276,7 +276,7 @@
           "follower": "China",
           "lag": 1,
           "r": 0.244,
-          "t": 3.563,
+          "t": 3.566,
           "q": 0.015
         }
       ],
@@ -296,22 +296,22 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-08-25",
+      "asof": "2026-08-27",
       "state": "calm",
-      "score": 47.0,
-      "spread_bp": 3.0
+      "score": 38.0,
+      "spread_bp": 1.0
     },
     "confirm": {
       "verdict": "confirm",
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-25"
+      "asof": "2026-08-28"
     },
     "dollar": {
       "usd_dir": "weakening",
       "regime": "US growth premium",
-      "risk": "risk-off",
+      "risk": "risk-on",
       "corr_top": [
         {
           "key": "GC=F",
@@ -328,13 +328,13 @@
       ],
       "unstable_n": 0,
       "fx_stress": {
-        "dominant": null,
+        "dominant": "carry_unwind",
         "top_key": "carry_unwind",
-        "top_val": 12.0
+        "top_val": 65.8
       }
     },
     "shadow": {
-      "pressure_pctile": 0.55,
+      "pressure_pctile": 0.53,
       "incumbent_state": "calm",
       "shadow_state": "calm",
       "escalated": false

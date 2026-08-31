@@ -1,79 +1,79 @@
 {
   "schema": "index_leadership.track_record.v1",
-  "as_of": "2026-08-25",
-  "generated_at": "2026-08-27T08:30:12.447232+00:00",
+  "as_of": "2026-08-28",
+  "generated_at": "2026-08-31T04:34:04.032241+00:00",
   "is_context_only": true,
-  "n_snapshots": 470,
-  "n_days": 15,
+  "n_snapshots": 535,
+  "n_days": 18,
   "horizons": {
     "5": {
-      "n_matured": 367,
+      "n_matured": 396,
       "by_stage": {
         "running": {
-          "n": 324,
-          "mean_fwd_rel": -0.0011,
-          "hit_rate": 0.522
+          "n": 350,
+          "mean_fwd_rel": -0.0015,
+          "hit_rate": 0.503
         },
         "coiling": {
           "n": 20,
-          "mean_fwd_rel": 0.0098,
-          "hit_rate": 0.75
+          "mean_fwd_rel": 0.0082,
+          "hit_rate": 0.7
         },
         "coiling_primed": {
-          "n": 23,
-          "mean_fwd_rel": 0.0243,
-          "hit_rate": 0.913
+          "n": 26,
+          "mean_fwd_rel": 0.0217,
+          "hit_rate": 0.846
         }
       },
-      "running_ic": 0.1442,
-      "running_ic_t_hac": 4.849,
+      "running_ic": 0.1163,
+      "running_ic_t_hac": 3.702,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "10": {
-      "n_matured": 264,
+      "n_matured": 298,
       "by_stage": {
         "running": {
-          "n": 235,
-          "mean_fwd_rel": 0.001,
-          "hit_rate": 0.502
+          "n": 262,
+          "mean_fwd_rel": -0.0017,
+          "hit_rate": 0.5
         },
         "coiling": {
-          "n": 13,
-          "mean_fwd_rel": -0.0121,
-          "hit_rate": 0.308
+          "n": 16,
+          "mean_fwd_rel": -0.0109,
+          "hit_rate": 0.312
         },
         "coiling_primed": {
-          "n": 16,
-          "mean_fwd_rel": 0.0517,
-          "hit_rate": 0.875
+          "n": 20,
+          "mean_fwd_rel": 0.0447,
+          "hit_rate": 0.85
         }
       },
-      "running_ic": 0.0946,
-      "running_ic_t_hac": 2.051,
+      "running_ic": 0.0095,
+      "running_ic_t_hac": 0.253,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
     },
     "21": {
-      "n_matured": 140,
+      "n_matured": 202,
       "by_stage": {
         "running": {
-          "n": 130,
-          "mean_fwd_rel": 0.0041,
-          "hit_rate": 0.592
+          "n": 186,
+          "mean_fwd_rel": 0.003,
+          "hit_rate": 0.548
         },
         "coiling": {
           "n": 8,
-          "mean_fwd_rel": -0.0218,
+          "mean_fwd_rel": -0.0258,
           "hit_rate": 0.625
         },
         "coiling_primed": {
-          "n": 2,
-          "mean_fwd_rel": -0.027,
-          "hit_rate": 0.0
+          "n": 8,
+          "mean_fwd_rel": 0.0652,
+          "hit_rate": 0.625
         }
       },
-      "running_ic": null,
+      "running_ic": -0.1745,
       "running_ic_t_hac": null,
       "coiling_ic": null,
       "coiling_ic_t_hac": null
@@ -88,10 +88,10 @@
     }
   },
   "lead_time_d": 5,
-  "peak_ic": 0.1442,
+  "peak_ic": 0.1163,
   "proven": {
     "5": true,
-    "10": true,
+    "10": false,
     "21": false,
     "63": false
   },
@@ -100,67 +100,67 @@
   "note": "Call-score IC is significant at the 5d horizon (measured). Context-only \u2014 informs the read, never sizes.",
   "recent_misses": [
     {
-      "date": "2026-08-04",
-      "id": "russell:airlines",
-      "name": "Airlines",
+      "date": "2026-08-07",
+      "id": "baskets:space-economy",
+      "name": "Space Economy",
       "stage": "running",
-      "fwd_rel": -0.1959,
+      "fwd_rel": -0.1314,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-04",
-      "id": "russell:computer-hardware",
-      "name": "Computer Hardware",
+      "date": "2026-08-07",
+      "id": "nasdaq:space-defense-tech",
+      "name": "Space & Defense Tech",
       "stage": "running",
-      "fwd_rel": -0.0958,
+      "fwd_rel": -0.1234,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-04",
-      "id": "russell:electronic-components",
-      "name": "Electronic Components",
-      "stage": "running",
-      "fwd_rel": -0.0863,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-08-04",
-      "id": "subsectors:electronic-components",
-      "name": "Electronic Components",
-      "stage": "running",
-      "fwd_rel": -0.0794,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-08-04",
-      "id": "russell:metal-fabrication",
-      "name": "Metal Fabrication",
-      "stage": "running",
-      "fwd_rel": -0.077,
-      "horizon_d": 21
-    },
-    {
-      "date": "2026-08-04",
+      "date": "2026-08-07",
       "id": "baskets:defense",
       "name": "Defense & Aerospace",
       "stage": "running",
-      "fwd_rel": -0.0687,
+      "fwd_rel": -0.0875,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-04",
-      "id": "russell:packaged-foods",
-      "name": "Packaged Foods",
+      "date": "2026-08-07",
+      "id": "russell:specialty-retail",
+      "name": "Specialty Retail",
       "stage": "running",
-      "fwd_rel": -0.065,
+      "fwd_rel": -0.0865,
       "horizon_d": 21
     },
     {
-      "date": "2026-08-04",
-      "id": "baskets:industrial-distribution",
-      "name": "Industrial Distribution & Capital Goods",
+      "date": "2026-08-07",
+      "id": "baskets:quantum-computing",
+      "name": "Quantum Computing",
       "stage": "running",
-      "fwd_rel": -0.0524,
+      "fwd_rel": -0.0634,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-07",
+      "id": "russell:aerospace-defense",
+      "name": "Aerospace & Defense",
+      "stage": "running",
+      "fwd_rel": -0.0523,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-07",
+      "id": "subsectors:specialty-retail",
+      "name": "Specialty Retail",
+      "stage": "running",
+      "fwd_rel": -0.0442,
+      "horizon_d": 21
+    },
+    {
+      "date": "2026-08-07",
+      "id": "baskets:retail",
+      "name": "Retail",
+      "stage": "running",
+      "fwd_rel": -0.0351,
       "horizon_d": 21
     }
   ],

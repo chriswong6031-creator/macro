@@ -1116,6 +1116,7 @@ class BrainChatRequest(BaseModel):
     thread_id: str | None = Field(None, description="Optional thread id for conversation continuity")
     history: list[dict] | None = Field(None, description="Client-sent fallback history (max 12 turns; used only when thread store is absent)")
     context: dict | None = Field(None, description="Optional page/symbol context hint")
+    company_source_span: dict | None = Field(None, description="Optional closed exact-source reference; source bytes are never accepted from the client")
     mode: str = Field("chat", description="'chat' (default) or 'research' (W6b Deep Research — forces pro lane, raises tool budget, structured multi-section cited report; requires pro quota)")
     images: list[str] | None = Field(None, max_length=4, description="Optional image attachments (W6c vision) — base64 data URIs or https URLs; served by a vision model (Haiku on Fast, Opus on Pro). Invalid/oversized dropped. Max 4.")
 
@@ -1366,6 +1367,7 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         thread_id=body.thread_id,
         history=history,
         context=body.context,
+        company_source_span=body.company_source_span,
         root=REPO,
         mode=mode,
         images=body.images,
@@ -1437,6 +1439,7 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             thread_id=body.thread_id,
             history=history,
             context=body.context,
+            company_source_span=body.company_source_span,
             root=REPO,
             mode=mode,
             images=body.images,
@@ -2170,6 +2173,13 @@ app.include_router(earnings_router)
 # recommendation surface.
 from app.company_intelligence import router as company_intelligence_router  # noqa: E402
 app.include_router(company_intelligence_router)
+
+# Bounded localhost projection of ONE regular-session quote for the static
+# stock dossiers.  Market-data authority stays with the Terminal Quote Plane —
+# this owns no store, socket, scheduler, or vendor credential, and it may only
+# report "live" when the upstream row itself proves measured current freshness.
+from app.dossier_quote import router as dossier_quote_router  # noqa: E402
+app.include_router(dossier_quote_router)
 
 # Market Memory is a read-only product projection over two existing context
 # engines (Brain macro analogues + Signal Episode Atlas).  The router enforces

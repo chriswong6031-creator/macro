@@ -262,7 +262,7 @@
   <script src="../logo_config.js?v=b37d33d3" defer></script>
   <script src="../stock-logos.js?v=cc29be53" defer></script>
   <script src="../live_config.js?v=52943e92" defer></script>
-  <script src="../live.js?v=cfb8c072" defer></script>
+  <script src="../live.js?v=f7bdf7cc" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -297,7 +297,7 @@
 <script src="../lightweight-charts-v5.js?v=c0992580" defer></script>
 <script src="../chart.js?v=a31b8e5a" defer></script>
 <script>
-const DETAIL = {"group":{"key":"medical-care-facilities","kind":"subsector","label":"Medical Care Facilities","label_zh":null,"sector":"Healthcare","sector_zh":null,"n_members":3,"n_priced":3,"reliability":"low","coverage_pct":1.0,"n_live":3,"start":"2014-01-03","as_of":"2026-08-26","price_level":4.9485,"class":"entry_now","entry":{"tier":"T3","weight":0.6,"tier_sub":"deep","ticks":0,"bars_to_cross":0.41,"fresh_bars":0,"eligible":true,"buyable":true,"above200":true,"reason":"buy fired; forward confirmation pending"},"regime":{"state":"EXTENDED","side":"avoid","label":"EXTENDED","label_zh":"\u8fc7\u70ed","action":"Overbought and still rising \u2014 late; hold/trim, don't chase.","action_zh":"\u8d85\u4e70\u4e14\u4ecd\u5728\u4e0a\u884c\u2014\u2014\u5df2\u665a\uff1b\u6301\u6709/\u51cf\u4ed3\uff0c\u52ff\u8ffd\u3002","color":"var(--orange)","conviction":1,"rsi_3d":54.0,"stoch_3d":22.0,"rsi_d":54.0,"stoch_d":100.0,"days_to_cross":null,"rs_60d":5.7,"signal_line":"StochRSI \u219120, MACD curling up","tailwind":false,"headwind":false,"ok":true},"members":[{"ticker":"UHS","name_zh":null,"price":178.69,"ret_20d":6.3,"vs_basket":11.7,"stock_tier":null,"stock_weight":0.0,"stock_ticks":16,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"HCA","name_zh":null,"price":427.16,"ret_20d":4.6,"vs_basket":10.1,"stock_tier":null,"stock_weight":0.0,"stock_ticks":18,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"long-bias"},{"ticker":"DVA","name_zh":null,"price":180.05,"ret_20d":-25.3,"vs_basket":-19.8,"stock_tier":null,"stock_weight":0.0,"stock_ticks":26,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"medical-care-facilities","has_signals":true},"kind":"subsector","as_of":"2026-08-26","ohlc_dir":"subsectorohlc","sig_dir":"subsector_signals","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-08-27 20:03"};
+const DETAIL = {"group":{"key":"medical-care-facilities","kind":"subsector","label":"Medical Care Facilities","label_zh":null,"sector":"Healthcare","sector_zh":null,"n_members":3,"n_priced":3,"reliability":"low","coverage_pct":1.0,"n_live":3,"start":"2014-01-03","as_of":"2026-08-28","price_level":4.853,"class":"tailwind","entry":{"tier":null,"weight":0.0,"tier_sub":null,"ticks":17,"bars_to_cross":null,"fresh_bars":50,"eligible":false,"buyable":false,"above200":true,"reason":"held but topped/rolled-over \u2014 no longer a fresh entry"},"regime":{"state":"BUY","side":"buy","label":"BUY","label_zh":"\u4e70\u5165","action":"Fresh up-turn confirmed on the daily AND 3-day \u2014 entry open.","action_zh":"\u65e5\u7ebf\u4e0e3\u65e5\u7ebf\u540c\u65f6\u786e\u8ba4\u8f6c\u4e0a\u2014\u2014\u5165\u573a\u7a97\u53e3\u6253\u5f00\u3002","color":"var(--up)","conviction":3,"rsi_3d":50.0,"stoch_3d":20.0,"rsi_d":48.0,"stoch_d":66.0,"days_to_cross":null,"rs_60d":7.6,"signal_line":"StochRSI \u219120","tailwind":true,"headwind":false,"ok":true},"members":[{"ticker":"HCA","name_zh":null,"price":417.82,"ret_20d":3.8,"vs_basket":10.6,"stock_tier":null,"stock_weight":0.0,"stock_ticks":18,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"UHS","name_zh":null,"price":171.66,"ret_20d":1.9,"vs_basket":8.7,"stock_tier":null,"stock_weight":0.0,"stock_ticks":16,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"},{"ticker":"DVA","name_zh":null,"price":180.68,"ret_20d":-24.7,"vs_basket":-18.0,"stock_tier":null,"stock_weight":0.0,"stock_ticks":26,"stock_bars_to_cross":null,"stock_buyable":false,"stock_state":"mixed"}],"chart_key":"medical-care-facilities","has_signals":true},"kind":"subsector","as_of":"2026-08-28","ohlc_dir":"subsectorohlc","sig_dir":"subsector_signals","back":"../subsectors.html","stock_base":"../stock.html#","generated_utc":"2026-08-31 05:14 UTC"};
 const CHART_KEY = "medical-care-facilities";
 const HAS_SIGNALS = true;
 const L = (en, zh) => `<span class="l-en">${en}</span><span class="l-zh">${zh == null ? en : zh}</span>`;
@@ -361,6 +361,7 @@ function render() {
 render();
 document.addEventListener('langchange', render);
 </script>
-<script src="../theme.js?v=0956049c" defer></script>
+<script src="../theme.js?v=f0609099" defer></script>
+<script defer data-whb data-root="../" src="../wh_banner.js?v=4a53a176"></script>
 </body>
 </html>

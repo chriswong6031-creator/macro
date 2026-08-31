@@ -1,5 +1,5 @@
 {
-  "cash": 0.25,
+  "cash": 0.0,
   "crash": false,
   "eligible": [
     "cn_ai_compute",
@@ -9,14 +9,16 @@
     "cn_metals",
     "cn_pharma_cxo",
     "cn_rare_earth",
+    "cn_robotics",
     "cn_semis"
   ],
   "held": [
-    "cn_gold",
     "cn_ai_compute",
-    "cn_pharma_cxo"
+    "cn_gold",
+    "cn_pharma_cxo",
+    "cn_robotics"
   ],
-  "leader": "cn_gold",
+  "leader": "cn_ai_compute",
   "names": {
     "cn_ai_compute": "AI Compute & Optics",
     "cn_appliances": "Home Appliances",

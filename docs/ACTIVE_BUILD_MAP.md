@@ -2,45 +2,53 @@
 
 # Active Build Map
 
-Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window): 500  |  base: `99b0299069c619af8b5fa4fa6e1bbb344fa87a81`
+Generated: 2026-08-29T10:10:47.291791+00:00  |  Open PRs: 41  |  Merged (window): 500  |  base: `f598aa73efac8587ffc224b285affca2d3f3c540`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #6538 | ops: route Livingston portfolio through Caddy | `claude/livingston-caddy` | 2026-08-27 | — |
-| #6537 | records(market-os): repair post-#6504 reconciliation truth | `sol/marketontology-post-6504-truth-repair-20260827` | 2026-08-27 | DRAFT |
-| #6536 | heal(agentos): schema-lawful Breathing forensic-acceptance record (main ci-pack-9 red) | `claude/heal-agentos-breathing-record-20260827` | 2026-08-27 | — |
-| #6535 | records(prophet-us): August availability ledger + two-tier backfill ruling + takeover handoff | `claude/prophet-us-records-20260827` | 2026-08-27 | — |
-| #6534 | prophet: PR-1 permanence net — extend the three existing watchdogs + a new post-publish acceptance alarm | `worktree-agent-abca2b21591a89932` | 2026-08-27 | ⚠ protected:4 |
-| #6533 | k2c: institutional 13F owner-read adapter pilot (K2-B owner-row basis + proof lane) | `claude/k2c-institutional-adapter-20260827` | 2026-08-27 | ⚠ protected:1 |
-| #6532 | design(us-board): make the board state its own freshness in plain words | `claude/us-board-freshness-truth` | 2026-08-27 | — |
-| #6529 | records(stock-identity): freeze W3-to-final program and Fable commission | `sol/stock-identity-recovery-20260827` | 2026-08-27 | DRAFT |
-| #6528 | records(market-memory): recharter full PIT-to-cognition program | `sol/market-memory-ceo-recharter-20260827` | 2026-08-27 | DRAFT |
+| #6651 | [HOLD-FOR-SOL] feat(admin): add Intelligence OS evidence view | `claude/eval-os-a1-evidence-view-20260828` | 2026-08-29 | DRAFT |
+| #6650 | [TDD][LINEAR] Initiative portfolio strategy v1 | `sol/linear-initiative-plan-task1-20260829` | 2026-08-29 | — |
+| #6648 | [RECORDS][HOLD-FOR-SOL] Codex native-session collision reconciliation | `sol/chairman-control-room-codex-session-collision-20260829` | 2026-08-29 | DRAFT |
+| #6647 | HOLD-FOR-SOL: fix(canada): TP-1 R3 — breadth truth, bounded gauge, dark filter parity, modal alignment | `claude/tp1-canada-r3` | 2026-08-29 | DRAFT |
+| #6643 | stocks: EQR->VMRK key migration (#4622) + LEG exit row + OTC acks + dataos unwedge | `claude/eqr-vmrk-key-migration` | 2026-08-29 | ⚠ CONFLICTING |
+| #6642 | feat(agentos): publish direct source-record content identity | `codex/agentos-source-records-digest-20260829` | 2026-08-29 | DRAFT |
+| #6641 | HOLD-FOR-SOL: CF2-P0 provider-family truth snapshot | `claude/capacity-fabric-p0-provider-truth-20260829` | 2026-08-29 | DRAFT |
+| #6638 | stock-identity W3A: episode-localization ruler engine + sealed PR-3 constants (SI-W3A-RULER-V1) | `claude/si-w3a-ruler-v1` | 2026-08-29 | DRAFT / ⚠ protected:1 |
+| #6636 | records(agentos): checkpoint Web-Sol S0/S1 preflight | `sol/web-sol-s0s1-agentos-preflight-20260829` | 2026-08-29 | DRAFT |
+| #6632 | records(alpha): reconcile K2-C/K3-D blockers and repair path | `sol/alpha-k2c-k3d-current-state-20260828` | 2026-08-29 | DRAFT |
+| #6631 | records(gmi): route frozen F04 children without provider-Fable gate | `sol/gmi-f04-bounded-child-routing-20260828` | 2026-08-29 | DRAFT |
+| #6628 | fix(ci): preserve red trusted-pack evidence for ci-gate (#6351) | `sol/ci-red-pack-relay-recovery-6351` | 2026-08-29 | DRAFT / ⚠ protected:1 |
+| #6627 | HOLD-FOR-SOL: fix(canada): TP-1 R2 — RIG REVISE repairs (modal reachability, fail-closed base, inset rails, achromatic breadth) | `claude/tp1-canada-r2` | 2026-08-29 | DRAFT |
+| #6625 | [HOLD-FOR-SOL] radar(w4.2): private evidence-spool boundary — dedicated store + shared-bucket refusal (LER-C1) | `claude/ler-c1-private-spool` | 2026-08-29 | DRAFT |
+| #6620 | records(canada): TP-1 theme-parity closeout — canada_stocks compliant post-proof | `claude/tp1-canada-closeout` | 2026-08-28 | — |
+| #6615 | [PLAN][STACKED] SNI semantic registration + SNI-1A contract execution plans | `sol/sni1a-plan-20260828` | 2026-08-28 | DRAFT |
+| #6613 | [ARCHITECTURE][HOLD-FOR-SOL] SNI-1 Alibaba/Tencent reference twin contract | `sol/sni1-reference-twin-20260828` | 2026-08-29 | DRAFT |
+| #6609 | HOLD-FOR-SOL: records(market-os): F00B current-owner capability crosswalk (88+42 parity scope) | `claude/mo-f00b-crosswalk-20260828` | 2026-08-29 | DRAFT |
+| #6604 | HOLD-FOR-SOL: records(options): Options Intelligence C0 consolidated masterplan + program-control freeze | `claude/options-intelligence-c0-program-control` | 2026-08-29 | DRAFT |
+| #6600 | HOLD-FOR-SOL: CXI C0 Benchmark Truth Recovery (op macro-context-index-completion-20260828-sol-001) — do not merge | `claude/macro-context-index-c0-20260828` | 2026-08-29 | DRAFT |
+| #6596 | records(crg): establish cross-repo contract governance execution home | `sol/cross-repo-contract-governance-r0-20260828` | 2026-08-29 | DRAFT |
+| #6595 | HOLD-FOR-SOL: records(market-os): reconcile Fable root-seat topology | `sol/marketontology-fable-seat-topology-reconcile-20260828` | 2026-08-28 | DRAFT |
+| #6593 | HOLD-FOR-SOL: records(agentos): reconcile Linear / Slack / GitHub drift | `sol/cross-plane-linear-slack-github-reconcile-20260827` | 2026-08-28 | DRAFT / ⚠ CONFLICTING |
+| #6589 | HOLD-FOR-SOL: records(market-memory) MM-G0 R1 repair — separate terminal gate classification from causal diagnosis | `claude/market-memory-mm-g0-repair-20260828` | 2026-08-29 | DRAFT |
+| #6586 | [AGENTOS][HOLD-FOR-SOL] Record Operator Continuity architecture | `sol/operator-continuity-records-20260827` | 2026-08-28 | DRAFT |
+| #6585 | HOLD-FOR-SOL: feat(oa1t): measured ThetaData trade+NBBO microstructure | `claude/oa1t-macro-measured-options-microstructure` | 2026-08-29 | DRAFT |
+| #6581 | records(agentos): refine MAS-112 to stale installed authorization | `sol/mas112-installed-auth-reconcile-20260827` | 2026-08-28 | DRAFT |
+| #6578 | records(agentos): reconcile Slack dialogue continuity gates | `sol/ccr-dialogue-continuity-reconcile-20260827` | 2026-08-29 | DRAFT |
+| #6570 | HOLD-FOR-SOL: research(toi): freeze Technical Opportunity Intelligence architecture and W1/W2 contracts | `sol/technical-opportunity-intelligence-w0-20260827` | 2026-08-29 | DRAFT |
+| #6567 | HOLD-FOR-SOL: fix(cn): prevent stale deep OHLC from regressing Prophet session | `sol/cn-prophet-stale-deep-overlay-20260827` | 2026-08-28 | DRAFT |
+| #6528 | records(market-memory): recharter full PIT-to-cognition program | `sol/market-memory-ceo-recharter-20260827` | 2026-08-29 | DRAFT |
 | #6526 | fix(market-os): refresh Portfolio badge after authoritative A1B reread | `sol/market-os-6510-badge-refresh-20260827` | 2026-08-27 | DRAFT |
-| #6523 | fix(china_stocks): drop stitched resumption bars; re-heal 002155.SZ suspension window | `claude/cn-suspension-window-002155` | 2026-08-27 | — |
-| #6522 | records(gmi): freeze end-to-end Theme Graph completion program | `sol/gmi-theme-graph-end-to-end-20260827` | 2026-08-27 | — |
-| #6521 | [RESEARCH][HOLD-FOR-SOL] TFG-0 transcript format generalization | `sol/tfg0-transcript-format-census-20260827` | 2026-08-27 | DRAFT |
-| #6519 | fix(ci): restore direct suffix startability containment | `claude/ci-main-red-defense-startability-20260827-sol-001` | 2026-08-27 | DRAFT / ⚠ CONFLICTING |
 | #6514 | HOLD-FOR-SOL: contracts(k3d): Economic Propagation hypothesis v1 — do not merge until Sol accepts | `claude/k3d-economic-propagation` | 2026-08-27 | DRAFT |
-| #6505 | ci: route trusted PR packs through main executor | `codex/ci-p3bb-production-route-6351` | 2026-08-27 | ⚠ protected:3 |
-| #6497 | HOLD-FOR-SOL: E3-C GOOGL generalization REFUSED on source format (records + regression, no runtime change) | `claude/e3c-googl-generalization-refusal` | 2026-08-27 | DRAFT |
-| #6485 | records(defense): Sol accepts D6-B1 / park at D6-C boundary | `sol/d6b1-final-acceptance-20260826` | 2026-08-27 | — |
-| #6459 | HOLD-FOR-SOL · plan: M1 Consumer Visibility Wave 1 | `sol/b1a-m1-consumer-visibility-plan-20260826` | 2026-08-26 | DRAFT |
-| #6457 | HOLD-FOR-CHAIRMAN · design: harden M1 Macro consumer recovery and migration | `sol/b1a-m1-consumer-hardening-design-20260826` | 2026-08-26 | DRAFT |
 | #6441 | HOLD-FOR-SOL: records(agentos): reconcile current state-sync program | `sol/agentos-state-sync-20260825` | 2026-08-27 | DRAFT |
-| #6426 | HOLD-FOR-SOL: CI ProofFreshness precedes stale semantic verdict | `claude/ci-prooffreshness-before-semantic-20260825` | 2026-08-25 | DRAFT |
+| #6426 | HOLD-FOR-SOL: CI ProofFreshness precedes stale semantic verdict | `claude/ci-prooffreshness-before-semantic-20260825` | 2026-08-25 | DRAFT / ⚠ CONFLICTING |
 | #6423 | DRAFT / DO NOT MERGE: ProofFreshness stale-red live fixture | `claude/prooffreshness-live-fixture-20260825` | 2026-08-25 | DRAFT |
-| #6391 | FF-1 acceptance-time representational equivalence | `claude/ff1-acceptance-time-equivalence-20260824` | 2026-08-25 | — |
-| #6390 | fix(live): make China Prophet A-share quotes genuinely live | `claude/fix-cn-prophet-live-quotes-20260824` | 2026-08-25 | — |
-| #6389 | [HOLD-FOR-SOL] BioCatalyst SNAPSHOT-ONBOARD A — Historical Event History | `warp/warp-2b1d7bf0a28b4f9d9016367398c3bd93` | 2026-08-27 | DRAFT / ⚠ CONFLICTING |
-| #6381 | Ship-loop watcher quiescence after PARKED / external exit (#6379) | `claude/ship-loop-quiescence-20260824` | 2026-08-27 | — |
+| #6389 | [HOLD-FOR-SOL] BioCatalyst SNAPSHOT-ONBOARD A — Historical Event History | `warp/warp-2b1d7bf0a28b4f9d9016367398c3bd93` | 2026-08-28 | DRAFT / ⚠ CONFLICTING |
 | #6296 | [HOLD-FOR-SOL] W-LIQ.1 causal global liquidity state producer | `claude/w-liq1-global-liquidity` | 2026-08-27 | DRAFT |
 | #6264 | research(prophet): harden flagship intelligence fan-out cells | `sol/prophet-flagship-fanout-hardening-20260822` | 2026-08-26 | DRAFT |
-| #6182 | feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65) | `chatgpt1/mas-65-linear-portfolio-plan-p0` | 2026-08-27 | DRAFT |
 | #6051 | scratch(exk): Turn-3 exact repository-price replay — DO NOT MERGE | `sol/exk-turn3-exact-replay-20260820` | 2026-08-20 | DRAFT / ⚠ protected:2 |
 | #5821 | docs(bci): freeze federated Biopharma Cycle Intelligence OS architecture | `sol/biopharma-cycle-intelligence-architecture-20260816` | 2026-08-17 | DRAFT |
-| #5737 | radar(w8): Live Entry Radar reference UX + RIG (Prophet sister language) | `cursor/entry-radar-w8-rig-9f9d` | 2026-08-19 | ⚠ CONFLICTING |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
 
@@ -48,49 +56,106 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #6534 | #6505 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #6519 | #6505 | 2 | `scripts/run_ci_pack.py`, `tests/test_ci_pack.py` |
-| #6534 | #6533 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6534 | #6532 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6534 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6534 | #6497 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6534 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6534 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6532 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6505 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6497 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6533 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6532 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6532 | #6505 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6532 | #6497 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6532 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6532 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6514 | #6505 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6514 | #6497 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6647 | #6627 | 25 | `mockups/evidence/theme-parity/tp1-canada/after-dark-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/after-light-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/allcands-dark-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/allcands-light-en-1440.png`, `mockups/evidence/theme-parity/tp1-canada/cells/06242bd37dade760.png`, `mockups/evidence/theme-parity/tp1-canada/cells/4efe886e93a53336.png`, `mockups/evidence/theme-parity/tp1-canada/cells/61758cf00e1ac6b3.png`, `mockups/evidence/theme-parity/tp1-canada/cells/69ee71c5645fedfe.png` +17 more |
+| #6643 | #6625 | 1 | `tests/test_caddy_hub_boundary.py` |
+| #6638 | #6625 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6638 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6638 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6638 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6625 | #6514 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6625 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
+| #6625 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6514 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6514 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6505 | #6497 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6505 | #6426 | 1 | `agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md` |
-| #6505 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6505 | #6381 | 1 | `agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md` |
-| #6505 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6497 | #6389 | 1 | `.github/ci/legacy-jobs.yml` |
-| #6497 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
 | #6426 | #6423 | 1 | `tests/test_merge_on_green_semantic.py` |
-| #6426 | #6381 | 1 | `agentos/workstreams/WS-CI-MERGE-CONTROL-PLANE.md` |
 | #6389 | #6296 | 1 | `.github/ci/legacy-jobs.yml` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #6635 | fix(control-room): route auth through admin session handler | 2026-08-29 |
+| #6634 | feat(agentos): deterministic zero-network Linear portfolio plan compiler (MAS-65) [release carrier] | 2026-08-29 |
+| #6633 | heal(agentos): schema-normalize four 08-28 records redding the contract fleet-wide | 2026-08-29 |
+| #6630 | records(eval-os): open A1 evidence-view workstream and handoff | 2026-08-29 |
+| #6626 | fix(ship-loop): a lawful claude/* HOLD-FOR-SOL waits instead of being told to merge | 2026-08-29 |
+| #6623 | stocks: exit-ledger fetch exclusion + AVB successor-splice heal | 2026-08-29 |
+| #6622 | prophet: record B1 natural production acceptance | 2026-08-29 |
+| #6621 | fix(ci): re-base probe ceilings for the three deliberate always-on gates (TP-1 repair edge) | 2026-08-28 |
+| #6619 | records(dossier-live-quote): realtime enabled and proven; anchor-roll defect | 2026-08-28 |
+| #6618 | feat(control-room): add operator-auth remote access boundary | 2026-08-28 |
+| #6617 | fix(dossier): stop rendering a rolled anchor as a zero move | 2026-08-28 |
+| #6616 | docs(law): hold notes do not end the Stop loop — ladder out once, then stay quiet | 2026-08-28 |
+| #6614 | biocatalyst: P1-AVAIL-1 entitled re-acceptance PASS — records closeout (MAS-172) | 2026-08-28 |
+| #6612 | HOLD-FOR-SOL: design(canada): TP-1 theme-parity — governed stock-dashboard CSS pair + dual art directions | 2026-08-28 |
+| #6611 | records(market-os): ratify granular full parity + beyond-parity ratchet | 2026-08-28 |
+| #6610 | research(market-os): preserve final Market Ontology audit | 2026-08-28 |
+| #6607 | daily: commit data/qledger from the stock_briefs job (Eval OS E1) | 2026-08-28 |
+| #6605 | heal(agentos): schema-normalize the breathing completion-commission handoff | 2026-08-28 |
+| #6603 | records: name the overnight-503 regression and why the tests missed it | 2026-08-28 |
+| #6601 | records(breathing): freeze completion architecture + COO C0 handoff | 2026-08-28 |
+| #6599 | [ARCHITECTURE][SOL-ACCEPTED] Live Entry Radar end-to-end completion program | 2026-08-28 |
+| #6598 | qledger: anchor stock_desk/thematic_desk claims at registration (Eval OS E1) | 2026-08-28 |
+| #6597 | records(topa): freeze OOT completion architecture + R0 COO handoff | 2026-08-28 |
+| #6594 | biocatalyst: P1-AVAIL-1 availability audit — no origin-side defect (MAS-172) | 2026-08-28 |
+| #6592 | dossier: fix the overnight 503 — regularSession is a session STATE, not a print provenance | 2026-08-28 |
+| #6590 | HOLD-FOR-SOL: records(defense) D6-C0 remaining-rail rebaseline + architecture freeze | 2026-08-28 |
+| #6587 | fix(china): heal stale A-share OHLC tails with guarded Tencent fallback | 2026-08-28 |
+| #6584 | records(agentos): reconcile C1 native production gate | 2026-08-28 |
+| #6583 | records(market-memory): MM-G0 August-25 W2C M0D gate adjudication — ABSTAINED | 2026-08-28 |
+| #6582 | records(eval-os): freeze recovered Evaluation OS architecture and current truth | 2026-08-28 |
+| #6580 | guard(gh-quota): flag a redundant CI status re-read (shape 7) | 2026-08-28 |
+| #6579 | design(tp-0): theme-parity governance — forward-only ratchet, runtime-style fence, dual-theme evidence | 2026-08-28 |
+| #6577 | ci: add non-authoritative pack execution timing (#6351) | 2026-08-28 |
+| #6576 | plan(oa1t): measured ThetaData trade+NBBO microstructure | 2026-08-28 |
+| #6575 | records(prophet-live): tighten D12 natural proof after fresh-empty production failure | 2026-08-28 |
+| #6574 | feat(ops): add bounded M1 consumer census (#6432) | 2026-08-28 |
+| #6573 | docs(oa0): freeze Options Alpha intelligence recovery architecture | 2026-08-28 |
+| #6572 | dossier: bind the stock dossier to the Terminal quote plane, honestly | 2026-08-28 |
+| #6571 | records(agentos): reconcile WP-1 orphan and manual pickup mode | 2026-08-28 |
+| #6569 | fix(sentinel): breach fresh-but-empty prophet_live and ahead-of-calendar armed packs | 2026-08-27 |
+| #6568 | design: Theme-Parity Ratchet + Presentation-Layer Convergence architecture | 2026-08-28 |
+| #6566 | records(agentos): hand off Worker Presence WP-0 merge and WP-1 release | 2026-08-27 |
+| #6565 | chore(prophet-live): remove temporary D12 red workflow | 2026-08-27 |
+| #6564 | [COMMISSION][HOLD-FOR-SOL] Project Recovery R8-B2 semantic program registry source | 2026-08-29 |
+| #6563 | fix: harden B1 natural acceptance inputs | 2026-08-27 |
+| #6562 | fix(prophet-b1): numpy-dressed rows must not crash the episode intake's receipt hash | 2026-08-27 |
+| #6561 | ci: bound trusted hosted planner materialization (#6351) | 2026-08-27 |
+| #6560 | docs(grey-deer): record GD-3 production acceptance | 2026-08-27 |
+| #6559 | fix(ci): bind reusable runtime workflow ref to resolved main | 2026-08-27 |
+| #6557 | records(v38): Sol final HK+Canada regional acceptance | 2026-08-27 |
+| #6556 | records(agentos): require ASD-A2 A2-0 admission revalidation | 2026-08-27 |
+| #6555 | HOLD-FOR-SOL: [RECORDS] TFG-1 v1 gold falsifier + R2 amendment | 2026-08-28 |
+| #6554 | fix(prophet-live): quarantine impossible pack tips before gating | 2026-08-27 |
+| #6553 | HOLD-FOR-SOL: records(market-os): reconcile K2-C proof + receiver truth | 2026-08-27 |
+| #6551 | records(agentos): hand off C1 merge and native production gate | 2026-08-27 |
+| #6550 | records(v38-canada): Canada V3.8 PROVEN_LIVE acceptance + regional closeout | 2026-08-27 |
+| #6549 | monitor: grade site/premiumdata/us_stocks.json — the entitled US board payload | 2026-08-27 |
+| #6548 | ci: wire tests/test_dashboard_template_render.py into CI + heal its one red | 2026-08-27 |
+| #6547 | records(k2c): production owner-read proof receipts (§7) | 2026-08-27 |
+| #6546 | [COMMISSION][HOLD-FOR-SOL] Project Recovery R8-B Agent OS typed waits | 2026-08-28 |
+| #6545 | canada(v38-r2): What to Act On Now at rest; owner-only ranks; Leadership & Rotation | 2026-08-27 |
+| #6544 | design(cn-board): make the CN board state its own freshness in plain words | 2026-08-27 |
+| #6543 | HOLD-FOR-SOL: records(ric): recover Rates & Inflation Command and freeze completion architecture | 2026-08-28 |
+| #6542 | prophet-rescue: [DAY N] title escalation when a breach class outlives a day | 2026-08-27 |
+| #6541 | records(v38-hk): HK V3.8 PROVEN_LIVE acceptance + carrier handoff | 2026-08-27 |
+| #6540 | records(agentos): reconcile #agent-dispatch receiver evidence | 2026-08-27 |
+| #6539 | records(agentos): reconcile hybrid Executive workforce source law | 2026-08-27 |
+| #6537 | records(market-os): repair post-#6504 reconciliation truth | 2026-08-27 |
+| #6536 | heal(agentos): schema-lawful Breathing forensic-acceptance record (main ci-pack-9 red) | 2026-08-27 |
+| #6535 | records(prophet-us): August availability ledger + two-tier backfill ruling + takeover handoff | 2026-08-27 |
+| #6534 | prophet: PR-1 permanence net — extend the three existing watchdogs + a new post-publish acceptance alarm | 2026-08-27 |
+| #6533 | k2c: institutional 13F owner-read adapter pilot (K2-B owner-row basis + proof lane) | 2026-08-27 |
+| #6532 | design(us-board): make the board state its own freshness in plain words | 2026-08-27 |
 | #6531 | records(breathing): reconcile post-Aug17 acceptance ruler and W-L2 | 2026-08-27 |
 | #6530 | records(deepvue): W2-A closeout — receipt, wave done, handoff | 2026-08-27 |
+| #6529 | records(stock-identity): freeze W3-to-final program and Fable commission | 2026-08-28 |
 | #6527 | fix(landing): the browser was dark-moding a page we never gave a dark mode | 2026-08-27 |
 | #6525 | records(market-os): F00 pickup and carrier-landing handoff | 2026-08-27 |
 | #6524 | records(prophet-live): mature force-majeure evidence closeout | 2026-08-27 |
+| #6523 | fix(china_stocks): drop stitched resumption bars; re-heal 002155.SZ suspension window | 2026-08-27 |
+| #6522 | records(gmi): finish-and-fold Theme Graph into autonomous F04 completion | 2026-08-28 |
+| #6521 | [RESEARCH][HOLD-FOR-SOL] TFG-0 transcript format generalization | 2026-08-27 |
 | #6520 | agentos(market-os): sync workstream after A1B production acceptance | 2026-08-27 |
 | #6518 | ci: extract 3 largest engine run bodies to scripts/ci — daily.yml 512KB-cap headroom diet | 2026-08-27 |
 | #6517 | fix(13f-census): recover filing documents omitted from SEC index.json via the SGML header manifest | 2026-08-27 |
@@ -103,6 +168,7 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6508 | records(market-os): accept A1B in production | 2026-08-27 |
 | #6507 | fix(options-source): ThetaData is canonical — stop calling the retired Polygon estate an outage | 2026-08-27 |
 | #6506 | shadow-book: percentile field is a true cross-sectional pct rank (era-stamped, no restatement) | 2026-08-27 |
+| #6505 | ci: route trusted PR packs through main executor | 2026-08-27 |
 | #6504 | records(market-os): complete MarketOntology parity + parallel Fable COO fanout | 2026-08-27 |
 | #6503 | fix(cortex): repair the five hypothesis-evaluator wiring defects (experiments audit §3 W1–W6) | 2026-08-27 |
 | #6502 | cn-limit: name-history source authority (Sol RETURN-GATE 10B) | 2026-08-27 |
@@ -110,6 +176,7 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6500 | fix(aibrief): the worker that writes the brief now writes its 中文 too | 2026-08-27 |
 | #6499 | shadow-book: wire nightly maturation, overlap-true HAC lags, leak-free Clark-West (experiments audit §8.4+13) | 2026-08-27 |
 | #6498 | records(alpha): commission K2-C and K3-D bounded waves | 2026-08-27 |
+| #6497 | HOLD-FOR-SOL: E3-C GOOGL generalization REFUSED on source format (records + regression, no runtime change) | 2026-08-27 |
 | #6496 | ci: make main-owned trusted executor call-capable (P3B-A #6351) | 2026-08-27 |
 | #6494 | cn-limit: treat a non-positive stk_limit price as absent, fail-closed | 2026-08-27 |
 | #6493 | perf(admin-analytics): stop every panel paying a 15.9M-row nested loop; fix the Visitors 524 | 2026-08-27 |
@@ -120,6 +187,7 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6488 | fix(aibrief): route the AI Daily Brief through the provider ladder (Codex → Claude → DeepSeek) | 2026-08-27 |
 | #6487 | CI P3A-R: freeze main-owned trusted executor control (#6351) | 2026-08-27 |
 | #6486 | cn-limit: historical PIT is source-union, not current-snapshot intersection | 2026-08-27 |
+| #6485 | records(defense): Sol accepts D6-B1 / park at D6-C boundary | 2026-08-27 |
 | #6484 | feat(prophet-live): recover and absorb the 598 events the outage never published | 2026-08-27 |
 | #6483 | records(prophet-live): US Prophet Live is PROVEN_LIVE — incident closeout | 2026-08-26 |
 | #6482 | fix(prophet-live): stamp an owner on the artifact the dead-man grades | 2026-08-26 |
@@ -145,7 +213,9 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6462 | docs(agentos): close E3-B as PROVEN_LIVE after authenticated PASS | 2026-08-27 |
 | #6461 | fix(revisions): capture the provider's fiscal period end and stop reading a rollover as a revision | 2026-08-26 |
 | #6460 | records(agentos): close MAS-112 Keychain helper merge gate | 2026-08-26 |
+| #6459 | plan: M1 Consumer Visibility Wave 1 | 2026-08-27 |
 | #6458 | records(k3e): SRC-A1P audit outcome — FAIL, no promotion, plus corrected run attribution | 2026-08-26 |
+| #6457 | design: harden M1 Macro consumer recovery and migration | 2026-08-27 |
 | #6456 | Sol V3.8 freeze — restore Action, separate Leadership | 2026-08-26 |
 | #6455 | cn-limit: freeze the mainland session epoch at 1992-01-01 (DEP-EXACT) | 2026-08-26 |
 | #6454 | d6b1: FR denominator shares the population-window predicate (acquire-lane heal) | 2026-08-26 |
@@ -201,6 +271,8 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6394 | Animate The Price of Duration figures | 2026-08-25 |
 | #6393 | records(biocatalyst): park core product between commissioned waves | 2026-08-25 |
 | #6392 | records(eval-os): reconcile completed T1 registry lifecycle | 2026-08-25 |
+| #6391 | FF-1 acceptance-time representational equivalence | 2026-08-28 |
+| #6390 | fix(live): make China Prophet A-share quotes genuinely live | 2026-08-29 |
 | #6388 | records(xpv2): reconcile R3B/R3B.1 and active R3B.2 state | 2026-08-25 |
 | #6386 | heal(ci): board-shadow session date is derived, not a literal that ages out | 2026-08-25 |
 | #6385 | agentos(defense-v3): D6-A production proof complete — done / Sol acceptance pending | 2026-08-25 |
@@ -502,90 +574,6 @@ Generated: 2026-08-27T07:40:34.320521+00:00  |  Open PRs: 33  |  Merged (window)
 | #6063 | docs(agentos): D3 temporal Change Tape close — WS seal + handoff | 2026-08-20 |
 | #6060 | records(dislocation): Turn 4 replay adjudication and blind P0 freeze | 2026-08-20 |
 | #6059 | govrev: fit the D3 page under a ratcheted raw-byte budget (296 KiB) | 2026-08-20 |
-| #6058 | records(prophet-lab): day-3 close-out — G-D PASS + Gate B findings + W-L1 referral + day-3 handoff | 2026-08-20 |
-| #6056 | docs(governance): recorded holds are merge barriers (DEC + fleet-law amendment + AD-1C0.1 wave row) | 2026-08-20 |
-| #6055 | design-system: port .skel + .mx-error verbatim from the specimen (P-MP1-SHELL gate) | 2026-08-20 |
-| #6054 | docs(agentos): record M0A W2C three-window prospective proof | 2026-08-20 |
-| #6053 | test(prophet-card): re-pin zh rebind test to the C8-C structural flip | 2026-08-20 |
-| #6052 | P0-C2R2 — retain request-local validated BioCatalyst artifacts | 2026-08-20 |
-| #6050 | china-alpha: P1 institutional visit tape collector + dossier block | 2026-08-20 |
-| #6049 | prep(p-mp1-shell): §8a stance projection + count plumbing + suite wiring — central act OWED (W-L1 referral to Sol) | 2026-08-20 |
-| #6048 | govrev D3: temporal contract v3 + Change Tape truth | 2026-08-20 |
-| #6047 | P0-ST: main-board risk-warning band ±5%→±10% effective 2026-07-06 (CN-LIMIT R6 wave) | 2026-08-20 |
-| #6046 | china-alpha: RIGHTS-0 source entitlement/rights registry | 2026-08-20 |
-| #6045 | china-alpha PR-0B: persist full intel_interest anatomy to the CN candidate plane | 2026-08-20 |
-| #6044 | fix(cs-v2-w1b): closed-bundle atomic persistence after W1A | 2026-08-20 |
-| #6043 | agentos(options): post-restoration census still 403; AD-1 not ready | 2026-08-20 |
-| #6042 | docs(china-alpha): freeze activation — Sol post-merge acceptance GO, freeze effective, three waves authorized | 2026-08-20 |
-| #6041 | fix(stocks): a subsidiary, brand or product line is not the issuer | 2026-08-20 |
-| #6040 | prophet board: live change on the gated cards, and one "Live now" heading | 2026-08-20 |
-| #6039 | docs(perf): continuation handoff through PR 3, and scout PR 4 | 2026-08-20 |
-| #6038 | research(gd1c): reconstruct leadership crack design era | 2026-08-20 |
-| #6037 | fix(grey-deer): GD-2R1 — semantic-correctness repair of the settled envelope | 2026-08-20 |
-| #6036 | docs(alpha-intel): FABLE-00 close-out — canonical K4-G precondition sources; next action = Sol dispatch FABLE-A | 2026-08-20 |
-| #6035 | docs(china-alpha): post-merge authority reconciliation — hold-merge incident DSC, final merged-object pins, AgentOS reality repair | 2026-08-20 |
-| #6034 | docs(agentos): rescue six orphaned WS:AGENT-OS executive records | 2026-08-20 |
-| #6033 | perf(edge): give every content-hashed public asset the immutable year it already earned | 2026-08-20 |
-| #6032 | records(grey-deer): Sol post-merge review — GD-2R1 commission, Gate 8 hold, GD-1C relay | 2026-08-20 |
-| #6031 | docs(agentos): D2P production close — DEFENSE-PROCUREMENT-V3 lifecycle seal | 2026-08-20 |
-| #6030 | fix(check_stock_dossier_integrity): heal three permanent-red guard defects | 2026-08-20 |
-| #6029 | fix(hk-board): the 18 "deterministic main reds" are a sparse-checkout artifact — mark them | 2026-08-20 |
-| #6028 | fix(ci): curate conviction-profile's scope — #6027 gave it whole-tree fallback smear | 2026-08-20 |
-| #6027 | fix(ci): move #5984's dossier suites to a gate:code job — gate:data never runs on a PR | 2026-08-19 |
-| #6026 | feat(grey-deer): GD-2 settled risk envelope + three-answer Macro hero | 2026-08-19 |
-| #6025 | records(prophet-lab): day-2 close-out — MP-1 Amendment 2 + W4.1 done + day-2 handoff | 2026-08-19 |
-| #6024 | ship-loop: bounded clearing path for authority-frozen merged heads | 2026-08-19 |
-| #6023 | ci: wire all five suites audit_unrun_tests reds on main (consolidates #6015 + #6016 + the unowned dossier three) | 2026-08-19 |
-| #6022 | fix(grey-deer): GD-4A — arm CN/HK forward-ledger advancement per-step in the Asia-close lane | 2026-08-19 |
-| #6021 | E2-D: Canonical Macro dossier glance from event_workspace.v1 | 2026-08-20 |
-| #6020 | ci: overlap contract-delta's head/base censuses, raise timeout margin | 2026-08-19 |
-| #6019 | records(grey-deer): Sol GD-1 acceptance — GD-1 closed, GD-1C prerequisite, GD-2/GD-4A commissioned | 2026-08-19 |
-| #6018 | agentos(options): live entitlement still blocked; reconcile AD-1 merged state | 2026-08-20 |
-| #6017 | ci: let data-health's workflow_run and schedule triggers actually plan | 2026-08-20 |
-| #6014 | fix(intraday-flow): survive first render when live quotes are still empty | 2026-08-19 |
-| #6013 | agentos: jam-recovery handoff + W-CONTRACT-DELTA wave (WS:CI-MERGE-CONTROL-PLANE) | 2026-08-19 |
-| #6012 | fix(cs-v2-w1a): clock-independent event identity + bundle re-observation | 2026-08-19 |
-| #6011 | design-system(C8-C): .mx ladder/mark primitives, --pv-buy retune off --up, touch-floor raises, specimen annotation | 2026-08-19 |
-| #6010 | ship-loop: retire semantic units main is not eligible to clear | 2026-08-19 |
-| #6009 | cn-limit R6-0: records-only landing of the Sol final architecture freeze | 2026-08-19 |
-| #6008 | agentos(govrev): unissued candidates self-retire — B2 and B3 both refused on evidence | 2026-08-20 |
-| #6007 | docs(cn-limit): G0 dependency census vs missing R6 freeze | 2026-08-19 |
-| #6006 | fix(i18n,render): stop re-wrapping vix_monitor's bilingual twins — unblock the estate-wide render lane | 2026-08-19 |
-| #6005 | ci: add differential contract-delta gate (PR-vs-base, never absolute) | 2026-08-19 |
-| #6004 | fix(govrev): bound the unaccounted-candidate excuse to the publisher's own vintage receipt | 2026-08-19 |
-| #6003 | docs(agentos): defense21 republish incident + heal recorded on the graph-republish DSC | 2026-08-19 |
-| #6002 | ci: cover two new import-closure edges — greens integration-baseline, unjams the merge train | 2026-08-19 |
-| #6001 | fix(live): keep the "$" a board baked when live.js patches its price | 2026-08-19 |
-| #6000 | perf(estate): drop the eager assistant tag from the last 519 archive pages, and guard it | 2026-08-19 |
-| #5999 | agentos: CA-TRUTH shipped — workstream state + handoff | 2026-08-19 |
-| #5998 | design(r4.2): C8-B reference repair — prose truth, ZH sector twin, error/loading states, evidence refresh | 2026-08-19 |
-| #5997 | govrev: candidate proof survives a reviewed-graph republish (unwedges the live lane + render gate) | 2026-08-19 |
-| #5996 | fix(china-special-sits): block-trade count saturated at the display cap (wave 1 follow-ups) | 2026-08-19 |
-| #5995 | feat(prophet-lab): commissioning prep — R2-first transport, baseline provisioning, e2e chain test | 2026-08-19 |
-| #5994 | docs(mp-1): Amendment 1 — C8 composition-cycle rulings (C8-A) | 2026-08-19 |
-| #5993 | perf(estate): stop shipping the 227 KB assistant bundle to the acquisition estate (1/2) | 2026-08-19 |
-| #5992 | docs(research_vault): Wave 4 production acceptance results + the 918-row corpus search gap | 2026-08-19 |
-| #5991 | docs(agentos): record the Saved Layout contract decision and the empty-layouts census | 2026-08-19 |
-| #5990 | rig(r4-composition): C8 dual-critic pass — receipts + verdict REVISE (MP-1 amendment + R4.2 chartered) | 2026-08-19 |
-| #5989 | Record E2-T1 production landing in Earnings Agent OS | 2026-08-19 |
-| #5988 | agentos: record the Terminal D-sweep's durable findings | 2026-08-19 |
-| #5987 | fix(china): W0.7 coverage banner cross-reads the tape before blaming the collectors | 2026-08-19 |
-| #5986 | fix(research_vault): publication integrity — the vault cannot report a success it did not achieve | 2026-08-19 |
-| #5985 | ci: wire three unrun suites (chat_launcher_stub, collectors_na_sentinel, template_site_sync_tokens) | 2026-08-19 |
-| #5984 | fix(stocks): stop the dossier estate publishing the wrong company | 2026-08-19 |
-| #5983 | feat(fif): FIF-2A authenticated canonical financial query bridge — Sol PASS | 2026-08-20 |
-| #5982 | docs(perf): continuation handoff for the 7-PR site performance remediation | 2026-08-19 |
-| #5981 | fix(ipo,quant-lab): stop raw NaN/inf sentinels from reaching site/ipo.html and site/quant_lab.html | 2026-08-19 |
-| #5980 | fix(analyzer,china): real display twins + percentile nesting fix | 2026-08-19 |
-| #5978 | fix(tests): three main reds where the assertion, not the artifact, was wrong | 2026-08-19 |
-| #5977 | fix(live-quotes): cover every visible live-change board, not just China | 2026-08-19 |
-| #5976 | fix(theme): assistant 404s on every nested route — resolve from the shared asset root, load on intent | 2026-08-19 |
-| #5975 | fix(china-special-sits): dimensional, population and freshness truth (4 P1 defects) | 2026-08-19 |
-| #5974 | feat(options-source): AD-1C0 — accrual failure-state durability, first-writer quality rule, log hardening | 2026-08-19 |
-| #5973 | agentos: W-GATE-SPLIT wave recorded on WS-CI-MERGE-CONTROL-PLANE (W1+W2 merged) | 2026-08-19 |
-| #5972 | fix(qledger): control clocks are registrar-local — ignore the dir, untrack the committed clock | 2026-08-19 |
-| #5971 | docs(prophet-fusion): accept PR-3D after natural ledgers proof | 2026-08-19 |
-| #5970 | fix(qledger): untrack committed control-evidence clock file + gitignore fence (fleet-wide T9 red) | 2026-08-19 |
 
 ---
 
