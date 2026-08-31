@@ -256,6 +256,51 @@ _CA_TABLE_COLS = [
 ]
 
 
+def _w8g_payload() -> tuple[dict, list[dict], str]:
+    """Render the real stocks-mode payload once for ZHC-509 contract assertions."""
+    import json
+    import re
+
+    vm = _w8g_vm()
+    html = _env().get_template("canada.html.j2").render(**vm, mode="stocks")
+    match = re.search(r'id="stocktable-data"[^>]*>(.*?)</script>', html, re.DOTALL)
+    assert match, "Canada stocktable-data block missing"
+    return vm, json.loads(match.group(1))["rows"], html
+
+
+def test_zhc509_ca_entry_status_serializes_owner_native_labels():
+    """Machine status survives unchanged beside the exact owner-native display pair."""
+    vm, serialized_rows, _html = _w8g_payload()
+    expected = {row["ticker"]: row["entry_signal"] for row in vm["setups"]["buy"]}
+
+    assert [row["ticker"] for row in serialized_rows] == list(expected)
+    for row in serialized_rows:
+        owner = expected[row["ticker"]]
+        assert row["entry_status"] == owner["status"]
+        assert row["entry_status_label"] == owner["headline"]
+        assert row["entry_status_label_zh"] == owner["headline_zh"]
+        assert row["entry_status_label"]
+        assert row["entry_status_label_zh"]
+
+
+def test_zhc509_ca_entry_formatter_uses_row_labels_not_status_slug():
+    """Entry rendering is row-aware bilingual copy; status remains the sort key."""
+    _vm_data, _rows, html = _w8g_payload()
+    import re
+
+    match = re.search(
+        r"\{key:'entry_status'.*?\},\s*\{key:'days_since_signal'",
+        html,
+        re.DOTALL,
+    )
+    assert match, "Entry-status column configuration missing"
+    column = match.group(0)
+    assert "fmt:function(v,row)" in column
+    assert "row.entry_status_label" in column
+    assert "row.entry_status_label_zh" in column
+    assert "replace(/_/g" not in column
+
+
 def test_w8g_ca_stocktable_data_block_present():
     """stocks mode must emit a <script type=application/json id=stocktable-data> block."""
     import json
