@@ -1643,6 +1643,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/entry_signal.py"
       - "engine/equity_factors.py"
@@ -6619,6 +6620,7 @@ jobs:
       - "engine/earnings_blackout.py"
       - "engine/earnings_catalyst.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/election_cycle.py"
       - "engine/entity_resolver.py"
       - "engine/entry_primitives.py"
@@ -7117,6 +7119,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
@@ -11231,7 +11234,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py tests/test_brain_exact_source_context.py tests/test_company_source_span.py -q
       - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
         run: >-
           python -m pytest
@@ -12172,6 +12175,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
