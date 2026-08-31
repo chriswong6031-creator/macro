@@ -1653,6 +1653,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/entry_signal.py"
       - "engine/equity_factors.py"
@@ -6646,6 +6647,7 @@ jobs:
       - "engine/earnings_blackout.py"
       - "engine/earnings_catalyst.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/election_cycle.py"
       - "engine/entity_resolver.py"
       - "engine/entry_primitives.py"
@@ -7154,6 +7156,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
@@ -10914,6 +10917,7 @@ jobs:
       - "tests/test_dashboard_template_render.py"
       - "tests/test_grade_us_board.py"
       - "tests/test_heal_stage_forward_ledger.py"
+      - "tests/test_macro_risk_dialog.py"
       - "tests/test_opportunity_timeline.py"
       - "tests/test_pick_lab_book.py"
       - "tests/test_pick_lab_cn_runner.py"
@@ -11043,7 +11047,7 @@ jobs:
       # No dependency widened: it renders Jinja templates only — jinja2 is already on
       # the install line above.  Measured 54s against this job's 245s body and 12m cap.
       - name: dashboard.html.j2 rendered-HTML contract (unrun backfill 2026-08-27)
-        run: python -m pytest tests/test_dashboard_template_render.py -q
+        run: python -m pytest tests/test_dashboard_template_render.py tests/test_macro_risk_dialog.py -q
   prophet-us-context-and-grades:
     # PROPHET US §W7 — the full-population candidate record: the PIT context store that
     # REMEMBERS each night's score, the forward grader that says what those names then did,
@@ -11275,7 +11279,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py tests/test_brain_exact_source_context.py tests/test_company_source_span.py -q
       - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
         run: >-
           python -m pytest
@@ -12226,6 +12230,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"

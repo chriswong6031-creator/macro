@@ -14,19 +14,25 @@ status: active
 program: prophet-us
 p0: PROPHET_FRESHNESS
 repos: [macro]
-owner: coo-fable
+owner: ceo-sol
 class: build
 blast_radius: reversible
 ambiguity: specified
 next_action: >
-  Execute child C0 from
-  agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md:
-  Chairman assigns the recommended Fable principal COO in the program-control
-  Slack thread; receiver ACKs, arms the exact-thread watcher, and performs
-  read-only production-truth recovery for Aug-26/Aug-27 plus the current
-  post-#6554/#6569/#6534 state. Do not modify code until C0 names one causal gap.
-  Architecture and completion law are frozen in
-  research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md.
+  Execute fresh child C2-A from
+  agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md.
+  C0 is accepted/terminal; do not reopen it. C2-A is the first still-live causal
+  dependency: the host-native close-pass lane can remain registered+locked in Git
+  while missing on disk, and current prepare_lane only has a weaker error-string +
+  prune recovery path that does not safely cover that state. Preferred avenue is
+  CTO Sol, receiver binding is CAPACITY_SELECTABLE, and current placement state is
+  WAITING_CAPACITY / needs_placement because CF2-I capacity-aware Executive
+  placement is not yet production-released. Do not turn that placement debt into
+  OPEN_PICKUP or routine Chairman account scheduling, and do not arm a receiver-
+  specific watcher until a lawful receiver exists. After C2-A code + actual Mac
+  Studio installer/preflight proof, separately reconcile C2-B backstop Massive
+  same-session coverage, C1 natural D12/permanence proof, C3 W-L2 breadth, C5
+  browser/degraded-state proof, then C6 three consecutive natural sessions.
 owns_paths:
   - scripts/close_pass_publish.py
   - scripts/close_pass_mirror.py
@@ -58,32 +64,47 @@ waves:
       Merged/deployed foundation: #5746 coverage path, #5760 host-native close
       clock, #5761 ruler/watchdog. Replay acceptance is historical foundation;
       current natural acceptance is W-ACCEPT.
+  - id: C2-A
+    title: Recover missing-but-locked host-native close-pass worktree
+    status: todo
+    depends_on: [W-L1R]
+    next_action: >
+      WAITING_CAPACITY / needs_placement. Use operation
+      breathing-c2-closepass-host-lane-repair-20260829-sol-001 and the 2026-08-29
+      C2-A handoff. PREFERRED_AVENUE=CTO Sol; CAPACITY_SELECTABLE. Require real-Git
+      reproduction + RED-before regression, structurally targeted recovery that
+      cannot touch unrelated worktrees, reviewed PR, existing installer deployment
+      to the Mac Studio, installed-bootstrap digest proof and non-publishing lane
+      readiness preflight. Weekend/pre-session preflight is not a C6 session green.
   - id: W-L2
     title: Current valid armed-level breadth outcome
     status: todo
     depends_on: [W-L1R]
     next_action: >
-      Use completion masterplan C3. Do not execute the old "raise/parallelize +
-      alerts" packet. #6554 now owns D12 correctness as BUILT_NOT_PROVEN;
-      process fan-out already exists; Availability/permanence owns publication
-      alerts; LIVE-ENTRY-RADAR owns tactical alerts. After D12 natural proof,
-      census current verified armed-level breadth and timing. Close by evidence
-      if the old gap is superseded; otherwise commission one measured bottleneck
-      repair without weakening parity/edge verification or inflating resources arbitrarily.
+      Use completion masterplan C3 after the delivery/availability prerequisites.
+      Do not execute the old "raise/parallelize + alerts" packet. #6554 owns D12
+      correctness as BUILT_NOT_PROVEN; process fan-out already exists;
+      Availability/permanence owns publication alerts; LIVE-ENTRY-RADAR owns tactical
+      alerts. After trustworthy natural input proof, census current verified
+      armed-level breadth and timing. Close by evidence if the old gap is superseded;
+      otherwise commission one measured bottleneck repair without weakening
+      parity/edge verification or inflating resources arbitrarily.
   - id: W-ACCEPT
     title: Live-session acceptance — three consecutive green sessions on the ruler
     status: in_progress
     depends_on: [W-L1R]
     next_action: >
-      Final acceptance follows completion masterplan C0/C1/C5/C6. Recover exact
-      Aug-26/Aug-27 receipts first. Aug-27 cannot be treated as a healthy whole
-      product merely from a fresh pass clock: #6569 proves the independent
-      Prophet-Live plane was fresh-empty/global-dark while the sentinel stayed
-      green. After the last relevant production-changing merge, accrue three
-      consecutive natural sessions with close_observed_at, first_candidate_at,
-      first_user_visible_at <=16:15 ET, >=95% same-session evaluable coverage,
-      100% universe accounting, truthful independent live/board clocks and real
-      desktop+narrow browser proof.
+      C0 is complete and binds the latest accepted failure evidence: 2026-08-26
+      FAIL (host lane_unprepared; GitHub backstop landed hours late with 251/1764 =
+      14.2% evaluated coverage) and 2026-08-27 FAIL (host lane_unprepared; no close
+      board; Prophet-Live fresh-clock/global-dark stale-pack state). No later durable
+      repair/acceptance proof was found in the 2026-08-29 GitHub/Slack restart
+      reconciliation. Do not infer later greens from absence of a record. After the
+      last relevant production-changing merge/deploy—including C2-A and any required
+      C2-B/Availability repair—accrue three consecutive genuine NYSE sessions with
+      close_observed_at, first_candidate_at, first_user_visible_at <=16:15 ET,
+      >=95% same-session evaluable coverage, 100% universe accounting, truthful
+      independent live/board clocks and real desktop+narrow browser proof.
 landmines:
   - "Completion architecture is research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md. Do not implement from the older 2026-08-08 W-L2 wording without reconciling this freeze."
   - "Freshness is a vector, not one timestamp: board as_of, reader first visibility, Prophet-Live pass/quote/non-vacuity, armed-pack as_of/completed_through, nightly source_asof and sentinel heartbeat are independent clocks."
@@ -99,6 +120,7 @@ landmines:
   - "GitHub cron is not a product clock; host-native close scheduling remains primary."
   - "Never splice a raw same-day close through a same-session split/dividend ambiguity; dark the name and let nightly settle it."
   - "The provisional board carries only the score evidence it can stand behind; never renormalise or impute omitted legs."
+  - "A locked missing close-pass worktree is not safely repaired by broad git worktree prune. Recovery must identify and reconcile only the exact production lane registration, or fail closed."
 do_not_redo:
   - "No third live/prophet_live writer."
   - "No new Massive WebSocket for Breathing."
@@ -108,7 +130,42 @@ do_not_redo:
   - "No Prophet rank/gate/entry-timing retune to solve delivery latency."
   - "No reconstruction of missing first_user_visible_at from candidate/R2/file timestamps."
   - "No arbitrary timeout/memory inflation standing in for measured causality."
+  - "Do not turn missing automated capacity placement into recurring Chairman numbered-account allocation."
 ---
+
+## State — 2026-08-29 CEO restart reconciliation
+
+Procedural pin: protected `mastermindx-market-intelligence/Mastermind@e3d1fe6bb454df10212ce6e13bf2e4e5160f7eb5`, `mastermind.sol_skillpack.v1` 1.0.1 / bootstrap-major 1 compatible. Macro reconciliation base: `2a45075ddb1139d3bcab6c6402f483040e0f6378`.
+
+### Program lifecycle
+
+- Parent program `breathing-completion-program-20260828-sol-001` remains ACTIVE.
+- C0 `breathing-c0-production-truth-20260828-sol-001` is TERMINAL/ACCEPTED by the explicit Sol STOP at Slack `1787917466.335309`; it must not be reopened.
+- A later parent-control triage correctly recorded `PARENT_ACTIVE_NO_SUCCESSOR`. The 2026-08-29 reconciliation found no subsequently commissioned Breathing child and no post-C0 GitHub/Slack receipt proving the close-pass host defect repaired.
+- Sol resumes end-to-end completion ownership; organizational owner is `ceo-sol`.
+
+### First still-live causal gap
+
+Accepted C0 production evidence identified the primary failure as `.claude/worktrees/closepass-host-lane` being registered+locked in Git while missing on disk. The launchd clock fired, but `prepare_lane` failed before close observation. Current `main` still contains only a partial corpse recovery: after `worktree add` failure it prunes/retries only when output contains `already registered`. A locked registration is intentionally retained by prune and the real missing+locked Git state has no regression test. Therefore C2-A is a genuine current code/host repair, not speculative rework.
+
+Fresh C2-A commission:
+
+```text
+operation_key: breathing-c2-closepass-host-lane-repair-20260829-sol-001
+handoff: agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md
+PREFERRED_AVENUE: CTO Sol
+WHY NOT FABLE: C0 already froze the product/authority boundary; this is difficult but bounded host/runner engineering.
+RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
+PLACEMENT_STATE: WAITING_CAPACITY / needs_placement
+```
+
+No worker-facing Slack commission and no receiver-specific watcher exists yet. Current `WS:EXECUTIVE-CAPACITY-FABRIC` says CF2-I (capacity-aware Executive placement) is still `todo` behind CF2-H0/P0, so no production-proven automated placement is available to claim. Current routing law explicitly forbids converting that absence into routine Chairman numbered-account scheduling or OPEN_PICKUP advertising.
+
+### What follows C2-A
+
+C2-B is separately bounded: prove/repair the GitHub backstop's same-session Massive credential/coverage path without disclosing credentials or absorbing Massive collector ownership. C0 showed the backstop path that actually ran on Aug-26 had no Massive key and evaluated only 251/1764 names. Current workflow expects `secrets.MASSIVE_API_KEY`; credential existence/value is not readable through the safe evidence surface used by this reconciliation, so no false "fixed" claim is made.
+
+Availability C1 remains a natural-proof dependency for D12/#6569/#6534; W-L2 C3 remains a measurement-first breadth question; C5 remains real browser/degraded-state acceptance; C6 remains three consecutive genuine post-change NYSE sessions. A weekend/pre-session C2-A preflight can restore the lane before the next close but cannot count as a market acceptance session.
 
 ## State — 2026-08-28 completion architecture freeze
 

@@ -245,10 +245,23 @@ touch them.
 **D1 — the source seal discards its own causal evidence.**
 `scripts/ingest_market_memory_sources_spy.py:474-482` returns on `not_eligible` without persisting
 `seal_state.transcript`, and `_collect_seal_observations` logs no observation. Every abstention is
-therefore causally unauditable forever. This is the mechanism that turned the Aug-25 gate into
-`RECEIPT_UNRESOLVED` in the first place, and it will do it again on every future abstention.
-Severity: this is the concrete instance of the recharter's `Production source-clock observability /
-abstention audit = BROKEN` row.
+therefore causally unauditable forever.
+
+**D1 did NOT cause the gate's prior `RECEIPT_UNRESOLVED` state, and this record must not be read as
+saying so.** Those are two different layers:
+
+- *Terminal gate classification.* The gate was `RECEIPT_UNRESOLVED` because the authentic
+  host/store receipts had not been recovered — everyone had searched GitHub/Slack/Linear/Agent OS,
+  which the writer never posts to. MM-G0 recovered those receipts and the terminal disposition is
+  now `ABSTAINED`. D1 played no part in that state and does not threaten it.
+- *Causal diagnosis, one layer down.* D1 destroys the answer to **why** the chain abstained
+  (`no_bar` vs `transport_error` vs `malformed`), retrospectively and permanently, for every
+  abstention it has already covered and every future one.
+
+D1's severity is therefore entirely at the causal layer: it is the concrete instance of the
+recharter's `Production source-clock observability / abstention audit = BROKEN` row, and it will
+destroy the cause of every future abstention until it is fixed. It never made, and cannot make, a
+terminal gate classification unresolvable.
 
 **D2 — `technicals-v2` reports a lawful no-admit as a hard failure.**
 It raises `TechnicalsV2SourceError` (exit 1) on real trading sessions when upstream is not eligible,

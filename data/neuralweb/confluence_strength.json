@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_strength.v1",
   "artifact_id": "confluence-strength",
-  "asof": "2026-08-26",
+  "asof": "2026-08-29",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -14358,19 +14358,6 @@
       "regime_bucket": "Q2"
     },
     {
-      "subject": "APP",
-      "as_of": "2026-08-19",
-      "direction": 1,
-      "horizon": "63.0",
-      "n_confirming_raw": 2,
-      "n_independent_confirming": 2.0,
-      "engines": [
-        "altdata",
-        "desk:stock_desk"
-      ],
-      "regime_bucket": "Q2"
-    },
-    {
       "subject": "ASTS",
       "as_of": "2026-08-19",
       "direction": 1,
@@ -14631,14 +14618,79 @@
       "regime_bucket": "Q2"
     },
     {
-      "subject": "CASY",
+      "subject": "ABBV",
       "as_of": "2026-08-20",
-      "direction": 1,
-      "horizon": "63.0",
+      "direction": -1,
+      "horizon": "5.0",
       "n_confirming_raw": 2,
       "n_independent_confirming": 2.0,
       "engines": [
-        "desk:stock_desk",
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "AMGN",
+      "as_of": "2026-08-20",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "AMZN",
+      "as_of": "2026-08-20",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "IRDM",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "LUNR",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "whitehouse"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "MDA",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
         "radar"
       ],
       "regime_bucket": "Q2"
@@ -14652,6 +14704,84 @@
       "n_independent_confirming": 2.0,
       "engines": [
         "altdata",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "MSFT",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "PFE",
+      "as_of": "2026-08-20",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "PG",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "radar"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "RDW",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "whitehouse"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "RKLB",
+      "as_of": "2026-08-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "whitehouse"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "SPCX",
+      "as_of": "2026-08-20",
+      "direction": -1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
         "radar"
       ],
       "regime_bucket": "Q2"
@@ -14770,6 +14900,19 @@
       "engines": [
         "radar",
         "track_record"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "KRMN",
+      "as_of": "2026-08-29",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata_conv",
+        "intel_hub"
       ],
       "regime_bucket": "Q2"
     },
@@ -15589,6 +15732,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-08-28T13:15:35Z",
+  "produced_at": "2026-08-30T05:45:43Z",
   "authority_check": []
 }
