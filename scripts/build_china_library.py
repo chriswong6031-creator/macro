@@ -764,7 +764,7 @@ def _overlay_deep_ohlc(out: list[tuple], group: str, min_rows: int = 300) -> int
             continue
         cache_last = _last_session(close)
         deep_last = _last_session(df["close"])
-        if cache_last is not None and (deep_last is None or deep_last < cache_last):
+        if deep_last is None or (cache_last is not None and deep_last < cache_last):
             stale += 1
             continue
         out[i] = (t, df["close"], df.get("high"), name, sector)
