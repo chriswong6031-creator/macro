@@ -250,9 +250,26 @@ function ensureStockDashCss(onReady) {
       if (link.parentNode) link.parentNode.removeChild(link);
       if (attempt < 3) {
         setTimeout(function () { attemptLoad(attempt + 1); }, 1500 * attempt);
+        return;
       }
       /* Fail soft after the final attempt: legacy page remains visible;
-         composer is not injected. */
+         composer is not injected.
+
+         PRA-401 signal (Sol REQUEST_REPAIR item 2). "No CSS implies no
+         dashboard" is the ratified behaviour and is deliberately NOT changed
+         here — the composer still does not mount, and the legacy page stays
+         visible and functional. What was missing was any way to know it had
+         happened: an independent reviewer found this path enlarged the failure
+         set of a frozen surface with no console assertion, beacon or
+         degraded-mode chip, so a stylesheet outage silently removed the whole
+         board for that user and left no trace.
+
+         Signalled through the estate's OWN established client seam —
+         console.warn('<Component>: <what failed>', detail) — as used by
+         site/stocktable.js, site/heatmap.js and site/watchstore.js. No
+         telemetry plane, no degraded-mode authority, no new state: one warning
+         on the terminal branch only. */
+      console.warn("StockDashCss: stylesheet failed after 3 attempts; composer not mounted, legacy page retained", link.href);
     };
     document.head.appendChild(link);
   }
