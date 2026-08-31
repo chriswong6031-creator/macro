@@ -1,8 +1,8 @@
 ---
 workstream: "WS:BREATHING-PLATFORM"
 session: "sol/modernize-mastermind-architecture-r0-recovery-20260831"
-model: "gpt-5.6-pro"
-ended_because: "architecture_carrier_ready_for_independent_review"
+model: sol
+ended_because: ci_handoff
 mission: >
   Recover the sole named R0 carrier for the Mastermind Reactive Projection Platform, replace its
   missing-effect state with a records-only architecture freeze and executable R1A plan, and leave
