@@ -4,13 +4,13 @@
 **Parent operation:** `modernize-mastermind-architecture-20260830-sol-001`  
 **Repository:** `mastermindx-market-intelligence/macro`  
 **Sole R0 carrier:** `sol/reactive-projection-platform-r0-20260830`  
-**Pickup base:** `20748fccbb9777f7e43c39acf19499bac4d011be`  
-**Protected Sol Skillpack:** `mastermindx-market-intelligence/Mastermind@eccf0a3fae8b8597c2ad0bc4f830e31b220415d2`  
+**Original pickup base:** `20748fccbb9777f7e43c39acf19499bac4d011be`  
+**Latest protected Sol procedure used for R0 correction:** `mastermindx-market-intelligence/Mastermind@dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c`  
 **Status:** **PROPOSED ARCHITECTURE FREEZE / RECORDS_ONLY / PRODUCTION_INERT**
 
 This document resolves the architecture question created by the Chairman's directive that Mastermind-X stop behaving like a once-per-night static publication and become a responsive market-intelligence product. It does **not** install a service, arm a scheduler, change a quote feed, alter ranking, publish a browser bundle, create an Executive Job, or make any live-capability claim.
 
-The architecture is deliberately evolutionary. Mastermind already has valuable canonical systems: nightly engines and ledgers, a Terminal Quote Plane, Macro's API serving tier, static-page progressive enhancement, Prophet-Live, close-pass publication, freshness sentinels, and a governed Agent/Executive operating system. The correct move is to make those systems cooperate through a small projection contract—not to replace them with a second realtime stack.
+The architecture is deliberately evolutionary. Mastermind already has valuable canonical systems: nightly engines and ledgers, a Terminal Quote Plane, Macro's API serving tier, static-page progressive enhancement, Prophet-Live, close-pass publication, freshness sentinels, and governed Agent/Executive operating systems. The correct move is to make those systems cooperate through a small projection contract—not to replace them with a second realtime stack.
 
 ---
 
@@ -19,14 +19,14 @@ The architecture is deliberately evolutionary. Mastermind already has valuable c
 Mastermind's responsive product architecture has exactly three semantic layers:
 
 1. **Durable baseline** — the nightly/close-pass generated artifact remains the complete, auditable and correction-safe baseline.
-2. **Deterministic live projection** — bounded current observations patch only fields explicitly owned by a live producer, with source time, receipt time, freshness, coverage, revision and correction semantics.
+2. **Deterministic live projection** — bounded current observations patch only fields explicitly owned by a live producer, with source time, projection time, feed freshness, market session, coverage and content-revision semantics.
 3. **Material intelligence delta** — slower intelligence is recomputed only when a governed materiality rule says the underlying evidence changed enough to matter. No model reruns merely because a quote tick arrived.
 
 The first implementation slice is **R1A — Intelligence Hub Market Pulse**:
 
-> For the names the nightly Intelligence Hub already selected, display current regular-session price and move from the canonical Terminal Quote Plane, update the whole visible pulse atomically, and state freshness/coverage honestly—without changing selection, order, score, stage, Prophet state, intelligence conclusion or trading authority.
+> For the names the nightly Intelligence Hub already selected, display current regular-session price and move from the canonical Terminal Quote Plane, update the whole visible pulse atomically, and state feed freshness, market session and coverage honestly—without changing selection, order, score, stage, Prophet state, intelligence conclusion or trading authority.
 
-R1A is a snapshot projection. Ordered deltas/SSE are a later independently reviewable wave. This is intentional: first prove one useful current-data vertical end to end, then generalize transport only from measured need.
+R1A is a stateless snapshot projection. Ordered deltas/SSE are a later independently reviewable wave. This is intentional: first prove one useful current-data vertical end to end, then generalize transport only from measured need.
 
 ---
 
@@ -38,14 +38,16 @@ A user opens a Mastermind page during or after the trading session and can immed
 
 - what the durable intelligence system concluded;
 - what the market is doing now;
-- whether the current layer is genuinely current, delayed, partial, stale or unavailable;
+- whether the feed is genuinely live, delayed or stale;
+- whether coverage is complete or partial;
+- whether the market is open or the displayed observation is a settled close;
 - whether the durable conclusion has been recomputed or is still the last settled baseline.
 
-The user must never mistake a recently fetched stale print for a current market observation, or a current quote for a newly recomputed intelligence verdict.
+The user must never mistake a recently fetched stale print for a live market observation, a partial response for full coverage, a settled close for an open market, or a current quote for a newly recomputed intelligence verdict.
 
 ### Machine/intelligence job
 
-The system must ingest current observations through the existing canonical owner, project only governed fields, preserve source and correction clocks, suppress out-of-order revisions, expose coverage and degradation, and leave all authoritative engines/ledgers untouched until their own cadence or promotion rules run.
+The system must ingest current observations through the existing canonical owner, project only governed fields, preserve source and projection clocks, reject out-of-order responses, expose coverage and degradation as separate axes, and leave all authoritative engines/ledgers untouched until their own cadence or promotion rules run.
 
 ### Product moat
 
@@ -78,11 +80,11 @@ The program is complete only when:
 | Macro public debranded quote projection precedent | `PROVEN_LIVE` | `app/dossier_quote.py` + dossier surface |
 | Generic static-page live-price progressive enhancement | `PARTIAL` | `templates/live.js`; mixed-latency and page-specific coverage |
 | Intelligence Hub current price markup | `PARTIAL` | nightly prices may render as `.nb-px`; current page-wide truth not proven |
-| Intelligence Hub page-complete Market Pulse | `DARK_OR_DISCONNECTED` | no bounded page contract, aggregate freshness/coverage or production acceptance |
+| Intelligence Hub page-complete Market Pulse | `DARK_OR_DISCONNECTED` | no bounded page contract, orthogonal freshness/coverage state or production acceptance |
 | Breathing Platform / Prophet same-session machinery | `PARTIAL` | useful live systems exist; current workstream still has separate causal acceptance gaps |
 | Shared ordered-delta/SSE projection transport | `NOT_BUILT` | deliberately deferred to R1B |
 | Materiality-gated intelligence recomputation | `PARTIAL` | domain-specific precedents exist; no universal authority |
-| This R0 architecture freeze | `NOT_BUILT` before this carrier lands | prior named branch had zero unique commits and no PR |
+| This R0 architecture freeze | `BUILT_NOT_PROVEN` while the draft PR is held | records exist; independent review and merge remain open |
 | R1A implementation | `NOT_BUILT` | architecture and implementation remain separate |
 
 No row should be averaged into “the site is live.” Different capabilities have different truth.
@@ -95,7 +97,8 @@ No row should be averaged into “the site is live.” Different capabilities ha
 |---|---|---|
 | Nightly intelligence, rankings, Prophet state, ledgers | Existing Macro engines and registered artifacts | Live layer may display beside them, never mutate or silently recompute them |
 | Current US quote observations | Terminal Quote Plane | Macro reads a bounded debranded projection; no second feed/store |
-| Public serving, auth, cache and rate policy | Existing Macro FastAPI serving tier | Add bounded route under existing middleware and deployment |
+| Public serving, auth, cache and rate policy | Existing Macro FastAPI serving tier | Add one deliberately public, bounded quote-only route under existing middleware and deploy ownership |
+| Static asset access boundary | `config/site_access.yml` + matching Caddy boundary | New controller is explicitly public presentation code or it does not load on the anonymous-public shell |
 | Durable organizational state | Agent OS | Record WS/DEC/DSC/handoff only; never runtime liveness |
 | Job/Attempt/Worker/Event lifecycle | Executive OS | R0 creates no lifecycle or dispatch |
 | User workspace/chart interaction | Terminal | Existing ticker-to-Terminal route remains sole interaction owner |
@@ -118,6 +121,7 @@ This program must not create:
 - a second scheduler/retry/liveness/heartbeat authority;
 - a second user identity or entitlement plane;
 - a second correction ledger;
+- a server-side monotonic sequence counter merely to decorate a stateless snapshot;
 - a general Kafka/Redis/Temporal platform before one user vertical proves the need;
 - a SPA rewrite merely to obtain fresh data;
 - continuous LLM/model inference on quote ticks;
@@ -145,15 +149,16 @@ The baseline is always renderable by itself. Live failure never empties the page
 
 ### Layer B — deterministic live projection
 
-A live projection may update only allowlisted observational fields, for example:
+A live projection may update only allowlisted observational fields:
 
 - regular-session price;
 - regular-session absolute move;
 - regular-session percentage move;
 - market session;
 - observation/source timestamp;
-- projection receive timestamp;
-- aggregate freshness and coverage state.
+- projection timestamp;
+- feed freshness;
+- coverage counts/state.
 
 It may not update:
 
@@ -183,24 +188,26 @@ A quote tick alone is never evidence that intelligence changed. R1A contains no 
 
 ---
 
-## 7. Projection envelope
+## 7. R1A projection envelope
 
-The platform contract begins with one versioned envelope:
+R1A is a stateless pull. Its response intentionally has **no server transport sequence**. Request ordering belongs to the browser's local generation counter; content ordering belongs to source time plus a deterministic content revision. A stream sequence appears only in R1B.
 
 ```json
 {
-  "schema": "reactive_projection.v1",
+  "schema": "intelligence_hub.market_pulse.v1",
   "projection": "intelligence_hub.market_pulse",
-  "snapshot_id": "opaque-stable-request-id",
-  "sequence": 42,
+  "snapshot_id": "opaque-response-identity",
   "generated_at": "2026-08-31T14:31:10.214Z",
   "source_owner": "terminal-market-data",
-  "source_revision": "measured upstream revision or null",
-  "status": "current",
+  "state": {
+    "availability": "available",
+    "freshness": "live",
+    "coverage": "partial"
+  },
   "coverage": {
     "requested": 30,
     "resolved": 29,
-    "current": 27,
+    "live": 27,
     "delayed": 2,
     "stale": 0,
     "missing": 1
@@ -213,14 +220,18 @@ The platform contract begins with one versioned envelope:
 ### Required envelope rules
 
 - `schema` and `projection` are exact, versioned identities.
-- `snapshot_id` identifies one response—not one durable lifecycle.
-- `sequence` is monotonic within one controller session/stream; lower sequences cannot repaint.
+- `snapshot_id` identifies one response; it grants no ordering, lifecycle or retry authority.
 - `generated_at` is projection creation time, not market source time.
 - `source_owner` names the canonical upstream program, not a vendor brand.
-- `status` is the conservative aggregate of item states.
+- `state.availability` is `available` only when at least one trustworthy item exists.
+- `state.freshness` is the conservative worst item freshness: `live`, `delayed`, or `stale`.
+- `state.coverage` is orthogonal: `complete` or `partial`. Empty coverage is a `503`, not a plausible `200`.
 - `coverage.requested` equals the sanitized requested-symbol count.
-- missing/error symbols remain accounted for; they cannot disappear from the denominator.
+- `coverage.resolved + coverage.missing == coverage.requested`.
+- `coverage.live + coverage.delayed + coverage.stale == coverage.resolved`.
+- Missing/error symbols remain accounted for; they cannot disappear from the denominator.
 - `errors` uses opaque allowlisted codes; no secret, vendor payload, filesystem path or raw exception.
+- A majority of live rows cannot hide one delayed/stale row; complete coverage cannot hide stale freshness, and live freshness cannot hide partial coverage.
 
 ### Item contract
 
@@ -232,13 +243,12 @@ The platform contract begins with one versioned envelope:
   "change_pct": 8.7379566918,
   "currency": "USD",
   "session": "regular",
-  "freshness": "current",
+  "freshness": "live",
   "observed_at": "2026-08-28T19:55:58Z",
-  "received_at": "2026-08-28T19:56:01Z",
+  "received_at": null,
   "published_at": "2026-08-28T19:56:01Z",
-  "revision": "source-derived-monotonic-token",
-  "regular_session_date": "2026-08-28",
-  "correction": false
+  "revision": "sha256-of-source-identity-time-and-values",
+  "regular_session_date": "2026-08-28"
 }
 ```
 
@@ -246,29 +256,43 @@ Rules:
 
 - `change_abs = price - regular_session_reference`.
 - `change_pct` is percent, never dollars.
+- `freshness` reuses the proven public projector vocabulary: `live`, `delayed`, `stale`.
+- `session` is independent: `regular`, `pre`, `post`, or `closed`.
+- “Live” may be displayed only for `freshness=live` **and** `session=regular`; a closed live-basis row is a settled close, not an open market.
 - `observed_at` is the source print/bar clock; it may legitimately stop after close.
-- `received_at` and `published_at` are transport/projection clocks.
-- freshness is session-aware and fails downward.
-- extended-hours data cannot be substituted into regular-session fields.
-- a missing reference produces null moves—not a fabricated zero.
-- unrecognized basis/session/freshness vocabulary degrades; it never earns “current.”
+- `received_at` is nullable because the current upstream contract may not expose a trustworthy receive clock. Never manufacture it from request time.
+- `published_at` is Macro projection time.
+- `revision` is a deterministic equality fingerprint, not a monotonic counter.
+- Extended-hours data cannot be substituted into regular-session fields.
+- A missing reference produces null moves—not a fabricated zero.
+- Unrecognized basis/session/freshness vocabulary degrades; it never earns `live`.
 
 ---
 
-## 8. Aggregate user states
+## 8. Server axes and client product states
 
-The visible Market Pulse has exactly these product states:
+The API expresses three orthogonal facts:
 
-| State | Meaning | Required behavior |
+| Axis | Values | Meaning |
 |---|---|---|
-| `current` | every resolved row needed for the visible pulse satisfies the current-session rule and coverage clears the accepted floor | update quote cluster atomically; label current/live only under the accepted language |
-| `delayed` | valid observations exist but one or more use an explicitly delayed basis, while coverage remains usable | show delayed language and source time; never animate as live |
-| `partial` | usable response but not all requested symbols resolved/current | paint only resolved symbols in one atomic commit, keep baked values for missing rows, print coverage |
-| `stale` | last-good projection exists but has exceeded the state-specific age budget | retain clearly stale last-good values or return to baked values according to the design; no live animation |
-| `unavailable` | no trustworthy projection can be obtained | durable baseline remains; concise unavailable status |
-| `baked` | page baseline before any current read or when live enhancement is disabled | print the baseline's own as-of; never call it live |
+| Availability | `available` or HTTP `503` | whether any trustworthy projection exists |
+| Feed freshness | `live`, `delayed`, `stale` | what the observation source proves |
+| Coverage | `complete`, `partial` | whether every requested symbol resolved |
 
-No state is inferred from HTTP 200 alone.
+The browser combines those facts with market session and its own lifecycle:
+
+| Client state | Required behavior |
+|---|---|
+| `baked` | complete durable baseline before live activation or when live display is disabled |
+| `loading` | baseline remains while one bounded request is in flight |
+| `live-complete` | atomically paint all rows; page-level live indicator permitted only while session is regular |
+| `live-partial` | paint resolved rows atomically, keep missing rows baked, print `resolved/requested` |
+| `delayed-complete` / `delayed-partial` | show delayed language and source time; never animate as live |
+| `stale-complete` / `stale-partial` | unmistakable stale language; retain last-good only inside the hard client bound |
+| `settled-complete` / `settled-partial` | session is closed and source is not stale; say settled close, never live market |
+| `unavailable` | baseline remains; concise unavailable status |
+
+These are presentation states, not server lifecycle or market authority. No state is inferred from HTTP `200` alone.
 
 ---
 
@@ -279,33 +303,42 @@ No state is inferred from HTTP 200 alone.
 Every implementation must keep separate:
 
 - **market/source time** — when the upstream observation occurred;
-- **receive time** — when the canonical quote owner received it;
+- **receive time** — only when the canonical quote owner actually supplies one;
 - **projection time** — when Macro built the public response;
 - **paint time** — when the browser committed the new visible state;
 - **baseline time** — when the durable page was generated.
 
-The UI chooses its language from market/source time plus session and basis, not from fetch/paint time.
+The UI chooses its language from market/source time plus session and feed freshness, not from fetch/paint time.
 
 ### Session-aware freshness
 
 During regular trading, a stalled print is a feed problem and the freshness budget is tight. After the market closes, the final regular-session print is supposed to stop; it remains a settled close rather than becoming stale minutes later. Pre/post/overnight observations are separate fields and states.
 
-### Ordering
+### Snapshot ordering
 
 A browser controller accepts a response only when:
 
-- the request belongs to the current route/controller generation;
-- its local request sequence is not older than the last committed response;
-- each item's revision/source time does not move backward without an explicit correction;
-- the symbol identity matches the DOM target.
+- the request belongs to the newest local controller generation;
+- the symbol identity matches an exact requested DOM target;
+- the item's source time is not older than the last committed source time for that symbol;
+- the response passes full schema and coverage validation before any DOM write.
+
+`snapshot_id` is never compared for ordering. R1A has no server sequence.
 
 ### Corrections
 
-A correction can replace a prior observation only when its identity matches and its revision wins. The controller commits the whole accepted response atomically. A late non-correction response cannot partially roll the page backward.
+R1A remains stateless on the server:
+
+- later local request generation + newer source time: accept;
+- later local request generation + older source time: reject that item and record an out-of-order measurement;
+- later local request generation + equal source time + equal revision: idempotent;
+- later local request generation + equal source time + different revision: treat as a source correction, accept atomically and record `same_timestamp_revision_change` telemetry.
+
+No `correction=true` claim is required from an upstream that does not supply one, and no browser/server correction ledger is created. The deterministic revision is an equality fingerprint only.
 
 ### Gaps and reconnect
 
-R1A is snapshot-based: a fresh snapshot closes any prior client gap. R1B ordered deltas must add explicit contiguous sequence/gap handling, with a bounded snapshot resync. Never add a hidden durable replay cursor database solely for browser reconnect.
+R1A is snapshot-based: a fresh snapshot closes any prior client gap. R1B ordered deltas must add explicit contiguous stream sequence/gap handling, with a bounded snapshot resync. Never add a hidden durable replay cursor database solely for browser reconnect.
 
 ---
 
@@ -336,6 +369,7 @@ JavaScript may mount/recompose canonical DOM and toggle state classes. It must n
 - no per-card request;
 - no client vendor access;
 - no server retry on a single page request;
+- no server sequence/cursor;
 - no background durable queue.
 
 This proves data/rights/time/browser/product semantics.
@@ -345,7 +379,7 @@ This proves data/rights/time/browser/product semantics.
 Only after R1A production proof may a separate wave add shared SSE for one or more proven high-value projections. It must have:
 
 - snapshot bootstrap;
-- monotonically increasing sequence;
+- monotonically increasing **stream** sequence;
 - heartbeat;
 - gap detection and bounded snapshot resync;
 - connection/rate/backpressure limits;
@@ -374,16 +408,33 @@ The browser never decides authority by comparing numbers locally.
 
 ---
 
-## 13. Rights, privacy and security
+## 13. Rights, access, privacy and security
+
+### Deliberate public boundary
+
+R1A's quote-only API is deliberately public because:
+
+- the Intelligence Hub HTML shell is anonymously reachable under the current serving law;
+- the payload contains only allowlisted market observations, no intelligence rows/scores, user data or private state;
+- the executed Massive enterprise redistribution addendum permits external API/display redistribution;
+- the proven dossier projection already establishes the public, debranded, loopback-only pattern.
+
+That decision must be explicit in the module docstring and pinned by an anonymous-access test. “No `Depends` happened to be added” is not an access policy.
+
+The controller asset is presentation code required by the public shell. It must be added to `config/site_access.yml` **and** the byte-for-byte matching Caddy public-asset boundary in the same PR, with `tests/test_site_access_boundary.py` proving parity. Otherwise the shell can load while the controller is default-gated and silently inert.
+
+### Data and abuse controls
 
 - The Terminal Quote Plane remains credential/vendor owner.
 - Macro consumes only loopback/private server output and returns a debranded allowlist.
-- Vendor/source/basis/anchor names that are not licensed for public display stay server-side.
+- Vendor/source/basis/anchor names stay server-side even though attribution is not contractually required.
 - No vendor key, internal host, path, raw upstream body or exception crosses the route.
 - The route rejects redirect egress and non-loopback upstream configuration.
-- Symbols are normalized by the existing safe-symbol contract, deduplicated and capped.
+- Symbols are normalized by the existing safe-symbol contract, deduplicated and capped at 80.
+- Rate limiting is **symbol-weighted**, not request-count-only: each unique requested symbol consumes one unit in bounded client and peer rolling budgets, preventing an 80-symbol batch from costing the same as one dossier read.
+- The page's normal 60-second refresh and maximum rendered universe must fit comfortably inside the accepted budget; the exact limits are printed and mutation-tested.
 - Response bodies and upstream reads have hard byte caps.
-- Existing API no-store/cache policy and rate limiting apply.
+- Existing API no-store/cache policy applies.
 - R1A uses no personal Portfolio/Watchlist state and adds no new privacy class.
 - Any future personalized projection must use verified existing identity and owner-scoped state; it cannot reuse this public response as an entitlement shortcut.
 
@@ -394,12 +445,14 @@ The browser never decides authority by comparing numbers locally.
 R1A must measure:
 
 - request count;
+- requested symbol-units;
 - sanitized symbol count;
 - upstream latency;
 - total projection latency;
-- response state;
-- requested/resolved/current/delayed/stale/missing counts;
-- correction and out-of-order suppression counts;
+- availability/freshness/coverage axes;
+- requested/resolved/live/delayed/stale/missing counts;
+- same-timestamp revision changes;
+- out-of-order item suppression counts;
 - client first-paint and refresh success/failure;
 - controller fallback reason;
 - browser interaction continuity for ticker-to-Terminal.
@@ -409,7 +462,7 @@ Initial acceptance budgets, subject to measurement rather than silent retuning:
 - route p95 under 2.5 seconds;
 - one upstream batch read per browser refresh;
 - no unbounded payload;
-- zero false-current rows in adversarial fixtures;
+- zero false-live rows in adversarial fixtures;
 - 100% requested-universe accounting;
 - no rank/order/score/stage changes;
 - no page-wide mixed-response paint;
@@ -424,18 +477,20 @@ Telemetry reports behavior; it grants no health or authority.
 | Failure | Response |
 |---|---|
 | Terminal Quote Plane unavailable | one bounded failure, no retry storm; baseline + unavailable state |
-| Upstream returns partial symbols | `partial`, denominator preserved, missing rows stay baked |
-| Unknown basis/session/clock | degrade item; never current |
+| Upstream returns partial symbols | coverage=`partial`, denominator preserved, missing rows stay baked; freshness remains separately truthful |
+| Unknown basis/session/clock | degrade item; never `live` |
 | Source timestamp absent/unparseable | stale/unavailable according to contract, never assumed fresh |
-| Late older request | suppress |
-| Explicit newer correction | atomically replace matching row |
-| Future clock beyond tolerance | refuse current classification |
+| Late older request generation | suppress entire response |
+| New request contains older item source time | suppress that item and recompute truthful coverage |
+| Same source time, changed revision on later request | accept as correction and record telemetry |
+| Future clock beyond tolerance | refuse live classification |
 | Browser hidden | pause refresh; resume with one fresh snapshot |
 | JavaScript disabled | baseline remains complete and honestly dated |
 | Live-price user setting disabled | remain baked; no request |
-| Route returns malformed schema | reject entire response; retain last-good/baked |
+| Controller asset gated/missing | serving-boundary test fails; production proof cannot pass |
+| Route returns malformed schema/coverage math | reject entire response; retain last-good/baked |
 | Existing Terminal click target | remains operative before and after price repaint |
-| Coverage below useful threshold | partial or unavailable; never cosmetically “live” |
+| Coverage below useful threshold | partial or unavailable; never cosmetically complete/live |
 
 ---
 
@@ -455,7 +510,7 @@ R0 makes no runtime capability live.
 
 ### R1A — Intelligence Hub Market Pulse
 
-One independently useful user vertical: canonical quote plane → bounded public batch projection → atomic Intelligence Hub display → production/browser proof.
+One independently useful user vertical: canonical quote plane → bounded public batch projection → public controller asset → atomic Intelligence Hub display → production/browser proof.
 
 ### R1B — shared ordered-delta transport
 
@@ -487,11 +542,12 @@ Each wave receives a separate operation identity, exact carrier and proof law.
 
 - US symbols already surfaced by the Intelligence Hub baseline.
 - Current regular-session price and absolute/percentage move.
-- One page-level aggregate freshness/coverage state.
+- Separate page-level feed freshness, market session and coverage state.
+- Deliberately public quote-only API and controller asset boundary.
 - Bilingual dark/light desktop/narrow presentation.
 - Existing ticker-to-Terminal action.
-- Current, delayed, partial, stale, unavailable and baked behavior.
-- Browser, API, rights and telemetry proof.
+- Live, delayed, partial, stale, settled, unavailable and baked behavior.
+- Browser, API, rights, access, abuse and telemetry proof.
 
 ### Excluded
 
@@ -508,15 +564,18 @@ Each wave receives a separate operation identity, exact carrier and proof law.
 
 ### Production proof
 
-R1A is not accepted until a real page proves, in both normal and degraded states:
+R1A is not accepted until a real page proves, in normal and degraded states:
 
-- visible current values came from the canonical quote projection;
+- visible values came from the canonical quote projection;
 - quote, absolute move and percent are one internally consistent regular-session tuple;
-- aggregate state and coverage match item truth;
+- feed freshness, market session and coverage independently match item truth;
+- anonymous shell can load the intended public controller and call the deliberately public route;
+- weighted rate limits prevent batch amplification while normal cadence succeeds;
 - the nightly order/scores/stages are byte/semantic invariant;
 - one refresh produced one batch route call, not N card calls;
 - a forced outage leaves the durable baseline usable;
 - late/out-of-order responses cannot roll the page backward;
+- equal-time changed-content correction can land without a server correction ledger;
 - ticker-to-Terminal continues to work;
 - dark/light × EN/ZH × 1440/390 evidence is reviewed.
 
@@ -532,7 +591,9 @@ R0 may be accepted only when:
 - current protected procedure and current Macro base are recorded;
 - an independent principal reviewer finds no duplicate authority/state/transport plane;
 - R1A is executable without architectural invention;
-- failure/time/correction/rights/one-DOM-owner rules are testable;
+- failure/time/correction/rights/access/one-DOM-owner rules are testable;
+- the stateless snapshot carries no fake server sequence or correction authority;
+- freshness, session and coverage are orthogonal rather than collapsed into a false-green status;
 - the PR remains records-only and production inert;
 - the worker/reviewer dialogue is explicitly closed.
 

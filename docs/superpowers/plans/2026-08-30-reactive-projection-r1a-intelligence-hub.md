@@ -4,7 +4,7 @@
 
 **Goal:** Add one page-complete, honestly labelled, batched current-price-and-move projection to the existing Intelligence Hub without changing any intelligence authority.
 
-**Architecture:** Reuse the Terminal Quote Plane through Macro's existing loopback public-projection pattern. Extract shared quote semantics once, expose one bounded batch API, hydrate durable Intelligence Hub markup through one route-scoped controller, and prove normal/degraded product behavior. Do not build streaming or a generic platform in this wave.
+**Architecture:** Reuse the Terminal Quote Plane through Macro's existing loopback public-projection pattern. Extract shared quote semantics once, expose one deliberately public bounded batch API, hydrate durable Intelligence Hub markup through one route-scoped controller, open only that controller asset through the existing serving boundary, and prove normal/degraded product behavior. Do not build streaming or a generic platform in this wave.
 
 **Tech Stack:** Python 3, FastAPI, Jinja2, vanilla JavaScript, pytest, existing browser/evidence harnesses.
 
@@ -17,7 +17,13 @@
 - Nightly Intelligence Hub selection/order/score/stage/stance/entry state is immutable in this wave.
 - One browser controller owns R1A quote nodes; generic `live.js` must not own the same DOM.
 - One batch route call per refresh, 1–80 unique symbols, one upstream read, no retry.
-- Source/market time, receive time, projection time and baseline time remain distinct.
+- The route is deliberately public quote-only access; the decision is printed and tested.
+- The controller asset must be public in both `config/site_access.yml` and the matching Caddy boundary.
+- Rate limits are symbol-weighted; an 80-symbol request cannot cost one ordinary request slot.
+- Feed freshness, market session and coverage are separate facts.
+- R1A is stateless: no server sequence, cursor or correction ledger.
+- Browser request order uses a local generation; item order uses source time plus revision equality.
+- Source/market time, optional receive time, projection time and baseline time remain distinct.
 - `chg` is percentage, not dollars; absolute move is derived.
 - Freshness is session-aware and fails downward.
 - Provider/source/basis/anchor names are not public payload/UI.
@@ -56,10 +62,12 @@ def test_shared_projection_treats_chg_as_percent():
     )
     assert projected.change_pct == pytest.approx(HUB_NVDA_RTH["chg"])
 
+
 def test_shared_projection_keeps_settled_close_valid_after_hours():
     projected = project_regular_quote(HUB_NVDA_CLOSED, ticker="NVDA", now=CLOSED_NOW)
     assert projected.session == "closed"
     assert projected.freshness != "stale"
+
 
 def test_extended_move_never_replaces_regular_move():
     projected = project_regular_quote(HUB_OPPOSITE_SIGNS, ticker="NVDA", now=NOW)
@@ -69,8 +77,6 @@ def test_extended_move_never_replaces_regular_move():
 
 - [ ] **Step 2: Run the new suite to verify it fails before extraction**
 
-Run:
-
 ```bash
 python3 -m pytest tests/test_public_quote_projection.py -q
 ```
@@ -78,8 +84,6 @@ python3 -m pytest tests/test_public_quote_projection.py -q
 Expected: collection/import failure because the shared module/interface does not yet exist.
 
 - [ ] **Step 3: Implement the minimal pure module**
-
-Implement immutable/pure projection logic with:
 
 ```python
 @dataclass(frozen=True)
@@ -90,23 +94,26 @@ class PublicQuote:
     change_pct: float | None
     currency: str | None
     session: Literal["regular", "pre", "post", "closed"]
-    freshness: Literal["current", "delayed", "stale"]
+    freshness: Literal["live", "delayed", "stale"]
     observed_at: str
     received_at: str | None
+    published_at: str
     regular_session_date: str | None
     revision: str
-    correction: bool = False
 ```
 
-`revision` must be deterministically derived from source-owned identity/time/value fields, not `now`.
+Rules:
+
+- `revision` is a deterministic equality fingerprint over source identity/time and projected values; it is not a monotonic counter.
+- `received_at` is null unless the current upstream exposes a trustworthy receive clock.
+- `published_at` is supplied by the route assembler, not used to classify freshness.
+- Never add `correction=true` unless the canonical upstream actually supplies a correction fact. R1A infers equal-time changed-content correction client-side.
 
 - [ ] **Step 4: Replace dossier-internal duplicate semantics with the shared function**
 
 Keep dossier-specific HTTP, rate limiting and schema assembly in `app/dossier_quote.py`; remove only logic now owned by `public_quote_projection.py`.
 
 - [ ] **Step 5: Run shared + dossier tests**
-
-Run:
 
 ```bash
 python3 -m pytest \
@@ -115,19 +122,20 @@ python3 -m pytest \
   tests/test_dossier_live_quote_surface.py -q
 ```
 
-Expected: all pass; existing dossier response fixtures unchanged except internal refactor.
+Expected: all pass; existing dossier response fixtures remain semantically unchanged.
 
 - [ ] **Step 6: Mutation-check the load-bearing guards**
 
-At minimum verify each mutation reds the targeted test:
+Each mutation must red a targeted test:
 
 ```text
 read chg as absolute dollars
-classify freshness from fetch time
+classify freshness from projection time
 apply regular-session stale bound while closed
-allow unknown basis to be current
+allow unknown basis to be live
 use extChg as day move
 accept prevClose == 0 for percentage derivation
+fabricate received_at from request time
 ```
 
 Restore exact code and rerun the three suites green.
@@ -142,12 +150,12 @@ git commit -m "refactor(quotes): share honest public quote projection"
 
 ---
 
-### Task 2: Add the bounded Intelligence Hub batch API
+### Task 2: Add the deliberately public bounded batch API
 
 **Files:**
 - Create: `app/intelligence_hub_market_pulse.py`
 - Modify: `app/main.py`
-- Modify only if required by current owner inventory: `app/deploy/update.sh`
+- Modify only if current owner inspection disproves the existing `app/*.py` trigger: `app/deploy/update.sh`
 - Test: `tests/test_intelligence_hub_market_pulse_api.py`
 
 **Interfaces:**
@@ -170,25 +178,42 @@ def test_batch_route_reads_upstream_once_for_thirty_symbols(client, fake_hub):
     assert fake_hub.calls == 1
     assert fake_hub.last_symbols == [f"T{i:02d}" for i in range(30)]
 
-def test_partial_response_preserves_denominator_and_request_order(client, fake_hub):
+
+def test_partial_response_keeps_freshness_and_coverage_orthogonal(client, fake_hub):
     response = client.get(
         "/api/intelligence-hub/market-pulse?symbols=NVDA,AAPL,MSFT"
     )
     body = response.json()
-    assert body["status"] == "partial"
+    assert body["state"] == {
+        "availability": "available",
+        "freshness": "live",
+        "coverage": "partial",
+    }
     assert body["coverage"] == {
         "requested": 3,
         "resolved": 2,
-        "current": 2,
+        "live": 2,
         "delayed": 0,
         "stale": 0,
         "missing": 1,
     }
     assert [row["symbol"] for row in body["items"]] == ["NVDA", "MSFT"]
     assert body["errors"] == [{"symbol": "AAPL", "code": "quote_unavailable"}]
+    assert "sequence" not in body
 ```
 
-Also test 0, >80, duplicate/order, invalid symbol, no usable rows, redirect, timeout, oversize, malformed JSON, unknown basis, provider-field absence and no retry.
+Also test:
+
+- anonymous access succeeds and is documented as intentional;
+- signed-in access has the same quote semantics;
+- 0, >80, duplicate/order, invalid symbol;
+- no usable rows;
+- redirect, timeout, oversize, malformed JSON;
+- unknown basis/session/clock;
+- provider-field absence;
+- no retry;
+- no server cursor/sequence/correction state;
+- symbol-weighted normal cadence and exhaustion.
 
 - [ ] **Step 2: Run the API suite red**
 
@@ -202,9 +227,19 @@ Expected: import/route failures.
 
 Use the existing safe ticker validator. Preserve first occurrence order, reject invalid members and reject >80 unique symbols. Do not silently drop invalid input.
 
-- [ ] **Step 4: Implement one bounded loopback read**
+- [ ] **Step 4: Implement symbol-weighted rate limiting**
 
-Use:
+Use the existing edge-resolved client and peer identity pattern, but store bounded rolling `(timestamp, symbol_units)` entries. Each unique symbol costs one unit. Expire old units before admission and cap identity cardinality. Print exact client/peer budgets as constants and test:
+
+```text
+largest intended page request at 60-second cadence + reasonable manual refreshes -> allowed
+repeated 80-symbol amplification -> 429
+one-symbol dossier behavior -> unchanged
+```
+
+Do not rewrite the global rate limiter or create persistent quota state.
+
+- [ ] **Step 5: Implement one bounded loopback read**
 
 ```text
 default base: http://127.0.0.1:3100
@@ -216,25 +251,22 @@ attempts: exactly one
 
 Assert loopback per request so a bad environment disables only this route.
 
-- [ ] **Step 5: Build the envelope and aggregate state**
-
-Aggregation order must be conservative:
+- [ ] **Step 6: Build the stateless envelope**
 
 ```text
 zero usable -> 503
-any stale -> stale unless product rule explicitly demotes to partial
-any delayed -> delayed
-missing with usable -> partial
-otherwise current
+otherwise availability=available
+freshness = worst(live, delayed, stale)
+coverage = complete iff missing == 0 else partial
 ```
 
-Do not let a majority of current rows hide a stale/delayed row; if the final implementation chooses `partial` as the headline for mixed coverage, include `freshest_state`/`worst_state` only if the spec is amended before coding. Do not invent ambiguous vocabulary during implementation.
+Validate both arithmetic identities. `snapshot_id` is opaque identity only. Do not add a server sequence/cursor or correction map.
 
-- [ ] **Step 6: Register through the existing app owner**
+- [ ] **Step 7: Register through the existing app owner**
 
-Add the router using the existing fail-closed optional-router pattern. Ensure deployment restart/integrity paths include the new module through the existing mechanism.
+Add one direct router import/include in `app/main.py`, matching the dossier precedent. The module docstring must say “deliberately public quote-only projection” and explain why. Confirm current `app/deploy/update.sh` already restarts on `app/*.py`; change it only if fresh inspection proves otherwise.
 
-- [ ] **Step 7: Run API + app import tests**
+- [ ] **Step 8: Run API + app import tests**
 
 ```bash
 python3 -m pytest \
@@ -245,20 +277,24 @@ python3 -c "import app.main; print('app import ok')"
 
 Expected: pass and exactly one route registration.
 
-- [ ] **Step 8: Mutation-check one-call/debrand/coverage laws**
+- [ ] **Step 9: Mutation-check access, one-call, debrand and state axes**
 
 Mutations that must fail:
 
 ```text
 loop over symbols and read upstream N times
 drop missing symbols from requested denominator
+collapse partial coverage into freshness
+let a majority of live rows hide one delayed/stale row
 forward source/basis/anchor_source
 retry once after timeout
 call a non-loopback URL
-mark unknown basis current
+mark unknown basis live
+count every batch as one rate unit
+add/accept a server sequence field
 ```
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add app/intelligence_hub_market_pulse.py app/main.py \
@@ -266,7 +302,7 @@ git add app/intelligence_hub_market_pulse.py app/main.py \
 git commit -m "feat(intel-hub): add batched market pulse projection"
 ```
 
-Omit `app/deploy/update.sh` from `git add` if current owner inspection proves no change is needed.
+Omit `app/deploy/update.sh` if unchanged.
 
 ---
 
@@ -281,7 +317,10 @@ Omit `app/deploy/update.sh` from `git add` if current owner inspection proves no
 - Consumes: current Intelligence Hub `hub` view model and nightly price fields.
 - Produces:
   - `[data-ihmp-root]`
-  - `[data-ihmp-status]`
+  - `[data-ihmp-availability]`
+  - `[data-ihmp-freshness]`
+  - `[data-ihmp-session]`
+  - `[data-ihmp-coverage]`
   - `[data-ihmp-symbol]`
   - `[data-ihmp-price]`
   - `[data-ihmp-abs]`
@@ -290,20 +329,9 @@ Omit `app/deploy/update.sh` from `git add` if current owner inspection proves no
 
 - [ ] **Step 1: Write surface tests**
 
-Assert the rendered page:
+Assert durable markup, `aria-live="polite"`, exact symbols, all quote slots, all state-axis slots, and no R1A target carrying generic `.nb-px`/`.nb-chg` ownership.
 
-```python
-assert 'data-ihmp-root' in html
-assert 'data-ihmp-status' in html
-assert 'data-ihmp-symbol="NVDA"' in html
-assert 'data-ihmp-price' in html
-assert 'data-ihmp-abs' in html
-assert 'data-ihmp-pct' in html
-assert 'class="nb-px' not in market_pulse_target_fragment
-assert 'aria-live="polite"' in html
-```
-
-Add invariance tests that snapshot command ticker order, opportunity score, stage, entry badge and stance before/after adding the markup.
+Add invariance tests snapshotting command ticker order, opportunity score, stage, entry badge and stance before/after the markup change.
 
 - [ ] **Step 2: Run the surface suite red**
 
@@ -313,40 +341,38 @@ python3 -m pytest tests/test_intelligence_hub_market_pulse_surface.py -q
 
 Expected: missing markup.
 
-- [ ] **Step 3: Add the compact page-level status instrument**
+- [ ] **Step 3: Add the compact page-level state instrument**
 
-Place it near the hero/state command area. Tier-1 text must remain under doctrine budgets and always answer what the numbers mean:
+Tier-1 phrases combine the orthogonal facts:
 
 ```text
 Baseline: Prices from the latest settled build
 Loading: Checking current prices
-Current: Current market pulse · 29/30 names
-Delayed: Delayed market pulse · 29/30 names
-Partial: Current prices for 27/30 names
+Live + complete: Live market pulse · 30/30 names
+Live + partial: Live prices for 27/30 names
+Delayed + complete: Delayed market pulse · 30/30 names
+Delayed + partial: Delayed prices · 27/30 names
+Settled: Settled close · 30/30 names
 Stale: Market pulse has stopped updating
 Unavailable: Current prices temporarily unavailable
 ```
 
-Provide equally plain Chinese strings. Technical clocks/coverage details belong in `data-tip-en/zh`.
+Provide equally plain Chinese. Technical clocks and error codes belong in `data-tip-en/zh`.
 
 - [ ] **Step 4: Add stable row quote clusters**
 
-Render baseline price and, when references exist, coherent absolute/percent moves. Each cluster must be addressable by exact symbol and remain visually compact.
+Render baseline price and, when references exist, coherent absolute/percent moves. Do not make the cluster a second ticker link or change `.tk` labels.
 
-Do not make the price cluster a second ticker link. Do not remove/change `.tk` ticker labels.
-
-- [ ] **Step 5: Author governed CSS in the template/design owner**
-
-Use existing tokens. Explicitly adjudicate:
+- [ ] **Step 5: Author governed dark and light CSS**
 
 ```text
-DARK: graphite instrument, luminance step, restrained semantic pulse at page level.
+DARK: graphite instrument, luminance step, restrained page-level semantic pulse.
 LIGHT: white research material, cool canvas contrast, hairline + small shadow, quiet rail; no glow translation.
 ```
 
-Use `--ink-up`/`--ink-down`; no literal directional colors. No JS stylesheet injection.
+Use `--ink-up`/`--ink-down`; no literal directional colors and no JS stylesheet injection.
 
-- [ ] **Step 6: Run render and surface tests**
+- [ ] **Step 6: Run render and surface guards**
 
 ```bash
 python3 -m scripts.build_intel_hub
@@ -355,8 +381,6 @@ python3 scripts/check_template_site_sync.py
 python3 scripts/check_title_i18n.py
 python3 scripts/check_validated_claims.py
 ```
-
-Expected: pass and generated page contains the same governed selectors.
 
 - [ ] **Step 7: Commit**
 
@@ -367,16 +391,19 @@ git add templates/intelligence_hub.html.j2 \
 git commit -m "feat(intel-hub): render durable market pulse surface"
 ```
 
-Commit the generated file only if current repository law/build output requires it for this page.
+Commit the generated file only if current repository law requires it for this page.
 
 ---
 
-### Task 4: Add one atomic route-scoped controller
+### Task 4: Add one atomic route-scoped controller and public asset boundary
 
 **Files:**
 - Create: `site/assets/js/intelligence-hub-market-pulse.js`
 - Modify: `templates/intelligence_hub.html.j2`
+- Modify: `config/site_access.yml`
+- Modify: `app/deploy/Caddyfile`
 - Test: `tests/test_intelligence_hub_market_pulse_client.py`
+- Test: `tests/test_site_access_boundary.py`
 - Test: `tests/test_lens_nested_control_taps.py` only if shared click routing needs an explicit regression
 
 **Interfaces:**
@@ -385,99 +412,108 @@ Commit the generated file only if current repository law/build output requires i
 
 - [ ] **Step 1: Write client contract tests**
 
-Use the existing JS/browser harness to prove:
+Prove:
 
 ```text
 30 row nodes -> one fetch
-partial response -> resolved nodes update in one RAF, missing stays baked
-old request resolves after new request -> old response ignored
-lower sequence/revision -> ignored
-explicit winning correction -> accepted
+partial coverage -> resolved nodes update in one RAF, missing stays baked
+old local request generation resolves after new -> old response ignored
+older source-time item -> suppressed and coverage recomputed
+same source time + equal revision -> idempotent
+same source time + changed revision in later generation -> correction accepted
+snapshot_id changes -> no ordering effect
 document.hidden -> no refresh
 visibility resume -> exactly one refresh
 live setting disabled -> zero fetches
-malformed schema/coverage -> zero DOM mutation
+malformed schema/state/coverage -> zero DOM mutation
 score/order/stage nodes -> unchanged
 ```
 
-- [ ] **Step 2: Run the client suite red**
+- [ ] **Step 2: Write serving-boundary tests red**
+
+Prove the exact controller path must exist in both `config/site_access.yml` and Caddy's public asset exclusion, and that no signal-bearing JSON path is newly public.
 
 ```bash
-python3 -m pytest tests/test_intelligence_hub_market_pulse_client.py -q
+python3 -m pytest \
+  tests/test_intelligence_hub_market_pulse_client.py \
+  tests/test_site_access_boundary.py -q
 ```
 
-Expected: controller missing.
+Expected: controller/boundary missing.
 
 - [ ] **Step 3: Implement immutable response validation**
 
-Validate:
+Validate exact schema/projection, three state axes, finite values, allowlisted session/freshness, requested unique symbols, coverage arithmetic and timestamps. Reject the whole response before any DOM write when envelope-level truth is malformed.
 
-- exact schema/projection;
-- finite nonnegative price;
-- nullable coherent moves;
-- allowlisted session/freshness;
-- item symbols are requested and unique;
-- coverage arithmetic equals actual rows/errors;
-- sequence is finite integer;
-- timestamps parse where required.
-
-Build a candidate map without touching DOM.
-
-- [ ] **Step 4: Implement lifecycle and one-request refresh**
+- [ ] **Step 4: Implement local lifecycle and one-request refresh**
 
 Use one `AbortController`, local generation and in-flight guard. Do not create a queue. Schedule the next refresh only after completion and visibility check.
 
-- [ ] **Step 5: Implement atomic paint**
+- [ ] **Step 5: Implement per-item correction/order handling**
+
+Maintain an in-memory map of last committed `{observedAt, revision}`. Suppress older source times. Treat equal-time changed revision on a later local generation as correction. Recompute resolved/missing/freshness/coverage from accepted items before paint; never show the server's original complete count after suppressing one item.
+
+- [ ] **Step 6: Implement atomic paint**
 
 Inside one `requestAnimationFrame`:
 
 1. update every accepted row's price/move/class/data state;
-2. restore/retain baked values for rows dictated by state;
-3. update the one page-level status, coverage and clock;
+2. retain baked values for missing/suppressed rows;
+3. update feed freshness, session, coverage and clock;
 4. publish one polite live-region change.
 
 No intermediate page state may combine response A prices with response B status.
 
-- [ ] **Step 6: Preserve Terminal interaction**
+- [ ] **Step 7: Open only the controller presentation asset**
 
-Ensure `.tk` elements/anchors and `theme.js` controller are untouched. The quote cluster uses `pointer-events`/markup only as required, without swallowing the ticker action.
+Add `/assets/js/intelligence-hub-market-pulse.js` to both existing public lists, in matching order/bytes as required by the boundary test. Do not open `site/intel_hub/hub.json`, other signal artifacts or broad `/assets/` prefixes.
 
-- [ ] **Step 7: Run focused tests and duplicate-owner audit**
+- [ ] **Step 8: Preserve Terminal interaction**
+
+Keep `.tk` and `theme.js` ownership untouched. The quote cluster must not swallow the ticker action.
+
+- [ ] **Step 9: Run focused tests and duplicate-owner audit**
 
 ```bash
 python3 -m pytest \
   tests/test_intelligence_hub_market_pulse_client.py \
   tests/test_intelligence_hub_market_pulse_surface.py \
+  tests/test_site_access_boundary.py \
   tests/test_lens_nested_control_taps.py -q
 grep -n "data-ihmp" templates/live.js site/live.js || true
 ```
 
 Expected: all pass; generic `live.js` has no R1A selector/ownership.
 
-- [ ] **Step 8: Mutation-check atomicity/order**
+- [ ] **Step 10: Mutation-check atomicity/order/access**
 
 Mutations that must fail:
 
 ```text
-remove generation check
+remove local generation check
+use snapshot_id for ordering
 paint rows before full validation
 omit requestAnimationFrame atomic commit
 allow duplicate response symbol
 let partial clear missing row
 ignore live-disabled setting
+remove asset from one public-list owner
+open a broad assets/data prefix
 ```
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add site/assets/js/intelligence-hub-market-pulse.js \
   templates/intelligence_hub.html.j2 \
+  config/site_access.yml app/deploy/Caddyfile \
   tests/test_intelligence_hub_market_pulse_client.py \
+  tests/test_site_access_boundary.py \
   tests/test_lens_nested_control_taps.py
-git commit -m "feat(intel-hub): hydrate market pulse atomically"
+git commit -m "feat(intel-hub): hydrate public market pulse atomically"
 ```
 
-Omit unchanged files.
+Omit unchanged test files.
 
 ---
 
@@ -486,26 +522,21 @@ Omit unchanged files.
 **Files:**
 - Modify: `.github/ci/legacy-jobs.yml`
 - Modify: `.github/workflows/ci.yml` only when its current path filter must name a new R1A subject
-- Modify: `config/unrun_test_baseline.json` only if the current audit workflow requires a baseline reconciliation
+- Modify: `config/unrun_test_baseline.json` only if the current audit workflow requires reconciliation
 - Create: `mockups/evidence/reactive-projection/r1a-intelligence-hub/EVIDENCE.yml`
 - Create: `mockups/evidence/reactive-projection/r1a-intelligence-hub/manifest.json`
-- Create: screenshots under `mockups/evidence/reactive-projection/r1a-intelligence-hub/`
+- Create: screenshots under that evidence directory
 - Test: all R1A suites
 
-**Interfaces:**
-- Produces: no dark tests/assets, exact changed-path CI coverage, dual-theme evidence receipt.
+- [ ] **Step 1: Determine current owning CI from current main**
 
-- [ ] **Step 1: Determine the current owning CI pack from current main**
+Read `.github/workflows/ci.yml`, `.github/ci/*`, `scripts/audit_unrun_tests.py` and existing Intelligence Hub registration. Do not create a second broad CI job.
 
-Do not guess from an old plan. Read `.github/workflows/ci.yml`, `.github/ci/*`, `scripts/audit_unrun_tests.py` and existing Intelligence Hub test registration.
+- [ ] **Step 2: Add tests and all production subjects to the same owner**
 
-- [ ] **Step 2: Add new tests and subjects to the same owner**
+Include API modules, template, controller, site-access and Caddy paths so the guarded change can trigger the guard.
 
-The tests must run when any R1A production subject changes. Do not add a second broad CI job solely for this feature.
-
-- [ ] **Step 3: Run the exact CI commands locally**
-
-At minimum:
+- [ ] **Step 3: Run exact focused and house guards**
 
 ```bash
 python3 -m pytest \
@@ -515,6 +546,7 @@ python3 -m pytest \
   tests/test_intelligence_hub_market_pulse_api.py \
   tests/test_intelligence_hub_market_pulse_surface.py \
   tests/test_intelligence_hub_market_pulse_client.py \
+  tests/test_site_access_boundary.py \
   tests/test_lens_nested_control_taps.py -q
 python3 scripts/audit_unrun_tests.py
 python3 scripts/check_design_system.py --mode enforce-added
@@ -523,11 +555,9 @@ python3 scripts/check_ui_visual_evidence.py
 python3 scripts/check_template_site_sync.py
 ```
 
-Run additional current house guards named by `AGENTS.md`/CI for touched paths.
+Run any additional current house guards named by `AGENTS.md`/CI for touched paths.
 
-- [ ] **Step 4: Capture the browser matrix**
-
-Production-shaped/local served page:
+- [ ] **Step 4: Capture browser matrix**
 
 ```text
 dark EN 1440
@@ -540,17 +570,18 @@ light EN 390
 light ZH 390
 ```
 
-For each, record viewport, theme, language, state, source fixture, no-overflow, console result and screenshot path. Include current, partial and unavailable states across the matrix; not every combination needs every failure state, but both art directions must have at least one degraded proof.
+Record viewport, theme, language, feed freshness, session, coverage, source fixture, no-overflow, console result and screenshot path. Include live, partial, delayed/settled and unavailable across the evidence set; both art directions need degraded proof.
 
 - [ ] **Step 5: Verify behavioral network evidence**
 
-Browser automation asserts:
-
 ```text
+anonymous shell loads controller asset
+anonymous quote-only route returns no provider/private fields
 exactly one market-pulse call per refresh
 no per-symbol route calls
+symbol-unit limiter allows normal cadence and blocks amplification
 response values and rendered tuple agree
-all rows/status change in one committed frame
+all rows/state change in one committed frame
 Terminal ticker action works after repaint
 background pause/resume works
 live disabled makes no call
@@ -565,7 +596,7 @@ git add .github/ci/legacy-jobs.yml .github/workflows/ci.yml \
 git commit -m "test(intel-hub): enforce market pulse proof matrix"
 ```
 
-Omit `.github/workflows/ci.yml` or `config/unrun_test_baseline.json` when current-main inspection proves that file requires no change; the evidence directory is mandatory for any material UI change.
+Omit unchanged CI/baseline files; the evidence directory is mandatory for material UI work.
 
 ---
 
@@ -576,12 +607,9 @@ Omit `.github/workflows/ci.yml` or `config/unrun_test_baseline.json` when curren
 - Create: `agentos/handoffs/BREATHING-PLATFORM-2026-08-31-reactive-projection-r1a.md`
 - Create a DSC only for a genuinely reusable falsifiable discovery.
 
-**Interfaces:**
-- Produces: one independently useful production capability and exact continuation boundary.
-
 - [ ] **Step 1: Reconcile exact branch/head and changed paths**
 
-Confirm the branch contains no unrelated source/data/render churn. Rebase/merge according to current repo law; never force over concurrent work.
+Confirm no unrelated source/data/render churn. Join current main according to repo law; never force over concurrent work.
 
 - [ ] **Step 2: Open one PR with exact boundary**
 
@@ -590,22 +618,21 @@ PR body states:
 ```text
 R1A observation-only
 Terminal Quote Plane canonical owner
-no ranking/score/stage/Prophet/trade changes
+deliberately public quote-only access
+public controller asset boundary only
+no rank/score/stage/Prophet/trade changes
+no server sequence/correction store
 no streaming
-tests and mutation proof
-browser matrix
-deployment/proof plan
+tests, mutations, browser matrix and deploy proof
 ```
-
-Arm only the current accepted merge mechanism after Sol review and concluded binding checks.
 
 - [ ] **Step 3: Obtain independent review**
 
-Reviewer must check duplicate-owner risk, quote semantics, public rights, one-call/one-DOM-owner, order/correction, degraded product behavior and intelligence invariance. Builder cannot self-approve.
+Reviewer checks duplicate-owner risk, quote semantics, access/rights, weighted abuse controls, one-call/one-DOM-owner, local ordering/correction, degraded product behavior and intelligence invariance. Builder cannot self-approve.
 
-- [ ] **Step 4: Wait for all binding checks to conclude**
+- [ ] **Step 4: Wait for every binding check to conclude**
 
-Pending is not green. A known nonbinding/spurious check must be evidenced by its current contract, not waived from memory.
+Pending is not green. Any excluded nonbinding check needs current evidence.
 
 - [ ] **Step 5: Merge and verify deployment**
 
@@ -615,29 +642,20 @@ After accepted exact-head review:
 merge
 confirm deployed API running commit
 confirm static asset/page cache stamp
-confirm route from public origin
+confirm public asset-list/Caddy parity
+confirm anonymous route from public origin
 confirm no provider fields
 ```
 
 - [ ] **Step 6: Run real production normal-state proof**
 
-During a valid market/session state, capture:
-
-- canonical upstream tuple;
-- public route tuple;
-- visible page tuple;
-- source/session/freshness clocks;
-- aggregate coverage;
-- one-call network receipt;
-- unchanged intelligence fingerprint.
+Capture canonical upstream tuple, public route tuple, visible page tuple, source/session/freshness clocks, coverage, one-call receipt, symbol-unit usage and unchanged intelligence fingerprint.
 
 - [ ] **Step 7: Run production-safe degraded proof**
 
-Use an accepted reversible canary/fixture/feature gate—not vendor sabotage—to prove unavailable/partial fallback. Restore normal operation and confirm recovery.
+Use an accepted reversible canary/fixture/feature gate—not vendor sabotage—to prove partial/unavailable fallback, then restore and prove recovery.
 
-- [ ] **Step 8: Close the capability ledger truthfully**
-
-Only after the user journey is real:
+- [ ] **Step 8: Close capability ledger truthfully**
 
 ```text
 R0 architecture: accepted/merged
@@ -646,9 +664,11 @@ R1B: NOT_BUILT
 broader reactive platform: PARTIAL
 ```
 
+Only after the user journey and access boundary are real.
+
 - [ ] **Step 9: Write Agent OS handoff and explicit dialogue STOP**
 
-Record head/merge/deploy/browser receipts, discoveries, remaining R1B gate and exact next action. Terminally stop the worker child and disarm only its exact watcher source; no successor is authorized by silence.
+Record head/merge/deploy/browser receipts, discoveries, remaining R1B gate and exact next action. Terminally stop the worker child and disarm only its exact watcher source.
 
 - [ ] **Step 10: Stop**
 
