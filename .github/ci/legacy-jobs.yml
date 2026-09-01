@@ -10896,6 +10896,7 @@ jobs:
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
+      - "tests/test_build_china_library_more_actionable_guard.py"
       - "tests/test_china_board_rank.py"
       - "tests/test_china_board_rank_v4.py"
       - "tests/test_china_continuation_watch.py"
@@ -11018,7 +11019,7 @@ jobs:
       # same US/CN board-surface family, same venv (pandas for the CN/HK/CA
       # parquet adapters, jinja2 already installed here for the card render).
       - name: prophet candidate Added-date resolver + card + surfaces
-        run: python -m pytest tests/test_prophet_board_since.py tests/test_prophet_card_added_date.py tests/test_prophet_candidate_added_date_surfaces.py -q
+        run: python -m pytest tests/test_prophet_board_since.py tests/test_prophet_card_added_date.py tests/test_prophet_candidate_added_date_surfaces.py tests/test_build_china_library_more_actionable_guard.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
