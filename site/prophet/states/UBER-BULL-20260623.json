@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "UBER-BULL-20260623",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 44.6,
@@ -12,7 +12,7 @@
   "components": {
     "validity": 100.0,
     "progress": 32.4,
-    "pace": 19.3,
+    "pace": 18.0,
     "retention": 74.2,
     "overlay": 67.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.557,
     "dist_to_t1_r": 0.943,
     "dist_to_t2_r": 2.443,
-    "horizon_pct_used": 117.8,
+    "horizon_pct_used": 120.0,
     "p1": 0.3714,
     "p2": 0.1857,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 53,
-  "tau": 1.1778
+  "days_elapsed": 54,
+  "tau": 1.2
 }
