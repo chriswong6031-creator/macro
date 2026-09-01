@@ -3,7 +3,33 @@ workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-mastermind-os-accelerated-reconciliation-20260830
 model: sol
 status: active_checkpoint
-ended_because: active_dependencies
+ended_because: blocked
+schema_repair: >
+  2026-09-01 shape-only repair by claude/executive-os-dr-a0-audit (Fable COO): this record
+  shipped without state_before/changed/unverified, with ended_because 'active_dependencies'
+  (not in the schema enum), and with bare-string verified[] items, which made
+  `scripts/agentos.py validate` exit 1 for the whole store and red the self-mod-fence CI
+  step on every records-touching PR. Content and meaning are Sol's and unchanged;
+  'active_dependencies' is rendered as 'blocked' (the checkpoint ends waiting on #312's
+  PR-bound test and Sentinel #255), verified[] claims are re-anchored to the readback
+  receipts this record already cites, and the added fields are the repairer's reading of
+  the record's own body, marked as such. Precedent: FF+FIF records repair, Sol PASS on
+  macro #6676 (2026-08-30).
+state_before: >
+  (Added in the 2026-09-01 schema repair, from this record's own body.) Autonomy program
+  mid-flight before this checkpoint: W3A build PR #250 closed unmerged on the Draft->Ready
+  connector defect with #312 as the sole live release carrier awaiting its PR-bound test;
+  Sentinel #255 STARTED_STICKY with exact effect reconciled; #265 held on #255; CF2-H0
+  child terminal effect-none on the noninteractive admin-surface blocker; ACK1 plan-only.
+changed:
+  - path: agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md
+    what: >
+      (Added in the 2026-09-01 schema repair.) Records-only checkpoint: per its own body
+      this reconciliation changed no repository bytes beyond landing this record
+      (macro main commit b2839cf14443).
+unverified:
+  - claim: "#312's PR-bound repository test (run 33468647909) concludes SUCCESS at the exact head 8c92dc4082ec"
+    what_would_verify: "gh run view 33468647909 --repo mastermindx-market-intelligence/Mastermind --json status,conclusion — pending at authoring time; the record's own hard gate"
 mission: >
   Complete the Chairman-authorized Autonomy program without duplicate control planes or replacement
   writers. Remove Slack archaeology, Grok dependency, manual tab waking, watcher repair and Chairman
@@ -156,12 +182,24 @@ capability_ledger:
   control_room: NOT_BUILT_NOT_PROVEN
   final_autonomy: PARTIAL_NOT_PRODUCTION_PROVEN
 verified:
-  - "#250 is closed unmerged build history; #312 is the sole live non-draft same-branch/same-head release carrier."
-  - "#312 has exact-head source approval, release-carrier approval, no open review threads and green security/analyzers."
-  - "Only #312's own repository test remains before expected-head merge."
-  - "Sentinel remains the exact sole writer; no replacement or failover exists."
-  - "H0 Claude6 child is terminal effect-none on a concrete noninteractive admin-surface blocker."
-  - "Grok is absent from every critical path."
+  - claim: "#250 is closed unmerged build history; #312 is the sole live non-draft same-branch/same-head release carrier"
+    command: "canonical PR readback recorded in this record (w3a_build_record: #250 CLOSED_UNMERGED_IMMUTABLE_HISTORY, ready-failure receipt Mastermind#250 comment 5488735410; w3a_release_312 block)"
+    result: "#312 OPEN_NON_DRAFT_MERGEABLE at head 8c92dc4082ec, tree c1d2eb78, base 6e3872cf, BEHIND_BY_ZERO_EXACT_EIGHT_PATHS"
+  - claim: "#312 has exact-head source approval, release-carrier approval, no open review threads and green security/analyzers"
+    command: "approval/review readback recorded in w3a_release_312 (source_approval 5073911566, release_carrier_approval 5073930984, review_threads EMPTY)"
+    result: "CODEQL_ACTIONS_PYTHON_JAVASCRIPT_GREEN_NO_CHANGED_CODE_ALERTS"
+  - claim: "Only #312's own repository test remains before expected-head merge"
+    command: "run readback recorded in current_pr_bound_test (run 33468647909 / job 99733664603)"
+    result: "IN_PROGRESS_REPOSITORY_TEST_GATE at authoring — its conclusion is the record's hard gate, tracked under unverified"
+  - claim: "Sentinel remains the exact sole writer; no replacement or failover exists"
+    command: "carrier readback recorded in sentinel_255 (Slack C0BSBM78V1N/1788063090.673889, ruling ts 1788232787.804529)"
+    result: "STARTED_STICKY_EXACT_EFFECT_RECONCILED_COMPLETION_ACTIVE; dirty paths exactly the two authorized release allowlists"
+  - claim: "H0 Claude6 child is terminal effect-none on a concrete noninteractive admin-surface blocker"
+    command: "stop readback recorded in cf2_h0 (stop C0BSBM78V1N/1788234359.660979/1788235613.403459)"
+    result: "SOL_CLOSED_STOP_TERMINAL_PRESTART_EFFECT_NONE; blocker ADMIN_AUTH_INTERACTION_UNAVAILABLE"
+  - claim: "Grok is absent from every critical path"
+    command: "transport-law audit recorded in this record's transport_law and canonical_program blocks"
+    result: "Grok optional visibility only"
 unresolved:
   - "#312 PR-bound repository test and expected-head merge."
   - "ACK1 implementation immediately after W3A source protection."
