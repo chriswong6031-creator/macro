@@ -84,8 +84,15 @@ waves:
       anti-laundering extension).
   - id: C2
     title: EVAL-E1 first real paired experiment (>=3 task classes, >=2 configs, sealed prereg)
-    status: todo
+    status: blocked
     depends_on: [B2, B4, C1]
+    next_action: >
+      PREREGISTRATION DONE 2026-09-02 - Mastermind #337 merged as 21a72142 (seal
+      sha256:91cb1686; 3x2x2/seed-5601/DESCRIPTIVE ceiling frozen; review PASS, gate refuses
+      premature satisfaction). EXECUTION blocked on two edges: runner PROVEN_LIVE on #162 (which
+      needs the human-gated live canary GO) AND fresh live authorization. On both: run the sealed
+      design through OHF2 bridge -> R0 store -> S1 scorers -> evidence ref, independent leakage
+      audit, then Phase D/F/G.
   - id: D1
     title: Outcome Learning OL-1..OL-7 execution per protected OL-0 sequence
     status: todo
