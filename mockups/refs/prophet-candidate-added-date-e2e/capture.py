@@ -54,15 +54,25 @@ PROBE = """
       rect: rect(c),
       znRect: zn ? rect(zn) : null,
       // How close the quiet chip comes to the actionable zone value, and
-      // whether the value is already ellipsizing. `.pv-znr/.pv-znm` carry
-      // min-width:0 + text-overflow:ellipsis while `.pv-added` is flex:none,
-      // so under pressure the PRICE yields before the metadata does.
+      // whether the value is ellipsizing. After the 2026-09-01 F1 repair
+      // `.pv-znr` (the PRICE) is flex:none and `.pv-added` shrinks+ellipsizes,
+      // so the metadata should be what yields. Measured, not assumed.
       gap: (() => { const v = c.querySelector('.pv-znr,.pv-znm');
         if (!v || !chip) return null;
         return Math.round(chip.getBoundingClientRect().left
                           - v.getBoundingClientRect().right); })(),
       valueClipped: (() => { const v = c.querySelector('.pv-znr,.pv-znm');
         return v ? v.scrollWidth > v.clientWidth + 1 : null; })(),
+      // Which element carries the zone value decides whether the F1 repair
+      // covers it: `.pv-znr` (the buy-zone PRICE) became flex:none, while
+      // `.pv-znm` (muted / re-add / note variant) still shrinks + ellipsizes.
+      valueClass: (() => { const v = c.querySelector('.pv-znr,.pv-znm');
+        return v ? (v.classList.contains('pv-znr') ? 'pv-znr' : 'pv-znm') : null; })(),
+      valueText: (() => { const v = c.querySelector('.pv-znr,.pv-znm');
+        return v ? (v.innerText || '').trim() : null; })(),
+      // After the repair the CHIP is meant to be the element that degrades.
+      chipClipped: chip ? chip.scrollWidth > chip.clientWidth + 1 : null,
+      chipW: chip ? Math.round(chip.getBoundingClientRect().width) : null,
       znOverflow: zn ? zn.scrollWidth > zn.clientWidth + 1 : null,
     };
   });
@@ -107,8 +117,37 @@ PROBE = """
       shell = {x: sr.x, y: sr.y, w: sr.w, h: Math.max(24, cr.y - sr.y)};
     }
   }
+  // FRESHNESS, asked the user's way, not the implementation's way: ANY visible
+  // element that states the board's vintage — the client shell's "Board <date>"
+  // / "榜单 <date>" header chip as well as the server's "Data through"
+  // paragraph. Scoping the search to the paragraph alone answers a narrower
+  // question than "can the reader see how fresh this board is".
+  const freshness = [];
+  {
+    // The shell chip is NOT ISO: boardDate() renders 'Board Aug 31, 2026'
+    // (en-US month/day/year) and '榜单 2026年8月31日'. Match the LABEL plus a
+    // 4-digit year, so any of the four vintage forms counts and the '—'
+    // no-date fallback does not.
+    // Case-INSENSITIVE: intl.html.j2 emits a lowercase 'data through'.
+    // A case-sensitive match here reports a visible stamp as absent —
+    // the same class of false negative that produced the wrong F2 call.
+    const re = /^(Board|榜单|Data through|数据截至)\\s*.{0,30}(19|20)\\d{2}/i;
+    for (const el of document.querySelectorAll('span,p,div,time,h1,h2')) {
+      const t = (el.innerText || '').replace(/\\s+/g, ' ').trim();
+      if (!re.test(t) || t.length > 80) continue;
+      if ([...el.children].some(c => re.test((c.innerText || '').trim()))) continue;
+      freshness.push({t: t.slice(0, 60), visible: vis(el),
+                      cls: (el.className || '').toString().slice(0, 40),
+                      rect: vis(el) ? rect(el) : null});
+    }
+  }
+  const pagehead = (() => {
+    const h = document.querySelector('main > header, .hk-v37-head, .ca-v36-head');
+    return h && vis(h) ? rect(h) : null;
+  })();
   const grid = document.querySelector('.nbgrid') || (cards[0] && cards[0].parentElement);
   return {cards: info, header: hdr, headerText: hdrText, stamps, shell, ink,
+          freshness, pagehead,
           standoutsDisplay: (() => { const s = document.querySelector('#standouts');
             return s ? getComputedStyle(s).display : '(absent)'; })(),
           cardsTotal: document.querySelectorAll('a.pvcard').length,
@@ -213,6 +252,7 @@ def run(pages):
                                "cardsTotal": d.get("cardsTotal"),
                                "headerVisibleText": d.get("headerText"),
                                "stampsOnPage": d.get("stamps"),
+                               "freshness": d.get("freshness"),
                                "standoutsDisplay": d.get("standoutsDisplay"),
                                "shots": []}
 
@@ -227,7 +267,15 @@ def run(pages):
                             fresh = pg.evaluate(PROBE)
                             boxes = []
                             for ix in idxs:
-                                if ix in ("header", "shell"):
+                                if ix == "freshness":
+                                    # re-resolved here, like every other box, so
+                                    # a late reflow cannot desync the clip
+                                    vf = [f for f in (fresh.get("freshness") or [])
+                                          if f["visible"]]
+                                    if vf:
+                                        boxes.append(min(vf,
+                                                     key=lambda f: f["rect"]["y"])["rect"])
+                                elif ix in ("header", "shell", "pagehead"):
                                     if fresh[ix]:
                                         boxes.append(fresh[ix])
                                 else:
@@ -251,11 +299,27 @@ def run(pages):
                         dated = [c for c in d["cards"] if c["added"]]
                         nulls = [c for c in d["cards"] if not c["added"]]
 
+                        # 0. FRESHNESS — the F2 question, framed on its own:
+                        #    is a board vintage date VISIBLE to this reader?
+                        #    Crops the visible stamp (shell "Board <date>" chip
+                        #    or server "Data through" paragraph), whichever the
+                        #    page actually shows.
+                        vis_fresh = [f for f in (d.get("freshness") or []) if f["visible"]]
+                        if vis_fresh:
+                            shot("freshness_visible",
+                                 (["pagehead"] if d.get("pagehead") else []) + ["freshness"],
+                                 pad=10)
+                        elif d.get("pagehead"):
+                            # No visible stamp anywhere — frame the header that
+                            # would have carried one, so the absence is evidenced.
+                            shot("freshness_absent", ["pagehead"], pad=10)
+
                         # 1. BOARD — everything the user meets above the first card
                         #    (the shell's own board header, plus this PR's
                         #    "Data through" stamp WHEN it is actually visible)
                         #    through the first cards.
-                        shot("board", ["shell"] + (["header"] if d["header"] else [])
+                        shot("board", (["pagehead"] if d["pagehead"] else [])
+                             + ["shell"] + (["header"] if d["header"] else [])
                              + [c["i"] for c in d["cards"][:n]], max_h=2600)
 
                         # 3. LONGEST — the widest ticker/zone case, whole card.
@@ -336,13 +400,24 @@ def run(pages):
                             shot("card_longest", [widest["i"]], pad=8)
 
                         out["ink"] = d.get("ink")
+                        out["clipByClass"] = {
+                            cls: {"n": sum(1 for c in d["cards"] if c["valueClass"] == cls),
+                                  "clipped": sum(1 for c in d["cards"]
+                                                 if c["valueClass"] == cls and c["valueClipped"]),
+                                  "clippedWithChip": sum(1 for c in d["cards"]
+                                                         if c["valueClass"] == cls
+                                                         and c["valueClipped"] and c["added"])}
+                            for cls in ("pv-znr", "pv-znm")}
+                        out["chipsEllipsized"] = sum(1 for c in d["cards"] if c["chipClipped"])
                         gaps = [c["gap"] for c in d["cards"] if c["gap"] is not None]
                         out["minGapPx"] = min(gaps) if gaps else None
                         out["valuesClipped"] = sum(1 for c in d["cards"] if c["valueClipped"])
                         out["rowsOverflowing"] = sum(1 for c in d["cards"] if c["znOverflow"])
                         out["detail"] = [
                             {k: c[k] for k in ("ticker", "added", "chipText", "znText",
-                                               "gap", "valueClipped", "znOverflow")}
+                                               "gap", "valueClipped", "valueClass",
+                                               "valueText", "chipClipped", "chipW",
+                                               "znOverflow")}
                             for c in d["cards"]
                         ]
                         manifest[basekey] = out
@@ -350,8 +425,15 @@ def run(pages):
                         print(key, out["cards"], "cards /", out["chips"], "chips",
                               "| docW", d["docW"], "winW", d["winW"], flush=True)
         browser.close()
-    (HERE / "capture_manifest.json").write_text(
-        json.dumps(manifest, indent=1, ensure_ascii=False), encoding="utf-8")
+    mf = HERE / "capture_manifest.json"
+    merged = {}
+    if mf.exists():
+        try:
+            merged = json.loads(mf.read_text(encoding="utf-8"))
+        except Exception:
+            merged = {}
+    merged.update(manifest)          # re-running one page refreshes only that page
+    mf.write_text(json.dumps(merged, indent=1, ensure_ascii=False), encoding="utf-8")
 
 
 if __name__ == "__main__":
