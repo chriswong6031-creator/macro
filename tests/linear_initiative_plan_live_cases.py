@@ -99,3 +99,245 @@ def test_current_repository_initiative_plan_is_deterministic_and_emits_ci_receip
             handle.write("\n## Linear Initiative desired-state receipt\n\n```json\n")
             handle.write(json.dumps(proof, ensure_ascii=False, sort_keys=True, indent=2))
             handle.write("\n```\n")
+
+
+def _initiative(initiative_id: str, name: str, key: str) -> tuple[dict, dict]:
+    desired = {
+        "initiative_key": key,
+        "name": name,
+        "status": "Active",
+        "priority": 1,
+        "health": None,
+        "owner_id": None,
+        "lead_team": "MastermindX",
+        "target_date": None,
+        "labels": [],
+        "parent_initiative_ids": [],
+    }
+    current = {
+        "initiative_id": initiative_id,
+        "name": name,
+        "status": "Active",
+        "priority": 1,
+        "health": None,
+        "owner_id": None,
+        "lead_team": "MastermindX",
+        "target_date": None,
+        "labels": [],
+        "parent_initiative_ids": [],
+    }
+    return desired, current
+
+
+def _project(
+    workstream_key: str,
+    project_id: str,
+    *,
+    initiative_ids: list[str],
+    initiative_names: list[str],
+) -> dict:
+    return {
+        "workstream_key": workstream_key,
+        "project_id": project_id,
+        "name": workstream_key,
+        "initiative_ids": initiative_ids,
+        "initiative_names": initiative_names,
+    }
+
+
+def _membership(workstream_key: str, initiative_name: str) -> dict:
+    return {
+        "workstream_key": workstream_key,
+        "initiative_name": initiative_name,
+        "project_required": True,
+    }
+
+
+def _snapshot(initiatives: list[dict], projects: list[dict]) -> dict:
+    return {
+        "schema": lip.SNAPSHOT_SCHEMA,
+        "initiatives": initiatives,
+        "projects": projects,
+    }
+
+
+def _drift_codes(
+    *,
+    desired_initiatives: list[dict],
+    current_initiatives: list[dict],
+    desired_memberships: list[dict],
+    projects: list[dict],
+) -> list[str]:
+    drift = lip.initiative_drift(
+        _snapshot(current_initiatives, projects),
+        desired_initiatives,
+        desired_memberships,
+        [],
+    )
+    return [row["code"] for row in drift]
+
+
+def test_membership_names_cannot_hide_a_wrong_known_initiative_id():
+    desired, desired_current = _initiative("init-desired", "Desired", "desired")
+    other, other_current = _initiative("init-other", "Other", "other")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired, other],
+        current_initiatives=[desired_current, other_current],
+        desired_memberships=[_membership("WS:A", "Desired")],
+        projects=[
+            _project(
+                "WS:A",
+                "project-a",
+                initiative_ids=["init-other"],
+                initiative_names=["Desired"],
+            )
+        ],
+    )
+
+    assert "membership_identity_conflict" in codes
+    assert "membership_identity_conflict" in lip._HARD_DRIFT_CODES
+
+
+def test_membership_names_cannot_hide_an_unknown_initiative_id():
+    desired, desired_current = _initiative("init-desired", "Desired", "desired")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired],
+        current_initiatives=[desired_current],
+        desired_memberships=[_membership("WS:A", "Desired")],
+        projects=[
+            _project(
+                "WS:A",
+                "project-a",
+                initiative_ids=["init-unknown"],
+                initiative_names=["Desired"],
+            )
+        ],
+    )
+
+    assert "membership_initiative_id_unknown" in codes
+    assert "membership_initiative_id_unknown" in lip._HARD_DRIFT_CODES
+
+
+def test_one_display_name_cannot_hide_two_initiative_ids():
+    desired, desired_current = _initiative("init-desired", "Desired", "desired")
+    other, other_current = _initiative("init-other", "Other", "other")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired, other],
+        current_initiatives=[desired_current, other_current],
+        desired_memberships=[_membership("WS:A", "Desired")],
+        projects=[
+            _project(
+                "WS:A",
+                "project-a",
+                initiative_ids=["init-desired", "init-other"],
+                initiative_names=["Desired"],
+            )
+        ],
+    )
+
+    assert "membership_multi_parent" in codes
+    assert "membership_multi_parent" in lip._HARD_DRIFT_CODES
+
+
+def test_wrong_display_name_cannot_override_the_correct_initiative_id():
+    desired, desired_current = _initiative("init-desired", "Desired", "desired")
+    other, other_current = _initiative("init-other", "Other", "other")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired, other],
+        current_initiatives=[desired_current, other_current],
+        desired_memberships=[_membership("WS:A", "Desired")],
+        projects=[
+            _project(
+                "WS:A",
+                "project-a",
+                initiative_ids=["init-desired"],
+                initiative_names=["Other"],
+            )
+        ],
+    )
+
+    assert "membership_identity_conflict" in codes
+    assert "membership_identity_conflict" in lip._HARD_DRIFT_CODES
+
+
+def test_duplicate_initiative_id_evidence_is_ambiguous():
+    desired, desired_current = _initiative("init-shared", "Desired", "desired")
+    other, other_current = _initiative("init-shared", "Other", "other")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired, other],
+        current_initiatives=[desired_current, other_current],
+        desired_memberships=[_membership("WS:A", "Desired")],
+        projects=[
+            _project(
+                "WS:A",
+                "project-a",
+                initiative_ids=["init-shared"],
+                initiative_names=["Desired"],
+            )
+        ],
+    )
+
+    assert "initiative_id_ambiguous" in codes
+    assert "initiative_id_ambiguous" in lip._HARD_DRIFT_CODES
+
+
+def test_duplicate_project_id_evidence_is_ambiguous():
+    desired, desired_current = _initiative("init-desired", "Desired", "desired")
+
+    codes = _drift_codes(
+        desired_initiatives=[desired],
+        current_initiatives=[desired_current],
+        desired_memberships=[
+            _membership("WS:A", "Desired"),
+            _membership("WS:B", "Desired"),
+        ],
+        projects=[
+            _project(
+                "WS:A",
+                "project-shared",
+                initiative_ids=["init-desired"],
+                initiative_names=["Desired"],
+            ),
+            _project(
+                "WS:B",
+                "project-shared",
+                initiative_ids=["init-desired"],
+                initiative_names=["Desired"],
+            ),
+        ],
+    )
+
+    assert "project_id_ambiguous" in codes
+    assert "project_id_ambiguous" in lip._HARD_DRIFT_CODES
+
+
+def test_conflicting_identity_evidence_is_input_order_invariant():
+    desired, desired_current = _initiative("init-shared", "Desired", "desired")
+    other, other_current = _initiative("init-shared", "Other", "other")
+    project = _project(
+        "WS:A",
+        "project-a",
+        initiative_ids=["init-shared"],
+        initiative_names=[],
+    )
+
+    first = lip.initiative_drift(
+        _snapshot([desired_current, other_current], [project]),
+        [desired, other],
+        [_membership("WS:A", "Desired")],
+        [],
+    )
+    second = lip.initiative_drift(
+        _snapshot([other_current, desired_current], [project]),
+        [desired, other],
+        [_membership("WS:A", "Desired")],
+        [],
+    )
+
+    assert first == second
+    assert "initiative_id_ambiguous" in {row["code"] for row in first}
