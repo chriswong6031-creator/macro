@@ -12,14 +12,16 @@ mission: >
   Control Room visibility and a measured zero-touch production fleet.
 state_before: >
   Macro main still carried a malformed and stale Autonomy checkpoint. Non-draft PR #6711 corrected
-  the post-W3A, ACK1, Control Room Phase-A and false Stage-B history, but its exact head e8f7f9f6
-  became stale when the original Sentinel RuntimeBinding returned a current-base green #255
-  candidate and Chairman terminally STOPped that worker child. BSC-A1 #310 also reached exact-head
-  green CI, but independent review 5074918447 found two release-blocking security/authority defects:
-  undersized RSA keys remain accepted and offline_access can become resource authority through an
-  already-instantiated ResourcePolicy. No #255 source protection, ACK1 pickup, Phase-A pickup,
-  Stage-B transfer, provider delivery, production retry, deployment, fleet interval or final
-  acceptance has occurred.
+  the post-W3A, ACK1, Control Room Phase-A and false Stage-B history, but its exact head c91b336d
+  became stale against Macro main. #6711 has now history-preservingly joined current Macro main
+  de146c115b54af071bcd1b2c5109f3b5e366db05 while preserving the sole handoff delta. The original
+  Sentinel RuntimeBinding returned a current-base green #255 candidate and Chairman terminally
+  STOPped that worker child. BSC-A1 #310 remains OPEN / NON-DRAFT / BLOCKED / CHANGES_REQUESTED at
+  current head 3ecd179599793f474ee0a660d33fe5b62778a1f6: the minimum-RSA-key repair exists in
+  ancestry, while the ResourcePolicy/offline_access authority-bypass repair remains unresolved.
+  Exact ACK1 and Phase-A carrier rereads show only pre-START/effect-none state. No #255 source
+  protection, ACK1 pickup, Phase-A pickup, Stage-B transfer, provider delivery, production retry,
+  deployment, fleet interval or final acceptance has occurred.
 changed:
   - path: Mastermind#312
     what: >
@@ -32,16 +34,19 @@ changed:
       wake-ack1-exact-session-ingress-implementation-20260901-claude8-001.
   - path: C0BSBM78V1N/1788241729.537039
     what: >
-      Delivered ACK1 to Claude8. Fresh reads show no worker PICKUP_ACK, watcher, PATH_FREEZE,
-      START, branch, PR or effect.
+      Claude8 was released pre-START; the same-operation replacement rebind was refused with
+      effect NONE and later remained blocked on a director-epoch continuity collision at
+      1788248672.815239. No worker PICKUP_ACK, watcher, PATH_FREEZE, START, branch, PR or effect
+      exists.
   - path: Mastermind#212/comments-5489589269-and-5489705944
     what: >
       Preserved Control Room Phase A while correcting its false Stage-B source statement.
       Stage-B durable target transfer is NOT_BUILT / NOT_PROTECTED and cannot be inferred.
   - path: C0BSBM78V1N/1788242362.935179
     what: >
-      Preserved the same pre-START Phase-A carrier, lawfully rebound the unconsumed receiver from
-      collision-bound Claude3 to alternate Claude4, and delivered the Stage-B correction.
+      Preserved the same pre-START Phase-A carrier and Stage-B correction. Alternate Claude4 was
+      released pre-START; the latest receiver rebind is ChatGPT2 at 1788247914.651179, with no
+      subsequent pickup or effect.
   - path: C0BSBM78V1N/1788242633.020709
     what: >
       Recorded Chairman STOP 1788242949.695359 for the broad four-target activation fanout.
@@ -54,12 +59,18 @@ changed:
       identical, has 256 local passes, terminal repository and CodeQL proof, independent review
       PASS and production effect NONE. Chairman then emitted terminal SOL ACCEPTED / STOP at
       1788245179.875019, durably mirrored by Mastermind#255/comment-5490005249.
-  - path: Mastermind#310/review-5074918447
+  - path: Mastermind#310
     what: >
-      Independently reviewed exact BSC-A1 head 6b287ea127817d6c9286e4c57b5c69e98b717ae0
-      against protected fc407e16. Generic repository/security checks are green, but release is
-      CHANGES_REQUESTED because PyJWT minimum RSA-key enforcement is disabled and a replaced or
-      manually constructed ResourcePolicy can still project offline_access as MCP authority.
+      Current head 3ecd179599793f474ee0a660d33fe5b62778a1f6 is OPEN / NON-DRAFT / BLOCKED /
+      CHANGES_REQUESTED against protected procedure 187490f3. The one-line PyJWT minimum-RSA-key
+      repair was recorded at d0af414e1597ad7e693a9c91051ee7cf19afad6d; the remaining
+      ResourcePolicy/offline_access authority-bypass repair still requires same-carrier proof and
+      independent review before any source protection.
+  - path: Mastermind#307
+    what: >
+      Web-Sol S0/S1/F1/F2 source is protected by merge ee473ad1cb02b0531f3802ce93930cc1c385bdc6.
+      It remains BUILT_NOT_PROVEN / PRODUCTION_NOT_INSTALLED; the merge grants no installation,
+      runtime or production effect.
   - path: Macro#6709-to-#6711
     what: >
       Recorded the source-neutral PR-metadata transition after the #6709 Ready connector failure.
@@ -75,7 +86,7 @@ changed:
       No runtime, provider, host, deployment or production state was created.
 protected_procedure:
   repository: mastermindx-market-intelligence/Mastermind
-  ref: fc407e1638a26932c8615c98c7732d7f3202b3b1
+  ref: 187490f3d5676adf7a249d69afacedd00b3efcec
   skillpack_schema: mastermind.sol_skillpack.v1
   skillpack_version: 1.0.1
   bootstrap_major: 1
@@ -130,31 +141,43 @@ current_carriers:
     prior_metadata_pr: Macro#6709
     current_release_pr: Macro#6711
     branch: sol/agentos-autonomy-handoff-schema-repair-20260831
-    joined_main: a0e95ded3a673a8274fd0af9b78557d32366ffc7
+    joined_main: de146c115b54af071bcd1b2c5109f3b5e366db05
     superseded_head: e8f7f9f666f14a40db5257ff65d644cea26786d7
     transition_receipt: Macro#6709/comment-5489705316
     repair_hold: Macro#6711/comment-5490057293
-    state: OPEN_NON_DRAFT_SAME_BRANCH_STALE_SENTINEL_REPAIR_IN_PROGRESS
+    state: OPEN_NON_DRAFT_SAME_BRANCH_CURRENT_BASE_RECORD_RECONCILIATION_IN_PROGRESS
   w3a:
     git: Mastermind#312
     source_head: fefffc3fd9cdfaaa622407ce8b429b95f99f4fb1
     protected_merge: fc407e1638a26932c8615c98c7732d7f3202b3b1
     state: BUILT_NOT_PROVEN_PROTECTED_PRODUCTION_DISARMED
+  web_sol_s0_s1_f1_f2:
+    git: Mastermind#307
+    source_head: e16fa2635d77cb218e6a27172ebce40be98a9e08
+    protected_merge: ee473ad1cb02b0531f3802ce93930cc1c385bdc6
+    state: BUILT_NOT_PROVEN_PROTECTED_PRODUCTION_NOT_INSTALLED
   ack1:
     plan_pr: Mastermind#297
     protected_plan_merge: e60f69aa10e67b1334b1fa6a3299cb90fbbde7ab
     operation: wake-ack1-exact-session-ingress-implementation-20260901-claude8-001
     github_packet: Mastermind#212/comment-5489506178
     slack: C0BSBM78V1N/1788241729.537039
-    receiver: Claude8/U0BS3H525NW
-    state: WAITING_RECEIVER_CONSUMPTION_PRESTART_EFFECT_NONE
+    original_receiver: Claude8/U0BS3H525NW_RELEASED_PRESTART
+    replacement_rebind: C0BSBM78V1N/1788241729.537039/1788247623.653859
+    authority_refusal: C0BSBM78V1N/1788241729.537039/1788248002.376939
+    latest_authority_result: C0BSBM78V1N/1788241729.537039/1788248672.815239
+    state: PRESTART_EFFECT_NONE_DIRECTOR_EPOCH_CONTINUITY_UNRESOLVED
+    next: >
+      Require a direct Chairman edge to the exact hands-on task or a non-circular authenticated
+      continuity ruling from the previously pinned director before any receiver can ACK.
   control_room_phase_a:
     operation: ad-cr1a-zero-slack-autonomy-cockpit-20260901-claude3-002
     github_packet: Mastermind#212/comment-5489589269
     correction: Mastermind#212/comment-5489705944
     slack: C0BSBM78V1N/1788242362.935179
-    current_receiver: alternate-Claude4/U0BT5J8NTSQ
-    rebind: C0BSBM78V1N/1788242362.935179/1788242604.760219
+    prior_receiver: alternate-Claude4/U0BT5J8NTSQ_RELEASED_PRESTART
+    current_receiver: ChatGPT2/U0BSB73JWNL_PENDING_ACTUAL_RUNTIME
+    rebind: C0BSBM78V1N/1788242362.935179/1788247914.651179
     correction_edge: C0BSBM78V1N/1788242362.935179/1788243193.870899
     state: WAITING_RECEIVER_CONSUMPTION_PRESTART_EFFECT_NONE
     boundary: >
@@ -172,17 +195,18 @@ current_carriers:
     operation: business-sol-a1-jwks-policy-binding-repair-20260901-secretary-001
     git: Mastermind#310
     branch: sol/business-sol-a1-release-20260901
-    protected_base: fc407e1638a26932c8615c98c7732d7f3202b3b1
-    blocked_head: 6b287ea127817d6c9286e4c57b5c69e98b717ae0
-    actual_path_count: 25
+    protected_base: 187490f3d5676adf7a249d69afacedd00b3efcec
+    current_head: 3ecd179599793f474ee0a660d33fe5b62778a1f6
+    minimum_rsa_key_repair_head: d0af414e1597ad7e693a9c91051ee7cf19afad6d
+    reviewed_path_count_at_6b287ea1: 25
     review: Mastermind#310/review-5074918447
-    state: OPEN_NON_DRAFT_UNMERGED_CHANGES_REQUESTED_SECURITY_REPAIR_REQUIRED
+    state: OPEN_NON_DRAFT_UNMERGED_BLOCKED_CHANGES_REQUESTED_AUTHORITY_REPAIR_REQUIRED
     blockers:
-      - PYJWT_MINIMUM_RSA_KEY_LENGTH_NOT_ENFORCED
       - OFFLINE_ACCESS_PREINSTANTIATED_POLICY_AUTHORITY_BYPASS
     next: >
       Repair only the same branch/PR, return fresh exact-head discriminating tests and hosted
-      proof, then obtain a new independent review before expected-head source protection.
+      proof for the remaining policy-object authority bypass, then obtain a new independent review
+      before expected-head source protection.
   sentinel_255:
     operation: ad-retry1-atomic-runtime-repair-20260829-sentinel-001
     native_task: 01a04c44-7988-7da1-a05e-9ed43da374c0
@@ -218,13 +242,14 @@ current_carriers:
     state: TERMINAL_PRESTART_EFFECT_NONE_ADMIN_AUTH_INTERACTION_UNAVAILABLE
 capability_ledger:
   w3a_source: BUILT_NOT_PROVEN_PROTECTED_PRODUCTION_DISARMED
-  bsc_a1_release_dependency: BUILT_NOT_PROVEN_OPEN_CHANGES_REQUESTED_SECURITY_REPAIR_REQUIRED
+  web_sol_s0_s1_f1_f2_source: BUILT_NOT_PROVEN_PROTECTED_PRODUCTION_NOT_INSTALLED
+  bsc_a1_release_dependency: BUILT_NOT_PROVEN_OPEN_BLOCKED_CHANGES_REQUESTED_AUTHORITY_REPAIR_REQUIRED
   atomic_retry_255: BUILT_NOT_PROVEN_OPEN_DRAFT_CURRENT_BASE_WORKER_TERMINAL_HELD_ON_310
   terminal_return_265: BUILT_NOT_PROVEN_OPEN_DRAFT_HELD_ON_255
-  ack1_runtime: NOT_BUILT_WAITING_RECEIVER_CONSUMPTION
+  ack1_runtime: NOT_BUILT_PRESTART_DIRECTOR_EPOCH_CONTINUITY_UNRESOLVED
   ack1_canary: NOT_RUN
   stageb_target_transfer: NOT_BUILT_NOT_PROTECTED
-  control_room_phase_a: NOT_BUILT_WAITING_RECEIVER_CONSUMPTION
+  control_room_phase_a: NOT_BUILT_PRESTART_WAITING_CHATGPT2_ACTUAL_RUNTIME
   automatic_session_activation: NOT_PROVEN_FANOUT_TERMINAL_PRESTART_EFFECT_NONE
   cf2_h0_source_closure: NOT_PROVEN_WAITING_INTERACTIVE_NATIVE_ADMIN_SURFACE
   agent_dialogue_v2: BUILT_NOT_PROVEN_DEVELOPMENT_UNARMED
@@ -241,12 +266,21 @@ verified:
       Read protected Mastermind master fc407e16 and PR #312 merge state/capability boundary.
     result: >
       #312 is merged; its merge grants source durability only, not delivery, ACK, resolution or production proof.
+  - claim: Web-Sol S0/S1/F1/F2 source is protected but not installed.
+    command: >
+      Read Mastermind PR #307 merge state, merge ee473ad1cb02b0531f3802ce93930cc1c385bdc6 and
+      its exact-head hosted/security receipt.
+    result: >
+      #307 is merged; its protected source remains BUILT_NOT_PROVEN / PRODUCTION_NOT_INSTALLED and
+      establishes no package, runtime, provider, host or production effect.
   - claim: ACK1 and corrected Phase A remain pre-START/effect-none.
     command: >
-      Read Mastermind #212 comments 5489506178, 5489589269 and 5489705944; reread Slack carriers
-      1788241729.537039 and 1788242362.935179 through their latest replies.
+      Read Mastermind #212 comments 5489506178, 5489589269, 5489705944 and 5490576621; reread
+      Slack carriers 1788241729.537039 and 1788242362.935179 through their latest replies.
     result: >
-      Neither target has worker PICKUP_ACK, PATH_FREEZE, START, branch or PR.
+      ACK1's latest reply is a director-epoch continuity block with effect NONE; Phase A's latest
+      pre-START receiver is ChatGPT2 pending an actual runtime. Neither target has worker
+      PICKUP_ACK, watcher, PATH_FREEZE, START, branch or PR.
   - claim: Stage-B is not protected.
     command: >
       Read Mastermind PRs #256 and #265 and search current protected source for Stage-B readiness/writer evidence.
@@ -265,14 +299,14 @@ verified:
       #255 is open/draft/unmerged/mergeable at exact current-base ten-path head 3270f6cf with 256
       local passes, terminal repository/CodeQL proof, independent PASS and production effect NONE.
       The original worker child is terminal and no further worker return or effect reconciliation is owed.
-  - claim: BSC-A1 #310 is not release-safe despite terminal-green generic checks.
+  - claim: BSC-A1 #310 remains blocked after the minimum-RSA-key repair.
     command: >
-      Compare protected fc407e16 to exact #310 head 6b287ea1, read all authority-bearing auth
-      modules/tests, inspect exact-head checks and submit anchored review 5074918447.
+      Read current Mastermind PR #310 at 3ecd1795, predecessor repair head d0af414e, blocking
+      review 5074918447 and current same-carrier repair comments.
     result: >
-      The real delta is 25 paths. PyJWT minimum RSA-key enforcement is disabled, and
-      offline_access can be projected through a pre-instantiated ResourcePolicy. #310 is
-      CHANGES_REQUESTED and must remain unmerged pending same-carrier repair and fresh review.
+      Minimum-RSA-key enforcement has a same-carrier repair commit, but the pre-instantiated or
+      replaced ResourcePolicy can still project offline_access as authority. #310 remains OPEN /
+      BLOCKED / CHANGES_REQUESTED and must remain unmerged pending same-carrier repair and fresh review.
   - claim: #6711 is the sole Agent OS source operation carrier but its prior head cannot land.
     command: >
       Read #6709 event/comment 5489705316, #6711, branch history, current Macro main, exact
@@ -281,14 +315,19 @@ verified:
       #6709 closed unmerged after a Ready failure with canonical effect NONE; #6711 uses the same
       branch/source operation, but e8f7f9f6 contains stale Sentinel recovery instructions and is held.
 unverified:
-  - claim: Claude8 consumed ACK1.
-    what_would_verify: Exact-carrier PICKUP_ACK/refusal, watcher, PATH_FREEZE and separate START.
-  - claim: Alternate Claude4 consumed corrected Phase A.
-    what_would_verify: Exact-carrier PICKUP_ACK/refusal after both packet comments, then watcher/PATH_FREEZE/START.
+  - claim: ACK1 has a resolved direct receiver authority and consumed pickup.
+    what_would_verify: >
+      A direct Chairman edge to the exact hands-on task or non-circular prior-director continuity
+      ruling, then exact-carrier PICKUP_ACK, watcher, PATH_FREEZE and separate START.
+  - claim: ChatGPT2 has consumed corrected Phase A.
+    what_would_verify: >
+      Exact-carrier PICKUP_ACK/refusal with an actual ChatGPT2 runtime after both packet comments,
+      then watcher/PATH_FREEZE/START.
   - claim: BSC-A1 #310 is repaired and protected.
     what_would_verify: >
-      Fresh immutable same-branch head closes both review 5074918447 blockers, terminal hosted/security
-      proof and independent review PASS, followed by expected-head protected-master merge readback.
+      Fresh immutable same-branch head closes the remaining policy-object authority bypass, terminal
+      hosted/security proof and independent review PASS, followed by expected-head protected-master
+      merge readback.
   - claim: Sentinel #255 source is protected.
     what_would_verify: >
       BSC-A1 #310 protected first, then fresh action-time #255 current-base/path/check/thread review
@@ -300,7 +339,7 @@ unverified:
   - claim: Autonomy sustains a zero-touch production fleet.
     what_would_verify: SHADOW, CANARY, SMALL FLEET and PRODUCTION FLEET adverse intervals with canonical receipts.
 unresolved:
-  - "Same-carrier BSC-A1 #310 repair for minimum RSA-key enforcement and offline_access policy-object bypass, then source protection."
+  - "Same-carrier BSC-A1 #310 repair for the remaining offline_access policy-object authority bypass, then source protection."
   - "Fresh Sol source release of current-base #255 after #310 protection; no Sentinel worker recovery."
   - "ACK1 receiver pickup, implementation, protection and exact-current-writer canary."
   - "Corrected Control Room Phase-A receiver pickup and DRAFT/HOLD product candidate."
@@ -313,8 +352,8 @@ next_actions:
     validation, fences/full CI, one-file/current-main collision census, review-thread census,
     mergeability readback and expected-head Sol merge.
   - >
-    Repair BSC-A1 #310 on its existing branch/PR against review 5074918447; do not merge blocked
-    head 6b287ea1 or create a replacement carrier.
+    Repair BSC-A1 #310 on its existing branch/PR against review 5074918447; do not merge current
+    blocked head 3ecd1795 or create a replacement carrier.
   - >
     After #310 protection, perform fresh Sol action-time #255 release review and expected-head
     source protection without re-entering the stopped Sentinel worker child.
@@ -329,7 +368,7 @@ do_not_redo:
   - "No second W3A implementation or release carrier."
   - "No revival of the three false-ready children or terminal broad activation fanout."
   - "No replacement, re-entry or recovery of the terminal Sentinel task/session/worktree/branch/PR/carrier."
-  - "No merge of BSC-A1 blocked head 6b287ea1 and no replacement #310 branch/PR; repair the same carrier."
+  - "No merge of BSC-A1 current blocked head 3ecd1795 and no replacement #310 branch/PR; repair the same carrier."
   - "No #255 source protection before #310 is repaired and protected."
   - "No second ACK1 or Phase-A child while their current direct carriers are unresolved."
   - "No Stage-B implementation/readiness/protected claim before #255 then #265 protection."
@@ -337,15 +376,15 @@ do_not_redo:
   - "No second API, source aggregator, lifecycle, placement, watcher, queue, registry or truth store."
 danger_areas:
   - "Protected Mastermind and Macro main may move; every release requires action-time identity and material-source proof."
-  - "Generic green CI did not detect #310 minimum-key or policy-object authority bypasses."
+  - "Generic green CI did not detect #310's policy-object authority bypass; fresh exact-head authority review remains required."
   - "Stale PR bodies and handoffs can misstate immutable heads and path counts; canonical compare and code win."
   - "A terminal worker STOP does not merge its PR, but it forbids reviving the worker child for release administration."
   - "W3A source protection is not provider delivery, target ACK, source resolution or production proof."
   - "Control Room must expose absent Stage-B truth rather than normalize it away."
   - "Attention DMs can look operational while no target session has consumed work."
 protected_truth:
-  mastermind_master: fc407e1638a26932c8615c98c7732d7f3202b3b1
-  macro_main_joined: a0e95ded3a673a8274fd0af9b78557d32366ffc7
+  mastermind_protected_procedure: 187490f3d5676adf7a249d69afacedd00b3efcec
+  macro_main_joined: de146c115b54af071bcd1b2c5109f3b5e366db05
   macro_release_pr: 6711
   macro_prior_metadata_pr: 6709
   macro_transition_receipt: Macro#6709/comment-5489705316
@@ -354,10 +393,13 @@ protected_truth:
   w3a_release_pr: 312
   w3a_protected_merge: fc407e1638a26932c8615c98c7732d7f3202b3b1
   bsc_a1_pr: 310
-  bsc_a1_blocked_head: 6b287ea127817d6c9286e4c57b5c69e98b717ae0
+  bsc_a1_current_blocked_head: 3ecd179599793f474ee0a660d33fe5b62778a1f6
+  bsc_a1_minimum_rsa_key_repair_head: d0af414e1597ad7e693a9c91051ee7cf19afad6d
   bsc_a1_blocking_review: Mastermind#310/review-5074918447
   ack1_carrier: C0BSBM78V1N/1788241729.537039
+  ack1_latest_authority_result: C0BSBM78V1N/1788241729.537039/1788248672.815239
   control_room_carrier: C0BSBM78V1N/1788242362.935179
+  control_room_chatgpt2_rebind: C0BSBM78V1N/1788242362.935179/1788247914.651179
   control_room_correction: Mastermind#212/comment-5489705944
   sentinel_head: 3270f6cf0c95a75d5164fd757bce4b8df72838a2
   sentinel_final_return: C0BSBM78V1N/1788063090.673889/1788244252.298469
@@ -365,6 +407,8 @@ protected_truth:
   sentinel_stop_receipt: Mastermind#255/comment-5490005249
   terminal_return_pr: 265
   terminal_return_head: fe0ebd8e1e791692e0e2bc93c0c34add4c22ee09
+  web_sol_release_pr: 307
+  web_sol_protected_merge: ee473ad1cb02b0531f3802ce93930cc1c385bdc6
 exact_current_hard_gate: >
   Correct and protect #6711 so Agent OS truth is compilable. Repair and protect BSC-A1 #310 before
   fresh Sol source release of current-base #255; do not reopen the terminal Sentinel child. #255
@@ -373,7 +417,7 @@ exact_current_hard_gate: >
   but delivery/ACK/resolution remain unproven. Final acceptance requires Agent Relay/W3C, mechanical
   return, exact Sol continuity, lawful placement, Control Room and measured multi-root
   production-fleet proof.
-mastermind_prs: [153, 212, 228, 255, 256, 265, 297, 310, 312]
+mastermind_prs: [153, 212, 228, 255, 256, 265, 297, 307, 310, 312]
 macro_prs: [6697, 6707, 6709, 6711]
 linear_issues: [MAS-127, MAS-158, MAS-181, MAS-206, MAS-209, MAS-213, MAS-214, MAS-215, MAS-216, MAS-217, MAS-218, MAS-219, MAS-226, MAS-229, MAS-253, MAS-254, MAS-255]
 ---
@@ -382,7 +426,8 @@ linear_issues: [MAS-127, MAS-158, MAS-181, MAS-206, MAS-209, MAS-213, MAS-214, M
 
 This is an active execution checkpoint, not completion. Re-pin protected Mastermind, current Macro
 main and this exact handoff before modification. Nearest gates: exact-head proof/landing of the
-corrected #6711 record, same-carrier repair/protection of BSC-A1 #310, then fresh Sol release of
-current-base #255 without re-entering its terminal worker child. Preserve the existing ACK1 and
-Phase-A carriers. Final acceptance is a measured zero-touch production interval, not Slack delivery,
+current-base corrected #6711 record, same-carrier repair/protection of BSC-A1 #310's remaining
+policy-object authority bypass, then fresh Sol release of current-base #255 without re-entering its
+terminal worker child. Preserve ACK1's authority-continuity blocker and the Phase-A ChatGPT2
+pre-START carrier. Final acceptance is a measured zero-touch production interval, not Slack delivery,
 CI, merge, source protection or QUEUED admission.
