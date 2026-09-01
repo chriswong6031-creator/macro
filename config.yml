@@ -2702,6 +2702,11 @@ stock_search:
     - ERIE   # Erie Indemnity
     - ET     # Energy Transfer
     - FBIN   # Fortune Brands Innovations
+    - FBRX   # Forte Biosciences — DELISTED 2026-08-27 (acquired by argenx, US$77.00
+             # cash tender; last session 08-26). Membership kept for the same reason
+             # as CTRA/TPH/AVB: page, search entry and deep links stay alive
+             # (CSP-R1). The exit row in config/delisted_symbols.yml stops the
+             # nightly fetch. Do NOT delete this line.
     - FCFS   # FirstCash Holdings
     - FCNCA  # First Citizens BancShares
     - FDS    # FactSet Research
@@ -2846,6 +2851,12 @@ stock_search:
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
     - TWLO   # Twilio
+    - TWO    # Two Harbors Investment — DELISTED 2026-08-25 (acquired by CrossCountry
+             # Mortgage, US$12.00 cash + $0.20326 stub dividend; last session 08-24).
+             # Common stock only — the TWO-PA/PB/PC preferreds and TWOD notes remain
+             # NYSE-listed. Membership kept per CSP-R1 (page/search/deep links stay
+             # alive); the exit row in config/delisted_symbols.yml stops the nightly
+             # fetch. Do NOT delete this line.
     - TXN    # Texas Instruments
     - TYL    # Tyler Technologies
     - UNP    # Union Pacific
@@ -3097,6 +3108,11 @@ stock_search:
     CTRA:  {name: "Coterra Energy", sector: "Energy"}
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
+    # FBRX and TWO: same rule — delisted 2026-08 (config/delisted_symbols.yml),
+    # labels keep their pages naming the company. TWO is a mortgage REIT, which
+    # GICS files under Financials, not Real Estate.
+    FBRX:  {name: "Forte Biosciences", sector: "Health Care"}
+    TWO:   {name: "Two Harbors Investment", sector: "Financials"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -3879,6 +3895,12 @@ quality:
     GOLD: "Gold.com, Inc. (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48; fka A-Mark Precious Metals) under its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer — store holds A-Mark/Gold.com's full history (2014-03-17->, its spinoff listing) and NEVER held Barrick: the file was born 2026-06-30, after the reuse. Prior symbol holders: Barrick (NYSE GOLD 2019-01-02 -> 2025-05-08; renamed Barrick Mining, NYSE 'B' since 2025-05-09); Randgold Resources (NASDAQ GOLD until the 2019-01-01 Barrick merger). CONSUMER DEFECT REPAIRED (PR #5632): gold_miners removes the Barrick-labelled GOLD row entirely, carries Barrick Mining (EDGAR CIK 756894) under NYSE 'B', and seeds curated data/baskets/ohlcv/B.parquet. GOLD remains a valid Gold.com instrument; this was a consumer-label repair, not a store quarantine."
   delisted_printing_acks:
     - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
+    - STRS                       # Stratus Properties — voluntarily left NASDAQ under its Plan of
+                                 # Complete Liquidation and Dissolution (Form 25 2026-07-31, effective
+                                 # ~08-10; Forms 15 08-10; CIK 885508) but the shares legitimately keep
+                                 # printing real OTC bars while liquidating distributions are pending.
+                                 # NOT an exit-row candidate while the tape lives — see the STRS note in
+                                 # config/delisted_symbols.yml for receipts and the graduation path.
   # --- ticker key migrations (engine/ledger_identity) ---
   # The MACHINE-READABLE half of the ack text above. The acks say a rename happened in
   # prose; nothing could read "under its 2026-06-24 SATS->ECHO rename" and act on it, so

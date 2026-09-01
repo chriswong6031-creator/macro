@@ -2512,11 +2512,28 @@ def _build_issuer_master_rows(master_rows: list[dict],
 class VendorAliasPruneConflict(Exception):
     """Raised by :func:`_prune_stale_aliases` (AMENDMENT ruling 6 / M5) when a fresh
     alias row overlaps a committed row that points at an ACTIVE (non-superseded)
-    ``security_id``. Fail-closed by design: the pre-amendment code silently dropped
-    ANY overlapping committed row (whether it pointed at a superseded id or not),
-    which is an undisclosed last-write-wins replacement on an append-only dataset —
-    exactly the M5 defect. A genuine correction to an ACTIVE row's alias history is a
-    curation act (a new RENAME_EVENTS/SECURITY_SUPERSESSIONS entry, or an operator
+    ``security_id`` and the overlap is not excused by the AMENDMENT §2 same-id-
+    refinement carve-out (see below). Fail-closed by design: the pre-amendment code
+    silently dropped ANY overlapping committed row (whether it pointed at a
+    superseded id or not), which is an undisclosed last-write-wins replacement on an
+    append-only dataset — exactly the M5 defect. A genuine correction to an ACTIVE
+    row's alias history that does NOT qualify for the carve-out is a curation act (a
+    new RENAME_EVENTS/SECURITY_SUPERSESSIONS entry, or an operator resolving the
+    conflict by hand), never something this builder silently resolves.
+
+    TWO lawful deletion classes now exist (:func:`_prune_stale_aliases` documents
+    both in full): the original superseded-``security_id`` tombstone prune, and the
+    AMENDMENT §2 same-id-refinement carve-out (implemented 2026-08-29) — a fresh
+    DATED family pointing at the SAME still-active ``security_id`` that exactly
+    tiles the full time axis, with the family row COVERING the committed row's own
+    start date carrying its ``vendor_symbol`` (start-anchored, see
+    :func:`_is_lawful_same_id_refinement`), is a lawful REFINEMENT of a committed
+    open-bounded row rather than a conflict. Every other overlap — an undated
+    replacement row, a zero/negative-width row, a gap or double-cover in the
+    tiling, a fully dated committed row, a family whose start-covering leg names a
+    different symbol, or a fresh row naming a DIFFERENT security_id — still raises
+    exactly as before, and the raised message names the SPECIFIC failed condition
+    (or the specific different-``security_id`` row).
 
     AMENDMENT ruling 11 (§3): a plain ``Exception``, NEVER ``SystemExit`` — the
     pre-amendment class subclassed ``SystemExit``, which is a ``BaseException``
@@ -2529,8 +2546,103 @@ class VendorAliasPruneConflict(Exception):
     path (:func:`main`) still stays fail-closed because nothing there catches it at
     all — an uncaught ``Exception`` propagating out of ``main()`` is still a non-zero
     exit, exactly like before this rebase.
-    resolving the conflict by hand), never something this builder silently resolves.
     """
+
+
+def _covering_family_row(ordered: list[AliasRow], point: date | None) -> AliasRow | None:
+    """The unique row in an already tiling-validated ``ordered`` family that covers
+    ``point`` — ``point=None`` means -infinity, which under a lawful gapless,
+    overlap-free tiling is covered ONLY by the row open at the start
+    (``valid_from is None``); a real date is covered by whichever row's
+    ``[valid_from, valid_to)`` half-open interval contains it. Callers must
+    validate the tiling FIRST (see :func:`_is_lawful_same_id_refinement`) — over an
+    unvalidated family this can return ``None`` (a gap) or an arbitrary row among
+    several genuine candidates (an overlap).
+    """
+    if point is None:
+        for f in ordered:
+            if f.valid_from is None:
+                return f
+        return None
+    for f in ordered:
+        lo_ok = f.valid_from is None or f.valid_from <= point
+        hi_ok = f.valid_to is None or point < f.valid_to
+        if lo_ok and hi_ok:
+            return f
+    return None
+
+
+def _is_lawful_same_id_refinement(ex_row: AliasRow, family: list[AliasRow]) -> str | None:
+    """AMENDMENT §2 same-id-refinement carve-out predicate (implemented 2026-08-29;
+    start-anchored symbol rule + deterministic tiling added in the same-day fix
+    packet). Returns ``None`` when ``ex_row`` IS a lawful refinement, else a short
+    string naming the FIRST failed condition — checked in this fixed order,
+    because the start-anchored symbol check (d) is only meaningful once the tiling
+    itself (e) is known to be well-formed.
+
+    ``family`` is every FRESH row sharing ``ex_row``'s ``(vendor, security_id)``.
+
+    a. ``ex_row`` is OPEN-ENDED (``valid_to is None``) — a fully dated committed row
+       contradicted by fresh evidence is a history rewrite, never a refinement.
+    b. (same id) — enforced by the CALLER: every fresh row that overlaps ``ex_row``
+       must share ``ex_row.security_id`` before this predicate even runs (a
+       different-id overlap is reported by name, never folded into this reason);
+       ``family`` is already scoped to ``ex_row.security_id`` by construction.
+    c. DATED — no row in ``family`` may be fully open (``valid_from is None and
+       valid_to is None``); a single undated replacement row is not a citable
+       refinement.
+    (width) — no row in ``family`` may have zero or negative width
+       (``valid_from is not None and valid_to is not None and valid_from >= valid_to``);
+       a degenerate row can neither tile the axis nor meaningfully "cover" a point,
+       and admitting one would make the tiling check below order-dependent.
+    e. Full-axis tiling — sorted DETERMINISTICALLY (``valid_from`` ascending with
+       ``None`` first, THEN ``valid_to`` ascending with ``None`` last as the
+       tie-break — two rows sharing one ``valid_from`` never depend on input
+       order), exactly one row is open at the start, exactly one is open at the
+       end, and every consecutive pair meets EXACTLY (``prev.valid_to ==
+       next.valid_from``): gapless and overlap-free across the whole axis.
+       (Implies ``len(family) >= 2`` given (c).)
+    d. Start-anchored symbol continuity — REPLACES the original era-blind rule
+       ("some row, ANYWHERE in the family, carries the committed symbol"), which
+       let a family whose EARLY leg happened to share the committed row's symbol
+       excuse pruning a row that, at ITS OWN start date, the family actually maps
+       to a DIFFERENT live symbol (the reviewer's PROBE A: a committed
+       ``(yahoo, ABC, sec, 2020-01-01, None)`` against a family whose current
+       (post-2010) leg is ``DEF`` must still raise, even though an ``ABC`` leg
+       exists earlier in the same family). The family row COVERING
+       ``ex_row.valid_from`` (``None`` == -infinity; see
+       :func:`_covering_family_row` — under the now-validated tiling exactly one
+       row covers any point) must carry ``ex_row``'s own ``vendor_symbol``.
+    """
+    if ex_row.valid_to is not None:
+        return "the committed row is fully dated (valid_to is not None), not open-ended"
+    if not family:
+        return "no fresh row shares this row's (vendor, security_id)"
+    if any(f.valid_from is None and f.valid_to is None for f in family):
+        return "the family contains an undated (fully open) row"
+    if any(
+        f.valid_from is not None and f.valid_to is not None and f.valid_from >= f.valid_to
+        for f in family
+    ):
+        return "the family contains a zero-or-negative-width row"
+    ordered = sorted(
+        family,
+        key=lambda f: (f.valid_from is not None, f.valid_from, f.valid_to is None, f.valid_to),
+    )
+    if sum(1 for f in ordered if f.valid_from is None) != 1:
+        return "the family does not have exactly one open-start row"
+    if sum(1 for f in ordered if f.valid_to is None) != 1:
+        return "the family does not have exactly one open-end row"
+    for prev, nxt in zip(ordered, ordered[1:]):
+        if prev.valid_to != nxt.valid_from:
+            return "the family does not exactly tile the time axis (a gap or overlap)"
+    covering = _covering_family_row(ordered, ex_row.valid_from)
+    if covering is None or covering.vendor_symbol != ex_row.vendor_symbol:
+        return (
+            "the family row covering the committed row's start must carry its "
+            "vendor_symbol"
+        )
+    return None
 
 
 def _prune_stale_aliases(
@@ -2543,22 +2655,45 @@ def _prune_stale_aliases(
     contradicts is not append-only history, it is a stale artifact of a mint this
     repair corrects.
 
-    ONE deletion class, narrowly scoped (AMENDMENT ruling 6 REMOVES the prior
+    TWO deletion classes, narrowly scoped (AMENDMENT ruling 6 REMOVES the prior
     "ambiguity-conflicting" class 2, which silently dropped ANY committed row
     overlapping a fresh one — including rows pointing at a perfectly ACTIVE id, an
     undisclosed last-write-wins replacement on an append-only dataset):
 
-    * **Superseded security_id.**  Any row minted for a security this run tombstoned
-      (V4-D2B1-R1 §3) is categorically wrong — VMRK's alias rows must converge onto
-      EQR's family (§3.7), never keep pointing at the corrected id.  Every deletion in
-      this class is named in ``pruned`` — the caller receipts it (``vendor_alias_prunes``
-      + a ``::warning``), never a silent drop.
+    * **Superseded security_id** (``prune_class="superseded_tombstone"``).  Any row
+      minted for a security this run tombstoned (V4-D2B1-R1 §3) is categorically
+      wrong — VMRK's alias rows must converge onto EQR's family (§3.7), never keep
+      pointing at the corrected id.
 
-    A fresh row that overlaps a committed row pointing at an ACTIVE id (never
-    superseded) is NO LONGER pruned — it is a fail-closed :class:`VendorAliasPruneConflict`.
-    Two rows that are BYTE-IDENTICAL are not a conflict (ordinary merge dedup in
-    :func:`merge_alias_rows` already handles those), and this never touches a fresh
-    row's own side.
+    * **Same-id refinement** (``prune_class="same_id_refinement"``, AMENDMENT §2
+      carve-out, implemented 2026-08-29).  A fresh candidate that overlaps a
+      committed row pointing at a still-ACTIVE ``security_id`` is not automatically a
+      conflict: when EVERY overlapping fresh row shares the committed row's OWN
+      ``security_id`` and belongs to a DATED same-id family that exactly tiles the
+      full time axis (no gaps, no overlaps) with the family row COVERING the
+      committed row's own start date carrying its ``vendor_symbol`` (the
+      start-anchored rule — see :func:`_is_lawful_same_id_refinement` for the full
+      ordered condition list), the committed open-bounded row is a stale
+      pre-refinement artifact, not a genuine ambiguity: it is pruned, not raised.
+      EVERY open-ended committed row that the SAME lawful family refines is pruned
+      (plural) — a family can legitimately extend past more than one prior
+      committed link in one run (see the chained-refinement unit test). A single
+      UNDATED replacement row, a zero/negative-width row, a gapped/overlapping
+      tiling, a fully DATED committed row, a family whose start-covering leg names
+      a different symbol, or ANY overlapping fresh row naming a DIFFERENT
+      ``security_id`` still falls through to the fail-closed raise below exactly
+      as before this carve-out.
+
+    Every deletion in EITHER class is named in ``pruned`` (tagged with its
+    ``prune_class``) — the caller receipts it (``vendor_alias_prunes`` + a dedicated
+    ``::warning`` per class), never a silent drop.
+
+    A fresh row that overlaps a committed row pointing at an ACTIVE id, and is not
+    excused by the carve-out above, is a fail-closed :class:`VendorAliasPruneConflict`
+    naming the specific failed condition (or the specific different-``security_id``
+    row, when that is what disqualified it). Two rows that are BYTE-IDENTICAL are
+    not a conflict (ordinary merge dedup in :func:`merge_alias_rows` already
+    handles those), and this never touches a fresh row's own side.
     """
     fresh_by_vendor_symbol: dict[tuple[str, str], list[AliasRow]] = {}
     fresh_by_vendor_sec: dict[tuple[str, str], list[AliasRow]] = {}
@@ -2570,7 +2705,7 @@ def _prune_stale_aliases(
     pruned: list[dict] = []
     for ex in existing:
         if str(ex["security_id"]) in superseded_ids:
-            pruned.append(ex)
+            pruned.append({**ex, "prune_class": "superseded_tombstone"})
             continue
         ex_row = AliasRow(
             str(ex["vendor"]), str(ex["vendor_symbol"]), str(ex["security_id"]),
@@ -2580,23 +2715,58 @@ def _prune_stale_aliases(
             fresh_by_vendor_symbol.get((ex_row.vendor, ex_row.vendor_symbol), [])
             + fresh_by_vendor_sec.get((ex_row.vendor, ex_row.security_id), [])
         )
+        family = fresh_by_vendor_sec.get((ex_row.vendor, ex_row.security_id), [])
+        overlaps: list[AliasRow] = []
         for fr in candidates:
             if (fr.vendor_symbol, fr.security_id, fr.valid_from, fr.valid_to) == (
                 ex_row.vendor_symbol, ex_row.security_id, ex_row.valid_from, ex_row.valid_to
             ):
                 continue  # identical — ordinary dedup, not a conflict
             if ex_row.overlaps(fr):
-                # AMENDMENT ruling 6 (M5): fail-closed — never a silent replacement.
-                raise VendorAliasPruneConflict(
-                    f"fresh alias row {fr!r} overlaps a COMMITTED row pointing at "
-                    f"an ACTIVE security_id ({ex_row!r}) — refusing to silently "
-                    "prune or replace it. A committed alias row may be pruned ONLY "
-                    "when it points at a superseded security_id (AMENDMENT ruling "
-                    "6 / M5); resolve this by curation (a registered "
-                    "RENAME_EVENTS/SECURITY_SUPERSESSIONS entry) or by hand, never "
-                    "by silent last-write-wins."
-                )
-        out.append(ex)
+                overlaps.append(fr)
+
+        if not overlaps:
+            out.append(ex)
+            continue
+
+        # A different-security_id overlap is disqualifying on its own and is named
+        # explicitly — it is never folded into the same-id predicate's reason.
+        foreign = next((fr for fr in overlaps if fr.security_id != ex_row.security_id), None)
+        if foreign is not None:
+            raise VendorAliasPruneConflict(
+                f"fresh alias row {foreign!r} overlaps a COMMITTED row pointing "
+                f"at an ACTIVE security_id ({ex_row!r}) but names a DIFFERENT "
+                "security_id — refusing to silently prune or replace it. A "
+                "committed alias row may be pruned ONLY when it points at a "
+                "superseded security_id (AMENDMENT ruling 6 / M5), or when it is "
+                "a lawful AMENDMENT §2 same-id-refinement, which requires EVERY "
+                "overlapping fresh row to share this row's OWN security_id — a "
+                "different security_id among the overlapping rows never "
+                "qualifies. Resolve this by curation (a registered "
+                "RENAME_EVENTS/SECURITY_SUPERSESSIONS entry) or by hand, never "
+                "by silent last-write-wins."
+            )
+
+        reason = _is_lawful_same_id_refinement(ex_row, family)
+        if reason is None:
+            # AMENDMENT §2 carve-out: prune the committed row, receipted — never a
+            # silent last-write-wins replacement, but no longer a raise either.
+            # EVERY open-ended committed row this SAME lawful family refines is
+            # pruned in its own loop iteration (plural), not just the first.
+            pruned.append({**ex, "prune_class": "same_id_refinement"})
+            continue
+
+        # AMENDMENT ruling 6 (M5): fail-closed — never a silent replacement.
+        raise VendorAliasPruneConflict(
+            f"fresh alias row {overlaps[0]!r} overlaps a COMMITTED row pointing "
+            f"at an ACTIVE security_id ({ex_row!r}) — refusing to silently prune "
+            "or replace it. A committed alias row may be pruned ONLY when it "
+            "points at a superseded security_id (AMENDMENT ruling 6 / M5), or "
+            "when it is a lawful AMENDMENT §2 same-id-refinement — this family "
+            f"did not qualify: {reason}. Resolve this by curation (a registered "
+            "RENAME_EVENTS/SECURITY_SUPERSESSIONS entry) or by hand, never by "
+            "silent last-write-wins."
+        )
     return out, pruned
 
 
@@ -3045,16 +3215,31 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
         _read_existing(aliases_path, ALIAS_COLUMNS, ALIAS_DTYPES),
         fresh_aliases, superseded_ids,
     )
-    if alias_prunes:
-        # AMENDMENT ruling 6 (M5) — every prune is receipted + a ::warning, never a
-        # silent drop.
+    # AMENDMENT ruling 6 (M5) / AMENDMENT §2 — every prune is receipted + a
+    # ::warning, never a silent drop; the two lawful deletion classes get their OWN
+    # named annotation so the nightly log tells the operator WHICH kind fired.
+    tombstone_prunes = [r for r in alias_prunes if r.get("prune_class") == "superseded_tombstone"]
+    refinement_prunes = [r for r in alias_prunes if r.get("prune_class") == "same_id_refinement"]
+    if tombstone_prunes:
         print(
-            f"::warning title=security-master-vendor-alias-prune::{len(alias_prunes)} "
+            f"::warning title=security-master-vendor-alias-prune::{len(tombstone_prunes)} "
             "committed vendor alias row(s) pruned (pointed at a security_id this "
             "run tombstoned): "
             + ", ".join(
                 f"{r['vendor']}/{r['vendor_symbol']}->{r['security_id']}"
-                for r in alias_prunes
+                for r in tombstone_prunes
+            ),
+            flush=True,
+        )
+    if refinement_prunes:
+        print(
+            f"::warning title=security-master-vendor-alias-refinement-prune::"
+            f"{len(refinement_prunes)} committed vendor alias row(s) pruned (a "
+            "fresh DATED same-id family refined a committed open-bounded row, "
+            "AMENDMENT §2 carve-out): "
+            + ", ".join(
+                f"{r['vendor']}/{r['vendor_symbol']}->{r['security_id']}"
+                for r in refinement_prunes
             ),
             flush=True,
         )
@@ -3134,14 +3319,17 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
             "issuer_migrations": len(issuer_migration_rows),
             "security_migrations": len(security_migration_rows),
         },
-        # AMENDMENT ruling 6 (M5) — every committed vendor alias row this run pruned
-        # (all point at a security_id this SAME run tombstoned), receipted rather
-        # than silently dropped.
+        # AMENDMENT ruling 6 (M5) / AMENDMENT §2 — every committed vendor alias row
+        # this run pruned, receipted rather than silently dropped: either it points
+        # at a security_id this SAME run tombstoned (`prune_class="superseded_
+        # tombstone"`) or a fresh DATED same-id family lawfully refined it
+        # (`prune_class="same_id_refinement"`).
         "vendor_alias_prunes": [
             {
                 "vendor": r["vendor"], "vendor_symbol": r["vendor_symbol"],
                 "security_id": r["security_id"], "valid_from": r["valid_from"],
-                "valid_to": r["valid_to"],
+                "valid_to": r["valid_to"], "prune_class": r["prune_class"],
+                "ingested_at": r["ingested_at"],
             }
             for r in sorted(alias_prunes, key=lambda r: (r["vendor"], r["vendor_symbol"]))
         ],
@@ -3353,6 +3541,75 @@ def build(out_dir: Path, dry_run: bool = False, allow_missing_evidence: bool = F
 _NIGHTLY_ARTIFACT_NAMES = (MASTER_NAME, ALIASES_NAME, ISSUER_MASTER_NAME, ISSUER_MIGRATIONS_NAME,
                            SECURITY_MIGRATIONS_NAME)
 
+#: DSC falsifier escalation sidecar (AMENDMENT §3-adjacent, added 2026-08-29) — a
+#: per-``out_dir`` streak of :class:`VendorAliasPruneConflict` nightly refusals with
+#: no intervening SUCCESSFUL refresh (see :func:`run_nightly_refresh`'s handler for
+#: the restart-on-different-conflict rule). Deliberately NOT in
+#: ``_NIGHTLY_ARTIFACT_NAMES``: it is bookkeeping about refusals, not a produced
+#: identity artifact, and must never be touched by :func:`_restore_artifacts`.
+#: TWO counters live in this sidecar, both int-validated on every read (see
+#: :func:`_valid_streak_count`):
+#:
+#: * ``consecutive`` / ``first_conflict_at`` — the MATCHING-TEXT streak: resets to
+#:   1 (and ``first_conflict_at`` to now) whenever the fresh conflict's message
+#:   text differs from the prior refusal's — a different conflict is a fresh clock,
+#:   not a continuation of the old one.
+#: * ``refusals_since_last_success`` / ``first_refusal_at`` — a MONOTONIC counter:
+#:   incremented on EVERY :class:`VendorAliasPruneConflict` refusal regardless of
+#:   whether the conflict text matches the prior one, and reset ONLY by
+#:   :func:`_clear_prune_conflict_streak` (i.e. only a SUCCESSFUL refresh clears
+#:   it). This exists because two or more DIFFERENT standing conflicts, each
+#:   recurring in alternation (A, B, A, B, ...), would otherwise hold
+#:   ``consecutive`` at 1 forever — genuinely wedged, but never escalating.
+#:
+#: PERSISTENCE (undeclared on purpose, like ``_receipt.json``): this sidecar rides
+#: the SAME nightly data commit as every other ``out_dir`` artifact — ``daily.yml``'s
+#: ``git add data/`` step commits it alongside ``_receipt.json``, which is likewise
+#: not a ``config/dataset_registry.yml`` row (it is process bookkeeping, not a
+#: dataset). No registry entry is added for it and it is never ``.gitignore``'d. If a
+#: commit is ever lost or the sidecar otherwise fails to persist across nights, the
+#: worst case is FAIL-DEGRADED, never fail-silent: BOTH counters simply restart at 1
+#: (see :func:`_read_prune_conflict_streak` — missing/corrupt reads as "no prior
+#: streak"), which only DELAYS the ``::error`` escalation by however many nights were
+#: lost. The per-night ``::warning`` (the primary disclosure) is unconditional and
+#: fires on every refusal regardless of the sidecar's state.
+_NIGHTLY_PRUNE_STREAK_NAME = "_nightly_prune_conflict_streak.json"
+
+
+def _read_prune_conflict_streak(out_dir: Path) -> dict:
+    """Prior streak state, or ``{}`` on missing/corrupt/unreadable/non-dict — NEVER
+    raises. A parsed JSON payload that is not itself an object (``null``, a list, a
+    bare number, a bare string — all valid JSON, none of them usable state) is
+    exactly as unusable as a missing file: treated as "no prior streak", never
+    propagated to the caller's ``.get`` calls, which would otherwise raise
+    ``AttributeError`` and break AMENDMENT §3's pinned always-return-0 invariant.
+    Individual COUNTER fields inside a dict payload are validated separately by the
+    caller via :func:`_valid_streak_count` (a dict is not proof its ``consecutive``/
+    ``refusals_since_last_success`` values are themselves usable ints)."""
+    path = out_dir / _NIGHTLY_PRUNE_STREAK_NAME
+    try:
+        payload = json.loads(path.read_text())
+    except Exception:  # noqa: BLE001 — a corrupt sidecar restarts the streak, never crashes
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _valid_streak_count(value: object) -> bool:
+    """True iff ``value`` is a usable prior streak count: a real (non-``bool``)
+    ``int`` that is ``>= 1``. ``bool`` is a subclass of ``int`` in Python
+    (``isinstance(True, int)`` is ``True``, and ``True + 1 == 2``), so a naive
+    ``isinstance(x, int)`` check would silently accept a JSON ``true``/``false``
+    sidecar value as a real count — excluded explicitly. Zero and negative values
+    are likewise never a legitimate PRIOR count (every real streak starts at 1),
+    so they are treated the same as "no prior streak", not propagated forward."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _clear_prune_conflict_streak(out_dir: Path) -> None:
+    path = out_dir / _NIGHTLY_PRUNE_STREAK_NAME
+    if path.exists():
+        path.unlink()
+
 
 def _read_bytes_if_exists(path: Path) -> bytes | None:
     return path.read_bytes() if path.exists() else None
@@ -3476,11 +3733,11 @@ def run_nightly_refresh(out_dir: Path) -> int:
     except VendorAliasPruneConflict as exc:
         # AMENDMENT ruling 11 (§3) — a DEDICATED handler, BEFORE the generic one
         # below: a fresh alias row conflicting with a committed ACTIVE-id row
-        # (ruling 6 / M5, and — until the AMENDMENT §2 same-id-refinement
-        # carve-out lands — every future dated rename on the `store` space) is a
-        # curation-required refusal, not a build defect. Same restore-and-continue
-        # shape as the generic handler, but its own named ::warning so the nightly
-        # log says WHAT needs curating rather than a bare "read/parse failure".
+        # (ruling 6 / M5) that the AMENDMENT §2 same-id-refinement carve-out did
+        # NOT excuse is a curation-required refusal, not a build defect. Same
+        # restore-and-continue shape as the generic handler, but its own named
+        # ::warning so the nightly log says WHAT needs curating rather than a bare
+        # "read/parse failure".
         _restore_artifacts(out_dir, before, before_receipt)
         print(
             f"::warning title=security-master-nightly-prune-conflict::{exc} — "
@@ -3488,6 +3745,78 @@ def run_nightly_refresh(out_dir: Path) -> int:
             "or an operator resolving the conflict by hand); keeping last-good "
             "artifacts, generated_at not re-stamped", flush=True,
         )
+        # DSC falsifier escalation — a STANDING conflict silently wedges the
+        # nightly artifact refresh indefinitely (measured 8 days, 2026-08-20 ->
+        # 08-28). The seam still ALWAYS returns 0 (AMENDMENT §3's invariant is
+        # unconditional — the escalation is the annotation, never the exit code),
+        # but a THIRD+ refusal with no intervening SUCCESSFUL refresh also raises
+        # its voice with a loud ::error naming how long the artifact set has been
+        # frozen and the curation cure. TWO counters, both fed by every refusal
+        # here: ``consecutive`` (the MATCHING-TEXT streak — restarts at 1 whenever
+        # the conflict text changes, a different conflict being a fresh clock) and
+        # ``refusals_since_last_success`` (MONOTONIC — every refusal here
+        # increments it regardless of text, reset ONLY on a success). The monotonic
+        # counter exists because two or more DIFFERENT conflicts recurring in
+        # ALTERNATION (A, B, A, B, ...) would otherwise hold ``consecutive`` at 1
+        # forever — genuinely wedged, yet never escalating under the text-matching
+        # counter alone.
+        streak_path = out_dir / _NIGHTLY_PRUNE_STREAK_NAME
+        prior = _read_prune_conflict_streak(out_dir)
+        now_stamp = _iso_now()
+        conflict_text = str(exc)[:1000]
+
+        prior_consecutive = prior.get("consecutive")
+        same_conflict = (
+            prior.get("conflict") == conflict_text and _valid_streak_count(prior_consecutive)
+        )
+        if same_conflict:
+            consecutive = prior_consecutive + 1
+            first_conflict_at = prior.get("first_conflict_at") or now_stamp
+        else:
+            consecutive = 1
+            first_conflict_at = now_stamp
+
+        prior_refusals = prior.get("refusals_since_last_success")
+        if _valid_streak_count(prior_refusals):
+            refusals_since_last_success = prior_refusals + 1
+            first_refusal_at = prior.get("first_refusal_at") or now_stamp
+        else:
+            refusals_since_last_success = 1
+            first_refusal_at = now_stamp
+
+        streak_path.write_text(json.dumps({
+            "consecutive": consecutive,
+            "first_conflict_at": first_conflict_at,
+            "refusals_since_last_success": refusals_since_last_success,
+            "first_refusal_at": first_refusal_at,
+            "last_conflict_at": now_stamp,
+            "conflict": conflict_text,
+        }, indent=2, sort_keys=True) + "\n")
+
+        # Escalate on EITHER trigger. A same-text streak (consecutive >= 3) is
+        # checked FIRST and, when it fires, is always also true of the monotonic
+        # counter (every matching-text refusal is also a refusal) — so preferring
+        # it keeps the message from claiming "conflict text has varied" when it
+        # has not. Only when consecutive stays under 3 (the text changed
+        # recently) but the monotonic count has still reached 3 do we escalate on
+        # alternating/varying conflicts, with wording that says so.
+        if consecutive >= 3:
+            escalate_n, escalate_since, varied = consecutive, first_conflict_at, False
+        elif refusals_since_last_success >= 3:
+            escalate_n, escalate_since, varied = (
+                refusals_since_last_success, first_refusal_at, True
+            )
+        else:
+            escalate_n = None
+        if escalate_n is not None:
+            varied_note = " (conflict text has varied)" if varied else ""
+            print(
+                f"::error title=security-master-nightly-prune-conflict-stuck::"
+                f"{escalate_n} nightly prune-conflict refusals{varied_note} with no "
+                f"intervening successful refresh since {escalate_since}; cure "
+                "with a curation act (a new RENAME_EVENTS/SECURITY_SUPERSESSIONS "
+                "entry) or an operator hand migration.", flush=True,
+            )
         return 0
     except Exception as exc:  # noqa: BLE001 — any read/parse failure refuses, never half-writes
         # FIX 4 (M2): a mid-build failure can leave PARTIAL writes on disk (build()
@@ -3515,12 +3844,14 @@ def run_nightly_refresh(out_dir: Path) -> int:
     if after == before:
         if before_receipt is not None:
             (out_dir / RECEIPT_NAME).write_bytes(before_receipt)
+        _clear_prune_conflict_streak(out_dir)
         print(
             "::notice title=security-master-nightly::inputs unchanged since the last "
             "generation — byte-stable no-op, generated_at not re-stamped", flush=True,
         )
         return 0
 
+    _clear_prune_conflict_streak(out_dir)
     print(
         f"::notice title=security-master-nightly::identity inputs advanced — "
         f"regenerated ({coverage_line(receipt)})", flush=True,
