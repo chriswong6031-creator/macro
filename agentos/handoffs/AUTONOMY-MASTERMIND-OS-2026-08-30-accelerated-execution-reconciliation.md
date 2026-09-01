@@ -14,7 +14,7 @@ state_before: >
   Macro main still carried a malformed and stale Autonomy checkpoint. Non-draft PR #6711 corrected
   the post-W3A, ACK1, Control Room Phase-A and false Stage-B history, but its exact head c91b336d
   became stale against Macro main. #6711 has now history-preservingly joined current Macro main
-  de146c115b54af071bcd1b2c5109f3b5e366db05 while preserving the sole handoff delta. The original
+  f30a9f6d23775006229c3bfa26f5e63c2d0e0b24 while preserving the sole handoff delta. The original
   Sentinel RuntimeBinding returned a current-base green #255 candidate and Chairman terminally
   STOPped that worker child. BSC-A1 #310 remains OPEN / NON-DRAFT / BLOCKED / CHANGES_REQUESTED at
   current head 3ecd179599793f474ee0a660d33fe5b62778a1f6: the minimum-RSA-key repair exists in
@@ -141,7 +141,7 @@ current_carriers:
     prior_metadata_pr: Macro#6709
     current_release_pr: Macro#6711
     branch: sol/agentos-autonomy-handoff-schema-repair-20260831
-    joined_main: de146c115b54af071bcd1b2c5109f3b5e366db05
+    joined_main: f30a9f6d23775006229c3bfa26f5e63c2d0e0b24
     superseded_head: e8f7f9f666f14a40db5257ff65d644cea26786d7
     transition_receipt: Macro#6709/comment-5489705316
     repair_hold: Macro#6711/comment-5490057293
@@ -384,7 +384,7 @@ danger_areas:
   - "Attention DMs can look operational while no target session has consumed work."
 protected_truth:
   mastermind_protected_procedure: 187490f3d5676adf7a249d69afacedd00b3efcec
-  macro_main_joined: de146c115b54af071bcd1b2c5109f3b5e366db05
+  macro_main_joined: f30a9f6d23775006229c3bfa26f5e63c2d0e0b24
   macro_release_pr: 6711
   macro_prior_metadata_pr: 6709
   macro_transition_receipt: Macro#6709/comment-5489705316
