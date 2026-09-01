@@ -1600,3 +1600,237 @@ def test_existing_host_metrics_reduction_is_unchanged_by_the_slice_extension(
         "swap_used_peak_bytes",
         "disk_free_min_bytes",
     }
+
+
+# ── C3R-A: aggregate CI slice + sealed fourth root ───────────────────────────
+# One slice bounds pc-ci-1..4 together. The renderer stays OUTSIDE it: that is
+# the whole point of an aggregate CI envelope, and it is why render must never
+# inherit the slice or CI's KillMode=control-group.
+
+SLICE_TEMPLATE = ROOT / "ops" / "runner-host" / "pc" / "mastermind-ci.slice.template"
+CI_SERVICE_TEMPLATE = (
+    ROOT / "ops" / "runner-host" / "pc" / "actions-runner-ci.service.template"
+)
+
+
+def test_ci_slice_template_carries_the_exact_frozen_envelope() -> None:
+    unit = SLICE_TEMPLATE.read_text(encoding="utf-8")
+    for directive in (
+        "CPUQuota=800%",
+        "CPUQuotaPeriodSec=100ms",
+        "MemoryHigh=10G",
+        "MemoryMax=12G",
+        "MemorySwapMax=2G",
+    ):
+        assert directive in unit, f"frozen envelope lost {directive}"
+    for accounting in (
+        "CPUAccounting=true",
+        "MemoryAccounting=true",
+        "IOAccounting=true",
+        "TasksAccounting=true",
+    ):
+        assert accounting in unit, f"{accounting} is required to receipt the counters"
+
+
+def test_ci_slice_leaves_first_wave_tunables_deliberately_inherited() -> None:
+    """AllowedCPUs/CPUWeight/IOWeight/TasksMax stay unset in this wave; their
+    counters are receipted instead. Setting one needs a new measured carrier.
+    """
+    unit = SLICE_TEMPLATE.read_text(encoding="utf-8")
+    for directive in ("AllowedCPUs=", "CPUWeight=", "IOWeight=", "TasksMax="):
+        assert directive not in unit, f"{directive} requires a new measured carrier"
+
+
+def test_ci_slice_is_ci_only_and_never_absorbs_render() -> None:
+    unit = SLICE_TEMPLATE.read_text(encoding="utf-8")
+    assert "render" in unit.lower(), "the template must state render is outside"
+    directives = [line.split("=", 1)[0] for line in unit.splitlines() if "=" in line]
+    assert "KillMode" not in directives, "KillMode belongs to the CI service"
+    for forbidden in ("pc-render", "render-linux"):
+        assert f"Slice={forbidden}" not in unit
+
+
+def test_only_the_pc_ci_service_template_joins_the_ci_slice() -> None:
+    """No checked-in render or cache unit may join the CI envelope."""
+    joined = sorted(
+        path.name
+        for path in (ROOT / "ops" / "runner-host").rglob("*")
+        if path.is_file()
+        and path.suffix in {".template", ".service", ".timer", ".plist"}
+        and "Slice=mastermind-ci.slice"
+        in path.read_text(encoding="utf-8", errors="replace")
+    )
+    assert joined == ["actions-runner-ci.service.template"]
+
+
+def test_pc_ci_service_joins_the_slice_without_losing_its_sandbox() -> None:
+    unit = CI_SERVICE_TEMPLATE.read_text(encoding="utf-8")
+    assert "Slice=mastermind-ci.slice" in unit
+    # Every pre-existing seal survives the slice migration.
+    for preserved in (
+        "KillMode=control-group",
+        "ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git",
+        "ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag",
+        "UMask=0022",
+        "NoNewPrivileges=true",
+        "ProtectSystem=strict",
+        "InaccessiblePaths=/mnt/c /mnt/d /home/longr /root",
+        "StartLimitIntervalSec=0",
+    ):
+        assert preserved in unit, f"slice migration dropped {preserved}"
+    assert "--require-slice" in unit, "a slice-joined unit must demand its binding"
+
+
+def test_cleanup_admits_exactly_the_fourth_sealed_root(tmp_path: Path) -> None:
+    roots = {str(path) for path in CLEANUP.PC_CI_ROOTS}
+    assert roots == {
+        "/opt/mastermind-ci/runner-1",
+        "/opt/mastermind-ci/runner-2",
+        "/opt/mastermind-ci/runner-3",
+        "/opt/mastermind-ci/runner-4",
+    }
+
+
+def test_cleanup_refuses_a_fifth_or_foreign_runner_root(tmp_path: Path) -> None:
+    for name in ("runner-5", "runner-0", "render-1"):
+        stray = tmp_path / name
+        (stray / "_work").mkdir(parents=True)
+        with pytest.raises(RuntimeError, match="sealed PC CI allowlist"):
+            CLEANUP.scrub_pc_state(stray)
+
+
+def test_resource_guard_thresholds_are_versioned_apart_from_slice_ceilings() -> None:
+    """Guard thresholds and slice ceilings move independently: retuning a refusal
+    threshold must not read as a change to the measured resource envelope.
+    """
+    assert RESOURCE_GUARD.THRESHOLDS_VERSION == (
+        "mastermind.ci_resource_guard_thresholds.v1"
+    )
+    preflight = RESOURCE_GUARD.PREFLIGHT_PROFILES["four-slot-canary"]
+    assert preflight["memory_available_min_bytes"] == 20 * 1024**3
+    assert preflight["swap_used_max_bytes"] == 512 * 1024**2
+    assert preflight["psi_full_avg10_max"] == 0.10
+    assert RESOURCE_GUARD.PREFLIGHT_PROFILES["steady"]["memory_available_min_bytes"] == (
+        4 * 1024**3
+    )
+
+
+def test_resource_guard_refuses_a_candidate_outside_the_ci_slice() -> None:
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=Path("/nonexistent"),
+        cgroup="/system.slice/actions.runner.macro.pc-ci-4.service",
+        profile="steady",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert any("mastermind-ci.slice" in reason for reason in reasons)
+    assert evidence["bound"] is False
+
+
+def test_resource_guard_refuses_on_slice_memory_limit_events(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(
+        root, CI_CGROUP, **{"memory.events": "low 0\nhigh 0\nmax 1\noom 0\noom_kill 2\n"}
+    )
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="steady",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert any("limit event" in reason for reason in reasons)
+    assert evidence["memory_events"]["oom_kill"] == 2
+
+
+def test_resource_guard_four_slot_preflight_gates_memory_swap_and_pressure(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP)
+    clean, _ = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert clean == []
+
+    thin, _ = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=12 * 1024**3,
+        swap_used_bytes=1024**3,
+        require_slice=True,
+    )
+    assert any("20 GiB" in reason or "memory available" in reason for reason in thin)
+    assert any("swap" in reason for reason in thin)
+
+    _write_slice_tree(
+        root,
+        CI_CGROUP,
+        **{
+            "memory.pressure": (
+                "some avg10=5.00 avg60=4.00 avg300=3.00 total=9999\n"
+                "full avg10=0.90 avg60=0.50 avg300=0.20 total=500\n"
+            )
+        },
+    )
+    stalled, _ = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert any("pressure" in reason for reason in stalled)
+
+
+def test_resource_guard_memory_floor_stays_guest_wide_for_render_headroom(
+    tmp_path: Path,
+) -> None:
+    """The renderer lives OUTSIDE the CI slice, so a slice-local memory floor
+    would be blind to it. The floor must stay a guest-wide MemAvailable read.
+    """
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{"memory.current": "1048576\n"})
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=2 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert reasons, "a nearly-idle slice must not excuse a starved guest"
+    assert evidence["memory_floor_is_guest_wide"] is True
+
+
+def test_cumulative_memory_high_reclaim_never_strands_a_listener(tmp_path: Path) -> None:
+    """memory.events counters are CUMULATIVE over the slice lifetime. `high` is
+    MemoryHigh reclaim working as designed; refusing a start on it would mean
+    that once CI ever touched 10G, every later listener start refuses forever.
+    Only real kills (max/oom/oom_kill) may gate a start.
+    """
+    root = tmp_path / "cgroup"
+    _write_slice_tree(
+        root,
+        CI_CGROUP,
+        **{"memory.events": "low 0\nhigh 4096\nmax 0\noom 0\noom_kill 0\n"},
+    )
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert reasons == [], "cumulative MemoryHigh reclaim must not wedge the slot"
+    assert evidence["memory_events"]["high"] == 4096, "but it is still receipted"

@@ -11,6 +11,187 @@ from pathlib import Path
 
 
 GIB = 1024**3
+MIB = 1024**2
+
+EXPECTED_SLICE = "mastermind-ci.slice"
+
+# Guard thresholds are versioned SEPARATELY from the slice ceilings in
+# mastermind-ci.slice.template. Retuning when a listener refuses to start is an
+# operational decision; changing CPUQuota/MemoryMax is a measured resource
+# decision. Sharing one version for both would make a threshold tweak read as a
+# change to the envelope itself.
+THRESHOLDS_VERSION = "mastermind.ci_resource_guard_thresholds.v1"
+
+PREFLIGHT_PROFILES = {
+    # Steady state for pc-ci-1..3 today: unchanged from the accepted P2 guard.
+    "steady": {
+        "memory_available_min_bytes": 4 * GIB,
+        "swap_used_max_bytes": None,
+        "psi_full_avg10_max": None,
+    },
+    # Stricter gate before a four-slot diagnostic, from the frozen plan
+    # preconditions. Deliberately harder than steady state: the point is to
+    # refuse starting a four-wide run on a guest that is already strained,
+    # where the result would measure the strain rather than the capacity.
+    "four-slot-canary": {
+        "memory_available_min_bytes": 20 * GIB,
+        "swap_used_max_bytes": 512 * MIB,
+        "psi_full_avg10_max": 0.10,
+    },
+}
+
+
+def _read(path: Path) -> str | None:
+    """None means the kernel does not expose the field; never treated as zero."""
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+
+
+def _read_keyed(path: Path) -> dict[str, int] | None:
+    raw = _read(path)
+    if raw is None:
+        return None
+    values: dict[str, int] = {}
+    for line in raw.splitlines():
+        fields = line.split()
+        if len(fields) == 2:
+            try:
+                values[fields[0]] = int(fields[1])
+            except ValueError:
+                continue
+    return values or None
+
+
+def _read_full_avg10(path: Path) -> float | None:
+    raw = _read(path)
+    if raw is None:
+        return None
+    for line in raw.splitlines():
+        fields = line.split()
+        if fields and fields[0] == "full":
+            for item in fields[1:]:
+                key, _, value = item.partition("=")
+                if key == "avg10":
+                    try:
+                        return float(value)
+                    except ValueError:
+                        return None
+    return None
+
+
+def candidate_cgroup(proc_self_cgroup: Path = Path("/proc/self/cgroup")) -> str | None:
+    raw = _read(proc_self_cgroup)
+    if raw is None:
+        return None
+    for line in raw.splitlines():
+        if line.startswith("0::"):
+            return line[3:].strip() or None
+    return None
+
+
+def is_bound_to_ci_slice(cgroup: str | None) -> bool:
+    """Exact path COMPONENT match beneath the slice, in a `.service` unit.
+
+    A substring test would accept `other-mastermind-ci.slice`, and the slice
+    root itself is not a candidate.
+    """
+    if not cgroup:
+        return False
+    components = [item for item in cgroup.split("/") if item]
+    if EXPECTED_SLICE not in components:
+        return False
+    index = components.index(EXPECTED_SLICE)
+    return any(item.endswith(".service") for item in components[index + 1 :])
+
+
+def slice_reasons(
+    cgroup_root: Path,
+    cgroup: str | None,
+    profile: str,
+    memory_available_bytes: int,
+    swap_used_bytes: int,
+    *,
+    require_slice: bool,
+) -> tuple[list[str], dict]:
+    """Aggregate-slice half of the prestart refusal decision.
+
+    The memory floor is read GUEST-WIDE on purpose. The renderer lives outside
+    this slice, so a slice-local memory read would show a nearly idle cgroup
+    while the guest itself is starved -- and would happily admit a CI job that
+    then starves the renderer. Slice evidence is used for what only it can
+    answer: whether CI's own envelope is already throttling, swapping or
+    OOM-killing.
+    """
+
+    thresholds = PREFLIGHT_PROFILES.get(profile) or PREFLIGHT_PROFILES["steady"]
+    bound = is_bound_to_ci_slice(cgroup)
+    evidence: dict[str, object] = {
+        "thresholds_version": THRESHOLDS_VERSION,
+        "profile": profile,
+        "expected_slice": EXPECTED_SLICE,
+        "cgroup": cgroup,
+        "bound": bound,
+        "memory_floor_is_guest_wide": True,
+        "memory_events": None,
+        "pressure_full_avg10": None,
+    }
+    reasons: list[str] = []
+
+    if require_slice and not bound:
+        reasons.append(
+            f"candidate cgroup {cgroup!r} is not a .service under /{EXPECTED_SLICE}"
+        )
+
+    floor = thresholds["memory_available_min_bytes"]
+    if floor is not None and memory_available_bytes < floor:
+        reasons.append(
+            f"guest memory available below {floor // GIB} GiB "
+            f"({memory_available_bytes // MIB} MiB)"
+        )
+    swap_ceiling = thresholds["swap_used_max_bytes"]
+    if swap_ceiling is not None and swap_used_bytes > swap_ceiling:
+        reasons.append(
+            f"swap in use above {swap_ceiling // MIB} MiB "
+            f"({swap_used_bytes // MIB} MiB)"
+        )
+
+    if bound:
+        node = Path(cgroup_root) / str(cgroup).lstrip("/")
+        events = _read_keyed(node / "memory.events")
+        evidence["memory_events"] = events
+        if events:
+            # These counters are CUMULATIVE over the slice's lifetime, not
+            # per-run. `high` counts MemoryHigh reclaim, which is the ceiling
+            # working as designed -- refusing on it would mean that once CI ever
+            # touched 10G, every later listener start refuses forever and the
+            # slot is stranded permanently. Only real kills gate a start here.
+            # The plan's "zero high/max/oom/oom_kill DELTA" is an acceptance
+            # criterion over one run window; that is the receipt reducer's job
+            # (capture_ci_canary_receipt.slice_metrics), not the prestart gate.
+            killed = {
+                key: value
+                for key, value in events.items()
+                if key in {"max", "oom", "oom_kill"} and value
+            }
+            if killed:
+                reasons.append(f"slice memory limit event(s) already recorded: {killed}")
+        ceiling = thresholds["psi_full_avg10_max"]
+        pressure: dict[str, float] = {}
+        for name, key in (("memory.pressure", "memory"), ("io.pressure", "io")):
+            value = _read_full_avg10(node / name)
+            if value is not None:
+                pressure[key] = value
+        evidence["pressure_full_avg10"] = pressure or None
+        if ceiling is not None:
+            for key, value in sorted(pressure.items()):
+                if value >= ceiling:
+                    reasons.append(
+                        f"slice {key} pressure full avg10 {value} at or above {ceiling}"
+                    )
+
+    return reasons, evidence
 
 
 def refusal_backoff(reasons: list[str], seconds: int, *, sleep=time.sleep) -> None:
@@ -38,6 +219,24 @@ def main() -> int:
         metavar="0..3600",
         help="wait before returning refusal status 78 (default: no wait)",
     )
+    parser.add_argument(
+        "--require-slice",
+        action="store_true",
+        help=(
+            "refuse unless this candidate is bound to a .service under "
+            f"/{EXPECTED_SLICE}; set by any unit that declares Slice="
+        ),
+    )
+    parser.add_argument(
+        "--preflight-profile",
+        choices=sorted(PREFLIGHT_PROFILES),
+        default="steady",
+        help="threshold profile; four-slot-canary is the stricter pre-diagnostic gate",
+    )
+    parser.add_argument("--cgroup-root", type=Path, default=Path("/sys/fs/cgroup"))
+    parser.add_argument(
+        "--proc-self-cgroup", type=Path, default=Path("/proc/self/cgroup")
+    )
     args = parser.parse_args()
     disk = os.statvfs(args.path)
     total = disk.f_blocks * disk.f_frsize
@@ -50,13 +249,23 @@ def main() -> int:
     swap_used_pct = (
         (1 - swap_free / swap_total) * 100 if swap_total else 0.0
     )
+    swap_used = swap_total - swap_free
     reasons: list[str] = []
     if used_pct >= 85 or free < 100 * GIB:
         reasons.append("critical disk pressure")
-    if available < 4 * GIB:
-        reasons.append("less than 4 GiB memory available")
     if swap_used_pct >= 50 and available < 8 * GIB:
         reasons.append("swap thrash risk")
+    # The memory floor, swap ceiling and every slice-aware gate live in
+    # slice_reasons so the threshold profile is the single place they are set.
+    slice_refusals, slice_evidence = slice_reasons(
+        cgroup_root=args.cgroup_root,
+        cgroup=candidate_cgroup(args.proc_self_cgroup),
+        profile=args.preflight_profile,
+        memory_available_bytes=available,
+        swap_used_bytes=swap_used,
+        require_slice=args.require_slice,
+    )
+    reasons.extend(slice_refusals)
     result = {
         "schema": "mastermind.ci_resource_guard.v1",
         "path": str(args.path.resolve()),
@@ -66,6 +275,8 @@ def main() -> int:
         "disk_used_percent": round(used_pct, 2),
         "memory_available_bytes": available,
         "swap_used_percent": round(swap_used_pct, 2),
+        "swap_used_bytes": swap_used,
+        "ci_slice": slice_evidence,
         "allowed": not reasons,
         "reasons": reasons,
     }
