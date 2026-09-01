@@ -10575,6 +10575,7 @@ jobs:
       - "engine/price_ladder.py"
       - "engine/prophet_arena.py"
       - "engine/prophet_board_read.py"
+      - "engine/prophet_board_since.py"
       - "engine/prophet_bridge.py"
       - "engine/prophet_doors.py"
       - "engine/prophet_integrity.py"
@@ -10747,6 +10748,7 @@ jobs:
       - "scripts/build_canada_library.py"
       - "scripts/build_capital_structure_page.py"
       - "scripts/build_chart_data.py"
+      - "scripts/build_china.py"
       - "scripts/build_china_library.py"
       - "scripts/build_china_masterminds.py"
       - "scripts/build_china_microstructure.py"
@@ -10755,7 +10757,10 @@ jobs:
       - "scripts/build_commodity_strategies.py"
       - "scripts/build_crossmarket.py"
       - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_hk.py"
       - "scripts/build_index_leadership.py"
+      - "scripts/build_intl.py"
+      - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_live_overlay.py"
       - "scripts/build_market_heatmap.py"
@@ -10853,8 +10858,12 @@ jobs:
       - "templates/_prophet_card.html.j2"
       - "templates/_stock_decision.css.j2"
       - "templates/_track_record_dlg.html.j2"
+      - "templates/_us_board_cards.html.j2"
+      - "templates/canada.html.j2"
       - "templates/china.html.j2"
       - "templates/dashboard.html.j2"
+      - "templates/hk.html.j2"
+      - "templates/intl.html.j2"
       - "templates/stocktable.js"
       - "templates/theme.css"
       - "tests/test_b3_forex_consumer.py"
@@ -10879,6 +10888,9 @@ jobs:
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_board_read.py"
+      - "tests/test_prophet_board_since.py"
+      - "tests/test_prophet_candidate_added_date_surfaces.py"
+      - "tests/test_prophet_card_added_date.py"
       - "tests/test_prophet_card_live_change.py"
       - "tests/test_prophet_card_shared.py"
       - "tests/test_prophet_fusion_arena.py"
@@ -10969,6 +10981,17 @@ jobs:
       # synthetic LibraryIndex trees under tmp_path, no data/ or site/ reads.
       - name: prophet board read (G-D actionability join + honest absence)
         run: python -m pytest tests/test_prophet_board_read.py -q
+      # Prophet candidate "Added date" (prophet-candidate-added-date-fable-e2e,
+      # 2026-09-01). engine/prophet_board_since.py's resolver core + market
+      # adapters (test_prophet_board_since.py), the pv_card chip
+      # (test_prophet_card_added_date.py, real Jinja render via the harness
+      # tests/test_prophet_card_live_change.py already established), and the
+      # caller-census + freshness-header guards across all five markets
+      # (test_prophet_candidate_added_date_surfaces.py). Rides this step —
+      # same US/CN board-surface family, same venv (pandas for the CN/HK/CA
+      # parquet adapters, jinja2 already installed here for the card render).
+      - name: prophet candidate Added-date resolver + card + surfaces
+        run: python -m pytest tests/test_prophet_board_since.py tests/test_prophet_card_added_date.py tests/test_prophet_candidate_added_date_surfaces.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
