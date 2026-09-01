@@ -14,6 +14,23 @@ None in that case unless the caller asserts `starts_at_inception=True` for a
 market whose recorded history is independently known to start at the board's
 actual launch. Every call site in this module passes `starts_at_inception=False`
 today; see the per-market adapter docstrings for the evidence.
+
+MEMBERSHIP vs DISPLAY (adjudicated 2026-09-01, REQUEST_REPAIR on the same
+carrier): a name's presence in the OBSERVATION series each adapter builds —
+what sustains or resets tenure — is a strictly wider set than the pv_card
+(chip) surface. MEMBERSHIP = presence in the published board fossil under any
+LIVE, name-visible lane/group/definition — every lane whose names are
+actually rendered somewhere on the public board page (card, table row, or
+link grid), excluding only research/shadow cohorts whose names are never
+shown. DISPLAY = the narrower pv_card lane(s) that actually receive the
+`added_date` chip. Each adapter section below now names both sets explicitly
+(`*_MEMBERSHIP_*` feeds the observation history + today's current-ids fold;
+`*_DISPLAY_*` / `*_CURRENT_LANES` still gates which rows get stamped) so a
+name moving between two visible lanes (e.g. US buy<->watch, HK/CA
+entry_open<->watch) is represented as continued presence in the SAME
+observation set and does not reset the streak — only a published observation
+that omits the name outright resets it (`current_continuous_membership_start`
+docstring above).
 """
 from __future__ import annotations
 
@@ -178,17 +195,45 @@ def current_continuous_membership_start(
 
 
 # ─────────────────────────────── US adapter ─────────────────────────────────
-# Visible lane trace (2026-09-01): templates/_us_board_cards.html.j2 is included
-# from exactly two places — dashboard.html.j2:16649 with items=_render_list.items
-# (built solely from `_board = _su.buy`, both the legacy lane-partition path and
-# the priority stage-partition path), and scripts/build_site.py's
-# `_write_us_payload` (items from `_us_board_group_items(locked_rows, ...)` where
-# `locked_rows` is documented as "the withheld remainder of `buy`"). watch /
-# leaders / laggards / ran are rendered by SEPARATE templates
-# (_us_leader_rows.html.j2, _us_ran_rows.html.j2, _us_setups_rows.html.j2), none
-# of which call pv_card — grep confirms zero `pv_card(` occurrences in any of the
-# three. So the only US visible lane is `buy`.
-US_VISIBLE_LANES = ("buy",)
+# CARD/DISPLAY lane trace (2026-09-01): templates/_us_board_cards.html.j2 is
+# included from exactly two places — dashboard.html.j2:16649 with
+# items=_render_list.items (built solely from `_board = _su.buy`, both the
+# legacy lane-partition path and the priority stage-partition path), and
+# scripts/build_site.py's `_write_us_payload` (items from
+# `_us_board_group_items(locked_rows, ...)` where `locked_rows` is documented
+# as "the withheld remainder of `buy`"). So the only US pv_card (chip) lane is
+# `buy` — this is the DISPLAY surface, unchanged by the membership fix below.
+US_DISPLAY_LANES = US_VISIBLE_LANES = ("buy",)
+
+# MEMBERSHIP lane trace (2026-09-01, REQUEST_REPAIR — membership vs display are
+# two different sets; a display-only walk under-counted the market's own
+# published-board surfaces and reset tenure on buy<->watch moves). Evidence
+# that watch/leaders/laggards/ran each reach the reader on dashboard.html.j2,
+# even though none of them render through pv_card:
+#   - `leaders`: templates/_us_leader_rows.html.j2 — a real <tr> table (rank,
+#     ticker, name, sector, alpha…) rendered both in the free shell and via
+#     scripts/build_site.py._render_us_panel_payload's "leaders_html" for the
+#     locked remainder. Ticker + company name are always printed.
+#   - `ran`: templates/_us_ran_rows.html.j2 (.pbr-l "recently fired" strip) —
+#     same shape, ticker + name always printed, plus a "leaders_html"-style
+#     sibling render for the locked remainder ("ran_html").
+#   - `watch` + `laggards`: dashboard.html.j2:16029-16059 builds the `#plv-names`
+#     JSON island — "the near-decision population the pack arms from — buy u
+#     watch u leaders u laggards" — precisely so the live #prophet-live strip
+#     (build_prophet_live_pack.py / live/prophet_live.json) can print a real
+#     company name, not a bare ticker, the moment one of THOSE names crosses a
+#     level intraday. build_site.py:5557-5573 independently confirms the same
+#     union for the gated-tier payload ("plv_names"), noting watch/laggards are
+#     "the two populations that have no panel here at all" (no dedicated table)
+#     — i.e. they reach the reader ONLY through this strip, never through a
+#     locked panel, but they DO reach the reader. This is the frozen-spec test
+#     ("names actually rendered somewhere on the public board page") — card or
+#     not.
+#   - `donor` stays EXCLUDED: it never appears in the `#plv-names` union, the
+#     leaders/ran partials, or any other US template (grep: zero occurrences of
+#     doc.get('donor') / su.get('donor') / .donor outside research/telemetry
+#     code) — never rendered as a name to a reader, so it is research-only.
+US_MEMBERSHIP_LANES = ("buy", "watch", "leaders", "laggards", "ran")
 
 # starts_at_inception=False — PROVEN false: data/us_board_ledger/retro_grades.parquet
 # carries as_of back to 2026-06-15 (measured), before snapshots.jsonl's own fossil
@@ -200,7 +245,7 @@ _us_obs_cache: dict[tuple[str, float, int], list[Observation]] = {}
 
 
 def observations_from_us_snapshots_jsonl(
-    path: Path, visible_lanes: Sequence[str] = US_VISIBLE_LANES,
+    path: Path, visible_lanes: Sequence[str] = US_MEMBERSHIP_LANES,
 ) -> list[Observation]:
     """Stream `data/us_board_ledger/snapshots.jsonl` line-by-line (never a whole-file
     read — the file is ~33MB). Memoized per-process keyed by (path, mtime, size) so a
@@ -254,9 +299,11 @@ def stamp_us_board_since(
         return artifact
     data = Path(data_dir) if data_dir is not None else _REPO_ROOT / "data"
     hist = observations_from_us_snapshots_jsonl(data / "us_board_ledger" / "snapshots.jsonl")
-    current_ids = identities_in_lanes(artifact, US_VISIBLE_LANES)
+    # MEMBERSHIP (sustains tenure) uses the wider visible-lane set; DISPLAY (which
+    # rows get a chip, below) stays the narrower pv_card-only lane.
+    current_ids = identities_in_lanes(artifact, US_MEMBERSHIP_LANES)
     obs = with_current_board(hist, artifact.get("as_of"), current_ids)
-    for lane in US_VISIBLE_LANES:
+    for lane in US_DISPLAY_LANES:
         rows = artifact.get(lane)
         if not isinstance(rows, list):
             continue
@@ -285,14 +332,15 @@ def stamp_us_board_since_fail_open(
 
 
 # ─────────────────────────────── CN adapter ─────────────────────────────────
-# Visible identity trace (2026-09-01): templates/china.html.j2 has exactly two
+# DISPLAY identity trace (2026-09-01): templates/china.html.j2 has exactly two
 # pv_card call sites. ENTRY/featured (~L3605) iterates `_mrg`, built from
 # `_entry_rows` (setups.buy filtered to stage=='ENTRY', OR the whole of
 # setups.buy when neither ENTRY nor RAN_LATE rows exist — the pre-W1
 # backward-compat fallback) UNION `setups.more_actionable`. RAN/LATE (~L3709)
 # iterates `_ran_late_rows` (setups.buy filtered to stage=='RAN_LATE').
 # `setups.late_or_unfillable` is counted in the facet-bar chip but never
-# iterated for a card — excluded.
+# iterated for a card — excluded. This is the DISPLAY (chip) surface only,
+# unchanged by the membership fix below.
 CN_CURRENT_LANES = ("buy", "more_actionable")
 
 # starts_at_inception=False — PROVEN false: board_definition=='legacy' rows
@@ -309,7 +357,27 @@ def observations_from_cn_frame(
     `board_definition` is a watch/shadow cohort (never sustains tenure) AND rows
     whose `board_definition` == 'legacy' (1,082 rows, null lane, pre-v2 era —
     non-authoritative for presence AND absence; observations begin at the first
-    non-legacy date)."""
+    non-legacy date).
+
+    MEMBERSHIP TRACE (2026-09-01, REQUEST_REPAIR): `board_definition` is the
+    ONLY filter here, and that is deliberate, not an oversight. Traced
+    scripts/build_china_library.py (append_board call sites ~L4280-4315) and
+    engine/china_board_rank.py._partition: only `wide["buy"]` — which IS
+    `_board_lanes["featured"]`, i.e. the SAME rows `china.html.j2` cards as the
+    entry/featured shelf — plus the explicit reversal_watch / v2-shadow /
+    v3-shadow / continuation_watch cohorts (all in WATCH_DEFINITIONS, already
+    excluded above) ever reach `china_standout_track.append_board`. The other
+    three lanes `_partition` computes (`more_actionable`, `late_or_unfillable`,
+    `forming`) are NEVER appended to board.parquet — measured on the live
+    fossil: its `lane` column holds exactly three values (`featured`,
+    `reversal_watch`, null/`legacy`), never `more_actionable` or
+    `late_or_unfillable`. So "every live-definition row in the fossil" and
+    "the featured/carded shelf" are the SAME set today, by construction of the
+    upstream persistence layer (out of this module's scope to change) — a
+    `late_or_unfillable` demotion is a display partition of a row that was
+    simply never fossil-tracked to begin with, so it structurally cannot
+    "remove" a membership the fossil never granted it. `cn_current_visible_ids`
+    below reconciles the CURRENT-day read to this same fossil truth."""
     if df is None or getattr(df, "empty", False):
         return []
     cols = set(getattr(df, "columns", ()))
@@ -331,8 +399,32 @@ def observations_from_cn_frame(
 
 
 def cn_current_visible_ids(artifact: Mapping[str, Any] | None) -> set[str]:
-    """Ticker set actually reaching a pv_card on china.html.j2 today — mirrors the
-    template's own `_entry_rows` / `_ran_late_rows` / `_more_lane` partition."""
+    """Ticker set TONIGHT's build writes (or would write) to board.parquet under
+    its live board_definition — i.e. all of `artifact["buy"]` (the "featured"
+    lane; see the fossil trace above), regardless of the `stage` a card
+    happens to display it under (ENTRY vs RAN_LATE is a template-only
+    partition of the SAME lane and must never gate membership).
+
+    NOT the same set as the template's pv_card partition: `more_actionable`
+    cards render today (china.html.j2 `_more_lane`) but are never persisted to
+    the fossil (see the trace above), so a more_actionable-only ticker
+    correctly gets no membership contribution here — `added_date` resolves to
+    None for it, which is the honest "unprovable" answer, not a bug. This
+    function is therefore DELIBERATELY NOT a superset of every card-rendered
+    id; it is the fossil-write set, which the ADJUDICATED RULE (top of this
+    module) defines membership against."""
+    if not artifact:
+        return set()
+    buy = artifact.get("buy") or []
+    return {tk for r in buy if isinstance(r, dict) and (tk := _clean_id(r.get("ticker")))}
+
+
+def _cn_card_rendered_ids_for_test(artifact: Mapping[str, Any] | None) -> set[str]:
+    """TEST-ONLY mirror of china.html.j2's pv_card partition (entry_rows u
+    ran_late_rows u more_lane) — kept out of the adapter's own public surface
+    (cn_current_visible_ids is fossil-truth, not display-truth; see its
+    docstring) but retained so tests can assert the DISPLAY set independently
+    without re-deriving the template partition inline."""
     if not artifact:
         return set()
     buy = artifact.get("buy") or []
@@ -397,18 +489,40 @@ def stamp_cn_board_since_fail_open(
 
 
 # ─────────────────────────────── HK / CA adapter ─────────────────────────────
-# Visible-group trace (2026-09-01): hk.html.j2's pv_card loop
+# DISPLAY-group trace (2026-09-01): hk.html.j2's pv_card loop
 # (`_render_list.items if _hsg.any else _hkb`) is built entirely from
 # `_hkb = setups.buy` — `setups.watch` is rendered separately as a plain
 # `<a>` anchor grid ("watch-strip"), never through pv_card (grep: zero
 # `pv_card(` near that block). canada.html.j2 is the same shape: pv_card loop
 # is `for s in setups.buy`; `setups.watch` is its own anchor-only watch-strip.
-# So the only visible group is the one that ends up inside `setups.buy`, which
-# corresponds to the board_ledger parquet's `entry_open` / `setting_up` groups
-# — `watch` in the parquet corresponds to the anchor-only strip and must NOT
-# count (the frozen spec: "`watch` counts ONLY if it is genuinely carded").
-HK_CA_VISIBLE_GROUPS = frozenset({"entry_open", "setting_up"})
-HK_CA_CURRENT_LANES = ("buy",)
+# So the only CARDED (chip) group is the one that ends up inside `setups.buy`,
+# which corresponds to the board_ledger parquet's `entry_open` / `setting_up`
+# groups. HK_CA_DISPLAY_LANES / HK_CA_CURRENT_LANES stay `("buy",)` — the chip
+# still only ever shows on a carded row, unchanged by the membership fix below.
+HK_CA_DISPLAY_LANES = HK_CA_CURRENT_LANES = ("buy",)
+
+# MEMBERSHIP-group trace (2026-09-01, REQUEST_REPAIR): `watch` renders as a
+# visible anchor grid of names ("watch-strip") on BOTH hk.html.j2 and
+# canada.html.j2 — visible names sustain tenure per the ADJUDICATED RULE
+# (top of this module) even when they never earn a pv_card. And unlike CN's
+# more_actionable/late_or_unfillable (never fossil-persisted, see the CN
+# adapter above), HK/CA's `watch` group genuinely IS written to the fossil:
+# scripts/build_hk_library.py._board_ledger_calls(buys, watch, ...) builds
+# `calls = buys + watch` (its own docstring: "buy + watch, and nothing
+# else... leaders / ran / vetoed" are the ones deliberately excluded), fed to
+# `engine.board_ledger.append_board`. Measured on the live fossil: `group`
+# actually holds `watch` rows today (HK: 321, CA: 248), alongside
+# `entry_open` / `setting_up`. So including `watch` in the membership read is
+# not merely visible-but-unrecorded (the earlier US-donor / CN-more_actionable
+# case) — it is visible AND already fossil-tracked; the prior exclusion here
+# was the display/membership conflation the mission packet exists to correct.
+HK_CA_VISIBLE_GROUPS = frozenset({"entry_open", "setting_up", "watch"})
+# `identities_in_lanes(artifact, HK_CA_MEMBERSHIP_LANES)` reads the CURRENT
+# (today's) board for the same reason — the artifact carries `watch` as its
+# own top-level key (confirmed: hk_standouts.json / canada_standouts.json both
+# ship a `watch` list alongside `buy`), so folding it into today's observation
+# keeps the live read consistent with the parquet history it will join.
+HK_CA_MEMBERSHIP_LANES = ("buy", "watch")
 
 # starts_at_inception left False in code for BOTH markets — undetermined, see
 # git receipts gathered in the worker's RETURN (engine/hk_board_rank.py wasn't
@@ -459,9 +573,11 @@ def stamp_hkca_board_since(
     if path.exists():
         import pandas as pd  # noqa: PLC0415 — optional adapter dep
         hist = observations_from_board_ledger_frame(pd.read_parquet(path))
-    current_ids = identities_in_lanes(artifact, HK_CA_CURRENT_LANES)
+    # MEMBERSHIP (sustains tenure) folds in `watch`; DISPLAY (which rows get a
+    # chip, below) stays the narrower pv_card-only `buy` lane.
+    current_ids = identities_in_lanes(artifact, HK_CA_MEMBERSHIP_LANES)
     obs = with_current_board(hist, artifact.get("as_of"), current_ids)
-    for lane in HK_CA_CURRENT_LANES:
+    for lane in HK_CA_DISPLAY_LANES:
         rows = artifact.get(lane)
         if not isinstance(rows, list):
             continue
@@ -497,7 +613,12 @@ def stamp_hkca_board_since_fail_open(
 # is exactly the kind of git-in-the-build-path this program forbids).
 #
 # Visible-lane trace (2026-09-01): intl.html.j2 has exactly ONE pv_card call
-# site, iterating `buys = setups.buy`.
+# site, iterating `buys = setups.buy`. REQUEST_REPAIR re-check: grepped
+# intl.html.j2 for `laggards` (the membership-vs-display question raised for
+# US/CN/HK/CA) — zero occurrences of `setups.laggards` / `.get('laggards')` /
+# any other reference to a laggards list anywhere in the template. Whatever
+# `laggards` key the intl artifact may carry is never rendered as a name to a
+# reader here, so it stays excluded — membership is `buy` only, unchanged.
 INTL_VISIBLE_LANES = ("buy",)
 
 

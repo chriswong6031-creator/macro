@@ -153,7 +153,11 @@ def test_cn_watch_definitions_module_attr_identity():
     assert isinstance(WATCH_DEFINITIONS, frozenset)
 
 
-def test_cn_current_visible_ids_matches_template_partition():
+def test_cn_current_visible_ids_is_the_full_buy_lane_not_a_stage_partition():
+    # cn_current_visible_ids is FOSSIL-TRUTH (what tonight's build writes to
+    # board.parquet under its live board_definition — the whole "featured"
+    # lane), not the template's stage partition. A row's `stage` (ENTRY vs
+    # RAN_LATE) is a display-only facet and must not gate membership.
     artifact = {
         "buy": [
             {"ticker": "AAA", "stage": "ENTRY"},
@@ -164,12 +168,46 @@ def test_cn_current_visible_ids_matches_template_partition():
         "late_or_unfillable": [{"ticker": "EEE"}],
     }
     ids = pbs.cn_current_visible_ids(artifact)
-    assert ids == {"AAA", "BBB", "DDD"}
+    assert ids == {"AAA", "BBB", "CCC"}
+
+
+def test_cn_current_visible_ids_excludes_more_actionable_never_fossil_tracked():
+    # Traced scripts/build_china_library.py: only wide["buy"] (== the "featured"
+    # lane) is ever appended to board.parquet; more_actionable/late_or_unfillable
+    # never are (measured on the live fossil: its `lane` column never holds
+    # either value). A more_actionable-only ticker therefore correctly earns NO
+    # membership contribution here — this is NOT a superset of every
+    # card-rendered id (more_actionable cards render on china.html.j2 today via
+    # `_more_lane`; see _cn_card_rendered_ids_for_test), by construction of the
+    # upstream persistence layer this module does not own.
+    artifact = {"buy": [{"ticker": "AAA"}], "more_actionable": [{"ticker": "DDD"}]}
+    membership_ids = pbs.cn_current_visible_ids(artifact)
+    card_ids = pbs._cn_card_rendered_ids_for_test(artifact)
+    assert membership_ids == {"AAA"}
+    assert card_ids == {"AAA", "DDD"}
+    assert "DDD" in card_ids and "DDD" not in membership_ids
 
 
 def test_cn_current_visible_ids_legacy_fallback_whole_board():
     artifact = {"buy": [{"ticker": "AAA"}, {"ticker": "BBB"}]}
     assert pbs.cn_current_visible_ids(artifact) == {"AAA", "BBB"}
+
+
+def test_cn_observations_ignore_display_facet_columns_other_than_board_definition():
+    # "a display partition of fossil-present live rows does NOT remove
+    # membership" — observations_from_cn_frame's only filter key is
+    # board_definition; other per-row facets (stage, extended, entry_status,
+    # etc.) that the template might use to route a row into a different
+    # display group must never subtract it from the fossil-membership read.
+    df = pd.DataFrame([
+        {"date": "2026-08-01", "ticker": "AAA", "board_definition": "cn_prophet_v4",
+         "stage": "ENTRY", "extended": False},
+        {"date": "2026-08-02", "ticker": "AAA", "board_definition": "cn_prophet_v4",
+         "stage": "RAN_LATE", "extended": True},
+    ])
+    obs = pbs.observations_from_cn_frame(df, watch_definitions=set())
+    assert dict(obs)["2026-08-01"] == frozenset({"AAA"})
+    assert dict(obs)["2026-08-02"] == frozenset({"AAA"})
 
 
 # ─────────────────────────────────── HK/CA ───────────────────────────────────
@@ -178,7 +216,13 @@ def _ledger_frame(rows):
     return pd.DataFrame(rows, columns=["date", "ticker", "group"])
 
 
-def test_hk_ca_visible_groups_excludes_watch():
+def test_hk_ca_visible_groups_includes_watch_for_membership():
+    # watch renders as a visible anchor grid on both hk.html.j2 and
+    # canada.html.j2 (never pv_card — see the template-census tests below) AND
+    # is genuinely fossil-tracked: build_hk_library._board_ledger_calls builds
+    # `calls = buys + watch`, so watch rows are already in hk_board.parquet /
+    # ca_board.parquet today. Visible + fossil-tracked -> counts toward
+    # membership, unlike CN's more_actionable (visible but never persisted).
     df = _ledger_frame([
         ("2026-08-01", "AAA", "entry_open"),
         ("2026-08-01", "BBB", "watch"),
@@ -186,12 +230,21 @@ def test_hk_ca_visible_groups_excludes_watch():
         ("2026-08-02", "BBB", "watch"),
     ])
     obs = pbs.observations_from_board_ledger_frame(df)
-    assert dict(obs)["2026-08-01"] == frozenset({"AAA"})
-    assert dict(obs)["2026-08-02"] == frozenset({"AAA"})
+    assert dict(obs)["2026-08-01"] == frozenset({"AAA", "BBB"})
+    assert dict(obs)["2026-08-02"] == frozenset({"AAA", "BBB"})
 
 
-def test_hk_ca_visible_groups_constant_is_entry_open_and_setting_up_only():
-    assert pbs.HK_CA_VISIBLE_GROUPS == frozenset({"entry_open", "setting_up"})
+def test_hk_ca_visible_groups_constant_is_entry_open_setting_up_and_watch():
+    assert pbs.HK_CA_VISIBLE_GROUPS == frozenset({"entry_open", "setting_up", "watch"})
+
+
+def test_hk_ca_display_lanes_stay_buy_only_despite_wider_membership():
+    # DISPLAY (which rows get the added_date chip) is unchanged: only the
+    # carded `buy` lane, never `watch`, even though `watch` now counts toward
+    # MEMBERSHIP (the constant above).
+    assert pbs.HK_CA_DISPLAY_LANES == ("buy",)
+    assert pbs.HK_CA_CURRENT_LANES == ("buy",)
+    assert pbs.HK_CA_MEMBERSHIP_LANES == ("buy", "watch")
 
 
 def test_hk_template_never_pv_cards_the_watch_lane():
@@ -214,10 +267,99 @@ def test_canada_template_never_pv_cards_the_watch_lane():
     assert "pv.pv_card(" not in window
 
 
+def test_hk_ca_entry_open_watch_entry_open_movement_preserves_streak():
+    # A candidate moving entry_open -> watch -> entry_open must NOT reset its
+    # tenure: watch is a visible (anchor-grid) lane and now counts toward
+    # membership. ZZZ rides alongside AAA on EVERY date (in an always-counted
+    # group) so each date is a genuinely PUBLISHED observation under the OLD
+    # filter too — a row that filters down to zero rows for a date makes that
+    # date a silent GAP (never reaches obs at all), not a published absence,
+    # which would pass even against the pre-fix code for the wrong reason.
+    df = _ledger_frame([
+        ("2026-06-29", "ZZZ", "entry_open"),                # AAA genuinely absent
+        ("2026-06-30", "AAA", "entry_open"), ("2026-06-30", "ZZZ", "entry_open"),
+        ("2026-07-01", "AAA", "watch"), ("2026-07-01", "ZZZ", "entry_open"),
+        ("2026-07-02", "AAA", "entry_open"), ("2026-07-02", "ZZZ", "entry_open"),
+    ])
+    obs = pbs.observations_from_board_ledger_frame(df)
+    start = pbs.current_continuous_membership_start(obs, "AAA")
+    assert start == ("2026-06-30", "absence_proof")
+
+
+def test_hk_ca_stamp_since_preserves_date_across_watch_move(tmp_path):
+    # Full stamp_hkca_board_since pipeline: AAA is featured today ("buy") after
+    # having sat in "watch" yesterday and "buy" the day before — the chip must
+    # show the ORIGINAL date, not today's. A ticker that is in "watch" ONLY
+    # today (never "buy") must get no added_date key at all — display stays
+    # carded-only even though membership is wider.
+    data_dir = tmp_path / "data"
+    (data_dir / "board_ledger").mkdir(parents=True)
+    hist = pd.DataFrame([
+        {"date": "2026-06-29", "ticker": "ZZZ", "group": "entry_open"},
+        {"date": "2026-06-30", "ticker": "AAA", "group": "entry_open"},
+        {"date": "2026-06-30", "ticker": "ZZZ", "group": "entry_open"},
+        {"date": "2026-07-01", "ticker": "AAA", "group": "watch"},
+        {"date": "2026-07-01", "ticker": "ZZZ", "group": "entry_open"},
+    ])
+    hist.to_parquet(data_dir / "board_ledger" / "hk_board.parquet")
+    artifact = {
+        "as_of": "2026-07-02",
+        "buy": [{"ticker": "AAA"}],
+        "watch": [{"ticker": "WWW"}],  # WWW: watch-only today, never carded
+    }
+    out = pbs.stamp_hkca_board_since("hk", artifact, data_dir=data_dir)
+    assert out["buy"][0]["added_date"] == "2026-06-30"
+    assert "added_date" not in out["watch"][0]  # display stays carded-only
+
+
 # ──────────────────────────────────── US ─────────────────────────────────────
 
 def test_us_visible_lanes_is_buy_only():
     assert pbs.US_VISIBLE_LANES == ("buy",)
+    assert pbs.US_DISPLAY_LANES == ("buy",)
+
+
+def test_us_membership_lanes_includes_watch_leaders_laggards_ran_not_donor():
+    assert pbs.US_MEMBERSHIP_LANES == ("buy", "watch", "leaders", "laggards", "ran")
+
+
+def test_us_buy_watch_buy_movement_preserves_streak(tmp_path):
+    # A candidate moving buy -> watch -> buy must not reset its tenure: watch
+    # reaches the reader via the #plv-names / #prophet-live strip (see the
+    # trace comment on US_MEMBERSHIP_LANES) even though it never earns a card.
+    jsonl = tmp_path / "snapshots.jsonl"
+    jsonl.write_text(
+        '{"as_of": "2026-06-29", "buy": [], "watch": []}\n'
+        '{"as_of": "2026-06-30", "buy": [{"ticker": "AAA"}], "watch": []}\n'
+        '{"as_of": "2026-07-01", "buy": [], "watch": [{"ticker": "AAA"}]}\n'
+        '{"as_of": "2026-07-02", "buy": [{"ticker": "AAA"}], "watch": []}\n',
+        encoding="utf-8",
+    )
+    obs = pbs.observations_from_us_snapshots_jsonl(jsonl)
+    start = pbs.current_continuous_membership_start(obs, "AAA")
+    assert start == ("2026-06-30", "absence_proof")
+
+
+def test_us_stamp_since_preserves_date_across_watch_move_display_only_on_buy(tmp_path):
+    data_dir = tmp_path / "data"
+    (data_dir / "us_board_ledger").mkdir(parents=True)
+    jsonl = data_dir / "us_board_ledger" / "snapshots.jsonl"
+    jsonl.write_text(
+        '{"as_of": "2026-06-29", "buy": [], "watch": []}\n'
+        '{"as_of": "2026-06-30", "buy": [{"ticker": "AAA"}], "watch": []}\n'
+        '{"as_of": "2026-07-01", "buy": [], "watch": [{"ticker": "AAA"}]}\n',
+        encoding="utf-8",
+    )
+    pbs._us_obs_cache.clear()
+    artifact = {
+        "as_of": "2026-07-02",
+        "buy": [{"ticker": "AAA"}],
+        "watch": [{"ticker": "WWW"}],  # WWW: watch-only today, never carded
+        "leaders": [], "laggards": [], "ran": [],
+    }
+    out = pbs.stamp_us_board_since(artifact, data_dir=data_dir)
+    assert out["buy"][0]["added_date"] == "2026-06-30"
+    assert "added_date" not in out["watch"][0]  # display stays carded-only
 
 
 def test_us_donor_never_treated_as_a_ticker_lane(tmp_path):
