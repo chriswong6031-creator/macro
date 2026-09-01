@@ -1,28 +1,28 @@
 {
   "schema": "options_ivspread.gate.v1",
-  "generated_at": "2026-08-01 08:33 UTC",
+  "generated_at": "2026-09-01 11:17 UTC",
   "scored": false,
-  "status": "insufficient_history (have 41/120 dates, 390/15 names)",
+  "status": "insufficient_history (have 39/120 dates, 406/15 names)",
   "weight": 0.0,
-  "n_dates": 41,
-  "n_names": 390,
+  "n_dates": 39,
+  "n_names": 406,
   "min_dates": 120,
   "min_names": 15,
   "ic_by_horizon": {
     "5": {
-      "n_dates": 30,
-      "mean_ic": 0.0714,
-      "hac_t": 6.27
+      "n_dates": 23,
+      "mean_ic": 0.06,
+      "hac_t": 2.14
     },
     "10": {
-      "n_dates": 25,
-      "mean_ic": 0.0144,
-      "hac_t": 0.56
+      "n_dates": 20,
+      "mean_ic": 0.0168,
+      "hac_t": 0.51
     },
     "21": {
-      "n_dates": 14,
-      "mean_ic": 0.0539,
-      "hac_t": 1.75
+      "n_dates": 11,
+      "mean_ic": 0.144,
+      "hac_t": 5.53
     }
   },
   "note": "the chain panel is too narrow/short to validate the IV spread as a return predictor \u2192 display-only context, accruing toward a verdict"

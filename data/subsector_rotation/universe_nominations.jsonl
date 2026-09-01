@@ -50,3 +50,6 @@
 {"date":"2026-08-28","theme":"Crypto & Blockchain","donor":"blockchainplatforms","receiver":"blockchainenterprise","confidence":0.339,"both_confirmed":false}
 {"date":"2026-08-28","theme":"Energy Renewable","donor":"energycleanmaterials","receiver":"energycleanutilities","confidence":0.305,"both_confirmed":false}
 {"date":"2026-08-28","theme":"Hardware","donor":"hardwaredatacenters","receiver":"hardwaregaming","confidence":0.303,"both_confirmed":false}
+{"date":"2026-08-31","theme":"Commodities Metals","donor":"commmetalsgold","receiver":"commmetalsrecycling","confidence":0.389,"both_confirmed":false}
+{"date":"2026-08-31","theme":"Crypto & Blockchain","donor":"blockchainplatforms","receiver":"blockchainenterprise","confidence":0.298,"both_confirmed":false}
+{"date":"2026-08-31","theme":"Wearables","donor":"wearablesmedical","receiver":"wearablesimmersive","confidence":0.292,"both_confirmed":false}
