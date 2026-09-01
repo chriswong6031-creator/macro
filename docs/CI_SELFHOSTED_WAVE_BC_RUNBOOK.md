@@ -287,6 +287,42 @@ The guard therefore receipts these counters and refuses on none of them. The pla
 "zero `high`/`max`/`oom`/`oom_kill` **delta**" is a per-run acceptance criterion over
 one window, owned by the receipt reducer, which has both endpoints and can subtract.
 
+### Forward-compatible receipt identities
+
+The receipt carries five additive identity fields so the **existing** contract can
+express four-slot and elastic-capacity evidence later without a second receipt
+format or store:
+
+| Field | Meaning |
+|---|---|
+| `execution_profile_id` | stable identity of the reviewed persistent-PC execution profile |
+| `admission_policy_version` | identity of the guard's admission thresholds |
+| `workflow_job_queued_at` | optional; when the job entered the queue |
+| `runner_job_started_at` | optional; when a runner picked it up |
+| `queue_wait_seconds` | **derived**, never supplied |
+
+The schema stays `ci.selfhosted_canary_receipt.v2`. Every pre-existing key keeps its
+exact name and meaning, a historical P1/P2/P4 receipt simply lacks these keys, and the
+comparator's parity allowlist does not read them — so no migration is needed and
+hosted-vs-self-hosted comparison is untouched.
+
+`queue_wait_seconds` exists **only** when both timestamps are present, parseable and
+correctly ordered. Absent, unparseable, or out-of-order all yield `null` — never `0`,
+and never a negative duration. An observed `0.0` (picked up within the same second) is
+a real measurement and stays distinct from `null`. Queue wait measures time *before*
+the runner picked the job up, and is computed from nothing else, so it can never be
+folded into the checkout / dependency / test / wall execution timings.
+
+`admission_policy_version` is deliberately **separate from the slice ceilings**. Its
+digest is computed over the guard's threshold profiles alone; the envelope lives in
+`mastermind-ci.slice.template` and is not an input. Retuning a refusal threshold and
+changing the measured envelope are different decisions, and one identity for both
+would make the first look like the second.
+
+C3R-A populates none of this in production: it obtains no live GitHub job metadata.
+The requirement it satisfies is that the contract can carry the values truthfully when
+a later wave does.
+
 ### The security-sensitive stop
 
 Installation is **not** in this carrier and must not be performed from an unmerged

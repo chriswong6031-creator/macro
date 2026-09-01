@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import time
@@ -39,6 +40,20 @@ PREFLIGHT_PROFILES = {
         "psi_full_avg10_max": 0.10,
     },
 }
+
+
+def admission_policy_digest() -> str:
+    """Stable identity for the ADMISSION THRESHOLDS, and nothing else.
+
+    Deliberately computed over PREFLIGHT_PROFILES alone. The resource envelope
+    (CPUQuota / MemoryHigh / MemoryMax / MemorySwapMax) lives in
+    mastermind-ci.slice.template and is NOT an input here: retuning when a
+    listener refuses to start and changing the measured envelope are different
+    decisions, and a shared identity would make one look like the other.
+    """
+
+    canonical = json.dumps(PREFLIGHT_PROFILES, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16]
 
 
 def _read(path: Path) -> str | None:
@@ -294,6 +309,8 @@ def main() -> int:
     reasons.extend(slice_refusals)
     result = {
         "schema": "mastermind.ci_resource_guard.v1",
+        "admission_policy_version": THRESHOLDS_VERSION,
+        "admission_policy_digest": admission_policy_digest(),
         "path": str(args.path.resolve()),
         "cpu_count": os.cpu_count(),
         "load_average": list(os.getloadavg()),

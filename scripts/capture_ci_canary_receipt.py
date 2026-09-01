@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import datetime as _datetime
 import json
 import os
 import re
@@ -251,6 +252,63 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
         "pids_current_peak": _peak(
             [(item.get("pids") or {}).get("current") for item in observations]
         ),
+    }
+
+
+def _parse_timestamp(value: str | None) -> "_datetime.datetime | None":
+    """Parse one ISO-8601 instant, or None. Unparseable is unavailable, not zero."""
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        return _datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def build_identity_fields(
+    execution_profile_id: str | None,
+    admission_policy_version: str | None,
+    workflow_job_queued_at: str | None,
+    runner_job_started_at: str | None,
+) -> dict:
+    """Forward-compatible receipt identities for later four-slot/elastic evidence.
+
+    Purely additive: the schema stays ci.selfhosted_canary_receipt.v2, no
+    existing key changes name or meaning, and a historical P1/P2/P4 receipt
+    simply lacks these keys. The comparator's parity allowlist does not read
+    them, so hosted-vs-selfhosted comparison is untouched.
+
+    `queue_wait_seconds` is DERIVED, never supplied: it exists only when both
+    timestamps are present, parseable and correctly ordered. Absent, unparseable
+    or out-of-order all yield None -- never 0, and never a negative duration. An
+    observed 0.0 (picked up in the same second) is a real measurement and stays
+    distinct from None.
+
+    Queue wait is time BEFORE the runner picked the job up. It is deliberately
+    computed from nothing else here, so it can never be folded into the
+    checkout / dependency / test / wall execution timings.
+    """
+
+    queued = _parse_timestamp(workflow_job_queued_at)
+    started = _parse_timestamp(runner_job_started_at)
+    queue_wait = None
+    if queued is not None and started is not None:
+        if queued.tzinfo is None or started.tzinfo is None:
+            queue_wait = None
+        else:
+            delta = (started - queued).total_seconds()
+            queue_wait = round(delta, 3) if delta >= 0 else None
+    return {
+        "execution_profile_id": execution_profile_id,
+        "admission_policy_version": admission_policy_version,
+        "workflow_job_queued_at": workflow_job_queued_at or None,
+        "runner_job_started_at": runner_job_started_at or None,
+        "queue_wait_seconds": queue_wait,
     }
 
 
@@ -534,6 +592,13 @@ def main() -> int:
     parser.add_argument("--runner-kind", required=True)
     parser.add_argument("--runner-name", required=True)
     parser.add_argument("--runner-profile", default="unknown")
+    # Forward-compatible identities (Sol ruling 2026-09-01). All optional and
+    # null-preserving: C3R-A does not obtain live GitHub job metadata, it only
+    # proves the existing receipt contract can carry it truthfully later.
+    parser.add_argument("--execution-profile-id", default=None)
+    parser.add_argument("--admission-policy-version", default=None)
+    parser.add_argument("--workflow-job-queued-at", default=None)
+    parser.add_argument("--runner-job-started-at", default=None)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--trace2", type=Path)
     parser.add_argument("--metrics", type=Path)
@@ -614,6 +679,12 @@ def main() -> int:
         # captured from the same pack invocation that minted it.
         "fragment_schema": fragment_schema,
         "fragment_plan_sha256": fragment_plan_sha256,
+        **build_identity_fields(
+            execution_profile_id=args.execution_profile_id,
+            admission_policy_version=args.admission_policy_version,
+            workflow_job_queued_at=args.workflow_job_queued_at,
+            runner_job_started_at=args.runner_job_started_at,
+        ),
     }
     args.output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     print("CI_CANARY_RECEIPT=" + json.dumps(receipt, sort_keys=True), flush=True)

@@ -73,6 +73,16 @@ changed:
       Adds Slice=mastermind-ci.slice and --require-slice on the ExecStartPre guard.
       Every pre-existing seal is preserved (KillMode=control-group, ReadOnlyPaths,
       ReadWritePaths, UMask=0022, StartLimitIntervalSec=0, the full sandbox set).
+  - path: scripts/capture_ci_canary_receipt.py (Sol ruling 2026-09-01)
+    what: >
+      Adds build_identity_fields() and five additive receipt keys —
+      execution_profile_id, admission_policy_version, workflow_job_queued_at,
+      runner_job_started_at and a DERIVED queue_wait_seconds — plus the matching
+      optional CLI arguments. Schema stays ci.selfhosted_canary_receipt.v2; no
+      existing key changes; the comparator's allowlist does not read them.
+      queue_wait_seconds exists only when both timestamps are present, parseable
+      and ordered; absent/unparseable/out-of-order all yield null, never 0 and
+      never negative, while an observed 0.0 stays distinct from null.
   - path: ops/runner-host/pc/mastermind_ci_resource_guard.py
     what: >
       Adds slice_reasons(), THRESHOLDS_VERSION and PREFLIGHT_PROFILES, plus
@@ -147,6 +157,14 @@ verified:
       additive JSON only and the host-global `resources` block is unchanged.
     command: "grep -n 'monitor_ci_host_resources\\|capture_ci_canary_receipt\\|select_ci_canary_packs' .github/workflows/trusted-ci-executor.yml"
     result: "182-184 (copy list), 293 (selector), 406 (monitor), 440 (receipt)"
+  - claim: >
+      The Sol CONTINUE ruling of 2026-09-01 was satisfied inside the existing
+      receipt contract with no schema break, no second receipt store and no
+      PATH_FREEZE widening; the admission-policy digest is computed over the
+      guard's threshold profiles ALONE, with the slice ceilings provably not an
+      input (asserted against the function's AST, docstring excluded).
+    command: "python3 -m pytest -q tests/test_ci_canary_tools.py -k 'forward_compatible or queue_wait or identity_fields or admission_policy_digest'"
+    result: "6 passed; full three-suite run 154 passed"
 unverified:
   - claim: >
       That the slice actually bounds four concurrent candidates to 8 vCPU-equivalents

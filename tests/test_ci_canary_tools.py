@@ -2028,3 +2028,142 @@ def test_resource_guard_binding_check_is_anchored_too() -> None:
     ):
         assert RESOURCE_GUARD.is_bound_to_ci_slice(stray) is False
     assert RESOURCE_GUARD.is_bound_to_ci_slice(CI_CGROUP) is True
+
+
+# ── C3R-A: forward-compatible receipt identities (Sol ruling 2026-09-01) ─────
+# Additive identities so the EXISTING receipt contract can carry four-slot and
+# elastic evidence truthfully later. No second receipt format or store, no
+# runtime behaviour change, and historical P1/P2/P4 receipts stay readable.
+
+
+def test_receipt_carries_forward_compatible_identities_without_a_schema_break() -> None:
+    receipt = CAPTURE.build_identity_fields(
+        execution_profile_id="pc-ci.persistent.v1",
+        admission_policy_version="mastermind.ci_resource_guard_thresholds.v1",
+        workflow_job_queued_at=None,
+        runner_job_started_at=None,
+    )
+    assert receipt["execution_profile_id"] == "pc-ci.persistent.v1"
+    assert receipt["admission_policy_version"] == (
+        "mastermind.ci_resource_guard_thresholds.v1"
+    )
+    assert receipt["workflow_job_queued_at"] is None
+    assert receipt["runner_job_started_at"] is None
+    assert receipt["queue_wait_seconds"] is None
+
+
+def test_queue_wait_is_derived_only_from_two_ordered_timestamps() -> None:
+    ordered = CAPTURE.build_identity_fields(
+        execution_profile_id="pc-ci.persistent.v1",
+        admission_policy_version="v1",
+        workflow_job_queued_at="2026-09-01T10:00:00Z",
+        runner_job_started_at="2026-09-01T10:02:30Z",
+    )
+    assert ordered["queue_wait_seconds"] == 150.0
+
+    # An observed zero is a real measurement and must stay distinct from null.
+    instant = CAPTURE.build_identity_fields(
+        execution_profile_id="pc-ci.persistent.v1",
+        admission_policy_version="v1",
+        workflow_job_queued_at="2026-09-01T10:00:00Z",
+        runner_job_started_at="2026-09-01T10:00:00Z",
+    )
+    assert instant["queue_wait_seconds"] == 0.0
+    assert instant["queue_wait_seconds"] is not None
+
+
+def test_queue_wait_is_null_when_unavailable_out_of_order_or_unparseable() -> None:
+    for queued, started in (
+        (None, "2026-09-01T10:02:30Z"),
+        ("2026-09-01T10:00:00Z", None),
+        (None, None),
+        ("2026-09-01T10:02:30Z", "2026-09-01T10:00:00Z"),   # out of order
+        ("not-a-timestamp", "2026-09-01T10:00:00Z"),
+        ("", ""),
+    ):
+        fields = CAPTURE.build_identity_fields(
+            execution_profile_id="pc-ci.persistent.v1",
+            admission_policy_version="v1",
+            workflow_job_queued_at=queued,
+            runner_job_started_at=started,
+        )
+        assert fields["queue_wait_seconds"] is None, (queued, started)
+
+
+def test_queue_wait_is_separate_from_checkout_dependency_test_and_wall_timing() -> None:
+    """Sol ruling: keep checkout/dependency/test/wall timing separate. Queue wait
+    measures time before the runner picked the job up; it must never be folded
+    into an execution duration.
+    """
+    source = (ROOT / "scripts" / "capture_ci_canary_receipt.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    fn = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "build_identity_fields"
+    )
+    body = ast.dump(fn)
+    for unrelated in ("checkout_seconds", "dependency_seconds", "test_seconds", "wall_seconds"):
+        assert unrelated not in body, f"queue wait must not touch {unrelated}"
+
+
+def test_identity_fields_are_additive_so_historical_receipts_stay_readable() -> None:
+    """The receipt schema stays ci.selfhosted_canary_receipt.v2. A P1/P2/P4
+    receipt simply lacks the new keys, and every pre-existing key keeps its
+    exact name and meaning, so no comparator migration is needed.
+    """
+    source = (ROOT / "scripts" / "capture_ci_canary_receipt.py").read_text(encoding="utf-8")
+    assert '"schema": "ci.selfhosted_canary_receipt.v2"' in source
+    assert "ci.selfhosted_canary_receipt.v3" not in source
+    added = set(
+        CAPTURE.build_identity_fields(
+            execution_profile_id="x",
+            admission_policy_version="y",
+            workflow_job_queued_at=None,
+            runner_job_started_at=None,
+        )
+    )
+    # None of the added names may collide with an existing receipt field.
+    existing = {
+        "schema", "runner_kind", "runner_name", "tested_sha", "base_sha", "pack",
+        "plan_sha256", "logical_jobs", "executed_jobs", "failed_jobs", "exit_code",
+        "result", "prewarm", "prewarm_seconds", "origin_fetch_seconds",
+        "checkout_seconds", "dependency_seconds", "test_seconds", "wall_seconds",
+        "cache_bytes_before", "cache_bytes_after", "workspace_object_bytes",
+        "resources", "ci_slice", "fragment_schema", "fragment_plan_sha256",
+    }
+    assert added & existing == set(), added & existing
+    # And the comparator's parity allowlist must not start reading them.
+    comparator = (ROOT / "scripts" / "compare_ci_canary_receipts.py").read_text(encoding="utf-8")
+    for name in added:
+        assert f'"{name}"' not in comparator, f"{name} must not enter parity comparison"
+
+
+def test_admission_policy_digest_tracks_thresholds_not_slice_ceilings() -> None:
+    """Sol ruling: admission policy identity must be separate from slice
+    ceilings. The digest is computed over the guard's threshold profiles only;
+    the envelope lives in mastermind-ci.slice.template and is not an input.
+    """
+    digest = RESOURCE_GUARD.admission_policy_digest()
+    assert digest == RESOURCE_GUARD.admission_policy_digest(), "must be stable"
+    assert len(digest) == 16
+
+    source = (
+        ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_resource_guard.py"
+    ).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    fn = next(
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name == "admission_policy_digest"
+    )
+    # Inspect executable code only: the docstring names the ceilings precisely to
+    # say they are NOT inputs, and that sentence is worth keeping.
+    statements = [node for node in fn.body if not (
+        isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant)
+        and isinstance(node.value.value, str)
+    )]
+    body = ast.dump(ast.Module(body=statements, type_ignores=[]))
+    assert "PREFLIGHT_PROFILES" in body
+    for ceiling in ("CPUQuota", "MemoryHigh", "MemoryMax", "MemorySwapMax", "cpu_max"):
+        assert ceiling not in body, f"slice ceiling {ceiling} must not feed the digest"
