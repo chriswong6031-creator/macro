@@ -4,30 +4,31 @@
 
 **Goal:** Prove one second-failure-domain, one-job GitHub Actions JIT runner can execute one non-destructive diagnostic CI pack with exact semantic parity, external logs, bounded AWS effect reconciliation, and zero production `ci-linux` eligibility.
 
-**Architecture:** AWS EC2 is the first EC1 substrate because GitHub OIDC removes long-lived AWS credentials and EC2 `RunInstances` client tokens give native idempotent creation that matches Mastermind's `EFFECT_UNKNOWN` law. EC1 remains diagnostic only: a protected GitHub-hosted launcher creates one isolated `c7i.2xlarge` from an immutable AMI, obtains one JIT configuration through a dedicated GitHub App, and boots a runner labeled only `ci-linux-burst-canary` in the existing `macro-home-canary` runner group. A main-defined diagnostic workflow executes one selected pack, compares its semantic fragment to a hosted control, uploads the existing receipt/timing artifacts, and then the VM terminates. No webhook scaler or production `ci-linux` route exists in this wave.
+**Architecture:** AWS EC2 is the first EC1 substrate because GitHub OIDC removes long-lived AWS credentials and EC2 `RunInstances` client tokens give native idempotent creation that matches Mastermind's `EFFECT_UNKNOWN` law. EC1 remains diagnostic only: a protected GitHub-hosted launcher creates one isolated `c7i.2xlarge` from an immutable AMI, obtains one JIT configuration through a dedicated GitHub App, and boots a runner labeled only `ci-linux-burst-canary` in the existing `macro-home-canary` group. A main-defined diagnostic workflow executes one selected pack, compares its semantic fragment to a hosted control, uploads existing receipt/timing evidence, and the one-job runner powers off. No webhook scaler or production `ci-linux` route exists in EC1.
 
-**Tech Stack:** GitHub Actions, GitHub JIT self-hosted-runner REST API, AWS EC2 `us-east-1`, CloudFormation, Packer HCL, GitHub OIDC, AWS CLI v2, Bash/Python 3, existing `run_ci_pack.py`/canary receipt/comparator tooling, systemd, nftables, CloudWatch Logs.
+**Tech Stack:** GitHub Actions, GitHub JIT self-hosted-runner REST API, AWS EC2 `us-east-1`, CloudFormation, Packer 1.16.0 HCL, GitHub OIDC, AWS CLI v2, Bash/Python 3, existing CI pack/canary receipt/comparator tooling, systemd, nftables, CloudWatch Logs.
 
 **Spec:** `docs/superpowers/specs/2026-09-01-ci-elastic-pressure-capacity-design.md`.
 
 ## Global Constraints
 
-- Do not start until #6717 architecture is merged, C3 production four-slot capacity is Sol-accepted, and L3 immutable dependency/execution-profile proof is `PROVEN_LIVE` for the persistent Linux/x86_64 route.
-- EC1 is a fresh operation/carrier. It does not reuse C3R-A/C3R-B/C3-PROMOTE or #6628.
-- The AWS account, GitHub App installation, GitHub Environment approvals, and runner-group selected-workflow change are privileged admin effects and require their own explicit ceremony/receipt; source code alone cannot claim them.
-- Initial provider region is `us-east-1`; instance type is exactly `c7i.2xlarge`; root volume is one encrypted 150-GiB gp3 EBS volume; instance count hard ceiling is one.
-- The EC1 runner carries `self-hosted`, `Linux`, `X64`, and `ci-linux-burst-canary`; it must not carry `ci-linux`, `ci-linux-canary`, or `render-linux`.
-- EC1 workflow is `workflow_dispatch` on protected `main` only and must be the only new selected workflow added to the existing `macro-home-canary` group.
-- The candidate process receives no AWS provisioning role, no GitHub App private key/token, no home-network route, and no persistent JIT configuration bytes.
-- The instance profile is log-only. The `macroci` UID is blocked from EC2 Instance Metadata Service before runner registration; IMDSv2 is required and IPv6 IMDS is disabled.
-- GitHub runner application logs and bootstrap logs must leave the instance through CloudWatch Logs before production-style proof is accepted. CloudWatch evidence is diagnostic only; it never substitutes for semantic fragments.
-- The VM is configured with `InstanceInitiatedShutdownBehavior=terminate` and a root-owned 45-minute hard-stop timer. One job or timeout ends the machine.
-- Provider-create ambiguity is reconciled by deterministic EC2 `ClientToken` plus tags; no blind second `RunInstances` and no provider failover.
-- No webhook, autoscaling policy, queue classifier, production `ci-linux`, `max-parallel` change, second provider, ARC, Runner Scale Set Client, scheduler, queue, registry, proof store, or retry service enters EC1.
+- Do not start until #6717 is merged, C3 four-slot production capacity is Sol-accepted, and L3 immutable dependency/execution profile is `PROVEN_LIVE` on persistent Linux/x86_64.
+- EC1 is a fresh operation/carrier; never reuse C3 or #6628.
+- AWS account setup, GitHub App install, GitHub Environment configuration, runner-group selected-workflow mutation and live canary launch are privileged effects with explicit receipts.
+- Region is `us-east-1`; runtime instance is exactly `c7i.2xlarge`; one encrypted 150-GiB gp3 root volume; one instance maximum.
+- EC1 runner carries `self-hosted`, `Linux`, `X64`, `ci-linux-burst-canary`; never `ci-linux`, `ci-linux-canary`, or `render-linux`.
+- EC1 diagnostic workflow is `workflow_dispatch` from protected `main` and is the sole new selected workflow added to `macro-home-canary`.
+- Candidate process receives no AWS provisioning authority, no registrar App token/private key, no home/private-network route, and no persistent JIT bytes.
+- Runtime instance profile is CloudWatch-log-only; `macroci` is blocked from IMDS before registration. IMDSv2 required, IPv6 IMDS disabled, metadata tags disabled.
+- Runner/bootstrap logs are exported to CloudWatch before EC1 acceptance. They are diagnostic only and never substitute semantic fragments.
+- Runtime instance uses `InstanceInitiatedShutdownBehavior=terminate`. The JIT service has `SuccessAction=poweroff` and `FailureAction=poweroff`. A root-owned **210-minute** hard-stop is the final backstop because current trusted-pack timeout is 180 minutes plus 30-minute provisioning/teardown margin.
+- Provider-create ambiguity uses deterministic EC2 `ClientToken` + tags; no blind second create/provider failover.
+- Packer image building uses a separate OIDC role/environment from runtime canary launch. Build-time temporary SSH ingress is limited to the exact GitHub-hosted builder public `/32` and is deleted with the Packer build; runtime security group has no ingress.
+- No webhook, autoscaling policy, queue classifier, production `ci-linux`, production concurrency edit, second provider, ARC/Scale Set Client, scheduler, queue, registry, proof store or retry service in EC1.
 
 ---
 
-### Task 1: Freeze AWS and GitHub privileged interfaces as source contracts
+### Task 1: Freeze AWS and GitHub privileged interfaces
 
 **Files:**
 - Create: `ops/runner-cloud/aws/ci-burst-stack.yml`
@@ -38,76 +39,61 @@
 - Modify: `tests/test_runner_policy.py`
 
 **Interfaces:**
-- CloudFormation parameters: `GitHubOidcProviderArn`, `GitHubRepository=mastermindx-market-intelligence/macro`.
-- CloudFormation outputs: `BurstAdminRoleArn`, `BurstSubnetId`, `BurstSecurityGroupId`, `BurstInstanceProfileName`, `BurstLogGroupName`.
-- New declared diagnostic label: `ci-linux-burst-canary`, status `pending` until live proof.
+- CloudFormation parameters: `GitHubOidcProviderArn`, `GitHubRepository` default `mastermindx-market-intelligence/macro`.
+- Outputs: `BurstImageBuilderRoleArn`, `BurstCanaryRoleArn`, `BurstSubnetId`, `BurstSecurityGroupId`, `BurstInstanceProfileName`, `BurstLogGroupName`.
+- New diagnostic label `ci-linux-burst-canary`, declared pending until live proof.
 
-- [ ] **Step 1: Write RED stack and runner-policy tests**
+- [ ] **Step 1: Write RED stack/policy tests**
 
-In `tests/test_ci_burst_aws_stack.py`, parse the YAML and require exactly:
+Require:
 
 ```python
-assert stack["Parameters"]["GitHubRepository"]["Default"] == \
-    "mastermindx-market-intelligence/macro"
+assert stack["Parameters"]["GitHubRepository"]["Default"] == "mastermindx-market-intelligence/macro"
 assert stack["Resources"]["BurstLogGroup"]["Properties"]["RetentionInDays"] == 14
 assert stack["Resources"]["BurstSecurityGroup"]["Properties"].get("SecurityGroupIngress", []) == []
-assert stack["Resources"]["BurstInstanceRole"]["Properties"]["Policies"][0]["PolicyDocument"] \
-    ["Statement"][0]["Action"] == ["logs:CreateLogStream", "logs:PutLogEvents"]
 ```
 
-Also assert the GitHub OIDC trust condition is exact:
+Require instance role actions exactly `logs:CreateLogStream`, `logs:PutLogEvents`. Require OIDC subjects exactly:
 
 ```text
+repo:mastermindx-market-intelligence/macro:environment:ci-burst-image
 repo:mastermindx-market-intelligence/macro:environment:ci-burst-admin
 ```
 
-and the AWS admin policy can create/describe/terminate only EC2 resources carrying the fixed `MastermindRole=ci-burst` tag plus the exact stack-owned subnet/security-group/profile resources.
+`tests/test_runner_policy.py` requires pending `ci-linux-burst-canary` with no live carrier, forbids it on schedules/forks/render/production trusted pack, and preserves production persistent `ci-linux` carriers.
 
-In `tests/test_runner_policy.py`, require a pending `ci-linux-burst-canary` label with empty `carried_by`, forbid that label on scheduled consumers, and continue to require production `ci-linux.carried_by` only the accepted persistent runners.
-
-- [ ] **Step 2: Run and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```bash
-python3.12 -m pytest -q tests/test_ci_burst_aws_stack.py tests/test_runner_policy.py \
-  -k "burst or runner_policy"
+python3.12 -m pytest -q tests/test_ci_burst_aws_stack.py tests/test_runner_policy.py -k "burst or runner_policy"
 ```
 
-Expected: missing stack and missing pending label.
+- [ ] **Step 3: Implement runtime network, logging and roles**
 
-- [ ] **Step 3: Implement the dedicated AWS network and roles**
+CloudFormation creates:
 
-`ops/runner-cloud/aws/ci-burst-stack.yml` must create:
+- VPC `10.77.0.0/24`, subnet `10.77.0.0/26`, DNS enabled, internet gateway/route, no peering/VPN/Tailscale;
+- runtime SG no ingress; egress TCP/443, TCP+UDP/53, UDP/123 only;
+- `/mastermind/ci-burst` log group, 14-day retention;
+- runtime instance role/profile with log-stream create/put only;
+- `BurstCanaryRole` trusted only by `ci-burst-admin`, allowed exact bounded `RunInstances`, `DescribeInstances`, tagged `TerminateInstances`, and `iam:PassRole` only the log-only EC2 instance role;
+- `BurstImageBuilderRole` trusted only by `ci-burst-image`, allowed the Packer build operations: EC2 describe calls; tagged build `RunInstances`/Stop/Terminate; CreateImage/DeregisterImage; Create/DeleteSnapshot; Create/Delete/Authorize/Revoke temporary SecurityGroup; Create/Delete temporary KeyPair; CreateTags; ModifyImageAttribute; and no runner/GitHub/Secrets Manager authority.
 
-- VPC `10.77.0.0/24` with DNS support/hostnames enabled and no peering/VPN/Tailscale resources;
-- one public subnet `10.77.0.0/26` in the stack-selected `us-east-1` AZ;
-- internet gateway + route table for outbound internet only;
-- security group with **no ingress**, egress TCP/443 to `0.0.0.0/0`, UDP+TCP/53 to `0.0.0.0/0`, UDP/123 to `169.254.169.123/32`; no all-protocol egress;
-- CloudWatch log group `/mastermind/ci-burst` with 14-day retention;
-- instance role with only `logs:CreateLogStream` and `logs:PutLogEvents` on that log group; no EC2, STS, Secrets Manager, S3, SSM, IAM, KMS, or GitHub authority;
-- instance profile wrapping that log-only role;
-- GitHub OIDC admin role trusted only from the `ci-burst-admin` GitHub environment, with session duration 3600 seconds;
-- admin permissions bounded to launch `c7i.2xlarge` from an AMI tagged `MastermindCiBurstImage=true`, in the stack subnet/security group/profile, tag resources with the fixed role/generation/reconcile keys, `DescribeInstances`, and terminate only tagged burst instances.
+Both mutation roles are region-bounded to `us-east-1` and require stack/build role tags wherever AWS supports conditions.
 
-Set EC2 launch conditions in IAM for region `us-east-1` and require request/resource tag `MastermindRole=ci-burst` wherever AWS supports that condition. The code-level launcher will enforce the same constraints again.
+- [ ] **Step 4: Declare diagnostic label only**
 
-- [ ] **Step 4: Add the diagnostic label declaration without making it live**
+Add pending `ci-linux-burst-canary` without live carrier/pool promotion. `check_runner_policy.py` rejects accidental production use, render/fork/scheduled use, `ci-linux` on EC1 diagnostic runner, or a fifth persistent slot hidden under this label.
 
-Add only the new pending label/capability. Do **not** add a live pool slot or `carried_by` runner. `scripts/check_runner_policy.py` must reject:
-
-- `ci-linux-burst-canary` on a production trusted-pack job;
-- any live carrier before EC1 host proof;
-- any burst label on render/fork/scheduled work;
-- `ci-linux` on a declared EC1 burst runner.
-
-- [ ] **Step 5: Run focused proof and commit**
+- [ ] **Step 5: Prove and commit**
 
 ```bash
 python3.12 -m pytest -q tests/test_ci_burst_aws_stack.py tests/test_runner_policy.py
 python3.12 scripts/check_runner_policy.py
 git diff --check
 git add ops/runner-cloud/aws/ci-burst-stack.yml ops/runner-cloud/aws/README.md \
-  tests/test_ci_burst_aws_stack.py .github/runner-policy.yml \
-  scripts/check_runner_policy.py tests/test_runner_policy.py
+  tests/test_ci_burst_aws_stack.py .github/runner-policy.yml scripts/check_runner_policy.py \
+  tests/test_runner_policy.py
 git commit -m "ci: define isolated AWS burst substrate"
 ```
 
@@ -126,153 +112,133 @@ git commit -m "ci: define isolated AWS burst substrate"
 - Create: `.github/workflows/ci-burst-image.yml`
 
 **Interfaces:**
-- Image version manifest schema `mastermind.ci_burst_image.v1`.
-- GitHub Actions runner fixed initially at `2.337.0`, Linux x64 archive SHA-256 `70920811a4f8ad4328818682bca5c6469c1c942fab52448868071d0063816613`.
+- Image manifest schema `mastermind.ci_burst_image.v1`.
+- GitHub Actions runner fixed initially `2.337.0`, Linux x64 archive SHA-256 `70920811a4f8ad4328818682bca5c6469c1c942fab52448868071d0063816613`.
+- Packer fixed `1.16.0`; setup action pinned `hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789`.
 - AMI tags: `MastermindCiBurstImage=true`, `ExecutionProfileId`, `SourceCommit`, `RunnerVersion`.
 
-- [ ] **Step 1: Write RED image-contract tests**
+- [ ] **Step 1: Write RED image tests**
 
-Tests must statically require:
+Require exact version/hash JSON, Canonical Ubuntu 24.04 amd64 owner `099720109477`, encrypted 150-GiB gp3 root, source/built AMI receipt, no pre-registered runner/JIT/token bytes, 210-minute hard-stop, and systemd JIT service `SuccessAction=poweroff`/`FailureAction=poweroff`.
 
-```python
-versions = json.loads(Path("ops/runner-cloud/aws/image-versions.json").read_text())
-assert versions["schema"] == "mastermind.ci_burst_image.v1"
-assert versions["github_actions_runner"]["version"] == "2.337.0"
-assert versions["github_actions_runner"]["sha256"] == \
-    "70920811a4f8ad4328818682bca5c6469c1c942fab52448868071d0063816613"
-```
+Require Packer's temporary build SG CIDR comes from explicit variable `builder_cidr`; runtime SG is never used for SSH.
 
-Require the Packer source to resolve only Canonical Ubuntu 24.04 amd64 images owned by AWS account `099720109477`, use a 150-GiB encrypted gp3 root device, and write a Packer manifest containing the resolved source AMI ID and built AMI ID.
-
-Require `provision-image.sh` to install nftables, CloudWatch Agent, Git, jq, unzip/tar prerequisites, the pinned runner archive with SHA verification, `macroci` user, the current L3 dependency-cache verifier, current Git prewarm/cache-update helpers, and root-only hard-stop unit/timer.
-
-- [ ] **Step 2: Run and confirm RED**
+- [ ] **Step 2: Confirm RED**
 
 ```bash
 python3.12 -m pytest -q tests/test_ci_burst_image.py
 ```
 
-Expected: missing image files/workflow.
+- [ ] **Step 3: Implement Packer source**
 
-- [ ] **Step 3: Implement the Packer image**
-
-The Packer source uses:
+Core source:
 
 ```hcl
+variable "builder_cidr" { type = string }
 source "amazon-ebs" "ci_burst" {
   region        = "us-east-1"
   instance_type = "c7i.2xlarge"
   ssh_username  = "ubuntu"
+  temporary_security_group_source_cidrs = [var.builder_cidr]
   source_ami_filter {
     filters = {
-      name                = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
-      root-device-type    = "ebs"
+      name = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
+      root-device-type = "ebs"
       virtualization-type = "hvm"
-      architecture        = "x86_64"
+      architecture = "x86_64"
     }
-    owners      = ["099720109477"]
+    owners = ["099720109477"]
     most_recent = true
   }
   launch_block_device_mappings {
-    device_name           = "/dev/sda1"
-    volume_size           = 150
-    volume_type           = "gp3"
-    encrypted             = true
+    device_name = "/dev/sda1"
+    volume_size = 150
+    volume_type = "gp3"
+    encrypted = true
     delete_on_termination = true
   }
 }
 ```
 
-`provision-image.sh` must verify the runner archive hash before extraction. It must create `/var/cache/mastermind-ci/macro.git` and `/var/cache/mastermind-ci/python` as root-owned, candidate-read-only cache roots and install the current main-owned helper bytes under `/usr/local/libexec` with a generated manifest of SHA-256 hashes.
+`provision-image.sh` installs nftables, CloudWatch Agent, Git/jq prerequisites, verified runner archive, `macroci`, current main-owned Git/dependency cache helpers under `/usr/local/libexec` with helper SHA manifest, cache roots, JIT systemd unit and 210-minute timer. No runner registration or secret is baked.
 
-Do not pre-register a GitHub runner in the image and do not bake JIT configuration, GitHub tokens, AWS admin credentials, or candidate repository credentials into it.
+- [ ] **Step 4: Implement one-use JIT/metadata fence**
 
-- [ ] **Step 4: Implement the one-use JIT wrapper and metadata fence**
+`run-jit-once.sh` as `macroci` validates `/run/mastermind-ci/jit.config` owner/mode/size, reads it, unlinks it before any GitHub registration, fsyncs parent, validates helper/profile/cache identities, then:
 
-`run-jit-once.sh` runs as `macroci`. Before it contacts GitHub it must:
+```bash
+exec /opt/actions-runner/run.sh --jitconfig "$jit"
+```
 
-1. read `/run/mastermind-ci/jit.config` once;
-2. require the file owner UID to equal `macroci`, mode `0400`, and size `1..131072` bytes;
-3. read into memory;
-4. unlink the file and fsync its parent directory;
-5. verify `/proc/self/cgroup`, current helper-manifest hashes, read-only Git/dependency cache permissions, and the execution-profile ID;
-6. `exec /opt/actions-runner/run.sh --jitconfig "$jit"`.
-
-The Packer image installs an nftables rule loaded before this service:
+Runtime image loads nftables before JIT service:
 
 ```text
 meta skuid macroci ip daddr 169.254.169.254 reject
 ```
 
-and the launch request later uses `HttpTokens=required`, `HttpPutResponseHopLimit=1`, `HttpProtocolIpv6=disabled`, `InstanceMetadataTags=disabled`.
+JIT service includes:
 
-No runner process may start until the IMDS fence is active.
+```ini
+SuccessAction=poweroff
+FailureAction=poweroff
+```
 
-- [ ] **Step 5: Implement the image-build workflow with pinned actions**
+Hard-stop service fires at 210 minutes only.
 
-`.github/workflows/ci-burst-image.yml` is `workflow_dispatch` only, uses protected environment `ci-burst-admin`, permission `id-token: write`, and pins:
+- [ ] **Step 5: Implement pinned image-build workflow**
+
+`.github/workflows/ci-burst-image.yml`: `workflow_dispatch` only, environment `ci-burst-image`, `id-token: write`. Pin:
 
 ```yaml
 - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c
+- uses: hashicorp/setup-packer@ce93c3c08a6c2ff2275bf4b54ff0d9a75f6c9789
+  with:
+    version: "1.16.0"
 ```
 
-It runs `packer init`, `packer validate`, `packer build`, then writes a non-secret image receipt containing source AMI, built AMI, Packer template SHA, exact repository commit, execution-profile ID and runner archive SHA. It never uploads AWS credentials.
+Resolve the builder public CIDR:
 
-- [ ] **Step 6: Local/static proof and commit**
+```bash
+BUILDER_IP=$(curl -fsS https://checkip.amazonaws.com | tr -d '\n')
+test -n "$BUILDER_IP"
+packer init ops/runner-cloud/aws/packer/ci-burst.pkr.hcl
+packer validate -var "builder_cidr=${BUILDER_IP}/32" ops/runner-cloud/aws/packer/ci-burst.pkr.hcl
+packer build -var "builder_cidr=${BUILDER_IP}/32" ops/runner-cloud/aws/packer/ci-burst.pkr.hcl
+```
+
+After build, verify no tagged build instance, temporary SG or temporary key pair remains. Receipt includes source/built AMI, repo commit, execution profile, Packer/runner versions and helper manifest SHA; no AWS credentials.
+
+- [ ] **Step 6: Prove/commit**
 
 ```bash
 python3.12 -m pytest -q tests/test_ci_burst_image.py
-packer fmt -check ops/runner-cloud/aws/packer/ci-burst.pkr.hcl
-packer validate ops/runner-cloud/aws/packer/ci-burst.pkr.hcl
 git diff --check
-git add ops/runner-cloud/aws/packer/ci-burst.pkr.hcl \
-  ops/runner-cloud/aws/scripts/provision-image.sh \
-  ops/runner-cloud/aws/scripts/run-jit-once.sh \
-  ops/runner-cloud/aws/scripts/hard-stop.sh \
-  ops/runner-cloud/aws/cloudwatch-agent.json \
-  ops/runner-cloud/aws/image-versions.json \
+git add ops/runner-cloud/aws/packer/ci-burst.pkr.hcl ops/runner-cloud/aws/scripts \
+  ops/runner-cloud/aws/cloudwatch-agent.json ops/runner-cloud/aws/image-versions.json \
   tests/test_ci_burst_image.py .github/workflows/ci-burst-image.yml
 git commit -m "ci: build sealed AWS JIT runner image"
 ```
 
 ---
 
-### Task 3: Implement deterministic AWS/JIT effect control without a state database
+### Task 3: Implement deterministic AWS/JIT effect control
 
 **Files:**
 - Create: `scripts/ci_burst_aws.py`
 - Create: `tests/test_ci_burst_aws.py`
 
 **Interfaces:**
-- Pure functions: `reconcile_id()`, `client_token()`, `runner_name()`, `build_run_instances_args()`, `classify_instances()`.
-- Side-effect CLI: `launch`, `wait-online`, `reconcile`, `terminate`.
-- GitHub endpoint: `POST /orgs/mastermindx-market-intelligence/actions/runners/generate-jitconfig`.
+- Pure: `reconcile_id`, `client_token`, `runner_name`, `build_run_instances_args`, `classify_instances`.
+- CLI: `launch`, `wait-online`, `reconcile`, `terminate`.
+- JIT endpoint: `POST /orgs/mastermindx-market-intelligence/actions/runners/generate-jitconfig`.
 
-- [ ] **Step 1: Write RED deterministic identity tests**
+- [ ] **Step 1: Write RED deterministic identity/effect tests**
 
-```python
-def test_effect_identity_is_stable_and_bounded() -> None:
-    rid = BURST.reconcile_id(
-        repository="mastermindx-market-intelligence/macro",
-        workflow_run_id="123456",
-        workflow_run_attempt=1,
-        execution_profile_id="ci-linux-x64-deadbeef",
-    )
-    assert rid == BURST.reconcile_id(
-        repository="mastermindx-market-intelligence/macro",
-        workflow_run_id="123456",
-        workflow_run_attempt=1,
-        execution_profile_id="ci-linux-x64-deadbeef",
-    )
-    assert len(BURST.client_token(rid)) <= 64
-    assert BURST.runner_name(rid).startswith("ci-burst-")
-```
+Require stable bounded IDs, changed attempt/profile => different ID, one matching instance => `PRESENT`, >1 => `CONFLICT`, absent => `ABSENT`, AWS timeout => `EFFECT_UNKNOWN` followed by inventory read, and local refusal if same client token would be paired with changed launch parameters.
 
-Add tests proving changed attempt/profile yields a different identity, same identity + conflicting two live instances is `CONFLICT`, zero instance is `ABSENT`, one matching instance is `PRESENT`, terminal instance is not a license to create again under the same completed reconcile ID, and AWS errors/timeouts classify `EFFECT_UNKNOWN` until inventory is read.
+- [ ] **Step 2: Implement exact launch args**
 
-- [ ] **Step 2: Implement exact `RunInstances` arguments**
-
-`build_run_instances_args()` must produce one instance only with:
+One instance only:
 
 ```text
 --count 1
@@ -281,49 +247,28 @@ Add tests proving changed attempt/profile yields a different identity, same iden
 --metadata-options HttpTokens=required,HttpPutResponseHopLimit=1,HttpEndpoint=enabled,HttpProtocolIpv6=disabled,InstanceMetadataTags=disabled
 ```
 
-plus exact AMI/subnet/security-group/instance-profile inputs from the deployed stack, encrypted 150-GiB gp3 root, deterministic client token, and tags:
+Use exact AMI/subnet/runtime SG/profile, encrypted 150-GiB gp3 root, deterministic client token, tags `MastermindRole=ci-burst`, reconcile/profile/run IDs. Any count/region/type/identity drift refuses before AWS.
 
-```text
-MastermindRole=ci-burst
-MastermindReconcileId=<stable id>
-ExecutionProfileId=<exact profile>
-GitHubRunId=<run id>
-GitHubRunAttempt=<attempt>
-```
+- [ ] **Step 3: Implement closed JIT API client**
 
-The code validates those inputs before invoking AWS CLI. Any instance count other than one is a local refusal.
-
-- [ ] **Step 3: Implement GitHub JIT request with a closed response parser**
-
-Use Python `urllib.request`, bearer token from environment `CI_BURST_GITHUB_TOKEN`, API version `2022-11-28`, and body:
+Use Python `urllib.request`, bearer env `CI_BURST_GITHUB_TOKEN`, API version `2022-11-28`. Discover exactly one runner group named `macro-home-canary`, then request:
 
 ```json
 {
-  "name": "ci-burst-<stable-id>",
+  "name": "ci-burst-stable-id",
   "runner_group_id": 123,
   "labels": ["ci-linux-burst-canary"],
   "work_folder": "_work"
 }
 ```
 
-The actual runner group ID is discovered immediately before launch by listing the organization runner groups and requiring exactly one named `macro-home-canary`. Do not persist the ID in source as authority.
+The integer above is fixture shape only; live group ID is fresh-discovered. Parse only runner ID/name + non-empty encoded JIT config. Never print/persist JIT bytes in receipts.
 
-Parse only `runner.id`, `runner.name`, and non-empty `encoded_jit_config`. Never print/log/store the encoded config in receipts. Return it only to the launch path that embeds it in root bootstrap userdata.
+- [ ] **Step 4: Implement ambiguity reconciliation**
 
-- [ ] **Step 4: Implement ambiguous-effect reconciliation**
+Before create, describe exact tagged effect. One existing resource => reuse/reconcile; >1 => conflict; absent => issue one idempotent `RunInstances`. On client timeout/error immediately describe exact tags; no second create in that command and no provider failover.
 
-`launch` sequence:
-
-1. `DescribeInstances` by exact `MastermindReconcileId` + `MastermindRole=ci-burst`;
-2. if one nonterminal matching instance exists, return it without `RunInstances`;
-3. if more than one exists, `CONFLICT` and stop;
-4. if absent, issue exactly one `RunInstances` with deterministic client token;
-5. on client timeout/error, immediately `DescribeInstances` using the same tags; do not call `RunInstances` again in that command;
-6. only a later explicit reconcile command may decide whether the same AWS-idempotent request is safe to query/recover; no provider failover.
-
-`terminate` requires the exact role/reconcile/profile tags and refuses a running GitHub job/runner-busy state supplied by the caller.
-
-- [ ] **Step 5: Run tests and commit**
+- [ ] **Step 5: Prove/commit**
 
 ```bash
 python3.12 -m pytest -q tests/test_ci_burst_aws.py
@@ -344,45 +289,21 @@ git commit -m "ci: add replay-safe AWS JIT effect control"
 - Modify: `tests/test_runner_policy.py`
 
 **Interfaces:**
-- Dispatch inputs: `pr_number` integer-like string and optional `pack` integer-like string; absent pack means use current `select_ci_canary_packs.py --count 1`.
+- Inputs: `pr_number`; optional `pack` integer-like string, otherwise current selector chooses one non-empty pack.
 - Jobs: `plan`, `hosted-control`, `launch-burst`, `burst-pack`, `compare`, `teardown`, `summary`.
-- Self-hosted job `runs-on`: group `macro-home-canary`, label `ci-linux-burst-canary` only.
+- `burst-pack` runs in group `macro-home-canary`, label `ci-linux-burst-canary` only.
 
 - [ ] **Step 1: Write RED workflow-security tests**
 
-Tests must prove:
+Require workflow_dispatch only; static burst label/group; same plan artifact for hosted/burst; same pack; existing comparator; hosted teardown always; no AWS/App credential on self-hosted job; fork refusal; main-owned control; no merge controller/production labels.
 
-- only `workflow_dispatch` exists; no `pull_request`, `pull_request_target`, `push`, `schedule`, or `workflow_call`;
-- `burst-pack` uses group `macro-home-canary` and static label `ci-linux-burst-canary`;
-- the workflow text contains no production `labels: ci-linux` for burst-pack;
-- fork PRs are refused by `plan` before JIT generation;
-- candidate workflow YAML is data only; control checkout comes from `main` and the exact candidate SHA is separately resolved;
-- hosted control and burst pack consume the same plan/changed-file artifact and pack identity;
-- `compare` calls existing `scripts/compare_ci_canary_receipts.py` and does not call merge control;
-- `teardown` is hosted and `if: always()`;
-- no job except hosted `launch-burst`/`teardown` receives AWS OIDC permission;
-- no self-hosted job receives `CI_BURST_GITHUB_TOKEN`, AWS credentials, App private key, or cloud role ARN.
+- [ ] **Step 2: Implement exact plan/hosted control**
 
-- [ ] **Step 2: Implement `plan` using current main-defined CI helpers**
+Use current main control, `resolve_ci_canary_ref.py`, one `gate: code` plan, one selected pack, exact candidate/base/head/tested SHA. Hosted control uses Python 3.12.13 + Node 20 and existing semantic/receipt path.
 
-Use current main checkout/control, resolve the exact same-repo PR with `scripts/resolve_ci_canary_ref.py`, freeze one `gate: code` `ci.pack_plan.v2`, publish exact candidate/base/head/tested SHA + changed-files artifact, and select exactly one non-empty pack. Preserve current production `RUNNER_CONTRACT` and L3 dependency lock.
+- [ ] **Step 3: Implement launch job with separate protected credentials**
 
-- [ ] **Step 3: Implement hosted control**
-
-Mirror the existing diagnostic hosted-control contract: exact candidate checkout, setup Python `3.12.13`, setup Node `20`, run the selected pack against the frozen plan, emit semantic fragment, execution timing and canary receipt.
-
-- [ ] **Step 4: Implement `launch-burst` with two protected credentials**
-
-The job uses environment `ci-burst-admin`, `id-token: write`, current pinned AWS credentials action:
-
-```yaml
-- uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c
-  with:
-    role-to-assume: ${{ vars.CI_BURST_AWS_ROLE_ARN }}
-    aws-region: us-east-1
-```
-
-and a dedicated GitHub App token action pinned at:
+Environment `ci-burst-admin`; pin AWS credentials action. Mint dedicated registrar token using:
 
 ```yaml
 - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1
@@ -393,27 +314,17 @@ and a dedicated GitHub App token action pinned at:
     owner: mastermindx-market-intelligence
 ```
 
-The registrar App permission set is exactly organization `Self-hosted runners: write` plus metadata. It has no contents/actions/issues/pulls/workflows/administration permission.
+Registrar App has organization self-hosted-runners write plus metadata only. Generate one JIT config, launch one VM, then wait up to 10 minutes for exact online/idle runner **before** `launch-burst` completes and `burst-pack` queues.
 
-`launch-burst` generates one JIT config, calls `ci_burst_aws.py launch`, then polls GitHub runner inventory until the exact runner is `online`/idle or 10 minutes elapse. It does not complete until online; therefore `burst-pack` is not queued before the runner is known eligible.
+- [ ] **Step 4: Bootstrap without JIT leakage**
 
-- [ ] **Step 5: Implement root bootstrap userdata without leaking JIT bytes**
+Root cloud-init with shell tracing off writes JIT config to `/run/mastermind-ci/jit.config` `macroci:macroci` mode `0400`, starts log/IMDS fences, validates AMI/profile/helper/cache identities, root-updates current public Git/dependency caches before eligibility, then starts JIT unit. Tests forbid `echo`/trace/JIT receipt leakage.
 
-Generate a MIME/cloud-init payload without shell tracing. The payload writes the encoded JIT config to `/run/mastermind-ci/jit.config` owned `macroci:macroci`, mode `0400`; starts CloudWatch Agent and nftables; verifies the AMI/helper/profile/cache identities; root-updates the public Git cache **before** runner registration; builds/verifies any missing L3 dependency group only through the trusted root updater; then starts the `macroci` JIT service.
+- [ ] **Step 5: Execute/compare/teardown**
 
-The userdata script must never `echo`, `set -x`, or serialize JIT config into the receipt. Tests scan for forbidden logging patterns.
+`burst-pack` downloads exact same plan/control, verifies profile/runner name, setup Python 3.12.13/Node 20, executes current pack, emits existing fragment/timing/receipt. `compare` uses existing comparator. `teardown` fresh-reads GitHub/AWS and terminates only exact tagged idle/terminal effect after burst job; normal service exit already powers off/terminates. 210-minute hard-stop is last resort.
 
-- [ ] **Step 6: Implement the burst pack from existing semantics, not a new gate**
-
-`burst-pack` downloads the same control/plan artifacts, checks exact SHA/profile, setup-python 3.12.13 and Node 20, runs current `run_ci_pack.py --execute`, captures resources/timing/fragment/receipt through the existing helpers, and uploads artifacts. It must verify `RUNNER_NAME` starts with `ci-burst-` and the execution profile equals the L3 profile.
-
-- [ ] **Step 7: Compare, teardown, and summarize**
-
-`compare` requires hosted vs burst equality through the existing comparator. `teardown` obtains fresh AWS OIDC, fresh-reads GitHub runner/job state, and terminates only the matching tagged instance after `burst-pack` is terminal. The instance's 45-minute hard-stop remains a backstop, not normal teardown authority.
-
-`summary` writes one non-authoritative Markdown/JSON receipt with launch, runner-online, queue/pickup, pack, compare, log-stream, and termination state. JIT bytes/tokens are never included.
-
-- [ ] **Step 8: Run static tests and commit**
+- [ ] **Step 6: Prove/commit**
 
 ```bash
 python3.12 -m pytest -q tests/test_ci_burst_workflow.py tests/test_runner_policy.py \
@@ -427,94 +338,65 @@ git commit -m "ci: add dispatch-only AWS burst canary"
 
 ---
 
-### Task 5: Admin bootstrap, one real JIT canary, and terminal EC1 proof
+### Task 5: Privileged bootstrap and one real JIT canary
 
-**Source files:**
+**Files after proof:**
 - Modify: `docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md`
 - Modify: `agentos/workstreams/WS-RUNNER-FLEET-RESILIENCE.md`
 - Create: `agentos/handoffs/CI-EC1-AWS-JIT-SUBSTRATE-CANARY-2026-09-01.md`
 
-**External privileged effects:**
-- Deploy CloudFormation stack in `us-east-1`.
-- Configure protected GitHub Environment `ci-burst-admin`.
-- Create/install dedicated GitHub App `Mastermind CI Burst Registrar` with org self-hosted-runners write only.
-- Add the merged `ci-burst-canary.yml@refs/heads/main` as the sole new selected workflow in existing runner group.
-- Build one AMI through merged `ci-burst-image.yml`.
+- [ ] **Step 1: Stop for explicit admin ceremony**
 
-- [ ] **Step 1: Stop for explicit privileged admin ceremony before external writes**
+Record pre-change runner-group selected workflows/runners, AWS stack absence/presence/OIDC provider, resources matching `MastermindRole=ci-burst`. Never request/paste JIT config/private keys.
 
-Re-pin current procedure and obtain the current authorized operator/admin edge. Record pre-change runner-group selected workflows, runners, AWS stack absence/presence, OIDC-provider ARN, and existing AWS resources matching `MastermindRole=ci-burst`. Do not request/paste private keys or JIT config in chat/Slack/GitHub.
-
-- [ ] **Step 2: Deploy the stack once and verify negative network/permission boundaries**
-
-Use:
+- [ ] **Step 2: Deploy AWS stack once**
 
 ```bash
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 GITHUB_OIDC_PROVIDER_ARN=$(aws iam list-open-id-connect-providers \
-  --query 'OpenIDConnectProviderList[].Arn' --output text | \
-  tr '\t' '\n' | grep 'token.actions.githubusercontent.com$')
-test -n "$GITHUB_OIDC_PROVIDER_ARN"
-aws cloudformation deploy \
-  --region us-east-1 \
-  --stack-name mastermind-ci-burst \
+  --query 'OpenIDConnectProviderList[].Arn' --output text | tr '\t' '\n' | \
+  grep 'token.actions.githubusercontent.com$')
+test "$(printf '%s\n' "$GITHUB_OIDC_PROVIDER_ARN" | sed '/^$/d' | wc -l)" -eq 1
+aws cloudformation deploy --region us-east-1 --stack-name mastermind-ci-burst \
   --template-file ops/runner-cloud/aws/ci-burst-stack.yml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameter-overrides GitHubOidcProviderArn="$GITHUB_OIDC_PROVIDER_ARN"
 ```
 
-If zero or multiple matching GitHub OIDC providers are found, stop; do not create a second provider automatically.
+Zero/multiple provider matches => STOP; do not auto-create another OIDC provider.
 
-Verify no inbound SG rules, no peering/VPN, instance-role policy is log-only, admin trust subject exact, and AWS account/region are the intended ones.
+- [ ] **Step 3: Configure protected environments and registrar App**
 
-- [ ] **Step 3: Build and attest one AMI**
+Create `ci-burst-image` with builder role variable and `ci-burst-admin` with canary role variable. Create/install `Mastermind CI Burst Registrar` with only org self-hosted-runners write + metadata. Store App private key only in `ci-burst-admin`; source never contains it.
 
-Dispatch merged `ci-burst-image.yml` once. Record exact AMI ID, source AMI ID, runner version/hash, repository commit, helper-manifest SHA, dependency-lock document SHA and execution-profile ID. AMI must have `MastermindCiBurstImage=true`.
+- [ ] **Step 4: Build/attest one AMI**
 
-- [ ] **Step 4: Update runner-group selected workflows as one audited change**
+Dispatch merged `ci-burst-image.yml` once. Record exact built/source AMI, runner/Packer versions, repo commit, helper manifest, dependency-lock document and execution-profile IDs; verify no temporary build resources remain.
 
-Fresh-read the group. Add only:
+- [ ] **Step 5: Add only the canary selected workflow**
+
+Add exactly:
 
 ```text
 mastermindx-market-intelligence/macro/.github/workflows/ci-burst-canary.yml@refs/heads/main
 ```
 
-Keep every previously accepted selected workflow byte-for-byte in the membership list. Re-read after write and record exact group ID + selected workflow list. Do not add `trusted-ci-executor.yml` if it is already present or loosen to all workflows.
+to existing `macro-home-canary`, preserving existing selected workflows. Re-read exact list/group ID.
 
-- [ ] **Step 5: Dispatch exactly one non-destructive canary**
+- [ ] **Step 6: Dispatch exactly one safe candidate**
 
-Choose a current same-repo PR that does not edit CI/runner/admission/provider surfaces. Record exact head/base/tested SHA before dispatch. Dispatch:
+Choose same-repo PR not editing CI/runner/provider/admission paths; record exact head/base/tested SHA. Dispatch once:
 
 ```bash
 gh workflow run ci-burst-canary.yml --ref main -f pr_number="$PR_NUMBER"
 ```
 
-Do not dispatch a second EC1 run while the first effect is nonterminal or ambiguous.
+No second run while first effect nonterminal/ambiguous.
 
-- [ ] **Step 6: Acceptance checklist**
+- [ ] **Step 7: EC1 PASS gate**
 
-PASS requires all of:
+Require one EC2 effect; exact type/AMI/network/profile/metadata; one runner with canary label and no production/render labels; no JIT leakage; `macroci` IMDS refusal; external logs; one job only; hosted/burst SHA/plan/jobs/fragment/result parity; exact L3 profile/lock; unchanged caches; auto-deregister; instance terminated; no persistent/render route change.
 
-- one and only one EC2 resource for the reconcile ID;
-- correct `c7i.2xlarge`, AMI, subnet, SG, profile, metadata options and tags;
-- runner appears once in existing group with `ci-linux-burst-canary`, never `ci-linux`/render;
-- JIT config absent from Actions/CloudWatch/receipt logs;
-- candidate UID cannot read IMDS;
-- external bootstrap + runner `_diag` logs exist in `/mastermind/ci-burst`;
-- one burst job and no second job on the runner;
-- hosted/burst tested SHA, base, plan, logical jobs, semantic fragment and result match;
-- execution-profile/dependency-lock identities match the approved L3 contract;
-- candidate does not mutate Git/dependency caches;
-- runner auto-deregisters after the job;
-- EC2 terminates and no matching live resource remains;
-- no production trusted pack ran on the burst instance;
-- existing four persistent runners/render route are unchanged.
-
-Any mismatch is EC1 FAIL; do not move to EC2.
-
-- [ ] **Step 7: Record and return held implementation PR**
-
-Update the runbook/workstream and exact handoff with immutable run/job/AMI/log/instance/runner/fragment/receipt IDs and rollback. Run:
+- [ ] **Step 8: Durable records/review**
 
 ```bash
 python3.12 scripts/agentos.py validate
@@ -523,12 +405,12 @@ python3.12 -m pytest -q tests/test_ci_burst_aws_stack.py tests/test_ci_burst_ima
 git diff --check
 ```
 
-Independent adversarial review is required. Return the source PR DRAFT/HOLD-FOR-SOL; worker does not self-merge.
+Independent review required. Return source PR DRAFT/HOLD-FOR-SOL; no self-merge.
 
 ## Stop Condition
 
-Stop before external effect or next wave if AWS OIDC cannot be scoped to the protected GitHub environment, the registrar App needs broader authority than self-hosted-runner write, the VM needs a cloud-management credential visible to `macroci`, the existing runner group cannot restrict the canary workflow, JIT bytes cannot be erased before candidate execution, external logs cannot survive termination, semantic parity fails, or an existing AWS/provider owner already owns the same infrastructure.
+Stop if AWS OIDC cannot be narrowly scoped, image building requires runtime broad credentials, registrar requires broader GitHub authority, VM exposes cloud management to `macroci`, group cannot restrict canary workflow, JIT bytes survive into candidate execution/logs, external logs fail, semantic parity fails, or another current provider owner collides.
 
 ## Completion Truth
 
-EC1 success means `AWS_JIT_BURST_SUBSTRATE = PROVEN_DIAGNOSTIC_ONLY`. It proves one second-domain one-job runner can safely execute a diagnostic pack. It does **not** create queue-driven autoscaling, production `ci-linux` eligibility, a webhook receiver, a persistent cloud pool, or permission to launch more than one runner.
+EC1 success means `AWS_JIT_BURST_SUBSTRATE = PROVEN_DIAGNOSTIC_ONLY`. It proves one second-domain one-job diagnostic runner. It does not enable queue-driven autoscaling, production `ci-linux`, a webhook receiver, persistent cloud pool, or >1 runner.
