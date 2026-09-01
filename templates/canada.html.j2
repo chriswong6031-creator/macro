@@ -2459,6 +2459,11 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       'tip_en':'The energy backdrop is currently supportive for this name. A tailwind, not a signal — it earns the card no points and changes nothing in the order on this board.',
       'tip_zh':'当前能源背景对该股有利。这是顺风，不是信号 — 不为卡片加分，也不改变本榜排序。'}] %}
     {% endif %}
+    {#- NO DATE IN THE ZONE ROW (HK/CN/US twin, 2026-09-01). `signal.asof or
+         setups.as_of` is a board-wide constant, not the zone's vintage. `added_date`
+         (engine/prophet_board_since.py) is the labelled per-candidate
+         membership-start chip; the board's own vintage is stated once in
+         #standouts's "Data through" header below. -#}
     {{ pv.pv_card({
       'href': 'canada_stock.html#' ~ s.ticker, 'tk': s.ticker, 'mkt': 'ca',
       'name': s.name, 'sec': s.sector, 'sec_zh': s.sector,
@@ -2475,11 +2480,6 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
       'zone_kind': _zk,
       'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
       'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
-      {#- NO DATE IN THE ZONE ROW (HK/CN/US twin, 2026-09-01). `signal.asof or
-           setups.as_of` is a board-wide constant, not the zone's vintage. `added_date`
-           (engine/prophet_board_since.py) is the labelled per-candidate
-           membership-start chip; the board's own vintage is stated once in
-           #standouts's "Data through" header below. -#}
       'date': none,
       'added_date': s.get('added_date'),
       'flags': _fl.rows

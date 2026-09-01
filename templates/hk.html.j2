@@ -3982,6 +3982,12 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
          §5.5 names. Prefer a real translation from the artifact, fall back to the
          shared i18n map, and only then to English (which is `tr`'s own fallback). #}
       {% set _csz = n.sector_zh if (n.sector_zh and n.sector_zh != n.sector) else tr(n.sector) %}
+      {#- NO DATE IN THE ZONE ROW (CN/US twin, 2026-08-27/26). `signal.asof or
+           setups.as_of` is a board-wide constant, not the zone's vintage — see the
+           china.html.j2 / _us_board_cards.html.j2 measurement fence for the same
+           removal. `added_date` (engine/prophet_board_since.py) is the labelled
+           per-candidate membership-start chip; the board's own vintage is now
+           stated once in #standouts's "Data through" header below. -#}
       {{ pv.pv_card({
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
         'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
@@ -4002,12 +4008,6 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
-        {#- NO DATE IN THE ZONE ROW (CN/US twin, 2026-08-27/26). `signal.asof or
-             setups.as_of` is a board-wide constant, not the zone's vintage — see the
-             china.html.j2 / _us_board_cards.html.j2 measurement fence for the same
-             removal. `added_date` (engine/prophet_board_since.py) is the labelled
-             per-candidate membership-start chip; the board's own vintage is now
-             stated once in #standouts's "Data through" header below. -#}
         'date': none,
         'added_date': n.get('added_date'),
         'flags': _fl.rows,

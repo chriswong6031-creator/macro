@@ -2012,6 +2012,12 @@
     {% set _fl = namespace(rows=[]) %}
     {% if _vs and _vs.state in ('FIRED_UP','EXPANSION') %}{% set _fl.rows = _fl.rows + [('Already moving — quiet entry may be gone', '已在异动 — 安静入场点可能已过')] %}{% endif %}
     {% if b.notes %}{% for nt in b.notes %}{% set _fl.rows = _fl.rows + [(nt.en, nt.zh or nt.en)] %}{% endfor %}{% endif %}
+    {#- NO DATE IN THE ZONE ROW (HK/CA/CN/US twin, 2026-09-01). `setups.as_of` is a
+         board-wide constant, not a per-name vintage. `added_date`
+         (engine/prophet_board_since.py, carry-forward stamping — Intl has no
+         persisted history to scan) is the labelled per-candidate
+         membership-start chip; the board's own vintage is stated once in the
+         "Data through" header above. -#}
     {{ pv.pv_card({
       'href': 'intl_stock.html#' ~ b.ticker, 'tk': b.ticker, 'mkt': 'intl', 'flag': b.flag,
       'name': b.name, 'sec': b.sector,
@@ -2026,12 +2032,6 @@
       'zone_kind': 'note',
       'zone_note_en': 'Momentum screen — no entry zone',
       'zone_note_zh': '动量筛选 — 无买入区',
-      {#- NO DATE IN THE ZONE ROW (HK/CA/CN/US twin, 2026-09-01). `setups.as_of` is a
-           board-wide constant, not a per-name vintage. `added_date`
-           (engine/prophet_board_since.py, carry-forward stamping — Intl has no
-           persisted history to scan) is the labelled per-candidate
-           membership-start chip; the board's own vintage is stated once in the
-           "Data through" header above. -#}
       'date': none,
       'added_date': b.get('added_date'),
       'flags': _fl.rows
