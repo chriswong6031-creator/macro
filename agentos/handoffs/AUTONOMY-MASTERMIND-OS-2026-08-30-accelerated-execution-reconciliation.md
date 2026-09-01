@@ -3,7 +3,7 @@ workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-mastermind-os-accelerated-reconciliation-20260830
 model: sol
 status: active_checkpoint
-ended_because: active_dependencies
+ended_because: blocked
 mission: >
   Complete the Chairman-authorized Autonomy program without duplicate control planes or replacement
   writers. Remove Slack archaeology, Grok dependency, manual tab waking, watcher repair and Chairman
@@ -103,7 +103,7 @@ current_carriers:
       production retry, #265 write, ACK1 or provider/host action.
   w3a_250_worker_child:
     operation: wake-pr3a-browser-current-base-composition-20260831-forge-001
-    native_task: 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0
+    native_task: 01a04bdf-b144-7af2-a08c-5d28ee63aad0
     slack: C0BSBM78V1N/1788225119.350469
     state: SOL_ACCEPTED_STOP_TERMINAL
     accepted_head: 0e61a576d998f27f4c8a53a2ba295268d81e2281
@@ -219,12 +219,76 @@ capability_ledger:
   control_room_autonomy_cockpit: NOT_BUILT_NOT_PROVEN
   final_autonomy_mas158: PARTIAL_NOT_PRODUCTION_PROVEN
 verified:
-  - "The #250 worker child is terminal and was not reopened; source integration is a separate CEO operation on the same Git carrier."
-  - "The #250 current-base join has exact two-parent ancestry, current protected tree, eight accepted W3A blobs, behind-by-zero compare and no protected-master mutation."
-  - "Sentinel ambiguity is resolved: path ten was not edited, and the only dirty effects are the two authorized allowlist rows."
-  - "#255 and #265 remain one-carrier sticky; no replacement or failover was created."
-  - "ACK1 plan boundaries are current and preserve one RuntimeBinding/current-writer/Wake ledger."
-  - "Grok is absent from every critical path."
+  - claim: >
+      The #250 worker child is terminal and was not reopened; source integration is a separate CEO
+      operation on the same Git carrier.
+    command: >
+      Read the exact W3A child thread C0BSBM78V1N/1788225119.350469 through its terminal
+      SOL ACCEPTED / STOP edge; read Mastermind PR #250 source-integration comment 5488414761,
+      current release-integration operation `wake-pr3a-current-base-release-rejoin-20260901-sol-001`,
+      and current branch/head evidence; search for any later child ACK, START, source reuse or reopen.
+    result: >
+      The worker child remains terminal and its watcher source is not reused. Current-base source
+      integration is a distinct CEO operation that preserves the same Git branch/PR without reopening
+      the terminal child.
+  - claim: >
+      The #250 current-base join has exact two-parent ancestry, current protected tree, eight accepted
+      W3A blobs, behind-by-zero compare and no protected-master mutation.
+    command: >
+      Read Mastermind PR #250 current head 634048eadb3691ff571396c0ff00a0acf0067e06,
+      commit parents 0e61a576d998f27f4c8a53a2ba295268d81e2281 and
+      ee473ad1cb02b0531f3802ce93930cc1c385bdc6, tree
+      c76a57892ff5f179b93ebf4cd29c29128d4d2afa, protected master and the complete protected-to-head
+      compare; enumerate the eight changed paths and exact blobs.
+    result: >
+      The same branch was fast-forwarded without force to a two-parent current-base join. Protected
+      master remained unchanged; the compare was behind-by-zero and contained exactly the eight
+      accepted W3A paths with their reviewed bytes.
+  - claim: >
+      Sentinel ambiguity is resolved: path ten was not edited, and the only dirty effects are the two
+      authorized allowlist rows.
+    command: >
+      Read the exact Sentinel carrier C0BSBM78V1N/1788063090.673889, read-only reconciliation return
+      1788232290.186519 and continuation ruling 1788232787.804529; inspect the returned branch, HEAD,
+      porcelain, untracked-file census, two allowlist-row diffs, path-ten assertion and commands run
+      since the prior proven receipt.
+    result: >
+      Exact Sentinel proved no post-ruling path-ten write. The local tree had no untracked paths and
+      exactly two authorized dirty allowlist rows; `tests/test_control_room_remote_install.py` still
+      asserted 24. The ambiguity was resolved without reset, cleanup, retry or failover.
+  - claim: >
+      #255 and #265 remain one-carrier sticky; no replacement or failover was created.
+    command: >
+      Read Mastermind PRs #255 and #265 plus their exact Slack carriers
+      C0BSBM78V1N/1788063090.673889 and C0BSBM78V1N/1788087553.985979; compare native tasks, branches,
+      heads, worktrees, dirty/effect receipts and current continuation/hold edges; search for any
+      replacement task, branch, PR, retry or cross-surface failover.
+    result: >
+      Both operations remain bound to their original RuntimeBindings and Git carriers. No replacement
+      task, branch, PR, retry or failover was created; #265 remains held on #255 protection.
+  - claim: >
+      ACK1 plan boundaries are current and preserve one RuntimeBinding/current-writer/Wake ledger.
+    command: >
+      Read the three protected ACK1 plan files at Mastermind
+      ee473ad1cb02b0531f3802ce93930cc1c385bdc6, the current-writer implementation owners, Wake ledger
+      and RuntimeBinding contracts, plus the current #250/#255/#265 path-collision census; check for a
+      second reader, client, ledger, RuntimeBinding owner, provider identity store or lifecycle plane.
+    result: >
+      The protected ACK1 plan consumes the existing current worker generation/client, one Wake ledger
+      transaction and target-current RuntimeBinding validation. It creates no second reader, client,
+      ledger, RuntimeBinding owner, provider identity store or lifecycle plane, and remains gated on
+      #250 protection.
+  - claim: >
+      Grok is absent from every critical path.
+    command: >
+      Read this checkpoint's transport law, current carriers, ACK1 readiness, capability ledger,
+      unresolved work and next actions; read the exact Sentinel, #250, #265 and H1 carriers and search
+      for Grok as modifying receiver, wake owner, placement owner, retry owner, authority owner or
+      durable-state owner.
+    result: >
+      Grok remains quota-exhausted and optional visibility only. Every critical modifying, placement,
+      wake, retry and durable-state obligation names a non-Grok canonical owner, so no critical path
+      depends on Grok.
 unresolved:
   - "#250 repository test and independent exact-head review; then current-base release adjudication."
   - "Sentinel #255 current-source join, 24->25 closure, proof, expected-head push, review and RESULT."
