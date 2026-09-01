@@ -51,8 +51,13 @@ _WATCHLIST_EXCEPTION = "WS:WATCHLIST-PORTFOLIO-CEO"
 _HARD_DRIFT_CODES = frozenset({
     "unexpected_initiative",
     "initiative_name_ambiguous",
+    "initiative_id_ambiguous",
     "project_binding_ambiguous",
+    "project_id_ambiguous",
     "membership_multi_parent",
+    "membership_unknown_initiative_id",
+    "membership_duplicate_initiative_id",
+    "membership_identity_conflict",
     "exception_has_forbidden_membership",
     "unmapped_visible_project",
 })
@@ -387,27 +392,104 @@ def _binding_rows(
     return out
 
 
+def _clean_string_list(raw: Any) -> tuple[list[str], bool]:
+    """Return non-empty strings plus whether the original value was a valid list."""
+    if not isinstance(raw, list):
+        return [], False
+    clean = [value for value in raw if isinstance(value, str) and value]
+    return clean, len(clean) == len(raw)
+
+
+def _current_membership_evidence(
+    project: Mapping[str, Any],
+    initiative_name_by_id: Mapping[str, str],
+) -> dict[str, Any]:
+    """Resolve membership without letting names override immutable IDs."""
+    raw_names = project.get("initiative_names")
+    if "initiative_ids" not in project:
+        if raw_names is None:
+            return {"initiative_ids": [], "names": [], "issues": []}
+        names, names_valid = _clean_string_list(raw_names)
+        issues: list[dict[str, Any]] = []
+        if not names_valid:
+            issues.append({
+                "code": "membership_identity_conflict",
+                "reason": "initiative_names_malformed",
+            })
+        return {"initiative_ids": [], "names": names, "issues": issues}
+
+    issues: list[dict[str, Any]] = []
+    raw_ids = project.get("initiative_ids")
+    ids, ids_valid = _clean_string_list(raw_ids)
+    if not ids_valid:
+        issues.append({
+            "code": "membership_identity_conflict",
+            "reason": "initiative_ids_malformed",
+        })
+
+    duplicate_ids = sorted(
+        initiative_id
+        for initiative_id, count in Counter(ids).items()
+        if count > 1
+    )
+    if duplicate_ids:
+        issues.append({
+            "code": "membership_duplicate_initiative_id",
+            "initiative_ids": duplicate_ids,
+        })
+
+    unknown_ids = sorted({
+        initiative_id
+        for initiative_id in ids
+        if initiative_id not in initiative_name_by_id
+    })
+    if unknown_ids:
+        issues.append({
+            "code": "membership_unknown_initiative_id",
+            "initiative_ids": unknown_ids,
+        })
+
+    resolved_names = [
+        initiative_name_by_id[initiative_id]
+        for initiative_id in ids
+        if initiative_id in initiative_name_by_id
+    ]
+    if len(set(ids)) > 1:
+        issues.append({
+            "code": "membership_multi_parent",
+            "current_initiative_ids": sorted(set(ids)),
+            "current_initiatives": sorted(set(resolved_names)),
+        })
+
+    if raw_names is not None:
+        names, names_valid = _clean_string_list(raw_names)
+        if not names_valid:
+            issues.append({
+                "code": "membership_identity_conflict",
+                "reason": "initiative_names_malformed",
+            })
+        if Counter(names) != Counter(resolved_names):
+            issues.append({
+                "code": "membership_identity_conflict",
+                "reason": "initiative_id_name_disagreement",
+                "initiative_ids": list(ids),
+                "resolved_names": sorted(resolved_names),
+                "observed_names": sorted(names),
+            })
+
+    return {
+        "initiative_ids": list(ids),
+        "names": resolved_names,
+        "issues": sorted(issues, key=lpp.canonical_bytes),
+    }
+
+
 def _current_membership_names(
     project: Mapping[str, Any],
     initiative_name_by_id: Mapping[str, str],
 ) -> list[str]:
-    names = project.get("initiative_names")
-    if isinstance(names, list):
-        clean_names = [
-            str(value)
-            for value in names
-            if isinstance(value, str) and value
-        ]
-        if clean_names or not project.get("initiative_ids"):
-            return clean_names
-    ids = project.get("initiative_ids")
-    if not isinstance(ids, list):
-        return []
-    return [
-        initiative_name_by_id[value]
-        for value in ids
-        if isinstance(value, str) and value in initiative_name_by_id
-    ]
+    """Compatibility wrapper; IDs remain authoritative whenever supplied."""
+    return list(_current_membership_evidence(project, initiative_name_by_id)["names"])
 
 
 def initiative_drift(
@@ -423,14 +505,36 @@ def initiative_drift(
     drift: list[dict[str, Any]] = []
     current_initiatives = _snapshot_initiatives(snapshot)
     by_name: dict[str, list[Mapping[str, Any]]] = {}
-    id_to_name: dict[str, str] = {}
+    id_rows: dict[str, list[Mapping[str, Any]]] = {}
     for row in current_initiatives:
         name = row.get("name")
         if isinstance(name, str):
             by_name.setdefault(name, []).append(row)
         initiative_id = row.get("initiative_id")
-        if isinstance(initiative_id, str) and isinstance(name, str):
-            id_to_name[initiative_id] = name
+        if isinstance(initiative_id, str) and initiative_id:
+            id_rows.setdefault(initiative_id, []).append(row)
+        else:
+            drift.append({
+                "code": "initiative_id_ambiguous",
+                "initiative_id": initiative_id,
+                "name": name,
+                "reason": "missing_or_empty",
+            })
+
+    id_to_name: dict[str, str] = {}
+    for initiative_id, rows in sorted(id_rows.items()):
+        names = sorted({
+            row.get("name") for row in rows if isinstance(row.get("name"), str)
+        })
+        if len(rows) != 1 or len(names) != 1:
+            drift.append({
+                "code": "initiative_id_ambiguous",
+                "initiative_id": initiative_id,
+                "count": len(rows),
+                "names": names,
+            })
+            continue
+        id_to_name[initiative_id] = names[0]
 
     desired_names = {row["name"] for row in desired_initiatives}
     for desired in desired_initiatives:
@@ -466,24 +570,11 @@ def initiative_drift(
             current_value = current.get(current_field)
             desired_value = desired.get(desired_field)
             if desired_field in {"labels", "parent_initiative_ids"}:
-                current_value = (
-                    sorted(current_value)
-                    if isinstance(current_value, list)
-                    else current_value
-                )
-                desired_value = (
-                    sorted(desired_value)
-                    if isinstance(desired_value, list)
-                    else desired_value
-                )
+                current_value = sorted(current_value) if isinstance(current_value, list) else current_value
+                desired_value = sorted(desired_value) if isinstance(desired_value, list) else desired_value
             if current_value != desired_value:
                 fields.append(desired_field)
 
-        # Health is unset at creation, and only a later formal Sol strategic
-        # update may set On track / At risk / Off track. That lawful later value
-        # is DESCRIPTIVE, not structural drift, so health is compared only when
-        # the approved desired state actually pins one. Creation desired state
-        # keeps health=null, so this stays silent for a normal live Initiative.
         desired_health = desired.get("health")
         if desired_health is not None and current.get("health") != desired_health:
             fields.append("health")
@@ -506,25 +597,46 @@ def initiative_drift(
                 })
 
     current_projects = _snapshot_projects(snapshot)
+    project_id_rows: dict[str, list[Mapping[str, Any]]] = {}
     by_workstream: dict[str, list[Mapping[str, Any]]] = {}
     for row in current_projects:
         key = row.get("workstream_key")
         if isinstance(key, str):
             by_workstream.setdefault(key, []).append(row)
+        project_id = row.get("project_id")
+        if isinstance(project_id, str) and project_id:
+            project_id_rows.setdefault(project_id, []).append(row)
 
-    desired_membership_by_key = {
-        row["workstream_key"]: row
-        for row in desired_memberships
-    }
+    for project_id, rows in sorted(project_id_rows.items()):
+        if len(rows) > 1:
+            drift.append({
+                "code": "project_id_ambiguous",
+                "project_id": project_id,
+                "count": len(rows),
+                "workstream_keys": sorted({
+                    row.get("workstream_key")
+                    for row in rows
+                    if isinstance(row.get("workstream_key"), str)
+                }),
+            })
+
+    membership_evidence: dict[int, dict[str, Any]] = {}
+    for project in current_projects:
+        evidence = _current_membership_evidence(project, id_to_name)
+        membership_evidence[id(project)] = evidence
+        for issue in evidence["issues"]:
+            drift.append({
+                **issue,
+                "workstream_key": project.get("workstream_key"),
+                "project_id": project.get("project_id"),
+            })
+
+    desired_membership_by_key = {row["workstream_key"]: row for row in desired_memberships}
     for desired in desired_memberships:
         key = desired["workstream_key"]
         matches = by_workstream.get(key, [])
         if not matches:
-            code = (
-                "project_create_required"
-                if desired.get("project_required")
-                else "project_binding_missing"
-            )
+            code = "project_create_required" if desired.get("project_required") else "project_binding_missing"
             drift.append({"code": code, "workstream_key": key})
             continue
         if len(matches) > 1:
@@ -538,13 +650,14 @@ def initiative_drift(
         project = matches[0]
         project_id = project.get("project_id")
         if not isinstance(project_id, str) or not project_id:
-            drift.append({
-                "code": "project_binding_missing",
-                "workstream_key": key,
-            })
+            drift.append({"code": "project_binding_missing", "workstream_key": key})
             continue
 
-        names = _current_membership_names(project, id_to_name)
+        evidence = membership_evidence[id(project)]
+        if evidence["issues"]:
+            continue
+
+        names = evidence["names"]
         if len(names) == 0:
             drift.append({
                 "code": "membership_missing",
@@ -569,20 +682,11 @@ def initiative_drift(
             })
 
     exception_ws = {
-        row.get("identity")
-        for row in exceptions
-        if row.get("identity_kind") == "workstream_key"
+        row.get("identity") for row in exceptions if row.get("identity_kind") == "workstream_key"
     }
     exception_ids = {
-        row.get("identity")
-        for row in exceptions
-        if row.get("identity_kind") == "linear_project_id"
+        row.get("identity") for row in exceptions if row.get("identity_kind") == "linear_project_id"
     }
-    # An exact workstream key stays unique even when it is a deliberately
-    # unassigned exception. Those keys never reach the desired-membership loop
-    # above, so the duplicate check has to happen here or two visible Projects
-    # carrying the same exact key both pass silently. Exact key identity only —
-    # never title or fuzzy matching, and a rename must not launder a duplicate.
     exception_key_counts = Counter(
         key
         for key in (project.get("workstream_key") for project in current_projects)
@@ -600,7 +704,8 @@ def initiative_drift(
         key = project.get("workstream_key")
         project_id = project.get("project_id")
         is_exception = key in exception_ws or project_id in exception_ids
-        names = _current_membership_names(project, id_to_name)
+        evidence = membership_evidence[id(project)]
+        names = evidence["names"]
         if is_exception:
             if names or project.get("initiative_ids"):
                 drift.append({
@@ -647,23 +752,10 @@ def compile_initiative_plan(
         if isinstance(row, Mapping)
     ]
     exceptions = sorted(exceptions, key=lpp.canonical_bytes)
-    drift = initiative_drift(
-        snapshot,
-        desired_initiatives,
-        desired_memberships,
-        exceptions,
-    )
-    hard_blockers = [
-        row
-        for row in drift
-        if row["code"] in _HARD_DRIFT_CODES
-    ]
-    drift_counts = dict(
-        sorted(Counter(row["code"] for row in drift).items())
-    )
-    group_counts = dict(
-        sorted(Counter(row["initiative_key"] for row in desired_memberships).items())
-    )
+    drift = initiative_drift(snapshot, desired_initiatives, desired_memberships, exceptions)
+    hard_blockers = [row for row in drift if row["code"] in _HARD_DRIFT_CODES]
+    drift_counts = dict(sorted(Counter(row["code"] for row in drift).items()))
+    group_counts = dict(sorted(Counter(row["initiative_key"] for row in desired_memberships).items()))
 
     semantic: dict[str, Any] = {
         "schema": PLAN_SCHEMA,
@@ -688,9 +780,7 @@ def compile_initiative_plan(
     receipt = {
         "schema": RECEIPT_SCHEMA,
         "status": "compiled",
-        "strategy_source_revision": strategy.get("source_design", {}).get(
-            "protected_revision"
-        ),
+        "strategy_source_revision": strategy.get("source_design", {}).get("protected_revision"),
         "project_plan_semantic_hash": project_plan.get("semantic_hash"),
         "initiative_plan_semantic_hash": digest,
         "desired_counts": {
