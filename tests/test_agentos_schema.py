@@ -295,15 +295,15 @@ STATE_RULES_ARE_WARNINGS: list[tuple[str, str, str, str]] = [
     (
         "active-but-complete",
         "workstreams/WS-MACRO-CONTEXT-INDEX.md",
-        "    status: in_progress\n"
-        "    next_action: Work the red gates in research/context_index/BENCHMARK_RESULTS.md.\n"
-        '  - id: W2\n'
-        '    title: "Add agentos/** as a corpus (Agent OS Phase 3 dependency)"\n'
-        "    status: todo",
-        "    status: done\n"
-        '  - id: W2\n'
-        '    title: "Add agentos/** as a corpus (Agent OS Phase 3 dependency)"\n'
-        "    status: dropped",
+        # C0 regold 2026-08-28: W2/C0 are now `done`, so flipping the one
+        # remaining in_progress wave (W1) to done manufactures the
+        # all-waves-complete-but-status-active inconsistency by itself.
+        "  - id: W1\n"
+        "    title: Benchmark gates to green so the index stops being advisory\n"
+        "    status: in_progress",
+        "  - id: W1\n"
+        "    title: Benchmark gates to green so the index stops being advisory\n"
+        "    status: done",
     ),
     # These two anchor on WS-CN-LIMIT-ALPHA's LIVE top-level state and must CREATE
     # the inconsistent state from it (2026-08-14: the record moved blocked->active
@@ -371,7 +371,15 @@ def test_clean_merge_of_two_valid_states_validates(store: Path, tmp_path: Path) 
 
     git("checkout", "-q", "main")
     git("checkout", "-q", "-b", "branch-b")
-    _patch(record, "    status: todo", "    status: dropped")
+    # C0 regold 2026-08-28: no wave carries `status: todo` any more; drop the
+    # C0 wave instead (its block is far enough from W1's for a clean merge).
+    _patch(
+        record,
+        '    title: "Benchmark Truth Recovery (Sol op macro-context-index-completion-20260828-sol-001)"\n'
+        "    status: done",
+        '    title: "Benchmark Truth Recovery (Sol op macro-context-index-completion-20260828-sol-001)"\n'
+        "    status: dropped",
+    )
     assert _validate(repo / "agentos").returncode == 0, "branch B is a valid state"
     git("commit", "-aqm", "W2 dropped")
 
