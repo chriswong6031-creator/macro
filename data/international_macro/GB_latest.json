@@ -8,7 +8,7 @@
   "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
   "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
   "asof": "2026-08-28",
-  "built": "2026-08-31 05:40 UTC",
+  "built": "2026-09-01 06:31 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
@@ -204,18 +204,18 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 14,
+    "top_score": 28,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.186,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 14.5,
+      "intensity": 28.0,
       "peak": 80.7,
       "peak_days_ago": 22,
-      "off_peak": 66.2,
-      "velocity": -0.2,
-      "phase": "flat",
+      "off_peak": 52.7,
+      "velocity": 13.3,
+      "phase": "rising",
       "reached_risk": true,
       "state_now": "calm",
       "odds_now": 0.186,
@@ -245,16 +245,16 @@
         8.3,
         12.5,
         10.3,
-        14.5
+        28.0
       ],
-      "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.4 93.0,21.3",
+      "spark_pts": "3.0,3.1 6.9,3.0 10.8,5.0 14.7,5.0 18.7,6.1 22.6,5.6 26.5,10.2 30.4,10.0 34.3,8.7 38.2,7.9 42.1,14.3 46.0,13.7 50.0,14.1 53.9,11.1 57.8,11.8 61.7,15.5 65.6,18.4 69.5,21.3 73.4,21.2 77.3,21.8 81.3,23.0 85.2,21.8 89.1,22.4 93.0,17.6",
       "spark_peak": {
         "x": 6.9,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 21.3
+        "y": 17.6
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -286,9 +286,20 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 38.2,
-        "band": "calm",
-        "firing_legs": []
+        "score": 58.8,
+        "band": "watch",
+        "firing_legs": [
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.71,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.57,
+            "confirmed": false
+          }
+        ]
       },
       {
         "scare": "capital_flow",
@@ -543,7 +554,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 548,
+      "age_days": 549,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -551,7 +562,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 242,
+      "age_days": 243,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -559,7 +570,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-04",
-      "age_days": 152,
+      "age_days": 153,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -567,7 +578,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 91,
+      "age_days": 92,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

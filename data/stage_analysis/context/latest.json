@@ -1,8 +1,8 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-31",
-  "data_session": "2026-08-28",
-  "built": "2026-08-31T05:00:05Z",
+  "asof": "2026-09-01",
+  "data_session": "2026-08-31",
+  "built": "2026-09-01T05:51:24Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -15,32 +15,28 @@
     "target_week_source": "spy_benchmark",
     "spy_stage_week": "2026-08-28",
     "population_modal_week": "2026-08-28",
-    "current": 2708,
-    "stale": 33,
+    "current": 2709,
+    "stale": 32,
     "unknown": 0,
     "total": 2741,
     "current_coverage_pct": 98.8,
-    "data_session": "2026-08-28",
-    "data_session_all": "2026-08-28",
+    "data_session": "2026-08-31",
+    "data_session_all": "2026-08-31",
     "week_histogram": [
       {
         "week": "2026-08-28",
-        "n": 2708
+        "n": 2709
       },
       {
         "week": "2026-07-10",
-        "n": 7
+        "n": 6
       },
       {
         "week": "2026-07-17",
-        "n": 5
+        "n": 6
       },
       {
         "week": "2026-08-07",
-        "n": 5
-      },
-      {
-        "week": "2026-08-21",
         "n": 5
       },
       {
@@ -48,23 +44,27 @@
         "n": 4
       },
       {
-        "week": "2026-08-14",
-        "n": 3
+        "week": "2026-07-24",
+        "n": 4
       },
       {
-        "week": "2026-07-03",
-        "n": 2
+        "week": "2026-08-21",
+        "n": 4
+      },
+      {
+        "week": "2026-08-14",
+        "n": 3
       }
     ],
     "issues": []
   },
   "counts": {
-    "total": 2708,
+    "total": 2709,
     "stage1": 146,
-    "stage2": 1550,
-    "stage2_fresh": 350,
+    "stage2": 1549,
+    "stage2_fresh": 348,
     "stage3": 179,
-    "stage4": 833,
+    "stage4": 835,
     "too_young": 350,
     "new_today": 37
   },
@@ -77,73 +77,10 @@
   },
   "top_stage2": [
     {
-      "ticker": "HOG",
-      "company": "Harley-Davidson",
-      "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-28",
-      "stage_week_end": "2026-08-28",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 9,
-      "fresh": true,
-      "sga_score": 69,
-      "ma30_slope_pct5w": 5.076,
-      "pct_vs_ma30": 20.41,
-      "mansfield_rs": 7.95,
-      "vol_ratio": 0.63,
-      "event": null,
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.3625,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.5,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raise",
-          "inventory_management",
-          "dealer_health",
-          "new_products",
-          "tariffs",
-          "cost_savings",
-          "back_to_the_bricks",
-          "turnaround_strategy",
-          "motorcycles",
-          "recreational_vehicles",
-          "automotive_oem",
-          "consumer_discretionary",
-          "us_manufacturing",
-          "dealer_networks",
-          "brand_turnaround",
-          "supply_chain_management"
-        ],
-        "quarter": "Q2",
-        "summary": "Sell-through on Super Glide has been strong, dealer enthusiasm has been high and MSRP realization is among the strongest we have seen in some time."
-      },
-      "why": [
-        "Early in its climb — 9 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 9 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 1.8495,
-      "atr_ext": 2.575,
-      "atr_pct_price": 0.06582,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2D_extended_run",
-      "industry_percentile": 100.0
-    },
-    {
       "ticker": "AIRJ",
       "company": "AirJoule Technologies Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -190,7 +127,7 @@
       "ticker": "DSP",
       "company": "Viant Technology Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -241,7 +178,7 @@
       "ticker": "PLX",
       "company": "Protalix BioTherapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -253,7 +190,7 @@
       "mansfield_rs": 4.75,
       "vol_ratio": 0.91,
       "event": null,
-      "gate_tier": "T2",
+      "gate_tier": "T1",
       "blackout": false,
       "arc_pos": 0.375,
       "earnings": {
@@ -290,7 +227,7 @@
       "ticker": "URBN",
       "company": "Urban Outfitters, Inc.",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -342,7 +279,7 @@
       "ticker": "EDIT",
       "company": "Editas Medicine Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -386,7 +323,7 @@
       "ticker": "NKTR",
       "company": "Nektar Therapeutics",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -431,10 +368,59 @@
       "industry_percentile": null
     },
     {
+      "ticker": "CDW",
+      "company": "CDW Corporation",
+      "sector": "Information Technology",
+      "stage_source_asof": "2026-08-31",
+      "stage_week_end": "2026-08-28",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 2,
+      "fresh": true,
+      "sga_score": 55,
+      "ma30_slope_pct5w": 1.713,
+      "pct_vs_ma30": 15.39,
+      "mansfield_rs": -0.9,
+      "vol_ratio": 1.06,
+      "event": "pullback_resume",
+      "gate_tier": "T2",
+      "blackout": false,
+      "arc_pos": 0.275,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.5,
+        "performance": 7.8,
+        "tone_word": "confident",
+        "tags": [
+          "beat_and_raise",
+          "margin_contraction"
+        ],
+        "quarter": "Q2",
+        "summary": "CDW reported Q2 FY26 net sales of $6.6 billion (up 10% YoY) and non-GAAP EPS of $2.91 (up 12%), setting new all-time quarterly records for top-line, gross profit, and earnings per share despite a sequential decline in gross margin to 20.1%. Management raised its full-year outl…"
+      },
+      "why": [
+        "Early in its climb — 2 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest",
+        "Also shows a strong confirmation from our other checks"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 2 周",
+        "已明显高于 30 周均线 — 可能需要回踩",
+        "其他多项验证同样给出强确认"
+      ],
+      "atr_14w": 15.4637,
+      "atr_ext": 1.274,
+      "atr_pct_price": 0.1047,
+      "sata_score": 6,
+      "sata_change_1w": 1,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 47.8
+    },
+    {
       "ticker": "ABUS",
       "company": "Arbutus Biopharma Corp",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -478,7 +464,7 @@
       "ticker": "BOW",
       "company": "Bowhead Specialty Holdings Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -532,7 +518,7 @@
       "ticker": "HNVR",
       "company": "Hanover Bancorp Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -576,7 +562,7 @@
       "ticker": "REAX",
       "company": "Real REMAX Group Inc",
       "sector": "Real Estate",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -624,7 +610,7 @@
       "ticker": "TKNO",
       "company": "Alpha Teknova Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -672,7 +658,7 @@
       "ticker": "ITIC",
       "company": "Investors Title Co",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -716,7 +702,7 @@
       "ticker": "PNRG",
       "company": "PrimeEnergy Resources Corp",
       "sector": "Energy",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -760,7 +746,7 @@
       "ticker": "XNCR",
       "company": "Xencor Inc",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -804,7 +790,7 @@
       "ticker": "ALEC",
       "company": "Alector Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -852,7 +838,7 @@
       "ticker": "SMTI",
       "company": "Sanara MedTech Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -900,7 +886,7 @@
       "ticker": "ACIW",
       "company": "ACI Worldwide",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -948,7 +934,7 @@
       "ticker": "GRND",
       "company": "Grindr Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -996,7 +982,7 @@
       "ticker": "LWAY",
       "company": "Lifeway Foods Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1043,7 +1029,7 @@
       "ticker": "MYO",
       "company": "Myomo Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1100,7 +1086,7 @@
       "ticker": "RDVT",
       "company": "Red Violet Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1148,7 +1134,7 @@
       "ticker": "ARCT",
       "company": "Arcturus Therapeutics Holdings Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1195,7 +1181,7 @@
       "ticker": "AVAH",
       "company": "Aveanna Healthcare Holdings Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1243,7 +1229,7 @@
       "ticker": "DSGR",
       "company": "Distribution Solutions Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1287,7 +1273,7 @@
       "ticker": "SKWD",
       "company": "Skyward Specialty Insurance Group Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1337,7 +1323,7 @@
       "ticker": "DV",
       "company": "DoubleVerify Holdings Inc.",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1397,7 +1383,7 @@
       "ticker": "FHTX",
       "company": "Foghorn Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1438,62 +1424,10 @@
       "industry_percentile": 55.6
     },
     {
-      "ticker": "GEN",
-      "company": "Gen Digital",
-      "sector": "Information Technology",
-      "stage_source_asof": "2026-08-28",
-      "stage_week_end": "2026-08-28",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 2,
-      "fresh": true,
-      "sga_score": 48,
-      "ma30_slope_pct5w": 2.603,
-      "pct_vs_ma30": 30.65,
-      "mansfield_rs": 12.82,
-      "vol_ratio": 0.85,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.275,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8,
-        "performance": 8.5,
-        "tone_word": "confident",
-        "tags": [
-          "guidance_raised",
-          "beat_and_raise",
-          "margin_expansion",
-          "demand_acceleration",
-          "new_product"
-        ],
-        "quarter": "Q1",
-        "summary": "Gen delivered Q1 FY2027 with bookings and revenue both up 11% year-over-year, above the high end of guidance, and non-GAAP EPS grew 19%. The company raised full-year FY2027 guidance to 9%-11% revenue growth and 14%-18% EPS growth. Cyber Safety grew mid-single digits, while Tru…"
-      },
-      "why": [
-        "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 2.1698,
-      "atr_ext": 3.354,
-      "atr_pct_price": 0.06995,
-      "sata_score": 8,
-      "sata_change_1w": 0,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
-    },
-    {
       "ticker": "PGEN",
       "company": "Precigen Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1541,7 +1475,7 @@
       "ticker": "AHR",
       "company": "American Healthcare REIT",
       "sector": "Real Estate",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1590,7 +1524,7 @@
       "ticker": "ALH",
       "company": "Alliance Laundry Holdings Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1639,7 +1573,7 @@
       "ticker": "BBY",
       "company": "Best Buy",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1688,7 +1622,7 @@
       "ticker": "DMRA",
       "company": "Damora Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1732,7 +1666,7 @@
       "ticker": "PAY",
       "company": "Paymentus Holdings Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1779,10 +1713,54 @@
       "industry_percentile": 85.0
     },
     {
+      "ticker": "SAFX",
+      "company": "XCF Global Inc",
+      "sector": "Utilities",
+      "stage_source_asof": "2026-08-31",
+      "stage_week_end": "2026-08-28",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 4,
+      "fresh": true,
+      "sga_score": 47,
+      "ma30_slope_pct5w": 8.9,
+      "pct_vs_ma30": -6.95,
+      "mansfield_rs": -40.87,
+      "vol_ratio": 0.4,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3,
+      "earnings": {
+        "present": false,
+        "sentiment": null,
+        "performance": null,
+        "tone_word": null,
+        "tags": [],
+        "quarter": null,
+        "summary": null
+      },
+      "why": [
+        "Early in its climb — 4 weeks up so far",
+        "Still near its 30-week line — not clear of it yet"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 4 周",
+        "仍接近 30 周均线 — 尚未站稳"
+      ],
+      "atr_14w": 0.1168,
+      "atr_ext": -0.23,
+      "atr_pct_price": 0.32531,
+      "sata_score": 4,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": null
+    },
+    {
       "ticker": "SMHI",
       "company": "SEACOR Marine Holdings Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1823,54 +1801,10 @@
       "industry_percentile": null
     },
     {
-      "ticker": "SAFX",
-      "company": "XCF Global Inc",
-      "sector": "Utilities",
-      "stage_source_asof": "2026-08-28",
-      "stage_week_end": "2026-08-28",
-      "stage_current": true,
-      "stage": 2,
-      "weeks_in_stage": 4,
-      "fresh": true,
-      "sga_score": 46,
-      "ma30_slope_pct5w": 8.9,
-      "pct_vs_ma30": -6.95,
-      "mansfield_rs": -40.87,
-      "vol_ratio": 0.4,
-      "event": null,
-      "gate_tier": null,
-      "blackout": false,
-      "arc_pos": 0.3,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 4 weeks up so far",
-        "Still near its 30-week line — not clear of it yet"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 4 周",
-        "仍接近 30 周均线 — 尚未站稳"
-      ],
-      "atr_14w": 0.1168,
-      "atr_ext": -0.23,
-      "atr_pct_price": 0.32531,
-      "sata_score": 4,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
-    },
-    {
       "ticker": "STIM",
       "company": "Neuronetics, Inc.",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1918,7 +1852,7 @@
       "ticker": "AII",
       "company": "American Integrity Insurance Group Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -1966,7 +1900,7 @@
       "ticker": "CRD-A",
       "company": "Crawford & Co",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2010,7 +1944,7 @@
       "ticker": "FDMT",
       "company": "4D Molecular Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2054,7 +1988,7 @@
       "ticker": "PRAA",
       "company": "PRA Group, Inc.",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2103,7 +2037,7 @@
       "ticker": "BAC",
       "company": "Bank of America",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2162,7 +2096,7 @@
       "ticker": "BSET",
       "company": "BSET",
       "sector": "Unknown",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2206,7 +2140,7 @@
       "ticker": "CRCT",
       "company": "Cricut Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2256,7 +2190,7 @@
       "ticker": "DLO",
       "company": "DLocal Limited",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2303,7 +2237,7 @@
       "ticker": "EXFY",
       "company": "Expensify, Inc.",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2352,7 +2286,7 @@
       "ticker": "FNWD",
       "company": "FNWD",
       "sector": "Unknown",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2396,7 +2330,7 @@
       "ticker": "GRPN",
       "company": "Groupon Inc",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2440,10 +2374,71 @@
       "industry_percentile": 85.7
     },
     {
+      "ticker": "HOG",
+      "company": "Harley-Davidson",
+      "sector": "Consumer Discretionary",
+      "stage_source_asof": "2026-08-31",
+      "stage_week_end": "2026-08-28",
+      "stage_current": true,
+      "stage": 2,
+      "weeks_in_stage": 9,
+      "fresh": true,
+      "sga_score": 44,
+      "ma30_slope_pct5w": 5.076,
+      "pct_vs_ma30": 20.41,
+      "mansfield_rs": 7.95,
+      "vol_ratio": 0.63,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.3625,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.5,
+        "performance": 7.5,
+        "tone_word": "confident",
+        "tags": [
+          "guidance_raise",
+          "inventory_management",
+          "dealer_health",
+          "new_products",
+          "tariffs",
+          "cost_savings",
+          "back_to_the_bricks",
+          "turnaround_strategy",
+          "motorcycles",
+          "recreational_vehicles",
+          "automotive_oem",
+          "consumer_discretionary",
+          "us_manufacturing",
+          "dealer_networks",
+          "brand_turnaround",
+          "supply_chain_management"
+        ],
+        "quarter": "Q2",
+        "summary": "Sell-through on Super Glide has been strong, dealer enthusiasm has been high and MSRP realization is among the strongest we have seen in some time."
+      },
+      "why": [
+        "Early in its climb — 9 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 9 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 1.8495,
+      "atr_ext": 2.575,
+      "atr_pct_price": 0.06582,
+      "sata_score": 8,
+      "sata_change_1w": 0,
+      "stage_detailed": "2D_extended_run",
+      "industry_percentile": 100.0
+    },
+    {
       "ticker": "MMI",
       "company": "Marcus & Millichap, Inc.",
       "sector": "Real Estate",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2490,7 +2485,7 @@
       "ticker": "MSI",
       "company": "Motorola Solutions",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2538,7 +2533,7 @@
       "ticker": "OMER",
       "company": "Omeros Corp",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2587,7 +2582,7 @@
       "ticker": "VCEL",
       "company": "Vericel",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2647,7 +2642,7 @@
       "ticker": "ABBV",
       "company": "AbbVie",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2696,7 +2691,7 @@
       "ticker": "BRCC",
       "company": "BRC Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2706,7 +2701,7 @@
       "ma30_slope_pct5w": 22.911,
       "pct_vs_ma30": 545.47,
       "mansfield_rs": 496.5,
-      "vol_ratio": 1.1,
+      "vol_ratio": 1.09,
       "event": "trendline_recapture",
       "gate_tier": null,
       "blackout": false,
@@ -2734,9 +2729,9 @@
         "上升初期 — 已上行 1 周",
         "已明显高于 30 周均线 — 可能需要回踩"
       ],
-      "atr_14w": 2.275,
-      "atr_ext": 3.135,
-      "atr_pct_price": 0.26955,
+      "atr_14w": 1.4425,
+      "atr_ext": 4.944,
+      "atr_pct_price": 0.17091,
       "sata_score": 9,
       "sata_change_1w": 6,
       "stage_detailed": "2A_strong_breakout",
@@ -2746,7 +2741,7 @@
       "ticker": "CRBP",
       "company": "Corbus Pharmaceuticals Holdings Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2790,7 +2785,7 @@
       "ticker": "EOLS",
       "company": "Evolus Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2837,7 +2832,7 @@
       "ticker": "HIW",
       "company": "Highwoods Properties",
       "sector": "Real Estate",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2895,7 +2890,7 @@
       "ticker": "MHK",
       "company": "Mohawk Industries",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2946,7 +2941,7 @@
       "ticker": "NBBK",
       "company": "NB Bancorp Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-28",
+      "stage_source_asof": "2026-08-31",
       "stage_week_end": "2026-08-28",
       "stage_current": true,
       "stage": 2,
@@ -2988,24 +2983,6 @@
     }
   ],
   "warnings_stage3": [
-    {
-      "ticker": "ECL",
-      "company": "Ecolab",
-      "weeks_in_stage": 4,
-      "sga_score": 25
-    },
-    {
-      "ticker": "MC",
-      "company": "Moelis & Company",
-      "weeks_in_stage": 8,
-      "sga_score": 25
-    },
-    {
-      "ticker": "WH",
-      "company": "Wyndham Hotels & Resorts",
-      "weeks_in_stage": 5,
-      "sga_score": 25
-    },
     {
       "ticker": "ZURA",
       "company": "Zura Bio Ltd",
@@ -3107,6 +3084,24 @@
       "company": "NiSource",
       "weeks_in_stage": 2,
       "sga_score": 11
+    },
+    {
+      "ticker": "COMP",
+      "company": "Compass Inc",
+      "weeks_in_stage": 2,
+      "sga_score": 10
+    },
+    {
+      "ticker": "CRVS",
+      "company": "Corvus Pharmaceuticals Inc",
+      "weeks_in_stage": 1,
+      "sga_score": 10
+    },
+    {
+      "ticker": "DIN",
+      "company": "Dine Brands Global Inc",
+      "weeks_in_stage": 3,
+      "sga_score": 10
     }
   ],
   "sectors": [
@@ -3148,8 +3143,8 @@
     },
     {
       "sector": "Healthcare",
-      "n": 345,
-      "pct_stage2": 57.4,
+      "n": 346,
+      "pct_stage2": 57.2,
       "trend": "up"
     },
     {
@@ -3183,15 +3178,15 @@
       "trend": "down"
     },
     {
-      "sector": "Technology",
-      "n": 175,
-      "pct_stage2": 45.7,
-      "trend": "down"
-    },
-    {
       "sector": "Communication Services",
       "n": 103,
       "pct_stage2": 45.6,
+      "trend": "down"
+    },
+    {
+      "sector": "Technology",
+      "n": 175,
+      "pct_stage2": 45.1,
       "trend": "down"
     },
     {
@@ -6850,6 +6845,10 @@
       4,
       26
     ],
+    "FBRX": [
+      2,
+      48
+    ],
     "FBYD": [
       4,
       7
@@ -9767,8 +9766,8 @@
       11
     ],
     "MVIS": [
-      2,
-      5
+      4,
+      43
     ],
     "MVST": [
       4,
@@ -11019,8 +11018,8 @@
       16
     ],
     "PMI": [
-      2,
-      3
+      4,
+      19
     ],
     "PMT": [
       4,
@@ -36440,9 +36439,9 @@
       "event": null
     },
     "MVIS": {
-      "stage": 2,
-      "fresh": true,
-      "event": "pullback_resume"
+      "stage": 4,
+      "fresh": false,
+      "event": null
     },
     "MVST": {
       "stage": 4,
@@ -38020,9 +38019,9 @@
       "event": "pullback_resume"
     },
     "PMI": {
-      "stage": 2,
-      "fresh": true,
-      "event": "pullback_resume"
+      "stage": 4,
+      "fresh": false,
+      "event": null
     },
     "PMT": {
       "stage": 4,
