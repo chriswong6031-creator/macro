@@ -8621,11 +8621,11 @@
           "rationale": "S&P 500 Real Estate constituent"
         },
         {
-          "ticker": "EQR",
+          "ticker": "VMRK",
           "added": "2023-05-09",
           "curated_added": "2026-06-28",
           "removed": null,
-          "rationale": "S&P 500 Real Estate constituent"
+          "rationale": "S&P 500 Real Estate constituent (formerly EQR: Equity Residential renamed Vivmark Residential, NYSE EQR->VMRK eff. 2026-08-18, SEC 8-K accession 0001140361-26-033377; store re-keyed in the same change)"
         },
         {
           "ticker": "ESS",

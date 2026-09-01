@@ -1588,6 +1588,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -2445,6 +2455,10 @@ jobs:
       - "scripts/prophet_lab_baseline.py"
       - "tests/test_prophet_lab.py"
       - "tests/test_prophet_lab_api.py"
+      # D5 A7's manifest-authenticated N/N+1 correction chain is hermetic and
+      # load-bearing for the Prophet Lab adapter, so its PR owner must be this
+      # gate:code job rather than only neural-web-core's nightly data lane.
+      - "tests/test_company_intelligence_workspace_chain.py"
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
@@ -2464,18 +2478,21 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
-        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
-        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
-        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
-        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
-        # either deletes the R2 credential env vars or injects a fake client
-        # object directly — the real boto3 import is never reached.
-        run: pip install pytest pandas fastapi httpx pyyaml
-      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+        # both (httpx importorskip'd). pandas + pyarrow: the D5 API suite writes
+        # its canonical security-master parquet and app.prophet_lab imports the
+        # B1 episode module, whose parquet owner is unconditional. requests:
+        # D5's company-intelligence reader imports it at module scope. boto3 is
+        # NOT needed: engine.entry_radar.spool imports it LAZILY inside
+        # `_r2_client()`, and every R2 path this suite exercises either deletes
+        # the R2 credential env vars or injects a fake client object directly —
+        # the real boto3 import is never reached.
+        run: pip install pytest pandas pyarrow fastapi httpx pyyaml requests
+      - name: Prophet Operator Lab — projection, real-reader chain, transport, timeparse, commissioning-prep
         run: >
           python -m pytest
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
+          tests/test_company_intelligence_workspace_chain.py
           tests/test_prophet_lab_timeparse.py
           tests/test_prophet_lab_commissioning.py
           tests/test_caddy_hub_boundary.py -q
@@ -6518,6 +6535,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -7076,6 +7103,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -9094,6 +9131,14 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "engine/theme_graph/**"
+      # D5's app/prophet_lab route extends this curated app closure through the
+      # canonical issuer reader. Keep the measured stock-identity package files
+      # explicit; path-risk and the B1 episode reader are not in this job's
+      # derived closure and are intentionally not declared here.
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
@@ -12132,6 +12177,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/theme_graph/identity.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
