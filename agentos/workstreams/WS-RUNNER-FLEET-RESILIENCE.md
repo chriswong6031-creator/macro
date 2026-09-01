@@ -303,3 +303,45 @@ fences, merge control and untrusted independence while also reducing execution
 amplification or other avoidable hosted work, then re-measuring the billing API with
 explicit headroom below the allowance. See
 DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER.
+
+## Fourth PC CI slot — code substrate landed, host unproven — 2026-09-01
+
+Operation `ci-pc-fourth-slot-recovery-20260901-sol-001` (issue #6714, C3R-A) completed
+frozen plan `docs/superpowers/plans/2026-08-26-pc-ci-fourth-slot-resource-isolation.md`
+Tasks 1-5 as a source-only carrier. Capability state is
+`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.
+
+Read that state literally. There is no `pc-ci-4` registration, no
+`/opt/mastermind-ci/runner-4`, no `mastermind-ci.slice` unit on any host, and no
+fourth listener. Live capacity remains exactly three slots, trusted execution remains
+`max-parallel: 3`, and `ci-linux` remains carried by exactly `pc-ci-1..3`. Landing
+this does not mean a fourth runner exists, peak capacity increased, a four-slot canary
+passed, or final capacity was accepted.
+
+The durable structural change is that live capacity and code capability are now
+separate vocabulary in `.github/runner-policy.yml`, and rule R14 in
+`scripts/check_runner_policy.py` refuses every way they could quietly merge — a fifth
+slot, an invented carrier name, a pending block on another pool, `ci-linux` in
+`pending_labels`, or `pc-ci-4` entering any `carried_by` roster. Before R14, appending
+`pc-ci-4` to `label_registry.ci-linux.carried_by` passed the policy guard clean.
+
+The second durable property is that aggregate slice evidence refuses rather than
+substitutes: a candidate outside `/mastermind-ci.slice/<unit>.service` produces
+`refused` with no metric values, and the receipt reducer reports aggregates only when
+every sample in the window was cleanly bound. Render stays outside the slice, proven
+from source by the slice setting no `KillMode` and by a test asserting
+`actions-runner-ci.service.template` is the only checked-in unit that joins it.
+
+Sequence from here is unchanged and strictly ordered: C3R-B performs the privileged
+host installation and the four-slot acceptance after a fresh census and explicit
+authorization for the organization runner registration; only after C3R-B is accepted
+may a separate promotion carrier add the live `ci-linux` carrier and move
+trusted-executor `max-parallel` from 3 to 4.
+
+The predecessor child #6640 remains terminal `SOL CLOSED / STOP`, closed
+`not_planned`. It has no PR and no remote branch, and none of its bytes were used;
+every accepted byte here was re-derived from current main.
+
+Continuation detail, including the `do_not_redo` list and the bootstrap hazard of
+shipping the slice-joined unit to a host without the slice unit installed, is in
+`agentos/handoffs/WS-RUNNER-FLEET-RESILIENCE-2026-09-01.md`.
