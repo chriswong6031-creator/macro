@@ -87,10 +87,17 @@ next_action: >
 decisions:
   - DEC:AGENT-EVAL-FABLE-COO-DELEGATION
 artifacts:
-  - docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-design.md
-  - docs/superpowers/plans/2026-08-30-outcome-learning-policy-calibration.md
-  - docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-governance-amendment.md
+  - agentos/workstreams/WS-AGENT-EVAL-FABRIC.md
+  - agentos/decisions/DEC-AGENT-EVAL-FABLE-COO-DELEGATION.md
+  - agentos/handoffs/AGENT-EVAL-FABRIC-2026-09-01.md
 landmines:
+  - >
+    The Outcome Learning design trio (docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-design.md,
+    docs/superpowers/plans/2026-08-30-outcome-learning-policy-calibration.md,
+    docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-governance-amendment.md)
+    lives on HOLD carrier #6699 and is not on main. Do not list those paths as artifacts until
+    #6699 merges — unprefixed citations fail phantom-artifact and trip
+    test_cross_repo_path_is_unchecked_when_that_checkout_is_absent fleet-wide.
   - >
     Mastermind #299 release gate 4 binds on the UNRELATED serialized release window PR #310
     (Business OAuth): do not release #299 while #310's window is open, and re-reconcile onto the
