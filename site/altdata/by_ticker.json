@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-31",
-  "generated_utc": "2026-08-31T05:56:28.653276+00:00",
+  "generated_utc": "2026-08-31T23:50:14.435086+00:00",
   "n_tickers": 2641,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
