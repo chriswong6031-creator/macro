@@ -104,18 +104,20 @@ unverified:
       R1A-M starts only after R1A-T proof, then returns reviewed Macro implementation, deployment and
       real dark/light EN/ZH desktop/narrow browser proof.
 unresolved:
-  - "Macro PR #6709 remains draft behind a terminal no-effect READY transport; no retry/failover is authorized by that stopped request."
-  - "After a separately lawful #6709 release transition and merge, PR #6707 must rejoin current main and rerun."
+  - "Exact-head hosted CI green on the rejoined #6707 head (2026-09-01 merge of then-current main 53bab0e30cebcd0fbc284fe0c6f2439e2b5599d7; the Agent OS base blocker closed via the main-side heal, validate 0 errors)."
   - "Independent exact-head review of the corrected R0 records."
   - "Fresh post-R0 capacity placement for R1A-T, then R1A-M."
 next_actions:
   - >
-    Preserve #6709 HOLD-ON-TRANSITION. Do not revive or retry the terminal metadata request, bypass
-    draft state, merge directly to main, create a replacement PR, or use #6710 as a workaround.
+    2026-09-01 reconciliation: the Agent OS base blocker is closed — the foreign Autonomy handoff
+    was repaired directly on current main (agentos reconcile commits, latest via PR #6716) and
+    scripts/agentos.py validate exits 0 at main 53bab0e30cebcd0fbc284fe0c6f2439e2b5599d7. Closed
+    #6709 and its metadata-layer successor #6711 are superseded for this gate; their disposition is
+    Sol release administration. Do not revive either from this program.
   - >
-    Continue only path-disjoint R0 semantic work. Once a new lawful release/metadata edge independently
-    makes #6709 ready, Sol must fresh-reread exact head/current target/checks, merge it only if every
-    gate still holds, then history-preservingly join current main into #6707.
+    #6707 rejoined then-current main history-preservingly on 2026-09-01 (merge commit
+    7b5ff94b84b975a9b0628860722c8b99f6592035; behind-by-zero; exact five-record delta preserved;
+    agentos validate 0 errors on the branch tree). Next: exact-head hosted CI on the pushed head.
   - >
     Re-run exact-head CI and refresh the existing unstarted R0 review carrier to the new immutable
     head; do not mint a duplicate review operation unless the existing carrier is first reconciled.

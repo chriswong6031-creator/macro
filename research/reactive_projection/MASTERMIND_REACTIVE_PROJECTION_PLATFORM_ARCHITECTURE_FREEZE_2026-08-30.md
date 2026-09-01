@@ -5,7 +5,7 @@
 **Repository:** `mastermindx-market-intelligence/macro`  
 **Sole R0 carrier:** `sol/reactive-projection-platform-r0-20260830` / Macro PR `#6707`  
 **Current corrected architecture head before this edit:** `8cd1ac766f544e6615366b7ba21c7d8d0182bda9`  
-**Current protected Sol procedure:** `mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc`  
+**Protected Sol procedure:** `mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc` at freeze; re-pinned `@187490f3d5676adf7a249d69afacedd00b3efcec` at the 2026-09-01 main rejoin  
 **Terminal archaeology pin:** `mastermindx-market-intelligence/mastermind-terminal@86a75b68c273a592a41af5e322f95aab242b8297`  
 **Status:** **PROPOSED ARCHITECTURE FREEZE / BUILT_NOT_PROVEN / RECORDS_ONLY / PRODUCTION_INERT**
 
@@ -88,7 +88,7 @@ The program is complete only when it has:
 | Breathing Platform / Prophet same-session machinery | `PARTIAL` | Useful systems exist; separate completion program remains active |
 | Shared ordered-delta/SSE projection transport | `NOT_BUILT` | Held to R1B |
 | Materiality-gated intelligence recomputation | `PARTIAL` | Domain-specific precedents only |
-| This R0 freeze on PR #6707 | `BUILT_NOT_PROVEN` | Records exist; foreign-base repair, current-head CI and independent review remain gates |
+| This R0 freeze on PR #6707 | `BUILT_NOT_PROVEN` | Records exist; foreign-base repair landed on main 2026-09-01; current-head CI and independent review remain gates |
 | R1A implementation and production proof | `NOT_BUILT` | Separate post-R0 child operations required |
 
 No aggregate label such as “the site is live” may erase these distinctions.
