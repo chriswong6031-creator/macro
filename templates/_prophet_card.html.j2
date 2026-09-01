@@ -10,7 +10,11 @@
      · identity: ticker + name on one line, sector alone underneath
      · 4-stage lifecycle tracker: Bottoming → Turning → Ready → Trend (stage 0 = all muted)
      · contextual zone footer: ZONE range / muted pending range / "sets on confirmation" /
-       RE-ADD range / "no zone" — plus the signal as-of date pinned right
+       RE-ADD range / "no zone" — plus an optional labelled Added / 入榜 board-membership
+       chip (`.pv-added`, param `added_date`, engine/prophet_board_since.py) and the
+       separate legacy per-row `date` chip (`.pv-dt`) for callers whose date really is
+       per-row and honest (the plan-book cards). Candidate-board callers pass `date: none`
+       and pass `added_date` instead — the two slots are independent and never merged.
      · one hue per card: glow edge, chart, chip, score, tracker and zone label all follow the
        verb via --pvh. Hues are the dedicated --pv-* tokens (theme.css): green-up/red-down
        in English and red-up/green-down under html[data-lang="zh"].
@@ -422,6 +426,8 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
 .pv-znr{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-dt{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
+.pv-added{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}
+.pv-dt+.pv-added{margin-left:5px}
 .pv-trg{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:800;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 9%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 45%,transparent)}
 .pv-trg.pv-trg-soon{border-style:dashed;opacity:.92}
 .pv-cau{position:relative;display:inline-flex}
@@ -588,6 +594,16 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
     {%- endif -%}
     {%- set _d = cx.get('date') -%}
     {%- if _d and _d|length >= 10 %}<span class="pv-dt">{{ t(_MN.get(_d[5:7], _d[5:7]) ~ ' ' ~ (_d[8:10]|int), _d[5:10]) }}</span>{% endif %}
+    {#- Added / 入榜 — current continuous published-board membership start
+        (engine/prophet_board_since.py). STRICT ISO gate: anything shorter or
+        longer than exactly 10 chars, or not matching the YYYY-MM-DD shape at
+        positions 4/7, renders NOTHING — no "Added —" placeholder, no fallback.
+        Unlike `date` this is never derived from an as-of/build-date/wall-clock
+        constant; a market whose history cannot prove a start date ships null,
+        and null is silent here by design (frozen spec: "unknown/unprovable ⇒
+        None and NO chip"). -#}
+    {%- set _ad = cx.get('added_date') -%}
+    {%- if _ad and _ad|length == 10 and _ad[4] == '-' and _ad[7] == '-' %}<span class="pv-added" data-added="{{ _ad|e }}" data-tip-en="On the Prophet board continuously since this date. If the name leaves and later returns, this date resets." data-tip-zh="自该日起持续在 Prophet 榜上；若离榜后重新上榜，此日期将重新计算。">{{ t('Added ' ~ _MN.get(_ad[5:7], _ad[5:7]) ~ ' ' ~ (_ad[8:10]|int), '入榜 ' ~ _ad[5:10]) }}</span>{% endif %}
   </div>
 </a>
 {% endmacro %}
