@@ -253,6 +253,7 @@ function buildQuotesResponse(syms, nowMs, deps = {}, options = {}) {
     includeExtended ? extFeed : null,
     snapshotFeed
   );
+  for (const sym of Object.keys(served)) out[sym] = served[sym];
   // ... macroFeed and any other legs join `out` here ...
   if (!includeExtended) {
     for (const sym of Object.keys(out)) {
@@ -429,8 +430,8 @@ Verify:
 response is flat present-entries-only object
 no extPrice/extChg/extTs/extSession/extSource/extBasis anywhere
 ExtFeed membership/order/size unchanged by the request
-Polygon subscription-map size/membership unchanged or bounded per freeze §5 ruling
-SnapshotFeed pending/flush counters bounded per freeze §5 ruling
+Polygon subscriptions grew by at most the request's own 58 names, with zero eviction of pre-existing members
+SnapshotFeed pending/flush movement attributable only to the request's own batched demand
 regular SnapshotFeed/Polygon demand remains observable
 unknown view returns HTTP 400
 ```
@@ -793,7 +794,10 @@ Dark: graphite instrument and restrained page-level luminance. Light: white rese
 
 - [ ] **Step 7: Run render and house guards**
 
+Session worktrees are SPARSE by default and omit `site/` — run `python3 scripts/worktree_sparse.py add site` (or `… full`) FIRST, or the render truncates the committed artifact instead of updating it (house law, 2026-08-13 incident).
+
 ```bash
+python3 scripts/worktree_sparse.py add site
 python3 -m scripts.build_intel_hub
 python3 -m pytest tests/test_intelligence_hub_market_pulse_surface.py -q
 python3 scripts/check_template_site_sync.py

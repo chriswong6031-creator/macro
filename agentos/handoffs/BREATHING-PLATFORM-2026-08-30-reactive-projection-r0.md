@@ -119,6 +119,13 @@ next_actions:
     7b5ff94b84b975a9b0628860722c8b99f6592035; behind-by-zero; exact five-record delta preserved;
     agentos validate 0 errors on the branch tree). Next: exact-head hosted CI on the pushed head.
   - >
+    2026-09-01 R0-C round: a same-day Sol pre-review finding (two-boundary regular-view closure) and
+    an internal adversarial red-team REVISE (7 blocking + 4 minor findings — roster key hub.discovery
+    not discovery_shown; live.js duplicate visible quote plane; envelope example vs freshness law;
+    page-session aggregation; Polygon/SnapshotFeed budget ruling; mandatory endpoint-level
+    handleQuotes tests; non-US roster exclusion) were consumed and repaired records-only on this
+    carrier; cycle receipts live in PR #6707 comments; the current PR head is the repaired candidate.
+  - >
     Re-run exact-head CI and refresh the existing unstarted R0 review carrier to the new immutable
     head; do not mint a duplicate review operation unless the existing carrier is first reconciled.
   - >
@@ -138,7 +145,7 @@ danger_areas:
   - "Terminal ExtFeed demand is global across users; hidden demand side effects are a product regression even when the public payload is debranded."
   - "One symbol can be rendered in multiple Intelligence Hub panels; updating only one occurrence creates mixed truth."
   - "Quote Hub chg is percent, ts is source print time, and closed regular prints need session-aware freshness."
-  - "Generic live.js and the R1A controller must never mutate the same DOM nodes."
+  - "Generic live.js and the R1A controller must never mutate the same DOM nodes — and node-disjointness alone is NOT compliance: live.js already repaints the hub's .nb-px[data-sym] rows via the global nav include, so R1A-M removes that generic markup from roster rows (freeze §12); two visible prices per card is the forbidden duplicate quote plane."
   - "Green CI, R0 merge, R1A-T merge or Slack delivery does not prove the R1A user capability live."
 program_key: "modernize-mastermind-architecture-20260830-sol-001"
 operation_key: "modernize-mastermind-r0-carrier-recovery-20260831-sol-001"

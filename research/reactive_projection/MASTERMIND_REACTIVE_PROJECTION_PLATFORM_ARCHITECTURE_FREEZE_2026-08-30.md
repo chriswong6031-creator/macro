@@ -107,7 +107,7 @@ No aggregate label such as “the site is live” may erase these distinctions.
 | Job/Attempt/Worker/Event lifecycle | Executive OS | R0 creates no lifecycle or dispatch |
 | Ticker/chart workspace interaction | Terminal | Existing ticker-to-Terminal route remains sole interaction owner |
 | Page baseline | Current Intelligence Hub builder and Jinja template | Complete no-JavaScript fallback |
-| Client quote DOM | One R1A route-scoped controller | Generic live controller must not own the same targets |
+| Client quote DOM | One R1A route-scoped controller | Generic `live.js` must not own the same targets, and R1A-M removes the generic quote markup from roster rows so it selects nothing on this route (§12) |
 | Telemetry | Existing first-party observability paths | Emit measurements; create no second analytics store |
 
 The projection platform is a contract and composition pattern, not a new source of market truth.
@@ -149,7 +149,7 @@ For `view=regular`, Terminal must:
 
 Macro's R1A route must call `view=regular` explicitly and must fail closed if deployed Terminal does not prove that contract. No direct vendor call, second snapshot service or Macro-side demand suppressor may substitute for the Terminal owner change.
 
-The other two globally shared demand budgets are ruled on explicitly rather than left silent. `view=regular` deliberately keeps demanding the Polygon subscription plane (a process-wide **500-slot** LRU, `hub/lib/polygon.js::LRU_CAP`) and the SnapshotFeed batched-REST path, because those are exactly the planes that make regular prices live for everyone. The 58-name roster consumes at most 11.6% of the 500-slot Polygon budget, and hub roster names are high-attention symbols that overlap organic Terminal demand, so this spend is **accepted as bounded** — but it is measured, not assumed: the R1A-T production canary must record Polygon subscription-map size and membership and SnapshotFeed pending/flush counters before and after the 58-symbol regular request and show them unchanged or bounded within this ruling. Only ExtFeed (30-slot) must show zero attributable change.
+The other two globally shared demand budgets are ruled on explicitly rather than left silent. `view=regular` deliberately keeps demanding the Polygon subscription plane (a process-wide **500-slot** LRU, `hub/lib/polygon.js::LRU_CAP`) and the SnapshotFeed batched-REST path, because those are exactly the planes that make regular prices live for everyone. The 58-name roster consumes at most 11.6% of the 500-slot Polygon budget, and hub roster names are high-attention symbols that overlap organic Terminal demand, so this spend is **accepted as bounded** — but it is measured, not assumed: the R1A-T production canary must record Polygon subscription-map size and membership and SnapshotFeed pending/flush counters before and after the 58-symbol regular request and prove: at most 58 additional Polygon subscriptions, ZERO eviction of pre-existing Polygon members, and SnapshotFeed counter movement attributable only to the request's own batched demand. Only ExtFeed (30-slot) must show zero attributable change.
 
 ---
 
@@ -575,7 +575,7 @@ R1A-T must prove on the actual Terminal host:
 - `view=regular` returns the regular flat response;
 - no extended field is emitted, including from legacy Store rows that already carry `ext*` keys;
 - 58-name regular-view demand changes neither ExtFeed subscription map nor LRU order;
-- the same before/after canary records Polygon subscription-map size and membership and SnapshotFeed pending/flush counters and shows them unchanged or bounded within the §5 ruling;
+- the same before/after canary proves at most 58 additional Polygon subscriptions, zero eviction of pre-existing Polygon members, and SnapshotFeed movement attributable only to the request itself (§5 ruling);
 - SnapshotFeed/Polygon/AnchorCache regular paths still receive demand;
 - invalid view fails closed;
 - deployment identity matches reviewed merge.

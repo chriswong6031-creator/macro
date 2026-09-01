@@ -582,7 +582,7 @@ The shared projector must preserve:
 ### Production/browser proof
 
 - Terminal host regular-view no-LRU-effect canary;
-- the same canary records Polygon subscription-map size/membership and SnapshotFeed pending/flush counters, unchanged or bounded per the freeze §5 ruling;
+- the same canary proves at most 58 additional Polygon subscriptions, zero eviction of pre-existing Polygon members, and SnapshotFeed movement attributable only to the request itself (freeze §5 ruling);
 - real public Macro route and controller;
 - one browser call / one Terminal call;
 - zero generic `live.js` quote fetches and zero `.nb-px[data-sym]` quote nodes on the rendered hub page;
