@@ -372,7 +372,7 @@ def build_features(pit_basis: str | None = None,
     # Fuller curve + 5y inflation leg. (us1y/us3y/us7y added for the Bonds
     # dashboard's near-term-forward spread + curve interpolation; additive — the
     # macro engine does not read them.)
-    for col in ["us3m", "us6m", "us1y", "us3y", "us5y", "us7y", "us30y",
+    for col in ["us3m", "us6m", "us1y", "us3y", "us5y", "us7y", "us20y", "us30y",
                 "spread_10y3m", "breakeven_5y", "us5y_real"]:
         put(col, series.get(col))
     f["spread_10y3m"] = f["spread_10y3m"].combine_first(f["us10y"] - f["us3m"])

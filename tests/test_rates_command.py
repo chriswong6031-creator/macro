@@ -350,6 +350,25 @@ class TestFailOpen:
         assert isinstance(result, dict)
         assert result["authority"] is False
 
+    def test_rates_command_carries_canonical_yield_momentum_read(self, tmp_path):
+        transmission = tmp_path / "transmission"
+        transmission.mkdir()
+        (transmission / "latest.json").write_text(json.dumps({
+            "asof": "2026-09-01",
+            "yield_momentum": {
+                "schema": "yield_momentum.v1",
+                "display_only": True,
+                "authority": False,
+                "series": {"20y": {"status": "available"}},
+            },
+        }))
+
+        result = build_board(root=tmp_path)
+
+        assert result["yield_momentum"]["series"]["20y"]["status"] == "available"
+        assert result["yield_momentum"]["display_only"] is True
+        assert result["yield_momentum"]["authority"] is False
+
 
 # ---------------------------------------------------------------------------
 # 7. Word-ban scans over emitted strings and keys
