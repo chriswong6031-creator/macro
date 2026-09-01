@@ -2240,6 +2240,8 @@ html[data-lang="zh"][data-theme="light"] body.page-canada .ms-red .cax-big-score
     'days_since_signal': _r.get('days_since_signal'),
     'alpha':             _r.get('alpha'),
     'entry_status':      _es.get('status') or '',
+    'entry_status_label':    _es.get('headline') or '',
+    'entry_status_label_zh': _es.get('headline_zh') or '',
     'group':             _r.get('group') or '',
   } %}
   {% set _ = _ca_st_rows.append(_ca_row) %}
@@ -2571,9 +2573,15 @@ function initStockTableView(){
         '<span class="' + (v>=0?'st-pos':'st-neg') + '">' + (v>=0?'+':'')+fn(v,2) + '</span>'; },
       tip:{en:'Momentum screen z (sector-neutral residual alpha; display-only, accruing)',zh:'动量筛选 z 值（板块中性残差 alpha；仅展示，累积中）'} },
     { key:'entry_status', labelEn:'Entry', labelZh:'入场', default:true, sortable:true,
-      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
+      fmt:function(v,row){ if(!v) return '<span class="st-muted">—</span>';
+        /* ZHC-509: render the owner-native entry_signal.assess() headline pair.
+           v remains the sort/filter/colour authority; the labels are display-only.
+           An incomplete owner pair fails closed to the muted idiom rather than
+           leaking English machine vocabulary into Chinese mode. */
+        var _en = row && row.entry_status_label, _zh = row && row.entry_status_label_zh;
+        if(!_en || !_zh) return '<span class="st-muted">—</span>';
         var cls = (v==='buy_now'||v==='partial')?'st-pos':(v==='extended'||v==='exit'||v==='avoid'?'st-neg':'');
-        return '<span class="' + cls + '">' + esc(v.replace(/_/g,' ')) + '</span>'; },
+        return '<span class="' + cls + '">' + b(esc(_en), esc(_zh)) + '</span>'; },
       tip:{en:'Entry-timing gate: buy_now / partial / buy_soon / wait_pullback / extended …',zh:'入场时机门控：立即买入 / 部分 / 即将买入 / 等回调 / 偏离 …'} },
     { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:false, sortable:true, right:true,
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
