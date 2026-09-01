@@ -20,20 +20,24 @@ p0: null
 waves:
   - id: A1
     title: Protect EVAL-F0 architecture (Mastermind #299, four records)
-    status: in_progress
+    status: done
     next_action: >
-      When the serialized BSC A1 #310 release window completes: history-preserving merge of
-      protected master into sol/agent-evaluation-fabric-f0-20260831, verify exact four-record
-      delta, fresh exact-head CI, fresh independent review binding the exact candidate, then
-      principal release adjudication, explicit Draft/HOLD removal, expected-head squash merge.
+      DONE 2026-09-01 - merged as protected-master squash 8ddd64a16d17 (exact accepted candidate
+      606cc696; independent review 5077273278 APPROVED; all five exact-head checks SUCCESS; four
+      records live-verified on master). Nonblocking residue carried to B1 opening ruling:
+      PAIR_IDENTITY_MISSING firing condition under frozen pairing.method; four amendment-3.7
+      hygiene notes (classifier attribution, UNRESOLVED_NAME dominance, closed exempt-set
+      enumeration, verbatim-provenance sentences).
   - id: A2
     title: Repair + protect Outcome Learning OL-0 (macro #6699, same sole carrier)
-    status: in_progress
+    status: awaiting_ci
     pr: 6699
     next_action: >
-      Land the bounded 6-point repair (ruling ts 1788144551; review 5061735318 blockers A-E)
-      plus history-preserving main reconcile; independent review on exact head; hosted CI green;
-      principal acceptance; expected-head squash merge.
+      Repair EXECUTED and principal-ACCEPTED at head 5de470287410 (opus review PASS 0 blockers +
+      delta FINDINGS-CLOSED; acceptance posted OL carrier ts 1788254991). Merge deferred on the
+      fleet agentos-validate heal (Sol-held macro #6711): on its landing, re-green the pack, drop
+      the HOLD title, ready, expected-head squash merge 5de470287410, post the merge receipt on
+      the OL carrier.
   - id: B1
     title: EVAL-R0 native evidence core (stdlib-only, environment-free)
     status: todo
