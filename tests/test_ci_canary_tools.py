@@ -1195,3 +1195,102 @@ def test_listener_startup_cleanup_scrubs_all_pc_job_state_and_recreates_runtime_
 def test_start_admission_has_no_workspace_mutation_api() -> None:
     assert not hasattr(ADMISSION, "scrub_pc_state")
     assert not hasattr(ADMISSION, "remove_entry")
+
+
+# ── C3R-A: four-slot diagnostic selection ────────────────────────────────────
+# The canary must be able to select FOUR distinct non-empty packs so the fourth
+# PC CI slot can be exercised diagnostically. Selection stays weight-ordered and
+# still refuses to invent a pack when the plan cannot supply one.
+
+
+def _four_pack_plan() -> dict:
+    return {
+        "schema": SELECT._PLAN_SCHEMA,
+        "packs": [
+            {"index": 0, "weight": 2, "jobs": ["small"]},
+            {"index": 7, "weight": 99, "jobs": ["heavy"]},
+            {"index": 4, "weight": 50, "jobs": ["middle"]},
+            {"index": 2, "weight": 30, "jobs": ["fourth"]},
+            {"index": 9, "weight": 0, "jobs": []},
+        ],
+    }
+
+
+def test_selector_admits_four_distinct_non_empty_packs() -> None:
+    chosen = SELECT.select(_four_pack_plan(), 4)
+    indices = [item["index"] for item in chosen]
+    assert indices == [7, 4, 2, 0], "four-slot selection stays weight-ordered"
+    assert len(set(indices)) == 4, "every selected pack must be distinct"
+    assert all(item["jobs"] for item in chosen), "no empty pack may be selected"
+
+
+def test_selector_refuses_four_slots_when_the_plan_cannot_fill_them() -> None:
+    thin = {
+        "schema": SELECT._PLAN_SCHEMA,
+        "packs": [
+            {"index": 0, "weight": 2, "jobs": ["a"]},
+            {"index": 1, "weight": 1, "jobs": ["b"]},
+            {"index": 2, "weight": 3, "jobs": ["c"]},
+            {"index": 3, "weight": 9, "jobs": []},
+        ],
+    }
+    with pytest.raises(ValueError, match="only 3 non-empty pack"):
+        SELECT.select(thin, 4)
+
+
+def test_selector_cli_emits_a_four_entry_matrix_for_every_slot_identity(
+    tmp_path: Path,
+) -> None:
+    """hosted-control, selfhosted-pack and compare all fan out over
+    `needs.plan.outputs.matrix`, so proving the selector emits four distinct pack
+    identities is what proves all three matrices carry four at slots=4.
+    """
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(_four_pack_plan()), encoding="utf-8")
+    output = tmp_path / "github-output"
+    output.write_text("", encoding="utf-8")
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "select_ci_canary_packs.py"),
+            "--plan",
+            str(plan_path),
+            "--count",
+            "4",
+            "--github-output",
+            str(output),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
+    values = dict(
+        line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines() if line
+    )
+    matrix = json.loads(values["matrix"])
+    assert matrix == {"include": [{"pack": 7}, {"pack": 4}, {"pack": 2}, {"pack": 0}]}
+    assert len({entry["pack"] for entry in matrix["include"]}) == 4
+    assert values["primary_pack"] == "7"
+
+
+def test_selector_cli_refuses_a_fifth_slot(tmp_path: Path) -> None:
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(_four_pack_plan()), encoding="utf-8")
+    completed = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "select_ci_canary_packs.py"),
+            "--plan",
+            str(plan_path),
+            "--count",
+            "5",
+            "--github-output",
+            str(tmp_path / "github-output"),
+        ],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode != 0
+    assert "invalid choice" in completed.stderr
