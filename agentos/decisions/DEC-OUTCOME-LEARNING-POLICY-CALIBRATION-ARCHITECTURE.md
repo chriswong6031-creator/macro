@@ -148,3 +148,54 @@ parallel identity/event/time/correction store, new lifecycle, queue, watcher, re
 authority, hidden utility score or automatic policy editor. Do not ingest private chain of thought
 or publish punitive individual rankings. Do not call a schema, dashboard, merged PR or descriptive
 study an institutional learning loop.
+
+## Amendment (2026-09-01) — executive-memory and CCL reconciliation
+
+Repair authority chain: Chairman transfer op `mastermind-agent-evaluation-fable-coo-end-to-end-20260901`
+→ Slack ruling `SOL REQUEST_REPAIR / CONTINUE` ts `1788144551` → GitHub review `5061735318` (blockers
+A–E) on exact head `29518b3cfad719226db0444ccb4d92a3626b07c9`. Full text:
+`docs/superpowers/specs/2026-09-01-outcome-learning-executive-memory-ccl-reconciliation-amendment.md`.
+
+**Ownership ruling.** `organizational-learning` is confirmed the canonical owner of generic
+organizational-learning and executive-experience methodology — expectation/outcome semantics,
+decision-quality-vs-luck adjudication, assumption/falsifier semantics, memory
+admission/application/poisoning/correction/replay law, retrieval-discipline law, and self-model/
+memory-efficacy benchmark methodology. CCL-A4 (Chairman Cognition Loop strategic learning) is a
+consumer/application of these contracts, not a second memory store, schema authority, retriever,
+graph, evaluator, or promotion plane. The CCL program's canonical carrier (currently PR #309/#311/
+#292 and their successors) owes the corresponding narrow ownership-acknowledgment correction before
+CCL-A3 START.
+
+**Sequencing correction.** A minimal sealed prospective expectation/assumption receipt (the `OL-2a`
+contract subset) must exist before the first CCL-A3 effect; CCL-A3 need not wait for randomized OL-5.
+With only the minimal receipt, CCL-A3's learning grade ceiling is `DESCRIPTIVE_ONLY`.
+
+**Receipt v2 extension.** `mastermind.decision_expectation_receipt.v1` semantics are preserved
+verbatim. A closed `mastermind.decision_expectation_receipt.v2` extension adds `assumptions[]`
+(with resolution states `HELD`/`FALSIFIED`/`UNRESOLVED`/`NOT_TESTED`/`CONFOUNDED`, never forced
+binary), `assumption_resolutions[]` (append-only, never mutating the sealed receipt), and
+`memory_exposure` (pre/final option-set digests and consulted-record influence). No private chain of
+thought; `PUBLIC_SAFE` classification required for every V1 durable learning artifact in a public
+repository, with restricted/unknown material failing closed rather than entering public Git history.
+
+**Memory law.** Untrusted prose never becomes durable executive memory directly (admission gate);
+a valid historical DEC/DSC remains evidence, not current truth or procedure (application gate). Three
+frozen inequalities bind every future memory consumer: `REMEMBERED_ACTION != AUTHORIZED_ACTION`,
+`REMEMBERED_SUCCESS != CURRENT_PROCEDURE`, `REMEMBERED_TOOL_SEQUENCE != REPLAYABLE_EFFECT`. A
+corrected/superseded premise flags downstream lineage `MEMORY_PREMISE_INVALIDATED` without automatic
+reversal or policy edit.
+
+**Retrieval law.** Macro Context Index (CXI) remains the only retrieval plane; no memory RAG service,
+no graph authority. A future two-pass retrieval law (memory-light first pass, source-attributed second
+pass, delta record, anchoring/negative-transfer audit) is specified for later implementation. A later
+derived relationship view's edges carry provenance `CANONICAL_DECLARED`, `DETERMINISTIC_DERIVED`, or
+`MODEL_INFERRED`; `MODEL_INFERRED` edges have zero authority.
+
+**Benchmark wave.** A later wave `OL-4E` (governance §7, between OL-4D and OL-5A) benchmarks an
+empirical, non-psychological self-model across at least memory-light, naive-injection, and
+anti-anchored two-pass arms; it never emits a universal CEO/worker/model score.
+
+This amendment changes no `affects` path beyond the records already listed above (it adds the new
+amendment spec file as an additional canonical document) and confers no new authority: it remains
+`SPEC_ONLY / RECORDS_ONLY`, creates no program, database, record type, canary, or code, and makes no
+edit to the Mastermind repository, PR #299, PR #162, or any CCL carrier.

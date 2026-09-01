@@ -72,6 +72,8 @@ This key is intentionally broader than the `Outcome Compiler` component and narr
 
 The program row and workstream are not created in this records-only carrier. Current Macro has a strict semantic census and PR #6615 already owns a stacked, not-yet-landed semantic registration. Registration must re-read the action-time registry and land as its own path-owning wave after that carrier is reconciled; no approximate parent is allowed.
 
+**Ownership ruling versus CCL-A4 (2026-09-01):** `organizational-learning` is the canonical owner of generic organizational-learning and executive-experience methodology; CCL-A4 is a consumer/application of these contracts, not a second memory store, schema authority, retriever, graph, evaluator, or promotion plane. See `docs/superpowers/specs/2026-09-01-outcome-learning-executive-memory-ccl-reconciliation-amendment.md` §A for the full ruling, the CCL-A3 sequencing correction, and the binding cross-program requirement.
+
 ### 2.2 No automatic constitution
 
 The compiler may emit evidence and a policy-delta candidate. It may not edit source law, route policy, worker eligibility, Agent OS decisions, Executive settings, merge rules or canary allocation. A policy change exists only after an authorized human/Sol decision in the current owner.
@@ -271,6 +273,8 @@ mastermind.decision_expectation_receipt.v1
 ```
 
 Field names may be refined in implementation, but these semantics are frozen.
+
+**Extension pointer (2026-09-01):** the v1 semantics above remain frozen verbatim. A closed `mastermind.decision_expectation_receipt.v2` extension — adding `assumptions[]`, `assumption_resolutions[]`, and `memory_exposure` — is specified in `docs/superpowers/specs/2026-09-01-outcome-learning-executive-memory-ccl-reconciliation-amendment.md` §C. This paragraph is a pointer only; it does not alter the v1 JSON block above.
 
 ### 7.2 Owner placement
 

@@ -306,6 +306,8 @@ Expected changed paths are only the five OL-1 files listed above. Open one bound
 
 ### Task 2: OL-2 — Build pure contracts and deterministic compiler
 
+**Task 2a boundary (2026-09-01, per the CCL reconciliation amendment §B):** the receipt-contract subset of this task — schema, sealing, and validation for `mastermind.decision_expectation_receipt.v2` (`docs/superpowers/specs/2026-09-01-outcome-learning-executive-memory-ccl-reconciliation-amendment.md` §C), with no compiler/study dependency — is `OL-2a` and must be protected before the first CCL-A3 effect (see Task 4's CCL-A3 gate cross-ref below). The compiler and everything else in this task remain OL-2 proper and are not required before CCL-A3.
+
 **Files:**
 - Create: `control_plane/outcome_learning_contracts.py`
 - Create: `control_plane/outcome_compiler.py`
@@ -500,6 +502,8 @@ Stop after one real descriptive study proves the cross-owner read path. Do not c
 
 ### Task 4: OL-4 — Capture ex-ante expectations in canonical owners
 
+**CCL-A3 gate cross-ref (2026-09-01, per the CCL reconciliation amendment §A.3–A.4):** the CCL program's first CCL-A3 effect may not begin before the minimal `OL-2a` receipt (Task 2a) is available and a sealed expectation/assumption receipt exists for that effect. The CCL program's canonical carrier owes the corresponding narrow correction before CCL-A3 START; this task does not implement that correction on the CCL side.
+
 **Files:**
 - Modify only after owner clearance: `control_plane/executive_runtime.py`
 - Modify only after owner clearance: `control_plane/model_router.py`
@@ -531,6 +535,16 @@ Record the complete eligible action set after hard exclusions and the determinis
 Only after Agent OS compiler owner clearance, add a closed optional `ex_ante` object to DEC if a material-decision canary proves that external receipt references are insufficient. Otherwise preserve expectations as linked evidence artifacts and avoid schema growth.
 
 Stop when ex-ante expectations survive a real owner-native write/read round trip. No policy canary or randomization belongs in OL-4.
+
+---
+
+### Task 4E: OL-4E — Executive-memory efficacy benchmark (stub)
+
+**Added 2026-09-01 per the CCL reconciliation amendment §G.** This is a stub for a later wave sequenced between OL-4D and OL-5A (governance §7 revision); it is not commissioned by this plan and carries no files, steps, or acceptance proof yet.
+
+**Scope at commissioning time:** an empirical, non-psychological self-model for the logical office, partitioned by decision class/domain/ambiguity/blast radius/topology/model-surface cohort where known; forecast calibration, time-to-evidence bias, intervention classes, rework classes, assumption-failure patterns, and topology outcomes with sample size/coverage/uncertainty; never a universal CEO/worker/model score. Minimum three benchmark arms: memory-light reasoning, naive memory injection, anti-anchored two-pass memory (§F future retrieval law). Memory is promoted for use only on measured decision improvement with no hidden quality regression, mirroring the two-decision canary promotion discipline.
+
+Do not begin implementation from this stub alone; a fresh commission with its own Files/Interfaces/Steps is required when OL-4E is actually scheduled.
 
 ---
 
@@ -656,6 +670,11 @@ Mark OL-7 done only when production proof and delayed consequence exist. Update 
 | Canary is causal enough | Pre-registration + assignment probabilities + randomization/overlap/missingness audit |
 | Policy changed lawfully | Independent review + DSC + explicit DEC + rollback scope |
 | Improvement is real | Production path + terminal/delayed study + no guardrail regression |
+| Sealed-before-effect (2026-09-01) | CCL-A3 effect timestamp postdates its OL-2a receipt `recorded_at`/`sealed_hash` |
+| Assumption resolution states present (2026-09-01) | `assumption_resolutions[]` entries use only `HELD`/`FALSIFIED`/`UNRESOLVED`/`NOT_TESTED`/`CONFOUNDED`, never a forced binary |
+| Memory-exposure lineage present (2026-09-01) | Receipt's `memory_exposure.consulted[]` names every DEC/DSC/source-law consulted with an `influence` value |
+| PUBLIC_SAFE fail-closed (2026-09-01) | Every V1 durable learning artifact in a public repo carries an explicit `PUBLIC_SAFE` classification; unresolved/restricted material is withheld, not redacted-and-published |
+| Two-pass retrieval delta recorded (2026-09-01) | A major ambiguous decision's memory-light first pass and source-attributed second pass produce a delta record naming what changed and what was rejected |
 
 ## Plan self-review
 
