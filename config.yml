@@ -2713,6 +2713,11 @@ stock_search:
     - ERIE   # Erie Indemnity
     - ET     # Energy Transfer
     - FBIN   # Fortune Brands Innovations
+    - FBRX   # Forte Biosciences — DELISTED 2026-08-27 (acquired by argenx, US$77.00
+             # cash tender; last session 08-26). Membership kept for the same reason
+             # as CTRA/TPH/AVB: page, search entry and deep links stay alive
+             # (CSP-R1). The exit row in config/delisted_symbols.yml stops the
+             # nightly fetch. Do NOT delete this line.
     - FCFS   # FirstCash Holdings
     - FCNCA  # First Citizens BancShares
     - FDS    # FactSet Research
@@ -2857,6 +2862,12 @@ stock_search:
     - TTD    # The Trade Desk
     - TTWO   # Take-Two Interactive
     - TWLO   # Twilio
+    - TWO    # Two Harbors Investment — DELISTED 2026-08-25 (acquired by CrossCountry
+             # Mortgage, US$12.00 cash + $0.20326 stub dividend; last session 08-24).
+             # Common stock only — the TWO-PA/PB/PC preferreds and TWOD notes remain
+             # NYSE-listed. Membership kept per CSP-R1 (page/search/deep links stay
+             # alive); the exit row in config/delisted_symbols.yml stops the nightly
+             # fetch. Do NOT delete this line.
     - TXN    # Texas Instruments
     - TYL    # Tyler Technologies
     - UNP    # Union Pacific
@@ -3109,6 +3120,11 @@ stock_search:
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
     LEG:   {name: "Leggett & Platt", sector: "Consumer Discretionary"}
+    # FBRX and TWO: same rule — delisted 2026-08 (config/delisted_symbols.yml),
+    # labels keep their pages naming the company. TWO is a mortgage REIT, which
+    # GICS files under Financials, not Real Estate.
+    FBRX:  {name: "Forte Biosciences", sector: "Health Care"}
+    TWO:   {name: "Two Harbors Investment", sector: "Financials"}
     # ADR sensor mini-set (W0-4 — INTL-49; collected in yahoo.adr_sensors)
     ASML:  {name: "ASML Holding (ADR)", sector: "Information Technology"}
     LVMUY: {name: "LVMH (ADR)", sector: "Consumer Discretionary"}
@@ -3901,6 +3917,12 @@ quality:
                                  # issuer: SEC CIK 12318, formerNames empty; routine F-6 renewal
                                  # accession 0001193805-26-000853 eff. 2026-06-30; OpenFIGI IMPUY =
                                  # 'IMPALA PLATINUM-SPON ADR', live). Same RHHBY shape; pgm_miners member.
+    - STRS                       # Stratus Properties — voluntarily left NASDAQ under its Plan of
+                                 # Complete Liquidation and Dissolution (Form 25 2026-07-31, effective
+                                 # ~08-10; Forms 15 08-10; CIK 885508) but the shares legitimately keep
+                                 # printing real OTC bars while liquidating distributions are pending.
+                                 # NOT an exit-row candidate while the tape lives — see the STRS note in
+                                 # config/delisted_symbols.yml for receipts and the graduation path.
   # --- ticker key migrations (engine/ledger_identity) ---
   # The MACHINE-READABLE half of the ack text above. The acks say a rename happened in
   # prose; nothing could read "under its 2026-06-24 SATS->ECHO rename" and act on it, so
