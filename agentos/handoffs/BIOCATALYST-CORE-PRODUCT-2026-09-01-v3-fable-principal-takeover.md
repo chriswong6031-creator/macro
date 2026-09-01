@@ -8,9 +8,9 @@ mission: >
   practically useless for stock-catalyst discovery, recover current canonical
   truth, recharter the product around Decision Intelligence, determine whether
   Fable meets the protected principal-admission test, create the durable R0
-  architecture/commissioning carrier, and hand sustained day-to-day ownership
-  to Fable without duplicating the biocatalyst program or disturbing the
-  already-started #6389 carrier.
+  architecture/commissioning carrier, pre-shape the first two vertical waves,
+  and hand sustained day-to-day ownership to Fable without duplicating the
+  biocatalyst program or disturbing the already-started #6389 carrier.
 state_before: >
   `WS:BIOCATALYST-CORE-PRODUCT` was parked after P1-1
   PROVEN_LIVE_COHORT_LIMITED on four ClinicalTrials.gov NCTs. Its blanket
@@ -36,7 +36,8 @@ changed:
       owner and promotion protections.
   - path: research/biocatalyst_decision_intelligence_v3/README.md
     what: >
-      Added the cold-start read order and R0 authority boundary.
+      Added the cold-start read order, R0 authority boundary and links to the
+      two pre-shaped but uncommissioned R1 packets.
   - path: research/biocatalyst_decision_intelligence_v3/BIOCATALYST_DECISION_INTELLIGENCE_V3_MASTERPLAN_2026-09-01.md
     what: >
       Added the product thesis, root-cause analysis, 10/10 experience, entrance
@@ -51,8 +52,20 @@ changed:
       failure states, ordered sequence, acceptance, stop/return contract and
       reciprocal watcher law for operation
       BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901.
+  - path: research/biocatalyst_decision_intelligence_v3/BIOCATALYST_R1A_SOURCE_GRADUATION_PRECOMMISSION_2026-09-01.md
+    what: >
+      Pre-shaped, without commissioning, the exact source-governance vertical:
+      freeze and adjudicate the ended soak, preserve pass/fail honesty, create
+      the successor source regime, production-prove broad event coverage and
+      stop before product UI or prediction work.
+  - path: research/biocatalyst_decision_intelligence_v3/BIOCATALYST_R1B_WHAT_MATTERS_NEXT_PRECOMMISSION_2026-09-01.md
+    what: >
+      Pre-shaped, without commissioning, the first useful production vertical:
+      broad real ticker-level catalyst discovery, honest timing source classes,
+      canonical identity, evidence/revisions, explainable Research Priority,
+      NOT_ESTIMABLE behavior and real entitled browser acceptance.
   - path: agentos/handoffs/BIOCATALYST-CORE-PRODUCT-2026-09-01-v3-fable-principal-takeover.md
-    what: Added this durable continuation handoff.
+    what: Added this durable continuation handoff and reconciled it to the full seed packet.
 prs: [6712]
 verified:
   - claim: >
@@ -82,7 +95,15 @@ verified:
       research/Agent OS additions and no runtime/product/source/config/data/
       contract/workflow/deployment effect.
     command: GitHub branch/file creation and draft-PR readback
-    result: PR #6712, head 7406dc4ed485378f341bac100ad58fee6564bf83 before this handoff commit.
+    result: >
+      PR #6712 created and retained DRAFT/HOLD; seven changed files before
+      this reconciliation commit, all under research/ or agentos/.
+  - claim: >
+      Linear MAS-256 is the urgent projection of the same R0 operation under
+      the existing WS:BIOCATALYST-CORE-PRODUCT project; it is Backlog while no
+      concrete Fable receiver has STARTed.
+    command: Linear create/readback
+    result: MAS-256 created with PR #6712 attached and WAITING_CAPACITY stated.
   - claim: >
       #6389 remains a separate OPEN/DRAFT/unmerged carrier at exact head
       678443d0df0bf28c55ca9739dc862ac2f8868bf9 and was not modified,
@@ -94,17 +115,19 @@ verified:
 unverified:
   - >
     The final R0 architecture, contract reuse matrix, external research,
-    experience reference compositions, exact R1A/R1B handoffs and Agent OS
-    workstream reconciliation remain Fable's commissioned work and are not
-    claimed complete by the seed package.
+    experience reference compositions, final reconciled R1A/R1B handoffs and
+    Agent OS workstream reconciliation remain Fable's commissioned work and
+    are not claimed complete by the seed package. The included R1A/R1B files
+    are pre-shaped drafts, not implementation authority.
   - >
     No Fable receiver is bound at the moment this handoff is written. Current
     truthful placement state is WAITING_CAPACITY / needs_placement. A current
     authorized Sol/placement direct delivery to a concrete eligible Fable
     session becomes the DIRECT_TARGETED assignment edge.
   - >
-    No GitHub CI/Agent OS validation is claimed yet on the final R0 carrier;
-    Fable must complete and prove the exact final head before Sol review.
+    GitHub CI is running on the seed branch. No final R0 Agent OS/CI validation
+    or architecture acceptance is claimed; Fable must complete and prove the
+    exact final head before Sol review.
 unresolved:
   - >
     Exact existing owner/contract suitability for asset/drug identity must be
@@ -119,8 +142,9 @@ unresolved:
     none is assumed production-ready.
 next_actions:
   - >
-    Canonical placement owner / authorized Sol delivery binds one concrete
-    eligible Fable principal to
+    The direct-targeted placement operation
+    biocatalyst-v3-fable-placement-20260901-groksec-001 on #agent-dispatch
+    binds one concrete eligible Fable principal to
     BIOCATALYST-DECISION-INTELLIGENCE-V3-FABLE-PRINCIPAL-20260901 and Macro
     PR #6712. Receiver ACKs actual identity, reads the full carrier, arms one
     exact-thread continuation source, emits separate START after current
@@ -128,7 +152,7 @@ next_actions:
   - >
     Sol must respond to every Fable BLOCKED/DECISION_REQUEST/RESULT on the same
     carrier with explicit CONTINUE/REQUEST_REPAIR or terminal ACCEPTED/STOP.
-    R1A/R1B cannot start from this seed package or from silence.
+    R1A/R1B cannot start from the seed packets or from silence.
 do_not_redo:
   - >
     Do not repeat the conclusion that a four-NCT Trial Milestones page is the
@@ -163,9 +187,11 @@ danger_areas:
 
 Cold-stranger summary: the Chairman approved a CEO-level BioCatalyst recharter
 because the current four-trial registry workspace was functioning at the wrong
-layer. Sol created DRAFT/HOLD PR #6712 as the single R0 architecture carrier and
-selected Fable as sustained principal/COO under a justified principal-admission
-receipt. The product target is a What Matters Next stock-catalyst decision
-workflow with separate facts, calibrated intelligence/research priority and
-unchanged trade authority. The exact next action is concrete Fable placement and
-R0 completion on #6712; #6389 stays untouched on its own started carrier.
+layer. Sol created DRAFT/HOLD PR #6712 as the single R0 architecture carrier,
+created Linear MAS-256, pre-shaped R1A Source Graduation and R1B What Matters
+Next, and selected Fable as sustained principal/COO under a justified
+principal-admission receipt. The product target is a What Matters Next
+stock-catalyst decision workflow with separate facts, calibrated intelligence /
+research priority and unchanged trade authority. The exact next action is
+concrete Fable placement and R0 completion on #6712; #6389 stays untouched on
+its own started carrier.
