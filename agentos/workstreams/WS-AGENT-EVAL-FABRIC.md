@@ -40,8 +40,14 @@ waves:
       the OL carrier.
   - id: B1
     title: EVAL-R0 native evidence core (stdlib-only, environment-free)
-    status: todo
+    status: done
     depends_on: [A1]
+    next_action: >
+      DONE 2026-09-01 - Mastermind #330 merged as ba3a421918 (candidate e7f4f6e9; adversarial
+      executed-probe review CONFIRMED-CLOSED after one blocker + two majors repaired at the
+      boundary; 472 tests; capability BUILT / SYNTHETIC_VERTICAL_PROVEN / PRODUCTION_INERT).
+      Follow-ups carried: fence-test mechanism pin, summarize scenario_refs[0] multi-scenario
+      limit, independent 4MiB boundary probe, BLOCKED-pairing seed derivation.
   - id: B2
     title: EVAL-C0 governed scenario corpus + content-evidence resolution
     status: todo
@@ -75,8 +81,9 @@ waves:
     status: todo
     depends_on: [C2, D1, F1]
 next_action: >
-  Complete waves A1 and A2 (both in flight 2026-09-01); on A1, watch Mastermind #310 to
-  completion before reconciling #299.
+  Merge A2 (#6699 accepted at 5de470287410) and program-home #6713 when the Sol-held macro
+  #6711 agentos heal lands; then commission B2 (EVAL-C0 corpus, task-class seeds ratified) and
+  B3 (OHF1 on the existing #162 carrier).
 decisions:
   - DEC:AGENT-EVAL-FABLE-COO-DELEGATION
 artifacts:
