@@ -1,12 +1,12 @@
 {
   "schema": "options_dislocation.gate.v1",
-  "generated_at": "2026-08-05 11:29 UTC",
+  "generated_at": "2026-09-01 11:17 UTC",
   "scored": false,
   "scored_primitives": [],
-  "status": "insufficient_history (have 41/120 dates, 392/15 names)",
+  "status": "insufficient_history (have 48/120 dates, 408/15 names)",
   "weight": 0.0,
-  "n_dates": 41,
-  "n_names": 392,
+  "n_dates": 48,
+  "n_names": 408,
   "min_dates": 120,
   "min_names": 15,
   "fdr_alpha": 0.1,
@@ -19,23 +19,23 @@
       "prereg_sign": -1,
       "by_horizon": {
         "5": {
-          "n_dates": 30,
-          "mean_ic": -0.0873,
-          "hac_t": -3.365,
+          "n_dates": 38,
+          "mean_ic": -0.0965,
+          "hac_t": -2.873,
           "sign_ok": true,
           "fdr_pass": true
         },
         "10": {
-          "n_dates": 25,
-          "mean_ic": -0.1287,
-          "hac_t": -10.21,
+          "n_dates": 33,
+          "mean_ic": -0.1474,
+          "hac_t": -4.588,
           "sign_ok": true,
           "fdr_pass": true
         },
         "21": {
-          "n_dates": 14,
-          "mean_ic": -0.2028,
-          "hac_t": -21.819,
+          "n_dates": 22,
+          "mean_ic": -0.1875,
+          "hac_t": -45.275,
           "sign_ok": true,
           "fdr_pass": true
         }
@@ -45,21 +45,21 @@
       "prereg_sign": 1,
       "by_horizon": {
         "5": {
-          "n_dates": 11,
-          "mean_ic": 0.0505,
-          "hac_t": 3.361,
+          "n_dates": 13,
+          "mean_ic": 0.0458,
+          "hac_t": 2.158,
           "sign_ok": true,
           "fdr_pass": true
         },
         "10": {
-          "n_dates": 9,
-          "mean_ic": 0.0196,
-          "hac_t": 1.349,
+          "n_dates": 11,
+          "mean_ic": 0.0126,
+          "hac_t": 0.876,
           "sign_ok": true,
           "fdr_pass": false
         },
         "21": {
-          "n_dates": 2,
+          "n_dates": 5,
           "mean_ic": null,
           "hac_t": null,
           "sign_ok": false,
@@ -71,23 +71,23 @@
       "prereg_sign": 1,
       "by_horizon": {
         "5": {
-          "n_dates": 25,
-          "mean_ic": 0.0659,
-          "hac_t": 9.472,
+          "n_dates": 32,
+          "mean_ic": 0.0545,
+          "hac_t": 4.366,
           "sign_ok": true,
           "fdr_pass": true
         },
         "10": {
-          "n_dates": 20,
-          "mean_ic": 0.0303,
-          "hac_t": 1.549,
+          "n_dates": 27,
+          "mean_ic": 0.0434,
+          "hac_t": 3.881,
           "sign_ok": true,
-          "fdr_pass": false
+          "fdr_pass": true
         },
         "21": {
-          "n_dates": 9,
-          "mean_ic": 0.053,
-          "hac_t": 2.537,
+          "n_dates": 16,
+          "mean_ic": 0.0518,
+          "hac_t": 6.282,
           "sign_ok": true,
           "fdr_pass": true
         }
@@ -97,24 +97,24 @@
       "prereg_sign": -1,
       "by_horizon": {
         "5": {
-          "n_dates": 11,
-          "mean_ic": -0.0554,
-          "hac_t": -6.043,
+          "n_dates": 13,
+          "mean_ic": -0.0432,
+          "hac_t": -2.441,
           "sign_ok": true,
           "fdr_pass": true
         },
         "10": {
-          "n_dates": 10,
-          "mean_ic": 0.0054,
-          "hac_t": 0.305,
+          "n_dates": 11,
+          "mean_ic": 0.0009,
+          "hac_t": 0.072,
           "sign_ok": false,
           "fdr_pass": false
         },
         "21": {
-          "n_dates": 4,
-          "mean_ic": null,
+          "n_dates": 7,
+          "mean_ic": -0.0441,
           "hac_t": null,
-          "sign_ok": false,
+          "sign_ok": true,
           "fdr_pass": false
         }
       }
@@ -123,23 +123,23 @@
       "prereg_sign": -1,
       "by_horizon": {
         "5": {
-          "n_dates": 25,
-          "mean_ic": -0.0305,
-          "hac_t": -3.595,
+          "n_dates": 30,
+          "mean_ic": -0.0169,
+          "hac_t": -0.89,
           "sign_ok": true,
-          "fdr_pass": true
+          "fdr_pass": false
         },
         "10": {
-          "n_dates": 23,
-          "mean_ic": -0.0387,
-          "hac_t": -2.568,
+          "n_dates": 25,
+          "mean_ic": -0.0456,
+          "hac_t": -3.937,
           "sign_ok": true,
           "fdr_pass": true
         },
         "21": {
-          "n_dates": 14,
-          "mean_ic": -0.0551,
-          "hac_t": -2.717,
+          "n_dates": 18,
+          "mean_ic": -0.071,
+          "hac_t": -7.733,
           "sign_ok": true,
           "fdr_pass": true
         }
@@ -149,24 +149,24 @@
       "prereg_sign": 1,
       "by_horizon": {
         "5": {
-          "n_dates": 18,
-          "mean_ic": 0.0199,
-          "hac_t": 1.185,
+          "n_dates": 23,
+          "mean_ic": 0.0001,
+          "hac_t": 0.005,
           "sign_ok": true,
           "fdr_pass": false
         },
         "10": {
-          "n_dates": 16,
-          "mean_ic": -0.0088,
-          "hac_t": -0.613,
-          "sign_ok": false,
+          "n_dates": 18,
+          "mean_ic": 0.0127,
+          "hac_t": 1.017,
+          "sign_ok": true,
           "fdr_pass": false
         },
         "21": {
-          "n_dates": 7,
-          "mean_ic": -0.0017,
-          "hac_t": null,
-          "sign_ok": false,
+          "n_dates": 11,
+          "mean_ic": 0.0174,
+          "hac_t": 1.259,
+          "sign_ok": true,
           "fdr_pass": false
         }
       }
@@ -175,23 +175,23 @@
       "prereg_sign": -1,
       "by_horizon": {
         "5": {
-          "n_dates": 30,
-          "mean_ic": -0.0402,
-          "hac_t": -2.725,
+          "n_dates": 38,
+          "mean_ic": -0.0411,
+          "hac_t": -2.668,
           "sign_ok": true,
           "fdr_pass": true
         },
         "10": {
-          "n_dates": 25,
-          "mean_ic": -0.0909,
-          "hac_t": -3.394,
+          "n_dates": 33,
+          "mean_ic": -0.0841,
+          "hac_t": -3.809,
           "sign_ok": true,
           "fdr_pass": true
         },
         "21": {
-          "n_dates": 14,
-          "mean_ic": -0.1362,
-          "hac_t": -3.549,
+          "n_dates": 22,
+          "mean_ic": -0.1303,
+          "hac_t": -7.023,
           "sign_ok": true,
           "fdr_pass": true
         }
