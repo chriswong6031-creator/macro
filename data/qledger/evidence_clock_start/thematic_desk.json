@@ -1,0 +1,7 @@
+{
+  "claim_family": "thematic_desk",
+  "declared_horizon_d": 20,
+  "first_prospective_registration_utc": "2026-08-31T05:01:42.762963+00:00",
+  "git_sha": "09cc2e0f465c5a27f7382b3656694b5d068ef00d",
+  "horizon_unit": "trading_days"
+}

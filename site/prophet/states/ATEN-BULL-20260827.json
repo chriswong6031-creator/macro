@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ATEN-BULL-20260827",
-  "asof": "2026-08-29",
+  "asof": "2026-08-31",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 16.2,
@@ -17,20 +17,20 @@
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.0,
+    "dist_to_stop_r": -0.233,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 4.4,
-    "p1": -0.6667,
-    "p2": -0.3334,
+    "horizon_pct_used": 8.9,
+    "p1": -0.8221,
+    "p2": -0.4111,
     "p3": null,
-    "move_r": -1.0,
+    "move_r": -1.233,
     "mfe_r": 0.0,
-    "mae_r": -1.0
+    "mae_r": -1.233
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Stop Level Breached",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 6.866455066756316e-07,
-  "_mae": -1.329999237060548,
+  "_mae": -1.6400006103515636,
   "_max_p1": 3.442177194082777e-07,
   "_first_trigger_ts": "2026-08-27",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 2,
-  "tau": 0.0444
+  "days_elapsed": 4,
+  "tau": 0.0889
 }

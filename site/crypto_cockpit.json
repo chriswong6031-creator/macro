@@ -2,17 +2,17 @@
   "schema": "crypto.cockpit/v1",
   "contract_phase": "w0",
   "display_only": true,
-  "as_of": "2026-08-30",
-  "generated_at": "2026-08-30T13:33:26+00:00",
+  "as_of": "2026-09-01",
+  "generated_at": "2026-09-01T06:31:41+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 78008.85,
-    "change_24h_pct": -0.29,
+    "price": 78283.77,
+    "change_24h_pct": -0.36,
     "stance_en": "STRONG RISK-ON",
     "stance_zh": "强烈偏多",
-    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and fundamentals; the drag comes from leveraged bets and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向明显偏多。支撑来自动量与基本面；拖累来自杠杆押注与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": 43,
+    "summary_en": "The big picture reads strongly risk-on. Support comes from momentum and the trend; the drag comes from behaviour versus stocks and leveraged bets. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向明显偏多。支撑来自动量与趋势；拖累来自与美股的联动与杠杆押注。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": 38,
     "exposure_pct": 100,
     "gate_active": false
   },
@@ -153,7 +153,7 @@
         "state_en": "Low",
         "state_zh": "低",
         "tone": "bull",
-        "as_of": "2026-08-30"
+        "as_of": "2026-09-01"
       },
       "spark_source": "signals.oi_mcap_ratio",
       "receipt_members": [
@@ -200,9 +200,9 @@
           "label_en": "Miner economics",
           "label_zh": "矿工经济",
           "source": "master.board.miner",
-          "state_en": "Capitulation (bottoming)",
-          "state_zh": "投降（筑底）",
-          "tone": "bull",
+          "state_en": "Neutral",
+          "state_zh": "中性",
+          "tone": "neutral",
           "grade": "NEW"
         },
         {
@@ -210,9 +210,9 @@
           "label_en": "Holder spread (STH/LTH)",
           "label_zh": "持有者价差",
           "source": "master.board.holders",
-          "state_en": "Neutral",
-          "state_zh": "中性",
-          "tone": "neutral",
+          "state_en": "Accumulation",
+          "state_zh": "累积",
+          "tone": "bull",
           "grade": "NEW"
         },
         {
