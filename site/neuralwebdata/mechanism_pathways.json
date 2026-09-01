@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-08-29",
+  "as_of": "2026-09-01",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -23,14 +23,210 @@
       "mastermind_arming"
     ]
   },
-  "pathways": [],
-  "no_pathway": {
-    "reason": "no_attributable_driver",
-    "printed": true,
-    "trigger_context": {
-      "quad": "Q3",
-      "label": "Q2",
-      "note": "regime present but no attributable driver family resolved"
+  "pathways": [
+    {
+      "family": "rates",
+      "driver": "fed_repricing",
+      "pathway_role": "primary",
+      "as_of": "2026-09-01",
+      "direction_en": "hawkish repricing — cuts priced out, front-end up",
+      "direction_zh": "鹰派重定价 — 计入更少降息、前端利率上行",
+      "confidence_ceiling": "context_only",
+      "coverage_score": 1.0,
+      "coherence": "supported",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_fed_repricing",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "fed_repricing",
+          "observation": {
+            "en": "hawkish repricing — cuts priced out, front-end up",
+            "zh": "鹰派重定价 — 计入更少降息、前端利率上行"
+          },
+          "direction": 1,
+          "value": 0.98,
+          "z_or_percentile": 1.36,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        },
+        {
+          "node_id": "leg_fed_repricing_0",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "fed-funds futures",
+          "observation": {
+            "en": "fed-funds futures (+4.0σ)",
+            "zh": "联邦基金期货 (+4.0σ)"
+          },
+          "direction": "positive",
+          "value": 4.0,
+          "z_or_percentile": 4.0,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[0]"
+          ]
+        },
+        {
+          "node_id": "leg_fed_repricing_1",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "2y yield",
+          "observation": {
+            "en": "2y yield (+1.1σ)",
+            "zh": "2年期收益率 (+1.1σ)"
+          },
+          "direction": "positive",
+          "value": 1.1,
+          "z_or_percentile": 1.1,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[1]"
+          ]
+        },
+        {
+          "node_id": "leg_fed_repricing_2",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "rate-path (2y−FF)",
+          "observation": {
+            "en": "rate-path (2y−FF) (+0.7σ)",
+            "zh": "利率路径(2年−联邦基金) (+0.7σ)"
+          },
+          "direction": "positive",
+          "value": 0.7,
+          "z_or_percentile": 0.7,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[2]"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "src_node": "driver_fed_repricing",
+          "dst_node": "leg_fed_repricing_0",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[0]"
+          ]
+        },
+        {
+          "src_node": "driver_fed_repricing",
+          "dst_node": "leg_fed_repricing_1",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[1]"
+          ]
+        },
+        {
+          "src_node": "driver_fed_repricing",
+          "dst_node": "leg_fed_repricing_2",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "positive",
+          "observed_sign": "positive",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[2]"
+          ]
+        }
+      ]
+    },
+    {
+      "family": "equity-leadership",
+      "driver": "ai_semis",
+      "pathway_role": "alternate",
+      "as_of": "2026-09-01",
+      "direction_en": "AI/semis leadership — narrow tech-led tape",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "ai_semis",
+          "observation": {
+            "en": "AI/semis leadership — narrow tech-led tape",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.72,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
+    },
+    {
+      "family": "china",
+      "driver": "china_stimulus",
+      "pathway_role": "alternate",
+      "as_of": "2026-09-01",
+      "direction_en": "China risk-on — A-shares/HK & copper lead up",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_china_stimulus",
+          "as_of": "2026-09-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "china_stimulus",
+          "observation": {
+            "en": "China risk-on — A-shares/HK & copper lead up",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.51,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
     }
-  }
+  ]
 }
