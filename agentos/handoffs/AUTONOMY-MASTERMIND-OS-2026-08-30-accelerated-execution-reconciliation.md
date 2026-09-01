@@ -1,414 +1,287 @@
 ---
 schema: agentos.handoff.v1
 workstream: WS:CHAIRMAN-CONTROL-ROOM
-session: sol/assess-ai-operating-hub-continuation-20260901
+session: sol/executive-learning-autonomy-continuation-20260901
 model: sol
 status: active_checkpoint
 ended_because: ci_handoff
 mission: >
-  Complete the Chairman-authorized AI Operating Hub as the existing Project Workroom Fabric and
-  Chairman Control Room: one trustworthy place to inspect responsibility, current worker and Sol
-  action, placement, freshness, blockers and exact evidence, then take bounded action through the
-  canonical Executive, Agent OS, GitHub, Linear and Slack owners. Do not create a replacement
-  lifecycle, session, placement, watcher, retry, memory, queue, source-authority or product plane.
+  Complete Mastermind's Executive Learning and AI Operating Hub on the existing canonical owners:
+  repair durable Agent OS truth, protect owner-produced content identity and Chairman-cognition
+  composition, seal expectations before any effect, then prove one bounded reversible operating
+  improvement and expose the real Workroom/Control Room journey. Do not create a second lifecycle,
+  memory store, outcome database, session registry, placement plane, queue, watcher, retry system,
+  graph authority or self-modifying policy.
 state_before: >
-  Macro main still carries the malformed and materially obsolete Autonomy handoff whose fleet-wide
-  Agent OS validation errors block unrelated records carriers. Macro PR #6711 is the sole repair
-  carrier. Its prior candidate became stale after ACK1, SCF-PKG0, Capacity C1, ORION R2 and protected
-  source moved. The Project Workroom architecture and falsifier are protected, but the Linear
-  compiler, live Linear apply, WR-P0, canonical Control Room consumer and zero-touch fleet remain
-  incomplete.
+  Macro main still contains one malformed obsolete Autonomy handoff that fails fleet-wide Agent OS
+  validation and blocks unrelated records carriers. Macro PR #6711 is the sole repair carrier.
+  Web-Sol R1 source is protected but not installed. ACK1, SCF-PKG0, Capacity C1, ORION R2, H0,
+  Phase A, the Linear compiler, Chairman Cognition A2 and Outcome Learning OL-0 all remain
+  unprotected or incomplete. No real Executive Learning canary or production Hub is live.
 changed:
   - path: mastermindx-market-intelligence/Mastermind@96825d5cd83dcd694b7ef71cffbe1d03c5d10f01
     what: >
       Current protected Mastermind and Sol-procedure pin. Skillpack is
-      mastermind.sol_skillpack.v1 version 1.0.1 / bootstrap-major 1. The current source includes
-      protected OLS-A1 through PR #324 and Web-Sol R1 through PR #306. Those releases are
-      path-disjoint from ACK1, SCF-PKG0, Capacity C1, Phase A and ORION; they create no provider,
-      installation, deployment or production effect.
-  - path: mastermindx-market-intelligence/Mastermind#306
-    what: >
-      Web-Sol R1 was expected-head squash-merged as
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 after exact seven-path repository/security proof,
-      current-head approval and empty review threads. The protected capability is
-      BUILT_NOT_PROVEN / PRODUCTION_NOT_INSTALLED. T1 PR #308 remains OPEN / DRAFT / UNMERGED and
-      must reconcile onto protected R1 before review; no installed extension, browser restart,
-      context rotation, Chairman-seat, provider, deployment or production proof exists.
-  - path: mastermindx-market-intelligence/Mastermind#273
-    what: >
-      Project Workroom Fabric architecture is protected. It defines the AI Operating Hub as a
-      projection and bounded-action workflow over existing canonical owners rather than another
-      orchestration, lifecycle, session, queue, identity, memory or source-authority plane.
-  - path: mastermindx-market-intelligence/Mastermind#285
-    what: >
-      WR-R0 research and falsifier are protected. Architecture and falsifier records do not make a
-      Workroom, planner, Linear apply path or production Control Room live.
-  - path: mastermindx-market-intelligence/Mastermind#321
-    what: >
-      Atomic replay-safe Executive retry is protected at
-      7191702e3b0104525b6b26cd30ddb53d89a8a663 and remains BUILT_NOT_PROVEN /
-      PRODUCTION_INERT. Closed-unmerged PR #255 is predecessor history, not a current release
-      carrier or worker-revival instruction.
-  - path: mastermindx-market-intelligence/Mastermind#325
-    what: >
-      SCF-PKG0 is OPEN / NON-DRAFT / UNMERGED on the same twelve-path carrier at exact head
-      c561f4f1ae6496fcbed71153ae5d3b18c9d79782 and tree
-      d0dd0a9a575fde1da101da8be5479264f20a1e64. Repository CI run 33510972344 and all security
-      analyzers are terminal SUCCESS. Exact-current-head Sol review 5078889899 is PASS but is an
-      author-account COMMENT rather than independent approval. Protected Web-Sol R1
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 now makes this carrier behind by one
-      path-disjoint release, so a history-preserving current-base join, fresh proof and exact-head
-      independent review remain required. Protection would establish SPEC_ONLY / RECORDS_ONLY /
-      PRODUCTION_INERT only.
-  - path: mastermindx-market-intelligence/Mastermind#322
-    what: >
-      ACK1 is OPEN / NON-DRAFT / UNMERGED at exact current-base head
-      7e0706b7d84daf0b92a717b469a6e66d13bf3472 and tree
-      520504a432ca81bcee55e784cdf7323538e93471 with exactly twenty-one paths. Repository CI
-      33510559280 and CodeQL 33510555531 are terminal SUCCESS, but later exact-head review
-      5078588225 is CHANGES_REQUESTED: timeout followed by an exact late completed turn can clear
-      only the worker-local fence and discard the Wake ACK projection. Exact repair task
-      01a05cf9-e8de-73d2-9d80-3a843d61ba16 remains bound and must return the requested
-      DECISION_REQUEST / PATH_BOUNDARY_REQUIRED before any fifth-path edit. Remote source effect is
-      known; provider, live ACK, SOURCE_RESOLVED, deployment and production effects remain NONE.
-  - path: C0BSBM78V1N/1788240769.053579
-    what: >
-      CF2-H0 prestage remains sticky to exact ChatGPT1/Codex task
-      01a05a89-cb19-7162-99c4-54ffdc714cf1. One inert Mastermind bundle and one complete Macro
-      v3 transport exist with exact hashes and installed_effect=false. Manifest and final
-      independent archive verification remain incomplete. Sol CONTINUE 1788266340.286059
-      authorizes only read-only verification of those exact inodes and one truthful manifest; no
-      rebuild, second pair, sudo, installed-host, provider or production effect.
-  - path: mastermindx-market-intelligence/Mastermind#329
-    what: >
-      Capacity C1 has one remote OPEN / DRAFT / UNMERGED implementation carrier at exact head
-      3f6e03073ebd1ab69e9e55753f66e2bb0ba6048b and tree
-      c94cb4e2bbad60fe5808dd525fd52cb4d9d6b4ee, exactly five paths. Exact-head repository CI
-      33513914980 is terminal SUCCESS, no PR review exists, and protected Web-Sol R1 now leaves the
-      carrier behind current master and mergeable=false. The exact STARTed Claude5 session
-      7941166a-4c33-49c3-b4c3-9a25a45ea30f remains the worker owner and must preserve the five
-      candidate blobs through a history-preserving current-base join. The selector and Control Room
-      read consumer remain placement-selection inert; no Job, Attempt, Worker, RuntimeBinding,
-      provider, commitment, deployment or production effect exists.
-  - path: mastermindx-market-intelligence/Mastermind#326
-    what: >
-      Control Room Phase A remains one OPEN / DRAFT / UNMERGED six-path candidate at exact head
-      68fd6d3dcd65f0e8bc920a64e0a4affd2dc46ed2 and tree
-      edf67a8b2fd5830d57f05b1539835284662c25c2. Its repository and security proof is green, but
-      the accepted state remains BUILT_NOT_PROVEN / PRODUCTION_NOT_DEPLOYED /
-      INTEGRATION_HELD_ON_CAPACITY_C1. It is not a live canonical consumer.
-  - path: C0BSBM78V1N/1788087553.985979
-    what: >
-      Terminal-return R2 remains STARTED_STICKY on exact ORION task
-      01a03330-4c36-7a11-b730-44c591ed3481. Direct Chairman edge 1788266503.620269 cleared the
-      incompatible-director-source hold, resolved PR #247 as stale-base rather than semantic
-      Runtime ownership, and authorized the exact fourteen-path repair. Latest attributable worker
-      state remains local head 1465b3e3985fb7ea851280b52001edfc865cb488, tree
-      a0d7eff31c0b547fff0fb04d71d893f7b3923006, thirteen dirty paths and status digest
-      e0a5b6233e6973aeec831d2264c70c00d4a98594866450255722b5da0cb997b2. Remote PR #265
-      remains unchanged at fe0ebd8e1e791692e0e2bc93c0c34add4c22ee09; the exact-task repair
-      return is pending. Remote, Relay RESULT, Wake and production effects remain NONE.
-  - path: mastermindx-market-intelligence/macro#6658
-    what: >
-      The Linear Initiative compiler remains OPEN / DRAFT / UNMERGED at exact head
-      5074e4f4e8d8e4c640acdd5b38ae18fa10593a84 on its same five-path carrier. Current
-      mergeability is false after main movement. The earlier hosted red includes the inherited
-      malformed Autonomy handoff and a separate trusted-CI artifact-namespace defect; neither
-      authorizes widening or duplicating the compiler. Linear/SaaS effect is NONE.
+      mastermind.sol_skillpack.v1 version 1.0.1 / bootstrap-major 1. This source protects OLS-A1
+      and Web-Sol R1; both remain production-inert or production-not-installed.
   - path: mastermindx-market-intelligence/macro#6711
     what: >
-      This remains the sole Agent OS schema/current-truth repair carrier. Chairman carrier-writer
-      ACK / CONTINUE 1788269866.542069 attributes the prior Git effect to the ChatGPT3 writer that
-      posted PATH_FREEZE, START and exact-head receipts, then transfers the bounded continuation
-      function to the current Chairman-addressed Sol session. Initial PATH_FREEZE
-      1788270175.163819 and material-source continuation freeze 1788271068.833839 limit every
-      repair to this one Agent OS path. The refreshed tree is constructed from current Macro main
-      everywhere except this record and creates organizational memory only.
+      Sole one-path Agent OS repair carrier. Chairman carrier-writer ACK 1788269866.542069 and
+      same-carrier freezes 1788270175.163819, 1788271068.833839 and 1788271658.059479 bind the
+      current Sol continuation. The branch is constructed from current Macro main everywhere
+      except the existing Autonomy handoff. No runtime, provider, Linear or deployment effect.
+  - path: mastermindx-market-intelligence/Mastermind#306
+    what: >
+      Web-Sol R1 expected-head squash-merged as 96825d5cd83dcd694b7ef71cffbe1d03c5d10f01
+      after exact seven-path proof and approval. Capability is BUILT_NOT_PROVEN /
+      PRODUCTION_NOT_INSTALLED. T1 PR #308 remains draft, stale-base and unmerged.
+  - path: mastermindx-market-intelligence/Mastermind#322
+    what: >
+      ACK1 remains open/non-draft/unmerged at 7e0706b7d84daf0b92a717b469a6e66d13bf3472
+      with terminal repository/security proof and controlling CHANGES_REQUESTED review 5078588225.
+      Exact worker 01a05cf9-e8de-73d2-9d80-3a843d61ba16 returned PATH_BOUNDARY_REQUIRED at
+      1788270534.154659. Sol ruling 1788271095.989969 accepted the existing-owner route and expanded
+      the exact ceiling to ten named paths without a second START. The worker is nonterminal; no new
+      repair commit, provider retry, live ACK or SOURCE_RESOLVED effect is proven.
+  - path: mastermindx-market-intelligence/Mastermind#325
+    what: >
+      SCF-PKG0 remains open/non-draft/unmerged at c561f4f1ae6496fcbed71153ae5d3b18c9d79782,
+      exactly twelve paths, with repository/security success. Sol exact-head source review
+      5078889899 passes semantics but is not independent approval. Protected Web-Sol R1 leaves the
+      carrier stale-base; current-base composition, fresh proof and independent review remain.
+  - path: mastermindx-market-intelligence/Mastermind#329
+    what: >
+      Capacity C1 has one existing five-path draft carrier at
+      3f6e03073ebd1ab69e9e55753f66e2bb0ba6048b. Exact-head CI 33513914980 is SUCCESS, no review
+      exists, and protected R1 leaves it stale-base/mergeable-false. The original STARTed Claude5
+      session remains owner. Selection is inert and creates no RuntimeBinding commitment.
+  - path: mastermindx-market-intelligence/Mastermind#326
+    what: >
+      Control Room Phase A remains a six-path draft at
+      68fd6d3dcd65f0e8bc920a64e0a4affd2dc46ed2 with green source proof but
+      INTEGRATION_HELD_ON_CAPACITY_C1 and PRODUCTION_NOT_DEPLOYED.
+  - path: C0BSBM78V1N/1788087553.985979
+    what: >
+      ORION R2 remains STARTED_STICKY on exact task
+      01a03330-4c36-7a11-b730-44c591ed3481. Chairman edge 1788266503.620269 cleared the obsolete
+      source hold and authorized the exact fourteen-path repair. Preserved local state is
+      1465b3e3985fb7ea851280b52001edfc865cb488 with thirteen dirty paths; remote PR #265 remains
+      the older fe0ebd8e1e791692e0e2bc93c0c34add4c22ee09 candidate. No remote RESULT is inferred.
+  - path: C0BSBM78V1N/1788240769.053579
+    what: >
+      H0 prestage remains sticky to exact task 01a05a89-cb19-7162-99c4-54ffdc714cf1. One inert
+      Mastermind bundle and one complete Macro v3 transport exist as exact local inodes with
+      installed_effect=false. Final read-only archive verification and one manifest remain pending.
+  - path: mastermindx-market-intelligence/macro#6642
+    what: >
+      Agent OS direct-source content-identity producer remains draft/unmerged at
+      07a00aa40a07e1488ac1cc477da003382e516ad7 with exactly two paths. Its source contract is the
+      required canonical producer for Chairman Cognition A2. The latest hosted red is inherited from
+      the malformed #6711 handoff, so #6642 must be current-base rejoined and reproved only after
+      #6711 protection.
+  - path: mastermindx-market-intelligence/Mastermind#311
+    what: >
+      Chairman Cognition A2 remains open/non-draft/unmerged at
+      4c43fa9baebff7eeeda00d7d37b20815d6e95a72 with exactly four paths and mergeable=false after
+      protected-source movement. It is a pure owner-preserving composer with
+      execution_authority_granted=false and remains blocked on canonical producer #6642.
+  - path: mastermindx-market-intelligence/macro#6699
+    what: >
+      Outcome Learning OL-0 remains a seven-path draft records-only architecture carrier at
+      5de470287410adffa927e64317e06611e7a2ed2f. Its federated Outcome Compiler, two-decision canary
+      gate, prospective receipt sequencing, PUBLIC_SAFE law and no-leaderboard/no-self-editing
+      boundaries were accepted in direction. It remains stale and blocked on #6711 validation;
+      merge would freeze architecture only, not implement learning or authorize a canary.
+  - path: mastermindx-market-intelligence/macro#6658
+    what: >
+      The Linear Initiative compiler remains a five-path draft/unmerged carrier at
+      5074e4f4e8d8e4c640acdd5b38ae18fa10593a84 and is behind current main. The inherited #6711 red
+      and separate #6628 CI-relay defect do not authorize widening or duplicating this compiler.
   - path: agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md
     what: >
-      Replaced falsified current-frontier projections while preserving exact worker/carrier
-      stickiness, known local effects, no-rebuild boundaries, source-versus-runtime distinctions and
-      truthful unresolveds. This record is not a runtime dashboard and authorizes no worker, retry,
-      merge, provider call, Linear mutation, deployment or next wave merely because it names one.
+      Replaces false current-frontier claims with one compact recovery checkpoint. This record is
+      organizational memory only and never authorizes a named worker, merge, provider call, retry,
+      Linear mutation, installation, deployment, canary or production action by itself.
 verified:
   - claim: Current protected procedure is readable and compatible.
     command: >
-      GitHub read mastermindx-market-intelligence/Mastermind refs/heads/master and
-      docs/sol_skills/INDEX.md, COLD_START.md, RECONCILE_STATE.md, REVIEW_RETURN.md, CLOSEOUT.md
-      and docs/AGENT_DIALOGUE_SESSION_CLOSE_LAW.md at
+      GitHub read Mastermind refs/heads/master and docs/sol_skills/INDEX.md, COLD_START.md,
+      RECONCILE_STATE.md, REVIEW_RETURN.md and CLOSEOUT.md at
       96825d5cd83dcd694b7ef71cffbe1d03c5d10f01.
     result: >
-      Protected master is 96825d5cd83dcd694b7ef71cffbe1d03c5d10f01. INDEX reports
-      mastermind.sol_skillpack.v1 version 1.0.1 and minimum bootstrap-major 1; every required
-      procedure was loaded from that same SHA. The new protected source is Web-Sol R1 source only
-      and is explicitly production-not-installed.
-  - claim: The sole Macro repair carrier is attributable, one-path and collision-free at freeze.
+      Protected master is 96825d5cd83dcd694b7ef71cffbe1d03c5d10f01; Skillpack is
+      mastermind.sol_skillpack.v1 version 1.0.1 / bootstrap-major 1 and all procedures were loaded
+      from that same SHA.
+  - claim: #6711 is one attributable source carrier with no target-path collision.
     command: >
-      GitHub read Macro PR #6711, branch sol/agentos-autonomy-handoff-schema-repair-20260831,
-      current main acd1cc77302db08196d5313e93ed1241c20a8846 and both target blobs; read Slack
-      C0BSBM78V1N/1788266438.587109 through Chairman ACK 1788269866.542069, initial PATH_FREEZE
-      1788270175.163819 and material-source continuation freeze 1788271068.833839.
+      GitHub read Macro main acd1cc77302db08196d5313e93ed1241c20a8846, PR #6711 and branch
+      sol/agentos-autonomy-handoff-schema-repair-20260831; read the main and branch target blobs;
+      read Slack C0BSBM78V1N/1788266438.587109.
     result: >
-      Branch head before this amendment is c293fd66ecf38465bb7e2ba58e37a6ad155befcb with target
-      blob 7b906e877b4eccd1411d26346c9fae25ceec4e3b. Current Macro main remains
-      acd1cc77302db08196d5313e93ed1241c20a8846 with tree
-      63238f2f1e6f3ea5c34d829af79dca350d4c76e1 and original target blob
-      24f6cf92c7173d55d2f2b8ceabf539fd8207eeda. The physical writer and bounded continuation are
-      explicitly reconciled; exactly one source path is authorized.
-  - claim: Web-Sol R1 is protected source but not installed or production-proven.
+      Current Macro main target blob remains 24f6cf92c7173d55d2f2b8ceabf539fd8207eeda.
+      The physical writer and current Sol continuation are explicit and every repair is frozen to
+      exactly this handoff path.
+  - claim: ACK1 path authority is resolved but implementation remains nonterminal.
     command: >
-      GitHub read Mastermind PR #306, exact head b7ecb946277b498bc69b7b66a129b3f0d13911a1,
-      current-head reviews/checks and protected master
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01.
+      GitHub read Mastermind PR #322 and reviews; Slack read
+      C0BSBM78V1N/1788262574.792129 through 1788271095.989969.
     result: >
-      #306 expected-head squash-merged as 96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 after terminal
-      repository/security proof, exact-head approval and zero review threads. The release is
-      BUILT_NOT_PROVEN / PRODUCTION_NOT_INSTALLED; T1 #308 remains draft/unmerged.
-  - claim: SCF-PKG0 payload is green but no longer current-base after Web-Sol R1 protection.
+      Review 5078588225 still blocks release. The exact worker returned the required decision
+      request and received an exact ten-path continuation using existing owners. No new repair
+      commit, second provider call, live ACK or source-resolution effect is proven.
+  - claim: Web-Sol, SCF-PKG0 and Capacity states are not inflated.
     command: >
-      GitHub read Mastermind PR #325, commit c561f4f1ae6496fcbed71153ae5d3b18c9d79782,
-      workflow run 33510972344, exact check runs, current protected master
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 and PR review history.
+      GitHub read Mastermind PRs #306, #308, #325, #326 and #329 plus exact-head checks and reviews.
     result: >
-      #325 is open/non-draft/unmerged with exactly twelve SCF paths and terminal repository/security
-      success. Review 5078889899 passes the exact current source semantically but is an
-      author-account COMMENT, not independent approval. Web-Sol R1 is a path-disjoint protected
-      successor to the PR base, so current-base join, fresh proof and exact-head independent review
-      remain release gates.
-  - claim: ACK1 has green immediate-causality proof but a later exact-head release blocker.
+      R1 alone is protected and production-not-installed. T1, SCF-PKG0, Phase A and Capacity C1 are
+      unmerged; SCF-PKG0 and Capacity have green prior exact heads but require current-base
+      reconciliation and fresh review/proof.
+  - claim: ORION and H0 retain exact-carrier ownership.
     command: >
-      GitHub read Mastermind PR #322 and its complete review history; read Slack
-      C0BSBM78V1N/1788262574.792129 through 1788269475.542099.
+      Slack read C0BSBM78V1N/1788087553.985979 through 1788266503.620269 and
+      C0BSBM78V1N/1788240769.053579 through 1788266340.286059; GitHub read PR #265.
     result: >
-      #322 is current-base at 7e0706b7... with terminal repository/security success. Approval
-      5078583538 is superseded for release by later CHANGES_REQUESTED review 5078588225 on the same
-      head. The exact worker remains nonterminal and owes a path-boundary decision request; no live
-      provider or ACK effect is proven.
-  - claim: Capacity C1 has one remote green carrier that now needs a current-base join.
+      ORION has one directly continued sticky task with local effect and no remote repaired return.
+      H0 has one exact artifact pair with final verification/manifest pending; neither may be rebuilt
+      or transferred.
+  - claim: Executive Learning dependencies remain unprotected.
     command: >
-      GitHub read Mastermind PR #329, commit 3f6e03073ebd1ab69e9e55753f66e2bb0ba6048b,
-      workflow run 33513914980, current protected master
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 and review history; read Slack
-      C0BSBM78V1N/1788254614.254279.
+      GitHub read Macro PRs #6642 and #6699 and Mastermind PR #311 against current protected refs.
     result: >
-      #329 is open/draft/unmerged and exactly five paths with terminal SUCCESS on its exact head.
-      It has no review and protected Web-Sol R1 leaves it behind/mergeable=false. The same STARTed
-      Claude5 worker remains owner and must history-preserve the five blobs; source publication
-      grants no placement commitment or runtime effect.
-  - claim: ORION's source gate is cleared but its exact-task repair has not returned remotely.
+      #6642 is the unprotected Agent OS content-identity producer, #311 is its stale blocked A2
+      consumer, and #6699 is stale records-only OL-0 architecture. No expectation seal, A3 effect,
+      outcome study or policy improvement is live.
+  - claim: The Workroom product path remains incomplete.
     command: >
-      Read Slack C0BSBM78V1N/1788087553.985979 from worker return 1788266230.698509 through direct
-      Chairman continuation 1788266503.620269; read Mastermind PR #265.
+      GitHub read Macro PR #6658, Mastermind PR #326 and current protected refs; inspect the guarded
+      7/52/2 and WR-P0 sequence without mutation.
     result: >
-      The Chairman directly authorized the exact fourteen-path continuation on the existing task,
-      worktree, branch, PR and watcher. Latest attributable local state is preserved; PR #265 remains
-      the older four-path remote candidate at fe0ebd8e..., so no R2 remote RESULT or protection is
-      inferred.
-  - claim: H0 and Phase A remain exact-carrier incomplete rather than reconstructed.
-    command: >
-      Read Slack C0BSBM78V1N/1788240769.053579 through 1788266340.286059 and GitHub read
-      Mastermind PR #326.
-    result: >
-      H0 retains exactly two large inert artifact inodes with manifest/final verification pending.
-      Phase A remains the six-path draft evidence carrier held on Capacity C1 and has no deployment
-      or production effect.
-  - claim: The Workroom compiler is unmerged and no production-ready Hub exists.
-    command: >
-      GitHub read Macro PR #6658, Mastermind PR #326 and current Macro main; inspect the current
-      Linear/Workroom release sequence without performing any mutation.
-    result: >
-      #6658 is draft/unmerged and behind current main, Phase A is draft and unwired, no guarded
-      7/52/2 Linear apply/readback exists, WR-P0 is not protected, and no deployed canonical
-      Workroom/Control Room or measured zero-touch fleet is proven.
+      The compiler is unmerged, no authorized Linear apply/readback has run, WR-P0 is not built,
+      Phase A is not deployed, and no production Workroom/Control Room or zero-touch fleet is proven.
 unverified:
-  - claim: Macro main has a schema-valid current Autonomy checkpoint.
+  - claim: Macro main has a valid recoverable Agent OS checkpoint.
     what_would_verify: >
-      This refreshed #6711 head passes Agent OS validation, all exact-head semantic CI/fences and
-      immutable-head review, then one expected-head merge succeeds and Macro-main readback contains
-      this exact blob.
-  - claim: Web-Sol R1/T1 is installed and works across real service-worker/browser interruption.
+      This exact #6711 head passes Agent OS validation, fences and full semantic CI, receives
+      immutable-head review, expected-head merges, and Macro main reads back the exact new blob.
+  - claim: Agent OS content identity and Chairman Cognition A2 are protected.
     what_would_verify: >
-      T1 #308 first reaches protected current-base source, then a separately authorized installation
-      and disposable/live restart-outage matrix proves exact-profile recovery, bounded handshake and
-      no action replay on the real managed browser/native-host path.
-  - claim: SCF-PKG0 records are protected.
+      After #6711, #6642 is current-base reproved/reviewed/merged; then #311 is current-source joined,
+      exact-head green, reviewed and merged with its four-path owner-preserving contract intact.
+  - claim: Outcome Learning is implemented.
     what_would_verify: >
-      The same branch history-preservingly joins protected
-      96825d5cd83dcd694b7ef71cffbe1d03c5d10f01 with all twelve SCF blobs unchanged, fresh hosted
-      proof and exact-head independent review pass, and one expected-head merge of #325 is followed
-      by protected-master readback.
+      OL-0 and registration land, OL-2a seals a prospective expectation/assumption receipt before
+      any CCL-A3 effect, owner-native outcomes mature, independent review and separate pre/post
+      decisions govern any canary and policy change.
   - claim: ACK1 is repaired and protected.
     what_would_verify: >
-      The exact bound worker returns a path-boundary decision request, Sol rules on only the
-      unavoidable existing-owner paths, the late-completion persisted ACK journey goes RED to
-      GREEN, new exact-head review passes and #322 merges.
-  - claim: The H0 prestage pair is sealed and usable for a later administrator ceremony.
+      The exact worker implements only the authorized ten paths, proves timeout -> durable ACCEPTED
+      -> exact late terminal -> one DELIVERED -> one TARGET_ACKNOWLEDGED with replay inertness,
+      rejoins current protected source, returns hosted/security/mutation proof, passes independent
+      review and #322 merges.
+  - claim: Capacity C1 and Phase A are live.
     what_would_verify: >
-      The exact STARTed task completes read-only final archive verification, creates one truthful
-      third-file manifest and returns the exact three-file sealed census. A separate native-admin
-      operation must still revalidate source before installed-state mutation.
-  - claim: Capacity C1 has delivered a protected deterministic selector and current read consumer.
+      The exact #329 worker preserves its five blobs through current-base join and protection;
+      Phase A then wires only the released compositor seam and deployed desktop/mobile proof consumes
+      real canonical data and adverse states.
+  - claim: ORION R2 and H0 are complete.
     what_would_verify: >
-      The exact worker preserves the five candidate blobs through a current-base join, returns
-      immutable hosted/adversarial proof, independent review and Sol acceptance pass, and #329
-      merges without RuntimeBinding commitment.
-  - claim: Control Room Phase A is a live canonical product consumer.
-    what_would_verify: >
-      Capacity C1 protection releases the two shared compositor paths, Phase A adds only approved
-      minimal wiring, and deployed desktop/mobile proof consumes real canonical data and failure
-      states.
-  - claim: ORION R2 is complete and protected.
-    what_would_verify: >
-      Exact task 01a03330-4c36-7a11-b730-44c591ed3481 consumes Chairman continuation
-      1788266503.620269, completes the fourteen-path repair, publishes one immutable same-PR result,
-      passes hosted/security/independent review and later receives expected-head protection.
-  - claim: Linear Initiative compilation and live apply are protected and idempotent.
-    what_would_verify: >
-      #6711 and the independent CI-relay dependency are reconciled, #6658 reaches a current-base
-      exact-head-green independently reviewed release, then a separate authorized apply creates
-      exactly 7 Initiatives / 52 memberships / 2 exceptions and a second run performs zero mutation.
+      Their exact sticky tasks publish the authorized immutable returns; H0 separately undergoes a
+      current-source native-admin ceremony. No reconstructed artifact or replacement worker counts.
   - claim: The AI Operating Hub is complete.
     what_would_verify: >
-      WR-P0 and downstream Workroom surfaces consume real canonical Planner/Agent OS/Executive data,
-      all adverse states are visible, bounded actions route through existing owners, deployed
-      desktop/mobile proof passes, and instrumentation demonstrates useful zero-Slack operation.
+      #6658 protects the compiler, a separately authorized first Linear apply creates exactly
+      7 Initiatives / 52 memberships / 2 exceptions, replay mutates nothing, WR-P0 and Workroom
+      surfaces consume real owners, and deployed instrumentation proves useful zero-Slack operation.
 unresolved:
-  - "Protect this exact #6711 repair before attributing inherited Agent OS validation reds to other Macro carriers."
-  - "Obtain the ACK1 exact-worker path-boundary decision request; do not edit a fifth path or merge #322 from its stale PR body."
-  - "Reconcile SCF-PKG0 #325 onto protected Web-Sol R1 with its twelve blobs unchanged, then obtain fresh exact-head proof, independent review and expected-head records-only protection."
-  - "Reconcile Web-Sol T1 #308 onto protected R1 on its existing branch/PR; keep it draft until exact-head proof and review pass."
-  - "Consume Capacity C1 current-base reconciliation/result/review on the exact #329 carrier; exact-head CI is green, but do not construct a second selector or commit a RuntimeBinding."
-  - "Consume the direct-Chairman-authorized ORION fourteen-path return on the exact task and #265 carrier."
-  - "Complete H0 final read-only verification and one manifest on the exact existing artifact pair."
-  - "Keep Phase A draft and off the two shared compositor paths until Capacity C1 is protected."
-  - "After #6711, reconcile #6658 on the same five-path carrier and keep the separate CI-relay defect on #6628."
-  - "Do not run the 7/52/2 Linear apply without protected compiler source and a fresh explicit mutation commission."
-  - "Do not call architecture, green CI, a merge, Slack delivery or Linear admission a live Hub or autonomous fleet."
+  - "Protect the exact one-path #6711 repair before repairing inherited Agent OS reds elsewhere."
+  - "Continue ACK1 only on exact task 01a05cf9-e8de-73d2-9d80-3a843d61ba16 under ten-path ruling 1788271095.989969; no eleventh path or second START."
+  - "Reconcile Web-Sol T1 #308, SCF-PKG0 #325 and Capacity C1 #329 on their existing carriers after protected R1 movement."
+  - "Consume ORION and H0 only from their exact sticky tasks; do not reconstruct local effects."
+  - "After #6711, release #6642 producer, then #311 A2; independently reprove and release records-only #6699."
+  - "Before any CCL-A3 effect, protect the organizational-learning prospective OL-2a receipt contract and seal the real expectation."
+  - "After #6711, repair/reprove #6658 on its same five-path carrier; keep #6628 separate."
+  - "Do not perform the Linear 7/52/2 apply, provider activation, installation, deployment or canary without its own fresh authority and owner-local revalidation."
 next_actions:
   - >
-    Run exact-head Agent OS validation, fences and full semantic CI on this one-path #6711 repair;
-    obtain immutable-head adversarial review; merge only after a final main/head/blob/path readback.
+    Validate, review and expected-head merge this exact #6711 one-path carrier; read back Macro main.
   - >
-    Require exact ACK1 task 01a05cf9-e8de-73d2-9d80-3a843d61ba16 to return the requested
-    DECISION_REQUEST / PATH_BOUNDARY_REQUIRED before any further source mutation.
+    Current-base reconcile and release Macro #6642, then current-source reconcile/review/release
+    Mastermind #311. Reconcile/review records-only Macro #6699 without calling it implementation.
   - >
-    Reconcile Web-Sol T1 #308 onto protected R1 on its same branch/PR, preserving its exact five-path
-    payload; keep it draft until fresh exact-head proof and review pass.
+    Consume ACK1, ORION, H0, T1, SCF-PKG0 and Capacity only on their exact existing carriers and
+    workers. Preserve all local effects and stop on new path or authority needs.
   - >
-    Reconcile SCF-PKG0 #325 onto protected 96825d5c... on the same branch with all twelve SCF blobs
-    unchanged; then require fresh exact-head hosted proof and independent review before release.
-  - >
-    Require Capacity #329's exact started worker to preserve its five blobs through a current-base
-    join, then consume its return and review the selector/Control Room read consumer without
-    permitting RuntimeBinding commitment.
-  - >
-    Consume ORION and H0 only on their existing exact tasks and carriers. Never reconstruct their
-    local bytes or large artifact pair in another session.
-  - >
-    After #6711 protection, repair/reprove #6658 on its existing five-path carrier; only after
-    compiler protection may a separately authorized Linear apply and WR-P0 begin.
+    After #6711, current-base repair #6658. Only after protected compiler source may a separately
+    authorized guarded Linear apply and WR-P0 vertical begin.
 do_not_redo:
-  - "Do not create another AI Operating Hub, Session Fabric, Workroom lifecycle, placement selector, provider daemon, source registry, queue, watcher database or memory plane."
-  - "Do not revive the terminal #6711 builder child, terminal former ACK1 implementation task, stopped Sentinel child or rejected Session Fabric canary."
-  - "Do not treat the ACK1 PR body or earlier approval as current release truth after review 5078588225."
-  - "Do not absorb #6628's CI relay repair into #6658 or widen the compiler beyond its five paths."
-  - "Do not delete, rebuild, rename or replace the existing H0 artifacts while their exact task owns the effect."
-  - "Do not reconstruct or transfer Capacity C1 or ORION local bytes to another worker."
-  - "Do not let Phase A edit Capacity C1 compositor paths or call design/browser fixtures production proof."
-  - "Do not mutate Linear, mark PRs Ready, merge, deploy or activate providers from this records-only reconciliation."
-  - "Do not blind-retry an ambiguous modification or auto-failover a STARTed or effect-known operation."
+  - "Do not create another Agent OS handoff repair, Executive Learning store, outcome database, memory database, graph authority, Workroom lifecycle, placement selector, queue, watcher or retry plane."
+  - "Do not revive terminal workers or transfer a STARTed/effect-known carrier to a new task."
+  - "Do not treat green CI, Slack delivery, QUEUED admission or merge as execution, installation, deployment, canary evidence or production proof."
+  - "Do not treat ACK1's stale PR body or superseded approval as current truth; ruling 1788271095.989969 controls the exact worker."
+  - "Do not absorb #6628 into #6658, or Phase A paths into Capacity, or CAP-S1 paths before SCF/ACK1 protection."
+  - "Do not publish private chain of thought, secrets, native provider payloads or restricted human material into public Git history."
+  - "Do not auto-promote an n=1 result, scalar-rank workers/models, or let statistical/model output grant policy or trade authority."
 danger_areas:
-  - "Macro main's malformed handoff is an inherited semantic red for unrelated Agent OS-touching PRs; false attribution creates duplicate repairs."
-  - "ACK1's immediate terminal classifier is green, but late exact completion can still be consumed without reaching durable DELIVERED plus ACK."
-  - "SCF-PKG0 current source is green and Sol-reviewed, but protected Web-Sol R1 makes it stale-base and its current-head review is not independent approval."
-  - "Capacity C1 already has remote PR #329 with green exact-head CI; protected-source movement still requires the same worker to compose it current-base before review."
-  - "ORION's former source-compatibility hold was directly superseded by Chairman edge 1788266503.620269; replaying the old blocker would stall a valid sticky worker."
-  - "The trusted-CI pack producer/consumer artifact namespace mismatch remains a separate #6628 carrier and can hide real per-pack evidence."
-  - "ACK1 and future CAP-S1 share codex_operator_adapter.py and operator_harness_contract.py; source protection ordering is a hard collision boundary."
-  - "Capacity C1 and Phase A share the only lawful Control Room compositor/test paths; one writer owns them until protection."
-  - "H0 contains a roughly 23 GB transport and real local inodes; destructive cleanup or rebuild would lose the sole known effect."
-  - "A dated Agent OS checkpoint records durable recovery truth; unrelated bot/data/main movement alone must not trigger infinite parent-only joins."
-  - "Source protection remains production-disarmed; live provider, host, Linear, browser and fleet proofs are separate gates."
-prs: [265, 273, 285, 299, 306, 308, 321, 322, 324, 325, 326, 329, 6628, 6658, 6711]
+  - "The malformed main handoff creates inherited red CI on unrelated Agent OS PRs and can provoke duplicate repairs."
+  - "The organizational checkpoint is point-in-time truth, not a runtime dashboard; unrelated data movement is not a reason for endless parent-only joins, but material carrier changes must be corrected before merge."
+  - "ACK1 immediate terminal classification is green, while persisted timeout-to-late-completion delivery plus ACK remains unproven."
+  - "Protected R1 moved the shared source base; T1, SCF-PKG0, ACK1 and Capacity must preserve their exact payloads through current-base joins."
+  - "Capacity and Phase A share the only lawful compositor paths; one writer owns them until protection."
+  - "ORION local dirty state and H0's roughly 23 GB artifact pair are unique known effects; cleanup or reconstruction can destroy them."
+  - "Historical routing outcomes are selection-biased; raw success rates cannot identify counterfactual worker quality."
+  - "No CCL-A3 effect may precede a sealed prospective expectation/assumption receipt."
+prs: [265, 273, 285, 306, 308, 311, 322, 325, 326, 329, 6628, 6642, 6658, 6699, 6711]
 decisions:
   - DEC:EXECUTIVE-CAPACITY-FABRIC-OWNERSHIP-AND-CONTRACT
 ---
 
-## Current executive checkpoint
-
-The timed-out AI Operating Hub program is not a missing greenfield application. Its accepted product
-identity is the **Project Workroom Fabric + Chairman Control Room** over existing canonical owners:
+## Current program topology
 
 ```text
-Executive OS     -> runtime Job / Attempt / Worker / Event and admission truth
-Agent OS         -> durable organizational workstreams, decisions, discoveries and handoffs
-GitHub           -> implementation, review, CI and immutable evidence truth
-Linear           -> selected portfolio projection and, only when authorized, Initiative membership
-Slack            -> transport and hot-state visibility, never lifecycle authority
-Workroom / UI    -> useful projection + bounded actions over those owners, never a replacement plane
+Durable recovery
+  Macro #6711
+      -> Macro #6642 Agent OS source identity
+      -> Mastermind #311 Chairman Cognition A2
+      -> Macro #6699 Outcome Learning OL-0
+      -> OL-2a prospective expectation receipt
+      -> one supervised reversible CCL-A3 effect
+      -> owner-native outcome + independent review
+      -> separate consequence and policy decisions
+
+Operating Hub
+  Macro #6711
+      -> Macro #6658 Linear desired-state compiler
+      -> separately authorized 7/52/2 apply + zero-mutation replay
+      -> WR-P0
+      -> real Workroom / Control Room consumer and instrumentation
+
+Autonomy source lanes
+  Web-Sol R1 protected -> T1 -> installation/restart proof
+  SCF-PKG0 -> ACK1 -> CAP-S1
+  Capacity C1 -> Phase A -> live Control Room consumer
+  ORION R2 -> later Stage-B
+  H0 sealed pair -> separate native-admin ceremony
 ```
 
-The immediate Workroom release chain remains:
-
-```text
-Macro #6711 current Agent OS schema/truth protection
-        -> Macro #6658 current-base compiler proof and release
-        -> one guarded Linear apply: 7 Initiatives / 52 memberships / 2 exceptions
-        -> second-run zero mutation
-        -> WR-P0 planner/current-source join
-        -> Workroom projection + exact Slack room + Control Room consumer
-        -> deployed desktop/mobile adverse-state proof and instrumentation
-```
-
-Independent Autonomy execution proceeds in parallel without waiving those gates:
-
-```text
-Web-Sol R1 #306 protected / production-not-installed
-        -> T1 #308 current-base repair/review/protection
-        -> later installed restart/transport proof
-
-SCF-PKG0 #325 current-base join/reproof/protection
-        -> ACK1 #322 late-completion path ruling + repair/protection
-        -> CAP-S1
-
-H0 existing pair verification + manifest
-        -> separate interactive native-admin H0 ceremony
-        -> P0/CF2 host proof
-
-ORION direct Chairman continuation
-        -> exact fourteen-path R2 repair/proof on #265
-        -> later Stage-B transfer only after protection
-
-Capacity C1 #329 CI/result/review/protection
-        -> Phase A minimal shared-compositor wiring
-        -> live canonical Control Room proof
-```
-
-## Current capability ledger
+## Capability ledger
 
 | Capability | Current truth |
 |---|---|
-| Workroom architecture / falsifier | `SPEC_ONLY / RECORDS_ONLY / PROTECTED` |
-| Agent OS checkpoint on Macro main | `BROKEN / SCHEMA_INVALID / RELEASE_CARRIER_ACTIVE` |
-| #6711 repair candidate | `RECORDS_ONLY / CURRENT_TRUTH_RECONCILING / PRODUCTION_INERT` |
-| Linear Initiative compiler #6658 | `BUILT_NOT_PROVEN / DRAFT / UPSTREAM_SEMANTIC_BLOCKED / BEHIND` |
-| CI pack evidence relay #6628 | `SEPARATE_REPAIR_CARRIER / NOT_PROTECTED` |
-| Live Linear 7/52/2 apply | `NOT_AUTHORIZED / NOT_PROVEN` |
-| WR-P0 | `NOT_BUILT` |
-| Web-Sol R1 #306 | `BUILT_NOT_PROVEN / PROTECTED / PRODUCTION_NOT_INSTALLED` |
-| Web-Sol T1 #308 | `BUILT_NOT_PROVEN / DRAFT / STALE_BASE / HELD_AFTER_R1` |
-| SCF-PKG0 #325 | `SPEC_ONLY / RECORDS_ONLY / EXACT_HEAD_GREEN / STALE_BASE / INDEPENDENT_REVIEW_PENDING` |
-| ACK1 #322 | `BUILT_NOT_PROVEN / REQUEST_CHANGES / PATH_BOUNDARY_DECISION_PENDING / PRODUCTION_DISARMED` |
-| H0 prestage | `STARTED_STICKY / TWO_ARTIFACT_EFFECT_PRESERVED / FINAL_VERIFY_AND_MANIFEST_PENDING` |
-| Terminal return R2 | `STARTED_STICKY / DIRECT_CHAIRMAN_CONTINUE / LOCAL_EFFECT_PRESERVED / REMOTE_RETURN_PENDING` |
-| Capacity C1 #329 | `BUILT_NOT_PROVEN / DRAFT / EXACT_HEAD_GREEN / STALE_BASE / NO_REVIEW / PLACEMENT_INERT` |
-| Control Room Phase A #326 | `BUILT_NOT_PROVEN / EXACT_HEAD_GREEN / HELD_ON_CAPACITY_C1 / NOT_DEPLOYED` |
-| Real canonical Workroom / Control Room | `NOT_PROVEN_LIVE` |
-| Automatic placement and commitment | `NOT_PROVEN` |
-| Exact target ACK and source resolution | `NOT_PROVEN` |
-| Zero-touch production fleet | `NOT_PROVEN` |
+| Agent OS checkpoint on Macro main | `BROKEN / #6711 SOLE REPAIR ACTIVE` |
+| Agent OS source identity #6642 | `BUILT_NOT_PROVEN / DRAFT / BLOCKED_ON_6711` |
+| Chairman Cognition A2 #311 | `BUILT_NOT_PROVEN / STALE / BLOCKED_ON_6642` |
+| Outcome Learning OL-0 #6699 | `SPEC_ONLY / RECORDS_ONLY / STALE / BLOCKED_ON_6711` |
+| Prospective OL-2a receipt / CCL-A3 effect | `NOT_PROTECTED / NOT_EXECUTED` |
+| Web-Sol R1 #306 | `PROTECTED / PRODUCTION_NOT_INSTALLED` |
+| Web-Sol T1 #308 | `DRAFT / STALE_BASE` |
+| SCF-PKG0 #325 | `EXACT_HEAD_GREEN / STALE_BASE / INDEPENDENT_REVIEW_PENDING` |
+| ACK1 #322 | `REQUEST_CHANGES / TEN_PATH_CONTINUE / WORKER_IN_PROGRESS / STALE_BASE` |
+| Capacity C1 #329 | `EXACT_HEAD_GREEN / DRAFT / STALE_BASE / NO_REVIEW / PLACEMENT_INERT` |
+| Phase A #326 | `EXACT_HEAD_GREEN / HELD_ON_CAPACITY / NOT_DEPLOYED` |
+| ORION R2 | `STARTED_STICKY / LOCAL_EFFECT / REMOTE_RETURN_PENDING` |
+| H0 | `STARTED_STICKY / TWO_ARTIFACT_EFFECT / VERIFY_AND_MANIFEST_PENDING` |
+| Linear compiler #6658 | `BUILT_NOT_PROVEN / DRAFT / BEHIND` |
+| Live Workroom / Control Room / zero-touch fleet | `NOT_PROVEN` |
 
-A fresh Sol must boot from current protected Mastermind, this exact Agent OS record and the named
-immutable Git/Slack carriers. The primary next action is exact-head validation and review of this
-#6711 repair. Do not begin WR-P0 or Linear mutation from chat memory, and do not reinterpret a
-worker's local effect as available capacity for another session.
+The exact next action is to protect #6711. Everything else remains on its named current carrier and
+must be revalidated at action time.
