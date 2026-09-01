@@ -53,14 +53,20 @@ def trace2_fetch_seconds(path: Path | None) -> float | None:
     return round(total, 3)
 
 
-def metrics(path: Path | None) -> dict[str, object]:
+def load_samples(path: Path | None) -> list[dict]:
     if path is None or not path.exists():
-        return {}
-    samples = [
+        return []
+    return [
         json.loads(line)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def metrics(path: Path | None) -> dict[str, object]:
+    """Host-global reduction. Deliberately unchanged by the slice extension so
+    P1/P2 receipts stay byte-comparable against P3+ ones."""
+    samples = load_samples(path)
     if not samples:
         return {}
     return {
@@ -75,6 +81,143 @@ def metrics(path: Path | None) -> dict[str, object]:
         ),
         "swap_used_peak_bytes": max(item["swap_used_bytes"] for item in samples),
         "disk_free_min_bytes": min(item["disk_free_bytes"] for item in samples),
+    }
+
+
+EXPECTED_CI_SLICE = "mastermind-ci.slice"
+# Worst-first. One sample outside the slice poisons the whole window: a candidate
+# that changed cgroups mid-run has no honest aggregate to report.
+_SLICE_STATUS_PRECEDENCE = ("refused", "unavailable", "degraded", "bound")
+
+
+def _empty_slice_metrics(status: str, reason: str | None, **extra: object) -> dict:
+    metrics: dict[str, object] = {
+        "status": status,
+        "expected_slice": EXPECTED_CI_SLICE,
+        "reason": reason,
+        "samples": 0,
+        "cgroups": [],
+        "cpu_max": None,
+        "cpu_delta": None,
+        "memory_events_delta": None,
+        "pids_events_delta": None,
+        "pressure_total_delta": None,
+        "memory_current_peak_bytes": None,
+        "memory_swap_peak_bytes": None,
+        "memory_peak_bytes_cgroup_lifetime": None,
+        "memory_peak_is_run_local": False,
+        "pids_current_peak": None,
+    }
+    metrics.update(extra)
+    return metrics
+
+
+def _keyed_delta(first: Mapping[str, Any] | None, last: Mapping[str, Any] | None):
+    if not isinstance(first, Mapping) or not isinstance(last, Mapping):
+        return None
+    return {
+        key: int(last[key]) - int(first.get(key, 0))
+        for key in last
+        if isinstance(last.get(key), int)
+    }
+
+
+def _peak(values: list[Any]) -> int | None:
+    observed = [item for item in values if isinstance(item, int)]
+    return max(observed) if observed else None
+
+
+def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
+    """Reduce aggregate CI-slice samples into one bounded receipt section.
+
+    Fail-closed by construction: aggregate numbers are reported ONLY when every
+    sample in the window was cleanly bound to the expected slice. A refused,
+    degraded, unavailable or absent window yields its status and no numbers, so
+    a downstream acceptance threshold can never be evaluated against evidence
+    that did not actually come from the CI slice.
+    """
+
+    observations = [
+        sample["slice"]
+        for sample in samples
+        if isinstance(sample, Mapping) and isinstance(sample.get("slice"), Mapping)
+    ]
+    if not observations:
+        # Either no run at all, or a pre-slice P1/P2 metrics file. Absent is the
+        # honest answer; it is not a passing observation.
+        return _empty_slice_metrics(
+            "absent", "no aggregate CI-slice evidence in this metrics stream"
+        )
+
+    statuses = {str(item.get("status")) for item in observations}
+    worst = next(
+        (status for status in _SLICE_STATUS_PRECEDENCE if status in statuses),
+        "unavailable",
+    )
+    cgroups = sorted(
+        {str(item.get("cgroup")) for item in observations if item.get("cgroup")}
+    )
+    if worst != "bound":
+        reason = next(
+            (
+                str(item.get("reason"))
+                for item in observations
+                if item.get("status") == worst and item.get("reason")
+            ),
+            f"aggregate CI-slice evidence is {worst}",
+        )
+        return _empty_slice_metrics(
+            worst, reason, samples=len(observations), cgroups=cgroups
+        )
+
+    first, last = observations[0], observations[-1]
+    pressure_delta: dict[str, dict[str, int]] = {}
+    first_pressure = first.get("pressure") or {}
+    last_pressure = last.get("pressure") or {}
+    if isinstance(first_pressure, Mapping) and isinstance(last_pressure, Mapping):
+        for resource, kinds in last_pressure.items():
+            if not isinstance(kinds, Mapping):
+                continue
+            base = first_pressure.get(resource) or {}
+            deltas = {}
+            for kind, values in kinds.items():
+                if not isinstance(values, Mapping) or "total" not in values:
+                    continue
+                previous = (base.get(kind) or {}).get("total", 0)
+                deltas[kind] = int(values["total"]) - int(previous)
+            if deltas:
+                pressure_delta[resource] = deltas
+
+    return {
+        "status": "bound",
+        "expected_slice": EXPECTED_CI_SLICE,
+        "reason": None,
+        "samples": len(observations),
+        "cgroups": cgroups,
+        "cpu_max": last.get("cpu_max"),
+        "cpu_delta": _keyed_delta(first.get("cpu"), last.get("cpu")),
+        "memory_events_delta": _keyed_delta(
+            first.get("memory_events"), last.get("memory_events")
+        ),
+        "pids_events_delta": _keyed_delta(
+            first.get("pids_events"), last.get("pids_events")
+        ),
+        "pressure_total_delta": pressure_delta or None,
+        "memory_current_peak_bytes": _peak(
+            [(item.get("memory") or {}).get("current") for item in observations]
+        ),
+        "memory_swap_peak_bytes": _peak(
+            [(item.get("memory") or {}).get("swap_current") for item in observations]
+        ),
+        # cgroup lifetime, NOT this run's peak — the counter is only reset by a
+        # privileged ceremony, which this carrier does not perform.
+        "memory_peak_bytes_cgroup_lifetime": _peak(
+            [(item.get("memory") or {}).get("peak") for item in observations]
+        ),
+        "memory_peak_is_run_local": False,
+        "pids_current_peak": _peak(
+            [(item.get("pids") or {}).get("current") for item in observations]
+        ),
     }
 
 
@@ -427,6 +570,11 @@ def main() -> int:
         "cache_bytes_after": read_float(args.cache_after),
         "workspace_object_bytes": args.workspace_object_bytes,
         "resources": metrics(args.metrics),
+        # Aggregate CI-slice evidence (C3R-A). Additive: the host-global
+        # "resources" block above is untouched, and the comparator's field
+        # allowlist does not read this key, so hosted receipts (which have no
+        # mastermind-ci.slice) stay comparable to self-hosted ones.
+        "ci_slice": slice_metrics(load_samples(args.metrics)),
         # Fragment reference (D, #6351): not the fragment's full body — that
         # travels as its own artifact and is what `compare_ci_canary_receipts.py`
         # diffs byte-for-byte — just enough to cross-check this receipt was

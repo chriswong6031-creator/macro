@@ -42,6 +42,9 @@ RESOURCE_GUARD = load(
 )
 COMPARE = load("compare_ci_canary_receipts", ROOT / "scripts" / "compare_ci_canary_receipts.py")
 CAPTURE = load("capture_ci_canary_receipt", ROOT / "scripts" / "capture_ci_canary_receipt.py")
+MONITOR = load(
+    "monitor_ci_host_resources", ROOT / "scripts" / "monitor_ci_host_resources.py"
+)
 
 
 def git(cwd: Path, *args: str) -> str:
@@ -1294,3 +1297,306 @@ def test_selector_cli_refuses_a_fifth_slot(tmp_path: Path) -> None:
     )
     assert completed.returncode != 0
     assert "invalid choice" in completed.stderr
+
+
+# ── C3R-A: aggregate cgroup-v2 slice evidence ────────────────────────────────
+# Four CI candidates share one enforced envelope, so per-candidate host-global
+# numbers stop being evidence: they cannot tell "CI is inside its budget" from
+# "the guest happens to be quiet". The monitor therefore binds each candidate to
+# the immutable /mastermind-ci.slice hierarchy and REFUSES rather than falling
+# back to host-global metrics — a green produced by the wrong cgroup is worse
+# than no green at all, because it reads as proof.
+
+
+def _write_slice_tree(root: Path, cgroup: str, **overrides: str) -> Path:
+    node = root / cgroup.lstrip("/")
+    node.mkdir(parents=True, exist_ok=True)
+    files = {
+        "cpu.stat": (
+            "usage_usec 1000000\nuser_usec 700000\nsystem_usec 300000\n"
+            "nr_periods 400\nnr_throttled 20\nthrottled_usec 50000\n"
+        ),
+        "cpu.max": "800000 100000\n",
+        "memory.current": "1073741824\n",
+        "memory.peak": "2147483648\n",
+        "memory.swap.current": "0\n",
+        "memory.events": "low 0\nhigh 3\nmax 0\noom 0\noom_kill 0\n",
+        "pids.current": "42\n",
+        "pids.events": "max 0\n",
+        "cpu.pressure": (
+            "some avg10=1.50 avg60=1.00 avg300=0.50 total=1234\n"
+            "full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n"
+        ),
+        "memory.pressure": (
+            "some avg10=0.10 avg60=0.05 avg300=0.01 total=99\n"
+            "full avg10=0.02 avg60=0.01 avg300=0.00 total=11\n"
+        ),
+        "io.pressure": (
+            "some avg10=0.20 avg60=0.10 avg300=0.05 total=77\n"
+            "full avg10=0.03 avg60=0.01 avg300=0.00 total=7\n"
+        ),
+    }
+    files.update(overrides)
+    for name, body in files.items():
+        if body is None:
+            continue
+        (node / name).write_text(body, encoding="utf-8")
+    return node
+
+
+def _proc_cgroup(tmp_path: Path, cgroup: str) -> Path:
+    path = tmp_path / "proc-self-cgroup"
+    path.write_text(f"0::{cgroup}\n", encoding="utf-8")
+    return path
+
+
+CI_CGROUP = "/mastermind-ci.slice/actions.runner.macro.pc-ci-4.service"
+
+
+def test_monitor_binds_a_candidate_to_the_expected_ci_slice(tmp_path: Path) -> None:
+    assert MONITOR.EXPECTED_SLICE == "mastermind-ci.slice"
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "bound"
+    assert sample["cgroup"] == CI_CGROUP
+    assert sample["cpu"]["usage_usec"] == 1_000_000
+    assert sample["cpu"]["nr_periods"] == 400
+    assert sample["cpu"]["nr_throttled"] == 20
+    assert sample["cpu"]["throttled_usec"] == 50_000
+    assert sample["cpu_max"] == "800000 100000"
+    assert sample["memory"]["current"] == 1_073_741_824
+    assert sample["memory"]["peak"] == 2_147_483_648
+    assert sample["memory"]["swap_current"] == 0
+    assert sample["memory_events"]["high"] == 3
+    assert sample["pids"]["current"] == 42
+    assert sample["pressure"]["memory"]["full"]["avg10"] == 0.02
+    assert sample["pressure"]["io"]["some"]["total"] == 77
+
+
+def test_monitor_refuses_a_candidate_outside_the_ci_slice(tmp_path: Path) -> None:
+    """A candidate still in system.slice must produce an explicit refusal, never
+    a host-global substitute dressed up as slice evidence.
+    """
+    stray = "/system.slice/actions.runner.macro.pc-ci-4.service"
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, stray)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
+    assert sample["status"] == "refused"
+    assert sample["cgroup"] == stray
+    assert "mastermind-ci.slice" in sample["reason"]
+    for key in ("cpu", "memory", "memory_events", "pids", "pressure", "cpu_max"):
+        assert sample[key] is None, f"{key} must not carry a foreign-cgroup substitute"
+
+
+def test_monitor_refuses_a_foreign_slice_that_merely_looks_similar(tmp_path: Path) -> None:
+    stray = "/other-mastermind-ci.slice/actions.runner.macro.pc-ci-4.service"
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, stray)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
+    assert sample["status"] == "refused"
+
+
+def test_monitor_refuses_a_slice_candidate_that_is_not_a_service(tmp_path: Path) -> None:
+    stray = "/mastermind-ci.slice"
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, stray)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
+    assert sample["status"] == "refused"
+
+
+def test_monitor_degrades_when_slice_evidence_is_unreadable(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    (root / CI_CGROUP.lstrip("/")).mkdir(parents=True)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "degraded"
+    assert sample["cgroup"] == CI_CGROUP
+    assert sample["cpu"] is None
+    assert sample["memory"]["current"] is None
+
+
+def test_monitor_distinguishes_an_unavailable_field_from_an_observed_zero(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{"memory.swap.current": None})
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "bound"
+    assert sample["memory"]["swap_current"] is None, "absent kernel field is not zero"
+    assert sample["memory_events"]["oom_kill"] == 0, "an observed zero stays zero"
+
+
+def test_monitor_reports_unavailable_when_the_candidate_cgroup_cannot_be_read(
+    tmp_path: Path,
+) -> None:
+    sample = MONITOR.slice_sample(tmp_path / "cgroup", tmp_path / "absent-proc-file")
+    assert sample["status"] == "unavailable"
+    assert sample["cgroup"] is None
+    assert sample["cpu"] is None
+
+
+def _slice_sample(status: str = "bound", **overrides: object) -> dict:
+    sample = {
+        "status": status,
+        "expected_slice": "mastermind-ci.slice",
+        "cgroup": CI_CGROUP,
+        "reason": None,
+        "cpu": {
+            "usage_usec": 1_000_000,
+            "nr_periods": 400,
+            "nr_throttled": 20,
+            "throttled_usec": 50_000,
+        },
+        "cpu_max": "800000 100000",
+        "memory": {"current": 1 << 30, "peak": 2 << 30, "swap_current": 0},
+        "memory_events": {"low": 0, "high": 3, "max": 0, "oom": 0, "oom_kill": 0},
+        "pids": {"current": 42},
+        "pids_events": {"max": 0},
+        "pressure": {
+            "cpu": {"some": {"avg10": 1.5, "total": 1234}, "full": {"avg10": 0.0, "total": 0}},
+            "memory": {"some": {"avg10": 0.1, "total": 99}, "full": {"avg10": 0.02, "total": 11}},
+            "io": {"some": {"avg10": 0.2, "total": 77}, "full": {"avg10": 0.03, "total": 7}},
+        },
+    }
+    sample.update(overrides)
+    return sample
+
+
+def _host_sample(slice_payload: dict) -> dict:
+    return {
+        "time": 1.0,
+        "cpu_percent": 10.0,
+        "load": [1.0, 1.0, 1.0],
+        "memory_available_bytes": 32 << 30,
+        "swap_used_bytes": 0,
+        "disk_free_bytes": 100 << 30,
+        "slice": slice_payload,
+    }
+
+
+def test_receipt_reduces_bound_slice_samples_into_window_deltas(tmp_path: Path) -> None:
+    first = _slice_sample()
+    last = _slice_sample(
+        cpu={
+            "usage_usec": 9_000_000,
+            "nr_periods": 900,
+            "nr_throttled": 45,
+            "throttled_usec": 120_000,
+        },
+        memory={"current": 3 << 30, "peak": 5 << 30, "swap_current": 1 << 20},
+        memory_events={"low": 0, "high": 11, "max": 2, "oom": 0, "oom_kill": 0},
+        pids={"current": 61},
+        pids_events={"max": 1},
+        pressure={
+            "cpu": {"some": {"avg10": 2.0, "total": 5234}, "full": {"avg10": 0.1, "total": 40}},
+            "memory": {"some": {"avg10": 0.3, "total": 199}, "full": {"avg10": 0.05, "total": 31}},
+            "io": {"some": {"avg10": 0.4, "total": 177}, "full": {"avg10": 0.06, "total": 27}},
+        },
+    )
+    result = CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
+
+    assert result["status"] == "bound"
+    assert result["samples"] == 2
+    assert result["expected_slice"] == "mastermind-ci.slice"
+    assert result["cgroups"] == [CI_CGROUP]
+    assert result["cpu_max"] == "800000 100000"
+    assert result["cpu_delta"] == {
+        "usage_usec": 8_000_000,
+        "nr_periods": 500,
+        "nr_throttled": 25,
+        "throttled_usec": 70_000,
+    }
+    assert result["memory_events_delta"] == {"low": 0, "high": 8, "max": 2, "oom": 0, "oom_kill": 0}
+    assert result["pids_events_delta"] == {"max": 1}
+    assert result["memory_current_peak_bytes"] == 3 << 30
+    assert result["memory_swap_peak_bytes"] == 1 << 20
+    assert result["pids_current_peak"] == 61
+    assert result["pressure_total_delta"]["memory"]["full"] == 20
+    assert result["pressure_total_delta"]["io"]["some"] == 100
+
+
+def test_receipt_labels_memory_peak_as_a_cgroup_lifetime_fact() -> None:
+    """memory.peak is a cgroup-lifetime high-water mark. Presenting it as a
+    run-local peak without a documented reset ceremony would overstate what the
+    receipt observed.
+    """
+    result = CAPTURE.slice_metrics([_host_sample(_slice_sample())])
+    assert "memory_peak_bytes_cgroup_lifetime" in result
+    assert result["memory_peak_bytes_cgroup_lifetime"] == 2 << 30
+    assert "memory_peak_bytes" not in result, "no unqualified run-local peak"
+    assert result["memory_peak_is_run_local"] is False
+
+
+def test_receipt_refuses_aggregate_numbers_when_any_sample_left_the_ci_slice() -> None:
+    samples = [
+        _host_sample(_slice_sample()),
+        _host_sample(
+            _slice_sample(
+                "refused",
+                cgroup="/system.slice/x.service",
+                cpu=None,
+                cpu_max=None,
+                memory=None,
+                memory_events=None,
+                pids=None,
+                pids_events=None,
+                pressure=None,
+                reason="candidate cgroup is not a .service under /mastermind-ci.slice",
+            )
+        ),
+    ]
+    result = CAPTURE.slice_metrics(samples)
+    assert result["status"] == "refused"
+    for key in (
+        "cpu_delta",
+        "memory_events_delta",
+        "pids_events_delta",
+        "pressure_total_delta",
+        "memory_current_peak_bytes",
+    ):
+        assert result.get(key) is None, f"{key} must not be reported off refused evidence"
+    assert "mastermind-ci.slice" in result["reason"]
+
+
+def test_receipt_reports_degraded_without_partial_aggregate_numbers() -> None:
+    result = CAPTURE.slice_metrics(
+        [
+            _host_sample(_slice_sample()),
+            _host_sample(_slice_sample("degraded", cpu=None, memory_events=None)),
+        ]
+    )
+    assert result["status"] == "degraded"
+    assert result["cpu_delta"] is None
+
+
+def test_receipt_reports_absent_slice_evidence_rather_than_inventing_it() -> None:
+    result = CAPTURE.slice_metrics([])
+    assert result["status"] == "absent"
+    assert result["cpu_delta"] is None
+    legacy = CAPTURE.slice_metrics([{"time": 1.0, "cpu_percent": 1.0}])
+    assert legacy["status"] == "absent", "a pre-slice P1/P2 sample is absent, not bound"
+
+
+def test_existing_host_metrics_reduction_is_unchanged_by_the_slice_extension(
+    tmp_path: Path,
+) -> None:
+    """P1/P2 receipts must stay honestly readable: the host-global reduction keeps
+    its exact previous keys and values whether or not slice evidence is present.
+    """
+    path = tmp_path / "metrics.jsonl"
+    with_slice = _host_sample(_slice_sample())
+    without_slice = {key: value for key, value in with_slice.items() if key != "slice"}
+    path.write_text(json.dumps(with_slice) + "\n", encoding="utf-8")
+    extended = CAPTURE.metrics(path)
+    path.write_text(json.dumps(without_slice) + "\n", encoding="utf-8")
+    legacy = CAPTURE.metrics(path)
+    assert extended == legacy
+    assert set(legacy) == {
+        "samples",
+        "cpu_peak_percent",
+        "cpu_mean_percent",
+        "load_peak_1m",
+        "memory_available_min_bytes",
+        "swap_used_peak_bytes",
+        "disk_free_min_bytes",
+    }
