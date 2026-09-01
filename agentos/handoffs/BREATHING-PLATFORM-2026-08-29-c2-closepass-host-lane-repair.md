@@ -2,7 +2,14 @@
 workstream: "WS:BREATHING-PLATFORM"
 session: sol/breathing-c2a-restart-20260829
 model: sol
-ended_because: active_started
+ended_because: blocked
+schema_repair: >
+  2026-09-01 shape-only repair by claude/executive-os-dr-a0-audit (Fable COO):
+  'ended_because: active_started' is not in the schema enum and made
+  `scripts/agentos.py validate` exit 1 store-wide (self-mod-fence red on every
+  records-touching PR). Rendered as 'blocked' — the checkpoint ends with the STARTed
+  CTO-FORGE child preserved on the locked-worktree host-lane blocker awaiting reviewed
+  repair. Content and meaning are Sol's and unchanged. Precedent: macro #6676.
 mission: >
   Preserve one bounded C2-A operation for recovery of the Mac Studio close-pass host lane whose Git
   worktree registration remains locked while the canonical lane path is absent; preserve the already-
