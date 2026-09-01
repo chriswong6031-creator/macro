@@ -38,14 +38,10 @@ CADDYFILE_PATH = REPO_ROOT / "app" / "deploy" / "Caddyfile"
 # proxy COUNT is pinned so a silently-dropped block is caught rather than
 # passing vacuously.
 # ---------------------------------------------------------------------------
-def test_shipped_caddyfile_has_exactly_eight_backend_proxies_all_safe() -> None:
+def test_shipped_caddyfile_has_exactly_seven_backend_proxies_all_safe() -> None:
     text = CADDYFILE_PATH.read_text(encoding="utf-8")
     proxies = classify_backend_proxies(text)
 
-    # 8 -> 7 (2026-08-29): #6635 deliberately re-pointed the Control Room
-    # auth-check block (old line 803) from 127.0.0.1:8000 to the admin session
-    # handler on 127.0.0.1:8787, so it is no longer a :8000 backend proxy at
-    # all — a reviewed topology change, not a silently-dropped block.
     assert len(proxies) == 7, (
         f"expected exactly 7 :8000 backend reverse_proxy blocks, found {len(proxies)}: {proxies}\n"
         "If this is a deliberate topology change, update the pinned count here — do not just "
@@ -75,9 +71,6 @@ def test_shipped_caddyfile_line_numbers_match_known_blocks() -> None:
         390: SAFE_FIXED_REWRITE,
         428: SAFE_FIXED_REWRITE,
         770: SAFE_FIXED_REWRITE,
-        # line 803's auth-check block left the :8000 backend set in #6635
-        # (re-pointed to the admin session handler on :8787) — see the count
-        # pin's comment above.
     }
 
 

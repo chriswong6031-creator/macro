@@ -20,6 +20,8 @@
  *         own client-held pin list. Wrapped in try/catch — a throwing hook never breaks
  *         send(). The effective-context strip + inspector consume the server's
  *         `context_receipt` reply either way.
+ *   getCompanySourceSpan: fn()->closed company_source_span reference for the next
+ *         explicit turn only. The widget never stores or serializes source bytes.
  * Public API: window.MMBrain = { open, close, toggle, expand, mounted:true }
  * ========================================================================== */
 (function () {
@@ -29,6 +31,11 @@
   var ANCHOR = CFG.anchor || 'br';
   var API = (CFG.api || '').replace(/\/$/, '');
   var DOC = document;
+
+  function captureCompanySourceSpan() {
+    try { return (typeof CFG.getCompanySourceSpan === 'function') ? CFG.getCompanySourceSpan() : null; }
+    catch (e) { return null; }
+  }
 
   /* ── i18n mini-helper (mirrors the site l-en/l-zh idiom) ── */
   function zh() { return DOC.documentElement.getAttribute('data-lang') === 'zh'; }
@@ -2309,9 +2316,10 @@
     ctx.ai_context = buildAiContext();
     /* an "explain this panel" request carries the panel key once, then clears */
     if (explainPanel) { ctx.panel = explainPanel; explainPanel = null; }
-    var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx };
+    var sourceSpan = captureCompanySourceSpan();
+    var payload = { text: text, imgs: imgs, lane: researchMode ? 'pro' : lane, mode: researchMode ? 'research' : 'chat', ctx: ctx, sourceSpan: sourceSpan };
     priorTurn = lastTurn;   /* retracting this turn must not leave Regenerate replaying it */
-    lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
+    lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode, sourceSpan: sourceSpan };
     pendingImages = []; renderThumbs();
     ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
     /* the composer answers the keystroke: one settle, retriggerable on a fast second send */
@@ -2323,7 +2331,7 @@
   function regenerate() {
     if (streaming || !lastTurn) return;
     refreshCtx();
-    runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode,
+    runStream({ text: lastTurn.text, imgs: (lastTurn.imgs || []).slice(), lane: lastTurn.lane, mode: lastTurn.mode, sourceSpan: lastTurn.sourceSpan || null,
                 ctx: (function () { var c = { page: (ANCHOR === 'top' ? 'terminal' : 'dashboard'), lang: (zh() ? 'zh' : 'en') }; if (ctxSymbol) c.symbol = ctxSymbol; c.ai_context = buildAiContext(); return c; })() }, false);
   }
   /* ── durable turns ───────────────────────────────────────────────────────────
@@ -2781,7 +2789,7 @@
     T.tl = thinkInit(typing.querySelector('.mmb-bub'), payload.mode);
     activeStream = T;
     var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
-    var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
+    var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, company_source_span: payload.sourceSpan || undefined, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
     if (streamAbort) { try { streamAbort.abort(); } catch (e) {} }
     var ac = (typeof AbortController !== 'undefined') ? new AbortController() : null; streamAbort = ac;
     withAuth({ 'Content-Type': 'application/json' }).then(function (h) {
