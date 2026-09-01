@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-08-31",
-  "oldest_component_asof": "2026-08-27",
-  "macro_context_id": "b83677f4126f3056",
+  "asof": "2026-09-01",
+  "oldest_component_asof": "2026-08-28",
+  "macro_context_id": "f3d5a242fd6d3e27",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -12,8 +12,8 @@
       "us_risk_radar": "calm",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
-      "us_liquidity_quality": "contracting",
-      "us_liquidity_overlay": "contracting",
+      "us_liquidity_quality": "neutral-hollow",
+      "us_liquidity_overlay": "neutral",
       "us_froth_band": "calm",
       "us_dislocation": "calm",
       "us_gamma_regime": "long",
@@ -26,7 +26,7 @@
       "market_state_verdict": "RISK_ON"
     },
     "transmission": {
-      "yield_curve_regime": "bull_steepener",
+      "yield_curve_regime": "bull_flattener",
       "recession_risk": "low"
     },
     "fx": {
@@ -35,14 +35,14 @@
       "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "supportive",
-      "fx_regime_radar": "carry_unwind",
+      "fx_regime_radar": null,
       "usd_valuation": "fair",
       "usd_positioning": "neutral",
-      "fed_path_lean": "steady",
+      "fed_path_lean": "hawkish_repricing",
       "fx_eurusd_action": "FLAT",
       "fx_gbpusd_action": "FLAT",
       "fx_usdjpy_action": "SHORT",
-      "fx_usdchf_action": "LONG",
+      "fx_usdchf_action": "FLAT",
       "fx_audusd_action": "SHORT",
       "fx_usdcad_action": "FLAT",
       "fx_usdmxn_action": "SHORT",
@@ -61,8 +61,8 @@
       "commodity_favored": "Gold, Silver",
       "commodity_mtf_grade": "BUY-THE-DIP",
       "commodity_ladder": "TOP WATCH",
-      "commodity_shock_state": "normal",
-      "commodity_confluence_state": "Extended \u2014 late cycle",
+      "commodity_shock_state": "blowoff",
+      "commodity_confluence_state": "Neutral",
       "commodity_breadth_bucket": "broad",
       "gold_action": "HOLD",
       "silver_action": "HOLD",
@@ -75,12 +75,12 @@
       "china_fe_band": "Neutral"
     },
     "hk": {
-      "hk_quad": "Q4",
+      "hk_quad": "Q1",
       "hk_risk_state": "Risk-on",
       "hk_peg_state": "weak-side (outflow)"
     },
     "canada": {
-      "canada_quad": "Q1",
+      "canada_quad": "Q3",
       "canada_overlay_state": "Risk-on",
       "canada_cycle_tag": "late"
     },
@@ -98,23 +98,23 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-08-28",
-    "data/market_state/latest.json": "2026-08-28",
-    "data/transmission/latest.json": "2026-08-28",
-    "data/forex/latest.json": "2026-08-31",
-    "data/bonds/bond_health.json": "2026-08-28",
-    "data/commodity/latest.json": "2026-08-30",
-    "data/china_regime/latest.json": "2026-08-27",
-    "data/hk_regime/latest.json": "2026-08-28",
-    "data/canada_regime/latest.json": "2026-08-28",
-    "data/dispersion/regime.json": "2026-08-30",
-    "data/intl_regime/AU_history.parquet": "2026-08-31",
+    "data/regime/latest.json": "2026-08-31",
+    "data/market_state/latest.json": "2026-08-31",
+    "data/transmission/latest.json": "2026-08-31",
+    "data/forex/latest.json": "2026-09-01",
+    "data/bonds/bond_health.json": "2026-08-31",
+    "data/commodity/latest.json": "2026-08-31",
+    "data/china_regime/latest.json": "2026-08-31",
+    "data/hk_regime/latest.json": "2026-08-31",
+    "data/canada_regime/latest.json": "2026-08-31",
+    "data/dispersion/regime.json": "2026-08-31",
+    "data/intl_regime/AU_history.parquet": "2026-09-01",
     "data/intl_regime/EZ_history.parquet": "2026-08-28",
     "data/intl_regime/GB_history.parquet": "2026-08-28",
     "data/intl_regime/IN_history.parquet": "2026-08-28",
-    "data/intl_regime/JP_history.parquet": "2026-08-31",
-    "data/intl_regime/KR_history.parquet": "2026-08-31",
-    "data/intl_regime/TW_history.parquet": "2026-08-31"
+    "data/intl_regime/JP_history.parquet": "2026-09-01",
+    "data/intl_regime/KR_history.parquet": "2026-09-01",
+    "data/intl_regime/TW_history.parquet": "2026-09-01"
   },
   "gaps": [],
   "display_only": true
