@@ -17,7 +17,7 @@
 - R1A-M is blocked until R1A-T is merged, deployed and production-proven on the actual Terminal host.
 - Terminal Quote Plane remains the sole current-US-quote owner.
 - No second quote source, store, cache service, event bus, scheduler, retry plane, identity plane or correction ledger.
-- The exact R1A roster is `command[:30] + emerging[:14] + discovery_shown[:14]`, ordered and deduplicated: at most 58 unique symbols.
+- The exact R1A roster is `hub.command[:30] + hub.emerging[:14] + hub.discovery[:14]`, ordered, deduplicated and filtered to US-routable symbols: at most 58 unique symbols. (`engine/intel_hub.py` exports the diversified presentation list under the key `discovery`; `discovery_shown` is only its internal local.)
 - Macro route cap is 60 unique symbols; browser refuses more than 58 rendered unique symbols.
 - Every occurrence of one symbol is one visual unit and commits in the same animation frame.
 - R1A-T `view=regular` must spend zero ExtFeed demand/LRU capacity.
@@ -253,23 +253,25 @@ function buildQuotesResponse(syms, nowMs, deps = {}, options = {}) {
     includeExtended ? extFeed : null,
     snapshotFeed
   );
+  // ... macroFeed and any other legs join `out` here ...
   if (!includeExtended) {
-    for (const sym of Object.keys(served)) {
-      const row = served[sym];
+    for (const sym of Object.keys(out)) {
+      const row = out[sym];
       const clean = {};
       for (const key of Object.keys(row)) {
         if (!key.startsWith("ext")) clean[key] = row[key];
       }
-      served[sym] = clean;
+      out[sym] = clean;
     }
   }
+  return out;
 }
 ```
 
-Default behavior remains full. The `ext*` strip runs over whatever the Store
-returned, so the response boundary stays closed even for a legacy or poisoned
-Store row that never touched ExtFeed; it copies rather than mutating rows the
-Store may share.
+Default behavior remains full. The `ext*` strip is the FINAL pass over `out`
+immediately before return — after Store rows AND `macroFeed.getAll(...)` rows have
+joined — so the freeze's "every returned row" promise holds unconditionally, not
+only for the Store branch. It copies rather than mutating rows the Store may share.
 
 - [ ] **Step 4: Wire `hub.js`**
 
@@ -283,7 +285,14 @@ applyDemand(syms, now, deps, options);
 const out = buildQuotesResponse(syms, now, deps, options);
 ```
 
-Import/re-export `parseQuoteView` as needed. Do not add another endpoint.
+Import/re-export `parseQuoteView` as needed. Do not add another endpoint. Parse and
+validate `view` BEFORE the empty-`syms` early return, so `?syms=&view=bogus` is 400,
+not an empty 200. Endpoint-level tests are mandatory here (spec §5.5): through
+`handleQuotes` (or an equivalent seam over the real wiring), prove `?view=regular`
+produces zero `extFeed.demand` calls, `?view=full` and a missing `view` still produce
+them, and an unknown `view` returns 400 — the `make unknown view default to full` and
+`make default view regular` mutations live in this file and cannot be caught by the
+pure-library suite.
 
 - [ ] **Step 5: Run focused GREEN**
 
@@ -407,7 +416,7 @@ Normalize only nondeterministic timestamps and verify semantic equality.
 
 - [ ] **Step 7: Prove regular response and zero LRU effect**
 
-Capture `/health` ExtFeed membership/size evidence using the existing accepted diagnostic surface, then issue one request containing 58 safe US symbols:
+Capture `/health` ExtFeed membership/size evidence using the existing accepted diagnostic surface — and, from the same seam, Polygon subscription-map size/membership and SnapshotFeed pending/flush counters (the other two globally shared demand budgets the freeze §5 ruling bounds) — then issue one request containing 58 safe US symbols:
 
 ```bash
 curl --fail --silent --show-error \
@@ -420,6 +429,8 @@ Verify:
 response is flat present-entries-only object
 no extPrice/extChg/extTs/extSession/extSource/extBasis anywhere
 ExtFeed membership/order/size unchanged by the request
+Polygon subscription-map size/membership unchanged or bounded per freeze §5 ruling
+SnapshotFeed pending/flush counters bounded per freeze §5 ruling
 regular SnapshotFeed/Polygon demand remains observable
 unknown view returns HTTP 400
 ```
@@ -729,10 +740,17 @@ Add `app/deploy/update.sh` only if changed by current evidence.
 Prove:
 
 ```python
-assert roster == ordered_unique(command[:30] + emerging[:14] + discovery_shown[:14])
+assert roster == ordered_unique(hub["command"][:30] + hub["emerging"][:14] + hub["discovery"][:14])
 assert len(roster) <= 58
 assert hidden_discovery_symbol not in roster
 assert exhausted_symbol not in roster
+# the engine exports the diversified list as hub["discovery"]; "discovery_shown"
+# is only an internal local — a roster built from hub.get("discovery_shown") is empty
+assert hub.get("discovery_shown") is None and len(hub["discovery"]) > 0
+# a non-US rendered row (e.g. 0700.HK) is excluded from the request set AND the
+# coverage denominator, and carries no Market Pulse cluster
+assert non_us_symbol not in roster
+assert non_us_symbol not in coverage_denominator
 ```
 
 Render a duplicate symbol in two panels and prove two `data-ihmp-symbol="AAPL"` targets exist while the unique request roster contains AAPL once.
@@ -767,7 +785,7 @@ Provide plain equivalent Chinese; technical clocks/errors live in tooltips.
 
 - [ ] **Step 5: Render stable quote clusters for every eligible occurrence**
 
-Do not create a second ticker link or change `.tk`. R1A nodes must not match generic `.nb-px[data-sym]`/`.nb-chg[data-sym]` ownership.
+Do not create a second ticker link or change `.tk`. R1A nodes must not match generic `.nb-px[data-sym]`/`.nb-chg[data-sym]` ownership — and the generic markup must GO, not merely be avoided: remove `.nb-px[data-sym]`/`.nb-chg[data-sym]` from every Command/Emerging/Discovery roster row so generic `live.js` selects zero quote nodes on this route and each row shows exactly one visible price (the R1A cluster, which itself carries the baked baseline value).
 
 - [ ] **Step 6: Author governed dark/light CSS**
 
@@ -889,7 +907,13 @@ python3 -m pytest \
   tests/test_site_access_boundary.py \
   tests/test_lens_nested_control_taps.py -q
 grep -n "data-ihmp" templates/live.js site/live.js || true
+# the rendered hub page must contain ZERO generic live.js quote nodes
+test "$(grep -c 'nb-px' site/intelligence_hub.html)" = "0"
 ```
+
+Browser proof must additionally show zero generic `live.js` quote fetches on the
+Intelligence Hub route (network log: no `live/overlay.json` / generic quotes call
+attributable to live.js on this page).
 
 Mutations that must red:
 

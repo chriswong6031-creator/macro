@@ -5,7 +5,7 @@
 **Design state:** **FROZEN FOR IMPLEMENTATION AFTER R0 ACCEPTANCE**  
 **Implementation state:** `NOT_BUILT`  
 **Macro records carrier:** `sol/reactive-projection-platform-r0-20260830` / PR `#6707`  
-**Current protected procedure:** `mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc`  
+**Protected procedure:** `mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc` at freeze; re-pinned `@187490f3d5676adf7a249d69afacedd00b3efcec` at the 2026-09-01 main rejoin  
 **Macro archaeology pin for this correction:** R0 head `8cd1ac766f544e6615366b7ba21c7d8d0182bda9`  
 **Terminal archaeology pin:** `mastermindx-market-intelligence/mastermind-terminal@86a75b68c273a592a41af5e322f95aab242b8297`
 
@@ -59,10 +59,10 @@ The roster is the ordered unique union of:
 ```text
 hub.command[:30]
 hub.emerging[:14]
-hub.discovery_shown[:14]
+hub.discovery[:14]
 ```
 
-`discovery_shown` means the builder's existing diversified presentation list. It does not mean the full Discovery candidate corpus.
+`hub.discovery` is the builder's existing diversified presentation list — `engine/intel_hub.py` builds it internally as the local `discovery_shown` and exports it under the key `discovery`. It does not mean the full Discovery candidate corpus.
 
 Rules:
 
@@ -71,6 +71,7 @@ Rules:
 - First rendered occurrence establishes request order.
 - Coverage counts unique symbols, not DOM nodes.
 - `exhausted`, catalyst-only and hidden Discovery names are excluded.
+- Non-US-routable symbols are excluded from the request set and from the coverage denominator, and carry no Market Pulse cluster (Terminal omits `cn/hk/ca` routes from the flat response; the batch route validates US symbols only).
 - A symbol may appear in several panels; all of its targets form one atomic visual unit.
 - The nightly builder remains roster and baseline authority.
 
@@ -131,8 +132,9 @@ The default full view must remain byte-for-semantic compatible with existing cal
 Modify the current owners rather than branching around them:
 
 ```javascript
-function parseQuoteView(url) {
-  // returns "full" | "regular" or throws the existing opaque HTTP error shape
+function parseQuoteView(rawValues) {
+  // takes url.searchParams.getAll("view"); returns "full" | "regular",
+  // or null for unknown/conflicting/repeated-invalid input (caller sends 400)
 }
 
 function applyDemand(syms, nowMs, deps = {}, options = { includeExtended: true }) {}
@@ -149,7 +151,7 @@ The exact parameter shape may be simplified during implementation, but the behav
 
 ### 5.5 Terminal acceptance tests
 
-Extend `hub/tests/quotes.test.js` and add HTTP-level coverage using the repo's existing harness if one exists.
+Extend `hub/tests/quotes.test.js`. Endpoint-level coverage is MANDATORY, not optional: the `make unknown view default to full` and `make default view regular` mutations live in `hub/hub.js` wiring, so at least one test must drive `handleQuotes` (or an equivalent seam over the real wiring) and prove `?view=regular` produces zero `extFeed.demand` calls, `?view=full` and a missing `view` still produce them, and an unknown `view` returns 400 — a pure-library suite cannot catch an inverted boolean at the wiring layer.
 
 Required discriminators:
 
@@ -333,6 +335,7 @@ resolved + missing == requested
 live + delayed + stale == resolved
 coverage=complete iff missing=0
 freshness=conservative worst resolved item
+page session=regular only when every resolved item session=regular; any mix renders conservative mixed/settled language, never live/regular
 source_view must equal regular
 ```
 
@@ -425,6 +428,8 @@ Every DOM occurrence receives the same accepted tuple in the same frame. `snapsh
 ## 10. Generic controller and serving boundary
 
 R1A target nodes must not be owned by `templates/live.js`. Pure formatters may be shared only after explicit extraction.
+
+Node-disjointness alone is not compliance. Generic `live.js` repaints `.nb-px[data-sym]` on the current Command/Emerging/Discovery rows today (wired once through the global nav include), so R1A-M must remove that generic markup from the roster rows it takes over: the rendered Intelligence Hub page contains zero `.nb-px[data-sym]` quote nodes, generic `live.js` issues zero quote fetches on this route, and each roster row shows exactly one visible price — the R1A instrument.
 
 The new controller path must be listed in both:
 
@@ -531,6 +536,7 @@ The shared projector must preserve:
 - regular demand calls ExtFeed zero times;
 - regular response receives no ExtFeed and emits no ext field;
 - 58-symbol regular call leaves ext LRU membership/order unchanged;
+- endpoint-level `handleQuotes` coverage: regular → zero ext demand, full/missing → ext demand, unknown view → 400;
 - invalid/conflicting view refuses;
 - existing `hub/tests/quotes.test.js` and `hub/tests/extfeed.test.js` stay green;
 - mutation proof for every load-bearing branch.
@@ -576,8 +582,10 @@ The shared projector must preserve:
 ### Production/browser proof
 
 - Terminal host regular-view no-LRU-effect canary;
+- the same canary records Polygon subscription-map size/membership and SnapshotFeed pending/flush counters, unchanged or bounded per the freeze §5 ruling;
 - real public Macro route and controller;
 - one browser call / one Terminal call;
+- zero generic `live.js` quote fetches and zero `.nb-px[data-sym]` quote nodes on the rendered hub page;
 - visible tuple coherence;
 - normal, delayed, partial, settled, malformed/upstream-unavailable states;
 - dark/light × EN/ZH × 1440/390;

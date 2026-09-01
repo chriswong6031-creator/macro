@@ -82,7 +82,7 @@ The program is complete only when it has:
 | Terminal Market Data and Quote Plane | `PROVEN_LIVE` | Canonical current quote owner |
 | Macro public debranded dossier quote projection | `PROVEN_LIVE` | Existing one-symbol precedent |
 | Generic static-page live-price enhancement | `PARTIAL` | `templates/live.js`; not a page-complete truth contract |
-| Intelligence Hub nightly quote markup | `PARTIAL` | Baked `.nb-px` values exist for surfaced rows |
+| Intelligence Hub nightly quote markup | `PARTIAL` | Baked `.nb-px` values exist for surfaced rows and are repainted today by generic `live.js` through the global nav include |
 | Intelligence Hub page-complete Market Pulse | `DARK_OR_DISCONNECTED` | No accepted bounded batch contract or production proof |
 | Terminal regular-only non-disruptive quote view | `NOT_BUILT` | Existing `/quotes` always demands extended-hours state for US names |
 | Breathing Platform / Prophet same-session machinery | `PARTIAL` | Useful systems exist; separate completion program remains active |
@@ -149,6 +149,8 @@ For `view=regular`, Terminal must:
 
 Macro's R1A route must call `view=regular` explicitly and must fail closed if deployed Terminal does not prove that contract. No direct vendor call, second snapshot service or Macro-side demand suppressor may substitute for the Terminal owner change.
 
+The other two globally shared demand budgets are ruled on explicitly rather than left silent. `view=regular` deliberately keeps demanding the Polygon subscription plane (a process-wide **500-slot** LRU, `hub/lib/polygon.js::LRU_CAP`) and the SnapshotFeed batched-REST path, because those are exactly the planes that make regular prices live for everyone. The 58-name roster consumes at most 11.6% of the 500-slot Polygon budget, and hub roster names are high-attention symbols that overlap organic Terminal demand, so this spend is **accepted as bounded** — but it is measured, not assumed: the R1A-T production canary must record Polygon subscription-map size and membership and SnapshotFeed pending/flush counters before and after the 58-symbol regular request and show them unchanged or bounded within this ruling. Only ExtFeed (30-slot) must show zero attributable change.
+
 ---
 
 ## 6. R1A rendered roster and identity
@@ -158,10 +160,10 @@ The projected roster is the ordered unique union of exactly:
 ```text
 hub.command[:30]
 hub.emerging[:14]
-hub.discovery_shown[:14]
+hub.discovery[:14]
 ```
 
-where `discovery_shown` is the existing diversified presentation list, not the full Discovery candidate corpus. `exhausted`, catalyst-only names and hidden Discovery candidates are outside R1A.
+where `hub.discovery` is the existing diversified presentation list — `engine/intel_hub.py` builds it as the local `discovery_shown` via `_diversify_by_source(discovery_list, 14, 5, ...)` and exports it under the key `discovery` (the name `discovery_shown` never appears as a `hub` key) — not the full Discovery candidate corpus. `exhausted`, catalyst-only names and hidden Discovery candidates are outside R1A.
 
 Rules:
 
@@ -170,6 +172,7 @@ Rules:
 - Coverage denominators count unique symbols, not DOM nodes.
 - One symbol may have several rendered targets. The client owns `Map<symbol, HTMLElement[]>`, validates the response once, and paints every target for that symbol inside the same animation-frame transaction.
 - A symbol not in the rendered roster cannot be requested merely because the public API accepts a safe symbol.
+- Roster membership is additionally filtered to US-routable symbols: a non-US rendered row is excluded from the request set and from the coverage denominator, and carries no Market Pulse cluster. (Terminal silently omits `cn/hk/ca` routes from the flat response and the Macro route validates US symbols only; without this filter one non-US row would either fail the whole request or sit in `missing` forever.)
 - The nightly builder remains the source of roster membership and baseline values.
 
 ---
@@ -249,7 +252,7 @@ R1A is stateless pull. There is no server transport sequence, replay cursor or c
   "source_view": "regular",
   "state": {
     "availability": "available",
-    "freshness": "live",
+    "freshness": "delayed",
     "coverage": "partial"
   },
   "coverage": {
@@ -278,6 +281,7 @@ Required laws:
 - Missing/error symbols remain in the denominator.
 - Errors are opaque allowlisted codes.
 - A majority of live rows cannot hide one delayed/stale row.
+- Page-level session is `regular` only when every resolved item's `session` is `regular`; any other mix must never render live/regular page language — the page-level session slot renders the conservative mixed/settled state while per-item truth is preserved.
 
 Item:
 
@@ -369,7 +373,8 @@ For R1A:
 - the template owns baked baseline markup;
 - the R1A controller owns the Market Pulse quote/move/status targets after activation;
 - `theme.js` owns ticker-to-Terminal interaction;
-- generic `live.js` must not mutate R1A targets.
+- generic `live.js` must not mutate R1A targets;
+- R1A-M removes the generic `.nb-px[data-sym]` / `.nb-chg[data-sym]` markup from Command, Emerging and Discovery roster rows, so generic `live.js` selects zero quote nodes on this route and the R1A controller is the sole visible price plane there — exactly one visible price per roster row, and zero generic `live.js` quote fetches on the Intelligence Hub route. Node-disjointness alone is not compliance: two independently updating prices for one symbol on one card is the duplicate visible quote plane §7 forbids.
 
 The controller may reuse pure formatters but cannot subscribe the same node to two asynchronous writers. It maps one symbol to all rendered targets and paints the accepted response atomically. It creates no runtime stylesheet, second token palette or hidden design system.
 
@@ -456,7 +461,7 @@ Measure:
 Initial acceptance budgets:
 
 - route p95 below 2.5 seconds;
-- one Macro upstream request per browser refresh;
+- one Macro upstream request per browser refresh, and zero generic `live.js` quote fetches on the Intelligence Hub route;
 - at most 60 unique symbols;
 - zero regular-view ext-demand calls;
 - zero false-live rows;
@@ -570,6 +575,7 @@ R1A-T must prove on the actual Terminal host:
 - `view=regular` returns the regular flat response;
 - no extended field is emitted, including from legacy Store rows that already carry `ext*` keys;
 - 58-name regular-view demand changes neither ExtFeed subscription map nor LRU order;
+- the same before/after canary records Polygon subscription-map size and membership and SnapshotFeed pending/flush counters and shows them unchanged or bounded within the §5 ruling;
 - SnapshotFeed/Polygon/AnchorCache regular paths still receive demand;
 - invalid view fails closed;
 - deployment identity matches reviewed merge.
@@ -585,6 +591,7 @@ R1A-M must prove on the real site:
 - symbol-weighted limits block amplification while normal cadence succeeds;
 - nightly order, scores and stages are invariant;
 - one refresh makes one batch route call;
+- the rendered Intelligence Hub page contains zero generic `.nb-px[data-sym]` quote nodes and issues zero generic `live.js` quote fetches;
 - outage/partial/malformed regular-view states leave the baseline usable;
 - old responses cannot roll the page backward;
 - equal-time correction can land without a server ledger;
