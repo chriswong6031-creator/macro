@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "HEI-BULL-20260723",
-  "asof": "2026-08-30",
+  "asof": "2026-08-31",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 49.8,
-  "raw_confidence": 49.1,
-  "delta_vs_base": -10.2,
+  "management_confidence": 48.5,
+  "raw_confidence": 46.9,
+  "delta_vs_base": -11.5,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 61.2,
+    "validity": 56.0,
     "progress": 0.0,
-    "pace": 29.9,
+    "pace": 24.9,
     "retention": 50.0,
-    "overlay": 58.0
+    "overlay": 55.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.695,
+    "dist_to_stop_r": 0.651,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 40.0,
-    "p1": -0.2031,
-    "p2": -0.1016,
+    "horizon_pct_used": 42.2,
+    "p1": -0.233,
+    "p2": -0.1165,
     "p3": null,
-    "move_r": -0.305,
+    "move_r": -0.349,
     "mfe_r": 0.0,
-    "mae_r": -0.305
+    "mae_r": -0.349
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Falling Behind Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 6.1035156022626325e-06,
-  "_mae": -36.57000122070315,
+  "_mae": -41.95000610351565,
   "_max_p1": 3.389994502631361e-08,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 19,
+  "tau": 0.4222
 }

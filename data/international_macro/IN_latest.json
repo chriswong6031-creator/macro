@@ -8,7 +8,7 @@
   "scope_en": "India national economy; Nifty 50 and Sensex are market context.",
   "scope_zh": "印度全国经济；Nifty 50与Sensex仅作市场背景。",
   "asof": "2026-08-28",
-  "built": "2026-08-31 05:40 UTC",
+  "built": "2026-09-01 06:31 UTC",
   "regime": {
     "quad": "Q2",
     "name": "Reflation",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 10,
+    "top_score": 19,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.185,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 9.9,
+      "intensity": 18.7,
       "peak": 87.1,
       "peak_days_ago": 24,
-      "off_peak": 77.2,
-      "velocity": 2.8,
+      "off_peak": 68.5,
+      "velocity": 11.5,
       "phase": "rising",
       "reached_risk": true,
       "state_now": "calm",
@@ -245,16 +245,16 @@
         5.6,
         6.9,
         11.3,
-        9.9
+        18.7
       ],
-      "spark_pts": "3.0,3.0 6.9,7.1 10.8,7.8 14.7,10.6 18.7,14.9 22.6,14.3 26.5,19.6 30.4,18.3 34.3,19.1 38.2,17.3 42.1,19.0 46.0,20.1 50.0,20.7 53.9,20.8 57.8,19.4 61.7,21.0 65.6,22.4 69.5,22.7 73.4,22.6 77.3,22.9 81.3,23.0 85.2,22.6 89.1,21.4 93.0,21.8",
+      "spark_pts": "3.0,3.0 6.9,7.1 10.8,7.8 14.7,10.6 18.7,14.9 22.6,14.3 26.5,19.6 30.4,18.3 34.3,19.1 38.2,17.3 42.1,19.0 46.0,20.1 50.0,20.7 53.9,20.8 57.8,19.4 61.7,21.0 65.6,22.4 69.5,22.7 73.4,22.6 77.3,22.9 81.3,23.0 85.2,22.6 89.1,21.4 93.0,19.3",
       "spark_peak": {
         "x": 3.0,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 21.8
+        "y": 19.3
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,9 +266,20 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 39.4,
-        "band": "calm",
-        "firing_legs": []
+        "score": 59.3,
+        "band": "watch",
+        "firing_legs": [
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.718,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.577,
+            "confirmed": false
+          }
+        ]
       },
       {
         "scare": "extension",
@@ -535,7 +546,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2025-03",
-      "age_days": 548,
+      "age_days": 549,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -559,7 +570,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 91,
+      "age_days": 92,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"
