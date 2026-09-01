@@ -370,20 +370,44 @@ def test_hk_leaders_strip_is_name_visible_but_not_in_membership_lanes_a_disclose
     assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is True  # the floor this gap forces
 
 
-def test_ca_template_has_no_unfossiled_name_visible_lane_beyond_buy_watch():
-    # Companion check: CA's own templates carry no leaders/ran strip at all
-    # (census-confirmed), so its membership lanes exactly match what the
-    # template renders — no disclosed gap, no floor required.
+def test_ca_laggards_strip_is_name_visible_forces_full_coverage():
+    # R1/R2 REPAIR (2026-09-01): this replaces
+    # test_ca_template_has_no_unfossiled_name_visible_lane_beyond_buy_watch,
+    # which asserted the FALSE property that canada.html.j2 carries no
+    # leaders/laggards-shaped strip. It does: canada.html.j2 renders a
+    # name-visible laggards anchor grid (`{% if setups.laggards %}` /
+    # `{% for r in setups.laggards %}`, ticker + name + alpha via a plain
+    # `<a>` — never a pv_card), the same "visible names, own grid, never
+    # persisted" shape as HK's leaders/laggards strips. Pin the REAL
+    # property directly against the template text rather than a marker
+    # string proxy for a property the old test could not establish.
     text = (_ROOT / "templates" / "canada.html.j2").read_text(encoding="utf-8")
-    assert "leaders-strip" not in text
-    assert "🏃" not in text  # HK's leaders-strip emoji marker, absent on CA
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["ca"] is False
+    assert "{% if setups.laggards %}" in text
+    assert "for r in setups.laggards" in text  # a real per-name loop, not a mere count
+    assert "laggards" not in pbs.HK_CA_MEMBERSHIP_LANES  # visible, still unfossiled
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["ca"] is True  # the floor this gap forces
 
 
-def test_hk_ca_requires_full_coverage_is_hk_only():
-    # M1/M2: only HK opts into the soundness floor — CA's fossil already
-    # covers every name-visible lane (no leaders/ran strip, census-confirmed).
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE == {"hk": True, "ca": False}
+def test_hk_laggards_strip_is_name_visible_alongside_leaders():
+    # Companion to test_hk_leaders_strip_is_name_visible_but_not_in_
+    # membership_lanes_a_disclosed_gap above: hk.html.j2 renders BOTH a
+    # leaders table (that test) AND a laggards anchor grid — pin the
+    # laggards half explicitly so the property backing HK's floor is fully
+    # established, not merely the leaders half.
+    text = (_ROOT / "templates" / "hk.html.j2").read_text(encoding="utf-8")
+    assert "{% if setups.laggards %}" in text
+    assert "for r in setups.laggards" in text
+    assert "laggards" not in pbs.HK_CA_MEMBERSHIP_LANES
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is True
+
+
+def test_hk_ca_requires_full_coverage_is_both_markets():
+    # R1 repair: HK and CA share the identical under-recording defect class
+    # (a name-visible laggards lane neither board_ledger writer persists) —
+    # both now opt into the soundness floor. This replaces
+    # test_hk_ca_requires_full_coverage_is_hk_only, which pinned the
+    # (disproven) CA=False property.
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE == {"hk": True, "ca": True}
 
 
 def test_hk_ca_display_lanes_stay_buy_only_despite_wider_membership():
@@ -452,18 +476,25 @@ def _hkca_watch_move_fixture(data_dir, market: str):
     }
 
 
-def test_ca_stamp_since_preserves_date_across_watch_move(tmp_path):
-    # CA has NO unfossiled name-visible lane (M1/M2 census: no leaders/ran
-    # strip), so it runs requires_full_coverage=False — absence proofs stay
-    # valid throughout, exactly like pre-fix behavior. AAA is featured today
-    # ("buy") after having sat in "watch" yesterday and "buy" the day before —
-    # the chip must show the ORIGINAL date, not today's. A ticker that is in
-    # "watch" ONLY today (never "buy") must get no added_date key at all —
-    # display stays carded-only even though membership is wider.
+def test_ca_stamp_since_nulls_the_same_scenario_pending_laggards_floor(tmp_path):
+    # R1 REPAIR (2026-09-01): this replaces
+    # test_ca_stamp_since_preserves_date_across_watch_move, which pinned the
+    # disproven property that CA has no unfossiled name-visible lane. CA's
+    # laggards anchor grid (canada.html.j2, see the census tests above) is
+    # genuinely name-visible and NOT persisted to ca_board.parquet
+    # (scripts/build_canada.py._canada_board_ledger builds `calls` from
+    # `setups.buy` + `setups.watch` only) — the identical defect class as
+    # HK's leaders/laggards. So CA now runs requires_full_coverage=True with
+    # a floor that never arrives under this program's scope, and every
+    # absence-anchored CA result must ship None (honest "unprovable") rather
+    # than the confidently-specific date the pre-repair code minted. This is
+    # the RED-first proof: it fails against pre-repair code (which returned
+    # "2026-06-30") and passes only once HK_CA_REQUIRES_FULL_COVERAGE["ca"]
+    # is True.
     data_dir = tmp_path / "data"
     artifact = _hkca_watch_move_fixture(data_dir, "ca")
     out = pbs.stamp_hkca_board_since("ca", artifact, data_dir=data_dir)
-    assert out["buy"][0]["added_date"] == "2026-06-30"
+    assert out["buy"][0]["added_date"] is None
     assert "added_date" not in out["watch"][0]  # display stays carded-only
 
 
@@ -478,8 +509,8 @@ def test_hk_stamp_since_nulls_the_same_scenario_pending_leaders_floor(tmp_path):
     # historical HK absence, HK now runs requires_full_coverage=True with a
     # floor that never arrives — every absence-anchored HK result must ship
     # None (honest "unprovable") rather than the same confidently-specific
-    # date CA still gets. This is the RED-first proof of the soundness
-    # tightening this repair round makes for HK specifically.
+    # date CA used to get pre-repair. This is the RED-first proof of the
+    # soundness tightening this repair round makes for HK.
     data_dir = tmp_path / "data"
     artifact = _hkca_watch_move_fixture(data_dir, "hk")
     out = pbs.stamp_hkca_board_since("hk", artifact, data_dir=data_dir)

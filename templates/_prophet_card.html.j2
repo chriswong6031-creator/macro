@@ -423,7 +423,16 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
 .pv-stl span.on{color:var(--pvh);opacity:1;font-weight:700}
 .pv-zn{display:flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--panel) 55%,var(--bg));border-top:1px solid var(--line);padding:6px 10px 7px;font-size:10.5px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;margin-top:auto}
 .pv-znl{font-size:9.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--pvh-ink,var(--pvh));flex:none}
-.pv-znr{font-weight:700;flex:none}
+{#- R4 (2026-09-01 repair round 3): flex:none stands (the F1 fix — the CHIP
+   degrades first, never the price) but a BARE flex:none has no size ceiling
+   of its own, so a pathologically long zone string (e.g. a wide "lo–hi"
+   range) could overflow `.pv-zn`'s row and get hard-clipped mid-character by
+   its `overflow:hidden`, with no ellipsis — an UNSIGNALLED clip. max-width:
+   100%;overflow:hidden;text-overflow:ellipsis gives .pv-znr its own bounded
+   overflow so that far-edge case degrades with a visible "…" instead,
+   without reintroducing flex-shrink (which is what let the chips crowd the
+   price out pre-F1). #}
+.pv-znr{font-weight:700;flex:none;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .pv-znm{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pv-dt{margin-left:auto;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:9.5px;padding-left:5px}
 .pv-added{margin-left:auto;color:var(--muted);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:9.5px;padding-left:5px}
@@ -485,14 +494,26 @@ html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
   .pv-nm{flex-basis:100%;width:100%}
   .pv-stl span{font-size:9px}
   .pv-zn{font-size:10px}
-  {#- F1 (2026-09-01 repair round): the buy-zone price (.pv-znr) must never
-     clip because of the metadata chips (.pv-dt / .pv-added) sharing this row
-     at narrow widths (measured clipping at 390px). .pv-znr is flex:none
-     (never shrinks, always renders in full) and the metadata chips already
-     shrink+ellipsize under pressure (base rules above); this narrow-viewport
-     cap makes the degradation start EARLY rather than only once the row is
-     already out of room, so the price reliably gets first claim on space. #}
-  .pv-dt,.pv-added{max-width:32%}
+  {#- F1 (2026-09-01 repair round) + R5 (round 3): the buy-zone price
+     (.pv-znr) must never clip because of the metadata chips (.pv-dt /
+     .pv-added) sharing this row at narrow widths (measured clipping at
+     390px). .pv-znr is flex:none (never shrinks, always renders in full,
+     see the R4 comment above for its own bounded overflow) and the metadata
+     chips already shrink+ellipsize under pressure (base rules above); this
+     narrow-viewport cap makes the degradation start EARLY rather than only
+     once the row is already out of room, so the price reliably gets first
+     claim on space.
+
+     Scoped to `.pv-added` ONLY (R5, round-3 repair-delta review finding): `.pv-dt`
+     is the separate legacy per-row date chip used by PLAN cards (see this
+     file's header comment) — a non-chip surface the theme/evidence matrix
+     for this program does not shoot, and capping it here would be an
+     unreviewed behavior change to a surface out of this packet's scope.
+     `.pv-dt` keeps its prior (pre-R5) narrow-viewport behavior: the shared
+     shrink+ellipsize base rule above (flex:0 1 auto;min-width:0;
+     overflow:hidden;text-overflow:ellipsis) applies, but with no extra
+     max-width ceiling at ≤680px. #}
+  .pv-added{max-width:32%}
   /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
      teaches "marked ⚡"); !important outranks the html[data-lang] l-en/l-zh
      visibility rules, which otherwise win at any width. The overlay's own

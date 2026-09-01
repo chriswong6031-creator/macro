@@ -99,17 +99,32 @@ def _pv_css() -> str:
 
 def test_zone_value_never_shrinks_the_added_and_date_chips_do():
     # F1 (2026-09-01 repair round): the buy-zone price (.pv-znr) must never
-    # clip because of the .pv-dt/.pv-added metadata chips sharing the same
-    # flex row — .pv-znr is pinned flex:none (renders at full content width,
-    # never truncated), while .pv-dt/.pv-added are the ones that shrink +
-    # ellipsize under pressure. This is the inverse of the pre-fix rule,
-    # where .pv-znr was the only shrinkable child and absorbed 100% of the
-    # squeeze from the un-shrinkable metadata chips.
+    # CROWD-OUT-clip because of the .pv-dt/.pv-added metadata chips sharing
+    # the same flex row — .pv-znr is pinned flex:none (renders at full
+    # content width, never shrunk by its siblings), while .pv-dt/.pv-added
+    # are the ones that shrink + ellipsize under pressure. This is the
+    # inverse of the pre-fix rule, where .pv-znr was the only shrinkable
+    # child and absorbed 100% of the squeeze from the un-shrinkable metadata
+    # chips.
+    #
+    # R4 (round 3 repair): flex:none alone has no ceiling of its own, so a
+    # pathologically long zone string could still overflow the row and get
+    # hard-clipped by .pv-zn's own overflow:hidden with no ellipsis — an
+    # UNSIGNALLED clip, not the crowd-out F1 fixed but a different failure
+    # mode. .pv-znr now carries its OWN bounded overflow (max-width:100%,
+    # overflow:hidden, text-overflow:ellipsis) so that edge case degrades
+    # visibly instead. min-width:0 is still deliberately absent — that
+    # would reintroduce flex-shrink and let the chips crowd the price out
+    # again, which is exactly what F1 fixed.
     css = _pv_css()
     znr_rule = re.search(r"\.pv-znr\{([^}]*)\}", css)
     assert znr_rule, ".pv-znr rule not found in pv_css()"
-    assert "flex:none" in znr_rule.group(1)
-    assert "min-width:0" not in znr_rule.group(1)  # no shrink -> no ellipsis needed
+    znr_body = znr_rule.group(1)
+    assert "flex:none" in znr_body
+    assert "min-width:0" not in znr_body  # no shrink -> chips still yield first
+    assert "max-width:100%" in znr_body
+    assert "overflow:hidden" in znr_body
+    assert "text-overflow:ellipsis" in znr_body  # bounded self-degradation, not a hard clip
 
     for cls in ("pv-dt", "pv-added"):
         rule = re.search(r"\." + cls + r"\{([^}]*)\}", css)
@@ -121,8 +136,20 @@ def test_zone_value_never_shrinks_the_added_and_date_chips_do():
         assert "text-overflow:ellipsis" in body
 
 
-def test_narrow_viewport_caps_metadata_chip_width_so_zone_gets_room():
+def test_narrow_viewport_caps_added_chip_width_so_zone_gets_room():
+    # R5 (round 3 repair): the ≤680px max-width:32% cap is scoped to
+    # `.pv-added` ONLY. `.pv-dt` is the separate legacy per-row date chip
+    # used by PLAN cards (a non-chip surface this program's evidence matrix
+    # does not shoot) and must keep its PRIOR narrow-viewport behavior — no
+    # extra cap beyond the shared shrink+ellipsize base rule (checked above).
+    # This replaces test_narrow_viewport_caps_metadata_chip_width_so_zone_
+    # gets_room, which pinned the (since-corrected) combined-selector cap.
     css = _pv_css()
     narrow_block = css[css.index("@media (max-width:680px)"):]
-    assert ".pv-dt,.pv-added{max-width:32%}" in narrow_block or \
-        re.search(r"\.pv-dt,\s*\.pv-added\{[^}]*max-width:32%", narrow_block)
+    assert re.search(r"(?<![.\w-])\.pv-added\{[^}]*max-width:32%", narrow_block), (
+        ".pv-added must carry the max-width:32% narrow-viewport cap")
+    # .pv-dt must NOT share that selector/cap anywhere in the narrow block.
+    assert not re.search(r"\.pv-dt\s*,\s*\.pv-added\{", narrow_block)
+    assert not re.search(r"\.pv-added\s*,\s*\.pv-dt\{", narrow_block)
+    dt_rule = re.search(r"(?<![.\w-])\.pv-dt\{([^}]*)\}", narrow_block)
+    assert not dt_rule, ".pv-dt must not gain its own narrow-viewport rule either"

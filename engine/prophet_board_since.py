@@ -628,8 +628,9 @@ HK_CA_MEMBERSHIP_LANES = ("buy", "watch")
 # Principal adjudicates; this worker does not flip either flag.
 HK_CA_STARTS_AT_INCEPTION = False
 
-# SOUNDNESS FLOOR PER MARKET (M1/M2, 2026-09-01 repair round) — HK and CA are
-# NOT symmetric here, confirmed by census:
+# SOUNDNESS FLOOR PER MARKET (M1/M2, 2026-09-01 repair round; R1 REPAIR
+# 2026-09-01 corrects the CA half — see below) — HK and CA turn out to share
+# the SAME defect class, confirmed by census:
 #
 #   HK: hk.html.j2's "🏃 Market leaders" table (`_hk_ldrs`, fed by
 #   `hk_board_rank.build_leaders_rows` in scripts/build_hk_library.py) is
@@ -637,20 +638,24 @@ HK_CA_STARTS_AT_INCEPTION = False
 #   is a DIFFERENT, disjoint ticker set from buy/watch (`exclude=_claimed`
 #   removes every buy/watch/laggard ticker before it is built) — a
 #   demote-to-leaders-then-return move is exactly the under-recording M1/M2
-#   exists to fix. It is deliberately NOT persisted to hk_board.parquet:
-#   scripts/build_hk_library.py._board_ledger_calls's own docstring records a
-#   2026-08-03 adversarial-review finding that appending leaders/ran/vetoed
-#   rows there corrupted `board_ledger`'s Spearman rank-IC (board_pos is
-#   assigned by LIST POSITION, and `board_ledger.scorecard`'s `ic_frame`
-#   filters only by `board_definition`, never by `group` — confirmed by
-#   reading engine/board_ledger.py directly, no group-based IC exclusion
-#   exists) — the same docstring states the safe fix needs "its own book...
-#   chartered as a §8-class follow-up", i.e. a NEW store, which this
-#   program's own scope forbids ("no new store"). engine/board_ledger.py is
-#   also rank/signal-authority code this program does not own or touch.
+#   exists to fix. hk.html.j2 ALSO renders a laggards anchor grid (lines 4459,
+#   4489: `{% if setups.laggards %}` ... `{% for r in setups.laggards %}`,
+#   name + z-score, same "visible names, own <a> grid" shape as the leaders
+#   table) — a second name-visible lane. Both are deliberately NOT persisted
+#   to hk_board.parquet: scripts/build_hk_library.py._board_ledger_calls's
+#   own docstring records a 2026-08-03 adversarial-review finding that
+#   appending leaders/ran/vetoed/laggards rows there corrupted
+#   `board_ledger`'s Spearman rank-IC (board_pos is assigned by LIST
+#   POSITION, and `board_ledger.scorecard`'s `ic_frame` filters only by
+#   `board_definition`, never by `group` — confirmed by reading
+#   engine/board_ledger.py directly, no group-based IC exclusion exists) —
+#   the same docstring states the safe fix needs "its own book... chartered
+#   as a §8-class follow-up", i.e. a NEW store, which this program's own
+#   scope forbids ("no new store"). engine/board_ledger.py is also
+#   rank/signal-authority code this program does not own or touch.
 #   Consequence, stated plainly per the frozen spec: HK's `hk_full_coverage_
 #   since` is permanently None until a dedicated follow-up safely persists
-#   leaders coverage, so `stamp_hkca_board_since` runs HK with
+#   leaders+laggards coverage, so `stamp_hkca_board_since` runs HK with
 #   `requires_full_coverage=True` — every absence-anchored HK candidate ships
 #   `added_date=None` (honest "unprovable", not silently wrong) rather than a
 #   confidently wrong date. HK's "Recently fired" (`ran`) strip is the same
@@ -659,16 +664,29 @@ HK_CA_STARTS_AT_INCEPTION = False
 #   actually renders a row, so there is nothing live to under-record; the
 #   same floor already covers it if it ever ships real rows.
 #
-#   CA: census of canada.html.j2 and scripts/build_canada.py/
-#   build_canada_library.py found NO leaders or ran strip tied to `setups` at
-#   all — canada.html.j2's pv_card loop is `setups.buy` and its only other
-#   name-visible group is `setups.watch` (the anchor-grid watch-strip),
-#   exactly the two lanes HK_CA_MEMBERSHIP_LANES / HK_CA_VISIBLE_GROUPS
-#   already cover and hk_board.parquet's HK-only leaders lane above does not
-#   apply. CA's fossil already covers every name-visible lane, so CA runs
-#   with `requires_full_coverage=False` (unchanged, unaffected) — absence
-#   proofs stay valid throughout, exactly like US.
-HK_CA_REQUIRES_FULL_COVERAGE = {"hk": True, "ca": False}
+#   CA (R1 REPAIR, 2026-09-01 — the original comment here was WRONG and is
+#   corrected in place rather than silently rewritten): the original census
+#   claimed canada.html.j2 has "NO leaders or ran strip tied to setups at
+#   all" and that CA's fossil "already covers every name-visible lane". That
+#   missed canada.html.j2's OWN laggards anchor grid: line 2387 ("watch-strip
+#   + laggards below are untouched"), line 2517 (`{% if setups.laggards %}`),
+#   line 2520 (`{% for r in setups.laggards %}` rendering ticker + name +
+#   alpha via a plain `<a>` — the exact "name-visible, own grid, no pv_card"
+#   shape as HK's leaders/laggards strips above). And exactly like HK,
+#   `laggards` is never persisted: scripts/build_canada.py._canada_board_
+#   ledger builds `calls` from `setups.buy` + `setups.watch` ONLY (its own
+#   comment at that call site: "the CA WATCH strip was never appended" refers
+#   to a PRIOR gap that was since fixed for watch — laggards was never even
+#   raised, and remains absent from `calls` today) — confirmed by reading
+#   build_canada.py directly, `board.get("laggards", [])` is never passed to
+#   `board_ledger.append_board`. So CA has the identical under-recording
+#   shape as HK (a name-visible, unfossiled lane that a buy -> laggards ->
+#   buy round-trip would silently under-record as a fresh start), and CA now
+#   runs with `requires_full_coverage=True` too — every absence-anchored CA
+#   candidate ships `added_date=None` until a dedicated follow-up safely
+#   persists laggards coverage (same "no new store" scope fence as HK; this
+#   program does not touch board_ledger writers).
+HK_CA_REQUIRES_FULL_COVERAGE = {"hk": True, "ca": True}
 
 
 def observations_from_board_ledger_frame(
@@ -725,12 +743,13 @@ def stamp_hkca_board_since(
             if not ident:
                 row["added_date"] = None
                 continue
-            # M1/M2: only HK opts into the soundness floor (see
-            # HK_CA_REQUIRES_FULL_COVERAGE docstring above) — CA's fossil
-            # already covers every name-visible lane, so it is unaffected.
-            # HK's floor never becomes non-None under this program's scope
-            # (leaders is not persisted, by deliberate rank-authority
-            # decision), so every HK absence-anchored result ships None.
+            # M1/M2 + R1 repair: BOTH HK and CA opt into the soundness floor
+            # (see HK_CA_REQUIRES_FULL_COVERAGE docstring above) — each has a
+            # name-visible laggards (HK also: leaders) lane that is never
+            # persisted to its board_ledger parquet. Neither market's floor
+            # becomes non-None under this program's scope (persisting those
+            # lanes is deliberate rank-authority scope, not touched here), so
+            # every HK/CA absence-anchored result ships None.
             start = current_continuous_membership_start(
                 obs, ident, starts_at_inception=HK_CA_STARTS_AT_INCEPTION,
                 full_coverage_since=None,

@@ -190,6 +190,31 @@ def _data_through() -> str | None:
     return _name_data_through(CSI300_ETF)
 
 
+def _more_actionable_append_is_safe(wide: dict | None) -> bool:
+    """R3 REPAIR (2026-09-01): whether `wide["more_actionable"]` rows may be
+    appended to the china_standout_track board store this build.
+
+    `_more_actionable`'s board_definition (`f"{wide['board_definition']}_
+    more_actionable"`) is a DISTINCT, non-watch definition — unlike the
+    reversal_watch / v2-shadow / v3-shadow / continuation_watch cohorts, it is
+    NOT in `engine.china_standout_track.WATCH_DEFINITIONS`, so it IS counted
+    by `china_standout_track._latest_definition_frame` when resolving the
+    headline (graded) board definition: that resolver picks
+    `newest_rows.iloc[-1]["board_definition"]` among every non-watch row
+    appended for the newest date. On a night where `wide["buy"]` (the
+    featured shelf) is EMPTY, the featured append below writes zero rows for
+    today's date — so if more_actionable still appended, its rows would be
+    the ONLY non-watch rows for that date, and `_latest_definition_frame`
+    would silently pick the more_actionable (near-miss/shadow) shelf as the
+    graded headline definition. Gating on a non-empty `wide["buy"]` for the
+    SAME build keeps a genuine featured row always present (and, by append
+    order — buy is appended immediately after — always positioned to keep
+    owning the headline definition), so more_actionable can never hijack
+    headline selection on a zero-featured night.
+    """
+    return bool((wide or {}).get("more_actionable")) and bool((wide or {}).get("buy"))
+
+
 def compute_board_staleness(data_through: str | None = None,
                             now: "datetime | None" = None) -> dict:
     """Board staleness for the China board — the CN analogue of
@@ -4301,7 +4326,11 @@ def main(alpha: dict | None = None) -> dict | None:
             # observations_from_cn_frame excludes only WATCH_DEFINITIONS + 'legacy',
             # so this distinct, non-watch definition IS counted for membership —
             # that inclusion is the entire point of this block.
-            if wide.get("more_actionable"):
+            # R3 REPAIR (2026-09-01): guarded via _more_actionable_append_is_safe
+            # (see its docstring) — never let more_actionable become the ONLY
+            # non-watch rows for a date, which would hijack
+            # china_standout_track._latest_definition_frame's headline pick.
+            if _more_actionable_append_is_safe(wide):
                 _more_board_definition = f"{wide['board_definition']}_more_actionable"
                 _more_rows_for_board = [
                     {**r, "board_definition": _more_board_definition, "lane": "more_actionable"}
@@ -4310,6 +4339,10 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_ma = china_standout_track.append_board(
                     _more_rows_for_board, asof=as_of, lane=_lane)
                 log.info("china more_actionable board-track: logged %d rows", _bn_ma)
+            elif wide.get("more_actionable"):
+                log.info(
+                    "china more_actionable board-track: skipped (zero featured "
+                    "names this build — would hijack the headline definition)")
             _bn = china_standout_track.append_board(wide["buy"], asof=as_of, lane=_lane)
             # reversal_watch cohort: same store, own board_definition (never the
             # headline grade — see WATCH_DEFINITIONS in china_standout_track).
