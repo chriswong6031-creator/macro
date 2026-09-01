@@ -103,7 +103,7 @@ current_carriers:
       production retry, #265 write, ACK1 or provider/host action.
   w3a_250_worker_child:
     operation: wake-pr3a-browser-current-base-composition-20260831-forge-001
-    native_task: 01a04bdf-b144-7af2-a08c-5d28ee63aad0
+    native_task: 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0
     slack: C0BSBM78V1N/1788225119.350469
     state: SOL_ACCEPTED_STOP_TERMINAL
     accepted_head: 0e61a576d998f27f4c8a53a2ba295268d81e2281
