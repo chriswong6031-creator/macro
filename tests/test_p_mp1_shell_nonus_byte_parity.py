@@ -12,15 +12,31 @@ four does `{% import "_prophet_card.html.j2" as pv %}` then calls
 `life`/`lane_mark` keys — every existing non-US call site). This suite proves,
 against origin/main's pre-migration copy of that file:
 
-  1. The four non-US page templates themselves are byte-identical to
-     origin/main (git diff --stat empty) — confirming no OTHER file in this
-     packet's diff touches them.
+  1. PIN UPDATE (2026-09-01, prophet-candidate-added-date-fable-e2e): item 1
+     used to require the four non-US templates be byte-identical to the
+     merge-base — that invariant held only because no OTHER program had ever
+     touched them. The Prophet candidate "Added date" rollout legitimately
+     does (frozen spec §6): each page's pv_card call gains `added_date` and
+     loses its old as-of-as-`date` fallback, and hk/canada/intl each gain a
+     board-level "Data through" freshness line they previously lacked. Rather
+     than weaken this to a keyword scan, `test_non_us_templates_functional_diff_
+     is_exactly_the_added_date_rollout` diffs each file with Jinja comments
+     stripped (`{#...#}` carries zero rendered-byte weight) and asserts the
+     STRIPPED diff's removed/added line SETS equal an exact, itemized,
+     per-file pin — still a byte-level proof, now scoped to "nothing besides
+     the itemized rollout changed", not "nothing changed". Comment PROSE is
+     free to reword (it was already free to, functionally); the executable
+     Jinja/HTML lines are pinned exactly.
   2. pv_css() — the shared <style> block every one of those four pages
      renders once — is byte-identical. This is the check that caught a real
      defect during this packet's build: the new .pv-life/.pv-newer/.pv-mark
      CSS was first added INSIDE pv_css() (shared), which would have changed
      all four pages' bytes; it now lives in dashboard.html.j2's own <style>
-     block instead (US-only, never included by the other four).
+     block instead (US-only, never included by the other four). PIN UPDATE
+     (2026-09-01): the Added-date rollout's `.pv-added`/`.pv-dt+.pv-added`
+     rules DO belong in this shared block (they render on every market, not
+     US-only) — `test_pv_css_is_byte_identical_except_the_pv_added_chip_rules`
+     pins the diff to exactly those two lines, nothing else.
   3. pv_card() — the per-row card macro — is byte-identical for representative
      cx dicts shaped exactly like the non-US callers' (no lifecycle/id/life/
      lane_mark keys), across several branches (buy/wait/hold/no-zone/flags/
@@ -50,6 +66,8 @@ this is a static-source proof, not a rendered/executed one.
 """
 from __future__ import annotations
 
+import difflib
+import re
 import subprocess
 from pathlib import Path
 
@@ -91,14 +109,89 @@ def _origin_main_text(rel_path: str) -> str:
     ).decode()
 
 
-def test_non_us_page_templates_are_untouched():
-    """Confirms no file besides _prophet_card.html.j2 in this packet's diff
-    can reach hk/china/canada/intl's rendered bytes at all."""
-    out = subprocess.check_output(
-        ["git", "diff", "--stat", _MERGE_BASE, "HEAD", "--", *NON_US_TEMPLATES],
-        cwd=str(ROOT),
-    ).decode()
-    assert out.strip() == "", f"non-US template(s) changed:\n{out}"
+def _strip_jinja_comments(text: str) -> str:
+    return re.sub(r"\{#.*?#\}", "", text, flags=re.S)
+
+
+def _functional_diff_lines(rel_path: str) -> tuple[list[str], list[str]]:
+    """(removed, added) NON-comment, non-blank lines between the merge-base and
+    HEAD versions of `rel_path`, computed on comment-stripped text so a Jinja
+    comment's prose (zero rendered-byte weight) can never appear in either
+    list — only lines that can actually change what ships are pinnable here."""
+    orig = _strip_jinja_comments(_origin_main_text(rel_path)).splitlines()
+    cur = _strip_jinja_comments((ROOT / rel_path).read_text()).splitlines()
+    sm = difflib.SequenceMatcher(a=orig, b=cur, autojunk=False)
+    removed: list[str] = []
+    added: list[str] = []
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag in ("replace", "delete"):
+            removed.extend(orig[i1:i2])
+        if tag in ("replace", "insert"):
+            added.extend(cur[j1:j2])
+    removed = [l for l in removed if l.strip()]
+    added = [l for l in added if l.strip()]
+    return removed, added
+
+
+#: Exact, itemized pin of the ONLY functional (comment-stripped) lines the
+#: Prophet candidate Added-date rollout may add/remove per non-US template.
+#: Any other functional change to these four files fails this test.
+_EXPECTED_ADDED_DATE_ROLLOUT_DIFF: dict[str, tuple[list[str], list[str]]] = {
+    "templates/hk.html.j2": (
+        ["        'date': (n.get('signal') or {}).get('asof') or setups.get('as_of'),"],
+        [
+            "    {% if setups and setups.get('as_of') %}",
+            '    <p class="note" style="margin:0 0 2px;text-transform:none;color:var(--muted)">'
+            '<span class="l-en">Data through</span><span class="l-zh">数据截至</span> '
+            "<strong>{{ setups.as_of }}</strong></p>",
+            "    {% endif %}",
+            "        'date': none,",
+            "        'added_date': n.get('added_date'),",
+        ],
+    ),
+    "templates/china.html.j2": (
+        [],
+        [
+            "        'added_date': n.get('added_date'),",
+            "        'added_date': n.get('added_date'),",
+        ],
+    ),
+    "templates/canada.html.j2": (
+        ["      'date': (s.get('signal') or {}).get('asof') or setups.get('as_of'),"],
+        [
+            "  {% if setups and setups.get('as_of') %}",
+            '  <p class="muted small" style="margin:0 0 8px"><span class="l-en">Data through</span>'
+            '<span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>',
+            "  {% endif %}",
+            "      'date': none,",
+            "      'added_date': s.get('added_date'),",
+        ],
+    ),
+    "templates/intl.html.j2": (
+        ["      'date': (setups.get('as_of') if setups else none),"],
+        [
+            "  {% if setups and setups.get('as_of') %}",
+            '  <p class="muted small" style="margin:2px 0 6px"><span class="l-en">Data through</span>'
+            '<span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>',
+            "  {% endif %}",
+            "      'date': none,",
+            "      'added_date': b.get('added_date'),",
+        ],
+    ),
+}
+
+
+def test_non_us_templates_functional_diff_is_exactly_the_added_date_rollout():
+    """Byte-level (comment-stripped) proof that the ONLY functional change to
+    hk/china/canada/intl since the merge-base is the itemized Added-date
+    rollout above — not a keyword scan: an exact removed/added line-set match."""
+    for rel_path in NON_US_TEMPLATES:
+        removed, added = _functional_diff_lines(rel_path)
+        exp_removed, exp_added = _EXPECTED_ADDED_DATE_ROLLOUT_DIFF[rel_path]
+        assert sorted(removed) == sorted(exp_removed), (
+            f"{rel_path}: unexpected functional removal(s):\n{removed}")
+        assert sorted(added) == sorted(exp_added), (
+            f"{rel_path}: unexpected functional addition(s):\n{added}")
 
 
 def _macros():
@@ -108,10 +201,34 @@ def _macros():
     return env.from_string(orig_src).module, env.from_string(cur_src).module
 
 
-def test_pv_css_is_byte_identical():
+#: PIN UPDATE (2026-09-01, prophet-candidate-added-date-fable-e2e): pv_css() gained
+#: exactly two rules for the new .pv-added chip — FROZEN SPEC point 5 puts its
+#: styling "with the existing .pv-* card styles in governed CSS", which IS this
+#: shared block. Both rules reuse var(--muted) (already dual-theme via theme.css,
+#: same token .pv-dt already uses) — no new tokens, no runtime style injection.
+_EXPECTED_PV_CSS_ADDED_LINES = [
+    ".pv-added{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}",
+    ".pv-dt+.pv-added{margin-left:5px}",
+]
+
+
+def test_pv_css_is_byte_identical_except_the_pv_added_chip_rules():
     """The shared <style> block every non-US page renders once via pv.pv_css()."""
+    import difflib as _difflib
+
     orig, cur = _macros()
-    assert str(orig.pv_css()) == str(cur.pv_css())
+    orig_lines = str(orig.pv_css()).splitlines()
+    cur_lines = str(cur.pv_css()).splitlines()
+    sm = _difflib.SequenceMatcher(a=orig_lines, b=cur_lines, autojunk=False)
+    removed: list[str] = []
+    added: list[str] = []
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag in ("replace", "delete"):
+            removed.extend(orig_lines[i1:i2])
+        if tag in ("replace", "insert"):
+            added.extend(cur_lines[j1:j2])
+    assert removed == [], f"pv_css() lost line(s): {removed}"
+    assert added == _EXPECTED_PV_CSS_ADDED_LINES, f"pv_css() diverged unexpectedly:\n{added}"
 
 
 def _base_cx(**overrides) -> dict:
