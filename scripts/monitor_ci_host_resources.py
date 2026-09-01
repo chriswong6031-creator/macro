@@ -158,18 +158,21 @@ def candidate_cgroup(proc_self_cgroup: Path) -> str | None:
 
 
 def _is_bound_to_ci_slice(cgroup: str) -> bool:
-    """Exact COMPONENT match, never a substring.
+    """Exact ANCHORED match: the candidate sits directly under the slice root.
 
-    `other-mastermind-ci.slice` contains the expected name as a substring and
-    must still be refused, and the slice root itself is not a candidate — a
-    real candidate always sits in a `.service` unit beneath the slice.
+    Component-anywhere matching accepted a nested look-alike such as
+    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
+    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
+    directory outside the slice entirely. A systemd top-level slice always
+    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
     """
 
     components = [item for item in cgroup.split("/") if item]
-    if EXPECTED_SLICE not in components:
+    if any(item in {"..", "."} for item in components):
         return False
-    index = components.index(EXPECTED_SLICE)
-    return any(item.endswith(".service") for item in components[index + 1 :])
+    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+        return False
+    return any(item.endswith(".service") for item in components[1:])
 
 
 def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> dict:
@@ -224,11 +227,24 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
             pressure[key] = parsed
     sample["pressure"] = pressure or None
 
-    # Bound but blind: the hierarchy is right and the evidence is not there.
-    # That is a degraded observation, not a passing one.
-    if sample["cpu"] is None and sample["memory"]["current"] is None:
+    # Bound but blind. Every acceptance threshold in the plan is computed from
+    # cpu.stat, memory.current and memory.events, so if ANY of the three is
+    # unreadable the window cannot answer the questions it exists to answer.
+    # This was an `and` first: a slice with only memory.current readable
+    # reported `bound` with every acceptance counter None, which an acceptance
+    # check for "zero memory.events delta" reads as satisfied.
+    missing = [
+        name
+        for name, value in (
+            ("cpu.stat", sample["cpu"]),
+            ("memory.current", sample["memory"]["current"]),
+            ("memory.events", sample["memory_events"]),
+        )
+        if value is None
+    ]
+    if missing:
         sample["status"] = "degraded"
-        sample["reason"] = f"no readable cgroup evidence under {node}"
+        sample["reason"] = f"unreadable cgroup evidence under {node}: {missing}"
     return sample
 
 

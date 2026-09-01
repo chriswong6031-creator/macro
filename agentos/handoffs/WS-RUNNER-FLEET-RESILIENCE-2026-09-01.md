@@ -132,6 +132,21 @@ verified:
       branch matches the fourth-slot carrier.
     command: "gh issue view 6640 --json state,stateReason ; gh pr view 6640 ; git ls-remote --heads origin | grep -Ei 'fourth|pc-ci|slot|canary'"
     result: "issue CLOSED/NOT_PLANNED; PR 6640 does not resolve; only sol/runner-fleet-w1a-hosted-merge-canary matches, a different W1-A scope"
+  - claim: >
+      An independent adversarial review returned PARTIAL with 2 BLOCKER and 6
+      SHOULD-FIX findings against the first five commits; every one was repaired
+      under RED-first tests, and the suite grew from 135 to 148 passing.
+    command: "Agent ROUTE review (opus reviewer) over origin/main...HEAD, then python3 -m pytest -q tests/test_runner_policy.py tests/test_ci_canary_workflows.py tests/test_ci_canary_tools.py"
+    result: "148 passed after repair; review's own run of the pre-repair head was 135 passed"
+  - claim: >
+      Two of the three scripts this carrier edits DO execute in production today:
+      trusted-ci-executor.yml copies select_ci_canary_packs.py,
+      monitor_ci_host_resources.py and capture_ci_canary_receipt.py into its
+      trusted-control directory and runs them on every trusted pack. On pc-ci-1..3
+      the new slice sampler returns `refused` with no values, so the effect is
+      additive JSON only and the host-global `resources` block is unchanged.
+    command: "grep -n 'monitor_ci_host_resources\\|capture_ci_canary_receipt\\|select_ci_canary_packs' .github/workflows/trusted-ci-executor.yml"
+    result: "182-184 (copy list), 293 (selector), 406 (monitor), 440 (receipt)"
 unverified:
   - claim: >
       That the slice actually bounds four concurrent candidates to 8 vCPU-equivalents
@@ -188,13 +203,19 @@ do_not_redo:
       by design; it belongs to the separately audited C3R-B activation packet gated
       on a GitHub online/idle receipt.
   - >
-      Do NOT make the prestart guard refuse on cumulative memory.events `high`. These
-      counters are cumulative over the slice lifetime and `high` counts MemoryHigh
-      reclaim working as designed, so refusing on it means that once CI ever touched
-      10G every later listener start refuses forever and the slot is stranded
-      permanently. This was written that way first and the test fixture caught it.
-      The plan's "zero high/max/oom/oom_kill DELTA" is a per-run acceptance criterion
-      owned by slice_metrics(), not by the gate.
+      Do NOT make the prestart guard refuse on ANY memory.events counter. Every field
+      is cumulative over the slice lifetime; cgroup-v2 defines `high` as MemoryHigh
+      reclaim, `max` as "usage was ABOUT TO go over max" and `oom` as "allocation was
+      ABOUT TO fail" — none is a kill — and `oom_kill`, though a real kill, is
+      cumulative too, so the guard cannot tell one three weeks ago from one a second
+      ago. Gating on any of them strands the slot permanently after one transient
+      event: Restart=always + RestartSec=5 + StartLimitIntervalSec=0 gives an
+      unbounded ~305s refuse loop that never reaches `failed`, so nothing alerts.
+      This was written wrong TWICE — first gating on `high` (caught by a fixture),
+      then gating on max/oom/oom_kill (caught by the adversarial review, which
+      pointed out the `high` argument applies verbatim to the other three). The
+      plan's "zero high/max/oom/oom_kill DELTA" is a per-run acceptance criterion
+      owned by slice_metrics(), which has both endpoints and can subtract.
   - >
       Do NOT make the resource guard's memory floor slice-local. The renderer lives
       OUTSIDE the slice, so a slice-local read shows a nearly idle cgroup while the
@@ -278,9 +299,18 @@ refused forever and the slot was stranded permanently. The gate now refuses only
 real kills; the zero-delta requirement is a per-run acceptance criterion owned by the
 receipt reducer.
 
-Render stays outside the slice by construction, and that is proven from source: the
-slice sets no `KillMode`, and a test asserts `actions-runner-ci.service.template` is
-the only checked-in unit carrying `Slice=mastermind-ci.slice`. What source cannot
-prove — that four concurrent candidates actually stay inside 8 vCPU-equivalents and
-12 GiB on the real guest, and that the renderer is unaffected in practice — is listed
-under `unverified` and belongs to C3R-B.
+Render's exclusion is bounded evidence, not a host proof. Source establishes that the
+slice sets no `KillMode` and that `actions-runner-ci.service.template` is the only
+CHECKED-IN unit carrying `Slice=mastermind-ci.slice`. The render listener's unit is
+not in the repository at all, so its actual exclusion is a C3R-B host observation.
+That, plus whether four concurrent candidates really stay inside 8 vCPU-equivalents
+and 12 GiB on the real guest, is listed under `unverified`.
+
+An independent adversarial review (opus `reviewer`, ROUTE review) returned PARTIAL
+with two blockers and six should-fixes against the first five commits, and all of
+them were repaired under RED-first tests before this PR was opened. The two blockers
+are worth naming because both were false-proof shapes rather than crashes: the
+prestart guard gated on cumulative `memory.events` counters that are not kills, and
+the receipt reducer resolved any unrecognised sample status to `bound`, which leaked
+foreign host numbers into aggregate fields while its own docstring — and the runbook
+and this record — claimed the opposite.

@@ -420,6 +420,22 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
                 )
             )
 
+    # A whole second CI pool is the other way a fifth slot hides in YAML. The
+    # live CI inventory is `pc-ci.slots` and nothing else, so no other pool may
+    # carry the routable CI label at all.
+    for name, pool in topology.items():
+        if name == "pc-ci" or not isinstance(pool, dict):
+            continue
+        if "ci-linux" in set(pool.get("labels") or []):
+            findings.append(
+                Finding(
+                    "R14",
+                    f"pool {name!r} carries the live CI label 'ci-linux'; only pc-ci "
+                    f"may, or its {pool.get('slots')!r} slot(s) are CI capacity "
+                    "outside the declared inventory",
+                )
+            )
+
     ci_pool = topology.get("pc-ci") or {}
     missing = sorted(
         key for key in ("pending_slots", "pending_carriers", "pending_labels")
@@ -445,11 +461,13 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
         )
         return findings
 
-    if pending_slots != 1:
+    # `type(...) is int` on purpose: bool is an int subclass, so `pending_slots:
+    # true` would satisfy `== 1`, and a float silently skipped the cross-check.
+    if type(pending_slots) is not int or pending_slots != 1:
         findings.append(
             Finding("R14", f"pc-ci must declare exactly one pending slot, not {pending_slots!r}")
         )
-    if isinstance(live_slots, int) and isinstance(pending_slots, int):
+    if type(live_slots) is int and type(pending_slots) is int:
         if live_slots + pending_slots != 4:
             findings.append(
                 Finding(
@@ -468,7 +486,7 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
         )
 
     # The pending carrier is the exact next slot name, never an invented host.
-    if isinstance(live_slots, int):
+    if type(live_slots) is int:
         expected_carriers = [f"pc-ci-{live_slots + 1}"]
         if pending_carriers != expected_carriers:
             findings.append(
@@ -510,16 +528,21 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
                 )
             )
 
-    ci_linux_roster = (label_registry.get("ci-linux") or {}).get("carried_by")
-    expected_roster = [f"pc-ci-{index}" for index in range(1, (live_slots or 0) + 1)]
-    if ci_linux_roster != expected_roster:
-        findings.append(
-            Finding(
-                "R14",
-                f"ci-linux live roster must be exactly {expected_roster}, "
-                f"not {ci_linux_roster!r}",
+    # Guarded: a non-integer slot count is R7's finding to report, and R7 can only
+    # report it if this does not raise first -- findings are printed after
+    # evaluate() returns, so a TypeError here replaces every message with a
+    # traceback.
+    if type(live_slots) is int:
+        ci_linux_roster = (label_registry.get("ci-linux") or {}).get("carried_by")
+        expected_roster = [f"pc-ci-{index}" for index in range(1, live_slots + 1)]
+        if ci_linux_roster != expected_roster:
+            findings.append(
+                Finding(
+                    "R14",
+                    f"ci-linux live roster must be exactly {expected_roster}, "
+                    f"not {ci_linux_roster!r}",
+                )
             )
-        )
 
     return findings
 

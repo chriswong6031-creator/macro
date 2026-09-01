@@ -328,9 +328,13 @@ slot, an invented carrier name, a pending block on another pool, `ci-linux` in
 The second durable property is that aggregate slice evidence refuses rather than
 substitutes: a candidate outside `/mastermind-ci.slice/<unit>.service` produces
 `refused` with no metric values, and the receipt reducer reports aggregates only when
-every sample in the window was cleanly bound. Render stays outside the slice, proven
-from source by the slice setting no `KillMode` and by a test asserting
-`actions-runner-ci.service.template` is the only checked-in unit that joins it.
+every sample in the window carried status exactly `bound` and named one cgroup.
+
+Render's exclusion is bounded evidence, not a host proof. What source establishes is
+that the slice sets no `KillMode` and that `actions-runner-ci.service.template` is
+the only CHECKED-IN unit carrying `Slice=mastermind-ci.slice`. The render listener's
+unit is not in the repository, so its exclusion from the slice is a C3R-B host
+observation, not something this carrier proved.
 
 Sequence from here is unchanged and strictly ordered: C3R-B performs the privileged
 host installation and the four-slot acceptance after a fresh census and explicit

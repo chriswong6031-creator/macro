@@ -113,13 +113,22 @@ def _empty_slice_metrics(status: str, reason: str | None, **extra: object) -> di
 
 
 def _keyed_delta(first: Mapping[str, Any] | None, last: Mapping[str, Any] | None):
+    """Per-key window delta, or None for a key absent at t0.
+
+    `last - first.get(key, 0)` would present a cgroup LIFETIME TOTAL as a window
+    delta whenever the kernel did not expose the field at t0 -- and these are
+    exactly the inputs to the acceptance rule
+    nr_throttled_delta / nr_periods_delta <= 0.25. Absent is unknown, not zero.
+    """
     if not isinstance(first, Mapping) or not isinstance(last, Mapping):
         return None
-    return {
-        key: int(last[key]) - int(first.get(key, 0))
-        for key in last
-        if isinstance(last.get(key), int)
-    }
+    delta: dict[str, int | None] = {}
+    for key, value in last.items():
+        if not isinstance(value, int):
+            continue
+        previous = first.get(key)
+        delta[key] = value - previous if isinstance(previous, int) else None
+    return delta
 
 
 def _peak(values: list[Any]) -> int | None:
@@ -150,13 +159,31 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
         )
 
     statuses = {str(item.get("status")) for item in observations}
-    worst = next(
-        (status for status in _SLICE_STATUS_PRECEDENCE if status in statuses),
-        "unavailable",
-    )
     cgroups = sorted(
         {str(item.get("cgroup")) for item in observations if item.get("cgroup")}
     )
+    # Anything that is not exactly "bound" is non-bound. This scanned a fixed
+    # whitelist first, so a sample carrying any other status string was invisible
+    # and the window resolved to "bound" -- leaking foreign host numbers into
+    # aggregate fields and falsifying this docstring.
+    unbound = statuses - {"bound"}
+    if unbound:
+        worst = next(
+            (status for status in _SLICE_STATUS_PRECEDENCE if status in unbound),
+            "unavailable",
+        )
+    elif len(cgroups) > 1:
+        # All samples bound, but not to the SAME cgroup: the candidate moved
+        # mid-run, so first/last deltas would straddle two different cgroups.
+        return _empty_slice_metrics(
+            "refused",
+            f"window spans {len(cgroups)} distinct cgroups {cgroups}; "
+            "no honest aggregate exists across a mid-run cgroup change",
+            samples=len(observations),
+            cgroups=cgroups,
+        )
+    else:
+        worst = "bound"
     if worst != "bound":
         reason = next(
             (
@@ -183,8 +210,14 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
             for kind, values in kinds.items():
                 if not isinstance(values, Mapping) or "total" not in values:
                     continue
-                previous = (base.get(kind) or {}).get("total", 0)
-                deltas[kind] = int(values["total"]) - int(previous)
+                # Same rule as _keyed_delta: a resource absent at t0 has an
+                # unknown delta, not a delta equal to its lifetime total.
+                previous = (base.get(kind) or {}).get("total")
+                deltas[kind] = (
+                    int(values["total"]) - int(previous)
+                    if isinstance(previous, (int, float))
+                    else None
+                )
             if deltas:
                 pressure_delta[resource] = deltas
 

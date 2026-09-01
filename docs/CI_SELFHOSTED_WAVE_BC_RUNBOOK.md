@@ -239,10 +239,20 @@ unreadable files yields `refused`/`degraded` **with no metric values at all**. I
 never substitutes host-global numbers for slice numbers, because a green produced
 from the wrong cgroup reads downstream as proof. `slice_metrics()` in
 `scripts/capture_ci_canary_receipt.py` reports aggregate numbers only when every
-sample in the window was cleanly bound. Absent kernel fields stay `null` and are
-never collapsed to `0`; `memory.peak` is reported as
-`memory_peak_bytes_cgroup_lifetime` because it is a cgroup-lifetime high-water mark,
-not a run-local peak.
+sample in the window carried status exactly `bound` **and** every sample named the
+same cgroup — a candidate that moved mid-run has no honest aggregate, because
+first/last deltas would straddle two cgroups. Any other status, including an
+unrecognised one, is treated as non-bound.
+
+A field absent at the START of the window yields a `null` delta, never
+`last - 0`: presenting a cgroup lifetime total as a window delta would corrupt
+exactly the inputs the acceptance rule
+`nr_throttled_delta / nr_periods_delta <= 0.25` consumes. A sample missing any of
+`cpu.stat`, `memory.current` or `memory.events` is `degraded`, not `bound`, because
+those three are what every acceptance threshold is computed from — otherwise a check
+for "zero `memory.events` delta" reads a missing file as satisfied. `memory.peak` is
+reported as `memory_peak_bytes_cgroup_lifetime` because it is a cgroup-lifetime
+high-water mark, not a run-local peak.
 
 Guard thresholds are versioned separately from the slice ceilings
 (`mastermind.ci_resource_guard_thresholds.v1`) so retuning a refusal threshold never
@@ -263,13 +273,19 @@ The memory floor stays a **guest-wide** `MemAvailable` read on purpose: the rend
 lives outside the slice, so a slice-local read would show a nearly idle cgroup while
 the guest was starved, and would admit a CI job that then starves render.
 
-Note the cumulative-vs-delta distinction, which is a real trap: `memory.events`
-counters are cumulative over the slice lifetime, and `high` counts `MemoryHigh`
-reclaim working as designed. The prestart guard therefore refuses only on real kills
-(`max`/`oom`/`oom_kill`). Refusing on cumulative `high` would mean that once CI ever
-touched 10G, **every** later listener start refuses forever and the slot is stranded
-permanently. The plan's "zero `high`/`max`/`oom`/`oom_kill` delta" is an acceptance
-criterion over one run window, and is the receipt reducer's job, not the gate's.
+Note the cumulative-vs-delta distinction, which is a real trap. **`memory.events`
+gates nothing.** Every field in it is cumulative over the slice lifetime, and
+cgroup-v2 defines `high` as `MemoryHigh` reclaim, `max` as "usage was ABOUT TO go
+over max", and `oom` as "allocation was ABOUT TO fail" — none of them is a kill.
+`oom_kill` is a real kill but is cumulative too, so a prestart guard cannot tell one
+three weeks ago from one a second ago.
+
+Gating a start on any of them strands the slot permanently after a single transient
+event: with `Restart=always`, `RestartSec=5` and `StartLimitIntervalSec=0`, the unit
+enters an unbounded ~305s refuse loop that never reaches `failed`, so nothing alerts.
+The guard therefore receipts these counters and refuses on none of them. The plan's
+"zero `high`/`max`/`oom`/`oom_kill` **delta**" is a per-run acceptance criterion over
+one window, owned by the receipt reducer, which has both endpoints and can subtract.
 
 ### The security-sensitive stop
 
@@ -290,11 +306,26 @@ change trusted-executor `max-parallel` from 3 to 4.
 
 ### Rollback for this code carrier
 
-Nothing to roll back on any host: this carrier installs nothing. Reverting the
-commits restores the three-slot policy declaration, the `slots=1|3` canary input,
-the host-global-only monitor, and the three-root cleanup allowlist. Because
-`pc-ci-4` was never registered and the slice was never installed, no runner, unit,
-cgroup, cache, credential or render lane is touched by the revert either.
+No host state to roll back: this carrier installs nothing, registers nothing, and
+starts nothing. Reverting the commits restores the three-slot policy declaration,
+the `slots=1|3` canary input, the host-global-only monitor, and the three-root
+cleanup allowlist. `pc-ci-4` was never registered and the slice was never installed,
+so no runner, unit, cgroup, cache, credential or render lane is touched either.
+
+One coupling is worth stating plainly rather than implying it is absent.
+`trusted-ci-executor.yml` copies `select_ci_canary_packs.py`,
+`monitor_ci_host_resources.py` and `capture_ci_canary_receipt.py` into its
+trusted-control directory and runs them on **every production trusted pack** (lines
+182-184, 293, 406, 440). So while this carrier changes no capacity, two of the three
+scripts it edits do execute in production today. On `pc-ci-1..3`, whose cgroup is
+`system.slice`, the new slice sampler returns `refused` with no values and the
+reducer returns `refused`; the effect is additive JSON in the metrics file and the
+receipt, and the host-global `resources` block is byte-identical to before. That is
+also why the correctness of those two scripts was treated as a production concern in
+review rather than a diagnostic-only one.
+
+`ops/runner-host/**` is the genuinely inert part: templates and helpers that no
+running host loads until a later carrier installs them.
 
 ## Rollback
 

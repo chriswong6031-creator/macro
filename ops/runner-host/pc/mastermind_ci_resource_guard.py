@@ -92,18 +92,22 @@ def candidate_cgroup(proc_self_cgroup: Path = Path("/proc/self/cgroup")) -> str 
 
 
 def is_bound_to_ci_slice(cgroup: str | None) -> bool:
-    """Exact path COMPONENT match beneath the slice, in a `.service` unit.
+    """Exact ANCHORED match: the candidate sits directly under the slice root.
 
-    A substring test would accept `other-mastermind-ci.slice`, and the slice
-    root itself is not a candidate.
+    Component-anywhere matching accepted a nested look-alike such as
+    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
+    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
+    directory outside the slice entirely. A systemd top-level slice always
+    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
     """
     if not cgroup:
         return False
     components = [item for item in cgroup.split("/") if item]
-    if EXPECTED_SLICE not in components:
+    if any(item in {"..", "."} for item in components):
         return False
-    index = components.index(EXPECTED_SLICE)
-    return any(item.endswith(".service") for item in components[index + 1 :])
+    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+        return False
+    return any(item.endswith(".service") for item in components[1:])
 
 
 def slice_reasons(
@@ -179,24 +183,26 @@ def slice_reasons(
                     "capacity diagnostic here would measure nothing"
                 )
 
-        events = _read_keyed(node / "memory.events")
-        evidence["memory_events"] = events
-        if events:
-            # These counters are CUMULATIVE over the slice's lifetime, not
-            # per-run. `high` counts MemoryHigh reclaim, which is the ceiling
-            # working as designed -- refusing on it would mean that once CI ever
-            # touched 10G, every later listener start refuses forever and the
-            # slot is stranded permanently. Only real kills gate a start here.
-            # The plan's "zero high/max/oom/oom_kill DELTA" is an acceptance
-            # criterion over one run window; that is the receipt reducer's job
-            # (capture_ci_canary_receipt.slice_metrics), not the prestart gate.
-            killed = {
-                key: value
-                for key, value in events.items()
-                if key in {"max", "oom", "oom_kill"} and value
-            }
-            if killed:
-                reasons.append(f"slice memory limit event(s) already recorded: {killed}")
+        # memory.events is EVIDENCE, never a gate. Every field is cumulative over
+        # the slice's lifetime, and cgroup-v2 defines `high` as MemoryHigh
+        # reclaim, `max` as "usage was ABOUT TO go over max" (reclaim attempted),
+        # and `oom` as "allocation was ABOUT TO fail" -- none of them is a kill.
+        # `oom_kill` is a real kill, but it is cumulative too, so this guard
+        # cannot distinguish one three weeks ago from one a second ago.
+        #
+        # Gating a start on ANY of them therefore strands the slot permanently
+        # after a single transient event: with Restart=always, RestartSec=5 and
+        # StartLimitIntervalSec=0 the unit enters an unbounded ~305s refuse loop
+        # that never reaches `failed`, so nothing alerts. That is the same
+        # failure the `high` reasoning already rejected, and it applies verbatim
+        # to the other three.
+        #
+        # The plan's "zero high/max/oom/oom_kill DELTA" is a per-run acceptance
+        # criterion over one window, owned by
+        # capture_ci_canary_receipt.slice_metrics, which has both endpoints and
+        # can subtract. A prestart gate has only a lifetime total and must not
+        # pretend otherwise.
+        evidence["memory_events"] = _read_keyed(node / "memory.events")
         ceiling = thresholds["psi_full_avg10_max"]
         pressure: dict[str, float] = {}
         for name, key in (("memory.pressure", "memory"), ("io.pressure", "io")):

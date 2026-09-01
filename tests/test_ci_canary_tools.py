@@ -1728,7 +1728,15 @@ def test_resource_guard_refuses_a_candidate_outside_the_ci_slice() -> None:
     assert evidence["bound"] is False
 
 
-def test_resource_guard_refuses_on_slice_memory_limit_events(tmp_path: Path) -> None:
+def test_resource_guard_receipts_memory_events_without_gating_on_them(
+    tmp_path: Path,
+) -> None:
+    """Superseded contract. This asserted a refusal on cumulative memory.events;
+    the adversarial review showed `max` and `oom` are "was ABOUT TO" reclaim
+    counters rather than kills, and that every field here is cumulative over the
+    slice lifetime, so any of them as a gate strands the slot permanently. They
+    are receipted as evidence and gate nothing.
+    """
     root = tmp_path / "cgroup"
     _write_slice_tree(
         root, CI_CGROUP, **{"memory.events": "low 0\nhigh 0\nmax 1\noom 0\noom_kill 2\n"}
@@ -1741,8 +1749,9 @@ def test_resource_guard_refuses_on_slice_memory_limit_events(tmp_path: Path) -> 
         swap_used_bytes=0,
         require_slice=True,
     )
-    assert any("limit event" in reason for reason in reasons)
+    assert reasons == []
     assert evidence["memory_events"]["oom_kill"] == 2
+    assert evidence["memory_events"]["max"] == 1
 
 
 def test_resource_guard_four_slot_preflight_gates_memory_swap_and_pressure(
@@ -1883,3 +1892,139 @@ def test_enforced_envelope_passes_the_four_slot_preflight(tmp_path: Path) -> Non
     )
     assert reasons == []
     assert evidence["cpu_max"] == "800000 100000"
+
+
+# ── C3R-A review repairs (adversarial review 2026-09-01) ─────────────────────
+
+
+def test_no_cumulative_memory_event_counter_can_gate_a_start(tmp_path: Path) -> None:
+    """REVIEW BLOCKER 1. Every memory.events counter is cumulative over the slice
+    LIFETIME, and cgroup-v2 defines `max` and `oom` as "was ABOUT TO" reclaim /
+    allocation-failure counters, not kills. Only `oom_kill` counts processes
+    actually killed -- and it is cumulative too, so the guard cannot tell an
+    OOM-kill three weeks ago from one a second ago. Gating a start on ANY of them
+    strands the slot permanently after one transient event, which is the exact
+    failure the `high` reasoning already rejected. They are evidence, not gates.
+    """
+    root = tmp_path / "cgroup"
+    for events in (
+        "low 0\nhigh 9\nmax 0\noom 0\noom_kill 0\n",
+        "low 0\nhigh 0\nmax 7\noom 0\noom_kill 0\n",
+        "low 0\nhigh 0\nmax 0\noom 5\noom_kill 0\n",
+        "low 0\nhigh 0\nmax 0\noom 0\noom_kill 3\n",
+    ):
+        _write_slice_tree(root, CI_CGROUP, **{"memory.events": events})
+        reasons, evidence = RESOURCE_GUARD.slice_reasons(
+            cgroup_root=root,
+            cgroup=CI_CGROUP,
+            profile="four-slot-canary",
+            memory_available_bytes=32 * 1024**3,
+            swap_used_bytes=0,
+            require_slice=True,
+        )
+        assert reasons == [], f"cumulative counters must not wedge the slot: {events!r}"
+        assert evidence["memory_events"] is not None, "but they are still receipted"
+
+
+def test_reducer_treats_any_unknown_status_as_non_bound() -> None:
+    """REVIEW BLOCKER 2. Worst-status selection scanned a fixed whitelist, so a
+    sample whose status was outside it became invisible and the window resolved
+    to `bound` -- leaking foreign host numbers into aggregate fields and
+    falsifying the docstring, the runbook and the workstream record.
+    """
+    forged = _slice_sample(
+        "host-global-fallback",
+        cgroup="/system.slice/whatever.service",
+        memory={"current": 99_999_999, "peak": 1, "swap_current": 0},
+    )
+    result = CAPTURE.slice_metrics([_host_sample(_slice_sample()), _host_sample(forged)])
+    assert result["status"] != "bound"
+    assert result["memory_current_peak_bytes"] is None
+    assert result["cpu_delta"] is None
+
+
+def test_reducer_refuses_a_window_spanning_more_than_one_cgroup() -> None:
+    """A candidate that changed cgroups mid-run has no honest aggregate: first/last
+    deltas would silently straddle two different cgroups.
+    """
+    moved = _slice_sample(cgroup="/mastermind-ci.slice/actions.runner.macro.pc-ci-2.service")
+    result = CAPTURE.slice_metrics([_host_sample(_slice_sample()), _host_sample(moved)])
+    assert result["status"] != "bound"
+    assert len(result["cgroups"]) == 2
+    assert result["cpu_delta"] is None
+
+
+def test_reducer_never_collapses_an_absent_first_sample_field_into_zero() -> None:
+    """REVIEW SHOULD-FIX 3, and the precise prohibition in plan Task 3 Step 1.
+    `last - first.get(key, 0)` presents a LIFETIME TOTAL as a window delta -- and
+    these are exactly the inputs to the acceptance rule
+    nr_throttled_delta / nr_periods_delta <= 0.25.
+    """
+    first = _slice_sample(
+        cpu={"usage_usec": 10},
+        pressure={"memory": {"full": {"avg10": 0.0, "total": 11}}},
+    )
+    last = _slice_sample(
+        cpu={
+            "usage_usec": 50,
+            "nr_periods": 10_000,
+            "nr_throttled": 9_000,
+            "throttled_usec": 7_000_000,
+        },
+        pressure={
+            "memory": {"full": {"avg10": 0.0, "total": 31}},
+            "io": {"full": {"avg10": 0.0, "total": 900_000}},
+        },
+    )
+    result = CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
+    assert result["cpu_delta"]["usage_usec"] == 40
+    for key in ("nr_periods", "nr_throttled", "throttled_usec"):
+        assert result["cpu_delta"][key] is None, f"{key} was absent at t0; delta is unknown"
+    assert result["pressure_total_delta"]["memory"]["full"] == 20
+    assert result["pressure_total_delta"]["io"]["full"] is None
+
+
+def test_monitor_degrades_when_any_core_acceptance_file_is_missing(tmp_path: Path) -> None:
+    """REVIEW SHOULD-FIX 4. The degraded predicate was an `and`, so a slice with
+    only memory.current readable reported `bound` with every acceptance counter
+    None -- which an acceptance check for "zero memory.events delta" reads as
+    satisfied.
+    """
+    root = tmp_path / "cgroup"
+    node = root / CI_CGROUP.lstrip("/")
+    node.mkdir(parents=True)
+    (node / "memory.current").write_text("123\n", encoding="utf-8")
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "degraded"
+    assert CAPTURE.slice_metrics([_host_sample(sample)])["status"] == "degraded"
+
+
+def test_monitor_anchors_the_slice_and_refuses_traversal(tmp_path: Path) -> None:
+    """REVIEW NIT 9. Component-anywhere matching accepted a nested look-alike, and
+    `..` was never normalised, so a forged cgroup could assemble fully `bound`
+    evidence from a directory outside the slice entirely.
+    """
+    for stray in (
+        "/foo/mastermind-ci.slice/x.service",
+        "/user.slice/user-1000.slice/mastermind-ci.slice/evil.service",
+        "/system.slice/x.service/mastermind-ci.slice/y.service",
+        "/mastermind-ci.slice/../../system.slice/pc-render-1.service",
+    ):
+        root = tmp_path / "cgroup"
+        _write_slice_tree(root, stray.replace("..", "dotdot"))
+        sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
+        assert sample["status"] == "refused", f"{stray} must be refused"
+        assert sample["memory"] is None
+    # The real, anchored shape still binds.
+    root = tmp_path / "ok"
+    _write_slice_tree(root, CI_CGROUP)
+    assert MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))["status"] == "bound"
+
+
+def test_resource_guard_binding_check_is_anchored_too() -> None:
+    for stray in (
+        "/foo/mastermind-ci.slice/x.service",
+        "/mastermind-ci.slice/../../system.slice/x.service",
+    ):
+        assert RESOURCE_GUARD.is_bound_to_ci_slice(stray) is False
+    assert RESOURCE_GUARD.is_bound_to_ci_slice(CI_CGROUP) is True
