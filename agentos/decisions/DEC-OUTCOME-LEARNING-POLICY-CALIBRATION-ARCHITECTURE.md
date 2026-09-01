@@ -77,6 +77,8 @@ affects:
   - config/mastermind_programs.yml
   - docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-design.md
   - docs/superpowers/plans/2026-08-30-outcome-learning-policy-calibration.md
+  - docs/superpowers/specs/2026-08-30-outcome-learning-policy-calibration-governance-amendment.md
+  - docs/superpowers/specs/2026-09-01-outcome-learning-executive-memory-ccl-reconciliation-amendment.md
   - mastermind/control_plane/**
 confidence: high
 reversibility: costly
@@ -171,9 +173,9 @@ contract subset) must exist before the first CCL-A3 effect; CCL-A3 need not wait
 With only the minimal receipt, CCL-A3's learning grade ceiling is `DESCRIPTIVE_ONLY`.
 
 **Receipt v2 extension.** `mastermind.decision_expectation_receipt.v1` semantics are preserved
-verbatim. A closed `mastermind.decision_expectation_receipt.v2` extension adds `assumptions[]`
-(with resolution states `HELD`/`FALSIFIED`/`UNRESOLVED`/`NOT_TESTED`/`CONFOUNDED`, never forced
-binary), `assumption_resolutions[]` (append-only, never mutating the sealed receipt), and
+verbatim. A closed `mastermind.decision_expectation_receipt.v2` extension adds `assumptions[]`,
+`assumption_resolutions[]` (append-only, never mutating the sealed receipt, with resolution states
+`HELD`/`FALSIFIED`/`UNRESOLVED`/`NOT_TESTED`/`CONFOUNDED`, never forced binary), and
 `memory_exposure` (pre/final option-set digests and consulted-record influence). No private chain of
 thought; `PUBLIC_SAFE` classification required for every V1 durable learning artifact in a public
 repository, with restricted/unknown material failing closed rather than entering public Git history.
@@ -195,7 +197,7 @@ derived relationship view's edges carry provenance `CANONICAL_DECLARED`, `DETERM
 empirical, non-psychological self-model across at least memory-light, naive-injection, and
 anti-anchored two-pass arms; it never emits a universal CEO/worker/model score.
 
-This amendment changes no `affects` path beyond the records already listed above (it adds the new
-amendment spec file as an additional canonical document) and confers no new authority: it remains
+This amendment changes no `affects` path beyond the records already listed above and confers no new
+authority: it remains
 `SPEC_ONLY / RECORDS_ONLY`, creates no program, database, record type, canary, or code, and makes no
 edit to the Mastermind repository, PR #299, PR #162, or any CCL carrier.

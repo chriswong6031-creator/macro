@@ -504,6 +504,8 @@ Stop after one real descriptive study proves the cross-owner read path. Do not c
 
 **CCL-A3 gate cross-ref (2026-09-01, per the CCL reconciliation amendment §A.3–A.4):** the CCL program's first CCL-A3 effect may not begin before the minimal `OL-2a` receipt (Task 2a) is available and a sealed expectation/assumption receipt exists for that effect. The CCL program's canonical carrier owes the corresponding narrow correction before CCL-A3 START; this task does not implement that correction on the CCL side.
 
+**Owed cross-program artifact:** CCL-A3 START is preconditioned on a CCL-side record — the CCL program's next canonical carrier, or a Mastermind DEC — adopting the ownership acknowledgment (amendment §A.2) and the pre-effect sealed-receipt clause (amendment §A.3). Until that record exists, this obligation is tracked here as **OWED**, not satisfied; no wave in this plan discharges it.
+
 **Files:**
 - Modify only after owner clearance: `control_plane/executive_runtime.py`
 - Modify only after owner clearance: `control_plane/model_router.py`

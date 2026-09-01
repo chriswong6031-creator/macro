@@ -158,9 +158,9 @@ Collect real unchanged-policy episodes and delayed outcomes sufficient to evalua
 
 Compile and independently review a readiness report. It may recommend a canary protocol; it cannot authorize one.
 
-#### OL-4E — executive-memory efficacy benchmark (2026-09-01, CCL reconciliation amendment §G)
+### OL-4E — executive-memory efficacy benchmark (2026-09-01, CCL reconciliation amendment §G)
 
-Sub-line inserted between OL-4D and OL-5A, not a renumbering of either. Empirical, non-psychological self-model for the logical office across at least three benchmark arms (memory-light reasoning, naive memory injection, anti-anchored two-pass memory); never a universal CEO/worker/model score. Memory is promoted for use only on measured decision improvement with no hidden quality regression.
+Peer wave inserted between OL-4D and OL-5A, not a renumbering of either. Empirical, non-psychological self-model for the logical office across at least three benchmark arms (memory-light reasoning, naive memory injection, anti-anchored two-pass memory); never a universal CEO/worker/model score. Memory is promoted for use only on measured decision improvement with no hidden quality regression.
 
 ### OL-5A — independent protocol review and pre-canary DEC
 

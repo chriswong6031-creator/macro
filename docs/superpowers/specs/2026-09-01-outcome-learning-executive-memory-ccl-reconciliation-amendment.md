@@ -92,6 +92,8 @@ No private chain of thought may enter any v2 field; the receipt grants no author
 
 This closes design §7 without rewriting the frozen v1 JSON block — see the design.md update hook below, which adds only a pointer paragraph, not an edit to the v1 example.
 
+**Study-side field mapping (review closure, 2026-09-01):** blocker B's study-side bullet asked for separate process-quality, forecast, realized-consequence, attribution/confounding, and regret/counterfactual fields on the compiled study. Process-quality, forecast, realized-consequence, and attribution/confounding separations are already satisfied by the unamended design — no new field is needed: design §9's decision-process-quality/forecast-calibration/realized-consequence separation law, design §8.1's sensitivity-analysis and known-unmeasured-confounders fields, and v1's `known_confounders` field already carry these. Regret/counterfactual quantities are the one bullet item not yet built; they are an explicitly **DEFERRED** optional study field for OL-4D, permitted only under the reviewed, explicit utility model that design §9 already mandates before any expected-utility, regret, or cost-benefit number may be computed ("the compiler may not invent hidden weights that collapse quality, speed, cost and risk into one score"). This is a deliberate deferral pending that utility-model review, not an omission from this amendment's scope.
+
 ---
 
 ## §D Memory admission, application, poisoning, correction, and replay law (closes BLOCKER C / review point 4)
