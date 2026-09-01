@@ -54,16 +54,34 @@ waves:
     depends_on: [B1]
   - id: B3
     title: EVAL-OHF1 fresh-Sol runner built + PROVEN_LIVE on existing PR #162 carrier
-    status: todo
+    status: blocked
     depends_on: [A1]
+    next_action: >
+      BUILD DONE 2026-09-02 on the same #162 carrier at head 478ca1f5 (three-round
+      executed-probe review CONFIRMED-CLOSED; CI+CodeQL green; BUILT_NOT_PROVEN; design
+      s15 merge gate stands). LIVE CANARY staged at zero cost and parked: dispatch awaits
+      a live human/Sol GO on the program root (DECISION_REQUEST ts 1788290559) after two
+      independent safety layers required live authorization for the first
+      credential-adjacent paid execution. On GO: re-commission the canary child citing the
+      live-go ts; on PASS: merge #162 and set PROVEN_LIVE.
   - id: B4
     title: EVAL-OHF2 runner-to-R0 contract integration (no second runner)
-    status: todo
-    depends_on: [B1, B3]
+    status: done
+    depends_on: [B1]
+    next_action: >
+      DONE 2026-09-02 - Mastermind #336 merged as 6c033c65 (candidate 57e92153; real
+      harness-bytes cross-probe review CONFIRMED-CLOSED; committed real-bytes fixture;
+      observations honesty gate; anti-laundering verified over mixed populations).
+      Runner-module import seam activates when #162 merges.
   - id: C1
     title: EVAL-S1 deterministic task scorers for load-bearing invariants
-    status: todo
+    status: done
     depends_on: [B1]
+    next_action: >
+      DONE 2026-09-01 - Mastermind #333 merged as f2117914 (candidate 394f60b8; scorer
+      honesty repairs: equality for closed-vocab golds, renamed dimensions, disclosure
+      codes in-artifact, unknown_count gate bucket; multi-scenario summarize + store
+      anti-laundering extension).
   - id: C2
     title: EVAL-E1 first real paired experiment (>=3 task classes, >=2 configs, sealed prereg)
     status: todo
@@ -81,9 +99,10 @@ waves:
     status: todo
     depends_on: [C2, D1, F1]
 next_action: >
-  Merge A2 (#6699 accepted at 5de470287410) and program-home #6713 when the Sol-held macro
-  #6711 agentos heal lands; then commission B2 (EVAL-C0 corpus, task-class seeds ratified) and
-  B3 (OHF1 on the existing #162 carrier).
+  Two human-gated edges: (1) live canary GO on the program root dispatches the parked OHF1
+  proof (then #162 merges, PROVEN_LIVE, E1 prereg); (2) Sol-held macro #6711 landing unblocks
+  the A2 #6699 and #6713 merges. Everything buildable without those edges is built: six
+  Mastermind merges 2026-09-01/02 (F0, R0, C0, S1, fence-scoping, OHF2).
 decisions:
   - DEC:AGENT-EVAL-FABLE-COO-DELEGATION
 artifacts:
