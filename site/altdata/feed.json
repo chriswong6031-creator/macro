@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-31T05:56:19.566432+00:00",
+  "generated_utc": "2026-08-31T23:50:05.239534+00:00",
   "as_of": "2026-08-31",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26527,10 +26527,10 @@
         {
           "ticker": "FANG",
           "buy_usd": 0.0,
-          "sell_usd": 2071393138.0,
-          "net_usd": -2071393138.0,
+          "sell_usd": 2068984136.0,
+          "net_usd": -2068984136.0,
           "buyers": 0,
-          "sellers": 18
+          "sellers": 16
         },
         {
           "ticker": "AVAH",
