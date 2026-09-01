@@ -2,88 +2,478 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add one page-complete, honestly labelled, batched current-price-and-move projection to the existing Intelligence Hub without changing any intelligence authority.
+**Goal:** Deliver one page-complete, honestly labelled regular-session Market Pulse for the exact rendered Intelligence Hub roster without changing intelligence authority or perturbing Terminal users' extended-hours demand.
 
-**Architecture:** Reuse the Terminal Quote Plane through Macro's existing loopback public-projection pattern. Extract shared quote semantics once, expose one deliberately public bounded batch API, hydrate durable Intelligence Hub markup through one route-scoped controller, open only that controller asset through the existing serving boundary, and prove normal/degraded product behavior. Do not build streaming or a generic platform in this wave.
+**Architecture:** R1A is one user capability delivered through two ordered modifying children. R1A-T extends the canonical Terminal `/quotes` owner with a non-disruptive `view=regular` option. After that contract is merged, deployed and proven, R1A-M adds the Macro batch projection, durable markup, one route-scoped controller and production browser proof. Streaming remains R1B.
 
-**Tech Stack:** Python 3, FastAPI, Jinja2, vanilla JavaScript, pytest, existing browser/evidence harnesses.
+**Tech Stack:** Node.js 18+ built-in tests, existing Terminal Quote Hub, Python 3, FastAPI, Jinja2, vanilla JavaScript, pytest, existing browser/evidence harnesses.
 
 **Spec:** `docs/superpowers/specs/2026-08-30-reactive-projection-platform-design.md`
 
-## Global Constraints
+## Global constraints
 
-- Implement only R1A. SSE/WebSocket/ordered-delta transport is R1B and is prohibited here.
+- R0 architecture must be accepted and merged before either implementation child STARTs.
+- R1A-T and R1A-M use separate operation keys and GitHub carriers; neither inherits START.
+- R1A-M is blocked until R1A-T is merged, deployed and production-proven on the actual Terminal host.
 - Terminal Quote Plane remains the sole current-US-quote owner.
-- Nightly Intelligence Hub selection/order/score/stage/stance/entry state is immutable in this wave.
-- One browser controller owns R1A quote nodes; generic `live.js` must not own the same DOM.
-- One batch route call per refresh, 1–80 unique symbols, one upstream read, no retry.
-- The route is deliberately public quote-only access; the decision is printed and tested.
-- The controller asset must be public in both `config/site_access.yml` and the matching Caddy boundary.
-- Rate limits are symbol-weighted; an 80-symbol request cannot cost one ordinary request slot.
-- Feed freshness, market session and coverage are separate facts.
-- R1A is stateless: no server sequence, cursor or correction ledger.
-- Browser request order uses a local generation; item order uses source time plus revision equality.
-- Source/market time, optional receive time, projection time and baseline time remain distinct.
-- `chg` is percentage, not dollars; absolute move is derived.
-- Freshness is session-aware and fails downward.
-- Provider/source/basis/anchor names are not public payload/UI.
-- No new database, event bus, scheduler, retry daemon, identity plane or runtime stylesheet.
-- All user-facing work requires dark/light × EN/ZH × 1440/390 evidence.
-- Use TDD: every behavioral change begins with a failing test and ends with discriminating proof.
-- One PR owns producer + consumer + UI + tests + production proof.
+- No second quote source, store, cache service, event bus, scheduler, retry plane, identity plane or correction ledger.
+- The exact R1A roster is `command[:30] + emerging[:14] + discovery_shown[:14]`, ordered and deduplicated: at most 58 unique symbols.
+- Macro route cap is 60 unique symbols; browser refuses more than 58 rendered unique symbols.
+- Every occurrence of one symbol is one visual unit and commits in the same animation frame.
+- R1A-T `view=regular` must spend zero ExtFeed demand/LRU capacity.
+- R1A-M must explicitly request `view=regular`; no fallback to default/full view.
+- Nightly selection, order, score, stage, stance, Prophet state, entry state, allocation and trade authority are immutable.
+- One route-scoped controller owns R1A nodes; generic `live.js` cannot own the same DOM.
+- One browser request and one Terminal upstream request per refresh; no per-card calls and no retry.
+- Macro access is deliberately public quote-only; this decision is printed and tested.
+- Controller asset must be public in both `config/site_access.yml` and `app/deploy/Caddyfile`.
+- Rate limits are symbol-weighted.
+- Freshness, session and coverage are orthogonal.
+- Stateless snapshot only: no server sequence, cursor or correction store.
+- Browser request ordering uses local generation; item ordering uses source time plus revision equality.
+- `chg` is percentage, not dollars; derive absolute move.
+- Unknown basis/session/clock fails downward.
+- Public output contains no provider/source/basis/anchor-source/internal-host/path/raw exception.
+- UI evidence: dark/light × EN/ZH × 1440/390, plus overflow, console, interaction and degraded-state proof.
+- TDD is mandatory: RED before implementation, then GREEN and mutation/discriminator proof.
+- Each child stops at its own acceptance boundary and returns an exact continuation handoff.
 
 ---
 
-### Task 1: Extract one shared public quote semantic owner
+# Child R1A-T — Terminal regular-only quote view
+
+**Repository:** `mastermindx-market-intelligence/mastermind-terminal`  
+**Preferred avenue:** `CTO Sol`  
+**Why:** bounded but architecture-sensitive quote-owner work with global-demand side effects and host deployment proof.  
+**Why not Fable:** product and authority boundaries are frozen; no principal cross-program ambiguity remains.  
+**Initial archaeology pin:** `86a75b68c273a592a41af5e322f95aab242b8297`
+
+## Task T1: Freeze the regular-view parser and demand contract with RED tests
+
+**Files:**
+- Modify: `hub/tests/quotes.test.js`
+- Later modify: `hub/lib/quotes.js`
+
+**Interfaces:**
+- Produces future pure interface:
+  - `parseQuoteView(rawValues: unknown) -> "full" | "regular" | null`
+  - `applyDemand(syms, nowMs, deps, {includeExtended})`
+  - `buildQuotesResponse(syms, nowMs, deps, {includeExtended})`
+
+- [ ] **Step 1: Add the missing parser import and failing tests**
+
+Add `parseQuoteView` to the test import before implementation:
+
+```javascript
+const {
+  parseQuoteView,
+  applyDemand,
+  buildQuotesResponse,
+} = require("../lib/quotes");
+```
+
+Add:
+
+```javascript
+describe("parseQuoteView — closed endpoint vocabulary", () => {
+  it("defaults only an absent value to full", () => {
+    assert.equal(parseQuoteView([]), "full");
+  });
+
+  it("accepts exactly one full or regular value", () => {
+    assert.equal(parseQuoteView(["full"]), "full");
+    assert.equal(parseQuoteView(["regular"]), "regular");
+  });
+
+  it("rejects unknown, blank and repeated values", () => {
+    for (const raw of [[""], ["all"], ["regular", "regular"], ["full", "regular"], null]) {
+      assert.equal(parseQuoteView(raw), null);
+    }
+  });
+});
+```
+
+- [ ] **Step 2: Add a demand spy that includes SnapshotFeed**
+
+Use:
+
+```javascript
+function demandSpies() {
+  const seen = { snapshot: [], polygon: [], anchor: [], ext: [], macro: [] };
+  return {
+    seen,
+    deps: {
+      snapshotFeed: { demand: (s) => seen.snapshot.push(s) },
+      polygon: {
+        isHealthy: () => true,
+        ensureSubscribed: (s) => seen.polygon.push(s),
+      },
+      anchorCache: { resolve: async (s) => { seen.anchor.push(s); } },
+      extFeed: { demand: (s) => seen.ext.push(s) },
+      macroFeed: { demand: (s) => seen.macro.push(s) },
+    },
+  };
+}
+```
+
+- [ ] **Step 3: Add the regular-demand RED test**
+
+```javascript
+it("regular view preserves regular demand and spends zero ext slots", () => {
+  const { seen, deps } = demandSpies();
+  applyDemand(["AAPL", "NVDA"], NOW, deps, { includeExtended: false });
+  assert.deepEqual(seen.snapshot, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.polygon, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.anchor, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.ext, []);
+});
+```
+
+- [ ] **Step 4: Add the default-full compatibility test**
+
+```javascript
+it("default/full view keeps existing ext demand", () => {
+  for (const options of [undefined, { includeExtended: true }]) {
+    const { seen, deps } = demandSpies();
+    applyDemand(["AAPL"], NOW, deps, options);
+    assert.deepEqual(seen.snapshot, ["AAPL"]);
+    assert.deepEqual(seen.polygon, ["AAPL"]);
+    assert.deepEqual(seen.anchor, ["AAPL"]);
+    assert.deepEqual(seen.ext, ["AAPL"]);
+  }
+});
+```
+
+- [ ] **Step 5: Add the response-assembly RED test**
+
+```javascript
+it("regular response passes no ext feed into Store", () => {
+  let seenExt = "unset";
+  const store = {
+    getQuotes(_syms, _now, extFeed) {
+      seenExt = extFeed;
+      return {
+        AAPL: {
+          sym: "AAPL",
+          last: 200,
+          prevClose: 198,
+          chg: 1.0101,
+          ts: TS,
+          live: true,
+          source: "polygon-live",
+          basis: "LIVE",
+        },
+      };
+    },
+  };
+  const out = buildQuotesResponse(
+    ["AAPL"], NOW, { store, extFeed: { getExt() { throw new Error("must not run"); } } },
+    { includeExtended: false }
+  );
+  assert.equal(seenExt, null);
+  for (const key of ["extPrice", "extChg", "extTs", "extSession", "extSource", "extBasis"]) {
+    assert.equal(key in out.AAPL, false);
+  }
+});
+```
+
+- [ ] **Step 6: Run RED**
+
+```bash
+cd hub
+node --test tests/quotes.test.js
+```
+
+Expected: failures because `parseQuoteView` and the options contract do not exist and ExtFeed is still passed.
+
+- [ ] **Step 7: Commit RED tests only**
+
+```bash
+git add hub/tests/quotes.test.js
+git commit -m "test(hub): pin regular-only quote demand"
+```
+
+## Task T2: Implement the pure regular-view owner contract
+
+**Files:**
+- Modify: `hub/lib/quotes.js`
+- Modify: `hub/hub.js`
+- Test: `hub/tests/quotes.test.js`
+
+**Interfaces:**
+- Consumes the RED tests from T1.
+- Produces the closed `view=full|regular` behavior.
+
+- [ ] **Step 1: Implement `parseQuoteView`**
+
+In `hub/lib/quotes.js`:
+
+```javascript
+function parseQuoteView(rawValues) {
+  if (!Array.isArray(rawValues)) return null;
+  if (rawValues.length === 0) return "full";
+  if (rawValues.length !== 1) return null;
+  const value = String(rawValues[0] || "").trim().toLowerCase();
+  return value === "full" || value === "regular" ? value : null;
+}
+```
+
+Export it.
+
+- [ ] **Step 2: Add `includeExtended` to demand without changing default**
+
+```javascript
+function applyDemand(syms, nowMs, deps = {}, options = {}) {
+  const includeExtended = options.includeExtended !== false;
+  // existing routing unchanged
+  // ...
+  if (includeExtended && extFeed) extFeed.demand(sym);
+}
+```
+
+Do not clock-gate this branch. Regular view suppresses ext demand in every session.
+
+- [ ] **Step 3: Add `includeExtended` to response assembly**
+
+```javascript
+function buildQuotesResponse(syms, nowMs, deps = {}, options = {}) {
+  const includeExtended = options.includeExtended !== false;
+  // ...
+  const served = store.getQuotes(
+    storeSyms,
+    nowMs,
+    includeExtended ? extFeed : null,
+    snapshotFeed
+  );
+}
+```
+
+Default behavior remains full.
+
+- [ ] **Step 4: Wire `hub.js`**
+
+In `handleQuotes`:
+
+```javascript
+const view = parseQuoteView(url.searchParams.getAll("view"));
+if (view == null) return sendJSON(res, 400, { error: "invalid view" });
+const options = { includeExtended: view === "full" };
+applyDemand(syms, now, deps, options);
+const out = buildQuotesResponse(syms, now, deps, options);
+```
+
+Import/re-export `parseQuoteView` as needed. Do not add another endpoint.
+
+- [ ] **Step 5: Run focused GREEN**
+
+```bash
+cd hub
+node --test tests/quotes.test.js tests/extfeed.test.js
+```
+
+Expected: all existing and new tests pass.
+
+- [ ] **Step 6: Run the complete Hub suite**
+
+```bash
+cd hub
+npm test
+```
+
+Expected: zero failures.
+
+- [ ] **Step 7: Mutation-check load-bearing branches**
+
+For each mutation, run `node --test tests/quotes.test.js` and prove RED, then restore:
+
+```text
+remove includeExtended guard around extFeed.demand
+always pass extFeed to Store
+make unknown view default to full
+make regular view skip SnapshotFeed
+make default view regular
+```
+
+- [ ] **Step 8: Verify no accidental source expansion**
+
+```bash
+git diff --check
+git diff --name-only <PICKUP_BASE>...HEAD
+```
+
+Expected changed paths at this task boundary:
+
+```text
+hub/hub.js
+hub/lib/quotes.js
+hub/tests/quotes.test.js
+```
+
+- [ ] **Step 9: Commit GREEN**
+
+```bash
+git add hub/hub.js hub/lib/quotes.js hub/tests/quotes.test.js
+git commit -m "feat(hub): add non-disruptive regular quote view"
+```
+
+## Task T3: Review, deploy and prove the Terminal owner extension
+
+**Files:**
+- No new implementation path expected.
+- Update existing repo documentation only if current terminal repository law requires endpoint documentation in the same PR.
+
+- [ ] **Step 1: Reconcile current Terminal master and open path owners**
+
+Pin:
+
+```text
+master SHA
+branch head
+merge base
+open PRs touching hub/hub.js, hub/lib/quotes.js, hub/tests/quotes.test.js
+VPS/live host code identity
+```
+
+Any overlapping semantic writer or unknown host drift returns to Sol.
+
+- [ ] **Step 2: Open one R1A-T PR**
+
+PR body must state:
+
+```text
+machine capability: regular-only canonical quote view
+no new endpoint/source/store
+zero ExtFeed demand in regular view
+default full behavior unchanged
+no Macro/user-facing completion claim
+exact tests and mutation receipts
+host deployment/proof plan
+```
+
+Keep HOLD-FOR-SOL until independent review and exact-head checks conclude.
+
+- [ ] **Step 3: Independent exact-head review**
+
+Reviewer must verify:
+
+- default/full compatibility;
+- regular demand still reaches SnapshotFeed/Polygon/AnchorCache;
+- zero ExtFeed demand and merge;
+- unknown view refusal;
+- no second source/endpoint/store;
+- test discrimination;
+- host rollout reversibility.
+
+- [ ] **Step 4: Merge only after current exact-head approval**
+
+Use current repository merge law. Green CI is necessary, not sufficient.
+
+- [ ] **Step 5: Deploy through the existing Terminal Hub owner**
+
+Do not invent a new daemon or deployment path. Verify the running Hub code/commit identity after deployment.
+
+- [ ] **Step 6: Run loopback default compatibility probe**
+
+```bash
+curl --fail --silent --show-error \
+  'http://127.0.0.1:3100/quotes?syms=AAPL&view=full'
+curl --fail --silent --show-error \
+  'http://127.0.0.1:3100/quotes?syms=AAPL'
+```
+
+Normalize only nondeterministic timestamps and verify semantic equality.
+
+- [ ] **Step 7: Prove regular response and zero LRU effect**
+
+Capture `/health` ExtFeed membership/size evidence using the existing accepted diagnostic surface, then issue one request containing 58 safe US symbols:
+
+```bash
+curl --fail --silent --show-error \
+  'http://127.0.0.1:3100/quotes?syms=<58_URL_ENCODED_SYMBOLS>&view=regular'
+```
+
+Verify:
+
+```text
+response is flat present-entries-only object
+no extPrice/extChg/extTs/extSession/extSource/extBasis anywhere
+ExtFeed membership/order/size unchanged by the request
+regular SnapshotFeed/Polygon demand remains observable
+unknown view returns HTTP 400
+```
+
+If existing `/health` does not expose exact membership, use one temporary read-only host probe against the running process's existing diagnostic seam; do not add a production registry merely to prove the PR.
+
+- [ ] **Step 8: Return R1A-T result and STOP**
+
+Return exact head, merge SHA, deployed identity, commands/results, before/after demand proof, failures, and capability state:
+
+```text
+R1A-T = PROVEN_LIVE
+R1A-M = NOT_BUILT
+R1A product = NOT_BUILT
+```
+
+The worker child then receives explicit terminal STOP. No Macro START is inherited.
+
+---
+
+# Child R1A-M — Macro Intelligence Hub Market Pulse
+
+**Repository:** `mastermindx-market-intelligence/macro`  
+**Preferred avenue:** `CTO Sol`  
+**Why:** bounded cross-layer implementation with API, template, browser, access and production proof after architecture freeze.  
+**Why not Fable:** R1A-T proof and this plan remove the cross-system ambiguity; one specialist can execute the frozen vertical.
+
+## Task M0: Prove prerequisites before START
+
+- [ ] **Step 1: Re-pin current protected Skillpack**
+
+Load INDEX and all required skills from one current protected SHA.
+
+- [ ] **Step 2: Verify R1A-T production proof**
+
+Require all of:
+
+```text
+Terminal PR merged
+running Terminal Hub commit identified
+view=regular accepted
+unknown view refused
+58-symbol regular request produced zero ExtFeed LRU change
+default full behavior unchanged
+```
+
+Missing proof means `BLOCKED / R1A_T_NOT_PROVEN`; do not emulate the contract in Macro.
+
+- [ ] **Step 3: Reconcile current Macro paths and owners**
+
+Census expected paths, current `app/dossier_quote.py`, Intelligence Hub builder/template, site-access/Caddy owners, CI packs and open PR overlaps. A real semantic collision returns to Sol.
+
+- [ ] **Step 4: Emit separate START**
+
+Only after M0 gates clear. Use one branch/PR carrier for R1A-M.
+
+## Task M1: Extract one shared public regular quote projector
 
 **Files:**
 - Create: `app/public_quote_projection.py`
 - Modify: `app/dossier_quote.py`
 - Test: `tests/test_public_quote_projection.py`
 - Test: `tests/test_dossier_quote_api.py`
+- Test: `tests/test_dossier_live_quote_surface.py`
 
 **Interfaces:**
-- Consumes: one raw Terminal Quote Plane row, canonical `ticker`, injected `now`.
-- Produces:
-  - `project_regular_quote(row: Mapping[str, Any], *, ticker: str, now: float) -> PublicQuote`
-  - `ProjectionError(code: str)`
-  - `PublicQuote.to_dict() -> dict[str, Any]`
-- Existing dossier route must preserve its public schema and status behavior.
-
-- [ ] **Step 1: Freeze the existing dossier behavior with focused regression fixtures**
-
-Add assertions covering:
 
 ```python
-def test_shared_projection_treats_chg_as_percent():
-    projected = project_regular_quote(HUB_NVDA_RTH, ticker="NVDA", now=NOW)
-    assert projected.change_abs == pytest.approx(
-        HUB_NVDA_RTH["last"] - HUB_NVDA_RTH["prevClose"]
-    )
-    assert projected.change_pct == pytest.approx(HUB_NVDA_RTH["chg"])
-
-
-def test_shared_projection_keeps_settled_close_valid_after_hours():
-    projected = project_regular_quote(HUB_NVDA_CLOSED, ticker="NVDA", now=CLOSED_NOW)
-    assert projected.session == "closed"
-    assert projected.freshness != "stale"
-
-
-def test_extended_move_never_replaces_regular_move():
-    projected = project_regular_quote(HUB_OPPOSITE_SIGNS, ticker="NVDA", now=NOW)
-    assert projected.change_pct > 0
-    assert HUB_OPPOSITE_SIGNS["extChg"] < 0
+project_regular_quote(
+    row: Mapping[str, Any],
+    *,
+    ticker: str,
+    now: float,
+    published_at: str,
+) -> PublicQuote
 ```
-
-- [ ] **Step 2: Run the new suite to verify it fails before extraction**
-
-```bash
-python3 -m pytest tests/test_public_quote_projection.py -q
-```
-
-Expected: collection/import failure because the shared module/interface does not yet exist.
-
-- [ ] **Step 3: Implement the minimal pure module**
 
 ```python
 @dataclass(frozen=True)
@@ -102,18 +492,42 @@ class PublicQuote:
     revision: str
 ```
 
-Rules:
+- [ ] **Step 1: Write RED shared-semantic fixtures**
 
-- `revision` is a deterministic equality fingerprint over source identity/time and projected values; it is not a monotonic counter.
-- `received_at` is null unless the current upstream exposes a trustworthy receive clock.
-- `published_at` is supplied by the route assembler, not used to classify freshness.
-- Never add `correction=true` unless the canonical upstream actually supplies a correction fact. R1A infers equal-time changed-content correction client-side.
+```python
+def test_chg_is_percent_and_absolute_move_is_derived():
+    q = project_regular_quote(HUB_NVDA_RTH, ticker="NVDA", now=NOW, published_at=PUBLISHED)
+    assert q.change_abs == pytest.approx(HUB_NVDA_RTH["last"] - HUB_NVDA_RTH["prevClose"])
+    assert q.change_pct == pytest.approx(HUB_NVDA_RTH["chg"])
 
-- [ ] **Step 4: Replace dossier-internal duplicate semantics with the shared function**
 
-Keep dossier-specific HTTP, rate limiting and schema assembly in `app/dossier_quote.py`; remove only logic now owned by `public_quote_projection.py`.
+def test_closed_regular_print_is_settled_not_immediately_stale():
+    q = project_regular_quote(HUB_NVDA_CLOSED, ticker="NVDA", now=CLOSED_NOW, published_at=PUBLISHED)
+    assert q.session == "closed"
+    assert q.freshness != "stale"
 
-- [ ] **Step 5: Run shared + dossier tests**
+
+def test_extended_fields_cannot_replace_regular_tuple():
+    q = project_regular_quote(HUB_OPPOSITE_SIGNS, ticker="NVDA", now=NOW, published_at=PUBLISHED)
+    assert q.change_pct > 0
+    assert HUB_OPPOSITE_SIGNS["extChg"] < 0
+```
+
+- [ ] **Step 2: Run RED**
+
+```bash
+python3 -m pytest tests/test_public_quote_projection.py -q
+```
+
+- [ ] **Step 3: Implement pure deterministic projector**
+
+Preserve dossier behavior. `revision` is a deterministic equality fingerprint over source identity/time and projected values. `received_at` is null unless upstream supplies a trustworthy receive clock. Projection time cannot determine freshness.
+
+- [ ] **Step 4: Replace dossier duplicate semantics**
+
+Keep dossier-specific HTTP/schema/rate ownership in `app/dossier_quote.py`.
+
+- [ ] **Step 5: Run GREEN and mutations**
 
 ```bash
 python3 -m pytest \
@@ -122,151 +536,114 @@ python3 -m pytest \
   tests/test_dossier_live_quote_surface.py -q
 ```
 
-Expected: all pass; existing dossier response fixtures remain semantically unchanged.
-
-- [ ] **Step 6: Mutation-check the load-bearing guards**
-
-Each mutation must red a targeted test:
+Mutations that must red:
 
 ```text
-read chg as absolute dollars
-classify freshness from projection time
-apply regular-session stale bound while closed
-allow unknown basis to be live
-use extChg as day move
-accept prevClose == 0 for percentage derivation
-fabricate received_at from request time
+read chg as dollars
+freshen from published_at
+apply RTH stale bound while closed
+allow unknown basis live
+use extChg
+fabricate received_at
 ```
 
-Restore exact code and rerun the three suites green.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add app/public_quote_projection.py app/dossier_quote.py \
   tests/test_public_quote_projection.py tests/test_dossier_quote_api.py
-git commit -m "refactor(quotes): share honest public quote projection"
+git commit -m "refactor(quotes): share regular public projection"
 ```
 
----
-
-### Task 2: Add the deliberately public bounded batch API
+## Task M2: Add the deliberate public bounded batch API
 
 **Files:**
 - Create: `app/intelligence_hub_market_pulse.py`
 - Modify: `app/main.py`
-- Modify only if current owner inspection disproves the existing `app/*.py` trigger: `app/deploy/update.sh`
+- Modify only if current trigger disproves ownership: `app/deploy/update.sh`
 - Test: `tests/test_intelligence_hub_market_pulse_api.py`
 
-**Interfaces:**
-- Consumes:
-  - `project_regular_quote(...)` from Task 1.
-  - loopback Quote Hub `GET /quotes?syms=...`.
-- Produces:
-  - `GET /api/intelligence-hub/market-pulse?symbols=...`
-  - schema `intelligence_hub.market_pulse.v1`.
+**Public contract:**
 
-- [ ] **Step 1: Write API tests before the route**
+```http
+GET /api/intelligence-hub/market-pulse?symbols=NVDA,AAPL,MSFT
+```
 
-Create a fake single-call upstream reader and assert:
+- [ ] **Step 1: Write RED API tests**
+
+Required fixture:
 
 ```python
-def test_batch_route_reads_upstream_once_for_thirty_symbols(client, fake_hub):
-    symbols = ",".join(f"T{i:02d}" for i in range(30))
+def test_route_uses_one_regular_view_upstream_call(client, fake_hub):
+    symbols = ",".join(f"T{i:02d}" for i in range(58))
     response = client.get(f"/api/intelligence-hub/market-pulse?symbols={symbols}")
     assert response.status_code == 200
     assert fake_hub.calls == 1
-    assert fake_hub.last_symbols == [f"T{i:02d}" for i in range(30)]
-
-
-def test_partial_response_keeps_freshness_and_coverage_orthogonal(client, fake_hub):
-    response = client.get(
-        "/api/intelligence-hub/market-pulse?symbols=NVDA,AAPL,MSFT"
-    )
-    body = response.json()
-    assert body["state"] == {
-        "availability": "available",
-        "freshness": "live",
-        "coverage": "partial",
-    }
-    assert body["coverage"] == {
-        "requested": 3,
-        "resolved": 2,
-        "live": 2,
-        "delayed": 0,
-        "stale": 0,
-        "missing": 1,
-    }
-    assert [row["symbol"] for row in body["items"]] == ["NVDA", "MSFT"]
-    assert body["errors"] == [{"symbol": "AAPL", "code": "quote_unavailable"}]
-    assert "sequence" not in body
+    assert fake_hub.last_query["view"] == "regular"
+    assert fake_hub.last_symbols == [f"T{i:02d}" for i in range(58)]
 ```
 
-Also test:
+Also pin:
 
-- anonymous access succeeds and is documented as intentional;
-- signed-in access has the same quote semantics;
-- 0, >80, duplicate/order, invalid symbol;
-- no usable rows;
-- redirect, timeout, oversize, malformed JSON;
-- unknown basis/session/clock;
-- provider-field absence;
-- no retry;
-- no server cursor/sequence/correction state;
-- symbol-weighted normal cadence and exhaustion.
+```python
+def test_regular_view_ext_field_leak_is_503(client, fake_hub):
+    fake_hub.rows["AAPL"]["extPrice"] = 201.0
+    r = client.get("/api/intelligence-hub/market-pulse?symbols=AAPL")
+    assert r.status_code == 503
+    assert r.json() == {"detail": "quote_projection_unavailable"}
+```
 
-- [ ] **Step 2: Run the API suite red**
+Test deliberate anonymous access, signed-in parity, 0/>60/invalid, order/dedupe, complete/partial/no usable, exact arithmetic, redirect/timeout/oversize/malformed, debranding, no retry, no sequence/cursor/correction store, and symbol-weighted budgets.
+
+- [ ] **Step 2: Run RED**
 
 ```bash
 python3 -m pytest tests/test_intelligence_hub_market_pulse_api.py -q
 ```
 
-Expected: import/route failures.
+- [ ] **Step 3: Implement input and roster-safe bounds**
 
-- [ ] **Step 3: Implement input normalization**
+Preserve first occurrence, reject invalid members, dedupe, and reject more than 60 unique symbols. Do not silently drop invalid input.
 
-Use the existing safe ticker validator. Preserve first occurrence order, reject invalid members and reject >80 unique symbols. Do not silently drop invalid input.
+- [ ] **Step 4: Implement symbol-weighted limiter**
 
-- [ ] **Step 4: Implement symbol-weighted rate limiting**
+Reuse existing edge-resolved client/peer identity pattern with bounded in-memory rolling `(timestamp, units)` entries. Each unique symbol costs one unit. Test normal 58-name 60-second cadence plus manual/resume margin and high-rate amplification refusal.
 
-Use the existing edge-resolved client and peer identity pattern, but store bounded rolling `(timestamp, symbol_units)` entries. Each unique symbol costs one unit. Expire old units before admission and cap identity cardinality. Print exact client/peer budgets as constants and test:
-
-```text
-largest intended page request at 60-second cadence + reasonable manual refreshes -> allowed
-repeated 80-symbol amplification -> 429
-one-symbol dossier behavior -> unchanged
-```
-
-Do not rewrite the global rate limiter or create persistent quota state.
-
-- [ ] **Step 5: Implement one bounded loopback read**
+- [ ] **Step 5: Implement exactly one loopback call**
 
 ```text
-default base: http://127.0.0.1:3100
-timeout: 2.5 seconds
-maximum bytes: 262144
-redirects: refused
-attempts: exactly one
+base: http://127.0.0.1:3100
+path: /quotes
+view: regular
+timeout: 2.5s
+max bytes: 262144
+redirects: no
+attempts: one
 ```
 
-Assert loopback per request so a bad environment disables only this route.
+Never omit the view or fall back to full/default.
 
-- [ ] **Step 6: Build the stateless envelope**
+- [ ] **Step 6: Reject regular-view contract violations**
+
+Any response row containing a key with the frozen extended-field vocabulary is an upstream contract failure. Do not strip and continue.
+
+- [ ] **Step 7: Build stateless envelope**
 
 ```text
 zero usable -> 503
 otherwise availability=available
-freshness = worst(live, delayed, stale)
-coverage = complete iff missing == 0 else partial
+freshness=worst(live, delayed, stale)
+coverage=complete iff missing=0 else partial
+source_view=regular
 ```
 
-Validate both arithmetic identities. `snapshot_id` is opaque identity only. Do not add a server sequence/cursor or correction map.
+No server sequence/cursor/correction map.
 
-- [ ] **Step 7: Register through the existing app owner**
+- [ ] **Step 8: Register in existing app owner**
 
-Add one direct router import/include in `app/main.py`, matching the dossier precedent. The module docstring must say “deliberately public quote-only projection” and explain why. Confirm current `app/deploy/update.sh` already restarts on `app/*.py`; change it only if fresh inspection proves otherwise.
+Module docstring says “deliberately public quote-only projection” and why. Confirm `app/*.py` restart ownership before touching deploy script.
 
-- [ ] **Step 8: Run API + app import tests**
+- [ ] **Step 9: Run GREEN and mutation matrix**
 
 ```bash
 python3 -m pytest \
@@ -275,104 +652,106 @@ python3 -m pytest \
 python3 -c "import app.main; print('app import ok')"
 ```
 
-Expected: pass and exactly one route registration.
-
-- [ ] **Step 9: Mutation-check access, one-call, debrand and state axes**
-
-Mutations that must fail:
+Mutations that must red:
 
 ```text
-loop over symbols and read upstream N times
-drop missing symbols from requested denominator
-collapse partial coverage into freshness
-let a majority of live rows hide one delayed/stale row
+N upstream calls
+omit view=regular
+fallback to full after failure
+strip ext leak instead of refusing
+drop missing denominator
+collapse partial into freshness
+majority hides delayed/stale
 forward source/basis/anchor_source
-retry once after timeout
-call a non-loopback URL
-mark unknown basis live
-count every batch as one rate unit
-add/accept a server sequence field
+retry once
+non-loopback URL
+one unit per batch
+server sequence field
 ```
 
 - [ ] **Step 10: Commit**
 
 ```bash
 git add app/intelligence_hub_market_pulse.py app/main.py \
-  app/deploy/update.sh tests/test_intelligence_hub_market_pulse_api.py
-git commit -m "feat(intel-hub): add batched market pulse projection"
+  tests/test_intelligence_hub_market_pulse_api.py
+git commit -m "feat(intel-hub): add regular market pulse projection"
 ```
 
-Omit `app/deploy/update.sh` if unchanged.
+Add `app/deploy/update.sh` only if changed by current evidence.
 
----
-
-### Task 3: Render durable Market Pulse markup in both art directions
+## Task M3: Render the exact durable roster and multi-target markup
 
 **Files:**
 - Modify: `templates/intelligence_hub.html.j2`
+- Modify only if the builder needs an explicit presentation list: `scripts/build_intel_hub.py`
 - Test: `tests/test_intelligence_hub_market_pulse_surface.py`
-- Generated by the normal builder, never hand-edit as source: `site/intelligence_hub.html`
+- Generated by normal builder when repo law requires: `site/intelligence_hub.html`
 
-**Interfaces:**
-- Consumes: current Intelligence Hub `hub` view model and nightly price fields.
-- Produces:
-  - `[data-ihmp-root]`
-  - `[data-ihmp-availability]`
-  - `[data-ihmp-freshness]`
-  - `[data-ihmp-session]`
-  - `[data-ihmp-coverage]`
-  - `[data-ihmp-symbol]`
-  - `[data-ihmp-price]`
-  - `[data-ihmp-abs]`
-  - `[data-ihmp-pct]`
-  - `[data-ihmp-baseline-at]`.
+**Selectors:**
 
-- [ ] **Step 1: Write surface tests**
+```text
+[data-ihmp-root]
+[data-ihmp-availability]
+[data-ihmp-freshness]
+[data-ihmp-session]
+[data-ihmp-coverage]
+[data-ihmp-symbol]
+[data-ihmp-price]
+[data-ihmp-abs]
+[data-ihmp-pct]
+[data-ihmp-baseline-at]
+```
 
-Assert durable markup, `aria-live="polite"`, exact symbols, all quote slots, all state-axis slots, and no R1A target carrying generic `.nb-px`/`.nb-chg` ownership.
+- [ ] **Step 1: Write RED roster tests**
 
-Add invariance tests snapshotting command ticker order, opportunity score, stage, entry badge and stance before/after the markup change.
+Prove:
 
-- [ ] **Step 2: Run the surface suite red**
+```python
+assert roster == ordered_unique(command[:30] + emerging[:14] + discovery_shown[:14])
+assert len(roster) <= 58
+assert hidden_discovery_symbol not in roster
+assert exhausted_symbol not in roster
+```
+
+Render a duplicate symbol in two panels and prove two `data-ihmp-symbol="AAPL"` targets exist while the unique request roster contains AAPL once.
+
+- [ ] **Step 2: Add invariance tests**
+
+Snapshot order, opportunity score, stage, entry badge and stance before/after the markup change.
+
+- [ ] **Step 3: Run RED**
 
 ```bash
 python3 -m pytest tests/test_intelligence_hub_market_pulse_surface.py -q
 ```
 
-Expected: missing markup.
+- [ ] **Step 4: Render one compact page-level instrument**
 
-- [ ] **Step 3: Add the compact page-level state instrument**
-
-Tier-1 phrases combine the orthogonal facts:
+Tier-1 EN copy:
 
 ```text
-Baseline: Prices from the latest settled build
-Loading: Checking current prices
-Live + complete: Live market pulse · 30/30 names
-Live + partial: Live prices for 27/30 names
-Delayed + complete: Delayed market pulse · 30/30 names
-Delayed + partial: Delayed prices · 27/30 names
-Settled: Settled close · 30/30 names
-Stale: Market pulse has stopped updating
-Unavailable: Current prices temporarily unavailable
+Prices from the latest settled build
+Checking current prices
+Live market pulse · 30/30 names
+Live prices for 27/30 names
+Delayed market pulse · 30/30 names
+Delayed prices · 27/30 names
+Settled close · 30/30 names
+Market pulse has stopped updating
+Current prices temporarily unavailable
 ```
 
-Provide equally plain Chinese. Technical clocks and error codes belong in `data-tip-en/zh`.
+Provide plain equivalent Chinese; technical clocks/errors live in tooltips.
 
-- [ ] **Step 4: Add stable row quote clusters**
+- [ ] **Step 5: Render stable quote clusters for every eligible occurrence**
 
-Render baseline price and, when references exist, coherent absolute/percent moves. Do not make the cluster a second ticker link or change `.tk` labels.
+Do not create a second ticker link or change `.tk`. R1A nodes must not match generic `.nb-px[data-sym]`/`.nb-chg[data-sym]` ownership.
 
-- [ ] **Step 5: Author governed dark and light CSS**
+- [ ] **Step 6: Author governed dark/light CSS**
 
-```text
-DARK: graphite instrument, luminance step, restrained page-level semantic pulse.
-LIGHT: white research material, cool canvas contrast, hairline + small shadow, quiet rail; no glow translation.
-```
+Dark: graphite instrument and restrained page-level luminance. Light: white research material, cool canvas, hairline and small shadow, no copied glow. Use semantic tokens and `--ink-up`/`--ink-down`; no runtime stylesheet.
 
-Use `--ink-up`/`--ink-down`; no literal directional colors and no JS stylesheet injection.
-
-- [ ] **Step 6: Run render and surface guards**
+- [ ] **Step 7: Run render and house guards**
 
 ```bash
 python3 -m scripts.build_intel_hub
@@ -382,20 +761,19 @@ python3 scripts/check_title_i18n.py
 python3 scripts/check_validated_claims.py
 ```
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add templates/intelligence_hub.html.j2 \
+  scripts/build_intel_hub.py \
   tests/test_intelligence_hub_market_pulse_surface.py \
   site/intelligence_hub.html
-git commit -m "feat(intel-hub): render durable market pulse surface"
+git commit -m "feat(intel-hub): render exact market pulse roster"
 ```
 
-Commit the generated file only if current repository law requires it for this page.
+Omit unchanged/generated-unrequired paths.
 
----
-
-### Task 4: Add one atomic route-scoped controller and public asset boundary
+## Task M4: Add one atomic multi-target controller and serving boundary
 
 **Files:**
 - Create: `site/assets/js/intelligence-hub-market-pulse.js`
@@ -404,34 +782,31 @@ Commit the generated file only if current repository law requires it for this pa
 - Modify: `app/deploy/Caddyfile`
 - Test: `tests/test_intelligence_hub_market_pulse_client.py`
 - Test: `tests/test_site_access_boundary.py`
-- Test: `tests/test_lens_nested_control_taps.py` only if shared click routing needs an explicit regression
+- Test only if needed: `tests/test_lens_nested_control_taps.py`
 
-**Interfaces:**
-- Consumes: Task 2 endpoint and Task 3 data attributes.
-- Produces: `window.IntelligenceHubMarketPulse.refresh/pause/resume/state`.
-
-- [ ] **Step 1: Write client contract tests**
+- [ ] **Step 1: Write RED client tests**
 
 Prove:
 
 ```text
-30 row nodes -> one fetch
-partial coverage -> resolved nodes update in one RAF, missing stays baked
-old local request generation resolves after new -> old response ignored
-older source-time item -> suppressed and coverage recomputed
-same source time + equal revision -> idempotent
-same source time + changed revision in later generation -> correction accepted
-snapshot_id changes -> no ordering effect
-document.hidden -> no refresh
-visibility resume -> exactly one refresh
-live setting disabled -> zero fetches
-malformed schema/state/coverage -> zero DOM mutation
-score/order/stage nodes -> unchanged
+58 unique symbols with duplicate DOM occurrences -> one fetch
+controller maps symbol to all targets
+partial response updates accepted targets in one RAF and leaves missing baked
+old local generation ignored
+older source time suppressed with coverage recomputed
+equal time/equal revision idempotent
+equal time/changed revision accepted as correction
+snapshot_id never orders
+hidden tab pauses
+visibility resume makes one request
+live setting disabled makes zero requests
+malformed source_view/state/arithmetic/duplicate/ext field makes zero DOM mutation
+score/order/stage nodes unchanged
 ```
 
-- [ ] **Step 2: Write serving-boundary tests red**
+- [ ] **Step 2: Write serving-boundary RED tests**
 
-Prove the exact controller path must exist in both `config/site_access.yml` and Caddy's public asset exclusion, and that no signal-bearing JSON path is newly public.
+The exact controller path must be in both public lists. No broad assets/data prefix or signal JSON is opened.
 
 ```bash
 python3 -m pytest \
@@ -439,40 +814,51 @@ python3 -m pytest \
   tests/test_site_access_boundary.py -q
 ```
 
-Expected: controller/boundary missing.
+- [ ] **Step 3: Implement target discovery**
 
-- [ ] **Step 3: Implement immutable response validation**
+Build:
 
-Validate exact schema/projection, three state axes, finite values, allowlisted session/freshness, requested unique symbols, coverage arithmetic and timestamps. Reject the whole response before any DOM write when envelope-level truth is malformed.
+```javascript
+const targetsBySymbol = new Map();
+const orderedSymbols = [];
+```
 
-- [ ] **Step 4: Implement local lifecycle and one-request refresh**
+Traverse `[data-ihmp-symbol]` in DOM order. Add every node to the symbol's array, but add each symbol to `orderedSymbols` once. Refuse activation if `orderedSymbols.length > 58`.
 
-Use one `AbortController`, local generation and in-flight guard. Do not create a queue. Schedule the next refresh only after completion and visibility check.
+- [ ] **Step 4: Implement immutable response validation**
 
-- [ ] **Step 5: Implement per-item correction/order handling**
+Require exact schema/projection/source_view, allowlisted state axes/session/freshness, finite values, requested unique identities, exact arithmetic and no forbidden ext/source/provider fields. Build a candidate model before DOM writes.
 
-Maintain an in-memory map of last committed `{observedAt, revision}`. Suppress older source times. Treat equal-time changed revision on a later local generation as correction. Recompute resolved/missing/freshness/coverage from accepted items before paint; never show the server's original complete count after suppressing one item.
+- [ ] **Step 5: Implement lifecycle and ordering**
 
-- [ ] **Step 6: Implement atomic paint**
+One `AbortController`, one in-flight request and local generation. Maintain page-lifetime `{observedAt, revision}` per symbol. Suppress older items and recompute coverage/state before paint.
+
+- [ ] **Step 6: Implement atomic multi-target paint**
 
 Inside one `requestAnimationFrame`:
 
-1. update every accepted row's price/move/class/data state;
-2. retain baked values for missing/suppressed rows;
-3. update feed freshness, session, coverage and clock;
-4. publish one polite live-region change.
+1. update every node array for each accepted symbol with the same tuple;
+2. retain baked values for missing/suppressed symbols;
+3. update availability/freshness/session/coverage/time;
+4. emit one polite live-region change.
 
-No intermediate page state may combine response A prices with response B status.
+No response may partially paint one panel before another.
 
-- [ ] **Step 7: Open only the controller presentation asset**
+- [ ] **Step 7: Add exact controller asset to both serving owners**
 
-Add `/assets/js/intelligence-hub-market-pulse.js` to both existing public lists, in matching order/bytes as required by the boundary test. Do not open `site/intel_hub/hub.json`, other signal artifacts or broad `/assets/` prefixes.
+Open only:
 
-- [ ] **Step 8: Preserve Terminal interaction**
+```text
+/assets/js/intelligence-hub-market-pulse.js
+```
 
-Keep `.tk` and `theme.js` ownership untouched. The quote cluster must not swallow the ticker action.
+in `config/site_access.yml` and `app/deploy/Caddyfile`, preserving byte/order parity.
 
-- [ ] **Step 9: Run focused tests and duplicate-owner audit**
+- [ ] **Step 8: Preserve ticker-to-Terminal interaction**
+
+Do not change `.tk`/`theme.js` ownership. Quote clusters cannot swallow pointer/keyboard action.
+
+- [ ] **Step 9: Run GREEN and mutations**
 
 ```bash
 python3 -m pytest \
@@ -483,25 +869,21 @@ python3 -m pytest \
 grep -n "data-ihmp" templates/live.js site/live.js || true
 ```
 
-Expected: all pass; generic `live.js` has no R1A selector/ownership.
-
-- [ ] **Step 10: Mutation-check atomicity/order/access**
-
-Mutations that must fail:
+Mutations that must red:
 
 ```text
-remove local generation check
-use snapshot_id for ordering
-paint rows before full validation
-omit requestAnimationFrame atomic commit
-allow duplicate response symbol
-let partial clear missing row
-ignore live-disabled setting
-remove asset from one public-list owner
-open a broad assets/data prefix
+one target per symbol instead of all
+remove generation check
+use snapshot_id to order
+paint before complete validation
+remove RAF transaction
+partial clears missing
+ignore live-disabled
+remove one serving-list entry
+open broad asset/data prefix
 ```
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add site/assets/js/intelligence-hub-market-pulse.js \
@@ -510,33 +892,26 @@ git add site/assets/js/intelligence-hub-market-pulse.js \
   tests/test_intelligence_hub_market_pulse_client.py \
   tests/test_site_access_boundary.py \
   tests/test_lens_nested_control_taps.py
-git commit -m "feat(intel-hub): hydrate public market pulse atomically"
+git commit -m "feat(intel-hub): paint market pulse atomically"
 ```
 
-Omit unchanged test files.
+Omit unchanged files.
 
----
-
-### Task 5: Integrate CI, build output and evidence requirements
+## Task M5: CI, visual evidence and behavior proof
 
 **Files:**
-- Modify: `.github/ci/legacy-jobs.yml`
-- Modify: `.github/workflows/ci.yml` only when its current path filter must name a new R1A subject
-- Modify: `config/unrun_test_baseline.json` only if the current audit workflow requires reconciliation
+- Modify current owning CI pack only: `.github/ci/legacy-jobs.yml` and/or current planner-owned file proven by archaeology
+- Modify `.github/workflows/ci.yml` only when current path filter requires it
+- Modify `config/unrun_test_baseline.json` only when current audit requires it
 - Create: `mockups/evidence/reactive-projection/r1a-intelligence-hub/EVIDENCE.yml`
 - Create: `mockups/evidence/reactive-projection/r1a-intelligence-hub/manifest.json`
-- Create: screenshots under that evidence directory
-- Test: all R1A suites
+- Create screenshots in that directory
 
-- [ ] **Step 1: Determine current owning CI from current main**
+- [ ] **Step 1: Bind all tests to the existing CI owner**
 
-Read `.github/workflows/ci.yml`, `.github/ci/*`, `scripts/audit_unrun_tests.py` and existing Intelligence Hub registration. Do not create a second broad CI job.
+No second broad CI job. Include every production subject so UI/access/API changes cannot dark their tests.
 
-- [ ] **Step 2: Add tests and all production subjects to the same owner**
-
-Include API modules, template, controller, site-access and Caddy paths so the guarded change can trigger the guard.
-
-- [ ] **Step 3: Run exact focused and house guards**
+- [ ] **Step 2: Run exact focused matrix**
 
 ```bash
 python3 -m pytest \
@@ -555,9 +930,9 @@ python3 scripts/check_ui_visual_evidence.py
 python3 scripts/check_template_site_sync.py
 ```
 
-Run any additional current house guards named by `AGENTS.md`/CI for touched paths.
+Run every additional current house guard selected for touched paths.
 
-- [ ] **Step 4: Capture browser matrix**
+- [ ] **Step 3: Capture the eight-cell matrix**
 
 ```text
 dark EN 1440
@@ -570,106 +945,112 @@ light EN 390
 light ZH 390
 ```
 
-Record viewport, theme, language, feed freshness, session, coverage, source fixture, no-overflow, console result and screenshot path. Include live, partial, delayed/settled and unavailable across the evidence set; both art directions need degraded proof.
+Across evidence, include live, partial, delayed or settled, and unavailable states. Both art directions need degraded proof. Record requested/applied locale/theme/viewport, console, overflow, network and screenshot path.
 
-- [ ] **Step 5: Verify behavioral network evidence**
+- [ ] **Step 4: Capture behavior receipts**
+
+Prove:
 
 ```text
-anonymous shell loads controller asset
-anonymous quote-only route returns no provider/private fields
-exactly one market-pulse call per refresh
-no per-symbol route calls
-symbol-unit limiter allows normal cadence and blocks amplification
-response values and rendered tuple agree
-all rows/state change in one committed frame
-Terminal ticker action works after repaint
+anonymous shell loads controller
+anonymous route contains no provider/private fields
+one browser call and one Terminal view=regular call per refresh
+no full-view fallback
+no per-symbol route call
+58-symbol roster bound
+all duplicate occurrences match
+one committed frame
+normal cadence passes weighted budget; amplification fails
 background pause/resume works
-live disabled makes no call
+live-disabled no request
+ticker opens Terminal
+intelligence fingerprint unchanged
 ```
 
-- [ ] **Step 6: Commit CI/evidence changes**
+- [ ] **Step 5: Commit CI/evidence**
 
 ```bash
 git add .github/ci/legacy-jobs.yml .github/workflows/ci.yml \
   config/unrun_test_baseline.json \
   mockups/evidence/reactive-projection/r1a-intelligence-hub/
-git commit -m "test(intel-hub): enforce market pulse proof matrix"
+git commit -m "test(intel-hub): enforce regular pulse proof matrix"
 ```
 
-Omit unchanged CI/baseline files; the evidence directory is mandatory for material UI work.
+Omit unchanged CI/baseline files. Evidence is mandatory for material UI work.
 
----
+## Task M6: PR, review, deployment and production acceptance
 
-### Task 6: PR, adversarial review, merge, deploy and production acceptance
+**Durable records after proof:**
+- Update `agentos/workstreams/WS-BREATHING-PLATFORM.md` only at accepted boundary.
+- Create `agentos/handoffs/BREATHING-PLATFORM-2026-08-31-reactive-projection-r1a.md`.
+- Add a discovery only for a genuinely reusable falsifiable fact; do not create a status diary.
 
-**Files/records after implementation proof:**
-- Update: `agentos/workstreams/WS-BREATHING-PLATFORM.md` only at the accepted wave boundary
-- Create: `agentos/handoffs/BREATHING-PLATFORM-2026-08-31-reactive-projection-r1a.md`
-- Create a DSC only for a genuinely reusable falsifiable discovery.
+- [ ] **Step 1: Reconcile exact branch and current main**
 
-- [ ] **Step 1: Reconcile exact branch/head and changed paths**
+Confirm one carrier, no unrelated generated/data churn, no same-path writer and current R1A-T deployed proof.
 
-Confirm no unrelated source/data/render churn. Join current main according to repo law; never force over concurrent work.
+- [ ] **Step 2: Open one R1A-M PR**
 
-- [ ] **Step 2: Open one PR with exact boundary**
-
-PR body states:
+Body prints:
 
 ```text
-R1A observation-only
-Terminal Quote Plane canonical owner
-deliberately public quote-only access
-public controller asset boundary only
-no rank/score/stage/Prophet/trade changes
+observation-only
+Terminal view=regular canonical owner
+zero ext-demand inherited proof
+deliberately public quote-only route
+exact rendered roster and multi-target atomicity
+no rank/score/stage/Prophet/trade mutation
 no server sequence/correction store
 no streaming
-tests, mutations, browser matrix and deploy proof
+local/hosted/mutation/browser/deploy proof
 ```
 
-- [ ] **Step 3: Obtain independent review**
+- [ ] **Step 3: Independent exact-head review**
 
-Reviewer checks duplicate-owner risk, quote semantics, access/rights, weighted abuse controls, one-call/one-DOM-owner, local ordering/correction, degraded product behavior and intelligence invariance. Builder cannot self-approve.
+Review duplicate-source/DOM risks, regular-view enforcement, quote semantics, public rights/access, weighted abuse, multi-target ordering/correction, degraded product behavior and intelligence invariance.
 
-- [ ] **Step 4: Wait for every binding check to conclude**
+- [ ] **Step 4: Consume every binding check**
 
-Pending is not green. Any excluded nonbinding check needs current evidence.
+Pending is not green. A nonbinding exclusion requires current evidence.
 
-- [ ] **Step 5: Merge and verify deployment**
+- [ ] **Step 5: Merge and deploy through existing owners**
 
-After accepted exact-head review:
+Verify:
 
 ```text
-merge
-confirm deployed API running commit
-confirm static asset/page cache stamp
-confirm public asset-list/Caddy parity
-confirm anonymous route from public origin
-confirm no provider fields
+Macro API running commit
+static controller/page cache stamp
+site-access/Caddy parity
+anonymous controller and route
+one known tuple against Terminal regular view
+no provider/ext fields
 ```
 
-- [ ] **Step 6: Run real production normal-state proof**
+- [ ] **Step 6: Run real production normal proof**
 
-Capture canonical upstream tuple, public route tuple, visible page tuple, source/session/freshness clocks, coverage, one-call receipt, symbol-unit usage and unchanged intelligence fingerprint.
+Capture the same source tuple through Terminal regular view, Macro projection and visible page; include clocks, state axes, unique coverage, one-call network receipt, weighted units, duplicate-target equality and unchanged intelligence fingerprint.
 
-- [ ] **Step 7: Run production-safe degraded proof**
+- [ ] **Step 7: Run reversible degraded proof**
 
-Use an accepted reversible canary/fixture/feature gate—not vendor sabotage—to prove partial/unavailable fallback, then restore and prove recovery.
+Use an accepted feature/canary/fixture seam, not vendor sabotage, to prove partial, unsupported/malformed regular view and unavailable fallback. Restore and prove recovery.
 
-- [ ] **Step 8: Close capability ledger truthfully**
+- [ ] **Step 8: Adjudicate capability state**
+
+Only after real proof:
 
 ```text
-R0 architecture: accepted/merged
-R1A implementation: PROVEN_LIVE
-R1B: NOT_BUILT
-broader reactive platform: PARTIAL
+R0 = accepted/merged
+R1A-T = PROVEN_LIVE
+R1A-M = PROVEN_LIVE
+R1A user capability = PROVEN_LIVE
+R1B = NOT_BUILT
+broader reactive platform = PARTIAL
 ```
 
-Only after the user journey and access boundary are real.
+- [ ] **Step 9: Durable handoff and explicit STOP**
 
-- [ ] **Step 9: Write Agent OS handoff and explicit dialogue STOP**
-
-Record head/merge/deploy/browser receipts, discoveries, remaining R1B gate and exact next action. Terminally stop the worker child and disarm only its exact watcher source.
+Record exact heads/merges/deployments/browser receipts, residuals and the held R1B gate. Send terminal STOP to the worker and remove only that child watcher source. No successor inherits START.
 
 - [ ] **Step 10: Stop**
 
-Do not absorb R1B, other pages, personalized projections, broad orchestration or material intelligence deltas into the R1A PR.
+Do not absorb R1B, other pages, personalization, broad orchestration or material intelligence deltas.
