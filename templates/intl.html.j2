@@ -1976,6 +1976,15 @@
 <!-- ===== Standout stocks ===== -->
 <div class="panel">
   <h2>{{ t('Prophet Stock Signals', 'Prophet 选股') }} {{ help('Stocks showing stronger momentum than peers in their own market and sector. Not a forecast.', '相对本市场、本板块更强的个股。非预测。') }}</h2>
+  {#- ── THE BOARD'S ONE VINTAGE STAMP (Intl twin, 2026-09-01). Removing the
+      per-card `setups.as_of` constant above left this board with no board-level
+      freshness disclosure of its own. Stated once (DESIGN_DOCTRINE Law 4).
+      Guarded on setups.as_of — today that value is null upstream, so this
+      renders nothing until a real session date is wired; the guard means it
+      lights up automatically the day one is. -#}
+  {% if setups and setups.get('as_of') %}
+  <p class="muted small" style="margin:2px 0 6px"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>
+  {% endif %}
   {% set buys = (setups.buy if setups else []) %}
   {% if buys %}
   {# shared progressive "See more" — theme.js initShowMore inserts the .sm-bar
@@ -2017,7 +2026,14 @@
       'zone_kind': 'note',
       'zone_note_en': 'Momentum screen — no entry zone',
       'zone_note_zh': '动量筛选 — 无买入区',
-      'date': (setups.get('as_of') if setups else none),
+      {#- NO DATE IN THE ZONE ROW (HK/CA/CN/US twin, 2026-09-01). `setups.as_of` is a
+           board-wide constant, not a per-name vintage. `added_date`
+           (engine/prophet_board_since.py, carry-forward stamping — Intl has no
+           persisted history to scan) is the labelled per-candidate
+           membership-start chip; the board's own vintage is stated once in the
+           "Data through" header above. -#}
+      'date': none,
+      'added_date': b.get('added_date'),
       'flags': _fl.rows
     }) }}
     {% endfor %}

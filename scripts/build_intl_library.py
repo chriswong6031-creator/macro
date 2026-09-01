@@ -522,6 +522,16 @@ def main(alpha: dict | None = None) -> dict | None:
             setups.get("buy") or [], base_of=lambda r: r.get("alpha"),
             verdict_of=lambda r: sig_verdict.get(r.get("ticker")))
         (site / "factordata").mkdir(parents=True, exist_ok=True)
+        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py). Carry-forward
+        # stamping — the PRIOR committed artifact MUST be read before the write below
+        # overwrites it; this is the artifact's single owner (build_intl.py calls this
+        # function to obtain `setups` rather than writing the file itself).
+        try:
+            from engine.prophet_board_since import stamp_intl_board_since_fail_open
+            setups = stamp_intl_board_since_fail_open(
+                setups, repo_root=Path(__file__).resolve().parent.parent, log=log)
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("intl board_since stamp failed (%s)", _bse)
         (site / "factordata" / "intl_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
     log.info("intl library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d standouts",
