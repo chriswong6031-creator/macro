@@ -1,28 +1,28 @@
 {
  "schema": "mag7_washout.v1",
- "as_of": "2026-08-27",
+ "as_of": "2026-08-31",
  "state": "idle",
  "basket": {
-  "stoch2w_k": 73.0,
-  "stoch2w_d": 64.8,
+  "stoch2w_k": 73.9,
+  "stoch2w_d": 65.1,
   "rsi_macd_1w": {
-   "line": -0.47,
-   "sig": -0.82
+   "line": -0.22,
+   "sig": -0.69
   },
   "rsi_macd_3d": {
-   "line": -0.13,
-   "sig": -0.41
+   "line": 0.2,
+   "sig": -0.29
   }
  },
- "members_washed": 1,
+ "members_washed": 0,
  "members": {
-  "AAPL": 47.4,
+  "AAPL": 49.3,
   "MSFT": 100.0,
-  "NVDA": 69.0,
-  "AMZN": 73.0,
-  "GOOGL": 19.3,
-  "META": 43.7,
-  "TSLA": 23.6
+  "NVDA": 60.5,
+  "AMZN": 78.4,
+  "GOOGL": 22.1,
+  "META": 45.1,
+  "TSLA": 21.8
  },
  "armed": false,
  "triggers_today": [],

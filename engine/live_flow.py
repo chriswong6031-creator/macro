@@ -79,6 +79,18 @@ DEFAULT_NAME_FLOOR   = 250_000     # $ gross premium floor for single names
 # bid-side share >= this, side="~sell"; else "mixed".  60% threshold.
 _SIDE_THRESHOLD = 0.60
 
+# Measured trade-vs-NBBO execution location (OA-1T).  This is a direct
+# price-vs-quote measurement on the licensed trade_quote tape; it is NOT signing,
+# NOT initiator identity, and it never feeds a rank, gate, size or score.
+MICROSTRUCTURE_SCHEMA = "options.trade_nbbo_microstructure/v1"
+# Edge equality only.  Absolute tolerance, never relative: a $0.01 quote and a
+# $400 quote must both mean "printed exactly at the edge".
+_EXECUTION_LOCATION_ATOL = 1e-9
+# Rounding happens once, at this published boundary — never inside the arithmetic.
+_MICRO_RATIO_DECIMALS = 6      # shares, coverage, percent ratios
+_MICRO_PREMIUM_DECIMALS = 2    # premium dollars
+_MICRO_SUMMARY_DECIMALS = 3    # milliseconds, spreads, vendor sizes
+
 # Max events retained in feed (contract: trailing 24h, cap 2000)
 MAX_EVENTS = 2000
 
@@ -329,6 +341,211 @@ def _coalesce_batch(df: pd.DataFrame, session_date: str) -> pd.DataFrame:
     return grp
 
 
+# ── measured trade-vs-NBBO microstructure ────────────────────────────────────
+
+def _measured_floats(series: pd.Series) -> np.ndarray:
+    """Coerce one vendor column to plain float64 with NaN for every missing value.
+
+    ``bulk_trade_quote`` hands back ``size``/``bid_size``/``ask_size``/``sequence``
+    as pandas *nullable* integers, so a masked ``pd.NA`` reaches this module and
+    would raise on the first ``float()``.  Everything downstream of here is plain
+    numpy float math.
+    """
+    numeric = pd.to_numeric(series, errors="coerce")
+    return numeric.astype("Float64").to_numpy(dtype="float64", na_value=np.nan)
+
+
+def _micro_round(value: Any, decimals: int) -> float | None:
+    """Round one published measurement, or return None when it is unsupported.
+
+    Never emits NaN or Infinity: the event stage serialises with
+    ``allow_nan=False`` and would refuse the whole batch.
+    """
+    if value is None:
+        return None
+    numeric = float(value)
+    if not np.isfinite(numeric):
+        return None
+    return round(numeric, decimals)
+
+
+def _median_or_none(values: np.ndarray) -> float | None:
+    finite = values[np.isfinite(values)]
+    if finite.size == 0:
+        return None
+    return float(np.median(finite))
+
+
+def _coalesce_nbbo_microstructure(
+    df: pd.DataFrame,
+) -> dict[tuple[str, float, str], dict]:
+    """Measure direct trade-vs-NBBO facts on source-valid, sequence-deduped rows.
+
+    This is independent of soft/tick/quote signing.  It never asserts initiator
+    identity: ``at_ask``/``at_bid`` are *execution locations*, not buyers and
+    sellers, and no field here may be read as opening intent or direction.
+
+    Callers must pass the frame BEFORE ``_sign_batch`` removes quote-unusable
+    rows.  That ordering is the whole point: the coverage denominator has to see
+    the prints that carry no usable NBBO, otherwise coverage is always 1.0 and
+    says nothing.
+    """
+    if df is None or df.empty:
+        return {}
+    if not {"expiration", "strike", "right", "price", "size"}.issubset(df.columns):
+        return {}
+
+    exp_key = pd.to_datetime(df["expiration"], errors="coerce").dt.strftime("%Y-%m-%d")
+    strike_key = _measured_floats(df["strike"])
+    right_key = df["right"].astype(str).str.upper().str[:1]
+
+    price = _measured_floats(df["price"])
+    size = _measured_floats(df["size"])
+    premium = price * size * 100.0
+
+    n = len(df)
+    if "bid" in df.columns and "ask" in df.columns:
+        bid = _measured_floats(df["bid"])
+        ask = _measured_floats(df["ask"])
+    else:
+        bid = np.full(n, np.nan)
+        ask = np.full(n, np.nan)
+    bid_size = _measured_floats(df["bid_size"]) if "bid_size" in df.columns else np.full(n, np.nan)
+    ask_size = _measured_floats(df["ask_size"]) if "ask_size" in df.columns else np.full(n, np.nan)
+
+    trade_et = _source_times_et(df["trade_timestamp"]) if "trade_timestamp" in df.columns else None
+    quote_et = _source_times_et(df["quote_timestamp"]) if "quote_timestamp" in df.columns else None
+    if trade_et is None or quote_et is None:
+        quote_age_ms = np.full(n, np.nan)
+    else:
+        quote_age_ms = (
+            (trade_et - quote_et).dt.total_seconds() * 1000.0
+        ).to_numpy(dtype="float64", na_value=np.nan)
+
+    # The covered set must be a SUBSET of the source set, or coverage can exceed
+    # 1.0: a row whose premium overflows to infinity leaves the source
+    # denominator, so it has to leave the covered numerator too.
+    source_ok = np.isfinite(premium)
+
+    # A print carries measured execution-location evidence only when its own
+    # quote is real, two-sided and causally prior.  Locked/crossed (ask <= bid)
+    # and future quotes are uncovered — never zero, never neutral.
+    nbbo_valid = (
+        source_ok
+        & np.isfinite(price) & (price > 0)
+        & np.isfinite(size) & (size > 0)
+        & np.isfinite(bid) & (bid > 0)
+        & np.isfinite(ask) & (ask > bid)
+        & np.isfinite(quote_age_ms) & (quote_age_ms >= 0)
+    )
+
+    with np.errstate(invalid="ignore"):
+        at_ask = nbbo_valid & np.isclose(price, ask, rtol=0.0, atol=_EXECUTION_LOCATION_ATOL)
+        at_bid = nbbo_valid & ~at_ask & np.isclose(
+            price, bid, rtol=0.0, atol=_EXECUTION_LOCATION_ATOL,
+        )
+        outside = nbbo_valid & ~at_ask & ~at_bid & ((price > ask) | (price < bid))
+    inside = nbbo_valid & ~at_ask & ~at_bid & ~outside
+
+    spread_usd = np.where(nbbo_valid, ask - bid, np.nan)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        spread_pct = np.where(nbbo_valid, (ask - bid) / ((ask + bid) / 2.0), np.nan)
+
+    keys = list(zip(exp_key.tolist(), strike_key.tolist(), right_key.tolist()))
+
+    grouped: dict[tuple[str, float, str], list[int]] = {}
+    for index, key in enumerate(keys):
+        exp_value, strike_value, right_value = key
+        if (
+            type(exp_value) is not str
+            or not exp_value
+            or not np.isfinite(strike_value)
+            or right_value not in ("C", "P")
+        ):
+            continue
+        grouped.setdefault((exp_value, float(strike_value), right_value), []).append(index)
+
+    measured: dict[tuple[str, float, str], dict] = {}
+    for key, rows in grouped.items():
+        idx = np.asarray(rows, dtype=int)
+        src = idx[source_ok[idx]]
+        cov = idx[nbbo_valid[idx]]
+
+        source_premium = float(premium[src].sum()) if src.size else 0.0
+        covered_premium = float(premium[cov].sum()) if cov.size else 0.0
+
+        def _share(mask: np.ndarray) -> float | None:
+            if covered_premium <= 0:
+                return None
+            selected = idx[mask[idx]]
+            return float(premium[selected].sum()) / covered_premium
+
+        # Round the edge shares FIRST, then derive aggression from the published
+        # values. The frozen law states `aggression_share = at_ask_share +
+        # at_bid_share`; rounding each of the three independently would break
+        # that identity in the 6th decimal and hand a downstream consumer an
+        # arithmetic contradiction.
+        at_ask_share = _micro_round(_share(at_ask), _MICRO_RATIO_DECIMALS)
+        at_bid_share = _micro_round(_share(at_bid), _MICRO_RATIO_DECIMALS)
+        inside_share = _micro_round(_share(inside), _MICRO_RATIO_DECIMALS)
+        outside_share = _micro_round(_share(outside), _MICRO_RATIO_DECIMALS)
+        edges_known = at_ask_share is not None and at_bid_share is not None
+        aggression_share = (
+            round(at_ask_share + at_bid_share, _MICRO_RATIO_DECIMALS)
+            if edges_known else None
+        )
+        aggression_balance = (
+            round(at_ask_share - at_bid_share, _MICRO_RATIO_DECIMALS)
+            if edges_known else None
+        )
+
+        measured[key] = {
+            "schema": MICROSTRUCTURE_SCHEMA,
+            "source_print_count": int(src.size),
+            "nbbo_valid_print_count": int(cov.size),
+            "source_premium_usd": _micro_round(source_premium, _MICRO_PREMIUM_DECIMALS),
+            "nbbo_covered_premium_usd": _micro_round(
+                covered_premium, _MICRO_PREMIUM_DECIMALS,
+            ),
+            "nbbo_print_coverage": (
+                _micro_round(cov.size / src.size, _MICRO_RATIO_DECIMALS)
+                if src.size else None
+            ),
+            "nbbo_premium_coverage": (
+                _micro_round(covered_premium / source_premium, _MICRO_RATIO_DECIMALS)
+                if source_premium > 0 else None
+            ),
+            "at_ask_share": at_ask_share,
+            "at_bid_share": at_bid_share,
+            "inside_share": inside_share,
+            "outside_share": outside_share,
+            "aggression_share": aggression_share,
+            "aggression_balance": aggression_balance,
+            "spread_median_usd": _micro_round(
+                _median_or_none(spread_usd[cov]), _MICRO_SUMMARY_DECIMALS,
+            ),
+            "spread_median_pct": _micro_round(
+                _median_or_none(spread_pct[cov]), _MICRO_RATIO_DECIMALS,
+            ),
+            "quote_age_median_ms": _micro_round(
+                _median_or_none(quote_age_ms[cov]), _MICRO_SUMMARY_DECIMALS,
+            ),
+            "quote_age_max_ms": _micro_round(
+                float(np.max(quote_age_ms[cov])) if cov.size else None,
+                _MICRO_SUMMARY_DECIMALS,
+            ),
+            "bid_size_median": _micro_round(
+                _median_or_none(np.where(bid_size[cov] >= 0, bid_size[cov], np.nan)),
+                _MICRO_SUMMARY_DECIMALS,
+            ),
+            "ask_size_median": _micro_round(
+                _median_or_none(np.where(ask_size[cov] >= 0, ask_size[cov], np.nan)),
+                _MICRO_SUMMARY_DECIMALS,
+            ),
+        }
+    return measured
+
+
 # ── DTE / moneyness for a coalesced row ──────────────────────────────────────
 
 def _enrich_contract_row(row: pd.Series, session_date: str,
@@ -374,6 +591,10 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
 
     # FIX 1 — vol_gt_oi: use cumulative day-volume from state, not per-batch size
     vol_gt_oi_val = None
+    # OA-1T — the same comparison expressed as a ratio.  Null unless the matched
+    # prior OI is finite and strictly positive; a zero/absent OI has no ratio and
+    # must never be reported as 0 or as "infinite pressure".
+    vol_gt_oi_ratio_val = None
     if oi_prev is not None and not oi_prev.empty:
         try:
             exp_norm = pd.to_datetime(exp_str, errors="coerce").strftime("%Y-%m-%d")
@@ -397,6 +618,8 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
                     # fallback: use the per-batch coalesced size
                     cum_vol = float(row.get("size", 0))
                 vol_gt_oi_val = bool(cum_vol > oi_val)
+                if np.isfinite(oi_val) and oi_val > 0 and np.isfinite(cum_vol):
+                    vol_gt_oi_ratio_val = float(cum_vol / oi_val)
         except Exception as e:  # noqa: BLE001
             log.debug("live_flow: vol_gt_oi check failed: %s", e)
 
@@ -405,6 +628,7 @@ def _enrich_contract_row(row: pd.Series, session_date: str,
         "dte_bucket": dte_bucket_val,
         "mny_bucket": mny_bucket_val,
         "vol_gt_oi": vol_gt_oi_val,
+        "vol_gt_oi_ratio": vol_gt_oi_ratio_val,
         "zerodte": zerodte,
     }
 
@@ -671,6 +895,11 @@ def process_batch(
                     ):
                         seen_sequences[k] = sequence
 
+    # Measure trade-vs-NBBO here, on the source-valid, sequence-deduped frame and
+    # BEFORE _sign_batch drops quote-unusable rows.  Measuring after it would hide
+    # every print that has no usable NBBO and report a false 100% coverage.
+    microstructure_by_contract = _coalesce_nbbo_microstructure(combined)
+
     combined = _sign_batch(combined)
     if combined.empty:
         return {
@@ -808,6 +1037,18 @@ def process_batch(
         if ev_id in emitted_ids:
             continue
 
+        # The measurement is keyed on the exact contract, not on the event id, so
+        # it cannot participate in identity.  A miss here means the pre-sign frame
+        # and the coalesced frame disagree about what contract this is, which is an
+        # internal identity defect — fail closed rather than publish a plausible
+        # empty block.
+        measurement_key = (exp_str, strike, right)
+        microstructure = microstructure_by_contract.get(measurement_key)
+        if microstructure is None:
+            raise ValueError(
+                f"measured microstructure missing for emitted event {ev_id}"
+            )
+
         contract_key = (root, exp_str, strike, right)
         n_cycles = notability_hist.get(contract_key, 0) + 1
         notability_hist[contract_key] = n_cycles
@@ -852,6 +1093,9 @@ def process_batch(
             "selection_floor_usd": selection_floor_usd,
             "selection_root_class": selection_root_class,
             "vol_gt_oi":       enrich["vol_gt_oi"],
+            # Additive: the same comparison as a ratio. Null when prior OI is
+            # absent or not strictly positive — never 0, never "infinite".
+            "vol_gt_oi_ratio": enrich["vol_gt_oi_ratio"],
             # Exact source vintage when the poller found a prior EOD chain.  Null is
             # intentional: never infer a date merely because vol_gt_oi is null.
             "oi_vintage":      oi_vintage,
@@ -860,6 +1104,10 @@ def process_batch(
             "signing_source":  "tape",
             # Additive: sweep-like heuristic label (>=3 prints, >=2 exchanges, <=2s span)
             "swept":           is_swept,
+            # Additive, zero-authority measurement block (OA-1T).  Execution
+            # location and coverage measured against the licensed NBBO; never a
+            # direction, a rank, a gate or a probability.
+            "microstructure":  microstructure,
         }
         new_events.append(event)
         emitted_ids.add(ev_id)
