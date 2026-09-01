@@ -6514,6 +6514,9 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      # Added-date closure widening 2026-09-01 (contract-delta): the serving
+      # path's builder imports now reach the Prophet board_since resolver.
+      - "engine/prophet_board_since.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
@@ -10250,6 +10253,30 @@ jobs:
     # the declared-scope coverage audit re-checks them on every load.
     scope: exclusive
     paths:
+      # Added-date closure widening 2026-09-01 (contract-delta): the surfaces
+      # census suite imports the intl builders, whose closure spans the intl
+      # engine stack. Widened, never narrowed.
+      - "engine/cb_desk.py"
+      - "engine/contagion.py"
+      - "engine/contagion_links.py"
+      - "engine/flow_regime.py"
+      - "engine/hk_global.py"
+      - "engine/hk_global_beta.py"
+      - "engine/international_macro_dashboard.py"
+      - "engine/intl_bonds.py"
+      - "engine/intl_compare.py"
+      - "engine/intl_equity_risk.py"
+      - "engine/intl_market_confirmation.py"
+      - "engine/intl_performance.py"
+      - "engine/intl_rates.py"
+      - "engine/intl_regime.py"
+      - "engine/intl_risk.py"
+      - "engine/intl_rotation.py"
+      - "engine/intl_run.py"
+      - "engine/intl_stocks.py"
+      - "engine/ird_velocity.py"
+      - "engine/rri_shadow.py"
+      - "scripts/build_international_macro.py"
       # B1A closure widening 2026-08-24 (contract-delta): the security_state producer stage in build_stock_library lazily imports the company-intelligence reader chain and Data OS identity.
       - "engine/company_intelligence/__init__.py"
       - "engine/company_intelligence/contracts.py"
