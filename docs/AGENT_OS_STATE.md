@@ -2,21 +2,30 @@
 
 # Agent OS state
 
-Generated: 2026-08-31T03:20:15Z  |  56 workstreams (40 active · 1 awaiting_ci · 1 awaiting_review · 4 blocked · 6 done · 4 parked)
+Generated: 2026-09-01T04:14:54Z  |  56 workstreams (40 active · 1 awaiting_ci · 1 awaiting_review · 4 blocked · 6 done · 4 parked)
 
 | Input | Value |
 |---|---|
 | active_builds | data/governance/active_builds.json@2026-08-29T10:10:47.291791+00:00 |
-| active_builds age | 41.2h |
+| active_builds age | 66.1h |
 | worktrees | 1 |
 | records | 56 WS · 279 DEC · 234 DSC · 397 handoffs |
 
 ## Degraded inputs
 
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'state_before'
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'changed'
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'unverified' — an empty list is a valid answer, its ABSENCE is not
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [bad-enum] 'ended_because' is 'active_dependencies'; allowed: blocked, ci_handoff, complete, context_budget, crashed
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[0] has no 'command' — 'tests pass' is the failure this list exists to make unwritable
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[1] has no 'command' — 'tests pass' is the failure this list exists to make unwritable
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[2] has no 'command' — 'tests pass' is the failure this list exists to make unwritable
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[3] has no 'command' — 'tests pass' is the failure this list exists to make unwritable
+- record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[4] has no 'command' — 'tests pass' is the failure this list exists to make unwritable
 - active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'
 - Mastermind checkout not found — p0 ids unvalidated, p0_active unknown
 - uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work
-- active_builds.v1 is 41h old — PR state predates the last nightly sweep
+- active_builds.v1 is 66h old — PR state predates the last nightly sweep
 
 ## Workstreams
 
@@ -138,6 +147,7 @@ Generated: 2026-08-31T03:20:15Z  |  56 workstreams (40 active · 1 awaiting_ci �
 - agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS.md: [review-overdue] review_by 2026-08-28 has passed
+- agentos/decisions/DEC-CS-V2-W2B-500-LIVE-ENVELOPE.md: [review-overdue] review_by 2026-08-30 has passed
 - agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md: [review-overdue] review_by 2026-08-25 has passed
 - agentos/decisions/DEC-D0R-RED-TEAM-ADJUDICATION-2026-08-17.md: [review-overdue] review_by 2026-08-18 has passed
 - agentos/decisions/DEC-E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER.md: [review-overdue] review_by 2026-08-23 has passed
