@@ -406,11 +406,28 @@ def _run_panel(state: dict, cfg: dict, call=None) -> dict:
     user = _build_user(state)
 
     def _one(key):
+        # Every fallible step of THIS role's call stays inside the try.
+        # _extract_json is documented "never raises" but calls .strip()/re.search,
+        # which raise on a non-str reply — and an escape here propagates out of
+        # _run_panel and synthesize into run()'s catch-all, killing the whole
+        # region's brief. One bad role must never outrank a total wipe.
+        # NOT closed here (pre-existing, same at base, out of this seam): the
+        # adjudicator/fallback _extract_json call and the _slim_stance() call in
+        # synthesize are still unguarded, so a non-str reply from the desk head,
+        # or a stance dict whose "theses" is non-iterable, still raises.
         try:
-            reply, _ = fn(_PANEL_SYSTEMS[key], user, cfg)
-            parsed = _ad._extract_json(reply) if reply is not None else None
-            return key, (parsed if isinstance(parsed, dict) else None)
-        except Exception:  # noqa: BLE001 — one analyst failing must not sink the panel
+            reply, reason = fn(_PANEL_SYSTEMS[key], user, cfg)
+            if reply is None:
+                log.warning("thematic_desk panel: role=%s returned no reply (%s)",
+                            key, reason or "absent_reply")
+                return key, None
+            parsed = _ad._extract_json(reply)
+            if not isinstance(parsed, dict):
+                log.warning("thematic_desk panel: role=%s reply unparseable", key)
+                return key, None
+            return key, parsed
+        except Exception as exc:  # noqa: BLE001 — one analyst failing must not sink the panel
+            log.warning("thematic_desk panel: role=%s failed (exception): %s", key, exc)
             return key, None
 
     keys = list(_PANEL_SYSTEMS)
@@ -454,22 +471,59 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         "passport": _ad._desk_passport(f"thematic_{region}"),
     }
     # adversarial panel (default on) → desk-head adjudication; analyst-only fallback.
+    # A SUB-QUORUM panel (fewer than panel.min_quorum roles survived) takes the same
+    # fallback path a total wipe already takes — a partial panel must never look
+    # "healthier" than a total one (a scout-only survivor cannot yield a lean by
+    # construction: narrative_scout is told to keep theses minimal, and the
+    # adjudicator's own rules assume crowding_skeptic survived to gate longs).
     panel_on = bool((cfg.get("panel") or {}).get("enabled", True))
+    missing: list[str] = []
     if panel_on:
+        # Coerce defensively: a bare `min_quorum:` in YAML yields None and a quoted
+        # value yields str — either would raise TypeError on the comparison below,
+        # turning a merely-degraded panel into a crashed desk in the nightly.
+        _mq = (cfg.get("panel") or {}).get("min_quorum", 2)
+        if isinstance(_mq, bool):        # True would silently mean "quorum of 1"
+            _mq = 2
+        try:
+            min_quorum = 2 if _mq is None else int(_mq)
+        except Exception:  # noqa: BLE001 — int() raises OverflowError (an
+            # ArithmeticError, not TypeError/ValueError) on float/Decimal
+            # infinity, and propagates whatever a custom __int__ raises. A
+            # defensive default must not have a hole its own purpose forbids.
+            min_quorum = 2
+        # Clamp: 0/negative would hand the adjudicator an EMPTY panel (a path the
+        # pre-fix code never had), and a value above the panel size would disable
+        # adjudication permanently on a full, healthy panel.
+        min_quorum = max(1, min(min_quorum, len(_PANEL_SYSTEMS)))
         panel = _run_panel(state, cfg, call)
         brief["panel"] = {k: _slim_stance(v) for k, v in panel.items() if v}
-        if any(panel.values()):
+        present = [k for k in _PANEL_SYSTEMS if panel.get(k)]
+        missing = [k for k in _PANEL_SYSTEMS if k not in present]
+        if len(present) >= min_quorum:
             reply, reason = _adjudicate(state, panel, cfg, call)
-        else:                                          # whole panel unavailable → single analyst
+        else:                       # sub-quorum (incl. total wipe) → single analyst
+            log.warning(
+                "thematic_desk[%s]: panel sub-quorum (%d/%d present, need %d) — "
+                "missing=%s; falling back to single-analyst",
+                region, len(present), len(_PANEL_SYSTEMS), min_quorum, ",".join(missing))
             reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
     else:
         reply, reason = (call or _mb._call_model)(_SYSTEM, _build_user(state), cfg)
+    # degraded_reason precedence: (a) a reason from the model/adjudicator call itself
+    # always wins — it is the more specific, real failure; (b) else, if any panel role
+    # is missing, name it (visible even when the panel met quorum — invisibility was
+    # half the defect); (c) else leave unset.
+    missing_reason = ("panel_incomplete: " + ",".join(missing)) if missing else None
     brief["raw_text"] = reply
     if reply is None:
-        brief["degraded_reason"] = reason
+        brief["degraded_reason"] = reason or missing_reason
         return brief
     parsed = _ad._extract_json(reply)
     if not isinstance(parsed, dict):
+        # "unparseable_reply" IS a call-failure reason and outranks panel
+        # availability: masking it sends on-call after a flaky analyst for what
+        # is really an adjudicator output defect.
         brief["degraded_reason"] = reason or "unparseable_reply"
         return brief
     brief["regime_context"] = parsed.get("regime_context")
@@ -484,8 +538,9 @@ def synthesize(state: dict, cfg: dict | None = None, call=None) -> dict:
         if th is not None:
             theses.append(th)
     brief["theses"] = theses
-    if reason:
-        brief["degraded_reason"] = reason
+    final_reason = reason or missing_reason
+    if final_reason:
+        brief["degraded_reason"] = final_reason
     return brief
 
 
