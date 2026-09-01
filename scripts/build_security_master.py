@@ -391,19 +391,21 @@ RENAME_EVENTS: tuple[RenameEvent, ...] = (
         # repair tests), so `membership` genuinely carries two simultaneous
         # observations that need the same date boundary to stay unambiguous.
         #
-        # `store` is DELIBERATELY NOT dated here (AMENDMENT ruling 9 / m3 asks for a
-        # dated store answer "per the same derivation rules as the yahoo family" —
-        # attempted and reverted: dating it requires CLOSING the pre-existing
-        # committed open-bounded `(store, EQR, ...)` row, which AMENDMENT ruling 6 /
-        # M5 forbids (a fresh row overlapping a committed row pointing at an ACTIVE
-        # id is now a fail-closed build error, never a silent replacement — verified:
-        # this exact combination raises VendorAliasPruneConflict on the real
-        # committed alias table). Reported as a builder-discovered ruling conflict
-        # rather than force one ruling over the other; see the PR body / packet
-        # DEVIATIONS for the full analysis and the two ways to resolve it (a narrow
-        # ruling-6 carve-out for a row a NEWLY-dated RenameEvent retroactively
-        # scopes, or an explicit one-time hand-migration of the stale `store` row).
-        vendors=(VENDOR_YAHOO, VENDOR_MEMBERSHIP),
+        # `store` IS dated here since 2026-08-28 (AMENDMENT ruling 9 / m3, completed
+        # alongside the owed breadth-lane retirement — the EQR->VMRK store-key
+        # migration under the #4622 protocol). The ruling conflict that deferred it
+        # (dating the store answer required closing the pre-existing committed
+        # open-bounded `(store, EQR, ...)` row, which AMENDMENT ruling 6 / M5's
+        # fail-closed prune law forbids the builder to do) was resolved via the
+        # comment's own option 2: an explicit ONE-TIME HAND-MIGRATION of the
+        # committed row (data/reference/vendor_aliases.parquet: `(store, EQR,
+        # SEC:US-XNYS-EQR, None, None)` -> valid_to=2026-08-18, plus the dated
+        # `(store, VMRK, ..., 2026-08-18, None)` row), receipted in that change's PR
+        # body. The general AMENDMENT §2 same-id-refinement carve-out remains a
+        # follow-up with its own review; until it lands, the NEXT dated rename on a
+        # current-catalog space still fail-closes at VendorAliasPruneConflict and
+        # needs the same one-time hand-migration.
+        vendors=(VENDOR_YAHOO, VENDOR_MEMBERSHIP, VENDOR_STORE),
         evidence=(
             "SEC EDGAR CIK 0000906107 Form 8-K filed 2026-08-17, accession "
             "0001140361-26-033377, Item 5.03: name changed Equity Residential -> "
@@ -1107,13 +1109,17 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
       open-bounded row (the space never moved, or the day it moved is not citable) or a
       DATED PAIR straddling the rename.  The pair is what makes the table answer
       differently either side of the boundary, which is the whole deliverable.
-    * CURRENT-CATALOG spaces (``yahoo_fetch``, ``store``) get exactly ONE OPEN-BOUNDED
-      row at today's symbol, for every security, always.  A vendor that migrated the
-      whole history onto the new name has no boundary to scope, and one row per security
-      is also what ``VendorAliasTable`` requires: the constructor refuses two rows that
-      overlap on ``(vendor, security_id)``, so a "current catalog" carrying both names
-      open-bounded is not a thing this reader will accept — correctly, because "what do
-      I call it today" has exactly one answer.
+    * CURRENT-CATALOG spaces (``yahoo_fetch``, ``store``) get ONE OPEN-BOUNDED row at
+      today's symbol per security — or, since 2026-08-28 (AMENDMENT ruling 9 / m3), a
+      DATED PAIR when a RenameEvent names the space in ``vendors`` AND the security is
+      the renamed one (inception-code gate below): the repo's own stored key genuinely
+      changed on a day (EQR->VMRK), and "what key did the repo file this under on date
+      D" needs the boundary. Either way exactly ONE row is open-bounded per security,
+      which is what ``VendorAliasTable`` requires (the constructor refuses two rows
+      overlapping on ``(vendor, security_id)``) — "what do I call it today" still has
+      exactly one answer. Dated or not, current-catalog rows are NEVER historical-
+      naming evidence: ``engine/theme_graph/identity_resolution.py`` excludes these
+      spaces by VENDOR IDENTITY in HISTORICAL mode (``_CURRENT_CATALOG_VENDORS``).
 
       V4-D2B1-R1: a dedup-onto-one-master-row rename (§2.3 — e.g. EQR/VMRK, where BOTH
       the pre-rename and post-rename symbol stay live universe keys on purpose, unlike
@@ -1163,13 +1169,11 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
         # it (MRSH -> MMC), which is why data/baskets/ohlcv/MMC.parquet is the file that
         # exists while Yahoo is fetched under MRSH.
         #
-        # `store` stays a plain current-catalog space (one open-bounded row, the
-        # is_root-gated root resolution only) — AMENDMENT ruling 9 (m3) asked for a
-        # dated VMRK answer here, but dating it structurally requires closing the
-        # pre-existing committed open `(store, EQR, ...)` row, which AMENDMENT ruling
-        # 6 / M5's fail-closed law forbids (verified: raises
-        # VendorAliasPruneConflict). See the `historical` dict above for the full
-        # note; reported as a builder-discovered ruling conflict, not force-resolved.
+        # `store` (like `yahoo_fetch`) is a current-catalog space: the is_root-gated
+        # winner per security is emitted below, dated through RENAME_EVENTS since
+        # 2026-08-28 (AMENDMENT ruling 9 / m3, completed — the ruling-6 conflict that
+        # deferred it was resolved by the one-time hand-migration of the committed
+        # open `(store, EQR, ...)` row; see the RenameEvent comment at the top).
         current = {
             VENDOR_YAHOO_FETCH: ticker_aliases.fetch_symbol(res.key),
             VENDOR_STORE: res.key,
@@ -1193,7 +1197,23 @@ def build_alias_rows(resolutions: list[Resolution], ids: dict[str, str]) -> list
                 current_by_sec[key] = (symbol, is_root)
 
     for (vendor, sec), (symbol, _is_root) in current_by_sec.items():
-        rows.append(AliasRow(vendor, symbol, sec, None, None))
+        # AMENDMENT ruling 9 (m3): a current-catalog space whose symbol a RenameEvent
+        # dates (event.vendors naming this vendor) emits the dated old/new pair per
+        # the same derivation rules as the historical spaces above, so `store` can
+        # answer "what key did the repo file this under on date D" across a ratified
+        # key migration (EQR->VMRK). A symbol no event dates keeps the single
+        # open-bounded row. The `dated` map is keyed by SYMBOL and carries no
+        # security identity, and this repo tracks live ticker reuse — so the pair is
+        # emitted ONLY for the security the event actually renamed (the one whose id
+        # the event's own keys resolve to); a stranger security that merely reuses
+        # one of the event's symbol strings keeps its plain open-bounded row.
+        event = dated.get((vendor, symbol))
+        renamed_sec = (ids.get(event.new) or ids.get(event.old)) if event else None
+        if event is None or sec != renamed_sec:
+            rows.append(AliasRow(vendor, symbol, sec, None, None))
+        else:
+            rows.append(AliasRow(vendor, event.old, sec, None, event.on))
+            rows.append(AliasRow(vendor, event.new, sec, event.on, None))
 
     # Dedup on the full grain — a security reached through two spaces that happen to
     # agree must not produce two identical rows (which would also read as an overlap).

@@ -2318,15 +2318,19 @@ breadth:
                   # are keyed on it.
     FISV: FI      # Fiserv renamed FISV->FI in 2023 — the page still shows the OLD symbol
                   # (Yahoo does too, hence the inverse entry in lib/ticker_aliases)
-    VMRK: EQR     # Equity Residential renamed EQR->VMRK on the NYSE 2026-08-18 (SEC EDGAR
-                  # CIK 0000906107, 8-K accession 0001140361-26-033377, Item 5.03 —
-                  # research/prophet_v4/d2/D2B1_R1_FROZEN_CONTRACT_2026-08-20.md
-                  # AMENDMENT ruling 7 / M6). EQR stays the stored key (same MMC->MRSH
-                  # precedent; lib/ticker_aliases.YAHOO_FETCH_ALIASES["EQR"]="VMRK"
-                  # fetches under the NEW symbol and stores under the OLD one). Does NOT
-                  # retire the pre-existing data/stocks/EQR.parquet + VMRK.parquet double
-                  # store — that is an owed breadth-lane retirement, out of scope here
-                  # (§10 forbids editing price stores).
+    # VMRK: EQR was removed 2026-08-28 (the owed breadth-lane retirement named by
+    # D2B1_R1_FROZEN_CONTRACT AMENDMENT ruling 7 / M6, executed as the EQR->VMRK key
+    # migration under the #4622 protocol, operator-ratified). The pin was measured
+    # actively harmful here: collectors/breadth.py fetches the PINNED key literally
+    # (it never imports lib/ticker_aliases), and Yahoo stopped serving 'EQR' after the
+    # 2026-08-18 NYSE rename (SEC EDGAR CIK 0000906107, 8-K accession
+    # 0001140361-26-033377, Item 5.03) — so from 2026-08-20 the pin froze BOTH cache
+    # columns: EQR advanced only on 0-volume 63.66 ghost bars through 08-21, and the
+    # live VMRK column stopped being written at 08-19. VMRK is now the stored key
+    # everywhere (stocks/baskets/breadth/ledger); the EQR cache-column history was
+    # spliced into the VMRK columns in the same change (overlap ratio 1.0, ghost bars
+    # dropped). The MMC/FISV pins above remain valid: Yahoo still serves those old
+    # symbols, so their pinned fetches still return live bars.
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same
@@ -2634,6 +2638,13 @@ stock_search:
              # nightly fetch — Yahoo answers this dead string with the acquirer's
              # re-based tape, so fetching it splices a foreign series (2026-08-22
              # incident). Do NOT delete this line.
+    - LEG    # Leggett & Platt — DELISTED 2026-08-27 (acquired by Somnigroup
+             # International; merger closed 08-26, 25-NSE accession
+             # 0000876661-26-000712). Membership added WITH the exit row: LEG was
+             # only ever universe()-reachable through the S&P 600 constituents,
+             # and the exit-ledger scrape exclusion removes it there — without a
+             # curated line its page and deep links would go dark (CSP-R1), the
+             # exact drop the CTRA/TPH/AVB lines above exist to prevent.
     - AWK    # American Water Works
     - AXP    # American Express
     - AZO    # AutoZone
@@ -3108,6 +3119,7 @@ stock_search:
     CTRA:  {name: "Coterra Energy", sector: "Energy"}
     TPH:   {name: "Tri Pointe Homes", sector: "Consumer Discretionary"}
     AVB:   {name: "AvalonBay Communities", sector: "Real Estate"}
+    LEG:   {name: "Leggett & Platt", sector: "Consumer Discretionary"}
     # FBRX and TWO: same rule — delisted 2026-08 (config/delisted_symbols.yml),
     # labels keep their pages naming the company. TWO is a mortgage REIT, which
     # GICS files under Financials, not Real Estate.
@@ -3895,6 +3907,16 @@ quality:
     GOLD: "Gold.com, Inc. (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48; fka A-Mark Precious Metals) under its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer — store holds A-Mark/Gold.com's full history (2014-03-17->, its spinoff listing) and NEVER held Barrick: the file was born 2026-06-30, after the reuse. Prior symbol holders: Barrick (NYSE GOLD 2019-01-02 -> 2025-05-08; renamed Barrick Mining, NYSE 'B' since 2025-05-09); Randgold Resources (NASDAQ GOLD until the 2019-01-01 Barrick merger). CONSUMER DEFECT REPAIRED (PR #5632): gold_miners removes the Barrick-labelled GOLD row entirely, carries Barrick Mining (EDGAR CIK 756894) under NYSE 'B', and seeds curated data/baskets/ohlcv/B.parquet. GOLD remains a valid Gold.com instrument; this was a consumer-label repair, not a store quarantine."
   delisted_printing_acks:
     - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
+    - ANGPY                      # OTC (Pink) ADR — Valterra Platinum Limited, JSE-primary PGM producer
+                                 # (renamed from Anglo American Platinum 2025; ADR ticker unchanged).
+                                 # SEC CIK 1673520 formerNames 'Anglo American Platinum Limited/ADR'
+                                 # -> Valterra; F-6EF accession 0001019155-25-000173 (2025-05-14);
+                                 # OpenFIGI ANGPY = 'VALTERRA PLATINUM-SPON ADR' (live). Same
+                                 # never-in-the-directory-by-design shape as RHHBY; pgm_miners member.
+    - IMPUY                      # OTCQX ADR — Impala Platinum Holdings Ltd, JSE-primary (unchanged
+                                 # issuer: SEC CIK 12318, formerNames empty; routine F-6 renewal
+                                 # accession 0001193805-26-000853 eff. 2026-06-30; OpenFIGI IMPUY =
+                                 # 'IMPALA PLATINUM-SPON ADR', live). Same RHHBY shape; pgm_miners member.
     - STRS                       # Stratus Properties — voluntarily left NASDAQ under its Plan of
                                  # Complete Liquidation and Dissolution (Form 25 2026-07-31, effective
                                  # ~08-10; Forms 15 08-10; CIK 885508) but the shares legitimately keep
@@ -3927,6 +3949,19 @@ quality:
   # `python scripts/migrate_track_record_keys.py --apply`, which refuses to run unless
   # its own losslessness receipt is clean.
   ticker_key_migrations:
+    # EQR -> VMRK (Equity Residential renamed Vivmark Residential, NYSE EQR->VMRK eff.
+    # 2026-08-18, SEC EDGAR CIK 0000906107, 8-K accession 0001140361-26-033377) is a
+    # ratified KEY MIGRATION executed 2026-08-28 at the STORE/membership/claims layer,
+    # but deliberately NOT declared here: track_record.parquet holds TWO NON-IDENTICAL
+    # computations of the company's history (266 EQR rows first_seen 2026-06/07 + 253
+    # VMRK rows re-fired first_seen 2026-08-05 on the re-adjusted tape — 61 shared
+    # (date,type) keys with 1,155 disagreeing cells, ~1% entry/forward price deltas
+    # from the different dividend-adjustment epochs), so migration_receipt is NOT
+    # lossless and tests/test_ledger_identity.py::TestLiveLedger refuses a declared
+    # row until the ledger's duplicate is adjudicated (the candidate repair — pruning
+    # the 2026-08-05 VMRK re-admission block — is an append-only-charter act needing
+    # its own operator ratification). With the EQR price stores retired, no scan can
+    # re-fire EQR rows, so the map's ingest-guard value is moot in the meantime.
     SATS: ECHO   # EchoStar Corp renamed SATS->ECHO effective 2026-06-24 (NASDAQ dir
                  # 'EchoStar Corporation'; EDGAR CIK 1415404; FIGI BBG000TGLV00 — the
                  # same receipts as the ECHO ack above). ECHO is the key the stack now

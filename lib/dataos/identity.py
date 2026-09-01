@@ -642,9 +642,13 @@ class AliasRow:
     Yahoo called it in 2020 and then REQUESTED that answer would get "possibly
     delisted, no price data found" — the seven-month ``insurance`` 18/19 outage in a
     new costume.  The CURRENT-CATALOG question ("what string do I use today, for a bar
-    of any date") is answered by a separate vendor space carrying ONE OPEN-BOUNDED row
-    per security; ``config/dataset_registry.yml::reference.vendor_aliases`` names both
-    families, and ``scripts/build_security_master.py`` emits them.
+    of any date") is answered by separate vendor spaces (``yahoo_fetch``/``store``)
+    carrying exactly one OPEN-BOUNDED row per security — plus, since 2026-08-28, a
+    dated predecessor row when the repo's own stored key changed on a citable day
+    (EQR->VMRK, AMENDMENT ruling 9 / m3); historical-mode readers exclude these
+    spaces by vendor identity, never by row shape.
+    ``config/dataset_registry.yml::reference.vendor_aliases`` names both families,
+    and ``scripts/build_security_master.py`` emits them.
     """
 
     vendor: str

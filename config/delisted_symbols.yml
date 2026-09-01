@@ -128,6 +128,34 @@ symbols:
       - 25-NSE 2026-08-27 — Nasdaq delisting notification. Accession 0001354457-26-000824
       - Absent from the NASDAQ symbol directory (nasdaqtraded.txt, fetched 2026-08-29)
 
+  LEG:
+    company: Leggett & Platt, Incorporated
+    company_zh: 礼恩派
+    exchange: NYSE
+    cik: '0000058492'
+    # True last session 2026-08-26 (the merger close date; 13.66M-share final
+    # session). The baskets store's 2026-08-27 bar is a 0-volume flat-forward of
+    # the 08-26 close (9.20 repeated on all four OHLC fields) — the same vendor
+    # padding tell as CTRA/BLD (#4616).
+    last_session: '2026-08-26'
+    delisted_on: '2026-08-27'
+    reason: acquisition
+    acquirer: Somnigroup International
+    acquirer_zh: Somnigroup International
+    # Per-share terms not restated in the closing 8-K read for this row; the
+    # Agreement and Plan of Merger is dated 2026-04-13 (see receipts). Left null
+    # rather than inferred.
+    consideration: null
+    successor_ticker: null
+    receipts:
+      - 8-K 2026-08-26 — merger with Sparrow Unity Corporation (Somnigroup merger
+        sub) completed under the Agreement and Plan of Merger dated 2026-04-13;
+        Leggett & Platt became a wholly-owned Somnigroup International subsidiary.
+        Accession 0001193125-26-366694
+      - 25-NSE 2026-08-27 — NYSE delisting notification. Accession 0000876661-26-000712
+      - Absent from the NASDAQ symbol directory (nasdaqlisted.txt + otherlisted.txt,
+        fetched 2026-08-28) and from OpenFIGI under ticker LEG + exchCode US
+
   # STRS has NO row on purpose (2026-08-29): Stratus Properties left NASDAQ
   # voluntarily under its Plan of Complete Liquidation and Dissolution (8-K
   # 2026-07-01 item 3.01 accession 0000885508-26-000035; Form 25 2026-07-31
