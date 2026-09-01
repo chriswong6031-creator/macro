@@ -11701,6 +11701,27 @@ jobs:
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode
         run: python -m pytest tests/test_w5b_edge_chips.py -q
+      # ZHC-509 PR-time ownership (Sol ruling 2026-08-31). tests/test_canada_build.py
+      # is the Canada row-contract + template-render guard, and its only other caller
+      # is `engine-render-guards`, which is `gate: data` — outside the pull-request
+      # merge gate entirely. The semantic plan therefore reported the path UNOWNED
+      # ("1 unowned path(s) did not widen"), so a candidate editing
+      # templates/canada.html.j2 could read all-green without this suite executing
+      # once; contract-delta passing proves only that the suite is NAMED somewhere in
+      # the repository, never that THIS candidate runs it.
+      #
+      # Placed beside the other template/page render contracts above. This does NOT
+      # reclassify engine-render-guards and does not touch
+      # .github/workflows/ci-main-heartbeat.yml: PR-time ownership and main/nightly
+      # revalidation are complementary proof paths, not duplicate authority.
+      #
+      # DEPENDENCIES, checked the way this job's China note above demands rather than
+      # assumed: the suite's only third-party imports are jinja2 and pandas, with
+      # pyarrow reached transitively through scripts.build_canada_library — all three
+      # already on this job's install line, so it cannot repeat the #5985 class of
+      # green-locally / ModuleNotFoundError-in-CI failure.
+      - name: Canada stock dashboard — row contract, owner-native entry labels, template render
+        run: python -m pytest tests/test_canada_build.py -q
       # Unrun backfill 2026-08-19 (audit_unrun_tests.py, #5952-class): the China
       # Special Situations desk's four truth contracts, shipped by #5975 and
       # extended by #5996, were named by no run: step in any workflow. Engine and
