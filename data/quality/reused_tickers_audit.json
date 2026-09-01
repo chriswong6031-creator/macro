@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-29",
+ "asof": "2026-08-30",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -780,7 +780,7 @@
   }
  ],
  "ledger_identity": {
-  "ledger": "/Users/chriswong/actions-runner-4/_work/macro/macro/data/signal_archive/track_record.parquet",
+  "ledger": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/signal_archive/track_record.parquet",
   "declared_duplicates": [
    {
     "superseded": "SATS",
@@ -801,7 +801,7 @@
   "ticker_key_migrations": {
    "SATS": "ECHO"
   },
-  "ledger_rows": 59809
+  "ledger_rows": 59814
  },
  "grace_days": 30,
  "stale_calendar_days": 7,

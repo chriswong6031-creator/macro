@@ -1,18 +1,18 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FTI-BULL-20260810",
-  "asof": "2026-08-29",
+  "asof": "2026-08-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 54.0,
-  "raw_confidence": 52.3,
-  "delta_vs_base": -6.0,
+  "management_confidence": 52.8,
+  "raw_confidence": 51.3,
+  "delta_vs_base": -7.2,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 11.8,
-    "pace": 33.6,
+    "pace": 29.0,
     "retention": 50.0,
     "overlay": 61.0
   },
@@ -20,7 +20,7 @@
     "dist_to_stop_r": 1.145,
     "dist_to_t1_r": 1.355,
     "dist_to_t2_r": 2.855,
-    "horizon_pct_used": 42.2,
+    "horizon_pct_used": 44.4,
     "p1": 0.0969,
     "p2": 0.0484,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 19,
-  "tau": 0.4222
+  "days_elapsed": 20,
+  "tau": 0.4444
 }

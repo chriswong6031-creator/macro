@@ -1,21 +1,9 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-27",
-  "generated_at_utc": "2026-08-30T12:41:49.663009+00:00",
+  "asof": "2026-08-31",
+  "generated_at_utc": "2026-08-31T14:06:34.849628+00:00",
   "horizon_days": 45,
   "entries": [
-    {
-      "date": "2026-08-27",
-      "window_end": "2026-08-31",
-      "etype": "earnings_season",
-      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
-      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
-      "region": "cn",
-      "impact": "high",
-      "source_class": "feed",
-      "source": "china_earnings.calendar",
-      "approx": false
-    },
     {
       "date": "2026-08-31",
       "window_end": null,
@@ -26,6 +14,18 @@
       "impact": "high",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-31",
+      "window_end": "2026-08-31",
+      "etype": "earnings_season",
+      "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
+      "label_zh": "A股中报密集披露期：2026年8月约99%的覆盖名单披露",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "feed",
+      "source": "china_earnings.calendar",
       "approx": false
     },
     {
@@ -348,6 +348,42 @@
       "label_zh": "海关进出口数据",
       "region": "cn",
       "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-12",
+      "window_end": null,
+      "etype": "CREDIT",
+      "label_en": "Money supply, RMB loans & TSF",
+      "label_zh": "货币供应、人民币贷款与社融",
+      "region": "cn",
+      "impact": "high",
+      "source_class": "rule",
+      "source": "engine.china_event_calendar",
+      "approx": true
+    },
+    {
+      "date": "2026-10-13",
+      "window_end": null,
+      "etype": "US_CPI",
+      "label_en": "US CPI",
+      "label_zh": "美国 CPI",
+      "region": "hk",
+      "impact": "high",
+      "source_class": "static",
+      "source": "engine.hk_event_calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-10-15",
+      "window_end": null,
+      "etype": "MLF",
+      "label_en": "MLF operation (PBoC)",
+      "label_zh": "MLF 操作（央行中期借贷便利）",
+      "region": "cn",
+      "impact": "medium",
       "source_class": "rule",
       "source": "engine.china_event_calendar",
       "approx": true

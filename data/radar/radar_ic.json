@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v2",
-  "as_of": "2026-08-29",
-  "generated_at": "2026-08-30T05:49:02.896165+00:00",
+  "as_of": "2026-08-30",
+  "generated_at": "2026-08-31T05:56:47.627215+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
@@ -9,7 +9,7 @@
     91
   ],
   "seed_horizon_cal_d": 91,
-  "n_snapshots": 12348,
+  "n_snapshots": 12351,
   "n_matured": 8610,
   "ic_all": -0.1572,
   "ic_all_signed": -0.0783,
@@ -47,17 +47,17 @@
       "excess_vs_base": -0.101,
       "mean_fwd_ret": -0.0347
     },
-    "NEGATIVE_DIVERGENCE": {
-      "n": 2729,
-      "dir_accuracy": 0.54,
-      "excess_vs_base": -0.004,
-      "mean_fwd_ret": -0.0078
-    },
     "CONFIRMED_DOWN": {
       "n": 2432,
       "dir_accuracy": 0.468,
       "excess_vs_base": -0.076,
       "mean_fwd_ret": 0.0112
+    },
+    "NEGATIVE_DIVERGENCE": {
+      "n": 2729,
+      "dir_accuracy": 0.54,
+      "excess_vs_base": -0.004,
+      "mean_fwd_ret": -0.0078
     }
   },
   "base_rate": {
@@ -136,17 +136,17 @@
           "excess_vs_base": -0.101,
           "mean_fwd_ret": -0.0347
         },
-        "NEGATIVE_DIVERGENCE": {
-          "n": 2729,
-          "dir_accuracy": 0.54,
-          "excess_vs_base": -0.004,
-          "mean_fwd_ret": -0.0078
-        },
         "CONFIRMED_DOWN": {
           "n": 2432,
           "dir_accuracy": 0.468,
           "excess_vs_base": -0.076,
           "mean_fwd_ret": 0.0112
+        },
+        "NEGATIVE_DIVERGENCE": {
+          "n": 2729,
+          "dir_accuracy": 0.54,
+          "excess_vs_base": -0.004,
+          "mean_fwd_ret": -0.0078
         }
       },
       "by_kind": {
@@ -279,17 +279,17 @@
           "excess_vs_base": -0.086,
           "mean_fwd_ret": -0.0781
         },
-        "NEGATIVE_DIVERGENCE": {
-          "n": 50,
-          "dir_accuracy": 0.38,
-          "excess_vs_base": -0.201,
-          "mean_fwd_ret": 0.0265
-        },
         "CONFIRMED_DOWN": {
           "n": 55,
           "dir_accuracy": 0.236,
           "excess_vs_base": -0.345,
           "mean_fwd_ret": 0.1654
+        },
+        "NEGATIVE_DIVERGENCE": {
+          "n": 50,
+          "dir_accuracy": 0.38,
+          "excess_vs_base": -0.201,
+          "mean_fwd_ret": 0.0265
         }
       },
       "by_kind": {
