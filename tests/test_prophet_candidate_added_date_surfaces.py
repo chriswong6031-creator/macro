@@ -134,12 +134,18 @@ def test_us_and_cn_freshness_headers_unaffected_by_this_change():
 
 # ─────────────────────────── build-script wiring census ──────────────────────
 
+#: S5 (2026-09-01 repair round): build_intl.py's OWN direct call was removed —
+#: it was a provable no-op (build_intl_library.main() is the artifact's single
+#: owner: it reads the prior committed intl_setups.json, stamps `setups`, THEN
+#: writes that file and returns the already-stamped `setups`; build_intl.py's
+#: second call always re-read the file build_intl_library.main() had just
+#: written with this exact content). Only build_intl_library.py needs the
+#: direct wiring now.
 BUILD_SCRIPTS = {
     "build_site.py": "stamp_us_board_since",
     "build_china.py": "stamp_cn_board_since",
     "build_hk.py": "stamp_hkca_board_since",
     "build_canada.py": "stamp_hkca_board_since",
-    "build_intl.py": "stamp_intl_board_since",
     "build_intl_library.py": "stamp_intl_board_since",
 }
 
@@ -151,3 +157,11 @@ def test_every_build_script_wires_its_market_stamp_fail_open():
         assert fn in src, f"{name}: no reference to {fn}"
         assert "fail_open" in src.split(fn)[1][:80] or f"{fn}_fail_open" in src, (
             f"{name}: {fn} call does not appear to be the fail-open wrapper")
+
+
+def test_build_intl_no_longer_carries_the_dead_no_op_restamp():
+    # S5: dead code removed. build_intl.py relies entirely on the `setups` it
+    # gets back from build_intl_library.main(), which is already stamped.
+    src = (ROOT / "scripts" / "build_intl.py").read_text(encoding="utf-8")
+    assert "stamp_intl_board_since" not in src
+    assert "build_intl_library.main(alpha=alpha)" in src

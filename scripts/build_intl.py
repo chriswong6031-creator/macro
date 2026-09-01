@@ -868,18 +868,14 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive
             log.error("intl stock library failed (%s)", e)
 
-        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py). Carry-forward
-        # stamping only — no history scan, no git subprocess. build_intl_library.main()
-        # already stamps `setups` before writing site/factordata/intl_setups.json (the
-        # artifact's single owner); this defensive re-stamp is a no-op there (same as_of,
-        # same membership) and only does real work if this vm-level `setups` ever diverges
-        # from what was written.
-        try:
-            from engine.prophet_board_since import stamp_intl_board_since_fail_open
-            setups = stamp_intl_board_since_fail_open(
-                setups, repo_root=Path(__file__).resolve().parent.parent, log=log)
-        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
-            log.warning("intl board_since stamp failed (%s)", _bse)
+        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py): NOT
+        # re-stamped here (S5, 2026-09-01 repair round — dead code removed).
+        # build_intl_library.main() is the artifact's single owner: it already
+        # reads the prior committed site/factordata/intl_setups.json and stamps
+        # `setups` BEFORE writing that same file and returning it, so `setups`
+        # above already carries `added_date`. A second call here always read
+        # back the file build_intl_library.main() had just written with this
+        # exact `setups` content — a provable no-op, never doing real work.
 
         for r in latest["records"]:
             r["quad_meaning"] = QUAD_MEANING.get(r.get("quad_name"))

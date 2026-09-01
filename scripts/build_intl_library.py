@@ -525,11 +525,17 @@ def main(alpha: dict | None = None) -> dict | None:
         # Per-candidate Added / 入榜 date (engine/prophet_board_since.py). Carry-forward
         # stamping — the PRIOR committed artifact MUST be read before the write below
         # overwrites it; this is the artifact's single owner (build_intl.py calls this
-        # function to obtain `setups` rather than writing the file itself).
+        # function to obtain `setups` rather than writing the file itself). S1
+        # (2026-09-01 repair round): `site_dir=site` threads THIS function's own
+        # already-resolved site directory (line ~312 above) into the read, so the
+        # prior-artifact read and this build's write are the same single source of
+        # truth for the site path — never a hard-coded "site" literal that could
+        # silently diverge from a deployment's actual configured site_dir.
         try:
             from engine.prophet_board_since import stamp_intl_board_since_fail_open
             setups = stamp_intl_board_since_fail_open(
-                setups, repo_root=Path(__file__).resolve().parent.parent, log=log)
+                setups, site_dir=site,
+                repo_root=Path(__file__).resolve().parent.parent, log=log)
         except Exception as _bse:  # noqa: BLE001 — additive, never fatal
             log.warning("intl board_since stamp failed (%s)", _bse)
         (site / "factordata" / "intl_setups.json").write_text(

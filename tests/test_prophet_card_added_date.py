@@ -89,3 +89,40 @@ def test_plan_cards_partial_keeps_plan_asof_and_gains_no_added_date():
     src = (TEMPLATES / "_us_prophet_plan_cards.html.j2").read_text(encoding="utf-8")
     assert "'date': p.get('plan_asof') or p.get('recorded_at')" in src
     assert "added_date" not in src
+
+
+def _pv_css() -> str:
+    src = PARTIAL.read_text(encoding="utf-8")
+    mod = _env().from_string(src).module
+    return str(mod.pv_css())
+
+
+def test_zone_value_never_shrinks_the_added_and_date_chips_do():
+    # F1 (2026-09-01 repair round): the buy-zone price (.pv-znr) must never
+    # clip because of the .pv-dt/.pv-added metadata chips sharing the same
+    # flex row — .pv-znr is pinned flex:none (renders at full content width,
+    # never truncated), while .pv-dt/.pv-added are the ones that shrink +
+    # ellipsize under pressure. This is the inverse of the pre-fix rule,
+    # where .pv-znr was the only shrinkable child and absorbed 100% of the
+    # squeeze from the un-shrinkable metadata chips.
+    css = _pv_css()
+    znr_rule = re.search(r"\.pv-znr\{([^}]*)\}", css)
+    assert znr_rule, ".pv-znr rule not found in pv_css()"
+    assert "flex:none" in znr_rule.group(1)
+    assert "min-width:0" not in znr_rule.group(1)  # no shrink -> no ellipsis needed
+
+    for cls in ("pv-dt", "pv-added"):
+        rule = re.search(r"\." + cls + r"\{([^}]*)\}", css)
+        assert rule, f".{cls} rule not found in pv_css()"
+        body = rule.group(1)
+        assert "flex:none" not in body, f".{cls} must not be flex:none (must be able to shrink)"
+        assert "min-width:0" in body
+        assert "overflow:hidden" in body
+        assert "text-overflow:ellipsis" in body
+
+
+def test_narrow_viewport_caps_metadata_chip_width_so_zone_gets_room():
+    css = _pv_css()
+    narrow_block = css[css.index("@media (max-width:680px)"):]
+    assert ".pv-dt,.pv-added{max-width:32%}" in narrow_block or \
+        re.search(r"\.pv-dt,\s*\.pv-added\{[^}]*max-width:32%", narrow_block)

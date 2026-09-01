@@ -127,7 +127,16 @@ def with_current_board(
     fossil is canonical. This is what makes a same-session rebuild (same as_of,
     same or a later call) a no-op rather than an overwrite, and what stops a
     stale as_of from clobbering a newer fossil someone else already wrote.
+
+    S4 FIX (2026-09-01 repair round): `observations` is materialized to a list
+    ONCE, up front. The old code called `collapse_published_observations(observations)`
+    first (which fully consumes an iterator) and THEN, further down, re-read the
+    same `observations` argument a second time via `list(observations or ())` —
+    a generator/iterator input is exhausted by the first pass, so the second read
+    silently returned `[]` and every fossil date before today was dropped from the
+    result. A list is a safe no-op to re-materialize; a generator is not.
     """
+    observations = list(observations or ())
     obs = collapse_published_observations(observations)
     iso = _iso_from_value(current_as_of)
     if not iso:
@@ -135,13 +144,15 @@ def with_current_board(
     if obs and iso <= obs[-1][0]:
         return obs
     cleaned_ids = {c for c in (_clean_id(x) for x in (current_ids or ())) if c}
-    return collapse_published_observations(list(observations or ()) + [(iso, cleaned_ids)])
+    return collapse_published_observations(observations + [(iso, cleaned_ids)])
 
 
 def current_continuous_membership_start(
     observations: Iterable[tuple[Any, Iterable[Any]]] | None,
     identity: Any,
     starts_at_inception: bool = False,
+    full_coverage_since: str | None = None,
+    requires_full_coverage: bool = False,
 ) -> MembershipStart | None:
     """Earliest date of the current uninterrupted published-board presence streak.
 
@@ -163,6 +174,26 @@ def current_continuous_membership_start(
     observation simply ABSENT from `observations` (a missing whole-board publish,
     a weekend, a holiday) does not — the walk only looks at observations that
     actually exist.
+
+    SOUNDNESS FLOOR (M1/M2, 2026-09-01 repair round): `requires_full_coverage=True`
+    opts a market into floor-gated absence proofs — the DEFAULT (False) is fully
+    backward compatible and ignores `full_coverage_since` entirely, so every
+    existing caller (US, HK/CA before their own floor lands, and the plain
+    resolver-core tests) is unaffected. When opted in, `full_coverage_since`
+    names the earliest ISO date at which a market's fossil is known to cover
+    EVERY name-visible lane/group (see the per-market `*_full_coverage_since`
+    helpers below). An observation dated BEFORE that floor may have been
+    recorded while one or more name-visible lanes were not yet persisted at
+    all — an identity "absent" from such an observation could simply be present
+    in an unfossiled lane nothing recorded, which makes that absence
+    UNPROVABLE, not proof of a reset. So, under `requires_full_coverage=True`,
+    an absence-proof whose anchoring absence observation predates the floor (or
+    whose market has no floor established yet at all — `full_coverage_since is
+    None` counts as "never sound", not "no restriction") resolves to None
+    rather than being trusted. This never affects "present" evidence (a name
+    found in even a narrower historical lane set is still genuinely present) or
+    the `starts_at_inception` left-censoring path, which is already
+    None-by-default for every market that would need a floor.
     """
     ident = _clean_id(identity)
     if not ident:
@@ -178,6 +209,7 @@ def current_continuous_membership_start(
     streak_start = last_date
     idx = len(obs) - 2
     hit_absence = False
+    absence_date: str | None = None
     while idx >= 0:
         date, ids = obs[idx]
         if ident in ids:
@@ -185,8 +217,13 @@ def current_continuous_membership_start(
             idx -= 1
             continue
         hit_absence = True
+        absence_date = date
         break
     if hit_absence:
+        if requires_full_coverage and (
+            full_coverage_since is None or (absence_date or "") < full_coverage_since
+        ):
+            return None  # unsound: absence predates (or floor never reached) full coverage
         return (streak_start, "absence_proof")
     # Walked back through every recorded observation without ever finding an
     # absence — present at the oldest one. Left-censored unless the caller has
@@ -250,7 +287,17 @@ def observations_from_us_snapshots_jsonl(
     """Stream `data/us_board_ledger/snapshots.jsonl` line-by-line (never a whole-file
     read — the file is ~33MB). Memoized per-process keyed by (path, mtime, size) so a
     second call in the same build (the two _attach_board_display_chips call sites)
-    does not re-parse the file."""
+    does not re-parse the file.
+
+    S3 FIX (2026-09-01 repair round): each JSONL line is a WHOLE-BOARD snapshot,
+    not an incremental per-name update — so when two lines share the same `as_of`
+    date, the LAST line published for that date is the entire truth for that date
+    and must REPLACE any earlier same-date line, never be unioned with it. The old
+    code called `by_date.setdefault(iso, set()).update(ids)`, which merged a later
+    same-date snapshot's ids into the earlier one — a name the later (correct,
+    final) snapshot had already dropped would incorrectly keep sustaining tenure
+    forever because the earlier line's copy of it never got removed from the
+    unioned set."""
     try:
         st = path.stat()
     except OSError:
@@ -283,7 +330,9 @@ def observations_from_us_snapshots_jsonl(
                             tk = _clean_id(row.get("ticker"))
                             if tk:
                                 ids.add(tk)
-                by_date.setdefault(iso, set()).update(ids)
+                # Last line per ISO date wins (replace, not union) — see the S3
+                # docstring note above.
+                by_date[iso] = ids
     except OSError:
         return []
     result = [(d, frozenset(by_date[d])) for d in sorted(by_date)]
@@ -343,6 +392,19 @@ def stamp_us_board_since_fail_open(
 # unchanged by the membership fix below.
 CN_CURRENT_LANES = ("buy", "more_actionable")
 
+# MEMBERSHIP TRACE UPDATE (M1/M2, 2026-09-01 repair round — supersedes the
+# "never fossil-tracked" trace on `observations_from_cn_frame` below):
+# scripts/build_china_library.py now appends `wide["more_actionable"]` to
+# board.parquet too, under a distinct `<live_definition>_more_actionable`
+# board_definition (never in china_standout_track.WATCH_DEFINITIONS, so
+# `observations_from_cn_frame`'s existing watch/legacy filter naturally
+# includes it) and a distinct row-level `lane="more_actionable"`. It is
+# persisted going FORWARD ONLY, starting the night this ships — there is no
+# backfill of historical more_actionable membership, hence the soundness floor
+# below (`cn_full_coverage_since`): any absence observed before that lane
+# first appears in the fossil is unprovable, not proof of a reset.
+CN_MEMBERSHIP_LANES = ("buy", "more_actionable")
+
 # starts_at_inception=False — PROVEN false: board_definition=='legacy' rows
 # (1,082 of them, null lane, pre-v2 era) precede the first non-legacy date and
 # are non-authoritative for presence/absence, so the usable (non-legacy)
@@ -359,25 +421,26 @@ def observations_from_cn_frame(
     non-authoritative for presence AND absence; observations begin at the first
     non-legacy date).
 
-    MEMBERSHIP TRACE (2026-09-01, REQUEST_REPAIR): `board_definition` is the
-    ONLY filter here, and that is deliberate, not an oversight. Traced
-    scripts/build_china_library.py (append_board call sites ~L4280-4315) and
-    engine/china_board_rank.py._partition: only `wide["buy"]` — which IS
-    `_board_lanes["featured"]`, i.e. the SAME rows `china.html.j2` cards as the
-    entry/featured shelf — plus the explicit reversal_watch / v2-shadow /
-    v3-shadow / continuation_watch cohorts (all in WATCH_DEFINITIONS, already
-    excluded above) ever reach `china_standout_track.append_board`. The other
-    three lanes `_partition` computes (`more_actionable`, `late_or_unfillable`,
-    `forming`) are NEVER appended to board.parquet — measured on the live
-    fossil: its `lane` column holds exactly three values (`featured`,
-    `reversal_watch`, null/`legacy`), never `more_actionable` or
-    `late_or_unfillable`. So "every live-definition row in the fossil" and
-    "the featured/carded shelf" are the SAME set today, by construction of the
-    upstream persistence layer (out of this module's scope to change) — a
-    `late_or_unfillable` demotion is a display partition of a row that was
-    simply never fossil-tracked to begin with, so it structurally cannot
-    "remove" a membership the fossil never granted it. `cn_current_visible_ids`
-    below reconciles the CURRENT-day read to this same fossil truth."""
+    MEMBERSHIP TRACE (2026-09-01, REQUEST_REPAIR; UPDATED same day, M1/M2
+    repair round): `board_definition` is the ONLY filter here, and that is
+    deliberate, not an oversight — it is also now sufficient to include
+    more_actionable rows. Traced scripts/build_china_library.py (append_board
+    call sites ~L4268-4320) and engine/china_board_rank.py._partition:
+    `wide["buy"]` (== `_board_lanes["featured"]`, the entry/featured shelf) is
+    appended under the LIVE headline board_definition; `wide["more_actionable"]`
+    is now ALSO appended (M1/M2 fix), under a distinct
+    `<live_definition>_more_actionable` board_definition that is deliberately
+    never added to china_standout_track.WATCH_DEFINITIONS — so this filter
+    (which excludes only WATCH_DEFINITIONS + 'legacy') naturally keeps it IN
+    the observation series. The explicit reversal_watch / v2-shadow /
+    v3-shadow / continuation_watch cohorts remain excluded via
+    WATCH_DEFINITIONS as before. `late_or_unfillable` / `forming` are still
+    NEVER appended (china.html.j2's facet bar counts `late_or_unfillable` but
+    never pv_cards it — display-only, no membership claim to make). Forward-only:
+    more_actionable rows exist in the fossil starting the night this ships, not
+    retroactively — see `cn_full_coverage_since` for the soundness floor this
+    requires. `cn_current_visible_ids` below reconciles the CURRENT-day read to
+    this same (now wider) fossil truth."""
     if df is None or getattr(df, "empty", False):
         return []
     cols = set(getattr(df, "columns", ()))
@@ -398,25 +461,53 @@ def observations_from_cn_frame(
     return [(d, frozenset(by_date[d])) for d in sorted(by_date)]
 
 
+def cn_full_coverage_since(df: Any) -> str | None:
+    """M1/M2 (2026-09-01 repair round): earliest ISO date at which CN's fossil
+    covers EVERY name-visible lane — i.e. the first date a more_actionable-tagged
+    (`board_definition` ending in `_more_actionable`) row appears in
+    board.parquet. Before this date, the fossil only ever recorded the featured
+    (buy) lane, so an absence derived from an observation that old cannot
+    distinguish "genuinely absent from every name-visible lane" from "present
+    via more_actionable, which nothing recorded yet" — see
+    `current_continuous_membership_start`'s SOUNDNESS FLOOR section. Returns
+    None if no more_actionable row has ever been written (no sound absence
+    proofs are possible yet for this market)."""
+    if df is None or getattr(df, "empty", False):
+        return None
+    cols = set(getattr(df, "columns", ()))
+    if "date" not in cols or "board_definition" not in cols:
+        return None
+    bd = df["board_definition"].astype(str)
+    mask = bd.str.endswith("_more_actionable")
+    if not mask.any():
+        return None
+    isos = sorted({iso for iso in (_iso_from_value(v) for v in df.loc[mask, "date"]) if iso})
+    return isos[0] if isos else None
+
+
 def cn_current_visible_ids(artifact: Mapping[str, Any] | None) -> set[str]:
     """Ticker set TONIGHT's build writes (or would write) to board.parquet under
-    its live board_definition — i.e. all of `artifact["buy"]` (the "featured"
-    lane; see the fossil trace above), regardless of the `stage` a card
-    happens to display it under (ENTRY vs RAN_LATE is a template-only
-    partition of the SAME lane and must never gate membership).
+    its live board_definition — `artifact["buy"]` (the "featured" lane) UNION
+    `artifact["more_actionable"]` (M1/M2, 2026-09-01 repair round — both lanes
+    are now fossil-written, see the trace above), regardless of the `stage` a
+    card happens to display a buy row under (ENTRY vs RAN_LATE is a
+    template-only partition of the SAME lane and must never gate membership).
 
-    NOT the same set as the template's pv_card partition: `more_actionable`
-    cards render today (china.html.j2 `_more_lane`) but are never persisted to
-    the fossil (see the trace above), so a more_actionable-only ticker
-    correctly gets no membership contribution here — `added_date` resolves to
-    None for it, which is the honest "unprovable" answer, not a bug. This
-    function is therefore DELIBERATELY NOT a superset of every card-rendered
-    id; it is the fossil-write set, which the ADJUDICATED RULE (top of this
-    module) defines membership against."""
+    This IS now a superset of every card-rendered id for CN (buy's stage
+    partition union more_actionable == exactly `_cn_card_rendered_ids_for_test`'s
+    partition) — the historical "membership is narrower than display" gap this
+    function used to encode for more_actionable is closed for TODAY's read;
+    only pre-floor HISTORY (dates before `cn_full_coverage_since`) still cannot
+    prove an absence soundly."""
     if not artifact:
         return set()
     buy = artifact.get("buy") or []
-    return {tk for r in buy if isinstance(r, dict) and (tk := _clean_id(r.get("ticker")))}
+    more = artifact.get("more_actionable") or []
+    ids: set[str] = set()
+    for row in (buy if isinstance(buy, list) else []) + (more if isinstance(more, list) else []):
+        if isinstance(row, dict) and (tk := _clean_id(row.get("ticker"))):
+            ids.add(tk)
+    return ids
 
 
 def _cn_card_rendered_ids_for_test(artifact: Mapping[str, Any] | None) -> set[str]:
@@ -452,9 +543,12 @@ def stamp_cn_board_since(
     data = Path(data_dir) if data_dir is not None else _REPO_ROOT / "data"
     path = data / "china_standout_track" / "board.parquet"
     hist: list[Observation] = []
+    floor: str | None = None
     if path.exists():
         import pandas as pd  # noqa: PLC0415 — optional adapter dep
-        hist = observations_from_cn_frame(pd.read_parquet(path), watch_definitions)
+        _df = pd.read_parquet(path)
+        hist = observations_from_cn_frame(_df, watch_definitions)
+        floor = cn_full_coverage_since(_df)
     current_ids = cn_current_visible_ids(artifact)
     obs = with_current_board(hist, artifact.get("as_of"), current_ids)
     for lane in CN_CURRENT_LANES:
@@ -469,7 +563,8 @@ def stamp_cn_board_since(
                 row["added_date"] = None
                 continue
             start = current_continuous_membership_start(
-                obs, ident, starts_at_inception=CN_STARTS_AT_INCEPTION)
+                obs, ident, starts_at_inception=CN_STARTS_AT_INCEPTION,
+                full_coverage_since=floor, requires_full_coverage=True)
             row["added_date"] = start[0] if start else None
     return artifact
 
@@ -533,6 +628,48 @@ HK_CA_MEMBERSHIP_LANES = ("buy", "watch")
 # Principal adjudicates; this worker does not flip either flag.
 HK_CA_STARTS_AT_INCEPTION = False
 
+# SOUNDNESS FLOOR PER MARKET (M1/M2, 2026-09-01 repair round) — HK and CA are
+# NOT symmetric here, confirmed by census:
+#
+#   HK: hk.html.j2's "🏃 Market leaders" table (`_hk_ldrs`, fed by
+#   `hk_board_rank.build_leaders_rows` in scripts/build_hk_library.py) is
+#   genuinely name-visible (ticker + sector + a real forward-ranked table) AND
+#   is a DIFFERENT, disjoint ticker set from buy/watch (`exclude=_claimed`
+#   removes every buy/watch/laggard ticker before it is built) — a
+#   demote-to-leaders-then-return move is exactly the under-recording M1/M2
+#   exists to fix. It is deliberately NOT persisted to hk_board.parquet:
+#   scripts/build_hk_library.py._board_ledger_calls's own docstring records a
+#   2026-08-03 adversarial-review finding that appending leaders/ran/vetoed
+#   rows there corrupted `board_ledger`'s Spearman rank-IC (board_pos is
+#   assigned by LIST POSITION, and `board_ledger.scorecard`'s `ic_frame`
+#   filters only by `board_definition`, never by `group` — confirmed by
+#   reading engine/board_ledger.py directly, no group-based IC exclusion
+#   exists) — the same docstring states the safe fix needs "its own book...
+#   chartered as a §8-class follow-up", i.e. a NEW store, which this
+#   program's own scope forbids ("no new store"). engine/board_ledger.py is
+#   also rank/signal-authority code this program does not own or touch.
+#   Consequence, stated plainly per the frozen spec: HK's `hk_full_coverage_
+#   since` is permanently None until a dedicated follow-up safely persists
+#   leaders coverage, so `stamp_hkca_board_since` runs HK with
+#   `requires_full_coverage=True` — every absence-anchored HK candidate ships
+#   `added_date=None` (honest "unprovable", not silently wrong) rather than a
+#   confidently wrong date. HK's "Recently fired" (`ran`) strip is the same
+#   shape but is a non-issue in PRACTICE today: hk.html.j2's own template
+#   comment records "no `ran` array (every artifact today)" — it never
+#   actually renders a row, so there is nothing live to under-record; the
+#   same floor already covers it if it ever ships real rows.
+#
+#   CA: census of canada.html.j2 and scripts/build_canada.py/
+#   build_canada_library.py found NO leaders or ran strip tied to `setups` at
+#   all — canada.html.j2's pv_card loop is `setups.buy` and its only other
+#   name-visible group is `setups.watch` (the anchor-grid watch-strip),
+#   exactly the two lanes HK_CA_MEMBERSHIP_LANES / HK_CA_VISIBLE_GROUPS
+#   already cover and hk_board.parquet's HK-only leaders lane above does not
+#   apply. CA's fossil already covers every name-visible lane, so CA runs
+#   with `requires_full_coverage=False` (unchanged, unaffected) — absence
+#   proofs stay valid throughout, exactly like US.
+HK_CA_REQUIRES_FULL_COVERAGE = {"hk": True, "ca": False}
+
 
 def observations_from_board_ledger_frame(
     df: Any, visible_groups: AbstractSet[str] = HK_CA_VISIBLE_GROUPS,
@@ -588,8 +725,16 @@ def stamp_hkca_board_since(
             if not ident:
                 row["added_date"] = None
                 continue
+            # M1/M2: only HK opts into the soundness floor (see
+            # HK_CA_REQUIRES_FULL_COVERAGE docstring above) — CA's fossil
+            # already covers every name-visible lane, so it is unaffected.
+            # HK's floor never becomes non-None under this program's scope
+            # (leaders is not persisted, by deliberate rank-authority
+            # decision), so every HK absence-anchored result ships None.
             start = current_continuous_membership_start(
-                obs, ident, starts_at_inception=HK_CA_STARTS_AT_INCEPTION)
+                obs, ident, starts_at_inception=HK_CA_STARTS_AT_INCEPTION,
+                full_coverage_since=None,
+                requires_full_coverage=HK_CA_REQUIRES_FULL_COVERAGE.get(market_key, False))
             row["added_date"] = start[0] if start else None
     return artifact
 
@@ -638,6 +783,20 @@ def stamp_intl_board_since(
       - current as_of == prior as_of, or either is missing/invalid -> carry only,
         mint nothing (today: setups.as_of IS null upstream, so this ships all-None
         until the artifact carries a real session date — expected and correct).
+
+    S2 (2026-09-01 repair round): `prior_valid` gates on the prior artifact being
+    a genuinely PARSEABLE mapping (i.e. `_read_json` succeeded) — nothing more.
+    A parseable prior whose own `as_of` is missing/invalid still lets every
+    ticker's existing ISO `added_date` CARRY forward unconditionally below (the
+    `tk in prior_since` branch never checks `prior_as_of`/`current_as_of`); as_of
+    validity gates ONLY whether a brand-new (never-seen) ticker may be MINTED a
+    fresh date (`can_mint`). Residual loss window, stated honestly: the ONLY case
+    that loses previously-recorded dates is a genuine parse/IO failure of the
+    prior artifact itself (missing file, corrupt JSON, or non-dict payload) —
+    every row then reads `prior_valid=False` and every added_date resolves to
+    None for that one build, even for tickers that had a perfectly good prior
+    date. There is no persistent ledger to recover a skipped night from; the next
+    successful read carries forward from whatever is on disk at that time.
     """
     if not artifact:
         return artifact
@@ -688,16 +847,42 @@ def _read_json(path: Path) -> dict[str, Any] | None:
     return blob if isinstance(blob, dict) else None
 
 
+def _configured_site_dir(repo_root: Path | None = None) -> Path:
+    """S1 (2026-09-01 repair round): single source of truth for the site output
+    directory, matching the writer's own resolution (`config.ROOT /
+    config.load()["storage"]["site_dir"]`, e.g. scripts/build_intl_library.py:312)
+    instead of a hard-coded `"site"` literal that could silently diverge from a
+    deployment's actual configured site_dir.
+
+    An explicit `repo_root` is a caller override (tests isolating against a
+    tmp_path fixture) and takes priority over `lib.config` — it must never fall
+    through to the real project's live configured site_dir, which would read a
+    real committed artifact instead of the test's isolated fixture. Only the
+    caller-omits-both-`site_dir`-and-`repo_root` production path consults
+    `lib.config`; if THAT import itself fails (e.g. a bare unit-test import with
+    no repo config on the path), fall back to `<_REPO_ROOT>/site` — never fatal,
+    this is a display-only read."""
+    if repo_root is not None:
+        return Path(repo_root) / "site"
+    try:
+        from lib import config as _config  # noqa: PLC0415
+
+        return Path(_config.ROOT) / _config.load()["storage"]["site_dir"]
+    except Exception:  # noqa: BLE001 — best-effort default, see docstring
+        return _REPO_ROOT / "site"
+
+
 def stamp_intl_board_since_fail_open(
     artifact: dict[str, Any] | None, *,
     prior_artifact: Mapping[str, Any] | None = None,
+    site_dir: Path | None = None,
     repo_root: Path | None = None,
     log: Any | None = None,
 ) -> dict[str, Any] | None:
     try:
         if prior_artifact is None:
-            root = repo_root or _REPO_ROOT
-            prior_artifact = _read_json(root / "site" / "factordata" / "intl_setups.json")
+            sd = Path(site_dir) if site_dir is not None else _configured_site_dir(repo_root)
+            prior_artifact = _read_json(sd / "factordata" / "intl_setups.json")
         return stamp_intl_board_since(artifact, prior_artifact=prior_artifact)
     except Exception as exc:  # noqa: BLE001 — additive display field, never fatal
         if log is not None:

@@ -12,31 +12,44 @@ four does `{% import "_prophet_card.html.j2" as pv %}` then calls
 `life`/`lane_mark` keys — every existing non-US call site). This suite proves,
 against origin/main's pre-migration copy of that file:
 
-  1. PIN UPDATE (2026-09-01, prophet-candidate-added-date-fable-e2e): item 1
-     used to require the four non-US templates be byte-identical to the
-     merge-base — that invariant held only because no OTHER program had ever
-     touched them. The Prophet candidate "Added date" rollout legitimately
-     does (frozen spec §6): each page's pv_card call gains `added_date` and
-     loses its old as-of-as-`date` fallback, and hk/canada/intl each gain a
-     board-level "Data through" freshness line they previously lacked. Rather
-     than weaken this to a keyword scan, `test_non_us_templates_functional_diff_
-     is_exactly_the_added_date_rollout` diffs each file with Jinja comments
-     stripped (`{#...#}` carries zero rendered-byte weight) and asserts the
-     STRIPPED diff's removed/added line SETS equal an exact, itemized,
-     per-file pin — still a byte-level proof, now scoped to "nothing besides
-     the itemized rollout changed", not "nothing changed". Comment PROSE is
-     free to reword (it was already free to, functionally); the executable
-     Jinja/HTML lines are pinned exactly.
+  1. B1 MERGE-SAFETY FIX (2026-09-01 repair round, independent code review):
+     items 1 and 2 below USED TO diff each file against `git merge-base
+     origin/main HEAD` and assert a specific NON-EMPTY diff shape (an itemized
+     added-date-rollout pin, or a 2-line pv_css() pin). That mechanism
+     self-destructs the moment this PR merges: once `origin/main` contains
+     this branch's commits, the merge-base of a later checkout IS (or
+     descends past) this branch's own HEAD, so `_origin_main_text()` reads
+     back the SAME post-rollout content `cur` already holds — the computed
+     diff collapses to empty, and an assertion that expects a non-empty,
+     itemized diff goes red forever. Fixed by dropping merge-base diffing
+     entirely for the two tests that assert a SPECIFIC diff shape: they now
+     pin exact SHA-256 hashes of the CURRENT (post-rollout) raw file bytes —
+     no diffing, no historical baseline, no leniency of any kind (not
+     comment-stripped, not sorted-line-set matched — literal bytes). A
+     future legitimate edit to any of these five surfaces must recompute and
+     update its pin by hand; that friction IS the guard's job — unrelated
+     drift (or a bug that silently changes shared markup) breaks the pin
+     without needing to know or care where `origin/main` currently sits.
+     `_merge_base()`/`_origin_main_text()` remain in use below ONLY by the
+     pv_card()-output-equality test and the stocktable.js diff test, which
+     both assert "no diff at all" / a PRE-EXISTING (unrelated) shape rather
+     than a rollout-specific non-empty diff — see their own docstrings for
+     why those two are unaffected by this failure mode.
   2. pv_css() — the shared <style> block every one of those four pages
-     renders once — is byte-identical. This is the check that caught a real
-     defect during this packet's build: the new .pv-life/.pv-newer/.pv-mark
-     CSS was first added INSIDE pv_css() (shared), which would have changed
-     all four pages' bytes; it now lives in dashboard.html.j2's own <style>
-     block instead (US-only, never included by the other four). PIN UPDATE
-     (2026-09-01): the Added-date rollout's `.pv-added`/`.pv-dt+.pv-added`
-     rules DO belong in this shared block (they render on every market, not
-     US-only) — `test_pv_css_is_byte_identical_except_the_pv_added_chip_rules`
-     pins the diff to exactly those two lines, nothing else.
+     renders once — is byte-pinned (SHA-256 of the exact rendered CSS text).
+     This is the check that caught a real defect during this packet's build:
+     the new .pv-life/.pv-newer/.pv-mark CSS was first added INSIDE pv_css()
+     (shared), which would have changed all four pages' bytes; it now lives
+     in dashboard.html.j2's own <style> block instead (US-only, never
+     included by the other four). The Added-date rollout's
+     `.pv-added`/`.pv-dt+.pv-added` rules DO belong in this shared block
+     (they render on every market, not US-only), and F1 (2026-09-01 repair
+     round) further changed `.pv-znr`/`.pv-dt`/`.pv-added`'s flex-shrink
+     behavior so the buy-zone price chip never loses the space fight to the
+     Added-date metadata chip — `test_pv_css_is_byte_pinned_post_rollout`
+     pins the CURRENT full CSS text exactly, superseding the old two-line
+     diff pin (which could not express "these three rules changed together"
+     without becoming exactly this — a whole-content hash).
   3. pv_card() — the per-row card macro — is byte-identical for representative
      cx dicts shaped exactly like the non-US callers' (no lifecycle/id/life/
      lane_mark keys), across several branches (buy/wait/hold/no-zone/flags/
@@ -66,7 +79,7 @@ this is a static-source proof, not a rendered/executed one.
 """
 from __future__ import annotations
 
-import difflib
+import hashlib
 import re
 import subprocess
 from pathlib import Path
@@ -113,85 +126,35 @@ def _strip_jinja_comments(text: str) -> str:
     return re.sub(r"\{#.*?#\}", "", text, flags=re.S)
 
 
-def _functional_diff_lines(rel_path: str) -> tuple[list[str], list[str]]:
-    """(removed, added) NON-comment, non-blank lines between the merge-base and
-    HEAD versions of `rel_path`, computed on comment-stripped text so a Jinja
-    comment's prose (zero rendered-byte weight) can never appear in either
-    list — only lines that can actually change what ships are pinnable here."""
-    orig = _strip_jinja_comments(_origin_main_text(rel_path)).splitlines()
-    cur = _strip_jinja_comments((ROOT / rel_path).read_text()).splitlines()
-    sm = difflib.SequenceMatcher(a=orig, b=cur, autojunk=False)
-    removed: list[str] = []
-    added: list[str] = []
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag in ("replace", "delete"):
-            removed.extend(orig[i1:i2])
-        if tag in ("replace", "insert"):
-            added.extend(cur[j1:j2])
-    removed = [l for l in removed if l.strip()]
-    added = [l for l in added if l.strip()]
-    return removed, added
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-#: Exact, itemized pin of the ONLY functional (comment-stripped) lines the
-#: Prophet candidate Added-date rollout may add/remove per non-US template.
-#: Any other functional change to these four files fails this test.
-_EXPECTED_ADDED_DATE_ROLLOUT_DIFF: dict[str, tuple[list[str], list[str]]] = {
-    "templates/hk.html.j2": (
-        ["        'date': (n.get('signal') or {}).get('asof') or setups.get('as_of'),"],
-        [
-            "    {% if setups and setups.get('as_of') %}",
-            '    <p class="note" style="margin:0 0 2px;text-transform:none;color:var(--muted)">'
-            '<span class="l-en">Data through</span><span class="l-zh">数据截至</span> '
-            "<strong>{{ setups.as_of }}</strong></p>",
-            "    {% endif %}",
-            "        'date': none,",
-            "        'added_date': n.get('added_date'),",
-        ],
-    ),
-    "templates/china.html.j2": (
-        [],
-        [
-            "        'added_date': n.get('added_date'),",
-            "        'added_date': n.get('added_date'),",
-        ],
-    ),
-    "templates/canada.html.j2": (
-        ["      'date': (s.get('signal') or {}).get('asof') or setups.get('as_of'),"],
-        [
-            "  {% if setups and setups.get('as_of') %}",
-            '  <p class="muted small" style="margin:0 0 8px"><span class="l-en">Data through</span>'
-            '<span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>',
-            "  {% endif %}",
-            "      'date': none,",
-            "      'added_date': s.get('added_date'),",
-        ],
-    ),
-    "templates/intl.html.j2": (
-        ["      'date': (setups.get('as_of') if setups else none),"],
-        [
-            "  {% if setups and setups.get('as_of') %}",
-            '  <p class="muted small" style="margin:2px 0 6px"><span class="l-en">Data through</span>'
-            '<span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>',
-            "  {% endif %}",
-            "      'date': none,",
-            "      'added_date': b.get('added_date'),",
-        ],
-    ),
+#: B1 (2026-09-01 repair round): exact SHA-256 of each non-US template's
+#: CURRENT raw file bytes — see the module docstring's item 1 for why this
+#: replaced the merge-base functional-diff mechanism. No comment-stripping,
+#: no leniency: literal file bytes. A legitimate future edit to any of these
+#: four templates must recompute and update its hash here.
+_EXPECTED_TEMPLATE_SHA256: dict[str, str] = {
+    "templates/hk.html.j2": "3fc18a6861518ac4691f30c7bfb13c5435a7339eacaeb01a921af33f9504476e",
+    "templates/china.html.j2": "cb6e0685b96a6d897e9562418927c0bb5d5e656d4b31c99e843ec5f213fa7031",
+    "templates/canada.html.j2": "d4a951e0c3a1426ebbcbaa69296def90e74dd62e06722986e07f6b6d9d80d425",
+    "templates/intl.html.j2": "c62b4a6373ac3130a16f622b8dae9b73218642e261051a3bd3493fc95fd0d9a5",
 }
 
 
-def test_non_us_templates_functional_diff_is_exactly_the_added_date_rollout():
-    """Byte-level (comment-stripped) proof that the ONLY functional change to
-    hk/china/canada/intl since the merge-base is the itemized Added-date
-    rollout above — not a keyword scan: an exact removed/added line-set match."""
+def test_non_us_templates_are_byte_pinned_post_rollout():
+    """Merge-safe successor to the old merge-base functional-diff test (B1):
+    pins each non-US template's CURRENT raw bytes exactly, with no comparison
+    to any historical baseline — so this assertion's truth value does not
+    depend on whether/when this branch has merged. Simulated merge-base==HEAD
+    (the exact failure mode B1 fixes) changes NOTHING here: this test never
+    calls git at all."""
     for rel_path in NON_US_TEMPLATES:
-        removed, added = _functional_diff_lines(rel_path)
-        exp_removed, exp_added = _EXPECTED_ADDED_DATE_ROLLOUT_DIFF[rel_path]
-        assert sorted(removed) == sorted(exp_removed), (
-            f"{rel_path}: unexpected functional removal(s):\n{removed}")
-        assert sorted(added) == sorted(exp_added), (
-            f"{rel_path}: unexpected functional addition(s):\n{added}")
+        cur = (ROOT / rel_path).read_text(encoding="utf-8")
+        assert _sha256_text(cur) == _EXPECTED_TEMPLATE_SHA256[rel_path], (
+            f"{rel_path}: content drifted from its pinned post-rollout hash — "
+            f"if this is a legitimate edit, recompute and update the pin")
 
 
 def _macros():
@@ -201,34 +164,28 @@ def _macros():
     return env.from_string(orig_src).module, env.from_string(cur_src).module
 
 
-#: PIN UPDATE (2026-09-01, prophet-candidate-added-date-fable-e2e): pv_css() gained
-#: exactly two rules for the new .pv-added chip — FROZEN SPEC point 5 puts its
-#: styling "with the existing .pv-* card styles in governed CSS", which IS this
-#: shared block. Both rules reuse var(--muted) (already dual-theme via theme.css,
-#: same token .pv-dt already uses) — no new tokens, no runtime style injection.
-_EXPECTED_PV_CSS_ADDED_LINES = [
-    ".pv-added{margin-left:auto;color:var(--muted);flex:none;font-size:9.5px;padding-left:5px}",
-    ".pv-dt+.pv-added{margin-left:5px}",
-]
+#: B1 (2026-09-01 repair round): exact SHA-256 of the CURRENT pv_css() render
+#: output — supersedes the old two-line merge-base diff pin (same failure
+#: mode as the template pin above: a merge-base==HEAD comparison collapses to
+#: an empty diff and an assertion expecting a non-empty one goes red). Covers
+#: both the Added-date rollout's `.pv-added`/`.pv-dt+.pv-added` rules AND F1's
+#: (2026-09-01 repair round) `.pv-znr`/`.pv-dt`/`.pv-added` flex-shrink fix
+#: (the buy-zone price chip must never lose the space fight to the Added-date
+#: metadata chip). A legitimate future edit to pv_css() must recompute and
+#: update this hash.
+_EXPECTED_PV_CSS_SHA256 = "42d78ccefa14c861519c6523173b9397de2f124052f14283fedd676f4c0279d0"
 
 
-def test_pv_css_is_byte_identical_except_the_pv_added_chip_rules():
-    """The shared <style> block every non-US page renders once via pv.pv_css()."""
-    import difflib as _difflib
-
-    orig, cur = _macros()
-    orig_lines = str(orig.pv_css()).splitlines()
-    cur_lines = str(cur.pv_css()).splitlines()
-    sm = _difflib.SequenceMatcher(a=orig_lines, b=cur_lines, autojunk=False)
-    removed: list[str] = []
-    added: list[str] = []
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag in ("replace", "delete"):
-            removed.extend(orig_lines[i1:i2])
-        if tag in ("replace", "insert"):
-            added.extend(cur_lines[j1:j2])
-    assert removed == [], f"pv_css() lost line(s): {removed}"
-    assert added == _EXPECTED_PV_CSS_ADDED_LINES, f"pv_css() diverged unexpectedly:\n{added}"
+def test_pv_css_is_byte_pinned_post_rollout():
+    """The shared <style> block every non-US page renders once via pv.pv_css().
+    No git dependency — reads only the current file on disk, so this is
+    immune to the merge-base==HEAD collapse B1 fixes (see module docstring)."""
+    cur_src = (ROOT / "templates" / "_prophet_card.html.j2").read_text()
+    cur = jinja2.Environment(autoescape=True).from_string(cur_src).module
+    css = str(cur.pv_css())
+    assert _sha256_text(css) == _EXPECTED_PV_CSS_SHA256, (
+        "pv_css() drifted from its pinned post-rollout hash — if this is a "
+        "legitimate edit, recompute and update the pin")
 
 
 def _base_cx(**overrides) -> dict:
