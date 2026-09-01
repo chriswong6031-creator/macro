@@ -1,27 +1,191 @@
 # Reactive Projection R1A — Intelligence Hub Market Pulse Design
 
 **Architecture parent:** `research/reactive_projection/MASTERMIND_REACTIVE_PROJECTION_PLATFORM_ARCHITECTURE_FREEZE_2026-08-30.md`  
-**Operation parent:** `modernize-mastermind-architecture-20260830-sol-001`  
+**Program:** `modernize-mastermind-architecture-20260830-sol-001`  
 **Design state:** **FROZEN FOR IMPLEMENTATION AFTER R0 ACCEPTANCE**  
 **Implementation state:** `NOT_BUILT`  
-**Original archaeology base:** `mastermindx-market-intelligence/macro@20748fccbb9777f7e43c39acf19499bac4d011be`  
-**Latest R0 correction procedure:** `mastermindx-market-intelligence/Mastermind@dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c`
+**Macro records carrier:** `sol/reactive-projection-platform-r0-20260830` / PR `#6707`  
+**Current protected procedure:** `mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc`  
+**Macro archaeology pin for this correction:** R0 head `8cd1ac766f544e6615366b7ba21c7d8d0182bda9`  
+**Terminal archaeology pin:** `mastermindx-market-intelligence/mastermind-terminal@86a75b68c273a592a41af5e322f95aab242b8297`
 
 ## 1. Observable capability
 
-On `intelligence_hub.html`, every eligible US ticker that the nightly Intelligence Hub already chose shows a current regular-session price and coherent day move from the canonical Terminal Quote Plane. One compact page-level instrument separately states feed freshness, market session and coverage. The update is atomic and never changes intelligence ranking, stage, score, stance or entry state.
+On `intelligence_hub.html`, the exact US names rendered in Command, Emerging and diversified Discovery views show current regular-session price and coherent day move from the canonical Terminal Quote Plane. One compact page-level instrument separately reports feed freshness, market session and unique-symbol coverage. Every occurrence of a symbol updates atomically. Intelligence rank, order, score, stage, stance, Prophet state, entry state, allocation and trade authority remain unchanged.
 
 ## 2. Why this is the first slice
 
-This page already combines high-value intelligence with ticker interaction, but its user trust is weakened when current observations and nightly conclusions are visually indistinguishable. The dossier quote projection proved a safe server-side read-through pattern. R1A extends that existing owner to one page-wide, batched, visibly useful vertical.
+The Intelligence Hub already combines high-value intelligence with ticker-to-Terminal interaction. Its trust gap is that nightly conclusions and current observations are visually conflated. The existing dossier route proves that Macro can safely project a debranded regular-session tuple from Terminal. R1A turns that precedent into one page-complete workflow.
 
-It deliberately does not begin with a generic bus, streaming platform or site rewrite. R1A must prove product, access and truth semantics before infrastructure is generalized.
+R1A does not begin with a generic bus, streaming platform, SPA rewrite or database. It first proves:
 
-## 3. Component boundaries
+- source ownership;
+- non-disruptive quote demand;
+- exact rendered population;
+- clock, correction and coverage semantics;
+- public rights/access/abuse boundaries;
+- one DOM owner;
+- coherent normal and degraded experience;
+- production falsifiability.
 
-### 3.1 Shared public quote semantics
+## 3. Ordered child operations
 
-Create or extract a pure module, provisionally:
+R1A is one user capability but requires two modifying children because GitHub ownership spans two repositories and one logical modification binds to one carrier.
+
+### R1A-T — Terminal regular-only owner contract
+
+Repository: `mastermindx-market-intelligence/mastermind-terminal`.
+
+Mission:
+
+> Extend the existing loopback `/quotes` endpoint with a closed `view=regular` option that preserves regular quote demand and response semantics while producing zero extended-hours demand or fields.
+
+This child stops after reviewed merge, host deployment and loopback production proof. It does not edit Macro or create the user-facing Market Pulse.
+
+### R1A-M — Macro Market Pulse consumer
+
+Repository: `mastermindx-market-intelligence/macro`.
+
+Mission:
+
+> Consume only the production-proven Terminal `view=regular` contract, expose one bounded debranded public batch projection, hydrate the exact rendered Intelligence Hub roster, and prove the full browser journey.
+
+R1A-M cannot START merely because R1A-T code exists. It requires R1A-T merged/deployed/proven and its own operation/carrier/receiver/ACK/START.
+
+## 4. Exact rendered roster
+
+The roster is the ordered unique union of:
+
+```text
+hub.command[:30]
+hub.emerging[:14]
+hub.discovery_shown[:14]
+```
+
+`discovery_shown` means the builder's existing diversified presentation list. It does not mean the full Discovery candidate corpus.
+
+Rules:
+
+- At most 58 unique candidates before dedupe.
+- API cap: 60 unique symbols.
+- First rendered occurrence establishes request order.
+- Coverage counts unique symbols, not DOM nodes.
+- `exhausted`, catalyst-only and hidden Discovery names are excluded.
+- A symbol may appear in several panels; all of its targets form one atomic visual unit.
+- The nightly builder remains roster and baseline authority.
+
+## 5. Terminal owner extension
+
+### 5.1 Current problem
+
+At the Terminal archaeology pin:
+
+- `hub/hub.js::handleQuotes()` calls `applyDemand()` for every requested symbol.
+- `hub/lib/quotes.js::applyDemand()` sends each US symbol to SnapshotFeed, Polygon, AnchorCache and `ExtFeed` while the Polygon leg is healthy.
+- `hub/lib/extfeed.js::ExtFeed` is a global singleton with a 30-symbol LRU shared by all users.
+- Ordinary `/quotes` therefore spends and refreshes extended-hours slots even when a caller needs only regular-session fields.
+
+A public 60-second refresh over up to 58 Intelligence Hub names would churn that LRU and evict active Terminal demand outside regular hours. Dropping `ext*` fields in Macro does not prevent the demand-side effect.
+
+### 5.2 Frozen endpoint contract
+
+Existing default:
+
+```http
+GET /quotes?syms=NVDA,AAPL
+GET /quotes?syms=NVDA,AAPL&view=full
+```
+
+New closed option:
+
+```http
+GET /quotes?syms=NVDA,AAPL&view=regular
+```
+
+Allowed view vocabulary:
+
+```text
+full | regular
+```
+
+Missing view is exactly `full`. Unknown or repeated-conflicting view input is HTTP `400` with an opaque error.
+
+### 5.3 `view=regular` behavior
+
+For every eligible US symbol:
+
+- `snapshotFeed.demand(sym, now)` still runs;
+- healthy Polygon subscription still runs;
+- AnchorCache warm still runs;
+- `extFeed.demand(sym)` does **not** run;
+- response assembly does not receive/use `extFeed`;
+- no `extPrice`, `extChg`, `extTs`, `extSession`, `extSource` or `extBasis` field is emitted;
+- the flat `{SYM: quote}` and present-entries-only response contract remains unchanged;
+- crypto/macro/daily-only/non-US routing remains exactly as current code defines it;
+- no second route, feed, store, cache, scheduler, service or credential is created.
+
+The default full view must remain byte-for-semantic compatible with existing callers and tests.
+
+### 5.4 Suggested pure interfaces
+
+Modify the current owners rather than branching around them:
+
+```javascript
+function parseQuoteView(url) {
+  // returns "full" | "regular" or throws the existing opaque HTTP error shape
+}
+
+function applyDemand(syms, nowMs, deps = {}, options = { includeExtended: true }) {}
+
+function buildQuotesResponse(
+  syms,
+  nowMs,
+  deps = {},
+  options = { includeExtended: true }
+) {}
+```
+
+The exact parameter shape may be simplified during implementation, but the behavioral contract is frozen. `view=regular` must mechanically map to `includeExtended=false` in both demand and response assembly. It must not rely on current clock/session to skip demand.
+
+### 5.5 Terminal acceptance tests
+
+Extend `hub/tests/quotes.test.js` and add HTTP-level coverage using the repo's existing harness if one exists.
+
+Required discriminators:
+
+```javascript
+it("regular view keeps regular demand and spends zero ext slots", () => {
+  applyDemand(["AAPL", "NVDA"], NOW, deps, { includeExtended: false });
+  assert.deepEqual(seen.snapshot, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.polygon, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.anchor, ["AAPL", "NVDA"]);
+  assert.deepEqual(seen.ext, []);
+});
+
+it("regular response never merges ext fields", () => {
+  const out = buildQuotesResponse(["AAPL"], NOW, deps, { includeExtended: false });
+  assert.equal(calls.storeExtFeed, null);
+  assert.equal("extPrice" in out.AAPL, false);
+});
+
+it("default full view remains unchanged", () => {
+  // existing response and ext-demand fixtures remain byte/semantic equal
+});
+```
+
+Mutation tests must fail when:
+
+- regular mode calls `extFeed.demand()`;
+- regular response passes `extFeed` into Store;
+- unknown view silently becomes full;
+- full default stops demanding/merging extended fields;
+- regular mode skips SnapshotFeed/Polygon/AnchorCache.
+
+Production proof on the actual Terminal host must compare ExtFeed health/LRU membership immediately before and after a 58-symbol regular-view request and show no change attributable to that request.
+
+## 6. Shared Macro public quote semantics
+
+Create or extract:
 
 ```text
 app/public_quote_projection.py
@@ -29,28 +193,27 @@ app/public_quote_projection.py
 
 Responsibilities:
 
-- validate/normalize an allowlisted US symbol;
-- parse one Terminal Quote Plane row;
-- distinguish feed freshness from market session;
-- distinguish regular from extended fields;
-- compute absolute move from price/reference;
-- accept upstream percentage only when consistent, otherwise derive it;
+- validate/normalize one allowlisted US symbol;
+- parse one Terminal regular-view row;
+- separate feed freshness from market session;
+- compute absolute move from price and regular reference;
+- treat upstream `chg` as percent, never dollars;
 - classify session-aware staleness;
 - emit only public/debranded fields;
 - return typed deterministic refusal codes.
 
-Both `app/dossier_quote.py` and the R1A batch route use the same pure semantic owner. R1A must not copy the dossier's freshness/percent/session logic into a second implementation.
+Both `app/dossier_quote.py` and R1A-M use this owner. The extraction must preserve the dossier API's public schema and semantics.
 
-The extraction must preserve the dossier API's public schema and behavior byte-for-semantic-byte. Existing dossier tests are regression authority. The shared internal vocabulary stays aligned with the proven route:
+Internal vocabulary:
 
 ```text
 freshness = live | delayed | stale
 session = regular | pre | post | closed
 ```
 
-A UI may say “current” only when `freshness=live` and `session=regular`; it says “settled close” for a non-stale closed session.
+A UI may say “live” only for `freshness=live && session=regular`. A non-stale closed regular row is a settled close.
 
-### 3.2 Batch projection route
+## 7. Macro batch projection route
 
 Create:
 
@@ -58,7 +221,7 @@ Create:
 app/intelligence_hub_market_pulse.py
 ```
 
-Register it directly through the existing Macro FastAPI owner in `app/main.py`. Current deploy law already restarts Macro API for `app/*.py`; only change `app/deploy/update.sh` if fresh current-main inspection disproves that fact.
+Register directly in `app/main.py` under existing API ownership.
 
 Public contract:
 
@@ -66,39 +229,45 @@ Public contract:
 GET /api/intelligence-hub/market-pulse?symbols=NVDA,AAPL,MSFT
 ```
 
-#### Access decision
+### 7.1 Deliberate access decision
 
-The route is **deliberately public**, not accidentally unauthenticated:
+The route is deliberately public because:
 
-- the Intelligence Hub HTML shell is anonymously reachable under current serving law;
-- the response contains quote observations only—no intelligence rows/scores, personal data or private state;
-- the repository licensing record permits external API/display redistribution;
-- the public dossier projection is the existing precedent.
+- the Intelligence Hub shell is public;
+- the response contains allowlisted quote observations only;
+- it contains no intelligence rows/scores, personal data or private state;
+- the enterprise entitlement record permits external display/API redistribution;
+- the dossier route is the existing debranded precedent.
 
-The module docstring must print this decision and tests must prove anonymous access. Absence of `Depends(...)` by accident is a defect.
+The module docstring and anonymous-access test must print this decision. Accidental absence of auth is a defect.
 
-#### Constraints
+### 7.2 Constraints
 
-- GET/read-only;
-- 1–80 unique normalized US symbols;
-- input order preserved in output/accounting;
-- one upstream Quote Hub request for the full set;
-- loopback-only upstream;
-- 2.5-second upstream timeout;
-- 256 KiB upstream response cap;
-- redirects refused;
-- no retry;
-- existing API `private, no-store` middleware;
-- route-local **symbol-weighted** client and peer rolling budgets, where each unique requested symbol consumes one unit;
-- bounded key/cardinality cleanup using the existing edge-resolved identity pattern;
-- opaque error codes;
-- provider names/keys/basis/anchor source removed.
+- GET/read-only.
+- 1–60 unique normalized US symbols.
+- Input order preserved.
+- One Terminal request for the full set:
 
-The exact symbol-unit budgets must allow the largest intended page refresh at 60-second cadence with margin, while rejecting high-rate batch amplification. Tests pin both normal cadence and exhaustion.
+```http
+/quotes?syms=<CSV>&view=regular
+```
 
-#### Schema
+- No fallback to missing/default/full view.
+- Require proof that returned rows contain no `ext*` field; any such field is a contract failure.
+- Loopback-only upstream.
+- 2.5-second timeout.
+- 256 KiB read cap.
+- Redirects refused.
+- No retry.
+- Existing private/no-store API middleware.
+- Symbol-weighted client and peer rolling budgets; one unique symbol consumes one unit.
+- Bounded identity-cardinality cleanup.
+- Opaque errors.
+- No provider/source/basis/anchor-source field in public output.
 
-R1A is a stateless snapshot. There is no server sequence/cursor and no server correction ledger.
+The budgets must allow the 58-name page at 60-second cadence plus bounded manual/resume refreshes while rejecting amplification.
+
+### 7.3 Stateless schema
 
 ```json
 {
@@ -107,6 +276,7 @@ R1A is a stateless snapshot. There is no server sequence/cursor and no server co
   "snapshot_id": "opaque-response-identity",
   "generated_at": "2026-08-31T14:31:10.214Z",
   "source_owner": "terminal-market-data",
+  "source_view": "regular",
   "state": {
     "availability": "available",
     "freshness": "live",
@@ -140,26 +310,26 @@ R1A is a stateless snapshot. There is no server sequence/cursor and no server co
 }
 ```
 
-Required arithmetic:
+Laws:
 
 ```text
 resolved + missing == requested
 live + delayed + stale == resolved
-state.coverage = complete iff missing == 0, else partial
-state.freshness = conservative worst freshness among resolved items
+coverage=complete iff missing=0
+freshness=conservative worst resolved item
+source_view must equal regular
 ```
 
-No majority rule may hide one delayed/stale row. Freshness and coverage are independent; a response may be `live + partial` or `delayed + complete`.
+There is no server sequence, cursor or correction ledger. `snapshot_id` is identity only.
 
-#### HTTP behavior
+HTTP:
 
-- `200` for at least one trustworthy item, whether coverage is complete or partial.
-- `400` for invalid query shape, empty list, >80 unique symbols or invalid symbol.
-- `429` through symbol-weighted limiter semantics.
-- `503` when no trustworthy item exists.
-- Malformed/oversized/redirected upstream is `503`, not a plausible empty `200`.
+- `200` when at least one trustworthy item exists.
+- `400` invalid query, empty, >60 unique or invalid symbol.
+- `429` symbol-weighted budget exceeded.
+- `503` no trustworthy item, unsupported Terminal regular view, ext-field leak, malformed/oversized/redirected upstream.
 
-### 3.3 Durable page markup
+## 8. Durable page markup
 
 Modify:
 
@@ -167,27 +337,29 @@ Modify:
 templates/intelligence_hub.html.j2
 ```
 
-The builder already knows surfaced tickers and nightly display prices. It must render:
+Render:
 
-- one compact Market Pulse instrument near the page command/state area;
-- explicit baseline as-of text;
-- separate slots for feed freshness, session and coverage;
-- stable quote clusters for each eligible row;
-- data attributes containing canonical symbol and baseline values;
-- distinct controller selectors, not the generic `.nb-px` ownership selector;
-- accessible live-region status with non-spammy `aria-live="polite"`;
-- no JavaScript-generated primary markup.
+- one compact page-level Market Pulse instrument;
+- baseline as-of text;
+- separate availability/freshness/session/coverage slots;
+- quote clusters for exact roster rows;
+- canonical symbol and baseline-value data attributes;
+- distinct R1A selectors, never generic `.nb-px[data-sym]` / `.nb-chg[data-sym]` ownership selectors;
+- `aria-live="polite"` on one non-spammy status;
+- complete primary markup before JavaScript.
 
-The row quote cluster includes:
+Each eligible occurrence carries:
 
-- price;
-- absolute move;
-- percent move;
-- existing ticker label/anchor controlled by shared Terminal routing.
+```text
+data-ihmp-symbol
+[data-ihmp-price]
+[data-ihmp-abs]
+[data-ihmp-pct]
+```
 
-Rows without a valid nightly quote still render their ticker/intelligence content; their live quote slot uses an honest em dash.
+The ticker `.tk` and existing Terminal-open interaction remain unchanged.
 
-### 3.4 Route-scoped browser controller
+## 9. Route-scoped browser controller
 
 Create:
 
@@ -195,306 +367,220 @@ Create:
 site/assets/js/intelligence-hub-market-pulse.js
 ```
 
-Export:
+Expose:
 
 ```javascript
 window.IntelligenceHubMarketPulse = {
-  refresh: function refresh() {},
-  pause: function pause() {},
-  resume: function resume() {},
-  state: function state() {}
+  refresh() {},
+  pause() {},
+  resume() {},
+  state() {}
 };
 ```
 
 Responsibilities:
 
-1. Discover eligible row targets and unique symbols.
-2. Make one batch request.
-3. Validate schema, projection identity, three state axes, coverage arithmetic and item identities.
-4. Build an immutable candidate view model.
-5. Reject responses from stale local request generations.
-6. Enforce per-symbol source-time/revision ordering.
-7. Commit page state and all accepted row values in one `requestAnimationFrame`.
-8. Preserve baked values for missing rows under partial coverage.
-9. Pause while `document.hidden`; issue one immediate refresh on visibility resume.
-10. Respect the existing live-prices user setting.
-11. Expose state for tests/diagnostics without becoming a durable store.
+1. Traverse eligible roster targets in rendered order.
+2. Build `Map<string, HTMLElement[]>` and ordered unique symbols.
+3. Refuse more than 58 rendered unique symbols even though the route cap is 60.
+4. Make one batch request.
+5. Validate exact schema, projection, `source_view=regular`, state axes, arithmetic, identities and absence of forbidden fields.
+6. Build an immutable candidate model before DOM mutation.
+7. Reject stale local request generations.
+8. Enforce per-symbol source-time/revision ordering.
+9. Recompute truthful coverage after any item suppression.
+10. Commit state and every occurrence of every accepted symbol in one `requestAnimationFrame`.
+11. Preserve baked values for missing/suppressed rows.
+12. Pause while hidden; issue one immediate refresh on visibility resume.
+13. Respect the existing live-prices setting.
+14. Retain only page-lifetime in-memory last-good/order state.
 
-Refresh cadence starts at 60 seconds because that matches the existing product cadence and limits load. The implementation must not shorten it without production measurement. Only one in-flight request exists. A new manual/resume refresh aborts the old request and increments a **local** generation; an aborted or older-generation response has no effect.
+Refresh cadence: 60 seconds. One in-flight request. Manual/resume refresh aborts the old request and increments local generation. No localStorage, IndexedDB, service worker, queue or background truth store.
 
-The controller may retain one in-memory last-good response and per-symbol `{observedAt, revision}` map for the current page lifetime. It may not use localStorage, IndexedDB or a service worker as a quote truth store.
+Ordering:
 
-Ordering rules:
-
-- newer local generation + newer source time: accept;
-- newer local generation + older source time: suppress item and recompute truthful coverage;
+- newer generation + newer source time: accept;
+- newer generation + older source time: suppress;
 - equal source time + equal revision: idempotent;
-- equal source time + changed revision in a later generation: accept as a correction and emit `same_timestamp_revision_change` telemetry.
+- equal source time + changed revision on a later generation: correction; accept and measure.
 
-`snapshot_id` is never an ordering key. R1A has no server sequence. R1B owns stream sequence if later commissioned.
+Every DOM occurrence receives the same accepted tuple in the same frame. `snapshot_id` is not an ordering key.
 
-### 3.5 Existing generic live controller interaction
+## 10. Generic controller and serving boundary
 
-R1A nodes must not carry `.nb-px[data-sym]` or `.nb-chg[data-sym]` if that would make `templates/live.js` a second owner. Reuse only pure formatting/semantic helpers after an explicit extraction, or implement route-local display formatting under the frozen schema.
+R1A target nodes must not be owned by `templates/live.js`. Pure formatters may be shared only after explicit extraction.
 
-The `.tk` ticker labels and `theme.js` Terminal overlay behavior remain unchanged. Price repaint must not consume click/pointer events or wrap the ticker in a second conflicting link.
-
-### 3.6 Static asset serving boundary
-
-The new controller is required presentation code for an anonymous-public HTML shell. Add the exact asset path to:
+The new controller path must be listed in both:
 
 ```text
 config/site_access.yml
 app/deploy/Caddyfile
 ```
 
-The two lists must remain byte-for-byte aligned under the existing boundary test. This change exposes JavaScript presentation logic only; it does not expose any static signal payload. The quote route self-declares and tests its separate public API access policy.
+No broad `/assets/` or signal-data prefix may be opened. `tests/test_site_access_boundary.py` must prove byte-for-byte parity and anonymous JavaScript delivery.
 
-## 4. User experience
+## 11. User states
 
-### Initial/baked
+### Baked
 
-- Page paints fully from static HTML.
-- Status: “Prices from the latest settled build” / equivalent Chinese.
-- The baseline timestamp is visible.
-- No false pulse animation.
+Complete nightly page, baseline timestamp, no network when live setting is disabled.
 
 ### Loading
 
-- Baseline remains.
-- Status quietly says “Checking current prices.”
-- No skeleton that hides intelligence.
-- No per-row spinner.
+Baseline remains; one quiet “Checking current prices” status; no row spinners or intelligence skeleton removal.
 
-### Live + complete
+### Live complete / partial
 
-- One atomic update changes all price/move clusters.
-- Status says “Live market pulse · 30/30 names.”
-- The live indicator may animate only while the market session is regular.
-- Intelligence score/order/stage remains fixed.
+All accepted occurrences paint atomically. Partial leaves missing rows baked and prints unique coverage. Animation is allowed only for live+regular.
 
-### Live + partial
+### Delayed complete / partial
 
-- Resolved rows update together.
-- Missing rows keep baseline values.
-- Status says “Live prices for 27 of 30 names.”
-- Coverage detail remains visible; feed freshness is still live.
+Values may update, but delayed language and source time are explicit. No live animation.
 
-### Delayed
+### Settled complete / partial
 
-- Rows update with valid delayed values.
-- Status combines both axes, e.g. “Delayed prices · 27/30 names.”
-- Source time is disclosed in plain language.
-- No green live pulse.
-
-### Settled
-
-- Session is closed and the source row is not stale.
-- Status says “Settled close · 30/30 names” (or partial equivalent).
-- The regular-session close and day move remain valid; no open-market animation.
+Closed market with a non-stale regular print. Say “Settled close,” never “Live market.”
 
 ### Stale
 
-- Last-good layer may remain visible only with unmistakable stale status and time.
-- After the hard client bound, return to baked values.
-- A settled close is not stale merely because the exchange is closed.
+Last-good may remain only within a hard client bound with unmistakable stale status; then return to baked values.
 
 ### Unavailable
 
-- Baseline remains.
-- Status says current prices are temporarily unavailable.
-- Ticker-to-Terminal action still works.
+Baseline and ticker interaction remain; concise current-price unavailable status.
 
-### Live disabled
-
-- No network request.
-- Status remains baseline and indicates live prices are disabled in settings where useful.
-
-## 5. Dark and light art directions
-
-### Dark — command center
-
-- Existing graphite canvas/panel depth.
-- Live status uses restrained luminance and the semantic health token, not broad glow.
-- Price/move remains numerically dominant but secondary to the page's intelligence hierarchy.
-- Delayed/partial/stale use semantic rails and plain words.
-
-### Light — research workspace
-
-- White material on cool canvas, hairline border and measured shadow.
-- No copied dark glow or dirty transparent wash.
-- Status uses a quiet left rail/background tint and deep ink.
-- Direction colors use `--ink-up`/`--ink-down` and preserve the Chinese red-up/green-down flip.
-- Neutral/baseline state remains legible against white without relying on opacity alone.
-
-No new token root, literal palette family or runtime stylesheet. Reuse existing theme tokens and canonical component geometry.
-
-## 6. Responsive and language behavior
+## 12. Dark, light, responsive and language
 
 Evidence matrix:
 
 ```text
-dark/light × EN/ZH × desktop 1440 × narrow 390
+dark/light × EN/ZH × 1440/390
 ```
 
-Also verify:
+Also verify 820 where layout changes, 200% zoom, reduced motion, keyboard/screen-reader behavior, long Chinese labels and zero horizontal overflow.
 
-- 820/tablet behavior if the row layout changes;
-- 200% zoom;
-- reduced motion;
-- keyboard focus and screen-reader status;
-- long Chinese labels;
-- no horizontal page overflow.
+Dark is a graphite command instrument with restrained semantic luminance. Light is a white research material on cool canvas with hairline/shadow and no translated glow. Use `--ink-up` / `--ink-down` so Chinese direction-color semantics remain correct. Add no token root, literal palette family or runtime stylesheet.
 
-On narrow screens:
+## 13. Data and identity rules
 
-- page-level status becomes a compact two-line instrument;
-- row quote cluster remains together;
-- absolute move may demote visually but cannot disagree with percent;
-- no independent cards are added solely to fit mobile.
+- Symbols originate in server-rendered roster markup, not free-form input.
+- Client deduplicates by exact canonical symbol and keeps all target occurrences.
+- Server independently validates every symbol.
+- Unrequested or duplicate response symbols invalidate the envelope.
+- Output follows request order.
+- Currency is allowlisted; unknown currency gets no guessed glyph.
+- Numeric values must be finite; booleans/strings/NaN/Infinity are invalid.
+- Negative price/reference is invalid.
+- Zero reference cannot produce percentage.
+- `-100%` reconstruction division is refused.
+- Extended fields in a regular-view response invalidate the upstream contract.
 
-## 7. Data and identity rules
+## 14. Freshness and correction landmines
 
-- Symbols come from server-rendered nightly markup, not a free-form user input.
-- Client query is built from those exact canonical symbols and deduplicated.
-- Server revalidates every symbol.
-- Response items not requested make the response malformed; they are not silently accepted.
-- Duplicate response symbols make the response malformed.
-- Output order follows request order.
-- Currency is allowlisted; unknown currency prints no guessed glyph.
-- Numbers must be finite; booleans, strings, NaN and Infinity are invalid.
-- Negative prices/references are invalid.
-- Zero reference cannot produce a percentage.
-- A `-100%` reconstruction division is refused.
-- Extended-session fields are never rendered as regular day move.
+The shared projector must preserve:
 
-## 8. Freshness and correction
-
-The shared projector must preserve the dossier's proven landmines:
-
-- upstream `chg` is percentage, not dollar change;
-- upstream `ts` is the market print clock, not fetch time;
-- after close, that print clock legitimately stops;
-- `regularSession` describes regular-session state, not necessarily the provenance of the primary field;
+- `chg` is percent;
+- `ts` is market/source print time, not fetch time;
+- a final regular print legitimately stops after close;
+- `regularSession` does not prove the provenance of every primary field;
 - regular and extended moves can have opposite signs;
-- unrecognized realtime basis fails closed.
+- unknown realtime basis fails closed;
+- request/projection time never refreshes source freshness;
+- `view=regular` must not merely hide ext fields after spending ext demand.
 
-Client correction/order rules are local and stateless as defined in §3.4. The canonical upstream owns source correction; the browser prevents visual regression within its own page lifetime. It never claims a durable correction ledger.
+## 15. Failure and abuse controls
 
-## 9. Failure and abuse controls
-
-- Symbol cap and length validation.
-- Symbol-weighted client and peer rate limits.
-- One request per refresh; no per-row calls.
-- One in-flight request; AbortController on supersession.
-- Loopback assertion per request.
-- No redirect opener.
+- 60-symbol cap and length validation.
+- Symbol-weighted client/peer budgets.
+- One browser request and one Terminal request per refresh.
+- One in-flight browser request.
+- Loopback assertion per server request.
+- Refuse redirects.
 - Bounded read.
-- Opaque logs and public errors.
-- No response caching across users/visitors at an edge.
-- No provider brand on public UI or payload.
-- No raw upstream logging in normal operation.
-- Controller catches all failures and leaves baseline usable.
-- No retry loop faster than normal cadence.
-- Public controller/Caddy/site-access parity is tested.
+- Opaque logs/errors.
+- No edge response caching.
+- No provider brand or raw upstream body.
+- No retries faster than normal cadence.
+- No fallback from regular to full view.
+- Controller failure leaves baseline usable.
+- Public asset/Caddy parity test.
 
-## 10. Testing strategy
+## 16. Test matrix
 
-### Shared semantic tests
+### Terminal R1A-T
 
-- Dossier fixtures remain green after extraction.
-- `chg`-as-percent discriminator.
-- closed-session settled close not stale.
-- delayed basis cannot become live.
-- missing/unknown clock fails downward.
-- opposite-sign extended fields are ignored.
-- degenerate `prevClose == price` with previous-session move stays coherent.
+- closed view parser;
+- default full compatibility;
+- regular demand keeps SnapshotFeed/Polygon/AnchorCache;
+- regular demand calls ExtFeed zero times;
+- regular response receives no ExtFeed and emits no ext field;
+- 58-symbol regular call leaves ext LRU membership/order unchanged;
+- invalid/conflicting view refuses;
+- existing `hub/tests/quotes.test.js` and `hub/tests/extfeed.test.js` stay green;
+- mutation proof for every load-bearing branch.
+
+### Shared Macro semantics
+
+- dossier regressions;
+- percent-vs-dollar discriminator;
+- closed settled freshness;
+- delayed cannot become live;
+- missing clock fails downward;
+- extended opposite-sign fields ignored/refused;
 - future/NaN/boolean/unknown basis refusal.
-- mutation tests delete each load-bearing guard and red the suite.
 
-### Batch API tests
+### Macro batch API
 
-- deliberately public anonymous access is explicit and stable;
-- one upstream call for 30 symbols;
-- order/dedupe/80-symbol cap;
-- complete/partial/zero-usable responses;
-- exact orthogonal state and coverage arithmetic;
-- upstream redirect/timeout/oversize/malformed JSON;
-- provider fields absent;
-- symbol-weighted rate limiting and normal-cadence allowance;
-- no retry;
-- session-aware mixed states;
-- schema and opaque errors;
-- no server sequence/cursor/correction state.
+- one Terminal call with `view=regular` for up to 58 names;
+- no fallback full call;
+- deliberate anonymous access;
+- order/dedupe/60 cap;
+- complete/partial/zero usable;
+- exact state arithmetic;
+- ext-field leak refusal;
+- redirect/timeout/oversize/malformed;
+- debranding;
+- symbol-weighted limit;
+- no retry/sequence/cursor/correction store.
 
-### Serving-boundary tests
+### Surface and controller
 
-- controller asset appears in `config/site_access.yml` and matching Caddy list;
-- anonymous request receives JavaScript, not registration/paywall content;
-- quote-only API route is intentionally public;
-- no signal-bearing JSON path is opened by the change.
+- exact Command/Emerging/Discovery roster;
+- one symbol to many targets;
+- generic live owner exclusion;
+- ticker routing unchanged;
+- EN/ZH and governed themes;
+- one fetch, hidden pause/resume and live-disabled no request;
+- atomic RAF commit;
+- partial keeps baked missing rows;
+- stale generation/source suppression;
+- equal-time revision correction;
+- score/order/stage immutability.
 
-### Surface tests
+### Production/browser proof
 
-- durable quote/status markup exists for command/emerging/discovery rows;
-- no R1A node matches generic live.js owner selectors;
-- ticker `.tk` routing contract remains;
-- both languages present;
-- no title-attribute i18n leak;
-- theme treatments use governed CSS, not runtime injected stylesheet.
+- Terminal host regular-view no-LRU-effect canary;
+- real public Macro route and controller;
+- one browser call / one Terminal call;
+- visible tuple coherence;
+- normal, delayed, partial, settled, malformed/upstream-unavailable states;
+- dark/light × EN/ZH × 1440/390;
+- zero console errors/overflow;
+- intelligence fingerprint unchanged;
+- ticker opens Terminal.
 
-### Controller tests
+## 17. Deployment, canary and rollback
 
-- one fetch, not N;
-- hidden tab pause/resume;
-- disabled-live no request;
-- atomic requestAnimationFrame commit;
-- partial keeps missing baked rows;
-- malformed envelope/coverage no repaint;
-- stale local generation suppression;
-- older source-time item suppression with truthful coverage recompute;
-- equal-time changed revision correction acceptance;
-- snapshot id never used for order;
-- unavailable and last-good aging;
-- no score/order/stage mutation;
-- ticker click route unaffected.
+### R1A-T
 
-### Browser/production proof
+Deploy through the existing Terminal hub owner. Verify running commit, default full behavior, regular-view contract, no ExtFeed LRU change and health. Roll back the Terminal commit if any existing caller or demand behavior regresses.
 
-- real route response from the served origin as anonymous and signed-in clients;
-- controller asset loads from the anonymous shell;
-- one network call per refresh;
-- visible tuple consistency;
-- live/delayed/partial/settled/unavailable states;
-- dark/light × EN/ZH × 1440/390 screenshots;
-- zero console errors and horizontal overflow;
-- page source/order/score fingerprint unchanged;
-- live setting and background-tab behavior;
-- actual ticker opens Terminal.
+### R1A-M
 
-## 11. Deployment and rollback
+Deploy through existing Macro API/static/render paths. Verify API running commit, public asset and route, cache stamps, known tuple, browser matrix and symbol-unit/error telemetry.
 
-Deployment uses the existing Macro merge/render/API restart paths. Current `app/deploy/update.sh` already restarts Macro API for `app/*.py`; implementation must verify that current fact rather than edit the deploy owner reflexively. The controller must be added to the existing public asset boundary and cache-stamp path.
+Feature disable makes the page remain baked. There is no database migration or durable live state to unwind.
 
-Canary:
+## 18. R1B hold
 
-1. merge reviewed exact head;
-2. deploy API and static assets through existing path;
-3. verify `/api/health` running commit;
-4. verify anonymous route and controller access;
-5. verify one known ticker tuple against canonical hub;
-6. open Intelligence Hub with cache-busted assets;
-7. run browser matrix and failure drills;
-8. observe symbol-unit budgets, telemetry and error rate.
-
-Rollback:
-
-- server feature flag or route-disable setting makes controller remain baked;
-- remove controller include to stop requests;
-- baseline remains complete throughout;
-- public asset-list entry may remain harmless presentation code or be removed with matching Caddy parity;
-- no data migration or durable live state to unwind.
-
-## 12. R1B hold
-
-Do not add SSE/WebSocket in R1A. R1B is commissioned only after Sol accepts R1A production proof and measurement shows snapshot pull cannot meet the user/cost target. R1B must reuse these semantics and add only ordered stream transport, heartbeat, gap resync and backpressure—not a new quote owner.
+R1A contains no SSE/WebSocket. R1B starts only after Sol accepts R1A production proof and measurement shows snapshot pull cannot meet the user/cost target. It must reuse this semantic contract and add only ordered stream transport, heartbeat, gap resync and backpressure.
