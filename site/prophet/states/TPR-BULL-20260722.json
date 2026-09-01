@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TPR-BULL-20260722",
-  "asof": "2026-08-29",
+  "asof": "2026-08-31",
   "phase": "invalidated",
   "detection_phase": "invalidated",
-  "management_confidence": 12.1,
+  "management_confidence": 10.1,
   "raw_confidence": 8.0,
-  "delta_vs_base": -47.9,
+  "delta_vs_base": -49.9,
   "recommended_action": "invalidated",
   "human_state": "Invalidated",
   "components": {
@@ -17,20 +17,20 @@
     "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": -0.071,
+    "dist_to_stop_r": -0.065,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 71.1,
-    "p1": -0.7142,
-    "p2": -0.3571,
+    "horizon_pct_used": 75.6,
+    "p1": -0.7103,
+    "p2": -0.3552,
     "p3": null,
-    "move_r": -1.071,
+    "move_r": -1.065,
     "mfe_r": 0.538,
     "mae_r": -1.071
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Stop Level Breached",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-08-06",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 32,
-  "tau": 0.7111
+  "days_elapsed": 34,
+  "tau": 0.7556
 }

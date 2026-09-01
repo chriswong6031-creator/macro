@@ -1,0 +1,254 @@
+{
+  "as_of": "2026-08-31",
+  "coverage": {
+    "end": "2026-08-28",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-19 to 2026-08-28; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-19"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-28",
+      "events": []
+    },
+    {
+      "date": "2026-08-27",
+      "events": []
+    },
+    {
+      "date": "2026-08-26",
+      "events": []
+    },
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "events": []
+    },
+    {
+      "date": "2026-08-22",
+      "events": [
+        {
+          "date": "2026-08-22",
+          "id": "cev-research_vault-a45893b7bba7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fkwg03orkqd-7a785b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Savone Global Reflections 22 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": []
+    },
+    {
+      "date": "2026-08-19",
+      "events": [
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-8d809004022b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iufhbreqa5u-c4615f",
+          "tickers": [],
+          "title": "Goldman Sachs: GS Early Morning Research Recap Ratings and Target Price Changes August 19, 2026 as of 5 30 AM ET",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-ac5dbf7b631c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-1dhpuvkzmk9-cd3352",
+          "tickers": [],
+          "title": "S&T: GS Duttenhoefer Daily 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-bd3a7c713928",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-cq6mru0v5yk-a55ba3",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Software Industry Thoughts and Rank Order AI Disruption Concerns Present Compelling Opportunities in Relation to Both Growth and Inexpensive Valuation",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-c86f4ab5ff2a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-mpcilhoxeqd-387755",
+          "tickers": [],
+          "title": "Prime: Prime Insights and Analytics Chart Pack August 2026 Marquee",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-c928685fa317",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-3ucrjfkfccl-27f57a",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-c942166e671a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tbliynlaqkt-bc801c",
+          "tickers": [],
+          "title": "UBS: Audio",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-ccabe1e8f084",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-wsa9qjhlngy-c5cfd6",
+          "tickers": [],
+          "title": "UBS: UBS Equity Preference List European Financials 2026 08 19",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-cdf0fed139fd",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ov4md82weal-dcff44",
+          "tickers": [],
+          "title": "S&T: GS US Equities Color UNWINDY 18 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-d2ef4511c79e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-mbejgl8u2ar-611f7c",
+          "tickers": [],
+          "title": "UBS: Bond markets",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-dfa43ecd8686",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bgcfsnmzxsb-dd3cc0",
+          "tickers": [],
+          "title": "S&T: GS Soria Chart of the Day Correlation Break AI vs SPXXAI 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-e4ce1e190272",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-8nzpchgsirm-9e2e46",
+          "tickers": [],
+          "title": "S&T: GS Johnstone TMT Spec Sales 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-e66556b390da",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tzvx7zjggp7-09e00e",
+          "tickers": [],
+          "title": "S&T: GS Blekos Marketcolour 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-e8e378388773",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bufvw25ethz-747874",
+          "tickers": [],
+          "title": "S&T: GS TMT SPEC SALES: MOMO reversal; Sunrise inline; TSMC CoWOS; Broadcom preview; Travel eSim comptition for operators ; Hynix Buyback",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-f6190fc200a4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-mbiiutd4p4l-b17aad",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM The BoJ s Catch 22",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-f8ed83e858c1",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-lbhcu1tsnlj-6747ba",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM APAC Consumer AI Survey",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-f9d07d767826",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-axsmm9dgdou-36a50f",
+          "tickers": [],
+          "title": "UBS: UBS Equity Preference List Singapore 2026 08 19",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-research_vault-fab4533051b4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-hbkq924i6po-7e46b3",
+          "tickers": [],
+          "title": "UBS: Investment strategy insights",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-19",
+          "id": "cev-risk_band-264d17712087",
+          "kind": "state_flip",
+          "source": "risk_band",
+          "source_ref": "risk_radar_forward_log#2026-08-19",
+          "tickers": [],
+          "title": "Risk radar: calm → watch",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

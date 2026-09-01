@@ -1,0 +1,245 @@
+{
+  "as_of": "2026-09-01",
+  "coverage": {
+    "end": "2026-08-31",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-20 to 2026-08-31; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-20"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-31",
+      "events": [
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-2b71e9b9c0b4",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_canada",
+          "tickers": [],
+          "title": "CANADA regime: Q1 Goldilocks → Q3 Stagflation",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-31",
+          "id": "cev-regime_flip-582af2b47649",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-31#regime_hk",
+          "tickers": [],
+          "title": "HK regime: Q4 Growth-scare → Q1 Goldilocks",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "events": []
+    },
+    {
+      "date": "2026-08-27",
+      "events": []
+    },
+    {
+      "date": "2026-08-26",
+      "events": []
+    },
+    {
+      "date": "2026-08-25",
+      "events": []
+    },
+    {
+      "date": "2026-08-24",
+      "events": [
+        {
+          "date": "2026-08-24",
+          "id": "cev-research_vault-2874cacaea1a",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-x6dm5a4kmqa-490e9f",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intelligence | Morning Briefing",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-23",
+      "events": []
+    },
+    {
+      "date": "2026-08-22",
+      "events": [
+        {
+          "date": "2026-08-22",
+          "id": "cev-research_vault-a45893b7bba7",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-fkwg03orkqd-7a785b",
+          "tickers": [],
+          "title": "Morgan Stanley: MS Savone Global Reflections 22 Aug 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "events": []
+    },
+    {
+      "date": "2026-08-20",
+      "events": [
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-bd1e3615b396",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tc0epnnavaq-75cfd5",
+          "tickers": [],
+          "title": "Goldman Sachs: Americas Utilities Power Levelized Cost of Energy Update Costs Rising Across Resource Types, but Solar Wind Remain Attract...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-be5e541083f5",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-jspnc9epg81-d912a7",
+          "tickers": [],
+          "title": "S&T: GS Vol Views 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-c4f1375450fb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-2jt2xgwgrrb-e2ee80",
+          "tickers": [],
+          "title": "Goldman Sachs: Japan July Trade Crude Oil Import Volume Swings Back to Positive YoY, but Crude Oil Import Prices Remain High",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-c66598714f1e",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-uthhel2agpd-d38089",
+          "tickers": [],
+          "title": "S&T: GS Blekos Marketcolour 20 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-caae5540ddfb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-2v7aymr4zey-14526d",
+          "tickers": [],
+          "title": "J.P. Morgan: Podcast Global equities checkin Europe strong, Asia rebuilding",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-ce008032a1ea",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-suweggnvrsc-c9b716",
+          "tickers": [],
+          "title": "Goldman Sachs: KONE Corp. (KNEBV.HE) Post 2Q26 update",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-d426dc6abbf6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gwfsfmg6tkg-078eed",
+          "tickers": [],
+          "title": "Goldman Sachs: China Resources Beer (0291.HK) 1H26 Review Premiumization, Op resilience and outperformance vs industry under appreciated, ...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-d6618b66cd7b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bnxb8rkgv7q-0a24b1",
+          "tickers": [],
+          "title": "Deutsche Bank: Early Morning Reid Macro Strategy",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-df78da8df1f6",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-3gdjdu9fiut-2de1e0",
+          "tickers": [],
+          "title": "S&T: GS Wijaya Energy Preview Recent Conversations 19 Aug 2026",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-e2efd6166a57",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-czcxavxorjj-280125",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Daily Credit Strategy",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-e69f0cb8d54b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-42iq6rtqumj-822968",
+          "tickers": [],
+          "title": "Goldman Sachs: am perspectives 3Q26 better together",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-eb2671fd28ff",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-donrltypljz-ab80cc",
+          "tickers": [],
+          "title": "Goldman Sachs: Americas Energy Oil & Gas E&P Highlight Capital Efficient Growth Outlook and Flexibility of Capital Returns Through Volat...",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-f20434bf8c55",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-uh93z7kptec-729f3b",
+          "tickers": [],
+          "title": "Goldman Sachs: Riksbank on Hold — We Continue to See a Hike in December as Likely",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-f9baf74e6b31",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-g0ncidbqzfc-373ae2",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM SK hynix W40trn buyback",
+          "weight_hint": 2
+        },
+        {
+          "date": "2026-08-20",
+          "id": "cev-research_vault-ff9d160845ee",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iuzpdbsyyrm-a968e8",
+          "tickers": [],
+          "title": "Goldman Sachs: Walmart Inc",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}
