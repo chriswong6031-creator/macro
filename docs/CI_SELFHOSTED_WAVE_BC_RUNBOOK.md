@@ -250,6 +250,15 @@ reads as a change to the measured envelope. `--preflight-profile four-slot-canar
 adds the stricter pre-diagnostic gate: `MemAvailable >= 20 GiB`, swap `<= 512 MiB`,
 memory/IO PSI `full avg10 < 0.10`. Steady state for `pc-ci-1..3` is unchanged.
 
+Binding is not enforcement, and the guard says so. systemd **auto-creates an
+undefined slice**, so a unit carrying `Slice=mastermind-ci.slice` binds cleanly even
+when no slice file was ever installed — it simply inherits no limits, and `cpu.max`
+reads `max 100000`. A capacity diagnostic run against an unenforced envelope measures
+nothing while looking bound and green. `--preflight-profile four-slot-canary`
+therefore refuses an unlimited `cpu.max`. Steady state deliberately does **not** gate
+on it: `pc-ci-1..3` run today with no slice installed at all, and refusing them would
+strand every live slot.
+
 The memory floor stays a **guest-wide** `MemAvailable` read on purpose: the renderer
 lives outside the slice, so a slice-local read would show a nearly idle cgroup while
 the guest was starved, and would admit a CI job that then starves render.

@@ -136,6 +136,7 @@ def slice_reasons(
         "memory_floor_is_guest_wide": True,
         "memory_events": None,
         "pressure_full_avg10": None,
+        "cpu_max": None,
     }
     reasons: list[str] = []
 
@@ -159,6 +160,25 @@ def slice_reasons(
 
     if bound:
         node = Path(cgroup_root) / str(cgroup).lstrip("/")
+
+        # BINDING IS NOT ENFORCEMENT. systemd auto-creates an UNDEFINED slice, so
+        # a unit carrying `Slice=mastermind-ci.slice` binds cleanly even when no
+        # slice file was ever installed -- it simply inherits no limits. A
+        # capacity diagnostic run against an unenforced envelope measures nothing
+        # while looking bound and green, which is the exact shape of false proof
+        # this guard exists to refuse. Only the stricter profile gates on it:
+        # pc-ci-1..3 run today with no slice installed at all, and refusing them
+        # here would strand every live slot.
+        raw_cpu_max = _read(node / "cpu.max")
+        cpu_max = raw_cpu_max.strip() if raw_cpu_max is not None else None
+        evidence["cpu_max"] = cpu_max
+        if thresholds["psi_full_avg10_max"] is not None:
+            if cpu_max is None or cpu_max.split()[:1] == ["max"]:
+                reasons.append(
+                    f"slice cpu.max is {cpu_max!r}: the envelope is unenforced, so a "
+                    "capacity diagnostic here would measure nothing"
+                )
+
         events = _read_keyed(node / "memory.events")
         evidence["memory_events"] = events
         if events:

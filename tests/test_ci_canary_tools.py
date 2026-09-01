@@ -1834,3 +1834,52 @@ def test_cumulative_memory_high_reclaim_never_strands_a_listener(tmp_path: Path)
     )
     assert reasons == [], "cumulative MemoryHigh reclaim must not wedge the slot"
     assert evidence["memory_events"]["high"] == 4096, "but it is still receipted"
+
+
+def test_binding_alone_does_not_prove_the_envelope_is_enforced(tmp_path: Path) -> None:
+    """systemd auto-creates an UNDEFINED slice, so a unit carrying
+    `Slice=mastermind-ci.slice` binds successfully even when no slice file was
+    ever installed -- it just inherits no limits. Binding therefore proves
+    membership, not enforcement. Running a four-slot capacity diagnostic against
+    an unenforced envelope would measure nothing while looking bound and green,
+    so the stricter profile must refuse an unlimited cpu.max.
+    """
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{"cpu.max": "max 100000\n"})
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert any("unenforced" in reason or "cpu.max" in reason for reason in reasons)
+    assert evidence["cpu_max"] == "max 100000"
+
+    # Steady state must NOT inherit this refusal: pc-ci-1..3 run today with no
+    # slice installed at all, and this carrier installs nothing.
+    steady, _ = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="steady",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert steady == [], "an unenforced slice must not wedge today's three slots"
+
+
+def test_enforced_envelope_passes_the_four_slot_preflight(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{"cpu.max": "800000 100000\n"})
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=CI_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert reasons == []
+    assert evidence["cpu_max"] == "800000 100000"
