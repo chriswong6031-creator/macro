@@ -4,11 +4,15 @@ This directory is the R0 architecture-completion and Fable principal-takeover pa
 
 Read in this order:
 
-1. `../agentos/decisions/DEC-BIOCATALYST-DECISION-INTELLIGENCE-V3-RECHARTER.md` — CEO product and authority ruling.
+1. `../../agentos/decisions/DEC-BIOCATALYST-DECISION-INTELLIGENCE-V3-RECHARTER.md` — CEO product and authority ruling.
 2. `BIOCATALYST_DECISION_INTELLIGENCE_V3_MASTERPLAN_2026-09-01.md` — product/system/intelligence architecture and ordered program.
 3. `BIOCATALYST_FABLE_PRINCIPAL_TAKEOVER_HANDOFF_2026-09-01.md` — exact R0 principal mission, scope, proof and continuation contract.
-4. Current `agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md` and `WS-BPC-JV-RECON.md` — canonical organizational entrance state.
-5. Current #6389 GitHub/Slack carrier — read-only collision/state evidence; do not modify from R0.
+4. `BIOCATALYST_R1A_SOURCE_GRADUATION_PRECOMMISSION_2026-09-01.md` — pre-shaped source-soak adjudication and broad event-universe wave; not yet authorized.
+5. `BIOCATALYST_R1B_WHAT_MATTERS_NEXT_PRECOMMISSION_2026-09-01.md` — pre-shaped first useful product vertical; not yet authorized.
+6. Current `../../agentos/workstreams/WS-BIOCATALYST-CORE-PRODUCT.md` and `../../agentos/workstreams/WS-BPC-JV-RECON.md` — canonical organizational entrance state.
+7. Current #6389 GitHub/Slack carrier — read-only collision/state evidence; do not modify from R0.
+
+The R1A/R1B packets are deliberate prework so the Fable principal can reconcile and finalize rather than rediscover the mission. They do not commission implementation. R0 must correct them against current archaeology before returning for Sol acceptance.
 
 ## Core outcome
 
