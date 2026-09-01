@@ -114,8 +114,8 @@ current_carriers:
     prior_metadata_pr: Macro#6709
     current_release_pr: Macro#6711
     branch: sol/agentos-autonomy-handoff-schema-repair-20260831
-    joined_main: 91185bef12ec842dbf41b1b15f4820a5821e68ed
-    previous_head: 5082f6e7feec1f47ad908f93e0850b79fd2b2819
+    joined_main: a0e95ded3a673a8274fd0af9b78557d32366ffc7
+    previous_head: 47a08e9e16dcc6c9d607c771f4fd0c5677300b99
     transition_receipt: Macro#6709/comment-5489705316
     state: OPEN_NON_DRAFT_SAME_BRANCH_CURRENT_TRUTH_RECONCILIATION
   w3a:
@@ -281,7 +281,7 @@ danger_areas:
   - "Attention DMs can look operational while no target session has consumed work."
 protected_truth:
   mastermind_master: fc407e1638a26932c8615c98c7732d7f3202b3b1
-  macro_main_joined: 91185bef12ec842dbf41b1b15f4820a5821e68ed
+  macro_main_joined: a0e95ded3a673a8274fd0af9b78557d32366ffc7
   macro_release_pr: 6711
   macro_prior_metadata_pr: 6709
   macro_transition_receipt: Macro#6709/comment-5489705316
