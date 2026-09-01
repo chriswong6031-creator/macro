@@ -147,7 +147,7 @@ it("default/full view keeps existing ext demand", () => {
 - [ ] **Step 5: Add the response-assembly RED test**
 
 ```javascript
-it("regular response passes no ext feed into Store", () => {
+it("regular response passes no ext feed into Store and strips legacy ext keys", () => {
   let seenExt = "unset";
   const store = {
     getQuotes(_syms, _now, extFeed) {
@@ -162,6 +162,14 @@ it("regular response passes no ext feed into Store", () => {
           live: true,
           source: "polygon-live",
           basis: "LIVE",
+          // legacy/poisoned row: the regular view must strip these at the
+          // response boundary even though no ExtFeed was consulted
+          extPrice: 201,
+          extChg: 1.5,
+          extTs: TS,
+          extSession: "post",
+          extSource: "webull",
+          extBasis: "EXT",
         },
       };
     },
@@ -245,10 +253,23 @@ function buildQuotesResponse(syms, nowMs, deps = {}, options = {}) {
     includeExtended ? extFeed : null,
     snapshotFeed
   );
+  if (!includeExtended) {
+    for (const sym of Object.keys(served)) {
+      const row = served[sym];
+      const clean = {};
+      for (const key of Object.keys(row)) {
+        if (!key.startsWith("ext")) clean[key] = row[key];
+      }
+      served[sym] = clean;
+    }
+  }
 }
 ```
 
-Default behavior remains full.
+Default behavior remains full. The `ext*` strip runs over whatever the Store
+returned, so the response boundary stays closed even for a legacy or poisoned
+Store row that never touched ExtFeed; it copies rather than mutating rows the
+Store may share.
 
 - [ ] **Step 4: Wire `hub.js`**
 
@@ -289,6 +310,7 @@ For each mutation, run `node --test tests/quotes.test.js` and prove RED, then re
 ```text
 remove includeExtended guard around extFeed.demand
 always pass extFeed to Store
+skip the regular-view ext-key strip over Store rows
 make unknown view default to full
 make regular view skip SnapshotFeed
 make default view regular

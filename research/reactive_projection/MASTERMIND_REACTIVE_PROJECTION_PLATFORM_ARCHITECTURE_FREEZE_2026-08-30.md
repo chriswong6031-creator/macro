@@ -142,7 +142,7 @@ For `view=regular`, Terminal must:
 - preserve the existing Polygon subscription and AnchorCache warm path;
 - **not call `extFeed.demand()`**;
 - pass no extended-hours provider into response assembly;
-- emit no `extPrice`, `extChg`, `extTs`, `extSession`, `extSource` or `extBasis` field;
+- strip every extended-hours key (`extPrice`, `extChg`, `extTs`, `extSession`, `extSource`, `extBasis`) from every returned row before serialization, so the regular view is closed at the response boundary even when a legacy Store row already carries such a key — never emit any of them;
 - retain the existing flat `{SYM: quote}` response and present-entries-only behavior;
 - reject unknown `view` values instead of silently broadening behavior;
 - preserve the default `view=full` byte-for-semantic behavior and tests.
@@ -568,7 +568,7 @@ R1A-T must prove on the actual Terminal host:
 
 - default `/quotes` behavior remains unchanged;
 - `view=regular` returns the regular flat response;
-- no extended field is emitted;
+- no extended field is emitted, including from legacy Store rows that already carry `ext*` keys;
 - 58-name regular-view demand changes neither ExtFeed subscription map nor LRU order;
 - SnapshotFeed/Polygon/AnchorCache regular paths still receive demand;
 - invalid view fails closed;

@@ -119,7 +119,7 @@ For every eligible US symbol:
 - AnchorCache warm still runs;
 - `extFeed.demand(sym)` does **not** run;
 - response assembly does not receive/use `extFeed`;
-- no `extPrice`, `extChg`, `extTs`, `extSession`, `extSource` or `extBasis` field is emitted;
+- every extended-hours key (`extPrice`, `extChg`, `extTs`, `extSession`, `extSource`, `extBasis`) is stripped from every returned row before serialization — the regular view is closed at both boundaries: zero ExtFeed demand/read, and no `ext*` key in any emitted row even when a Store test double or legacy Store row already contains one;
 - the flat `{SYM: quote}` and present-entries-only response contract remains unchanged;
 - crypto/macro/daily-only/non-US routing remains exactly as current code defines it;
 - no second route, feed, store, cache, scheduler, service or credential is created.
@@ -168,6 +168,21 @@ it("regular response never merges ext fields", () => {
   assert.equal("extPrice" in out.AAPL, false);
 });
 
+it("view=regular strips ext fields even when Store returns a legacy row containing them", () => {
+  const store = {
+    getQuotes() {
+      return { NVDA: {
+        sym: "NVDA", last: 100, prevClose: 95, chg: 5.263,
+        ts: 1, basis: "LIVE", source: "polygon",
+        extPrice: 101, extChg: 1, extTs: 2,
+        extSession: "post", extSource: "webull",
+      }};
+    },
+  };
+  const out = buildQuotesResponse(["NVDA"], NOW, { store }, { includeExtended: false });
+  assert.equal(Object.keys(out.NVDA).some((k) => k.startsWith("ext")), false);
+});
+
 it("default full view remains unchanged", () => {
   // existing response and ext-demand fixtures remain byte/semantic equal
 });
@@ -177,6 +192,7 @@ Mutation tests must fail when:
 
 - regular mode calls `extFeed.demand()`;
 - regular response passes `extFeed` into Store;
+- regular response returns a legacy Store row's `ext*` keys unstripped;
 - unknown view silently becomes full;
 - full default stops demanding/merging extended fields;
 - regular mode skips SnapshotFeed/Polygon/AnchorCache.
