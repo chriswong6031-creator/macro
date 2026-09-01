@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-31T13:48:27.291878+00:00",
-  "posts_seen": 6,
-  "seen_total": 148,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-09-01T05:07:47.323369+00:00",
+  "posts_seen": 7,
+  "seen_total": 152,
+  "evaluated": 1,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-08-31-fact-sheet-president-donald-j-trump-announces-historic-oil-agreement-to-secure-a",
+      "importance": 92,
+      "activated": true,
+      "degraded_reason": "served_by:codex"
+    }
+  ]
 }
