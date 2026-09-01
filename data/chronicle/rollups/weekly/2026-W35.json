@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-29",
+  "as_of": "2026-08-30",
   "coverage": {
-    "end": "2026-08-29",
+    "end": "2026-08-30",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W35; 13 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-30"
+    "start": "2026-05-31"
   },
   "iso_week": "2026-W35",
   "schema": "chronicle.rollup.weekly/v1",
@@ -23,7 +23,7 @@
           "top_events": []
         },
         {
-          "n_events": 16,
+          "n_events": 21,
           "source": "prophet_ledger",
           "theme": null,
           "top_events": []

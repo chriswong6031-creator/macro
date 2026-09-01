@@ -1,7 +1,7 @@
 {
-  "as_of": "2026-08-29",
+  "as_of": "2026-08-31",
   "state": "lean_in",
-  "dispersion_pctile": 0.91,
+  "dispersion_pctile": 0.73,
   "avg_corr": 0.06,
   "shadow_gross_mult": 1.2,
   "gross_mult_live": 1.0,
@@ -271,7 +271,19 @@
     {
       "as_of": "2026-08-29",
       "state": "lean_in",
-      "dispersion_pctile": 0.91,
+      "dispersion_pctile": 0.81,
+      "avg_corr": 0.06
+    },
+    {
+      "as_of": "2026-08-30",
+      "state": "lean_in",
+      "dispersion_pctile": 0.81,
+      "avg_corr": 0.06
+    },
+    {
+      "as_of": "2026-08-31",
+      "state": "lean_in",
+      "dispersion_pctile": 0.73,
       "avg_corr": 0.06
     }
   ],
@@ -281,9 +293,9 @@
     "basis": "trailing_252d_fixed",
     "n_names_used": 1499,
     "n_days_used": 252,
-    "dominant_equity_pc_share": 0.172,
-    "effective_universe_bets_pr": 23.55,
-    "idio_dispersion_share": 0.7818,
+    "dominant_equity_pc_share": 0.1723,
+    "effective_universe_bets_pr": 23.49,
+    "idio_dispersion_share": 0.8064,
     "sector_pc_loadings": null,
     "note": "sector map not wired (deferred); display-only \u2014 DISP-EIGEN-1 registered, activation DEFERRED pending DISP-GATE-1 non-stationarity resolution",
     "display_only": true

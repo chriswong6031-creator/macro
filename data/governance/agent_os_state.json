@@ -1,20 +1,30 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-29T10:10:47Z",
+  "generated_at": "2026-09-01T04:14:54Z",
   "inputs": {
-    "workstreams": 54,
-    "decisions": 269,
-    "discoveries": 231,
-    "handoffs": 382,
+    "workstreams": 56,
+    "decisions": 279,
+    "discoveries": 234,
+    "handoffs": 397,
     "active_builds": "data/governance/active_builds.json@2026-08-29T10:10:47.291791+00:00",
-    "active_builds_age_hours": 0.0,
+    "active_builds_age_hours": 66.1,
     "worktrees": 1,
     "uncommitted_worktrees": [],
     "degraded": [
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'state_before'",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'changed'",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [required-field] missing required field 'unverified' — an empty list is a valid answer, its ABSENCE is not",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [bad-enum] 'ended_because' is 'active_dependencies'; allowed: blocked, ci_handoff, complete, context_budget, crashed",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[0] has no 'command' — 'tests pass' is the failure this list exists to make unwritable",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[1] has no 'command' — 'tests pass' is the failure this list exists to make unwritable",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[2] has no 'command' — 'tests pass' is the failure this list exists to make unwritable",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[3] has no 'command' — 'tests pass' is the failure this list exists to make unwritable",
+      "record excluded (malformed): agentos/handoffs/AUTONOMY-MASTERMIND-OS-2026-08-30-accelerated-execution-reconciliation.md: [unbacked-verification] verified[4] has no 'command' — 'tests pass' is the failure this list exists to make unwritable",
       "active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'",
       "Mastermind checkout not found — p0 ids unvalidated, p0_active unknown",
-      "uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work"
+      "uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work",
+      "active_builds.v1 is 66h old — PR state predates the last nightly sweep"
     ]
   },
   "program_registry": {
@@ -520,9 +530,9 @@
         "macro"
       ],
       "next_action": "Decide the CI gate fix (parallel viewport jobs vs build-once + next start), coordinating the required-check contexts with branch protection and merge-on-green.yml.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "The Terminal responsive e2e merge gate is unreliable. E-3/E-4/E-5 are complete and verified but cannot merge; see next_actions[0] and DSC:TERMINAL-E2E-GATE-COLD-COMPILE.\n"
@@ -680,9 +690,9 @@
         "macro"
       ],
       "next_action": "AD-1T1 is PROVEN_LIVE and must not be reopened or rerun merely to show activity. The exact next product dependency is AD-1T2: restore the store-bearing M1 to the theta-m1 product workflow and production-prove AD-1 end to end, including the consumer/availability path needed by downstream Options Alpha PIT composition. AD-2 remains CLOSED until AD-1 production acceptance. Broken R2 sync is not an AD-1T2 prerequisite unless new evidence proves it necessary.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -894,9 +904,9 @@
         "macro"
       ],
       "next_action": "MAS-28 W1 implementation is merged and accepted as report-only / BUILT_NOT_PROVEN. The next MAS-28 operation is calibration only: run the representative frozen corpus required by MAS-28, record false positives, false negatives and incomplete observations, and return a recommendation to remain report-only, amend rules, or propose a separate bounded enforcement review. Do not arm a hard gate from W1. The pre-existing Agent OS Phase 4 W4 remains a separate high-blast-radius report-only hook wave and is still todo; this records correction does not commission it.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1125,6 +1135,12 @@
           "paths": [
             "agentos/**"
           ]
+        },
+        {
+          "with": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+          "paths": [
+            "agentos/**"
+          ]
         }
       ],
       "warnings": [],
@@ -1144,9 +1160,9 @@
         "macro"
       ],
       "next_action": "Next dependency is to commission K3-D Economic Propagation and K2-C Institutional adapter pilot as two separate bounded waves after a fresh path/authority collision census. They may proceed in parallel only if those surfaces remain genuinely disjoint. K3-D must inherit the c0 D0 rulings, including the four named DNR kills, Data OS exact-identity authority, typed abstention for unresolved identities, no fourth graph/store, and no new grader/ranker. K2-C must adopt K2-B/K1 contracts and prove owner-reader, source/rights, PIT/lineage and correction behavior without creating an institutional aggregation truth store. Do not start K5 OpportunityCase / Prophet integration until BOTH K2 and K3 are complete. K3-E merge itself authorizes no consumer wiring, Market OS UI, rank, gate, size, trade or deployment.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "PROPHET-US-V4-RECOVERY",
         "PROPHET-CONDITIONAL-FUSION",
@@ -1320,9 +1336,9 @@
         "macro"
       ],
       "next_action": "Wave P1-AVAIL-1 (MAS-172) is done: root cause = signed-out Chairman browser, no product defect, entitled matrix re-proven PASS 2026-08-28; parked again once Sol posts terminal acceptance. No other CORE-PRODUCT wave is commissioned; P1-2 still requires a separate explicit Sol ruling. The 2026-08-26T02:00Z source/launch-soak boundary remains owned by its source-governance path: window end grants no expansion authority; exact evidence must be frozen and adjudicated before any successor source/cohort transition.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1378,9 +1394,9 @@
         "macro"
       ],
       "next_action": "Recovery program complete. Preserve #6090 as the production proof and close this workstream rather than using it as an implementation catch-all. The MAS-74 post-P0 adjudication was executed 2026-08-20 by the Sol-commissioned P1-0 recharter: research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md (capability ledger, first-vertical verdict Catalyst Radar — Trial Milestones, frozen first slice in research/BIOCATALYST_P1_CONTINUATION_HANDOFF_2026-08-20.md). The P1 workstream home and the verdict's ratification are returned to Sol in that document's §11. No post-P0 implementation is authorized by this closeout or by the recharter records themselves.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1588,9 +1604,9 @@
         "macro"
       ],
       "next_action": "RECON-0 merged (#5909, 2026-08-19). Return to Sol for commissioning of the first bounded SNAPSHOT-ONBOARD vertical — bundled with the post-soak sequencing adjudication proposed in research/BIOCATALYST_P1_RECHARTER_AND_FIRST_VERTICAL_ARCHITECTURE_2026-08-20.md §11. Runtime biopharmcatalyst_jv_snapshot registration remains prohibited until the post-soak successor-registry / successor-launch-manifest transition.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1684,16 +1700,16 @@
       "program": "prophet-us",
       "p0": "PROPHET_FRESHNESS",
       "p0_active": null,
-      "owner": "coo-fable",
+      "owner": "ceo-sol",
       "class": "build",
       "blast_radius": "reversible",
       "repos": [
         "macro"
       ],
-      "next_action": "Execute child C0 from agentos/handoffs/BREATHING-PLATFORM-2026-08-28-completion-commission.md: Chairman assigns the recommended Fable principal COO in the program-control Slack thread; receiver ACKs, arms the exact-thread watcher, and performs read-only production-truth recovery for Aug-26/Aug-27 plus the current post-#6554/#6569/#6534 state. Do not modify code until C0 names one causal gap. Architecture and completion law are frozen in research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "next_action": "Execute fresh child C2-A from agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md. C0 is accepted/terminal; do not reopen it. C2-A is the first still-live causal dependency: the host-native close-pass lane can remain registered+locked in Git while missing on disk, and current prepare_lane only has a weaker error-string + prune recovery path that does not safely cover that state. Preferred avenue is CTO Sol, receiver binding is CAPACITY_SELECTABLE, and current placement state is WAITING_CAPACITY / needs_placement because CF2-I capacity-aware Executive placement is not yet production-released. Do not turn that placement debt into OPEN_PICKUP or routine Chairman account scheduling, and do not arm a receiver- specific watcher until a lawful receiver exists. After C2-A code + actual Mac Studio installer/preflight proof, separately reconcile C2-B backstop Massive same-session coverage, C1 natural D12/permanence proof, C3 W-L2 breadth, C5 browser/degraded-state proof, then C6 three consecutive natural sessions.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -1701,7 +1717,7 @@
         "done": 3,
         "dropped": 0,
         "in_progress": 1,
-        "todo": 1
+        "todo": 2
       },
       "wait": null,
       "wave_detail": [
@@ -1739,6 +1755,19 @@
           "wait": null
         },
         {
+          "id": "C2-A",
+          "title": "Recover missing-but-locked host-native close-pass worktree",
+          "status": "todo",
+          "depends_on": [
+            "W-L1R"
+          ],
+          "deps_satisfied": true,
+          "next_action": "WAITING_CAPACITY / needs_placement. Use operation breathing-c2-closepass-host-lane-repair-20260829-sol-001 and the 2026-08-29 C2-A handoff. PREFERRED_AVENUE=CTO Sol; CAPACITY_SELECTABLE. Require real-Git reproduction + RED-before regression, structurally targeted recovery that cannot touch unrelated worktrees, reviewed PR, existing installer deployment to the Mac Studio, installed-bootstrap digest proof and non-publishing lane readiness preflight. Weekend/pre-session preflight is not a C6 session green.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
           "id": "W-L2",
           "title": "Current valid armed-level breadth outcome",
           "status": "todo",
@@ -1746,7 +1775,7 @@
             "W-L1R"
           ],
           "deps_satisfied": true,
-          "next_action": "Use completion masterplan C3. Do not execute the old \"raise/parallelize + alerts\" packet. #6554 now owns D12 correctness as BUILT_NOT_PROVEN; process fan-out already exists; Availability/permanence owns publication alerts; LIVE-ENTRY-RADAR owns tactical alerts. After D12 natural proof, census current verified armed-level breadth and timing. Close by evidence if the old gap is superseded; otherwise commission one measured bottleneck repair without weakening parity/edge verification or inflating resources arbitrarily.\n",
+          "next_action": "Use completion masterplan C3 after the delivery/availability prerequisites. Do not execute the old \"raise/parallelize + alerts\" packet. #6554 owns D12 correctness as BUILT_NOT_PROVEN; process fan-out already exists; Availability/permanence owns publication alerts; LIVE-ENTRY-RADAR owns tactical alerts. After trustworthy natural input proof, census current verified armed-level breadth and timing. Close by evidence if the old gap is superseded; otherwise commission one measured bottleneck repair without weakening parity/edge verification or inflating resources arbitrarily.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -1759,7 +1788,7 @@
             "W-L1R"
           ],
           "deps_satisfied": true,
-          "next_action": "Final acceptance follows completion masterplan C0/C1/C5/C6. Recover exact Aug-26/Aug-27 receipts first. Aug-27 cannot be treated as a healthy whole product merely from a fresh pass clock: #6569 proves the independent Prophet-Live plane was fresh-empty/global-dark while the sentinel stayed green. After the last relevant production-changing merge, accrue three consecutive natural sessions with close_observed_at, first_candidate_at, first_user_visible_at <=16:15 ET, >=95% same-session evaluable coverage, 100% universe accounting, truthful independent live/board clocks and real desktop+narrow browser proof.\n",
+          "next_action": "C0 is complete and binds the latest accepted failure evidence: 2026-08-26 FAIL (host lane_unprepared; GitHub backstop landed hours late with 251/1764 = 14.2% evaluated coverage) and 2026-08-27 FAIL (host lane_unprepared; no close board; Prophet-Live fresh-clock/global-dark stale-pack state). No later durable repair/acceptance proof was found in the 2026-08-29 GitHub/Slack restart reconciliation. Do not infer later greens from absence of a record. After the last relevant production-changing merge/deploy—including C2-A and any required C2-B/Availability repair—accrue three consecutive genuine NYSE sessions with close_observed_at, first_candidate_at, first_user_visible_at <=16:15 ET, >=95% same-session evaluable coverage, 100% universe accounting, truthful independent live/board clocks and real desktop+narrow browser proof.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -1787,9 +1816,9 @@
         "terminal"
       ],
       "next_action": "Check whether R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID has an updated_at later than 2026-08-11T03:27:33Z; if so, dispatch attested-history-aapl-seed.yml from main, approve the protected environment, and independently admit the four downloaded artifacts with verify_fundamental_forensics_attested_history_seed_bundle.py.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Operator must replace the protected attested-history-seed environment secret R2_ATTESTED_HISTORY_SEED_ACCESS_KEY_ID with the Cloudflare R2 S3 Access Key ID for the separate Object Read & Write writer role; update its paired secret too if a new writer token is generated. The value must never enter chat or git.\n"
@@ -1967,9 +1996,9 @@
         "macro"
       ],
       "next_action": "W2A and W2B are PROVEN_LIVE. W2C PR #6415 merged as 5bc31a700406c2a90771d0ce86d230d28c73c86c and W2D PR #6424 merged as cadfa403033f9de338e9f490abac05eb08cbb293 after exact-head Sol release; both repairs are BUILT_NOT_PROVEN. Do not dispatch a proof run. Observe only the first natural scheduled collector -> Capital Structure chain whose checkout contains both merges. Only that chain can close W2 if it proves healthy same-day discovery/reconciliation, zero unserved LIVE work, and Capital Structure runtime below the unchanged warning. W3 and W4 remain held.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2268,9 +2297,9 @@
         "mastermind"
       ],
       "next_action": "Chairman intent on 2026-08-25 makes P0B the active continuation from the merged fixed-port substrate. Preserve P0A/H0 and X1 as accepted; no reopening is owed. On the Chairman host, use current protected Mastermind and the existing stopped disposable profile, obtain action-time native credential confirmation, run exact `configure-canary-port --vendor multilogin`, and only after EXACT_CONFIGURED run one fresh `run-canary --vendor multilogin`. Return the redacted live receipt to Sol under REVIEW_RETURN before any real-seat proof. ASD-A2/A3 remains an independent separately gated lane; do not start ASD-A4, real-seat mutation, generic Wake or P1 from this P0B records release.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2434,9 +2463,9 @@
         "macro"
       ],
       "next_action": "COLD-START FRONTIER (rewritten 2026-08-22 on Sol's instruction — the older \"P1 DONE / one open question\" prose is superseded by the more specific p1r2/p1r3 wave state below and must not be read as the frontier). ACTIVATION CLOSED 2026-08-20 (Sol PR-0D authority adjudication; freeze effective since Sol post-merge acceptance GO, receipt = main 49533d59b16076630ccd7d8bf48307f658db61da). DONE / PROVEN_LIVE: pr0b (#6045 squash fdbf543b2333), rights0, pr0d (Sol natural-proof adjudication 2026-08-21; #6116 squash ed28d0d992a1). P1 IS **PARTIAL**, NOT DONE. Its normal path is PROVEN_LIVE — #6050 squash c54d1b55f673 plus P1-R1 #6142 squash 650be4dfe6d5, proved on natural asia-close run 32460910383 (145 candidates -> 145 rows, exact reconciliation, production 交通银行 601328.SS card on desktop + mobile; research/china_alpha_intelligence/receipts/P1_NATURAL_RUN_RECEIPT_2026-08-21.md). Its malformed-evidence lifecycle is BUILT_NOT_PROVEN across three Sol-commissioned repairs of ONE defect family: p1r2 (#6229 squash c11b16500c15, superseded IN PART), p1r3 (#6242 squash 4e9735088638) and the p1r3a crash-consistency amendment inside the p1r3 wave entry (#6269 squash 0bcfef045517). The DSC:CHINA-VISITS-UNTYPED-ANNOUNCEMENT-ID-DROP question that the old text handed back to Sol is CLOSED — #6229 repaired that mechanism; what remains open is its successor, DSC:CHINA-VISITS-KEY-EXCLUSION-LATCH-AND-AGING-FORGETFULNESS. P1 CODE IS CLOSED (Sol FINAL CODE ADJUDICATION 2026-08-23: PASS). No further P1 implementation repair is authorized, and the three former residuals are RULED — see DEC:CHINA-COVERAGE-EXCEPTION-LEDGER §\"Sol residual rulings, 2026-08-23\" before proposing any of them: the unreadable accrued-store path is an outage-recovery concern and gets no second persistence site; the china_visits import failure stays fail-closed and the P1-relevance law must NOT be duplicated into china_filings; coverage exceptions get NO TTL/expiry/prune/operator-clear. THE ONE THING A FRESH SESSION MAY DO HERE — and it is a RECEIPT, not code: take the FIRST natural asia-close containing 0bcfef045517 with HEALTHY CNInfo transport and record the acceptance items named in the p1r3 wave entry. Do NOT rerun the lane and do NOT manufacture data to obtain one. As of 2026-08-22 production china_visits health reads upstream_degraded from a real `sse: HTTP 504 from CNInfo` with last_success_utc 2026-08-21T09:29:55Z, so the next close may degrade for that unrelated reason — a 504 run is valid failure-state evidence but is NOT the clean-path acceptance receipt, and the proof simply waits for a healthy night. Never manufacture malformed production input. STANDING GATE: P1B, L0, R1, R2, P2 and all later China Alpha execution stay CLOSED until Sol rules. Later tracks (P3-P6, R3-R4, S-lobes, L3+) charter from the masterplan at their wave boundaries. Completion law on every build wave: merge = BUILT_NOT_PROVEN; a real production receipt recorded here with immutable merge SHAs = done.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "ALPHA-INTELLIGENCE-INTEGRATION",
         "EARNINGS-INTELLIGENCE-OS",
@@ -2694,9 +2723,9 @@
         "macro"
       ],
       "next_action": "W-TRANSPORT and W-PR-EVENT-CAUSALITY are closed. Do not reopen either for a new CI-speed, runner, branch-protection, or cancellation-system proposal. Continue W-GATE-SPLIT and W-CONTRACT-DELTA only under their existing evidence gates; W-REWRITE remains separately commissioned. Verify contract-delta appears and behaves on the next few ordinary PRs (inherited-immune, catches introduced closure/unwired defects); confirm the armed backlog fully drains post-breaker-open (21 -> 17 within an hour of the 19:06Z green). Then W3 at >=72h from the W2 merge (~08-22): trailing-100 green rate above 90% via scripts/ci_gate_reliability_report.py plus two consecutive ordinary PRs merged with no main-red-repair. W-SEMANTIC-PROOF remains stopped; W-REWRITE remains separately commissioned. W3-PLANNER-CONTAINMENT is closed; W-SELFHOSTED-BRIDGE (issue #6351, Fable COO principal) owns the permanent ci-pack materialization repair — hosted packs still run the blob:none full-tree checkout that produced the #6406 and #6286 attempt-1 checkout-only failures; do not absorb pack-checkout repairs into product PRs or reopen them here outside the #6351 sequence. P3A-R and its repaired direct-main dispatch are accepted; run 33024021850 is a closed diagnostic receipt, not a retry candidate. P3B-A is accepted on main. Complete the separate P3B-B carrier: make the exact protected-main zero-input call for same-repository PRs, retain the hosted fork implementation and hosted planner/anchors/ci-gate, and prove the new route on its own exact PR tree before P4 natural traffic.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2857,9 +2886,9 @@
         "macro"
       ],
       "next_action": "Do not purchase. Resume only if a named vendor returns a written grant covering API + persist + derived-feature + customer-facing derived display of disclosure (年报 top-5 / SDB-class) edges. Otherwise leave supply-chain on the public CNInfo floor and CN-B identity work.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -2904,9 +2933,9 @@
         "macro"
       ],
       "next_action": "Execution owner is Fable COO under DEC:CNLI-FABLE-COO-AUTONOMOUS-EXECUTION (Chairman delegation 2026-08-25; Sol retains product thesis, architecture, evaluation law and final milestone acceptance; A5 stays Sol/Chairman). R6-0, P0-ST and DEP-CAI are done with production receipts. This PR (#6207) lands the Chairman TuShare compliance override reconciled onto current main. Next: execute DEP-EXACT per its row — dispatch tushare-spine-backfill mode=plan, then ONE bounded mode=canary, then a separate reviewed technical flip of BULK_HISTORICAL_BACKFILL_READY on canary evidence, then the resumable full-A range campaign and the sanitized completeness manifest. After DEP-EXACT: DEP-ID-ELIG, then I1A-T1..T4 / I1B / M2-R4-BATTERY / I1C-G6 / I2A per the frozen R6 wave graph. Milestone bundles return to Sol per agentos/handoffs/CN-LIMIT-ALPHA-2026-08-25-fable-coo-program.md. No live rank, score, gate, size, or public probability is authorized by any R6 record.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3230,9 +3259,9 @@
         "macro"
       ],
       "next_action": "Accept or reject the CSG-GD-货物-90d pilot in CN-C_GOV_SOE_DEMAND_SOURCE_MAP.md. If accepted, C1 is a display-tier adapter only.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "DEFENSE-PROCUREMENT-V3"
       ],
@@ -3292,9 +3321,9 @@
         "macro"
       ],
       "next_action": "Stay on PR #5734 (armed merge-on-green). After merge, confirm /etc/macro-sentinel.env has a human-watched channel if DELIVER was SKIP.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3337,6 +3366,144 @@
       "source": "agentos/workstreams/WS-COMMERCIAL-PATH-ALERTING.md"
     },
     {
+      "key": "CROSS-REPO-CONTRACT-GOVERNANCE",
+      "title": "Cross-Repository Contract Governance — Macro / Terminal / Portfolio",
+      "status": "active",
+      "program": "cross-repo-contract-governance",
+      "p0": null,
+      "p0_active": null,
+      "owner": "ceo-sol",
+      "class": "build",
+      "blast_radius": "user_facing",
+      "repos": [
+        "macro",
+        "terminal",
+        "mastermind"
+      ],
+      "next_action": "Complete exact-head validation and Sol review of PR #6596. After R0 merges, reconcile current runtime/transport state and establish one actual claimed Fable principal carrier for operation `crg-fable-principal-20260828-sol-001`; only then commission CRG-NW-AUTHORITY-V1 on a fresh stable child operation key.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 1,
+        "done": 0,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 6
+      },
+      "wait": null,
+      "wave_detail": [
+        {
+          "id": "R0",
+          "title": "Durable home and architecture freeze",
+          "status": "awaiting_ci",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Sol reviews exact PR #6596 head after required hosted validation; only accepted merge may make R0 durable on main. R0 creates no Executive Job and proves no Fable execution.\n",
+          "prs": [
+            6596
+          ],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R1",
+          "title": "P0 authority and imported-state identity",
+          "status": "todo",
+          "depends_on": [
+            "R0"
+          ],
+          "deps_satisfied": false,
+          "next_action": "After R0 is durable and an actual Fable principal carrier is claimed, execute CRG-NW-AUTHORITY-V1 then CRG-MACRO-IMPORT-IDENTITY-V1 under fresh collision checks.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R2",
+          "title": "High-value real-consumer contracts",
+          "status": "todo",
+          "depends_on": [
+            "R1"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Contract and prove Prophet, Terminal washout authority, intel, risk, opportunity and the other material live consumers one independently useful vertical at a time.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R3",
+          "title": "Shared semantic consolidation",
+          "status": "todo",
+          "depends_on": [
+            "R2"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Generate consumer conformance fixtures/manifests and route/schema/freshness descriptors from canonical producer contracts without creating a runtime registry.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R4",
+          "title": "Reverse publication ownership",
+          "status": "todo",
+          "depends_on": [
+            "R1"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Replace Portfolio's direct Macro working-tree commit/push behavior through a proven existing owner-native publication path, one real artifact family per carrier.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R5",
+          "title": "Production contract dossier",
+          "status": "todo",
+          "depends_on": [
+            "R2",
+            "R3",
+            "R4"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Produce exact-release production receipts for every material seam, including negative/stale/null/correction/auth/privacy states and actual consumer behavior.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "R6",
+          "title": "Semantic and Agent OS closeout",
+          "status": "todo",
+          "depends_on": [
+            "R5"
+          ],
+          "deps_satisfied": false,
+          "next_action": "Reconcile the semantic system map/registry and Agent OS only after canonical proof exists; remove stale unresolved claims without advancing any layer beyond evidence.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 6596,
+          "state": "open",
+          "wave": "R0",
+          "merged_at": null
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+    },
+    {
       "key": "CRYPTO-INTELLIGENCE",
       "title": "Governed crypto intelligence and decision presentation",
       "status": "blocked",
@@ -3350,9 +3517,9 @@
         "macro"
       ],
       "next_action": "Unblock the canonical Executive OS Personal-Pro modifying path under its owning program. Current protected Mastermind 51f9942733b86e550bb9169d2a43462bd28e774f still requires B2/C2 production proof before EXECOS/CEO_REQUEST_V1 and a fresh MMX/SOL_STATE_V1 handshake. Independent S0-R1/MAS-112 and C1/MAS-109 principal provisioning remain concrete gates. Once those and all then-current COMMISSION_WAVE gates are production-proven, re-run P0B's collision fence and admit one implementation attempt. Do not create a substitute runtime carrier.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "Current protected Mastermind Skillpack at 51f9942733b86e550bb9169d2a43462bd28e774f, docs/sol_skills/COMMISSION_WAVE.md, states that EXECOS/CEO_REQUEST_V1 may be used only after B2/C2 have proven it and that any missing runtime/transport gate forbids submission.\n",
@@ -3425,9 +3592,9 @@
         "macro"
       ],
       "next_action": "Operator fills docs/RESTORE_RUNBOOK.md §Vendor backup/PITR and §Scratch-Supabase restore receipt by creating mmx-restore-scratch-YYYYMMDD and running `python -m scripts.backup_user_tables restore --backup-id <id> --dest-db-url \"$SCRATCH_DB_URL\" --i-am-restoring-into-scratch`.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [
         "operator: confirm Supabase plan / PITR / vendor retention in the dashboard for fsldfzlxyavsuwqbceod",
@@ -3499,9 +3666,9 @@
         "macro"
       ],
       "next_action": "Sol's FOURTH GATE (A4P.1) closes the five escalations the third gate left open with the returns: (1) AG14 cohort-label question SETTLED by R2's three-row label truth table (named-subset labelling still governs every historical read today — the eligible historical roster is still exactly {PHM, KBH} — but the rule no longer needs a further Sol roundtrip once DHI/TOL receipts land); (2) ruling 6 (boundary receipts) stays honestly OPEN by design (R6) — registration is explicitly PERMITTED with receipts open, closed only by a future boundary-evidence wave; (3) DHI/TOL pre-FY2025 era receipting remains a named future census pass, unchanged; (4) the six minted cell IDs are RATIFIED by R3, with the sync family's market-risk cell renamed to forward_63_trading_day_drawdown_tail; (5) Treasury storage/reuse basis SETTLED GO_LIMITED by R5 (future ingestion design still not performed). A4 PROPER IS EXECUTED AND MERGED (PR #6244, 256b5695ab6a, 2026-08-22): the three rf.cycle_pattern.imce_* trial families are REGISTERED — declared_budget rows live in data/trial_ledger.jsonl, contract V1.2.1 stamped registered with pin 782b6e5703505af04ba21943b7d0a332853e286d and config_hash 05b43f9119fd1fd357d3994bd652abbc3cdff3d8. The criteria commit strictly precedes all outcome access (attested in commit 0ae5c413471a); outcome evaluation remains FENCED until boundary receipts exist (R6). SOL'S FIFTH GATE (A5 — prospective observation activation) IS EXECUTED (2026-08-22/23): A5A merged 5b8ca994de05 (PR #6270) and PROVEN LIVE — the production company-intelligence lane published R2 generation d7b994675fe59d0181643b8b carrying AAPL plus all four homebuilder workspaces under correct fiscal identities, and the production reader serves them (verified GET /api/event-workspace/DHI); A5B merged 9d14a3529d1c (PR #6281), classification BUILT_NOT_PROVEN — the forward ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl is created by the first production nightly, whose successful run stamps activation_started_at; PROVEN_LIVE awaits the first natural post-activation DHI/PHM/KBH/TOL earnings event (next expected: KBH FY2026 Q3, ~late Sep 2026). Outcomes remain FENCED — the observation schema carries zero outcome fields by whitelist-tested construction. Named source-coverage gaps riding to Sol: TOL §1b sensitivity prior-year comparator not extracted by A5A — CLOSED by PR #6307 (A5C, DRAFT pending the commissioning session's merge): the source plane now emits fact_cancellation_rate_beginning_backlog_sensitivity_prior_year from the same row's prior-year cell, so engine/cycle_pattern/imce_prospective.py:161's TOL_SENSITIVITY_PRIOR_YEAR_FACT_ID lookup self-heals to a real value the moment #6307 merges, zero consumption-side code change (see wave A5C below for the receipt spans and conventions); Treasury CMT C_t leg typed-absent (GO_LIMITED permits persistence; no first-party fetcher exists yet — natural next increment); workspace vintage retrieval is latest-generation-only (re-extraction of a past event rewrites the readable facts — correction records preserve what the experiment knew, but as-of retrieval does not exist). No runner built; no outcome computed; awaiting Sol's next directive. SOL'S A5C DIRECTIVE IS EXECUTED (2026-08-23). Four merges close it: A5C gamma (TOL sensitivity prior-year + equality-ruling pin) = PR #6307 -> 3d35ec5cd5ae; A5C-alpha alpha (fail-closed correction detection pending source-revision history) = PR #6308 -> 2ee5c16724da; A5C-chain beta+ delta (manifest chain/discovery/two-clock/shared-reader honest fix, plus the production-incident heal) = PR #6322 -> 8c0608652652 and PR #6343 -> 6fa417959bf9. PRODUCTION PROOF RECEIPTS: the healed dispatch (workflow_dispatch run 32657963256) completed SUCCESS in 8.5 minutes. The live top-level marker is generation 6d56c84a3ac23b8954e59ee7, schema event_workspace_manifest.v2, event_count 5, chaining onto previous_generation_id 8351f6fa8df7507c0ff842d1 with its verified sha receipt. All five tickers' latest reads were verified live on www.mastermind-x.com: AAPL (2026Q3), DHI (2026Q3), PHM (2026Q2), KBH (2026Q2), TOL (2026Q3). The live history walk was verified end-to-end (DHI 2026Q3 gives exactly 1 revision, state complete, form 8-K, receipts present, walk terminates at the v1 root) -- the SAME walk whose pre-optimization cost was measured at 153s against the post-incident chain, the number that motivated the read_all_event_source_revisions shared-walk fix in #6343. THE PRODUCTION INCIDENT, STATED HONESTLY: dispatch run 32652474368 (the FIRST production run of #6322, before the delta heal) crawled each homebuilder issuer's SEC \"recent\" submissions block back to 2010 under the then-unbounded discovery admission rule, and published ~170 historical events before the job's 25-minute timeout killed it mid-step. Those ~170 events are now immutable chain history -- never rewritten -- and are HARMLESS: every one is pre-activation, so A5B's own activation-cutoff law makes them permanently ineligible to ever become an observation. The healed dispatch (32657963256, above) converged back to a normal 5-event nest on its very next run, confirming the delta fix. NAMED RESIDUALS (delta red-team review, not closed by this directive, not hidden): MINOR-1 -- the per-issuer discovery boundary can silently exclude a genuine BETWEEN-QUARTERS amendment (an out-of-window correction to an already-superseded fiscal period); this is fail-closed (never a false admission) but currently silent -- a ::warning is recommended future work, not yet added. MINOR-2 -- the shared walk's own docstring overclaims its complexity: generation MANIFESTS are fetched at O(hops) as documented, but per-event WORKSPACE BODIES are still fetched only where present, so the true cost is O(hops) manifests + O(revisions-found) workspace reads, not a flat O(hops) for everything; the docstring should be corrected to say so. MINOR-3 -- the None-boundary (genuine first-publish) branch's own walk cost is UNBOUNDED in principle (bounded only by the current+prior-fiscal-year row filter, not by a hop cap on that branch specifically); unreachable in practice today (every current issuer already has a represented event), but not structurally guaranteed against a future issuer onboarding with zero prior history. Chain COMPACTION remains declared future work -- the incident alone consumed roughly 35% of the 500-hop DEFAULT_MAX_CHAIN_HOPS bound; the bound is not yet at risk but is no longer purely theoretical headroom. The REPLACEMENT-8-K residual named since wave alpha is UNCHANGED and still open (a same-accession-form-class replacement filing is not distinguished from a genuine correction). A5B STATUS: BUILT_NOT_PROVEN. Activation is NOT yet stamped -- the forward ledger data/cycle_pattern/imce_prospective_observation_v1.jsonl is still absent from main as of 2026-08-23T18:40Z; it is created and activation_started_at is stamped by the FIRST production nightly that runs after this point. Sol's own promotion precondition for A5B (A5C merged AND production-verified) is NOW SATISFIED by the four merges and receipts above. Natural-event proof (a real post-activation DHI/PHM/KBH/TOL earnings event actually observed) remains outstanding -- next expected candidate is KBH FY2026 Q3, ~late September 2026. TREASURY CMT FROZEN TEMPORAL LAW, restated for the next increment (unchanged by this directive, binding on any future C_t leg work): only the official rate/date pair from a first-party Treasury/CMT source may be used; retrieved_at/first_seen_at must be the REAL wall-clock ingestion time, never inferred; publication time is NEVER inferred from the ~3:30PM ET methodology-implied release convention -- only a genuine observed retrieval timestamp counts; a decision cutoff consumes only rows whose first_seen_at is at-or-before that cutoff (never the official rate/date field for eligibility); Freddie Mac PMMS stays HELD (not sourced); FRED/ALFRED remain EXCLUDED (no store/cache/ archive of FRED content per the standing FRED clause); NAR remains PROHIBITED as a source.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "STOCK-IDENTITY"
       ],
@@ -3801,9 +3968,9 @@
         "terminal"
       ],
       "next_action": "Return W2-A to Sol and remain parked. W2-B (semantic link-group propagation) and later waves require their own explicit Chairman/Sol commission. Open external gate: an authorized signed-in production principal (plus a second account for the cross-account half) to execute the persisted-user production journeys for both the W1-C resume residual and the W2-A save/reopen/rename/ duplicate/import/export/stale-fork/isolation proofs. The W1-B latency and deep-provider residuals remain separate bounded authorities.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -3962,9 +4129,9 @@
         "mastermind"
       ],
       "next_action": "D6-B is SOL ACCEPTED / PROVEN_LIVE (2026-08-26; Macro PR #6480 comment 5432443653). WS:DEFENSE-PROCUREMENT-V3 is PARKED at the accepted D6-B authorization boundary. Exact next action: no defense mutation until an explicit Chairman/Sol commission names the next bounded wave; before any such commission is executed, re-pin the protected Sol Skillpack and current repository state and reconcile collisions. D6-C+, D7+, GAO, DOT&E, IG and every later defense rail remain UNAUTHORIZED. D5 remains CLOSED FOR PROGRAM SEQUENCING but capability state BUILT_NOT_PROVEN: the entitled D5P browser journey is deferred/nonblocking, not silently satisfied by D6-B proof. Nonblocking D6-B reliability debt remains visible in the Sol acceptance handoff: 391-byte page-fence headroom, fms-acquire commit-back retry design, staged-State/freshness cadence, the pre-existing premium.enforced_early configuration gap, and validator/dependency maintenance. None authorizes a duplicate retry/publication/event/source plane or a product expansion. Publisher-vintage alarm and fixture-freezing the D2/D3 law suites out of the unrun-government-revenue holding pen remain separate follow-ups — do not fold them into the D5R close.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -4272,9 +4439,9 @@
         "terminal"
       ],
       "next_action": "E3-B is PROVEN_LIVE / DONE. E3-C is GENERALIZATION_REFUSED_ON_SOURCE_FORMAT — in progress, NOT complete; Sol has ruled (DEC:E3C-GOOGL-OOS-REFUSAL-SPENDS-EVENT) and nothing is awaiting Sol on that receipt. The separate method-hardening arc Sol required is now partly landed and is the live front of this workstream. TFG-0 (transcript format generalization architecture) is LANDED and SPEC_ONLY: merge a2dd436722dd0e6c6cb1e17bfa1c888c706c15d0 (#6521) froze the source-native separator/proxy/role law, a 16-revision development corpus chosen before body inspection, and an eight-revision metadata-only holdout (ranks 17-24). It added no runtime capability. TFG-1 v1 (operation tfg1-deterministic-transcript-format-hardening-20260827-v1) is TERMINAL at STOPPED_AT_DEVELOPMENT_GATE with an ACCEPTED falsifier. Implementing the frozen separator law faithfully recovered all 110 frozen handoffs with zero false negatives and exact direct-name extraction, and found three further genuine combined Q&A-opener-plus-first-question separators the frozen TFG-0 gold omitted (MBLY/2026Q2 #21, ARRY/2026Q2 #31, KREF/2026Q2 #15). Sol ruled YES/YES/YES and ratified DEC:E3FMT-DEVELOPMENT-GOLD-R2-FIRST-HANDOFF-OMISSIONS. No compiler code was written, no implementation head was frozen, and the holdout was never opened. Ratified R2 development truth is 113 structural separators / 97 direct / 6 explicit proxies / 103 source-supported / 10 unresolved / 9 source-clean calls / 7 expected-refusal calls. MBLY/2026Q2 leaves the source-clean set because #21 is a mandatory separator whose questioner is unresolved under the already-frozen placeholder + first-name-only law. Machine grading truth is research/earnings_intelligence/e3/tfg1_development_boundary_identity_adjudication_r2.json; the historical 110-boundary TFG-0 receipt is preserved unchanged as falsified evidence. TFG-1 R2 is NOT_BUILT. The successor is a distinct logical operation, tfg1-r2-deterministic-transcript-format-hardening-20260827-v1, whose sole packet is research/earnings_intelligence/e3/TFG1_R2_DETERMINISTIC_TRANSCRIPT_FORMAT_HARDENING_HANDOFF_2026-08-27.md. It may not begin until the v1 closeout PR #6555 is Sol-accepted and landed. The v1 operation key is spent and must not be reused. The eight holdout revisions remain SEALED (holdout_bodies_inspected: 0) until R2's corrected development gates are green and an exact implementation head is frozen. AAPL stays exactly 7 exchanges / 26 management answer turns / 68 replay spans and production revision admission stays AAPL-only. E3-C remains in progress: TFG completion is not E3-C completion, a fresh untouched-OOS acceptance wave (E3-OOS2) on a newly pre-registered event is still required to close it, and E3-P remains locked behind E3-C.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "EARNINGS-INTELLIGENCE-OS"
       ],
@@ -4467,9 +4634,9 @@
         "terminal"
       ],
       "next_action": "E2 arc is complete (E2-T1 Terminal + E2-D public dossier live). Return to Sol for E3 reassessment. Do not begin E3, slides, Q&A ML, publisher work, or corpus backfill from this workstream.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -4591,9 +4758,9 @@
         "macro"
       ],
       "next_action": "Commission A1 under the current protected Skillpack and current Macro main. The implementation must remain a derived view over canonical evidence owners and must not wait for E1 to finish; E1 accrual may be shown honestly as Accruing/insufficient evidence.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "EVAL-OS-T1-ENGINE-REGISTRY",
         "EVAL-OS-OUTPUT-HEALTH"
@@ -4641,16 +4808,16 @@
       "program": "qualitative-intelligence",
       "p0": null,
       "p0_active": null,
-      "owner": "Eval-OS program (CEO Sol; Fable COO execution lanes)",
+      "owner": "Eval-OS program (CEO Sol; bounded operator recovery lanes)",
       "class": "build",
       "blast_radius": "reversible",
       "repos": [
         "macro"
       ],
-      "next_action": "Execute Eval OS E1 from research/EVAL_OS_RECOVERY_ARCHITECTURE_FREEZE_2026-08-27.md: obtain real forward clock starts for stock_desk and thematic_desk from an actual scheduled producer run, verify current demand_chain runner-local control-clock truth, and return the exact trigger rows/timestamps plus the next real grading receipt. No retrospective rows.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "next_action": "Place and execute fresh child eval-os-e1-thematic-cohort-recovery-20260829-sol-001 under the current protected Skillpack. Do not redo the stock repair or stock general-clock start. Close the remaining E1 truth gap: classify the real US thematic zero-output path, obtain the first lawful thematic_desk prospective clock from real production without manufacturing a thesis, and prove the real grader/cohort excludes pre-clock rows. Preserve demand_chain's runner-local control law and stock matched-control NOT STARTED state until real governed evidence changes it.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -4701,7 +4868,7 @@
           "status": "in_progress",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "#5534/#5577/#5584 are already merged. Recover why stock_desk and thematic_desk have not minted their first real general evidence-clock files, preserve demand_chain's real start, start stock_desk's matched-control clock only from a valid future controlled claim, and verify demand_chain's current runner-local control clock without backdating or creating a second clock store.\n",
+          "next_action": "stock_desk general forward accrual is now PROVEN_LIVE from a real production registration: data/qledger/evidence_clock_start/stock_desk.json starts at 2026-08-29T11:08:11.609328+00:00 for 20 trading days. stock_desk matched-control remains truthfully NOT STARTED because the accepted stock receipts did not carry a valid governed control. thematic_desk still has no durable general clock. The old E1 worker child was terminally stopped for stale worker continuity after its effects were reconciled. A fresh bounded E1 recovery child must classify why the already-wired real US thematic nightly path yielded no registrable thesis/claim, produce the first lawful thematic prospective claim + clock when the underlying desk actually makes one (or repair only a proven blocking defect), and return explicit real grader/cohort proof that pre-clock rows are excluded.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -4739,9 +4906,9 @@
         "macro"
       ],
       "next_action": "None for T4 output health. This bounded workstream is complete and PROVEN_LIVE. Any T7/T8 evidence-scorecard/CEO-view work is a separate Eval OS wave under the recovery architecture and requires a fresh operation/carrier; do not reopen H1 or use this workstream as score authority.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "EVAL-OS-T1-ENGINE-REGISTRY"
       ],
@@ -4799,9 +4966,9 @@
         "macro"
       ],
       "next_action": "This bounded T1 workstream is complete. Preserve the landed registry/guard/overlay and its two deliberate output_class nulls as durable residue. Any T4 output-health work, T12 Agent OS tier interface, prospective evidence accrual, cortex two-species adjudication, options_structure curation, or T7/T8 measurement belongs to its own canonical workstream/wave and does not reopen T1.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -4877,10 +5044,10 @@
         "macro",
         "mastermind"
       ],
-      "next_action": "Repair the CF2-H0 current-carrier versus immutable-repair-identity source-law collision on the existing bounded RED-first carrier; only after that repair merges may the native H0 administrator ceremony resume, followed by repeated verify-only proof and independent P0. In parallel, OCR-1 Task 4 realm-set verification and OCR-3 Task 1 RED-first continuation work may proceed on their separate carriers after Chairman account binding. OCR-2C Family A is refused; Sol must present the Family B cross-repository architecture for Chairman approval before any v2 implementation/spec freeze.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "next_action": "At native execution time, re-pin CURRENT protected Mastermind and the immutable H0 repair release 229aebce5e8d0c1c7372f5fead9c24516b027cc1 plus accepted Macro dcdd939c45b23abce5ba04f95e330ac914a3904b. As of this reconciliation the current protected carrier is dfd69451dce5e186ce05f65446023fbe21f07a58 and the repair pin remains 229aebce5e8d0c1c7372f5fead9c24516b027cc1. Before building, require repair ancestry and exact mode/blob equality for all five authenticated H0 paths; if protected master advances, move only the carrier pin after the same reproof. Then execute the final v3 build and one bounded native administrator ceremony, require repair PASS plus two verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable root-carrier absence and disabled/unloaded broker state with sockets absent, and STOP for independent CF2-P0. OCR-1 Task 4 and OCR-3 Task 1 may proceed separately on their own lawful carriers; OCR-2C Family B remains a separate architecture gate.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -4941,7 +5108,7 @@
             "CF2-F"
           ],
           "deps_satisfied": true,
-          "next_action": "DO NOT RUN THE NATIVE ADMINISTRATOR CEREMONY YET. Mastermind PR #200 is the accepted H0 source-closure/generation-repair carrier and merged as e53f524230ffc4e8730c844f6fc319d50a2050f3. Protected Mastermind later advanced through procedure-only #202 and OCR-1 #184 without changing the existing authenticated H0 carrier material, but the current H0 runbook still overloads one REPAIR_MERGE_SHA as both exact current protected carrier and immutable repair provenance. That now makes the ceremony source law contradictory: the historical repair SHA fails current-origin equality, while relabelling the newer protected tip as the repair identity would falsify provenance. Complete the already-open bounded RED-first H0 current-carrier/repair-identity pin-split repair under operation cf2-h0-current-master-carrier-pin-repair-20260828-sol-001. Only after that source repair is reviewed/merged and the runbook is re-pinned may the local administrator ceremony run. Then require H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED, repeat verify-only, keep all three broker labels disabled/unloaded with sockets absent, and STOP for independent P0. No OAuth/device login, provider call, routing or CF2-I is authorized by H0.\n",
+          "next_action": "SOURCE_REPAIR_RELEASED_DO_NOT_REPEAT. Mastermind PR #213 repaired the current-carrier versus immutable-repair provenance split on the single canonical H0 carrier and source-released the final authenticated v3 H0 material as protected 229aebce5e8d0c1c7372f5fead9c24516b027cc1 after full repository test, CodeQL/static and exact-head Sol review. That SHA remains the immutable REPAIR_MERGE_SHA unless a later separately accepted H0 source-repair release supersedes it. Source transport is BUILT_NOT_PROVEN / PRODUCTION_INERT, not native acceptance. At every native attempt re-pin CURRENT protected Mastermind rather than freezing the historical release as the carrier. At this reconciliation protected master is dfd69451dce5e186ce05f65446023fbe21f07a58; its only movement after #213 is records-only #205, which changes no authenticated H0 path. Thus the current candidate CARRIER_COMMIT_SHA is dfd69451dce5e186ce05f65446023fbe21f07a58 while REPAIR_MERGE_SHA remains 229aebce5e8d0c1c7372f5fead9c24516b027cc1. Before any v3 build or root action, re-prove the current carrier is a protected descendant of the immutable repair and that all five authenticated H0 Git mode/blob rows are exactly equal at both pins. If protected master advances again, advance only CARRIER_COMMIT_SHA after that same reproof; never relabel the immutable repair. Then use accepted Macro dcdd939c45b23abce5ba04f95e330ac914a3904b, build the final v3 carrier and run exactly one bounded administrator ceremony from the reviewed runbook. Require source-repair PASS, two verify-only H0_INSTALLED_HOST_PASS_NOT_P0_ACCEPTED receipts, empty stderr, disposable root-carrier absence and all three broker labels disabled/unloaded with sockets absent. STOP for independent CF2-P0. No OAuth/device login, provider call, routing, services, workers or CF2-I is authorized by H0.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -5074,9 +5241,9 @@
         "terminal"
       ],
       "next_action": "FIF-3A4R is ACCEPTED_ARCHITECTURE / ON_MAIN / NOT_BUILT via PR #6382 (accepted head 07755cb557a53af1341d8b6323a412631af8d83e; squash merge fe8caca04b634686fc8d8707a188ea1a8477c31c; DEC:FIF-3A4R-CROSS-FILING-LINEAGE-ACCEPTED-ON-MAIN). Sol has closed the A4R research gate. Do not implement FIF-3A4 from this records closeout; implementation requires a separate Sol commission. FIF-1 remains DONE / FROZEN. FIF-2 remains DONE / FIXTURE_PROVEN SERVICE SUBSTRATE. FIF-3 remains IN_PROGRESS. FIF-3A1/A2 remain ACCEPTED / GOLDEN FIXTURE PROVEN / ON_MAIN. FIF-3A3 remains ACCEPTED / GOLDEN QUERY CONVERGENCE PROVEN / ON_MAIN. Production attested issuer service remains NOT_BUILT. Do not call FIF-3 done, do not claim production issuer coverage, and do not start another issuer from the A4R closeout.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -5366,9 +5533,9 @@
         "macro"
       ],
       "next_action": "PARKED / HOLD-FOR-SOL on PR #6391 pending review of its exact candidate head. The held FF-1R comparator repair admits only representationally equal valid UTC acceptance_datetime strings at canonical duplicate reconciliation, retaining the first exact text. It authorizes no recovery operation. Preserve plan e252f0a85c193323be128b6de2762c522a0ab86b74d8a2ed15a1f3014695e5a4, cursor/completed 0, backlog 2,571, null last-successful recovery receipt and the current incremental latest-complete. Previous-quarter reconciliation is SPEC_ONLY / NOT_BUILT; FF-2 is FORBIDDEN / NOT_STARTED.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -5549,10 +5716,10 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Claim the existing F04 parent operation marketontology-f04-ontology-transmission-20260826-fable-001 through one explicit Fable principal pickup. That principal performs a fresh collision census and starts D2C plus D2D concurrently only if their modifying write surfaces are genuinely disjoint; otherwise it sequences them. D2E/W3B/W3C remain dependency-held. Sol is not a routine per-PR hop; return only at frozen executive gates, milestone bundles or final acceptance.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "next_action": "After DEC:GMI-F04-BOUNDED-CHILD-ROUTING-2026-08-28 is main-canonical, Sol performs a fresh collision census for the existing D2C operation gmi-theme-pit-d2c-20260827-sol-001 first and D2D operation gmi-theme-ontology-d2d-20260827-sol-001 second by default. PREFERRED_AVENUE remains Terra unless current evidence justifies escalation. If current production placement provides a lawful RuntimeBinding, use the existing canonical admission/pickup path. Otherwise keep the relevant child PARKED / WAITING_CAPACITY with needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT; do not fabricate receiver, OPEN_PICKUP, ACK, START or watcher receipts. D2D may run concurrently only if actual planned write surfaces are genuinely disjoint. D2E/W3B/W3C remain dependency-held. F04 logical COO responsibility remains active above the children; a live Fable provider conversation is required only when a principal-level ambiguity or cross-owner integration gate actually arises.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -5607,7 +5774,7 @@
           "status": "todo",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "First executable GMI child. Under the claimed F04 sustained principal, refresh current main/open carriers and make required current-snapshot membership planes forward-replayable without backfilling later knowledge.\n",
+          "next_action": "First executable GMI child by sequence. Under the active F04 logical COO responsibility, retain Terra as the preferred bounded avenue. Before execution, Sol performs a fresh collision census. If no lawful RuntimeBinding/receiver exists and production automatic placement is not proven live, represent this child as PARKED / WAITING_CAPACITY with needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT; do not fabricate OPEN_PICKUP, Chairman quota labor, ACK, START or watcher state. Once lawfully placed, refresh current main/open carriers and make required current-snapshot membership planes forward-replayable without backfilling later knowledge. A live Fable provider conversation is not a prerequisite.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -5618,7 +5785,7 @@
           "status": "todo",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "First executable GMI child. Under the claimed F04 sustained principal, complete curated probation/adjudication breadth and navigability across local concepts and existing owner structural classifications. Unmapped remains legal; no fuzzy mapping.\n",
+          "next_action": "Second executable GMI child by default sequence. Under the active F04 logical COO responsibility, retain Terra as the preferred bounded avenue and complete curated probation/adjudication breadth and navigability across local concepts and existing owner structural classifications. Unmapped remains legal; no fuzzy mapping. D2D may execute in parallel with D2C only if a current planned-write census proves actual path disjointness. If no lawful RuntimeBinding/receiver exists, remain PARKED / WAITING_CAPACITY with needs_placement=true and turn_owner=EXECUTIVE_PLACEMENT. A live Fable provider conversation is not a prerequisite.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -5711,9 +5878,9 @@
         "mastermind"
       ],
       "next_action": "2026-08-27: GD-3 DONE. The authenticated-browser four-clock production acceptance passed on the first natural qualifying US-session source event; the complete receipt is agentos/handoffs/GREY-DEER-RISK-INTELLIGENCE-2026-08-27-GD3-DONE.md. This acceptance seat does not commission follow-on work: GD-8A/GD-8B/GD-9A remain unstarted pending an explicit new commission; GD-5A/B/C stay closed; GD-4B/4C open and uncommissioned; GD-6/7 and Portfolio cutover are not authorized.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -6112,9 +6279,9 @@
         "macro"
       ],
       "next_action": "Take no XPV2 execution — the declared reference objective is complete and R3C is explicitly not authorized. If and when the Chairman/Sol authorizes a successor wave, open it as a fresh commission via COMMISSION_WAVE (CONTINUATION_DELTA against merged #6337, pickup 8b303a58e8c0b807ef34d1913c4cacf5bb346e2d) with the five carried R3C-owned conditions as its acceptance floor; until that authorization exists, do not treat those conditions as open executable work.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -6244,9 +6411,9 @@
         "macro"
       ],
       "next_action": "PR-4/#6105 is merged but BUILT_NOT_PROVEN. Execute exactly one genuine current- session production dossier: prove board-scoped quote coverage + source freshness; current-session pulse mode/coverage; the reviewed com.mastermind.liveflow M1/R2 plane advancing naturally; /api/status and dead-man semantic health; and the actual served board at desktop+narrow with live labels only when every required gate passes. Stop at the first causal failure and repair it narrowly. Keep the retired Studio fleet disarmed and AD-9 separate. Only a later records closeout may return this workstream to done.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -6361,9 +6528,9 @@
         "terminal"
       ],
       "next_action": "Completion program governs (2026-08-28, DEC:LER-END-TO-END-COMPLETION-ARCHITECTURE-FREEZE, records carrier #6599). SUPERSEDED sequencing: the prior next_action's '#5929 OPEN and NOT YET MERGED' clause is stale — #5929 MERGED 2026-08-19T17:27:25Z (squash 9ef200f), #5995 MERGED 2026-08-19T19:51:58Z, quote-ts heal #6095 MERGED 2026-08-20T15:03:30Z, and W4.1 was genuinely commissioned 2026-08-20 (first real envelope 240/2979 usable, then warm ~5-min Lab live_forward; see W4.1 row — all receipts preserved). Commissioning did NOT complete the program: dark-gap/cold-start recovery and full-natural-RTH cadence remain open (Sol Day-5 ruling), DSC:RADAR-SPOOL-PUBLIC-R2 is unrebutted with no accepted remediation, and the canonical W5 prospective consumer is DISCONNECTED (DSC:LER-W5-PROSPECTIVE-CONSUMER-DISCONNECTED — ledger_state.json session 2026-08-27 = WAITING_FOR_LIVE_SOURCE, spool_dir=null, zero observed/live-forward/qledger; Prophet Lab live_forward is NOT W5/Eval-OS evidence). W6 stays in_progress: #5834+#5845 merged but not accepted on a non-empty real developing-RTH board; do not redesign the score. Remaining work runs as bounded child waves LER-C0..C8 under research/live_entry_radar/LIVE_ENTRY_RADAR_COMPLETION_ARCHITECTURE_MASTERPLAN_2026-08-28.md with a sustained Fable COO (one fresh operation key + one carrier + terminal watcher boundary per modifying child; graph in §Completion program below). Immediate next: after C0 (#6599) merges, start LER-C1 private evidence transport. Frozen: Prophet paths, detector formulas/hashes G0 9be89a8acc8b905c / C1 f0bbd6cf3a6e2339 / C2 d8ba60a25cfa7400 / C3 d54dc1e55c4261c8 / C4 dce21ac680233ee2 (context-only) / C5 13dec66345a0376c; F1 unbuilt/refusing. W8 = existing #5737 only (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9); W9 not started before C2/C4/C5.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -6655,18 +6822,18 @@
         "terminal",
         "mastermind"
       ],
-      "next_action": "Drive the benchmark gates green (W1).",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "next_action": "Await Sol review of C0 recovery; after terminal C0 acceptance, commission C1 separately for deterministic relevance + abstention on frozen v1.6 gold.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 1,
+        "done": 3,
         "dropped": 0,
         "in_progress": 1,
-        "todo": 1
+        "todo": 0
       },
       "wait": null,
       "wave_detail": [
@@ -6687,7 +6854,7 @@
           "status": "in_progress",
           "depends_on": [],
           "deps_satisfied": true,
-          "next_action": "Work the red gates in research/context_index/BENCHMARK_RESULTS.md.",
+          "next_action": "Superseded in structure by the Sol C0->C8 completion program (research/MACRO_CONTEXT_INDEX_COMPLETION_MASTERPLAN_BY_SOL.md); gate-green work now lands as waves C1-C3 under Sol operation keys.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -6695,12 +6862,21 @@
         {
           "id": "W2",
           "title": "Add agentos/** as a corpus (Agent OS Phase 3 dependency)",
-          "status": "todo",
-          "depends_on": [
-            "W1"
-          ],
-          "deps_satisfied": false,
-          "next_action": null,
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "CORRECTED 2026-08-28 (was a stale todo): the agentos/** corpus already landed via Agent OS Phase 3 / PR #5561 (Sol capability ledger: BUILT_NOT_PROVEN). Integration PROOF is wave C4 of the completion program.\n",
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "C0",
+          "title": "Benchmark Truth Recovery (Sol op macro-context-index-completion-20260828-sol-001)",
+          "status": "done",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Sol adversarial review of the C0 recovery head (PR #6600 held HOLD-FOR-SOL). Evidence: agentos/handoffs/WS-MACRO-CONTEXT-INDEX-2026-08-28.md; baselines v6/v7 in research/context_index/BENCHMARK_RESULTS.md. After terminal C0 acceptance, C1 requires a fresh child operation, carrier, and commission; it may not reuse this C0 pickup.\n",
           "prs": [],
           "done_at": null,
           "wait": null
@@ -6727,9 +6903,9 @@
         "macro"
       ],
       "next_action": "Do not start experience-v2 or v1 writers by hand. Tuesday 2026-08-25 04:00–04:32Z is the first natural M0D PROVEN_LIVE gate after the experience-v2 tmpfs/InaccessiblePaths namespace repair. M0D remains BUILT_NOT_PROVEN. If v1 is unrestored by then, grade v2 as v1_control_unavailable. Do not implement Options Audit preregistration v2 here. Do not open R2.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -6850,9 +7026,9 @@
         "terminal"
       ],
       "next_action": "PRIMARY PRODUCT: A1B is PROVEN_LIVE / DONE. Before any A2-A6 implementation, Sol refreshes current Macro/Terminal truth and commissions one independently useful vertical; eligibility is not execution. MAINTENANCE: #6510 may proceed independently as a bounded Portfolio mode-tab count synchronization repair if fresh collision census remains clean. PARALLEL ORGANIZATIONAL WORK: the separate Market Ontology parity/fanout carrier remains independent and must preserve its own current authority, claim, and proof gates; do not infer that this workstream sync lands or dispatches it.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7017,9 +7193,9 @@
         "macro"
       ],
       "next_action": "Leave overlapping-publisher atomicity as the remaining C0 item. Do not mix with W2C v2. Ordinary v1 technicals may now consume session 2026-08-21.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7065,17 +7241,17 @@
         "terminal"
       ],
       "next_action": "Review/land the OA-1T-Macro implementation-plan carrier, then choose one execution mode for that bounded wave. Recommended: subagent-driven/operator execution with one worker carrier, explicit pickup ACK before work, and a separate START receipt if a gate delays execution. OA-1T-Macro remains NOT STARTED until that commission is actually acknowledged; later OA waves remain closed.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
         "done": 1,
         "dropped": 0,
-        "in_progress": 0,
-        "todo": 8
+        "in_progress": 1,
+        "todo": 7
       },
       "wait": null,
       "wave_detail": [
@@ -7095,13 +7271,15 @@
         {
           "id": "OA-1T-MACRO",
           "title": "Measured trade+NBBO microstructure on the canonical live event and Flow ML path",
-          "status": "todo",
+          "status": "in_progress",
           "depends_on": [
             "OA-0"
           ],
           "deps_satisfied": true,
-          "next_action": "Implementation plan frozen at docs/superpowers/plans/2026-08-27-oa1t-macro-measured-options-microstructure.md. NOT STARTED. Before any code, re-pin current main and protected Skillpack, census live_flow.event_stage/v1 consumers, collision-check the exact engine/collector paths, and use one bounded implementation carrier. If additive nested event fields are rejected by a current consumer, stop for Sol v2 adjudication instead of weakening v1.\n",
-          "prs": [],
+          "next_action": "BUILT_NOT_PROVEN — natural-RTH production proof OWED. Implementation MERGED 2026-08-30 as dbd654edb0fb47449b969b7dcb4fbafc2e0fe3ef (squash of carrier head 77f400630d8a47402f0fd71a8c23eec3d6822356, 8 files +1284/-2, patch-identity proven byte-identical against the pre-merge blobs), under Sol conditional-adoption ruling #6585 comment 5459823114 after C3 gates A6 PASS / A2 SAFE_UNDER_FREEZE / A3 green + MERGEABLE / A4 scripts/** authority acknowledged. Status is NOT done: the capability moves BUILT_NOT_PROVEN -> PROVEN_LIVE only on a natural RTH session emitting a real measured event. Do NOT manufacture that proof — historical `--once --date` is explicitly forbidden as a proof path by the live-flow runbook. Consumer census is CLOSED, not owed: no current live_flow.event_stage/v1 consumer hard-enumerates nested event keys, so no v2 adjudication is required (both episode schemas carry zero additionalProperties:false; the poller/episode consumers read via .get() and their \"strict\" JSON loaders reject duplicate keys only). FS-4 remains frozen with scoring.enabled=false and the FS-5 kill switch intact; this wave armed no scoring, ranking or sizing authority. Two disclosed non-blocking defects carried forward for a separate bounded child, NOT repaired here: _coerce_int is not Infinity-safe on source_print_count/nbbo_valid_print_count (uncaught OverflowError can abort a harvest run), and vol_gt_oi_ratio is the one published measurement with no finite/rounding gate at the producer.\n",
+          "prs": [
+            6585
+          ],
           "done_at": null,
           "wait": null
         },
@@ -7206,6 +7384,12 @@
           "state": "merged",
           "wave": "OA-0",
           "merged_at": "2026-08-28T00:27:18Z"
+        },
+        {
+          "number": 6585,
+          "state": "open",
+          "wave": "OA-1T-MACRO",
+          "merged_at": null
         }
       ],
       "claim": null,
@@ -7228,9 +7412,9 @@
         "macro"
       ],
       "next_action": "Charter and implement Options Context Audit preregistration v2 as its own PR. Do not widen `_MAX_REFERENCES`, do not edit the v1 preregistration in place, and do not recouple this owner into trusted-context publication.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7275,9 +7459,9 @@
         "macro"
       ],
       "next_action": "Automatic W3 accrual on the natural us_prophet_ledgers lane. Do not start PR-3E. Do not start C2/C3/C4/C5 or Prophet V4. Do not read C1-vs-shadow outcomes. Durable paired-race N=2 unmatured (stamps 2026-08-17 and 2026-08-18); matured H=10 N=0. First lawful comparison remains PENDING until 20 matured H=10 sessions. Leave the frozen 2026-08-17 W3 parts byte-identical.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7440,9 +7624,9 @@
         "mastermind"
       ],
       "next_action": "PRESENTATION LANE — V3.8 correction COMPLETE (carrier stock-dashboard-v38-hk-ca-fable-20260826-sol-001, frozen architecture #6456 + DEC:V38-ACTION-IS-NOT-LEADERSHIP). HK V38-R1 PROVEN_LIVE 2026-08-27 (PR #6515, merge 5dad2bd41326, acceptance research/STOCK_DASHBOARD_V38_HK_ACCEPTANCE_2026-08-27.md). Canada V38-R2 PROVEN_LIVE 2026-08-27 (PR #6545, merge 1276333b37b9, acceptance research/STOCK_DASHBOARD_V38_CANADA_ACCEPTANCE_2026-08-27.md; handoff PROPHET-HK-CA-REVAMP-2026-08-27-v38-canada). Regional packet returned to Sol for final HK+Canada V3.8 acceptance. China V3.8: separate later carrier, fresh census first (§8.3). US stays decoupled and unauthorized (V4 B1→B2/B3→B4 + reconciled Cell H prerequisites). INTELLIGENCE LANE unchanged: hk-discovery CLOSED 2026-08-23 with production receipts (wave entry). Next lawful waves: hk-intel (HK-NATIVE-INTEL, depends on hk-discovery), ca-intel, ca-pit — each needs its own commissioning decision. Standing follow-up: ≈2026-08-26 verify the CA board-ledger-era-empty warning self-cleared (ledger-era wave entry); if it persists once gradable current-era rows exist, investigate — never silence.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7670,9 +7854,9 @@
         "macro"
       ],
       "next_action": "2026-08-27 CEO-takeover wave (handoff agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-27-ceo-takeover.md): permanence net PR #6534 and display-truth PR #6532 armed on merge-on-green. Verify tonight's B1 nightly (run 33036497832) yields a fresh session-2026-08-26 board live, close the open prophet-outage issues with receipts, then observe #6534's two §0 production proofs on NATURAL runs (never dispatch to force them). W2's full fire-drill week remains the program done-bar; chip follow-ups task_7df1337c/b0e6bfee/a194ca27/0c033ef2 close the known instrument gaps.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7756,9 +7940,9 @@
         "macro"
       ],
       "next_action": "Verify the 22:30Z bake (W1).",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -7845,9 +8029,9 @@
         "macro"
       ],
       "next_action": "B1 is accepted / PROVEN_LIVE from natural run 33147282433 and durable main commit a8ee11ba0e48; its exact evidence packet is indexed by agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-28-b1-acceptance.md. Reconcile and execute the bounded D5-EARNINGS handoff without losing the frozen Cell F amendments. Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner freezes and validates an exact immutable-event relationship contract. A2/A3/A4, B2/B3/B4, and all other V4 waves remain separate.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [
         "PROPHET-US-AVAILABILITY",
         "LIVE-ENTRY-RADAR",
@@ -8322,9 +8506,9 @@
         "macro"
       ],
       "next_action": "Complete PR #6543 F0 independent review/merge, then submit the frozen RIC-F1, RIC-F2 and RIC-F3 packets through canonical Executive admission/routing as three disjoint operations and call a lane active only after its concrete Fable/worker carrier/session ACK is proven.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -8477,9 +8661,9 @@
         "macro"
       ],
       "next_action": "W3 is Sol-accepted and closed. Keep the overall workstream active: W2 is closed from its accepted soak plus measured storage recovery above the 200 GiB root floor. TerraMaster remains qualified only as non-secret scratch. W4 is now a bounded capability admission for at most one theta-m1 lane; its read-only census is done, but current 201.3 GiB free space, zero listeners, stale guard bytes and collect_tail runtime tail make production admission unsafe today. Recover a 225 GiB start floor or prove a lower exact peak before the one-root canary. Generic macstudio remains forbidden. The M2 temporary-pack incident is recovered with 303.6 GB unallocated and zero Git garbage; measure the producer before extending the existing runner lifecycle. The private-readiness baseline in DSC:PRIVATE-CI-HOSTED-MINUTES-REQUIRE-TWO-LEVER-CUTOVER proves that moving packs alone cannot meet the 50,000-minute allowance; after PC and cutover acceptance, measure and reduce the complete hosted estate without weakening its protected control/untrusted boundary. W4/W5 remain unstarted; do not enter either wave without fresh Chairman intent and a current authority load. Trusted-CI promotion (issue #6351) is active under the Fable COO principal: capability ledger 2026-08-26 — W3 planner containment MERGED (PR #6286, fafe8d7ee775f8b60a0229c085fb7aee6d4349e7); P0R MERGED and baseline-green; P1 ACCEPTED on pc-ci-1; P2/P2R ACCEPTED with three concurrent PC CI slots, independent render reservation, exact hosted/self-hosted fragment parity and a safe resource envelope. P3A/P3A-R main-defined executor is accepted through PR #6487 and direct proof run 33030976647. P3B-A call capability merged through PR #6496 as 904863dabc490ee95ac50153048c25dee048d90b; its exact-head hosted run 33035115527 passed all twelve packs and recorded about 180.7 hosted pack-minutes. P3B-B PR #6505 reached the real PC hooks in run 33039532309 but failed closed before steps because job `env` is unavailable to pre-job hooks; contract-delta separately caught its unwired route suite. The same carrier now uses the GitHub event payload and root-owned wrapper pass-through. Drained pc-ci-1/2/3 carry post-restart Python hash 69faac248f755829a39f6821f17015382788056991f6d1ff9046b1842e86a002 and wrapper hash d55f046e6a6a758f55e311ed73b921e007c8570cc0aba11e0cafdc31cef06dee; Exact-head run 33043922465 then exercised all twelve packs on pc-ci-1/2/3: nine passed and only packs 5/6/9 failed. The complete set is sealed-host portability, not listener-version drift: RestrictSUIDSGID blocks a real set-ID fixture, a scrubbed subprocess/replay loses the dynamic 3.12.13 library path, Git 2.43 cannot demonstrate a newer poisoning result, and detached execution needs explicit PR branch metadata. The same #6505 carrier owns all four narrow repairs; no service hardening, label, WSL sizing, render route or runner identity changes. Repaired P3B-B exact execution and P4 natural PR proofs remain unaccepted. Macro private visibility mutation remains HOLD. Live accepted PC identities are pc-ci-1/2/3 plus an independent pc-render lane; the M1 has no generic CI listener and remains reserved for its live Theta/options/research estate while W4 measures one possible capability-specific theta-m1 lane.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -8612,9 +8796,9 @@
         "terminal"
       ],
       "next_action": "Nothing blocking. P0 is live and proven against a genuinely realtime feed (2026-08-28 13:30:46Z, measured 153.8 ms print-age floor). The one open item is a Terminal-repo question that needs its own commission — see next_actions[0].",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -8698,9 +8882,9 @@
         "macro"
       ],
       "next_action": "PROGRAM CLAIMED 2026-08-28: one sustained Fable COO holds operation key SI-FABLE-COO-PROGRAM-20260828 on the shared Slack program thread. Current rule: the first bounded operation is records reconciliation/acceptance of the SAME PR #6529 carrier; W3A and W3S open as separate child carriers ONLY after Sol posts CONTINUE W3 on that thread, and only after fresh current-main/changed-path collision checks; SI-W3B-ESTIMABILITY-V1 binds to W3A's metric schema and may publish no fit result.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -8968,6 +9152,193 @@
       "source": "agentos/workstreams/WS-STOCK-IDENTITY.md"
     },
     {
+      "key": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+      "title": "Technical Opportunity Intelligence — multi-timeframe setup, trigger, path, and remaining-opportunity system",
+      "status": "active",
+      "program": "market-timing-intelligence",
+      "p0": null,
+      "p0_active": null,
+      "owner": "ceo-sol",
+      "class": "research",
+      "blast_radius": "reversible",
+      "repos": [
+        "macro",
+        "terminal"
+      ],
+      "next_action": "Complete exact-head W0 validation and Sol review on draft PR #6570. Only after merge may W1 Evidence Census and W2-0 Data/Clock Archaeology start on separate disjoint carriers under operation keys TOI-W1-EVIDENCE-CENSUS-V1 and TOI-W2-0-DATA-CLOCK-V1; both must return before W3 preregistration or outcome testing.",
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
+      "depends_on": [],
+      "blocked_by": [],
+      "waves": {
+        "awaiting_ci": 1,
+        "done": 0,
+        "dropped": 0,
+        "in_progress": 0,
+        "todo": 9
+      },
+      "wait": null,
+      "wave_detail": [
+        {
+          "id": "W0",
+          "title": "Architecture freeze, evidence contract, data/clock contract, and durable records",
+          "status": "awaiting_ci",
+          "depends_on": [],
+          "deps_satisfied": true,
+          "next_action": "Adjudicate exact-head Agent OS validation and PR CI on #6570 under the current protected Skillpack, then complete Sol records-only acceptance. Do not commission W1, W2-0, runtime, or signal work before W0 is accepted and merged.\n",
+          "prs": [
+            6570
+          ],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W1",
+          "title": "Public-method and local-estate Technical Evidence Census",
+          "status": "todo",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W2-0",
+          "title": "Daily/Weekly/4H data, clock, correction, coverage, rights, and Terminal-parity archaeology",
+          "status": "todo",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W2",
+          "title": "Bounded existing-owner data substrate extension, only if W2-0 authorizes it",
+          "status": "todo",
+          "depends_on": [
+            "W2-0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W3",
+          "title": "Compression Release upside/downside preregistration and phase-zero family tournament",
+          "status": "todo",
+          "depends_on": [
+            "W1",
+            "W2-0"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W4",
+          "title": "Current per-security occurrence engine and two-queue snapshot",
+          "status": "todo",
+          "depends_on": [
+            "W3"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W5",
+          "title": "Technical Opportunity Radar, security detail, and Terminal vertical",
+          "status": "todo",
+          "depends_on": [
+            "W4"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W6",
+          "title": "Production shadow accrual and real-path proof",
+          "status": "todo",
+          "depends_on": [
+            "W5"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W7",
+          "title": "Sol species-by-species kill, version, accrue, display, or bounded-consumer adjudication",
+          "status": "todo",
+          "depends_on": [
+            "W6"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        },
+        {
+          "id": "W8",
+          "title": "Bottom/top reversal vertical using Durable Bottom and Setup Species law",
+          "status": "todo",
+          "depends_on": [
+            "W7"
+          ],
+          "deps_satisfied": false,
+          "next_action": null,
+          "prs": [],
+          "done_at": null,
+          "wait": null
+        }
+      ],
+      "prs": [
+        {
+          "number": 6570,
+          "state": "open",
+          "wave": "W0",
+          "merged_at": null
+        }
+      ],
+      "claim": null,
+      "needs_ceo": null,
+      "collisions": [
+        {
+          "with": "AGENT-OS",
+          "paths": [
+            "agentos/decisions/DEC-TECHNICAL-OPPORTUNITY-INTELLIGENCE-",
+            "agentos/discoveries/DSC-TECHNICAL-4H-RESEARCH-PANEL-NOT-PROVEN.md",
+            "agentos/discoveries/DSC-TECHNICAL-CONFLUENCE-V1-EXCLUDES-TECH-LAB-FAMILIES.md",
+            "agentos/discoveries/DSC-TOI-",
+            "agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-",
+            "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+          ]
+        }
+      ],
+      "warnings": [],
+      "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+    },
+    {
       "key": "TOP-ANATOMY",
       "title": "Top Anatomy — OOT Completion & Winner Health",
       "status": "active",
@@ -8981,9 +9352,9 @@
         "macro"
       ],
       "next_action": "Start R0 only: post the exact bounded handoff to one Chairman-assigned Fable/Opus-class COO, require pre-work ACK plus full-thread read, keep modification gated until the architecture PR lands, require a separate START receipt with fresh pickup SHA/collision census, and run reciprocal exact-thread watches until R0 returns to Sol or blocks.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -9106,9 +9477,9 @@
         "macro"
       ],
       "next_action": "None outstanding. Compliance is settled (CHAIRMAN_VERIFIED_PRIVATE / SATISFIED) and the census is done. The only optional follow-up is an engineering one - read the privilege page (redact token) against the 2026-08-09 SKU list and resolve the ACCESS_TIER_UNVERIFIED rows. [NULL per DEC:CNLI-TUSHARE-COMPLIANCE-IS-CHAIRMAN-VERIFIED-PRIVATE - the former written-enquiry step on the five commercial questions is REMOVED; those questions survive in matrix section 3 as historical census record only and are not a task.]",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -9154,9 +9525,9 @@
         "terminal"
       ],
       "next_action": "Use WS:MARKET-OS. After its M0 records merge, the only authorized runtime continuation is A1A Portfolio Population Truth + State Authority. This legacy record authorizes no implementation of its former W1 persistence proposal.",
-      "created": "2026-08-29",
-      "updated": "2026-08-29",
-      "stale_days": 0,
+      "created": "2026-08-31",
+      "updated": "2026-08-31",
+      "stale_days": 1,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -10061,6 +10432,18 @@
         "reason_code": "status_in_progress",
         "reason": "Authored workstream status is active.",
         "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-BREATHING-PLATFORM.md"
+      },
+      {
+        "workstream": "BREATHING-PLATFORM",
+        "wave": "C2-A",
+        "state": "ready",
+        "reason_code": "dependencies_satisfied",
+        "reason": "All declared dependencies are done.",
+        "depends_on": [
+          "WS:BREATHING-PLATFORM#W-L1R"
+        ],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-BREATHING-PLATFORM.md"
       },
@@ -11369,6 +11752,114 @@
         "depends_on": [],
         "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-COMMERCIAL-PATH-ALERTING.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R0",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is awaiting_ci.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R0.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R0"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R0"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R1"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2, WS:CROSS-REPO-CONTRACT-GOVERNANCE#R3, WS:CROSS-REPO-CONTRACT-GOVERNANCE#R4.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2",
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R3",
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R4"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R2",
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R3",
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R4"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
+      },
+      {
+        "workstream": "CROSS-REPO-CONTRACT-GOVERNANCE",
+        "wave": "R6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:CROSS-REPO-CONTRACT-GOVERNANCE#R5.",
+        "depends_on": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R5"
+        ],
+        "unmet_dependencies": [
+          "WS:CROSS-REPO-CONTRACT-GOVERNANCE#R5"
+        ],
+        "source": "agentos/workstreams/WS-CROSS-REPO-CONTRACT-GOVERNANCE.md"
       },
       {
         "workstream": "CRYPTO-INTELLIGENCE",
@@ -13321,6 +13812,16 @@
       },
       {
         "workstream": "MACRO-CONTEXT-INDEX",
+        "wave": "C0",
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md"
+      },
+      {
+        "workstream": "MACRO-CONTEXT-INDEX",
         "wave": "W0",
         "state": "done",
         "reason_code": "status_done",
@@ -13342,15 +13843,11 @@
       {
         "workstream": "MACRO-CONTEXT-INDEX",
         "wave": "W2",
-        "state": "blocked",
-        "reason_code": "unmet_dependencies",
-        "reason": "Waiting for declared dependencies: WS:MACRO-CONTEXT-INDEX#W1.",
-        "depends_on": [
-          "WS:MACRO-CONTEXT-INDEX#W1"
-        ],
-        "unmet_dependencies": [
-          "WS:MACRO-CONTEXT-INDEX#W1"
-        ],
+        "state": "done",
+        "reason_code": "status_done",
+        "reason": "Authored wave status is done.",
+        "depends_on": [],
+        "unmet_dependencies": [],
         "source": "agentos/workstreams/WS-MACRO-CONTEXT-INDEX.md"
       },
       {
@@ -13634,9 +14131,9 @@
       {
         "workstream": "OPTIONS-ALPHA-INTELLIGENCE-RECOVERY",
         "wave": "OA-1T-MACRO",
-        "state": "ready",
-        "reason_code": "dependencies_satisfied",
-        "reason": "All declared dependencies are done.",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is in_progress.",
         "depends_on": [
           "WS:OPTIONS-ALPHA-INTELLIGENCE-RECOVERY#OA-0"
         ],
@@ -15515,6 +16012,154 @@
         "source": "agentos/workstreams/WS-STOCK-IDENTITY.md"
       },
       {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": null,
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored workstream status is active.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W0",
+        "state": "in_progress",
+        "reason_code": "status_in_progress",
+        "reason": "Authored wave status is awaiting_ci.",
+        "depends_on": [],
+        "unmet_dependencies": [],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W1",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W2",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W2-0",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W0"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W3",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W1, WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W1",
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W1",
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W2-0"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W4",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W3.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W3"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W3"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W5",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W4.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W4"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W4"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W6",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W5.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W5"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W5"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W7",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W6.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W6"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W6"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
+        "workstream": "TECHNICAL-OPPORTUNITY-INTELLIGENCE",
+        "wave": "W8",
+        "state": "blocked",
+        "reason_code": "unmet_dependencies",
+        "reason": "Waiting for declared dependencies: WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W7.",
+        "depends_on": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W7"
+        ],
+        "unmet_dependencies": [
+          "WS:TECHNICAL-OPPORTUNITY-INTELLIGENCE#W7"
+        ],
+        "source": "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md"
+      },
+      {
         "workstream": "TOP-ANATOMY",
         "wave": null,
         "state": "in_progress",
@@ -15722,6 +16367,14 @@
     "agentos/workstreams/WS-LIVE-ENTRY-RADAR.md: [phantom-owns-path] owns_paths entry 'site/entry_radar.html' does not exist in repo 'macro'",
     "agentos/workstreams/WS-STOCK-IDENTITY.md: [phantom-owns-path] owns_paths entry 'scripts/stock_identity_' does not exist in repo 'macro'",
     "agentos/workstreams/WS-STOCK-IDENTITY.md: [phantom-owns-path] owns_paths entry 'research/STOCK_IDENTITY_' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'research/TECHNICAL_OPPORTUNITY_INTELLIGENCE_' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'research/technical_opportunity/' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/validate_toi_' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'scripts/research/run_toi_' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'tests/test_toi_' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/decisions/DEC-TECHNICAL-OPPORTUNITY-INTELLIGENCE-' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/discoveries/DSC-TOI-' does not exist in repo 'macro'",
+    "agentos/workstreams/WS-TECHNICAL-OPPORTUNITY-INTELLIGENCE.md: [phantom-owns-path] owns_paths entry 'agentos/handoffs/TECHNICAL-OPPORTUNITY-INTELLIGENCE-' does not exist in repo 'macro'",
     "agentos/workstreams/WS-TOP-ANATOMY.md: [phantom-owns-path] owns_paths entry 'scripts/research_top_anatomy_' does not exist in repo 'macro'",
     "agentos/workstreams/WS-TOP-ANATOMY.md: [phantom-owns-path] owns_paths entry 'reports/top-anatomy-' does not exist in repo 'macro'",
     "agentos/decisions/DEC-BIOCATALYST-P1-FIRST-VERTICAL-MILESTONE-RADAR.md: [review-overdue] review_by 2026-08-27 has passed",
@@ -15733,6 +16386,7 @@
     "agentos/decisions/DEC-CS-V2-LIVE-TAIL-SEPARATE-FROM-BACKLOG.md: [review-overdue] review_by 2026-08-25 has passed",
     "agentos/decisions/DEC-CS-V2-SIX-QUESTION-ONTOLOGY.md: [review-overdue] review_by 2026-08-25 has passed",
     "agentos/decisions/DEC-CS-V2-W2A-CLASS-RESERVES-AND-HORIZON-FRESHNESS.md: [review-overdue] review_by 2026-08-28 has passed",
+    "agentos/decisions/DEC-CS-V2-W2B-500-LIVE-ENVELOPE.md: [review-overdue] review_by 2026-08-30 has passed",
     "agentos/decisions/DEC-CS-V2-WHOLE-GENERATION-APPEND-ONLY-FENCE.md: [review-overdue] review_by 2026-08-25 has passed",
     "agentos/decisions/DEC-D0R-RED-TEAM-ADJUDICATION-2026-08-17.md: [review-overdue] review_by 2026-08-18 has passed",
     "agentos/decisions/DEC-E3-EVENT-INTELLIGENCE-COMPILER-NOT-SCORER.md: [review-overdue] review_by 2026-08-23 has passed",

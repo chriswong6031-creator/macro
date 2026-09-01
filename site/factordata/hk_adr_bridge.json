@@ -1,39 +1,39 @@
 {
   "display_only": true,
-  "hk_session_date": "2026-08-28",
+  "hk_session_date": "2026-08-31",
   "adr_date": "2026-08-28",
-  "expected_hk_session": "2026-08-28",
-  "freshness_verdict": "ok",
+  "expected_hk_session": "2026-08-31",
+  "freshness_verdict": "degraded",
   "adr_freshness": {
-    "BIDU": {
-      "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
-    },
-    "JD": {
-      "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
-    },
     "TCOM": {
       "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
     "KWEB": {
       "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "JD": {
+      "asof": "2026-08-28",
+      "lag_days": 3,
+      "state": "slow"
+    },
+    "BABA": {
+      "asof": "2026-08-28",
+      "lag_days": 3,
+      "state": "slow"
     },
     "FXI": {
       "asof": "2026-08-28",
-      "lag_days": 0,
-      "state": "fresh"
+      "lag_days": 3,
+      "state": "slow"
     },
-    "BABA": {
-      "asof": "2026-08-27",
-      "lag_days": 1,
-      "state": "fresh"
+    "BIDU": {
+      "asof": "2026-08-28",
+      "lag_days": 3,
+      "state": "slow"
     }
   },
   "names": [
@@ -44,16 +44,16 @@
       "adr_ticker": "BABA",
       "adr_source": "direct",
       "proxy_note": "",
-      "implied_open_gap_pct": null,
-      "adr_move_pct": null,
+      "implied_open_gap_pct": 2.23,
+      "adr_move_pct": 2.23,
       "hk_last_move_pct": -1.39,
-      "gap_context": "unknown",
-      "disconnect_flag": false,
-      "missing_reason": "ADR BABA bar missing for 2026-08-28",
+      "gap_context": "up",
+      "disconnect_flag": true,
+      "missing_reason": null,
       "freshness": {
-        "asof": "2026-08-27",
-        "lag_days": 1,
-        "state": "fresh"
+        "asof": "2026-08-28",
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -71,8 +71,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -90,8 +90,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -109,8 +109,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -128,8 +128,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -147,8 +147,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -166,8 +166,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -185,8 +185,8 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     },
     {
@@ -204,20 +204,23 @@
       "missing_reason": null,
       "freshness": {
         "asof": "2026-08-28",
-        "lag_days": 0,
-        "state": "fresh"
+        "lag_days": 3,
+        "state": "slow"
       }
     }
   ],
   "composite": {
-    "bellwether_implied_open_pct": 0.91,
-    "gap_context": "flat",
+    "bellwether_implied_open_pct": 1.24,
+    "gap_context": "up",
     "composite_source": "direct_average",
-    "n_direct": 3,
+    "n_direct": 4,
     "n_proxy": 5,
     "etf_composite_pct": 0.8,
     "etf_gap_context": "flat"
   },
-  "banner": null,
+  "banner": {
+    "en": "ADR bridge data degraded \u2014 stale: unknown; implied gaps may be outdated",
+    "zh": "ADR \u6865\u6570\u636edegraded \u2014 \u843d\u540e\uff1aunknown\uff1b\u9690\u542b\u8df3\u7a7a\u53ef\u80fd\u5df2\u8fc7\u65f6"
+  },
   "note": "context, not a signal / \u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7"
 }
