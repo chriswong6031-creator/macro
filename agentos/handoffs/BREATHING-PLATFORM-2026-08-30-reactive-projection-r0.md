@@ -1,76 +1,143 @@
 ---
 workstream: "WS:BREATHING-PLATFORM"
-session: "sol/modernize-mastermind-architecture-r0-recovery-20260831"
+session: "sol/modernize-mastermind-architecture-r0-demand-isolation-20260831"
 model: sol
 ended_because: ci_handoff
 mission: >
-  Recover the sole named R0 carrier for the Mastermind Reactive Projection Platform, replace its
-  missing-effect state with a records-only architecture freeze and executable R1A plan, and leave
-  one draft HOLD-FOR-SOL PR ready for exact-head independent review without starting implementation.
+  Recover and harden the sole Reactive Projection R0 records carrier, freeze the exact Intelligence
+  Hub roster and one-symbol-to-many-target browser law, discover the Terminal Quote Hub's shared
+  extended-hours demand collision, and replace the unsafe full-view assumption with an ordered
+  Terminal-owner `view=regular` child followed by the Macro consumer child—without starting runtime
+  implementation or creating another carrier/control plane.
 state_before: >
-  The branch sol/reactive-projection-platform-r0-20260830 existed at
-  ea653fdec77c1be3a6e1e7474e8505bc5e1bb960 but was a strict ancestor of current Macro main, carried
-  zero unique commits, contained none of the commissioned architecture/spec/plan/Agent OS records,
-  and had zero open or closed PRs. Two prior independent-review children correctly returned
-  OPEN_DRAFT_PR_MISSING or never STARTed; both were explicitly terminal with effect=NONE. The local
-  Pro checkpoint therefore classified R0 carrier/effect unresolved and R1A not admitted.
+  Macro PR #6707 was OPEN/DRAFT/HOLD with exactly five records at head
+  8cd1ac766f544e6615366b7ba21c7d8d0182bda9. The prior R0 correction had already made snapshot
+  state, access, rights, rate and correction semantics explicit. Its R1A plan still assumed Macro
+  could call ordinary Terminal `/quotes` for up to 80 symbols in one implementation PR. Fresh
+  Terminal archaeology proved ordinary US quote demand always reaches a process-wide 30-symbol
+  ExtFeed LRU, while the rendered Intelligence Hub can contain up to 58 unique Command/Emerging/
+  diversified-Discovery names. The old assumption could evict active Terminal extended-hours demand.
 changed:
   - path: "research/reactive_projection/MASTERMIND_REACTIVE_PROJECTION_PLATFORM_ARCHITECTURE_FREEZE_2026-08-30.md"
-    what: "Frozen the three-layer durable-baseline/live-projection/material-intelligence architecture, owner map, contract, failure semantics, waves and R1A boundary."
+    what: >
+      Froze the current-estate finding, exact <=58 rendered roster, one symbol to many DOM targets,
+      closed Terminal `view=regular` contract, zero-ExtFeed-demand law, two ordered implementation
+      children and separate production gates.
   - path: "docs/superpowers/specs/2026-08-30-reactive-projection-platform-design.md"
-    what: "Defined the complete R1A API, shared quote semantics, durable UI, controller, clock/correction, rights, theme, responsive and production-proof design."
+    what: >
+      Defined Terminal and Macro interfaces, default/full compatibility, regular demand and response
+      behavior, public batch contract, multi-target browser behavior, failures and production proof.
   - path: "docs/superpowers/plans/2026-08-30-reactive-projection-r1a-intelligence-hub.md"
-    what: "Created a TDD, task-by-task, one-PR implementation plan through deployment and real production acceptance."
+    what: >
+      Replaced the unsafe one-PR plan with TDD implementation sequences for R1A-T in Terminal and
+      R1A-M in Macro, each with one carrier, separate START, exact tests, deployment and stop boundary.
   - path: "agentos/decisions/DEC-REACTIVE-PROJECTION-EXTENDS-CANONICAL-PLANES.md"
-    what: "Recorded the ruling to extend existing canonical planes and reject a replacement realtime stack."
+    what: >
+      Recorded the owner ruling that hiding extended fields after an ordinary quote call is
+      insufficient; demand isolation belongs inside the existing Terminal Quote Plane.
   - path: "agentos/handoffs/BREATHING-PLATFORM-2026-08-30-reactive-projection-r0.md"
-    what: "Recorded carrier recovery, capability truth, no-rebuild boundaries, exact next action and continuation law."
+    what: >
+      Updated capability truth, verified archaeology, unresolved release gate and exact continuation.
 verified:
-  - claim: "Protected procedure was current and compatible before modification."
-    command: "Read protected mastermindx-market-intelligence/Mastermind master and all required Sol skills at eccf0a3fae8b8597c2ad0bc4f830e31b220415d2."
-    result: "PASS — mastermind.sol_skillpack.v1, version 1.0.1, bootstrap major 1."
-  - claim: "The named R0 branch was the sole existing carrier and safe to fast-forward without discarding work."
-    command: "GitHub branch/compare/PR reconciliation immediately before branch repair."
-    result: >
-      PASS — branch tip ea653fdec77c1be3a6e1e7474e8505bc5e1bb960 was the merge base of current main,
-      ahead_by=0, current main was 89 commits ahead, and no PR existed for the head.
-  - claim: "Prior review operations created no architecture verdict or implementation effect."
-    command: "Read exact Slack carriers C0BSBM78V1N/1788102655.232049 and C0BSBM78V1N/1788105256.153179."
-    result: >
-      PASS — one child stopped after OPEN_DRAFT_PR_MISSING; the later child had PICKUP_ACK and
-      WATCH_ARMED but no START, then explicit STOP; both effect=NONE.
-  - claim: "The architecture extends current canonical owners rather than inventing replacements."
+  - claim: "Protected procedure was current and compatible before the R0 correction."
     command: >
-      Read current Breathing Platform masterplan/workstream, Market OS workstream, DNR registry,
-      Terminal Quote Plane documentation, Macro dossier projection and generic live controller.
-    result: "PASS — owner boundaries and duplicate-plane prohibitions are printed in the freeze."
+      Read protected mastermindx-market-intelligence/Mastermind master and INDEX, COLD_START,
+      RECONCILE_STATE, REVIEW_RETURN, COMMISSION_WAVE, WORKER_AVENUE_ROUTING, WATCHER_ACTION_LOOP,
+      dialogue-close and routing laws from exact SHA 990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc.
+    result: "PASS — mastermind.sol_skillpack.v1 version 1.0.1, bootstrap-major 1 compatible."
+  - claim: "PR #6707 remains the sole R0 GitHub carrier and changes only the five records."
+    command: >
+      Read Macro PR #6707, branch sol/reactive-projection-platform-r0-20260830, compare and changed-file
+      inventory immediately before this correction.
+    result: >
+      PASS — OPEN/DRAFT/unmerged; prior exact head 8cd1ac766f544e6615366b7ba21c7d8d0182bda9;
+      changed-file set exactly the five R0 records; no implementation path.
+  - claim: "Ordinary Terminal US quote demand mutates the shared extended-hours demand set."
+    command: >
+      Read mastermind-terminal@86a75b68c273a592a41af5e322f95aab242b8297 hub/hub.js,
+      hub/lib/quotes.js, hub/lib/extfeed.js and hub/tests/extfeed.test.js.
+    result: >
+      PASS — handleQuotes invokes applyDemand; each eligible US symbol reaches ExtFeed.demand while
+      Polygon is healthy; ExtFeed documents a process-wide global 30-symbol LRU across all users;
+      tests pin demand, MRU promotion and eviction.
+  - claim: "The current rendered Intelligence Hub quote population is bounded by 58 presentation slots."
+    command: >
+      Read current Macro scripts/build_intel_hub.py, engine/intel_hub.py and
+      templates/intelligence_hub.html.j2.
+    result: >
+      PASS — builder attaches prices to command/emerging/discovery presentation rows; command is 30,
+      emerging is capped at 14, and diversified discovery_shown is capped at 14; hidden discovery,
+      exhausted and catalyst-only rows are not R1A quote targets.
+  - claim: "Discarding ext fields in Macro would not remove the demand-side collision."
+    command: >
+      Trace Terminal /quotes order from handleQuotes -> applyDemand -> buildQuotesResponse and compare
+      against the proposed Macro projector boundary.
+    result: >
+      PASS — demand occurs before response assembly, so stripping fields downstream cannot restore
+      LRU membership or prevent evictions.
+  - claim: "A closed owner-native regular view can preserve canonical ownership without a second plane."
+    command: >
+      Review current pure routing interfaces in hub/lib/quotes.js and existing flat response contract.
+    result: >
+      PASS — includeExtended can be applied to the current demand and response owner while preserving
+      default/full behavior, SnapshotFeed/Polygon/AnchorCache demand and the existing endpoint/shape.
+  - claim: "The existing #6709 READY transport is terminal with no effect and may not be retried from its stale request."
+    command: "Read Slack carrier C0BSBM78V1N/1788216853.962209 through terminal STOP 1788224322.185719 and reread Macro PR #6709."
+    result: >
+      PASS — no ACK/transition/effect; PR remains OPEN/DRAFT at c948460e13fa46abb969bcacafd52902cdd1c003;
+      that metadata request is terminal and grants no new attempt, merge or failover.
 unverified:
-  - claim: "Independent principal review passes the exact R0 PR head."
-    what_would_verify: "A fresh separately commissioned read-only reviewer returns PASS_FOR_LANDING on the immutable head, followed by explicit Sol adjudication."
-  - claim: "R0 hosted checks and Agent OS validation are green on the exact PR head."
-    what_would_verify: "Concluded GitHub checks and exact-head record validation."
-  - claim: "R1A is implemented, deployed or production-proven."
-    what_would_verify: "Separate R1A child operation, START, reviewed PR, merge, deployment and browser/API proof."
+  - claim: "The corrected R0 exact head passes full current-base hosted CI."
+    what_would_verify: >
+      PR #6709 lands through a separately lawful metadata/release path, #6707 history-preservingly
+      rejoins current main, and exact-head hosted CI/Agent OS validation concludes green.
+  - claim: "Independent architecture review accepts the corrected exact R0 head."
+    what_would_verify: >
+      Fresh read-only reviewer binds the post-rejoin immutable head and returns PASS_FOR_LANDING;
+      all prior unstarted or terminal reviewer children remain closed.
+  - claim: "Terminal `view=regular` exists or is deployed."
+    what_would_verify: >
+      Separate R1A-T operation, RED/GREEN tests, reviewed Terminal PR, host deployment identity and
+      58-symbol zero-ExtFeed-LRU-effect production canary.
+  - claim: "Intelligence Hub Market Pulse is built or visible."
+    what_would_verify: >
+      R1A-M starts only after R1A-T proof, then returns reviewed Macro implementation, deployment and
+      real dark/light EN/ZH desktop/narrow browser proof.
 unresolved:
-  - "Independent exact-head R0 review."
-  - "R0 merge after review and concluded checks."
-  - "Separate capacity placement and START for R1A after R0 acceptance."
+  - "Macro PR #6709 remains draft behind a terminal no-effect READY transport; no retry/failover is authorized by that stopped request."
+  - "After a separately lawful #6709 release transition and merge, PR #6707 must rejoin current main and rerun."
+  - "Independent exact-head review of the corrected R0 records."
+  - "Fresh post-R0 capacity placement for R1A-T, then R1A-M."
 next_actions:
-  - "Open/retain exactly one DRAFT HOLD-FOR-SOL PR for the five records on the sole branch."
-  - "Commission a new exact-head read-only independent review; do not reuse either terminal prior review child."
-  - "If review and checks pass, Sol accepts/merges R0 as records-only architecture, then closes that review dialogue explicitly."
-  - "Only after R0 merge, commission R1A as a new child operation; architecture merge is not implementation admission."
+  - >
+    Preserve #6709 HOLD-ON-TRANSITION. Do not revive or retry the terminal metadata request, bypass
+    draft state, merge directly to main, create a replacement PR, or use #6710 as a workaround.
+  - >
+    Continue only path-disjoint R0 semantic work. Once a new lawful release/metadata edge independently
+    makes #6709 ready, Sol must fresh-reread exact head/current target/checks, merge it only if every
+    gate still holds, then history-preservingly join current main into #6707.
+  - >
+    Re-run exact-head CI and refresh the existing unstarted R0 review carrier to the new immutable
+    head; do not mint a duplicate review operation unless the existing carrier is first reconciled.
+  - >
+    If R0 is accepted and merged, commission R1A-T as the first implementation child. R1A-M remains
+    blocked until R1A-T is deployed and proves zero ExtFeed demand/LRU effect.
 do_not_redo:
   - "Do not create another R0 branch, PR, operation key or architecture truth store."
-  - "Do not reopen the terminal prior review children; their effect remains NONE."
-  - "Do not build a new quote plane, realtime database, event bus, scheduler, retry/liveness plane, identity plane or browser-wide state owner."
-  - "Do not allow R1A to change Intelligence Hub selection/order/score/stage/Prophet/trade authority."
+  - "Do not reopen terminal prior reviewer children or the stopped #6709 metadata transport."
+  - "Do not call ordinary Terminal full-view /quotes from R1A and merely discard ext fields."
+  - "Do not create a second quote plane, snapshot daemon, database, event bus, scheduler, retry/liveness plane, identity plane or browser-wide state owner."
+  - "Do not project the full Discovery corpus, exhausted or catalyst-only names in R1A."
+  - "Do not let two async controllers own the same price/move nodes."
+  - "Do not let R1A change selection/order/score/stage/Prophet/entry/trade authority."
   - "Do not add SSE/WebSocket in R1A."
 danger_areas:
-  - "A current quote is not a current intelligence verdict; observation and authority must remain visually and mechanically separate."
-  - "Quote Hub chg is percent, ts is source print time, and closed-session settled prints need session-aware freshness."
+  - "A current quote is not a current intelligence verdict; observation and authority remain separate."
+  - "Terminal ExtFeed demand is global across users; hidden demand side effects are a product regression even when the public payload is debranded."
+  - "One symbol can be rendered in multiple Intelligence Hub panels; updating only one occurrence creates mixed truth."
+  - "Quote Hub chg is percent, ts is source print time, and closed regular prints need session-aware freshness."
   - "Generic live.js and the R1A controller must never mutate the same DOM nodes."
-  - "Green CI or R0 merge does not prove R1A built/live."
+  - "Green CI, R0 merge, R1A-T merge or Slack delivery does not prove the R1A user capability live."
 program_key: "modernize-mastermind-architecture-20260830-sol-001"
 operation_key: "modernize-mastermind-r0-carrier-recovery-20260831-sol-001"
 wave: "R0"
@@ -79,47 +146,87 @@ class: "architecture"
 repo: "macro"
 branch: "sol/reactive-projection-platform-r0-20260830"
 pickup_base: "20748fccbb9777f7e43c39acf19499bac4d011be"
-skillpack: "mastermindx-market-intelligence/Mastermind@eccf0a3fae8b8597c2ad0bc4f830e31b220415d2"
+skillpack: "mastermindx-market-intelligence/Mastermind@990b5b6c10ca9acb2f5fa42405c688c3b2abe2fc"
 ---
 
-# Reactive Projection R0 recovery handoff
+# Reactive Projection R0 continuation handoff
 
-## Capability truth after this records carrier
+## Capability truth
 
-When these five files exist on the draft PR head:
+- R0 records on PR #6707: `BUILT_NOT_PROVEN / PRODUCTION_INERT`.
+- Terminal Quote Plane: `PROVEN_LIVE` for current existing callers.
+- Terminal non-disruptive `view=regular`: `NOT_BUILT`.
+- Macro Intelligence Hub Market Pulse: `NOT_BUILT`.
+- R1A user capability: `NOT_BUILT`.
+- R1B ordered-delta/SSE: `NOT_BUILT`.
+- Broader responsive platform: `PARTIAL`.
 
-- R0 architecture/plan is `BUILT_NOT_PROVEN`.
-- It remains `PRODUCTION_INERT`.
-- R1A remains `NOT_BUILT`.
-- Existing Terminal Quote Plane and dossier projection remain the only proven public quote path.
-- The broader responsive architecture remains `PARTIAL`.
+## Correct implementation order
 
-## Routing receipt for the next review
+```text
+R0 accepted/merged
+-> R1A-T fresh operation in mastermind-terminal
+-> default/full compatibility + regular zero-ext-demand tests
+-> reviewed Terminal PR
+-> actual Hub deployment + 58-symbol zero-LRU-effect canary
+-> terminal R1A-T STOP
+-> R1A-M fresh operation in macro
+-> shared projector + regular-only batch route + exact roster + multi-target controller
+-> reviewed Macro PR + deployment + browser/degraded proof
+-> terminal R1A-M STOP
+```
+
+## Routing
+
+### R0 exact-head review
 
 ```text
 COGNITION_ROUTE: CHAT_PRO_DEFAULT
-PREFERRED_AVENUE: Grok
-WHY: independent frontier product/system architecture review with strong cross-boundary and failure-semantics criticism; no implementation is delegated.
-WHY NOT FABLE: the architecture is now explicit and bounded, so review does not require sustained principal-builder continuity. Fable remains available only if the reviewer discovers a material cross-program contradiction Sol cannot freeze.
+PREFERRED_AVENUE: Grok or CTO Sol
+WHY: independent adversarial system/product review of a bounded records-only exact head.
+WHY NOT FABLE: the architecture and falsifiers are explicit; principal continuity is unnecessary unless a new cross-program contradiction appears.
 RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
 ```
 
-The old reviewer operations are terminal and cannot be reused. The next review requires a new child operation key, exact current PR head, one lawful carrier, pickup ACK, continuation watch and a separate START before review.
+### R1A-T implementation after R0
 
-## Reviewer acceptance questions
+```text
+COGNITION_ROUTE: CHAT_PRO_DEFAULT
+PREFERRED_AVENUE: CTO Sol
+WHY: difficult but bounded canonical quote-owner implementation and host proof.
+WHY NOT FABLE: current archaeology and this freeze resolve the product/authority boundary.
+RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
+PLACEMENT_STATE: WAITING_CAPACITY / needs_placement until R0 acceptance
+```
 
-1. Is the first user capability independently useful?
-2. Does any part duplicate Terminal Quote Plane, Macro serving, Agent OS, Executive OS, identity,
-   scheduler, retry, correction, publication or browser state?
-3. Are source/receive/projection/baseline clocks distinct and testable?
-4. Can partial/stale/unavailable states ever look current?
-5. Is one DOM owner enforceable?
-6. Does the plan preserve Intelligence Hub rank/score/stage/Prophet/trade authority?
-7. Are public rights/debranding and loopback/redirect/body/rate limits complete?
-8. Does production proof falsify the capability rather than merely check a route?
-9. Is R1B streaming truly held?
-10. Is any architecture statement too vague for a bounded worker?
+### R1A-M implementation after R1A-T proof
+
+```text
+COGNITION_ROUTE: CHAT_PRO_DEFAULT
+PREFERRED_AVENUE: CTO Sol
+WHY: bounded API/template/browser vertical over a proven owner contract.
+WHY NOT FABLE: no unresolved principal-level architecture remains.
+RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
+PLACEMENT_STATE: BLOCKED_ON_R1A_T_PROOF
+```
+
+## Reviewer questions
+
+1. Does `view=regular` extend the existing Terminal owner rather than create a second source or endpoint plane?
+2. Can any regular-view request still mutate ExtFeed demand, LRU order or membership?
+3. Is default/full behavior unchanged and mutation-tested?
+4. Is the roster exactly the rendered Command/Emerging/diversified-Discovery union, not all candidates?
+5. Can one symbol's multiple DOM occurrences ever diverge?
+6. Are source/projection/baseline clocks, freshness, session and coverage distinct?
+7. Can partial, stale, settled or unavailable state look live?
+8. Are rights, public access, debranding, loopback, redirect, size and symbol-weighted rate limits complete?
+9. Can rank, score, stage, Prophet, entry or trade authority move?
+10. Do production proofs falsify demand isolation and the actual user journey?
+11. Is R1B genuinely held?
+12. Does each modifying child have one carrier, fresh START and terminal STOP?
 
 ## Stop boundary
 
-R0 stops at accepted, merged records. No implementation, deployment or product proof is part of R0.
+R0 stops at accepted merged records. It authorizes no implementation. R1A-T stops at a proven
+Terminal owner contract. R1A-M stops at the proven Intelligence Hub user capability. No child absorbs
+R1B or inherits another child's START.
