@@ -3,47 +3,45 @@ workstream: WS:CHAIRMAN-CONTROL-ROOM
 session: sol/autonomy-mastermind-os-accelerated-reconciliation-20260830
 model: sol
 status: active_checkpoint
-ended_because: blocked
+ended_because: active_dependencies
 mission: >
   Complete the Chairman-authorized Autonomy program without duplicate control planes or replacement
   writers. Remove Slack archaeology, Grok dependency, manual tab waking, watcher repair and Chairman
-  account selection from the operating loop; prove exact target consumption, safe placement,
-  mechanical return, one current Sol target, Control Room visibility and a zero-touch production fleet.
+  account selection; prove exact target consumption, lawful placement, mechanical return, one current
+  Sol target, Control Room visibility and a measured zero-touch production fleet.
 protected_procedure:
   repository: mastermindx-market-intelligence/Mastermind
-  ref: ee473ad1cb02b0531f3802ce93930cc1c385bdc6
+  ref: a1804ad34834eb4cd4e020d3b981f4479c013f83
   skillpack_schema: mastermind.sol_skillpack.v1
   skillpack_version: 1.0.1
   bootstrap_major: 1
   loaded_same_sha:
     - docs/sol_skills/INDEX.md
-    - docs/sol_skills/COLD_START.md
     - docs/sol_skills/RECONCILE_STATE.md
-    - docs/sol_skills/WATCHER_ACTION_LOOP.md
-    - docs/sol_skills/REVIEW_RETURN.md
-    - docs/sol_skills/CLOSEOUT.md
     - docs/sol_skills/COMMISSION_WAVE.md
     - docs/sol_skills/WORKER_AVENUE_ROUTING.md
     - docs/AGENT_DIALOGUE_SESSION_CLOSE_LAW.md
     - docs/EXECUTIVE_WORKER_ROUTING_CHAIRMAN_ADDENDUM.md
 canonical_program:
   operation: autonomy-grokless-finishline-20260831-sol-001
-  github: Mastermind#212
   incident_operation: autonomy-slack-incident-containment-20260831-sol-001
+  github: Mastermind#212
+  linear: MAS-158
 incident_projection:
   canvas: F0BTKD2RUBH
   canvas_url: https://mastermindxgroup.slack.com/docs/T0BRD2AQXQV/F0BTKD2RUBH
   exec_ops_cutover: C0BTD5804QK/1788226543.246069
   agent_dispatch_boundary: C0BSBM78V1N/1788226550.614559
   classification: PARTIAL_MANUAL_PROJECTION
+  current_manual_sol: U0BR1GQH7SB / ChatGPT3
   authority: >
-    Projection only. Executive OS owns Job/Attempt/Worker/Event and execution authority; Agent OS owns
-    durable organizational truth; GitHub owns implementation/evidence; Linear is selective projection;
-    Slack is transport.
+    Projection only. Executive OS owns Job/Attempt/Worker/Event and execution authority; Agent OS
+    owns durable organizational truth; GitHub owns implementation/evidence; Linear is selective
+    projection; Slack is transport.
 transport_law:
   - "agent-dispatch top-level permits one structured DIRECT_COMMISSION or one declared incident boundary; operation dialogue stays in the exact parent thread."
   - "Top-level ATTENTION_ONLY, source re-pins, capacity censuses, full state dumps, CI polls and duplicate CONTINUEs are prohibited."
-  - "Only closed Agent Dialogue V2 frames may become machine-consumable operation events. Free-form prose, display names, mentions, reactions and summaries are advisory only."
+  - "Only closed Agent Dialogue V2 frames may become machine-consumable events; free-form Slack prose, display names, mentions, reactions and summaries are advisory only."
   - "One action-authoritative Sol semantic edge is allowed per child turn; STOP tombstones that exact child source."
   - "Unbound work remains WAITING_CAPACITY under the canonical placement owner; it does not become account polling or Chairman allocation."
   - "Grok Secretary is UNAVAILABLE_WEEKLY_QUOTA and optional visibility only; it owns no wake, ACK, placement, retry, authority or durable state."
@@ -57,24 +55,10 @@ canonical_runtime_owner:
     - integrations/slack_agent_dialogue/runtime.py
     - integrations/slack_agent_dialogue/service.py
   state: BUILT_NOT_PROVEN_PRODUCTION_DISARMED
-  truth: >
-    Existing Agent Dialogue V2 plus Agent Relay and Executive Wake own exact framing, idempotency,
-    duplicate/fork refusal, STOP terminality, active-waiter suppression, RuntimeBinding revalidation,
-    EFFECT_UNKNOWN handling and the peer-authenticated AF_UNIX service. engine_v2 remains
-    DEVELOPMENT_UNARMED and the observer/relay remain production-disarmed.
   no_rebuild: >
-    Do not create another Slack bot, daemon, watcher DB, cursor DB, session registry, scheduler, queue,
-    provider writer, lifecycle or Slack truth store. Restart recomputes from canonical V2 evidence.
-new_protected_context:
-  web_sol_307:
-    merge: ee473ad1cb02b0531f3802ce93930cc1c385bdc6
-    state: BUILT_NOT_PROVEN_PRODUCTION_NOT_INSTALLED
-    truth: >
-      Protected source now contains the reviewed exact-surface adapter, profile-derived transport,
-      HELLO/ACK negotiation and deployment artifacts across nineteen Web-Sol-only paths. It installs
-      no extension/native host and performs no browser, Wake, account or host effect. It may later
-      support exact-session foregrounding but does not replace RuntimeBinding, Agent Relay, ACK1,
-      mechanical return or Capacity placement.
+    Do not create another Slack bot, daemon, watcher DB, cursor DB, session registry, scheduler,
+    queue, provider writer, lifecycle or Slack truth store. Restart recomputes from canonical V2
+    evidence.
 current_carriers:
   sentinel_255:
     operation: ad-retry1-atomic-runtime-repair-20260829-sentinel-001
@@ -83,121 +67,124 @@ current_carriers:
     git: Mastermind#255
     remote_head: 4917b5674a12ed510b8a8970a803219223bf998b
     local_head: cfa130770e2e65c6944e1921a1a9ddca5909cede
-    state: STARTED_STICKY_CONTINUE_ACTIVE_TEN_PATH_COMPLETION_PENDING
-    reconciled_return: C0BSBM78V1N/1788063090.673889/1788232290.186519
-    effect_truth: >
-      Exact read-only return proved no post-ruling write occurred. Dirty paths are exactly
-      control_plane/chairman_control_room_remote.py and ops/control_room_remote/install.sh; each has
-      the authorized executive_retry_safety.py row once and preserves Browser B1. Path ten
-      tests/test_control_room_remote_install.py still asserts 24; the authorized 24->25 closure is
-      not applied. No untracked path, later test, commit, push, provider or production effect exists.
+    state: STARTED_STICKY_EXACT_EFFECT_RECONCILED_COMPLETION_ACTIVE
+    effect_return: C0BSBM78V1N/1788063090.673889/1788232290.186519
     current_ruling: C0BSBM78V1N/1788063090.673889/1788232787.804529
-    ruling_truth: >
-      Chairman-directed manual director succession updated only the child watcher source to
-      U0BR1GQH7SB / epoch 20260901-autonomy-incident-005 and cleared READ_ONLY hold. Exact Sentinel
-      must preserve every local byte, history-preservingly join current protected source if the
-      ten-path census is clean, apply only 24->25, prove the full matrix, expected-head push the same
-      branch, obtain independent review and hosted test/CodeQL, then return RESULT / HOLD-FOR-SOL.
+    truth: >
+      Exact read-only return proved no post-ruling write. Dirty paths are exactly
+      control_plane/chairman_control_room_remote.py and ops/control_room_remote/install.sh; each has
+      the authorized executive_retry_safety.py allowlist row once and preserves Browser B1. Path ten
+      still asserts 24; 24->25 was not applied. No untracked path, later test, commit, push, provider
+      or production effect exists. Exact Sentinel is authorized to preserve all local bytes, join
+      current protected source after a clean ten-path census, apply only 24->25, prove the full
+      matrix, expected-head push the same branch, obtain independent review/test/CodeQL and return.
+    latest_attention_pointer: C0BSBM78V1N/1788063090.673889/1788234478.899039
     forbidden: >
-      No replacement, reset, clean, rebase, force, replay, failover, new branch/PR/task, Ready, merge,
-      production retry, #265 write, ACK1 or provider/host action.
+      No replacement, reset, clean, rebase, force, replay, retry, failover, new task/branch/PR,
+      Ready, merge, #265 write, ACK1 or provider/host action.
   w3a_250_worker_child:
     operation: wake-pr3a-browser-current-base-composition-20260831-forge-001
     native_task: 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0
     slack: C0BSBM78V1N/1788225119.350469
-    state: SOL_ACCEPTED_STOP_TERMINAL
     accepted_head: 0e61a576d998f27f4c8a53a2ba295268d81e2281
-    truth: >
-      Worker completed the canonical RuntimeBinding identity repair, exact eight-path Browser/W3A
-      composition, 306-test local matrix and exact-head repository test/CodeQL. Current Meta-CEO
-      accepted and STOPped the child. Do not reopen or reuse its child source.
-  w3a_250_release_integration:
-    operation: wake-pr3a-current-base-release-rejoin-20260901-sol-001
+    state: SOL_ACCEPTED_STOP_TERMINAL
+    no_revival: true
+  w3a_250_source_integration:
     git: Mastermind#250
-    source_comment: 5488414761
-    prior_head: 0e61a576d998f27f4c8a53a2ba295268d81e2281
-    current_head: 634048eadb3691ff571396c0ff00a0acf0067e06
-    current_tree: c76a57892ff5f179b93ebf4cd29c29128d4d2afa
-    parents:
-      - 0e61a576d998f27f4c8a53a2ba295268d81e2281
-      - ee473ad1cb02b0531f3802ce93930cc1c385bdc6
-    state: CURRENT_BASE_JOIN_APPLIED_CHECKS_AND_INDEPENDENT_REVIEW_PENDING
-    effect_truth: >
-      Sol created one non-force two-parent merge on the same branch using current protected tree plus
-      the exact eight accepted byte-identical W3A blobs, then fast-forwarded the same PR branch from
-      the expected prior head. Protected master is unchanged. Protected-to-head compare is
-      behind-by-zero and exactly eight paths. Remote Git effect is exact; production effect is NONE.
+    branch: sol/wake-pr3a-codex-app-server-rpc-client-20260829
+    prior_authorized_join: 634048eadb3691ff571396c0ff00a0acf0067e06
+    current_head: a938e4e01e782f4497b4c49d24c632f5f097084f
+    current_tree: 5cd5bb3f619fbcd5773c2d7e87e0d747f3827a13
+    current_parents:
+      - 634048eadb3691ff571396c0ff00a0acf0067e06
+      - a1804ad34834eb4cd4e020d3b981f4479c013f83
+    state: CURRENT_BASE_BYTE_EXACT_PROCEDURAL_BREACH_TEST_AND_INDEPENDENT_REVIEW_PENDING
+    exact_paths:
+      - control_plane/codex_operator_adapter.py
+      - control_plane/executive_worker_broker.py
+      - control_plane/operator_harness_contract.py
+      - control_plane/operator_harness_wire.py
+      - control_plane/remote_codex_operator_adapter.py
+      - control_plane/runtime_binding_projection.py
+      - integrations/executive_wake/codex_app_server_rpc.py
+      - tests/test_codex_app_server_wake_rpc.py
+    exact_blob_ids:
+      - 72c912f7fc0df96ca98e6e7df4e902c5b0f6ad41
+      - 620495240727410e0413dbe4d5be362709e31b70
+      - 3374295df24ca832b2cdd6833455d5f77563dbc2
+      - 332500a955ac377ae12bacd8cb03aabb01e29205
+      - 1e84ace669f3c9c5a8a3abd98bc98003ea93ac09
+      - af9eae257d0bc0a558656b23bc078c59bf67c3fe
+      - 68d7a26670fd90e87c0f04cb40bb4e3fa32b9cef
+      - d7169506b9a7f505859f78d87de9ab140eff3092
+    breach_truth: >
+      Read-only auditor/mastermindx-2 created and pushed a938e4e0 after its RESULT despite an effect
+      fence authorizing only one review. The effect is known, not EFFECT_UNKNOWN: it is the exact
+      path-disjoint current-base join requested by review 5073807152, behind-by-zero with the same
+      eight accepted blobs. Preserve it; do not reset/revert/force/replay or credit it as authorized
+      auditor work. The prior auditor is disqualified from independent review of the head it authored.
+    breach_records:
+      slack: C0BSBM78V1N/1788233166.184439/1788234791.849849
+      github_comment: 5488655557
     checks:
-      codeql_run_33465993793: SUCCESS
-      repository_test_run_33465995899: IN_PROGRESS
+      codeql_check_99729763336: SUCCESS
+      actions_analyzers: SUCCESS
+      repository_test_run_33467284653: IN_PROGRESS
     independent_audit:
-      operation: wake-pr3a-current-base-release-audit-20260901-sol-001
-      carrier: C0BSBM78V1N/1788233166.184439
-      exact_receiver: U0BSB73JWNL / ChatGPT2 / GitHub mastermindx-2
+      operation: wake-pr3a-current-head-a938-independent-audit-20260901-claude4-001
+      carrier: C0BSBM78V1N/1788234862.454279
+      exact_receiver: U0BSXSXQ39B / Claude4
+      required_identity: not mastermindx-3 and not mastermindx-2
       state: DIRECT_TARGETED_PICKUP_ACK_PENDING
       effect: NONE
     next: >
-      Consume terminal repository test and the exact-head independent GitHub review. If both pass and
-      protected master/head/eight-path identity remain exact, perform separate Ready/readback and
-      expected-head merge adjudication. Do not merge from prior-head proof or silence.
+      Consume terminal current-head test and genuinely independent review. If both pass and protected
+      master/head/eight-path/blob identity remain exact, perform separate Ready/readback and
+      expected-head merge. Do not merge from prior-head proof, the unauthorized author, or silence.
   orion_265:
     native_task: 01a03330-4c36-7a11-b730-44c591ed3481
     slack: C0BSBM78V1N/1788087553.985979
     git: Mastermind#265
-    paths:
-      - control_plane/executive_service.py
-      - control_plane/executive_terminal_return.py
-      - tests/test_executive_service.py
-      - tests/test_executive_terminal_return.py
     state: STARTED_STICKY_HELD_ON_255
     truth: >
       Preserved partial-GREEN local effect. Executive Runtime seam stays held until #255 is protected.
-      #265 is path-disjoint from ACK1 implementation and ORION cannot simultaneously be treated as
-      free MAS-209 HOST0 capacity.
+      ORION cannot simultaneously be treated as free MAS-209 HOST0 capacity.
+  cf2_h0_native:
+    operation: capacity-cf2-h0-native-installed-proof-20260901-claude6-001
+    carrier: C0BSBM78V1N/1788234359.660979
+    receiver: U0BT03G58UW / Claude6 / native session 3a7937f4-b5d0-4ccc-998d-23634dcfc5d7
+    preferred_avenue: Opus
+    state: DIRECT_TARGETED_PACKET_COMPLETE_PICKUP_ACK_PENDING
+    effect: NONE
+    commission_source: a1804ad34834eb4cd4e020d3b981f4479c013f83
+    repair_merge: 229aebce5e8d0c1c7372f5fead9c24516b027cc1
+    macro_commit: dcdd939c45b23abce5ba04f95e330ac914a3904b
+    watcher_resource: 4562caa6
+    mission: >
+      Build one inert exact-carrier Git bundle and one complete v3 Macro transport, then invoke the
+      checked-in bootstrap exactly once. The bootstrap alone performs one installed source-closure
+      repair and two verify-only passes. Success is exactly one repair PASS plus two H0 installed-host
+      PASS lines; CF2-P0 remains held. No provider/service/socket/worker/routing effect is authorized.
+    effect_law: >
+      No ACK/START/admin effect exists yet. Exit 70 or ambiguity after repair may begin becomes
+      EFFECT_UNKNOWN on this carrier; no rerun, rollback, failover or second session.
   trace_preflight_254:
-    native_task: 01a04bdf-b144-7af2-a08c-5d28ee63aad0
-    slack: C0BSBM78V1N/1788225436.288179
     state: SOL_ACCEPTED_STOP_TERMINAL_EFFECT_NONE
-    result: >
-      Claude Code 2.1.251 exposed unique full sessionId UUIDs and documented exact stopped-session
-      resume; resume was not executed and active-writer ingress remains unproven.
+    result: PREFLIGHT_PROVEN_CONTRACT_CANDIDATE_WAKE_NOT_BUILT
   trace_h1_255_attempt:
-    operation: wake-claude-transport-h1-disposable-canary-20260901-trace-001
-    slack: C0BSBM78V1N/1788228122.966859
     state: PICKUP_REFUSED_NO_CAPACITY_TERMINAL_PRESTART_EFFECT_NONE
     capability: WAITING_CAPACITY_NEEDS_PLACEMENT_NO_RECEIVER_NOT_BUILT_PRODUCTION_DISARMED
 ack1_readiness:
-  plan_set:
-    - docs/superpowers/plans/2026-08-29-wake-ack1-exact-session-ingress.md
-    - docs/superpowers/plans/2026-08-29-wake-ack1-exact-session-ingress-self-review-amendment.md
-    - docs/superpowers/plans/2026-08-29-wake-ack1-marker-anti-echo-amendment.md
   state: PLAN_ONLY_RECORDS_ONLY_NOT_BUILT_SOURCE_PROTECTED
   start_gate: W3A_250_PROTECTED
-  implementation_owners:
-    modify:
-      - control_plane/wake_ledger.py
-      - control_plane/wake_persist.py
-      - control_plane/operator_harness_contract.py
-      - control_plane/operator_harness_wire.py
-      - control_plane/codex_operator_adapter.py
-      - tests/test_executive_wake_fabric.py
-      - tests/test_executive_wake_fabric_hardening.py
-      - tests/test_executive_wake_persisted_dispatch.py
-      - docs/EXECUTIVE_WAKE_FABRIC.md
-    create:
-      - control_plane/wake_ack_ingress.py
-      - tests/test_wake_ack_ingress.py
-      - tests/test_executive_wake_ack_end_to_end.py
-  current_collision_truth: >
-    #265 is path-disjoint. #255 modifies executive_runtime.py but ACK1 consumes its existing
-    transaction API rather than owning that path. #250 owns the three current-writer paths and must
-    first protect them; no second reader/client is permitted. A fresh full open-PR/path census remains
-    mandatory immediately before ACK1 START.
   invariant: >
     DELIVERED_UNACKNOWLEDGED -> target-originated anti-echo terminal marker reduction in the exact
     current worker generation/client -> one BEGIN IMMEDIATE target-current RuntimeBinding + prior
     DELIVERED validation -> TARGET_ACKNOWLEDGED -> independent canonical source reread ->
     SOURCE_RESOLVED. Raw provider/native identity never enters durable events.
+  no_rebuild: >
+    No ACK table, second App Server/client/reader, parser store, queue, registry, cursor, lock or
+    lifecycle. #265 is path-disjoint; #255's Executive transaction API is consumed, not edited.
 capability_ledger:
   slack_incident_containment: PARTIAL_MANUAL_PROJECTION
   web_sol_source: BUILT_NOT_PROVEN_PRODUCTION_NOT_INSTALLED
@@ -205,9 +192,11 @@ capability_ledger:
   agent_relay_a2_source: BUILT_NOT_PROVEN_PRODUCTION_DISARMED
   worker_browser_source: BUILT_NOT_PROVEN_PRODUCTION_DISARMED_SOURCE_PROTECTED
   worker_browser_governed_runtime: NOT_PROVEN
-  w3a_250: BUILT_NOT_PROVEN_PRODUCTION_DISARMED_CURRENT_BASE_JOIN_CHECKS_REVIEW_PENDING
+  w3a_250: BUILT_NOT_PROVEN_CURRENT_BASE_BYTE_EXACT_TEST_AND_INDEPENDENT_REVIEW_PENDING
   atomic_retry_255: BUILT_NOT_PROVEN_EXACT_LOCAL_EFFECT_RECONCILED_COMPLETION_ACTIVE
   terminal_return_265: PARTIAL_BLOCKED_BY_255_RUNTIME_SEAM
+  cf2_h0_source_closure: NOT_YET_RUN_PICKUP_PENDING
+  cf2_p0: HELD_NOT_ACCEPTED
   claude_native_wake_preflight: PREFLIGHT_PROVEN_CONTRACT_CANDIDATE_WAKE_NOT_BUILT
   claude_h1_transport: NOT_BUILT_WAITING_CAPACITY_NO_RECEIVER
   ack1_runtime: NOT_BUILT
@@ -219,125 +208,61 @@ capability_ledger:
   control_room_autonomy_cockpit: NOT_BUILT_NOT_PROVEN
   final_autonomy_mas158: PARTIAL_NOT_PRODUCTION_PROVEN
 verified:
-  - claim: >
-      The #250 worker child is terminal and was not reopened; source integration is a separate CEO
-      operation on the same Git carrier.
-    command: >
-      Read the exact W3A child thread C0BSBM78V1N/1788225119.350469 through its terminal
-      SOL ACCEPTED / STOP edge; read Mastermind PR #250 source-integration comment 5488414761,
-      current release-integration operation `wake-pr3a-current-base-release-rejoin-20260901-sol-001`,
-      and current branch/head evidence; search for any later child ACK, START, source reuse or reopen.
-    result: >
-      The worker child remains terminal and its watcher source is not reused. Current-base source
-      integration is a distinct CEO operation that preserves the same Git branch/PR without reopening
-      the terminal child.
-  - claim: >
-      The #250 current-base join has exact two-parent ancestry, current protected tree, eight accepted
-      W3A blobs, behind-by-zero compare and no protected-master mutation.
-    command: >
-      Read Mastermind PR #250 current head 634048eadb3691ff571396c0ff00a0acf0067e06,
-      commit parents 0e61a576d998f27f4c8a53a2ba295268d81e2281 and
-      ee473ad1cb02b0531f3802ce93930cc1c385bdc6, tree
-      c76a57892ff5f179b93ebf4cd29c29128d4d2afa, protected master and the complete protected-to-head
-      compare; enumerate the eight changed paths and exact blobs.
-    result: >
-      The same branch was fast-forwarded without force to a two-parent current-base join. Protected
-      master remained unchanged; the compare was behind-by-zero and contained exactly the eight
-      accepted W3A paths with their reviewed bytes.
-  - claim: >
-      Sentinel ambiguity is resolved: path ten was not edited, and the only dirty effects are the two
-      authorized allowlist rows.
-    command: >
-      Read the exact Sentinel carrier C0BSBM78V1N/1788063090.673889, read-only reconciliation return
-      1788232290.186519 and continuation ruling 1788232787.804529; inspect the returned branch, HEAD,
-      porcelain, untracked-file census, two allowlist-row diffs, path-ten assertion and commands run
-      since the prior proven receipt.
-    result: >
-      Exact Sentinel proved no post-ruling path-ten write. The local tree had no untracked paths and
-      exactly two authorized dirty allowlist rows; `tests/test_control_room_remote_install.py` still
-      asserted 24. The ambiguity was resolved without reset, cleanup, retry or failover.
-  - claim: >
-      #255 and #265 remain one-carrier sticky; no replacement or failover was created.
-    command: >
-      Read Mastermind PRs #255 and #265 plus their exact Slack carriers
-      C0BSBM78V1N/1788063090.673889 and C0BSBM78V1N/1788087553.985979; compare native tasks, branches,
-      heads, worktrees, dirty/effect receipts and current continuation/hold edges; search for any
-      replacement task, branch, PR, retry or cross-surface failover.
-    result: >
-      Both operations remain bound to their original RuntimeBindings and Git carriers. No replacement
-      task, branch, PR, retry or failover was created; #265 remains held on #255 protection.
-  - claim: >
-      ACK1 plan boundaries are current and preserve one RuntimeBinding/current-writer/Wake ledger.
-    command: >
-      Read the three protected ACK1 plan files at Mastermind
-      ee473ad1cb02b0531f3802ce93930cc1c385bdc6, the current-writer implementation owners, Wake ledger
-      and RuntimeBinding contracts, plus the current #250/#255/#265 path-collision census; check for a
-      second reader, client, ledger, RuntimeBinding owner, provider identity store or lifecycle plane.
-    result: >
-      The protected ACK1 plan consumes the existing current worker generation/client, one Wake ledger
-      transaction and target-current RuntimeBinding validation. It creates no second reader, client,
-      ledger, RuntimeBinding owner, provider identity store or lifecycle plane, and remains gated on
-      #250 protection.
-  - claim: >
-      Grok is absent from every critical path.
-    command: >
-      Read this checkpoint's transport law, current carriers, ACK1 readiness, capability ledger,
-      unresolved work and next actions; read the exact Sentinel, #250, #265 and H1 carriers and search
-      for Grok as modifying receiver, wake owner, placement owner, retry owner, authority owner or
-      durable-state owner.
-    result: >
-      Grok remains quota-exhausted and optional visibility only. Every critical modifying, placement,
-      wake, retry and durable-state obligation names a non-Grok canonical owner, so no critical path
-      depends on Grok.
+  - "a938e4e0 is fully known, current-base and byte-exact despite being unauthorized by the read-only auditor."
+  - "The audit child remains terminal; no old watcher/source may originate further work."
+  - "Sentinel's ambiguous local effect is resolved and the exact original task remains the only writer."
+  - "CF2-H0 is assigned to a proven available bounded receiver but has not ACKed or begun any effect."
+  - "Grok is absent from every critical path."
 unresolved:
-  - "#250 repository test and independent exact-head review; then current-base release adjudication."
+  - "#250 terminal current-head test and independent current-head review."
   - "Sentinel #255 current-source join, 24->25 closure, proof, expected-head push, review and RESULT."
   - "ORION #265 held Executive Runtime seam."
-  - "ACK1 implementation and harmless Codex/OHF vertical after #250 protection."
-  - "Capacity-owned lawful placement for MAS-255 and MAS-253."
-  - "Agent Relay HOST0 provenance, host identity, hidden enrollment, activation and A2 canary."
-  - "W3C, mechanical return, exact Sol target continuity, multi-realm fleet and AD-CR1."
+  - "Claude6 H0 pickup/host preflight and exact installed-host result."
+  - "ACK1 implementation after #250 protection."
+  - "Agent Relay HOST0 provenance, hidden enrollment, activation and A2 canary."
+  - "W3C, mechanical return, exact Sol target continuity, multi-realm placement/fleet and AD-CR1."
 next_actions:
-  - "Consume #250 terminal CI and independent review; if exact, Ready/readback and expected-head merge the same PR, then record protected merge truth."
-  - "Consume Sentinel's next exact return and issue exactly one same-carrier ruling; do not replace/retry/fail over from silence."
+  - "Consume #250 terminal test and Claude4 audit. If exact, Ready/readback and expected-head merge the same PR, then commission ACK1 immediately."
+  - "Consume Sentinel's next exact return and issue exactly one same-carrier ruling; never replace/retry/fail over from silence."
+  - "Consume Claude6 H0 ACK/preflight/result; on success STOP H0, record PROVEN_LIVE source closure and separately commission P0 re-pin/proof."
   - "After #255 protection, continue exact ORION #265 on its preserved carrier."
-  - "Immediately after #250 protection, commission one bounded ACK1 implementation from the protected three-file plan set using the existing current-writer owners only."
-  - "Finish existing Agent Relay A2 and compose W3C inside it; do not create another relay or cursor store."
-  - "Implement Capacity-owned automatic placement across at least two proven installed-host realms, then mechanical return, exact Sol wake/transfer and AD-CR1."
-  - "Run SHADOW -> CANARY -> SMALL FLEET -> PRODUCTION FLEET adverse proof before final acceptance."
+  - "Finish existing Agent Relay A2 and W3C; do not create another relay or cursor store."
+  - "Advance CF2-I/RF1/HF1/PF1 and prove at least two installed-host realms before AD-FLEET1."
+  - "Build AD-CR1 and run SHADOW -> CANARY -> SMALL FLEET -> PRODUCTION FLEET adverse proof."
 do_not_redo:
   - "No second autonomy parent, Agent OS handoff, lifecycle, queue, watcher plane, cursor store, session registry, Slack bot, Agent Relay or Control Room truth store."
   - "No free-form Slack message may drive machine state."
-  - "No replacement Sentinel, FORGE or ORION task/branch/PR; no revival of terminal TRACE, H1 or W3A worker child sources."
-  - "No account polling, sister-task forwarding or capacity inference from silence/PARK."
-  - "No reset, clean, rebase, force, replay or discard of ambiguous local effects."
-  - "No #250 Ready/merge before current-head repository test, exact-head independent review and fresh protected/head/path reread."
-  - "No ACK1 implementation before #250 is protected."
+  - "No replacement Sentinel/FORGE/ORION task or branch; no revival of terminal TRACE/H1/W3A worker/audit children."
+  - "No reset/revert/force/replay of a938e4e0; preserve the known effect and procedural breach separately."
+  - "No account polling, sister-task forwarding or capacity inference from silence."
+  - "No #250 Ready/merge before current-head test, independent review and fresh identity readback."
+  - "No ACK1 implementation before #250 protection."
+  - "No H0 rerun/failover after possible admin effect; no P0 under the H0 operation."
   - "No Grok, EAF, AI Operating Hub, Canvas or Linear wake/lifecycle/placement/retry authority."
-  - "No Chairman message shuttle, tab waking, provider-account selection, watcher repair or Slack archaeology."
 danger_areas:
-  - "Protected Mastermind may move; every write/release requires fresh same-SHA procedure and exact-head/current-base proof."
+  - "Protected Mastermind may move; every modifying/release action requires fresh same-SHA procedure and exact-head/material-source proof."
   - "EFFECT_UNKNOWN forbids reassignment, retry and failover."
-  - "#250 composes Browser and attention state machines; release review must preserve resource identity, attention fencing, one current writer and delivery/ACK separation."
+  - "#250 source is sound but process discipline was breached; do not let the breach justify either a false rejection or a false acceptance."
   - "#255 has unpublished local history and authorized dirty rows; remote state is not a substitute for exact task return."
-  - "Agent Relay or Web-Sol source protection does not prove installation, credential enrollment, live Slack consumption or provider Wake."
+  - "H0 may invoke native administrator authority exactly once; any ambiguous post-start state is same-carrier reconciliation only."
   - "The temporary Canvas can become stale and remains projection-only until Control Room is proven live."
 protected_truth:
-  macro_main_before_update: 5757c9ee9d41505b97d77bc0d6106e2214779f00
-  w3a_current_base_comment: 5488414761
-  w3a_current_head: 634048eadb3691ff571396c0ff00a0acf0067e06
-  w3a_current_tree: c76a57892ff5f179b93ebf4cd29c29128d4d2afa
-  w3a_ci_run: 33465995899
-  w3a_codeql_run: 33465993793
-  w3a_audit_carrier: C0BSBM78V1N/1788233166.184439
-  sentinel_effect_return: C0BSBM78V1N/1788063090.673889/1788232290.186519
+  macro_main_before_update: 7e27334fe3efa40ae63e62c5e255dd57767e8a45
+  pr250_current_head: a938e4e01e782f4497b4c49d24c632f5f097084f
+  pr250_breach_comment: 5488655557
+  pr250_ci_run: 33467284653
+  pr250_codeql_check: 99729763336
+  pr250_audit_carrier: C0BSBM78V1N/1788234862.454279
+  sentinel_return: C0BSBM78V1N/1788063090.673889/1788232290.186519
   sentinel_continue: C0BSBM78V1N/1788063090.673889/1788232787.804529
+  h0_carrier: C0BSBM78V1N/1788234359.660979
 exact_current_hard_gate: >
-  #250 must finish current-head repository test and independent audit, then pass fresh current-base
-  release adjudication. Exact Sentinel must finish #255 on its preserved task and branch. #250
-  protection releases ACK1; #255 protection releases #265. Agent Relay A2, W3C, automatic placement,
-  mechanical return, exact Sol target transfer, fleet and Control Room remain downstream and unproven.
-prs: [153, 174, 181, 184, 212, 228, 250, 255, 265, 297, 307]
+  #250 requires terminal current-head test and genuinely independent review, then fresh release
+  adjudication. Exact Sentinel must finish #255 on its preserved task/branch. Claude6 H0 has one
+  direct assignment but no ACK/effect. #250 protection releases ACK1; #255 protection releases #265;
+  H0 success releases a separate P0 proof wave. Agent Relay A2, W3C, automatic placement,
+  mechanical return, exact Sol target transfer, fleet and Control Room remain downstream/unproven.
+prs: [153, 174, 181, 184, 212, 228, 237, 250, 255, 265, 297, 307]
 linear_issues: [MAS-127, MAS-158, MAS-181, MAS-206, MAS-209, MAS-213, MAS-214, MAS-215, MAS-217, MAS-218, MAS-219, MAS-226, MAS-229, MAS-253, MAS-254, MAS-255]
 ---
 
@@ -345,7 +270,7 @@ linear_issues: [MAS-127, MAS-158, MAS-181, MAS-206, MAS-209, MAS-213, MAS-214, M
 
 This is an active execution and incident-containment checkpoint, not completion. Re-pin protected
 Mastermind and this exact file before every modifying action. The next lawful Sol action is whichever
-material return occurs first: #250 terminal CI/audit or Sentinel #255 progress/RESULT. Preserve every
-sticky RuntimeBinding and ambiguous effect. Slack remains transport; only closed V2 frames may drive
-machinery. Final acceptance is a measured zero-touch production interval, not source protection,
-green CI, merge or QUEUED admission.
+material return occurs first: #250 terminal test/audit, Sentinel #255 return, or Claude6 H0
+ACK/preflight/result. Preserve every sticky RuntimeBinding and ambiguous effect. Slack remains
+transport; only closed V2 frames may drive machinery. Final acceptance is a measured zero-touch
+production interval, not source protection, green CI, merge or QUEUED admission.
