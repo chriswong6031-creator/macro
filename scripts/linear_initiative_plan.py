@@ -55,7 +55,7 @@ _HARD_DRIFT_CODES = frozenset({
     "project_binding_ambiguous",
     "project_id_ambiguous",
     "membership_multi_parent",
-    "membership_unknown_initiative_id",
+    "membership_initiative_id_unknown",
     "membership_duplicate_initiative_id",
     "membership_identity_conflict",
     "exception_has_forbidden_membership",
@@ -445,7 +445,7 @@ def _current_membership_evidence(
     })
     if unknown_ids:
         issues.append({
-            "code": "membership_unknown_initiative_id",
+            "code": "membership_initiative_id_unknown",
             "initiative_ids": unknown_ids,
         })
 
@@ -472,13 +472,13 @@ def _current_membership_evidence(
             issues.append({
                 "code": "membership_identity_conflict",
                 "reason": "initiative_id_name_disagreement",
-                "initiative_ids": list(ids),
+                "initiative_ids": sorted(ids),
                 "resolved_names": sorted(resolved_names),
                 "observed_names": sorted(names),
             })
 
     return {
-        "initiative_ids": list(ids),
+        "initiative_ids": sorted(ids),
         "names": resolved_names,
         "issues": sorted(issues, key=lpp.canonical_bytes),
     }
