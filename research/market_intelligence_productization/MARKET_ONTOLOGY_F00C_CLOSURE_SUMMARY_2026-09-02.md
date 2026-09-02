@@ -136,8 +136,11 @@ governed wrap); **(f) F09 slices needing no rights gate** — CORRECTED 2026-09-
 verification-first build attempt: 059/D018 maturity-wall is NOT buildable-now (its
 instruments-half premise was falsified — document_terms.py is registration-fee-table-only
 and no debt-maturity producer exists repo-wide; a new XBRL debt-maturity ingestion child
-must come first; see the corrected ledger rows), 062/D021 covenant-text carries the same
-premise-caution pending re-verification, 064 premium-math unverified-premise, D029
+must come first; see the corrected ledger rows), 062/D021 covenant-text RESOLVED
+source-first (archaeology per Sol independent review 5093713353: NO covenant-text
+producer exists — document_terms is fee-table-only and event_spine is the SEC
+event/edge/review metadata spine; a filing-text/covenant extraction producer child is
+required before any headroom computation), 064 premium-math unverified-premise, D029
 coverage matrix DELIVERED (this head:
 MARKET_ONTOLOGY_F09_COMMODITY_COVERAGE_MATRIX_2026-09-02.csv/.md); **(g) F08 pair-children**: delivery path (027/085), event→position
 mapping with the D042 schema (028/D042), user-portfolio risk projection (036/D014);
