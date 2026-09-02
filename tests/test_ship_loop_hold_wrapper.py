@@ -576,6 +576,12 @@ PARITY_FILES = (
     "agentos/decisions/DEC-SOL-HOLD-IS-A-MERGE-BARRIER.md",
     "agentos/decisions/DEC-SESSION-LENGTH-IS-NOT-A-COST-CONTROL.md",
     "agentos/decisions/DEC-HOLD-PARKS-SHIP-NOT-DIALOGUE.md",
+    # Sixth law surface. The Cursor rule is a separate ENFORCEMENT surface, so it went
+    # on carrying the conflation ("End the session after one concise evidence report")
+    # while the other five were corrected — and it does not contain the banned phrase
+    # verbatim, so the ban alone would never have caught it. A worker on that surface
+    # would still have been told to close the dialogue at PARKED.
+    ".cursor/rules/ship-loop-terminal-states.mdc",
 )
 
 PARITY_TOKENS = (
@@ -634,3 +640,23 @@ def test_source_law_keeps_hold_a_hard_merge_barrier():
     assert "not shipped" in lowered
     # The green requirement is the gate that makes PARKED lawful at all.
     assert "concluded green" in lowered
+
+
+def test_cursor_rule_no_longer_orders_the_session_closed_at_parked():
+    """The tenth-path falsifier: the banned phrase alone could not catch this one.
+
+    `.cursor/rules/ship-loop-terminal-states.mdc` never contained the literal string
+    `terminal for the current session`; it encoded the same conflation as an
+    instruction — "End the session after one concise evidence report" — so the parity
+    ban passed it while a Cursor-surface worker was still told to close the dialogue.
+    Pin the instruction's absence, not just the phrase's.
+    """
+    lowered = _source_law_text(".cursor/rules/ship-loop-terminal-states.mdc").lower()
+
+    for banned in ("end the session", "end your session", "stop the session"):
+        assert banned not in lowered, f"the Cursor rule still closes the session: {banned!r}"
+    # The prohibitions this surface already carried must survive the correction.
+    for kept in ("do not merge", "mark ready", "arm automation", "poll/retry"):
+        assert kept in lowered, f"tenth-path edit dropped an existing prohibition: {kept!r}"
+    # Law text is never evidence that a watcher exists.
+    assert "never establishes that any watcher" in lowered
