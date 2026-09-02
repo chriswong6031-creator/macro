@@ -30,17 +30,34 @@ waves:
       620263090fb9f272f763e420ba103b0ff8dc5f31. The eight-file PR/merge receipt is the
       canonical immutable GitHub evidence; F0 made records/source law durable and installed no
       runtime capability.
+  - id: B0
+    title: Hosted exact experiment tool-bundle forge
+    status: in_progress
+    depends_on: [F0]
+    next_action: >
+      Continue only the already-started sticky child
+      mastermind-codeintel-b0-hosted-tool-bundle-forge-20260902-sol-001 on canonical Mastermind
+      issue #371 and Slack carrier C0BSBM78V1N/1788338108.191559. Preserve its one isolated
+      worktree and branch, exact ten-path ceiling, source-only two-phase network boundary and
+      content-addressed provenance/SBOM/license contract. Its sole receiver is
+      Codex/Terra-task-01a06143-ab92-7e91-814a-784dda661713. B0 may build source in parallel but
+      may not dispatch a workflow, build a real bundle, install a host artifact, mark Ready or
+      merge until this Agent OS release and B0's own proof/review gates pass. Protected B0 plus a
+      separately authorized exact consumer dispatch is required before real C0 and Z0 binary trials.
   - id: C0
     title: Multi-language exact-worktree semantic-backend falsifier
     status: in_progress
     next_action: >
       Continue only the already-started sticky child
       mastermind-codeintel-c0-semantic-falsifier-20260830-sol-001 on canonical Mastermind issue
-      #365 and Slack carrier C0BSBM78V1N/1788336316.706679. Preserve its one isolated worktree and
-      branch, complete the protected six-tool Python plus TypeScript/TSX harness and paired trials,
-      and return DECISION_REQUEST / PINNED_BACKEND_ACQUISITION_REQUIRED rather than inventing a
-      winner if exact host-supplied attested binaries remain unavailable. Do not bind a second
-      receiver. This Agent OS release still gates C0 Ready, merge and backend acceptance.
+      #365 and Slack carrier C0BSBM78V1N/1788336316.706679. PR #375 contains the bounded
+      exact-worktree harness and an honest pinned-bundle decision request; keep the same receiver,
+      branch and PR while repairing its hosted fixture-collection blocker under Sol comment
+      5507109506. After exact-head CI and independent source review, hold the same child until B0
+      supplies an exact separately authorized Serena/direct-LSP bundle, then run the protected
+      Python plus TypeScript/TSX paired trials and return one immutable decision. Do not bind a
+      second receiver or invent a winner. This Agent OS release and B0 both gate C0 Ready, merge
+      and backend acceptance.
   - id: Z0
     title: Governed global-discovery and deployment-topology falsifier
     status: in_progress
@@ -49,9 +66,10 @@ waves:
       mastermind-codeintel-z0-discovery-falsifier-20260830-sol-001 on canonical Mastermind issue
       #367 and Slack carrier C0BSBM78V1N/1788336373.223499. Preserve its one isolated worktree and
       branch, execute the protected pinned-Zoekt quality, negative-authority, immutable-generation,
-      destructive-failure and topology matrix, and return one preregistered immutable result. Do
-      not bind a second receiver or install a production index. This Agent OS release still gates
-      Z0 Ready, merge and backend acceptance.
+      destructive-failure and topology harness, and return one preregistered immutable result.
+      Real pinned-Zoekt execution must consume a protected B0 bundle through a separately authorized
+      exact consumer dispatch. Do not bind a second receiver or install a production index. This
+      Agent OS release and B0 both gate Z0 Ready, merge and backend acceptance.
   - id: CI1
     title: Closed sealed-stdio capability-registry extension
     status: todo
@@ -78,20 +96,23 @@ landmines:
   - "A negative global search is non-authoritative when coverage, health, requested ref or freshness is unknown, stale, omitted or truncated."
   - "Python-only semantic success cannot promote C0; TypeScript/TSX is a load-bearing Terminal language family."
   - "Control Room projection is optional and proof-gated; never build a Sourcegraph/Sourcebot-style code browser or administration console as a substitute for worker capability."
-  - "C0 and Z0 each have one START-bound sticky receiver; a second worker, branch, PR or carrier would be a duplicate operation unless the original effect is canonically reconciled first."
+  - "B0, C0 and Z0 each have one START-bound sticky receiver; a second worker, branch, PR or carrier for any of them would be a duplicate operation unless the original effect is canonically reconciled first."
+  - "B0 prepares experiment evidence only; its source, workflow or artifacts never become a package registry, updater, production supply-chain admission or capability authority."
 do_not_redo:
   - "Do not create a second capability registry, workspace registry, semantic router, lifecycle, retry plane, session store or code-truth database."
   - "Do not add a broad GitHub MCP, super-MCP, Sourcebot, SCIP or ast-grep bundle in V1 without a measured benchmark gap and fresh Sol ruling."
-  - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from the F0 records merge."
+  - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from the F0 or Agent OS records merge."
   - "Do not revive Macro PR #6695 or #6696 as implementation carriers; their immediate-dedicated-program premise is superseded by the accepted organizational-parent decision."
-  - "Do not re-place, restart or fail over the active C0 or Z0 child from stale WAITING_CAPACITY prose; their current START bindings are sticky."
+  - "Do not re-place, restart or fail over the active B0, C0 or Z0 child from stale WAITING_CAPACITY prose; their current START bindings are sticky."
+  - "Do not let C0 or Z0 download, compile, discover or select ambient binaries; exact bundle preparation and sealed dispatch belong only to B0 under separate release/effect gates."
 next_action: >
   Land this current-state records carrier after fresh exact-head Agent OS validation, hosted fences,
-  semantic CI and current-main collision review. C0 and Z0 are already active on separate lawful
-  carriers; watch only those exact carriers for the next BLOCKED, DECISION_REQUEST or RESULT and
-  adjudicate each return under the protected plan. Hold CI1-CI5, production profiles, services,
-  indexes and Control Room projection until the prerequisite immutable falsifier results are
-  accepted.
+  semantic CI and current-main collision review. B0, C0 and Z0 are already active on separate lawful
+  carriers. Adjudicate C0's same-carrier hosted collection repair, preserve Z0's bounded harness work,
+  and continue B0 through one source-only Draft/Hold forge candidate. Watch only those exact carriers
+  for the next BLOCKED, DECISION_REQUEST or RESULT. Hold CI1-CI5, production profiles, services,
+  indexes, bundle dispatch and Control Room projection until the prerequisite immutable falsifier
+  and supply receipts are accepted.
 ---
 
 ## Current capability truth
@@ -99,17 +120,18 @@ next_action: >
 ```text
 F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW @ 620263090fb9f272f763e420ba103b0ff8dc5f31
 Code Intelligence Fabric overall               PARTIAL / PRODUCTION_INERT
-C0 semantic falsifier                          PARTIAL / STARTED / PRODUCTION_INERT
-Z0 global-discovery falsifier                  PARTIAL / STARTED / PRODUCTION_INERT
+B0 hosted exact tool-bundle forge               PARTIAL / STARTED / PRODUCTION_INERT
+C0 semantic falsifier harness                   PARTIAL / BUILT_NOT_PROVEN / CI_REPAIR / BUNDLE_GATED
+Z0 global-discovery falsifier                   PARTIAL / STARTED / PRODUCTION_INERT
 production capability profile/service/index    NOT_BUILT
 Control Room projection                        NOT_BUILT / OPTIONAL AFTER PROOF
 ```
 
-The C0 and Z0 START receipts establish active bounded experimental work only. They do not establish
-that either harness is built, that a backend is safe, that a result has been accepted, or that any
-production capability exists. Runtime/session identity remains owned by its canonical execution and
-carrier evidence; this Agent OS record preserves organizational wave truth and the no-duplicate
-continuation boundary.
+The B0, C0 and Z0 START receipts establish active bounded source/experimental work only. They do not
+establish that the B0 forge is built, that an executable bundle exists, that either falsifier result
+is accepted, that any backend is safe, or that a production capability exists. Runtime/session
+identity remains owned by its canonical execution and carrier evidence; this Agent OS record
+preserves organizational wave truth, dependency order and the no-duplicate continuation boundary.
 
 `macro-context-index` is the semantic parent because it already owns governed, authority-classed
 project-context retrieval across the three repositories. This workstream does not absorb or rewrite
