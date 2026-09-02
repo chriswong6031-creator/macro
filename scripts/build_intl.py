@@ -868,6 +868,15 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive
             log.error("intl stock library failed (%s)", e)
 
+        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py): NOT
+        # re-stamped here (S5, 2026-09-01 repair round — dead code removed).
+        # build_intl_library.main() is the artifact's single owner: it already
+        # reads the prior committed site/factordata/intl_setups.json and stamps
+        # `setups` BEFORE writing that same file and returning it, so `setups`
+        # above already carries `added_date`. A second call here always read
+        # back the file build_intl_library.main() had just written with this
+        # exact `setups` content — a provable no-op, never doing real work.
+
         for r in latest["records"]:
             r["quad_meaning"] = QUAD_MEANING.get(r.get("quad_name"))
 
