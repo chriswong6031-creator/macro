@@ -1,212 +1,192 @@
-# CI Runtime Continuity + Live Fleet Hardening Architecture
+# CI Runtime Continuity + Live Fleet Hardening Architecture — R1 Reconciled
 
-**Status:** records-only architecture freeze; implementation is separately gated  
-**Operation:** `ci-runtime-continuity-live-fleet-hardening-20260901-sol-001`  
+**Status:** records-only architecture freeze; implementation and release remain separately gated  
+**Program operation:** `ci-runtime-continuity-live-fleet-hardening-20260901-sol-001`  
 **Parent:** Macro #6351 / `WS:RUNNER-FLEET-RESILIENCE` + `WS:CI-MERGE-CONTROL-PLANE`  
-**Related carriers:** Macro #6714, PR #6718, architecture PR #6717  
-**Protected procedure loaded for this freeze:** `mastermindx-market-intelligence/Mastermind@21a721427743fdae6d513eeb0f993ebd1c327a81`, `mastermind.sol_skillpack.v1` v1.0.1 / bootstrap-major 1  
+**Canonical adjacent architecture:** PR #6717, especially the Runner Fleet W5A/EC2A owner and the C3R-A → C3R-B → C3P ladder  
+**Current C3R-A carriers:** issue #6714; merged PR #6718; repair PR #6728  
+**Protected procedure used for this reconciliation:** `mastermindx-market-intelligence/Mastermind@821e90f8f0f01dd1ed7bf11a6c548a5f410c2a32`, `mastermind.sol_skillpack.v1` v1.0.1 / bootstrap-major 1  
 
-This document freezes the architecture required to make CI capacity and Sol↔worker continuity resilient under peak operating pressure. It is deliberately not another scheduler, runner registry, lifecycle, queue mirror, watcher registry, retry plane, proof store, or merge controller.
+This document freezes the architecture required to keep CI, source release, worker continuity, and host capacity recoverable under peak load. It creates no scheduler, queue, runner registry, lifecycle, retry plane, watcher registry, proof store, health gate, merge controller, or durable liveness database.
+
+It also corrects three defects in the prior draft:
+
+1. live-fleet observation and queue classification are internal contract detail for the existing Runner Fleet **W5A/EC2A** owner, not new `LFO-1`/`QPC-1` workstreams;
+2. PR #6718 is already merged but technically rejected, so the current source state is **`BUILT_NOT_PROVEN / RELEASE_BLOCKED`**, not a pre-merge candidate;
+3. historical three-slot production acceptance is separated from action-time runner availability, which is always `UNKNOWN` until a fresh timestamped observation is read.
+
+No row, carrier, or capability is promoted by this architecture document alone.
 
 ## 1. Chairman outcome
 
-Mastermind must remain capable of proving, releasing, and operating software when several PRs, builders, reviews, and host workloads overlap. A runner shortage, stale declaration, dead provider tab, missed watcher wake, inherited main red, or long-running render must become an explicit bounded state with a deterministic recovery path—not a silent multi-hour company stall.
+Mastermind must continue proving and releasing software when many PRs, agents, reviews, renders, and host workloads overlap. A queue spike, stale runner declaration, dead provider tab, missed wake, inherited main red, review rejection, host disk exhaustion, or partial rollout must become an explicit bounded state with one lawful next action—not a multi-hour organizational stall.
 
-The target is not merely “add another runner.” The target is a resilient operating path in which:
+The 10/10 operating state has these properties:
 
-1. declared runner policy and observed live fleet truth are never confused;
-2. queue pressure is classified by cause rather than inferred from one stale field;
-3. an ephemeral worker can finish a source wave and lawfully release branch-writer responsibility before its session disappears;
-4. a lost exact session blocks only while it still owns local or effect-unknown state;
-5. remote-complete source may continue through a separately bound release responsibility on the same PR/branch without duplicating implementation;
-6. watchers wake the correct responsibility and never become lifecycle or retry authority;
-7. a fourth persistent PC runner is installed and proven before production concurrency changes;
-8. later elastic capacity consumes GitHub truth and existing CI proof owners without becoming a second scheduler;
-9. Control Room can explain declared capacity, observed capacity, queue age, cause, stale evidence, and the exact next legal action;
-10. no green CI, merge, Slack delivery, or static declaration is misrepresented as physical capacity or production proof.
+1. checked-in policy is never confused with current runner observation;
+2. historical acceptance is never confused with action-time liveness;
+3. queue delay is classified by cause, with stale or missing evidence kept unknown;
+4. a source worker can return remote-complete work and release branch-writer responsibility without making a dead tab the permanent owner of a known Git carrier;
+5. local-only or effect-unknown work remains exact-session sticky and never blind-fails over;
+6. terminal STOP is monotonic, so stale watchers and late messages cannot reopen a child;
+7. exact-head review and release gates cannot be bypassed by merge pressure or pasted authority prose;
+8. watchers wake the current responsibility, require delivery acknowledgement, and never become lifecycle or retry authority;
+9. host disk/resource pressure refuses new expensive work before ENOSPC and never deletes active foreign worktrees;
+10. fourth-slot source repair, privileged host proof, and production 3→4 promotion remain separate gates;
+11. every material state and exact next action is recoverable from GitHub plus durable Agent OS records without this chat.
 
-The 10/10 state is operationally boring: peak load may increase wait time or create a typed degraded state, but it cannot make the organization guess whether a worker is alive, whether a runner exists, whether source is safely transferable, or whether a red belongs to the candidate or main.
+## 2. Incident and root-cause model
 
-## 2. Incident model
+The C3R-A incident proved that several individually small weaknesses can combine into a system-wide disruption:
 
-This architecture addresses six incident families that currently amplify each other.
+- a started builder became session/worktree-identity ambiguous;
+- remote source existed, but branch-writer and release responsibility were not cleanly separated;
+- a terminal STOP was followed by stale continuation edges that could be misread as reopening authority;
+- the builder merged #6718 while an immutable exact-head review remained `CHANGES_REQUESTED`;
+- the real host falsified two shared test premises: systemd slice hierarchy and aggregate-parent location;
+- one listener was unavailable for about 96 seconds during the staged migration before rollback;
+- repeated full-tree scratch extractions and many concurrent sessions drove a 1.8 TiB host to ENOSPC;
+- narrow green tests and merge state were repeatedly at risk of being described as release or production proof.
 
-### 2.1 Declaration-observation collapse
-
-`.github/runner-policy.yml` is checked-in policy. It can prove that a label, route, slot ceiling, and pending carrier are allowed or forbidden. It cannot prove a declared runner is registered, online, idle, running the expected service, rooted in the expected workspace, or physically located on the expected host.
-
-### 2.2 Queue-cause ambiguity
-
-A delayed job may mean no eligible runner is online, all eligible runners are busy, GitHub-hosted capacity is queued, the job was never created, an admission hook refused it, a concurrency group is held by an older run, the candidate is red, main is red, or timestamps are unavailable. “Queued” is not one diagnosis.
-
-### 2.3 Ephemeral-session writer stickiness
-
-A source worker can return a clean remote PR, remain nonterminal while Sol reviews it, receive a later current-main join request, then lose its exact provider session. If the protocol never recorded that local effects were zero and remote source was complete, the whole source carrier becomes unnecessarily hostage to a dead tab.
-
-### 2.4 Notification-only continuation
-
-A watcher may notice a return yet stop at “Sol action required,” or may remain bound to a dead exact session even after the responsibility became safely transferable. The watcher then preserves attention but not progress.
-
-### 2.5 Main-red amplification
-
-A candidate may execute correctly and still remain red because an inherited main defect enters an always-on pack. Without exact attribution, teams either rerun blindly, absorb unrelated repairs into the candidate, or falsely treat the candidate as green.
-
-### 2.6 Capacity-before-proof pressure
-
-Under queue pressure, there is a temptation to register a runner, add a live label, or raise `max-parallel` before source, host identity, cgroup isolation, render coexistence, cleanup, and rollback have been proven separately.
+The system therefore needs one coherent architecture across source responsibility, exact-head release, watcher delivery, live fleet truth, host admission, and staged rollback. Fixing only one layer leaves the compound failure available.
 
 ## 3. Canonical owners and no-rebuild boundaries
 
-This program extends existing owners:
+### 3.1 Existing owners
 
-- **GitHub Actions** remains the sole workflow scheduler, job queue, matcher, assignment mechanism, and source for runner/job observation.
-- **`.github/runner-policy.yml` + Runner Fleet source law** remain the declaration/policy owner. They do not become a live registry.
-- **The existing runner group** remains the access boundary for trusted workflows.
-- **Existing `ci-plan`, semantic fragments, `ci-gate`, CI authority, and merge controller** remain the proof and merge owners.
-- **Existing CI monitor/receipt tooling** remains the capacity/latency evidence path.
-- **Executive OS** remains Job/Attempt/Worker/Event lifecycle authority.
-- **RuntimeBinding / Wake / Agent Dialogue owners** remain the session-continuity authorities.
-- **Agent OS** remains durable workstream/decision/discovery/handoff memory.
+- **Executive OS** owns runtime Job / Attempt / Worker / Event lifecycle and CEO-intent admission.
+- **Agent Dialogue / RuntimeBinding / Wake** own actor applicability, exact-session binding, return delivery, and continuation semantics.
+- **GitHub** owns implementation, commit, branch, PR, exact-head review, CI evidence, and merge truth.
+- **GitHub Actions** remains the sole workflow scheduler, queue, job matcher, and assignment mechanism.
+- **`.github/runner-policy.yml` and Runner Fleet source law** own declared topology, labels, carriers, and allowed routes—not liveness.
+- **The existing runner group** remains the trusted workflow access boundary.
+- **Existing CI plan, semantic fragments, `ci-gate`, CI authority, and merge controller** remain proof and merge owners.
+- **Existing monitor / canary receipt tooling** remains the execution, resource, and timing evidence path.
+- **Runner Fleet W5A/EC2A** owns the read-only joined live-fleet and queue projection.
+- **Existing runner-host/worktree admission and cleanup helpers** own host resource refusal and cleanup containment.
+- **Agent OS** owns durable workstreams, decisions, discoveries, and handoffs.
 - **Slack** remains transport and hot-state visibility.
-- **Control Room/Workroom** remain projections over canonical owners.
+- **Control Room / Workroom** remain projections over canonical owners.
+
+### 3.2 Forbidden duplicate planes
 
 This program must not create:
 
-- a second scheduler, queue, runner matcher, runner registry, or retry ledger;
-- a daemon database whose cursor is required to know whether GitHub work exists;
-- a second semantic gate, CI proof database, or merge controller;
-- a second session registry or worker lifecycle;
-- a watcher-owned completion/retry/continuation state machine;
-- a “live” policy file populated by unverified host declarations;
-- automatic cross-runner failover for a modifying job;
-- automatic cancellation of an old queued run merely because a newer run exists;
-- a generic self-hosted route for fork or untrusted code;
-- an elastic runner that carries production `ci-linux` before isolated proof.
+- another scheduler, queue mirror, runner matcher, runner registry, autoscaler state database, or retry ledger;
+- another Job/Attempt/Worker lifecycle or session registry;
+- watcher-owned lifecycle, completion, replacement-worker, retry, merge, or escalation authority;
+- another semantic gate, main-health gate, proof database, merge controller, or publication path;
+- a checked-in “live runners” truth store;
+- a second canary receipt family when the existing receipt can be extended compatibly;
+- automatic cross-runner failover for an ambiguous modifying operation;
+- automatic cancellation merely because a run is old or a newer run exists;
+- generic self-hosted routing for fork or untrusted code;
+- a second workstream for live fleet, queue cause, host reachability, or Control Room projection already owned by W5A/EC2A.
 
-## 4. Capability ledger at architecture freeze
+## 4. Capability ledger at the R1 reconciliation
 
-| Capability | State | Boundary |
+| Capability | State | Exact boundary |
 |---|---|---|
-| Three persistent sealed PC CI slots | `PROVEN_LIVE` | Existing P1–P4 path; current production ceiling remains three. |
-| Fourth-slot source substrate | `BUILT_NOT_PROVEN` candidate | PR #6718; merge would not create a listener or increase concurrency. |
-| Fourth persistent runner host proof | `NOT_BUILT` | Requires separate C3R-B privileged wave. |
-| Production concurrency 3→4 | `NOT_BUILT` | Requires separate promotion after C3R-B acceptance. |
-| Static runner declaration policy | `PROVEN_LIVE` for declaration | Explicitly not liveness evidence. |
-| Fresh live fleet observation contract | `NOT_BUILT` | Must read GitHub + host attestation without a second registry. |
-| Queue wait fields in existing receipt | `BUILT_NOT_PROVEN` candidate | #6718 adds nullable forward-compatible fields; live population remains later. |
-| Queue cause classifier | `NOT_BUILT` | Must consume existing observations only. |
-| Remote-complete writer release | `SPEC_ONLY` after this freeze | Needed to avoid dead-session hostage state. |
-| Exact-session loss reconciliation | `PARTIAL` | Fail-closed law exists; safe transfer boundary is incomplete. |
-| Action-authoritative watcher loop | `PARTIAL` | Source law exists; production and exact responsibility wake remain incomplete. |
-| Stale queued-run hostage census | `PARTIAL` | Historical incidents known; no bounded current read-only projection yet. |
-| Elastic JIT overflow | `SPEC_ONLY` in #6717 | Held behind main integrity, portability, four-slot proof, and residual-demand evidence. |
+| Three-slot trusted PC CI route — historical acceptance | `PROVEN_LIVE` | Accepted prior production receipts prove the route worked at their timestamps. They do not prove current runner availability. |
+| Three-slot action-time runner availability | `NOT_BUILT` as durable product | Every modifying or release action must obtain a fresh timestamped GitHub/host observation; absent or stale observation is `UNKNOWN`. |
+| Static runner policy | `PROVEN_LIVE` for declaration | It proves allowed topology/labels only, never online, idle, service, host, or cgroup state. |
+| #6718 fourth-slot source substrate | `BUILT_NOT_PROVEN` | Merged as `b260d28a6efbfb4593dfcc453731f71703252ac0` while exact-head review remained `CHANGES_REQUESTED`; release is blocked. |
+| #6728 C3R-A repair | `PARTIAL` | Head `04d30860e1309d427e160319072c6cb150f35e47` repairs systemd hierarchy and parent reads, but exact-head review `5085372259` requires the remaining false-proof repairs. |
+| Accepted C3R-A source | `NOT_BUILT` | Requires #6728 to close every blocker, pass current-head CI, receive separate-principal approval, and merge. |
+| Fourth persistent runner host proof | `NOT_BUILT` | Separate privileged C3R-B after accepted C3R-A. |
+| Production concurrency 3→4 | `NOT_BUILT` | Separate C3P after C3R-B acceptance and natural-traffic proof. |
+| W5A/EC2A live fleet + queue projection | `PARTIAL` | Manual/current reads exist; no accepted production projection with freshness and joined host truth yet. |
+| Queue timing fields in existing canary receipt | `BUILT_NOT_PROVEN` | Merged source is additive, but full C3R-A evidence logic remains release-blocked. |
+| Remote-complete writer release contract | `SPEC_ONLY` | Must extend existing Agent Dialogue / Executive continuity owners. |
+| Exact-session loss reconciliation | `PARTIAL` | Fail-closed behavior exists; remote-complete responsibility transfer is not production-proven. |
+| Exact-session wake acknowledgement (ACK1) | `BUILT_NOT_PROVEN` | Protected source exists; production remains disarmed and the DELIVERED→ACK crash window remains open work. |
+| Exact-head review/merge barrier | `PARTIAL` | Review truth exists in GitHub, but #6718 proved current merge paths can still bypass the intended barrier. |
+| Host ENOSPC admission / scratch containment | `PARTIAL` | Live-aware GC exists, but expensive source operations can still begin without sufficient disk headroom or bounded scratch ownership. |
+| Elastic overflow | `SPEC_ONLY` | Held behind main integrity, accepted C3P, execution portability, and prospective residual pressure. |
 
-No row may be promoted by this document alone.
+## 5. Runner Fleet W5A/EC2A — one joined observation owner
 
-## 5. Live fleet observation architecture
+### 5.1 Ownership mapping
 
-### 5.1 Declaration remains declaration
+All live-fleet, queue-cause, host-reachability, and read-only Control Room work in this document is **internal detail of the existing W5A/EC2A owner** under `WS:RUNNER-FLEET-RESILIENCE`.
 
-Policy fields such as pool slots, allowed labels, pending carriers, forbidden labels, selected workflows, and production `max-parallel` remain checked-in intent. They are valid for admission and diff review, not for proving liveness.
-
-### 5.2 Observation source
-
-The live observation source is a fresh read of GitHub’s runner and workflow-job APIs, constrained to the existing repository/organization and runner group. The observation is ephemeral or emitted into the existing receipt path; it is never copied into a new canonical database.
-
-A valid observation records at least:
+The former names `LFO-1`, `QPC-1`, `SQH-1`, and `CR-1` are not independent waves, workstreams, receipt families, or publication paths. They map only to these W5A internal steps:
 
 ```text
-schema: ci.runner_fleet_observation.v1
+W5A.1 — fresh declared-vs-observed fleet join
+W5A.2 — deterministic queue-cause and timing projection
+W5A.3 — read-only Control Room/Workroom projection
+W5A.4 — host-control reachability and disk/resource pressure projection
+W5A.5 — stale queued-run census, observation only
+```
+
+A later reader must be unable to commission both W5A and a separately named observer/classifier for the same facts.
+
+### 5.2 Inputs
+
+W5A consumes fresh or already canonical evidence only:
+
+- GitHub runner and workflow-job APIs;
+- main-owned workflow required labels and runner group;
+- `.github/runner-policy.yml` declared carriers and pending topology;
+- accepted host-attestation receipts;
+- existing admission-hook, monitor, cleanup, and execution receipts;
+- optional `workflow_job_queued_at`, `runner_job_started_at`, and derived `queue_wait_seconds`;
+- GitHub concurrency-group/run relationships where exposed;
+- existing candidate-vs-main semantic attribution;
+- host-control reachability and disk/resource observations from existing host tooling.
+
+It never assigns, retries, reroutes, cancels, registers, labels, restarts, deletes, merges, or promotes.
+
+### 5.3 Observation contract
+
+A valid fresh projection records at least:
+
+```text
+schema: ci.runner_fleet_projection.v1
 repository
 runner_group_id / runner_group_name
 observed_at
-source_request_identity
-runners[]:
+freshness_budget_seconds
+freshness_state
+policy_revision
+expected_persistent_slots
+expected_carriers[]
+observed_runners[]:
   github_runner_id
   runner_name
   status
   busy
   labels[]
   observed_at
-policy_revision
 host_attestations[]
-staleness_budget_seconds
-freshness_state
-mismatches[]
+missing_expected_carriers[]
+unexpected_carriers[]
+identity_or_label_mismatches[]
+eligible_queue_depth
+oldest_eligible_queue_age_seconds
+in_progress_eligible_jobs
+host_control_reachable = true | false | unknown
+host_disk_free_bytes
+host_disk_free_inodes
+host_disk_observed_at
+pressure_classification
+reasons[]
 ```
 
-`source_request_identity` is an auditable request/receipt identity, not a durable queue cursor.
+This may be emitted ephemerally or through an existing accepted receipt/projection path. It is not a new canonical database or queue cursor.
 
-### 5.3 Host identity binding
+### 5.4 Freshness and action-time truth
 
-Runner names are mutable presentation identifiers and are not physical-host identity. A live runner may be called `pc-ci-4` only after it is joined to a host attestation produced by the existing host-install/proof path. The attestation binds:
+- Historical production acceptance remains historical.
+- Current online/idle/busy/service/host state is `UNKNOWN` until a fresh observation with `observed_at` and an accepted freshness budget exists.
+- Missing GitHub or host evidence is `UNKNOWN`, never “offline,” “healthy,” or “available.”
+- Stale observations may be displayed but cannot authorize roster promotion, production concurrency increase, runner retirement, queued-run cancellation, host mutation, release based on presumed capacity, or elastic action.
+- Static policy cannot satisfy action-time liveness.
 
-```text
-host_fingerprint
-service_unit_digest
-runner_service_pid
-runner_root
-workspace_root
-cache_root
-cgroup_path
-runner_binary/version
-GitHub runner id/name
-observed labels
-audit time
-```
+### 5.5 Deterministic cause classes
 
-Host fingerprint must be privacy-safe and stable enough to distinguish physical/VM identity without exposing secrets. A rename changes presentation, not host identity. A new GitHub runner ID on the same host is a registration event and must be reconciled explicitly.
-
-### 5.4 Freshness law
-
-A fleet observation older than its accepted freshness budget may still be displayed with `STALE`, but it cannot authorize:
-
-- roster promotion;
-- `max-parallel` increase;
-- runner removal;
-- queued-run cancellation;
-- branch release based on presumed capacity;
-- autoscaler create/destroy action.
-
-Missing observation is `UNKNOWN`, never “offline.” Static policy plus no API read is not negative liveness evidence.
-
-### 5.5 Mismatch taxonomy
-
-The observer reports, without mutating:
-
-- `DECLARED_LIVE_NOT_OBSERVED`
-- `OBSERVED_NOT_DECLARED`
-- `LABEL_MISMATCH`
-- `GROUP_MISMATCH`
-- `HOST_ATTESTATION_MISSING`
-- `HOST_ATTESTATION_MISMATCH`
-- `RUNNER_REPLACED`
-- `OBSERVATION_STALE`
-- `RUNNER_BUSY`
-- `RUNNER_OFFLINE`
-- `RUNNER_IDLE`
-
-A mismatch is evidence for adjudication. It never self-repairs labels, registration, services, or policy.
-
-## 6. Queue pressure and cause classification
-
-### 6.1 Inputs
-
-The classifier consumes only existing or fresh canonical observations:
-
-- GitHub workflow run and workflow job status/timestamps;
-- required labels and runner group from the main-owned workflow/policy;
-- fresh live runner observation;
-- existing runner admission-hook receipt;
-- existing execution receipt fields, including optional `workflow_job_queued_at`, `runner_job_started_at`, and derived `queue_wait_seconds`;
-- existing concurrency-group/run relationship where GitHub exposes it;
-- existing semantic proof/main-integrity result.
-
-It does not assign jobs, start runners, retry, reroute, cancel, or change proof.
-
-### 6.2 Cause states
-
-One delayed job resolves to one primary cause with supporting secondary context:
+One delayed job receives one primary cause plus supporting reasons:
 
 ```text
 NO_ELIGIBLE_ONLINE_RUNNER
@@ -215,6 +195,8 @@ GITHUB_HOSTED_QUEUE
 JOB_NOT_CREATED_OR_HELD
 CONCURRENCY_GROUP_HELD
 RUNNER_ADMISSION_REFUSED
+HOST_CONTROL_UNREACHABLE
+HOST_DISK_PRESSURE
 RUNNER_SETUP_OR_DEPENDENCY_DELAY
 CANDIDATE_SEMANTIC_RED
 INHERITED_MAIN_RED
@@ -223,39 +205,89 @@ OBSERVATION_STALE
 UNKNOWN_INSUFFICIENT_EVIDENCE
 ```
 
-A classifier may return `UNKNOWN_INSUFFICIENT_EVIDENCE`; it must not manufacture certainty.
+`queue_wait_seconds` is derived only when both timestamps are present, parseable, comparable, and ordered. Missing, malformed, reversed, or clock-incomparable timestamps produce `null`, not zero or negative. Real `0.0` remains distinct from unavailable. Queue time remains separate from checkout, cache, dependency setup, test execution, artifact upload, and wall time.
 
-### 6.3 Time and null behavior
+## 6. C3R-A → C3R-B → C3P remains a hard ladder
 
-`queue_wait_seconds` is derived only when both timestamps are present, parseable, and ordered. Missing, malformed, clock-incomparable, or reversed timestamps produce `null`, not `0` and not a negative value. An observed `0.0` remains a real measurement distinct from unavailable.
+### 6.1 Current source truth
 
-Queue time remains separate from checkout, cache prewarm, dependency setup, test execution, artifact upload, and total wall time.
+PR #6718 is already merged. Merge is not acceptance. Its immutable head retained a release-blocking review, and the real host exposed additional false-proof assumptions. Therefore:
 
-### 6.4 Pressure levels
+```text
+#6718 = MERGED / BUILT_NOT_PROVEN / RELEASE_BLOCKED
+#6728 = existing same-program repair carrier / PARTIAL at reviewed head
+C3R-B = FORBIDDEN until repaired C3R-A is accepted and merged
+C3P = FORBIDDEN until C3R-B is accepted
+```
 
-Pressure levels are descriptive, not scheduler authority:
+No document, Slack post, green fast gate, or host experiment may rewrite that truth.
 
-- `NORMAL`: no eligible job exceeds the accepted queue SLO.
-- `ELEVATED`: at least one eligible job exceeds SLO while capacity still exists.
-- `SATURATED`: all eligible persistent slots are busy and queue age exceeds SLO.
-- `DEGRADED`: an expected persistent slot is not freshly observed/attested, or admission refuses.
-- `POISONED_BASE`: accepted main-integrity owner reports a known structural red.
-- `UNKNOWN`: evidence is stale or incomplete.
+### 6.2 Required C3R-A repair
 
-Elastic work may eventually consume these states, but it cannot originate or redefine them in a separate store.
+The existing #6728 carrier must preserve its valid hierarchical systemd and aggregate-parent fixes and additionally prove:
 
-## 7. Remote-complete handoff and branch-writer transfer
+- exact direct candidate service membership at `/mastermind.slice/mastermind-ci.slice/<unit>.service`;
+- exact aggregate-parent envelope: `cpu.max 800000 100000`, `memory.high 10737418240`, `memory.max 12884901888`, `memory.swap.max 2147483648`;
+- required parseable memory and I/O PSI in strict four-slot preflight;
+- a main-defined fail-closed preflight before four-way diagnostic fanout;
+- stable candidate and parent identity, chronological samples, and monotonic counters;
+- no numeric acceptance fields on reset, reversal, identity change, or missing evidence;
+- canonical non-symlink runner root and contained `_work` before cleanup;
+- exact pending-label identity and malformed-input refusal without traceback;
+- production remains three live `ci-linux` carriers and `max-parallel: 3`.
 
-### 7.1 Why this boundary is required
+Source merge can establish only `FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.
 
-Exact-session stickiness is correct while an execution surface owns local-only, unpushed, untracked, credential-bearing, host-mutating, or effect-unknown state. It is unnecessarily disruptive after all accepted source exists remotely and the local worktree has no unique effect.
+### 6.3 C3R-B privileged host proof
+
+After accepted C3R-A, a separate exact carrier must:
+
+1. fresh-read GitHub runner group, policy, service/helper bytes, host resources, render state, roots, cache, and rollback snapshots;
+2. wait for a natural drain;
+3. verify source/helper/unit digests before any daemon action;
+4. install the slice/helper/unit tuple without exposing old-helper/new-unit incompatibility;
+5. migrate and prove `pc-ci-1..3` one listener at a time, rolling back on first failure;
+6. create/register `pc-ci-4` initially with platform/architecture labels only, never production `ci-linux`;
+7. bind GitHub runner ID/name to service PID, root, workspace, cache, host identity, candidate cgroup, and aggregate parent;
+8. prove render remains outside the CI slice and its route is unchanged;
+9. run exactly one authorized slots=4 diagnostic with an independently active real render;
+10. prove cleanup, cache, cgroup envelope, PSI, counters, semantic parity, and rollback;
+11. stop without changing production `max-parallel`.
+
+Registration/credential ceremony remains a separately gated native operator act. No secret enters chat.
+
+### 6.4 C3P production promotion
+
+Only after C3R-B acceptance may a fresh carrier add the accepted fourth runner to the production roster and change `max-parallel: 3 → 4`. It must prove natural same-repository traffic, one simultaneous-PR overlap window, active real render, queue/resource improvement, semantic integrity, cleanup, cache, admission, and rollback. Failure restores production concurrency to three while preserving the proven but idle fourth host.
+
+### 6.5 Elastic capacity
+
+Elastic/JIT capacity remains later and consumes #6717. It requires active main integrity, accepted C3P, portable execution-profile evidence, external logs, prospective residual queue pressure, and a separately isolated one-job proof. It may not carry production `ci-linux` merely because persistent capacity is busy.
+
+## 7. Remote-complete source and responsibility transfer
+
+### 7.1 Existing lifecycle remains authoritative
+
+The following are evidence/projection fields inside existing Executive OS and Agent Dialogue records, not a new lifecycle:
+
+```text
+implementation_responsibility
+branch_writer_responsibility
+release_responsibility
+local_effect_state
+external_effect_state
+remote_complete_receipt
+terminal_worker_edge
+current_release_binding
+```
+
+Job/Attempt/Worker/Event lifecycle stays in Executive OS. GitHub remains source truth.
 
 ### 7.2 Remote-complete receipt
 
-Before a source worker returns `RESULT / HOLD-FOR-SOL`, it must return a machine-checkable or command-backed receipt:
+Before a source worker returns `RESULT / HOLD-FOR-SOL`, it must supply a command-backed receipt containing:
 
 ```text
-schema: agent_dialogue.remote_complete.v1
 operation_key
 repository
 pr_number
@@ -272,310 +304,317 @@ unpushed_commit_count
 uncommitted_in_scope_count
 local_only_effect
 external_effect_state
-branch_writer_state
 verified_at
 commands[]
 ```
 
-Required truth for `REMOTE_COMPLETE`:
+`REMOTE_COMPLETE` requires exact remote existence, local==remote, zero unpushed commits, zero uncommitted/untracked in-scope bytes, and no unreconciled local/host/provider/credential effect. Dirty unrelated paths are disclosed and separately collision-adjudicated, never erased.
 
-- exact remote PR/branch/head exists;
-- local HEAD equals remote HEAD;
-- zero unpushed commits;
-- zero uncommitted or untracked files in the owned scope;
-- no local-only host/provider/runtime/credential effect;
-- every external effect is `NONE` or separately reconciled and bound;
-- worker explicitly releases branch-writer responsibility after Sol’s terminal worker STOP.
+A later modifying CONTINUE invalidates the prior receipt until a new command-backed receipt is produced.
 
-A dirty worktree outside the owned scope is still reported and must not be silently erased; it may be nonblocking only when ownership/collision law proves it unrelated.
+### 7.3 Terminal worker and release boundary
 
-### 7.3 Responsibility states
+When remote source is complete and the worker mission is accepted:
 
-These are evidence/projection states, not a second Executive lifecycle:
+1. Sol issues `SOL ACCEPTED / STOP` for the worker child;
+2. STOP is terminal and monotonic;
+3. the worker removes only that child watcher source and performs no more branch, PR, CI, host, or next-wave work;
+4. branch-writer responsibility is released;
+5. a separately bound release responsibility may operate on the same PR/branch after fresh current-state admission;
+6. no duplicate implementation PR, branch, retry, or lifecycle is created.
 
-```text
-LOCAL_EFFECT_OPEN
-REMOTE_COMPLETE_HELD
-BRANCH_WRITER_RELEASED
-RELEASE_OWNER_BOUND
-RELEASE_RECONCILING_CURRENT_MAIN
-RELEASE_READY
-MERGED_BUILT_NOT_PROVEN
-```
+Release responsibility may fresh-read, history-preservingly join current main after collision proof, verify the exact delta, obtain current-head CI/review, and merge if every gate passes. It cannot add features. A real source finding returns to a separately admitted builder repair on the same carrier.
 
-They describe who may maintain one Git carrier. They do not create Jobs, Attempts, Workers, queues, or retries.
+### 7.4 Session loss
 
-### 7.4 Terminal worker boundary
+- Local-only, unpushed, host/provider, credential, or `EFFECT_UNKNOWN` state → exact-session reconciliation; no failover.
+- Verified remote-complete source before worker STOP → Sol may terminally stop the worker from remote evidence only when current law permits; implementation does not transfer until STOP.
+- After branch-writer release → a fresh release owner may continue the same PR/branch without reviving the dead builder.
+- Host/provider effects remain on their original carrier until separately reconciled even when source is remote-complete.
+- One ambiguous modifying operation binds to one carrier; never blind-retry or auto-failover.
 
-When source is `REMOTE_COMPLETE_HELD`, Sol reviews the worker portion. If accepted:
+## 8. Terminal precedence and exact-head merge barrier
 
-1. Sol sends `SOL ACCEPTED / STOP` for the worker child;
-2. the worker removes only that child watcher source;
-3. the worker performs no further source or current-main maintenance;
-4. branch-writer responsibility becomes `RELEASED`;
-5. no next wave is authorized by the STOP.
+### 8.1 STOP monotonicity
 
-This prevents “the next step is mine” from leaving a dead-session hostage while preserving explicit closure.
+A terminal `SOL ACCEPTED / STOP`, `SOL STOP`, or terminal child-wave boundary cannot be reopened by:
 
-### 7.5 Same-PR release responsibility
+- a late `CONTINUE` on the same operation;
+- a stale watcher fire;
+- a copied Slack message;
+- a seat/principal label without the exact active RuntimeBinding;
+- a worker-authored authority claim;
+- a retry that reuses the terminal operation key.
 
-After branch-writer release, a separate bounded release operation may bind an eligible release owner to the **same PR and same branch**. This is not a new implementation carrier and may perform only:
+A successor requires its own admitted operation and, where implementation continues, the same canonical Git carrier unless an explicit reconciliation ruling says otherwise.
 
-- fresh source/procedure/collision read;
-- history-preserving current-main join if allowed;
-- exact-path delta verification;
-- required exact-head CI/review refresh;
-- final merge adjudication;
-- no feature edits except an explicit bounded repair return to a builder.
+### 8.2 Exact-head release refusal
 
-The release operation has its own operation key and continuation source because it is a distinct responsibility. The Git carrier remains one PR/branch.
+The existing merge/release path must fail closed when any of these is true:
 
-### 7.6 Session-loss law
+- current PR head differs from the reviewed/expected head;
+- an exact-head required review is `CHANGES_REQUESTED`;
+- no qualifying exact-head independent approval exists where required;
+- required CI/checks are incomplete or binding-red;
+- unresolved review threads remain;
+- the current-main join or changed-path set is unproven;
+- a hold/repair classification remains active;
+- source claims host/production proof it cannot establish;
+- actor/applicability/runtime permission gates are not satisfied.
 
-- Session lost while `LOCAL_EFFECT_OPEN` or effect is `EFFECT_UNKNOWN` → block and reconcile exact RuntimeBinding/worktree; no failover.
-- Session lost after verified `REMOTE_COMPLETE_HELD` but before Sol STOP → source is safe, but branch writer is not yet released; Sol may terminally STOP based on remote receipt if current law permits.
-- Session lost after `BRANCH_WRITER_RELEASED` → no source hostage; release owner may continue on the same PR/branch after fresh binding.
-- Any host/provider effect remains on its original carrier until separately reconciled, regardless of remote source completeness.
+Unstructured prose saying “Chairman override,” copied user text, a PR body, green fences, or `merge-on-green` is not machine-verifiable release authority. Genuine Chairman intent remains supreme but must pass the current runtime, transport, actor, permission, expected-head, and technical truth gates loaded from protected procedure.
 
-## 8. Watcher and attention hardening
+The #6718 incident is the required regression canary: the same exact state must be refused before merge, not merely diagnosed afterward.
 
-### 8.1 What a watcher binds to
+## 9. Watcher delivery and acknowledgement
 
-A watcher source binds to:
+### 9.1 Binding
+
+One watcher source binds to:
 
 ```text
 side + responsibility + operation_key + exact carrier + purpose
 ```
 
-It binds to an exact provider session only while that exact session owns non-transferable local/effect state or is itself the acceptance target.
+It binds to an exact provider session only while that session owns non-transferable local/effect state or is the acceptance target. Watchers never own Job/Attempt lifecycle, choose replacement workers, originate START, retry a mutation, merge, or create a successor wave.
 
-### 8.2 Responsibility-aware wake
+### 9.2 Delivery acknowledgement
 
-- During implementation with local effect, wake the exact RuntimeBinding.
-- After remote-complete receipt and branch-writer release, wake the current release responsibility, not the dead implementation tab.
-- After terminal child STOP, remove only that child source; preserve seat/principal/sibling sources.
-- A watcher never chooses a replacement worker, retries a mutation, merges, or originates a new wave.
+A wake is not complete at “message sent.” The accepted path requires:
 
-### 8.3 Missed-fire behavior
+1. qualifying return observed;
+2. current responsibility resolved from canonical state;
+3. wake delivered to the exact responsibility/session when required;
+4. exact-session acknowledgement recorded;
+5. normal procedure re-entered and a lawful same-carrier edge emitted;
+6. terminal child source removed after STOP.
 
-Multiple missed expected watcher fires produce `WATCH_DEGRADED`. The next substantive action requires a fresh carrier read. The system must not stack a duplicate watcher, shorten model polling below the accepted floor, or assume silence means no return.
+Protected ACK1 source is `BUILT_NOT_PROVEN / PRODUCTION_DISARMED`. The remaining DELIVERED→ACK crash window must be closed through the existing wake/Agent Dialogue owner, not a second watcher service.
 
-### 8.4 Notification-only refusal
+Missed fires yield `WATCH_DEGRADED` and force a fresh carrier read. Silence is never terminal. Duplicate watcher sources are refused. `WATCH_STOP_FAILED` leaves the child terminal and reports transport cleanup failure without reopening work.
 
-When a qualifying return arrives and current authority/gates permit action, a Sol-owned watcher must re-enter normal procedure and issue the lawful same-carrier edge. “Sol action required” is not completion when the exact Sol responsibility can adjudicate.
+## 10. Host disk, scratch, and worktree pressure
 
-## 9. Stale queued-run hostage census
+### 10.1 Observation
 
-A read-only census may identify queued or pending runs whose age, required labels, runner availability, and concurrency relationships indicate likely hostage state.
+W5A.4 projects fresh host-control reachability, free bytes, free inodes, active worktree/process ownership, safely reclaimable bytes, and observation age. Missing host control is `UNKNOWN`, not healthy.
 
-The census emits observation only. It cannot cancel or rerun.
+### 10.2 Admission
 
-A future cancellation action requires a separate, reviewed law proving all of:
+Existing host/worktree admission must refuse expensive source work before it can drive the host to ENOSPC. At minimum, admission applies before:
 
-- exact run/job identity;
-- current same-run reread immediately before action;
-- accepted supersession/cancellation authority;
-- no unique evidence would be destroyed;
-- no effect ambiguity;
-- one carrier and one stable operation identity;
-- post-action readback.
+- creating a new full worktree or archive extraction;
+- full-suite artifact staging;
+- large scratch copies;
+- runner bootstrap or cache population;
+- host migration requiring rollback snapshots.
 
-“Old” or “a newer run exists” is insufficient cancellation authority.
+Thresholds must be versioned, fail closed when measurement is unavailable for a required operation, and preserve headroom for Git index writes, logs, rollback, and active runners. A future threshold change is a separately reviewed policy change, not an LLM judgment.
 
-## 10. Fourth persistent runner acceptance ladder
+### 10.3 Scratch containment
 
-### 10.1 C3R-A — source substrate
+- Full `git archive | tar -x` source copies are prohibited by default for comparison/review work.
+- Prefer shared-object Git worktrees, sparse checkout, targeted blob reads, or copy-on-write clones where the host supports them.
+- Every scratch root records owner operation, creation time, intended bytes, actual bytes, and expiry/terminal cleanup boundary.
+- Per-operation scratch quotas and host-wide reserve prevent one session from consuming fleet headroom.
+- Cleanup never follows symlinks, never crosses canonical roots, and never deletes worktrees with live owning processes or unresolved effects.
+- Orphan cleanup is evidence-driven and idempotent; active foreign sessions are not sacrificed to rescue a new operation.
 
-Landing #6718 may establish only `FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`. Production remains three slots. No registration, label, listener, host mutation, four-slot run, or `max-parallel` change is implied.
+### 10.4 Rollout containment
 
-### 10.2 C3R-B — privileged host proof
+Host changes proceed one listener at a time after natural drain, with exact pre-change bytes and first-failure rollback. The 96-second one-slot incident demonstrates why all-at-once migration is rejected by design. A single successful transient unit or helper invocation is not full-fleet acceptance.
 
-A fresh, separately authorized host wave must:
+## 11. Main red, candidate red, and capacity evidence
 
-1. fresh-census GitHub runner group, policy, service units, helper bytes, host resources, render state, cache/workspace roots, and rollback packet;
-2. wait for a natural drain;
-3. install the slice unit, updated helper, and affected service unit changes as one reviewed installation set, preserving exact pre-change bytes;
-4. prove existing `pc-ci-1..3` restart cleanly under the slice before adding a new listener;
-5. register/bootstrap `pc-ci-4` with platform/architecture identity only—without production `ci-linux`;
-6. bind GitHub runner ID/name to host attestation, service PID, root, workspace, cache, and exact cgroup;
-7. prove all four CI units are descendants of `/mastermind-ci.slice` and render is outside it;
-8. run exactly one `slots=4` diagnostic while a real render/reservation workload runs;
-9. prove cleanup, cache immutability, resource ceilings, no contamination, and rollback behavior;
-10. stop and return to Sol without changing production `max-parallel`.
+Candidate correctness, inherited main health, transport success, capacity health, and semantic verdict are separate facts.
 
-The installation ordering hazard is binding: an updated unit carrying both `Slice=mastermind-ci.slice` and `--require-slice` must not be installed ahead of the compatible slice/helper set.
+- A candidate may be clean while main is structurally red.
+- A trusted self-hosted fragment may be red while hosted relay succeeds.
+- Capacity/receipt green may never normalize semantic red.
+- `POISONED_BASE` is a derived state from the existing main-health/semantic owner, not a second gate.
+- Blind rerun, unrelated repair absorption, and “green except inherited” merge claims are forbidden unless current release law explicitly admits that exact evidence shape.
+- Main integrity and red-relay repairs remain their existing carriers; this architecture only consumes their verdicts.
 
-### 10.3 Separate production promotion
+## 12. Control Room / Workroom projection
 
-Only after C3R-B Sol acceptance may a fresh promotion carrier:
+W5A.3 should eventually show, read-only:
 
-- add the exact attested `pc-ci-4` to the live `ci-linux` roster;
-- change trusted executor `max-parallel: 3 → 4`;
-- preserve runner-group/workflow/fork boundaries;
-- prove natural same-repository PR traffic, including simultaneous pressure and active render;
-- compare queue wait and resource behavior to the three-slot baseline;
-- roll back to three on semantic, cleanup, cache, queue, pressure, admission, or render regression.
+- declared slots, carriers, labels, and production ceiling;
+- fresh observed runner IDs/names/status/busy state and observation age;
+- host-attestation match and host-control reachability;
+- disk/resource headroom and admission state;
+- oldest eligible queue age, depth, and deterministic primary cause;
+- active jobs by runner;
+- candidate red versus inherited-main red;
+- current implementation/branch-writer/release responsibility;
+- local/effect state and remote-complete receipt age;
+- watcher delivery/ack/degraded/stop-failed state;
+- exact next legal action, owner, carrier, and blocker.
 
-### 10.4 Elastic overflow remains later
+The view requests existing canonical operations only after separate authorization. It does not mutate runners, lifecycle, branches, jobs, or rulesets directly.
 
-No slot 5, provider actuator, JIT create/delete, burst label, webhook scaler, ARC, or scale set is authorized until:
+## 13. Deterministic, statistical, and model-generated methods
 
-- main integrity is reliable;
-- demand-reduction/ownership work is materially complete;
-- the execution profile is portable;
-- four persistent slots are proven in production;
-- residual eligible queue pressure is measured prospectively;
-- one isolated manual JIT proof passes without carrying production `ci-linux`.
+Deterministic methods own:
 
-## 11. Control Room projection
+- actor/applicability/runtime admission;
+- exact-head, tree, parent, merge-base, path, review, thread, and CI checks;
+- runner policy validation and declaration-vs-observation joins;
+- freshness, identity, queue timing, and cause prerequisites;
+- remote-complete and local-effect proof;
+- watcher-source uniqueness and delivery acknowledgement;
+- cgroup identity/envelope/counter validation;
+- disk/scratch admission and cleanup containment;
+- host/promotion gates and rollback identity.
 
-The existing Control Room/Workroom projection should eventually show, from canonical reads:
+Descriptive statistics may summarize prospective queue/resource receipts with sample size, missingness, and time windows disclosed. Model-generated summaries may explain state but have zero authority to rank proof, approve, merge, cancel, retry, register, label, rebind, clean, promote, or originate trades.
 
-- declared persistent slots and production ceiling;
-- fresh observed runners with online/offline/busy/idle and staleness;
-- host-attestation match state;
-- oldest eligible queue age and primary cause;
-- active/busy jobs by runner;
-- inherited-main-red versus candidate-red attribution;
-- current source responsibility: implementation, remote-complete hold, release owner, merged-not-proven;
-- watcher health: active, degraded, unavailable, terminal child source removed;
-- exact next legal action and its owner.
+## 14. Required failure states
 
-The view is read-only until separately authorized admin controls exist. A button may request an existing canonical operation; it does not mutate runners or lifecycle directly.
+The system must preserve at least:
 
-## 12. Deterministic, statistical, and model-generated methods
-
-- Runner policy validation, API observation parsing, freshness, identity joins, queue timing, cause prerequisites, path deltas, remote-complete checks, watcher-source uniqueness, and promotion gates are deterministic.
-- Pressure thresholds and economic capacity decisions may use descriptive statistics over prospective receipts, with sample size and missingness disclosed.
-- Model-generated summaries may explain the state but have zero authority to rank proof, cancel jobs, register runners, rebind started operations, approve merges, or promote capacity.
-
-## 13. Failure states
-
-The implementation must preserve and expose at least:
-
-- runner API unavailable or permission denied;
-- observation stale;
-- declared/observed mismatch;
-- duplicate runner name or replacement ID;
+- runner API unavailable/permission denied/stale;
+- declared-observed mismatch, duplicate name, replacement ID, label/group mismatch;
 - host attestation missing/mismatched;
-- queue timestamps unavailable/reversed;
-- all runners busy versus none eligible online;
-- admission refusal;
-- job never created / concurrency held;
-- inherited main red versus candidate red;
-- local worktree dirty, unpushed, or effect unknown;
+- host control unreachable or disk observation stale;
+- disk reserve exhausted, inode exhaustion, scratch quota exceeded;
+- all eligible runners busy versus none online;
+- job not created, concurrency held, admission refused, setup delay;
+- queue timestamps missing/malformed/reversed;
+- candidate semantic red versus inherited main red;
+- local worktree dirty, unpushed, untracked, or effect unknown;
 - exact RuntimeBinding lost;
-- remote source complete but branch writer not released;
-- duplicate watcher source;
-- watcher missed fire / unavailable / stop failed;
-- current-main path collision;
-- CI incomplete or review stale;
-- host drain unavailable;
-- installation partial or helper/unit incompatibility;
-- render joins CI slice;
-- fourth listener online but mislabeled/routable early;
-- four-slot diagnostic regression;
-- promotion regression and rollback failure.
+- remote source complete but branch writer not stopped/released;
+- terminal STOP followed by stale continuation attempt;
+- duplicate watcher source, delivery unacknowledged, missed fire, stop failure;
+- current-main/path collision;
+- exact-head review stale, `CHANGES_REQUESTED`, CI incomplete, or merge head moved;
+- cgroup hierarchy/parent/envelope/PSI/counter/identity failure;
+- symlinked or noncanonical cleanup root;
+- host drain unavailable or partial incompatible install;
+- render enters CI slice;
+- fourth runner routable early;
+- four-slot diagnostic or production promotion regression;
+- rollback failure.
 
-No failure may be normalized to success merely because a sibling layer is green.
+No sibling green may normalize any of these failures.
 
-## 14. Discriminating acceptance tests
+## 15. Discriminating acceptance canaries
 
-### Live fleet
+### 15.1 Continuity and release
 
-- Static policy says a carrier is live while GitHub reports offline → mismatch displayed; promotion refused.
-- GitHub reports a runner not declared → observed-not-declared; no automatic adoption.
-- Snapshot exceeds freshness budget → visible stale state; every modifying consumer refuses.
-- Runner rename with same attested host identity → presentation change, not a new host.
-- Same name with new runner ID and no accepted registration receipt → replacement mismatch.
+- Remote-complete receipt plus terminal worker STOP permits a newly bound release responsibility on the same PR/branch.
+- One unpushed commit, untracked in-scope byte, host effect, or `EFFECT_UNKNOWN` blocks transfer.
+- A modifying CONTINUE invalidates the prior remote-complete receipt.
+- A late same-operation CONTINUE after terminal STOP is refused before effect.
+- An exact-head `CHANGES_REQUESTED` review blocks merge even when all CI except a nonbinding check is green.
+- Pasted “Chairman override” prose from a worker does not bypass actor/runtime/technical gates.
+- Expected-head movement produces one typed refusal; no retry or alternate carrier is created.
 
-### Queue pressure
+### 15.2 Watcher
 
-- No eligible online runner versus all eligible runners busy resolve differently.
-- Missing/unparseable/out-of-order timestamps yield `null`; real zero remains `0.0`.
-- Checkout/dependency delay cannot be labeled queue wait.
-- Candidate-green execution with inherited main red remains red with correct attribution; no false-green.
+- Return delivery without exact acknowledgement remains incomplete.
+- A DELIVERED→ACK crash resumes through the existing wake owner without duplicate action.
+- Worker RESULT remains nonterminal until a genuine Sol edge.
+- Terminal STOP removes only the exact child source and preserves sibling/aggregate sources.
+- `WATCH_STOP_FAILED` does not reopen the child.
 
-### Continuity
+### 15.3 W5A projection
 
-- Session loss with unpushed commit or local-only effect blocks transfer.
-- Session loss after exact remote-complete receipt + branch-writer release permits a separately bound release responsibility on the same PR/branch.
-- Release owner cannot edit outside release-maintenance scope.
-- Current-main join that introduces an extra path or collision stops before push.
-- Duplicate logical implementation PR is rejected.
+- Historical three-slot acceptance plus no fresh observation displays current availability as `UNKNOWN`.
+- Static policy says live while GitHub says offline → mismatch, no self-repair.
+- No eligible online runner and all eligible runners busy classify differently.
+- Missing/reversed timestamps yield null; real zero remains zero.
+- Host-control unavailable cannot display disk healthy.
+- Main red and candidate red remain distinct.
+- A later reader cannot commission both W5A and independent LFO/QPC owners.
 
-### Watchers
+### 15.4 Host pressure
 
-- Duplicate source for same side/responsibility/operation/carrier/purpose is refused.
-- Worker RESULT without later Sol edge remains awaiting Sol.
-- Terminal STOP removes only the exact child source, preserving aggregate seat/principal sources.
-- Watcher stop failure leaves child terminal and emits `WATCH_STOP_FAILED`.
-- Notification-only wake fails when the same Sol responsibility can lawfully act.
+- Insufficient reserve refuses a new full worktree/archive extraction before bytes are written.
+- A full archive-copy command is rejected or explicitly policy-gated.
+- Live foreign worktree/process ownership prevents cleanup.
+- Symlinked/noncanonical scratch or runner roots are refused without touching targets.
+- Scratch quota exhaustion cannot consume runner rollback reserve.
 
-### Capacity
+### 15.5 Fourth slot
 
-- `pc-ci-4` entering any live roster before host proof fails.
-- `ci-linux` on `pc-ci-4` before C3R-B acceptance fails.
-- `max-parallel: 4` before separate promotion fails.
-- Any CI unit outside the CI slice or render inside it fails four-slot acceptance.
-- Missing aggregate slice evidence refuses rather than substituting host-global values.
+- #6718 merged bytes alone cannot start C3R-B.
+- #6728 remains blocked until every exact-head finding is closed.
+- Missing exact aggregate envelope or strict preflight fails before slots=4 fanout.
+- `pc-ci-4` in any live roster, production `ci-linux`, or `max-parallel: 4` before accepted gates fails.
 - Capacity receipt cannot make semantic CI green.
 
-## 15. Ordered implementation waves
+## 16. Ordered implementation sequence
 
-### RCH-0 — architecture freeze
+### RCH-0 — architecture R1 reconciliation
 
-This document and its review. Records only.
+This document and its durable handoff. Records only. It authorizes no downstream mutation by itself.
 
-### LFO-1 — live fleet observer
+### C3R-A repair — existing PR #6728
 
-Extend the existing Runner Fleet/receipt tooling with a read-only GitHub observation and declaration-vs-observation diff. No daemon or database. Produce CLI/fixture proof and one real read-only observation receipt.
+Complete exact-head review `5085372259` on the same PR/branch under a separately admitted builder operation. No host action or self-merge.
 
-### QPC-1 — queue pressure classifier
+### RCH-1 — remote-complete + terminal precedence + exact-head release barrier
 
-Use existing workflow-job and receipt data to classify queue cause and expose nullable timing. No actuation. Produce retrospective fixtures plus prospective natural-traffic receipts.
+Extend the existing Agent Dialogue / Executive continuity / merge-control owners in one independently useful vertical slice:
 
-### RCH-1 — remote-complete handoff contract
+- command-backed remote-complete receipt;
+- branch-writer release after terminal STOP;
+- same-PR release-responsibility admission;
+- STOP monotonicity;
+- exact-head review/CI/hold barrier;
+- regression tests reproducing the #6718 failure.
 
-Add the command-backed remote-complete receipt and branch-writer release law to existing Agent Dialogue/continuity owners. Add fail-closed tests for local effect and same-PR release transfer.
+Do not create a new lifecycle or Git carrier.
 
-### RCH-2 — responsibility-aware watcher wake
+### RCH-2 — delivery acknowledgement and responsibility-aware wake
 
-Teach the existing watcher/continuity path to wake implementation responsibility while local effect exists and release responsibility after branch-writer release. No watcher registry or new lifecycle.
+Complete ACK1 production qualification and the DELIVERED→ACK crash window through the existing wake owner. Wake exact implementation responsibility while local effect exists and release responsibility after branch-writer release. No watcher registry.
 
-### SQH-1 — stale queued-run read-only census
+### W5A internal delivery — existing Runner Fleet W5A/EC2A
 
-Expose likely hostage runs and exact reason. Alert only; no cancellation.
+Implement W5A.1–W5A.5 as one owner, sequenced into independently useful vertical PRs where needed:
 
-### C3R-B — fourth-slot privileged host proof
+1. fresh fleet/host observation and mismatch projection;
+2. queue-cause/null-safe timing projection;
+3. disk/resource admission visibility and stale-run census;
+4. read-only Control Room consumer.
 
-Install/attest/diagnose as §10.2. No production promotion.
+No new workstream, liveness DB, queue mirror, scheduler, receipt family, or publication path.
 
-### C3P — production 3→4 promotion
+### Host hygiene internal slice
 
-Promote and prove natural traffic as §10.3, with automatic rollback only if the existing accepted promotion/rollback owner has been separately reviewed and authorized; otherwise operator rollback remains explicit.
+Extend existing worktree/scratch admission and cleanup owners with disk reserve, quotas, archive-copy refusal, canonical-root checks, and live-process-aware GC. This is not a new host controller.
 
-### CR-1 — Control Room projection
+### C3R-B
 
-Project existing canonical observations and responsibilities. Read-only first.
+After repaired C3R-A acceptance/merge, perform the privileged one-listener-at-a-time host proof. Stop before production promotion.
 
-### EC1+ — elastic overflow
+### C3P
 
-Held behind the gates in §10.4 and #6717.
+After C3R-B acceptance, perform production 3→4 promotion and natural-traffic/rollback proof.
 
-Implementation waves may be parallel only when changed paths and authority are genuinely disjoint. C3R-B is gated on accepted/merged C3R-A. C3P is gated on accepted C3R-B. Elastic production is gated on accepted C3P plus residual-demand evidence.
+### Elastic capacity
 
-## 16. Release and completion law
+Only after active main integrity, accepted C3P, portability, and prospective residual-demand evidence. Consume #6717; do not bypass persistent-capacity truth.
 
-This program is not complete when documentation merges, #6718 merges, a runner registers, or `max-parallel` changes.
+Implementation may run in parallel only where authority, files, carriers, effects, and owners are genuinely disjoint. One independently useful capability per PR remains binding.
+
+## 17. Completion law
+
+This program is not complete when this document merges, #6728 merges, a fourth runner registers, CI turns green, Slack delivers, or `max-parallel` changes.
 
 Completion requires:
 
-- **Truth:** fresh declaration-vs-observation and host-attested fleet identity;
-- **Continuity:** remote-complete source can be safely released without dead-session hostage state, while local/effect-unknown work remains fail-closed;
-- **Capacity:** four persistent slots are proven under aggregate isolation and render coexistence;
-- **Product:** Control Room explains capacity, queue cause, staleness, responsibility, and next action;
-- **Learning:** prospective queue/resource receipts demonstrate whether 3→4 reduced eligible wait without new semantic, cleanup, cache, admission, or render regressions;
-- **Operations:** all material decisions/discoveries/handoffs are durable in Agent OS, with exact next action recoverable without this chat.
+- **Truth:** fresh declaration-vs-observation and host-attested identity, stale-safe and correction-safe;
+- **Continuity:** remote-complete source can release a dead builder without transferring local/effect-unknown work;
+- **Release safety:** terminal precedence and exact-head review/merge barriers refuse the #6718 failure before effect;
+- **Attention:** delivery acknowledgement and responsibility-aware wake are production-proven;
+- **Host resilience:** ENOSPC admission, scratch containment, live-safe GC, and staged rollback are proven;
+- **Capacity:** four persistent slots are proven under exact aggregate isolation and render coexistence;
+- **Product:** W5A/Control Room explains capacity, queue cause, staleness, responsibility, pressure, and next action;
+- **Learning:** prospective receipts show whether 3→4 improves eligible wait without semantic, cleanup, cache, admission, disk, or render regression;
+- **Operations:** exact durable decisions/discoveries/handoffs let a fresh session recover the ruling and next action without this chat.
 
-This architecture authorizes no implementation, merge, host action, runner registration, label change, CI retry/cancellation, provider action, watcher creation, or production promotion by itself.
+This architecture authorizes no source implementation, review approval, merge, CI retry/cancellation, watcher creation, host action, registration, credential handling, label/group change, ruleset/admin change, provider action, or production promotion by itself.
