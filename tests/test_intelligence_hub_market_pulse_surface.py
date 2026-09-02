@@ -345,13 +345,23 @@ def test_no_runtime_style_injection_was_introduced(template_code_only: str):
     assert ".insertRule(" not in template_code_only
 
 
-# ── the real rendered page (skipped if site/ is not checked out) ───────────
+# ── the real template rendered through the real builder call shape ─────────
+#    Render lanes own the committed site/ page (they rebake it continuously on
+#    main, which is why this PR ships the TEMPLATE only — a hand-committed
+#    rendered page re-conflicts within hours). The production page carrying
+#    this markup is proven in the M6 live verification against the real site;
+#    here we prove the template itself emits it under the builder's context.
 
-@pytest.fixture(scope="module")
-def rendered_html() -> str:
-    if not SITE_PATH.exists():
-        pytest.skip("site/ is not checked out in this sparse worktree")
-    return SITE_PATH.read_text(encoding="utf-8")
+@pytest.fixture()
+def rendered_html(env) -> str:
+    hub = _full_hub()
+    for d in hub["command"]:
+        d["price"] = 100.0
+    roster = compute_market_pulse_roster(hub)
+    return env.get_template("intelligence_hub.html.j2").render(
+        hub=hub, built="2026-08-31T00:00:00+00:00", mode="intel_hub",
+        qledger_chips={}, china=None, market_pulse_roster=roster,
+    )
 
 
 def test_rendered_hub_page_carries_zero_nb_px_quote_nodes(rendered_html: str):
