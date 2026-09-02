@@ -66,6 +66,7 @@ Mastermind
 │  ├─ Fundamental Forensics (intelligence_program; building)
 │  ├─ Global Market Intelligence Theme Graph (data_plane; building)
 │  ├─ Government Revenue Foresight (intelligence_program; operating)
+│  ├─ Grey Deer Risk Intelligence & Capital Protection (decision_engine; building)
 │  ├─ Group Reads (intelligence_program; operating)
 │  ├─ International Risk Intelligence (intelligence_program; operating)
 │  ├─ Long-Hold Thesis Intelligence (intelligence_program; operating)
@@ -88,6 +89,7 @@ Mastermind
 │  └─ Top Anatomy (research_program; building)
 ├─ Project infrastructure [project_infrastructure]
 │  ├─ Cross-Repository Contract Governance (project_infrastructure; building)
+│  ├─ Executive OS (infrastructure; operating)
 │  ├─ Macro Context Index (project_infrastructure; building)
 │  ├─ Mastermind-X Semantic System Map (project_infrastructure; operating)
 │  ├─ Project Active Build Control (project_infrastructure; operating)
@@ -1113,6 +1115,55 @@ Build point-in-time government contract, revenue, and catalyst evidence with cor
 
 **Product surfaces:** `macro-dashboard`
 
+#### Grey Deer Risk Intelligence & Capital Protection (`grey-deer-risk-intelligence`)
+
+- **Kind:** `decision_engine`
+- **Lifecycle:** `building`
+- **Scope:** `project`
+- **Repositories:** `macro`, `mastermind`, `terminal`
+
+Produce canonical market hazard/repair truth and bounded protection-policy contracts without replacing domain sensors or downstream portfolio authority.
+
+**Strategic role.** Convert fragmented risk observations into one coherent, PIT-honest market protection nervous system across Macro, Prophet, Terminal and Portfolio.
+
+**Owns**
+
+- Canonical Risk Envelope projection
+- Market-hazard episode composition
+- Scope-bounded market protection policy contracts
+- Cross-product risk-state semantics
+
+**Does not own**
+
+- Raw Prophet ranking or admission
+- Terminal quote/chart state
+- Portfolio position sizing/settlement/execution
+- LLM signal origination
+
+**Derived operational footprint**
+
+- Synapse owners: `grey-deer-risk-intelligence`
+- Lobe owners: `grey-deer-risk-intelligence`
+- Synapse artifacts: **1**; tier mix: display=1
+- Lobe charters: **0**
+- Information domains: none declared
+
+**Relationships**
+
+- `consumes_from` → `market-regime-risk` (`conceptual`; authority transfer: none)
+- `consumes_from` → `neural-web` (`conceptual`; authority transfer: none)
+- `consumes_from` → `policy-transmission-intelligence` (`conceptual`; authority transfer: none)
+- `consumes_from` → `rates-inflation-command` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `prophet` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `market-timing-intelligence` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `cross-repo-contract-governance` (`conceptual`; authority transfer: none)
+
+**Canonical docs:** `macro:research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md`, `macro:research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md`
+
+**Implementation anchors:** `macro:research/grey_deer`
+
+**Product surfaces:** —
+
 #### Group Reads (`group-reads`)
 
 - **Kind:** `intelligence_program`
@@ -1527,9 +1578,9 @@ Govern options flow, structure, exposure, dislocation, Prophet overlays, and iss
 
 **Derived operational footprint**
 
-- Synapse owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
-- Lobe owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
-- Synapse artifacts: **30**; tier mix: display=13, infrastructure=8, shadow=9
+- Synapse owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
+- Lobe owners: `flow-continuity`, `flow-leaders-desk`, `options-dislocation`, `options-flow`, `options-intelligence`, `options-intelligence-program`, `options-nw-entry-intelligence`, `options-prophet-shadow`
+- Synapse artifacts: **31**; tier mix: display=14, infrastructure=8, shadow=9
 - Lobe charters: **2**
 - Information domains: `tactical_entry`
 
@@ -1952,6 +2003,49 @@ Make producer, consumer, presentation, privacy, and authority seams explicit acr
 **Canonical docs:** `macro:research/CROSS_REPO_CONTRACT_BOUNDARY_AUDIT_2026-08-11.md`
 
 **Implementation anchors:** `macro:config/mastermind_programs.yml`
+
+**Product surfaces:** —
+
+#### Executive OS (`executive-os`)
+
+- **Kind:** `infrastructure`
+- **Lifecycle:** `operating`
+- **Scope:** `project`
+- **Repositories:** `mastermind`
+
+Own the durable Job, Attempt, Worker, and Event lifecycle for autonomous company work execution on the control host, including its SQLite runtime store and its backup, restore-verification, and offline-restore primitives.
+
+**Strategic role.** Keep company work admission, dispatch, retry, evidence, and lifecycle recovery deterministic, single-authority, and recoverable after host loss.
+
+**Owns**
+
+- Job, Attempt, Worker, and Event lifecycle authority and the canonical Executive SQLite runtime store
+- Executive online backup, backup verification, restore-verification, and explicit offline restore
+- Disaster-recovery contracts for the Executive lifecycle database (off-host copies, restore drills, RPO/RTO/RCO)
+
+**Does not own**
+
+- Provider, account, and quota capacity truth (shared-ai-provider-control)
+- Durable organizational knowledge records (Agent OS)
+- Portfolio artifact and decision-packet governance (portfolio-control-plane)
+- Market intelligence, signals, or capital authority
+
+**Derived operational footprint**
+
+- Synapse owners: none
+- Lobe owners: none
+- Synapse artifacts: **0**; tier mix: none
+- Lobe charters: **0**
+- Information domains: none declared
+
+**Relationships**
+
+- `coordinates_with` → `shared-ai-provider-control` (`conceptual`; authority transfer: none)
+- `coordinates_with` → `portfolio-control-plane` (`conceptual`; authority transfer: none)
+
+**Canonical docs:** `mastermind:research/EXECUTIVE_OS_PHASE0_CODEX_TECHNICAL_CENSUS.md`
+
+**Implementation anchors:** `mastermind:control_plane/executive_runtime.py`, `mastermind:control_plane/executive_backup.py`, `mastermind:control_plane/executive_service.py`, `mastermind:scripts/executive_os_phase1c.py`, `mastermind:ops/executive_os`
 
 **Product surfaces:** —
 
@@ -2566,6 +2660,8 @@ A plain relationship is conceptual and makes no runtime or authority-transfer cl
 | `earnings-intelligence` | `feeds_context_to` | `conceptual` | `fundamental-forensics` | — | none | — |
 | `earnings-intelligence` | `feeds_context_to` | `conceptual` | `terminal-market-data` | — | none | — |
 | `earnings-intelligence` | `feeds_context_to` | `conceptual` | `neural-web` | — | none | — |
+| `executive-os` | `coordinates_with` | `conceptual` | `shared-ai-provider-control` | — | none | — |
+| `executive-os` | `coordinates_with` | `conceptual` | `portfolio-control-plane` | — | none | — |
 | `factor-intelligence` | `feeds_context_to` | `conceptual` | `neural-web` | — | none | — |
 | `factor-intelligence` | `feeds_context_to` | `conceptual` | `prophet` | — | none | — |
 | `factor-intelligence` | `feeds_context_to` | `conceptual` | `portfolio-desk` | — | none | — |
@@ -2585,6 +2681,13 @@ A plain relationship is conceptual and makes no runtime or authority-transfer cl
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `fundamental-forensics` | — | none | — |
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `thematic-intelligence` | — | none | — |
 | `government-revenue-foresight` | `feeds_context_to` | `conceptual` | `prophet` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `market-regime-risk` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `neural-web` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `policy-transmission-intelligence` | — | none | — |
+| `grey-deer-risk-intelligence` | `consumes_from` | `conceptual` | `rates-inflation-command` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `prophet` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `market-timing-intelligence` | — | none | — |
+| `grey-deer-risk-intelligence` | `coordinates_with` | `conceptual` | `cross-repo-contract-governance` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `thematic-intelligence` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `gmi-theme-graph` | — | none | — |
 | `group-reads` | `feeds_context_to` | `conceptual` | `neural-web` | — | none | — |
@@ -2830,6 +2933,14 @@ These are non-binding semantic posture summaries, not a second authority system.
 - **Operational registry checks:** `macro:config/synapse.yml`, `macro:config/lobe_charters.yml`
 - **Repository guardrails:** `macro:CLAUDE.md`, `terminal:terminal/AGENTS.md`
 
+### Executive OS (`executive-os`)
+
+- **Semantic posture:** `operational_control`
+- **Non-binding summary:** Deterministic work-lifecycle control only; it grants no market, portfolio, or capital authority, and restore is an explicit offline administrator action, never automatic failover.
+- **Explicit authority sources:** `mastermind:AGENTS.md`, `mastermind:ops/executive_os/HOST_PREREQUISITES.md`
+- **Operational registry checks:** none
+- **Repository guardrails:** `mastermind:AGENTS.md`, `mastermind:config/authority_map.yml`
+
 ### Factor Intelligence (`factor-intelligence`)
 
 - **Semantic posture:** `context_only`
@@ -2861,6 +2972,14 @@ These are non-binding semantic posture summaries, not a second authority system.
 - **Explicit authority sources:** none; this posture asserts no independent runtime authority
 - **Operational registry checks:** `macro:config/synapse.yml`, `macro:config/lobe_charters.yml`
 - **Repository guardrails:** `macro:CLAUDE.md`
+
+### Grey Deer Risk Intelligence & Capital Protection (`grey-deer-risk-intelligence`)
+
+- **Semantic posture:** `deterministic_control`
+- **Non-binding summary:** Envelope itself owns no rank/size/execute authority. Individually registered policies may later carry bounded subtract-only authority after their own gate.
+- **Explicit authority sources:** `macro:research/grey_deer/GREY_DEER_RISK_INTELLIGENCE_ARCHITECTURE_FREEZE_2026-08-19.md`, `macro:research/grey_deer/GREY_DEER_FABLE_EXECUTION_COMMAND_PACKET_2026-08-19.md`
+- **Operational registry checks:** `macro:config/synapse.yml`, `macro:config/lobe_charters.yml`
+- **Repository guardrails:** `macro:CLAUDE.md`, `mastermind:AGENTS.md`, `mastermind:config/authority_map.yml`, `terminal:terminal/AGENTS.md`
 
 ### Group Reads (`group-reads`)
 
@@ -3451,6 +3570,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `fundamental-forensics` | `mapped` | `fundamental-forensics` | 3 | 0 |
 | `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 4 | 0 |
 | `macro` | `government-revenue-foresight` | `mapped` | `government-revenue-foresight` | 42 | 0 |
+| `macro` | `grey-deer-risk-intelligence` | `mapped` | `grey-deer-risk-intelligence` | 1 | 0 |
 | `macro` | `hk-canada` | `unresolved_split` | `china-system, international-risk-intelligence` | 2 | 0 |
 | `macro` | `hk-pick-lab` | `subprogram_of` | `prophet-cn` | 3 | 0 |
 | `macro` | `ignition-radar` | `subprogram_of` | `market-timing-intelligence` | 2 | 0 |
@@ -3486,6 +3606,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `options-alpha` | `mapped` | `options-alpha` | 8 | 0 |
 | `macro` | `options-dislocation` | `subprogram_of` | `options-intelligence` | 1 | 0 |
 | `macro` | `options-flow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
+| `macro` | `options-intelligence` | `mapped` | `options-intelligence` | 1 | 0 |
 | `macro` | `options-intelligence-program` | `mapped` | `options-intelligence` | 19 | 0 |
 | `macro` | `options-nw-entry-intelligence` | `subprogram_of` | `options-intelligence` | 3 | 2 |
 | `macro` | `options-prophet-shadow` | `subprogram_of` | `options-intelligence` | 1 | 0 |
@@ -3587,7 +3708,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `f33a4c0bfebe57899caef054499f6eadaf68b3e7458ec6b0acc9d64bc1babcc1` |
-| `config/synapse.yml` | `9ace9cebbf8fdfc451516d79a73796006dcf83c955b088905dfebf1ba5173dc5` |
+| `config/mastermind_programs.yml` | `5c54b13277e15eecfb309da53804ca662ef351b342faae635a44b3010283fbb2` |
+| `config/synapse.yml` | `82022e1c804177208e908429ff69301c80fa3120e003d4057f2a2344d90c73b8` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
