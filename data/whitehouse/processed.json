@@ -911,6 +911,30 @@
       "at": "2026-09-01T05:07:42.397358+00:00",
       "activated": true,
       "importance": 92
+    },
+    "https://www.whitehouse.gov/?p=49567": {
+      "id": "wh-2026-09-02-presidential-message-on-national-childhood-cancer-awareness-month",
+      "at": "2026-09-02T16:34:25.033659+00:00",
+      "activated": false,
+      "importance": 8
+    },
+    "https://www.whitehouse.gov/?p=49565": {
+      "id": "wh-2026-09-02-presidential-message-on-national-recovery-month",
+      "at": "2026-09-02T16:34:30.626537+00:00",
+      "activated": false,
+      "importance": 12
+    },
+    "https://www.whitehouse.gov/?p=49511": {
+      "id": "wh-2026-09-02-ten-times-extreme-liberal-democrats-in-congress-put-their-dangerous-agenda-ahead",
+      "at": "2026-09-02T16:34:35.632494+00:00",
+      "activated": false,
+      "importance": 10
+    },
+    "https://www.whitehouse.gov/?p=49573": {
+      "id": "wh-2026-09-02-presidential-message-on-national-preparedness-month-6e71",
+      "at": "2026-09-02T19:47:29.689308+00:00",
+      "activated": false,
+      "importance": 8
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

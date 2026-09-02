@@ -2400,6 +2400,7 @@ jobs:
           tests/test_stock_technicals.py
           tests/test_aibrief_page.py
           tests/test_aibrief_w4_panels.py
+          tests/test_market_reference.py
           tests/test_validated_claims_thirdparty.py
           tests/test_validated_claims_engine.py
           tests/test_validated_claims_surfaces.py
@@ -8552,6 +8553,12 @@ jobs:
         run: node --version
       - name: collect beacon throttle + growth-event registry + tape per-IP cap + generic billing/auth errors + dossier quote honesty
         run: python -m pytest tests/test_collect_throttle.py tests/test_growth_events_registry.py tests/test_tape_relay.py tests/test_billing_subscribe.py tests/test_company_intelligence_api.py tests/test_company_intelligence_dossier_js.py tests/test_dossier_quote_api.py tests/test_dossier_live_quote_surface.py -q
+      # R1A-M (2026-09-02): the shared regular-quote projector both this job's
+      # dossier route AND the Intelligence Hub batch route now use, plus the
+      # deliberately public batch API itself — same minimal FastAPI/httpx
+      # dependency closure as the dossier suite immediately above.
+      - name: shared regular quote projector + Intelligence Hub market pulse batch API
+        run: python -m pytest tests/test_public_quote_projection.py tests/test_intelligence_hub_market_pulse_api.py -q
       # CCR-R0 (2026-08-28) belongs in this existing pre-launch security lane:
       # authenticated operator identity, a fixed admin iframe, Caddy's real
       # adapted handler order, and the bounded atomic GitHub-source publisher.
@@ -9893,6 +9900,11 @@ jobs:
         run: python -m pytest tests/test_china_intel_hub_visits.py tests/test_china_intel_visits_render.py -q
       - name: Intelligence Hub PIT scope + W0 measurement heals + ticker-shape gate
         run: python -m pytest tests/test_intel_hub_universe_scope.py tests/test_intel_hub_w0_heals.py tests/test_ticker_shape.py -q
+      # R1A-M (2026-09-02): exact market pulse roster/markup (needs the same
+      # jinja2 + pandas closure scripts.build_intel_hub already pulls in this
+      # job) plus the route-scoped controller's node-executed contract.
+      - name: Intelligence Hub market pulse roster/markup + controller contract
+        run: python -m pytest tests/test_intelligence_hub_market_pulse_surface.py tests/test_intelligence_hub_market_pulse_client.py -q
 
   unrun-register-honesty:
     # The user-facing honesty register: falsifier/refutation vocabulary stays
