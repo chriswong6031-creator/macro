@@ -1555,12 +1555,37 @@ def test_receipt_reduces_bound_slice_samples_into_window_deltas(tmp_path: Path) 
     assert result["pressure_total_delta"]["io"]["some"] == 100
 
 
+def test_receipt_refuses_a_single_sample_as_a_missing_endpoint() -> None:
+    result = CAPTURE.slice_metrics([_host_sample(_slice_sample())])
+
+    assert result["status"] == "refused"
+    assert result["samples"] == 1
+    assert "distinct start and end samples" in result["reason"]
+    for key in (
+        "candidate_identity",
+        "aggregate_identity",
+        "cpu_max",
+        "effective_limits",
+        "cpu_delta",
+        "memory_events_delta",
+        "pids_events_delta",
+        "pressure_total_delta",
+        "memory_current_peak_bytes",
+        "memory_swap_peak_bytes",
+        "memory_peak_bytes_cgroup_lifetime",
+        "pids_current_peak",
+    ):
+        assert result[key] is None, key
+
+
 def test_receipt_labels_memory_peak_as_a_cgroup_lifetime_fact() -> None:
     """memory.peak is a cgroup-lifetime high-water mark. Presenting it as a
     run-local peak without a documented reset ceremony would overstate what the
     receipt observed.
     """
-    result = CAPTURE.slice_metrics([_host_sample(_slice_sample())])
+    result = CAPTURE.slice_metrics(
+        [_host_sample(_slice_sample()), _host_sample(_slice_sample())]
+    )
     assert "memory_peak_bytes_cgroup_lifetime" in result
     assert result["memory_peak_bytes_cgroup_lifetime"] == 2 << 30
     assert "memory_peak_bytes" not in result, "no unqualified run-local peak"

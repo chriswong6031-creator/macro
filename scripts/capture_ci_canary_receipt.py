@@ -293,6 +293,12 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
             "every host sample in a slice window must carry a slice mapping",
             samples=len(observations),
         )
+    if len(observations) < 2:
+        return _empty_slice_metrics(
+            "refused",
+            "aggregate CI-slice window requires distinct start and end samples",
+            samples=len(observations),
+        )
 
     sample_times = [sample.get("time") for sample in samples]
     if any(
