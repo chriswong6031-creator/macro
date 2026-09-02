@@ -210,6 +210,8 @@ def _invalid_bound_observation(item: Mapping[str, Any]) -> str | None:
         return "aggregate cgroup identity is missing or malformed"
     if item.get("limits") != EXPECTED_AGGREGATE_LIMITS:
         return "aggregate parent limits are missing, malformed, or drifted"
+    if item.get("cpu_max") != EXPECTED_AGGREGATE_LIMITS["cpu.max"]:
+        return "cpu_max disagrees with the exact aggregate parent limit tuple"
     for field, required in REQUIRED_CUMULATIVE_FIELDS.items():
         if not _valid_cumulative_mapping(item.get(field), required):
             return f"{field} cumulative evidence is missing or malformed"

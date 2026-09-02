@@ -2465,6 +2465,12 @@ def test_reducer_refuses_missing_malformed_or_drifted_parent_limits(
     _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
 
 
+def test_reducer_refuses_cpu_max_that_disagrees_with_the_limit_tuple() -> None:
+    first = _host_sample(_slice_sample(cpu_max="max 100000"))
+    last = _host_sample(_slice_sample(cpu_max="max 100000"))
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+
+
 def test_monitor_receipts_freeze_candidate_and_parent_identity(tmp_path: Path) -> None:
     root = tmp_path / "cgroup"
     _write_slice_tree(root, CI_CGROUP)

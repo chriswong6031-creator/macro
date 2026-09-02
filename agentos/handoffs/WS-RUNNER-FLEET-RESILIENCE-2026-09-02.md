@@ -82,7 +82,7 @@ changed:
 verified:
   - claim: "All three C3R-A suites pass after the RED-first false-proof repairs."
     command: "python3 -m pytest -q tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py tests/test_runner_policy.py"
-    result: "199 passed, 176 inherited pytest temporary-cleanup warnings in 28.44s"
+    result: "200 passed, 176 inherited pytest temporary-cleanup warnings in 23.98s"
   - claim: "Runner policy and direct policy unit tests accept the repaired source boundary."
     command: "python3 -m pytest -q tests/test_runner_policy.py && python3 scripts/check_runner_policy.py"
     result: "60 passed; policy checker rc=0"
