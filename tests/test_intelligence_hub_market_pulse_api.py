@@ -13,6 +13,7 @@ anonymous, unauthenticated client can use the route.
 """
 from __future__ import annotations
 
+import json
 import urllib.error
 import urllib.request
 
@@ -58,10 +59,10 @@ class FakeHub:
         self.omitted: set[str] = set()
         self.raise_error: Exception | None = None
 
-    def fetch(self, symbols):
+    def fetch(self, symbols, view):
         self.calls += 1
         self.last_symbols = list(symbols)
-        self.last_query = {"view": "regular"}
+        self.last_query = {"view": view}
         if self.raise_error is not None:
             raise self.raise_error
         return {s: dict(self.rows[s]) for s in symbols if s not in self.omitted}
@@ -71,6 +72,10 @@ class FakeHub:
 def fake_hub(monkeypatch) -> FakeHub:
     hub = FakeHub()
     monkeypatch.setattr(market_pulse_api, "_fetch_hub_quotes", hub.fetch)
+    # Freeze the route's evaluation clock to match the fixture rows' `ts` —
+    # otherwise freshness ages every row into "stale" the instant real wall
+    # time drifts past the fixture's fixed timestamp.
+    monkeypatch.setattr(market_pulse_api, "_now_epoch_seconds", lambda: NOW)
     return hub
 
 
@@ -319,6 +324,65 @@ def test_malformed_upstream_payload_is_503(client, fake_hub, monkeypatch):
     monkeypatch.setattr(market_pulse_api, "_fetch_hub_quotes", lambda syms: "not-an-object")
     r = client.get("/api/intelligence-hub/market-pulse?symbols=AAPL")
     assert r.status_code in (500, 503)
+
+
+# ── the REAL _fetch_hub_quotes (not the fake_hub double above) ─────────────
+#
+# fake_hub replaces `_fetch_hub_quotes` wholesale, so it can never prove what
+# that function itself puts on the wire. These tests fake only the transport
+# opener one layer down, exercising the real function body: URL/query
+# construction, the single-call contract, and the loopback assertion.
+
+class _FakeUpstreamResponse:
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self, n: int = -1) -> bytes:
+        return self._body[:n] if n and n > 0 else self._body
+
+
+class _FakeOpener:
+    def __init__(self, body: bytes):
+        self.body = body
+        self.calls: list[str] = []
+
+    def open(self, req, timeout=None):
+        self.calls.append(req.full_url)
+        return _FakeUpstreamResponse(self.body)
+
+
+def test_real_fetch_asks_for_view_regular_exactly_once_no_retry(monkeypatch):
+    body = json.dumps({"AAPL": _valid_row("AAPL")}).encode("utf-8")
+    opener = _FakeOpener(body)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
+    result = market_pulse_api._fetch_hub_quotes(["AAPL", "MSFT"], view="regular")
+    assert len(opener.calls) == 1  # never retried
+    assert "view=regular" in opener.calls[0]
+    assert result["AAPL"]["sym"] == "AAPL"
+
+
+def test_real_fetch_never_falls_back_to_full_view(monkeypatch):
+    """`view` is a required explicit parameter with no default — a caller
+    that omits it is a type error, not a silent full-view fallback."""
+    body = json.dumps({"AAPL": _valid_row("AAPL")}).encode("utf-8")
+    opener = _FakeOpener(body)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
+    market_pulse_api._fetch_hub_quotes(["AAPL"], view="regular")
+    assert all("view=full" not in call and "view=regular" in call for call in opener.calls)
+    with pytest.raises(TypeError):
+        market_pulse_api._fetch_hub_quotes(["AAPL"])  # type: ignore[call-arg]
+
+
+def test_real_fetch_is_loopback_only(monkeypatch):
+    monkeypatch.setattr(market_pulse_api, "_HUB_BASE", "http://evil.example.com")
+    with pytest.raises(ValueError):
+        market_pulse_api._fetch_hub_quotes(["AAPL"], view="regular")
 
 
 def test_the_hub_base_must_be_loopback():
