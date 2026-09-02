@@ -87,7 +87,7 @@ verified:
     command: "python3 -m pytest -q tests/test_runner_policy.py && python3 scripts/check_runner_policy.py"
     result: "60 passed; policy checker rc=0"
   - claim: "The final exact candidate preserves the pickup head as ancestor and current main by a history-preserving merge."
-    command: "git merge-base --is-ancestor 04d30860e1309d427e160319072c6cb150f35e47 HEAD && git merge-base --is-ancestor 708e87866005bc97c565b0aa7d20f658a70c0da0 HEAD"
+    command: "git merge-base --is-ancestor 04d30860e1309d427e160319072c6cb150f35e47 HEAD && git merge-base --is-ancestor 10a34bf76269dd5933783df4415a41b61b8944b7 HEAD"
     result: "both rc=0"
 unverified:
   - claim: >
