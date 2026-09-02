@@ -1,0 +1,6 @@
+schema: mastermind.page_evidence_receipt.v1
+changed_paths:
+  - templates/reference.html.j2
+  - templates/_navlinks.html.j2
+  - site/reference.html
+manifest: mockups/evidence/market_reference_mor1/manifest.json
