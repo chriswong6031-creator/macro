@@ -471,7 +471,14 @@ def cn_full_coverage_since(df: Any) -> str | None:
     via more_actionable, which nothing recorded yet" — see
     `current_continuous_membership_start`'s SOUNDNESS FLOOR section. Returns
     None if no more_actionable row has ever been written (no sound absence
-    proofs are possible yet for this market)."""
+    proofs are possible yet for this market).
+
+    CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02, supersedes the M1/M2 floor-gated
+    state below): `stamp_cn_board_since` no longer gates on this floor —
+    `requires_full_coverage=False` — so this function's return value is kept
+    (still computed, still directly tested) but is presently unused for
+    gating. It remains available as the honest boundary of pre-floor CN
+    absence soundness should a future call site need it again."""
     if df is None or getattr(df, "empty", False):
         return None
     cols = set(getattr(df, "columns", ()))
@@ -562,9 +569,24 @@ def stamp_cn_board_since(
             if not ident:
                 row["added_date"] = None
                 continue
+            # CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02, supersedes the M1/M2
+            # floor-gated state): the Chairman reviewed the live boards and
+            # ordered dates lit on CN/HK/CA now, superseding the earlier
+            # Sol HK-null ruling by hierarchy. `requires_full_coverage=False`
+            # trusts every absence-proof regardless of `floor` — the bounded,
+            # disclosed limitation this accepts is that a demote-then-return
+            # through an unfossiled-at-the-time more_actionable observation
+            # (pre-floor) reads as exit+re-add and mints a too-RECENT date;
+            # the error direction is only UNDERSTATEMENT of tenure, never a
+            # fabricated presence. CN's case self-heals going forward: since
+            # M1/M2, more_actionable rows are fossil-persisted every night, so
+            # every night after this ships narrows the pre-floor window that
+            # can still under-record a demote-return. `floor` is still
+            # computed above (see `cn_full_coverage_since` docstring) but no
+            # longer gates.
             start = current_continuous_membership_start(
                 obs, ident, starts_at_inception=CN_STARTS_AT_INCEPTION,
-                full_coverage_since=floor, requires_full_coverage=True)
+                full_coverage_since=floor, requires_full_coverage=False)
             row["added_date"] = start[0] if start else None
     return artifact
 
@@ -686,7 +708,26 @@ HK_CA_STARTS_AT_INCEPTION = False
 #   candidate ships `added_date=None` until a dedicated follow-up safely
 #   persists laggards coverage (same "no new store" scope fence as HK; this
 #   program does not touch board_ledger writers).
-HK_CA_REQUIRES_FULL_COVERAGE = {"hk": True, "ca": True}
+#
+# CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02, supersedes the M1/M2/R1
+# floor-gated state above): the Chairman reviewed the live boards and
+# ordered dates lit on CN/HK/CA now, superseding the earlier Sol HK-null
+# ruling by hierarchy. Both markets now run with the floor OFF
+# (`requires_full_coverage=False`) — ledger streaks over `entry_open` /
+# `setting_up` / `watch` mint dates today, trusting every absence-proof
+# regardless of whether it predates leaders/laggards coverage. The bounded,
+# disclosed limitation this accepts, unchanged in kind from the analysis
+# above: a demote-to-leaders(HK)/laggards(HK+CA)-then-return move through an
+# unfossiled lane reads as exit+re-add and mints a too-RECENT date — the
+# error direction is only UNDERSTATEMENT of tenure, never a fabricated
+# presence, and the card's tooltip ("if the name leaves and later returns,
+# this date resets") already matches this canonical-record semantics. Unlike
+# CN, this gap does NOT self-heal from this ship alone — leaders/laggards
+# still are not persisted to hk_board.parquet / ca_board.parquet (the same
+# rank-authority-safe extension named above remains the only real fix, and
+# remains out of this program's scope) — so it stays a persistent, disclosed
+# limitation until that follow-up lands, not a narrowing one.
+HK_CA_REQUIRES_FULL_COVERAGE = {"hk": False, "ca": False}
 
 
 def observations_from_board_ledger_frame(
@@ -743,13 +784,16 @@ def stamp_hkca_board_since(
             if not ident:
                 row["added_date"] = None
                 continue
-            # M1/M2 + R1 repair: BOTH HK and CA opt into the soundness floor
-            # (see HK_CA_REQUIRES_FULL_COVERAGE docstring above) — each has a
-            # name-visible laggards (HK also: leaders) lane that is never
-            # persisted to its board_ledger parquet. Neither market's floor
-            # becomes non-None under this program's scope (persisting those
-            # lanes is deliberate rank-authority scope, not touched here), so
-            # every HK/CA absence-anchored result ships None.
+            # CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02): both HK and CA now
+            # run with the soundness floor OFF (see HK_CA_REQUIRES_FULL_
+            # COVERAGE docstring above) — each still has a name-visible
+            # laggards (HK also: leaders) lane that is never persisted to its
+            # board_ledger parquet, so an absence anchored while that lane
+            # was live and unfossiled is trusted anyway. This is a bounded,
+            # disclosed limitation (understatement only, never a fabricated
+            # presence), persistent until a rank-authority-safe follow-up
+            # extends board_ledger coverage — this program does not touch
+            # that writer.
             start = current_continuous_membership_start(
                 obs, ident, starts_at_inception=HK_CA_STARTS_AT_INCEPTION,
                 full_coverage_since=None,
