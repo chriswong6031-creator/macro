@@ -42,6 +42,7 @@ from lib.economic_propagation import (
     EconomicPropagationError,
     compose_hypothesis,
     content_sha256,
+    derive_record_id,
     load_generator_registry,
     load_hypothesis_schema,
     validate_hypothesis,
@@ -450,6 +451,11 @@ def _build_hostile_resolved_target_missing_security_id():
     # (propagation_hypothesis.v1.schema.json:358,365-366); K3D_R013 already
     # binds issuer_id on RESOLVED, but security_id -- the canonical
     # logical-identity half of the SAME object -- was never bound.
+    # Since identity binds the resolved grain, tampering resolution AFTER
+    # composition also invalidates the stored record_id -- so this fixture now
+    # legitimately carries K3D_R082 alongside its commissioned K3D_R014. That is
+    # declared in HOSTILE_BUILDERS rather than left to the subset-match, so the
+    # side effect is recorded evidence instead of a silent pass.
     rec = copy.deepcopy(_base_min())
     rec["target"]["resolution"]["security_id"] = None
     return _rehash(rec)
@@ -502,7 +508,7 @@ HOSTILE_BUILDERS = {
     "hostile_authority_trading_true": (_build_hostile_authority_trading_true, {"K3D_R070"}),
     "hostile_mechanism_trade_language": (_build_hostile_mechanism_trade_language, {"K3D_R041"}),
     "hostile_disagreeing_derived_summary": (_build_hostile_disagreeing_derived_summary, {"K3D_R051", "K3D_R052", "K3D_R053"}),
-    "hostile_resolved_target_missing_security_id": (_build_hostile_resolved_target_missing_security_id, {"K3D_R014"}),
+    "hostile_resolved_target_missing_security_id": (_build_hostile_resolved_target_missing_security_id, {"K3D_R014", "K3D_R082"}),
     "hostile_admission_owner_not_generator_native": (_build_hostile_admission_owner_not_generator_native, {"K3D_R024"}),
     "hostile_unresolved_source_identity_supported": (_build_hostile_unresolved_source_identity_supported, {"K3D_R015"}),
 }
@@ -1506,3 +1512,51 @@ def test_blocker1_event_and_asof_remain_identity_inputs():
                                   compiled_at="2026-08-21T04:00:00Z")
     assert base["record_id"] != other_event["record_id"]
     assert base["record_id"] != other_asof["record_id"]
+
+
+# ---------------------------------------------------------------------------
+# Independent adversarial review (2026-09-02) mutation-tested the identity
+# repair and proved two load-bearing defenses had ZERO coverage: deleting the
+# namespace tags, and replacing the canonical-JSON pre-image with a naive
+# "\n".join(), each left all ten test_blocker1_* tests passing. Both tests
+# below fail under exactly those mutations.
+# ---------------------------------------------------------------------------
+
+
+def test_blocker1_namespace_tags_prevent_cross_namespace_forgery():
+    # Without the namespace tags the two components below are the SAME list
+    # (['UNRESOLVED', 'ACME']): a RESOLVED target whose issuer imitates a
+    # resolution state, versus an abstention whose alias imitates a security.
+    # Both sides are schema-legal, so only the tags keep canonical identity and
+    # fail-closed identity in disjoint spaces.
+    resolved = _resolved_record(requested_key="anything", issuer="UNRESOLVED", security="ACME")
+    abstention = _unresolved_record(requested_key="ACME", state="UNRESOLVED")
+    assert resolved["record_id"] != abstention["record_id"], (
+        "a fail-closed abstention forged an id in the canonical namespace"
+    )
+
+
+def _raw_target(state, issuer, security, requested_key="ACME"):
+    return {"requested_key": requested_key,
+            "resolution": {"resolution_state": state, "issuer_id": issuer, "security_id": security}}
+
+
+def test_blocker1_canonical_json_preimage_blocks_component_boundary_forgery():
+    # derive_record_id's docstring claims "no field value can forge a component
+    # boundary". The claim matters on the VALIDATOR path, which derives an
+    # expected id from an UNTRUSTED record before the schema's no-newline
+    # guarantee (propagation_hypothesis.v1.schema.json, "^[^\r\n]+$") has been
+    # enforced -- compose_hypothesis itself rejects these payloads outright.
+    # Under a "\n".join pre-image both targets collapse to one joined string
+    # ("resolved\nI\nS\nX"); canonical JSON keeps them distinct.
+    a = _raw_target("RESOLVED", "I", "S\nX")
+    b = _raw_target("RESOLVED", "I\nS", "X")
+    assert derive_record_id("evt-forge-0001", a, ASOF) != derive_record_id("evt-forge-0001", b, ASOF), (
+        "delimiter payload forged a component boundary in the identity pre-image"
+    )
+
+    # Same attack across the fail-closed namespace's own two components.
+    c = _raw_target("UNRESOLVED", None, None, requested_key="X\nY")
+    d = {"requested_key": "Y", "resolution": {"resolution_state": "UNRESOLVED\nX",
+                                              "issuer_id": None, "security_id": None}}
+    assert derive_record_id("evt-forge-0001", c, ASOF) != derive_record_id("evt-forge-0001", d, ASOF)

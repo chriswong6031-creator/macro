@@ -208,8 +208,9 @@ def content_sha256(record: dict) -> str:
 
 
 # Domain tag for the identity pre-image. It is hashed with the payload, so an id
-# derived here can never coincide with one minted by the superseded alias-only
-# formula for the same event/target/cutoff.
+# derived here will not coincide with one minted by the superseded alias-only
+# formula for the same event/target/cutoff -- except by sha256 collision, since
+# record_id is a 64-bit truncation (the frozen wire format).
 _RECORD_ID_DOMAIN = "k3d.record_id/v2"
 
 # Namespace tags. These are hashed, not emitted: the record_id wire format stays
@@ -241,7 +242,10 @@ def derive_target_identity_component(target: Any) -> list[str]:
     same alias are never silently merged.
 
     A target claiming RESOLVED without the full canonical grain also fails
-    closed here; K3D_R013/K3D_R014 report the underlying defect separately.
+    closed here. The underlying defect is reported separately: K3D_R013/K3D_R014
+    for a null or empty issuer_id/security_id, but a NON-STRING value (which
+    those two rules do not catch, since it is neither None nor "") is reported by
+    schema rule K3D_R001 instead.
 
     Sol ruling 2026-09-02 (carrier C0BSBM78V1N/1788343687.738349, #6514 comment
     5508382053) binds the non-canonical branch: the (resolution_state,

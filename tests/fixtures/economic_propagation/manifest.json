@@ -126,7 +126,8 @@
     "hostile_resolved_target_missing_security_id": {
       "bytes": 3905,
       "expected_codes": [
-        "K3D_R014"
+        "K3D_R014",
+        "K3D_R082"
       ],
       "kind": "hostile",
       "purpose": "RESOLVED target identity_resolution carries a null security_id.",
