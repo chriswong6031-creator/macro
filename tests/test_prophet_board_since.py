@@ -356,58 +356,66 @@ def test_hk_leaders_strip_is_name_visible_but_not_in_membership_lanes_a_disclose
     # "Market leaders" table IS genuinely name-visible on hk.html.j2 (a real
     # <table> of tickers, not merely counted) but is NOT one of
     # HK_CA_MEMBERSHIP_LANES (which stays buy/watch only) because it is not
-    # persisted to hk_board.parquet (see HK_CA_REQUIRES_FULL_COVERAGE's
-    # docstring for why). This test pins the gap explicitly so it stays a
-    # DISCLOSED, tracked limitation rather than a silent one — if a future
-    # change safely closes it, this test starts failing and must be updated
-    # alongside HK_CA_MEMBERSHIP_LANES.
+    # persisted to hk_board.parquet. CHAIRMAN-DIRECTED ACCEPTANCE
+    # (2026-09-02): the M1/M2 floor this gap used to force is now OFF for HK
+    # (HK_CA_REQUIRES_FULL_COVERAGE["hk"] is False) — the Chairman ordered
+    # dates lit regardless, accepting the disclosed, bounded limitation
+    # (demote-to-leaders-then-return under-records as a fresh date; error
+    # direction is understatement only) until a rank-authority-safe follow-up
+    # persists leaders coverage. This test still pins the underlying gap
+    # (leaders stays out of HK_CA_MEMBERSHIP_LANES) so it stays a DISCLOSED,
+    # tracked limitation rather than a silent one.
     text = (_ROOT / "templates" / "hk.html.j2").read_text(encoding="utf-8")
     idx = text.find("LEADERS STRIP")
     assert idx != -1, "hk.html.j2 leaders strip marker not found"
     window = text[idx: idx + 3000]
     assert "_hk_ldrs" in window and "<table" in window  # genuinely name-visible
     assert "leaders" not in pbs.HK_CA_MEMBERSHIP_LANES
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is True  # the floor this gap forces
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is False  # Chairman-accepted, floor off
 
 
-def test_ca_laggards_strip_is_name_visible_forces_full_coverage():
-    # R1/R2 REPAIR (2026-09-01): this replaces
-    # test_ca_template_has_no_unfossiled_name_visible_lane_beyond_buy_watch,
-    # which asserted the FALSE property that canada.html.j2 carries no
-    # leaders/laggards-shaped strip. It does: canada.html.j2 renders a
-    # name-visible laggards anchor grid (`{% if setups.laggards %}` /
-    # `{% for r in setups.laggards %}`, ticker + name + alpha via a plain
-    # `<a>` — never a pv_card), the same "visible names, own grid, never
-    # persisted" shape as HK's leaders/laggards strips. Pin the REAL
-    # property directly against the template text rather than a marker
-    # string proxy for a property the old test could not establish.
+def test_ca_laggards_strip_is_name_visible_disclosed_gap_floor_off():
+    # R1/R2 REPAIR (2026-09-01) established the underlying property:
+    # canada.html.j2 renders a name-visible laggards anchor grid
+    # (`{% if setups.laggards %}` / `{% for r in setups.laggards %}`, ticker +
+    # name + alpha via a plain `<a>` — never a pv_card), the same "visible
+    # names, own grid, never persisted" shape as HK's leaders/laggards
+    # strips. CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02) turns the floor this
+    # gap used to force OFF for CA (HK_CA_REQUIRES_FULL_COVERAGE["ca"] is
+    # False) — the Chairman ordered dates lit regardless, accepting the
+    # disclosed, bounded limitation (understatement only) until a
+    # rank-authority-safe follow-up persists laggards coverage. Pin the REAL
+    # underlying property directly against the template text.
     text = (_ROOT / "templates" / "canada.html.j2").read_text(encoding="utf-8")
     assert "{% if setups.laggards %}" in text
     assert "for r in setups.laggards" in text  # a real per-name loop, not a mere count
     assert "laggards" not in pbs.HK_CA_MEMBERSHIP_LANES  # visible, still unfossiled
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["ca"] is True  # the floor this gap forces
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["ca"] is False  # Chairman-accepted, floor off
 
 
 def test_hk_laggards_strip_is_name_visible_alongside_leaders():
     # Companion to test_hk_leaders_strip_is_name_visible_but_not_in_
     # membership_lanes_a_disclosed_gap above: hk.html.j2 renders BOTH a
     # leaders table (that test) AND a laggards anchor grid — pin the
-    # laggards half explicitly so the property backing HK's floor is fully
-    # established, not merely the leaders half.
+    # laggards half explicitly so the property backing HK's (now-disclosed,
+    # floor-off) gap is fully established, not merely the leaders half.
     text = (_ROOT / "templates" / "hk.html.j2").read_text(encoding="utf-8")
     assert "{% if setups.laggards %}" in text
     assert "for r in setups.laggards" in text
     assert "laggards" not in pbs.HK_CA_MEMBERSHIP_LANES
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is True
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE["hk"] is False  # Chairman-accepted, floor off
 
 
-def test_hk_ca_requires_full_coverage_is_both_markets():
-    # R1 repair: HK and CA share the identical under-recording defect class
-    # (a name-visible laggards lane neither board_ledger writer persists) —
-    # both now opt into the soundness floor. This replaces
-    # test_hk_ca_requires_full_coverage_is_hk_only, which pinned the
-    # (disproven) CA=False property.
-    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE == {"hk": True, "ca": True}
+def test_hk_ca_requires_full_coverage_is_off_for_both_markets_chairman_accepted():
+    # CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02): HK and CA share the identical
+    # under-recording defect class (a name-visible leaders/laggards lane
+    # neither board_ledger writer persists — see the module docstring above
+    # HK_CA_REQUIRES_FULL_COVERAGE) but the Chairman reviewed the live boards
+    # and ordered dates lit on both markets now, superseding the earlier Sol
+    # HK-null ruling by hierarchy — the floor is OFF for both. This replaces
+    # test_hk_ca_requires_full_coverage_is_both_markets, which pinned the
+    # (now-superseded) floor-ON={"hk": True, "ca": True} state.
+    assert pbs.HK_CA_REQUIRES_FULL_COVERAGE == {"hk": False, "ca": False}
 
 
 def test_hk_ca_display_lanes_stay_buy_only_despite_wider_membership():
@@ -476,45 +484,46 @@ def _hkca_watch_move_fixture(data_dir, market: str):
     }
 
 
-def test_ca_stamp_since_nulls_the_same_scenario_pending_laggards_floor(tmp_path):
-    # R1 REPAIR (2026-09-01): this replaces
-    # test_ca_stamp_since_preserves_date_across_watch_move, which pinned the
-    # disproven property that CA has no unfossiled name-visible lane. CA's
-    # laggards anchor grid (canada.html.j2, see the census tests above) is
-    # genuinely name-visible and NOT persisted to ca_board.parquet
+def test_ca_stamp_since_preserves_date_across_watch_move_chairman_accepted(tmp_path):
+    # CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02, supersedes the M1/M2/R1
+    # floor-gated state — this replaces
+    # test_ca_stamp_since_nulls_the_same_scenario_pending_laggards_floor,
+    # which pinned the now-superseded floor-ON null result). CA's laggards
+    # anchor grid (canada.html.j2, see the census tests above) is genuinely
+    # name-visible and NOT persisted to ca_board.parquet
     # (scripts/build_canada.py._canada_board_ledger builds `calls` from
-    # `setups.buy` + `setups.watch` only) — the identical defect class as
-    # HK's leaders/laggards. So CA now runs requires_full_coverage=True with
-    # a floor that never arrives under this program's scope, and every
-    # absence-anchored CA result must ship None (honest "unprovable") rather
-    # than the confidently-specific date the pre-repair code minted. This is
-    # the RED-first proof: it fails against pre-repair code (which returned
-    # "2026-06-30") and passes only once HK_CA_REQUIRES_FULL_COVERAGE["ca"]
-    # is True.
+    # `setups.buy` + `setups.watch` only) — but the Chairman reviewed the
+    # live boards and ordered dates lit regardless, accepting the disclosed,
+    # bounded limitation (a demote-through-laggards-then-return under-records
+    # as a fresh date; error direction is understatement only, never a
+    # fabricated presence) until a rank-authority-safe follow-up persists
+    # laggards coverage. RED-first proof: this fails against the M1/M2/R1
+    # floor-ON code (which returned None) and passes only once
+    # HK_CA_REQUIRES_FULL_COVERAGE["ca"] is False.
     data_dir = tmp_path / "data"
     artifact = _hkca_watch_move_fixture(data_dir, "ca")
     out = pbs.stamp_hkca_board_since("ca", artifact, data_dir=data_dir)
-    assert out["buy"][0]["added_date"] is None
+    assert out["buy"][0]["added_date"] == "2026-06-30"
     assert "added_date" not in out["watch"][0]  # display stays carded-only
 
 
-def test_hk_stamp_since_nulls_the_same_scenario_pending_leaders_floor(tmp_path):
-    # M1/M2 (2026-09-01 repair round): the IDENTICAL fixture as the CA test
-    # above, but for HK. HK's "Market leaders" table is genuinely name-visible
-    # and NOT persisted (see HK_CA_REQUIRES_FULL_COVERAGE's docstring — a
-    # 2026-08-03 adversarial review found appending it to hk_board.parquet
-    # corrupts board_ledger's rank-IC; closing this safely needs a new store,
-    # which this program's scope forbids, or rank-authority code this program
-    # does not own). Since leaders coverage can never be proven for ANY
-    # historical HK absence, HK now runs requires_full_coverage=True with a
-    # floor that never arrives — every absence-anchored HK result must ship
-    # None (honest "unprovable") rather than the same confidently-specific
-    # date CA used to get pre-repair. This is the RED-first proof of the
-    # soundness tightening this repair round makes for HK.
+def test_hk_stamp_since_preserves_date_across_watch_move_chairman_accepted(tmp_path):
+    # CHAIRMAN-DIRECTED ACCEPTANCE (2026-09-02): the IDENTICAL fixture as the
+    # CA test above, but for HK. HK's "Market leaders" table is genuinely
+    # name-visible and NOT persisted (see HK_CA_REQUIRES_FULL_COVERAGE's
+    # docstring — a 2026-08-03 adversarial review found appending it to
+    # hk_board.parquet corrupts board_ledger's rank-IC; closing this safely
+    # needs a new store, which this program's scope forbids, or
+    # rank-authority code this program does not own). The Chairman reviewed
+    # the live boards and ordered HK dates lit too, superseding the earlier
+    # Sol HK-null ruling by hierarchy — accepting the same disclosed, bounded
+    # limitation (understatement only) as CA. This replaces
+    # test_hk_stamp_since_nulls_the_same_scenario_pending_leaders_floor,
+    # which pinned the now-superseded floor-ON null result.
     data_dir = tmp_path / "data"
     artifact = _hkca_watch_move_fixture(data_dir, "hk")
     out = pbs.stamp_hkca_board_since("hk", artifact, data_dir=data_dir)
-    assert out["buy"][0]["added_date"] is None
+    assert out["buy"][0]["added_date"] == "2026-06-30"
     assert "added_date" not in out["watch"][0]
 
 
