@@ -49,25 +49,37 @@ waves:
       cache warmth (code path untouched; nonblocking).
   - id: R1A-M
     title: Macro Intelligence Hub Market Pulse — shared projector, public batch API, roster markup, atomic controller
-    status: in_progress
+    status: done
     next_action: >
-      Builder child r1a-m-intelligence-hub-market-pulse-20260902-fable-001 executing plan M0-M5
-      in worktree r1am-build-20260902 (draft PR to come on claude/r1a-m-market-pulse-20260902);
-      then program review -> merge -> deploy -> production/browser proof.
+      PROVEN_LIVE (initial) 2026-09-02: macro #6741 merged as
+      9a9de1afa07f137c4314296bdd3861633654f9e5 mid-RTH after the full cycle
+      (build M0-M5 -> REVISE 5 blockers/6 majors -> repairs + designer light art
+      direction -> verification 15/17 -> d2 placeholder adjudication -> radius +
+      contract-delta base heals -> template-only shape ending the rendered-page
+      conflict class). M6 battery green on the real site: 1 call/load, 60s
+      cadence measured, truthful mixed-tier "Delayed prices 30/38", coherent
+      tuples, atomic duplicate paint, zero nb-px, zero live.js fetches, ExtFeed
+      canary at full cap 30->30 zero eviction, Polygon +35 bounded, 68/68 ticker
+      links, 0 console errors, route median 0.52s. Receipts on #6741.
   - id: R1B
     title: Ordered delta transport (SSE) — measurement-gated decision
     status: todo
     next_action: >
       After R1A accrues real telemetry, record the durable ruling: NOT_REQUIRED if snapshot pull
       meets user/cost/latency goals, else commission the SSE architecture child per freeze SS13.
+      Early signal 2026-09-02: 38-symbol route through the CDN min 0.31s / median
+      0.52s / max 1.38s — snapshot pull comfortably inside targets.
   - id: R2
     title: Responsive Surface Ledger + flagship convergence
     status: in_progress
     next_action: >
-      Census scout gathering the P0 surface evidence base (baseline owners, live producers,
-      cadences, clocks, access classes); ledger authored as architecture/product evidence after
-      R1A-M lands; every P0 surface then dispositioned PROVEN_LIVE-at-justified-cadence or
-      explicitly DURABLE_ONLY.
+      Ledger V1 authored with dispositions
+      (research/reactive_projection/RESPONSIVE_SURFACE_LEDGER_V1.md): hub
+      PROVEN_LIVE@60s; dossier converged on the shared projector; start/index/
+      measurement DURABLE_ONLY (explicit); macro/us_stocks/regional boards = R2
+      port candidates for the R1A pattern (china_stocks largest at 137 live.js
+      nodes; Prophet cadence stays with WS:BREATHING-PLATFORM). Next: first R2
+      port vertical after the acceptance ruler concludes.
   - id: R3
     title: Materiality-gated live assessments (at least one production vertical)
     status: todo
@@ -90,11 +102,13 @@ waves:
       canonical identity/state owners.
   - id: ACCEPT
     title: Natural-session platform acceptance ruler
-    status: todo
+    status: in_progress
     next_action: >
-      After the last material production-changing deployment, accrue three consecutive genuine
-      market sessions (regular + post-close/settled + degraded-where-safe evidence) on the final
-      responsive ruler; fixtures/replays do not count.
+      Session 1 = 2026-09-02 (RTH evidence receipted on #6741; post-close
+      settled-language check runs nightly via the completion session's cron).
+      Three consecutive genuine sessions required from the last material deploy
+      (9a9de1af); target completion 2026-09-04/05. A false-live post-close row
+      is an acceptance failure to repair on the same carrier.
 ---
 
 # Reactive Projection Platform workstream
