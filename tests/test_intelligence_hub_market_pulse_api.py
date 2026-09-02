@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
+from collections import deque
 
 import pytest
 
@@ -144,6 +145,17 @@ def test_a_leak_on_one_symbol_refuses_the_whole_batch_not_just_that_symbol(clien
     assert r.status_code == 503
 
 
+def test_ext_leak_wins_over_sym_mismatch_and_still_503s(client, fake_hub):
+    """A row that BOTH leaks an extended field AND carries the wrong `sym`
+    must still 503 the whole batch — the ext-leak contract check runs BEFORE
+    the sym-mismatch per-symbol skip (freeze review g2), so a leaking
+    mismatched row can never be silently downgraded into a per-symbol
+    `quote_unavailable` entry in a 200 response."""
+    fake_hub.rows["AAPL"] = _valid_row("WRONG", extPrice=1.0)
+    r = client.get("/api/intelligence-hub/market-pulse?symbols=AAPL")
+    assert r.status_code == 503
+
+
 # ── order / dedupe / bounds ─────────────────────────────────────────────────
 
 def test_input_order_is_preserved_and_duplicates_are_deduped(client, fake_hub):
@@ -178,6 +190,17 @@ def test_an_invalid_member_refuses_the_whole_request_not_a_silent_drop(client, f
     r = client.get(f"/api/intelligence-hub/market-pulse?symbols={bad}")
     assert r.status_code == 400
     assert fake_hub.calls == 0
+
+
+@pytest.mark.parametrize("bad", ["../../etc/passwd", "AAPL;DROP", "a" * 40, "AAPL,", ",AAPL", ""])
+def test_400_detail_is_a_fixed_opaque_literal_never_the_caller_input(client, fake_hub, bad):
+    """Freeze review MINOR a1: the 400 body must never echo caller-supplied
+    text, however malformed — a fixed literal only."""
+    r = client.get(f"/api/intelligence-hub/market-pulse?symbols={bad}")
+    assert r.status_code == 400
+    assert r.json() == {"detail": "invalid_symbols"}
+    for leaked in ("etc/passwd", "DROP", "a" * 40):
+        assert leaked not in r.text
 
 
 # ── complete / partial / zero usable ────────────────────────────────────────
@@ -301,6 +324,40 @@ def test_amplification_is_refused(client, fake_hub):
     assert 429 in codes
 
 
+def test_many_concurrent_readers_of_the_full_roster_pass_the_peer_bucket(client, fake_hub):
+    """b1: the peer bucket is now charged one unit per REQUEST (600/60s), not
+    per symbol — many distinct readers (distinct client identities) each
+    polling the full 58-name roster must still clear the SHARED peer bucket
+    comfortably, the exact workload this route exists to serve."""
+    symbols = ",".join(f"T{i:03d}" for i in range(58))
+    codes = []
+    for i in range(400):  # well under the 600 req/60s peer cap
+        r = client.get(
+            f"/api/intelligence-hub/market-pulse?symbols={symbols}",
+            headers={"EO-Connecting-IP": f"203.0.113.{i % 250}"},
+        )
+        codes.append(r.status_code)
+    assert 429 not in codes
+
+
+def test_amplification_by_request_count_still_429s_the_peer_bucket(client, fake_hub):
+    """b1: a flood of many SMALL requests behind one shared peer identity must
+    still 429 once it crosses 600 requests/60s, even though each request's
+    low symbol count keeps the (symbol-weighted) per-client bucket nowhere
+    near its own limit — proving the peer bucket is charged per-REQUEST, not
+    per-symbol."""
+    codes = set()
+    for i in range(650):
+        r = client.get(
+            "/api/intelligence-hub/market-pulse?symbols=AAPL",
+            headers={"EO-Connecting-IP": f"198.51.100.{i % 250}"},
+        )
+        codes.add(r.status_code)
+        if 429 in codes:
+            break
+    assert 429 in codes
+
+
 def test_an_invalid_request_never_spends_rate_budget(client, fake_hub):
     for _ in range(50):
         client.get("/api/intelligence-hub/market-pulse?symbols=..%2F..%2Fetc")
@@ -320,10 +377,17 @@ def test_a_redirecting_hub_is_refused_not_followed():
         )
 
 
-def test_malformed_upstream_payload_is_503(client, fake_hub, monkeypatch):
-    monkeypatch.setattr(market_pulse_api, "_fetch_hub_quotes", lambda syms: "not-an-object")
+def test_malformed_upstream_payload_is_503(client, monkeypatch):
+    """Drives the REAL `_fetch_hub_quotes` (its actual two-parameter
+    ``(symbols, view)`` signature, not a stand-in double) so this test
+    exercises the function's own 'quote hub response was not an object'
+    branch — asserting exactly 503, not merely 'some 5xx from some
+    exception'."""
+    body = json.dumps(["not", "an", "object"]).encode("utf-8")
+    opener = _FakeOpener(body)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
     r = client.get("/api/intelligence-hub/market-pulse?symbols=AAPL")
-    assert r.status_code in (500, 503)
+    assert r.status_code == 503
 
 
 # ── the REAL _fetch_hub_quotes (not the fake_hub double above) ─────────────
@@ -351,9 +415,11 @@ class _FakeOpener:
     def __init__(self, body: bytes):
         self.body = body
         self.calls: list[str] = []
+        self.timeouts: list[float | None] = []
 
     def open(self, req, timeout=None):
         self.calls.append(req.full_url)
+        self.timeouts.append(timeout)
         return _FakeUpstreamResponse(self.body)
 
 
@@ -391,3 +457,56 @@ def test_the_hub_base_must_be_loopback():
     for remote in ("http://evil.example.com:3100", "http://10.0.0.5:3100"):
         with pytest.raises(ValueError):
             market_pulse_api._assert_loopback(remote)
+
+
+def test_real_fetch_passes_the_configured_timeout_to_the_opener(monkeypatch):
+    body = json.dumps({"AAPL": _valid_row("AAPL")}).encode("utf-8")
+    opener = _FakeOpener(body)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
+    market_pulse_api._fetch_hub_quotes(["AAPL"], view="regular")
+    assert opener.timeouts == [market_pulse_api._HUB_TIMEOUT_SECONDS] == [2.5]
+
+
+def test_real_fetch_refuses_a_response_over_the_256kib_cap(monkeypatch):
+    """The oversized-body bound must be checked against the REAL read, not a
+    stand-in — a body over 256KiB must never be decoded."""
+    oversized = b"{" + (b'"A":1,' * 50_000) + b'"pad":1}'
+    assert len(oversized) > market_pulse_api._HUB_MAX_BYTES
+    opener = _FakeOpener(oversized)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
+    with pytest.raises(ValueError, match="exceeded the bounded read size"):
+        market_pulse_api._fetch_hub_quotes(["AAPL"], view="regular")
+
+
+def test_oversized_upstream_body_is_503_through_the_route(client, monkeypatch):
+    oversized = b"{" + (b'"A":1,' * 50_000) + b'"pad":1}'
+    opener = _FakeOpener(oversized)
+    monkeypatch.setattr(market_pulse_api, "_NO_REDIRECT_OPENER", opener)
+    r = client.get("/api/intelligence-hub/market-pulse?symbols=AAPL")
+    assert r.status_code == 503
+
+
+# ── bounded identity-cardinality rate-limit store ───────────────────────────
+
+def test_rate_limit_bucket_store_evicts_the_oldest_key_once_bounded():
+    """`_RATE_LIMIT_MAX_KEYS` is a bound on the STORE, not merely a number in
+    a comment — fill it past capacity and prove the single oldest key (by its
+    bucket's own last-seen time) is the one evicted, and the bound holds."""
+    market_pulse_api._reset_rate_limit_for_tests()
+    buckets = market_pulse_api._rate_limit_buckets
+    try:
+        for i in range(market_pulse_api._RATE_LIMIT_MAX_KEYS):
+            buckets[f"seed:{i}"] = deque([(float(i), 1)])
+        assert len(buckets) == market_pulse_api._RATE_LIMIT_MAX_KEYS
+
+        ok = market_pulse_api._book_rate_limit(
+            "new-key", units=1, limit=999_999,
+            current=float(market_pulse_api._RATE_LIMIT_MAX_KEYS), cutoff=-1e9,
+        )
+        assert ok is True
+        assert "seed:0" not in buckets, "the single oldest key must be evicted"
+        assert "seed:1" in buckets, "eviction must not over-evict"
+        assert "new-key" in buckets
+        assert len(buckets) == market_pulse_api._RATE_LIMIT_MAX_KEYS
+    finally:
+        market_pulse_api._reset_rate_limit_for_tests()

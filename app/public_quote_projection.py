@@ -79,7 +79,14 @@ _PCT_CONSISTENCY_EPSILON = 0.05
 # Generic (multi-name / watchlist) freshness bounds — the looser,
 # upstream-consistent numbers. See module docstring for why these are looser
 # than the dossier's own overrides.
-DEFAULT_LIVE_MAX_AGE_SECONDS = 900.0
+#
+# DEFAULT_LIVE_MAX_AGE_SECONDS was 900.0 (15 minutes) — the same span as the
+# STALE bound, meaning a print could sit right up against dead-feed staleness
+# and still be called "live". 180s (3 minutes) keeps "live" meaning what a
+# reader expects while leaving DEFAULT_STALE_MAX_AGE_SECONDS at 900 so a
+# healthy-but-slow refresh still reads "delayed" rather than jumping straight
+# to "stale" (freeze review, MAJOR f2).
+DEFAULT_LIVE_MAX_AGE_SECONDS = 180.0
 DEFAULT_STALE_MAX_AGE_SECONDS = 900.0
 DEFAULT_CLOSED_STALE_MAX_AGE_SECONDS = 5 * 24 * 3600.0
 
@@ -113,6 +120,7 @@ class PublicQuote:
 
     symbol: str
     price: float
+    prev_close: float
     change_abs: float | None
     change_pct: float | None
     currency: str | None
@@ -294,6 +302,7 @@ def project_regular_quote(
     return PublicQuote(
         symbol=symbol,
         price=price,
+        prev_close=prev_close,
         change_abs=change_abs,
         change_pct=change_pct,
         currency=_ALLOWLISTED_CURRENCY,

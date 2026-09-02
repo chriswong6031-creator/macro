@@ -14,6 +14,8 @@ import math
 import pytest
 
 from app.public_quote_projection import (
+    DEFAULT_LIVE_MAX_AGE_SECONDS,
+    DEFAULT_STALE_MAX_AGE_SECONDS,
     PublicQuote,
     QuoteProjectionError,
     finite_number,
@@ -118,6 +120,25 @@ def test_a_far_future_clock_is_a_fault_not_a_fresh_quote():
         ticker="NVDA", now=1787871758.0 - 86_400, published_at=PUBLISHED,
     )
     assert q.freshness == "stale"
+
+
+def test_default_live_bound_is_180s_stale_bound_stays_900s():
+    """f2: pins the DEFAULT constants themselves (not just explicit-arg
+    behavior) — was 900s, now 180s, so a print sitting right up against
+    dead-feed staleness is no longer callable "live"."""
+    assert DEFAULT_LIVE_MAX_AGE_SECONDS == 180.0
+    assert DEFAULT_STALE_MAX_AGE_SECONDS == 900.0
+
+    row = _row(live=True, basis="REALTIME", marketSession="regular", ts=1787871758)
+    # No live_max_age_seconds/stale_max_age_seconds passed — DEFAULTS only.
+    still_live = project_regular_quote(row, ticker="NVDA", now=1787871758 + 170, published_at=PUBLISHED)
+    assert still_live.freshness == "live"
+
+    past_live_bound = project_regular_quote(row, ticker="NVDA", now=1787871758 + 200, published_at=PUBLISHED)
+    assert past_live_bound.freshness == "delayed"   # past LIVE(180s), still within STALE(900s)
+
+    past_stale_bound = project_regular_quote(row, ticker="NVDA", now=1787871758 + 950, published_at=PUBLISHED)
+    assert past_stale_bound.freshness == "stale"
 
 
 def test_realtime_row_older_than_the_bound_is_not_live():
@@ -250,6 +271,36 @@ def test_received_at_is_never_fabricated():
     stay None rather than being synthesised from `now` or `published_at`."""
     q = project_regular_quote(HUB_NVDA_RTH, ticker="NVDA", now=NOW, published_at=PUBLISHED)
     assert q.received_at is None
+
+
+# ── prev_close: exact round-trip, not a re-derivation ───────────────────────
+
+def test_prev_close_is_the_exact_anchor_not_derived_from_price_minus_change_abs():
+    """c1: PublicQuote.prev_close must round-trip the anchor byte-identical.
+
+    Chosen so ``price - (price - prev_close) != prev_close`` at the float
+    level — a re-derivation (``price - change_abs``) would drift from this
+    pair, while carrying the anchor through directly cannot.
+    """
+    price, prev_close = 3197.494565, 126.028765
+    assert price - (price - prev_close) != prev_close, "fixture must not be float-safe"
+    q = project_regular_quote(
+        _row(last=price, prevClose=prev_close, chg=0.0), ticker="NVDA", now=NOW, published_at=PUBLISHED,
+    )
+    assert q.prev_close == prev_close
+
+
+def test_prev_close_reflects_the_rolled_forward_anchor_when_one_applies():
+    """When `prevSessionChg` rolls the anchor forward, `prev_close` must
+    carry THAT reconstructed anchor, not the upstream `prevClose` verbatim."""
+    premarket = dict(
+        sym="NVDA", last=227.98, ts=1787917374, live=False, basis="DELAYED_15M",
+        regularSession="closed", prevClose=227.98, chg=8.7379566917867,
+        prevSessionChg=8.7379566917867, marketSession="pre",
+    )
+    q = project_regular_quote(premarket, ticker="NVDA", now=1787917374 + 30, published_at=PUBLISHED)
+    assert q.prev_close != 227.98  # not the flattened same-day anchor
+    assert q.prev_close == pytest.approx(227.98 / (1.0 + 8.7379566917867 / 100.0))
 
 
 # ── revision fingerprint / identity ─────────────────────────────────────────

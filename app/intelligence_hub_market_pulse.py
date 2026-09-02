@@ -83,11 +83,19 @@ _MAX_SYMBOLS = 60
 # refused outright, never stripped-and-continued (freeze line ~628).
 _EXT_FIELD_PREFIXES = ("ext",)
 
-# Symbol-weighted rolling budgets. One unique symbol costs one unit. The 58
-# name roster refreshing every 60s plus manual/resume margin must clear this
-# comfortably; a flood of full-roster requests (amplification) must not.
+# Client bucket stays symbol-weighted: one unique symbol costs one unit, and
+# the 58-name roster refreshing every 60s plus manual/resume margin must
+# clear this comfortably.
 _RATE_LIMIT_UNITS = 58 * 5           # ~5 full-roster refreshes per window
-_PEER_RATE_LIMIT_UNITS = 58 * 5 * 10  # one shared edge identity, many readers
+# Peer bucket is charged per-REQUEST, not per-symbol (freeze review MAJOR
+# b1). A symbol-weighted peer bucket let one shared edge identity behind many
+# concurrent readers spend its whole window on a handful of full-roster
+# requests, but also let a flood of tiny requests (amplification: many cheap
+# 1-symbol calls) buy far more requests than a legitimate multi-reader
+# workload ever needs. 600 requests/60s per peer identity clears many
+# concurrent readers polling the full 58-name roster every 60s with margin
+# for manual refresh/resume, while still 429-ing a request-count flood.
+_PEER_RATE_LIMIT_REQUESTS = 600
 _RATE_LIMIT_WINDOW_SECONDS = 60.0
 _RATE_LIMIT_MAX_KEYS = 8_192
 _TRUSTED_PEER_HEADER = "x-mm-peer"
@@ -202,8 +210,10 @@ def _allow_request(request: Request, *, units: int, now: float | None = None) ->
         ok_client = _book_rate_limit(
             f"client:{client}", units=units, limit=_RATE_LIMIT_UNITS, current=current, cutoff=cutoff,
         )
+        # Peer bucket: one unit per REQUEST regardless of symbol count (b1) —
+        # never `units` here, that would re-introduce the symbol weighting.
         ok_peer = _book_rate_limit(
-            f"peer:{peer}", units=units, limit=_PEER_RATE_LIMIT_UNITS, current=current, cutoff=cutoff,
+            f"peer:{peer}", units=1, limit=_PEER_RATE_LIMIT_REQUESTS, current=current, cutoff=cutoff,
         )
         return ok_client and ok_peer
 
@@ -297,15 +307,21 @@ def _build_envelope(
         if not isinstance(row, Mapping):
             errors.append({"symbol": symbol, "code": "quote_unavailable"})
             continue
-        row_sym = row.get("sym")
-        if not isinstance(row_sym, str) or row_sym.strip().upper() != symbol:
-            errors.append({"symbol": symbol, "code": "quote_unavailable"})
-            continue
         if _row_leaks_extended_fields(row):
             # A single leaking row invalidates the whole upstream contract —
             # this is not a per-symbol refusal, it is proof the "view=regular"
             # promise was broken. Raise all the way out to the route handler.
+            # Checked BEFORE the sym-mismatch skip below (freeze review g2): a
+            # row that leaks an extended field AND carries the wrong `sym`
+            # must still 503 the whole request — the sym-mismatch branch is a
+            # per-symbol refusal, and a contract violation must never be
+            # silently downgraded into one just because the leaking row also
+            # happened to be mismatched.
             raise QuoteProjectionError(f"upstream row for {symbol} leaked an extended field")
+        row_sym = row.get("sym")
+        if not isinstance(row_sym, str) or row_sym.strip().upper() != symbol:
+            errors.append({"symbol": symbol, "code": "quote_unavailable"})
+            continue
         try:
             projected = project_regular_quote(
                 row, ticker=symbol, now=now, published_at=generated_at_iso,
@@ -360,8 +376,12 @@ def market_pulse(symbols: str | None = None, *, request: Request, response: Resp
     docstring. Never cached: the whole point is currency."""
     try:
         ordered_symbols = _parse_symbols(symbols)
-    except _InvalidSymbols as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from None
+    except _InvalidSymbols:
+        # Fixed opaque literal — never echo caller input into the response
+        # (freeze review MINOR a1). `_InvalidSymbols` messages can themselves
+        # carry the caller's own malformed text (via `safe_ticker`'s
+        # ContractError), so the exception text may never reach the client.
+        raise HTTPException(status_code=400, detail="invalid_symbols") from None
 
     # Validate BEFORE booking a slot — an invalid/oversized request must not
     # spend real budget (same discipline as app/dossier_quote.py).

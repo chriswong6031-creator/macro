@@ -14,9 +14,25 @@
     `data-ihmp-price/-abs/-pct` start baked with the nightly close (price) and
     empty/hidden (abs/pct — no baked move exists for these rows today); the
     controller fills all three from one accepted quote tuple, together,
-    inside one requestAnimationFrame. -#}
+    inside one requestAnimationFrame.
+
+    ROSTER LAW (freeze review BLOCKER d1): a cluster is emitted ONLY for a
+    ticker that is a member of `market_pulse_roster` (the exact set
+    `compute_market_pulse_roster(hub)` computed — scripts/build_intel_hub.py).
+    The three loops below iterate their FULL panel lists (not roster-capped
+    slices), so region_for() alone was never a sufficient gate — a US-routable
+    name past the 30/14/14 per-panel cap, or a US-routable name the roster's
+    own cross-panel de-dupe already counted from an earlier panel, must still
+    render NOTHING here: the client controller's request set is the roster,
+    and a rendered `data-ihmp-symbol` outside that set is a target the
+    controller can never honestly fill. `market_pulse_roster` is read from
+    this template's own render context (same-template macros share it — no
+    explicit parameter needed) and defaults to empty so a caller that omits
+    it (a unit test rendering the macro in isolation) fails CLOSED to no
+    clusters, never open to an unfiltered one. -#}
 {% macro ihmp(ticker, price) -%}
-{%- if ticker and region_for(ticker) == 'us' -%}
+{%- set roster = market_pulse_roster|default([]) -%}
+{%- if ticker and (ticker|upper in roster) and region_for(ticker) == 'us' -%}
 <span class="ihmp-px" data-ihmp-symbol="{{ ticker }}"><span class="f" data-ihmp-price>{% if price is not none %}${{ '%.2f'|format(price) }}{% endif %}</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
 {%- endif -%}
 {%- endmacro %}
@@ -217,8 +233,10 @@
     content:""; position:absolute; inset:-4px; border-radius:50%;
     border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
   .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{ background:var(--warn); }
+  /* --act, not --down — that one is a market-direction token that flips to GREEN
+     under zh 红涨绿跌 — a health state must stay direction-neutral */
   .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot,
-  .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot{ background:var(--down); }
+  .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot{ background:var(--act); }
   .ihmp-bar time{ font-family:var(--fig); margin-left:auto; font-size:10px; }
   /* per-row quote cluster — the ONE visible price on a roster row */
   .ihmp-px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
@@ -228,6 +246,102 @@
   .ihmp-delta.neg{ color:var(--ink-down, var(--down)); }
   @media (prefers-reduced-motion:reduce){
     .ihmp-bar .ihmp-dot::after{ animation:none; }
+    /* restated at the live rule's own specificity — media queries add none, and
+       the (0,2,1) rule above loses to the (0,5,1) live rule */
+    .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+      animation:none; opacity:.5; }
+  }
+
+  /* ── R1A-M Market Pulse — LIGHT art direction ──────────────────────────────
+     Dark is a command center: depth by luminance, a green LED emitting an
+     expanding ring. Light is a research workspace: depth by material, and the
+     instrument is a bead SEATED on paper — white strip, full-weight hairline,
+     one soft card shadow, and a ring drawn as shadow spread rather than a bloom.
+     Four mechanisms differ on purpose: (1) material — dark leans on --card's
+     translucency over a dark field, light takes the full --panel white + --line
+     + --card-shadow (panel≈bg is the flatness bug, doctrine §5.8); (2) liveness
+     — dark's ring EXPANDS and fades out, light's ring holds a fixed radius and
+     breathes opacity in place, so nothing blooms on white; (3) degraded states —
+     light carries them in the BAR's own material (4–5% wash + a hue-warmed
+     hairline), a channel dark cannot use because a 4% tint on a near-black panel
+     is invisible; dark can only tint the dot; (4) resting states — light draws
+     settled as a HOLLOW bead (pale fill + grey ring), a distinction white ground
+     can hold and a 6px disc on dark cannot. Colour is spent only where something
+     is wrong: a healthy bar stays white, and live is carried by the LED, not by
+     paint. Tokens only, no new custom properties, no page-local palette. */
+
+  /* material: white research card on the cooler canvas (design system §12 E1) */
+  html[data-theme="light"] .ihmp-bar{
+    background:var(--panel); border-color:var(--line); box-shadow:var(--card-shadow); }
+
+  /* the readout itself — the sentence stops being the quietest ink on the page.
+     No letter-spacing, deliberately: the same rule sets the ZH sentence. */
+  html[data-theme="light"] .ihmp-bar [data-ihmp-status]{
+    color:var(--text); font-weight:600; }
+
+  /* the as-of stamp stays a fact, not a verdict: secondary in every state, and
+     deliberately NOT taking the state ink the sentence beside it takes */
+  html[data-theme="light"] .ihmp-bar time{ color:var(--muted); }
+
+  /* resting bead — settled build, loading, and any out-of-hours live print.
+     7px, not dark's 6px: a dark mark on white reads optically smaller than the
+     same mark glowing on a dark field. */
+  html[data-theme="light"] .ihmp-bar .ihmp-dot{
+    width:7px; height:7px;
+    background:color-mix(in srgb,var(--muted) 26%,var(--panel));
+    box-shadow:0 0 0 1.5px color-mix(in srgb,var(--muted) 55%,transparent); }
+
+  /* live + regular session — solid LED, ring breathing in place.
+     Ring geometry is FIXED (no scale, no fade-out): light seats, dark emits.
+     `dtp-pulse` is the estate's shipped live cadence (theme.css), the house
+     live idiom — not a second motion vocabulary. */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
+    background:var(--ok); box-shadow:none; }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+    inset:-3px; border:1.5px solid color-mix(in srgb,var(--ok) 70%,transparent);
+    opacity:1; animation:dtp-pulse 1.4s ease-in-out infinite; }
+
+  /* delayed — the whole strip warms by 4%: readable peripherally, silent up close */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"]{
+    background:color-mix(in srgb,var(--warn) 4%,var(--panel));
+    border-color:color-mix(in srgb,var(--warn) 42%,var(--line)); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{
+    background:var(--warn);
+    box-shadow:0 0 0 2.5px color-mix(in srgb,var(--warn) 20%,transparent); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="delayed"] [data-ihmp-status]{
+    color:var(--ink-warn); }
+
+  /* stale / unavailable — same mechanism, one step firmer.
+     --act, NOT --down — this is a data-health state, and --down flips to GREEN
+     under zh 红涨绿跌. --act/--ok/--warn are the tokens theme.css keeps
+     direction-neutral for exactly this reason. */
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"],
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"]{
+    background:color-mix(in srgb,var(--act) 5%,var(--panel));
+    border-color:color-mix(in srgb,var(--act) 42%,var(--line)); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot,
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot{
+    background:var(--act);
+    box-shadow:0 0 0 2.5px color-mix(in srgb,var(--act) 20%,transparent); }
+  html[data-theme="light"] .ihmp-bar[data-ihmp-freshness="stale"] [data-ihmp-status],
+  html[data-theme="light"] .ihmp-bar[data-ihmp-availability="unavailable"] [data-ihmp-status]{
+    color:var(--ink-act); }
+
+  /* per-row cluster — on paper, rank is weight, not luminance.
+     Dark separates level from move with raw hue saturation; light deepens those
+     inks toward --text and loses that separation, so light restores the ladder
+     with weight: the level at 600, the move — the only figure that changes
+     intraday — at 700. .pos/.neg keep --ink-up/--ink-down untouched: those are
+     the measured light rungs and the only route that survives the zh flip. */
+  html[data-theme="light"] .ihmp-px{ font-weight:600; }
+  html[data-theme="light"] .ihmp-delta.pos,
+  html[data-theme="light"] .ihmp-delta.neg{ font-weight:700; }
+
+  /* reduced motion — stated at the light live rule's own specificity, so it
+     actually lands over the (0,5,1) live rule above. */
+  @media (prefers-reduced-motion:reduce){
+    html[data-theme="light"] .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+      animation:none; opacity:1; }
   }
 
   /* ── section mark: an accent tick, a label, a rule, a count ── */
@@ -477,6 +591,12 @@
        aria-live="polite">
     <span class="ihmp-dot" aria-hidden="true"></span>
     <span data-ihmp-status>{{ t('Prices from the latest settled build', '价格来自最近一次结算构建') }}</span>
+    {#- d3: a visible baseline as-of — baked with the nightly build time; the
+        controller repaints it to the accepted projection's own as-of on a
+        successful refresh (site/assets/js/intelligence-hub-market-pulse.js).
+        The CSS already styles `.ihmp-bar time`; this creates the element it
+        was styling nothing for. -#}
+    <time data-ihmp-asof datetime="{{ built or '' }}">{{ built or '' }}</time>
   </div>
 
   {# ── desk rail. Purpose + grading receipt ride the hover; Tier 1 keeps the

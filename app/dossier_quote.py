@@ -276,15 +276,11 @@ def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> di
     except QuoteProjectionError as exc:
         raise ValueError(str(exc)) from exc
 
-    # prev_close is not part of the shared tuple; it is recovered losslessly
-    # from price - change_abs (exactly how it was derived upstream).
-    prev_close = projected.price - projected.change_abs
-
     return {
         "schema": SCHEMA,
         "ticker": ticker,
         "price": projected.price,
-        "prev_close": prev_close,
+        "prev_close": projected.prev_close,
         "change_abs": projected.change_abs,
         "change_pct": projected.change_pct,
         "freshness": projected.freshness,

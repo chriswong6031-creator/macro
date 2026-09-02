@@ -32,7 +32,15 @@ from scripts.build_intel_hub import compute_market_pulse_roster, MARKET_PULSE_RO
 
 
 def _row(ticker: str, **overrides) -> dict:
-    row = {"ticker": ticker, "opportunity_score": 50, "stage": "emerging"}
+    row = {
+        "ticker": ticker, "opportunity_score": 50, "stage": "emerging", "price": None,
+        # Full-page rendering (the Command ledger's `led-row`) also touches
+        # these — safe/empty defaults so a full template render never trips
+        # on an unrelated Undefined while proving the roster law.
+        "name": None, "lean": 1, "edge_remaining": 0.5, "entry_gate": None,
+        "trajectory": None, "flags": [], "edge_drivers": [], "falsifier": None,
+        "leading_gap": 0, "directions": {}, "composite_conviction": None, "n_confirm": 0,
+    }
     row.update(overrides)
     return row
 
@@ -142,7 +150,7 @@ _STUB_HUB = {
 }
 
 
-def _render_macro(env: Environment, call: str) -> str:
+def _render_macro(env: Environment, call: str, roster: list[str] | None = None) -> str:
     # `import` executes the WHOLE imported template's top-level code as a
     # module (Jinja semantics) — not just the macro body — so the snippet
     # must supply everything that top-level code touches. `with context`
@@ -150,7 +158,10 @@ def _render_macro(env: Environment, call: str) -> str:
     tmpl = env.from_string(
         '{% from "intelligence_hub.html.j2" import ihmp with context %}' + call
     )
-    return tmpl.render(hub=_STUB_HUB, built="2026-08-31T00:00:00+00:00", qledger_chips={}, china=None)
+    return tmpl.render(
+        hub=_STUB_HUB, built="2026-08-31T00:00:00+00:00", qledger_chips={}, china=None,
+        market_pulse_roster=["AAPL"] if roster is None else roster,
+    )
 
 
 def test_ihmp_macro_renders_the_required_selectors(env):
@@ -163,9 +174,32 @@ def test_ihmp_macro_renders_the_required_selectors(env):
 
 
 def test_ihmp_macro_omits_non_us_symbols_entirely(env):
-    html = _render_macro(env, "{{ ihmp('0700.HK', 300.0) }}")
+    # roster includes the ticker so the ONLY reason it's omitted is region_for.
+    html = _render_macro(env, "{{ ihmp('0700.HK', 300.0) }}", roster=["0700.HK"])
     assert "data-ihmp-symbol" not in html
     assert html.strip() == ""
+
+
+def test_ihmp_macro_omits_a_us_symbol_not_in_the_roster(env):
+    """BLOCKER d1: the roster law gates the shipped page, not merely the
+    request set — a US-routable symbol absent from `market_pulse_roster`
+    must render NOTHING, even though `region_for` alone would allow it."""
+    html = _render_macro(env, "{{ ihmp('AAPL', 227.98) }}", roster=["MSFT"])
+    assert "data-ihmp-symbol" not in html
+    assert html.strip() == ""
+
+
+def test_ihmp_macro_omitted_when_roster_kwarg_is_absent_entirely():
+    """Fails CLOSED: a caller that never passes `market_pulse_roster` at all
+    (context variable undefined) must gate to nothing, never to unfiltered."""
+    e = Environment(loader=FileSystemLoader(str(ROOT / "templates")),
+                     autoescape=select_autoescape(["html", "xml"]))
+    e.globals["region_for"] = lambda sym: "us"
+    tmpl = e.from_string(
+        '{% from "intelligence_hub.html.j2" import ihmp with context %}{{ ihmp("AAPL", 227.98) }}'
+    )
+    html = tmpl.render(hub=_STUB_HUB, built="2026-08-31T00:00:00+00:00", qledger_chips={}, china=None)
+    assert "data-ihmp-symbol" not in html
 
 
 def test_ihmp_macro_never_uses_the_generic_live_js_selectors(env):
@@ -189,6 +223,61 @@ def test_duplicate_symbol_across_two_panel_occurrences_yields_two_targets(env):
     to one request. This proves the DOM side of that split."""
     html = _render_macro(env, "{{ ihmp('AAPL', 227.98) }}{{ ihmp('AAPL', 227.98) }}")
     assert html.count('data-ihmp-symbol="AAPL"') == 2
+
+
+# ── BLOCKER d1: the rendered page, through the REAL full template path ─────
+
+def _full_hub(**overrides) -> dict:
+    hub = {
+        "schema": "intel-hub-v3", "n_universe": 0, "n_actionable": 0,
+        "n_emerging": 0, "n_discovery": 0,
+        "command": [_row(f"C{i:02d}") for i in range(30)],
+        "emerging": [_row(f"E{i:02d}") for i in range(14)],
+        "discovery": [_row(f"D{i:02d}") for i in range(14)],
+        "exhausted": [], "catalysts": [],
+        "desks": {k: {"live": False} for k in
+                  ("news", "alt_data", "radar", "standout", "policy", "special")},
+        "sector_heat": [], "macro_context": {}, "counts": {},
+        "disclaimer": "Context only.", "as_of": "2026-08-31",
+        "track_record": {"n_snapshots": 0}, "desk_grader": {},
+    }
+    hub.update(overrides)
+    return hub
+
+
+def test_rendered_page_ihmp_symbols_exactly_match_the_roster_law(env):
+    """BLOCKER d1: every rendered `data-ihmp-symbol` must be a member of
+    `compute_market_pulse_roster(hub)`, and the roster stays within its
+    58-name cap — proven through the REAL page template (build_intel_hub.py's
+    actual render call shape), not the isolated macro."""
+    hub = _full_hub()
+    for d in hub["command"]:
+        d["price"] = 100.0
+    roster = compute_market_pulse_roster(hub)
+    assert roster  # sanity: the fixture actually produced a non-empty roster
+    html = env.get_template("intelligence_hub.html.j2").render(
+        hub=hub, built="2026-08-31T00:00:00+00:00", mode="intel_hub",
+        qledger_chips={}, china=None, market_pulse_roster=roster,
+    )
+    rendered_syms = set(re.findall(r'data-ihmp-symbol="([^"]+)"', html))
+    assert rendered_syms == set(roster)
+    assert len(rendered_syms) <= MARKET_PULSE_ROSTER_CAP
+
+
+def test_rendered_page_never_targets_a_symbol_beyond_the_roster(env):
+    """A US-routable command-panel row beyond the roster's own 30-cap must
+    never render a cluster, even though every OTHER gate (US-routable,
+    non-empty ticker) would pass it."""
+    hub = _full_hub(command=[_row(f"C{i:02d}") for i in range(40)])
+    for d in hub["command"]:
+        d["price"] = 100.0
+    roster = compute_market_pulse_roster(hub)
+    assert "C39" not in roster
+    html = env.get_template("intelligence_hub.html.j2").render(
+        hub=hub, built="2026-08-31T00:00:00+00:00", mode="intel_hub",
+        qledger_chips={}, china=None, market_pulse_roster=roster,
+    )
+    assert 'data-ihmp-symbol="C39"' not in html
 
 
 # ── static source assertions over the full template ─────────────────────────
@@ -220,9 +309,16 @@ def test_page_level_instrument_selectors_are_present(template_code_only: str):
     for selector in (
         "data-ihmp-root", "data-ihmp-availability", "data-ihmp-freshness",
         "data-ihmp-session", "data-ihmp-coverage", "data-ihmp-baseline-at",
+        "data-ihmp-asof",
     ):
         assert selector in template_code_only, selector
     assert 'aria-live="polite"' in template_code_only
+
+
+def test_baseline_asof_time_element_is_baked_with_the_build_time(template_code_only: str):
+    """d3: `.ihmp-bar time` was styled by CSS with nothing to select — this
+    creates the element, baked with the nightly `built` timestamp."""
+    assert "<time data-ihmp-asof datetime=\"{{ built or '' }}\">{{ built or '' }}</time>" in template_code_only
 
 
 def test_theme_css_uses_semantic_ink_tokens_not_a_literal_palette(template_code_only: str):
