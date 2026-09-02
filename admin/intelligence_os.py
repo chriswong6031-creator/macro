@@ -145,12 +145,26 @@ def _derive(root: Path, force: bool) -> tuple[dict, dict, float, str]:
         from scripts.build_intelligence_registry import (  # noqa: PLC0415
             SynapseUnavailable,
         )
-        from scripts.build_output_health import build_with_registry  # noqa: PLC0415
+        from scripts.build_output_health import (  # noqa: PLC0415
+            STALENESS_REL,
+            build_with_registry,
+        )
 
         started = time.monotonic()
+        # THE READER PLANE RIDES ALONG WHEN THE SENTINEL'S FILE EXISTS. The T4 CLI
+        # already defaults to site/live/staleness.json; a panel that omitted it was
+        # reader-blind on exactly the plane the freshness sentinel writes to (the
+        # deployed estate), and the resolver's §8 makes reader evidence sovereign.
+        # Deliberately NOT part of the cache key: the sentinel rewrites the file on
+        # its own cadence, so keying on its mtime would evict every request — the TTL
+        # already bounds how long a superseded reader row can be served.
+        staleness = root / STALENESS_REL
         try:
             view, registry = build_with_registry(
-                root, now=datetime.now(timezone.utc), trust_mtime=_trust_mtime()
+                root,
+                now=datetime.now(timezone.utc),
+                trust_mtime=_trust_mtime(),
+                staleness_json=staleness if staleness.is_file() else None,
             )
         except SynapseUnavailable as exc:
             # T1's own sentinel — an artifact census that could not be loaded. Caught
