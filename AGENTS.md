@@ -381,11 +381,20 @@ itself on demand.
   re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
   whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
   screenshots and full page dumps inside a subagent.
-- **One session = one task boundary.** A long program needs durable state on
-  disk, not a long session. Run it as a chain of short sessions over a
-  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
-  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
-  operator clear rather than grinding to the ceiling.
+- **Durable state on disk — and a session may run as long as it stays useful.**
+  Operator 2026-09-01 REPEALED the former "one session = one task boundary" rule:
+  it forced every long workflow into a relay of amnesiac sessions, and
+  re-establishing context in each successor cost more than the stop ever saved.
+  There is no task-boundary stop — a merged, live-verified wave is a checkpoint,
+  not a session end, and one session may carry a program end-to-end across many
+  waves and many merges. The durable-state half survives as a WRITE rule, not a
+  STOP rule: keep program state in a
+  `research/*_CONTINUATION_HANDOFF_<date>.md` and `agentos/handoffs/` as you go,
+  so the work survives a clear, a crash, or an operator handoff. Cost control is
+  the two bullets above and is unaffected — a long session held near 150k is
+  cheap, a short one riding 800k is not, so when context grows, delegate the next
+  wave's execution rather than shortening the session. Context figures are
+  advisory targets, never a stop trigger.
 
 Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
 cutting thinking degrades quality for at most a sixth of the cost. The savings

@@ -10,10 +10,15 @@ import shutil
 from pathlib import Path
 
 
+# The sealed PC CI slots, and nothing else. This is an exact allowlist, not a
+# prefix match: runner-5, runner-0 and any render root are refused, so a
+# mistyped or hostile --runner-root can never scrub a tree this helper does not
+# own. Adding a root here is a deliberate capacity act.
 PC_CI_ROOTS = {
     Path("/opt/mastermind-ci/runner-1"),
     Path("/opt/mastermind-ci/runner-2"),
     Path("/opt/mastermind-ci/runner-3"),
+    Path("/opt/mastermind-ci/runner-4"),
 }
 
 

@@ -1518,6 +1518,14 @@ def main() -> int:
             log.warning("canada radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
             vm["radar_dlg"] = {}
 
+        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py). Display-only.
+        try:
+            from engine.prophet_board_since import stamp_hkca_board_since_fail_open
+            vm["setups"] = stamp_hkca_board_since_fail_open(
+                "ca", vm.get("setups"), data_dir=config.data_dir(), log=log)
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("ca board_since stamp failed (%s)", _bse)
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n

@@ -1,0 +1,49 @@
+[Unit]
+Description=Mastermind aggregate CI resource envelope (pc-ci-1..4)
+Documentation=file:///opt/mastermind-ci/docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
+Before=slices.target
+#
+# WHY THIS SLICE EXISTS.
+# Four CI candidates on one guest can only be reasoned about together. Per-unit
+# limits bound each listener but say nothing about what the four do to the guest
+# at once, and host-global numbers cannot tell "CI stayed inside its budget"
+# from "the guest happened to be quiet". One named slice makes the aggregate a
+# measurable object: scripts/monitor_ci_host_resources.py binds every candidate
+# to this hierarchy and refuses to substitute host-global metrics for it.
+#
+# RENDER IS DELIBERATELY OUTSIDE THIS SLICE.
+# pc-render-1 and every remote render roster entry keep their own service,
+# labels, cgroup and resource semantics. That separation is the point: CI may
+# saturate its eight vCPU-equivalents without starving the renderer, and the
+# canary's render-reservation probe exists to prove the renderer stays
+# independently routable while CI is at full width. Never add a render unit to
+# this slice, and never copy the CI service's KillMode=control-group or these
+# ceilings onto a render unit.
+#
+# ENVELOPE PROVENANCE.
+# CPUQuota=800% with a 100ms period bounds CI to eight vCPU-equivalents, and
+# MemoryMax=12G/MemorySwapMax=2G bounds it to 12 GiB inside the 16-vCPU/44-GiB
+# WSL guest, leaving guest headroom for the renderer. MemoryHigh=10G throttles
+# and reclaims before the hard ceiling kills anything, so pressure shows up in
+# PSI and memory.events as a receipt rather than as an OOM. These exact values
+# are frozen: changing any of them requires a new measured carrier, not an edit
+# here.
+
+[Slice]
+# Accounting is what makes the envelope auditable. Every counter these enable is
+# read back into the canary receipt (scripts/capture_ci_canary_receipt.py).
+CPUAccounting=true
+MemoryAccounting=true
+IOAccounting=true
+TasksAccounting=true
+
+CPUQuota=800%
+CPUQuotaPeriodSec=100ms
+MemoryHigh=10G
+MemoryMax=12G
+MemorySwapMax=2G
+
+# AllowedCPUs, CPUWeight, IOWeight and TasksMax are deliberately left
+# unset/inherited in this first wave. Their counters are receipted so a later
+# measured carrier can set them from evidence instead of from guesswork; pinning
+# one here now would bake in an unmeasured assumption.
