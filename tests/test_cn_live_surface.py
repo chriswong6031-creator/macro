@@ -25,29 +25,49 @@ def test_js_pair_is_byte_identical() -> None:
 def test_script_is_stocks_mode_only() -> None:
     assert "{% if mode == 'stocks' %}<script src=\"cn_prophet_live.js\"></script>{% endif %}" in TPL
     header = TPL[TPL.index("A-SHARE STOCK DASHBOARD HEADER"):TPL.index("_china_act_now_board.html.j2")]
-    assert 'id="cn-prophet-live"' in header
+    assert header.count('id="cn-prophet-live"') == 1
 
 
-def test_hidden_session_sentinel_is_wired_before_the_action_board() -> None:
-    assert 'id="cn-prophet-live"' in TPL
+def test_hidden_session_carrier_is_safe_on_first_paint() -> None:
+    """The legacy carrier may hold the SSR session only; first paint must never lay it out."""
+    assert TPL.count('id="cn-prophet-live"') == 1
     assert "data-cn-session=" in TPL
     assert ".cnpl[hidden]{display:none!important}" in TPL
+    carrier = TPL[TPL.index('id="cn-prophet-live"') - 80:TPL.index('id="cn-prophet-live"') + 240]
+    assert " hidden " in carrier or " hidden>" in carrier or " hidden data-" in carrier
     assert TPL.index('id="cn-prophet-live"') < TPL.index("_china_act_now_board.html.j2")
 
 
-def test_runtime_can_never_reveal_the_page_level_intraday_strip() -> None:
-    """Viewport telemetry must stay contextual to cards, not become a top-level block."""
+def test_runtime_detaches_page_level_carrier_before_first_fetch() -> None:
+    """After boot there is no grid item left for later JS/CSS to accidentally reveal."""
     js = _nc(JS)
-    assert "function keepSentinelHidden" in js
-    assert "keepSentinelHidden();" in js
-    assert "sentinel.hidden = true" in js
-    assert "strip.hidden = false" not in js
-    assert "sentinel.hidden = false" not in js
+    assert "function detachSessionCarrier" in js
+    assert 'carrier.hidden = true' in js
+    assert 'carrier.removeAttribute("class")' in js
+    assert 'carrier.textContent = ""' in js
+    assert 'carrier.setAttribute("aria-hidden", "true")' in js
+    assert "carrier.parentNode.removeChild(carrier)" in js
+
+    arm = js[js.index("function arm()") : js.index('if (document.readyState')]
+    assert arm.index("pageSession();") < arm.index("detachSessionCarrier();") < arm.index("tick(true);")
+
+    teardown = js[js.index("function tearDown()") : js.index("function paintChip")]
+    assert teardown.index("detachSessionCarrier();") < teardown.index("if (!_painted) return;")
+
+
+def test_runtime_has_no_page_level_reveal_or_telemetry_paint_path() -> None:
+    js = _nc(JS)
     assert "function paintStrip" not in js
+    assert "strip.hidden = false" not in js
+    assert "carrier.hidden = false" not in js
+    assert "sentinel.hidden = false" not in js
     assert "cnpl-phase" not in js
     assert "cnpl-cov" not in js
     assert "cnpl-asof" not in js
     assert "cnpl-close" not in js
+    assert "market_phase" not in js
+    assert "coverage_pct" not in js
+    assert "close_provisional" not in js
 
 
 def test_polls_the_gated_artifact_without_cache() -> None:
@@ -58,8 +78,10 @@ def test_polls_the_gated_artifact_without_cache() -> None:
     assert "cn_prophet_live.states/v1" in js
 
 
-def test_feed_floor_refuses_an_older_session() -> None:
+def test_feed_floor_refuses_an_older_session_after_carrier_detach() -> None:
     js = _nc(JS)
+    assert "function pageSession" in js
+    assert "_bakedSession" in js
     assert "function feedIsCurrent" in js
     assert "s >= floor" in js
     assert "tearDown" in js
