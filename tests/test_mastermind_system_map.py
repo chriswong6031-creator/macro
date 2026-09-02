@@ -66,7 +66,10 @@ def test_real_registry_is_valid_and_covers_the_complete_census(model):
     # 60 -> 61: Executive OS DR-A0 (WS:EXECUTIVE-OS-DISASTER-RECOVERY) registered
     # executive-os — the work-lifecycle control plane was absent from the semantic
     # registry entirely (registry gap resolved 2026-09-01).
-    assert len(registry["programs"]) == 61
+    # 61 -> 62: RWE P0 (WS:REPRODUCIBLE-WORKER-ENVIRONMENTS) registered
+    # reproducible-worker-environments — hash-locked receipted worker toolchain
+    # environments (registry gap resolved 2026-09-02, Mastermind PR #342 pilot).
+    assert len(registry["programs"]) == 62
     assert len(registry["product_surfaces"]) == 16
     assert len(registry["cross_repo_contracts"]) == 17
     assert {
