@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess
 import sys
@@ -77,6 +78,10 @@ def run_trusted_gate(
         "HEAD_REPOSITORY": repository,
         "BASE_REF": "main",
         "EVENT_PR_NUMBER": pr_number,
+        "EVENT_TESTED_SHA": "b" * 40,
+        "EVENT_BASE_SHA": "c" * 40,
+        "EVENT_HEAD_SHA": "d" * 40,
+        "EVENT_HEAD_REF": "feature/event-frozen",
         "DISPATCH_PR_NUMBER": "",
     }
     environment.update(overrides)
@@ -119,6 +124,10 @@ def test_p3bb_executor_stays_call_capable_after_production_route_activation() ->
         "pr_number": "${{ steps.admit.outputs.pr_number }}",
         "mode": "${{ steps.admit.outputs.mode }}",
         "semantic_workflow": "${{ steps.admit.outputs.semantic_workflow }}",
+        "event_tested_sha": "${{ steps.admit.outputs.event_tested_sha }}",
+        "event_base_sha": "${{ steps.admit.outputs.event_base_sha }}",
+        "event_head_sha": "${{ steps.admit.outputs.event_head_sha }}",
+        "event_head_ref": "${{ steps.admit.outputs.event_head_ref }}",
     }
     gate = trusted_gate_step()
     assert gate["id"] == "admit"
@@ -132,6 +141,10 @@ def test_p3bb_executor_stays_call_capable_after_production_route_activation() ->
         "HEAD_REPOSITORY": "${{ github.event.pull_request.head.repo.full_name }}",
         "BASE_REF": "${{ github.base_ref }}",
         "EVENT_PR_NUMBER": "${{ github.event.pull_request.number }}",
+        "EVENT_TESTED_SHA": "${{ github.sha }}",
+        "EVENT_BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "EVENT_HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
+        "EVENT_HEAD_REF": "${{ github.event.pull_request.head.ref }}",
         "DISPATCH_PR_NUMBER": "${{ inputs.pr_number }}",
     }
 
@@ -156,6 +169,10 @@ def test_p3ba_accepts_exact_main_called_same_repo_pr_and_derives_identity(
         "pr_number": "6390",
         "mode": "production",
         "semantic_workflow": "ci",
+        "event_tested_sha": "b" * 40,
+        "event_base_sha": "c" * 40,
+        "event_head_sha": "d" * 40,
+        "event_head_ref": "feature/event-frozen",
     }
 
 
@@ -176,6 +193,10 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         HEAD_REPOSITORY="",
         BASE_REF="",
         EVENT_PR_NUMBER="",
+        EVENT_TESTED_SHA="",
+        EVENT_BASE_SHA="",
+        EVENT_HEAD_SHA="",
+        EVENT_HEAD_REF="",
         DISPATCH_PR_NUMBER="6390",
     )
     assert result.returncode == 0, result.stdout + result.stderr
@@ -184,6 +205,10 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         "pr_number": "6390",
         "mode": "dispatch",
         "semantic_workflow": "trusted-ci-executor",
+        "event_tested_sha": "",
+        "event_base_sha": "",
+        "event_head_sha": "",
+        "event_head_ref": "",
     }
 
 
@@ -215,6 +240,10 @@ def test_p3ba_keeps_the_direct_main_dispatch_canary(tmp_path: Path) -> None:
         {"EVENT_PR_NUMBER": "6391"},
         {"DISPATCH_PR_NUMBER": "6390"},
         {"CALLED_WORKFLOW_SHA": "candidate"},
+        {"EVENT_TESTED_SHA": ""},
+        {"EVENT_BASE_SHA": "A" * 40},
+        {"EVENT_HEAD_SHA": "short"},
+        {"EVENT_HEAD_REF": ""},
     ],
 )
 def test_p3ba_refuses_untrusted_call_contexts(
@@ -253,6 +282,20 @@ def test_p3ba_planner_uses_main_control_and_routes_one_or_all_exact_pr_packs() -
     assert "resolve_ci_canary_ref.py" in resolve["run"]
     assert '--github-sha "${{ needs.trust-gate.outputs.control_sha }}"' in resolve["run"]
     assert '--pr-number "${{ needs.trust-gate.outputs.pr_number }}"' in resolve["run"]
+    assert resolve["env"] == {
+        "GITHUB_TOKEN": "${{ github.token }}",
+        "EVENT_TESTED_SHA": "${{ needs.trust-gate.outputs.event_tested_sha }}",
+        "EVENT_BASE_SHA": "${{ needs.trust-gate.outputs.event_base_sha }}",
+        "EVENT_HEAD_SHA": "${{ needs.trust-gate.outputs.event_head_sha }}",
+        "EVENT_HEAD_REF": "${{ needs.trust-gate.outputs.event_head_ref }}",
+    }
+    for token in (
+        '--event-tested-sha "$EVENT_TESTED_SHA"',
+        '--event-base-sha "$EVENT_BASE_SHA"',
+        '--event-head-sha "$EVENT_HEAD_SHA"',
+        '--event-head-ref "$EVENT_HEAD_REF"',
+    ):
+        assert token in resolve["run"]
     candidate_checkout = next(
         step for step in steps if step.get("name") == "checkout the immutable PR candidate"
     )
@@ -548,3 +591,199 @@ def test_p3a_executor_has_no_secret_or_candidate_credential_surface() -> None:
         for step in job.get("steps", []) or []:
             if step.get("uses") == "actions/checkout@v4":
                 assert step["with"]["persist-credentials"] is False
+
+
+def _resolver_module():
+    path = ROOT / "scripts" / "resolve_ci_canary_ref.py"
+    spec = importlib.util.spec_from_file_location("trusted_ci_ref_resolver", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_p0_event_frozen_resolver_preserves_original_merge_sha_without_live_ref(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    resolver = _resolver_module()
+    tested_sha = "a" * 40
+    base_sha = "b" * 40
+    head_sha = "c" * 40
+    calls: list[tuple[str, ...]] = []
+
+    def fake_git(*args: str) -> str:
+        calls.append(args)
+        if args == ("check-ref-format", "--branch", "feature/event-frozen"):
+            return "feature/event-frozen"
+        if args[:3] == ("fetch", "--no-tags", "origin"):
+            assert args[3].startswith(f"+{tested_sha}:refs/ci-canary/event/6390/merge")
+            return ""
+        if args[0] == "rev-parse" and args[1].endswith("^{commit}"):
+            return tested_sha
+        if args == ("rev-list", "--parents", "-n", "1", tested_sha):
+            return f"{tested_sha} {base_sha} {head_sha}"
+        raise AssertionError(args)
+
+    monkeypatch.setattr(resolver, "git", fake_git)
+    monkeypatch.setattr(
+        resolver,
+        "pull_request",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("production event-frozen path consulted live PR API")
+        ),
+    )
+    values = resolver.resolve(
+        "mastermindx-market-intelligence/macro",
+        "d" * 40,
+        6390,
+        "",
+        event_tested_sha=tested_sha,
+        event_base_sha=base_sha,
+        event_head_sha=head_sha,
+        event_head_ref="feature/event-frozen",
+    )
+
+    assert values == {
+        "source_kind": "same-repository-pr-event-merge",
+        "tested_ref": tested_sha,
+        "tested_sha": tested_sha,
+        "base_sha": base_sha,
+        "head_sha": head_sha,
+        "head_ref": "feature/event-frozen",
+        "contamination_sha": base_sha,
+    }
+    assert all("refs/pull/" not in " ".join(call) for call in calls)
+
+
+@pytest.mark.parametrize(
+    ("parent_line", "match"),
+    [
+        ("{tested} {head}", "exactly two parents"),
+        ("{tested} {base} {head} {extra}", "exactly two parents"),
+        ("{tested} {wrong} {head}", "ordered parents"),
+        ("{tested} {base} {wrong}", "ordered parents"),
+    ],
+)
+def test_p0_event_frozen_resolver_refuses_invalid_commit_shape_without_fallback(
+    monkeypatch: pytest.MonkeyPatch, parent_line: str, match: str
+) -> None:
+    resolver = _resolver_module()
+    tested_sha = "a" * 40
+    base_sha = "b" * 40
+    head_sha = "c" * 40
+    wrong_sha = "d" * 40
+    extra_sha = "e" * 40
+    calls: list[tuple[str, ...]] = []
+
+    def fake_git(*args: str) -> str:
+        calls.append(args)
+        if args == ("check-ref-format", "--branch", "feature/event-frozen"):
+            return "feature/event-frozen"
+        if args[:3] == ("fetch", "--no-tags", "origin"):
+            return ""
+        if args[0] == "rev-parse" and args[1].endswith("^{commit}"):
+            return tested_sha
+        if args == ("rev-list", "--parents", "-n", "1", tested_sha):
+            return parent_line.format(
+                tested=tested_sha, base=base_sha, head=head_sha,
+                wrong=wrong_sha, extra=extra_sha
+            )
+        raise AssertionError(args)
+
+    monkeypatch.setattr(resolver, "git", fake_git)
+    with pytest.raises(resolver.ResolutionError, match=match):
+        resolver.resolve(
+            "mastermindx-market-intelligence/macro",
+            "f" * 40,
+            6390,
+            "",
+            event_tested_sha=tested_sha,
+            event_base_sha=base_sha,
+            event_head_sha=head_sha,
+            event_head_ref="feature/event-frozen",
+        )
+    assert all("refs/pull/" not in " ".join(call) for call in calls)
+
+
+def test_p0_event_frozen_resolver_refuses_unavailable_or_malformed_event_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    resolver = _resolver_module()
+    base_sha = "b" * 40
+    head_sha = "c" * 40
+
+    with pytest.raises(resolver.ResolutionError, match="exact lowercase"):
+        resolver.resolve(
+            "mastermindx-market-intelligence/macro",
+            "f" * 40,
+            6390,
+            "",
+            event_tested_sha="A" * 40,
+            event_base_sha=base_sha,
+            event_head_sha=head_sha,
+            event_head_ref="feature/event-frozen",
+        )
+
+    def unavailable(*args: str) -> str:
+        if args == ("check-ref-format", "--branch", "feature/event-frozen"):
+            return "feature/event-frozen"
+        if args[:3] == ("fetch", "--no-tags", "origin"):
+            raise resolver.ResolutionError("event commit unavailable")
+        raise AssertionError(args)
+
+    monkeypatch.setattr(resolver, "git", unavailable)
+    with pytest.raises(resolver.ResolutionError, match="event commit unavailable"):
+        resolver.resolve(
+            "mastermindx-market-intelligence/macro",
+            "f" * 40,
+            6390,
+            "",
+            event_tested_sha="a" * 40,
+            event_base_sha=base_sha,
+            event_head_sha=head_sha,
+            event_head_ref="feature/event-frozen",
+        )
+
+
+def test_p0_direct_dispatch_retains_live_pr_resolution(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    resolver = _resolver_module()
+    tested_sha = "a" * 40
+    base_sha = "b" * 40
+    head_sha = "c" * 40
+    monkeypatch.setattr(
+        resolver,
+        "pull_request",
+        lambda *args: {
+            "state": "open",
+            "head": {
+                "sha": head_sha,
+                "ref": "feature/diagnostic",
+                "repo": {"full_name": "mastermindx-market-intelligence/macro"},
+            },
+            "base": {"sha": base_sha, "ref": "main"},
+            "merge_commit_sha": tested_sha,
+        },
+    )
+
+    def fake_git(*args: str) -> str:
+        if args[:3] == ("fetch", "--no-tags", "origin"):
+            assert "refs/pull/6390/merge" in args[3]
+            return ""
+        if args[0] == "rev-parse" and args[1].startswith("refs/ci-canary/pull/"):
+            return tested_sha
+        if args == ("check-ref-format", "--branch", "feature/diagnostic"):
+            return "feature/diagnostic"
+        if args == ("rev-parse", f"{tested_sha}^1"):
+            return base_sha
+        if args == ("rev-parse", f"{tested_sha}^2"):
+            return head_sha
+        raise AssertionError(args)
+
+    monkeypatch.setattr(resolver, "git", fake_git)
+    values = resolver.resolve(
+        "mastermindx-market-intelligence/macro", "f" * 40, 6390, "token"
+    )
+    assert values["source_kind"] == "same-repository-pr-merge"
+    assert values["tested_ref"] == "refs/pull/6390/merge"
