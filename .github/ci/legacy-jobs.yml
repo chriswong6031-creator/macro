@@ -289,6 +289,33 @@ jobs:
       - name: annotations must start the line (bare print, never a logger)
         run: python -m pytest tests/test_gh_annotation_line_start.py -q
 
+  market-ontology-p1-corpus-admission:
+    if: ${{ false }}
+    gate: code
+    # F00A admits the retained public-P1 research corpus BYTE-IDENTICALLY, and the
+    # archive it writes is what F00C reconciles 1,556 granular rows against. A
+    # member that is reconstructed, normalized, or silently truncated is therefore
+    # undetectable downstream — which is why the harness is fail-closed and why
+    # these tests may not go dark. The suite pins the properties that do the work:
+    # size alone must never pass (an equal-length tamper is rejected on hash), a
+    # missing member must write nothing rather than a partial archive, a partial
+    # set stays corpus_admitted:false unless a Sol adjudication is named, and a
+    # supplied manifest that contradicts the two published receipts is refused
+    # rather than trusted for being newer. Fixtures are synthetic: the real corpus
+    # is not in the repo, and the gate must be provably correct BEFORE it arrives.
+    paths:
+      - scripts/verify_market_ontology_p1_corpus.py
+      - tests/test_market_ontology_p1_corpus.py
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: install test deps
+        run: pip install pytest
+      - name: corpus admission stays fail-closed
+        run: python -m pytest tests/test_market_ontology_p1_corpus.py -q
+
   all-exports-resolve:
     if: ${{ false }}
     gate: code
