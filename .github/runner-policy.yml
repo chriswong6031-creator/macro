@@ -68,6 +68,23 @@ pool_topology:
     slots: 3
     labels: [self-hosted, ci-linux]
     forbidden_labels: [render-linux]
+    # ── PENDING FOURTH SLOT (rule R14, added 2026-09-01) ──────────────────────
+    # `slots` is the LIVE, routable inventory and stays at three. The fourth slot
+    # is declared here as ARCHITECTURE ONLY: the code, units, cleanup roots and
+    # receipts support four candidates, but no fourth listener is registered and
+    # none is routable. The split exists because "code supports four" and "four
+    # slots are carrying traffic" are different facts, and collapsing them is how
+    # a policy file starts claiming capacity that does not exist.
+    #
+    # `pending_labels` is deliberately platform/architecture identity ONLY. The
+    # fourth runner is bootstrapped WITHOUT `ci-linux` so its roster, service,
+    # PID, root and cgroup can be proved online but unroutable. Adding `ci-linux`
+    # here, or adding pc-ci-4 to any label_registry carried_by list, is the live
+    # activation act — it belongs to a separate audited carrier that first
+    # confirms GitHub reports the exact runner online/idle, never to this one.
+    pending_slots: 1
+    pending_carriers: [pc-ci-4]
+    pending_labels: [self-hosted, Linux, X64]
   pc-render:
     slots: 1
     labels: [self-hosted, Linux, X64, render-linux]
