@@ -376,3 +376,35 @@ enter §8 append-only.**
   FROZEN at this commit, before any OOT confirmatory effect estimate exists in the
   repository. Authority: Chairman override of 2026-09-01 (carrier ts
   `1788307821.689309`) under program `TOPA-COMPLETION-20260828`.
+- 2026-09-01 — RECEIPT-EMITTER OPERATIONALIZATIONS (append-only; declared with the
+  emitter commit, before any confirmatory number; none moves a registered quantity —
+  each records a §5 implementation choice the frozen text left open):
+  (a) **Sealing read** (`scripts/research_top_anatomy_oot_receipt.py::_seal_state`): §4's
+  sealing law is read literally off `episode_peaks`'s own flags — a TOPPED label seals
+  only when the peak-search window itself is final (`peak_window_truncated` false; an
+  open window means a later higher close could still move the peak and void the print);
+  a SURVIVED label whose [peak, peak+126] window ran off the data edge is
+  CENSORED-AT-DATA-EDGE, never evidence of survival.
+  (b) **Dark-segment census definition**: "who is missing" = identity segments that
+  traded inside the OOT window but stopped printing before the store's last session
+  (dark), plus identity-break segments first appearing inside the window — a receipt-side
+  descriptive definition, not an engine function.
+  (c) **Emitter posture**: the current emitter can never print `eligible: true` — its
+  cell rows always carry `completeness_floor_not_evaluable_no_era_blocks` and
+  `validity_precondition_not_evaluable_matcher_not_run` because era-block construction
+  and real AM2 matching are deliberately not implemented in a counting read. Activating
+  them is harness work for the wave that approaches the floors; activation is itself a
+  §8-entry event and changes no registered quantity.
+  (d) **Monthly completeness basis**: the per-peak-month sealed/unsealed and day-level
+  resolution census is the declared input basis for the §4 ≥80% per-era completeness
+  floor once era blocks exist.
+- 2026-09-01 — FIRST RECEIPT EMITTED (UTC 2026-09-02 artifact date):
+  `data/research/top_anatomy_oot_receipt_2026-09-02.json` (+ .md). State:
+  **`OOT_ACCRUING_NO_VERDICT`, 0/18 cells eligible.** Pinned store: last session
+  2026-08-28, 20,934 shards, manifest_sha256 null (`manifest_not_present_in_checkout` —
+  local sparse checkout; production emits the hash). Candidates accruing: STRICT
+  221 primary / 238 r63 / 854 atrz (BRIDGE 73/106/237; excluded_no_snapshots
+  196/236/479) — every candidate `immature_unsealed`, zero sealed anywhere, matcher
+  `zero_candidates`, distinct sealed-topped peak months 0. Delisting census: 256 dark
+  segments, 87 in-window identity breaks (examples printed in the artifact). Exactly the
+  designed early-life behavior; nothing here reads any effect estimate.
