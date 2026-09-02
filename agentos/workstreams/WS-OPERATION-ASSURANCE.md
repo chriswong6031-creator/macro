@@ -18,16 +18,7 @@ ambiguity: scoped
 waves:
   - {id: R0, title: "Recover canonical truth; protect OLS-F0 architecture/source law (PR 279)", status: done, pr: 279}
   - {id: A1, title: "Pure deterministic assurance engine + immutable report + report-only CLI (PR 324)", status: done, pr: 324}
-  - id: A2
-    title: Canonical Agent OS source compilation through the protected Executive Steward
-    status: in_progress
-    pr: [339, 362]
-    next_action: >
-      Protected design PR #339 is complete. Reconcile and adversarially review implementation PR
-      #362 on current protected Mastermind, then prove its positive path against this exact corrected,
-      schema-valid, pinned Agent OS revision through gather -> existing Executive Steward -> pure
-      compiler -> protected A1 checker -> immutable report. The synthetic corrected fixture is unit
-      evidence only. No A2 release until exact byte/source receipts and hosted exact-head proof exist.
+  - {id: A2, title: "Canonical Agent OS source compilation through the protected Executive Steward", status: in_progress, pr: [339, 362], next_action: "Reconcile and review PR 362 on current protected Mastermind, then prove its positive path against this exact corrected pinned Agent OS revision; the synthetic corrected fixture is unit evidence only."}
   - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2]}
   - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3]}
   - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4]}
