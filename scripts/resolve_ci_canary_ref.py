@@ -45,7 +45,68 @@ def write_outputs(path: Path, values: dict[str, str]) -> None:
             handle.write(f"{key}={value}\n")
 
 
-def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dict[str, str]:
+
+def _exact_sha(value: str, label: str) -> str:
+    if len(value) != 40 or any(ch not in "0123456789abcdef" for ch in value):
+        raise ResolutionError(f"{label} must be an exact lowercase 40-character SHA")
+    return value
+
+
+def resolve_event_frozen_pr_merge(
+    *,
+    repository: str,
+    pr_number: int,
+    tested_sha: str,
+    base_sha: str,
+    head_sha: str,
+    head_ref: str,
+) -> dict[str, str]:
+    if pr_number <= 0:
+        raise ResolutionError("event-frozen PR identity requires a positive PR number")
+    tested_sha = _exact_sha(tested_sha, "event tested SHA")
+    base_sha = _exact_sha(base_sha, "event base SHA")
+    head_sha = _exact_sha(head_sha, "event head SHA")
+    if not head_ref:
+        raise ResolutionError("event head ref must not be empty")
+    git("check-ref-format", "--branch", head_ref)
+
+    local_ref = f"refs/ci-canary/event/{pr_number}/merge"
+    git("fetch", "--no-tags", "origin", f"+{tested_sha}:{local_ref}")
+    fetched_sha = git("rev-parse", f"{local_ref}^{{commit}}")
+    if fetched_sha != tested_sha:
+        raise ResolutionError(
+            "fetched event merge commit does not match the frozen event SHA: "
+            f"fetched={fetched_sha}, event={tested_sha}"
+        )
+    parent_line = git("rev-list", "--parents", "-n", "1", tested_sha).split()
+    if len(parent_line) != 3 or parent_line[0] != tested_sha:
+        raise ResolutionError("event merge commit must have exactly two parents")
+    if parent_line[1:] != [base_sha, head_sha]:
+        raise ResolutionError(
+            "event merge commit ordered parents do not match frozen event base/head"
+        )
+    return {
+        "source_kind": "same-repository-pr-event-merge",
+        "tested_ref": tested_sha,
+        "tested_sha": tested_sha,
+        "base_sha": base_sha,
+        "head_sha": head_sha,
+        "head_ref": head_ref,
+        "contamination_sha": base_sha,
+    }
+
+
+def resolve(
+    repository: str,
+    github_sha: str,
+    pr_number: int,
+    token: str,
+    *,
+    event_tested_sha: str = "",
+    event_base_sha: str = "",
+    event_head_sha: str = "",
+    event_head_ref: str = "",
+) -> dict[str, str]:
     if pr_number == 0:
         tested_sha = git("rev-parse", f"{github_sha}^{{commit}}")
         parent = git("rev-parse", f"{tested_sha}^")
@@ -58,6 +119,19 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
             "head_ref": "main",
             "contamination_sha": parent,
         }
+
+    event_values = (event_tested_sha, event_base_sha, event_head_sha, event_head_ref)
+    if any(event_values):
+        if not all(event_values):
+            raise ResolutionError("event-frozen PR identity requires tested/base/head SHA and head ref")
+        return resolve_event_frozen_pr_merge(
+            repository=repository,
+            pr_number=pr_number,
+            tested_sha=event_tested_sha,
+            base_sha=event_base_sha,
+            head_sha=event_head_sha,
+            head_ref=event_head_ref,
+        )
 
     if not token:
         raise ResolutionError("GITHUB_TOKEN is required to resolve a pull request")
@@ -113,6 +187,10 @@ def main() -> int:
     parser.add_argument("--repository", required=True)
     parser.add_argument("--github-sha", required=True)
     parser.add_argument("--pr-number", type=int, default=0)
+    parser.add_argument("--event-tested-sha", default="")
+    parser.add_argument("--event-base-sha", default="")
+    parser.add_argument("--event-head-sha", default="")
+    parser.add_argument("--event-head-ref", default="")
     parser.add_argument("--github-output", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -121,6 +199,10 @@ def main() -> int:
             args.github_sha,
             args.pr_number,
             os.environ.get("GITHUB_TOKEN", ""),
+            event_tested_sha=args.event_tested_sha,
+            event_base_sha=args.event_base_sha,
+            event_head_sha=args.event_head_sha,
+            event_head_ref=args.event_head_ref,
         )
     except ResolutionError as exc:
         print(f"::error title=ci-canary-ref::{exc}", flush=True)
