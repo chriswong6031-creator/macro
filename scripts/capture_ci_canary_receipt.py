@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import datetime as _datetime
 import json
 import os
 import re
@@ -53,14 +54,20 @@ def trace2_fetch_seconds(path: Path | None) -> float | None:
     return round(total, 3)
 
 
-def metrics(path: Path | None) -> dict[str, object]:
+def load_samples(path: Path | None) -> list[dict]:
     if path is None or not path.exists():
-        return {}
-    samples = [
+        return []
+    return [
         json.loads(line)
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+
+
+def metrics(path: Path | None) -> dict[str, object]:
+    """Host-global reduction. Deliberately unchanged by the slice extension so
+    P1/P2 receipts stay byte-comparable against P3+ ones."""
+    samples = load_samples(path)
     if not samples:
         return {}
     return {
@@ -75,6 +82,233 @@ def metrics(path: Path | None) -> dict[str, object]:
         ),
         "swap_used_peak_bytes": max(item["swap_used_bytes"] for item in samples),
         "disk_free_min_bytes": min(item["disk_free_bytes"] for item in samples),
+    }
+
+
+EXPECTED_CI_SLICE = "mastermind-ci.slice"
+# Worst-first. One sample outside the slice poisons the whole window: a candidate
+# that changed cgroups mid-run has no honest aggregate to report.
+_SLICE_STATUS_PRECEDENCE = ("refused", "unavailable", "degraded", "bound")
+
+
+def _empty_slice_metrics(status: str, reason: str | None, **extra: object) -> dict:
+    metrics: dict[str, object] = {
+        "status": status,
+        "expected_slice": EXPECTED_CI_SLICE,
+        "reason": reason,
+        "samples": 0,
+        "cgroups": [],
+        "cpu_max": None,
+        "cpu_delta": None,
+        "memory_events_delta": None,
+        "pids_events_delta": None,
+        "pressure_total_delta": None,
+        "memory_current_peak_bytes": None,
+        "memory_swap_peak_bytes": None,
+        "memory_peak_bytes_cgroup_lifetime": None,
+        "memory_peak_is_run_local": False,
+        "pids_current_peak": None,
+    }
+    metrics.update(extra)
+    return metrics
+
+
+def _keyed_delta(first: Mapping[str, Any] | None, last: Mapping[str, Any] | None):
+    """Per-key window delta, or None for a key absent at t0.
+
+    `last - first.get(key, 0)` would present a cgroup LIFETIME TOTAL as a window
+    delta whenever the kernel did not expose the field at t0 -- and these are
+    exactly the inputs to the acceptance rule
+    nr_throttled_delta / nr_periods_delta <= 0.25. Absent is unknown, not zero.
+    """
+    if not isinstance(first, Mapping) or not isinstance(last, Mapping):
+        return None
+    delta: dict[str, int | None] = {}
+    for key, value in last.items():
+        if not isinstance(value, int):
+            continue
+        previous = first.get(key)
+        delta[key] = value - previous if isinstance(previous, int) else None
+    return delta
+
+
+def _peak(values: list[Any]) -> int | None:
+    observed = [item for item in values if isinstance(item, int)]
+    return max(observed) if observed else None
+
+
+def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
+    """Reduce aggregate CI-slice samples into one bounded receipt section.
+
+    Fail-closed by construction: aggregate numbers are reported ONLY when every
+    sample in the window was cleanly bound to the expected slice. A refused,
+    degraded, unavailable or absent window yields its status and no numbers, so
+    a downstream acceptance threshold can never be evaluated against evidence
+    that did not actually come from the CI slice.
+    """
+
+    observations = [
+        sample["slice"]
+        for sample in samples
+        if isinstance(sample, Mapping) and isinstance(sample.get("slice"), Mapping)
+    ]
+    if not observations:
+        # Either no run at all, or a pre-slice P1/P2 metrics file. Absent is the
+        # honest answer; it is not a passing observation.
+        return _empty_slice_metrics(
+            "absent", "no aggregate CI-slice evidence in this metrics stream"
+        )
+
+    statuses = {str(item.get("status")) for item in observations}
+    cgroups = sorted(
+        {str(item.get("cgroup")) for item in observations if item.get("cgroup")}
+    )
+    # Anything that is not exactly "bound" is non-bound. This scanned a fixed
+    # whitelist first, so a sample carrying any other status string was invisible
+    # and the window resolved to "bound" -- leaking foreign host numbers into
+    # aggregate fields and falsifying this docstring.
+    unbound = statuses - {"bound"}
+    if unbound:
+        worst = next(
+            (status for status in _SLICE_STATUS_PRECEDENCE if status in unbound),
+            "unavailable",
+        )
+    elif len(cgroups) > 1:
+        # All samples bound, but not to the SAME cgroup: the candidate moved
+        # mid-run, so first/last deltas would straddle two different cgroups.
+        return _empty_slice_metrics(
+            "refused",
+            f"window spans {len(cgroups)} distinct cgroups {cgroups}; "
+            "no honest aggregate exists across a mid-run cgroup change",
+            samples=len(observations),
+            cgroups=cgroups,
+        )
+    else:
+        worst = "bound"
+    if worst != "bound":
+        reason = next(
+            (
+                str(item.get("reason"))
+                for item in observations
+                if item.get("status") == worst and item.get("reason")
+            ),
+            f"aggregate CI-slice evidence is {worst}",
+        )
+        return _empty_slice_metrics(
+            worst, reason, samples=len(observations), cgroups=cgroups
+        )
+
+    first, last = observations[0], observations[-1]
+    pressure_delta: dict[str, dict[str, int]] = {}
+    first_pressure = first.get("pressure") or {}
+    last_pressure = last.get("pressure") or {}
+    if isinstance(first_pressure, Mapping) and isinstance(last_pressure, Mapping):
+        for resource, kinds in last_pressure.items():
+            if not isinstance(kinds, Mapping):
+                continue
+            base = first_pressure.get(resource) or {}
+            deltas = {}
+            for kind, values in kinds.items():
+                if not isinstance(values, Mapping) or "total" not in values:
+                    continue
+                # Same rule as _keyed_delta: a resource absent at t0 has an
+                # unknown delta, not a delta equal to its lifetime total.
+                previous = (base.get(kind) or {}).get("total")
+                deltas[kind] = (
+                    int(values["total"]) - int(previous)
+                    if isinstance(previous, (int, float))
+                    else None
+                )
+            if deltas:
+                pressure_delta[resource] = deltas
+
+    return {
+        "status": "bound",
+        "expected_slice": EXPECTED_CI_SLICE,
+        "reason": None,
+        "samples": len(observations),
+        "cgroups": cgroups,
+        "cpu_max": last.get("cpu_max"),
+        "cpu_delta": _keyed_delta(first.get("cpu"), last.get("cpu")),
+        "memory_events_delta": _keyed_delta(
+            first.get("memory_events"), last.get("memory_events")
+        ),
+        "pids_events_delta": _keyed_delta(
+            first.get("pids_events"), last.get("pids_events")
+        ),
+        "pressure_total_delta": pressure_delta or None,
+        "memory_current_peak_bytes": _peak(
+            [(item.get("memory") or {}).get("current") for item in observations]
+        ),
+        "memory_swap_peak_bytes": _peak(
+            [(item.get("memory") or {}).get("swap_current") for item in observations]
+        ),
+        # cgroup lifetime, NOT this run's peak — the counter is only reset by a
+        # privileged ceremony, which this carrier does not perform.
+        "memory_peak_bytes_cgroup_lifetime": _peak(
+            [(item.get("memory") or {}).get("peak") for item in observations]
+        ),
+        "memory_peak_is_run_local": False,
+        "pids_current_peak": _peak(
+            [(item.get("pids") or {}).get("current") for item in observations]
+        ),
+    }
+
+
+def _parse_timestamp(value: str | None) -> "_datetime.datetime | None":
+    """Parse one ISO-8601 instant, or None. Unparseable is unavailable, not zero."""
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        return _datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def build_identity_fields(
+    execution_profile_id: str | None,
+    admission_policy_version: str | None,
+    workflow_job_queued_at: str | None,
+    runner_job_started_at: str | None,
+) -> dict:
+    """Forward-compatible receipt identities for later four-slot/elastic evidence.
+
+    Purely additive: the schema stays ci.selfhosted_canary_receipt.v2, no
+    existing key changes name or meaning, and a historical P1/P2/P4 receipt
+    simply lacks these keys. The comparator's parity allowlist does not read
+    them, so hosted-vs-selfhosted comparison is untouched.
+
+    `queue_wait_seconds` is DERIVED, never supplied: it exists only when both
+    timestamps are present, parseable and correctly ordered. Absent, unparseable
+    or out-of-order all yield None -- never 0, and never a negative duration. An
+    observed 0.0 (picked up in the same second) is a real measurement and stays
+    distinct from None.
+
+    Queue wait is time BEFORE the runner picked the job up. It is deliberately
+    computed from nothing else here, so it can never be folded into the
+    checkout / dependency / test / wall execution timings.
+    """
+
+    queued = _parse_timestamp(workflow_job_queued_at)
+    started = _parse_timestamp(runner_job_started_at)
+    queue_wait = None
+    if queued is not None and started is not None:
+        if queued.tzinfo is None or started.tzinfo is None:
+            queue_wait = None
+        else:
+            delta = (started - queued).total_seconds()
+            queue_wait = round(delta, 3) if delta >= 0 else None
+    return {
+        "execution_profile_id": execution_profile_id,
+        "admission_policy_version": admission_policy_version,
+        "workflow_job_queued_at": workflow_job_queued_at or None,
+        "runner_job_started_at": runner_job_started_at or None,
+        "queue_wait_seconds": queue_wait,
     }
 
 
@@ -358,6 +592,13 @@ def main() -> int:
     parser.add_argument("--runner-kind", required=True)
     parser.add_argument("--runner-name", required=True)
     parser.add_argument("--runner-profile", default="unknown")
+    # Forward-compatible identities (Sol ruling 2026-09-01). All optional and
+    # null-preserving: C3R-A does not obtain live GitHub job metadata, it only
+    # proves the existing receipt contract can carry it truthfully later.
+    parser.add_argument("--execution-profile-id", default=None)
+    parser.add_argument("--admission-policy-version", default=None)
+    parser.add_argument("--workflow-job-queued-at", default=None)
+    parser.add_argument("--runner-job-started-at", default=None)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--trace2", type=Path)
     parser.add_argument("--metrics", type=Path)
@@ -427,12 +668,23 @@ def main() -> int:
         "cache_bytes_after": read_float(args.cache_after),
         "workspace_object_bytes": args.workspace_object_bytes,
         "resources": metrics(args.metrics),
+        # Aggregate CI-slice evidence (C3R-A). Additive: the host-global
+        # "resources" block above is untouched, and the comparator's field
+        # allowlist does not read this key, so hosted receipts (which have no
+        # mastermind-ci.slice) stay comparable to self-hosted ones.
+        "ci_slice": slice_metrics(load_samples(args.metrics)),
         # Fragment reference (D, #6351): not the fragment's full body — that
         # travels as its own artifact and is what `compare_ci_canary_receipts.py`
         # diffs byte-for-byte — just enough to cross-check this receipt was
         # captured from the same pack invocation that minted it.
         "fragment_schema": fragment_schema,
         "fragment_plan_sha256": fragment_plan_sha256,
+        **build_identity_fields(
+            execution_profile_id=args.execution_profile_id,
+            admission_policy_version=args.admission_policy_version,
+            workflow_job_queued_at=args.workflow_job_queued_at,
+            runner_job_started_at=args.runner_job_started_at,
+        ),
     }
     args.output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     print("CI_CANARY_RECEIPT=" + json.dumps(receipt, sort_keys=True), flush=True)
