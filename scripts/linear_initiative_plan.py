@@ -47,6 +47,11 @@ _EXPECTED_EXCEPTIONS = {
     ("workstream_key", "WS:WATCHLIST-PORTFOLIO-CEO", "compatibility_redirect"),
     ("linear_project_id", "9aef6461-306a-4a3c-911b-c6a4b6635a78", "canonical_parent_unresolved"),
 }
+_EXPECTED_SOURCE_IDENTITY = {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "path": "docs/superpowers/specs/2026-08-29-linear-initiative-portfolio-architecture-design.md",
+    "protected_revision": "d004f5bf7953e943281dff7efd8fe17a54b0cf6c",
+}
 _WATCHLIST_EXCEPTION = "WS:WATCHLIST-PORTFOLIO-CEO"
 _HARD_DRIFT_CODES = frozenset({
     "unexpected_initiative",
@@ -71,10 +76,16 @@ class InitiativePlanError(RuntimeError):
         super().__init__(f"linear initiative plan refused: {len(self.failures)} hard defect(s)")
 
 
-def load_strategy(path: Path) -> dict[str, Any]:
-    doc = json.loads(path.read_text(encoding="utf-8"))
+def _load_strategy_payload(path: Path) -> tuple[dict[str, Any], bytes]:
+    payload = path.read_bytes()
+    doc = json.loads(payload)
     if not isinstance(doc, dict) or doc.get("schema") != STRATEGY_SCHEMA:
         raise InitiativePlanError([{"code": "strategy_wrong_schema"}])
+    return doc, payload
+
+
+def load_strategy(path: Path) -> dict[str, Any]:
+    doc, _payload = _load_strategy_payload(path)
     return doc
 
 
@@ -149,6 +160,21 @@ def validate_strategy(strategy: Mapping[str, Any], project_plan: Mapping[str, An
     failures: list[dict[str, Any]] = []
     if strategy.get("schema") != STRATEGY_SCHEMA:
         failures.append({"code": "strategy_wrong_schema"})
+
+    source_design = strategy.get("source_design")
+    if not isinstance(source_design, Mapping):
+        source_fields = sorted(_EXPECTED_SOURCE_IDENTITY)
+    else:
+        source_fields = sorted(
+            field
+            for field, expected in _EXPECTED_SOURCE_IDENTITY.items()
+            if source_design.get(field) != expected
+        )
+    if source_fields:
+        failures.append({
+            "code": "strategy_source_design_invalid",
+            "fields": source_fields,
+        })
 
     initiatives = _initiative_mapping(strategy.get("initiatives"), failures)
     if len(initiatives) != len(_EXPECTED_INITIATIVES):
@@ -308,26 +334,39 @@ def _project_rows(
     return rows, active
 
 
-def _snapshot_projects(
+def _snapshot_rows(
     snapshot: Mapping[str, Any] | None,
+    collection: str,
 ) -> list[Mapping[str, Any]]:
     if snapshot is None:
         return []
-    rows = snapshot.get("projects")
+    rows = snapshot.get(collection)
     if not isinstance(rows, list):
-        raise InitiativePlanError([{"code": "initiative_snapshot_missing_projects"}])
-    return [row for row in rows if isinstance(row, Mapping)]
+        raise InitiativePlanError([{"code": f"initiative_snapshot_missing_{collection}"}])
+    failures = [
+        {
+            "code": "initiative_snapshot_row_malformed",
+            "collection": collection,
+            "row_index": row_index,
+        }
+        for row_index, row in enumerate(rows)
+        if not isinstance(row, Mapping)
+    ]
+    if failures:
+        raise InitiativePlanError(failures)
+    return list(rows)
+
+
+def _snapshot_projects(
+    snapshot: Mapping[str, Any] | None,
+) -> list[Mapping[str, Any]]:
+    return _snapshot_rows(snapshot, "projects")
 
 
 def _snapshot_initiatives(
     snapshot: Mapping[str, Any] | None,
 ) -> list[Mapping[str, Any]]:
-    if snapshot is None:
-        return []
-    rows = snapshot.get("initiatives")
-    if not isinstance(rows, list):
-        raise InitiativePlanError([{"code": "initiative_snapshot_missing_initiatives"}])
-    return [row for row in rows if isinstance(row, Mapping)]
+    return _snapshot_rows(snapshot, "initiatives")
 
 
 def _desired_initiatives(strategy: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -736,7 +775,7 @@ def compile_initiative_plan(
     snapshot_path: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Compile Initiative desired state from an already-compiled Project plan."""
-    strategy = load_strategy(strategy_path)
+    strategy, strategy_payload = _load_strategy_payload(strategy_path)
     validate_strategy(strategy, project_plan)
     snapshot = _load_snapshot(snapshot_path)
 
@@ -756,6 +795,17 @@ def compile_initiative_plan(
     hard_blockers = [row for row in drift if row["code"] in _HARD_DRIFT_CODES]
     drift_counts = dict(sorted(Counter(row["code"] for row in drift).items()))
     group_counts = dict(sorted(Counter(row["initiative_key"] for row in desired_memberships).items()))
+    source_identity = {
+        field: strategy["source_design"][field]
+        for field in _EXPECTED_SOURCE_IDENTITY
+    }
+    strategy_provenance = {
+        "source_identity": source_identity,
+        "strategy_content_sha256": hashlib.sha256(strategy_payload).hexdigest(),
+        "desired_memberships_sha256": hashlib.sha256(
+            lpp.canonical_bytes(desired_memberships)
+        ).hexdigest(),
+    }
 
     semantic: dict[str, Any] = {
         "schema": PLAN_SCHEMA,
@@ -780,7 +830,8 @@ def compile_initiative_plan(
     receipt = {
         "schema": RECEIPT_SCHEMA,
         "status": "compiled",
-        "strategy_source_revision": strategy.get("source_design", {}).get("protected_revision"),
+        "strategy_source_revision": source_identity["protected_revision"],
+        "strategy_provenance": strategy_provenance,
         "project_plan_semantic_hash": project_plan.get("semantic_hash"),
         "initiative_plan_semantic_hash": digest,
         "desired_counts": {
