@@ -135,3 +135,4 @@ danger_areas:
   - >
     A terminal child STOP removes only that child watcher source. Aggregate seat/principal/sibling
     watcher sources must remain active; WATCH_STOP_FAILED does not reopen the child.
+---
