@@ -1,8 +1,7 @@
 /* cn_prophet_live.js — CN Breathing Platform runtime board (CN-PR-3).
    Polls live/cn_prophet_live.json and paints only the reserved .pv-live chip on
-   each .pvcard[data-ticker]. The page-level #cn-prophet-live node is a hidden
-   boot-time session carrier only: its date is cached, then the node is removed
-   from the DOM before the first live fetch so it cannot consume viewport.
+   each .pvcard[data-ticker]. The SSR session floor is carried by the existing
+   stocks header; there is no standalone page-level CN live/telemetry module.
 
    Fail-closed. A 401, a bad schema, a feed older than the page session, or an
    artifact older than 45 minutes tears the live layer down and leaves the SSR
@@ -50,20 +49,10 @@
   function pageSession() {
     if (_bakedSession !== undefined) return _bakedSession;
     _bakedSession = "";
-    var el = document.getElementById("cn-prophet-live");
+    var el = document.getElementById("stocks-header");
     var s = el ? (el.getAttribute("data-cn-session") || "") : "";
     if (DATE_RE.test(s)) _bakedSession = s;
     return _bakedSession;
-  }
-
-  function detachSessionCarrier() {
-    var carrier = document.getElementById("cn-prophet-live");
-    if (!carrier) return;
-    carrier.hidden = true;
-    carrier.removeAttribute("class");
-    carrier.textContent = "";
-    carrier.setAttribute("aria-hidden", "true");
-    if (carrier.parentNode) carrier.parentNode.removeChild(carrier);
   }
 
   function feedIsCurrent(d) {
@@ -101,7 +90,6 @@
   }
 
   function tearDown() {
-    detachSessionCarrier();
     if (!_painted) return;
     var slots = document.querySelectorAll(".pvcard[data-ticker] .pv-live");
     for (var i = 0; i < slots.length; i++) {
@@ -164,7 +152,6 @@
   }
 
   function apply(d) {
-    detachSessionCarrier();
     paintCards(d.names || {});
   }
 
@@ -190,9 +177,8 @@
   }
 
   function arm() {
-    if (!document.getElementById("cn-prophet-live")) return;
+    if (!document.getElementById("stocks-header")) return;
     pageSession();
-    detachSessionCarrier();
     tick(true);
     if (_timer) clearInterval(_timer);
     _timer = setInterval(function () { tick(false); }, POLL);
