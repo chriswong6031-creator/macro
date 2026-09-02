@@ -1,0 +1,228 @@
+{
+  "axes": {
+    "access": [
+      "anonymous"
+    ],
+    "force_states": [],
+    "locales": [
+      "en",
+      "zh"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "viewports": {
+      "desktop": [
+        1440,
+        900
+      ]
+    }
+  },
+  "excluded": [],
+  "generated_at": "2026-09-02T11:03:01Z",
+  "honesty": {
+    "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
+    "authority": "this tool measures and screenshots; it scores, ranks, and judges nothing",
+    "gaps": "states that were not captured are recorded with a reason; nothing is inferred for them"
+  },
+  "outcome": "captured",
+  "pages": [
+    {
+      "console_errors": [],
+      "failed_responses": [],
+      "gaps": [
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "free"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "essential"
+        },
+        {
+          "captured": false,
+          "dimension": "access",
+          "reason": "requires authenticated session; not automatable without approved fixtures",
+          "value": "pro"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "loading"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "empty"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "stale"
+        },
+        {
+          "captured": false,
+          "dimension": "page_state",
+          "reason": "state not synthesizable against static output",
+          "value": "error"
+        }
+      ],
+      "metrics": {
+        "asof_present": false,
+        "by_viewport": {
+          "desktop": {
+            "document_height_px": 2578,
+            "elements_wider_than_viewport": 0,
+            "horizontal_overflow": false
+          }
+        },
+        "console_error_count": 0,
+        "document_height_px": 2578,
+        "duplicate_heading_texts": [],
+        "elements_wider_than_viewport": 0,
+        "heading_counts": {
+          "h1": 1,
+          "h2": 5,
+          "h3": 5,
+          "h4": 0,
+          "h5": 0,
+          "h6": 0
+        },
+        "horizontal_overflow": false,
+        "long_paragraph_count": 0,
+        "measured_in": {
+          "access": "anonymous",
+          "locale": "en",
+          "theme": "light",
+          "viewport": "desktop"
+        },
+        "panel_count": 12,
+        "payload_bytes_total": 733289,
+        "raw_slug_hit_count": 0,
+        "raw_slug_hits": [],
+        "request_count": 16,
+        "screenshot_completion": 1.0,
+        "section_count": 0,
+        "source_present": false,
+        "todo_placeholder_hit_count": 0,
+        "todo_placeholder_hits": [],
+        "visible_word_count": 860
+      },
+      "page_id": "intelligence_hub.html",
+      "registry_route": "intelligence_hub.html",
+      "route": "intelligence_hub.html",
+      "route_kind": "explicit_override",
+      "states": [
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "light",
+          "bytes": 581350,
+          "captured": true,
+          "file": "7b8c3a5b321169d6.png",
+          "force_state": null,
+          "height": 2578,
+          "locale": "en",
+          "sha256": "7b8c3a5b321169d66539f55dc1262238293675eb5a7de939c2ae5b8c80be51fb",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "en",
+          "applied_theme": "dark",
+          "bytes": 590947,
+          "captured": true,
+          "file": "4e81956fa84bce32.png",
+          "force_state": null,
+          "height": 2578,
+          "locale": "en",
+          "sha256": "4e81956fa84bce3270949c613fb7f8150dc608c703b9b7d5cc196e4d82e5dccd",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "light",
+          "bytes": 578840,
+          "captured": true,
+          "file": "a77c46e0b3927e54.png",
+          "force_state": null,
+          "height": 2647,
+          "locale": "zh",
+          "sha256": "a77c46e0b3927e544368cb5f2d7e1a7c4946b69c6f54e787543e2f4701cd5e24",
+          "theme": "light",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        },
+        {
+          "access": "anonymous",
+          "applied_locale": "zh",
+          "applied_theme": "dark",
+          "bytes": 586810,
+          "captured": true,
+          "file": "547c7aa22eb4bb35.png",
+          "force_state": null,
+          "height": 2647,
+          "locale": "zh",
+          "sha256": "547c7aa22eb4bb35760a76b0acd288312213076c28bf9b1fa3f83167e37cc0ae",
+          "theme": "dark",
+          "viewport": "desktop",
+          "viewport_height": 900,
+          "viewport_width": 1440,
+          "width": 1440
+        }
+      ]
+    }
+  ],
+  "schema": "mastermind.p0_evidence.v2",
+  "selection": {
+    "explicit_routes": [
+      "intelligence_hub.html"
+    ],
+    "max_pages": 30,
+    "mode": "explicit_routes",
+    "note": "--routes overrode registry selection; the --priority and --repo filters were not applied",
+    "priority": null,
+    "registry": "data/product_experience/page_registry.json",
+    "registry_rows": 309,
+    "repo": null,
+    "selected": 1
+  },
+  "target": {
+    "base_url": "http://127.0.0.1:8991",
+    "kind": "base_url",
+    "resolved_gitdir_or_none": null,
+    "resolved_sha_or_none": null,
+    "resolved_sha_source": "unavailable: a live origin does not disclose the commit it is serving",
+    "site_dir": null
+  },
+  "tool": {
+    "module_ref": "scripts/capture_page_evidence.py",
+    "module_sha256": "384b76088923d7ad02f71840db830e0dda38f49febc21abf72f1f03c5e20ee2d",
+    "user_agent": "mastermind-page-census/1.0 (internal product observability)",
+    "version": "1.2.0"
+  },
+  "totals": {
+    "pages": 1,
+    "states_attempted": 4,
+    "states_captured": 4
+  }
+}
