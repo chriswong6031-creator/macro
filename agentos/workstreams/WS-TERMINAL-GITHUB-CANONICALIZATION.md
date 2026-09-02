@@ -24,7 +24,7 @@ waves:
       rerun the fail-closed preflight and must not reinterpret runtime data as Git source.
   - id: W1
     title: Fail-closed source audit capability
-    status: built_not_proven
+    status: in_progress
     pr: 484
     depends_on: [W0]
     next_action: >
@@ -44,7 +44,7 @@ waves:
       identities without a new deployment database.
   - id: W3
     title: Repository authority, merge and security hardening
-    status: partial
+    status: in_progress
     depends_on: [W1]
     next_action: >
       Keep W3B PR #487 DRAFT/held until #485 makes the required browser authority reliable, then
