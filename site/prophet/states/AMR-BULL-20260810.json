@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AMR-BULL-20260810",
-  "asof": "2026-08-30",
+  "asof": "2026-08-31",
   "phase": "between_t1_t2",
   "detection_phase": "between_t1_t2",
   "management_confidence": 87.6,
@@ -11,21 +11,21 @@
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 82.0,
+    "progress": 88.0,
     "pace": 100.0,
-    "retention": 98.3,
-    "overlay": 61.0
+    "retention": 100.0,
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.523,
-    "dist_to_t1_r": -1.023,
-    "dist_to_t2_r": 0.477,
-    "horizon_pct_used": 40.0,
-    "p1": 1.6819,
-    "p2": 0.841,
+    "dist_to_stop_r": 3.881,
+    "dist_to_t1_r": -1.381,
+    "dist_to_t2_r": 0.119,
+    "horizon_pct_used": 42.2,
+    "p1": 1.9206,
+    "p2": 0.9603,
     "p3": null,
-    "move_r": 2.523,
-    "mfe_r": 2.566,
+    "move_r": 2.881,
+    "mfe_r": 2.881,
     "mae_r": -0.147
   },
   "rr_ratio": 1.5,
@@ -39,12 +39,12 @@
     "recommended_action": "display \u2014 narrate, not authoritative order",
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
-  "_mfe": 67.8800048828125,
+  "_mfe": 76.19999694824219,
   "_mae": -3.899993896484375,
-  "_max_p1": 1.7109011942737866,
+  "_max_p1": 1.9206048380149254,
   "_first_trigger_ts": "2026-08-12",
   "_first_t1_ts": "2026-08-21",
   "_first_t2_ts": null,
-  "days_elapsed": 18,
-  "tau": 0.4
+  "days_elapsed": 19,
+  "tau": 0.4222
 }

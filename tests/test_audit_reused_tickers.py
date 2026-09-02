@@ -63,7 +63,7 @@ def _dead_era(end: str = "2026-01-15", n: int = 40) -> pd.DatetimeIndex:
 def _run(tmp_path, **kw):
     defaults = dict(cfg=CFG, now=NOW, out_dir=tmp_path / "quality",
                     data_dir=tmp_path / "data", directory={}, quality_raw={},
-                    stock_search_raw={})
+                    stock_search_raw={}, exit_ledger=frozenset())
     defaults.update(kw)
     return art.run(**defaults)
 
@@ -204,6 +204,24 @@ def test_delisted_printing_ack_and_dot_dash_normalization(tmp_path, capsys):
     # BRK-B is listed under dot notation => not flagged at all; RHHBY flagged but acked
     assert doc["totals"]["delisted_printing"] == 1
     assert doc["unacked_delisted_printing"] == []
+    assert _lines(capsys, "::warning title=delisted still printing::") == []
+
+
+def test_resolved_exit_row_reads_as_acked_delisted_printing(tmp_path, capsys):
+    """A name carrying a resolved exit row (config/delisted_symbols.yml) is the
+    already-triaged case this warning exists to demand — it stays disclosed in
+    the JSON with a 'resolved exit' rationale but never warns unacked during the
+    few sessions before its frozen tip ages past stocks_stale_calendar_days."""
+    fresh = pd.bdate_range(end="2026-08-04", periods=30)
+    _write_registry(tmp_path / "data", {})
+    _write_store(tmp_path / "data", "stocks", "GONE",
+                 _alternating(fresh, 200.0, 0.001, -0.001))
+    doc = _run(tmp_path, directory={"OTHER": "Some Corp"},
+               exit_ledger=frozenset({"GONE"}))
+    assert doc["totals"]["delisted_printing"] == 1
+    assert doc["unacked_delisted_printing"] == []
+    row = doc["stores"][0]["delisted_printing"][0]
+    assert row["acked"] is True and "resolved exit" in row["ack"]
     assert _lines(capsys, "::warning title=delisted still printing::") == []
 
 

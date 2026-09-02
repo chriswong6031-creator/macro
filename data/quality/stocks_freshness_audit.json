@@ -1,5 +1,5 @@
 {
- "asof": "2026-08-30",
+ "asof": "2026-08-31",
  "audit": "stocks",
  "config": {
   "price_max_gap_days": 4,
@@ -19,14 +19,14 @@
   "stocks_stale_calendar_days": 7,
   "email_alerts": false
  },
- "n": 244,
+ "n": 245,
  "n_failed": 0,
  "fail_pct": 0.0,
  "n_flags": 3,
  "universes": [
   {
    "name": "stocks",
-   "n": 244,
+   "n": 245,
    "n_failed": 0,
    "fail_pct": 0.0,
    "n_flags": 3,
@@ -42,20 +42,20 @@
     {
      "name": "EA",
      "kind": "stale_live",
-     "detail": "last bar 2026-08-10 (20d stale)"
+     "detail": "last bar 2026-08-10 (21d stale)"
     },
     {
      "name": "EQR",
      "kind": "stale_live",
-     "detail": "last bar 2026-08-21 (9d stale)"
+     "detail": "last bar 2026-08-21 (10d stale)"
     }
    ]
   }
  ],
- "expected_session": "2026-08-28",
+ "expected_session": "2026-08-31",
  "threshold_calendar_days": 7,
  "totals": {
-  "fresh": 241,
+  "fresh": 242,
   "stale_live": 2,
   "stale_dead": 1,
   "missing": 0,
@@ -65,13 +65,13 @@
   {
    "ticker": "EA",
    "last_bar": "2026-08-10",
-   "lag_days": 20,
+   "lag_days": 21,
    "in_union": false
   },
   {
    "ticker": "EQR",
    "last_bar": "2026-08-21",
-   "lag_days": 9,
+   "lag_days": 10,
    "in_union": false
   }
  ],
@@ -79,7 +79,7 @@
   {
    "ticker": "AVB",
    "last_bar": "2026-08-24",
-   "lag_days": 6,
+   "lag_days": 7,
    "in_union": false,
    "delisted_ledger": true,
    "contradiction": true
