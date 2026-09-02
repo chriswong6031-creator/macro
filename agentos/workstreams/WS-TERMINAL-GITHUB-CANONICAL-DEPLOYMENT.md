@@ -1,3 +1,45 @@
+---
+key: TERMINAL-GITHUB-CANONICAL-DEPLOYMENT
+title: Terminal GitHub Canonical Deployment
+objective: >
+  Make GitHub the canonical implementation/evidence truth for Mastermind Terminal and make
+  production reproducibly deployable from one accepted GitHub SHA through a mechanically
+  observable receipt, runtime/browser proof and loud drift detection.
+status: active
+program: terminal-charting
+repos: [terminal, macro]
+owner: ceo-sol
+class: build
+blast_radius: user_facing
+ambiguity: scoped
+waves:
+  - id: W0
+    title: Production archaeology
+    status: in_progress
+    next_action: >
+      Recover exact runtime topology, deployed SHA and GitHub↔host delta via the already-dispatched
+      read-only archaeology commission; production mutation remains UNKNOWN_STOP.
+  - id: W1
+    title: Deterministic source audit
+    status: todo
+    depends_on: [W0]
+  - id: W2
+    title: Exact-SHA deploy and receipts
+    status: todo
+    depends_on: [W1]
+  - id: W3
+    title: Repository authority and security
+    status: todo
+    depends_on: [W1]
+  - id: W4
+    title: Production acceptance and visibility
+    status: todo
+    depends_on: [W2, W3]
+next_action: >
+  Complete Wave-0 read-only production archaeology and classify every GitHub↔host delta before any
+  production mutation. Canonical carrier remains mastermind-terminal#483.
+---
+
 # WS-TERMINAL-GITHUB-CANONICAL-DEPLOYMENT
 
 ## Objective
