@@ -79,7 +79,10 @@ WHAT IT CHECKS — every per-ticker parquet in data/stocks/ and data/baskets/ohl
                     ::warning for un-acked names.
 
 ACKS — config.yml `quality.reused_ticker_acks` ({TICKER: identity rationale}),
-`quality.delisted_printing_acks` ([TICKER, ...]) and
+`quality.delisted_printing_acks` ([TICKER, ...] — plus, for the delisted_printing
+class only, any name carrying a resolved exit row in config/delisted_symbols.yml:
+the exit row is the triage the warning asks for, so it reads as acked with a
+"resolved exit" rationale rather than warning until the tip ages out) and
 `quality.member_identity_acks` ({TICKER: verified-identity rationale, for a curated
 name that legitimately disagrees with the directory}) are operator-ratified
 identities: acked names are still disclosed in the JSON every night (with the
@@ -118,7 +121,7 @@ import pandas as pd
 _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
-from lib import config, nyse_calendar  # noqa: E402
+from lib import config, delisted_symbols, nyse_calendar  # noqa: E402
 from scripts import audit_common as ac  # noqa: E402
 
 log = logging.getLogger("audit.reused_tickers")
@@ -392,7 +395,8 @@ def run(cfg: dict | None = None, now: datetime | None = None,
         directory: dict[str, str] | None = None,
         quality_raw: dict | None = None,
         ledger_path: Path | None = None,
-        stock_search_raw: dict | None = None) -> dict:
+        stock_search_raw: dict | None = None,
+        exit_ledger: frozenset[str] | None = None) -> dict:
     """Audit both per-ticker stores for reused/zombie ticker keys and persist
     data/quality/reused_tickers_audit.json. Never raises for a data issue.
 
@@ -408,6 +412,19 @@ def run(cfg: dict | None = None, now: datetime | None = None,
     grace_days = int(cfg.get("reused_grace_days", 30))
     today = _today_et(now)
     reused_acks, delisted_acks, member_acks = _acks(quality_raw)
+    # A resolved exit row (config/delisted_symbols.yml) IS the triage this class
+    # asks for: "delisted still printing" exists to surface an in-flight
+    # take-private nobody has resolved yet, and once the exit ledger carries the
+    # name — evidence-backed, #4622 protocol — the freshly-dead tip is the
+    # already-diagnosed final-session window, not an un-triaged alarm (the fetch
+    # exclusion freezes the tip within a session; the freshness lanes' delisted
+    # contradiction shout still owns bars past last_session). Union, never a
+    # replacement: quality.delisted_printing_acks stays the home for names that
+    # legitimately keep printing OTC (RHHBY, STRS). tickers() fails open to
+    # empty, so a broken ledger degrades to pre-ledger behaviour. `exit_ledger`
+    # injects the resolved-exit set (tests); None reads config/delisted_symbols.yml.
+    if exit_ledger is None:
+        exit_ledger = delisted_symbols.tickers()
 
     # --- dead registry: per-ticker death-era closes -------------------------------
     reg_path = data_dir / "edgar" / "dead_name_prices.parquet"
@@ -506,10 +523,13 @@ def run(cfg: dict | None = None, now: datetime | None = None,
                           "quality.reused_ticker_acks or migrate the key.", flush=True)
             elif directory is not None and (today - tip).days <= stale_days \
                     and not _listed(t, directory):
-                acked = t in delisted_acks
+                resolved = t in exit_ledger
+                acked = t in delisted_acks or resolved
                 totals["delisted_printing"] += 1
-                rec["delisted_printing"].append({"ticker": t, "store_tip": str(tip),
-                                                 "acked": acked})
+                entry = {"ticker": t, "store_tip": str(tip), "acked": acked}
+                if resolved:
+                    entry["ack"] = "resolved exit — config/delisted_symbols.yml"
+                rec["delisted_printing"].append(entry)
                 uni.flag(t, "delisted_printing",
                          f"fresh bars ({tip}) but no current NASDAQ/NYSE listing")
                 if not acked:

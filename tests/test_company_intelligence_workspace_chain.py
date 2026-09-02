@@ -32,9 +32,17 @@ from engine.company_intelligence.event_workspace import (
     write_workspace_generation,
 )
 from engine.neuralweb import company_intelligence_reader as reader
+from engine.prophet_lab.intelligence_vector import (
+    IntelligenceVectorContractError,
+    build_earnings_intelligence_vector,
+    validate_intelligence_vector,
+)
+from engine.us_candidate_episode import episode_id as b1_episode_id
+from lib.dataos.identity import IssuerMaster
 
 BASE = "https://company-intelligence-chain.example/company_intelligence"
 EVENT_ID = "evt_cik0000320193_2026q3_results"
+_MINTED_WORKSPACE_BYTES: dict[tuple[str, str], bytes] = {}
 
 
 def _raw_workspace(
@@ -46,6 +54,8 @@ def _raw_workspace(
     form: str = "8-K",
     state: str = "complete",
     event_id: str = EVENT_ID,
+    fact_value: int = 100,
+    include_issuer_release: bool = True,
 ) -> dict:
     """A minimal event_workspace.v1 body — only the keys this test's own
     machinery (validate_event_workspace + the chain-walk itself) reads or
@@ -61,16 +71,24 @@ def _raw_workspace(
         "lifecycle": {"state": state, "observed_at": observed_at or source_available_at,
                       "source_available_at": source_available_at},
         "completeness": {},
-        "facts": [],
+        "facts": [{
+            "schema": "event_fact.v1", "metric": "revenue", "value": fact_value,
+            "unit": "USD", "period": "2026Q3", "basis": "reported",
+            "source_span": {"document_id": "doc:1", "text": "never project source spans"},
+        }],
         "deltas": [],
         "guidance": [],
         "claims": [],
-        "sources": [{
+        "sources": ([{
             "kind": "issuer_release", "document_id": "doc:1",
             "filing_key": {"cik": "0000320193", "accession": accession},
             "source_sha256": source_sha256, "form": form, "url": None,
             "receipt_state": "byte_replayed",
-        }],
+        }] if include_issuer_release else [{
+            "kind": "transcript", "document_id": "doc:body:1",
+            "source_sha256": source_sha256, "receipt_state": "byte_replayed",
+            "body": "body-only revision that must never enter D5",
+        }]),
         "warnings": [],
         "generation_id": "",
         "generated_at": source_available_at,
@@ -98,6 +116,10 @@ def _mint(
         previous_manifest_sha256=previous_manifest_sha256,
     )
     manifest = jsonlib.loads((generation_dir / "manifest.json").read_text(encoding="utf-8"))
+    for event_id in workspaces:
+        _MINTED_WORKSPACE_BYTES[(generation_dir.name, event_id)] = (
+            generation_dir / "workspaces" / f"{event_id}.json"
+        ).read_bytes()
     return generation_dir.name, manifest
 
 
@@ -125,7 +147,17 @@ def _server(objects: dict[str, dict], *, marker_generation_id: str | None, fetch
                     break
                 for event_id, ws in bundle["workspaces"].items():
                     if url == f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{event_id}.json":
-                        body = canonical_json_bytes(ws)
+                        byte_overrides = bundle.get("workspace_byte_overrides")
+                        if isinstance(byte_overrides, dict) and event_id in byte_overrides:
+                            body = byte_overrides[event_id]
+                        else:
+                            body = (
+                                canonical_json_bytes(ws)
+                                if bundle.get("serve_workspace_overrides") is True
+                                else _MINTED_WORKSPACE_BYTES.get(
+                                    (generation_id, event_id), canonical_json_bytes(ws),
+                                )
+                            )
                         break
                 if body is not None:
                     break
@@ -543,3 +575,961 @@ def test_fetch_current_workspace_marker_raw_clean_404_returns_none(monkeypatch) 
     monkeypatch.setattr(reader, "_fetch_bytes", lambda url, *, limit, allow_404=False: None)
     assert reader.fetch_current_workspace_marker_raw(base_url=BASE) is None
     assert reader.fetch_current_workspace_marker(base_url=BASE) is None
+
+
+# ---------------------------------------------------------------------------
+# D5 Task 2 — the pure Earnings projection over the real revision-chain reader
+# ---------------------------------------------------------------------------
+
+_D5_GENERATION_ID = "peg:" + "e" * 64
+
+
+def _d5_episode(*, cut: str = "2026-01-31T12:00:00Z") -> dict:
+    anchor = {
+        "kind": "reset_low",
+        "time": cut,
+        "price": "100.0000",
+        "basis": "turn_watch.reset_low",
+        "source_receipt": "sha256:" + "f" * 64,
+    }
+    return {
+        "schema": "prophet.candidate_episode/v1",
+        "episode_id": b1_episode_id("SEC:US-XNAS-AAPL", "epoch_0", anchor, 1),
+        "company_id": "ISS:US:320193",
+        "security_id": "SEC:US-XNAS-AAPL",
+        "identity_epoch": "epoch_0",
+        "opened_at": cut,
+        "opened_session": cut[:10],
+        "structural_anchor": anchor,
+        "expert_events": ["radar:event:content-addressed-1"],
+    }
+
+
+def _d5_issuer_master() -> IssuerMaster:
+    return IssuerMaster.from_records([{
+        "security_id": "SEC:US-XNAS-AAPL",
+        "issuer_id": "ISS:US:320193",
+        "issuer_state": "active",
+        "listing_key": "US:XNAS:AAPL",
+        "issuer_cik": "0000320193",
+    }])
+
+
+def _d5_project(*, episode: dict | None = None, read_revisions=None) -> dict:
+    return build_earnings_intelligence_vector(
+        episode=episode or _d5_episode(),
+        episode_generation_id=_D5_GENERATION_ID,
+        episode_known_at="2026-01-30T20:05:00Z",
+        issuer_master=_d5_issuer_master(),
+        find_event_id=lambda company_id: EVENT_ID,
+        read_revisions=read_revisions or (
+            lambda event_id: reader.read_event_source_revisions(event_id, base_url=BASE)
+        ),
+    )
+
+
+def _chain_objects(*bundles: tuple[str, dict, dict]) -> dict[str, dict]:
+    return {
+        generation_id: {
+            "manifest": manifest,
+            "workspaces": {EVENT_ID: workspace | {"generation_id": generation_id}},
+        }
+        for generation_id, manifest, workspace in bundles
+    }
+
+
+def test_real_revision_reader_rejects_foreign_body_at_the_receipted_address(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requested = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: requested}, generated_at="2026-01-30T20:03:00Z",
+    )
+    foreign = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        event_id="evt_cik9999999999_2026q3_results",
+    )
+    foreign["issuer"]["company_id"] = "cik:9999999999"
+    objects = _chain_objects((generation_id, manifest, foreign))
+    objects[generation_id]["serve_workspace_overrides"] = True
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    with pytest.raises(
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*(bytes|sha256).*manifest receipt",
+    ):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_revision_reader_rejects_same_address_workspace_byte_substitution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipted = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        fact_value=100,
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: receipted}, generated_at="2026-01-30T20:03:00Z",
+    )
+    substituted = jsonlib.loads(
+        _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    )
+    substituted["facts"] = [dict(receipted["facts"][0], value=999)]
+    substituted["schema"] = "dummy_workspace.v1"
+    substituted["sources"][0]["source_sha256"] = "b" * 64
+    assert len(canonical_json_bytes(substituted)) == manifest["files"][
+        f"workspaces/{EVENT_ID}.json"
+    ]["bytes"]
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            {
+                generation_id: {
+                    "manifest": manifest,
+                    "workspaces": {EVENT_ID: substituted},
+                    "serve_workspace_overrides": True,
+                },
+            },
+            marker_generation_id=generation_id,
+        ),
+    )
+
+    with pytest.raises(
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*sha256.*manifest receipt",
+    ):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_d5_same_address_workspace_substitution_is_receipted_pending_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    receipted = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        fact_value=100,
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: receipted}, generated_at="2026-01-30T20:03:00Z",
+    )
+    substituted = jsonlib.loads(
+        _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    )
+    substituted["facts"] = [dict(receipted["facts"][0], value=999)]
+    substituted["schema"] = "dummy_workspace.v1"
+    substituted["sources"][0]["source_sha256"] = "b" * 64
+    assert len(canonical_json_bytes(substituted)) == manifest["files"][
+        f"workspaces/{EVENT_ID}.json"
+    ]["bytes"]
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            {
+                generation_id: {
+                    "manifest": manifest,
+                    "workspaces": {EVENT_ID: substituted},
+                    "serve_workspace_overrides": True,
+                },
+            },
+            marker_generation_id=generation_id,
+        ),
+    )
+
+    payload = _d5_project()
+    family = payload["evidence_families"][0]
+    assert family["coverage"] == {
+        "state": "UNKNOWN",
+        "basis": "correction_chain_integrity",
+    }
+    assert family["correction"] == {
+        "state_at_decision": "PENDING",
+        "current_state": "UNKNOWN",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": [],
+        "later_revision_receipts": [],
+        "later_revision_state": "UNKNOWN",
+    }
+    assert all(item["value_state"] == "ABSENT" for item in family["observations"])
+    assert all(
+        set(item["absence_reasons"]) == {"UNESTIMABLE", "CORRECTION_PENDING"}
+        for item in family["observations"]
+    )
+    assert payload["assembly_receipt"]["errors"][0]["type"] == (
+        "WorkspaceChainIntegrityError"
+    )
+    assert family["source_refs"] == []
+    assert family["evidence_roots"] == []
+    assert family["trajectory"] == {"state": "NOT_APPLICABLE", "dimensions": []}
+    assert all(item["value"] is None for item in family["observations"])
+    serialized = jsonlib.dumps(family, sort_keys=True)
+    assert "dummy_workspace" not in serialized
+    assert "b" * 64 not in serialized
+
+
+def test_revision_reader_authenticates_malformed_workspace_bytes_before_decoding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    receipted = _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    malformed = b"!" * len(receipted)
+    objects = _chain_objects((generation_id, manifest, workspace))
+    objects[generation_id]["workspace_byte_overrides"] = {EVENT_ID: malformed}
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    with pytest.raises(
+        reader.WorkspaceChainIntegrityError,
+        match="workspace.*sha256.*manifest receipt",
+    ):
+        reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+
+def test_revision_reader_propagates_authenticated_workspace_manifest_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    fetch_calls: list[str] = []
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects((generation_id, manifest, workspace)),
+            marker_generation_id=generation_id,
+            fetch_calls=fetch_calls,
+        ),
+    )
+
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+
+    expected = manifest["files"][f"workspaces/{EVENT_ID}.json"]
+    assert revisions[0]["workspace_receipt"] == {
+        "sha256": expected["sha256"],
+        "bytes": expected["bytes"],
+    }
+    workspace_url = (
+        f"{BASE}/event_workspaces/generations/{generation_id}/"
+        f"workspaces/{EVENT_ID}.json"
+    )
+    assert fetch_calls.count(workspace_url) == 1
+
+
+def test_d5_malformed_workspace_substitution_is_receipted_pending_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+    )
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    receipted = _MINTED_WORKSPACE_BYTES[(generation_id, EVENT_ID)]
+    malformed = b"!" * len(receipted)
+    objects = _chain_objects((generation_id, manifest, workspace))
+    objects[generation_id]["workspace_byte_overrides"] = {EVENT_ID: malformed}
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(objects, marker_generation_id=generation_id),
+    )
+
+    payload = _d5_project()
+    family = payload["evidence_families"][0]
+    assert family["coverage"] == {
+        "state": "UNKNOWN",
+        "basis": "correction_chain_integrity",
+    }
+    assert family["quality"] == {"flags": ["correction_chain_integrity"]}
+    assert family["correction"] == {
+        "state_at_decision": "PENDING",
+        "current_state": "UNKNOWN",
+        "decision_version_ref_ids": [],
+        "later_correction_ref_ids": [],
+        "later_revision_receipts": [],
+        "later_revision_state": "UNKNOWN",
+    }
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert set(family["observations"][0]["absence_reasons"]) == {
+        "UNESTIMABLE", "CORRECTION_PENDING",
+    }
+    assert payload["assembly_receipt"]["errors"][0]["type"] == (
+        "WorkspaceChainIntegrityError"
+    )
+
+
+def test_d5_decision_value_stays_at_n_while_n_plus_1_is_observed_correction_lineage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ws1 = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z", observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64, fact_value=100,
+    )
+    ws2 = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z", observed_at="2026-02-01T20:02:00Z",
+        source_sha256="b" * 64, fact_value=120,
+    )
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-30T20:03:00Z")
+    gen2, man2 = _mint(
+        tmp_path, {EVENT_ID: ws2}, generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=gen1,
+        previous_manifest_sha256=sha256(canonical_json_bytes(man1)).hexdigest(),
+    )
+    assert ws1["facts"][0]["value"] != ws2["facts"][0]["value"]
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(
+            _chain_objects((gen1, man1, ws1), (gen2, man2, ws2)),
+            marker_generation_id=gen1,
+        ),
+    )
+    initial_payload = _d5_project()
+    initial_family = initial_payload["evidence_families"][0]
+    initial_fact = next(
+        item for item in initial_family["observations"]
+        if item["native_metric_id"] == "fact:revenue"
+    )
+    fetch_calls: list[str] = []
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(_chain_objects((gen1, man1, ws1), (gen2, man2, ws2)),
+                marker_generation_id=gen2, fetch_calls=fetch_calls),
+    )
+
+    corrected_payload = _d5_project()
+    family = corrected_payload["evidence_families"][0]
+    fact = next(item for item in family["observations"] if item["native_metric_id"] == "fact:revenue")
+    assert fact["value"] == 100
+    assert {
+        key: value for key, value in fact.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    } == {
+        key: value for key, value in initial_fact.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    }
+    assert fact["observation_id"] != initial_fact["observation_id"]
+    assert initial_fact["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert fact["correction_lineage_state"] == "OBSERVED"
+    assert corrected_payload["projection_id"] != initial_payload["projection_id"]
+    assert family["correction"]["state_at_decision"] == "NONE"
+    assert family["correction"]["current_state"] == "CORRECTED"
+    assert family["correction"].get("later_revision_state") == "PROJECTED"
+    lane_assessment = family["owner_lane_dispositions"]
+    assert lane_assessment["owner_subject_id"] == EVENT_ID
+    assert lane_assessment["generation_id"] == gen1
+    assert lane_assessment["workspace_receipt"] == {
+        "sha256": man1["files"][f"workspaces/{EVENT_ID}.json"]["sha256"],
+        "bytes": man1["files"][f"workspaces/{EVENT_ID}.json"]["bytes"],
+    }
+    assert lane_assessment["owner_lane_assessment_id"].startswith("ola:")
+    assert all(
+        lane["owner_lane_receipt_id"].startswith("olr:")
+        for lane in lane_assessment["lanes"]
+    )
+    decision_refs = set(family["correction"]["decision_version_ref_ids"])
+    later_refs = set(family["correction"]["later_correction_ref_ids"])
+    assert decision_refs and later_refs and decision_refs.isdisjoint(later_refs)
+    later_receipts = family["correction"]["later_revision_receipts"]
+    assert len(later_receipts) == 1
+    assert later_receipts[0]["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in later_receipts[0].items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": EVENT_ID,
+        "generation_id": gen2,
+        "workspace_receipt": {
+            "sha256": man2["files"][f"workspaces/{EVENT_ID}.json"]["sha256"],
+            "bytes": man2["files"][f"workspaces/{EVENT_ID}.json"]["bytes"],
+        },
+        "source_sha256": "b" * 64,
+        "source_available_at": "2026-02-01T20:00:00Z",
+        "observed_at": "2026-02-01T20:02:00Z",
+        "generated_at": "2026-02-01T20:03:00Z",
+        "disposition": "PROJECTED",
+        "source_ref_ids": sorted(later_refs),
+    }
+    source_refs = {item["source_ref_id"]: item for item in family["source_refs"]}
+    assert {source_refs[ref]["version_or_generation"] for ref in decision_refs} == {gen1}
+    assert {source_refs[ref]["version_or_generation"] for ref in later_refs} == {gen2}
+    assert family["point_in_time"]["corrected_at"]["value"] == "2026-02-01T20:03:00Z"
+
+    # The adapter calls the real reader ONCE. The reader in turn fetches each
+    # immutable manifest and workspace exactly once per verified chain hop.
+    for generation_id in (gen1, gen2):
+        manifest_url = f"{BASE}/event_workspaces/generations/{generation_id}/manifest.json"
+        workspace_url = f"{BASE}/event_workspaces/generations/{generation_id}/workspaces/{EVENT_ID}.json"
+        assert fetch_calls.count(manifest_url) == 1
+        assert fetch_calls.count(workspace_url) == 1
+
+
+def test_d5_observable_later_revision_without_projectable_fields_is_distinct(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+    )
+    later = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="b" * 64,
+        fact_value=120,
+    )
+    later["facts"] = []
+    later["deltas"] = []
+    later["guidance"] = []
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: later},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=decision_generation,
+        ),
+    )
+    initial_family = _d5_project()["evidence_families"][0]
+    initial_observations = initial_family["observations"]
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, later),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
+    family = _d5_project()["evidence_families"][0]
+    correction = family["correction"]
+    assert correction["state_at_decision"] == "NONE"
+    assert correction["decision_version_ref_ids"]
+    assert correction["later_correction_ref_ids"] == []
+    assert correction["later_revision_state"] == "OBSERVED_UNPROJECTABLE"
+    assert correction["current_state"] == "UNKNOWN"
+    assert [
+        {
+            key: value for key, value in observation.items()
+            if key not in {"observation_id", "correction_lineage_state"}
+        }
+        for observation in family["observations"]
+    ] == [
+        {
+            key: value for key, value in observation.items()
+            if key not in {"observation_id", "correction_lineage_state"}
+        }
+        for observation in initial_observations
+    ]
+    assert {
+        observation["correction_lineage_state"]
+        for observation in initial_observations
+    } == {"NONE_IN_CHAIN"}
+    assert len(correction["later_revision_receipts"]) == 1
+    later_receipt = correction["later_revision_receipts"][0]
+    assert later_receipt["later_revision_receipt_id"].startswith("lrr:")
+    assert {
+        key: value for key, value in later_receipt.items()
+        if key != "later_revision_receipt_id"
+    } == {
+        "owner_subject_id": EVENT_ID,
+        "generation_id": later_generation,
+        "workspace_receipt": {
+            "sha256": later_manifest["files"][
+                f"workspaces/{EVENT_ID}.json"
+            ]["sha256"],
+            "bytes": later_manifest["files"][
+                f"workspaces/{EVENT_ID}.json"
+            ]["bytes"],
+        },
+        "source_sha256": "b" * 64,
+        "source_available_at": "2026-02-01T20:00:00Z",
+        "observed_at": "2026-02-01T20:02:00Z",
+        "generated_at": "2026-02-01T20:03:00Z",
+        "disposition": "OBSERVED_UNPROJECTABLE",
+        "source_ref_ids": [],
+    }
+    assert {
+        source_ref["version_or_generation"]
+        for source_ref in family["source_refs"]
+    } == {decision_generation}
+    assert {
+        observation["correction_lineage_state"]
+        for observation in family["observations"]
+    } == {"OBSERVED"}
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": "2026-02-01T20:03:00Z",
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": [],
+    }
+
+
+def test_d5_same_issuer_release_hash_is_none_in_chain_not_observed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+    )
+    carry_forward = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=120,
+    )
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: carry_forward},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(
+            _chain_objects(
+                (decision_generation, decision_manifest, decision),
+                (later_generation, later_manifest, carry_forward),
+            ),
+            marker_generation_id=later_generation,
+        ),
+    )
+
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    assert [revision["generation_id"] for revision in revisions] == [
+        decision_generation,
+    ]
+    family = _d5_project()["evidence_families"][0]
+    revenue = next(
+        observation for observation in family["observations"]
+        if observation["native_metric_id"] == "fact:revenue"
+    )
+    assert revenue["value"] == 100
+    assert revenue["correction_lineage_state"] == "NONE_IN_CHAIN"
+    assert family["correction"]["later_revision_receipts"] == []
+    assert family["correction"]["later_revision_state"] == "NONE"
+    assert family["correction"]["current_state"] == "CURRENT"
+
+
+def test_d5_body_only_decision_to_issuer_release_is_observed_and_endpoint_200(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from types import SimpleNamespace
+
+    import app.prophet_lab as prophet_lab_api
+
+    decision = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z",
+        source_sha256="a" * 64,
+        fact_value=100,
+        include_issuer_release=False,
+    )
+    decision["facts"] = []
+    decision["guidance"] = [{
+        "metric": "revenue_yoy_pct",
+        "low": 9.0,
+        "high": 11.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "introduced",
+        "source_span": {"document_id": "doc:body:1", "text": "never project"},
+    }]
+    later = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z",
+        observed_at="2026-02-01T20:02:00Z",
+        source_sha256="b" * 64,
+        fact_value=120,
+    )
+    later["guidance"] = [{
+        "metric": "revenue_yoy_pct",
+        "low": 12.0,
+        "high": 14.0,
+        "unit": "percent",
+        "horizon": "FY2026 Q4",
+        "status": "raised",
+        "source_span": {"document_id": "doc:body:2", "text": "never project"},
+    }]
+    later["sources"].append({
+        "kind": "transcript",
+        "document_id": "doc:body:2",
+        "source_sha256": "c" * 64,
+        "receipt_state": "byte_replayed",
+        "body": "later body that must never enter D5",
+    })
+    decision_generation, decision_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: decision},
+        generated_at="2026-01-30T20:03:00Z",
+    )
+    later_generation, later_manifest = _mint(
+        tmp_path,
+        {EVENT_ID: later},
+        generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=decision_generation,
+        previous_manifest_sha256=sha256(
+            canonical_json_bytes(decision_manifest)
+        ).hexdigest(),
+    )
+    chain_objects = _chain_objects(
+        (decision_generation, decision_manifest, decision),
+        (later_generation, later_manifest, later),
+    )
+
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(chain_objects, marker_generation_id=decision_generation),
+    )
+    initial_payload = _d5_project()
+    initial_guidance = next(
+        observation
+        for observation in initial_payload["evidence_families"][0]["observations"]
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    )
+
+    monkeypatch.setattr(
+        reader,
+        "_fetch_bytes",
+        _server(chain_objects, marker_generation_id=later_generation),
+    )
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    assert [revision["source_sha256"] for revision in revisions] == [
+        None,
+        "b" * 64,
+    ]
+    assert [revision["generation_id"] for revision in revisions] == [
+        decision_generation,
+        later_generation,
+    ]
+    assert decision["guidance"][0]["low"] == 9.0
+    assert later["guidance"][0]["low"] == 12.0
+
+    episode = _d5_episode()
+    snapshot = SimpleNamespace(
+        generation_id=_D5_GENERATION_ID,
+        generation=SimpleNamespace(
+            episodes=(episode,),
+            events=({
+                "event_type": "OPENED",
+                "episode_id": episode["episode_id"],
+                "known_at": "2026-01-30T20:05:00Z",
+            },),
+        ),
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "load_candidate_episode_store_snapshot",
+        lambda _root: snapshot,
+    )
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "_load_issuer_master",
+        lambda _path: _d5_issuer_master(),
+    )
+
+    def _real_projection(**kwargs):
+        return build_earnings_intelligence_vector(
+            **kwargs,
+            find_event_id=lambda _company_id: EVENT_ID,
+            read_revisions=lambda event_id: reader.read_event_source_revisions(
+                event_id, base_url=BASE,
+            ),
+        )
+
+    monkeypatch.setattr(
+        prophet_lab_api,
+        "build_earnings_intelligence_vector",
+        _real_projection,
+    )
+
+    response = prophet_lab_api.episode_intelligence_v1(
+        episode["episode_id"], _user={"id": "u-paid"},
+    )
+
+    assert response.status_code == 200
+    payload = jsonlib.loads(response.body)
+    validate_intelligence_vector(payload)
+    family = payload["evidence_families"][0]
+    guidance = next(
+        observation for observation in family["observations"]
+        if observation["native_metric_id"] == "guidance:revenue_yoy_pct"
+    )
+    assert {
+        key: value for key, value in guidance.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    } == {
+        key: value for key, value in initial_guidance.items()
+        if key not in {"observation_id", "correction_lineage_state"}
+    }
+    assert guidance["observation_id"] != initial_guidance["observation_id"]
+    assert guidance["correction_lineage_state"] == "OBSERVED"
+    correction = family["correction"]
+    assert correction["current_state"] == "CORRECTED"
+    assert correction["later_revision_state"] == "PROJECTED"
+    assert len(correction["later_revision_receipts"]) == 1
+    later_receipt = correction["later_revision_receipts"][0]
+    assert later_receipt["generation_id"] == later_generation
+    assert later_receipt["generated_at"] == "2026-02-01T20:03:00Z"
+    assert later_receipt["source_ref_ids"] == correction[
+        "later_correction_ref_ids"
+    ]
+    assert family["point_in_time"]["corrected_at"] == {
+        "state": "ASSERTED",
+        "value": later_receipt["generated_at"],
+        "interval": None,
+        "precision": "INSTANT",
+        "basis": "later_event_workspace.generated_at",
+        "source_ref_ids": correction["later_correction_ref_ids"],
+    }
+
+
+def test_d5_body_only_generations_collapse_to_not_observable_never_no_correction(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ws1 = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z", source_sha256="a" * 64,
+        fact_value=100, include_issuer_release=False,
+    )
+    ws2 = _raw_workspace(
+        source_available_at="2026-02-01T20:00:00Z", source_sha256="b" * 64,
+        fact_value=120, include_issuer_release=False,
+    )
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-30T20:03:00Z")
+    gen2, man2 = _mint(
+        tmp_path, {EVENT_ID: ws2}, generated_at="2026-02-01T20:03:00Z",
+        previous_generation_id=gen1,
+        previous_manifest_sha256=sha256(canonical_json_bytes(man1)).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(_chain_objects((gen1, man1, ws1), (gen2, man2, ws2)), marker_generation_id=gen2),
+    )
+    revisions = reader.read_event_source_revisions(EVENT_ID, base_url=BASE)
+    assert len(revisions) == 1 and revisions[0]["source_sha256"] is None
+
+    family = _d5_project()["evidence_families"][0]
+    assert family["correction"].get("later_revision_state") == "NONE"
+    assert family["correction"]["later_revision_receipts"] == []
+    assert all(
+        observation["correction_lineage_state"] == "NOT_OBSERVABLE"
+        for observation in family["observations"]
+    )
+
+
+def test_d5_source_before_cut_but_observed_after_is_typed_absence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ws = _raw_workspace(
+        source_available_at="2026-01-31T10:00:00Z",
+        observed_at="2026-01-31T13:00:00Z",
+    )
+    gen, manifest = _mint(tmp_path, {EVENT_ID: ws}, generated_at="2026-01-31T13:01:00Z")
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(_chain_objects((gen, manifest, ws)), marker_generation_id=gen),
+    )
+    family = _d5_project()["evidence_families"][0]
+    assert family["coverage"]["state"] == "COVERED"
+    assert family["point_in_time"]["decision_admissibility"] == "AFTER_DECISION_CUT"
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert family["observations"][0]["absence_reasons"] == ["NOT_CAPTURED_AT_DECISION"]
+
+
+@pytest.mark.parametrize("missing_clock", ["source_available_at", "observed_at", "generated_at"])
+def test_d5_unknown_clock_is_typed_and_names_the_missing_clock(
+    missing_clock: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = _raw_workspace(source_available_at="2026-01-30T20:00:00Z")
+    generation_id, manifest = _mint(
+        tmp_path, {EVENT_ID: workspace}, generated_at="2026-01-30T20:03:00Z",
+    )
+    served_workspace = workspace | {
+        "generation_id": generation_id,
+        "generated_at": "2026-01-30T20:03:00Z",
+        "lifecycle": dict(workspace["lifecycle"]),
+    }
+    if missing_clock == "generated_at":
+        served_workspace["generated_at"] = None
+    else:
+        served_workspace["lifecycle"][missing_clock] = None
+    revision = {
+        "generation_id": generation_id,
+        "source_sha256": "d" * 64,
+        "source_available_at": served_workspace["lifecycle"]["source_available_at"],
+        "observed_at": served_workspace["lifecycle"]["observed_at"],
+        "lifecycle_state": "complete",
+        "form": "8-K",
+        "workspace_receipt": {
+            "sha256": sha256(canonical_json_bytes(served_workspace)).hexdigest(),
+            "bytes": len(canonical_json_bytes(served_workspace)),
+        },
+        "workspace": served_workspace,
+    }
+
+    family = _d5_project(read_revisions=lambda event_id: [revision])["evidence_families"][0]
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert family["point_in_time"]["decision_admissibility"] == "UNKNOWN"
+    assert family["point_in_time"]["missing_clocks"] == [missing_clock]
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert family["observations"][0]["absence_reasons"] == ["UNKNOWN"]
+
+
+def test_d5_equal_clock_distinct_revisions_are_conflicted(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ws1 = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z", source_sha256="a" * 64, fact_value=100,
+    )
+    ws2 = _raw_workspace(
+        source_available_at="2026-01-30T20:00:00Z",
+        observed_at="2026-01-30T20:02:00Z", source_sha256="b" * 64, fact_value=120,
+    )
+    gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-30T20:03:00Z")
+    gen2, man2 = _mint(
+        tmp_path, {EVENT_ID: ws2}, generated_at="2026-01-30T20:04:00Z",
+        previous_generation_id=gen1,
+        previous_manifest_sha256=sha256(canonical_json_bytes(man1)).hexdigest(),
+    )
+    monkeypatch.setattr(
+        reader, "_fetch_bytes",
+        _server(_chain_objects((gen1, man1, ws1), (gen2, man2, ws2)), marker_generation_id=gen2),
+    )
+    family = _d5_project()["evidence_families"][0]
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert family["point_in_time"]["decision_admissibility"] == "UNVERIFIABLE"
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert family["observations"][0]["absence_reasons"] == ["CONFLICTED"]
+
+
+@pytest.mark.parametrize("failure_kind", ["missing_predecessor", "wrong_hash", "hop_bound"])
+def test_d5_real_reader_integrity_failures_never_degrade_to_empty_healthy_evidence(
+    failure_kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    ws1 = _raw_workspace(source_available_at="2026-01-30T20:00:00Z", source_sha256="a" * 64)
+    ws2 = _raw_workspace(source_available_at="2026-02-01T20:00:00Z", source_sha256="b" * 64)
+    if failure_kind == "missing_predecessor":
+        current_id, current_manifest = _mint(
+            tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-30T20:03:00Z",
+            previous_generation_id="0" * 24, previous_manifest_sha256="f" * 64,
+        )
+        objects = _chain_objects((current_id, current_manifest, ws1))
+        real_read = lambda event_id: reader.read_event_source_revisions(event_id, base_url=BASE)
+    else:
+        gen1, man1 = _mint(tmp_path, {EVENT_ID: ws1}, generated_at="2026-01-30T20:03:00Z")
+        gen2, man2 = _mint(
+            tmp_path, {EVENT_ID: ws2}, generated_at="2026-02-01T20:03:00Z",
+            previous_generation_id=gen1,
+            previous_manifest_sha256=(
+                "0" * 64 if failure_kind == "wrong_hash"
+                else sha256(canonical_json_bytes(man1)).hexdigest()
+            ),
+        )
+        current_id = gen2
+        objects = _chain_objects((gen1, man1, ws1), (gen2, man2, ws2))
+        max_hops = 1 if failure_kind == "hop_bound" else 500
+        real_read = lambda event_id: reader.read_event_source_revisions(
+            event_id, base_url=BASE, max_hops=max_hops,
+        )
+    monkeypatch.setattr(
+        reader, "_fetch_bytes", _server(objects, marker_generation_id=current_id),
+    )
+
+    payload = _d5_project(read_revisions=real_read)
+    family = payload["evidence_families"][0]
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert family["observations"][0]["value_state"] == "ABSENT"
+    assert set(family["observations"][0]["absence_reasons"]) == {
+        "UNESTIMABLE", "CORRECTION_PENDING",
+    }
+    assert payload["assembly_receipt"]["errors"][0]["type"] == "WorkspaceChainIntegrityError"
+
+
+@pytest.mark.parametrize("failure", [
+    "chain link names generation 'missing', which does not exist",
+    "previous_manifest_sha256 does not match predecessor bytes",
+    "predecessor chain exceeds the 3-hop bound without reaching a root",
+])
+def test_d5_chain_integrity_failure_is_sanitized_unestimable_receipt(failure: str) -> None:
+    def broken_reader(event_id: str):
+        raise reader.WorkspaceChainIntegrityError(
+            failure + " at /private/worktree/secret and https://internal.invalid/object"
+        )
+
+    payload = _d5_project(read_revisions=broken_reader)
+    family = payload["evidence_families"][0]
+    assert family["coverage"]["state"] == "UNKNOWN"
+    assert set(family["observations"][0]["absence_reasons"]) == {
+        "UNESTIMABLE", "CORRECTION_PENDING",
+    }
+    receipt = jsonlib.dumps(payload["assembly_receipt"], sort_keys=True)
+    assert "WorkspaceChainIntegrityError" in receipt
+    assert "/private/" not in receipt
+    assert "https://" not in receipt

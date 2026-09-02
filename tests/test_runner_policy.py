@@ -618,3 +618,230 @@ def test_codex_registry_entry_keeps_its_scheduled_waiver() -> None:
     waiver = codex["scheduled_use_waiver"]
     assert waiver["reason"]
     assert waiver["since"]
+
+
+# ── C3R-A: pending fourth PC CI slot (rule R14) ──────────────────────────────
+# The fourth slot is declared as ARCHITECTURE, not as capacity. `slots` stays the
+# live inventory (3) and `ci-linux.carried_by` stays the live roster; the pending
+# fourth slot lives in a separate `pending_slots`/`pending_carriers`/`pending_labels`
+# triple so that "code supports four" can never be mistaken for "four are routable".
+# Live activation is a later, separately audited act that moves pc-ci-4 out of
+# `pending_carriers` and into the roster only once GitHub reports it online/idle.
+
+
+def test_policy_declares_exactly_one_pending_fourth_pc_ci_slot() -> None:
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    pool = registry["pool_topology"]["pc-ci"]
+    assert pool["slots"] == 3, "live PC CI inventory must stay at three"
+    assert pool["pending_slots"] == 1
+    assert pool["pending_carriers"] == ["pc-ci-4"]
+    assert "ci-linux" not in pool["pending_labels"]
+    assert "render-linux" not in pool["pending_labels"]
+    assert registry["label_registry"]["ci-linux"]["carried_by"] == [
+        "pc-ci-1",
+        "pc-ci-2",
+        "pc-ci-3",
+    ]
+
+
+def test_production_trusted_executor_stays_three_slot_bound() -> None:
+    workflow = yaml.safe_load(
+        (WORKFLOWS / "trusted-ci-executor.yml").read_text(encoding="utf-8")
+    )
+    assert workflow["jobs"]["trusted-pack"]["strategy"]["max-parallel"] == 3
+
+
+def test_pending_fourth_slot_cannot_become_a_live_ci_linux_carrier(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["label_registry"]["ci-linux"]["carried_by"].append("pc-ci-4"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_fourth_slot_cannot_appear_in_any_other_live_label_roster(
+    tmp_path: Path,
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["label_registry"]["self-hosted"]["carried_by"].append("pc-ci-4"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_capacity_cannot_hide_a_fifth_ci_slot(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+
+    def add_fifth(doc: dict) -> None:
+        pool = doc["pool_topology"]["pc-ci"]
+        pool["pending_slots"] = 2
+        pool["pending_carriers"] = ["pc-ci-4", "pc-ci-5"]
+
+    mutate_registry(registry, add_fifth)
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_carrier_must_be_the_exact_next_slot_name(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["pc-ci"].__setitem__(
+            "pending_carriers", ["pc-ci-9"]
+        ),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_capacity_cannot_raise_the_live_slot_count(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry, lambda doc: doc["pool_topology"]["pc-ci"].__setitem__("slots", 4)
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R7" in result.stdout
+
+
+def test_pending_fourth_slot_cannot_carry_render_linux(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["pc-ci"]["pending_labels"].append("render-linux"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_fourth_slot_cannot_declare_ci_linux_before_activation(
+    tmp_path: Path,
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["pc-ci"]["pending_labels"].append("ci-linux"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_fourth_slot_cannot_invent_a_new_label_family(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["pc-ci"]["pending_labels"].append("ci-linux-x"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_pending_capacity_cannot_be_declared_for_the_render_pool(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+
+    def add_render_pending(doc: dict) -> None:
+        pool = doc["pool_topology"]["pc-render"]
+        pool["pending_slots"] = 1
+        pool["pending_carriers"] = ["pc-render-5"]
+
+    mutate_registry(registry, add_render_pending)
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_dropping_the_pending_capacity_declaration_fails(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+
+    def drop(doc: dict) -> None:
+        pool = doc["pool_topology"]["pc-ci"]
+        pool.pop("pending_slots", None)
+        pool.pop("pending_carriers", None)
+        pool.pop("pending_labels", None)
+
+    mutate_registry(registry, drop)
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+# ── C3R-A review repairs (adversarial review 2026-09-01) ─────────────────────
+
+
+def test_a_second_ci_pool_cannot_hide_a_fifth_slot(tmp_path: Path) -> None:
+    """REVIEW FINDING 6. Frozen plan Task 1 Step 2 names "a fifth CI slot hidden
+    in YAML" as a required red test, but the hidden-slot test only covered the
+    narrowest `pending_slots: 2` form. A whole second CI pool carrying ci-linux
+    passed the guard clean -- inherited, but this carrier's job to close.
+    """
+    root, registry, workflows = fixture_tree(tmp_path)
+
+    def add_pool(doc: dict) -> None:
+        doc["pool_topology"]["pc-ci-extra"] = {
+            "slots": 2,
+            "labels": ["self-hosted", "ci-linux"],
+            "forbidden_labels": ["render-linux"],
+        }
+
+    mutate_registry(registry, add_pool)
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_only_the_pc_ci_pool_may_carry_the_ci_linux_label(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["pool_topology"]["m1-theta-canary"]["labels"].append("ci-linux"),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R14" in result.stdout
+
+
+def test_r14_reports_a_finding_instead_of_crashing_on_a_non_integer_slot_count(
+    tmp_path: Path,
+) -> None:
+    """REVIEW FINDING 7. A YAML string slot count raised TypeError inside
+    evaluate(), and findings are only printed after evaluate() returns -- so the
+    operator got a traceback instead of R7's actual message.
+    """
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry, lambda doc: doc["pool_topology"]["pc-ci"].__setitem__("slots", "3")
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "Traceback" not in result.stderr, result.stderr
+    assert "R7" in result.stdout
+
+
+def test_r14_refuses_a_bool_or_float_pending_slot_count(tmp_path: Path) -> None:
+    """REVIEW FINDING 10. `pending_slots: true` is an int subclass in Python and
+    `1.0` silently skipped the live+pending cross-check.
+    """
+    for index, value in enumerate((True, 1.0)):
+        case = tmp_path / f"case-{index}"
+        case.mkdir()
+        root, registry, workflows = fixture_tree(case)
+        mutate_registry(
+            registry,
+            lambda doc, v=value: doc["pool_topology"]["pc-ci"].__setitem__(
+                "pending_slots", v
+            ),
+        )
+        result = run_guard(root, registry, workflows)
+        assert result.returncode == 1, f"{value!r} must be refused"
+        assert "R14" in result.stdout
