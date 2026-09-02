@@ -132,9 +132,14 @@ decision gating 022/026/035/037/D017/D002); **(d) consolidated F09/F02 rights do
 (061/D020, 064-financing, 065/D024, 068, D026 rating actions, D028 AIS, 041/D030, 049,
 030-source) — one adjudication gating ~12 rows; **(e) F01/F13 cheap-projection batch**
 (011 AM-Edition, D010 indicators catalog, 088 /help+changelog, D011 /glossary, 009
-governed wrap); **(f) buildable-now F09 slices** needing no rights gate: 059/D018
-maturity-wall from EDGAR XBRL, 062/D021 covenant-text extraction, 064 premium-math,
-D029 coverage matrix; **(g) F08 pair-children**: delivery path (027/085), event→position
+governed wrap); **(f) F09 slices needing no rights gate** — CORRECTED 2026-09-02 after a
+verification-first build attempt: 059/D018 maturity-wall is NOT buildable-now (its
+instruments-half premise was falsified — document_terms.py is registration-fee-table-only
+and no debt-maturity producer exists repo-wide; a new XBRL debt-maturity ingestion child
+must come first; see the corrected ledger rows), 062/D021 covenant-text carries the same
+premise-caution pending re-verification, 064 premium-math unverified-premise, D029
+coverage matrix DELIVERED (this head:
+MARKET_ONTOLOGY_F09_COMMODITY_COVERAGE_MATRIX_2026-09-02.csv/.md); **(g) F08 pair-children**: delivery path (027/085), event→position
 mapping with the D042 schema (028/D042), user-portfolio risk projection (036/D014);
 **(h) F10 output-surface child** (039/D016); **(i) F02 children**: D031 base-map +
 sanctions overlay (rights-clear layers only), D032 implementation-state machine, plus an
