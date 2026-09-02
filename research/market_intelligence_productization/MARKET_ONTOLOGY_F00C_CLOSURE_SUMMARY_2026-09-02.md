@@ -26,9 +26,9 @@ and never blended into any percentage here.
 
 ## Counts
 
-Granular dispositions (130): NEW_BOUNDED_BUILD 46 · UPGRADE_EXISTING_OWNER 40 ·
-PROJECTION_ONLY 20 · BLOCKED_RIGHTS 7 · CONTEXT_ONLY 7 · PENDING_SOL_RULING 5 ·
-EXACT_EQUIVALENT 5.
+Granular dispositions (130, post-ruling amendment): NEW_BOUNDED_BUILD 46 ·
+UPGRADE_EXISTING_OWNER 40 · PROJECTION_ONLY 21 · CONTEXT_ONLY 8 · BLOCKED_RIGHTS 7 ·
+EXACT_EQUIVALENT 5 · REJECTED_BY_DESIGN 3 (ruled) · PENDING_SOL_RULING 0.
 
 Capability states (130): NOT_BUILT 57 · PARTIAL 51 · SPEC_ONLY 11 · BUILT_NOT_PROVEN 6 ·
 PROVEN_LIVE 5. Exactly two state changes vs F00B, both evidence-backed corrections:
@@ -85,29 +85,33 @@ claims (MO-PAID-033, MO-DELTA-001, MO-PAID-001 embedding) — sparse-tree scope-
 closable only with live receipts; off-repo data-contract existence (census can only
 prove no reference in code/docs).
 
-## Five dockets for explicit Sol ruling (facts + principal recommendation)
+## Five dockets — RULED by Sol (Program-CEO C2 docket ruling: macro#6748 comment `5504596085`; CEO carrier `C0BTG1BMY8K/1788325004.496539`)
 
-1. **MO-PAID-048 (military asset tracking)** — D0R registry row 38: Imagery/logistics =
-   "REJECT unless licensed"; no lawful source integrated; row's own notes name it a
-   REJECTED_BY_DESIGN candidate absent a license. *Recommendation:* ratify
-   REJECTED_BY_DESIGN-until-licensed — the mechanism is rejected while unlicensed, the
-   lawful job is preserved behind an explicit Chairman/commercial licensing gate.
-2. **MO-PAID-050 (satellite tracking)** — same D0R row; Planet/Maxar-class gate; only
-   repo "satellite" hit is a sector keyword (`engine/altdata_models.py:274`).
-   *Recommendation:* same ruling as 048.
-3. **MO-DELTA-040 (enterprise deployment planner)** — owner is the commercial/product-ops
-   layer with no intelligence-truth ownership; F12 tenancy is 12/18 NOT_BUILT.
-   *Recommendation:* REJECTED_BY_DESIGN-now for a single-tenant product; preserve the job
-   for a post-tenancy revisit clause.
-4. **MO-PAID-024 (arbitrage scanner authority)** — ceiling refuses competitor
-   direction/confidence/expected-impact/priced% absent calibrated promotion (Sol
-   amendment `1787907339.753029`; K2-C→K3-D→K5 chain all short of acceptance).
-   *Recommendation:* ratify the refusal as permanent row law — the fields are inheritable
-   only via Mastermind's own K5 + Eval-OS calibrated promotion; no interim surface.
-5. **MO-DELTA-006 (ranked-catalyst Opportunity Map)** — same amendment; row's own note:
-   "permissible now only as plain uncalibrated research-priority list."
-   *Recommendation:* ratify that split — the uncalibrated research-priority list is
-   lawful now; every calibrated field waits on K5 promotion.
+Facts and principal recommendations as originally filed are preserved in git history at
+#6748's merged head `ccf80e31`; the controlling rulings, now folded into the ledger rows:
+
+1. **MO-PAID-048 (military asset tracking)** — RULED `REJECTED_BY_DESIGN /
+   RIGHTS_GATED_UNLICENSED`: the lawful job is preserved behind a future explicit
+   licensing gate; no spend/build authority now. (D0R Imagery/logistics = REJECT unless
+   licensed; recommendation ratified.)
+2. **MO-PAID-050 (satellite tracking)** — RULED the same for the Planet/Maxar-class
+   source.
+3. **MO-DELTA-040 (enterprise deployment planner)** — RULED
+   `REJECTED_BY_DESIGN_CURRENT_PRODUCT_SHAPE / DEFERRED_POST_TENANCY`: the underlying
+   enterprise-deployment-planning job is preserved for a post-F12-tenancy revisit.
+4. **MO-PAID-024 (arbitrage scanner authority)** — RULED `AUTHORITY_REFUSAL +
+   BLOCKED_DEPENDENCY`: research-only context may exist, but
+   direction/confidence/expected-impact/priced% or arbitrage authority requires separate
+   K2-C + K3-D acceptance, then K5 + Eval-OS calibrated promotion.
+5. **MO-DELTA-006 (ranked-catalyst Opportunity Map)** — RULED
+   `SPLIT_LAWFUL_NOW_VS_CALIBRATED_HELD`: plain uncalibrated research-priority ordering
+   is lawful now; calibrated ranking/impact/confidence/gate/size/trade semantics remain
+   held behind K5 + Eval-OS.
+
+The ruling additionally states, as amendment law: the `UNASSESSED=0` claim stays scoped
+strictly to `ADMITTED_NOW=130` and does not close or dilute the retained P1
+`1,556 + 460` denominator; this PR is not full parity; no product/trading authority and
+no duplicate carriers arise from these rulings.
 
 ## Child-convergence ledger (what the 130 rows converge onto)
 
@@ -136,12 +140,16 @@ mapping with the D042 schema (028/D042), user-portfolio risk projection (036/D01
 sanctions overlay (rights-clear layers only), D032 implementation-state machine, plus an
 F02 owner-resolution memo (006/034 carry explicit owner-unresolved flags).
 
-## Program-level items surfaced upward
+## Program-level items surfaced upward (updated by the same ruling)
 
-- The **MO-PAID-020 renderer repair is unclaimed** inside WS:MARKET-OS — Program CEO
-  visibility requested (blocks the second-issuer journey for F06 and B1B-B6).
-- The **D2C→W3C fold-sequence status** could not be confirmed from module docstrings;
-  asked on the Program CEO carrier rather than guessed.
+- **MO-PAID-020 — RULED**: the row belongs to WS:MARKET-OS/F06; Stock Identity/Data OS
+  are owner DEPENDENCIES, not child write authority. A single bounded renderer/CIK-access
+  repair may be admitted only after a fresh collision census and remains
+  `CAPACITY_SELECTABLE / WAITING_CAPACITY`; any owner-path mutation returns
+  `OWNER_BOUNDARY_REQUIRED`. (Blocks the second-issuer journey for F06 and B1B-B6.)
+- **D2C→W3C fold-sequence — ANSWERED by the same ruling**: `D2C→D2E→W3B→W3C has NOT
+  executed`, because D2C still has no receiver/ACK/watcher/START. MO-PAID-043's
+  gap-monitor child stays deferred on that sequence actually executing.
 - **MO-PAID-038 is a deliberate HOLD** (DEC:MARKET-INTEL-PRODUCTIZATION-NO-NEW-WORKSTREAM
   names ResearchStudy Workbench HELD) — a release decision, never a schedulable build.
 
