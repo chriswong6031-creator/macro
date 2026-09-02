@@ -271,11 +271,13 @@
              whose Tier-2 hover also carries this signal-bucket date — at board level,
              where it is true.
 
-             DO NOT restore a date here. If a future artifact ever makes signal.asof
-             genuinely per-card, it still would not be the ZONE's vintage, and it would
-             need its own labelled slot rather than this bare one. `date` is kept as an
-             explicit `none` rather than a deleted key so the slot reads as a decision
-             rather than an oversight. The shared macro keeps full `date` support for
+             DO NOT restore signal.asof / setups.as_of here. `added_date` (below) is
+             the labelled per-candidate current-continuous-membership-start chip
+             (engine/prophet_board_since.py, "Added <date>" / "入榜 <date>") — it is
+             NOT a revert of this removal, it answers a different question (how long
+             has this name been on the board, not what date is this zone from), and it
+             is null (no chip) whenever the ledger cannot prove a start date. `date`
+             stays an explicit `none`. The shared macro keeps full `date` support for
              _us_prophet_plan_cards.html.j2, whose dates ARE per-plan and honest. -#}
         {{ pv.pv_card({
           'href': 'stock.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'us',
@@ -298,6 +300,7 @@
           'zone_lo': ('$' ~ ('%.2f'|format(_bz.low))) if (_bz and _bz.low is not none) else none,
           'zone_hi': ('$' ~ ('%.2f'|format(_bz.high))) if (_bz and _bz.high is not none) else none,
           'date': none,
+          'added_date': n.get('added_date'),
           'flags': _fl.rows, 'triage': (_is_triage and not _feat),
           'featured': _feat, 'stage_key': (n.get('stage') if sg_any else none),
           'marks': _mk_slot,

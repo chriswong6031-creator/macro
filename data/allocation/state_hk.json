@@ -11,8 +11,8 @@
   ],
   "held": [
     "hk_conglo",
-    "hk_dividend",
     "hk_tech_hardware",
+    "hk_dividend",
     "hk_energy"
   ],
   "leader": "hk_miners",

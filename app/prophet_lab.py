@@ -6,10 +6,16 @@ against canonical Prophet plan data and existing board-read enrichment into
 six frozen "Lab boards", all in one response (``research/prophet_v4/
 LAB0_B5_RECUT_OPERATOR_LAB_2026-08-18.md`` §3-§5, ``DEC:PROPHET-LAB-B5A-RECUT``).
 
+``GET /api/prophet/lab/v1/episodes/{episode_id}/intelligence`` is the bounded
+D5 detail read: it pins one atomic B1 generation and one exact episode, builds
+the canonical current ``IssuerMaster`` reader, then delegates the Earnings
+projection to the pure ``engine.prophet_lab.intelligence_vector`` adapter.
+
 This router is a transport boundary only.  Every board is computed by
 ``engine/prophet_lab`` (a pure projection package — see its module docstrings)
 from data read off injectable filesystem roots; this file's only job is
-auth, the kill switch, path resolution for those roots, and response framing.
+auth, the kill switch, bounded reader composition, path resolution, and
+response framing.
 It runs NO detector formula, reads NO forward outcome, and writes NO store —
 LAB-0 §1's "read / filter / join / decorate only" law, and the reason this
 module has no ``open(..., "w")`` anywhere in it.
@@ -33,21 +39,30 @@ token check a caller could supply from off-box.
 """
 from __future__ import annotations
 
+from io import BytesIO
 import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
 from engine.prophet_lab import LabRoots, build_lab_response
 from engine.prophet_lab.contracts import KILL_SWITCH_ENV
+from engine.prophet_lab.intelligence_vector import (
+    IntelligenceVectorContractError,
+    build_earnings_intelligence_vector,
+    load_candidate_episode_store_snapshot,
+)
+from lib.dataos.identity import IssuerMaster
 
 router = APIRouter()
 log = logging.getLogger("macro.prophet_lab")
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
+_CANDIDATE_EPISODE_STORE_ROOT = _REPO_ROOT / "data" / "us_prophet_rank" / "episodes"
+_SECURITY_MASTER_PATH = _REPO_ROOT / "data" / "reference" / "security_master.parquet"
 
 #: INTERNAL-ONLY loopback addresses. macro-api always sits behind Caddy on
 #: 127.0.0.1 (app/main.py::_brain_identity docstring), so a bare TCP-peer check
@@ -103,6 +118,27 @@ def _merged_private_headers(existing: dict[str, str] | None) -> dict[str, str]:
 
 def _response(payload: dict[str, Any], *, status_code: int = 200) -> JSONResponse:
     return JSONResponse(content=payload, status_code=status_code, headers=_PRIVATE_HEADERS)
+
+
+def _load_issuer_master(path: Path) -> IssuerMaster:
+    """Build the canonical identity reader from one immutable parquet byte read."""
+    import pandas as pd  # noqa: PLC0415 — optional API data dependency, request-scoped
+
+    raw = Path(path).read_bytes()
+    records = pd.read_parquet(BytesIO(raw)).to_dict("records")
+    return IssuerMaster.from_records(records)
+
+
+def _source_integrity_failed(payload: Mapping[str, Any]) -> bool:
+    receipt = payload.get("assembly_receipt")
+    if not isinstance(receipt, Mapping):
+        return False
+    errors = receipt.get("errors")
+    return isinstance(errors, list) and any(
+        isinstance(error, Mapping)
+        and error.get("type") == "WorkspaceChainIntegrityError"
+        for error in errors
+    )
 
 
 # Review N4: case-insensitive OFF set; anything NOT recognized as "off" is
@@ -210,6 +246,77 @@ def lab_v1(_user: dict = Depends(require_site_full_user)) -> JSONResponse:
         log.warning("prophet_lab: projection failed (%s: %s)", type(exc).__name__, exc)
         return _response(
             {"error": "prophet_lab_unavailable", "detail": "Lab projection temporarily unavailable"},
+            status_code=503,
+        )
+    return _response(payload)
+
+
+@router.get("/api/prophet/lab/v1/episodes/{episode_id}/intelligence")
+def episode_intelligence_v1(
+    episode_id: str,
+    _user: dict = Depends(require_site_full_user),
+) -> JSONResponse:
+    """Project one exact B1 episode through the read-only D5 Earnings adapter."""
+    if _kill_switch_active():
+        return _response(
+            {
+                "error": "prophet_lab_disabled",
+                "detail": f"the Prophet Operator Lab is stood down ({KILL_SWITCH_ENV}=1)",
+            },
+            status_code=503,
+        )
+
+    try:
+        episode_store_root = _env_path(
+            "PROPHET_LAB_EPISODE_STORE_ROOT", _CANDIDATE_EPISODE_STORE_ROOT,
+        )
+        security_master_path = _env_path(
+            "PROPHET_LAB_SECURITY_MASTER_PATH", _SECURITY_MASTER_PATH,
+        )
+        if episode_store_root is None or security_master_path is None:
+            raise IntelligenceVectorContractError("D5 read roots must be configured")
+
+        snapshot = load_candidate_episode_store_snapshot(episode_store_root)
+        matching_episodes = [
+            episode
+            for episode in snapshot.generation.episodes
+            if episode.get("episode_id") == episode_id
+        ]
+        if not matching_episodes:
+            return _response({"error": "prophet_episode_not_found"}, status_code=404)
+        if len(matching_episodes) != 1:
+            raise IntelligenceVectorContractError("B1 generation contains duplicate episode identity")
+
+        opened_events = [
+            event
+            for event in snapshot.generation.events
+            if event.get("episode_id") == episode_id and event.get("event_type") == "OPENED"
+        ]
+        if len(opened_events) != 1:
+            raise IntelligenceVectorContractError("B1 episode must have exactly one OPENED event")
+        episode_known_at = opened_events[0].get("known_at")
+        if not isinstance(episode_known_at, str):
+            raise IntelligenceVectorContractError("B1 OPENED event known_at is invalid")
+
+        payload = build_earnings_intelligence_vector(
+            episode=matching_episodes[0],
+            episode_generation_id=snapshot.generation_id,
+            episode_known_at=episode_known_at,
+            issuer_master=_load_issuer_master(security_master_path),
+        )
+        if _source_integrity_failed(payload):
+            raise IntelligenceVectorContractError("D5 source integrity receipt is not admissible")
+    except Exception as exc:  # noqa: BLE001 — corrupt read chains must not 500 blind
+        log.warning(
+            "prophet_lab: episode intelligence failed (%s: %s)",
+            type(exc).__name__,
+            exc,
+        )
+        return _response(
+            {
+                "error": "prophet_episode_intelligence_unavailable",
+                "detail": "Episode intelligence temporarily unavailable",
+            },
             status_code=503,
         )
     return _response(payload)

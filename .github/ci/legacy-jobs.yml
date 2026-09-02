@@ -1588,6 +1588,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -1643,6 +1653,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/entry_signal.py"
       - "engine/equity_factors.py"
@@ -2444,6 +2455,10 @@ jobs:
       - "scripts/prophet_lab_baseline.py"
       - "tests/test_prophet_lab.py"
       - "tests/test_prophet_lab_api.py"
+      # D5 A7's manifest-authenticated N/N+1 correction chain is hermetic and
+      # load-bearing for the Prophet Lab adapter, so its PR owner must be this
+      # gate:code job rather than only neural-web-core's nightly data lane.
+      - "tests/test_company_intelligence_workspace_chain.py"
       - "tests/test_prophet_lab_timeparse.py"
       - "tests/test_prophet_lab_commissioning.py"
       - "tests/fixtures/prophet_lab/**"
@@ -2463,18 +2478,21 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         # fastapi + httpx: test_prophet_lab_api.py's FastAPI TestClient needs
-        # both (httpx importorskip'd). pandas: engine.prophet_board_read's
-        # enrichment path (boards.py's lazy import, LAB-0 §5's sanctioned
-        # reuse). boto3 is NOT needed: engine.entry_radar.spool imports it
-        # LAZILY inside `_r2_client()`, and every R2 path this suite exercises
-        # either deletes the R2 credential env vars or injects a fake client
-        # object directly — the real boto3 import is never reached.
-        run: pip install pytest pandas fastapi httpx pyyaml
-      - name: Prophet Operator Lab — projection, transport, timeparse, commissioning-prep
+        # both (httpx importorskip'd). pandas + pyarrow: the D5 API suite writes
+        # its canonical security-master parquet and app.prophet_lab imports the
+        # B1 episode module, whose parquet owner is unconditional. requests:
+        # D5's company-intelligence reader imports it at module scope. boto3 is
+        # NOT needed: engine.entry_radar.spool imports it LAZILY inside
+        # `_r2_client()`, and every R2 path this suite exercises either deletes
+        # the R2 credential env vars or injects a fake client object directly —
+        # the real boto3 import is never reached.
+        run: pip install pytest pandas pyarrow fastapi httpx pyyaml requests
+      - name: Prophet Operator Lab — projection, real-reader chain, transport, timeparse, commissioning-prep
         run: >
           python -m pytest
           tests/test_prophet_lab.py
           tests/test_prophet_lab_api.py
+          tests/test_company_intelligence_workspace_chain.py
           tests/test_prophet_lab_timeparse.py
           tests/test_prophet_lab_commissioning.py
           tests/test_caddy_hub_boundary.py -q
@@ -6513,10 +6531,23 @@ jobs:
     # genuine import edges.
     scope: exclusive
     paths:
+      # Added-date closure widening 2026-09-01 (contract-delta): the serving
+      # path's builder imports now reach the Prophet board_since resolver.
+      - "engine/prophet_board_since.py"
       - "engine/theme_graph/identity.py"
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -6619,6 +6650,7 @@ jobs:
       - "engine/earnings_blackout.py"
       - "engine/earnings_catalyst.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/election_cycle.py"
       - "engine/entity_resolver.py"
       - "engine/entry_primitives.py"
@@ -7074,6 +7106,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/security_state.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -7117,6 +7159,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
@@ -9091,6 +9134,14 @@ jobs:
       - "engine/seasonality/**"
       - "engine/sector_intelligence/**"
       - "engine/theme_graph/**"
+      # D5's app/prophet_lab route extends this curated app closure through the
+      # canonical issuer reader. Keep the measured stock-identity package files
+      # explicit; path-risk and the B1 episode reader are not in this job's
+      # derived closure and are intentionally not declared here.
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
       - "research/DO_NOT_REBUILD.md"
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
@@ -10247,6 +10298,30 @@ jobs:
     # the declared-scope coverage audit re-checks them on every load.
     scope: exclusive
     paths:
+      # Added-date closure widening 2026-09-01 (contract-delta): the surfaces
+      # census suite imports the intl builders, whose closure spans the intl
+      # engine stack. Widened, never narrowed.
+      - "engine/cb_desk.py"
+      - "engine/contagion.py"
+      - "engine/contagion_links.py"
+      - "engine/flow_regime.py"
+      - "engine/hk_global.py"
+      - "engine/hk_global_beta.py"
+      - "engine/international_macro_dashboard.py"
+      - "engine/intl_bonds.py"
+      - "engine/intl_compare.py"
+      - "engine/intl_equity_risk.py"
+      - "engine/intl_market_confirmation.py"
+      - "engine/intl_performance.py"
+      - "engine/intl_rates.py"
+      - "engine/intl_regime.py"
+      - "engine/intl_risk.py"
+      - "engine/intl_rotation.py"
+      - "engine/intl_run.py"
+      - "engine/intl_stocks.py"
+      - "engine/ird_velocity.py"
+      - "engine/rri_shadow.py"
+      - "scripts/build_international_macro.py"
       # B1A closure widening 2026-08-24 (contract-delta): the security_state producer stage in build_stock_library lazily imports the company-intelligence reader chain and Data OS identity.
       - "engine/company_intelligence/__init__.py"
       - "engine/company_intelligence/contracts.py"
@@ -10572,6 +10647,7 @@ jobs:
       - "engine/price_ladder.py"
       - "engine/prophet_arena.py"
       - "engine/prophet_board_read.py"
+      - "engine/prophet_board_since.py"
       - "engine/prophet_bridge.py"
       - "engine/prophet_doors.py"
       - "engine/prophet_integrity.py"
@@ -10744,6 +10820,7 @@ jobs:
       - "scripts/build_canada_library.py"
       - "scripts/build_capital_structure_page.py"
       - "scripts/build_chart_data.py"
+      - "scripts/build_china.py"
       - "scripts/build_china_library.py"
       - "scripts/build_china_masterminds.py"
       - "scripts/build_china_microstructure.py"
@@ -10752,7 +10829,10 @@ jobs:
       - "scripts/build_commodity_strategies.py"
       - "scripts/build_crossmarket.py"
       - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_hk.py"
       - "scripts/build_index_leadership.py"
+      - "scripts/build_intl.py"
+      - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_live_overlay.py"
       - "scripts/build_market_heatmap.py"
@@ -10850,13 +10930,18 @@ jobs:
       - "templates/_prophet_card.html.j2"
       - "templates/_stock_decision.css.j2"
       - "templates/_track_record_dlg.html.j2"
+      - "templates/_us_board_cards.html.j2"
+      - "templates/canada.html.j2"
       - "templates/china.html.j2"
       - "templates/dashboard.html.j2"
+      - "templates/hk.html.j2"
+      - "templates/intl.html.j2"
       - "templates/stocktable.js"
       - "templates/theme.css"
       - "tests/test_b3_forex_consumer.py"
       - "tests/test_board_contradictions.py"
       - "tests/test_bottom_ledger.py"
+      - "tests/test_build_china_library_more_actionable_guard.py"
       - "tests/test_china_board_rank.py"
       - "tests/test_china_board_rank_v4.py"
       - "tests/test_china_continuation_watch.py"
@@ -10876,6 +10961,9 @@ jobs:
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_board_read.py"
+      - "tests/test_prophet_board_since.py"
+      - "tests/test_prophet_candidate_added_date_surfaces.py"
+      - "tests/test_prophet_card_added_date.py"
       - "tests/test_prophet_card_live_change.py"
       - "tests/test_prophet_card_shared.py"
       - "tests/test_prophet_fusion_arena.py"
@@ -10966,6 +11054,17 @@ jobs:
       # synthetic LibraryIndex trees under tmp_path, no data/ or site/ reads.
       - name: prophet board read (G-D actionability join + honest absence)
         run: python -m pytest tests/test_prophet_board_read.py -q
+      # Prophet candidate "Added date" (prophet-candidate-added-date-fable-e2e,
+      # 2026-09-01). engine/prophet_board_since.py's resolver core + market
+      # adapters (test_prophet_board_since.py), the pv_card chip
+      # (test_prophet_card_added_date.py, real Jinja render via the harness
+      # tests/test_prophet_card_live_change.py already established), and the
+      # caller-census + freshness-header guards across all five markets
+      # (test_prophet_candidate_added_date_surfaces.py). Rides this step —
+      # same US/CN board-surface family, same venv (pandas for the CN/HK/CA
+      # parquet adapters, jinja2 already installed here for the card render).
+      - name: prophet candidate Added-date resolver + card + surfaces
+        run: python -m pytest tests/test_prophet_board_since.py tests/test_prophet_card_added_date.py tests/test_prophet_candidate_added_date_surfaces.py tests/test_build_china_library_more_actionable_guard.py -q
       - name: US track-ledger era boundary and frozen pre-era evidence
         run: python -m pytest tests/test_track_ledger_era.py -q
       # Stage-analysis board + its forward ledger and session-stamp heal
@@ -11231,7 +11330,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jsonschema jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
       - name: brain gateway — lane routing, quota ledger, tool allowlist, SSE event order
-        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py -q
+        run: python -m pytest tests/test_brain_gateway.py tests/test_brain_gateway_quota_safety.py tests/test_brain_streaming.py tests/test_brain_tool_economics.py tests/test_brain_instant_lane.py tests/test_intelligence_workspace_context_compiler.py tests/test_mm_brain_asset.py tests/test_brain_exact_source_context.py tests/test_company_source_span.py -q
       - name: W1-A typed datapoint registry — owners, PIT, rights, consumers, mutations, batching
         run: >-
           python -m pytest
@@ -12129,6 +12228,16 @@ jobs:
       - "engine/theme_graph/__init__.py"
       - "engine/theme_graph/identity.py"
       - "engine/quote_resolution.py"
+      # D5's app/prophet_lab route imports the canonical B1 episode reader and
+      # issuer identity chain. This curated job reaches that app router, so its
+      # exclusive declaration must cover the exact transitive closure rather
+      # than silently skipping changes to these dependencies.
+      - "engine/path_risk_signals.py"
+      - "engine/stock_identity/__init__.py"
+      - "engine/stock_identity/authority.py"
+      - "engine/stock_identity/fingerprint.py"
+      - "engine/stock_identity/plane.py"
+      - "engine/us_candidate_episode.py"
       # W1-B wires Brain's native-fact serve to the frozen W1-A runtime. This
       # job's own app/neuralweb import closure now reaches those packages, so
       # its curated scope must retain their real dependency ownership.
@@ -12172,6 +12281,7 @@ jobs:
       - "engine/desk_ledger.py"
       - "engine/desk_scorer.py"
       - "engine/earnings_qual.py"
+      - "engine/earnings_transcript_intake.py"
       - "engine/entity_resolver.py"
       - "engine/event_calendar.py"
       - "engine/forward_calendar_context.py"
