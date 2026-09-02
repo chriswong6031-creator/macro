@@ -334,10 +334,12 @@ W2 → residual planner measurement → W4 → W5 → W6 → advisory W7 → W8,
 W3 capability is not rerun; any measured residual planner optimization and W4 ship
 separately so a planner regression is bisectable.
 
-Run as a **chain of short sessions** over this document, one wave per session, per the
-context-economy law — not one long session. Each session: read this file, read the
-latest `research/CI_LATENCY_*_HANDOFF_<date>.md` if present, build one wave, ship it to
-merged + verified, write the handoff, stop.
+This document is the program's durable state. A session may take a single wave or carry
+several end-to-end — the former one-wave-per-session boundary was repealed 2026-09-01
+(`DEC:SESSION-LENGTH-IS-NOT-A-COST-CONTROL`). Per wave, however many a session takes:
+read this file, read the latest `research/CI_LATENCY_*_HANDOFF_<date>.md` if present,
+build the wave, ship it to merged + verified, then update the handoff before opening the
+next one.
 
 ## §4 Reuse inventory (do not rebuild)
 

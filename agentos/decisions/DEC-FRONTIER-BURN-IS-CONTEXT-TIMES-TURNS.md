@@ -41,6 +41,7 @@ confidence: high
 reversibility: easy
 decided_by: coo-fable
 decided_at: 2026-08-06
+superseded_by: DEC:SESSION-LENGTH-IS-NOT-A-COST-CONTROL
 ---
 
 ## Grounds
@@ -52,6 +53,14 @@ the 76%/2.6% tool-call split is Fable's main-loop aggregate for the week (not on
 session's) — because CLAUDE.md carries the fuller measurement context (26% Fable / 62%
 Opus of all model burn). Attribution: analysis + standing law authored by the fleet →
 coo-fable.
+
+## Superseded 2026-09-01
+
+`DEC:SESSION-LENGTH-IS-NOT-A-COST-CONTROL` supersedes this record. The measurement above
+and controls (1) delegate execution and (2) budget what enters context are carried forward
+unchanged and remain law; control (3) — "one session = one task boundary", long programs as
+chains of short sessions, checkpoint-and-clear past ~250k — was REPEALED by the Chairman on
+2026-09-01 as impeding end-to-end long workflows. Read the successor for the current policy.
 
 ## What would reopen this
 

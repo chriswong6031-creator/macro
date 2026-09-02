@@ -420,6 +420,94 @@ programs:
         - repo: mastermind
           path: AGENTS.md
 
+  executive-os:
+    name: Executive OS
+    category: project_infrastructure
+    kind: infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Own the durable Job, Attempt, Worker, and Event lifecycle for autonomous company work execution on the control host, including its SQLite runtime store and its backup, restore-verification, and offline-restore primitives.
+    strategic_role: Keep company work admission, dispatch, retry, evidence, and lifecycle recovery deterministic, single-authority, and recoverable after host loss.
+    owns:
+      - Job, Attempt, Worker, and Event lifecycle authority and the canonical Executive SQLite runtime store
+      - Executive online backup, backup verification, restore-verification, and explicit offline restore
+      - Disaster-recovery contracts for the Executive lifecycle database (off-host copies, restore drills, RPO/RTO/RCO)
+    does_not_own:
+      - Provider, account, and quota capacity truth (shared-ai-provider-control)
+      - Durable organizational knowledge records (Agent OS)
+      - Portfolio artifact and decision-packet governance (portfolio-control-plane)
+      - Market intelligence, signals, or capital authority
+    repo_bindings:
+      - repo: mastermind
+        role: control_plane
+    relationships:
+      coordinates_with:
+        - shared-ai-provider-control
+        - portfolio-control-plane
+    canonical_docs:
+      - repo: mastermind
+        path: research/EXECUTIVE_OS_PHASE0_CODEX_TECHNICAL_CENSUS.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - control_plane/executive_runtime.py
+          - control_plane/executive_backup.py
+          - control_plane/executive_service.py
+          - scripts/executive_os_phase1c.py
+          - ops/executive_os/
+    product_surfaces: []
+    decision_boundary:
+      authority_class: operational_control
+      summary: Deterministic work-lifecycle control only; it grants no market, portfolio, or capital authority, and restore is an explicit offline administrator action, never automatic failover.
+      authority_sources:
+        - repo: mastermind
+          path: AGENTS.md
+        - repo: mastermind
+          path: ops/executive_os/HOST_PREREQUISITES.md
+
+  reproducible-worker-environments:
+    name: Reproducible Worker Environments
+    category: project_infrastructure
+    kind: infrastructure
+    lifecycle_state: operating
+    scope: project
+    purpose: Own declared, hash-locked, receipted build/test toolchain environments for selected worker task classes across hosts and CI, starting with the Mastermind repository test gate.
+    strategic_role: Bound environment drift (interpreter, package, PATH, vendored-input) so worker and CI results are comparable and drift incidents become visible receipts instead of silent divergence.
+    owns:
+      - Per-platform hash-locked environment definitions for admitted pilot task classes (requirements/gate-*.lock in Mastermind)
+      - The rwe_env task interface (lock/realize/receipt/gate) and the mastermind.worker_environment/v1 receipt contract
+      - Environment-parity evidence between local hosts and CI for admitted task classes
+    does_not_own:
+      - Provider credentials, provider homes, Keychain, browser profiles, or worker identity (shared-ai-provider-control and harness owners)
+      - Executive host installation, launchd services, or lifecycle authority (executive-os)
+      - Third-party artifact trust and admission (supply-chain admission program, not yet registered)
+      - The repository's primary CI gate definition (its owners; the shadow lane never displaces it)
+    repo_bindings:
+      - repo: mastermind
+        role: implementation_owner
+      - repo: macro
+        role: consumer
+    relationships:
+      coordinates_with:
+        - executive-os
+    canonical_docs:
+      - repo: macro
+        path: research/REPRODUCIBLE_WORKER_ENVIRONMENTS_MASTERPLAN_V1.md
+    implementation:
+      - repo: mastermind
+        roots:
+          - scripts/rwe_env.py
+          - requirements/
+          - .github/workflows/rwe-shadow.yml
+          - docs/RWE_RUNBOOK.md
+    product_surfaces: []
+    decision_boundary:
+      authority_class: operational_control
+      summary: Environment identity and assembly only; it selects no worker, provider, model, or workspace, grants no install or deployment authority, and its receipts are evidence, never gates, until separately promoted.
+      authority_sources:
+        - repo: macro
+          path: research/REPRODUCIBLE_WORKER_ENVIRONMENTS_MASTERPLAN_V1.md
+
   macro-context-index:
     name: Macro Context Index
     category: project_infrastructure
@@ -3735,6 +3823,9 @@ owner_program_dispositions:
   gmi-theme-graph:
     disposition: mapped
     program: gmi-theme-graph
+  grey-deer-risk-intelligence:
+    disposition: mapped
+    program: grey-deer-risk-intelligence
     note: >
       Became a raw synapse owner with GMI W1b (#5343: theme-graph-nodes/edges/evidence,
       display tier, all six authority booleans false). The program entry itself was

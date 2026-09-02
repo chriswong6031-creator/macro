@@ -8,6 +8,9 @@ Wants=network-online.target
 StartLimitIntervalSec=0
 
 [Service]
+# Every pc-ci-1..4 listener shares ONE aggregate envelope. The renderer stays
+# outside it by design -- see ops/runner-host/pc/mastermind-ci.slice.template.
+Slice=mastermind-ci.slice
 Type=simple
 User=macroci
 Group=macroci
@@ -16,7 +19,7 @@ Environment=ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/libexec/mastermind-ci-adm
 Environment=MASTERMIND_CI_PROFILE=pc-ci
 Environment=MASTERMIND_CI_RUNNER_ROOT=__RUNNER_ROOT__
 Environment=HOME=__RUNNER_ROOT__/_work/_home
-ExecStartPre=/usr/local/libexec/mastermind-ci-resource-guard --path __RUNNER_ROOT__ --refusal-backoff-seconds 300
+ExecStartPre=/usr/local/libexec/mastermind-ci-resource-guard --path __RUNNER_ROOT__ --refusal-backoff-seconds 300 --require-slice
 ExecStart=/usr/local/libexec/mastermind-ci-runner __RUNNER_ROOT__
 Restart=always
 RestartSec=5
