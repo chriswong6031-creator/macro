@@ -58,11 +58,341 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=f41f9a21">
-<link rel="stylesheet" href="assets/css/c981c54c.css?v=c981c54c">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
-<link rel="preload" as="style" href="assets/css/1d85c19b.css?v=1d85c19b">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ══ Intelligence Hub ══════════════════════════════════════════════════════
+     The page is an instrument, not a poster. One hairline system, one radius,
+     one card fill, mono reserved for figures, and a single bright element — the
+     room-left spine down the Command ledger — which draws the page's own thesis
+     (how much of the move is still ahead) as the structure of the list itself.
+
+     Removed 2026-07-30 (operator order): the ambient sky canvas and its sun. A
+     drifting starfield behind four hundred figures competes with the only thing
+     on the page that matters, and the sun's 220px glow washed the top cards.
+     `sky.js` stays in the tree — start.html still owns that treatment.
+     ────────────────────────────────────────────────────────────────────────── */
+  body.page-hub{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
+    --r:10px;
+    --card:color-mix(in srgb,var(--panel) 92%,transparent);
+    --card-2:color-mix(in srgb,var(--panel) 62%,transparent);
+    --hair:color-mix(in srgb,var(--line) 78%,transparent);
+    --hair-soft:color-mix(in srgb,var(--line) 44%,transparent);
+    --dim:color-mix(in srgb,var(--text) 74%,transparent);
+    --cat:#8b5cf6;
+    --fig:var(--font-mono); }
+  .hub-wrap{ max-width:1200px; margin:0 auto; padding:6px 20px 64px; position:relative; z-index:1; }
+  body.page-hub > .site-nav{ max-width:1200px; margin:14px auto 6px; padding:0 20px; }
+  .ic-svg{ width:14px; height:14px; flex:none; vertical-align:middle; }
+  /* every figure on the page is mono + tabular; words never are */
+  .f{ font-family:var(--fig); font-variant-numeric:tabular-nums; }
+
+  /* ── hero: identity left, market state right, one rule under both ── */
+  .hh{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px 32px; align-items:end;
+    margin:16px 0 0; padding-bottom:17px; border-bottom:1px solid var(--hair); }
+  @media(max-width:880px){ .hh{ grid-template-columns:1fr; align-items:start; } }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+  .eyebrow time{ font-family:var(--fig); letter-spacing:.04em; }
+  .live{ width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative; flex:none; }
+  .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
+    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
+  @keyframes hp{ 0%{ transform:scale(.55); opacity:.55 } 100%{ transform:scale(1.75); opacity:0 } }
+  .hh h1{ font-size:clamp(29px,3.7vw,41px); font-weight:800; letter-spacing:-.033em; line-height:1.03;
+    margin:10px 0 8px; color:var(--text); }
+  .deck{ margin:0; font-size:14px; line-height:1.5; color:var(--dim); max-width:58ch; }
+  .deck .lens-q{ vertical-align:baseline; }
+  /* market state: an instrument readout, not another row of pills */
+  .state{ display:flex; flex-wrap:wrap; align-items:baseline; row-gap:9px; }
+  .state i{ font-style:normal; display:inline-flex; align-items:baseline; gap:7px; padding:0 15px;
+    border-left:1px solid var(--hair); font-size:10px; font-weight:700; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  .state i:first-child{ border-left:0; padding-left:0; }
+  /* the engine hands these down lower-cased ("mid", "expanding"); capitalise at render
+     so the readout doesn't mix cases beside "Goldilocks" / "Hawkish" */
+  .state b{ font-size:13px; font-weight:700; letter-spacing:-.008em; text-transform:capitalize;
+    color:var(--text); }
+  .state i.hot b{ color:var(--ink-up, var(--up)); }
+  @media(max-width:880px){ .state i:first-child{ padding-left:0 } .state{ margin-top:4px } }
+
+  /* ── desk rail: six links, one container, hairline cells ── */
+  .rail{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:18px 0 2px;
+    border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .rl{ display:flex; align-items:center; gap:8px; min-width:0; padding:11px 13px;
+    text-decoration:none; color:var(--text); font-size:12.5px; font-weight:600;
+    border-left:1px solid var(--hair-soft); transition:background .16s ease, color .16s ease; }
+  .rl:first-child{ border-left:0; }
+  .rl:hover{ background:color-mix(in srgb,var(--info) 9%,transparent); color:var(--ink-info, var(--info)); }
+  .rl .ic-svg{ color:var(--muted); transition:color .16s ease; }
+  .rl:hover .ic-svg{ color:var(--ink-info, var(--info)); }
+  .rl .rn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rl .gw{ margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; white-space:nowrap; }
+  .rl .lamp{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--down); }
+  .rl .lamp.on{ background:var(--ok); }
+  .ql-chip-ungraded, .gw.ql-ungraded{ color:var(--muted); }
+  .ql-chip-accruing{ color:var(--ink-warn, var(--warn)); }
+  .ql-chip-graded-pos{ color:var(--ink-up, var(--up)); }
+  .ql-chip-graded-neg{ color:var(--ink-down, var(--down)); }
+  @media(max-width:1040px){
+    .rail{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .rl{ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(3n+1){ border-left:0; }
+    .rl:nth-child(n+4){ border-top:1px solid var(--hair-soft); }
+  }
+  @media(max-width:620px){
+    .rail{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .rl{ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(3n+1){ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(odd){ border-left:0; }
+    .rl:nth-child(n+3){ border-top:1px solid var(--hair-soft); }
+    .rl .gw{ display:none; }
+  }
+
+  /* ── R1A-M Market Pulse instrument (reactive-projection freeze §8/§12) ──
+     Dark = graphite command instrument: hairline card, restrained semantic
+     luminance, a pulse ONLY for the live+regular state (same idiom as the
+     existing hero `.live::after` dot above — no new glow language). Light =
+     white research material on the page's cool canvas: the identical
+     hairline/card tokens read as a flat, shadow-quiet strip once theme.css
+     swaps `--card`/`--hair`/`--text` for their light values — no dark-only
+     glow value is hardcoded here, so light never inherits the pulse's box-
+     shadow bloom. Semantic tokens only: --ink-up/--ink-down keep Chinese
+     direction-color correct; no new token root, no literal palette, no
+     runtime stylesheet. */
+  .ihmp-bar{ display:flex; align-items:center; gap:9px; margin:14px 0 0; padding:9px 14px;
+    border:1px solid var(--hair); border-radius:var(--r); background:var(--card);
+    font-size:11.5px; color:var(--muted); }
+  .ihmp-dot{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--muted); }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
+    background:var(--ok); position:relative; }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+    content:""; position:absolute; inset:-4px; border-radius:50%;
+    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
+  .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{ background:var(--warn); }
+  .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot,
+  .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot{ background:var(--down); }
+  .ihmp-bar time{ font-family:var(--fig); margin-left:auto; font-size:10px; }
+  /* per-row quote cluster — the ONE visible price on a roster row */
+  .ihmp-px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    color:var(--muted); white-space:nowrap; display:inline-flex; align-items:baseline; gap:4px; }
+  .ihmp-delta{ font-size:10px; }
+  .ihmp-delta.pos{ color:var(--ink-up, var(--up)); }
+  .ihmp-delta.neg{ color:var(--ink-down, var(--down)); }
+  @media (prefers-reduced-motion:reduce){
+    .ihmp-bar .ihmp-dot::after{ animation:none; }
+  }
+
+  /* ── section mark: an accent tick, a label, a rule, a count ── */
+  .band{ display:flex; align-items:center; gap:11px; margin:34px 0 12px; }
+  .band .tick{ width:3px; height:14px; border-radius:2px; flex:none;
+    background:var(--accent,var(--info)); }
+  .band h2{ margin:0; font-size:11.5px; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--text); white-space:nowrap; }
+  .band .ln{ flex:1; height:1px; min-width:14px;
+    background:linear-gradient(90deg,var(--hair),transparent 94%); }
+  .band .n{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
+    font-weight:700; color:var(--muted); flex:none; }
+  .band .legend{ display:inline-flex; align-items:center; gap:6px; flex:none; font-size:10px;
+    font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .band .legend .lg{ width:3px; height:12px; border-radius:2px;
+    background:linear-gradient(to top,var(--up) 62%,var(--hair-soft) 62%); }
+  @media(max-width:620px){ .band .legend{ display:none } }
+
+  /* ── one card system ── */
+  .card{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); }
+  .empty{ font-size:12.5px; color:var(--muted); padding:11px 0; }
+  /* Stance line — every signal band answers "so what do I do" ONCE, here, in plain
+     words (DESIGN_DOCTRINE Law 1 + Law 4). This is what the stage-templated sentence
+     that used to reprint itself on every row was reaching for. */
+  .stance{ font-size:11.5px; line-height:1.5; color:var(--muted); margin:-3px 0 11px; max-width:78ch; }
+  .stance b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
+
+  /* ── one chip system: state · good · caution · bad · catalyst · neutral ── */
+  .chip{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 7px; border-radius:5px; white-space:nowrap; flex:none;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); }
+  .chip.good, .chip.st-early{ background:color-mix(in srgb,var(--up) 17%,transparent); color:var(--ink-up, var(--up)); }
+  .chip.info, .chip.st-emerging, .chip.st-discovery{
+    background:color-mix(in srgb,var(--info) 20%,transparent); color:var(--ink-info, var(--info)); }
+  .chip.warn, .chip.crowd, .chip.st-faltering{
+    background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--ink-warn, var(--warn)); }
+  .chip.bad, .chip.st-exhausted, .chip.st-distribution{
+    background:color-mix(in srgb,var(--down) 17%,transparent); color:var(--ink-down, var(--down)); }
+  .chip.cat{ background:color-mix(in srgb,var(--cat) 20%,transparent);
+    color:color-mix(in srgb,var(--cat) 68%,var(--text)); }
+  .chip.en-buy{ display:inline-flex; align-items:center; gap:3px; cursor:help;
+    background:color-mix(in srgb,var(--up) 22%,transparent); color:var(--ink-up, var(--up));
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 38%,transparent) inset; }
+  .chip.src{ background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--ink-info, var(--info)); }
+
+  /* ── shared row atoms ── */
+  .tk{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-weight:700; font-size:14.5px;
+    letter-spacing:-.015em; }
+  .px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px; color:var(--muted);
+    white-space:nowrap; }
+  .nm{ font-size:10.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .score{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:20px; font-weight:700;
+    letter-spacing:-.035em; color:var(--text); line-height:1; }
+  .rd{ font-size:12px; line-height:1.45; color:var(--dim); }
+  .drv{ font-size:10.5px; line-height:1.5; color:var(--muted); margin-top:5px; }
+  .drv b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
+  .drv .cau{ color:var(--ink-warn, var(--warn)); }
+  .cline{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .watch{ font-size:10px; color:var(--muted); margin-top:5px; }
+  .watch b{ color:color-mix(in srgb,var(--text) 72%,transparent); font-weight:600; }
+
+  /* room-left rail — the figure keeps the precision the bar can only suggest */
+  .room{ display:flex; align-items:center; gap:9px; }
+  .room .lab{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); white-space:nowrap; }
+  .room .trk{ flex:1; min-width:36px; height:3px; border-radius:2px; background:var(--hair-soft);
+    overflow:hidden; }
+  .room .trk i{ display:block; height:100%; background:var(--accent,var(--info)); }
+  .room .v{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    font-weight:700; color:color-mix(in srgb,var(--text) 84%,transparent); }
+
+  /* ── agreement matrix ── */
+  .mtx{ display:inline-flex; gap:3px; align-items:center; cursor:help; }
+  .mtx .cell{ width:8px; height:14px; border-radius:2px; background:var(--hair-soft); }
+  .mtx .cell.up{ background:var(--up); } .mtx .cell.dn{ background:var(--down); }
+  .mtx .cell.nz{ background:color-mix(in srgb,var(--muted) 55%,transparent); }
+  .mtx .cell.off{ background:color-mix(in srgb,var(--line) 40%,transparent); }
+
+  /* ── emerging: the page's hero. The only cards that get an accent edge. ──
+     Card faces are uniform by construction (no prose block one card carries and its
+     siblings don't) and the bottom strip is pushed down with margin-top:auto, so the
+     room-left rails line up across the row instead of leaving a hollow band under
+     the shortest card. Never `align-items:start` — that hides a void, it can't fix it. */
+  .ecards{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); }
+  .ecard{ position:relative; padding:14px 15px 13px; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .ecard.lead::before{ content:""; position:absolute; inset:0 auto 0 0; width:2px;
+    background:var(--accent,var(--info)); }
+  /* the figure stays pinned to the top-right corner however far the chips wrap */
+  .ecard .et{ display:flex; align-items:baseline; gap:8px 7px; flex-wrap:wrap; padding-right:38px; }
+  .ecard .et .score, .ecard .et .dscore{ position:absolute; top:12px; right:15px; margin:0; }
+  .ecard .nm{ margin-top:3px; }
+  .ecard .rd{ margin:8px 0 0; }
+  .ecard .room{ margin-top:auto; padding-top:11px; border-top:1px solid var(--hair-soft); }
+  .ecard .foot{ margin-top:7px; font-size:10px; color:var(--muted);
+    display:flex; align-items:center; gap:5px; }
+  .ecard .foot .ic-svg{ width:12px; height:12px; }
+
+  /* ── discovery: same anatomy, quieter, no accent edge. The reason clamps to two
+        lines so fourteen cards can't each set their own height. ── */
+  .dcard .rd{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; }
+  .dscore{ font-family:var(--fig); font-variant-numeric:tabular-nums;
+    font-size:15px; font-weight:700; color:var(--ink-info, var(--info)); }
+  .dchan{ font-size:10px; color:var(--muted); margin-top:auto; padding-top:8px;
+    display:flex; align-items:center; gap:5px; min-width:0; }
+  .dchan .ic-svg{ width:12px; height:12px; flex:none; }
+  .dchan .ch{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ── two-up alert panels ── */
+  /* minmax(0,1fr), not 1fr: the catalyst briefs are nowrap-ellipsised, and a bare 1fr
+     resolves to minmax(auto,1fr) — their min-content width would let that column push
+     the other panel down to a sliver */
+  .alerts{ display:grid; gap:12px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin-top:6px; }
+  /* minmax(0,…) here too — a bare 1fr is minmax(auto,1fr) and the nowrap briefs would
+     set the column's min-content width, scrolling the whole page sideways on mobile */
+  @media(max-width:820px){ .alerts{ grid-template-columns:minmax(0,1fr); } }
+  .panel{ padding:13px 15px 14px; }
+  .panel h3{ display:flex; align-items:center; gap:10px; margin:0 0 3px; font-size:11px;
+    font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text); }
+  .panel h3 .tick{ width:3px; height:12px; border-radius:2px; flex:none; background:var(--accent,var(--info)); }
+  .panel h3 .n{ margin-left:auto; font-family:var(--fig); font-variant-numeric:tabular-nums;
+    font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0; }
+  /* row-scoped, so the "View all" overlay can move these rows out of the panel
+     and they still lay out; separators stay in-flow-only (the overlay draws its own) */
+  .arow{ display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12px; }
+  .panel .arow{ border-top:1px solid var(--hair-soft); }
+  .arow .tk{ font-size:12.5px; min-width:48px; flex:none; }
+  .arow .ab{ color:var(--dim); line-height:1.4; min-width:0; flex:1; }
+  .arow .age{ margin-left:auto; font-family:var(--fig); font-size:10px; color:var(--muted);
+    white-space:nowrap; }
+  .arow .pct{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
+    font-weight:700; color:var(--ink-down, var(--down)); }
+  /* one line per catalyst, ellipsised: two-line briefs made this panel taller than
+     its neighbour and parked a dead band under the shorter one */
+  .arow.cat-row .ab{ display:flex; align-items:center; gap:8px; overflow:hidden; }
+  .arow.cat-row .cb{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ══ Command ledger — the signature ════════════════════════════════════════
+     One container, thirty rows, no per-row card. A single rule runs down the
+     left edge and each row's segment fills from the bottom by how much of the
+     move is still ahead — so scrolling the ledger shows the edge draining away.
+     The bar is the shape; the mono figure beside the score keeps the precision.
+     ─────────────────────────────────────────────────────────────────────────── */
+  .led{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .led-row{ display:grid; grid-template-columns:26px 150px 52px 55px minmax(0,1fr);
+    align-items:center; gap:0 14px; padding:10px 15px 10px 0; min-height:58px; }
+  .led > .led-row + .led-row{ border-top:1px solid var(--hair-soft); }
+  .sp{ align-self:stretch; position:relative; }
+  .sp::before{ content:""; position:absolute; left:11px; top:0; bottom:0; width:3px;
+    background:linear-gradient(to top, var(--sp-c) var(--sp-p), var(--hair-soft) var(--sp-p)); }
+  .led-row .id{ min-width:0; }
+  .led-row .id .tkline{ display:flex; align-items:baseline; gap:7px; }
+  .led-row .score{ text-align:right; }
+  .led-row .rmv{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    font-weight:700; color:var(--muted); text-align:right; }
+  @media(max-width:820px){
+    .led-row{ grid-template-columns:22px 118px 46px minmax(0,1fr); gap:0 11px; }
+    .led-row .mtxc{ display:none; }
+    .sp::before{ left:9px; }
+  }
+
+  /* ── track record: the plain read, with the study panel folded beneath ── */
+  .trh{ display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); }
+  .trc{ padding:12px 14px 13px; }
+  .trc .th{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+  .trc .th .h{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:12.5px;
+    font-weight:700; letter-spacing:-.01em; }
+  .trc .th .chip{ margin-left:auto; }
+  .trg{ display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; }
+  .trcell{ min-width:0; }
+  .trlab{ display:block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--muted); margin-bottom:3px; line-height:1.35; }
+  .trval{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:13.5px; font-weight:700;
+    color:var(--text); }
+  .trval.pos{ color:var(--ink-up, var(--up)); } .trval.neg{ color:var(--ink-down, var(--down)); }
+  .trans{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  .trans.ok{ color:var(--ink-up, var(--up)); } .trans.bad{ color:var(--ink-down, var(--down)); }
+  .note{ font-size:12px; line-height:1.55; color:var(--dim); padding:12px 15px; }
+  .note b{ color:var(--text); }
+
+  /* ── sector heat: one container, one column of bars ──
+     Six scattered cards each drew their meter at a different x-offset and width, so
+     the one comparison the panel exists to make — which sector is hottest — had to be
+     done by reading numbers. Aligned in a single list the bars share a scale and the
+     ranking is legible without any vocabulary at all. */
+  .slist{ overflow:hidden; }
+  .srow{ display:grid; grid-template-columns:46px minmax(110px,200px) minmax(70px,1fr) auto;
+    align-items:center; gap:0 14px; padding:10px 15px; font-size:12.5px; }
+  .slist > .srow + .srow{ border-top:1px solid var(--hair-soft); }
+  .srow .etf{ font-family:var(--fig); font-size:9.5px; font-weight:700; letter-spacing:.03em;
+    padding:2px 5px; border-radius:5px; text-align:center;
+    background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--ink-info, var(--info)); }
+  .srow .snm{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:flex; align-items:center; gap:7px; min-width:0; }
+  .srow .meter{ height:4px; border-radius:2px; background:var(--hair-soft); overflow:hidden; }
+  .srow .meter i{ display:block; height:100%; background:var(--accent,var(--info)); }
+  .srow .sf{ font-size:10px; color:var(--muted); display:flex; gap:12px; white-space:nowrap; }
+  .srow .sf b{ font-family:var(--fig); font-variant-numeric:tabular-nums;
+    color:color-mix(in srgb,var(--text) 80%,transparent); }
+  @media(max-width:620px){
+    .srow{ grid-template-columns:46px minmax(0,1fr) auto; row-gap:8px; }
+    .srow .meter{ grid-column:1 / -1; }
+  }
+
+  footer.hf{ margin-top:32px; padding-top:15px; border-top:1px solid var(--hair);
+    font-size:11px; color:var(--muted); line-height:1.6; }
+  footer.hf time{ font-family:var(--fig); }
+  @media (prefers-reduced-motion:reduce){
+    .rl, .rl .ic-svg{ transition:none; }
+    .live::after{ animation:none; }
+  }
+</style>
 </head>
 <body class="page-hub">
 
@@ -71,7 +401,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -283,10 +613,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=f7bdf7cc" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -312,7 +642,7 @@
   
   <header class="hh">
     <div>
-      <span class="eyebrow"><span class="live"></span><span class="l-en">Live</span><span class="l-zh">实时</span> · <time datetime="2026-09-01T22:22:40.705253+00:00">2026-09-01</time></span>
+      <span class="eyebrow"><span class="live"></span><span class="l-en">Live</span><span class="l-zh">实时</span> · <time datetime="2026-09-02T01:33:51.089939+00:00">2026-09-02</time></span>
       <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
       <p class="deck"><span class="l-en">What still has room to run — surfaced before the crowd arrives.</span><span class="l-zh">仍有上行空间的机会 —— 抢在人群之前浮出水面。</span>
         <button class="lens-q" type="button" aria-label="How this page ranks names"
@@ -321,11 +651,19 @@
     </div>
     <div class="state">
       <i class="hot"><span class="l-en">Regime</span><span class="l-zh">格局</span> <b>Reflation Q2</b></i>
-      <i><span class="l-en">Cycle</span><span class="l-zh">周期</span> <b>late</b></i>
-      <i><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>neutral</b></i>
+      <i><span class="l-en">Cycle</span><span class="l-zh">周期</span> <b>mid</b></i>
+      <i><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>expanding</b></i>
       <i><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>Hawkish</b></i>
     </div>
   </header>
+
+  
+  <div class="ihmp-bar" data-ihmp-root data-ihmp-availability="" data-ihmp-freshness=""
+       data-ihmp-session="" data-ihmp-coverage="" data-ihmp-baseline-at="2026-09-01"
+       aria-live="polite">
+    <span class="ihmp-dot" aria-hidden="true"></span>
+    <span data-ihmp-status><span class="l-en">Prices from the latest settled build</span><span class="l-zh">价格来自最近一次结算构建</span></span>
+  </div>
 
   
   <div class="rail">
@@ -413,7 +751,7 @@
   <div class="ecards lst-collapse lst-cap4 is-collapsed">
     
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">BWXT</span><span class="nb-px px" data-sym="BWXT" data-mkt="us">$152.29</span>
+      <div class="et"><span class="tk">BWXT</span><span class="ihmp-px" data-ihmp-symbol="BWXT"><span class="f" data-ihmp-price>$152.29</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">federal velocity</span>
         
         <span class="dscore">75</span></div>
@@ -422,7 +760,7 @@
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">AXON</span><span class="nb-px px" data-sym="AXON" data-mkt="us">$566.56</span>
+      <div class="et"><span class="tk">AXON</span><span class="ihmp-px" data-ihmp-symbol="AXON"><span class="f" data-ihmp-price>$566.56</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">federal velocity</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">70</span></div>
@@ -431,7 +769,7 @@
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">MRK</span><span class="nb-px px" data-sym="MRK" data-mkt="us">$147.76</span>
+      <div class="et"><span class="tk">MRK</span><span class="ihmp-px" data-ihmp-symbol="MRK"><span class="f" data-ihmp-price>$147.76</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">radar quiet</span>
         
         <span class="dscore">50</span></div>
@@ -442,10 +780,10 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> <span class="ch">clinical phase3 start · fda label expansion</span></div>
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">BRK.B</span>
+      <div class="et"><span class="tk">BRK.B</span><span class="ihmp-px" data-ihmp-symbol="BRK.B"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">radar quiet</span>
         
-        <span class="dscore">47</span></div>
+        <span class="dscore">48</span></div>
       <div class="rd" style="margin-top:8px">13f add + affiliation; uncrowded</div>
       
       <div class="dchan">
@@ -453,52 +791,61 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> <span class="ch">13f add · affiliation</span></div>
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">PSUS</span>
+      <div class="et"><span class="tk">PSUS</span><span class="ihmp-px" data-ihmp-symbol="PSUS"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">insider cluster</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="rd" style="margin-top:8px">8 insiders bought open-market (6 officers) · 64d-lagged filing</div>
+      <div class="rd" style="margin-top:8px">8 insiders bought open-market (6 officers) · 63d-lagged filing</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">BXDC</span>
+      <div class="et"><span class="tk">BXDC</span><span class="ihmp-px" data-ihmp-symbol="BXDC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">insider cluster</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="rd" style="margin-top:8px">8 insiders bought open-market (4 officers) · 64d-lagged filing</div>
+      <div class="rd" style="margin-top:8px">8 insiders bought open-market (4 officers) · 63d-lagged filing</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">ARXS</span>
+      <div class="et"><span class="tk">ARXS</span><span class="ihmp-px" data-ihmp-symbol="ARXS"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">insider cluster</span>
         
         <span class="dscore">45</span></div>
-      <div class="rd" style="margin-top:8px">7 insiders bought open-market (5 officers) · 64d-lagged filing</div>
+      <div class="rd" style="margin-top:8px">7 insiders bought open-market (5 officers) · 63d-lagged filing</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">AVBC</span>
+      <div class="et"><span class="tk">AVBC</span><span class="ihmp-px" data-ihmp-symbol="AVBC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">insider cluster</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="rd" style="margin-top:8px">8 insiders bought open-market (5 officers) · 64d-lagged filing</div>
+      <div class="rd" style="margin-top:8px">8 insiders bought open-market (5 officers) · 63d-lagged filing</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">GEHC</span>
+      <div class="et"><span class="tk">GEHC</span><span class="ihmp-px" data-ihmp-symbol="GEHC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">insider cluster</span>
         
         <span class="dscore">45</span></div>
-      <div class="rd" style="margin-top:8px">8 insiders bought open-market (3 officers) · 64d-lagged filing</div>
+      <div class="rd" style="margin-top:8px">8 insiders bought open-market (3 officers) · 63d-lagged filing</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">BZFD</span><span class="nb-px px" data-sym="BZFD" data-mkt="us">$1.19</span>
+      <div class="et"><span class="tk">BZFD</span><span class="ihmp-px" data-ihmp-symbol="BZFD"><span class="f" data-ihmp-price>$1.19</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
+        <span class="chip src">activist ownership</span>
+        
+        <span class="dscore">41</span></div>
+      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active filed 18d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      
+      
+    </div>
+    <div class="card ecard dcard">
+      <div class="et"><span class="tk">BEN</span><span class="ihmp-px" data-ihmp-symbol="BEN"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">activist ownership</span>
         
         <span class="dscore">41</span></div>
@@ -507,38 +854,29 @@
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">BEN</span>
-        <span class="chip src">activist ownership</span>
-        
-        <span class="dscore">41</span></div>
-      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active filed 20d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
-      
-      
-    </div>
-    <div class="card ecard dcard">
-      <div class="et"><span class="tk">SHAZ</span>
+      <div class="et"><span class="tk">SHAZ</span><span class="ihmp-px" data-ihmp-symbol="SHAZ"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">activist ownership</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">40</span></div>
-      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Situational Awareness LP) filed 5d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Situational Awareness LP) filed 4d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">XPON</span><span class="nb-px px" data-sym="XPON" data-mkt="us">$9.17</span>
+      <div class="et"><span class="tk">XPON</span><span class="ihmp-px" data-ihmp-symbol="XPON"><span class="f" data-ihmp-price>$9.17</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">activist ownership</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">40</span></div>
-      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Five Narrow Lane LP) filed 5d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Five Narrow Lane LP) filed 4d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
       
     </div>
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">PHGE</span>
+      <div class="et"><span class="tk">PHGE</span><span class="ihmp-px" data-ihmp-symbol="PHGE"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
         <span class="chip src">activist ownership</span>
         <span class="chip good"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
-        <span class="dscore">39</span></div>
-      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Cystic Fibrosis Foundation) filed 13d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+        <span class="dscore">40</span></div>
+      <div class="rd" style="margin-top:8px">13G→13D flip — escalation to active (Cystic Fibrosis Foundation) filed 12d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
       
     </div>
@@ -555,30 +893,30 @@
       <div class="stance" style="margin:2px 0 6px"><span class="l-en">Desks lean bearish and price is rolling over. <b>De-risk — not a long.</b></span><span class="l-zh">各台偏空且价格见顶回落。<b>降低风险 —— 不宜做多。</b></span></div>
       <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow">
-        <span class="tk">PRGO</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">35%</span></span></div><div class="arow">
-        <span class="tk">CEG</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">74%</span></span></div><div class="arow">
-        <span class="tk">MKTX</span><span class="chip st-exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">28%</span></span></div><div class="arow">
-        <span class="tk">BAH</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">56%</span></span></div><div class="arow">
-        <span class="tk">KO</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">40%</span></span></div><div class="arow">
-        <span class="tk">MA</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">32%</span></span></div><div class="arow">
-        <span class="tk">IR</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">52%</span></span></div><div class="arow">
-        <span class="tk">ADBE</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">53%</span></span></div><div class="arow">
-        <span class="tk">SPCX</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="tk">PRGO</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">36%</span></span></div><div class="arow">
+        <span class="tk">MU</span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">64%</span></span></div><div class="arow">
-        <span class="tk">RTX</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
+        <span class="tk">CEG</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">52%</span></span></div><div class="arow">
+        <span class="tk">REGN</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">32%</span></span></div><div class="arow">
+        <span class="tk">UNP</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">41%</span></span></div><div class="arow">
+        <span class="tk">BAH</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">57%</span></span></div><div class="arow">
+        <span class="tk">ADBE</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">54%</span></span></div><div class="arow">
+        <span class="tk">SPCX</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">65%</span></span></div><div class="arow">
+        <span class="tk">MA</span>
         <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">35%</span></span></div><div class="arow">
-        <span class="tk">KNSL</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">49%</span></span></div><div class="arow">
-        <span class="tk">ABBV</span><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
-        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">30%</span></span></div>
+        <span class="tk">IR</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">52%</span></span></div><div class="arow">
+        <span class="tk">RTX</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">37%</span></span></div><div class="arow">
+        <span class="tk">ABBV</span>
+        <span class="ab"><span class="l-en">room left</span><span class="l-zh">剩余空间</span> <span class="pct">31%</span></span></div>
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
@@ -590,29 +928,29 @@
       <div class="lst-wrap"><div class="lst-collapse is-collapsed">
       <div class="arow cat-row">
         <span class="tk">MIR</span>
-        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">Mirion Technologies Launches $250 Million Five-Year Stock Buyback Program</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">Mirion Technologies Launches $250 Million Five-Year Stock Buyback Program</span></span><span class="age">0<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">HNI</span>
-        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">What Does HNI&#39;s (NYSE:HNI) Larger Share Repurchase Plan Signal?</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">What Does HNI&#39;s (NYSE:HNI) Larger Share Repurchase Plan Signal?</span></span><span class="age">0<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">CTVA</span>
-        <span class="ab"><span class="chip cat">Spin-Offs</span><span class="cb">Corteva filed an 8-K disclosing that Vylor, its wholly owned subsidiary to house the seed business in a planned separation, issued $1.1B senior notes: $550M 5.125% notes due 2031 and $550M 5.625% notes due 2036, sold privately under Regulat</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Spin-Offs</span><span class="cb">Corteva filed an 8-K disclosing that Vylor, its wholly owned subsidiary to house the seed business in a planned separation, issued $1.1B senior notes: $550M 5.125% notes due 2031 and $550M 5.625% notes due 2036, sold privately under Regulat</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">STC</span>
-        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">STEWART INFORMATION SERVICES CORPORATION ANNOUNCES DIVIDEND INCREASE AND DECLARES THIRD QUARTER DIVIDEND</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Capital Returns</span><span class="cb">STEWART INFORMATION SERVICES CORPORATION ANNOUNCES DIVIDEND INCREASE AND DECLARES THIRD QUARTER DIVIDEND</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">ARRY</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Array Technologies filed an 8-K announcing completion of its acquisition of Affordable Wire Management (AWM) via subsidiary STINorland USA. Cash consideration was approximately $165 million, net of customary adjustments, under an equity pur</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Array Technologies filed an 8-K announcing completion of its acquisition of Affordable Wire Management (AWM) via subsidiary STINorland USA. Cash consideration was approximately $165 million, net of customary adjustments, under an equity pur</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">COLD</span>
-        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">Americold Realty Trust filed an 8-K reporting the closing of a joint venture transaction with EQT&#39;s Active Core Infrastructure fund, first announced May 7, 2026. Americold contributed 12 cold storage facilities valued at over $1.3 billion t</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">Americold Realty Trust filed an 8-K reporting the closing of a joint venture transaction with EQT&#39;s Active Core Infrastructure fund, first announced May 7, 2026. Americold contributed 12 cold storage facilities valued at over $1.3 billion t</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">HBT</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">HBT Financial, Inc. filed an S-4 registration statement on August 31, 2026, in connection with the proposed merger of Tri-County Financial Group, Inc. (TYFG) into HBT. Under the merger agreement dated August 10, 2026, MergerCo, a wholly-own</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">HBT Financial, Inc. filed an S-4 registration statement on August 31, 2026, in connection with the proposed merger of Tri-County Financial Group, Inc. (TYFG) into HBT. Under the merger agreement dated August 10, 2026, MergerCo, a wholly-own</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">RDHL</span>
-        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">RedHill Biopharma filed a 6-K announcing the divestiture of its Talicia business to Apotex Health Corp. RedHill sold its 70% stake in Talicia Holdings Inc. to Apotex for $18 million upfront plus up to $35 million in net sales milestones, wi</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Divestitures</span><span class="cb">RedHill Biopharma filed a 6-K announcing the divestiture of its Talicia business to Apotex Health Corp. RedHill sold its 70% stake in Talicia Holdings Inc. to Apotex for $18 million upfront plus up to $35 million in net sales milestones, wi</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">TEM</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Tempus AI filed an S-4 registering stock for its acquisition of Personalis, Inc. Under the merger agreement, Merger Sub I, a wholly owned Tempus subsidiary, will merge with Personalis, which will survive as a wholly owned Tempus subsidiary.</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Tempus AI filed an S-4 registering stock for its acquisition of Personalis, Inc. Under the merger agreement, Merger Sub I, a wholly owned Tempus subsidiary, will merge with Personalis, which will survive as a wholly owned Tempus subsidiary.</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">ATAI</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">AtaiBeckley Inc. filed an 8-K updating the status of its pending acquisition by Eli Lilly and Company (Parent) via merger with indirect subsidiary Albali Acquisition Corporation, per the July 15, 2026 Merger Agreement. The HSR waiting perio</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">AtaiBeckley Inc. filed an 8-K updating the status of its pending acquisition by Eli Lilly and Company (Parent) via merger with indirect subsidiary Albali Acquisition Corporation, per the July 15, 2026 Merger Agreement. The HSR waiting perio</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">BOW</span>
-        <span class="ab"><span class="chip cat">Going-Private</span><span class="cb">Bowhead Specialty Holdings, American Family Mutual Insurance (Parent), and Trident Superior (Merger Sub) filed a Schedule 13E-3 on August 31, 2026, relating to the merger agreement dated August 2, 2026. Merger Sub will merge into Bowhead, w</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
+        <span class="ab"><span class="chip cat">Going-Private</span><span class="cb">Bowhead Specialty Holdings, American Family Mutual Insurance (Parent), and Trident Superior (Merger Sub) filed a Schedule 13E-3 on August 31, 2026, relating to the merger agreement dated August 2, 2026. Merger Sub will merge into Bowhead, w</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div><div class="arow cat-row">
         <span class="tk">CJMB</span>
-        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Callan JMB Inc. disclosed via Form 8-K that its subsidiary Callan Power LLC entered into an Asset Purchase Agreement to acquire 50% of The Pfanenstiel Company&#39;s oil and gas leases and wells in North Dakota and Montana for $12.5 million cash</span></span><span class="age">2<span class="l-en">d</span><span class="l-zh">天</span></span></div>
+        <span class="ab"><span class="chip cat">Acquisitions</span><span class="cb">Callan JMB Inc. disclosed via Form 8-K that its subsidiary Callan Power LLC entered into an Asset Purchase Agreement to acquire 50% of The Pfanenstiel Company&#39;s oil and gas leases and wells in North Dakota and Montana for $12.5 million cash</span></span><span class="age">1<span class="l-en">d</span><span class="l-zh">天</span></span></div>
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
       
@@ -632,7 +970,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:83%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">AXON</span><span class="nb-px px" data-sym="AXON" data-mkt="us">$566.56</span></div>
+        <div class="tkline"><span class="tk">AXON</span><span class="ihmp-px" data-ihmp-symbol="AXON"><span class="f" data-ihmp-price>$566.56</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">47</div>
@@ -652,13 +990,13 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--up);--sp-p:62%"></span>
+      <span class="sp" style="--sp-c:var(--up);--sp-p:63%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">VSAT</span></div>
+        <div class="tkline"><span class="tk">VSAT</span><span class="ihmp-px" data-ihmp-symbol="VSAT"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">37</div>
-        <div class="rmv">62%</div></div>
+      <div><div class="score">36</div>
+        <div class="rmv">63%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 38 across 1 desk."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 38，来自 1 个台。">
 <span class="cell off"></span>
@@ -676,7 +1014,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:53%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">PLTR</span><span class="nb-px px" data-sym="PLTR" data-mkt="us">$186.38</span></div>
+        <div class="tkline"><span class="tk">PLTR</span><span class="ihmp-px" data-ihmp-symbol="PLTR"><span class="f" data-ihmp-price>$186.38</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">33</div>
@@ -696,13 +1034,13 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--up);--sp-p:45%"></span>
+      <span class="sp" style="--sp-c:var(--up);--sp-p:46%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">MSFT</span><span class="nb-px px" data-sym="MSFT" data-mkt="us">$507.29</span></div>
+        <div class="tkline"><span class="tk">MSFT</span><span class="ihmp-px" data-ihmp-symbol="MSFT"><span class="f" data-ihmp-price>$507.29</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">31</div>
-        <div class="rmv">45%</div></div>
+        <div class="rmv">46%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 64 across 2 desks."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 64，来自 2 个台。">
 <span class="cell off"></span>
@@ -718,9 +1056,31 @@
     </div>
     
     <div class="led-row">
+      <span class="sp" style="--sp-c:var(--down);--sp-p:36%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">PRGO</span><span class="ihmp-px" data-ihmp-symbol="PRGO"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
+        
+      </div>
+      <div><div class="score">27</div>
+        <div class="rmv">36%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 59 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 59，来自 2 个台。">
+<span class="cell off"></span>
+<span class="cell dn"></span>
+<span class="cell dn"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
+        <div class="drv"><b>-38% off high</b> · <b>RS +28% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">PSUS</span></div>
+        <div class="tkline"><span class="tk">PSUS</span><span class="ihmp-px" data-ihmp-symbol="PSUS"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -734,7 +1094,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>8 insiders bought open-market (6 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>8 insiders bought open-market (6 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -742,7 +1102,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">BXDC</span></div>
+        <div class="tkline"><span class="tk">BXDC</span><span class="ihmp-px" data-ihmp-symbol="BXDC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -756,7 +1116,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>8 insiders bought open-market (4 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>8 insiders bought open-market (4 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -764,7 +1124,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">AVBC</span></div>
+        <div class="tkline"><span class="tk">AVBC</span><span class="ihmp-px" data-ihmp-symbol="AVBC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -778,7 +1138,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>8 insiders bought open-market (5 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>8 insiders bought open-market (5 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -786,7 +1146,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">DPC</span></div>
+        <div class="tkline"><span class="tk">DPC</span><span class="ihmp-px" data-ihmp-symbol="DPC"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -800,7 +1160,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>9 insiders bought open-market (3 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>9 insiders bought open-market (3 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -808,7 +1168,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">EFOR</span></div>
+        <div class="tkline"><span class="tk">EFOR</span><span class="ihmp-px" data-ihmp-symbol="EFOR"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -822,7 +1182,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>12 insiders bought open-market (5 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>12 insiders bought open-market (5 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -830,7 +1190,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">XRN</span></div>
+        <div class="tkline"><span class="tk">XRN</span><span class="ihmp-px" data-ihmp-symbol="XRN"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -844,7 +1204,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>9 insiders bought open-market (4 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>9 insiders bought open-market (4 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -852,7 +1212,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">FCBM</span></div>
+        <div class="tkline"><span class="tk">FCBM</span><span class="ihmp-px" data-ihmp-symbol="FCBM"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -866,7 +1226,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>14 insiders bought open-market (5 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>14 insiders bought open-market (5 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -874,7 +1234,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">MOBI</span></div>
+        <div class="tkline"><span class="tk">MOBI</span><span class="ihmp-px" data-ihmp-symbol="MOBI"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -888,7 +1248,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>10 insiders bought open-market (2 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>10 insiders bought open-market (2 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -896,7 +1256,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">VITL</span></div>
+        <div class="tkline"><span class="tk">VITL</span><span class="ihmp-px" data-ihmp-symbol="VITL"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -910,7 +1270,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>10 insiders bought open-market (4 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>10 insiders bought open-market (4 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -918,7 +1278,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">BETR</span></div>
+        <div class="tkline"><span class="tk">BETR</span><span class="ihmp-px" data-ihmp-symbol="BETR"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -932,7 +1292,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>7 insiders bought open-market (3 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>7 insiders bought open-market (3 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
@@ -940,7 +1300,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:73%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">KRMD</span></div>
+        <div class="tkline"><span class="tk">KRMD</span><span class="ihmp-px" data-ihmp-symbol="KRMD"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">26</div>
@@ -954,63 +1314,19 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>5 insiders bought open-market (5 officers) · 64d-lagged filing</b></div>
+        <div class="drv"><b>5 insiders bought open-market (5 officers) · 63d-lagged filing</b></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:35%"></span>
+      <span class="sp" style="--sp-c:var(--info);--sp-p:100%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">PRGO</span></div>
-        
-      </div>
-      <div><div class="score">26</div>
-        <div class="rmv">35%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 60 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 60，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
-        <div class="drv"><b>-38% off high</b> · <b>RS +29% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:74%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">CEG</span><span class="nb-px px" data-sym="CEG" data-mkt="us">$274.77</span></div>
+        <div class="tkline"><span class="tk">MSTR</span><span class="ihmp-px" data-ihmp-symbol="MSTR"><span class="f" data-ihmp-price>$132.94</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">24</div>
-        <div class="rmv">74%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 24 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 24，来自 1 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>-32% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ fresh capital returns</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--info);--sp-p:98%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">MSTR</span><span class="nb-px px" data-sym="MSTR" data-mkt="us">$132.94</span></div>
-        
-      </div>
-      <div><div class="score">24</div>
-        <div class="rmv">98%</div></div>
+        <div class="rmv">100%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 2."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 2。">
 <span class="cell off"></span>
@@ -1020,37 +1336,37 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
-        <div class="drv"><b>-63% off high</b> · <b>RS +1% vs SPY</b></div>
+        <div class="drv"><b>-63% off high</b> · <b>RS +0% vs SPY</b></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:28%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:64%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">MKTX</span><span class="nb-px px" data-sym="MKTX" data-mkt="us">$162.63</span></div>
+        <div class="tkline"><span class="tk">MU</span><span class="ihmp-px" data-ihmp-symbol="MU"><span class="f" data-ihmp-price>$958.73</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">21</div>
-        <div class="rmv">28%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 60 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 60，来自 2 个台。">
+      <div><div class="score">22</div>
+        <div class="rmv">64%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 32 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 32，来自 2 个台。">
 <span class="cell off"></span>
 <span class="cell dn"></span>
 <span class="cell dn"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
       <div>
-        <div class="cline"><span class="chip st-exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>-15% off high</b> · <b>fresh acquisitions</b> · <span class="cau">⚠ radar fading</span></div>
-        
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
+        <div class="drv"><b>-21% off high</b> · <b>RS -5% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="watch"><span class="l-en">Watching</span><span class="l-zh">关注</span>: <b>{&#39;text&#39;: &#39;Insider activity turns net negative while congressional buying ceases and patent momentum materially weakens.&#39;, &#39;check&#39;: {&#39;kind&#39;: &#39;rel_return&#39;, &#39;subject_ticker&#39;: &#39;MU&#39;, &#39;vs&#39;: &#39;SPY&#39;, &#39;op&#39;: &#39;&lt;&#39;, &#39;threshold&#39;: -0.05, &#39;horizon_d&#39;: 60}}</b></div>
       </div>
     </div>
     
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--up);--sp-p:77%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">TKO</span></div>
+        <div class="tkline"><span class="tk">TKO</span><span class="ihmp-px" data-ihmp-symbol="TKO"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">20</div>
@@ -1064,7 +1380,7 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>RS -5% vs SPY</b> · <b>radar forming</b></div>
+        <div class="drv"><b>RS -7% vs SPY</b> · <b>radar forming</b></div>
         
       </div>
     </div>
@@ -1072,7 +1388,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:var(--info);--sp-p:76%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">UBER</span><span class="nb-px px" data-sym="UBER" data-mkt="us">$75.65</span></div>
+        <div class="tkline"><span class="tk">UBER</span><span class="ihmp-px" data-ihmp-symbol="UBER"><span class="f" data-ihmp-price>$75.65</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">18</div>
@@ -1092,15 +1408,15 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:56%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:52%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">BAH</span></div>
+        <div class="tkline"><span class="tk">CEG</span><span class="ihmp-px" data-ihmp-symbol="CEG"><span class="f" data-ihmp-price>$274.77</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">16</div>
-        <div class="rmv">56%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 22 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 22，来自 1 个台。">
+      <div><div class="score">18</div>
+        <div class="rmv">52%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 30 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 30，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
@@ -1108,19 +1424,63 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>-28% off high</b> · <b>fresh acquisitions</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="drv"><b>-32% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ fresh capital returns</span></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--up);--sp-p:69%"></span>
+      <span class="sp" style="--sp-c:var(--info);--sp-p:70%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">LYV</span></div>
+        <div class="tkline"><span class="tk">NVDA</span><span class="ihmp-px" data-ihmp-symbol="NVDA"><span class="f" data-ihmp-price>$220.78</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
+        
+      </div>
+      <div><div class="score">17</div>
+        <div class="rmv">70%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 4."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 4。">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
+        <div class="drv"><b>RS +2% vs SPY</b> · <b>fresh divestitures</b></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
+      <span class="sp" style="--sp-c:var(--down);--sp-p:32%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">REGN</span><span class="ihmp-px" data-ihmp-symbol="REGN"><span class="f" data-ihmp-price>$799.08</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
+        
+      </div>
+      <div><div class="score">17</div>
+        <div class="rmv">32%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 49 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 49，来自 2 个台。">
+<span class="cell off"></span>
+<span class="cell dn"></span>
+<span class="cell dn"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip mut"><span class="l-en">isolated</span><span class="l-zh">孤立</span></span></div>
+        <div class="drv"><b>quiet tape (room)</b> · <b>-5% off high</b> · <span class="cau">⚠ radar fading</span></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
+      <span class="sp" style="--sp-c:var(--up);--sp-p:70%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">LYV</span><span class="ihmp-px" data-ihmp-symbol="LYV"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">16</div>
-        <div class="rmv">69%</div></div>
+        <div class="rmv">70%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 12 across 1 desk."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 12，来自 1 个台。">
 <span class="cell off"></span>
@@ -1130,107 +1490,63 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="chip info"><span class="l-en">leads by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="drv"><b>radar forming</b> · <b>RS +8% vs SPY</b> · <span class="cau">⚠ at the highs</span></div>
+        <div class="drv"><b>RS +6% vs SPY</b> · <b>radar forming</b> · <span class="cau">⚠ at the highs</span></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--info);--sp-p:71%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:41%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">NVDA</span><span class="nb-px px" data-sym="NVDA" data-mkt="us">$220.78</span></div>
+        <div class="tkline"><span class="tk">UNP</span><span class="ihmp-px" data-ihmp-symbol="UNP"><span class="f" data-ihmp-price>$300.67</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">16</div>
-        <div class="rmv">71%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 3."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 3。">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>RS -1% vs SPY</b> · <b>fresh divestitures</b></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:40%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">KO</span><span class="nb-px px" data-sym="KO" data-mkt="us">$88.67</span></div>
-        
-      </div>
-      <div><div class="score">14</div>
-        <div class="rmv">40%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 34 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 34，来自 2 个台。">
+        <div class="rmv">41%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 24 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 24，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell dn"></span>
-<span class="cell dn"></span>
+<span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
-        <div class="drv"><b>fresh capital returns</b> · <b>RS +15% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="drv"><b>RS +3% vs SPY</b> · <b>-3% off high</b> · <span class="cau">⚠ fresh acquisitions</span></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:32%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:57%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">MA</span><span class="nb-px px" data-sym="MA" data-mkt="us">$589.31</span></div>
+        <div class="tkline"><span class="tk">BAH</span><span class="ihmp-px" data-ihmp-symbol="BAH"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">14</div>
-        <div class="rmv">32%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 42 across 2 desks."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 42，来自 2 个台。">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip info"><span class="l-en">velocity spike</span><span class="l-zh">加速</span></span></div>
-        <div class="drv"><b>quiet tape (room)</b> · <b>RS +21% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
-        
-      </div>
-    </div>
-    
-    <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:52%"></span>
-      <div class="id">
-        <div class="tkline"><span class="tk">IR</span></div>
-        
-      </div>
-      <div><div class="score">14</div>
-        <div class="rmv">52%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 24 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 24，来自 1 个台。">
+      <div><div class="score">15</div>
+        <div class="rmv">57%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 20 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 20，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
       <div>
-        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
-        <div class="drv"><b>-18% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span><span class="chip cat"><span class="l-en">catalyst</span><span class="l-zh">催化</span></span></div>
+        <div class="drv"><b>-28% off high</b> · <b>RS +6% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:53%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:54%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">ADBE</span><span class="nb-px px" data-sym="ADBE" data-mkt="us">$292.79</span></div>
+        <div class="tkline"><span class="tk">ADBE</span><span class="ihmp-px" data-ihmp-symbol="ADBE"><span class="f" data-ihmp-price>$292.79</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
       <div><div class="score">14</div>
-        <div class="rmv">53%</div></div>
+        <div class="rmv">54%</div></div>
       <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 23 across 1 desk."
   data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 23，来自 1 个台。">
 <span class="cell off"></span>
@@ -1240,21 +1556,21 @@
 <span class="cell off"></span></span></div>
       <div>
         <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
-        <div class="drv"><b>-20% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="drv"><b>-20% off high</b> · <b>RS +10% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
         
       </div>
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--down);--sp-p:64%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:65%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">SPCX</span><span class="nb-px px" data-sym="SPCX" data-mkt="us">$143.69</span></div>
+        <div class="tkline"><span class="tk">SPCX</span><span class="ihmp-px" data-ihmp-symbol="SPCX"><span class="f" data-ihmp-price>$143.69</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">12</div>
-        <div class="rmv">64%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 16 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 16，来自 1 个台。">
+      <div><div class="score">13</div>
+        <div class="rmv">65%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 18 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 18，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
@@ -1268,23 +1584,45 @@
     </div>
     
     <div class="led-row">
-      <span class="sp" style="--sp-c:var(--info);--sp-p:46%"></span>
+      <span class="sp" style="--sp-c:var(--down);--sp-p:35%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">ACM</span></div>
+        <div class="tkline"><span class="tk">MA</span><span class="ihmp-px" data-ihmp-symbol="MA"><span class="f" data-ihmp-price>$589.31</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
         
       </div>
-      <div><div class="score">11</div>
-        <div class="rmv">46%</div></div>
-      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 6 across 1 desk."
-  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 6，来自 1 个台。">
+      <div><div class="score">13</div>
+        <div class="rmv">35%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 34 across 2 desks."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 34，来自 2 个台。">
+<span class="cell off"></span>
+<span class="cell dn"></span>
+<span class="cell dn"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip info"><span class="l-en">velocity spike</span><span class="l-zh">加速</span></span></div>
+        <div class="drv"><b>RS +15% vs SPY</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
+        
+      </div>
+    </div>
+    
+    <div class="led-row">
+      <span class="sp" style="--sp-c:var(--down);--sp-p:52%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">IR</span><span class="ihmp-px" data-ihmp-symbol="IR"><span class="f" data-ihmp-price></span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span></div>
+        
+      </div>
+      <div><div class="score">13</div>
+        <div class="rmv">52%</div></div>
+      <div class="mtxc"><span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board, then policy as context only (it never votes). Green up, red down, grey no lean, empty means that desk never looked. Agreement score 21 across 1 desk."
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜，最后是仅作背景的政策（不参与排序）。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。一致度 21，来自 1 个台。">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
-<span class="cell up"></span>
+<span class="cell off"></span>
 <span class="cell off"></span></span></div>
       <div>
-        <div class="cline"><span class="chip st-building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="chip en-buy" data-tip-en="Validated confluence buy · tier T3" data-tip-zh="已验证共振买入 · 层级 T3">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T3</span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
-        <div class="drv"><b>-50% off high</b> · <b>RS +7% vs SPY</b> · <span class="cau">⚠ radar fading</span></div>
+        <div class="cline"><span class="chip st-distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span></div>
+        <div class="drv"><b>-18% off high</b> · <b>quiet tape (room)</b> · <span class="cau">⚠ radar fading</span></div>
         
       </div>
     </div>
@@ -1414,7 +1752,70 @@
   
 
   
-  <link rel="stylesheet" href="assets/css/1d85c19b.css?v=1d85c19b">
+  <style>
+  /* ── desk scorecard: a Tier-3 study panel folded behind a Tier-1 summary ──
+     Tokens only (no literal greys) so the panel tracks light / dark / zh. */
+  .dg{ --dg-hair:color-mix(in srgb,var(--line,#2a2f3a) 78%,transparent);
+    margin-top:22px; border:1px solid var(--dg-hair); border-radius:12px;
+    background:color-mix(in srgb,var(--panel,#181b21) 72%,transparent); }
+  .dg-sum{ display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 15px; cursor:pointer; list-style:none;
+    font-size:13.5px; border-radius:12px; transition:background .16s ease; }
+  .dg-sum::-webkit-details-marker{ display:none; }
+  .dg-sum:hover{ background:color-mix(in srgb,var(--panel2,#1e222a) 55%,transparent); }
+  .dg-sum:focus-visible{ outline:2px solid var(--info,#5b9bf0); outline-offset:2px; }
+  .dg-mark{ width:17px; height:17px; flex:none; color:var(--muted,#8b93a1); }
+  .dg-is-alarm .dg-mark{ color:var(--ink-down, var(--down,#e06464)); }
+  .dg-ttl{ font-weight:700; letter-spacing:-.005em; }
+  .dg-verdict{ font-size:12px; color:var(--muted,#8b93a1); }
+  .dg-open{ margin-left:auto; display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:600;
+    color:var(--muted,#8b93a1); }
+  .dg-open svg{ width:13px; height:13px; transition:transform .2s ease; }
+  .dg[open] .dg-open svg{ transform:rotate(180deg); }
+  .dg[open] .dg-sum{ border-bottom:1px solid var(--dg-hair); border-radius:12px 12px 0 0; }
+  .dg-body{ padding:13px 15px 15px; }
+  .dg-lead{ font-size:12.5px; line-height:1.55; margin:0 0 12px; color:color-mix(in srgb,var(--text,#d7dce3) 82%,transparent); }
+  .dg-counts{ display:block; margin-top:3px; font-size:11px; color:var(--muted,#8b93a1); }
+  .dg-tblwrap{ overflow-x:auto; }
+  .dg-tbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .dg-tbl th,.dg-tbl td{ padding:6px 10px; text-align:left; border-bottom:1px solid color-mix(in srgb,var(--line,#2a2f3a) 45%,transparent); }
+  .dg-tbl th.num,.dg-tbl td.num{ text-align:right;
+    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; }
+  .dg-tbl thead th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    font-weight:600; color:var(--muted,#8b93a1); }
+  .dg-tbl tbody td:first-child{ font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
+  .dg-row-alarm{ background:color-mix(in srgb,var(--down,#e06464) 9%,transparent); }
+  .dg-pos{ color:var(--ink-up, var(--up,#45b873)); } .dg-neg{ color:var(--ink-down, var(--down,#e06464)); }
+  .mut2{ color:var(--muted,#8b93a1); }
+  .dg-badge{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 8px; border-radius:6px; white-space:nowrap; }
+  .dg-proven{ background:color-mix(in srgb,var(--up,#45b873) 18%,transparent); color:var(--ink-up, var(--up,#45b873)); }
+  .dg-measuring{ background:color-mix(in srgb,var(--muted,#8b93a1) 16%,transparent); color:var(--muted,#8b93a1); }
+  .dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 20%,transparent); color:var(--ink-down, var(--down,#e06464)); }
+  .dg-fine{ font-size:11px; color:var(--muted,#8b93a1); line-height:1.55; margin:10px 0 0; }
+  .dg-sub{ margin-top:14px; }
+  .dg-sub h3{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:700;
+    color:var(--muted,#8b93a1); margin:0 0 7px; }
+  .dg-ev{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; margin:3px 0; }
+  .dg-ev-h{ font-weight:700; min-width:34px; font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
+  .dg-ev-tag{ padding:2px 8px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted,#8b93a1) 11%,transparent); }
+  .dg-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; }
+  .dg-find{ font-size:12.5px; line-height:1.5; display:flex; gap:8px; padding:6px 10px; border-radius:7px;
+    background:color-mix(in srgb,var(--muted,#8b93a1) 8%,transparent); }
+  .dg-find.dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 10%,transparent); color:var(--text,#d7dce3); }
+  .dg-find.dg-warn{ background:color-mix(in srgb,var(--warn,#e0a030) 10%,transparent); }
+  .dg-sev{ flex:0 0 auto; }
+  .dg-notes li{ font-size:12px; line-height:1.5; padding:6px 0;
+    border-top:1px solid color-mix(in srgb,var(--line,#2a2f3a) 40%,transparent); }
+  .dg-nd{ display:inline-block; min-width:78px; color:var(--muted,#8b93a1);
+    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; font-size:11px; }
+  @media (prefers-reduced-motion:reduce){
+    .dg-sum{ transition:none; }
+    .dg-open svg{ transition:none; }
+  }
+</style>
   
 
 <details class="dg dg-is-alarm">
@@ -1439,8 +1840,8 @@
         measured against SPY. Context only — never a trade instruction.</span>
       <span class="l-zh">本台每个入选标的都以其之后的实际走势评分，并与标普对比。仅作参考 —— 绝非交易指令。</span>
       <span class="dg-counts">
-        <span class="l-en">202,802 names recorded · 11,100 drops tracked</span>
-        <span class="l-zh">已记录 202,802 个标的 · 已追踪 11,100 次剔除</span></span>
+        <span class="l-en">202,803 names recorded · 11,100 drops tracked</span>
+        <span class="l-zh">已记录 202,803 个标的 · 已追踪 11,100 次剔除</span></span>
     </p>
 
     
@@ -1456,8 +1857,8 @@
     </tr></thead><tbody>
       
       <tr class=""
-          data-tip-en="After this desk dropped a name it went +1.7% against SPY (n=17742) · usable prices for 53.9% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 +1.7%（样本 17742）· 入选标的中 53.9% 有可用价格">
+          data-tip-en="After this desk dropped a name it went +1.7% against SPY (n=17742) · usable prices for 54.6% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 +1.7%（样本 17742）· 入选标的中 54.6% 有可用价格">
         <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">104281</td>
         <td class="num dg-neg">-0.015</td>
@@ -1478,8 +1879,8 @@
       </tr>
       
       <tr class=""
-          data-tip-en="After this desk dropped a name it went +5.7% against SPY (n=9127) · usable prices for 40.8% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 +5.7%（样本 9127）· 入选标的中 40.8% 有可用价格">
+          data-tip-en="After this desk dropped a name it went +5.7% against SPY (n=9127) · usable prices for 41.3% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 +5.7%（样本 9127）· 入选标的中 41.3% 有可用价格">
         <td><b>20</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">71272</td>
         <td class="num dg-neg">-0.040</td>
@@ -1489,8 +1890,8 @@
       </tr>
       
       <tr class="dg-row-alarm"
-          data-tip-en="After this desk dropped a name it went +0.5% against SPY (n=3660) · usable prices for 25.3% of surfaced names"
-          data-tip-zh="本台剔除标的后，其相对标普走势为 +0.5%（样本 3660）· 入选标的中 25.3% 有可用价格">
+          data-tip-en="After this desk dropped a name it went +0.5% against SPY (n=3660) · usable prices for 25.7% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 +0.5%（样本 3660）· 入选标的中 25.7% 有可用价格">
         <td><b>30</b><span class="l-en">d</span><span class="l-zh">日</span></td>
         <td class="num">40850</td>
         <td class="num dg-neg">-0.079</td>
@@ -1634,19 +2035,19 @@
   <div class="card slist">
     
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 36 names the desks surfaced here: 12.6 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 36 个标的平均信念度：12.6 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 36 names the desks surfaced here: 13.4 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 36 个标的平均信念度：13.4 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLK</span>
       <span class="snm">Technology</span>
-      <span class="meter"><i style="width:12.6%"></i></span>
+      <span class="meter"><i style="width:13.4%"></i></span>
       <span class="sf"><span><b>36</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 35 names the desks surfaced here: 9.8 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 35 个标的平均信念度：9.8 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 35 names the desks surfaced here: 10.9 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 35 个标的平均信念度：10.9 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLV</span>
       <span class="snm">Health Care</span>
-      <span class="meter"><i style="width:9.8%"></i></span>
+      <span class="meter"><i style="width:10.9%"></i></span>
       <span class="sf"><span><b>35</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
@@ -1670,46 +2071,46 @@
         </span>
     </div>
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 25 names the desks surfaced here: 7.9 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 25 个标的平均信念度：7.9 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 25 names the desks surfaced here: 7.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 25 个标的平均信念度：7.3 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLF</span>
       <span class="snm">Financials</span>
-      <span class="meter"><i style="width:7.9%"></i></span>
+      <span class="meter"><i style="width:7.3%"></i></span>
       <span class="sf"><span><b>25</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         <span style="color:var(--ink-warn, var(--warn))"><b>1</b> <span class="l-en">crowded</span><span class="l-zh">拥挤</span></span></span>
     </div>
     <div class="srow" style="--accent:var(--up)"
-         data-tip-en="Average conviction across the 15 names the desks surfaced here: 7.8 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 15 个标的平均信念度：7.8 / 100。各条形共用同一标尺，越长表示越热。">
-      <span class="etf">XLP</span>
-      <span class="snm">Staples</span>
-      <span class="meter"><i style="width:7.8%"></i></span>
-      <span class="sf"><span><b>15</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
-        
-        </span>
-    </div>
-    <div class="srow" style="--accent:var(--up)"
-         data-tip-en="Average conviction across the 18 names the desks surfaced here: 5.8 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 18 个标的平均信念度：5.8 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 18 names the desks surfaced here: 5.9 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 18 个标的平均信念度：5.9 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLY</span>
       <span class="snm">Discretionary</span>
-      <span class="meter"><i style="width:5.8%"></i></span>
+      <span class="meter"><i style="width:5.9%"></i></span>
       <span class="sf"><span><b>18</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
+    <div class="srow" style="--accent:var(--up)"
+         data-tip-en="Average conviction across the 15 names the desks surfaced here: 5.9 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 15 个标的平均信念度：5.9 / 100。各条形共用同一标尺，越长表示越热。">
+      <span class="etf">XLP</span>
+      <span class="snm">Staples</span>
+      <span class="meter"><i style="width:5.9%"></i></span>
+      <span class="sf"><span><b>15</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
+        
+        </span>
+    </div>
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 22 names the desks surfaced here: 5.5 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 22 个标的平均信念度：5.5 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 22 names the desks surfaced here: 5.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 22 个标的平均信念度：5.3 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLI</span>
       <span class="snm">Industrials</span>
-      <span class="meter"><i style="width:5.5%"></i></span>
+      <span class="meter"><i style="width:5.3%"></i></span>
       <span class="sf"><span><b>22</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
     </div>
     <div class="srow" style="--accent:var(--down)"
-         data-tip-en="Average conviction across the 16 names the desks surfaced here: 5.0 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 16 个标的平均信念度：5.0 / 100。各条形共用同一标尺，越长表示越热。">
+         data-tip-en="Average conviction across the 16 names the desks surfaced here: 5.3 of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 16 个标的平均信念度：5.3 / 100。各条形共用同一标尺，越长表示越热。">
       <span class="etf">XLU</span>
       <span class="snm">Utilities</span>
-      <span class="meter"><i style="width:5.0%"></i></span>
+      <span class="meter"><i style="width:5.3%"></i></span>
       <span class="sf"><span><b>16</b> <span class="l-en">names</span><span class="l-zh">标的</span></span>
         
         </span>
@@ -1736,12 +2137,13 @@
   
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-09-01T22:22:40.705253+00:00">2026-09-01 22:22</time> UTC ·
-    <span class="l-en">scanned</span><span class="l-zh">扫描</span> <span class="f">2,327</span> <span class="l-en">names</span><span class="l-zh">标的</span> · 
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-09-02T01:33:51.089939+00:00">2026-09-02 01:33</time> UTC ·
+    <span class="l-en">scanned</span><span class="l-zh">扫描</span> <span class="f">2,328</span> <span class="l-en">names</span><span class="l-zh">标的</span> · 
     Context only — five research desks fused into one read per name, never a trade instruction and never a position size.
   </footer>
 </div>
-<script src="theme.js?v=f0609099" defer></script>
+<script src="theme.js"></script>
 
+<script defer src="assets/js/intelligence-hub-market-pulse.js?v=20260902a"></script>
 </body>
 </html>

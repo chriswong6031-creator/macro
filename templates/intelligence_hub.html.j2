@@ -2,6 +2,24 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+{#- R1A-M Market Pulse quote cluster (reactive-projection freeze §8/§9). ONE
+    visible price per eligible roster row. `region_for()` gates non-US
+    symbols out entirely — they carry no cluster and never enter the request
+    set (freeze §4/§6). Deliberately NOT .nb-px/.nb-chg: that selector is the
+    GENERIC templates/live.js owner, and this route's whole point is that its
+    roster rows are owned by ONE route-scoped controller
+    (site/assets/js/intelligence-hub-market-pulse.js) instead — the generic
+    class is removed from these rows entirely, not merely left unused, so the
+    rendered page carries zero `.nb-px[data-sym]` quote nodes (freeze §10).
+    `data-ihmp-price/-abs/-pct` start baked with the nightly close (price) and
+    empty/hidden (abs/pct — no baked move exists for these rows today); the
+    controller fills all three from one accepted quote tuple, together,
+    inside one requestAnimationFrame. -#}
+{% macro ihmp(ticker, price) -%}
+{%- if ticker and region_for(ticker) == 'us' -%}
+<span class="ihmp-px" data-ihmp-symbol="{{ ticker }}"><span class="f" data-ihmp-price>{% if price is not none %}${{ '%.2f'|format(price) }}{% endif %}</span><span class="ihmp-delta ihmp-abs f" data-ihmp-abs hidden></span><span class="ihmp-delta ihmp-pct f" data-ihmp-pct hidden></span></span>
+{%- endif -%}
+{%- endmacro %}
 {#- inline SVG icons (Lucide-style, currentColor). Icons carry exactly ONE meaning on
     this page — "a desk" — plus the two inline markers (a dated event, a data channel).
     Section marks use the accent tick instead, so an icon always means something. -#}
@@ -176,6 +194,40 @@
     .rl:nth-child(odd){ border-left:0; }
     .rl:nth-child(n+3){ border-top:1px solid var(--hair-soft); }
     .rl .gw{ display:none; }
+  }
+
+  /* ── R1A-M Market Pulse instrument (reactive-projection freeze §8/§12) ──
+     Dark = graphite command instrument: hairline card, restrained semantic
+     luminance, a pulse ONLY for the live+regular state (same idiom as the
+     existing hero `.live::after` dot above — no new glow language). Light =
+     white research material on the page's cool canvas: the identical
+     hairline/card tokens read as a flat, shadow-quiet strip once theme.css
+     swaps `--card`/`--hair`/`--text` for their light values — no dark-only
+     glow value is hardcoded here, so light never inherits the pulse's box-
+     shadow bloom. Semantic tokens only: --ink-up/--ink-down keep Chinese
+     direction-color correct; no new token root, no literal palette, no
+     runtime stylesheet. */
+  .ihmp-bar{ display:flex; align-items:center; gap:9px; margin:14px 0 0; padding:9px 14px;
+    border:1px solid var(--hair); border-radius:var(--r); background:var(--card);
+    font-size:11.5px; color:var(--muted); }
+  .ihmp-dot{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--muted); }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
+    background:var(--ok); position:relative; }
+  .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
+    content:""; position:absolute; inset:-4px; border-radius:50%;
+    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
+  .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{ background:var(--warn); }
+  .ihmp-bar[data-ihmp-availability="unavailable"] .ihmp-dot,
+  .ihmp-bar[data-ihmp-freshness="stale"] .ihmp-dot{ background:var(--down); }
+  .ihmp-bar time{ font-family:var(--fig); margin-left:auto; font-size:10px; }
+  /* per-row quote cluster — the ONE visible price on a roster row */
+  .ihmp-px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    color:var(--muted); white-space:nowrap; display:inline-flex; align-items:baseline; gap:4px; }
+  .ihmp-delta{ font-size:10px; }
+  .ihmp-delta.pos{ color:var(--ink-up, var(--up)); }
+  .ihmp-delta.neg{ color:var(--ink-down, var(--down)); }
+  @media (prefers-reduced-motion:reduce){
+    .ihmp-bar .ihmp-dot::after{ animation:none; }
   }
 
   /* ── section mark: an accent tick, a label, a rule, a count ── */
@@ -414,6 +466,19 @@
     </div>
   </header>
 
+  {# ── R1A-M Market Pulse — one compact page-level instrument (freeze §8/§11).
+        Baked by default (nightly build); the route-scoped controller
+        (site/assets/js/intelligence-hub-market-pulse.js) is the only writer
+        of the four state-axis attributes below and of `.l-en`/`.l-zh` inside
+        `[data-ihmp-status]`. `aria-live="polite"` on the ROOT, not a spammy
+        per-row announcement — one status line for the whole roster. ── #}
+  <div class="ihmp-bar" data-ihmp-root data-ihmp-availability="" data-ihmp-freshness=""
+       data-ihmp-session="" data-ihmp-coverage="" data-ihmp-baseline-at="{{ hub.as_of or '' }}"
+       aria-live="polite">
+    <span class="ihmp-dot" aria-hidden="true"></span>
+    <span data-ihmp-status>{{ t('Prices from the latest settled build', '价格来自最近一次结算构建') }}</span>
+  </div>
+
   {# ── desk rail. Purpose + grading receipt ride the hover; Tier 1 keeps the
         name, the live lamp and the translated grading state. ── #}
   <div class="rail">
@@ -444,7 +509,7 @@
   <div class="ecards">
     {% for d in EM %}
     <div class="card ecard lead" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}
         {{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}{{ tstate(d.trajectory) }}
         <span class="score">{{ d.opportunity_score|round|int }}</span></div>
       {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
@@ -468,7 +533,7 @@
   <div class="ecards lst-collapse lst-cap4 is-collapsed">
     {% for d in hub.discovery %}{% set dd = d.discovery or {} %}
     <div class="card ecard dcard">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}
         <span class="chip src">{{ (dd.source or '')|replace('_',' ')|e }}</span>
         {% if dd.off_desk %}<span class="chip good">{{ t('off-desk','非台内') }}</span>{% endif %}
         <span class="dscore">{{ ((dd.disc_score or 0)*100)|round|int }}</span></div>
@@ -531,7 +596,7 @@
     <div class="led-row">
       <span class="sp" style="--sp-c:{{ acc }};--sp-p:{{ ((d.edge_remaining or 0)*100)|round|int }}%"></span>
       <div class="id">
-        <div class="tkline"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}</div>
+        <div class="tkline"><span class="tk">{{ d.ticker }}</span>{{ ihmp(d.ticker, d.price) }}</div>
         {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
       </div>
       <div><div class="score">{{ d.opportunity_score|round|int }}</div>
@@ -624,7 +689,10 @@
   </footer>
 </div>
 <script src="theme.js"></script>
-{# intraday progressive enhancement: live (~15-min) prices on the surfaced names.
-   No-ops if not configured/served — the slow-brain scores stay nightly. #}
+{# R1A-M: the ONE route-scoped controller for every [data-ihmp-symbol] node on
+   this page (reactive-projection freeze §9/§10). No-ops if the page rendered
+   no roster targets or the live-prices setting is off — the baked page stays
+   fully usable either way. #}
+<script defer src="assets/js/intelligence-hub-market-pulse.js?v=20260902a"></script>
 </body>
 </html>
