@@ -3749,6 +3749,16 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
         <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
       </span>
     </h2>
+    {#- ── THE BOARD'S ONE VINTAGE STAMP (HK twin of the US/CN #stocks-header fix,
+        2026-09-01). Removing the per-card `date` chip above (a board-wide constant
+        masquerading as a per-name vintage — see the fence at the pv_card call)
+        left this board with NO freshness disclosure at all, unlike US/CN, which
+        already state it once at page level. "Data through <as_of>" is the whole
+        answer to "how fresh is this board", stated once, in plain words
+        (DESIGN_DOCTRINE Law 4: one as-of stamp per panel). -#}
+    {% if setups and setups.get('as_of') %}
+    <p class="note" style="margin:0 0 2px;text-transform:none;color:var(--muted)"><span class="l-en">Data through</span><span class="l-zh">数据截至</span> <strong>{{ setups.as_of }}</strong></p>
+    {% endif %}
     {# THE ONE board-note (§7.2). Board mechanics only — the "screen, not a buy list" caveat
        lives once in the desk manifest above + the per-card tier badge. #}
     <p class="note" style="margin:0 0 2px;text-transform:none">{% if _hsg.any %}{{ t('Live entries first, then setups forming, then names that already ran or are blocked. Rank is a screen, not a promise.', '先看入场窗口已打开的，再看形态形成中的，最后是已启动或受阻的。排名是筛选，不是承诺。') }}{% else %}{{ t('Only names with a fresh entry signal make this board. Entry-open group first, then setting-up. Rank is a screen, not a promise.', '仅收录出现新入场信号的个股。入场开启组优先，蓄势中次之。排名是筛选，不是承诺。') }}{% endif %}</p>
@@ -3972,6 +3982,12 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
          §5.5 names. Prefer a real translation from the artifact, fall back to the
          shared i18n map, and only then to English (which is `tr`'s own fallback). #}
       {% set _csz = n.sector_zh if (n.sector_zh and n.sector_zh != n.sector) else tr(n.sector) %}
+      {#- NO DATE IN THE ZONE ROW (CN/US twin, 2026-08-27/26). `signal.asof or
+           setups.as_of` is a board-wide constant, not the zone's vintage — see the
+           china.html.j2 / _us_board_cards.html.j2 measurement fence for the same
+           removal. `added_date` (engine/prophet_board_since.py) is the labelled
+           per-candidate membership-start chip; the board's own vintage is now
+           stated once in #standouts's "Data through" header below. -#}
       {{ pv.pv_card({
         'href': 'hk_lookup.html#' ~ n.ticker, 'tk': n.ticker, 'mkt': 'hk',
         'name': n.name, 'sec': n.sector, 'sec_zh': _csz,
@@ -3992,7 +4008,8 @@ html[data-lang="zh"][data-theme="light"] body.page-hk .ms-red .hkx-big-score { t
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
         'zone_hi': ('%.2f'|format(_bz.high)) if (_bz and _bz.high is not none) else none,
-        'date': (n.get('signal') or {}).get('asof') or setups.get('as_of'),
+        'date': none,
+        'added_date': n.get('added_date'),
         'flags': _fl.rows,
         'featured': _feat, 'stage_key': (n.get('stage') if _hsg.any else none),
         'marks': (_mk.rows[:3] if (_hsg.any or _mk.rows) else none)

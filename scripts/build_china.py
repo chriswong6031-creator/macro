@@ -1943,6 +1943,18 @@ def main() -> int:
             log.warning("china radar_dlg ctx failed (%s); dialog renders core only", _rdlg_e)
             vm["radar_dlg"] = {}
 
+        # Per-candidate Added / 入榜 date (engine/prophet_board_since.py). Display-only.
+        # watch_definitions is the CANONICAL china_standout_track set, imported here
+        # rather than duplicated in the resolver module.
+        try:
+            from engine.china_standout_track import WATCH_DEFINITIONS as _cn_watch_defs
+            from engine.prophet_board_since import stamp_cn_board_since_fail_open
+            vm["setups"] = stamp_cn_board_since_fail_open(
+                vm.get("setups"), data_dir=config.data_dir(),
+                watch_definitions=_cn_watch_defs, log=log)
+        except Exception as _bse:  # noqa: BLE001 — additive, never fatal
+            log.warning("cn board_since stamp failed (%s)", _bse)
+
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
         from engine import i18n

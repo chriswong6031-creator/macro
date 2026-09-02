@@ -19,20 +19,17 @@ class: build
 blast_radius: reversible
 ambiguity: specified
 next_action: >
-  Execute fresh child C2-A from
-  agentos/handoffs/BREATHING-PLATFORM-2026-08-29-c2-closepass-host-lane-repair.md.
-  C0 is accepted/terminal; do not reopen it. C2-A is the first still-live causal
-  dependency: the host-native close-pass lane can remain registered+locked in Git
-  while missing on disk, and current prepare_lane only has a weaker error-string +
-  prune recovery path that does not safely cover that state. Preferred avenue is
-  CTO Sol, receiver binding is CAPACITY_SELECTABLE, and current placement state is
-  WAITING_CAPACITY / needs_placement because CF2-I capacity-aware Executive
-  placement is not yet production-released. Do not turn that placement debt into
-  OPEN_PICKUP or routine Chairman account scheduling, and do not arm a receiver-
-  specific watcher until a lawful receiver exists. After C2-A code + actual Mac
-  Studio installer/preflight proof, separately reconcile C2-B backstop Massive
-  same-session coverage, C1 natural D12/permanence proof, C3 W-L2 breadth, C5
-  browser/degraded-state proof, then C6 three consecutive natural sessions.
+  Continue the already-STARTed C2-A child
+  breathing-c2-closepass-host-lane-repair-20260829-sol-001 on canonical Slack
+  carrier C0BSBM78V1N/1788248718.881509 with post-START sticky binding to CTO-FORGE
+  native task 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0. Preserve its exact existing
+  local worktree/branch/effect; do not rebind, fail over, reset, stash-away,
+  transfer, or create a replacement carrier/worktree/branch. The worker owes the
+  frozen real-Git TDD repair and one reviewed PR candidate. Sol then independently
+  reviews current head/main/checks; only accepted merged code may proceed to the
+  existing Mac Studio installer plus installed-bootstrap digest and non-publishing
+  lane-readiness preflight. C2-B, C1/D12/permanence, C3 W-L2, C5 browser proof and
+  C6 remain separate downstream dependencies.
 owns_paths:
   - scripts/close_pass_publish.py
   - scripts/close_pass_mirror.py
@@ -66,16 +63,20 @@ waves:
       current natural acceptance is W-ACCEPT.
   - id: C2-A
     title: Recover missing-but-locked host-native close-pass worktree
-    status: todo
+    status: in_progress
     depends_on: [W-L1R]
     next_action: >
-      WAITING_CAPACITY / needs_placement. Use operation
-      breathing-c2-closepass-host-lane-repair-20260829-sol-001 and the 2026-08-29
-      C2-A handoff. PREFERRED_AVENUE=CTO Sol; CAPACITY_SELECTABLE. Require real-Git
-      reproduction + RED-before regression, structurally targeted recovery that
-      cannot touch unrelated worktrees, reviewed PR, existing installer deployment
-      to the Mac Studio, installed-bootstrap digest proof and non-publishing lane
-      readiness preflight. Weekend/pre-session preflight is not a C6 session green.
+      ACTIVE/STARTED on exact canonical carrier C0BSBM78V1N/1788248718.881509,
+      receiver CTO-FORGE native task 01a04bdf-7a7b-7f63-9abd-9a7c13e944c0,
+      post-START sticky binding. Controlling Sol edge is 1788254394.044819. Preserve
+      existing worktree /Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/breathing-c2a-host-lane-repair-20260901,
+      branch claude/breathing-c2a-host-lane-repair-20260901, and its known local-only
+      two-path effect. Continue real-Git locked+missing reproduction, RED-before,
+      structurally targeted exact-lane repair, adversarial no-collateral proof and
+      one reviewed PR candidate. No installer/launchd/production mutation before
+      Sol source acceptance. After accepted merge, use the existing Mac Studio
+      installer and prove installed-bootstrap digest plus non-publishing lane
+      readiness. Weekend/pre-session preflight is not a C6 session green.
   - id: W-L2
     title: Current valid armed-level breadth outcome
     status: todo
@@ -94,17 +95,13 @@ waves:
     status: in_progress
     depends_on: [W-L1R]
     next_action: >
-      C0 is complete and binds the latest accepted failure evidence: 2026-08-26
-      FAIL (host lane_unprepared; GitHub backstop landed hours late with 251/1764 =
-      14.2% evaluated coverage) and 2026-08-27 FAIL (host lane_unprepared; no close
-      board; Prophet-Live fresh-clock/global-dark stale-pack state). No later durable
-      repair/acceptance proof was found in the 2026-08-29 GitHub/Slack restart
-      reconciliation. Do not infer later greens from absence of a record. After the
-      last relevant production-changing merge/deploy—including C2-A and any required
-      C2-B/Availability repair—accrue three consecutive genuine NYSE sessions with
-      close_observed_at, first_candidate_at, first_user_visible_at <=16:15 ET,
-      >=95% same-session evaluable coverage, 100% universe accounting, truthful
-      independent live/board clocks and real desktop+narrow browser proof.
+      Historical accepted failures remain evidence, not a present C2-A lifecycle
+      owner. After the last relevant production-changing merge/deploy—including C2-A
+      and any required C2-B/Availability repair—accrue three consecutive genuine
+      NYSE sessions with close_observed_at, first_candidate_at,
+      first_user_visible_at <=16:15 ET, >=95% same-session evaluable coverage, 100%
+      universe accounting, truthful independent live/board clocks and real
+      desktop+narrow browser proof. Do not infer greens from CI/merge/Slack silence.
 landmines:
   - "Completion architecture is research/BREATHING_PLATFORM_COMPLETION_MASTERPLAN_2026-08-28.md. Do not implement from the older 2026-08-08 W-L2 wording without reconciling this freeze."
   - "Freshness is a vector, not one timestamp: board as_of, reader first visibility, Prophet-Live pass/quote/non-vacuity, armed-pack as_of/completed_through, nightly source_asof and sentinel heartbeat are independent clocks."
@@ -121,6 +118,7 @@ landmines:
   - "Never splice a raw same-day close through a same-session split/dividend ambiguity; dark the name and let nightly settle it."
   - "The provisional board carries only the score evidence it can stand behind; never renormalise or impute omitted legs."
   - "A locked missing close-pass worktree is not safely repaired by broad git worktree prune. Recovery must identify and reconcile only the exact production lane registration, or fail closed."
+  - "The C2-A cross-carrier START/PARK collision is terminally adjudicated: canonical carrier is C0BSBM78V1N/1788248718.881509, controlling independent Sol edge 1788254394.044819, and post-START binding to the exact CTO-FORGE task is sticky. Do not reopen the collision from stale WAITING_CAPACITY prose."
 do_not_redo:
   - "No third live/prophet_live writer."
   - "No new Massive WebSocket for Breathing."
@@ -131,7 +129,32 @@ do_not_redo:
   - "No reconstruction of missing first_user_visible_at from candidate/R2/file timestamps."
   - "No arbitrary timeout/memory inflation standing in for measured causality."
   - "Do not turn missing automated capacity placement into recurring Chairman numbered-account allocation."
+  - "Do not create a replacement C2-A receiver/task/carrier/worktree/branch after START while the known local effect remains owned by CTO-FORGE."
 ---
+
+## State — 2026-09-01 C2-A started-child reconciliation
+
+Current protected procedure was re-pinned at reconciliation time from protected `mastermindx-market-intelligence/Mastermind@47eaa510aa0b9877d91052fbaa27156957aa963c`, `mastermind.sol_skillpack.v1` 1.0.1 / bootstrap-major 1 compatible. This SHA is an observation, never future authority; every later substantive action must fetch current protected `master` and same-SHA procedure again. Macro reconciliation base was `27d01ae7da43b03ddda4475a5f11c7f930068ec2`.
+
+### Canonical C2-A dialogue and effect state
+
+- The sole canonical C2-A dialogue carrier is Slack `C0BSBM78V1N/1788248718.881509` for operation `breathing-c2-closepass-host-lane-repair-20260829-sol-001`.
+- Receiver is exact CTO-FORGE native task `01a04bdf-7a7b-7f63-9abd-9a7c13e944c0` / Slack principal `U0BRETDUAS2`. Original binding mode was `CAPACITY_SELECTABLE`; post-START binding is sticky.
+- FORGE mistakenly posted its `PICKUP_ACK 1788249012.936929`, `WATCH_ARMED 1788249123.760009`, and `START 1788249794.644409` on the Breathing parent thread before a later child-carrier `SOL PRESTART_REBIND / PARK 1788249796.626079` was written under the false premise that no START/effect existed.
+- FORGE then returned `BLOCKED / CROSS_CARRIER_LIFECYCLE_COLLISION / HOLD` and corrected its frozen local-effect census. The preserved effect is known local-only, not `EFFECT_UNKNOWN`: worktree `/Users/chriswong/Documents/Cluade/macro-main/.claude/worktrees/breathing-c2a-host-lane-repair-20260901`; branch `claude/breathing-c2a-host-lane-repair-20260901`; worker base/HEAD `f30a9f6d23775006229c3bfa26f5e63c2d0e0b24`; exactly two unstaged paths `scripts/close_pass_host_runner.py` and `tests/test_close_pass_host_runner.py`; diffstat `+152/-9`; no commit/push/PR/installer/launchd/host/production mutation at the frozen census.
+- Child message `1788252942.692779`, though labeled `SOL RULING / CONTINUE`, was authored by the same bound ChatGPT1/FORGE principal and is not an independent Sol authority edge.
+- Controlling independent Sol edge is ChatGPT3 message `1788254394.044819`: it consumed the worker blocker/effect census, ruled the later PARK inapplicable because START had already occurred, restored the assignment thread as sole canonical child carrier, preserved post-START sticky binding, and ordered continuation in the same worktree/branch only.
+- A fresh carrier read during this reconciliation found no newer opposite-side semantic edge after `1788254394.044819`. Healthy continuation therefore remains nonterminal and silent to the Chairman.
+
+### Current Git/source collision state
+
+- Macro main advanced from the prior controlling-edge observation `88ee960ffda54f8d5e4c4cb09cb1c184a28a1cea` to `27d01ae7da43b03ddda4475a5f11c7f930068ec2` through nine data/telemetry commits. The compare is path-disjoint from `scripts/close_pass_host_runner.py`, `tests/test_close_pass_host_runner.py`, `scripts/install_closepass_launchd.sh`, and this child authority surface.
+- Fresh open-PR searches found no open `breathing-c2` carrier and no open `close_pass_host_runner` repair carrier. No current source collision blocks the exact FORGE continuation.
+- Current main still leaves C2-A source acceptance open; GitHub does not yet contain a returned reviewed C2-A implementation PR or host-production proof.
+
+### Durable-state supersession
+
+Older `WAITING_CAPACITY / needs_placement` text below and in the original restart handoff describes the pre-assignment restart state. It is superseded for current C2-A lifecycle projection by this started-child reconciliation. It must never be used to rebind the active post-START child or reopen the already-adjudicated cross-carrier collision. The original C0 and placement-census terminal facts remain unchanged.
 
 ## State — 2026-08-29 CEO restart reconciliation
 
@@ -148,7 +171,7 @@ Procedural pin: protected `mastermindx-market-intelligence/Mastermind@e3d1fe6bb4
 
 Accepted C0 production evidence identified the primary failure as `.claude/worktrees/closepass-host-lane` being registered+locked in Git while missing on disk. The launchd clock fired, but `prepare_lane` failed before close observation. Current `main` still contains only a partial corpse recovery: after `worktree add` failure it prunes/retries only when output contains `already registered`. A locked registration is intentionally retained by prune and the real missing+locked Git state has no regression test. Therefore C2-A is a genuine current code/host repair, not speculative rework.
 
-Fresh C2-A commission:
+Historical C2-A restart receipt at that point:
 
 ```text
 operation_key: breathing-c2-closepass-host-lane-repair-20260829-sol-001
@@ -159,7 +182,7 @@ RECEIVER_BINDING_MODE: CAPACITY_SELECTABLE
 PLACEMENT_STATE: WAITING_CAPACITY / needs_placement
 ```
 
-No worker-facing Slack commission and no receiver-specific watcher exists yet. Current `WS:EXECUTIVE-CAPACITY-FABRIC` says CF2-I (capacity-aware Executive placement) is still `todo` behind CF2-H0/P0, so no production-proven automated placement is available to claim. Current routing law explicitly forbids converting that absence into routine Chairman numbered-account scheduling or OPEN_PICKUP advertising.
+That historical placement state has since been superseded by the 2026-09-01 started-child reconciliation above. It does not authorize a new placement attempt.
 
 ### What follows C2-A
 
