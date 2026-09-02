@@ -317,8 +317,12 @@ def test_page_level_instrument_selectors_are_present(template_code_only: str):
 
 def test_baseline_asof_time_element_is_baked_with_the_build_time(template_code_only: str):
     """d3: `.ihmp-bar time` was styled by CSS with nothing to select — this
-    creates the element, baked with the nightly `built` timestamp."""
-    assert "<time data-ihmp-asof datetime=\"{{ built or '' }}\">{{ built or '' }}</time>" in template_code_only
+    creates the element, baked with the nightly `built` timestamp. N2: the
+    visible text is the plain-word form (YYYY-MM-DD HH:MM:SS UTC), never the
+    raw microsecond ISO string; the machine-readable datetime attr keeps it."""
+    assert "<time data-ihmp-asof datetime=\"{{ built or '' }}\">" in template_code_only
+    assert "|replace('T',' ')|truncate(19, True, '')" in template_code_only
+    assert "{% if built %} UTC{% endif %}</time>" in template_code_only
 
 
 def test_theme_css_uses_semantic_ink_tokens_not_a_literal_palette(template_code_only: str):

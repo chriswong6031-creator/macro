@@ -330,7 +330,12 @@ def _build_envelope(
             errors.append({"symbol": symbol, "code": "quote_unavailable"})
             continue
 
-        items.append(asdict(projected))
+        item = asdict(projected)
+        # dossier-only field: the public batch item keeps the frozen 12-key
+        # intelligence_hub.market_pulse.v1 shape (spec §7.3); prev_close is
+        # derivable client-side from price - change_abs and is not shipped.
+        item.pop("prev_close", None)
+        items.append(item)
         freshnesses.append(projected.freshness)
         sessions.append(projected.session)
         if projected.freshness == "live":
