@@ -1,29 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-09-02T16:34:35.635584+00:00",
-  "posts_seen": 6,
-  "seen_total": 155,
-  "evaluated": 3,
+  "as_of": "2026-09-02T19:47:29.692501+00:00",
+  "posts_seen": 7,
+  "seen_total": 156,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-09-02-presidential-message-on-national-childhood-cancer-awareness-month",
+      "id": "wh-2026-09-02-presidential-message-on-national-preparedness-month-6e71",
       "importance": 8,
       "activated": false,
       "degraded_reason": "served_by:codex"
-    },
-    {
-      "id": "wh-2026-09-02-presidential-message-on-national-recovery-month",
-      "importance": 12,
-      "activated": false,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-09-02-ten-times-extreme-liberal-democrats-in-congress-put-their-dangerous-agenda-ahead",
-      "importance": 10,
-      "activated": false,
-      "degraded_reason": null
     }
   ]
 }

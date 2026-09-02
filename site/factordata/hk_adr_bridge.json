@@ -5,12 +5,12 @@
   "expected_hk_session": "2026-09-02",
   "freshness_verdict": "ok",
   "adr_freshness": {
-    "BIDU": {
+    "JD": {
       "asof": "2026-08-31",
       "lag_days": 2,
       "state": "fresh"
     },
-    "JD": {
+    "BIDU": {
       "asof": "2026-08-31",
       "lag_days": 2,
       "state": "fresh"
@@ -20,7 +20,7 @@
       "lag_days": 2,
       "state": "fresh"
     },
-    "BABA": {
+    "FXI": {
       "asof": "2026-08-31",
       "lag_days": 2,
       "state": "fresh"
@@ -30,7 +30,7 @@
       "lag_days": 2,
       "state": "fresh"
     },
-    "FXI": {
+    "BABA": {
       "asof": "2026-08-31",
       "lag_days": 2,
       "state": "fresh"
