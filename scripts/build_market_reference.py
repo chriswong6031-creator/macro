@@ -71,13 +71,33 @@ FAMILY_LABELS: dict[str, tuple[str, str]] = {
 # always legal. This is the allowlist "unknown owner page/anchor" fails
 # closed against — extending it is the only way a future registry edit may
 # cite a new owner surface.
+#
+# NAVIGABILITY (B1, 2026-09-02 review repair): `regime-radar`, `sx-events-v2`,
+# `sx-markets-v2` and `sx-v5-sentiment` are the Market State command-center's
+# always-visible container ids — verified, using BeautifulSoup against the
+# committed site/macro.html, to sit outside any `display:none`/
+# `visibility:hidden` rule under macro.html's actual rendered body class
+# (`page-macro mx4-grid`, the server-rendered default). `ms-score` (inside
+# `.mx2-hero`, which IS `display:none!important` under `mx4-grid`),
+# `mx5PopFactors` (a `.mx5-popover`, at-rest `display:none` until a click),
+# `dlg-risk`/`dlg-markets` (`.mx5-dlg` modals, at-rest `display:none`;
+# macro.html does have a `_resolveAlertHash()` cold-load JS resolver that can
+# open a `.mx5-dlg` named by the hash, but this registry does not rely on a
+# JS mechanism for reachability — the design spec's own contract is that the
+# page works with JS disabled), `release-radar` (`position:absolute;
+# left:-10000px;visibility:hidden` under `mx4-grid` until its own tray is
+# opened) and `cross-asset-macro` (only rendered when `mode=='stocks'`, i.e.
+# on us_stocks.html — and even there `body.page-stocks
+# #cross-asset-macro{display:none!important}`, so it is never visible on
+# either page) are EXCLUDED from this allowlist for exactly that reason —
+# see `check_anchor_liveness()` below and its red fixture in
+# tests/test_market_reference.py.
 KNOWN_OWNER_PAGES: dict[str, set[str]] = {
-    "macro.html": {"ms-score", "regime-radar", "dlg-risk", "mx5PopFactors", "release-radar"},
+    "macro.html": {"regime-radar", "sx-events-v2", "sx-markets-v2", "sx-v5-sentiment"},
     "aibrief.html": set(),
     "whitehouse.html": {"treasury-watch"},
     "bonds.html": {"curve", "real", "credit"},
     "committee.html": {"cm_rebalance_pulse_section"},
-    "us_stocks.html": {"cross-asset-macro"},
 }
 
 # Display label for an owner_ref link. The registry stores only the raw
@@ -90,7 +110,6 @@ PAGE_LABELS: dict[str, tuple[str, str]] = {
     "whitehouse.html": ("Treasury Watch", "财政部观察"),
     "bonds.html": ("Bonds", "债券"),
     "committee.html": ("Committee", "委员会"),
-    "us_stocks.html": ("US Stocks", "美股"),
 }
 
 # Public primary-source allowlist (MOR1_CONTRACT.md "Registry taxonomy").
@@ -154,10 +173,77 @@ def load_registry(path: Path = REGISTRY_PATH) -> dict:
     return raw
 
 
-def validate(raw: dict) -> list[dict]:
+# ---------------------------------------------------------------------------
+# anchor liveness (B1, 2026-09-02 review repair)
+# ---------------------------------------------------------------------------
+#
+# A durable, pragmatic (NOT a full CSS cascade engine) check against the
+# committed site/<page>.html output: it catches the one selector SHAPE every
+# real anchor-hiding bug found in this codebase used —
+# `body.<class1>.<class2>… #<id> { display:none / visibility:hidden }` — by
+# reading the page's actual rendered `<body class="…">` and checking whether
+# any such rule's required class set is a subset of it. It does NOT resolve
+# general CSS cascade (specificity/!important ordering, non-body-anchored
+# ancestor chains, descendant-class rules like `#sx-risk-v2 .sxg-face`,
+# sibling/attribute selectors) — KNOWN_OWNER_PAGES itself remains the
+# hand-verified source of truth; this check is the regression net that
+# would have caught `ms-score`/`mx5PopFactors`/`dlg-risk`/`release-radar`/
+# `cross-asset-macro` before they shipped, not a general CSS verifier.
+_BODY_HIDE_RULE_RE = re.compile(
+    r"body((?:\.[A-Za-z0-9_-]+)+)\s*(?:>\s*)?#([A-Za-z0-9_-]+)\s*\{([^}]*)\}"
+)
+_BODY_CLASS_RE = re.compile(r'<body[^>]*\bclass="([^"]*)"')
+_HIDDEN_DECL_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden")
+
+
+def _page_body_classes(html_text: str) -> frozenset[str]:
+    m = _BODY_CLASS_RE.search(html_text)
+    return frozenset(m.group(1).split()) if m else frozenset()
+
+
+def _body_gated_hidden_ids(html_text: str) -> dict[str, list[frozenset[str]]]:
+    """id -> list of body-class sets under which a `body.<classes> #<id>{…}`
+    rule in this page hides it (display:none or visibility:hidden)."""
+    hidden: dict[str, list[frozenset[str]]] = {}
+    for m in _BODY_HIDE_RULE_RE.finditer(html_text):
+        classes = frozenset(m.group(1).lstrip(".").split("."))
+        frag, decl = m.group(2), m.group(3)
+        if _HIDDEN_DECL_RE.search(decl):
+            hidden.setdefault(frag, []).append(classes)
+    return hidden
+
+
+def check_anchor_liveness(repo_root: Path, page: str, frag: str) -> tuple[bool, str]:
+    """(is_live, note) for `<page>#<frag>`. FAILS OPEN (is_live=True) when
+    site/<page> is absent from this checkout — a sparse worktree, or a page
+    this builder does not itself produce, may legitimately not have it built;
+    this builder does not require every OTHER page's output to exist. When
+    the page IS present, fails CLOSED: the id must exist in the page, and
+    must not resolve to a body-class-gated display:none/visibility:hidden
+    rule under the page's own actual rendered body class."""
+    site_path = repo_root / "site" / page
+    if not site_path.exists():
+        return True, f"site/{page} not built in this checkout — liveness check skipped"
+    text = site_path.read_text(encoding="utf-8", errors="replace")
+    if f'id="{frag}"' not in text:
+        return False, f'no id="{frag}" found in site/{page}'
+    body_classes = _page_body_classes(text)
+    for required in _body_gated_hidden_ids(text).get(frag, []):
+        if required <= body_classes:
+            return False, (
+                f"#{frag} is display:none/visibility:hidden on {page} under body class(es) "
+                f"{sorted(required)} (page's rendered body class: {sorted(body_classes)})"
+            )
+    return True, "live"
+
+
+def validate(raw: dict, repo_root: Path = config.ROOT) -> list[dict]:
     """Validate the raw registry against every MOR1_CONTRACT.md §"Registry taxonomy"
-    / DEC §3.3 rule; return the ordered list of entry dicts on success. Raises
-    RegistryError (fail-closed) with every violation found."""
+    / DEC §3.3 rule, PLUS (B1) the anchor-liveness check against
+    `<repo_root>/site/<page>.html`; return the ordered list of entry dicts on
+    success. Raises RegistryError (fail-closed) with every violation found.
+    `repo_root` defaults to this checkout's root; tests pass a temp dir with a
+    synthetic site/<page>.html to exercise the liveness rule in isolation."""
     errors: list[str] = []
     if raw.get("schema") != SCHEMA:
         errors.append(f"schema must be {SCHEMA!r}, got {raw.get('schema')!r}")
@@ -219,7 +305,7 @@ def validate(raw: dict) -> list[dict]:
             elif len(cav_en) != len(cav_zh):
                 errors.append(f"{where}: caveats_en and caveats_zh must have matching length")
 
-        # unknown owner page/anchor
+        # unknown owner page/anchor, and (B1) anchor LIVENESS
         owner = e.get("owner_ref")
         if not owner or not isinstance(owner, str):
             errors.append(f"{where}: owner_ref is required")
@@ -229,6 +315,10 @@ def validate(raw: dict) -> list[dict]:
                 errors.append(f"{where}: unknown owner page {page!r} in owner_ref {owner!r}")
             elif frag and frag not in KNOWN_OWNER_PAGES[page]:
                 errors.append(f"{where}: unknown owner anchor '#{frag}' on page {page!r} in owner_ref {owner!r}")
+            elif frag:
+                is_live, note = check_anchor_liveness(repo_root, page, frag)
+                if not is_live:
+                    errors.append(f"{where}: owner_ref {owner!r} is not a live/visible anchor: {note}")
 
         # unsafe / non-allowlist public_source_refs
         for url in (e.get("public_source_refs") or []):
@@ -254,6 +344,15 @@ def validate(raw: dict) -> list[dict]:
         for rid in (e.get("related_ids") or []):
             if rid not in seen_ids:
                 errors.append(f"entry[{i}] id={e.get('id')!r}: related_ids references unknown id {rid!r}")
+
+    # status:deprecated requires superseded_by; superseded_by must resolve to a real id
+    for i, e in enumerate(entries):
+        eid = e.get("id")
+        sb = e.get("superseded_by")
+        if e.get("status") == "deprecated" and not sb:
+            errors.append(f"entry[{i}] id={eid!r}: status:deprecated requires a superseded_by")
+        if sb and sb not in seen_ids:
+            errors.append(f"entry[{i}] id={eid!r}: superseded_by references unknown id {sb!r}")
 
     # superseded_by cycle detection (status: deprecated entries only)
     graph = {e.get("id"): e.get("superseded_by") for e in entries if e.get("status") == "deprecated"}

@@ -5,8 +5,11 @@ Verifies:
    one red-fixture per rule (unknown owner ref, duplicate alias, superseded_by
    cycle, unsafe source URL, missing caveats on kind:indicator, missing either
    language, missing `_zh` sibling for a present unit_or_basis/interpretation_*
-   field) — each fixture violates exactly one rule so the failure message is
-   attributable.
+   field, schema mismatch, empty entries, invalid kind/family/authority_
+   ceiling/status, non-kebab id, aliases presence parity, caveats length
+   mismatch, superseded_by resolving to a real id, status:deprecated requiring
+   superseded_by, and the B1 anchor-liveness rule) — each fixture violates
+   exactly one rule so the failure message is attributable.
 2. Happy-path build of the real committed registry: validates clean, the ZH
    supplement's coverage counts (34/26/26/34), and the rendered page carries
    the expected entry/family counts.
@@ -34,6 +37,7 @@ sys.path.insert(0, str(REPO))
 from scripts.build_market_reference import (  # noqa: E402
     RegistryError,
     build_view_model,
+    check_anchor_liveness,
     initial_of,
     search_key,
     validate,
@@ -177,6 +181,161 @@ def test_unknown_related_id_fails_closed():
     with pytest.raises(RegistryError) as exc:
         validate(reg)
     assert "references unknown id" in _errors(exc.value)
+
+
+# --- M6: the 9 basic-shape red fixtures the review found missing ----------
+
+def test_schema_mismatch_fails_closed():
+    reg = _registry(_base_entry())
+    reg["schema"] = "not-the-right-schema/v1"
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "schema must be" in _errors(exc.value)
+
+
+def test_empty_entries_fails_closed():
+    with pytest.raises(RegistryError) as exc:
+        validate({"schema": "mastermind.market_reference/v1", "entries": []})
+    assert "entries must be a non-empty list" in _errors(exc.value)
+
+
+def test_invalid_kind_fails_closed():
+    reg = _registry(_base_entry(kind="not-a-real-kind"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "kind must be one of" in _errors(exc.value)
+
+
+def test_invalid_family_fails_closed():
+    reg = _registry(_base_entry(family="not-a-real-family"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "family must be one of" in _errors(exc.value)
+
+
+def test_invalid_authority_ceiling_fails_closed():
+    reg = _registry(_base_entry(authority_ceiling="advisory"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "authority_ceiling must be 'reference_only'" in _errors(exc.value)
+
+
+def test_invalid_status_fails_closed():
+    reg = _registry(_base_entry(status="archived"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "status must be one of" in _errors(exc.value)
+
+
+def test_non_kebab_id_fails_closed():
+    reg = _registry(_base_entry(id="Not_Kebab Case!"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "id must be a non-empty kebab-case slug" in _errors(exc.value)
+
+
+def test_aliases_presence_parity_fails_closed():
+    """aliases_en present without aliases_zh (or vice versa) fails closed —
+    both must be present when either is, even if one is an empty list."""
+    reg = _registry(_base_entry(aliases_en=["only-english-alias"]))
+    del reg["entries"][0]["aliases_zh"]
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "aliases_en/aliases_zh must both be present" in _errors(exc.value)
+
+
+def test_caveats_length_mismatch_fails_closed():
+    reg = _registry(_indicator_entry(
+        caveats_en=["one caveat", "two caveats"],
+        caveats_zh=["一条注意事项"],
+    ))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "caveats_en and caveats_zh must have matching length" in _errors(exc.value)
+
+
+# --- M6: 3 new rules, each with its own red fixture ------------------------
+
+def test_superseded_by_unknown_id_fails_closed():
+    reg = _registry(_base_entry(status="deprecated", superseded_by="ghost-entry"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "superseded_by references unknown id" in _errors(exc.value)
+
+
+def test_deprecated_without_superseded_by_fails_closed():
+    reg = _registry(_base_entry(status="deprecated"))
+    with pytest.raises(RegistryError) as exc:
+        validate(reg)
+    assert "status:deprecated requires a superseded_by" in _errors(exc.value)
+
+
+def test_anchor_liveness_fails_closed_on_display_none_id(tmp_path):
+    """B1: the durable anchor-liveness rule. A synthetic site/<page>.html with a
+    body.<classes> #<id>{display:none} rule matching the page's own rendered
+    body class must be rejected — this is the exact selector shape every real
+    anchor-hiding bug in this codebase used (mx4-grid / page-stocks toggles)."""
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "hiddenpage.html").write_text(
+        '<html><body class="page-macro mx4-grid">'
+        '<style>body.page-macro.mx4-grid #hidden-thing{display:none!important;}</style>'
+        '<div id="hidden-thing">content</div>'
+        "</body></html>",
+        encoding="utf-8",
+    )
+    is_live, note = check_anchor_liveness(tmp_path, "hiddenpage.html", "hidden-thing")
+    assert is_live is False
+    assert "display:none" in note or "visibility:hidden" in note
+
+
+def test_anchor_liveness_accepts_a_visible_id(tmp_path):
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "visiblepage.html").write_text(
+        '<html><body class="page-macro mx4-grid">'
+        '<style>body.page-macro.mx4-grid #hidden-thing{display:none!important;}</style>'
+        '<div id="visible-thing">content</div>'
+        "</body></html>",
+        encoding="utf-8",
+    )
+    is_live, note = check_anchor_liveness(tmp_path, "visiblepage.html", "visible-thing")
+    assert is_live is True
+
+
+def test_anchor_liveness_skips_when_site_page_absent(tmp_path):
+    """Fail-open: this builder does not require every OTHER page's site
+    output to exist (sparse checkouts, pages this builder does not produce)."""
+    is_live, note = check_anchor_liveness(tmp_path, "never-built.html", "whatever")
+    assert is_live is True
+    assert "not built in this checkout" in note
+
+
+def test_anchor_liveness_wired_into_validate_fails_closed(tmp_path):
+    """End-to-end: validate() itself rejects a KNOWN_OWNER_PAGES anchor that
+    resolves to a display:none-gated id in the committed site output."""
+    from scripts import build_market_reference as bmr
+
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "macro.html").write_text(
+        '<html><body class="page-macro mx4-grid">'
+        '<style>body.page-macro.mx4-grid #regime-radar-decoy{display:none!important;}</style>'
+        '<div id="regime-radar-decoy">content</div>'
+        "</body></html>",
+        encoding="utf-8",
+    )
+    # temporarily widen the allowlist so this fixture's fragment is "known"
+    # without touching the real KNOWN_OWNER_PAGES for every other test
+    old = bmr.KNOWN_OWNER_PAGES["macro.html"]
+    bmr.KNOWN_OWNER_PAGES["macro.html"] = old | {"regime-radar-decoy"}
+    try:
+        reg = _registry(_base_entry(owner_ref="macro.html#regime-radar-decoy"))
+        with pytest.raises(RegistryError) as exc:
+            validate(reg, repo_root=tmp_path)
+        assert "not a live/visible anchor" in _errors(exc.value)
+    finally:
+        bmr.KNOWN_OWNER_PAGES["macro.html"] = old
 
 
 def test_explicit_null_interpretation_is_accepted_same_as_omitted():

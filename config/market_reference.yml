@@ -62,9 +62,7 @@ entries:
     short_definition_en: >
       A 0-100 dial summarising current US equity market posture, blending trend, cross-asset
       risk appetite, volatility, breadth, liquidity, and stress into one composite read.
-    short_definition_zh: >
-      0-100 综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、
-      流动性与压力六项因子。
+    short_definition_zh: '0-100综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、流动性与压力六项因子。'
     why_it_matters_en: >
       Turns six separate market inputs into one glanceable number so you can track whether
       conditions are improving or deteriorating day to day.
@@ -88,7 +86,7 @@ entries:
     caveats_zh:
       - 这是对当前状态的综合确认性衡量，不是预测性评分。
       - 各分项因子可能方向不一致，仅看总分容易误判，建议查看分项拆解。
-    owner_ref: macro.html#ms-score
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [market-regime, market-breadth, evidence-liquidity]
     authority_ceiling: reference_only
@@ -104,9 +102,7 @@ entries:
     short_definition_en: >
       A four-way classification of the macro backdrop by the direction of growth and inflation:
       e.g. growth rising with inflation falling, or growth falling with inflation rising.
-    short_definition_zh: >
-      按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、
-      通胀上行等组合。
+    short_definition_zh: '按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、通胀上行等组合。'
     why_it_matters_en: >
       Different quadrants historically favour different sectors and factors, so it helps frame
       which parts of the market the backdrop tends to support.
@@ -166,7 +162,7 @@ entries:
       - A "new regime" label reflects a just-confirmed change and may itself still be tested.
     caveats_zh:
       - 稳定标签代表确认结果，并非绝对保证——宏观象限仍可能发生转变。
-      - '"刚切换"标签代表刚确认的变化，其本身仍可能被后续数据检验。'
+      - '「刚切换」标签代表刚确认的变化，其本身仍可能被后续数据检验。'
     owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [regime-quadrant, market-regime]
@@ -183,9 +179,7 @@ entries:
     short_definition_en: >
       A leading advisory score for pullback risk across seven scare types — credit stress,
       rate shocks, bubble unwind, growth scares, volatility events, and breadth breakdowns.
-    short_definition_zh: >
-      针对七类"惊吓"情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等）
-      给出的前瞻性回撤风险提示评分。
+    short_definition_zh: '针对七类「惊吓」情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等）给出的前瞻性回撤风险提示评分。'
     why_it_matters_en: >
       Flags rising pullback risk earlier than a lagging drawdown measure, so you can size or
       hedge before stress becomes visible in price.
@@ -199,11 +193,11 @@ entries:
     interpretation_up_zh: '偏高或避险——历史上意味着近期回撤概率高于平常，属于降低仓位风险的参考，而非清仓信号。'
     interpretation_down: >
       Calm or watch — no unusual pullback pressure detected among the tracked scare types.
-    interpretation_down_zh: '平静或观察——所跟踪的各类"惊吓"情景中未检测到异常回撤压力。'
+    interpretation_down_zh: '平静或观察——所跟踪的各类「惊吓」情景中未检测到异常回撤压力。'
     interpretation_neutral: >
       Caution — some scare types are stirring; a reason to tighten risk controls, not to
       override a supportive market read.
-    interpretation_neutral_zh: '谨慎——部分"惊吓"情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。'
+    interpretation_neutral_zh: '谨慎——部分「惊吓」情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。'
     caveats_en:
       - This is a probability-of-pullback advisory, not a certainty or a timing call.
       - Elevated/caution bands describe sizing context; they do not by themselves override
@@ -211,7 +205,7 @@ entries:
     caveats_zh:
       - 这是回撤概率的提示性评分，不是确定性判断或择时信号。
       - 高位/谨慎区间提供的是仓位管理参考，不会单独凌驾于整体市场判断之上。
-    owner_ref: macro.html#dlg-risk
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [market-state-score, drawdown, evidence-stress]
     authority_ceiling: reference_only
@@ -252,7 +246,7 @@ entries:
       - '"Expansion" describes system liquidity, not a guarantee that every asset benefits equally or immediately.'
     caveats_zh:
       - 流动性状况变化通常较为缓慢，可能滞后于部分反应更快的市场事件。
-      - '"扩张"描述的是系统整体流动性，不代表所有资产都会同等或立即受益。'
+      - '「扩张」描述的是系统整体流动性，不代表所有资产都会同等或立即受益。'
     owner_ref: whitehouse.html#treasury-watch
     public_source_refs:
       - https://fred.stlouisfed.org
@@ -293,7 +287,7 @@ entries:
     caveats_zh:
       - 权重偏向周线与月线，单日大幅波动对该因子影响有限。
       - 这是对趋势的确认性衡量，不是对趋势能否延续的预测。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [market-state-score, market-breadth, evidence-risk-appetite]
     authority_ceiling: reference_only
@@ -330,7 +324,7 @@ entries:
     caveats_zh:
       - 反映的是各类资产之间的相对表现，而非单一资产的绝对水平。
       - 在个别指数领涨的窄幅行情中，可能与仅基于股票的趋势因子出现分化。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [market-state-score, risk-on-risk-off, evidence-trend]
     authority_ceiling: reference_only
@@ -367,7 +361,7 @@ entries:
     caveats_zh:
       - 这是对当前波动率状态的衡量，不是对未来波动率飙升的预测。
       - 波动率可能在重要事件公布前后出现骤变，建议结合日历事件一并查看。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs:
       - https://www.cboe.com
     related_ids: [vix, volatility-regime, evidence-stress]
@@ -406,7 +400,7 @@ entries:
     caveats_zh:
       - 该指标反映当前参与度快照，广度偏弱不代表必然出现反转。
       - 建议与趋势因子结合查看，避免单独解读。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [market-breadth, evidence-trend, market-state-score]
     authority_ceiling: reference_only
@@ -422,13 +416,11 @@ entries:
     short_definition_en: >
       One of six factors feeding the Market State Score: broad money and credit conditions,
       sometimes called the "money tide."
-    short_definition_zh: >
-      构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为"资金潮汐"。
+    short_definition_zh: '构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为「资金潮汐」。'
     why_it_matters_en: >
       Liquidity conditions historically influence how much fuel is available for risk assets
       to keep rising, independent of price trend alone.
-    why_it_matters_zh: >
-      资金面状况历史上会影响风险资产持续上涨的"燃料"是否充足，独立于价格趋势本身。
+    why_it_matters_zh: '资金面状况历史上会影响风险资产持续上涨的「燃料」是否充足，独立于价格趋势本身。'
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
     unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — liquidity and credit conditions supportive.
@@ -444,7 +436,7 @@ entries:
     caveats_zh:
       - 流动性状况变化通常较为缓慢，该因子日间大幅波动的情况并不常见。
       - 反映的是系统层面的整体状况，而非某一资金流或机构的情况。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs:
       - https://fred.stlouisfed.org
     related_ids: [liquidity-state, credit-spread, real-rates]
@@ -483,7 +475,7 @@ entries:
     caveats_zh:
       - 该因子对急性压力反应较快，波动速度可能快于其余五项因子。
       - 这是对当前状况的防护性衡量，不是对压力是否会加剧的预测。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [risk-radar, drawdown, evidence-volatility]
     authority_ceiling: reference_only
@@ -503,9 +495,7 @@ entries:
     short_definition_en: >
       When two or more market indicators point in different directions at the same time,
       shown as a "note" (minor) or "tension" (more significant) severity.
-    short_definition_zh: >
-      指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为"提示"（较轻微）与
-      "张力"（较显著）两级。
+    short_definition_zh: '指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为「提示」（较轻微）与「张力」（较显著）两级。'
     why_it_matters_en: >
       Divergence is a flag to slow down: acting on one signal while ignoring a conflicting
       one raises the odds of being wrong-footed.
@@ -524,7 +514,7 @@ entries:
       - A "tension" flag calls for more caution, not automatically a change in position.
     caveats_zh:
       - 信号分歧本身并不能说明最终哪个信号会被验证正确。
-      - '"张力"级别的分歧提示应更加谨慎，但并不意味着必须立即改变仓位。'
+      - '「张力」级别的分歧提示应更加谨慎，但并不意味着必须立即改变仓位。'
     owner_ref: aibrief.html
     public_source_refs: []
     related_ids: [confidence-tier, market-regime, stance-ladder]
@@ -577,15 +567,11 @@ entries:
     short_definition_en: >
       The briefing's four-word action vocabulary, from calmest to most urgent: ignore,
       stand-aside, protect, act — describing posture, never a specific trade.
-    short_definition_zh: >
-      简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态，
-      而非具体交易指令。
+    short_definition_zh: '简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态，而非具体交易指令。'
     why_it_matters_en: >
       Gives a consistent, plain-word scale for how seriously to treat a given read, so
       urgency is comparable across different briefings and days.
-    why_it_matters_zh: >
-      提供统一、直白的分级标准，帮助判断某一判断的紧迫程度，使不同简报、不同日期之间具备
-      可比性。
+    why_it_matters_zh: '提供统一、直白的分级标准，帮助判断某一判断的紧迫程度，使不同简报、不同日期之间具备可比性。'
     unit_or_basis: Categorical ladder (ignore / stand-aside / protect / act)
     unit_or_basis_zh: '分类等级（忽略／观望／保护／行动）'
     interpretation_up: null
@@ -599,7 +585,7 @@ entries:
       - '"Act" signals urgency to review, not a predetermined action.'
     caveats_zh:
       - 仅描述姿态与紧迫程度，绝非针对具体证券的买卖指令。
-      - '"行动"级别提示应尽快复核，而非预先设定的具体操作。'
+      - '「行动」级别提示应尽快复核，而非预先设定的具体操作。'
     owner_ref: aibrief.html
     public_source_refs: []
     related_ids: [confidence-tier, signal-divergence, market-regime]
@@ -616,9 +602,7 @@ entries:
     short_definition_en: >
       Whether an economic release is likely to land cooler, in line, or hotter than the
       consensus forecast, based on available leading indicators.
-    short_definition_zh: >
-      基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是
-      偏热。
+    short_definition_zh: '基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是偏热。'
     why_it_matters_en: >
       Helps set expectations ahead of a release, so the eventual market reaction is easier
       to interpret in context.
@@ -643,7 +627,7 @@ entries:
     caveats_zh:
       - 这是公布前基于现有指标的倾向判断，并非实际公布结果。
       - 即便公布结果符合该偏向，市场反应仍可能超出预期。
-    owner_ref: macro.html#release-radar
+    owner_ref: macro.html#sx-events-v2
     public_source_refs:
       - https://www.bls.gov
       - https://www.bea.gov
@@ -661,9 +645,7 @@ entries:
     short_definition_en: >
       Mechanical buying and selling by index funds and large asset allocators around
       quarter-end, driven by target weights rather than views on individual securities.
-    short_definition_zh: >
-      指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素
-      是权重目标而非对个别证券的判断。
+    short_definition_zh: '指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素是权重目标而非对个别证券的判断。'
     why_it_matters_en: >
       Can temporarily distort price and volume patterns near quarter-end, unrelated to
       fundamentals or sentiment.
@@ -699,9 +681,7 @@ entries:
     short_definition_en: >
       A scheduled economic release, central bank decision, or other calendar event judged
       likely to move markets, shown with its exact time and source.
-    short_definition_zh: >
-      被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间
-      与来源。
+    short_definition_zh: '被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间与来源。'
     why_it_matters_en: >
       Lets you plan around known catalysts in advance, rather than being surprised by
       volatility around a scheduled release.
@@ -722,7 +702,7 @@ entries:
     caveats_zh:
       - 列入日历代表该事件被判断为重要，但不代表能预测市场反应的方向。
       - 时间与范围可能变动，临近事件时请以原始来源确认为准。
-    owner_ref: macro.html#release-radar
+    owner_ref: macro.html#sx-events-v2
     public_source_refs:
       - https://www.bls.gov
       - https://www.bea.gov
@@ -745,9 +725,7 @@ entries:
     short_definition_en: >
       A chart of government bond yields across maturities; "inverted" means shorter-dated
       yields sit above longer-dated ones, the reverse of the usual upward-sloping shape.
-    short_definition_zh: >
-      不同期限政府债券收益率的走势图；"倒挂"指短期收益率高于长期收益率，与通常向上倾斜的
-      正常形态相反。
+    short_definition_zh: '不同期限政府债券收益率的走势图；「倒挂」指短期收益率高于长期收益率，与通常向上倾斜的正常形态相反。'
     why_it_matters_en: >
       An inverted curve has historically preceded many past US recessions, though with
       variable and sometimes long lead times.
@@ -791,15 +769,11 @@ entries:
       Describes how the gap between short- and long-dated bond yields is changing —
       widening (steepening) or narrowing (flattening) — and whether it is driven mainly by
       short or long rates moving.
-    short_definition_zh: >
-      描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要
-      是由短端还是长端利率变动驱动。
+    short_definition_zh: '描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要是由短端还是长端利率变动驱动。'
     why_it_matters_en: >
       The combination of steepening/flattening with rising/falling rates carries different
       economic implications, from growth optimism to recession fears.
-    why_it_matters_zh: >
-      陡峭化／平坦化与利率上行／下行的不同组合，通常对应不同的经济含义，从对增长乐观到
-      对衰退的担忧不等。
+    why_it_matters_zh: '陡峭化／平坦化与利率上行／下行的不同组合，通常对应不同的经济含义，从对增长乐观到对衰退的担忧不等。'
     unit_or_basis: Change in spread between two maturities, in basis points
     unit_or_basis_zh: '两个期限之间利差的变化，以基点计'
     interpretation_up: Steepening — the spread between long and short yields is widening.
@@ -838,9 +812,7 @@ entries:
       Rising real rates raise the opportunity cost of holding non-yielding or long-duration
       assets, and have historically pressured segments like gold and long-duration growth
       stocks.
-    why_it_matters_zh: >
-      实际利率上升会提高持有无息或长久期资产的机会成本，历史上通常对黄金及长久期成长股
-      等板块构成压力。
+    why_it_matters_zh: '实际利率上升会提高持有无息或长久期资产的机会成本，历史上通常对黄金及长久期成长股等板块构成压力。'
     unit_or_basis: Percent (nominal yield minus breakeven inflation)
     unit_or_basis_zh: '百分比（名义收益率减去盈亏平衡通胀率）'
     interpretation_up: >
@@ -877,9 +849,7 @@ entries:
     short_definition_en: >
       The market-implied average inflation rate over a given period, derived from the yield
       gap between a nominal bond and its inflation-protected equivalent.
-    short_definition_zh: >
-      市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差
-      计算得出。
+    short_definition_zh: '市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差计算得出。'
     why_it_matters_en: >
       Gives a real-time, market-based read on inflation expectations, distinct from surveys
       or economist forecasts.
@@ -919,15 +889,11 @@ entries:
       The extra yield investors demand for holding a longer-maturity bond instead of
       rolling over a series of shorter-maturity ones, compensating for extra risk and
       uncertainty over time.
-    short_definition_zh: >
-      投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内
-      承担的额外风险与不确定性。
+    short_definition_zh: '投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内承担的额外风险与不确定性。'
     why_it_matters_en: >
       A rising term premium can push long-end yields higher even if growth and inflation
       expectations are unchanged, a distinct driver worth separating out.
-    why_it_matters_zh: >
-      期限溢价上升可能在增长与通胀预期不变的情况下单独推高长端收益率，是值得区分开来看的
-      独立驱动因素。
+    why_it_matters_zh: '期限溢价上升可能在增长与通胀预期不变的情况下单独推高长端收益率，是值得区分开来看的独立驱动因素。'
     unit_or_basis: Percent (estimated component of long-dated yields)
     unit_or_basis_zh: '百分比（长端收益率中的估算组成部分）'
     interpretation_up: >
@@ -963,9 +929,7 @@ entries:
     short_definition_en: >
       The extra yield a corporate bond pays over a comparable-maturity government bond,
       compensating investors for default and liquidity risk.
-    short_definition_zh: >
-      企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性
-      风险。
+    short_definition_zh: '企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性风险。'
     why_it_matters_en: >
       Widening spreads signal rising perceived credit risk and tend to coincide with
       broader risk-off conditions across markets.
@@ -1006,15 +970,11 @@ entries:
     short_definition_en: >
       The credit spread specifically on below-investment-grade ("high-yield" or "junk")
       corporate bonds — a widely watched gauge of stress in riskier credit markets.
-    short_definition_zh: >
-      专指投资级以下（"高收益"或"垃圾"级）企业债的信用利差——是衡量较高风险信用市场压力
-      的常用指标。
+    short_definition_zh: '专指投资级以下（「高收益」或「垃圾」级）企业债的信用利差——是衡量较高风险信用市场压力的常用指标。'
     why_it_matters_en: >
       High-yield borrowers are typically the first to feel funding stress, so this spread
       often widens earlier and more sharply than investment-grade spreads.
-    why_it_matters_zh: >
-      高收益债发行人通常最先感受到融资压力，因此该利差往往比投资级利差更早、更大幅度地
-      走阔。
+    why_it_matters_zh: '高收益债发行人通常最先感受到融资压力，因此该利差往往比投资级利差更早、更大幅度地走阔。'
     unit_or_basis: Basis points over a comparable government bond yield
     unit_or_basis_zh: '相对同期限政府债券收益率的基点利差'
     interpretation_up: >
@@ -1054,9 +1014,7 @@ entries:
     why_it_matters_en: >
       A stronger dollar tends to tighten global financial conditions and can pressure
       commodities and emerging markets; a weaker dollar tends to ease them.
-    why_it_matters_zh: >
-      美元走强通常会收紧全球金融条件，并对大宗商品及新兴市场构成压力；美元走弱则通常
-      起到缓解作用。
+    why_it_matters_zh: '美元走强通常会收紧全球金融条件，并对大宗商品及新兴市场构成压力；美元走弱则通常起到缓解作用。'
     unit_or_basis: Index level (relative, no fixed unit)
     unit_or_basis_zh: '指数点位（相对值，无固定单位）'
     interpretation_up: >
@@ -1074,7 +1032,7 @@ entries:
     caveats_zh:
       - 该指数篮子权重集中于少数主要货币，无法反映美元对所有货币的双边情况。
       - 与其他资产的关系属于历史经验规律，并非固定法则。
-    owner_ref: us_stocks.html#cross-asset-macro
+    owner_ref: macro.html#sx-markets-v2
     public_source_refs:
       - https://fred.stlouisfed.org
     related_ids: [real-rates, liquidity-state, flight-to-quality]
@@ -1091,14 +1049,11 @@ entries:
     short_definition_en: >
       An index measuring the market's expectation of S&P 500 volatility over the next 30
       days, derived from options prices; often called the "fear gauge."
-    short_definition_zh: >
-      基于期权价格计算的标普500未来30天预期波动率指数，常被称为"恐慌指数"。
+    short_definition_zh: '基于期权价格计算的标普500未来30天预期波动率指数，常被称为「恐慌指数」。'
     why_it_matters_en: >
       Sharp VIX spikes typically coincide with sudden risk-off moves, while sustained low
       levels typically coincide with calmer, trending markets.
-    why_it_matters_zh: >
-      VIX急剧飙升通常与突发性避险行情同时出现，而长期维持低位则通常对应较为平稳、趋势
-      明确的市场。
+    why_it_matters_zh: 'VIX急剧飙升通常与突发性避险行情同时出现，而长期维持低位则通常对应较为平稳、趋势明确的市场。'
     unit_or_basis: Index level (annualized implied volatility percentage)
     unit_or_basis_zh: '指数点位（年化隐含波动率百分比）'
     interpretation_up: >
@@ -1116,7 +1071,7 @@ entries:
     caveats_zh:
       - 衡量的是期权隐含的未来预期波动率，而非已经实现的历史波动率。
       - 长期处于低位并不能据此预测波动率何时会上升。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs:
       - https://www.cboe.com
     related_ids: [volatility-regime, evidence-volatility, risk-on-risk-off]
@@ -1138,9 +1093,7 @@ entries:
     why_it_matters_en: >
       An inverted term structure (near-term volatility above longer-term) often signals
       acute near-term stress rather than a durable volatility regime shift.
-    why_it_matters_zh: >
-      波动率期限结构倒挂（近月高于远月）通常意味着短期急性压力，而非波动率环境的持久性
-      转变。
+    why_it_matters_zh: '波动率期限结构倒挂（近月高于远月）通常意味着短期急性压力，而非波动率环境的持久性转变。'
     unit_or_basis: Categorical / relative comparison across option expirations
     unit_or_basis_zh: '分类／不同到期期权之间的相对比较'
     interpretation_up: >
@@ -1157,7 +1110,7 @@ entries:
     caveats_zh:
       - 期限结构倒挂在触发事件消退后往往会较快恢复正常。
       - 反映的是期权市场定价，不是对未来实际波动率的预测。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs:
       - https://www.cboe.com
     related_ids: [vix, evidence-volatility]
@@ -1174,9 +1127,7 @@ entries:
     short_definition_en: >
       A shorthand for whether investors are broadly favouring riskier assets (risk-on) or
       broadly seeking safety (risk-off) across markets at the same time.
-    short_definition_zh: >
-      简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险）
-      的用语。
+    short_definition_zh: '简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险）的用语。'
     why_it_matters_en: >
       Recognizing the prevailing risk sentiment helps explain why many unrelated assets can
       move together on the same day.
@@ -1198,7 +1149,7 @@ entries:
     caveats_zh:
       - 这是对已观察到的跨资产行为的描述性标签，并非预测性信号。
       - 个别资产仍可能因自身特殊原因而偏离整体标签所描述的方向。
-    owner_ref: us_stocks.html#cross-asset-macro
+    owner_ref: macro.html#sx-v5-sentiment
     public_source_refs: []
     related_ids: [evidence-risk-appetite, flight-to-quality, correlation-regime]
     authority_ceiling: reference_only
@@ -1214,9 +1165,7 @@ entries:
     short_definition_en: >
       A shift of investor capital into perceived safer assets — such as government bonds,
       the dollar, or gold — typically during periods of market stress.
-    short_definition_zh: >
-      投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压
-      时期。
+    short_definition_zh: '投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压时期。'
     why_it_matters_en: >
       Recognizing a flight-to-quality move helps explain simultaneous declines in risk
       assets alongside rallies in traditional safe havens.
@@ -1234,9 +1183,9 @@ entries:
       - Which assets act as "safe havens" can shift over time and across episodes.
       - A descriptive pattern, not a rule that safe havens always rise during stress.
     caveats_zh:
-      - 被视为"避险资产"的具体品种可能随时间及具体事件而变化。
+      - '被视为「避险资产」的具体品种可能随时间及具体事件而变化。'
       - 这是描述性模式，并不意味着避险资产在每次压力事件中都必然上涨。
-    owner_ref: us_stocks.html#cross-asset-macro
+    owner_ref: macro.html#sx-v5-sentiment
     public_source_refs: []
     related_ids: [risk-on-risk-off, dollar-index, drawdown]
     authority_ceiling: reference_only
@@ -1274,7 +1223,7 @@ entries:
     caveats_zh:
       - 衡量的是已经发生的跌幅，不能预测跌幅是会进一步加深还是随后回升。
       - 不同时期的回撤比较应考虑整体波动率水平的差异。
-    owner_ref: macro.html#dlg-risk
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [risk-radar, evidence-stress]
     authority_ceiling: reference_only
@@ -1317,7 +1266,7 @@ entries:
     caveats_zh:
       - 相关性基于历史窗口计算，在重大市场事件前后可能迅速变化。
       - 相关性偏高本身并不能说明方向，只说明资产之间同向变动的程度。
-    owner_ref: us_stocks.html#cross-asset-macro
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [risk-on-risk-off, market-breadth]
     authority_ceiling: reference_only
@@ -1357,7 +1306,7 @@ entries:
     caveats_zh:
       - 广度狭窄本身并不能预测反转是否会发生或何时发生。
       - 不同广度衡量方式（涨跌家数、新高新低、市值加权与等权对比）之间有时会出现分歧。
-    owner_ref: macro.html#mx5PopFactors
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [evidence-breadth, market-state-score, correlation-regime]
     authority_ceiling: reference_only
@@ -1373,9 +1322,7 @@ entries:
     short_definition_en: >
       How exposed investors currently are to a given market or theme — for example, how
       crowded a trade has become relative to its own history.
-    short_definition_zh: >
-      投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度
-      如何。
+    short_definition_zh: '投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度如何。'
     why_it_matters_en: >
       Extremely crowded positioning can make a market more vulnerable to sharp reversals
       when sentiment shifts, even without a change in fundamentals.
@@ -1398,7 +1345,7 @@ entries:
     caveats_zh:
       - 公开可得的持仓数据通常存在滞后，且无法覆盖所有市场参与者。
       - 极端持仓状态可能持续较长时间才会发生反转。
-    owner_ref: us_stocks.html#cross-asset-macro
+    owner_ref: macro.html#regime-radar
     public_source_refs: []
     related_ids: [risk-on-risk-off, correlation-regime]
     authority_ceiling: reference_only

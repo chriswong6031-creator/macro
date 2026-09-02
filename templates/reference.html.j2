@@ -181,6 +181,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
   border-left:3px solid var(--link); box-shadow:var(--card-shadow); }
 .rf-e:target .rf-label { font-weight:800; }
 .rf-e:target + .rf-e > .rf-sum, .rf-e:target > .rf-sum { border-top-color:transparent; }
+/* Close-affordance fallback (verified empirically in headless Chromium,
+   2026-09-02): history.replaceState() clearing location.hash does NOT make
+   :target stop matching in Chromium — it is "sticky" until a real navigation
+   (a hash-changing link click, location.hash assignment, or back/forward).
+   clearHashToBrowse() therefore also stamps .rf-closed on the entry it is
+   collapsing; this override wins regardless of :target's continued match,
+   and handleHash() removes the class the moment a real hash navigation
+   re-opens that (or any) entry. */
+.rf-e.rf-closed .rf-body { display:none !important; }
+.rf-e.rf-closed { background:none; border-left-color:transparent; padding-left:0; }
+html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow:none; }
 
 /* ── record blocks ──────────────────────────────────────────────────────────── */
 .rf-blk { margin:var(--sp-4,16px) 0 0; }
@@ -279,11 +290,15 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   <!-- ══ index rail (sticky ≥1000w; hidden below — its controls move into the ══
        ══ mobile filter bar inside the column) ═══════════════════════════════ -->
-  <nav class="rf-rail" aria-label="{{ 'Reference index' }}">
+  {# N7: aria-label is a plain attribute (no l-en/l-zh child markup possible), so
+     bilingual support here follows the M5 data-ph-en/zh pattern — a JS-driven
+     data-lang update, not a server-baked single language. seed english so the
+     label is never empty pre-JS. #}
+  <nav class="rf-rail" aria-label="Reference index" data-aria-en="Reference index" data-aria-zh="参考索引">
     <div class="rf-rail-inner">
       {# Mode. NOT role=tablist: these are filters over one list, not parallel tasks
          (§9.9). role=group + aria-pressed. `all` is the default and the deep-link state. #}
-      <div class="segbtn-row rf-seg" role="group" aria-label="{{ 'Show' }}">
+      <div class="segbtn-row rf-seg" role="group" aria-label="Show" data-aria-en="Show" data-aria-zh="显示">
         <button type="button" class="segbtn" data-mode="all" aria-pressed="true">{{ t('All', '全部') }}</button>
         <button type="button" class="segbtn" data-mode="indicator" aria-pressed="false">{{ t('Indicators', '指标') }}</button>
         <button type="button" class="segbtn" data-mode="glossary" aria-pressed="false">{{ t('Terms', '术语') }}</button>
@@ -313,8 +328,12 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
         {# A–Z is a FILTER, not a jump — one filter model {mode, family, letter, q}.
            JS-only, hidden with JS off. #}
         <div class="rf-az-wrap" hidden>
-          <h2 class="eyebrow rf-eb">{{ t('Letter', '字母') }}</h2>
-          <div class="rf-az" role="group" aria-label="{{ 'Filter by letter' }}">
+          {# N3: the A-Z buttons filter on the English label's initial (initial_of()
+             in the builder never reads label_zh) — "字母" alone reads ambiguous in
+             ZH (could imply pinyin), so the ZH label names what it actually is.
+             Function unchanged; label only. #}
+          <h2 class="eyebrow rf-eb">{{ t('Letter', '按英文首字母') }}</h2>
+          <div class="rf-az" role="group" aria-label="Filter by letter" data-aria-en="Filter by letter" data-aria-zh="按字母筛选">
             {% for L in letters %}<button type="button" class="rf-azb" data-letter="{{ L }}" aria-pressed="false">{{ L }}</button>{% endfor %}
           </div>
         </div>
@@ -374,7 +393,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="{{ fam.id }}">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name">{{ t(fam.label_en, fam.label_zh) }}</span>
-          <span class="rf-grp-c tnum">{{ fam.count }}</span>
+          <span class="rf-grp-c tnum" data-count-group="{{ fam.id }}">{{ fam.count }}</span>
         </h2>
 
         {% for e in entries if e.family == fam.id %}
@@ -514,6 +533,28 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     if (el) el.hidden = false;
   });
 
+  // M5/N7: placeholder + aria-label translation — the estate pattern
+  // (templates/darkpool.html.j2, the updatePlaceholders()/data-ph-en/
+  // data-ph-zh idiom, extended to data-aria-en/data-aria-zh): a <input
+  // placeholder> or an aria-label attribute is not covered by the l-en/l-zh
+  // dual-span idiom (an attribute has no child nodes to hide/show), so both
+  // need their own data-lang-driven update, live on langchange.
+  function updatePlaceholders(){
+    var lang = document.documentElement.getAttribute("data-lang") || "en";
+    root.querySelectorAll("[data-ph-en]").forEach(function(el){
+      el.placeholder = lang === "zh"
+        ? (el.getAttribute("data-ph-zh") || el.getAttribute("data-ph-en"))
+        : el.getAttribute("data-ph-en");
+    });
+    root.querySelectorAll("[data-aria-en]").forEach(function(el){
+      el.setAttribute("aria-label", lang === "zh"
+        ? (el.getAttribute("data-aria-zh") || el.getAttribute("data-aria-en"))
+        : el.getAttribute("data-aria-en"));
+    });
+  }
+  document.addEventListener("langchange", updatePlaceholders);
+  updatePlaceholders();
+
   var railSeg = root.querySelector(".rf-seg");
   var railSearch = root.querySelector(".rf-search");
   var railFacets = root.querySelector(".rf-facets");
@@ -523,16 +564,27 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   // 2 · Move (do not copy) the rail controls on <1000w.
   function relocate(mq){
-    if (mq.matches){ // >=1000w: controls live in the rail
-      if (railSeg && barModeSlot && barModeSlot.contains === undefined) { /* noop guard */ }
+    // M3 fix: always APPEND in the desired final order rather than
+    // insertBefore-with-a-reference-node. appendChild silently MOVES a node
+    // that already exists elsewhere in the document, so this needs no
+    // "is it already a child of the target parent" reference-node check —
+    // the previous insertBefore(railSearch, railFacets) form threw
+    // NotFoundError on the <1000w -> >=1000w transition specifically,
+    // because at that moment railFacets was still a child of the MOBILE bar,
+    // not of the rail, so it was not a valid reference node for insertBefore
+    // inside the rail yet. Verified both directions via resize in the
+    // capture harness.
+    if (mq.matches){ // >=1000w: controls live in the rail, in order seg/search/facets
       var rail = root.querySelector(".rf-rail-inner");
-      if (rail && railSeg && railSeg.parentElement !== rail) rail.insertBefore(railSeg, rail.firstChild);
-      if (rail && railSearch && railSearch.parentElement !== rail) rail.insertBefore(railSearch, railFacets || null);
-      if (rail && railFacets && railFacets.parentElement !== rail) rail.appendChild(railFacets);
-    } else { // <1000w: controls live in the mobile bar
-      if (barModeSlot && railSeg && railSeg.parentElement !== barModeSlot) barModeSlot.appendChild(railSeg);
-      if (barSearchSlot && railSearch && railSearch.parentElement !== barSearchSlot) barSearchSlot.appendChild(railSearch);
-      if (barFacetsSlot && railFacets && railFacets.parentElement !== barFacetsSlot) barFacetsSlot.appendChild(railFacets);
+      if (rail){
+        if (railSeg) rail.appendChild(railSeg);
+        if (railSearch) rail.appendChild(railSearch);
+        if (railFacets) rail.appendChild(railFacets);
+      }
+    } else { // <1000w: controls live in the mobile bar, one slot each
+      if (barModeSlot && railSeg) barModeSlot.appendChild(railSeg);
+      if (barSearchSlot && railSearch) barSearchSlot.appendChild(railSearch);
+      if (barFacetsSlot && railFacets) barFacetsSlot.appendChild(railFacets);
     }
   }
   var mq1000 = window.matchMedia("(min-width:1000px)");
@@ -568,10 +620,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       if (!off) visible++;
     });
     groups.forEach(function(g){
-      var anyVisible = Array.prototype.some.call(g.querySelectorAll(".rf-e"), function(el){
+      var visibleInGroup = Array.prototype.filter.call(g.querySelectorAll(".rf-e"), function(el){
         return !el.classList.contains("is-off");
-      });
-      g.classList.toggle("is-off", !anyVisible);
+      }).length;
+      g.classList.toggle("is-off", visibleInGroup === 0);
+      // M2: the group header's own count (data-count-group) reflects entries
+      // actually visible in THIS section right now — distinct from the
+      // rail's data-count-family "what if I picked this family" number.
+      // querySelectorAll (never bare querySelector) even though exactly one
+      // match is expected per family, per the reviewer's querySelector-
+      // first-match-trap note — a duplicated attribute must never leave a
+      // second element silently stale.
+      var groupCountEls = g.querySelectorAll('[data-count-group="' + g.getAttribute("data-group") + '"]');
+      for (var gi = 0; gi < groupCountEls.length; gi++) groupCountEls[gi].textContent = String(visibleInGroup);
     });
     for (var i = 0; i < countVisibleEls.length; i++) countVisibleEls[i].textContent = String(visible);
 
@@ -586,8 +647,8 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
         var queryOK = !q || (el.getAttribute("data-search") || "").indexOf(q) !== -1;
         return modeOK && letterOK && queryOK && el.getAttribute("data-family") === fam;
       }).length;
-      var countEl2 = root.querySelector('[data-count-family="' + fam + '"]');
-      if (countEl2) countEl2.textContent = String(n);
+      var famCountEls = root.querySelectorAll('[data-count-family="' + fam + '"]');
+      for (var fi = 0; fi < famCountEls.length; fi++) famCountEls[fi].textContent = String(n);
       btn.classList.toggle("is-zero", n === 0);
     });
     var azButtons = root.querySelectorAll(".rf-azb");
@@ -617,7 +678,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   // 6 · Filters and the hash are mutually exclusive, deliberately.
   function clearHashToBrowse(){
-    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+    if (!location.hash) return;
+    // Close-affordance fallback (verified in headless Chromium): replaceState
+    // alone does not make :target stop matching, so stamp .rf-closed on the
+    // currently-open entry (its CSS wins regardless of :target). handleHash()
+    // clears the class the moment a real navigation re-opens an entry.
+    var openEl = root.querySelector(".rf-e:target");
+    if (openEl) openEl.classList.add("rf-closed");
+    history.replaceState(null, "", location.pathname + location.search);
   }
 
   function setPressed(group, activeEl){
@@ -661,7 +729,6 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     var clearBtn = ev.target.closest ? ev.target.closest(".rf-clear") : null;
     if (clearBtn){
       state = { mode: "all", family: null, letter: null, q: "" };
-      var qInput = root.getElementById ? null : null;
       var qEl = root.querySelector("#rf-q");
       if (qEl) qEl.value = "";
       Array.prototype.forEach.call(root.querySelectorAll(".rf-seg .segbtn"), function(b){
@@ -710,7 +777,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
   // 7 · Deep-link on load + hashchange.
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function handleHash(){
-    var hash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
+    // N6: decodeURIComponent throws URIError on a malformed percent-encoding
+    // (an incomplete/invalid escape). Uncaught here it would abort THIS whole
+    // IIFE mid-run — since handleHash() runs before the hashchange listener
+    // is registered below, a bad hash on cold load would silently leave
+    // every later wire-up (return bar, initial applyFilters()) dead. Caught:
+    // a malformed hash just degrades to the browse-all / no-hash path.
+    var hash = "";
+    if (location.hash){
+      try { hash = decodeURIComponent(location.hash.slice(1)); }
+      catch (e) { hash = ""; }
+    }
     if (!hash){
       if (missEl) missEl.hidden = true;
       return;
@@ -718,6 +795,9 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     var target = null;
     try { target = root.getElementById(hash); } catch(e) {}
     if (target && target.classList.contains("rf-e")){
+      // a real hash navigation is opening this entry — clear any stale
+      // Close-affordance fallback class so :target's own styling shows again.
+      target.classList.remove("rf-closed");
       if (missEl) missEl.hidden = true;
       window.requestAnimationFrame(function(){
         target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });

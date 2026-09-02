@@ -218,6 +218,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
   border-left:3px solid var(--link); box-shadow:var(--card-shadow); }
 .rf-e:target .rf-label { font-weight:800; }
 .rf-e:target + .rf-e > .rf-sum, .rf-e:target > .rf-sum { border-top-color:transparent; }
+/* Close-affordance fallback (verified empirically in headless Chromium,
+   2026-09-02): history.replaceState() clearing location.hash does NOT make
+   :target stop matching in Chromium — it is "sticky" until a real navigation
+   (a hash-changing link click, location.hash assignment, or back/forward).
+   clearHashToBrowse() therefore also stamps .rf-closed on the entry it is
+   collapsing; this override wins regardless of :target's continued match,
+   and handleHash() removes the class the moment a real hash navigation
+   re-opens that (or any) entry. */
+.rf-e.rf-closed .rf-body { display:none !important; }
+.rf-e.rf-closed { background:none; border-left-color:transparent; padding-left:0; }
+html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow:none; }
 
 /* ── record blocks ──────────────────────────────────────────────────────────── */
 .rf-blk { margin:var(--sp-4,16px) 0 0; }
@@ -554,10 +565,11 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   <!-- ══ index rail (sticky ≥1000w; hidden below — its controls move into the ══
        ══ mobile filter bar inside the column) ═══════════════════════════════ -->
-  <nav class="rf-rail" aria-label="Reference index">
+  
+  <nav class="rf-rail" aria-label="Reference index" data-aria-en="Reference index" data-aria-zh="参考索引">
     <div class="rf-rail-inner">
       
-      <div class="segbtn-row rf-seg" role="group" aria-label="Show">
+      <div class="segbtn-row rf-seg" role="group" aria-label="Show" data-aria-en="Show" data-aria-zh="显示">
         <button type="button" class="segbtn" data-mode="all" aria-pressed="true"><span class="l-en">All</span><span class="l-zh">全部</span></button>
         <button type="button" class="segbtn" data-mode="indicator" aria-pressed="false"><span class="l-en">Indicators</span><span class="l-zh">指标</span></button>
         <button type="button" class="segbtn" data-mode="glossary" aria-pressed="false"><span class="l-en">Terms</span><span class="l-zh">术语</span></button>
@@ -629,8 +641,9 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
         
         <div class="rf-az-wrap" hidden>
-          <h2 class="eyebrow rf-eb"><span class="l-en">Letter</span><span class="l-zh">字母</span></h2>
-          <div class="rf-az" role="group" aria-label="Filter by letter">
+          
+          <h2 class="eyebrow rf-eb"><span class="l-en">Letter</span><span class="l-zh">按英文首字母</span></h2>
+          <div class="rf-az" role="group" aria-label="Filter by letter" data-aria-en="Filter by letter" data-aria-zh="按字母筛选">
             <button type="button" class="rf-azb" data-letter="A" aria-pressed="false">A</button><button type="button" class="rf-azb" data-letter="B" aria-pressed="false">B</button><button type="button" class="rf-azb" data-letter="C" aria-pressed="false">C</button><button type="button" class="rf-azb" data-letter="D" aria-pressed="false">D</button><button type="button" class="rf-azb" data-letter="E" aria-pressed="false">E</button><button type="button" class="rf-azb" data-letter="F" aria-pressed="false">F</button><button type="button" class="rf-azb" data-letter="G" aria-pressed="false">G</button><button type="button" class="rf-azb" data-letter="H" aria-pressed="false">H</button><button type="button" class="rf-azb" data-letter="I" aria-pressed="false">I</button><button type="button" class="rf-azb" data-letter="J" aria-pressed="false">J</button><button type="button" class="rf-azb" data-letter="K" aria-pressed="false">K</button><button type="button" class="rf-azb" data-letter="L" aria-pressed="false">L</button><button type="button" class="rf-azb" data-letter="M" aria-pressed="false">M</button><button type="button" class="rf-azb" data-letter="N" aria-pressed="false">N</button><button type="button" class="rf-azb" data-letter="O" aria-pressed="false">O</button><button type="button" class="rf-azb" data-letter="P" aria-pressed="false">P</button><button type="button" class="rf-azb" data-letter="Q" aria-pressed="false">Q</button><button type="button" class="rf-azb" data-letter="R" aria-pressed="false">R</button><button type="button" class="rf-azb" data-letter="S" aria-pressed="false">S</button><button type="button" class="rf-azb" data-letter="T" aria-pressed="false">T</button><button type="button" class="rf-azb" data-letter="U" aria-pressed="false">U</button><button type="button" class="rf-azb" data-letter="V" aria-pressed="false">V</button><button type="button" class="rf-azb" data-letter="W" aria-pressed="false">W</button><button type="button" class="rf-azb" data-letter="X" aria-pressed="false">X</button><button type="button" class="rf-azb" data-letter="Y" aria-pressed="false">Y</button><button type="button" class="rf-azb" data-letter="Z" aria-pressed="false">Z</button>
           </div>
         </div>
@@ -683,7 +696,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="regime">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Regime</span><span class="l-zh">宏观周期</span></span>
-          <span class="rf-grp-c tnum">7</span>
+          <span class="rf-grp-c tnum" data-count-group="regime">7</span>
         </h2>
 
         
@@ -810,8 +823,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
             <span class="rf-gloss">
               <span class="l-en">A 0-100 dial summarising current US equity market posture, blending trend, cross-asset risk appetite, volatility, breadth, liquidity, and stress into one composite read.
-</span><span class="l-zh">0-100 综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、 流动性与压力六项因子。
-</span>
+</span><span class="l-zh">0-100综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、流动性与压力六项因子。</span>
             </span>
           </a>
 
@@ -831,8 +843,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A 0-100 dial summarising current US equity market posture, blending trend, cross-asset risk appetite, volatility, breadth, liquidity, and stress into one composite read.
-</span><span class="l-zh">0-100 综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、 流动性与压力六项因子。
-</span></p>
+</span><span class="l-zh">0-100综合仪表盘，反映美股当前市场态势，综合趋势、跨资产风险偏好、波动率、市场广度、流动性与压力六项因子。</span></p>
             </div>
 
             
@@ -889,7 +900,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#ms-score"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -919,8 +930,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
             <span class="rf-gloss">
               <span class="l-en">A four-way classification of the macro backdrop by the direction of growth and inflation: e.g. growth rising with inflation falling, or growth falling with inflation rising.
-</span><span class="l-zh">按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、 通胀上行等组合。
-</span>
+</span><span class="l-zh">按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、通胀上行等组合。</span>
             </span>
           </a>
 
@@ -940,8 +950,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A four-way classification of the macro backdrop by the direction of growth and inflation: e.g. growth rising with inflation falling, or growth falling with inflation rising.
-</span><span class="l-zh">按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、 通胀上行等组合。
-</span></p>
+</span><span class="l-zh">按增长与通胀的方向变化，将宏观环境划分为四种象限：例如增长上行、通胀下行，或增长下行、通胀上行等组合。</span></p>
             </div>
 
             
@@ -1104,7 +1113,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1134,8 +1143,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
             <span class="rf-gloss">
               <span class="l-en">A leading advisory score for pullback risk across seven scare types — credit stress, rate shocks, bubble unwind, growth scares, volatility events, and breadth breakdowns.
-</span><span class="l-zh">针对七类&#34;惊吓&#34;情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等） 给出的前瞻性回撤风险提示评分。
-</span>
+</span><span class="l-zh">针对七类「惊吓」情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等）给出的前瞻性回撤风险提示评分。</span>
             </span>
           </a>
 
@@ -1155,8 +1163,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A leading advisory score for pullback risk across seven scare types — credit stress, rate shocks, bubble unwind, growth scares, volatility events, and breadth breakdowns.
-</span><span class="l-zh">针对七类&#34;惊吓&#34;情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等） 给出的前瞻性回撤风险提示评分。
-</span></p>
+</span><span class="l-zh">针对七类「惊吓」情景（信用压力、利率冲击、泡沫回落、增长担忧、波动率事件、市场广度恶化等）给出的前瞻性回撤风险提示评分。</span></p>
             </div>
 
             
@@ -1187,13 +1194,13 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Calm or watch — no unusual pullback pressure detected among the tracked scare types.
-</span><span class="l-zh">平静或观察——所跟踪的各类&#34;惊吓&#34;情景中未检测到异常回撤压力。</span></dd>
+</span><span class="l-zh">平静或观察——所跟踪的各类「惊吓」情景中未检测到异常回撤压力。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Caution — some scare types are stirring; a reason to tighten risk controls, not to override a supportive market read.
-</span><span class="l-zh">谨慎——部分&#34;惊吓&#34;情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。</span></dd>
+</span><span class="l-zh">谨慎——部分「惊吓」情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1213,7 +1220,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#dlg-risk"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1304,7 +1311,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
               <ul>
                 <li><span class="l-en">A stable label describes confirmation, not certainty — regimes can and do turn.</span><span class="l-zh">稳定标签代表确认结果，并非绝对保证——宏观象限仍可能发生转变。</span></li>
               
-                <li><span class="l-en">A &#34;new regime&#34; label reflects a just-confirmed change and may itself still be tested.</span><span class="l-zh">&#34;刚切换&#34;标签代表刚确认的变化，其本身仍可能被后续数据检验。</span></li>
+                <li><span class="l-en">A &#34;new regime&#34; label reflects a just-confirmed change and may itself still be tested.</span><span class="l-zh">「刚切换」标签代表刚确认的变化，其本身仍可能被后续数据检验。</span></li>
               </ul>
             </div>
 
@@ -1418,7 +1425,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1439,7 +1446,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="liquidity">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></span>
-          <span class="rf-grp-c tnum">2</span>
+          <span class="rf-grp-c tnum" data-count-group="liquidity">2</span>
         </h2>
 
         
@@ -1457,8 +1464,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--indicator"><span class="l-en">Indicator</span><span class="l-zh">指标</span></span>
             <span class="rf-gloss">
               <span class="l-en">One of six factors feeding the Market State Score: broad money and credit conditions, sometimes called the &#34;money tide.&#34;
-</span><span class="l-zh">构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为&#34;资金潮汐&#34;。
-</span>
+</span><span class="l-zh">构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为「资金潮汐」。</span>
             </span>
           </a>
 
@@ -1478,16 +1484,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">One of six factors feeding the Market State Score: broad money and credit conditions, sometimes called the &#34;money tide.&#34;
-</span><span class="l-zh">构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为&#34;资金潮汐&#34;。
-</span></p>
+</span><span class="l-zh">构成市场状态分的六项因子之一：广义货币与信用状况，有时也称为「资金潮汐」。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">Liquidity conditions historically influence how much fuel is available for risk assets to keep rising, independent of price trend alone.
-</span><span class="l-zh">资金面状况历史上会影响风险资产持续上涨的&#34;燃料&#34;是否充足，独立于价格趋势本身。
-</span></p>
+</span><span class="l-zh">资金面状况历史上会影响风险资产持续上涨的「燃料」是否充足，独立于价格趋势本身。</span></p>
             </div>
 
             
@@ -1533,7 +1537,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1637,7 +1641,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
               <ul>
                 <li><span class="l-en">Liquidity conditions shift gradually and lag some faster market-moving events.</span><span class="l-zh">流动性状况变化通常较为缓慢，可能滞后于部分反应更快的市场事件。</span></li>
               
-                <li><span class="l-en">&#34;Expansion&#34; describes system liquidity, not a guarantee that every asset benefits equally or immediately.</span><span class="l-zh">&#34;扩张&#34;描述的是系统整体流动性，不代表所有资产都会同等或立即受益。</span></li>
+                <li><span class="l-en">&#34;Expansion&#34; describes system liquidity, not a guarantee that every asset benefits equally or immediately.</span><span class="l-zh">「扩张」描述的是系统整体流动性，不代表所有资产都会同等或立即受益。</span></li>
               </ul>
             </div>
 
@@ -1669,7 +1673,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="volatility-stress">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Volatility &amp; Stress</span><span class="l-zh">波动率与压力</span></span>
-          <span class="rf-grp-c tnum">5</span>
+          <span class="rf-grp-c tnum" data-count-group="volatility-stress">5</span>
         </h2>
 
         
@@ -1756,7 +1760,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#dlg-risk"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1862,7 +1866,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -1892,8 +1896,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">An index measuring the market&#39;s expectation of S&amp;P 500 volatility over the next 30 days, derived from options prices; often called the &#34;fear gauge.&#34;
-</span><span class="l-zh">基于期权价格计算的标普500未来30天预期波动率指数，常被称为&#34;恐慌指数&#34;。
-</span>
+</span><span class="l-zh">基于期权价格计算的标普500未来30天预期波动率指数，常被称为「恐慌指数」。</span>
             </span>
           </a>
 
@@ -1913,16 +1916,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">An index measuring the market&#39;s expectation of S&amp;P 500 volatility over the next 30 days, derived from options prices; often called the &#34;fear gauge.&#34;
-</span><span class="l-zh">基于期权价格计算的标普500未来30天预期波动率指数，常被称为&#34;恐慌指数&#34;。
-</span></p>
+</span><span class="l-zh">基于期权价格计算的标普500未来30天预期波动率指数，常被称为「恐慌指数」。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">Sharp VIX spikes typically coincide with sudden risk-off moves, while sustained low levels typically coincide with calmer, trending markets.
-</span><span class="l-zh">VIX急剧飙升通常与突发性避险行情同时出现，而长期维持低位则通常对应较为平稳、趋势 明确的市场。
-</span></p>
+</span><span class="l-zh">VIX急剧飙升通常与突发性避险行情同时出现，而长期维持低位则通常对应较为平稳、趋势明确的市场。</span></p>
             </div>
 
             
@@ -1970,7 +1971,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -2079,7 +2080,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -2141,8 +2142,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">An inverted term structure (near-term volatility above longer-term) often signals acute near-term stress rather than a durable volatility regime shift.
-</span><span class="l-zh">波动率期限结构倒挂（近月高于远月）通常意味着短期急性压力，而非波动率环境的持久性 转变。
-</span></p>
+</span><span class="l-zh">波动率期限结构倒挂（近月高于远月）通常意味着短期急性压力，而非波动率环境的持久性转变。</span></p>
             </div>
 
             
@@ -2190,7 +2190,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -2214,7 +2214,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="rates-curve">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Rates &amp; Curve</span><span class="l-zh">利率与曲线</span></span>
-          <span class="rf-grp-c tnum">5</span>
+          <span class="rf-grp-c tnum" data-count-group="rates-curve">5</span>
         </h2>
 
         
@@ -2232,8 +2232,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">The market-implied average inflation rate over a given period, derived from the yield gap between a nominal bond and its inflation-protected equivalent.
-</span><span class="l-zh">市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差 计算得出。
-</span>
+</span><span class="l-zh">市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差计算得出。</span>
             </span>
           </a>
 
@@ -2253,8 +2252,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">The market-implied average inflation rate over a given period, derived from the yield gap between a nominal bond and its inflation-protected equivalent.
-</span><span class="l-zh">市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差 计算得出。
-</span></p>
+</span><span class="l-zh">市场隐含的某一期限内平均通胀预期，通过普通债券与对应通胀保值债券之间的收益率差计算得出。</span></p>
             </div>
 
             
@@ -2341,8 +2339,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">Describes how the gap between short- and long-dated bond yields is changing — widening (steepening) or narrowing (flattening) — and whether it is driven mainly by short or long rates moving.
-</span><span class="l-zh">描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要 是由短端还是长端利率变动驱动。
-</span>
+</span><span class="l-zh">描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要是由短端还是长端利率变动驱动。</span>
             </span>
           </a>
 
@@ -2362,16 +2359,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">Describes how the gap between short- and long-dated bond yields is changing — widening (steepening) or narrowing (flattening) — and whether it is driven mainly by short or long rates moving.
-</span><span class="l-zh">描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要 是由短端还是长端利率变动驱动。
-</span></p>
+</span><span class="l-zh">描述短期与长期债券收益率之差如何变化——扩大（陡峭化）或缩小（平坦化）——以及主要是由短端还是长端利率变动驱动。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">The combination of steepening/flattening with rising/falling rates carries different economic implications, from growth optimism to recession fears.
-</span><span class="l-zh">陡峭化／平坦化与利率上行／下行的不同组合，通常对应不同的经济含义，从对增长乐观到 对衰退的担忧不等。
-</span></p>
+</span><span class="l-zh">陡峭化／平坦化与利率上行／下行的不同组合，通常对应不同的经济含义，从对增长乐观到对衰退的担忧不等。</span></p>
             </div>
 
             
@@ -2479,8 +2474,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">Rising real rates raise the opportunity cost of holding non-yielding or long-duration assets, and have historically pressured segments like gold and long-duration growth stocks.
-</span><span class="l-zh">实际利率上升会提高持有无息或长久期资产的机会成本，历史上通常对黄金及长久期成长股 等板块构成压力。
-</span></p>
+</span><span class="l-zh">实际利率上升会提高持有无息或长久期资产的机会成本，历史上通常对黄金及长久期成长股等板块构成压力。</span></p>
             </div>
 
             
@@ -2561,8 +2555,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">The extra yield investors demand for holding a longer-maturity bond instead of rolling over a series of shorter-maturity ones, compensating for extra risk and uncertainty over time.
-</span><span class="l-zh">投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内 承担的额外风险与不确定性。
-</span>
+</span><span class="l-zh">投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内承担的额外风险与不确定性。</span>
             </span>
           </a>
 
@@ -2582,16 +2575,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">The extra yield investors demand for holding a longer-maturity bond instead of rolling over a series of shorter-maturity ones, compensating for extra risk and uncertainty over time.
-</span><span class="l-zh">投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内 承担的额外风险与不确定性。
-</span></p>
+</span><span class="l-zh">投资者持有长期债券而非滚动持有一系列短期债券所要求的额外收益，用以补偿更长时间内承担的额外风险与不确定性。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">A rising term premium can push long-end yields higher even if growth and inflation expectations are unchanged, a distinct driver worth separating out.
-</span><span class="l-zh">期限溢价上升可能在增长与通胀预期不变的情况下单独推高长端收益率，是值得区分开来看的 独立驱动因素。
-</span></p>
+</span><span class="l-zh">期限溢价上升可能在增长与通胀预期不变的情况下单独推高长端收益率，是值得区分开来看的独立驱动因素。</span></p>
             </div>
 
             
@@ -2672,8 +2663,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">A chart of government bond yields across maturities; &#34;inverted&#34; means shorter-dated yields sit above longer-dated ones, the reverse of the usual upward-sloping shape.
-</span><span class="l-zh">不同期限政府债券收益率的走势图；&#34;倒挂&#34;指短期收益率高于长期收益率，与通常向上倾斜的 正常形态相反。
-</span>
+</span><span class="l-zh">不同期限政府债券收益率的走势图；「倒挂」指短期收益率高于长期收益率，与通常向上倾斜的正常形态相反。</span>
             </span>
           </a>
 
@@ -2693,8 +2683,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A chart of government bond yields across maturities; &#34;inverted&#34; means shorter-dated yields sit above longer-dated ones, the reverse of the usual upward-sloping shape.
-</span><span class="l-zh">不同期限政府债券收益率的走势图；&#34;倒挂&#34;指短期收益率高于长期收益率，与通常向上倾斜的 正常形态相反。
-</span></p>
+</span><span class="l-zh">不同期限政府债券收益率的走势图；「倒挂」指短期收益率高于长期收益率，与通常向上倾斜的正常形态相反。</span></p>
             </div>
 
             
@@ -2775,7 +2764,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="credit">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Credit</span><span class="l-zh">信用</span></span>
-          <span class="rf-grp-c tnum">2</span>
+          <span class="rf-grp-c tnum" data-count-group="credit">2</span>
         </h2>
 
         
@@ -2793,8 +2782,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">The extra yield a corporate bond pays over a comparable-maturity government bond, compensating investors for default and liquidity risk.
-</span><span class="l-zh">企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性 风险。
-</span>
+</span><span class="l-zh">企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性风险。</span>
             </span>
           </a>
 
@@ -2814,8 +2802,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">The extra yield a corporate bond pays over a comparable-maturity government bond, compensating investors for default and liquidity risk.
-</span><span class="l-zh">企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性 风险。
-</span></p>
+</span><span class="l-zh">企业债相对于同期限政府债券支付的额外收益，用于补偿投资者所承担的违约风险与流动性风险。</span></p>
             </div>
 
             
@@ -2904,8 +2891,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">The credit spread specifically on below-investment-grade (&#34;high-yield&#34; or &#34;junk&#34;) corporate bonds — a widely watched gauge of stress in riskier credit markets.
-</span><span class="l-zh">专指投资级以下（&#34;高收益&#34;或&#34;垃圾&#34;级）企业债的信用利差——是衡量较高风险信用市场压力 的常用指标。
-</span>
+</span><span class="l-zh">专指投资级以下（「高收益」或「垃圾」级）企业债的信用利差——是衡量较高风险信用市场压力的常用指标。</span>
             </span>
           </a>
 
@@ -2925,16 +2911,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">The credit spread specifically on below-investment-grade (&#34;high-yield&#34; or &#34;junk&#34;) corporate bonds — a widely watched gauge of stress in riskier credit markets.
-</span><span class="l-zh">专指投资级以下（&#34;高收益&#34;或&#34;垃圾&#34;级）企业债的信用利差——是衡量较高风险信用市场压力 的常用指标。
-</span></p>
+</span><span class="l-zh">专指投资级以下（「高收益」或「垃圾」级）企业债的信用利差——是衡量较高风险信用市场压力的常用指标。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">High-yield borrowers are typically the first to feel funding stress, so this spread often widens earlier and more sharply than investment-grade spreads.
-</span><span class="l-zh">高收益债发行人通常最先感受到融资压力，因此该利差往往比投资级利差更早、更大幅度地 走阔。
-</span></p>
+</span><span class="l-zh">高收益债发行人通常最先感受到融资压力，因此该利差往往比投资级利差更早、更大幅度地走阔。</span></p>
             </div>
 
             
@@ -3006,7 +2990,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="breadth-participation">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Breadth &amp; Participation</span><span class="l-zh">广度与参与度</span></span>
-          <span class="rf-grp-c tnum">2</span>
+          <span class="rf-grp-c tnum" data-count-group="breadth-participation">2</span>
         </h2>
 
         
@@ -3100,7 +3084,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -3208,7 +3192,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#mx5PopFactors"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -3229,7 +3213,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="flows-positioning">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Flows &amp; Positioning</span><span class="l-zh">资金流与持仓</span></span>
-          <span class="rf-grp-c tnum">1</span>
+          <span class="rf-grp-c tnum" data-count-group="flows-positioning">1</span>
         </h2>
 
         
@@ -3247,8 +3231,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">How exposed investors currently are to a given market or theme — for example, how crowded a trade has become relative to its own history.
-</span><span class="l-zh">投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度 如何。
-</span>
+</span><span class="l-zh">投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度如何。</span>
             </span>
           </a>
 
@@ -3268,8 +3251,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">How exposed investors currently are to a given market or theme — for example, how crowded a trade has become relative to its own history.
-</span><span class="l-zh">投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度 如何。
-</span></p>
+</span><span class="l-zh">投资者当前对某一市场或主题的敞口程度——例如某一交易相对其自身历史而言拥挤程度如何。</span></p>
             </div>
 
             
@@ -3325,7 +3307,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#cross-asset-macro"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -3346,7 +3328,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="calendar-events">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Calendar &amp; Events</span><span class="l-zh">日历与事件</span></span>
-          <span class="rf-grp-c tnum">3</span>
+          <span class="rf-grp-c tnum" data-count-group="calendar-events">3</span>
         </h2>
 
         
@@ -3364,8 +3346,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">A scheduled economic release, central bank decision, or other calendar event judged likely to move markets, shown with its exact time and source.
-</span><span class="l-zh">被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间 与来源。
-</span>
+</span><span class="l-zh">被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间与来源。</span>
             </span>
           </a>
 
@@ -3385,8 +3366,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A scheduled economic release, central bank decision, or other calendar event judged likely to move markets, shown with its exact time and source.
-</span><span class="l-zh">被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间 与来源。
-</span></p>
+</span><span class="l-zh">被判断为可能对市场产生较大影响的经济数据公布、央行决议或其他日历事件，附带具体时间与来源。</span></p>
             </div>
 
             
@@ -3433,7 +3413,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#release-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-events-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -3466,8 +3446,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">Mechanical buying and selling by index funds and large asset allocators around quarter-end, driven by target weights rather than views on individual securities.
-</span><span class="l-zh">指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素 是权重目标而非对个别证券的判断。
-</span>
+</span><span class="l-zh">指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素是权重目标而非对个别证券的判断。</span>
             </span>
           </a>
 
@@ -3487,8 +3466,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">Mechanical buying and selling by index funds and large asset allocators around quarter-end, driven by target weights rather than views on individual securities.
-</span><span class="l-zh">指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素 是权重目标而非对个别证券的判断。
-</span></p>
+</span><span class="l-zh">指数基金及大型资产配置机构在季末前后，为达到目标权重而进行的机械性买卖，其驱动因素是权重目标而非对个别证券的判断。</span></p>
             </div>
 
             
@@ -3565,8 +3543,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">Whether an economic release is likely to land cooler, in line, or hotter than the consensus forecast, based on available leading indicators.
-</span><span class="l-zh">基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是 偏热。
-</span>
+</span><span class="l-zh">基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是偏热。</span>
             </span>
           </a>
 
@@ -3586,8 +3563,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">Whether an economic release is likely to land cooler, in line, or hotter than the consensus forecast, based on available leading indicators.
-</span><span class="l-zh">基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是 偏热。
-</span></p>
+</span><span class="l-zh">基于可获得的领先指标，判断某项经济数据公布结果相对市场一致预期偏冷、符合预期，还是偏热。</span></p>
             </div>
 
             
@@ -3644,7 +3620,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="macro.html#release-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-events-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -3668,7 +3644,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="doctrine">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Doctrine</span><span class="l-zh">方法论词汇</span></span>
-          <span class="rf-grp-c tnum">3</span>
+          <span class="rf-grp-c tnum" data-count-group="doctrine">3</span>
         </h2>
 
         
@@ -3785,8 +3761,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">When two or more market indicators point in different directions at the same time, shown as a &#34;note&#34; (minor) or &#34;tension&#34; (more significant) severity.
-</span><span class="l-zh">指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为&#34;提示&#34;（较轻微）与 &#34;张力&#34;（较显著）两级。
-</span>
+</span><span class="l-zh">指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为「提示」（较轻微）与「张力」（较显著）两级。</span>
             </span>
           </a>
 
@@ -3806,8 +3781,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">When two or more market indicators point in different directions at the same time, shown as a &#34;note&#34; (minor) or &#34;tension&#34; (more significant) severity.
-</span><span class="l-zh">指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为&#34;提示&#34;（较轻微）与 &#34;张力&#34;（较显著）两级。
-</span></p>
+</span><span class="l-zh">指两个或以上市场指标在同一时间给出不同方向的判断，按严重程度分为「提示」（较轻微）与「张力」（较显著）两级。</span></p>
             </div>
 
             
@@ -3846,7 +3820,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
               <ul>
                 <li><span class="l-en">Divergence does not by itself say which signal will prove correct.</span><span class="l-zh">信号分歧本身并不能说明最终哪个信号会被验证正确。</span></li>
               
-                <li><span class="l-en">A &#34;tension&#34; flag calls for more caution, not automatically a change in position.</span><span class="l-zh">&#34;张力&#34;级别的分歧提示应更加谨慎，但并不意味着必须立即改变仓位。</span></li>
+                <li><span class="l-en">A &#34;tension&#34; flag calls for more caution, not automatically a change in position.</span><span class="l-zh">「张力」级别的分歧提示应更加谨慎，但并不意味着必须立即改变仓位。</span></li>
               </ul>
             </div>
 
@@ -3884,8 +3858,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">The briefing&#39;s four-word action vocabulary, from calmest to most urgent: ignore, stand-aside, protect, act — describing posture, never a specific trade.
-</span><span class="l-zh">简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态， 而非具体交易指令。
-</span>
+</span><span class="l-zh">简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态，而非具体交易指令。</span>
             </span>
           </a>
 
@@ -3905,16 +3878,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">The briefing&#39;s four-word action vocabulary, from calmest to most urgent: ignore, stand-aside, protect, act — describing posture, never a specific trade.
-</span><span class="l-zh">简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态， 而非具体交易指令。
-</span></p>
+</span><span class="l-zh">简报使用的四级应对用语，由平静到紧急依次为：忽略、观望、保护、行动——描述的是姿态，而非具体交易指令。</span></p>
             </div>
 
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">Gives a consistent, plain-word scale for how seriously to treat a given read, so urgency is comparable across different briefings and days.
-</span><span class="l-zh">提供统一、直白的分级标准，帮助判断某一判断的紧迫程度，使不同简报、不同日期之间具备 可比性。
-</span></p>
+</span><span class="l-zh">提供统一、直白的分级标准，帮助判断某一判断的紧迫程度，使不同简报、不同日期之间具备可比性。</span></p>
             </div>
 
             
@@ -3945,7 +3916,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
               <ul>
                 <li><span class="l-en">Describes posture and urgency only; it is never a specific instruction to buy or sell any security.</span><span class="l-zh">仅描述姿态与紧迫程度，绝非针对具体证券的买卖指令。</span></li>
               
-                <li><span class="l-en">&#34;Act&#34; signals urgency to review, not a predetermined action.</span><span class="l-zh">&#34;行动&#34;级别提示应尽快复核，而非预先设定的具体操作。</span></li>
+                <li><span class="l-en">&#34;Act&#34; signals urgency to review, not a predetermined action.</span><span class="l-zh">「行动」级别提示应尽快复核，而非预先设定的具体操作。</span></li>
               </ul>
             </div>
 
@@ -3974,7 +3945,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       <section class="rf-group" data-group="cross-asset-basics">
         <h2 class="rf-grp-h">
           <span class="rf-grp-name"><span class="l-en">Cross-Asset Basics</span><span class="l-zh">跨资产基础</span></span>
-          <span class="rf-grp-c tnum">4</span>
+          <span class="rf-grp-c tnum" data-count-group="cross-asset-basics">4</span>
         </h2>
 
         
@@ -4070,7 +4041,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#cross-asset-macro"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#regime-radar"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -4129,8 +4100,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Why it matters</span><span class="l-zh">为什么重要</span></h3>
               <p><span class="l-en">A stronger dollar tends to tighten global financial conditions and can pressure commodities and emerging markets; a weaker dollar tends to ease them.
-</span><span class="l-zh">美元走强通常会收紧全球金融条件，并对大宗商品及新兴市场构成压力；美元走弱则通常 起到缓解作用。
-</span></p>
+</span><span class="l-zh">美元走强通常会收紧全球金融条件，并对大宗商品及新兴市场构成压力；美元走弱则通常起到缓解作用。</span></p>
             </div>
 
             
@@ -4178,7 +4148,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#cross-asset-macro"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-markets-v2"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -4211,8 +4181,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">A shift of investor capital into perceived safer assets — such as government bonds, the dollar, or gold — typically during periods of market stress.
-</span><span class="l-zh">投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压 时期。
-</span>
+</span><span class="l-zh">投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压时期。</span>
             </span>
           </a>
 
@@ -4232,8 +4201,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A shift of investor capital into perceived safer assets — such as government bonds, the dollar, or gold — typically during periods of market stress.
-</span><span class="l-zh">投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压 时期。
-</span></p>
+</span><span class="l-zh">投资者资金转向被认为更安全的资产（如政府债券、美元或黄金），通常发生在市场承压时期。</span></p>
             </div>
 
             
@@ -4270,7 +4238,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk rf-caveats">
               <h3 class="eyebrow rf-eb"><span class="l-en">Worth knowing</span><span class="l-zh">需要注意</span></h3>
               <ul>
-                <li><span class="l-en">Which assets act as &#34;safe havens&#34; can shift over time and across episodes.</span><span class="l-zh">被视为&#34;避险资产&#34;的具体品种可能随时间及具体事件而变化。</span></li>
+                <li><span class="l-en">Which assets act as &#34;safe havens&#34; can shift over time and across episodes.</span><span class="l-zh">被视为「避险资产」的具体品种可能随时间及具体事件而变化。</span></li>
               
                 <li><span class="l-en">A descriptive pattern, not a rule that safe havens always rise during stress.</span><span class="l-zh">这是描述性模式，并不意味着避险资产在每次压力事件中都必然上涨。</span></li>
               </ul>
@@ -4280,7 +4248,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#cross-asset-macro"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-v5-sentiment"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -4310,8 +4278,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <span class="rf-kind rf-kind--glossary"><span class="l-en">Term</span><span class="l-zh">术语</span></span>
             <span class="rf-gloss">
               <span class="l-en">A shorthand for whether investors are broadly favouring riskier assets (risk-on) or broadly seeking safety (risk-off) across markets at the same time.
-</span><span class="l-zh">简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险） 的用语。
-</span>
+</span><span class="l-zh">简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险）的用语。</span>
             </span>
           </a>
 
@@ -4331,8 +4298,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">What it is</span><span class="l-zh">定义</span></h3>
               <p class="rf-def"><span class="l-en">A shorthand for whether investors are broadly favouring riskier assets (risk-on) or broadly seeking safety (risk-off) across markets at the same time.
-</span><span class="l-zh">简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险） 的用语。
-</span></p>
+</span><span class="l-zh">简明描述投资者在同一时期是普遍偏向风险资产（风险偏好）还是普遍寻求避险资产（避险）的用语。</span></p>
             </div>
 
             
@@ -4388,7 +4354,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
             
             <div class="rf-blk">
               <h3 class="eyebrow rf-eb"><span class="l-en">Where you’ll see this</span><span class="l-zh">在哪里出现</span></h3>
-              <p class="rf-links"><a class="rf-owner" href="us_stocks.html#cross-asset-macro"><span class="l-en">US Stocks</span><span class="l-zh">美股</span></a></p>
+              <p class="rf-links"><a class="rf-owner" href="macro.html#sx-v5-sentiment"><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观看板</span></a></p>
             </div>
 
             
@@ -4413,7 +4379,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 <!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
 <footer class="rf-foot">
   <span class="l-en">Reference only — definitions, not calls. No live market values appear on this page.</span><span class="l-zh">仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。</span>
-  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-02 13:44 UTC</span>.
+  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-02 14:42 UTC</span>.
 </footer>
 
 <script>
@@ -4427,6 +4393,28 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     if (el) el.hidden = false;
   });
 
+  // M5/N7: placeholder + aria-label translation — the estate pattern
+  // (templates/darkpool.html.j2, the updatePlaceholders()/data-ph-en/
+  // data-ph-zh idiom, extended to data-aria-en/data-aria-zh): a <input
+  // placeholder> or an aria-label attribute is not covered by the l-en/l-zh
+  // dual-span idiom (an attribute has no child nodes to hide/show), so both
+  // need their own data-lang-driven update, live on langchange.
+  function updatePlaceholders(){
+    var lang = document.documentElement.getAttribute("data-lang") || "en";
+    root.querySelectorAll("[data-ph-en]").forEach(function(el){
+      el.placeholder = lang === "zh"
+        ? (el.getAttribute("data-ph-zh") || el.getAttribute("data-ph-en"))
+        : el.getAttribute("data-ph-en");
+    });
+    root.querySelectorAll("[data-aria-en]").forEach(function(el){
+      el.setAttribute("aria-label", lang === "zh"
+        ? (el.getAttribute("data-aria-zh") || el.getAttribute("data-aria-en"))
+        : el.getAttribute("data-aria-en"));
+    });
+  }
+  document.addEventListener("langchange", updatePlaceholders);
+  updatePlaceholders();
+
   var railSeg = root.querySelector(".rf-seg");
   var railSearch = root.querySelector(".rf-search");
   var railFacets = root.querySelector(".rf-facets");
@@ -4436,16 +4424,27 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   // 2 · Move (do not copy) the rail controls on <1000w.
   function relocate(mq){
-    if (mq.matches){ // >=1000w: controls live in the rail
-      if (railSeg && barModeSlot && barModeSlot.contains === undefined) { /* noop guard */ }
+    // M3 fix: always APPEND in the desired final order rather than
+    // insertBefore-with-a-reference-node. appendChild silently MOVES a node
+    // that already exists elsewhere in the document, so this needs no
+    // "is it already a child of the target parent" reference-node check —
+    // the previous insertBefore(railSearch, railFacets) form threw
+    // NotFoundError on the <1000w -> >=1000w transition specifically,
+    // because at that moment railFacets was still a child of the MOBILE bar,
+    // not of the rail, so it was not a valid reference node for insertBefore
+    // inside the rail yet. Verified both directions via resize in the
+    // capture harness.
+    if (mq.matches){ // >=1000w: controls live in the rail, in order seg/search/facets
       var rail = root.querySelector(".rf-rail-inner");
-      if (rail && railSeg && railSeg.parentElement !== rail) rail.insertBefore(railSeg, rail.firstChild);
-      if (rail && railSearch && railSearch.parentElement !== rail) rail.insertBefore(railSearch, railFacets || null);
-      if (rail && railFacets && railFacets.parentElement !== rail) rail.appendChild(railFacets);
-    } else { // <1000w: controls live in the mobile bar
-      if (barModeSlot && railSeg && railSeg.parentElement !== barModeSlot) barModeSlot.appendChild(railSeg);
-      if (barSearchSlot && railSearch && railSearch.parentElement !== barSearchSlot) barSearchSlot.appendChild(railSearch);
-      if (barFacetsSlot && railFacets && railFacets.parentElement !== barFacetsSlot) barFacetsSlot.appendChild(railFacets);
+      if (rail){
+        if (railSeg) rail.appendChild(railSeg);
+        if (railSearch) rail.appendChild(railSearch);
+        if (railFacets) rail.appendChild(railFacets);
+      }
+    } else { // <1000w: controls live in the mobile bar, one slot each
+      if (barModeSlot && railSeg) barModeSlot.appendChild(railSeg);
+      if (barSearchSlot && railSearch) barSearchSlot.appendChild(railSearch);
+      if (barFacetsSlot && railFacets) barFacetsSlot.appendChild(railFacets);
     }
   }
   var mq1000 = window.matchMedia("(min-width:1000px)");
@@ -4481,10 +4480,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
       if (!off) visible++;
     });
     groups.forEach(function(g){
-      var anyVisible = Array.prototype.some.call(g.querySelectorAll(".rf-e"), function(el){
+      var visibleInGroup = Array.prototype.filter.call(g.querySelectorAll(".rf-e"), function(el){
         return !el.classList.contains("is-off");
-      });
-      g.classList.toggle("is-off", !anyVisible);
+      }).length;
+      g.classList.toggle("is-off", visibleInGroup === 0);
+      // M2: the group header's own count (data-count-group) reflects entries
+      // actually visible in THIS section right now — distinct from the
+      // rail's data-count-family "what if I picked this family" number.
+      // querySelectorAll (never bare querySelector) even though exactly one
+      // match is expected per family, per the reviewer's querySelector-
+      // first-match-trap note — a duplicated attribute must never leave a
+      // second element silently stale.
+      var groupCountEls = g.querySelectorAll('[data-count-group="' + g.getAttribute("data-group") + '"]');
+      for (var gi = 0; gi < groupCountEls.length; gi++) groupCountEls[gi].textContent = String(visibleInGroup);
     });
     for (var i = 0; i < countVisibleEls.length; i++) countVisibleEls[i].textContent = String(visible);
 
@@ -4499,8 +4507,8 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
         var queryOK = !q || (el.getAttribute("data-search") || "").indexOf(q) !== -1;
         return modeOK && letterOK && queryOK && el.getAttribute("data-family") === fam;
       }).length;
-      var countEl2 = root.querySelector('[data-count-family="' + fam + '"]');
-      if (countEl2) countEl2.textContent = String(n);
+      var famCountEls = root.querySelectorAll('[data-count-family="' + fam + '"]');
+      for (var fi = 0; fi < famCountEls.length; fi++) famCountEls[fi].textContent = String(n);
       btn.classList.toggle("is-zero", n === 0);
     });
     var azButtons = root.querySelectorAll(".rf-azb");
@@ -4530,7 +4538,14 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
   // 6 · Filters and the hash are mutually exclusive, deliberately.
   function clearHashToBrowse(){
-    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+    if (!location.hash) return;
+    // Close-affordance fallback (verified in headless Chromium): replaceState
+    // alone does not make :target stop matching, so stamp .rf-closed on the
+    // currently-open entry (its CSS wins regardless of :target). handleHash()
+    // clears the class the moment a real navigation re-opens an entry.
+    var openEl = root.querySelector(".rf-e:target");
+    if (openEl) openEl.classList.add("rf-closed");
+    history.replaceState(null, "", location.pathname + location.search);
   }
 
   function setPressed(group, activeEl){
@@ -4574,7 +4589,6 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     var clearBtn = ev.target.closest ? ev.target.closest(".rf-clear") : null;
     if (clearBtn){
       state = { mode: "all", family: null, letter: null, q: "" };
-      var qInput = root.getElementById ? null : null;
       var qEl = root.querySelector("#rf-q");
       if (qEl) qEl.value = "";
       Array.prototype.forEach.call(root.querySelectorAll(".rf-seg .segbtn"), function(b){
@@ -4623,7 +4637,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
   // 7 · Deep-link on load + hashchange.
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function handleHash(){
-    var hash = location.hash ? decodeURIComponent(location.hash.slice(1)) : "";
+    // N6: decodeURIComponent throws URIError on a malformed percent-encoding
+    // (an incomplete/invalid escape). Uncaught here it would abort THIS whole
+    // IIFE mid-run — since handleHash() runs before the hashchange listener
+    // is registered below, a bad hash on cold load would silently leave
+    // every later wire-up (return bar, initial applyFilters()) dead. Caught:
+    // a malformed hash just degrades to the browse-all / no-hash path.
+    var hash = "";
+    if (location.hash){
+      try { hash = decodeURIComponent(location.hash.slice(1)); }
+      catch (e) { hash = ""; }
+    }
     if (!hash){
       if (missEl) missEl.hidden = true;
       return;
@@ -4631,6 +4655,9 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
     var target = null;
     try { target = root.getElementById(hash); } catch(e) {}
     if (target && target.classList.contains("rf-e")){
+      // a real hash navigation is opening this entry — clear any stale
+      // Close-affordance fallback class so :target's own styling shows again.
+      target.classList.remove("rf-closed");
       if (missEl) missEl.hidden = true;
       window.requestAnimationFrame(function(){
         target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
