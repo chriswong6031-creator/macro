@@ -327,7 +327,8 @@ slot, an invented carrier name, a pending block on another pool, `ci-linux` in
 `pc-ci-4` to `label_registry.ci-linux.carried_by` passed the policy guard clean.
 
 The second durable property is that aggregate slice evidence refuses rather than
-substitutes: a candidate outside `/mastermind-ci.slice/<unit>.service` produces
+substitutes: a candidate outside the exact direct-service hierarchy
+`/mastermind.slice/mastermind-ci.slice/<unit>.service` produces
 `refused` with no metric values, and the receipt reducer reports aggregates only when
 every sample in the window carried status exactly `bound` and named one cgroup.
 

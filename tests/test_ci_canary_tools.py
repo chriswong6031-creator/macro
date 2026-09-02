@@ -1304,7 +1304,7 @@ def test_selector_cli_refuses_a_fifth_slot(tmp_path: Path) -> None:
 # Four CI candidates share one enforced envelope, so per-candidate host-global
 # numbers stop being evidence: they cannot tell "CI is inside its budget" from
 # "the guest happens to be quiet". The monitor therefore binds each candidate to
-# the immutable /mastermind-ci.slice hierarchy and REFUSES rather than falling
+# the immutable /mastermind.slice/mastermind-ci.slice hierarchy and REFUSES rather than falling
 # back to host-global metrics — a green produced by the wrong cgroup is worse
 # than no green at all, because it reads as proof.
 
