@@ -104,9 +104,50 @@ first non-zero S6 forward row, S13 on panel availability. S6's next_step now nam
 the fork honestly: UNBLOCK (a §8-signed taxonomy extension is an adjudication act)
 or propose a KILL-or-park rather than carry a third structurally-guaranteed null.
 
-## 4. Remaining lanes (placeholder)
+## 4. vector-btc-impulse — the motivating gate FAILED on leak-free labels; the seed was carrying pre-fix numbers
 
-- vector-btc-impulse + spvector-overlay: pending lane packet.
+The seed's "historical gate all_pass=true (d2 4.43/d3 2.67/u1 6.37)" was refuted by
+the repo itself 63 days before the come-back date: `83a74313859d` (2026-07-01,
+PR #808) replaced a leaking label (`close.shift(-1).rolling(H).min()` included
+close[t-1]/close[t]) with a strictly-forward one, and `impulse_legs_gate.json`
+(asof 09-01) now reads **all_pass=false** — d2/d3 demoted on edge (holdout lifts
+1.84/1.187), u1 insufficient_n (lift 1.699, p .002, 14 of 30 holdout fires). The
+08-31 come-back question ("confirm first live act-tier fires landed") answers NO
+structurally: `_gate()` forces a demoted leg's `fired_today=False`, so the
+falsification ledger records 0 fires on all 51 rows and can never accrue live
+evidence to re-promote a demoted leg. Status → **blocked**; re-read 12-01 on the
+repair gate, not maturation (u1's holdout floor is a 2028-2029 question).
+
+**Live honesty defect (flagged for a separate fix, chip filed):**
+`engine/btc_alerts.py:415` reads the UNGATED `fire_series`, so two `tier:"act"`
+alerts published live in-window (06-29 d2; 08-19 d2 — 49 days post-demotion)
+carrying "a verified LEADING precursor cross" on a demoted leg. Also recorded:
+Phase-1 component ledger = radar/decay/falsifier/staleness-fix shipped, alerts
+shipped-defective, gauges + June-24 confession exist in JSON only — **zero
+templates reference the radar**, so nothing user-visible renders it.
+
+## 5. spvector-overlay — the row fused three different objects; re-keyed and split
+
+The old row's `source` named the S&P LLM knife-veto overlay, its `what/maturation`
+described a BTC 5d-regime study with a row schema that has never existed
+(`{regime, vector_state, realized_5d_return}` — actual rows carry no forward field
+at all), and its merge premise ("same accrual clock" as vector-btc-impulse) is
+refuted by 48/51 vs 0/55 matured on different horizons (3d vs 90d). Adjudication:
+**keep two rows, mint a third** —
+
+- **`btc-regime-ledger`** (re-keyed from `spvector-overlay`): 55 rows / 10
+  contiguous band episodes; falsifier correctly n_matured=0 (first 90d window
+  closes 09-18 — though its honesty_note's "ledger is empty" is wrong prose over
+  55 rows); `score()` — the only code producing per-tier stats — is wired into no
+  workflow. Come-back 09-25 on the first-maturation gate. The audit's own 5d read
+  is recorded as NOT a result (TAILWIND = one 3-day episode).
+- **`spvector-llm-veto-overlay`** (minted): 332 rows, 0 vetoes — structurally
+  uninformative because `shock_reversible=="unknown"` on 332/332, so the veto
+  branch is unreachable on live data; plus an undeduped bare-append log. Come-back
+  12-01 on the shock_reversible gate.
+
+## 6. Remaining lane (placeholder)
+
 - s-mlc-3-weekly-wait-cost: pending builder run.
 
 ## 3. Method note
