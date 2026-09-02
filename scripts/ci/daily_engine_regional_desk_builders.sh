@@ -20,6 +20,27 @@ brun() {
   echo "$rc"          > "$ART/$slug.rc"
   echo "$((t1 - t0))" > "$ART/$slug.sec"
 }
+# TOP ANATOMY R0b ordering fix (TOPA-COMPLETION-20260828): build_top_maturation in
+# cl_stage consumes data/massive_stock_day, which is R2-canonical and gitignored —
+# a fresh engine checkout never holds the shards, and this job's only other restore
+# of that store (the price_pressure lobe leg) runs AFTER this band. Cold runner
+# proof: run 33232322255 / job 99066153702 — "panel: 0 source files" at 12:10:46Z,
+# then the SAME job restored 21,452 tickers at 12:56Z; Winner Health fail-opened to
+# a null artifact stamped with a healthy vintage (the manifest is committed, the
+# shards are not) at rc=0, four consecutive nights. So: restore BEFORE any cluster
+# launches. Same guarded idiom as the price_pressure leg — warm runner = one
+# find(1) probe that stops at the first hit (never a glob: ~20k files ≈ 800KB of
+# argv), cold runner = the same delta download the later leg would otherwise pay,
+# so net job cost is unchanged. Non-fatal on purpose: the builder's own staleness
+# gate refuses and writes its designed null rather than failing the band, and the
+# later price_pressure leg retries. R2_* env comes from the step's env block.
+# Ordering pinned by tests/test_daily_engine_massive_restore_order.py.
+if [ -z "$(find data/massive_stock_day -maxdepth 1 -name '*.parquet' -print -quit 2>/dev/null)" ]; then
+  echo "top_maturation: massive_stock_day store has no parquet bars locally (cold runner) — restoring from R2 before the builder band"
+  python -m scripts.fetch_r2 --dirs massive_stock_day --workers 24 || echo "::warning title=massive-restore-pre-band::massive_stock_day restore failed (non-fatal — top_maturation fail-opens to its null state; the price_pressure leg retries later in this job)"
+else
+  echo "top_maturation: massive_stock_day store present locally — no R2 restore needed"
+fi
 # --- clusters: each internally ORDERED by its data deps; clusters mutually independent ---
 cl_markets() {
   brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities

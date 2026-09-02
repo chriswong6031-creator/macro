@@ -1,0 +1,1226 @@
+{
+  "artifact": "oot_maturity_receipt",
+  "boundary": "2026-07-03",
+  "delisting_identity_break_census": {
+    "dark_examples": [
+      {
+        "last_session": "2026-08-07",
+        "segment": "AEHL#3",
+        "ticker": "AEHL"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ALBpA",
+        "ticker": "ALBpA"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ALLpB",
+        "ticker": "ALLpB"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ALLpH",
+        "ticker": "ALLpH"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ALLpJ",
+        "ticker": "ALLpJ"
+      },
+      {
+        "last_session": "2026-08-26",
+        "segment": "ALOT",
+        "ticker": "ALOT"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ANGpD",
+        "ticker": "ANGpD"
+      },
+      {
+        "last_session": "2026-07-17",
+        "segment": "APM#2",
+        "ticker": "APM"
+      },
+      {
+        "last_session": "2026-07-30",
+        "segment": "APOpA#1",
+        "ticker": "APOpA"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ARESpB",
+        "ticker": "ARESpB"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ATHpA",
+        "ticker": "ATHpA"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ATHpD",
+        "ticker": "ATHpD"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "ATHpE",
+        "ticker": "ATHpE"
+      },
+      {
+        "last_session": "2026-08-27",
+        "segment": "ATXG#1",
+        "ticker": "ATXG"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "AVB",
+        "ticker": "AVB"
+      },
+      {
+        "last_session": "2026-07-24",
+        "segment": "AVNS",
+        "ticker": "AVNS"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpB",
+        "ticker": "BACpB"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpK",
+        "ticker": "BACpK"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpL",
+        "ticker": "BACpL"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpM",
+        "ticker": "BACpM"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpN",
+        "ticker": "BACpN"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpO",
+        "ticker": "BACpO"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpP",
+        "ticker": "BACpP"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpQ",
+        "ticker": "BACpQ"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BACpS",
+        "ticker": "BACpS"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BANCpF",
+        "ticker": "BANCpF"
+      },
+      {
+        "last_session": "2026-07-17",
+        "segment": "BANL#0",
+        "ticker": "BANL"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BApA",
+        "ticker": "BApA"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BBBY#1",
+        "ticker": "BBBY"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BCPC#1",
+        "ticker": "BCPC"
+      },
+      {
+        "last_session": "2026-08-27",
+        "segment": "BGI",
+        "ticker": "BGI"
+      },
+      {
+        "last_session": "2026-08-21",
+        "segment": "BIAF#1",
+        "ticker": "BIAF"
+      },
+      {
+        "last_session": "2026-07-10",
+        "segment": "BIYA#1",
+        "ticker": "BIYA"
+      },
+      {
+        "last_session": "2026-07-14",
+        "segment": "BLCN",
+        "ticker": "BLCN"
+      },
+      {
+        "last_session": "2026-08-12",
+        "segment": "BNRG#2",
+        "ticker": "BNRG"
+      },
+      {
+        "last_session": "2026-08-13",
+        "segment": "BNRG#3",
+        "ticker": "BNRG"
+      },
+      {
+        "last_session": "2026-08-06",
+        "segment": "BNZI#3",
+        "ticker": "BNZI"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "BOHpB",
+        "ticker": "BOHpB"
+      },
+      {
+        "last_session": "2026-08-27",
+        "segment": "BREZ#1",
+        "ticker": "BREZ"
+      },
+      {
+        "last_session": "2026-08-27",
+        "segment": "BTSGU",
+        "ticker": "BTSGU"
+      },
+      {
+        "last_session": "2026-07-17",
+        "segment": "BURU#1",
+        "ticker": "BURU"
+      },
+      {
+        "last_session": "2026-08-13",
+        "segment": "BYND#0",
+        "ticker": "BYND"
+      },
+      {
+        "last_session": "2026-07-17",
+        "segment": "CCG#0",
+        "ticker": "CCG"
+      },
+      {
+        "last_session": "2026-07-27",
+        "segment": "CCIX",
+        "ticker": "CCIX"
+      },
+      {
+        "last_session": "2026-07-20",
+        "segment": "CCRN",
+        "ticker": "CCRN"
+      },
+      {
+        "last_session": "2026-07-17",
+        "segment": "CDT#4",
+        "ticker": "CDT"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "CFGpH",
+        "ticker": "CFGpH"
+      },
+      {
+        "last_session": "2026-08-14",
+        "segment": "CFGpI",
+        "ticker": "CFGpI"
+      },
+      {
+        "last_session": "2026-07-06",
+        "segment": "CGTL#0",
+        "ticker": "CGTL"
+      },
+      {
+        "last_session": "2026-08-17",
+        "segment": "CISS#4",
+        "ticker": "CISS"
+      }
+    ],
+    "identity_break_examples": [
+      {
+        "first_session": "2026-08-27",
+        "segment": "AAC#1",
+        "ticker": "AAC"
+      },
+      {
+        "first_session": "2026-08-10",
+        "segment": "AEHL#4",
+        "ticker": "AEHL"
+      },
+      {
+        "first_session": "2026-08-05",
+        "segment": "ATTO#1",
+        "ticker": "ATTO"
+      },
+      {
+        "first_session": "2026-07-20",
+        "segment": "BANL#1",
+        "ticker": "BANL"
+      },
+      {
+        "first_session": "2026-08-17",
+        "segment": "BCPC#2",
+        "ticker": "BCPC"
+      },
+      {
+        "first_session": "2026-08-24",
+        "segment": "BIAF#2",
+        "ticker": "BIAF"
+      },
+      {
+        "first_session": "2026-07-13",
+        "segment": "BIYA#2",
+        "ticker": "BIYA"
+      },
+      {
+        "first_session": "2026-08-13",
+        "segment": "BNRG#3",
+        "ticker": "BNRG"
+      },
+      {
+        "first_session": "2026-07-07",
+        "segment": "BRKL#1",
+        "ticker": "BRKL"
+      },
+      {
+        "first_session": "2026-08-14",
+        "segment": "BYND#1",
+        "ticker": "BYND"
+      },
+      {
+        "first_session": "2026-07-20",
+        "segment": "CCG#1",
+        "ticker": "CCG"
+      },
+      {
+        "first_session": "2026-07-20",
+        "segment": "CDT#5",
+        "ticker": "CDT"
+      },
+      {
+        "first_session": "2026-07-07",
+        "segment": "CGTL#1",
+        "ticker": "CGTL"
+      },
+      {
+        "first_session": "2026-07-21",
+        "segment": "CIGL#1",
+        "ticker": "CIGL"
+      },
+      {
+        "first_session": "2026-07-07",
+        "segment": "CIR#1",
+        "ticker": "CIR"
+      },
+      {
+        "first_session": "2026-08-19",
+        "segment": "CISS#5",
+        "ticker": "CISS"
+      },
+      {
+        "first_session": "2026-07-31",
+        "segment": "CLDI#2",
+        "ticker": "CLDI"
+      },
+      {
+        "first_session": "2026-07-13",
+        "segment": "CPOP#2",
+        "ticker": "CPOP"
+      },
+      {
+        "first_session": "2026-07-06",
+        "segment": "CRIS#2",
+        "ticker": "CRIS"
+      },
+      {
+        "first_session": "2026-07-31",
+        "segment": "CSAI#1",
+        "ticker": "CSAI"
+      },
+      {
+        "first_session": "2026-08-18",
+        "segment": "CXAI#2",
+        "ticker": "CXAI"
+      },
+      {
+        "first_session": "2026-07-30",
+        "segment": "CYCU#2",
+        "ticker": "CYCU"
+      },
+      {
+        "first_session": "2026-08-28",
+        "segment": "CYCU#3",
+        "ticker": "CYCU"
+      },
+      {
+        "first_session": "2026-07-24",
+        "segment": "DBGI#5",
+        "ticker": "DBGI"
+      },
+      {
+        "first_session": "2026-07-13",
+        "segment": "EDBL#5",
+        "ticker": "EDBL"
+      },
+      {
+        "first_session": "2026-08-10",
+        "segment": "ELPW#4",
+        "ticker": "ELPW"
+      },
+      {
+        "first_session": "2026-07-09",
+        "segment": "ENLV#1",
+        "ticker": "ENLV"
+      },
+      {
+        "first_session": "2026-07-31",
+        "segment": "FCUV#3",
+        "ticker": "FCUV"
+      },
+      {
+        "first_session": "2026-07-24",
+        "segment": "FFAI#1",
+        "ticker": "FFAI"
+      },
+      {
+        "first_session": "2026-08-19",
+        "segment": "FIXX#1",
+        "ticker": "FIXX"
+      },
+      {
+        "first_session": "2026-08-24",
+        "segment": "GAME#2",
+        "ticker": "GAME"
+      },
+      {
+        "first_session": "2026-07-16",
+        "segment": "GNPX#3",
+        "ticker": "GNPX"
+      },
+      {
+        "first_session": "2026-08-06",
+        "segment": "GRNQ#1",
+        "ticker": "GRNQ"
+      },
+      {
+        "first_session": "2026-08-14",
+        "segment": "HAO#3",
+        "ticker": "HAO"
+      },
+      {
+        "first_session": "2026-07-06",
+        "segment": "HKIT#3",
+        "ticker": "HKIT"
+      },
+      {
+        "first_session": "2026-07-21",
+        "segment": "HLTH#1",
+        "ticker": "HLTH"
+      },
+      {
+        "first_session": "2026-08-27",
+        "segment": "IMCC#3",
+        "ticker": "IMCC"
+      },
+      {
+        "first_session": "2026-07-06",
+        "segment": "INLF#2",
+        "ticker": "INLF"
+      },
+      {
+        "first_session": "2026-07-10",
+        "segment": "INT#1",
+        "ticker": "INT"
+      },
+      {
+        "first_session": "2026-07-14",
+        "segment": "JEM#2",
+        "ticker": "JEM"
+      },
+      {
+        "first_session": "2026-08-07",
+        "segment": "JUNS#1",
+        "ticker": "JUNS"
+      },
+      {
+        "first_session": "2026-07-06",
+        "segment": "JZ#1",
+        "ticker": "JZ"
+      },
+      {
+        "first_session": "2026-08-13",
+        "segment": "KIDZ#2",
+        "ticker": "KIDZ"
+      },
+      {
+        "first_session": "2026-08-03",
+        "segment": "KWM#1",
+        "ticker": "KWM"
+      },
+      {
+        "first_session": "2026-08-03",
+        "segment": "LBGJ#2",
+        "ticker": "LBGJ"
+      },
+      {
+        "first_session": "2026-08-03",
+        "segment": "LEXX#1",
+        "ticker": "LEXX"
+      },
+      {
+        "first_session": "2026-08-21",
+        "segment": "LIMN#1",
+        "ticker": "LIMN"
+      },
+      {
+        "first_session": "2026-07-13",
+        "segment": "LMFA#2",
+        "ticker": "LMFA"
+      },
+      {
+        "first_session": "2026-07-22",
+        "segment": "MEDS#2",
+        "ticker": "MEDS"
+      },
+      {
+        "first_session": "2026-07-20",
+        "segment": "MF#2",
+        "ticker": "MF"
+      }
+    ],
+    "last_session_read": "2026-08-28",
+    "n_dark_since_last_session": 256,
+    "n_identity_breaks_starting_in_window": 87,
+    "n_identity_segments_total": 10019
+  },
+  "family": "top_anatomy_oot",
+  "final_verdict_eligible": [
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "primary",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "primary",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "primary",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "primary",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "primary",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "primary",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "r63",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "r63",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "r63",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "r63",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "r63",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "r63",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "atrz",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "atrz",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "strict",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "atrz",
+      "reasons": [
+        "distinct sealed-topped OOT-STRICT episode-peak months (0) is below the 12-month floor",
+        "literal sealed-topped OOT-STRICT candidate count (0) is below the 100-episode registered floor (matcher_run is false; literal pre-matching count only, never an actual matched count)",
+        "completeness_floor_not_evaluable_no_era_blocks",
+        "validity_precondition_not_evaluable_matcher_not_run"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B2_rsi14",
+      "panel": "atrz",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "B3_rsi14_chg10",
+      "panel": "atrz",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    },
+    {
+      "cohort": "bridge",
+      "construction": "am2_agefree",
+      "eligible": false,
+      "floor_inputs": {
+        "completeness_evaluable": false,
+        "distinct_peak_months_sealed_topped": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_count": 0,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100,
+        "validity_precondition_evaluable": false
+      },
+      "leg": "F1_episode_age",
+      "panel": "atrz",
+      "reasons": [
+        "bridge_never_graded"
+      ]
+    }
+  ],
+  "oot_end_observed": "2026-08-28",
+  "oot_start": "2026-07-03",
+  "pinned_store_state": {
+    "last_session": "2026-08-28",
+    "manifest_reason": "manifest_not_present_in_checkout",
+    "manifest_sha256": null,
+    "shard_count": 20934
+  },
+  "provenance": {
+    "data_root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/topa-completion-recovery-4c3fc1/data",
+    "generated_at_utc": "2026-09-02T01:05:27.468528+00:00",
+    "script": "scripts/research_top_anatomy_oot_receipt.py"
+  },
+  "schema_version": 2,
+  "seed": 20260901,
+  "state": "OOT_ACCRUING_NO_VERDICT",
+  "store_coverage": {
+    "first_session": "2021-07-06",
+    "last_session": "2026-08-28",
+    "n_eligible_names_last_session": 4555,
+    "n_identity_segments": 10019,
+    "n_tickers_scanned": 20934
+  },
+  "tiers": {
+    "atrz": {
+      "construction_diagnostic_readiness": {
+        "am_v2_validity_evaluable": false,
+        "reason": "matched-episode counting was skipped; AM-v2 validity diagnostics require matched pairs"
+      },
+      "day_level": {
+        "bridge": {
+          "CENSORED": 388,
+          "CONTINUED": 44,
+          "TOPPED": 70
+        },
+        "labels": [
+          "TOPPED",
+          "CONTINUED",
+          "CENSORED"
+        ],
+        "strict": {
+          "CENSORED": 1685,
+          "CONTINUED": 113,
+          "TOPPED": 13
+        }
+      },
+      "distinct_peak_months_sealed_topped": {
+        "bridge": 0,
+        "strict": 0
+      },
+      "episode_level": {
+        "bridge": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 237,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        },
+        "labels": [
+          "TOPPED",
+          "SURVIVED",
+          "IMMATURE-UNSEALED"
+        ],
+        "strict": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 854,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        }
+      },
+      "floors": {
+        "distinct_peak_months_floor_met": false,
+        "distinct_peak_months_sealed_topped_strict": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_strict_count": 0,
+        "match_starved_rate_line": 0.5,
+        "matched_topped_episodes_floor_met": false,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100
+      },
+      "match_starvation": {
+        "evaluable": false,
+        "reason": "matcher_run is false; match rate cannot be computed"
+      },
+      "matcher": {
+        "n_sealed_topped_strict_candidates": 0,
+        "reason": "zero_candidates",
+        "run": false,
+        "seed": 20260901
+      },
+      "monthly_completeness": {
+        "bridge": {
+          "2026-07": {
+            "day_censored": 366,
+            "day_continued": 44,
+            "day_topped": 70,
+            "episode_sealed": 0,
+            "episode_unsealed": 226
+          },
+          "2026-08": {
+            "day_censored": 22,
+            "day_continued": 0,
+            "day_topped": 0,
+            "episode_sealed": 0,
+            "episode_unsealed": 11
+          }
+        },
+        "strict": {
+          "2026-08": {
+            "day_censored": 1685,
+            "day_continued": 113,
+            "day_topped": 13,
+            "episode_sealed": 0,
+            "episode_unsealed": 854
+          }
+        }
+      },
+      "n_case_episodes_bridge": 237,
+      "n_case_episodes_strict": 854,
+      "n_episodes_total": 17974,
+      "n_excluded_no_snapshots": 479,
+      "n_ext_days": 683342,
+      "n_races_censored_data_edge_in_window": 28313,
+      "outcome_horizon_maturity": {
+        "any_strict_sealed": false,
+        "n_strict_censored_at_data_edge": 0,
+        "n_strict_immature_unsealed": 854
+      },
+      "variant": "atrz"
+    },
+    "primary": {
+      "construction_diagnostic_readiness": {
+        "am_v2_validity_evaluable": false,
+        "reason": "matched-episode counting was skipped; AM-v2 validity diagnostics require matched pairs"
+      },
+      "day_level": {
+        "bridge": {
+          "CENSORED": 45,
+          "CONTINUED": 31,
+          "TOPPED": 64
+        },
+        "labels": [
+          "TOPPED",
+          "CONTINUED",
+          "CENSORED"
+        ],
+        "strict": {
+          "CENSORED": 282,
+          "CONTINUED": 106,
+          "TOPPED": 13
+        }
+      },
+      "distinct_peak_months_sealed_topped": {
+        "bridge": 0,
+        "strict": 0
+      },
+      "episode_level": {
+        "bridge": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 73,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        },
+        "labels": [
+          "TOPPED",
+          "SURVIVED",
+          "IMMATURE-UNSEALED"
+        ],
+        "strict": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 221,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        }
+      },
+      "floors": {
+        "distinct_peak_months_floor_met": false,
+        "distinct_peak_months_sealed_topped_strict": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_strict_count": 0,
+        "match_starved_rate_line": 0.5,
+        "matched_topped_episodes_floor_met": false,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100
+      },
+      "match_starvation": {
+        "evaluable": false,
+        "reason": "matcher_run is false; match rate cannot be computed"
+      },
+      "matcher": {
+        "n_sealed_topped_strict_candidates": 0,
+        "reason": "zero_candidates",
+        "run": false,
+        "seed": 20260901
+      },
+      "monthly_completeness": {
+        "bridge": {
+          "2026-07": {
+            "day_censored": 41,
+            "day_continued": 31,
+            "day_topped": 64,
+            "episode_sealed": 0,
+            "episode_unsealed": 69
+          },
+          "2026-08": {
+            "day_censored": 4,
+            "day_continued": 0,
+            "day_topped": 0,
+            "episode_sealed": 0,
+            "episode_unsealed": 4
+          }
+        },
+        "strict": {
+          "2026-08": {
+            "day_censored": 282,
+            "day_continued": 106,
+            "day_topped": 13,
+            "episode_sealed": 0,
+            "episode_unsealed": 221
+          }
+        }
+      },
+      "n_case_episodes_bridge": 73,
+      "n_case_episodes_strict": 221,
+      "n_episodes_total": 7229,
+      "n_excluded_no_snapshots": 196,
+      "n_ext_days": 175450,
+      "n_races_censored_data_edge_in_window": 5240,
+      "outcome_horizon_maturity": {
+        "any_strict_sealed": false,
+        "n_strict_censored_at_data_edge": 0,
+        "n_strict_immature_unsealed": 221
+      },
+      "variant": "primary"
+    },
+    "r63": {
+      "construction_diagnostic_readiness": {
+        "am_v2_validity_evaluable": false,
+        "reason": "matched-episode counting was skipped; AM-v2 validity diagnostics require matched pairs"
+      },
+      "day_level": {
+        "bridge": {
+          "CENSORED": 104,
+          "CONTINUED": 43,
+          "TOPPED": 65
+        },
+        "labels": [
+          "TOPPED",
+          "CONTINUED",
+          "CENSORED"
+        ],
+        "strict": {
+          "CENSORED": 312,
+          "CONTINUED": 89,
+          "TOPPED": 13
+        }
+      },
+      "distinct_peak_months_sealed_topped": {
+        "bridge": 0,
+        "strict": 0
+      },
+      "episode_level": {
+        "bridge": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 106,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        },
+        "labels": [
+          "TOPPED",
+          "SURVIVED",
+          "IMMATURE-UNSEALED"
+        ],
+        "strict": {
+          "censored_at_data_edge": 0,
+          "immature_unsealed": 238,
+          "sealed_survived": 0,
+          "sealed_topped": 0
+        }
+      },
+      "floors": {
+        "distinct_peak_months_floor_met": false,
+        "distinct_peak_months_sealed_topped_strict": 0,
+        "literal_count_is_not_a_matched_count": true,
+        "literal_sealed_topped_strict_count": 0,
+        "match_starved_rate_line": 0.5,
+        "matched_topped_episodes_floor_met": false,
+        "min_distinct_peak_months": 12,
+        "min_matched_topped_episodes": 100
+      },
+      "match_starvation": {
+        "evaluable": false,
+        "reason": "matcher_run is false; match rate cannot be computed"
+      },
+      "matcher": {
+        "n_sealed_topped_strict_candidates": 0,
+        "reason": "zero_candidates",
+        "run": false,
+        "seed": 20260901
+      },
+      "monthly_completeness": {
+        "bridge": {
+          "2026-07": {
+            "day_censored": 102,
+            "day_continued": 43,
+            "day_topped": 65,
+            "episode_sealed": 0,
+            "episode_unsealed": 104
+          },
+          "2026-08": {
+            "day_censored": 2,
+            "day_continued": 0,
+            "day_topped": 0,
+            "episode_sealed": 0,
+            "episode_unsealed": 2
+          }
+        },
+        "strict": {
+          "2026-08": {
+            "day_censored": 312,
+            "day_continued": 89,
+            "day_topped": 13,
+            "episode_sealed": 0,
+            "episode_unsealed": 238
+          }
+        }
+      },
+      "n_case_episodes_bridge": 106,
+      "n_case_episodes_strict": 238,
+      "n_episodes_total": 8576,
+      "n_excluded_no_snapshots": 236,
+      "n_ext_days": 159064,
+      "n_races_censored_data_edge_in_window": 5544,
+      "outcome_horizon_maturity": {
+        "any_strict_sealed": false,
+        "n_strict_censored_at_data_edge": 0,
+        "n_strict_immature_unsealed": 238
+      },
+      "variant": "r63"
+    }
+  }
+}
