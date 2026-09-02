@@ -32,22 +32,26 @@ waves:
       runtime capability.
   - id: C0
     title: Multi-language exact-worktree semantic-backend falsifier
-    status: todo
+    status: in_progress
     next_action: >
-      After this Agent OS carrier is accepted and lawful capacity placement exists, start fresh
-      child operation mastermind-codeintel-c0-semantic-falsifier-20260830-sol-001 on one new
-      GitHub carrier. Preferred avenue CTO Sol; receiver binding CAPACITY_SELECTABLE. Compare pinned
-      Serena behind the stable facade against direct LSP for both Python and TypeScript/TSX and
-      permit NO_SAFE_BACKEND.
+      Continue only the already-started sticky child
+      mastermind-codeintel-c0-semantic-falsifier-20260830-sol-001 on canonical Mastermind issue
+      #365 and Slack carrier C0BSBM78V1N/1788336316.706679. Preserve its one isolated worktree and
+      branch, complete the protected six-tool Python plus TypeScript/TSX harness and paired trials,
+      and return DECISION_REQUEST / PINNED_BACKEND_ACQUISITION_REQUIRED rather than inventing a
+      winner if exact host-supplied attested binaries remain unavailable. Do not bind a second
+      receiver. This Agent OS release still gates C0 Ready, merge and backend acceptance.
   - id: Z0
     title: Governed global-discovery and deployment-topology falsifier
-    status: todo
+    status: in_progress
     next_action: >
-      After this Agent OS carrier is accepted and lawful capacity placement exists, start fresh
-      child operation mastermind-codeintel-z0-discovery-falsifier-20260830-sol-001 on one new
-      GitHub carrier. Preferred avenue Terra; receiver binding CAPACITY_SELECTABLE. Measure search
-      quality, protected-ref freshness, exclusions, rebuild cost, resource use and colocated versus
-      separate self-hosted topology.
+      Continue only the already-started sticky child
+      mastermind-codeintel-z0-discovery-falsifier-20260830-sol-001 on canonical Mastermind issue
+      #367 and Slack carrier C0BSBM78V1N/1788336373.223499. Preserve its one isolated worktree and
+      branch, execute the protected pinned-Zoekt quality, negative-authority, immutable-generation,
+      destructive-failure and topology matrix, and return one preregistered immutable result. Do
+      not bind a second receiver or install a production index. This Agent OS release still gates
+      Z0 Ready, merge and backend acceptance.
   - id: CI1
     title: Closed sealed-stdio capability-registry extension
     status: todo
@@ -74,27 +78,38 @@ landmines:
   - "A negative global search is non-authoritative when coverage, health, requested ref or freshness is unknown, stale, omitted or truncated."
   - "Python-only semantic success cannot promote C0; TypeScript/TSX is a load-bearing Terminal language family."
   - "Control Room projection is optional and proof-gated; never build a Sourcegraph/Sourcebot-style code browser or administration console as a substitute for worker capability."
+  - "C0 and Z0 each have one START-bound sticky receiver; a second worker, branch, PR or carrier would be a duplicate operation unless the original effect is canonically reconciled first."
 do_not_redo:
   - "Do not create a second capability registry, workspace registry, semantic router, lifecycle, retry plane, session store or code-truth database."
   - "Do not add a broad GitHub MCP, super-MCP, Sourcebot, SCIP or ast-grep bundle in V1 without a measured benchmark gap and fresh Sol ruling."
   - "Do not install or arm Serena, Zoekt, LSPs, services, credentials or worker profiles from the F0 records merge."
   - "Do not revive Macro PR #6695 or #6696 as implementation carriers; their immediate-dedicated-program premise is superseded by the accepted organizational-parent decision."
+  - "Do not re-place, restart or fail over the active C0 or Z0 child from stale WAITING_CAPACITY prose; their current START bindings are sticky."
 next_action: >
-  Land this records-only Agent OS carrier after exact-head validation. Then place C0 and Z0 as two
-  separately keyed, separately carried, production-inert falsifiers; keep both WAITING_CAPACITY
-  until a lawful concrete receiver exists and do not emit an unbound Slack OPEN_PICKUP.
+  Land this current-state records carrier after fresh exact-head Agent OS validation, hosted fences,
+  semantic CI and current-main collision review. C0 and Z0 are already active on separate lawful
+  carriers; watch only those exact carriers for the next BLOCKED, DECISION_REQUEST or RESULT and
+  adjudicate each return under the protected plan. Hold CI1-CI5, production profiles, services,
+  indexes and Control Room projection until the prerequisite immutable falsifier results are
+  accepted.
 ---
 
 ## Current capability truth
 
 ```text
 F0 architecture and bounded plans              SPEC_ONLY / PROTECTED SOURCE LAW @ 620263090fb9f272f763e420ba103b0ff8dc5f31
-Code Intelligence Fabric overall               NOT_BUILT
-C0 semantic falsifier                          NOT_BUILT
-Z0 global-discovery falsifier                  NOT_BUILT
+Code Intelligence Fabric overall               PARTIAL / PRODUCTION_INERT
+C0 semantic falsifier                          PARTIAL / STARTED / PRODUCTION_INERT
+Z0 global-discovery falsifier                  PARTIAL / STARTED / PRODUCTION_INERT
 production capability profile/service/index    NOT_BUILT
 Control Room projection                        NOT_BUILT / OPTIONAL AFTER PROOF
 ```
+
+The C0 and Z0 START receipts establish active bounded experimental work only. They do not establish
+that either harness is built, that a backend is safe, that a result has been accepted, or that any
+production capability exists. Runtime/session identity remains owned by its canonical execution and
+carrier evidence; this Agent OS record preserves organizational wave truth and the no-duplicate
+continuation boundary.
 
 `macro-context-index` is the semantic parent because it already owns governed, authority-classed
 project-context retrieval across the three repositories. This workstream does not absorb or rewrite
