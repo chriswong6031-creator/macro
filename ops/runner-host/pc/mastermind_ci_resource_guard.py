@@ -106,23 +106,36 @@ def candidate_cgroup(proc_self_cgroup: Path = Path("/proc/self/cgroup")) -> str 
     return None
 
 
-def is_bound_to_ci_slice(cgroup: str | None) -> bool:
-    """Exact ANCHORED match: the candidate sits directly under the slice root.
+def expected_slice_chain(slice_name: str = EXPECTED_SLICE) -> list[str]:
+    """The cgroup component chain systemd creates for a slice unit name.
 
-    Component-anywhere matching accepted a nested look-alike such as
-    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
-    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
-    directory outside the slice entirely. A systemd top-level slice always
-    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
+    systemd treats `-` in a slice name as a PATH SEPARATOR, so
+    `mastermind-ci.slice` is a child of an implicit `mastermind.slice` and lives
+    at /mastermind.slice/mastermind-ci.slice/. Discovered on the real host
+    2026-09-02 when a correctly configured pc-ci-1 was refused exit 78 and could
+    not start: the previous matcher required the slice at component 0.
     """
+
+    stem = slice_name[: -len(".slice")] if slice_name.endswith(".slice") else slice_name
+    parts = stem.split("-")
+    return ["-".join(parts[: i + 1]) + ".slice" for i in range(len(parts))]
+
+
+def is_bound_to_ci_slice(cgroup: str | None) -> bool:
+    """Anchored match against the slice's real systemd cgroup path."""
     if not cgroup:
         return False
     components = [item for item in cgroup.split("/") if item]
     if any(item in {"..", "."} for item in components):
         return False
-    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+    chain = expected_slice_chain(EXPECTED_SLICE)
+    # Anchored on the FULL systemd-derived parent chain: this accepts the real
+    # /mastermind.slice/mastermind-ci.slice/<unit>.service while still refusing
+    # /user.slice/user-1000.slice/mastermind-ci.slice/... and every other nested
+    # look-alike, which is what anchoring was introduced to stop.
+    if components[: len(chain)] != chain:
         return False
-    return any(item.endswith(".service") for item in components[1:])
+    return any(item.endswith(".service") for item in components[len(chain) :])
 
 
 def slice_reasons(
@@ -156,6 +169,7 @@ def slice_reasons(
         "memory_events": None,
         "pressure_full_avg10": None,
         "cpu_max": None,
+        "slice_cgroup": None,
     }
     reasons: list[str] = []
 
@@ -178,7 +192,11 @@ def slice_reasons(
         )
 
     if bound:
-        node = Path(cgroup_root) / str(cgroup).lstrip("/")
+        # Envelope and aggregate counters live on the SLICE node; a candidate's
+        # leaf `.service` cgroup has neither.
+        slice_cgroup = "/" + "/".join(expected_slice_chain(EXPECTED_SLICE))
+        evidence["slice_cgroup"] = slice_cgroup
+        node = Path(cgroup_root) / slice_cgroup.lstrip("/")
 
         # BINDING IS NOT ENFORCEMENT. systemd auto-creates an UNDEFINED slice, so
         # a unit carrying `Slice=mastermind-ci.slice` binds cleanly even when no

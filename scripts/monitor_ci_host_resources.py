@@ -157,22 +157,35 @@ def candidate_cgroup(proc_self_cgroup: Path) -> str | None:
     return None
 
 
-def _is_bound_to_ci_slice(cgroup: str) -> bool:
-    """Exact ANCHORED match: the candidate sits directly under the slice root.
+def expected_slice_chain(slice_name: str = EXPECTED_SLICE) -> list[str]:
+    """The cgroup component chain systemd creates for a slice unit name.
 
-    Component-anywhere matching accepted a nested look-alike such as
-    /user.slice/user-1000.slice/mastermind-ci.slice/evil.service, and an
-    unnormalised `..` let a forged cgroup assemble fully "bound" evidence from a
-    directory outside the slice entirely. A systemd top-level slice always
-    produces /mastermind-ci.slice/<unit>.service, so anchoring costs nothing.
+    systemd treats `-` in a slice name as a PATH SEPARATOR, so
+    `mastermind-ci.slice` is a child of an implicit `mastermind.slice` and lives
+    at /mastermind.slice/mastermind-ci.slice/. Discovered on the real host
+    2026-09-02 when a correctly configured pc-ci-1 was refused exit 78 and could
+    not start: the previous matcher required the slice at component 0.
     """
+
+    stem = slice_name[: -len(".slice")] if slice_name.endswith(".slice") else slice_name
+    parts = stem.split("-")
+    return ["-".join(parts[: i + 1]) + ".slice" for i in range(len(parts))]
+
+
+def _is_bound_to_ci_slice(cgroup: str) -> bool:
+    """Anchored match against the slice's real systemd cgroup path."""
 
     components = [item for item in cgroup.split("/") if item]
     if any(item in {"..", "."} for item in components):
         return False
-    if len(components) < 2 or components[0] != EXPECTED_SLICE:
+    chain = expected_slice_chain(EXPECTED_SLICE)
+    # Anchored on the FULL systemd-derived parent chain: this accepts the real
+    # /mastermind.slice/mastermind-ci.slice/<unit>.service while still refusing
+    # /user.slice/user-1000.slice/mastermind-ci.slice/... and every other nested
+    # look-alike, which is what anchoring was introduced to stop.
+    if components[: len(chain)] != chain:
         return False
-    return any(item.endswith(".service") for item in components[1:])
+    return any(item.endswith(".service") for item in components[len(chain) :])
 
 
 def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> dict:
@@ -188,6 +201,7 @@ def _empty_slice_sample(status: str, cgroup: str | None, reason: str | None) -> 
         "pids": None,
         "pids_events": None,
         "pressure": None,
+        "slice_cgroup": None,
     }
 
 
@@ -210,8 +224,16 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
             "refusing to substitute host-global metrics",
         )
 
-    node = Path(cgroup_root) / cgroup.lstrip("/")
+    # Membership is the CANDIDATE's; the aggregate evidence is the SLICE's.
+    # cgroup-v2 puts CPUQuota/MemoryMax and the summed counters on the slice
+    # node, while a candidate's leaf `.service` carries only its own usage and
+    # no ceilings at all (measured on the host 2026-09-02: the slice node had
+    # cpu.max "800000 100000", the leaf had none). Reading the leaf and calling
+    # it aggregate would report one candidate's numbers as the whole envelope.
+    slice_cgroup = "/" + "/".join(expected_slice_chain(EXPECTED_SLICE))
+    node = Path(cgroup_root) / slice_cgroup.lstrip("/")
     sample = _empty_slice_sample("bound", cgroup, None)
+    sample["slice_cgroup"] = slice_cgroup
     sample["memory"] = {"current": None, "peak": None, "swap_current": None}
     sample["pids"] = {"current": None}
     for name, (group, key) in _SLICE_INT_FILES.items():
@@ -244,7 +266,7 @@ def slice_sample(cgroup_root: Path, proc_self_cgroup: Path) -> dict:
     ]
     if missing:
         sample["status"] = "degraded"
-        sample["reason"] = f"unreadable cgroup evidence under {node}: {missing}"
+        sample["reason"] = f"unreadable aggregate evidence under {slice_cgroup}: {missing}"
     return sample
 
 

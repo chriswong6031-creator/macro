@@ -1308,9 +1308,24 @@ def test_selector_cli_refuses_a_fifth_slot(tmp_path: Path) -> None:
 # than no green at all, because it reads as proof.
 
 
-def _write_slice_tree(root: Path, cgroup: str, **overrides: str) -> Path:
+def _write_slice_tree(
+    root: Path, cgroup: str, at_slice: bool = True, **overrides: str
+) -> Path:
+    """Populate cgroup files for a fixture.
+
+    The AGGREGATE counters and the envelope live on the slice node, not on a
+    candidate's leaf `.service` (measured on the real host). So by default the
+    metric files are written at the slice node and the candidate path is merely
+    created, which is what membership needs. Pass at_slice=False to plant decoy
+    values on the leaf and prove they are never reported.
+    """
     node = root / cgroup.lstrip("/")
     node.mkdir(parents=True, exist_ok=True)
+    if at_slice:
+        chain = "/".join(MONITOR.expected_slice_chain(MONITOR.EXPECTED_SLICE))
+        if cgroup.lstrip("/").startswith(chain):
+            node = root / chain
+            node.mkdir(parents=True, exist_ok=True)
     files = {
         "cpu.stat": (
             "usage_usec 1000000\nuser_usec 700000\nsystem_usec 300000\n"
@@ -1350,7 +1365,14 @@ def _proc_cgroup(tmp_path: Path, cgroup: str) -> Path:
     return path
 
 
-CI_CGROUP = "/mastermind-ci.slice/actions.runner.macro.pc-ci-4.service"
+# The REAL systemd layout: `-` in a slice name is a cgroup path separator, so
+# mastermind-ci.slice is a child of an implicit mastermind.slice. This constant
+# was originally written without the parent and every fixture inherited the
+# error, which is why no test caught the refusal that stopped pc-ci-1 on the host.
+CI_CGROUP = (
+    "/mastermind.slice/mastermind-ci.slice/"
+    "actions.runner.macro.pc-ci-4.service"
+)
 
 
 def test_monitor_binds_a_candidate_to_the_expected_ci_slice(tmp_path: Path) -> None:
@@ -1398,7 +1420,7 @@ def test_monitor_refuses_a_foreign_slice_that_merely_looks_similar(tmp_path: Pat
 
 
 def test_monitor_refuses_a_slice_candidate_that_is_not_a_service(tmp_path: Path) -> None:
-    stray = "/mastermind-ci.slice"
+    stray = "/mastermind.slice/mastermind-ci.slice"
     root = tmp_path / "cgroup"
     _write_slice_tree(root, stray)
     sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, stray))
@@ -1947,7 +1969,7 @@ def test_reducer_refuses_a_window_spanning_more_than_one_cgroup() -> None:
     """A candidate that changed cgroups mid-run has no honest aggregate: first/last
     deltas would silently straddle two different cgroups.
     """
-    moved = _slice_sample(cgroup="/mastermind-ci.slice/actions.runner.macro.pc-ci-2.service")
+    moved = _slice_sample(cgroup="/mastermind.slice/mastermind-ci.slice/actions.runner.macro.pc-ci-2.service")
     result = CAPTURE.slice_metrics([_host_sample(_slice_sample()), _host_sample(moved)])
     assert result["status"] != "bound"
     assert len(result["cgroups"]) == 2
@@ -2167,3 +2189,115 @@ def test_admission_policy_digest_tracks_thresholds_not_slice_ceilings() -> None:
     assert "PREFLIGHT_PROFILES" in body
     for ceiling in ("CPUQuota", "MemoryHigh", "MemoryMax", "MemorySwapMax", "cpu_max"):
         assert ceiling not in body, f"slice ceiling {ceiling} must not feed the digest"
+
+
+# ── C3R-A follow-up: systemd slice names are a cgroup HIERARCHY ──────────────
+# Found on the real host 2026-09-02, not by any test: systemd treats `-` in a
+# slice unit name as a path separator, so `mastermind-ci.slice` is a CHILD of an
+# implicit `mastermind.slice` and its cgroup is
+#   /mastermind.slice/mastermind-ci.slice/<unit>.service
+# never /mastermind-ci.slice/<unit>.service.
+#
+# The first anchored matcher required the slice at components[0], so a correctly
+# configured pc-ci-1 was REFUSED with exit 78 and the slot could not start. The
+# fix anchors on the full systemd-derived parent chain, which keeps the nested
+# look-alike refusals that motivated anchoring in the first place.
+
+REAL_HOST_CGROUP = (
+    "/mastermind.slice/mastermind-ci.slice/"
+    "actions.runner.mastermindx-market-intelligence-macro.pc-ci-1.service"
+)
+
+
+def test_expected_slice_chain_is_derived_from_the_systemd_name() -> None:
+    assert MONITOR.expected_slice_chain("mastermind-ci.slice") == [
+        "mastermind.slice",
+        "mastermind-ci.slice",
+    ]
+    assert MONITOR.expected_slice_chain("solo.slice") == ["solo.slice"]
+    assert MONITOR.expected_slice_chain("a-b-c.slice") == [
+        "a.slice",
+        "a-b.slice",
+        "a-b-c.slice",
+    ]
+
+
+def test_monitor_binds_the_real_systemd_slice_path(tmp_path: Path) -> None:
+    """The exact cgroup a live pc-ci listener reports once Slice= is set."""
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, REAL_HOST_CGROUP)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, REAL_HOST_CGROUP))
+    assert sample["status"] == "bound", sample["reason"]
+    assert sample["cgroup"] == REAL_HOST_CGROUP
+    assert sample["cpu"]["nr_periods"] == 400
+
+
+def test_resource_guard_binds_the_real_systemd_slice_path() -> None:
+    assert RESOURCE_GUARD.is_bound_to_ci_slice(REAL_HOST_CGROUP) is True
+
+
+def test_slice_hierarchy_fix_still_refuses_every_nested_look_alike() -> None:
+    """The anchoring that motivated the original fix must survive."""
+    for stray in (
+        "/user.slice/user-1000.slice/mastermind-ci.slice/evil.service",
+        "/system.slice/x.service/mastermind.slice/mastermind-ci.slice/y.service",
+        "/foo.slice/mastermind-ci.slice/x.service",
+        "/mastermind.slice/other-mastermind-ci.slice/x.service",
+        "/mastermind.slice/mastermind-ci.slice/../../system.slice/x.service",
+        "/mastermind.slice/mastermind-ci.slice",
+        "/system.slice/actions.runner.macro.pc-ci-1.service",
+    ):
+        assert MONITOR._is_bound_to_ci_slice(stray) is False, stray
+        assert RESOURCE_GUARD.is_bound_to_ci_slice(stray) is False, stray
+
+
+def test_aggregate_metrics_come_from_the_slice_node_not_the_candidate_leaf(
+    tmp_path: Path,
+) -> None:
+    """Second real-host defect (2026-09-02): the envelope and the AGGREGATE
+    counters live on the slice node, not on the candidate's leaf `.service`
+    cgroup. Reading the leaf yields per-candidate numbers with no ceilings —
+    and labelling those "aggregate" is exactly the false-proof shape this
+    module exists to refuse. Measured on the host: the slice node carries
+    cpu.max `800000 100000` while a leaf carries none.
+    """
+    root = tmp_path / "cgroup"
+    slice_node = root / "mastermind.slice" / "mastermind-ci.slice"
+    # Aggregate truth on the slice node.
+    _write_slice_tree(root, "/mastermind.slice/mastermind-ci.slice")
+    # Decoy per-candidate values on the leaf; these must NOT be reported.
+    _write_slice_tree(
+        root,
+        REAL_HOST_CGROUP,
+        at_slice=False,
+        **{
+            "memory.current": "999999999\n",
+            "cpu.max": "max 100000\n",
+            "cpu.stat": "usage_usec 7\nnr_periods 7\nnr_throttled 7\nthrottled_usec 7\n",
+        },
+    )
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, REAL_HOST_CGROUP))
+
+    assert sample["status"] == "bound"
+    assert sample["cgroup"] == REAL_HOST_CGROUP, "membership is still the candidate's"
+    assert sample["slice_cgroup"] == "/mastermind.slice/mastermind-ci.slice"
+    # Values must be the slice's, never the leaf decoys.
+    assert sample["cpu_max"] == "800000 100000"
+    assert sample["memory"]["current"] == 1_073_741_824
+    assert sample["cpu"]["nr_periods"] == 400
+
+
+def test_guard_reads_the_envelope_from_the_slice_node(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, "/mastermind.slice/mastermind-ci.slice")
+    _write_slice_tree(root, REAL_HOST_CGROUP, at_slice=False, **{"cpu.max": "max 100000\n"})
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        cgroup_root=root,
+        cgroup=REAL_HOST_CGROUP,
+        profile="four-slot-canary",
+        memory_available_bytes=32 * 1024**3,
+        swap_used_bytes=0,
+        require_slice=True,
+    )
+    assert evidence["cpu_max"] == "800000 100000", "envelope read from the slice"
+    assert reasons == [], "an enforced envelope must not be called unenforced"
