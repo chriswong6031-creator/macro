@@ -82,11 +82,17 @@ waves:
       port vertical after the acceptance ruler concludes.
   - id: R3
     title: Materiality-gated live assessments (at least one production vertical)
-    status: todo
+    status: in_progress
     next_action: >
-      Select the first vertical after R2 census (strong candidates: market-regime/risk state,
-      major economic-release assessment) and freeze its producer/consumer/fingerprint/
-      materiality-predicate/hysteresis/authority-class contract before any build.
+      Vertical SELECTED and contract FROZEN 2026-09-02
+      (research/reactive_projection/R3_MATERIALITY_CONTRACT_V1_RISK_ENVELOPE.md):
+      the existing GD-3 live risk envelope is the first R3 vertical — named, not
+      rebuilt (VIX-family live splice every 30m -> minute-cadence dwell/debounce
+      state machine with DISTINCT-observation materiality -> live on-page band).
+      Remaining: GAP-1 (one record_firing materiality-ledger row with explicit
+      fingerprint hash, Grey-Deer-coordinated, single module touch) and GAP-2
+      (one full-chain production receipt during acceptance sessions 2/3).
+      Release-forecast recorded as candidate-2, deliberately unbuilt.
   - id: R4
     title: Reactive publication / orchestration resilience through existing owners
     status: todo
