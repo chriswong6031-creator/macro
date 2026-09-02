@@ -1578,6 +1578,43 @@ def test_receipt_refuses_a_single_sample_as_a_missing_endpoint() -> None:
         assert result[key] is None, key
 
 
+@pytest.mark.parametrize(
+    ("case", "expected_status", "expected_reason"),
+    [
+        (
+            "nonfinite_time",
+            "refused",
+            "aggregate samples are not strictly time ordered",
+        ),
+        ("non_bound_status", "unavailable", "slice metrics are unavailable"),
+        (
+            "malformed_parent",
+            "refused",
+            "aggregate cgroup is missing or not the fixed parent slice",
+        ),
+    ],
+)
+def test_single_sample_preserves_stronger_refusal_before_missing_endpoint(
+    case: str, expected_status: str, expected_reason: str
+) -> None:
+    slice_payload = _slice_sample()
+    sample = _host_sample(slice_payload)
+    if case == "nonfinite_time":
+        sample["time"] = float("nan")
+    elif case == "non_bound_status":
+        slice_payload.update(
+            status="unavailable", reason="slice metrics are unavailable"
+        )
+    else:
+        slice_payload["aggregate_cgroup"] = "/wrong.slice"
+
+    result = CAPTURE.slice_metrics([sample])
+
+    assert result["status"] == expected_status
+    assert result["reason"] == expected_reason
+    assert result["samples"] == 1
+
+
 def test_receipt_labels_memory_peak_as_a_cgroup_lifetime_fact() -> None:
     """memory.peak is a cgroup-lifetime high-water mark. Presenting it as a
     run-local peak without a documented reset ceremony would overstate what the
