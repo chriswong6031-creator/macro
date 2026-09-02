@@ -12,6 +12,9 @@ falsifier: >
   structured, source-attributed attention admission, authority, ready time, deadline, wait,
   actual-impact, autonomy and service-feasibility facts for every live executive demand family.
   Schema capability alone is insufficient; the fields must be populated in the real portfolio.
+  The counterexample must identify an exact protected source/PR against the F0B/F0G baseline in
+  Mastermind PR #275 and re-run `python3 scripts/agentos.py validate`; a discovery correction must
+  supersede this record rather than silently erase the observed input gap.
 so_what: >
   A1 must be strict about demand/authority identity and permissive about optional factors being
   UNKNOWN. Start only from explicit Wake/Executive Inbox/turn-owner/structured decision facts;
@@ -19,12 +22,14 @@ so_what: >
   coverage/degraded-state rates alongside interruption reduction so a falsely calm frontier cannot
   hide incomplete upstream admission.
 kind: architecture
-verified_at: 2026-08-30
+verified_at: 2026-09-02
 verified_by: >
   Manual F0B canary against Macro main ede7e065a90b294e9835e98e5326a84e1c14d038 including
   WS-BREATHING-PLATFORM, WS-ACCOUNT-IDENTITY-HARDENING and WS-ADVANCED-DATA-OPTIONS; current Agent OS
   schema/code search for `needs_ceo`, typed wait/review_after; current Wake/turn-owner/Steward owner
-  archaeology; Mastermind F0B real-portfolio canary document.
+  archaeology; Mastermind PR #275 and its protected F0B/F0G real-portfolio source contracts; current
+  continuation reconciliation at Macro main 4fe6434d7bc2422f0cf3baceee0566faef72ac93; and
+  `python3 scripts/agentos.py validate` as the record-contract verification command.
 scope:
   - WS:EXECUTIVE-ATTENTION-ECONOMICS
   - agentos/workstreams/**
