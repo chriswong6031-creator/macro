@@ -19,12 +19,12 @@ waves:
   - {id: R0, title: "Recover canonical truth; protect OLS-F0 architecture/source law (PR 279)", status: done, pr: 279}
   - {id: A1, title: "Pure deterministic assurance engine + immutable report + report-only CLI (PR 324)", status: done, pr: 324}
   - {id: A2, title: "Canonical Agent OS source compilation through the protected Executive Steward", status: in_progress, pr: [339, 362], next_action: "Sol must review the exact current PR 362 head against protected A2 design 339, B1-B4 repairs, current-base CI and this exact corrected Agent OS revision; if clean, release A2, otherwise commission only the smallest same-carrier repair. The attempted fable-004 placement ended pre-START with effect NONE and is not an active receiver."}
-  - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2]}
-  - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3]}
-  - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4]}
-  - {id: A6, title: "Runtime conformance shadow path", status: todo, depends_on: [A2]}
-  - {id: A7, title: "Admission integration, calibrated default-off promotion", status: todo, depends_on: [A5, A6]}
-  - {id: A8, title: "Production installation, rollback drill, runbook, learning loop", status: todo, depends_on: [A7]}
+  - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2], next_action: "After A2 protection, derive current applicability and an evidence-preserving summary without mutating any historical report."}
+  - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3], next_action: "After A3, project the report-only assurance result into the existing Control Room with real data, degraded states and browser proof."}
+  - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4], next_action: "After A4, run a supervised report-only canary and calibrate false positives, false negatives and decision usefulness without admission effects."}
+  - {id: A6, title: "Runtime conformance shadow path", status: todo, depends_on: [A2], next_action: "After A2 protection, compare authored-model expectations with existing runtime evidence through a read-only conformance shadow; do not create runtime truth."}
+  - {id: A7, title: "Admission integration, calibrated default-off promotion", status: todo, depends_on: [A5, A6], next_action: "After accepted A5 and A6 evidence, implement a separately reviewed default-off admission projection; no verdict may grant authority or originate retry."}
+  - {id: A8, title: "Production installation, rollback drill, runbook, learning loop", status: todo, depends_on: [A7], next_action: "After A7 acceptance, install the bounded production path, prove rollback and cleanup, publish the runbook, and establish the correction-safe learning loop."}
 next_action: >
   Complete exact-head CEO review of Mastermind PR #362. Require current protected master ancestry,
   the exact OLS-A2 source/compiler/CLI/fixture/test path family, terminal hosted proof, no unresolved
@@ -79,10 +79,12 @@ writer or continuation authority. Existing PR #362 source is preserved as known 
 reviewed in place rather than duplicated or retried.
 
 This revision is the real owner-native positive source candidate required by the protected design.
-Once protected on Macro main, PR #362 must gather this exact commit's bytes under its full immutable
-revision and return model/report/source-byte receipts. That proof remains Agent-OS-scoped: it does not
-establish current Executive runtime completeness, production applicability, admission authority, or
-permission to proceed.
+Every nonterminal wave now has an explicit dependency-bounded continuation or current next action,
+so the positive compile can distinguish implementation behavior from an avoidable organizational
+no-completion defect. Once protected on Macro main, PR #362 must gather this exact commit's bytes
+under its full immutable revision and return model/report/source-byte receipts. That proof remains
+Agent-OS-scoped: it does not establish current Executive runtime completeness, production
+applicability, admission authority, or permission to proceed.
 
 A3 through A8 remain held. No Control Room experience, canary, runtime conformance, admission
 integration, enforcement, production installation or learning-loop completion is created by this
