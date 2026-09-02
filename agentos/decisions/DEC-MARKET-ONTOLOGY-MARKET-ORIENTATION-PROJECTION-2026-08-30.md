@@ -362,11 +362,17 @@ verified eligible Pro conversation created inside the account's exact Mastermind
 Retrieved packets and idle browsers are not assignment. Project Sol stops after returning reviewed
 MOR-1/MOR-2/MOR-3 worker packets; it does not implement all waves or auto-start a worker.
 
-> **Placement supersession (2026-09-02):** the prepared `PROJECT_CEO_SOL / CHAT_PRO_DEFAULT`
-> placement above was never delivered. Chairman DIRECT_TARGETED commission
+> **Placement and stop-law supersession (2026-09-02):** the prepared `PROJECT_CEO_SOL /
+> CHAT_PRO_DEFAULT` placement above was never delivered. Chairman live DIRECT_TARGETED commission
 > `marketontology-premium-research-organism-fable-principal-20260902-sol-001` (Fable Account B
-> principal; PICKUP_ACK/censuses/WATCH_ARMED/START on carrier `C0BTG1BMY8K/1788318581.187819`,
-> 2026-09-02) now owns MOR-1/MOR-2/MOR-3 execution. F00B #6609 landed 2026-08-30 (`8c92f747`),
-> satisfying the durability gate. Only this section's placement/receiver clauses are superseded;
-> every product, experience, data, correction, authority, and wave-boundary clause of this
-> decision remains controlling, including production-proof row gating and the no-new-plane laws.
+> principal; packet `04_MarketOntology_Account_B_Fable_Handoff_2026-09-02.md` delivered directly
+> into session `756295e2-de1f-4faa-a8e7-88bea209aba0`; receiver receipts on carrier
+> `C0BTG1BMY8K/1788318581.187819`, 2026-09-02) now owns MOR-1/MOR-2/MOR-3 architecture,
+> decomposition, commissioning, review and production-proof responsibility, delegating
+> implementation to bounded workers under least-scarce routing. F00B #6609 landed 2026-08-30
+> (`8c92f747`), satisfying the durability gate. Superseded by that newer Chairman act: this
+> section's placement/receiver clauses AND its return-packets-only stop sentence (both halves of
+> this Placement-and-stop-law section). Every product, experience, data, correction,
+> authority-ceiling, and wave-boundary clause elsewhere in this decision remains controlling,
+> including production-proof row gating and the no-new-plane laws. Sol/Program-CEO same-carrier
+> confirmation of the commission gates the carrier PR's hold release.

@@ -91,7 +91,19 @@ unverified:
 unresolved:
   - "RESOLVED 2026-09-02: F00B #6609 landed durably (MERGED 2026-08-30T20:56Z, commit 8c92f747); the commissioning precondition is satisfied."
   - "The exact lawful premarket schedule and minimum source-currentness set require Project-Sol archaeology."
-  - "SUPERSEDED 2026-09-02: placement was consumed by Chairman DIRECT_TARGETED delivery of marketontology-premium-research-organism-fable-principal-20260902-sol-001 (Fable Account B principal; PICKUP_ACK/START on carrier C0BTG1BMY8K/1788318581.187819), whose Domain B owns MOR-1/MOR-2/MOR-3 execution under this unchanged freeze. The prepared CHAT_PRO_DEFAULT Project-Sol packet below is preserved as provenance; its placement clauses no longer await delivery."
+  - >
+    SUPERSEDED 2026-09-02 by newer Chairman authority: placement was consumed by Chairman live
+    DIRECT_TARGETED delivery of packet 04_MarketOntology_Account_B_Fable_Handoff_2026-09-02.md
+    (operation marketontology-premium-research-organism-fable-principal-20260902-sol-001) into Fable
+    session 756295e2-de1f-4faa-a8e7-88bea209aba0 — the outer-live-directive receiver-assignment edge
+    recognized by Skillpack INDEX hard law 19 / WORKER_AVENUE_ROUTING, not an inference from a
+    retrieved packet or a Slack delivery. That commission also explicitly WIDENS this record's
+    return-packets-only Project-Sol stop law into wave execution responsibility (architecture,
+    decomposition, commissioning, review, production proof) with implementation delegated to bounded
+    workers; §14's widening condition is exercised by that superseding Chairman act rather than by a
+    Program CEO assignment. Receiver receipts: PICKUP_ACK/censuses/WATCH_ARMED/START on carrier
+    C0BTG1BMY8K/1788318581.187819. Sol/Program-CEO same-carrier confirmation of this commission is
+    the precondition for releasing this PR's HOLD-FOR-SOL.
   - "The GitHub Draft-to-Ready connector currently fails on Repository.fullDatabaseId for command and landing carriers; do not bypass or blind-retry."
   - "The first glossary batch size is not a parity claim; MO-DELTA-011 remains partial until 200+ reviewed production terms exist."
 next_actions:
@@ -106,11 +118,14 @@ next_actions:
     C0BTG1BMY8K/1788318581.187819 on 2026-09-02.
   - >
     The premium-research-organism principal performs the missing current workflow/source/owner archaeology,
-    preserves this architecture freeze, and executes MOR-1, MOR-2, MOR-3 as bounded independently useful
-    waves rather than one mega-PR; production proof gates each row per the freeze.
+    preserves this architecture freeze, and owns MOR-1, MOR-2, MOR-3 architecture, decomposition,
+    commissioning, review and production-proof responsibility as bounded independently useful waves
+    (never one mega-PR), routing implementation to bounded workers through least-scarce lawful avenues
+    per §12; production proof gates each row per the freeze.
   - >
-    Program CEO / Sol retain review and acceptance authority over each MOR wave through the principal's
-    carrier; one operation/carrier/runtime per child through production proof and explicit STOP.
+    Program CEO / Sol review the principal's wave returns and retain acceptance authority over each MOR
+    wave through the principal's carrier; bounded workers are assigned through least-scarce lawful
+    avenues; one operation/carrier/runtime per child through production proof and explicit STOP.
 do_not_redo:
   - "Do not create a second AI brief engine, LLM prompt family, model quota lane, brief JSON store, or general morning truth plane."
   - "Do not publish docs/site_semantics raw or expose internal repository paths, model/provider names, DNR labels, scoring keys, or operator instructions."
@@ -132,7 +147,7 @@ danger_areas:
   - "Project Sol can collapse into routine coding instead of producing coherent worker packets and adversarial review."
 prs:
   - "macro#6609 MERGED 2026-08-30T20:56Z (commit 8c92f747) — F00B durability prerequisite SATISFIED (was OPEN/DRAFT at freeze; re-verified at reconciliation 2026-09-02)."
-  - "macro#6680 MERGED 2026-08-30T20:57Z — parent command carrier transition completed (was OPEN/DRAFT under HOLD-ON-TRANSITION at freeze)."
+  - "macro#6680 MERGED 2026-08-30T20:57Z (merge commit e7aba5e5) — parent command carrier transition completed (was OPEN/DRAFT under HOLD-ON-TRANSITION at freeze)."
 decisions:
   - DEC:MARKET-ONTOLOGY-MARKET-ORIENTATION-PROJECTION-2026-08-30
   - DEC:MARKET-ONTOLOGY-GRANULAR-FULL-PARITY-BEYOND-PARITY-RATCHET
@@ -157,6 +172,15 @@ This is a prepared durable packet, not a live commission. A retrieved file, PR, 
 or account label does not self-assign a Project Sol. Program CEO must deliver it deliberately to a positively
 verified eligible Pro conversation created inside the account's exact `MastermindX` project folder. The
 receiver then uses its actual identity to ACK, establish continuation, and emit a separate truthful START.
+
+> **Placement and stop-law supersession (2026-09-02):** the placement block above was never delivered
+> and is superseded — together with this packet's return-packets-only stop law (§11 step 9, §14) — by
+> Chairman live DIRECT_TARGETED commission
+> `marketontology-premium-research-organism-fable-principal-20260902-sol-001`
+> (carrier `C0BTG1BMY8K/1788318581.187819`), which owns MOR-1/2/3 architecture, decomposition,
+> commissioning, review and production proof and delegates implementation to bounded workers per §12's
+> least-scarce routing. §§1-10 and §12-§13 remain controlling for the commissioned principal.
+> Sol/Program-CEO same-carrier confirmation gates the carrier PR's hold release.
 
 ## 1. Observable mission
 
