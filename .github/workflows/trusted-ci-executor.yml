@@ -47,6 +47,10 @@ jobs:
       pr_number: ${{ steps.admit.outputs.pr_number }}
       mode: ${{ steps.admit.outputs.mode }}
       semantic_workflow: ${{ steps.admit.outputs.semantic_workflow }}
+      event_tested_sha: ${{ steps.admit.outputs.event_tested_sha }}
+      event_base_sha: ${{ steps.admit.outputs.event_base_sha }}
+      event_head_sha: ${{ steps.admit.outputs.event_head_sha }}
+      event_head_ref: ${{ steps.admit.outputs.event_head_ref }}
     steps:
       - id: admit
         name: admit direct dispatch or exact main-called same-repository PR
@@ -60,6 +64,10 @@ jobs:
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REF: ${{ github.base_ref }}
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_TESTED_SHA: ${{ github.sha }}
+          EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
         shell: bash
         run: |
@@ -70,6 +78,10 @@ jobs:
           }
           direct_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
           called_workflow_ref="$REPOSITORY/.github/workflows/trusted-ci-executor.yml@refs/heads/main"
+          event_tested_sha=
+          event_base_sha=
+          event_head_sha=
+          event_head_ref=
           case "$CALLED_WORKFLOW_SHA" in
             [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
             *)
@@ -128,6 +140,25 @@ jobs:
                 echo "::error title=trusted-executor-caller::only the ordinary ci.yml PR workflow may call the executor"
                 exit 1
               }
+              for event_sha_name in EVENT_TESTED_SHA EVENT_BASE_SHA EVENT_HEAD_SHA; do
+                event_sha_value="${!event_sha_name}"
+                [[ "$event_sha_value" =~ ^[0-9a-f]{40}$ ]] || {
+                  echo "::error title=trusted-executor-event-identity::$event_sha_name must be an exact lowercase commit"
+                  exit 1
+                }
+              done
+              test -n "$EVENT_HEAD_REF" || {
+                echo "::error title=trusted-executor-event-identity::event head ref must not be empty"
+                exit 1
+              }
+              git check-ref-format --branch "$EVENT_HEAD_REF" >/dev/null || {
+                echo "::error title=trusted-executor-event-identity::event head ref is invalid"
+                exit 1
+              }
+              event_tested_sha="$EVENT_TESTED_SHA"
+              event_base_sha="$EVENT_BASE_SHA"
+              event_head_sha="$EVENT_HEAD_SHA"
+              event_head_ref="$EVENT_HEAD_REF"
               pr_number="$EVENT_PR_NUMBER"
               mode=production
               semantic_workflow=ci
@@ -148,6 +179,10 @@ jobs:
           printf 'pr_number=%s\n' "$pr_number" >> "$GITHUB_OUTPUT"
           printf 'mode=%s\n' "$mode" >> "$GITHUB_OUTPUT"
           printf 'semantic_workflow=%s\n' "$semantic_workflow" >> "$GITHUB_OUTPUT"
+          printf 'event_tested_sha=%s\n' "$event_tested_sha" >> "$GITHUB_OUTPUT"
+          printf 'event_base_sha=%s\n' "$event_base_sha" >> "$GITHUB_OUTPUT"
+          printf 'event_head_sha=%s\n' "$event_head_sha" >> "$GITHUB_OUTPUT"
+          printf 'event_head_ref=%s\n' "$event_head_ref" >> "$GITHUB_OUTPUT"
 
   plan:
     name: trusted-executor-hosted-plan
@@ -215,11 +250,19 @@ jobs:
         name: resolve the immutable same-repository PR candidate
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          EVENT_TESTED_SHA: ${{ needs.trust-gate.outputs.event_tested_sha }}
+          EVENT_BASE_SHA: ${{ needs.trust-gate.outputs.event_base_sha }}
+          EVENT_HEAD_SHA: ${{ needs.trust-gate.outputs.event_head_sha }}
+          EVENT_HEAD_REF: ${{ needs.trust-gate.outputs.event_head_ref }}
         run: |
           python3 "$RUNNER_TEMP/trusted-ci-control/scripts/resolve_ci_canary_ref.py" \
             --repository "${{ github.repository }}" \
             --github-sha "${{ needs.trust-gate.outputs.control_sha }}" \
             --pr-number "${{ needs.trust-gate.outputs.pr_number }}" \
+            --event-tested-sha "$EVENT_TESTED_SHA" \
+            --event-base-sha "$EVENT_BASE_SHA" \
+            --event-head-sha "$EVENT_HEAD_SHA" \
+            --event-head-ref "$EVENT_HEAD_REF" \
             --github-output "$GITHUB_OUTPUT"
       - name: checkout the immutable PR candidate
         uses: actions/checkout@v4
