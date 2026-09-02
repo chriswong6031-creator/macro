@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STRA-BULL-20260728",
-  "asof": "2026-08-27",
+  "asof": "2026-08-31",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 67.1,
-  "raw_confidence": 67.1,
-  "delta_vs_base": 7.1,
+  "management_confidence": 59.9,
+  "raw_confidence": 55.5,
+  "delta_vs_base": -0.1,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 100.0,
-    "progress": 12.4,
-    "pace": 100.0,
+    "validity": 94.4,
+    "progress": 0.0,
+    "pace": 75.9,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.155,
-    "dist_to_t1_r": 1.345,
-    "dist_to_t2_r": 2.845,
-    "horizon_pct_used": 13.3,
-    "p1": 0.1034,
-    "p2": 0.0517,
+    "dist_to_stop_r": 0.958,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 22.2,
+    "p1": -0.0278,
+    "p2": -0.0139,
     "p3": null,
-    "move_r": 0.155,
+    "move_r": -0.042,
     "mfe_r": 0.187,
-    "mae_r": -0.0
+    "mae_r": -0.042
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 2.6099987792968733,
-  "_mae": -1.8310546892053026e-06,
+  "_mae": -0.5800036621093767,
   "_max_p1": 0.12491020719295878,
   "_first_trigger_ts": "2026-08-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 6,
-  "tau": 0.1333
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

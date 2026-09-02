@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FSLR-BULL-20260805",
-  "asof": "2026-08-27",
+  "asof": "2026-08-31",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 34.7,
-  "raw_confidence": 34.1,
-  "delta_vs_base": -25.3,
+  "management_confidence": 28.2,
+  "raw_confidence": 26.2,
+  "delta_vs_base": -31.8,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 40.8,
+    "validity": 26.9,
     "progress": 0.0,
-    "pace": 35.3,
+    "pace": 16.2,
     "retention": 50.0,
-    "overlay": 67.0
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.514,
+    "dist_to_stop_r": 0.378,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 37.8,
-    "p1": -0.3237,
-    "p2": -0.1618,
+    "horizon_pct_used": 46.7,
+    "p1": -0.4146,
+    "p2": -0.2073,
     "p3": null,
-    "move_r": -0.486,
+    "move_r": -0.622,
     "mfe_r": 0.0,
-    "mae_r": -0.555
+    "mae_r": -0.622
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Macro Tailwind",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.03000183105467613,
-  "_mae": -33.37000732421876,
+  "_mae": -37.400006103515636,
   "_max_p1": 0.00033257766383633895,
   "_first_trigger_ts": "2026-08-10",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 17,
-  "tau": 0.3778
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

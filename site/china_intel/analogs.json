@@ -1,108 +1,62 @@
 {
   "schema": "china_intel.analogs.v1",
   "is_context_only": true,
-  "generated_utc": "2026-08-27T23:41:01Z",
-  "as_of": "2026-08-26",
+  "generated_utc": "2026-09-01T12:38:39Z",
+  "as_of": "2026-09-01",
   "coverage": {
     "start": "2006-03-30",
-    "end": "2026-08-26",
-    "n_candidate_days": 5325
+    "end": "2026-09-01",
+    "n_candidate_days": 5329
   },
   "query": {
-    "date": "2026-08-26",
+    "date": "2026-09-01",
     "quad": "Q4",
     "quad_name": "Growth-scare",
     "liquidity": "contracting",
     "cycle": "mid",
-    "growth_z": -1.155,
-    "inflation_z": -1.1783
+    "growth_z": -1.0141,
+    "inflation_z": -1.1772
   },
   "analogs": [
     {
-      "date": "2023-05-16",
+      "date": "2023-05-29",
       "distance": 0.115,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.016963,
-        "h60": -0.029346,
-        "h120": -0.075128
+        "h20": -0.013059,
+        "h60": -0.045031,
+        "h120": -0.058511
       },
       "fwd_csi300": {
-        "h20": -0.018907,
-        "h60": -0.000253,
-        "h120": -0.079242
+        "h20": 0.005457,
+        "h60": -0.012322,
+        "h120": -0.06263
       }
     },
     {
-      "date": "2011-11-21",
-      "distance": 0.1247,
+      "date": "2022-10-28",
+      "distance": 0.115,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.085043,
-        "h60": -0.001274,
-        "h120": -0.025886
-      },
-      "fwd_csi300": null
-    },
-    {
-      "date": "2008-10-09",
-      "distance": 0.1247,
-      "quad": "Q4",
-      "quad_name": "Growth-scare",
-      "liquidity": "contracting",
-      "cycle": "mid",
-      "fwd_shcomp": {
-        "h20": -0.135125,
-        "h60": -0.032218,
-        "h120": 0.159869
-      },
-      "fwd_csi300": null
-    },
-    {
-      "date": "2022-12-20",
-      "distance": 0.1443,
-      "quad": "Q4",
-      "quad_name": "Growth-scare",
-      "liquidity": "contracting",
-      "cycle": "mid",
-      "fwd_shcomp": {
-        "h20": 0.0545,
-        "h60": 0.068709,
-        "h120": 0.041335
+        "h20": 0.061999,
+        "h60": 0.117938,
+        "h120": 0.120524
       },
       "fwd_csi300": {
-        "h20": 0.081419,
-        "h60": 0.050399,
-        "h120": 0.014022
-      }
-    },
-    {
-      "date": "2023-12-21",
-      "distance": 0.1846,
-      "quad": "Q4",
-      "quad_name": "Growth-scare",
-      "liquidity": "contracting",
-      "cycle": "mid",
-      "fwd_shcomp": {
-        "h20": -0.055889,
-        "h60": 0.039259,
-        "h120": 0.019619
-      },
-      "fwd_csi300": {
-        "h20": -0.039332,
-        "h60": 0.057225,
-        "h120": 0.048121
+        "h20": 0.06173,
+        "h60": 0.169675,
+        "h120": 0.118369
       }
     },
     {
       "date": "2018-12-12",
-      "distance": 0.1846,
+      "distance": 0.115,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
@@ -119,8 +73,54 @@
       }
     },
     {
+      "date": "2011-11-23",
+      "distance": 0.1501,
+      "quad": "Q4",
+      "quad_name": "Growth-scare",
+      "liquidity": "contracting",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.09224,
+        "h60": 0.020437,
+        "h120": -0.015208
+      },
+      "fwd_csi300": null
+    },
+    {
+      "date": "2008-11-03",
+      "distance": 0.1501,
+      "quad": "Q4",
+      "quad_name": "Growth-scare",
+      "liquidity": "contracting",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.101822,
+        "h60": 0.20643,
+        "h120": 0.405409
+      },
+      "fwd_csi300": null
+    },
+    {
+      "date": "2023-12-26",
+      "distance": 0.1848,
+      "quad": "Q4",
+      "quad_name": "Growth-scare",
+      "liquidity": "contracting",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.002922,
+        "h60": 0.042504,
+        "h120": 0.027117
+      },
+      "fwd_csi300": {
+        "h20": 0.00041,
+        "h60": 0.056102,
+        "h120": 0.048986
+      }
+    },
+    {
       "date": "2018-02-09",
-      "distance": 0.9086,
+      "distance": 0.8969,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
@@ -137,109 +137,113 @@
       }
     },
     {
-      "date": "2018-10-12",
-      "distance": 0.9086,
+      "date": "2018-10-10",
+      "distance": 0.8969,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": 0.024016,
-        "h60": -0.009292,
-        "h120": 0.216843
+        "h20": 0.019994,
+        "h60": -0.019689,
+        "h120": 0.226341
       },
       "fwd_csi300": {
-        "h20": 0.024187,
-        "h60": -0.017733,
-        "h120": 0.245208
+        "h20": 0.029492,
+        "h60": -0.021335,
+        "h120": 0.264871
       }
     },
     {
-      "date": "2019-08-26",
-      "distance": 0.92,
+      "date": "2019-08-27",
+      "distance": 0.9199,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": 0.018179,
-        "h60": 0.000345,
-        "h120": -0.00757
+        "h20": 0.012135,
+        "h60": -0.001406,
+        "h120": 0.026319
       },
       "fwd_csi300": {
-        "h20": 0.015369,
-        "h60": 0.015877,
-        "h120": 0.030911
+        "h20": 0.011585,
+        "h60": 0.017454,
+        "h120": 0.069728
       }
     },
     {
-      "date": "2024-08-15",
-      "distance": 0.9643,
+      "date": "2024-08-14",
+      "distance": 0.9312,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "contracting",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.062827,
-        "h60": 0.150176,
-        "h120": 0.151602
+        "h20": -0.057299,
+        "h60": 0.144251,
+        "h120": 0.152547
       },
       "fwd_csi300": {
-        "h20": -0.05485,
-        "h60": 0.173978,
-        "h120": 0.164818
+        "h20": -0.049627,
+        "h60": 0.169624,
+        "h120": 0.168385
       }
     },
     {
-      "date": "2012-08-07",
-      "distance": 1.0077,
+      "date": "2025-04-18",
+      "distance": 1.0,
       "quad": "Q4",
       "quad_name": "Growth-scare",
       "liquidity": "expanding",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": -0.058754,
-        "h60": -0.025904,
-        "h120": 0.116565
+        "h20": 0.026608,
+        "h60": 0.071244,
+        "h120": 0.160352
       },
       "fwd_csi300": {
-        "h20": -0.081283,
-        "h60": -0.041752,
-        "h120": 0.1256
+        "h20": 0.03599,
+        "h60": 0.086524,
+        "h120": 0.202476
       }
     },
     {
-      "date": "2009-01-06",
-      "distance": 1.0077,
+      "date": "2019-02-15",
+      "distance": 1.0066,
       "quad": "Q4",
       "quad_name": "Growth-scare",
-      "liquidity": "expanding",
+      "liquidity": "neutral",
       "cycle": "mid",
       "fwd_shcomp": {
-        "h20": 0.161315,
-        "h60": 0.212636,
-        "h120": 0.47358
+        "h20": 0.117062,
+        "h60": 0.053583,
+        "h120": 0.019612
       },
-      "fwd_csi300": null
+      "fwd_csi300": {
+        "h20": 0.113183,
+        "h60": 0.060111,
+        "h120": 0.083661
+      }
     }
   ],
   "fan": {
     "h20": {
-      "p25": -0.059772,
-      "median": -0.027495,
-      "p75": 0.027738,
+      "p25": -0.019301,
+      "median": 0.016065,
+      "p75": 0.044678,
       "n": 12
     },
     "h60": {
-      "p25": -0.013445,
-      "median": 0.006345,
-      "p75": 0.089076,
+      "p25": 0.008907,
+      "median": 0.048044,
+      "p75": 0.124516,
       "n": 12
     },
     "h120": {
-      "p25": -0.012149,
-      "median": 0.071822,
-      "p75": 0.153669,
+      "p25": 0.010907,
+      "median": 0.064713,
+      "p75": 0.154498,
       "n": 12
     }
   },

@@ -1,26 +1,8 @@
 {
-  "as_of": "2026-08-28",
+  "as_of": "2026-09-02",
   "horizon_days": 45,
   "display_only": true,
   "upcoming": [
-    {
-      "type": "MSCI_REVIEW",
-      "name_en": "MSCI Index Review \u2014 Aug semi-annual 2026",
-      "name_zh": "MSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff09",
-      "announce_date": "2026-08-03",
-      "effective_date": "2026-08-31",
-      "scope": "MSCI EM / China A-Inclusion / HK indexes",
-      "source_note": "rule-computed: effective = last business day of Aug 2026; verify at msci.com",
-      "provisional": true,
-      "display_only": true,
-      "date": "2026-08-31",
-      "days_until": 3,
-      "imminent": true,
-      "dow": "Mon",
-      "dow_zh": "\u5468\u4e00",
-      "md": "Aug 31",
-      "md_zh": "8\u670831\u65e5"
-    },
     {
       "type": "HSI_REVIEW",
       "name_en": "HSI / HS-TECH Index Review (2026-Q3)",
@@ -32,7 +14,7 @@
       "provisional": true,
       "display_only": true,
       "date": "2026-09-14",
-      "days_until": 17,
+      "days_until": 12,
       "imminent": false,
       "dow": "Mon",
       "dow_zh": "\u5468\u4e00",
@@ -50,7 +32,7 @@
       "provisional": true,
       "display_only": true,
       "date": "2026-09-21",
-      "days_until": 24,
+      "days_until": 19,
       "imminent": false,
       "dow": "Mon",
       "dow_zh": "\u5468\u4e00",
@@ -59,12 +41,12 @@
     }
   ],
   "imminent": {
-    "en": "Next catalyst: MSCI Index Review \u2014 Aug semi-annual 2026 in 3 days (Aug 31) [provisional].",
-    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1aMSCI\u6307\u6570\u68c0\u8ba8 \u2014 2026\u5e748\u6708\uff08semi-annual\uff093\u5929\u540e\uff088\u670831\u65e5\uff09 [provisional]\u3002",
-    "type": "MSCI_REVIEW",
-    "date": "2026-08-31",
-    "days_until": 3,
-    "imminent": true,
+    "en": "Next catalyst: HSI / HS-TECH Index Review (2026-Q3) in 12 days (Sep 14) [provisional].",
+    "zh": "\u4e0b\u4e00\u7ed3\u6784\u6027\u50ac\u5316\uff1a\u6052\u6307 / \u6052\u79d1\u6307\u6570\u5b63\u5ea6\u68c0\u8ba8\uff082026\u5e74\u7b2c3\u5b63\u5ea6\uff0912\u5929\u540e\uff089\u670814\u65e5\uff09 [provisional]\u3002",
+    "type": "HSI_REVIEW",
+    "date": "2026-09-14",
+    "days_until": 12,
+    "imminent": false,
     "provisional": true,
     "display_only": true
   }

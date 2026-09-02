@@ -381,11 +381,20 @@ itself on demand.
   re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
   whole files, cap command output (`head`, `--limit`, `--jq`), and keep browser
   screenshots and full page dumps inside a subagent.
-- **One session = one task boundary.** A long program needs durable state on
-  disk, not a long session. Run it as a chain of short sessions over a
-  `research/*_CONTINUATION_HANDOFF_<date>.md`, one wave per session. Keep an
-  orchestrator under ~200k; past ~250k, checkpoint to a handoff and let the
-  operator clear rather than grinding to the ceiling.
+- **Durable state on disk — and a session may run as long as it stays useful.**
+  Operator 2026-09-01 REPEALED the former "one session = one task boundary" rule:
+  it forced every long workflow into a relay of amnesiac sessions, and
+  re-establishing context in each successor cost more than the stop ever saved.
+  There is no task-boundary stop — a merged, live-verified wave is a checkpoint,
+  not a session end, and one session may carry a program end-to-end across many
+  waves and many merges. The durable-state half survives as a WRITE rule, not a
+  STOP rule: keep program state in a
+  `research/*_CONTINUATION_HANDOFF_<date>.md` and `agentos/handoffs/` as you go,
+  so the work survives a clear, a crash, or an operator handoff. Cost control is
+  the two bullets above and is unaffected — a long session held near 150k is
+  cheap, a short one riding 800k is not, so when context grows, delegate the next
+  wave's execution rather than shortening the session. Context figures are
+  advisory targets, never a stop trigger.
 
 Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, so
 cutting thinking degrades quality for at most a sixth of the cost. The savings
@@ -636,6 +645,22 @@ information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
 
+**Hold notes do not end the Stop loop — go quiet through the ladder, not through
+repetition** (operator 2026-08-28). A one-line hold note satisfies the quota rule
+above but is not terminal to the guard: the Stop hook blocks again seconds later,
+and a session that answers every block with another note types near-identical
+hold notes in a tight billed loop for hours (about one hundred such turns measured
+on 2026-08-28 while a HOLD-FOR-SOL carrier lawfully waited out a queued CI field
+under an armed watcher; the cost is context × turns and the notes carry zero
+information after the first). When a long external wait is owned by an armed
+watcher or cron and the guard keeps blocking, check the escape-ladder threshold
+(any code: 10 consecutive / 15 total); once met, end the turn ONCE with the
+literal `SHIP LOOP BLOCKED:` evidence report — literal first characters, naming
+the PR, exact head, check state, and watcher id plus cadence — then stay quiet:
+no per-Stop hold notes, no tailing your own watcher's output file between ticks.
+Real events (watcher exit, cron fire, task notification, operator message)
+re-invoke the session; that is the only lawful cadence for a parked wait.
+
 When an operating standard changes, update the repository's `AGENTS.md` and
 `CLAUDE.md` together so both Codex and every Claude account inherit it.
 
@@ -731,7 +756,16 @@ removes the only thing that would have noticed.
 Claude enforces this contract with `.claude/hooks/ship_loop_guard.py` at SessionStart
 and `scripts/ship_loop_hold_wrapper.py` at Stop. The wrapper delegates every ordinary
 state to the canonical guard and only turns a fully lawful Sol hold into terminal
-`SHIP LOOP PARKED`. For ordinary work, the guard snapshots pre-existing dirty files,
+`SHIP LOOP PARKED`. A lawful hold whose binding checks are not yet green instead gets
+`HOLD-FOR-SOL WAITING`, or `HOLD-FOR-SOL CHECKS RED` when one concluded red — and since
+2026-08-28 that applies on `claude/*` as well as `sol/*`. It used to be `sol/*`-only, so
+an ordinary held pull request fell through to `unmerged` and was told to squash-merge and
+deploy the very pull request `DEC:SOL-HOLD-IS-A-MERGE-BARRIER` forbids merging; PR #6608
+took 121 consecutive blocks carrying that impossible instruction. The repair corrects the
+ADVICE only — pending and red still block, `parked` remains the one terminal exit and
+still requires every binding check concluded green, and waiting on CI still does not
+qualify for the escape ladder, so answer such a block with a one-line hold note rather
+than a fresh poll or a `SHIP LOOP BLOCKED` report. For ordinary work, the guard snapshots pre-existing dirty files,
 then refuses a normal stop while session-created work is uncommitted, unpushed,
 unmerged, awaiting a render, or absent from production. `unmerged` is satisfied by an
 actually-MERGED pull request and by nothing else; an armed `merge-on-green` pull request

@@ -1,27 +1,32 @@
 {
-  "1c7ed29d4c19": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Defensive + Basic Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Defensive + Basic Materials",
-    "score": 53.9
+  "c2a23868e3bb": {
+    "name_en": "Cross-sector cluster \u00b7 Basic Materials + Consumer Defensive",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Consumer Defensive",
+    "score": 56.5
   },
-  "6a6f1ffe74be": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Defensive + Consumer Cyclical",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Defensive + Consumer Cyclical",
-    "score": 61.3
+  "d31285809ed8": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
+    "score": 57.6
   },
-  "910d8deff554": {
-    "name_en": "Cross-sector cluster \u00b7 Basic Materials + Technology",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Basic Materials + Technology",
-    "score": 68.2
+  "eaa9c5d549e3": {
+    "name_en": "Cross-sector cluster \u00b7 Utilities + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Utilities + Industrials",
+    "score": 62.2
   },
-  "af59c45e1d9e": {
-    "name_en": "Emerging Industrials cluster",
-    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
-    "score": 56.3
+  "f223cbb977ff": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Technology",
+    "score": 78.1
   },
-  "cac881533aab": {
-    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Communication Services",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Communication Services",
-    "score": 63.5
+  "f9325c233ae1": {
+    "name_en": "Cross-sector cluster \u00b7 Technology + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Industrials",
+    "score": 52.6
+  },
+  "fea0a4d1a63a": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Cyclical + Consumer Defensive",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Cyclical + Consumer Defensive",
+    "score": 57.4
   }
 }

@@ -1,25 +1,25 @@
 {
-  "date": "2026-08-28",
+  "date": "2026-09-01",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
     "equity_us",
     "equity_sm",
     "credit_hy",
-    "equity_intl",
-    "equity_em"
+    "copper",
+    "equity_intl"
   ],
   "correlation": "converging",
-  "asof": "2026-08-28",
+  "asof": "2026-09-01",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
     "regime": "mixed / no clear trend",
     "correlation": {
       "verdict": "converging",
-      "absorption_pctile": 0.54,
+      "absorption_pctile": 0.53,
       "n_markets": 6,
-      "absorption_ratio": 0.369,
+      "absorption_ratio": 0.368,
       "mean_abs_corr": 0.237,
       "dominant_cluster": [
         "US",
@@ -28,7 +28,6 @@
         "Crypto"
       ],
       "spark_w": [
-        0.347,
         0.34,
         0.331,
         0.344,
@@ -131,9 +130,10 @@
         0.392,
         0.396,
         0.369,
-        0.369
+        0.367,
+        0.368
       ],
-      "spark_asof": "2026-08-28"
+      "spark_asof": "2026-09-04"
     },
     "breadth": 0.31,
     "trend_top": [
@@ -153,6 +153,11 @@
         "z": 1.0
       },
       {
+        "asset": "copper",
+        "trend": "up",
+        "z": 1.0
+      },
+      {
         "asset": "equity_intl",
         "trend": "up",
         "z": 1.0
@@ -161,42 +166,37 @@
         "asset": "equity_em",
         "trend": "up",
         "z": 1.0
-      },
-      {
-        "asset": "gold",
-        "trend": "mixed",
-        "z": 0.33
       }
     ],
     "trend_summary": {
       "n": 13,
-      "n_up": 5,
-      "n_down": 1
+      "n_up": 6,
+      "n_down": 2
     },
     "intermarket": [
       {
         "pair": "copper_gold",
         "ratio": 0.001,
         "trend": "mid",
-        "pctile": 52.0
+        "pctile": 59.0
       },
       {
         "pair": "gold_silver",
-        "ratio": 66.568,
+        "ratio": 66.808,
         "trend": "mid",
-        "pctile": 26.0
+        "pctile": 27.0
       },
       {
         "pair": "oil_gold",
-        "ratio": 0.018,
+        "ratio": 0.019,
         "trend": "mid",
-        "pctile": 31.0
+        "pctile": 47.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.166,
+        "ratio": 0.171,
         "trend": "mid",
-        "pctile": 34.0
+        "pctile": 39.0
       }
     ],
     "carry": {
@@ -205,7 +205,7 @@
           "key": "rates_term",
           "label_en": "Rates term-spread (10y-3m)",
           "label_zh": "\u5229\u7387\u671f\u9650\u5229\u5dee (10\u5e74-3\u6708)",
-          "value": 0.96,
+          "value": 0.99,
           "unit": "%",
           "state": "positive carry"
         },
@@ -251,16 +251,16 @@
           "leader": "Dollar",
           "follower": "HK",
           "lag": 1,
-          "r": 0.292,
-          "t": 4.589,
+          "r": 0.293,
+          "t": 4.571,
           "q": 0.0
         },
         {
           "leader": "US",
           "follower": "HK",
           "lag": 1,
-          "r": 0.306,
-          "t": 4.133,
+          "r": 0.304,
+          "t": 4.087,
           "q": 0.0
         },
         {
@@ -268,15 +268,15 @@
           "follower": "HK",
           "lag": 1,
           "r": 0.263,
-          "t": 3.96,
+          "t": 3.952,
           "q": 0.005
         },
         {
           "leader": "US",
           "follower": "China",
           "lag": 1,
-          "r": 0.245,
-          "t": 3.568,
+          "r": 0.244,
+          "t": 3.556,
           "q": 0.015
         }
       ],
@@ -296,45 +296,45 @@
       "impulse_13w": null
     },
     "funding_stress": {
-      "asof": "2026-08-26",
+      "asof": "2026-08-28",
       "state": "calm",
-      "score": 38.0,
-      "spread_bp": 1.0
+      "score": 44.0,
+      "spread_bp": 2.0
     },
     "confirm": {
       "verdict": "confirm",
       "agree_pct": 100,
       "n_blind_flags": 0,
       "flags_top": [],
-      "asof": "2026-08-26"
+      "asof": "2026-08-28"
     },
     "dollar": {
-      "usd_dir": "weakening",
+      "usd_dir": "flat",
       "regime": "US growth premium",
       "risk": "risk-on",
       "corr_top": [
         {
           "key": "GC=F",
-          "corr": -0.68
+          "corr": -0.69
         },
         {
           "key": "HG=F",
-          "corr": -0.6
+          "corr": -0.59
         },
         {
           "key": "BTC",
-          "corr": -0.43
+          "corr": -0.44
         }
       ],
       "unstable_n": 0,
       "fx_stress": {
         "dominant": null,
-        "top_key": "carry_unwind",
-        "top_val": 11.7
+        "top_key": "em_crisis_capital_flight",
+        "top_val": 24.5
       }
     },
     "shadow": {
-      "pressure_pctile": 0.54,
+      "pressure_pctile": 0.53,
       "incumbent_state": "calm",
       "shadow_state": "calm",
       "escalated": false

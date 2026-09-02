@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TEL-BULL-20260717",
-  "asof": "2026-08-27",
+  "asof": "2026-08-31",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 32.2,
-  "raw_confidence": 31.0,
-  "delta_vs_base": -27.8,
+  "management_confidence": 32.7,
+  "raw_confidence": 34.6,
+  "delta_vs_base": -27.3,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
-    "validity": 61.4,
+    "validity": 75.3,
     "progress": 0.0,
-    "pace": 0.5,
+    "pace": 0.0,
     "retention": 50.0,
-    "overlay": 61.0
+    "overlay": 67.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.697,
+    "dist_to_stop_r": 0.81,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 82.2,
-    "p1": -0.2023,
-    "p2": -0.1012,
+    "horizon_pct_used": 91.1,
+    "p1": -0.1265,
+    "p2": -0.0632,
     "p3": null,
-    "move_r": -0.303,
+    "move_r": -0.19,
     "mfe_r": 0.456,
     "mae_r": -0.428
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Falling Behind Schedule",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-28",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 37,
-  "tau": 0.8222
+  "days_elapsed": 41,
+  "tau": 0.9111
 }

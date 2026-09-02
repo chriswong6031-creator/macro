@@ -1,18 +1,30 @@
 {
-  "as_of": "2026-08-20",
+  "as_of": "2026-09-01",
   "bottleneck": {
     "accounts": [
       {
-        "account": "mastermind_news",
+        "account": "flagship",
         "author_replies": 0,
-        "contributions": 8,
+        "contributions": 5,
         "engagements": 0,
         "impressions": 0,
         "measured": 0,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
-        "unmeasured": 8
+        "unmeasured": 5
+      },
+      {
+        "account": "mastermind_news",
+        "author_replies": 0,
+        "contributions": 9,
+        "engagements": 0,
+        "impressions": 0,
+        "measured": 0,
+        "replies_abstained": 0,
+        "replies_enqueued": 0,
+        "replies_sent": 0,
+        "unmeasured": 9
       }
     ],
     "basis": "raw_counts",
@@ -30,9 +42,25 @@
       "med_adjusted": null,
       "med_impressions": null,
       "med_label": null,
-      "n": 8,
+      "n": 9,
       "n_labelled": 0,
-      "n_null": 8,
+      "n_null": 9,
+      "verdict": "seeding",
+      "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "breaking",
+        "hook_family": "press_lane",
+        "register": "unknown"
+      },
+      "med_adjusted": null,
+      "med_impressions": null,
+      "med_label": null,
+      "n": 5,
+      "n_labelled": 0,
+      "n_null": 5,
       "verdict": "seeding",
       "verdict_note": "0 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
     }
@@ -70,8 +98,8 @@
     "hook_family"
   ],
   "n_floor": 20,
-  "n_rows": 8,
-  "n_rows_all_time": 120,
+  "n_rows": 14,
+  "n_rows_all_time": 160,
   "north_star": {
     "active": false,
     "follower_floor": 250,
@@ -91,9 +119,9 @@
         "med_adjusted": null,
         "med_impressions": null,
         "med_label": null,
-        "n": 8,
+        "n": 14,
         "n_labelled": 0,
-        "n_null": 8,
+        "n_null": 14,
         "verdict": "seeding",
         "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       }
@@ -104,9 +132,9 @@
         "med_adjusted": null,
         "med_impressions": null,
         "med_label": null,
-        "n": 8,
+        "n": 14,
         "n_labelled": 0,
-        "n_null": 8,
+        "n_null": 14,
         "shape": "unknown",
         "verdict": "seeding",
         "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
@@ -117,9 +145,9 @@
         "med_adjusted": null,
         "med_impressions": null,
         "med_label": null,
-        "n": 8,
+        "n": 14,
         "n_labelled": 0,
-        "n_null": 8,
+        "n_null": 14,
         "trigger": "unknown",
         "verdict": "seeding",
         "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"

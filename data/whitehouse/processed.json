@@ -869,6 +869,48 @@
       "at": "2026-08-28T05:24:31.790376+00:00",
       "activated": false,
       "importance": 35
+    },
+    "https://www.whitehouse.gov/?p=49232": {
+      "id": "wh-2026-08-28-fact-sheet-president-donald-j-trump-establishes-a-commission-to-design-the-unite",
+      "at": "2026-08-28T18:42:00.791729+00:00",
+      "activated": false,
+      "importance": 28
+    },
+    "https://www.whitehouse.gov/?p=49230": {
+      "id": "wh-2026-08-28-establishing-the-united-states-space-academy",
+      "at": "2026-08-28T18:42:08.553254+00:00",
+      "activated": false,
+      "importance": 25
+    },
+    "https://www.whitehouse.gov/?p=49235": {
+      "id": "wh-2026-08-29-president-trump-was-right-america-controls-the-strait-of-hormuz",
+      "at": "2026-08-29T02:12:01.826147+00:00",
+      "activated": true,
+      "importance": 92
+    },
+    "https://www.whitehouse.gov/?p=49402": {
+      "id": "wh-2026-08-31-fact-sheet-president-donald-j-trump-announces-deal-with-nine-additional-pharmace",
+      "at": "2026-08-31T20:05:10.560234+00:00",
+      "activated": true,
+      "importance": 72
+    },
+    "https://www.whitehouse.gov/?p=49389": {
+      "id": "wh-2026-08-31-president-trump-and-vp-vance-deliver-manufacturing-renaissance-to-michigan",
+      "at": "2026-08-31T20:05:19.001284+00:00",
+      "activated": false,
+      "importance": 32
+    },
+    "https://www.whitehouse.gov/?p=49415": {
+      "id": "wh-2026-08-31-fact-sheet-delivering-a-universal-sign-on-for-public-services",
+      "at": "2026-08-31T23:51:16.279973+00:00",
+      "activated": false,
+      "importance": 32
+    },
+    "https://www.whitehouse.gov/?p=49461": {
+      "id": "wh-2026-08-31-fact-sheet-president-donald-j-trump-announces-historic-oil-agreement-to-secure-a",
+      "at": "2026-09-01T05:07:42.397358+00:00",
+      "activated": true,
+      "importance": 92
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

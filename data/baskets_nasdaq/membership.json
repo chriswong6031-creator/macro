@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-08-28",
+ "as_of": "2026-09-01",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -44,12 +44,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -86,12 +86,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "DDOG",
@@ -398,12 +398,12 @@
      "name": "Marvell Technology Inc"
     },
     {
-     "ticker": "ADI",
-     "name": "Analog Devices Inc"
-    },
-    {
      "ticker": "QCOM",
      "name": "Qualcomm Inc"
+    },
+    {
+     "ticker": "ADI",
+     "name": "Analog Devices Inc"
     },
     {
      "ticker": "MPWR",
@@ -528,12 +528,12 @@
      "name": "Automatic Data Processing Inc"
     },
     {
-     "ticker": "CDNS",
-     "name": "Cadence Design Systems Inc"
-    },
-    {
      "ticker": "INTU",
      "name": "Intuit Inc"
+    },
+    {
+     "ticker": "CDNS",
+     "name": "Cadence Design Systems Inc"
     },
     {
      "ticker": "DDOG",

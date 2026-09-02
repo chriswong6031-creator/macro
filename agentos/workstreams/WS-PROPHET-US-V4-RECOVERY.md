@@ -194,17 +194,18 @@ waves:
   - id: b1
     depends_on: [a1]
     title: "V4-B1 — canonical candidate episode registry (prophet.candidate_episode/v1)"
-    status: in_progress
+    status: done
     next_action: >
-      BUILT_PENDING_NATURAL_ACCEPTANCE. Merge the reviewed B1 code/wiring, then wait
-      for the first ordinary scheduled nightly descendant. Accept only from its exact
-      HEAD-referenced immutable generation, receipt/source hashes, workflow ancestry,
-      and read-only canonical-reader proof. The B1 step itself is schedule-only and is
-      skipped by daily workflow_dispatch; a manual dispatch, rerun, replay, report mode,
-      or CI fixture is not natural acceptance. The Radar lineage input remains
-      PROPOSED/STAGED_NOT_ARMED: only WS:LIVE-ENTRY-RADAR may freeze and validate its
-      forward-projection contract and require exact immutable event_id before PRODUCED.
-      Do not arm or manufacture that store here. D5 remains blocked until then.
+      ACCEPTED / PROVEN_LIVE for the canonical episode data plane. Natural scheduled
+      run 33147282433 at descendant head 24ccea3fe482 published generation
+      peg:c025bb50c45f319f989a4848249b8a85b65354143e3262f2ad09d07841311b08;
+      commit a8ee11ba0e48 pushed the exact HEAD-selected bytes to main. The shared
+      validator and sole canonical loader read 467 lawful episodes / 915 events / 5,435
+      suppressions with zero duplicate episode, event, or source identities. The
+      unrelated standout_audit_us timed out before us_prophet_ledgers began; the workflow
+      continued, B1 then succeeded and pushed its durable generation, while the final run
+      conclusion remained cancelled solely because of that earlier unrelated timeout. Radar forward lineage
+      remains PROPOSED/STAGED_NOT_ARMED and is not widened by this acceptance.
   - id: b2
     depends_on: [b1]
     title: "V4-B2 — entry-event correction hardening (B-15..B-19)"
@@ -584,9 +585,32 @@ waves:
       A7 binds Earnings decision-time reads to the revision-chain reader and FORBIDS
       read_event_workspace there; A8 binds decision_cut to B1-owned opened_at/opened_session
       and sets tradable_at NOT_ASSERTED until B4; A9 requires episode_ref to pin the B1
-      generation_id. Runtime D5 stays gated on B1 natural-production acceptance (B1 is
-      MERGED / BUILT_NOT_PROVEN as 878930b3b2f9)."
-    status: todo
+      generation_id. B1 DEPENDENCY CLEARED 2026-08-28: natural run 33147282433 and
+      durable main commit a8ee11ba0e48 prove the canonical episode generation. This
+      clears only D5's B1 dependency. POST-RECONCILIATION LOCAL ACCEPTANCE 2026-08-31:
+      independent whole-branch hostile re-review 4 passed exact final reviewed head
+      f48c8d1598c49aa0f3b1eba85922c9e633dd114d with no P0/P1/P2/P3 findings. Merge head
+      bb34c575f58879f4944ca353e17ca6a6fa4512ca has that reviewed head and fresh-main
+      b7b3938aec35372dc32229981b4f3159f2b5faf2 as its exact parents. At the merge head,
+      focused D5 is 444 passed, hostile lineage/PIT 22 passed, complete
+      tests/test_ci_pack.py 117 passed, exact route/closure selectors 3 passed, the exact
+      Prophet Lab six-suite manifest line 453 passed, the clean declared-dependency Python
+      3.12 five-suite 435 passed, path-isolated routing 3/133 with prophet-lab selected
+      (plan hash 179a8fde50a3647cba6779dbdf781379dcbc9a6ea8b1c19214f312d4198bf896),
+      whole 14-file range 133/133 (plan hash
+      8740f42f6b48b70142dc044eebf6c8ea16771a893c98aa34cb6d5890a5e86bd9), and Agent OS
+      is 967 records / 0 errors / 40 warnings. The reconciled Caddyfile and boundary test
+      are byte-identical to fresh main. This is local proof only: hosted CI, PR, squash
+      merge to main, deploy, and authenticated covered plus typed-unresolved live receipts
+      remain pending. D6 and every other downstream wave remain gated."
+    status: in_progress
+    next_action: >
+      Complete D5 delivery from exact post-reconciliation proof without widening scope:
+      push the records-only child of merge head bb34c575f58879f4944ca353e17ca6a6fa4512ca,
+      open one PR, wait for concluded hosted CI, squash-merge, verify main and the normal
+      deploy, and collect authenticated covered plus typed-unresolved production receipts.
+      Fill the PR/merge/CI/deploy/live placeholders in the 2026-08-30 D5 pre-delivery
+      handoff before any `PROVEN_LIVE` claim.
   - id: d6
     depends_on: [d5]
     title: "V4-D6 — earnings adapter. Premise updated 0B: EIOS E1P is LIVE for the
@@ -625,14 +649,15 @@ waves:
     title: "V4-E6 — promotion gauntlet + V3 retirement ruling"
     status: todo
 next_action: >
-  B1 is BUILT_PENDING_NATURAL_ACCEPTANCE on its single reviewed carrier. Merge it,
-  then wait for the first ordinary scheduled nightly descendant and validate the exact
-  HEAD-selected immutable generation, receipt/source hashes, ancestry, and canonical
-  read path. The B1 workflow step is schedule-only; do not dispatch, rerun, or replay as
-  a substitute. Radar forward lineage remains PROPOSED/STAGED_NOT_ARMED until its owner
-  freezes and validates an exact immutable-event relationship contract. D5 remains blocked;
-  PR #6275 stays a contract-only carrier to reconcile only after B1 acceptance without
-  losing its frozen D5 evidence terms. A2/A3/A4 and all other V4 waves remain separate.
+  D5's bounded Earnings implementation is independently hostile-review accepted and locally
+  exact-head verified after fresh-main reconciliation at merge head
+  bb34c575f58879f4944ca353e17ca6a6fa4512ca, but it is not yet hosted-CI accepted, merged
+  to main, deployed, or live-proven. Continue Task 4 from
+  agentos/handoffs/PROPHET-US-V4-RECOVERY-2026-08-30-d5-pre-delivery.md: push the exact
+  records-only child, open one PR, wait for concluded hosted CI, squash-merge, verify
+  main/deploy, and collect authenticated covered plus typed-unresolved endpoint receipts.
+  Radar forward lineage remains
+  PROPOSED/STAGED_NOT_ARMED; A2/A3/A4, B2/B3/B4, D6, and every later wave remain separate.
 ---
 
 ## Context

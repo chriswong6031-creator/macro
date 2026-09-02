@@ -1,33 +1,47 @@
 {
-  "appended": 2,
-  "asof": "2026-08-27",
+  "appended": 3,
+  "asof": "2026-08-31",
   "candidates": {
-    "R": 2,
-    "T": 3,
-    "W": 33
+    "R": 3,
+    "T": 1,
+    "W": 12
   },
   "deduped": {
     "R": 0,
-    "T": 3,
-    "W": 33
+    "T": 1,
+    "W": 12
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "consulted": false
+      "asof": "2026-09-01",
+      "consulted": true,
+      "n_keys": 27,
+      "n_themes": 18,
+      "ok": true,
+      "reason": null,
+      "source": "site/basketdata/foresight_cascade.json"
     },
     "ignition": {
       "coil_min_sessions": 293,
       "consulted": true,
-      "null_reasons": {},
+      "null_reasons": {
+        "ohlcv_absent": 15
+      },
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {},
+      "themes_read": {
+        "Software": {
+          "theme_thrust_frac": 0.1064,
+          "theme_thrust_reason": null,
+          "theme_thrust_state": "quiet"
+        }
+      },
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 2,
-      "tickers_read": 2
+      "tickers_ok": 48,
+      "tickers_read": 63
     },
     "keys": [
       "relay_count_3d",
@@ -45,11 +59,16 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": false
+      "consulted": true,
+      "high_lookback": 63,
+      "members_indexed": 132,
+      "n_covered": 80,
+      "reason": null,
+      "window_sessions": 21
     },
     "turnover": {
       "consulted": true,
-      "last_session": "2026-08-27",
+      "last_session": "2026-08-31",
       "n_tickers": 1544,
       "ok": true,
       "reason": null,
@@ -83,8 +102,9 @@
   },
   "flag_tickers": {
     "R": [
-      "WOR",
-      "LTC"
+      "RHI",
+      "DOCU",
+      "PJT"
     ],
     "T": [],
     "W": []
@@ -95,41 +115,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-28 10:37:29",
-  "runtime_s": 133.2,
+  "run_utc": "2026-09-01 08:15:09",
+  "runtime_s": 111.2,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": -1,
-    "asof": "2026-08-28",
-    "n_members": 139,
+    "age_days": 0,
+    "asof": "2026-08-31",
+    "n_members": 132,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 3.884,
+        "emerging_score": 2.744,
         "rank": 1,
-        "theme": "Commodities Metals"
-      },
-      {
-        "emerging_score": 2.074,
-        "rank": 2,
         "theme": "Cybersecurity"
       },
       {
-        "emerging_score": 1.845,
+        "emerging_score": 1.795,
+        "rank": 2,
+        "theme": "Big Data"
+      },
+      {
+        "emerging_score": 1.569,
         "rank": 3,
-        "theme": "Crypto & Blockchain"
+        "theme": "Software"
       },
       {
-        "emerging_score": 1.404,
+        "emerging_score": 1.527,
         "rank": 4,
-        "theme": "Quantum Computing"
+        "theme": "Artificial Intelligence"
       },
       {
-        "emerging_score": 1.375,
+        "emerging_score": 1.343,
         "rank": 5,
-        "theme": "Electric Vehicles"
+        "theme": "Biometrics"
       }
     ]
   },
@@ -138,19 +158,19 @@
       "2B",
       "3B"
     ],
-    "aligned": 33,
-    "asof_max": "2026-08-27",
+    "aligned": 12,
+    "asof_max": "2026-08-31",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-27",
+    "asof_run": "2026-08-31",
     "evaluated": 712,
-    "fresh": 35,
+    "fresh": 12,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 25.8,
+    "runtime_s": 20.4,
     "skipped": 5,
     "source": "baskets/membership.json",
-    "state_turn": 97,
+    "state_turn": 89,
     "universe_n": 717
   }
 }
