@@ -614,13 +614,14 @@ If redistribution is uncertain, source-derived membership can remain internal ev
 ## 16. W3 IS NOW SPLIT INTO THREE SUB-WAVES
 
 The original single W3 scope is too large after this amendment.
-Per session-chain/context-economy law, amend the roadmap:
+Amend the roadmap (the split below is about PR granularity; the session-chain half of the
+2026-08-14 citation was repealed 2026-09-01 — `DEC:SESSION-LENGTH-IS-NOT-A-COST-CONTROL`):
 
 W3A — Local Taxonomy & PIT Membership Plane — THIS NEXT SESSION
 W3B — Dual-Market Local + Canonical ThemeState
 W3C — Selection Cohort Read + Consequence Grading
 
-One sub-wave per session.
+One sub-wave per PR — a single session may carry more than one of them.
 Do not combine all three into one mega-PR.
 W1 already proved that splitting a wave into `W1a/W1b` is the right pattern when a prerequisite emerges.
 
