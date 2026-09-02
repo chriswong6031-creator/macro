@@ -987,6 +987,33 @@ def test_a_named_suite_edit_does_not_select_peer_pytest_jobs() -> None:
     assert len(nonempty) < 12, nonempty
 
 
+def test_company_intelligence_workspace_chain_is_executed_by_pr_code_gate() -> None:
+    """D5's hermetic real-reader chain suite must run before a PR can merge.
+
+    A path-only owner is insufficient: the selected ``gate: code`` job must
+    also name the suite in an executing ``run:`` step.
+    """
+    manifest = _yaml(MANIFEST)
+    prophet_lab = manifest["jobs"]["prophet-lab"]
+    suite = "tests/test_company_intelligence_workspace_chain.py"
+    assert prophet_lab["gate"] == "code"
+    assert suite in prophet_lab["paths"]
+    assert any(
+        suite in str(step.get("run") or "")
+        for step in prophet_lab["steps"]
+    )
+    assert {"requests", "pyarrow"} <= _job_pip_packages(prophet_lab), (
+        "prophet-lab's executing D5 suite imports requests and pyarrow in a clean "
+        "Python 3.12 job; keep those dependencies on this owning job's install line"
+    )
+
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    code_jobs = [job for job in jobs if job.gate == "code"]
+    selected, reason = PACK.select_jobs(code_jobs, [suite])
+    assert "prophet-lab" in {job.job_id for job in selected}, reason
+    assert "unowned path" not in reason, reason
+
+
 def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
     """PR #5488 shape: `.claude/hooks/gh_quota_guard.py` used to mint 187/187 jobs.
 
@@ -3574,6 +3601,70 @@ def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
         "in .github/ci/legacy-jobs.yml to cover the listed files — widening is "
         "always the safe direction."
     )
+
+
+def test_d5_route_closure_keeps_affected_curated_jobs_selecting_dependencies() -> None:
+    """D5's Prophet Lab route closure must not become a five-job false green.
+
+    These are the concrete dependencies introduced through ``app/prophet_lab.py``.
+    The generic closure audit above re-derives the complete graph; this regression
+    independently pins the exact five-job D5 repair so a future inference change
+    cannot silently erase the manifest ownership that this branch requires.
+    """
+    required = {
+        "biocatalyst-history": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "biocatalyst-serving": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "defense-rail-laws": (
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+        ),
+        "flow-surface": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+        "unrun-government-revenue-grader": (
+            "engine/path_risk_signals.py",
+            "engine/stock_identity/__init__.py",
+            "engine/stock_identity/authority.py",
+            "engine/stock_identity/fingerprint.py",
+            "engine/stock_identity/plane.py",
+            "engine/us_candidate_episode.py",
+        ),
+    }
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+
+    for job_id, dependencies in required.items():
+        job = jobs[job_id]
+        assert job.exclusive, job_id
+        for dependency in dependencies:
+            selected, reason = PACK.select_jobs([job], [dependency])
+            assert [item.job_id for item in selected] == [job_id], (
+                job_id,
+                dependency,
+                reason,
+            )
+            match = PACK._job_diff_match(job, [dependency])
+            assert match and match[1] == "declared", (job_id, dependency, match)
 
 
 def test_curated_exclusivity_drops_only_the_opaque_fallback_tier() -> None:

@@ -12,15 +12,84 @@ four does `{% import "_prophet_card.html.j2" as pv %}` then calls
 `life`/`lane_mark` keys — every existing non-US call site). This suite proves,
 against origin/main's pre-migration copy of that file:
 
-  1. The four non-US page templates themselves are byte-identical to
-     origin/main (git diff --stat empty) — confirming no OTHER file in this
-     packet's diff touches them.
+  1. B1 MERGE-SAFETY FIX (2026-09-01 repair round 1, independent code review):
+     items 1 and 2 below USED TO diff each file against `git merge-base
+     origin/main HEAD` and assert a specific NON-EMPTY diff shape (an itemized
+     added-date-rollout pin, or a 2-line pv_css() pin). That mechanism
+     self-destructs the moment this PR merges: once `origin/main` contains
+     this branch's commits, the merge-base of a later checkout IS (or
+     descends past) this branch's own HEAD, so `_origin_main_text()` reads
+     back the SAME post-rollout content `cur` already holds — the computed
+     diff collapses to empty, and an assertion that expects a non-empty,
+     itemized diff goes red forever. Fixed by dropping merge-base diffing
+     entirely for the two tests that assert a SPECIFIC diff shape: they now
+     pin exact SHA-256 hashes of the CURRENT (post-rollout) raw file bytes —
+     no diffing, no historical baseline, no leniency of any kind (not
+     comment-stripped, not sorted-line-set matched — literal bytes). A
+     future legitimate edit to any of these five surfaces must recompute and
+     update its pin by hand; that friction IS the guard's job — unrelated
+     drift (or a bug that silently changes shared markup) breaks the pin
+     without needing to know or care where `origin/main` currently sits.
+
+     R6 CORRECTION (2026-09-01 repair round 3, independent repair-delta
+     review): round 1's docstring claimed "`_merge_base()`/`_origin_main_
+     text()` remain in use below ONLY by the pv_card()-output-equality test
+     and the stocktable.js diff test, which both assert 'no diff at all' /
+     a PRE-EXISTING (unrelated) shape rather than a rollout-specific
+     non-empty diff — see their own docstrings for why those two are
+     unaffected by this failure mode." That claim was FALSE for the
+     stocktable.js diff test specifically, and round 1 never verified it:
+     `test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards`
+     asserted `hunk_count == 2` against `git diff -U0 $MERGE_BASE --
+     templates/stocktable.js` — a SPECIFIC non-empty diff shape, the exact
+     pattern item 1 warns about, not a "no diff at all" equality check. It
+     was red on this exact head in CI pack 9: templates/stocktable.js's git
+     blob (f8145bd6fb4ed0adba5f34b5c97a7895b7332f2e) is IDENTICAL at
+     origin/main, at this branch's own merge-base, AND at HEAD — this
+     branch's own commits never touched the file at all, so the two
+     additive `stageFilter` guards the test exists to protect had already
+     landed on main (from an earlier, unrelated change) before this
+     branch's merge-base — collapsing the diff to 0 hunks regardless of
+     when the test runs, not merely after this PR merges. Fixed the same
+     way as item 1: `test_stocktablejs_is_byte_pinned_and_carries_both_
+     stagefilter_guards` below drops the diff assertion and pins the
+     CURRENT file's exact SHA-256 bytes (losing nothing — those bytes
+     already ARE the fully-guarded post-rollout file) plus a direct
+     substring check for both guards, no git dependency at all.
+
+     Precise accounting of what remains true, so this docstring makes no
+     further false assurances: `_merge_base()`/`_origin_main_text()` are
+     still used by exactly two tests below —
+     `test_pv_card_is_byte_identical_across_representative_non_us_calls`
+     (via `_macros()`) and
+     `test_non_us_stocktable_init_call_sites_are_byte_identical_to_origin_main`.
+     Both assert EQUALITY ("no diff at all" between the origin/main-sourced
+     text and the current text) rather than a specific non-empty diff
+     shape — the collapse this section describes makes `orig`/`cur` (or
+     `orig_call`/`cur_call`) identical BY CONSTRUCTION once merge-base
+     reaches this branch's own HEAD, which keeps an equality assertion
+     trivially true (never red), unlike a shape assertion that expects a
+     particular non-empty diff and has nothing left to match once the diff
+     empties out. Both genuinely survive; neither was re-verified to be
+     false the way the stocktable.js diff test was, and both remain
+     git-dependent (a legitimate future non-US template/stocktable.js edit
+     on either side of the merge-base could still change what they compare,
+     just never turn a currently-passing run red from the collapse itself).
   2. pv_css() — the shared <style> block every one of those four pages
-     renders once — is byte-identical. This is the check that caught a real
-     defect during this packet's build: the new .pv-life/.pv-newer/.pv-mark
-     CSS was first added INSIDE pv_css() (shared), which would have changed
-     all four pages' bytes; it now lives in dashboard.html.j2's own <style>
-     block instead (US-only, never included by the other four).
+     renders once — is byte-pinned (SHA-256 of the exact rendered CSS text).
+     This is the check that caught a real defect during this packet's build:
+     the new .pv-life/.pv-newer/.pv-mark CSS was first added INSIDE pv_css()
+     (shared), which would have changed all four pages' bytes; it now lives
+     in dashboard.html.j2's own <style> block instead (US-only, never
+     included by the other four). The Added-date rollout's
+     `.pv-added`/`.pv-dt+.pv-added` rules DO belong in this shared block
+     (they render on every market, not US-only), and F1 (2026-09-01 repair
+     round) further changed `.pv-znr`/`.pv-dt`/`.pv-added`'s flex-shrink
+     behavior so the buy-zone price chip never loses the space fight to the
+     Added-date metadata chip — `test_pv_css_is_byte_pinned_post_rollout`
+     pins the CURRENT full CSS text exactly, superseding the old two-line
+     diff pin (which could not express "these three rules changed together"
+     without becoming exactly this — a whole-content hash).
   3. pv_card() — the per-row card macro — is byte-identical for representative
      cx dicts shaped exactly like the non-US callers' (no lifecycle/id/life/
      lane_mark keys), across several branches (buy/wait/hold/no-zone/flags/
@@ -34,22 +103,28 @@ touched file — the shared-macro proof above is the complete surface by
 construction: nothing else in the diff can reach those four pages' bytes.
 
 STOCKTABLE.JS COVERAGE (commissioning follow-up, gap 2): templates/stocktable.js
-is a SECOND shared file this packet touches (retiring the US-only Stage/阶段
-filter dropdown + its count chips, MP-1 §6/§9/§8). hk.html.j2/china.html.j2/
-canada.html.j2 each call `StockTable.init({...})` with no `stageFilter` key —
-the new guard (`cfg.stageFilter !== false` / `cfg.stageFilter === false`) is
-mathematically a no-op for any caller that never sets that key (`undefined
-!== false` is `true`; `undefined === false` is `false`), so this is proven
-by (a) diffing stocktable.js against origin/main and asserting the ONLY
-change is the two additive guard hunks, and (b) grepping every non-US
-`StockTable.init({...})` call site's own source text for the literal string
-`stageFilter` — its absence in all three is what makes the guard inert there.
-intl.html.j2 never calls StockTable.init at all and is unaffected by
-construction. Same no-DOM-execution limitation as the page templates above:
-this is a static-source proof, not a rendered/executed one.
+is a SECOND shared file in scope (retiring the US-only Stage/阶段 filter
+dropdown + its count chips, MP-1 §6/§9/§8) — its two additive `stageFilter`
+guards are already present at `origin/main`, at this branch's merge-base, and
+at HEAD alike (R6, see item 1 above), so it is more precisely "a file this
+program's design touches" than "a file this branch's diff touches" today.
+hk.html.j2/china.html.j2/canada.html.j2 each call `StockTable.init({...})`
+with no `stageFilter` key — the guard (`cfg.stageFilter !== false` /
+`cfg.stageFilter === false`) is mathematically a no-op for any caller that
+never sets that key (`undefined !== false` is `true`; `undefined === false`
+is `false`), so this is proven by (a) pinning stocktable.js's current bytes
+exactly and asserting both guard substrings are present in them (R6 —
+replaces the old origin/main diff, which could not survive the merge-base
+collapse for a file this branch never itself modifies), and (b) grepping
+every non-US `StockTable.init({...})` call site's own source text for the
+literal string `stageFilter` — its absence in all three is what makes the
+guard inert there. intl.html.j2 never calls StockTable.init at all and is
+unaffected by construction. Same no-DOM-execution limitation as the page
+templates above: this is a static-source proof, not a rendered/executed one.
 """
 from __future__ import annotations
 
+import hashlib
 import subprocess
 from pathlib import Path
 
@@ -91,14 +166,35 @@ def _origin_main_text(rel_path: str) -> str:
     ).decode()
 
 
-def test_non_us_page_templates_are_untouched():
-    """Confirms no file besides _prophet_card.html.j2 in this packet's diff
-    can reach hk/china/canada/intl's rendered bytes at all."""
-    out = subprocess.check_output(
-        ["git", "diff", "--stat", _MERGE_BASE, "HEAD", "--", *NON_US_TEMPLATES],
-        cwd=str(ROOT),
-    ).decode()
-    assert out.strip() == "", f"non-US template(s) changed:\n{out}"
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+#: B1 (2026-09-01 repair round): exact SHA-256 of each non-US template's
+#: CURRENT raw file bytes — see the module docstring's item 1 for why this
+#: replaced the merge-base functional-diff mechanism. No comment-stripping,
+#: no leniency: literal file bytes. A legitimate future edit to any of these
+#: four templates must recompute and update its hash here.
+_EXPECTED_TEMPLATE_SHA256: dict[str, str] = {
+    "templates/hk.html.j2": "3fc18a6861518ac4691f30c7bfb13c5435a7339eacaeb01a921af33f9504476e",
+    "templates/china.html.j2": "cb6e0685b96a6d897e9562418927c0bb5d5e656d4b31c99e843ec5f213fa7031",
+    "templates/canada.html.j2": "d4a951e0c3a1426ebbcbaa69296def90e74dd62e06722986e07f6b6d9d80d425",
+    "templates/intl.html.j2": "c62b4a6373ac3130a16f622b8dae9b73218642e261051a3bd3493fc95fd0d9a5",
+}
+
+
+def test_non_us_templates_are_byte_pinned_post_rollout():
+    """Merge-safe successor to the old merge-base functional-diff test (B1):
+    pins each non-US template's CURRENT raw bytes exactly, with no comparison
+    to any historical baseline — so this assertion's truth value does not
+    depend on whether/when this branch has merged. Simulated merge-base==HEAD
+    (the exact failure mode B1 fixes) changes NOTHING here: this test never
+    calls git at all."""
+    for rel_path in NON_US_TEMPLATES:
+        cur = (ROOT / rel_path).read_text(encoding="utf-8")
+        assert _sha256_text(cur) == _EXPECTED_TEMPLATE_SHA256[rel_path], (
+            f"{rel_path}: content drifted from its pinned post-rollout hash — "
+            f"if this is a legitimate edit, recompute and update the pin")
 
 
 def _macros():
@@ -108,10 +204,32 @@ def _macros():
     return env.from_string(orig_src).module, env.from_string(cur_src).module
 
 
-def test_pv_css_is_byte_identical():
-    """The shared <style> block every non-US page renders once via pv.pv_css()."""
-    orig, cur = _macros()
-    assert str(orig.pv_css()) == str(cur.pv_css())
+#: B1 (2026-09-01 repair round 1): exact SHA-256 of the CURRENT pv_css() render
+#: output — supersedes the old two-line merge-base diff pin (same failure
+#: mode as the template pin above: a merge-base==HEAD comparison collapses to
+#: an empty diff and an assertion expecting a non-empty one goes red). Covers
+#: both the Added-date rollout's `.pv-added`/`.pv-dt+.pv-added` rules AND F1's
+#: (2026-09-01 repair round 1) `.pv-znr`/`.pv-dt`/`.pv-added` flex-shrink fix
+#: (the buy-zone price chip must never lose the space fight to the Added-date
+#: metadata chip). Recomputed for round 3's R4 (.pv-znr gains its own bounded
+#: max-width:100%;overflow:hidden;text-overflow:ellipsis so a pathologically
+#: long zone string ellipsizes instead of hard-clipping) and R5 (the ≤680px
+#: max-width:32% cap is scoped to `.pv-added` only, not `.pv-dt`). A
+#: legitimate future edit to pv_css() must recompute and update this hash
+#: again.
+_EXPECTED_PV_CSS_SHA256 = "11b3c39a9ec2594681ff428bc7326fee18c23949b8324d31bbbe19322bf82172"
+
+
+def test_pv_css_is_byte_pinned_post_rollout():
+    """The shared <style> block every non-US page renders once via pv.pv_css().
+    No git dependency — reads only the current file on disk, so this is
+    immune to the merge-base==HEAD collapse B1 fixes (see module docstring)."""
+    cur_src = (ROOT / "templates" / "_prophet_card.html.j2").read_text()
+    cur = jinja2.Environment(autoescape=True).from_string(cur_src).module
+    css = str(cur.pv_css())
+    assert _sha256_text(css) == _EXPECTED_PV_CSS_SHA256, (
+        "pv_css() drifted from its pinned post-rollout hash — if this is a "
+        "legitimate edit, recompute and update the pin")
 
 
 def _base_cx(**overrides) -> dict:
@@ -184,35 +302,40 @@ def _init_call_source(template_rel_path: str) -> str:
     return src[start:i + 1]
 
 
-def test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards():
-    """`git diff --numstat` for the ONE line that gained a condition (dropdown
-    gate: `stageOpts.length > 0` -> `cfg.stageFilter !== false && stageOpts.length
-    > 0`) plus two pure-insertion comment/early-return blocks. Asserted by
-    hunk count and content rather than a line-subsequence check — the dropdown
-    hunk is a genuine one-line MODIFICATION (a `+`/`-` pair), not an insertion,
-    so a pure-subsequence check is the wrong shape for this diff."""
-    diff = subprocess.check_output(
-        ["git", "diff", "-U0", _MERGE_BASE, "--", "templates/stocktable.js"],
-        cwd=str(ROOT),
-    ).decode()
-    hunk_count = diff.count("@@ -")
-    assert hunk_count == 2, f"expected exactly 2 hunks, found {hunk_count}:\n{diff}"
-    removed = [l[1:] for l in diff.splitlines() if l.startswith("-") and not l.startswith("---")]
-    added = [l[1:] for l in diff.splitlines() if l.startswith("+") and not l.startswith("+++")]
-    # exactly one line removed (the un-gated dropdown condition) ...
-    assert removed == [
-        "      if (stageOpts.length > 0) { var ddStage = _makeDD('stage', stageOpts); if (ddStage) bar.appendChild(ddStage); }"
-    ], removed
-    # ... and every added line is either that SAME line with the guard
-    # prepended, or pure comment/early-return — never a removal of anything
-    # else, never a change to a DIFFERENT line.
-    assert any("cfg.stageFilter !== false && stageOpts.length > 0" in l for l in added)
+#: R6 (2026-09-01 repair round 3): exact SHA-256 of the CURRENT
+#: templates/stocktable.js raw bytes. Same merge-safety reasoning as the B1
+#: template pins above (module docstring item 1) applies here, confirmed
+#: independently in round 3: templates/stocktable.js's git blob
+#: (f8145bd6fb4ed0adba5f34b5c97a7895b7332f2e) is IDENTICAL at origin/main,
+#: at this branch's own merge-base, AND at HEAD — this branch never itself
+#: modified the file, so the predecessor test's `git diff -U0 $MERGE_BASE`
+#: was always going to collapse to 0 hunks, not merely after a future
+#: merge. Pinning current bytes loses nothing: those bytes already ARE the
+#: fully-guarded post-rollout file. A legitimate future edit to
+#: templates/stocktable.js must recompute and update this hash.
+_EXPECTED_STOCKTABLEJS_SHA256 = "56f6f93366f2e21024b4cd5c971766a7c9506aea49c21b37b428674b8f086819"
+
+
+def test_stocktablejs_is_byte_pinned_and_carries_both_stagefilter_guards():
+    """Merge-safe successor to
+    test_stocktablejs_diff_is_exactly_the_two_additive_stagefilter_guards
+    (R6, round 3): that test asserted a SPECIFIC non-empty diff shape
+    (`hunk_count == 2`) against `git diff -U0 $MERGE_BASE --
+    templates/stocktable.js` — measured RED on this exact head, in this
+    exact file, inside CI pack 9, because the file's bytes are already
+    identical at origin/main, this branch's merge-base, and HEAD (see the
+    hash comment above). This test drops the diff entirely: it pins the
+    CURRENT file's raw bytes exactly (no git dependency, immune to any
+    future merge-base movement) and asserts the two additive `stageFilter`
+    guards the retired test existed to protect are directly present in the
+    file text — the property that mattered, checked without a diff
+    artifact standing in for it."""
     cur = (ROOT / "templates" / "stocktable.js").read_text()
-    orig = _origin_main_text("templates/stocktable.js")
+    assert _sha256_text(cur) == _EXPECTED_STOCKTABLEJS_SHA256, (
+        "templates/stocktable.js drifted from its pinned byte hash — if this "
+        "is a legitimate edit, recompute and update the pin")
     assert "cfg.stageFilter !== false && stageOpts.length > 0" in cur
     assert "cfg.stageFilter === false" in cur
-    assert "cfg.stageFilter !== false && stageOpts.length > 0" not in orig
-    assert "cfg.stageFilter === false" not in orig
 
 
 def test_non_us_stocktable_init_calls_never_set_stagefilter():

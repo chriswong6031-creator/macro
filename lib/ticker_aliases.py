@@ -37,10 +37,12 @@ from __future__ import annotations
 YAHOO_FETCH_ALIASES: dict[str, str] = {
     "FI": "FISV",       # Fiserv renamed FISV->FI in 2023; Yahoo still serves the OLD symbol
     "MMC": "MRSH",      # Marsh McLennan renamed MMC->MRSH 2026-01-14; Yahoo serves the NEW symbol
-    "EQR": "VMRK",      # Equity Residential renamed EQR->VMRK 2026-08-18 (SEC EDGAR CIK
-                        # 0000906107, 8-K accession 0001140361-26-033377, Item 5.03); the
-                        # membership/basket key stays EQR (data/baskets/ohlcv/EQR.parquet),
-                        # Yahoo serves the NEW symbol.
+    # "EQR": "VMRK" was removed 2026-08-28: the EQR->VMRK key migration (#4622 protocol,
+    # operator-ratified) made VMRK the stable membership/store key everywhere (membership,
+    # baskets/ohlcv, stocks, breadth constituents, open qledger claims), so the alias's
+    # vendor target became a universe member — exactly the two-stores-for-one-company
+    # leak scripts/check_symbol_rename_drift.py exists to refuse. Rename receipts: SEC
+    # EDGAR CIK 0000906107, 8-K accession 0001140361-26-033377, Item 5.03, eff. 2026-08-18.
 }
 
 #: yfinance symbol -> membership ticker (the inverse; used to rename a fetched frame back).
