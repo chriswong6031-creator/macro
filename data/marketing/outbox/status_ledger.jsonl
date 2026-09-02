@@ -4675,3 +4675,11 @@
 {"id":"ob-2026-09-02-2130daf228","from":"approved","to":"quarantined","at":"2026-09-02T17:25:21Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
 {"id":"ob-2026-09-02-498d2dae88","from":"approved","to":"quarantined","at":"2026-09-02T17:25:21Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
 {"id":"ob-2026-09-02-8fbe4261bd","from":"approved","to":"quarantined","at":"2026-09-02T17:25:21Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-09-02-742cbe74b0","from":"queued","to":"approved","at":"2026-09-02T17:31:01Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
+{"id":"ob-2026-09-02-dc2d2f416e","from":"queued","to":"approved","at":"2026-09-02T17:31:01Z","actor":"approval-desk","note":"approval-desk: payload, session_language, expired_session, number_sanity, liveness, chart_law, banned_language, dedup","receipt":null}
+{"id":"ob-2026-09-02-3a3cb8cfbd","from":"queued","to":"approved","at":"2026-09-02T17:31:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-02-5255f77591","from":"queued","to":"approved","at":"2026-09-02T17:31:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-02-d59f21f895","from":"queued","to":"approved","at":"2026-09-02T17:31:19Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
+{"id":"ob-2026-09-02-3a3cb8cfbd","from":"approved","to":"quarantined","at":"2026-09-02T17:31:19Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-09-02-5255f77591","from":"approved","to":"quarantined","at":"2026-09-02T17:31:19Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
+{"id":"ob-2026-09-02-d59f21f895","from":"approved","to":"quarantined","at":"2026-09-02T17:31:20Z","actor":"publisher","note":"clock: yesterday_word_off_session:yesterday","receipt":null}
