@@ -178,17 +178,24 @@ def load_registry(path: Path = REGISTRY_PATH) -> dict:
 # ---------------------------------------------------------------------------
 #
 # A durable, pragmatic (NOT a full CSS cascade engine) check against the
-# committed site/<page>.html output: it catches the one selector SHAPE every
-# real anchor-hiding bug found in this codebase used —
-# `body.<class1>.<class2>… #<id> { display:none / visibility:hidden }` — by
-# reading the page's actual rendered `<body class="…">` and checking whether
-# any such rule's required class set is a subset of it. It does NOT resolve
-# general CSS cascade (specificity/!important ordering, non-body-anchored
-# ancestor chains, descendant-class rules like `#sx-risk-v2 .sxg-face`,
-# sibling/attribute selectors) — KNOWN_OWNER_PAGES itself remains the
-# hand-verified source of truth; this check is the regression net that
-# would have caught `ms-score`/`mx5PopFactors`/`dlg-risk`/`release-radar`/
-# `cross-asset-macro` before they shipped, not a general CSS verifier.
+# committed site/<page>.html output AND the page's full local CSS corpus
+# (inline <style> blocks plus every site-local <link rel=stylesheet> file,
+# comments stripped — rendered pages here carry ZERO inline styles, so
+# scanning the HTML alone finds nothing; verified on site/macro.html).
+# Exact coverage, verified by EXECUTING the check against the six anchors
+# removed in the B1 repair — do not overclaim beyond this list:
+#   1. id ABSENT from the committed page — catches `cross-asset-macro`;
+#   2. body-gated hide rules `body.<classes> #<id>{display:none|visibility:hidden}`
+#      whose class set matches the rendered <body class="…"> — catches
+#      `release-radar`;
+#   3. host-element-own-class hide rules (`.cls…{display:none|…}` where the
+#      id's element carries that class) — catches `mx5PopFactors`
+#      (.mx5-popover) and `dlg-risk`/`dlg-markets` (.mx5-dlg).
+# NOT covered: ANCESTOR-chain hiding (`ms-score` sits inside .mx2-hero,
+# which is what hides it), descendant/sibling/attribute selectors, and
+# !important cascade ordering — so KNOWN_OWNER_PAGES itself remains the
+# hand-verified source of truth and this check is a 5-of-6 regression net,
+# not a CSS verifier.
 _BODY_HIDE_RULE_RE = re.compile(
     r"body((?:\.[A-Za-z0-9_-]+)+)\s*(?:>\s*)?#([A-Za-z0-9_-]+)\s*\{([^}]*)\}"
 )
@@ -196,21 +203,72 @@ _BODY_CLASS_RE = re.compile(r'<body[^>]*\bclass="([^"]*)"')
 _HIDDEN_DECL_RE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden")
 
 
+def _page_css_texts(repo_root: Path, html_text: str) -> list[str]:
+    """The page's CSS corpus: inline <style> blocks PLUS the contents of every
+    LOCAL stylesheet it links (href resolved under site/, ?v= cache-busters
+    stripped, external http(s) links skipped). Rendered pages here typically
+    carry zero inline styles — their hide rules live in linked files — so
+    scanning the HTML alone finds nothing (verified on site/macro.html)."""
+    def _strip_comments(css: str) -> str:
+        return re.sub(r"/\*.*?\*/", " ", css, flags=re.S)
+
+    texts = [_strip_comments(m.group(1))
+             for m in re.finditer(r"<style[^>]*>(.*?)</style>", html_text, re.S)]
+    for lm in re.finditer(r'<link\s[^>]*rel="stylesheet"[^>]*href="([^"]+)"', html_text):
+        href = lm.group(1).split("?", 1)[0]
+        if href.startswith(("http://", "https://", "//")):
+            continue
+        css_path = (repo_root / "site" / href.lstrip("./")).resolve()
+        try:
+            css_path.relative_to((repo_root / "site").resolve())
+        except ValueError:
+            continue
+        if css_path.exists():
+            texts.append(_strip_comments(css_path.read_text(encoding="utf-8", errors="replace")))
+    return texts
+
+
 def _page_body_classes(html_text: str) -> frozenset[str]:
     m = _BODY_CLASS_RE.search(html_text)
     return frozenset(m.group(1).split()) if m else frozenset()
 
 
-def _body_gated_hidden_ids(html_text: str) -> dict[str, list[frozenset[str]]]:
+def _body_gated_hidden_ids(css_text: str) -> dict[str, list[frozenset[str]]]:
     """id -> list of body-class sets under which a `body.<classes> #<id>{…}`
-    rule in this page hides it (display:none or visibility:hidden)."""
+    rule in this CSS hides it (display:none or visibility:hidden)."""
     hidden: dict[str, list[frozenset[str]]] = {}
-    for m in _BODY_HIDE_RULE_RE.finditer(html_text):
+    for m in _BODY_HIDE_RULE_RE.finditer(css_text):
         classes = frozenset(m.group(1).lstrip(".").split("."))
         frag, decl = m.group(2), m.group(3)
         if _HIDDEN_DECL_RE.search(decl):
             hidden.setdefault(frag, []).append(classes)
     return hidden
+
+
+def _host_element_classes(html_text: str, frag: str) -> frozenset[str]:
+    """Class set on the element carrying id=frag (empty when none/absent)."""
+    m = re.search(r'<[A-Za-z][A-Za-z0-9]*\b[^>]*\bid="' + re.escape(frag) + r'"[^>]*>', html_text)
+    if not m:
+        return frozenset()
+    cm = re.search(r'\bclass="([^"]*)"', m.group(0))
+    return frozenset(cm.group(1).split()) if cm else frozenset()
+
+
+def _pure_class_hidden_sets(css_text: str) -> list[frozenset[str]]:
+    """Class sets hidden by PURE compound class rules (`.a.b{display:none}`).
+    Only selectors that are exactly one class compound count — descendant,
+    id-anchored, and attribute selectors are ignored (ancestor hiding is out
+    of scope by design; see the coverage comment above KNOWN_OWNER_PAGES)."""
+    out: list[frozenset[str]] = []
+    for rm in re.finditer(r"([^{}]+)\{([^}]*)\}", css_text):
+        sel_list, decl = rm.group(1), rm.group(2)
+        if not _HIDDEN_DECL_RE.search(decl):
+            continue
+        for sel in sel_list.split(","):
+            sel = sel.strip()
+            if re.fullmatch(r"(?:\.[A-Za-z0-9_-]+)+", sel):
+                out.append(frozenset(sel.lstrip(".").split(".")))
+    return out
 
 
 def check_anchor_liveness(repo_root: Path, page: str, frag: str) -> tuple[bool, str]:
@@ -228,12 +286,22 @@ def check_anchor_liveness(repo_root: Path, page: str, frag: str) -> tuple[bool, 
     if f'id="{frag}"' not in text:
         return False, f'no id="{frag}" found in site/{page}'
     body_classes = _page_body_classes(text)
-    for required in _body_gated_hidden_ids(text).get(frag, []):
-        if required <= body_classes:
-            return False, (
-                f"#{frag} is display:none/visibility:hidden on {page} under body class(es) "
-                f"{sorted(required)} (page's rendered body class: {sorted(body_classes)})"
-            )
+    host_classes = _host_element_classes(text, frag)
+    for css_text in _page_css_texts(repo_root, text):
+        for required in _body_gated_hidden_ids(css_text).get(frag, []):
+            if required <= body_classes:
+                return False, (
+                    f"#{frag} is display:none/visibility:hidden on {page} under body class(es) "
+                    f"{sorted(required)} (page's rendered body class: {sorted(body_classes)})"
+                )
+        if host_classes:
+            for required in _pure_class_hidden_sets(css_text):
+                if required <= host_classes:
+                    return False, (
+                        f"#{frag}'s own element is hidden on {page}: class rule "
+                        f"{sorted(required)} carries display:none/visibility:hidden "
+                        f"(element classes: {sorted(host_classes)})"
+                    )
     return True, "live"
 
 

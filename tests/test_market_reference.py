@@ -289,6 +289,50 @@ def test_anchor_liveness_fails_closed_on_display_none_id(tmp_path):
     assert "display:none" in note or "visibility:hidden" in note
 
 
+def test_anchor_liveness_fails_closed_on_host_class_hide_in_linked_css(tmp_path):
+    """R1 widening: the id's own element carries a class whose pure-class rule
+    (in a LINKED local stylesheet, behind a CSS comment, with a ?v= cache
+    buster) hides it — the .mx5-popover/.mx5-dlg shape behind 11 of the 16
+    originally-broken entries, in the exact serving shape of site/macro.html
+    (zero inline styles, external hashed CSS)."""
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "pop.css").write_text(
+        "/* Popover panel */\n.pop-panel{display:none;position:absolute}",
+        encoding="utf-8",
+    )
+    (site_dir / "poppage.html").write_text(
+        '<html><head><link rel="stylesheet" href="pop.css?v=abc123"></head>'
+        '<body class="page-x">'
+        '<div class="pop-panel" id="pop-thing">content</div>'
+        "</body></html>",
+        encoding="utf-8",
+    )
+    is_live, note = check_anchor_liveness(tmp_path, "poppage.html", "pop-thing")
+    assert is_live is False
+    assert "own element is hidden" in note
+
+
+def test_anchor_liveness_fails_closed_on_body_gated_hide_in_linked_css(tmp_path):
+    """R1 widening: the body-gated shape must also be found when the rule
+    lives in a linked stylesheet rather than an inline <style> block (real
+    rendered pages here carry zero inline styles)."""
+    site_dir = tmp_path / "site"
+    site_dir.mkdir()
+    (site_dir / "page.css").write_text(
+        "body.page-y #tray-thing{visibility:hidden}",
+        encoding="utf-8",
+    )
+    (site_dir / "traypage.html").write_text(
+        '<html><head><link rel="stylesheet" href="page.css"></head>'
+        '<body class="page-y"><div id="tray-thing">content</div></body></html>',
+        encoding="utf-8",
+    )
+    is_live, note = check_anchor_liveness(tmp_path, "traypage.html", "tray-thing")
+    assert is_live is False
+    assert "visibility:hidden" in note or "display:none" in note
+
+
 def test_anchor_liveness_accepts_a_visible_id(tmp_path):
     site_dir = tmp_path / "site"
     site_dir.mkdir()
