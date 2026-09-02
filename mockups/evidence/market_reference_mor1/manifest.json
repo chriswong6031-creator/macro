@@ -23,7 +23,20 @@
       ]
     }
   },
-  "excluded": [],
+  "excluded": [
+    {
+      "route": "reference.html#vix",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    },
+    {
+      "route": "reference.html#not-a-real-entry",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    },
+    {
+      "route": "reference.html?q=curve",
+      "reason": "not committed into mockups/evidence/market_reference_mor1 \u2014 gitignored source captures under data/product_experience/evidence/ are not visible to CI; only the reference.html primary library matrix was committed per the estate idiom (mockups/evidence/<name>/) to satisfy scripts/check_ui_visual_evidence.py, which requires complete desktop+mobile REST coverage for every page present in manifest.pages."
+    }
+  ],
   "generated_at": "2026-09-02T14:44:10Z",
   "honesty": {
     "access": "anonymous only; no credential is entered, stored, or synthesized, so no premium payload can enter these artifacts",
@@ -136,7 +149,7 @@
           "applied_theme": "dark",
           "bytes": 610225,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/d91ce8e7ebbf6202.png",
+          "file": "d91ce8e7ebbf6202.png",
           "force_state": null,
           "height": 2361,
           "locale": "en",
@@ -153,7 +166,7 @@
           "applied_theme": "light",
           "bytes": 533838,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/55d689d6a0ce65dd.png",
+          "file": "55d689d6a0ce65dd.png",
           "force_state": null,
           "height": 2457,
           "locale": "en",
@@ -170,7 +183,7 @@
           "applied_theme": "dark",
           "bytes": 731048,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/75f64e8096344422.png",
+          "file": "75f64e8096344422.png",
           "force_state": null,
           "height": 2361,
           "locale": "zh",
@@ -187,7 +200,7 @@
           "applied_theme": "light",
           "bytes": 662655,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/d2b4e7d347a70c07.png",
+          "file": "d2b4e7d347a70c07.png",
           "force_state": null,
           "height": 2457,
           "locale": "zh",
@@ -204,7 +217,7 @@
           "applied_theme": "dark",
           "bytes": 491224,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/73cbe865aba420de.png",
+          "file": "73cbe865aba420de.png",
           "force_state": null,
           "height": 3884,
           "locale": "en",
@@ -221,7 +234,7 @@
           "applied_theme": "light",
           "bytes": 455061,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/9dd6351f2c13b6ba.png",
+          "file": "9dd6351f2c13b6ba.png",
           "force_state": null,
           "height": 3976,
           "locale": "en",
@@ -238,7 +251,7 @@
           "applied_theme": "dark",
           "bytes": 602107,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/875e44fcebd179d4.png",
+          "file": "875e44fcebd179d4.png",
           "force_state": null,
           "height": 3860,
           "locale": "zh",
@@ -255,719 +268,11 @@
           "applied_theme": "light",
           "bytes": 570438,
           "captured": true,
-          "file": "../../../data/product_experience/evidence/ebaec747f324c993.png",
+          "file": "ebaec747f324c993.png",
           "force_state": null,
           "height": 3952,
           "locale": "zh",
           "sha256": "ebaec747f324c993c371e166e019be39bb5240a37a3f3500adcd32d9bfb5d2c7",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        }
-      ]
-    },
-    {
-      "console_errors": [],
-      "failed_responses": [],
-      "gaps": [
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "free"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "essential"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "pro"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "loading"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "empty"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "stale"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "error"
-        }
-      ],
-      "metrics": {
-        "asof_present": false,
-        "by_viewport": {
-          "desktop": {
-            "document_height_px": 2991,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          },
-          "mobile": {
-            "document_height_px": 4662,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          }
-        },
-        "console_error_count": 0,
-        "document_height_px": 2991,
-        "duplicate_heading_texts": [],
-        "elements_wider_than_viewport": 0,
-        "heading_counts": {
-          "h1": 1,
-          "h2": 12,
-          "h3": 5,
-          "h4": 0,
-          "h5": 0,
-          "h6": 0
-        },
-        "horizontal_overflow": false,
-        "long_paragraph_count": 0,
-        "measured_in": {
-          "access": "anonymous",
-          "locale": "en",
-          "theme": "dark",
-          "viewport": "desktop"
-        },
-        "panel_count": 0,
-        "payload_bytes_total": 571360,
-        "raw_slug_hit_count": 0,
-        "raw_slug_hits": [],
-        "request_count": 14,
-        "screenshot_completion": 1.0,
-        "section_count": 5,
-        "source_present": false,
-        "todo_placeholder_hit_count": 0,
-        "todo_placeholder_hits": [],
-        "visible_word_count": 1219
-      },
-      "page_id": "reference.html#vix",
-      "registry_route": "reference.html#vix",
-      "route": "reference.html#vix",
-      "route_kind": "explicit_override",
-      "states": [
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 663853,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/d7cde1001574701d.png",
-          "force_state": null,
-          "height": 2991,
-          "locale": "en",
-          "sha256": "d7cde1001574701d2ca1a7249a923081060513a8ce87e5fff6f4b27edeadd46c",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 608885,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/841d30ce50537ba0.png",
-          "force_state": null,
-          "height": 3089,
-          "locale": "en",
-          "sha256": "841d30ce50537ba04eee6954028def4ac802f9c22b2b0ebf443e6129daf4f18d",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 807116,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/b6ddf008a086bfa8.png",
-          "force_state": null,
-          "height": 2967,
-          "locale": "zh",
-          "sha256": "b6ddf008a086bfa8fd3d2234632e89ce0b87cd3a63f3424025cb8c68225e6469",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 751365,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/9700ac610e283fbb.png",
-          "force_state": null,
-          "height": 3065,
-          "locale": "zh",
-          "sha256": "9700ac610e283fbb26c224bcc697d060fbcea8b18f8433922bd033b83ac92b07",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 477171,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/88927970d0bc0c3e.png",
-          "force_state": null,
-          "height": 4662,
-          "locale": "en",
-          "sha256": "88927970d0bc0c3edebedbd3aaea79276d9c6b875858edb48730ae2bdc7d3d41",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 475052,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/e77c8cb4655f5d6c.png",
-          "force_state": null,
-          "height": 4840,
-          "locale": "en",
-          "sha256": "e77c8cb4655f5d6c49737bcf74321d0c4d3e553f79aaa6495a788c1ff78e9eb2",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 599467,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/e7e24cffe46e7c84.png",
-          "force_state": null,
-          "height": 4570,
-          "locale": "zh",
-          "sha256": "e7e24cffe46e7c84e363770c66d9647cd8c479ceb562ce1fa9d3fec6a074ae3f",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 594517,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/c1b480507fd15d89.png",
-          "force_state": null,
-          "height": 4664,
-          "locale": "zh",
-          "sha256": "c1b480507fd15d8973ceaa481d2ebbde095aa5620faaefd0b7c2798a8e623caf",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        }
-      ]
-    },
-    {
-      "console_errors": [],
-      "failed_responses": [],
-      "gaps": [
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "free"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "essential"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "pro"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "loading"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "empty"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "stale"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "error"
-        }
-      ],
-      "metrics": {
-        "asof_present": false,
-        "by_viewport": {
-          "desktop": {
-            "document_height_px": 2517,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          },
-          "mobile": {
-            "document_height_px": 4060,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          }
-        },
-        "console_error_count": 0,
-        "document_height_px": 2517,
-        "duplicate_heading_texts": [],
-        "elements_wider_than_viewport": 0,
-        "heading_counts": {
-          "h1": 1,
-          "h2": 12,
-          "h3": 0,
-          "h4": 0,
-          "h5": 0,
-          "h6": 0
-        },
-        "horizontal_overflow": false,
-        "long_paragraph_count": 0,
-        "measured_in": {
-          "access": "anonymous",
-          "locale": "en",
-          "theme": "dark",
-          "viewport": "desktop"
-        },
-        "panel_count": 0,
-        "payload_bytes_total": 911990,
-        "raw_slug_hit_count": 0,
-        "raw_slug_hits": [],
-        "request_count": 14,
-        "screenshot_completion": 1.0,
-        "section_count": 5,
-        "source_present": false,
-        "todo_placeholder_hit_count": 0,
-        "todo_placeholder_hits": [],
-        "visible_word_count": 1094
-      },
-      "page_id": "reference.html#not-a-real-entry",
-      "registry_route": "reference.html#not-a-real-entry",
-      "route": "reference.html#not-a-real-entry",
-      "route_kind": "explicit_override",
-      "states": [
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 621093,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/c7121195de6af96e.png",
-          "force_state": null,
-          "height": 2517,
-          "locale": "en",
-          "sha256": "c7121195de6af96e3d95820e86cd4b2afd11a3541845195d2607bf509c8f2efa",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 548181,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/9cf02764c1cee6e1.png",
-          "force_state": null,
-          "height": 2613,
-          "locale": "en",
-          "sha256": "9cf02764c1cee6e1da9eca369b1dc0319e595f83b0e074f7b4330e47efcd4a5f",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 746489,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/bb66669cd9d93843.png",
-          "force_state": null,
-          "height": 2517,
-          "locale": "zh",
-          "sha256": "bb66669cd9d9384391274e62509450a3309ba11814336625b2e00bd71a5bad86",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 677443,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/9ca0469010ac34e6.png",
-          "force_state": null,
-          "height": 2613,
-          "locale": "zh",
-          "sha256": "9ca0469010ac34e6ef4dfb69ff540e314507fb953f2695dee9dc1e8418903b72",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 500464,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/e5d3b62dced12bd2.png",
-          "force_state": null,
-          "height": 4060,
-          "locale": "en",
-          "sha256": "e5d3b62dced12bd2e97181a781db9e48e12d9a644b0772fed1d8a6110cd3aa53",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 468646,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/32351bdd154d804e.png",
-          "force_state": null,
-          "height": 4152,
-          "locale": "en",
-          "sha256": "32351bdd154d804e932edcbfe4a0eb13405d5d2ad98a246807251979df3eb0b6",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 612867,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/9af147409fdf0d5b.png",
-          "force_state": null,
-          "height": 4016,
-          "locale": "zh",
-          "sha256": "9af147409fdf0d5bf90bfcf0cca34a4c7fae5ebe56b89005aefaf89ffdc03a87",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 582324,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/893743d3cb2b948b.png",
-          "force_state": null,
-          "height": 4108,
-          "locale": "zh",
-          "sha256": "893743d3cb2b948b50aaabe9becb63b1b8d8f180071820871d0a3ba5379f48d7",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        }
-      ]
-    },
-    {
-      "console_errors": [],
-      "failed_responses": [],
-      "gaps": [
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "free"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "essential"
-        },
-        {
-          "captured": false,
-          "dimension": "access",
-          "reason": "requires authenticated session; not automatable without approved fixtures",
-          "value": "pro"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "loading"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "empty"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "stale"
-        },
-        {
-          "captured": false,
-          "dimension": "page_state",
-          "reason": "state not synthesizable against static output",
-          "value": "error"
-        }
-      ],
-      "metrics": {
-        "asof_present": false,
-        "by_viewport": {
-          "desktop": {
-            "document_height_px": 1086,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          },
-          "mobile": {
-            "document_height_px": 844,
-            "elements_wider_than_viewport": 0,
-            "horizontal_overflow": false
-          }
-        },
-        "console_error_count": 0,
-        "document_height_px": 1086,
-        "duplicate_heading_texts": [],
-        "elements_wider_than_viewport": 0,
-        "heading_counts": {
-          "h1": 1,
-          "h2": 3,
-          "h3": 0,
-          "h4": 0,
-          "h5": 0,
-          "h6": 0
-        },
-        "horizontal_overflow": false,
-        "long_paragraph_count": 0,
-        "measured_in": {
-          "access": "anonymous",
-          "locale": "en",
-          "theme": "dark",
-          "viewport": "desktop"
-        },
-        "panel_count": 0,
-        "payload_bytes_total": 888326,
-        "raw_slug_hit_count": 0,
-        "raw_slug_hits": [],
-        "request_count": 14,
-        "screenshot_completion": 1.0,
-        "section_count": 5,
-        "source_present": false,
-        "todo_placeholder_hit_count": 0,
-        "todo_placeholder_hits": [],
-        "visible_word_count": 204
-      },
-      "page_id": "reference.html?q=curve",
-      "registry_route": "reference.html?q=curve",
-      "route": "reference.html?q=curve",
-      "route_kind": "explicit_override",
-      "states": [
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 290663,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/cf27bf1480a7661c.png",
-          "force_state": null,
-          "height": 1086,
-          "locale": "en",
-          "sha256": "cf27bf1480a7661c203e19ca9a80d3c0dd5824bb993994368b100704a93085ef",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 273405,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/80498c87b4933629.png",
-          "force_state": null,
-          "height": 1086,
-          "locale": "en",
-          "sha256": "80498c87b4933629f94d7025b4fc7177cda6289100e5e7d501aee60ff1097590",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 299278,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/318cee384333d292.png",
-          "force_state": null,
-          "height": 1085,
-          "locale": "zh",
-          "sha256": "318cee384333d2922c878411c871686ac7a1621185149ddd1662c6e73eb5c0f1",
-          "theme": "dark",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 283094,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/d571951e625880fd.png",
-          "force_state": null,
-          "height": 1085,
-          "locale": "zh",
-          "sha256": "d571951e625880fdbb3850d293f40b00afbcd8c4cc46b3e23753a303709d1d4b",
-          "theme": "light",
-          "viewport": "desktop",
-          "viewport_height": 900,
-          "viewport_width": 1440,
-          "width": 1440
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "dark",
-          "bytes": 153384,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/82f6084e4e04e18b.png",
-          "force_state": null,
-          "height": 844,
-          "locale": "en",
-          "sha256": "82f6084e4e04e18bd5cb973474552d08d68f724dfded538358dd9dbde4080719",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "en",
-          "applied_theme": "light",
-          "bytes": 136551,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/44eeead554d1b929.png",
-          "force_state": null,
-          "height": 844,
-          "locale": "en",
-          "sha256": "44eeead554d1b929022b8e2c28ecf4d8c0dc51aa1b88dd7011efe3cb429ab695",
-          "theme": "light",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "dark",
-          "bytes": 157395,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/e14672d61d66ba0b.png",
-          "force_state": null,
-          "height": 844,
-          "locale": "zh",
-          "sha256": "e14672d61d66ba0b55e7ded0df4f945130ac0ff1de4fbc25b45ef0405ab3564a",
-          "theme": "dark",
-          "viewport": "mobile",
-          "viewport_height": 844,
-          "viewport_width": 390,
-          "width": 390
-        },
-        {
-          "access": "anonymous",
-          "applied_locale": "zh",
-          "applied_theme": "light",
-          "bytes": 145954,
-          "captured": true,
-          "file": "../../../data/product_experience/evidence/a54848b02c1e42c6.png",
-          "force_state": null,
-          "height": 844,
-          "locale": "zh",
-          "sha256": "a54848b02c1e42c6cd2d939d191aae859d0d39a60314f8e91e71475f4073a86b",
           "theme": "light",
           "viewport": "mobile",
           "viewport_height": 844,
@@ -980,19 +285,16 @@
   "schema": "mastermind.p0_evidence.v2",
   "selection": {
     "explicit_routes": [
-      "reference.html",
-      "reference.html#vix",
-      "reference.html#not-a-real-entry",
-      "reference.html?q=curve"
+      "reference.html"
     ],
     "max_pages": 30,
     "mode": "explicit_routes",
-    "note": "--routes overrode registry selection; the --priority and --repo filters were not applied",
+    "note": "--routes overrode registry selection; the --priority and --repo filters were not applied | evidence-commit narrowing: only reference.html (8-cell primary library matrix) retained for the committed receipt \u2014 deep-link target routes (reference.html#vix, reference.html#not-a-real-entry, reference.html?q=curve) dropped entirely rather than partially, because scripts/check_ui_visual_evidence.py requires full desktop+mobile REST coverage for every page listed in manifest.pages; a partial (desktop-only) page would itself fail the gate.",
     "priority": null,
     "registry": "data/product_experience/page_registry.json",
     "registry_rows": 309,
     "repo": null,
-    "selected": 4
+    "selected": 1
   },
   "target": {
     "base_url": null,
@@ -1009,8 +311,8 @@
     "version": "1.2.0"
   },
   "totals": {
-    "pages": 4,
-    "states_attempted": 32,
-    "states_captured": 32
+    "pages": 1,
+    "states_attempted": 8,
+    "states_captured": 8
   }
 }
