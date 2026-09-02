@@ -321,6 +321,51 @@ def _attach_live_prices(hub: dict, root, asof: str) -> None:
                 d["price"] = px(t)                     # template's `d.price is not none` guard is safe
 
 
+# R1A-M ROSTER LAW (reactive-projection-platform freeze §4/§6, plan Task M3) —
+# the exact, ordered, deduplicated, US-routable-only set of tickers the
+# Intelligence Hub Market Pulse controller may request quotes for. A pure
+# function so both the render path and the test suite call the SAME logic.
+_ROSTER_SOURCES = (("command", 30), ("emerging", 14), ("discovery", 14))
+MARKET_PULSE_ROSTER_CAP = 58
+
+
+def compute_market_pulse_roster(hub: dict) -> list[str]:
+    """Ordered unique union of ``hub.command[:30] + hub.emerging[:14] +
+    hub.discovery[:14]``, filtered to US-routable symbols.
+
+    ``hub["discovery"]`` IS the engine's exported diversified presentation
+    list (``discovery_shown`` is only an internal local inside
+    ``engine.intel_hub.load_and_build`` and is never a key on the returned
+    hub dict) — reading any other key here would silently produce an empty
+    Discovery contribution to the roster.
+
+    Non-US-routable symbols (``engine.live_overlay.region_for(ticker) !=
+    "us"`` — the same classifier the client-side live overlay uses) are
+    excluded from the roster entirely: they never reach the request set and
+    never count toward the coverage denominator, matching the freeze's
+    "Terminal omits cn/hk/ca routes from the flat response" rule.
+    """
+    from engine.live_overlay import region_for
+
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for key, cap in _ROSTER_SOURCES:
+        for row in (hub.get(key) or [])[:cap]:
+            ticker = row.get("ticker") if isinstance(row, dict) else None
+            if not ticker:
+                continue
+            ticker = str(ticker).strip().upper()
+            if ticker in seen:
+                continue
+            if region_for(ticker) != "us":
+                continue
+            seen.add(ticker)
+            ordered.append(ticker)
+    # Defensive only: 30+14+14=58 unique max before dedupe already satisfies
+    # this; dedupe can only shrink the set further.
+    return ordered[:MARKET_PULSE_ROSTER_CAP]
+
+
 def build(write: bool = True) -> dict:
     hub = intel_hub.load_and_build(top=30)
     stamp_special_freshness(hub, config.ROOT)      # D3 — age the catalyst panel's input, loudly
@@ -415,16 +460,32 @@ def build(write: bool = True) -> dict:
     except Exception as exc:  # noqa: BLE001
         log.debug("qledger chips skipped (%s)", exc)
 
+    # R1A-M market pulse roster (see compute_market_pulse_roster above). Never
+    # fatal to the page build — an import/lookup fault degrades to an empty
+    # roster (the page renders with no live-pulse decoration, not a 500).
+    try:
+        market_pulse_roster = compute_market_pulse_roster(hub)
+    except Exception as e:  # noqa: BLE001
+        log.warning("market pulse roster computation failed: %s", e)
+        market_pulse_roster = []
+    if len(market_pulse_roster) > MARKET_PULSE_ROSTER_CAP:
+        log.warning("market pulse roster: %d exceeds the %d cap (should be structurally impossible)",
+                    len(market_pulse_roster), MARKET_PULSE_ROSTER_CAP)
+
     # render the page
     try:
         from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from engine.live_overlay import region_for
         env = Environment(loader=FileSystemLoader(str(root / "templates")),
                           autoescape=select_autoescape(["html", "xml"]))
+        env.globals["region_for"] = region_for
         html = env.get_template("intelligence_hub.html.j2").render(
             hub=hub, built=datetime.now(timezone.utc).isoformat(), mode="intel_hub",
-            qledger_chips=qledger_chips, china=china)
+            qledger_chips=qledger_chips, china=china,
+            market_pulse_roster=market_pulse_roster)
         write_page(site / "intelligence_hub.html", html)
-        log.info("built site/intelligence_hub.html")
+        log.info("built site/intelligence_hub.html — market pulse roster: %d names",
+                 len(market_pulse_roster))
     except Exception as e:  # noqa: BLE001
         log.error("intelligence_hub render failed: %s", e)
     return hub

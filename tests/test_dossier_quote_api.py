@@ -261,6 +261,20 @@ def test_regular_session_move_never_uses_the_extended_hours_print(client, monkey
     assert 226.25 not in body.values()
 
 
+def test_prev_close_is_byte_identical_to_the_upstream_anchor_not_a_rederivation(client, monkeypatch) -> None:
+    """c1: `prev_close` must round-trip the ORIGINAL upstream anchor value
+    exactly — not `price - change_abs`, a re-derivation that can drift from
+    the true anchor under float subtraction. This pair is deliberately
+    chosen so a lossy re-derivation (the old ``price - change_abs`` "recovered
+    losslessly" comment) is actually caught rather than accidentally
+    round-tripping: EXACT equality, not ``pytest.approx``."""
+    price, prev_close = 3197.494565, 126.028765
+    assert price - (price - prev_close) != prev_close, "fixture must not be float-safe"
+    _patch_hub(monkeypatch, _hub_row(last=price, prevClose=prev_close, chg=0.0), now=1787871758 + 5)
+    body = client.get("/api/dossier-quote/NVDA").json()
+    assert body["prev_close"] == prev_close
+
+
 def test_change_abs_is_derived_not_read_from_the_percent_field(client, monkeypatch) -> None:
     """`chg` upstream is a PERCENT.  Treating it as dollars is the trap."""
     _patch_hub(monkeypatch, _hub_row(last=120.0, prevClose=100.0, chg=20.0), now=1787871758 + 5)
