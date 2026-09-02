@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-09-02T01:21:17.318589+00:00",
+  "generated_utc": "2026-09-02T10:09:18.066372+00:00",
   "as_of": "2026-09-02",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26547,18 +26547,18 @@
         {
           "ticker": "CRWV",
           "buy_usd": 0.0,
-          "sell_usd": 1289141789.0,
-          "net_usd": -1289141789.0,
+          "sell_usd": 1274504870.0,
+          "net_usd": -1274504870.0,
           "buyers": 0,
-          "sellers": 1088
+          "sellers": 1070
         },
         {
           "ticker": "DELL",
           "buy_usd": 0.0,
-          "sell_usd": 1246775492.0,
-          "net_usd": -1246775492.0,
+          "sell_usd": 1244502052.0,
+          "net_usd": -1244502052.0,
           "buyers": 0,
-          "sellers": 1273
+          "sellers": 1226
         },
         {
           "ticker": "BIRK",
