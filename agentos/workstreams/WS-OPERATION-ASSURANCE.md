@@ -18,7 +18,7 @@ ambiguity: scoped
 waves:
   - {id: R0, title: "Recover canonical truth; protect OLS-F0 architecture/source law (PR 279)", status: done, pr: 279}
   - {id: A1, title: "Pure deterministic assurance engine + immutable report + report-only CLI (PR 324)", status: done, pr: 324}
-  - {id: A2, title: "Canonical owner/source compilation via separately-accepted bounded gather seam", status: in_progress, next_action: "Author the A2 seam design record (records-only Mastermind PR, F0 pattern): freeze target operation, seam contract per Steward-reconciliation spec §5-§8, collision review vs CCL-A2 branches; Sol accepts before implementation"}
+  - {id: A2, title: "Canonical owner/source compilation via separately-accepted bounded gather seam", status: in_progress, next_action: "A2 seam design PROTECTED at Mastermind master ae483cc5 (PR 339, two adversarial review rounds); implementation in flight on fable/ols-a2-impl-20260902 under operation fable-003 (COO operator authority); positive real-gather proof pins THIS corrected Agent OS revision"}
   - {id: A3, title: "Correction-safe current applicability + evidence-preserving summary", status: todo, depends_on: [A2]}
   - {id: A4, title: "Control Room experience over real data", status: todo, depends_on: [A3]}
   - {id: A5, title: "Report-only real canary + calibration", status: todo, depends_on: [A4]}
@@ -26,9 +26,10 @@ waves:
   - {id: A7, title: "Admission integration, calibrated default-off promotion", status: todo, depends_on: [A5, A6]}
   - {id: A8, title: "Production installation, rollback drill, runbook, learning loop", status: todo, depends_on: [A7]}
 next_action: >
-  Author and land the A2 gather/source-compiler seam design record (records-only Mastermind PR)
-  and freeze the first real target operation; request Sol acceptance on the fable-002 carrier
-  before any A2 implementation.
+  Complete the A2 implementation (Mastermind branch fable/ols-a2-impl-20260902: AGENT_OS gather
+  adapter, Steward-composed source compiler, bounded CLI) under operation fable-003 and the
+  standing Chairman COO-operator commission; then run the positive real-gather end-to-end proof
+  pinned to this corrected Agent OS revision and release with receipts on the fable-003 carrier.
 do_not_redo:
   - "Do not re-diagnose the false-green Slack RESULT sequence on the parent carrier (F0/A1/A2 'PROTECTED' claims dated pre-2026-09-01): Sol's canonical correction overrode them and R0 re-landed F0 for real; GitHub is truth."
   - "repair_scope is RULED out of the F0/A1 wire (removed, pinned by exact-tuple tests at Mastermind tests/test_operation_assurance_a1_repair_wave.py); do not re-freeze it without superseding the ruling."
