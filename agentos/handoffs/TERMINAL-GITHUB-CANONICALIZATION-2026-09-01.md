@@ -2,7 +2,7 @@
 workstream: WS:TERMINAL-GITHUB-CANONICALIZATION
 session: sol/terminal-github-canonicalization-continuation-20260901
 model: sol
-ended_because: active_handoff
+ended_because: ci_handoff
 mission: >
   Preserve the current Terminal GitHub-canonicalization frontier after the first visual-readiness
   repair landed, reconcile the live responsive-CI blockers without retry-to-green, keep source audit
