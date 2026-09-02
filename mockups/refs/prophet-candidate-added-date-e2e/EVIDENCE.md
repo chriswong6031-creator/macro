@@ -549,3 +549,405 @@ in the document. The rendered zone row terminates at the price:
   chips different narrow-viewport rules.
 - **Keyboard reachability of the Tier-2 tip** is unresolved (F5) and inherited.
 - Captures are anonymous; only US gates its board, and that gated state is captured.
+
+---
+---
+
+# ADDENDUM — 2026-09-02: the zone shelf FOLDS (Chairman visibility repair)
+
+Branch `claude/prophet-added-date-cn-dates-visibility-20260902`, base head
+`dd033837c02efca06d8fc35cfaa11082f5e2eba7`. **Design lane, CSS only** —
+`pv_card()`'s markup is byte-unchanged and
+`test_pv_card_is_byte_identical_across_representative_non_us_calls` proves it
+independently. Chip copy, the null-renders-nothing rule, the strict-ISO gate,
+the `data-tip-en/zh` + `data-added` mechanism and the SHA-256 parity-pin
+mechanism are all untouched; the pv_css pin is **recomputed**, not relaxed.
+
+The Chairman reported the chip "crowded and spaced out of view" on the live US
+board — `Added A…`, `Adde…`. Everything below names its PNG or its number.
+
+---
+
+## A. The defect, re-measured on the live board
+
+The zone shelf was a single **unwrappable** flex line — `.pv-zn{display:flex;
+white-space:nowrap;overflow:hidden}` — carrying `[ZONE][value] …… [Added Aug 31]`.
+`.pv-znr` was `flex:none` (F1: the price never shrinks) and `.pv-added` was the
+row's **only shrinkable child**. So under pressure the chip did not yield space,
+it **dissolved**: `flex:0 1 auto;min-width:0` has no floor, and the ≤680 px
+`max-width:32%` cap made the dissolving start early on purpose.
+
+Measured on the real committed `site/us_stocks.html`, at the board's own 2-up
+narrow grid (**154 px cards** — this is the dense multi-column grid on a phone,
+not a hypothetical):
+
+| cell | card | zone value | chip needs | chip **got** | renders as |
+|---|---|---|---|---|---|
+| dark/light EN 390 | CDW 154 px | `$145.50–$151.60` | 71 px | **5 px** | *nothing* |
+| dark/light EN 390 | FICO 154 px | `$1111.10–$1147.20` | 71 px | **5 px** | *nothing* |
+| dark/light EN 390 | URBN 154 px | `$77.59–$80.69` | 71 px | **10.5 px** | `Adde…` → blank |
+| dark/light ZH 390 | CDW / FICO / URBN | — | 55 px | **22 / 18.1 / 29.2 px** | `入..` |
+
+`chipTruncated = true` on **3/3 cards, all four theme × language cells**.
+
+**A second, worse fault the previous pass's instrumentation could not see.**
+`.pv-zn`'s own `overflow:hidden` was silently clipping the row, and on the
+widest card that clip reached the **price**:
+
+| cell | `rowOverflows` | `valClippedByShelf` | `chipClipped` |
+|---|---|---|---|
+| `head` dark EN 390 | CDW ✓, FICO ✓ | **FICO ✓** | CDW ✓, FICO ✓ |
+| `head` light EN 390 | CDW ✓, FICO ✓ | **FICO ✓** | CDW ✓, FICO ✓ |
+| `fold` (all cells, both themes, EN+ZH) | 0 | **0** | 0 |
+
+F1's earlier `valuesClipped = 0` was measured as *the element's own*
+`scrollWidth > clientWidth`, which cannot see a child clipped by its **parent's**
+box. `fold_us_before_dark_en_390_shelf.png` is the receipt: `ZONE $145.50–$151.60`
+and **no date at all**. Its twin `fold_us_after_dark_en_390_shelf.png` shows the
+same card with `Added Aug 31` in full on a folded line.
+
+**On desktop the defect did NOT reproduce here, and that is stated rather than
+papered over.** Swept 1600 → 680 px in 20 px steps, both languages: card width
+never falls below **256.4 px**, the shelf stays one line, `chipTruncated = 0` and
+`valClippedByShelf = 0` at every width. At the shipped grid rule's `minmax(246px,
+1fr)` **floor**, however, the arithmetic is a coin flip: `.pv-zn` offers 224 px of
+content and the widest real US string needs `29.6 + 5 + 114.2 + 5 + 70.6 =
+**224.4 px**`. A font stack 3 % wider than headless Chromium's — an ordinary
+difference between a real macOS browser and this harness — truncates. That is the
+most likely origin of the Chairman's desktop `Adde…`, and the fix removes the
+dependence on font metrics entirely instead of buying a few pixels against it.
+
+---
+
+## B. The treatment — and the two that were rejected
+
+**Chosen: the shelf folds, it never truncates.**
+
+```css
+.pv-zn   { display:flex; flex-wrap:wrap; align-items:center; gap:2px 5px; … }   /* may become two lines */
+.pv-znr  { font-weight:700; flex:none; max-width:100%; overflow:hidden; text-overflow:ellipsis }
+.pv-znm  { color:var(--muted); flex:none; max-width:100%; overflow:hidden; text-overflow:ellipsis }
+.pv-dt   { …unchanged… flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; padding-left:5px }
+.pv-added{ margin-left:auto; color:var(--muted); flex:0 0 auto; font-size:9.5px; line-height:1.3 }
+@media (max-width:680px){ /* the .pv-added{max-width:32%} cap is GONE */ }
+```
+
+Four decisions, each load-bearing:
+
+1. **`flex-wrap:wrap` on the shelf.** The price keeps first claim on line one;
+   when the line cannot hold both, the chip drops to its own line, still hard
+   against the right edge, and renders whole. Truncating a 12-character date is
+   worse than not printing it — `Added A…` states a fact the reader cannot use
+   and reads as a rendering fault, and this card already has an honest vocabulary
+   for "we cannot say": the null renders **nothing**.
+2. **`.pv-added{flex:0 0 auto}` with NO `overflow`/`text-overflow`.** These are two
+   halves of one decision. A flex item whose `overflow` is not `visible` resolves
+   `min-width:auto` to **0**, so keeping `overflow:hidden` would have quietly
+   defeated `flex:0 0 auto` and collapsed the chip to 5 px again instead of
+   wrapping. The chip now has **no truncated state left to render**. The test
+   pins this with that reason written out, because it is the one way this repair
+   can be silently undone by a later "tidy-up".
+3. **`.pv-znm` hardened to `.pv-znr`'s contract.** F1 named `.pv-znm` the one
+   value path its repair never covered. The fold makes closing it *necessary*
+   rather than tidy: with the chip no longer shrinkable, a `min-width:0` value
+   slot becomes the sole absorber of the squeeze, so a card carrying a muted
+   range or a stance sentence (`No zone — stand aside`) plus a chip would have
+   started clipping the **stance** to protect the metadata — exactly inverted.
+4. **`padding-left:5px` dropped from the chip.** `margin-left:auto` already pins
+   it to the far right and the shelf's own 5 px column-gap is the same separation
+   `.pv-znl ↔ .pv-znr` use, so the extra 5 px was belt-and-braces that cost
+   precisely the room the fold was being triggered by. It buys ~4.6 px of headroom
+   at the 246 px desktop floor — enough that the widest real US string now fits on
+   one line there **with margin** instead of on a coin flip.
+
+**Rejected — (a) relocate the chip to the badge/marks row.** Four reasons, in
+descending weight. *Semantics:* `.pv-mk` is a taxonomy of signal-bearing marks —
+rank (`★ Featured`), recency (`New`), a context event that just turned, setup
+shape/theme — and the partial's own header says the row must read as a taxonomy
+rather than chip spam. `Added <date>` is **provenance**, and it would sit inches
+from `New`, which is the same fact at a coarser resolution: two chips for one
+fact, the defect `.pv-mk-adj`'s comment already warns about in a different guise.
+*The user job:* the brief requires the date not to compete with actionability —
+and the marks row *is* the actionability row. *Structure:* `.pv-mk` exists only
+when a caller passes `marks`, i.e. US only; four of five boards have no such row,
+so the chip would need two homes or those boards would grow one. *Density:* the
+row already wraps, so on a card carrying `★ Featured` + a theme name a 66 px chip
+would wrap anyway — the same fold, but now shoving the **signal** chips around.
+
+**Rejected — (c-variant) hide the chip below a legibility floor.** Clean, costs
+zero height, and matches the null's semantics — but it fails the user job. The
+Chairman asked to *read* the date on a crowded board; vanishing is a correct
+degradation, not a fix. It stays available as the behaviour of last resort only
+because the shelf's `overflow:hidden` still bounds a pathological case.
+
+---
+
+## C. DARK TREATMENT — command centre
+
+Measured live on both boards (`fold_theme_measurements.txt`), not read off the
+stylesheet.
+
+| dark | value | |
+|---|---|---|
+| canvas | `#000000` ground behind `--bg` | |
+| card `--panel2` | `#1b1f28` | lum **0.0137** |
+| shelf `color-mix(--panel 55%, --bg)` | `#11141c` | lum **0.0072** |
+| card → shelf step | **−0.0064** | **recessed ✓** |
+| chip `.pv-added` | `#8b93a1` · 9.5 px · **400** | **5.93 : 1** |
+| zone value `.pv-znr` | `#c8d0dc` · **700** | **11.80 : 1** |
+| subordination | **1.99×** | unchanged by this PR |
+
+The shelf is a **well cut downward out of the card**. When the chip folds, the
+second line lands *inside that well*, on a black canvas: a mid-grey 400-weight
+line at the bottom of a darker trough reads as a margin note without any
+additional demotion. Dark therefore needs **no extra mechanism for the folded
+line**, and it is where the 2 px row-gap is spent — a dark trough absorbs air
+without the fold reading as a gap.
+
+Evidence: `fold_us_after_dark_{en,zh}_{1440,390}_{cards,shelf}.png`,
+`fold_ca_realbuild_dark_{en,zh}_{1440,390}_{cards,shelf}.png`.
+
+## D. LIGHT TREATMENT — research workspace
+
+Light is judged **first** for anything that could add presence, per F9. It is not
+the dark design with swapped tokens, and this pass found the reason stated
+precisely.
+
+| light | `us_stocks` | `canada_stocks` |
+|---|---|---|
+| card | `#eef1f6` (lum 0.8774) | `#ffffff` (lum 1.0000) |
+| shelf | `#f5f6f9` (lum 0.9208) | `#f5f6f9` (lum 0.9208) |
+| card → shelf step | **+0.0434 — ADVANCED ✗** | **−0.0792 — recessed ✓** |
+| chip `#4c5a6c` 400 on shelf | **6.50 : 1** | 6.50 : 1 |
+| value `#2e3950` 700 on shelf | **10.68 : 1** | 10.68 : 1 |
+| subordination | **1.64×** | 1.64× |
+
+Three light-specific facts, all measured:
+
+1. **F9's inversion is confirmed, unchanged, and it is the material this repair
+   lands on.** The card paints from `--panel2`; the shelf paints from
+   `color-mix(--panel 55%, --bg)`. In dark `--panel` is *darker* than `--panel2`,
+   so the shelf always recedes. In light `--panel` is `#ffffff` — *lighter* — so
+   on a board whose cards paint at `--panel2` the shelf comes out **lighter than
+   the card containing it**. `us_stocks` is such a board. `canada_stocks` escapes
+   it only because its client shell paints cards pure white.
+2. **In light the chip is absolutely stronger (6.50 vs 5.93) and relatively
+   louder (1.64× vs 1.99×).** Same declaration, different luminance environment.
+3. **In light, and only in light, the fold's second line therefore enlarges an
+   *advancing* plate**, where in dark it deepens a receding well. That is the one
+   genuine risk this change carries, and it is a light-only risk.
+
+**The light-first judgment.** The fold changes **position**, not ink, weight, size
+or saturation, so subordination is measured **identical before and after** in both
+themes (1.64× light / 1.99× dark). And the position it moves to is a *demotion* in
+reading order, not a promotion: it removes the chip from the value's own line —
+the only line the eye reads for the number. The residual light cost is that the
+shelf grows (29.8 → 43.3 px at 390). The reason that does not bite is measured,
+not asserted: **the fold never fires on the light desktop board.** Swept
+680 → 1600 px, both languages, the US shelf stays 29.8 px with zero folds, so the
+advancing plate never grows at reading density. Where it does fire — the 2-up
+phone grid at 154 px cards — the shelf spans the whole card width regardless, and
+the alternative there is an illegible date.
+
+**A light-only ink rule was considered and refused.** Stepping the folded line's
+ink down in light would restore ~1.9× subordination on the advancing plate. It was
+not shipped: F9's standing caution is against *increasing* the chip's weight, size
+or saturation in light, and none of those increase here; a second ink token for one
+9.5 px chip is an accessory, and the estate already pays for every extra
+theme-conditional rule in the pv_css shared block that all five boards render.
+Chanel's rule applies — the mechanism that would be added is smaller than the
+inconsistency it would introduce. Recorded as a decision, not an oversight.
+
+Evidence: `fold_us_after_light_{en,zh}_{1440,390}_{cards,shelf}.png`,
+`fold_ca_realbuild_light_{en,zh}_{1440,390}_{cards,shelf}.png`.
+`fold_ca_realbuild_light_en_1440_cards.png` is the clearest read of the light art
+direction as a design: white cards on a perceptibly deeper cool canvas, forest-green
+stance ink, a hairline shelf divider, and the chip sitting quietly at the right
+edge of a two-end table row.
+
+## E. Which mechanisms intentionally differ
+
+**None are authored to differ, and that is a finding rather than a default.**
+`.pv-added` reuses `var(--muted)` exactly as `.pv-dt` does; the fold adds no
+theme-conditional rule; nothing this chip uses appears in the MPDS §12 translation
+table (it is not a tinted status chip, not a glow, not an accent rail, not a
+heatmap cell).
+
+What differs is **rendered, not authored**, and this pass records three such
+differences rather than waving the shared CSS through:
+
+1. the token pair resolves to different inks against differently-derived surfaces,
+   moving subordination 1.99× → 1.64× (§C/§D);
+2. the card ↔ shelf depth step **reverses sign** in light on `us_stocks` (+0.0434
+   vs −0.0064 dark), so the fold lands in a receding well in dark and on an
+   advancing plate in light (§D, F9);
+3. **light is additionally heterogeneous board-to-board in a way dark is not**:
+   the same fold lands on a *recessed* shelf on CA (`#ffffff` cards, −0.0792) and
+   on an *advanced* shelf on US (`#eef1f6` cards, +0.0434), while dark's step is
+   −0.0064 on both. Light is the theme where "the same shelf" is not the same
+   material.
+
+Because the mechanism is shared, the argument that it works in both luminance
+environments is made above from measurements (§D) rather than from the fact that
+the CSS still renders once the tokens swap.
+
+## F. Degraded states, per theme
+
+- **Null — unchanged, and proven unchanged.** A card with no `added_date` renders
+  no `.pv-added` element at all, so the shelf has nothing to wrap and
+  `flex-wrap:wrap` cannot fire. Measured on `hk_stocks` (all-null) under **both**
+  stylesheets, dark + light, EN + ZH at 390: shelf height **42.0 px identically**,
+  `rowOverflows = false`, `valClippedByShelf = false` in every cell.
+  `fold_hk_null_before_*_shelf.png` and `fold_hk_null_after_*_shelf.png` are
+  pixel-comparable pairs. The markup half is proven separately and more strongly:
+  `pv_card()` is byte-identical to the merge-base macro across all six
+  representative non-US cx variants.
+- **Folded (two-line shelf).** Fires only where the line genuinely cannot hold
+  both. Measured US 390: 29.8 → **43.3 px**, chip at its full 65.6 px EN / 50.2 px
+  ZH, `chipTruncated = 0`, `chipClipped = 0`, `valClippedByShelf = 0`, in all four
+  theme × language cells.
+- **Stacked (three-line shelf) — new, bounded, disclosed.** When the *label plus
+  value* alone exceed the row, the value takes its own line too and the shelf
+  reads `ZONE` / `$1111.10–$1147.20` / `Added Aug 31` (US FICO, EN only, 390:
+  **59.6 px**; the ZH label is narrower and stays at 43.3 px). This is the same
+  over-capacity condition that previously **hard-clipped the price** (§A) — it is
+  now a legible stacked micro-block instead of a silent cut. It is the least
+  elegant state this design produces and it is named as such rather than hidden.
+- **Zone-value far-edge overflow (R4/`.pv-znm` extension).** Both value variants
+  keep `max-width:100%` + ellipsis. Still **unexercised** on real content; no
+  ellipsis screenshot exists because the state never occurred and none was
+  fabricated.
+- **Locked / tier-preview (US).** The chip ghosts with the rest of the card and
+  leaks nothing — visible in every `fold_us_*_390_cards.png`, where only the first
+  card is unghosted.
+- **Tier-2 explanation.** `data-tip-en` / `data-tip-zh` and `data-added` are
+  unchanged and untouched by this PR.
+
+## G. How this evidence was made
+
+| what | mechanism |
+|---|---|
+| `canada_stocks` | **REAL BUILD.** `~/.cache/mm-venv-mac-builder-3/bin/python -m scripts.build_canada`, rc=0. The built page carries the fold CSS inline. |
+| `us_stocks`, `hk_stocks` | the **real committed built pages**, served locally, with only the shared pv_css asset (`site/assets/css/3f6de652.css`) swapped for the current template's `pv_css()` render. |
+
+**Why US was not rebuilt, stated plainly.** At the time these builds ran, a
+concurrent session was mid-edit on `engine/prophet_board_since.py` in this same
+worktree (`git status`: ` M`); that work has since landed as
+`dd033837c02e` — *"prophet_board_since: Chairman-directed acceptance lights
+CN/HK/CA dates"* — which is this branch's base head. A 1 069 s
+`scripts.build_site` run at that moment would have (a) rendered the US board
+through a half-finished engine and (b) written across `data/` underneath that
+session. The swap was used instead, and the substitution is **proved, not
+asserted**:
+
+- the real `build_canada` output's inline pv_css block is **byte-identical**
+  (SHA-256 `72ed9b13…`) to `pv_css()`'s render from the template on disk; and
+- the rule set injected into the US/HK pages is **rule-for-rule equal** to that
+  real build's pv rules (97/97 identical).
+
+So the US and HK crops render exactly the CSS a real US build would ship. The
+board content, data, markup and every other stylesheet are the genuine built
+artefacts. Reproduce with `capture_fold.py` / `measure_fold.py` next to this file.
+
+Theme and language use the site's own `theme` / `lang` `localStorage` mechanism
+and every cell asserts the resulting `data-theme` / `data-lang` before shooting.
+Captures are anonymous, so the US tier-preview ghost is active — the honest
+anonymous state, as in the original pass.
+
+**One CA note, disclosed.** The rebuilt CA board renders **5 chips** where the
+pre-`dd033837c02e` tree rendered 0 (the §2 table above, "CA went 10/10 → 0/10").
+That change is `dd033837c02e`'s, not this PR's — it is the sibling engine work
+lighting CN/HK/CA dates, and it is now part of this branch's base rather than an
+uncommitted edit. The CA cells are used here as a *layout and material* receipt —
+a real build carrying the fold CSS with real chips at real widths — and never as
+evidence about which dates CA should stamp. It does mean the launch-state table in
+§2 above is superseded for CA by `dd033837c02e`.
+
+## H. Design judgment
+
+### Dark — PASS
+`fold_us_after_dark_en_1440_cards.png`: the desktop shelf is unchanged, one line,
+`ZONE $145.50–$151.60 …… Added Aug 31`, eye order sparkline → ticker → stance →
+priority → zone → chip with the chip last. `fold_us_after_dark_en_390_shelf.png`:
+folded, the date whole, right-aligned under the number, the two-end table rhythm
+preserved on both lines. Nothing gained a hue, a fill or a border. The null twin
+(`fold_hk_null_after_dark_en_390_shelf.png`) terminates cleanly on the value with
+no orphaned separator, no collapsed padding, no reserved gap.
+
+### Light — PASS
+`fold_ca_realbuild_light_en_1440_cards.png` and `fold_us_after_light_en_1440_shelf.png`
+read as designed-for-light rather than translated. The two caveats are the
+measured ones and both are quantified: 1.64× subordination, and the +0.0442-class
+inverted card→shelf step on `us_stocks` (F9) that removes the recession cue on
+that board. Neither is introduced by this PR; both are properties the fold now
+sits on, so both are stated, and the fold is the one change here that could have
+made them worse — measured, it does not (§D).
+
+### EN / ZH parity — PASS at every width, which is new
+This is the parity result the previous pass could not report. `入榜 08-31` is a real
+translation and is narrower than the EN form (50.2 px vs 65.6 px). The 390 px
+asymmetry that produced `入..` in ZH while EN vanished entirely is **gone**: both
+render in full on a folded line. Compare `fold_us_before_light_zh_390_shelf.png`
+(`入..`) with `fold_us_after_light_zh_390_shelf.png` (`入榜 08-31`).
+
+### Responsive — PASS
+`docW == winW` in every cell of every board, both stylesheets. Containment is
+achieved by folding the metadata, never by degrading the price:
+`valClippedByShelf = 0` and `chipTruncated = 0` in all 24 post-fold cells.
+
+### Density budget — PASS
+Desktop cost is **zero**: swept 680 → 1600 px in both languages, the shelf stays
+29.8 px and no card folds. Chip-less cards are unchanged at every width and in
+every theme. The only height cost is +13.5 px on a chip-carrying card at the 2-up
+phone grid, where the alternative is a date the reader cannot read.
+
+## I. Findings
+
+- **F11 — NEW, fixed here.** `.pv-zn`'s `overflow:hidden` was clipping the zone
+  **price** on the widest US card at 390 px in EN (`valClippedByShelf` true for
+  FICO, both themes). F1's `valuesClipped` probe measured only each element's own
+  overflow and could not see a child clipped by its parent's box. Now 0 everywhere.
+- **F12 — NEW, open, bounded.** The three-line stacked shelf (§F). Cosmetic, EN-only
+  on today's data, phone-only, and strictly better than the clip it replaces. Not
+  fixable in CSS alone without a wrapper element, which would break `pv_card()`'s
+  byte-identity guarantee — deliberately not attempted in this packet.
+- **F1a — CLOSED.** "Below the width where the chip can say anything, ellipsizing it
+  is worse than hiding it. The priority is now correct; the form is unfinished."
+  The form is now finished, in the third direction: neither ellipsize nor hide —
+  fold.
+- **F9 — carried, re-measured, unchanged** (+0.0434 on `us_stocks` light). Now with
+  the added observation that light, unlike dark, is heterogeneous board-to-board
+  (§E.3).
+- **F3 / F4 / F5 / F6 / F7 / F8 — carried unchanged.** This packet changes layout
+  behaviour only; it does not touch which boards can stamp a date, the meaning of
+  the null, or the tip's keyboard reachability.
+
+## J. Screenshot index (56 PNGs, all `fold_*`)
+
+| family | cells | files |
+|---|---|---|
+| `fold_us_before_*` | dark/light × EN/ZH × 1440/390 | `_cards` + `_shelf` (16) |
+| `fold_us_after_*` | dark/light × EN/ZH × 1440/390 | `_cards` + `_shelf` (16) |
+| `fold_ca_realbuild_*` | dark/light × EN/ZH × 1440/390 | `_cards` + `_shelf` (16) |
+| `fold_hk_null_{before,after}_*` | dark/light × EN/ZH × 390 | `_shelf` (8) |
+
+Machine receipts: `fold_measurements.json` (every cell's per-card geometry,
+clipping flags and computed inks) and `fold_theme_measurements.txt` (the §C/§D
+luminance and contrast table). Tooling: `capture_fold.py`, `measure_fold.py`.
+
+## K. Gaps
+
+- **US was not rebuilt** (§G) — mechanism disclosed and the CSS substitution proved
+  byte-equal to a real build's output. A US rebuild remains the stronger receipt if
+  the concurrent engine work lands first.
+- **The desktop `Adde…` did not reproduce in this harness** at any width
+  680 → 1600 px. The arithmetic at the `minmax(246px,1fr)` floor (224.4 px needed
+  vs 224 px available) explains it as a font-metric coin flip, and the fold removes
+  the dependence — but the specific rendering the Chairman saw is inferred, not
+  photographed.
+- **F12** (three-line stacked shelf) is open by choice.
+- **CN / Intl were not rebuilt or reshot.** Both are all-null today, so the fold has
+  nothing to act on there; the null-identity proof on HK covers the same code path.
+- **`.pv-dt + .pv-added`** (F6) still has no real-data instance; the two chips now
+  have deliberately different degradation (shrink vs fold), which is stated in the
+  partial and pinned by test.
