@@ -23,7 +23,7 @@ import pandas as pd
 import yfinance as yf
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, delisted_symbols
 
 log = logging.getLogger(__name__)
 
@@ -360,6 +360,17 @@ class BreadthAdapter(Adapter):
                          self.name, int(hit.sum()),
                          {s: fixups[s] for s in sorted(df.loc[hit, "symbol"].unique())})
                 df["symbol"] = df["symbol"].map(lambda s: fixups.get(s, s))
+        # drop securities the exit ledger says stopped existing: Wikipedia's index
+        # tables lag a merger close by days, and one lagging row re-admits a dead
+        # symbol to the universe every night — the fetch then requests a tape that
+        # can never return (LEG, 2026-08: Form 25 filed 08-27, page still listed it).
+        # lib.delisted_symbols fails open, so an unreadable ledger drops nothing.
+        dead = df["symbol"].isin(delisted_symbols.tickers())
+        if dead.any():
+            log.info("%s constituents: dropping %d delisted symbol(s) per the exit "
+                     "ledger: %s", self.name, int(dead.sum()),
+                     sorted(df.loc[dead, "symbol"].unique()))
+            df = df[~dead]
         # strip wiki-markup transport residue from the ISSUER NAME (see
         # sanitize_company_name) — this is the canonical boundary the whole US
         # dossier estate inherits its company names from, so a stray delimiter

@@ -233,3 +233,17 @@
 {"asof":"2026-08-27","data_session":"2026-08-27","session_source":"bench","market":"cn","p_raw":0.1496,"pct":0.4504,"level":"low","top_exporter":"jp"}
 {"asof":"2026-08-27","data_session":"2026-08-27","session_source":"bench","market":"hk","p_raw":0.1642,"pct":0.5198,"level":"low","top_exporter":"jp"}
 {"asof":"2026-08-28","data_session":"2026-08-28","session_source":"bench","market":"ca","p_raw":0.1657,"pct":0.5377,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-28","data_session":"2026-08-28","session_source":"bench","market":"cn","p_raw":0.2211,"pct":0.498,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-28","data_session":"2026-08-28","session_source":"bench","market":"hk","p_raw":0.2544,"pct":0.5496,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"kr","p_raw":0.2752,"pct":0.5337,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"jp","p_raw":0.2494,"pct":0.5298,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"tw","p_raw":0.407,"pct":0.6548,"level":"low","top_exporter":"kr"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"au","p_raw":0.2924,"pct":0.5774,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"us","p_raw":0.1573,"pct":0.6548,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"cn","p_raw":0.1606,"pct":0.6448,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"hk","p_raw":0.154,"pct":0.6667,"level":"low","top_exporter":"jp"}
+{"asof":"2026-08-31","data_session":"2026-08-31","session_source":"bench","market":"ca","p_raw":0.1541,"pct":0.6329,"level":"low","top_exporter":"au"}
+{"asof":"2026-09-01","data_session":"2026-09-01","session_source":"bench","market":"kr","p_raw":0.1601,"pct":0.7083,"level":"low","top_exporter":"jp"}
+{"asof":"2026-09-01","data_session":"2026-09-01","session_source":"bench","market":"jp","p_raw":0.1342,"pct":0.6687,"level":"low","top_exporter":"kr"}
+{"asof":"2026-09-01","data_session":"2026-09-01","session_source":"bench","market":"tw","p_raw":0.2152,"pct":0.8016,"level":"moderate","top_exporter":"jp"}
+{"asof":"2026-09-01","data_session":"2026-09-01","session_source":"bench","market":"au","p_raw":0.1577,"pct":0.7103,"level":"low","top_exporter":"jp"}

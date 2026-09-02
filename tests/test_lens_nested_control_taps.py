@@ -1,33 +1,14 @@
-"""tests/test_lens_nested_control_taps.py — the lens must never steal a nested control's tap.
+"""tests/test_lens_nested_control_taps.py — shared theme.js interaction boundaries.
 
-`theme.js`'s lens binds `SEL = '[data-tip-en], .lens-q, .lens-term'` and opens on
-`focusin`. Tapping a <button>/<a> INSIDE a tip wrapper focuses it, focusin bubbles
-up to the wrapper, and in SHEET mode (`max-width:640px`) `show()` mounts a
-full-viewport `.lens-scrim` — mid-tap. mousedown has already landed on the control
-but mouseup then lands on the scrim, so the browser retargets the `click` to
-<body> and the control's own handler NEVER runs.
-
-The click handler has always carved nested controls out ("let the control activate
-instead of hijacking the tap"), but that carve-out is unreachable here: no click
-survives the scrim to reach it. So the fix belongs in `focusin`, and this suite
-pins it there.
-
-Measured on the deployed page at 390x844 / hover:none / isSheet, before the fix —
-`elementFromPoint` at each control's own tap point returned `DIV.lens-scrim`:
-  /us_stocks.html  3  (#us-src-toggle, #us-st-view-toggle, .nb-ewatch > a)
-  /canada.html    24  (.cax-sorow > a)
-  /bonds.html      2  (.cc-tile > a)
+The original boundary in this suite pins the lens rule that a tooltip wrapper must
+never steal a nested control's tap.  It also owns narrow interaction contracts that
+live in the same shared ``templates/theme.js`` / emitted ``site/theme.js`` pair,
+including Intelligence Hub ticker labels entering the canonical Terminal route.
 
 WHY THIS SUITE IS BROWSER-FREE. The CI packs install a minimal dependency set, not
 ``requirements.txt`` — a ``pytest.importorskip("playwright")`` here would SKIP in CI
-and report green while proving nothing (house trap:
-ci-packs-install-minimal-deps-not-requirements). The browser measurements live in
-the PR body; what is mechanically checkable is asserted against the shipped source.
-
-DO NOT "strengthen" this into "no data-tip wrapper may contain a focusable control".
-That pins the WORKAROUND, not the fix: with the carve-out in place such a wrapper is
-correct, and those tips (".cax-sorow" names the leader and its sector rank) are worth
-keeping. The invariant is the carve-out, not the absence of the markup.
+and report green while proving nothing.  Browser measurements live in PR evidence;
+what is mechanically checkable is asserted against the shipped source.
 """
 from __future__ import annotations
 
@@ -39,9 +20,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_JS = ROOT / "templates" / "theme.js"
 SITE_JS = ROOT / "site" / "theme.js"
+HUB_HTML = ROOT / "site" / "intelligence_hub.html"
 
-# The focusable set the carve-out must cover. A control the selector misses is a
-# control whose tap the lens still steals.
+# The focusable set the lens carve-out must cover. A control the selector misses is
+# a control whose tap the lens can still steal.
 FOCUSABLE = ("button", "a", "input", "select", "textarea", "label", '[role="button"]')
 
 
@@ -49,6 +31,13 @@ def _lens_region(src: str) -> str:
     """The lens IIFE, from its SEL definition to the end of its keydown binding."""
     start = src.index("var SEL = '[data-tip-en], .lens-q, .lens-term';")
     end = src.index("if (e.key === 'Escape' && isOpen()) hide();", start)
+    return src[start:end]
+
+
+def _hub_terminal_region(src: str) -> str:
+    """The Hub ticker-promotion helper, excluding the canonical router around it."""
+    start = src.index("function initHubTerminalTickerLinks()")
+    end = src.index("initHubTerminalTickerLinks();", start)
     return src[start:end]
 
 
@@ -107,11 +96,7 @@ def test_focusin_consults_the_nested_control_carve_out_before_showing(name, src)
 
 @pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
 def test_the_scrim_gate_matches_the_condition_show_mounts_a_scrim_under(name, src):
-    """show() mounts .lens-scrim iff isSheet(); the focusin gate must track that.
-
-    If show() ever starts mounting the scrim on another condition, this pins the
-    coupling so the un-fix is loud rather than silent.
-    """
+    """show() mounts .lens-scrim iff isSheet(); the focusin gate must track that."""
     src = _require(name, src)
     region = _lens_region(src)
     body = _handler_body(region, "focusin")
@@ -153,8 +138,7 @@ def test_carve_out_covers_every_focusable_control_kind(name, src):
 
 
 def test_the_toggle_this_healed_still_carries_its_tooltip():
-    """#us-st-view-toggle keeps data-tip-*: the fix makes the markup safe, so the
-    tooltip does not have to be sacrificed to make the button tappable."""
+    """#us-st-view-toggle keeps data-tip-*: the fix makes the markup safe."""
     dash = (ROOT / "templates" / "dashboard.html.j2").read_text(encoding="utf-8")
     m = re.search(r"<span[^>]*id=\"us-st-view-toggle\"[^>]*>", dash)
     assert m, "#us-st-view-toggle not found in dashboard.html.j2"
@@ -162,3 +146,60 @@ def test_the_toggle_this_healed_still_carries_its_tooltip():
         "the tooltip was removed instead of relying on the lens carve-out — if that "
         "was deliberate, delete this test and say why in the PR"
     )
+
+
+# ---------------------------------------------------------------------------
+# Intelligence Hub ticker -> existing Terminal overlay boundary
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_intelligence_hub_promotes_inert_tickers_to_canonical_analyzer_links(name, src):
+    """Hub `.tk` spans must enter the already-existing terminalTarget() route."""
+    src = _require(name, src)
+    region = _hub_terminal_region(src)
+
+    assert "classList.contains('page-hub')" in region, (
+        f"{name}: Hub ticker promotion must be scoped to body.page-hub"
+    )
+    assert "querySelectorAll('.tk')" in region
+    assert "mm-terminal-ticker-link" in region
+    assert "document.createElement('a')" in region
+    assert "stock.html#" in region
+    assert "encodeURIComponent(ticker)" in region
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_intelligence_hub_promotion_skips_existing_interactive_controls(name, src):
+    """Never nest a new ticker anchor inside an existing link/button/control."""
+    src = _require(name, src)
+    region = _hub_terminal_region(src)
+
+    assert 'a,button,input,select,textarea,[role="button"],[role="link"]' in region
+    assert ".closest(interactive)" in region
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_intelligence_hub_promotion_accepts_real_symbol_punctuation_only(name, src):
+    """BRK.B is valid; arbitrary prose must never become a stock route."""
+    src = _require(name, src)
+    region = _hub_terminal_region(src)
+
+    assert "/^[A-Z0-9][A-Z0-9.-]{0,15}$/" in region
+
+
+def test_current_hub_fixture_contains_a_dot_symbol_regression_case():
+    hub = HUB_HTML.read_text(encoding="utf-8")
+    assert '<span class="tk">BRK.B</span>' in hub
+
+
+@pytest.mark.parametrize("name,src", SOURCES, ids=SOURCE_IDS)
+def test_hub_reuses_the_single_existing_terminal_click_controller(name, src):
+    """Do not add a Hub iframe/modal/controller parallel to openTerminal()."""
+    src = _require(name, src)
+    region = _hub_terminal_region(src)
+
+    assert "iframe" not in region.lower()
+    assert "MDXTerminalOverlay" not in region
+    assert "openTerminal(" not in region
+    assert src.count("openTerminal(target.ticker, a, target.url)") == 1
