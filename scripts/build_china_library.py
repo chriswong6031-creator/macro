@@ -14,6 +14,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import numbers
 import os
 import sys
 import time
@@ -762,7 +763,12 @@ def _last_session(close) -> "object | None":
         s = close.dropna()
         if s.empty:
             return None
-        ts = pd.Timestamp(s.index.max())
+        raw_last = s.index.max()
+        if raw_last is None or isinstance(raw_last, numbers.Number) or pd.isna(raw_last):
+            return None
+        ts = pd.Timestamp(raw_last)
+        if pd.isna(ts):
+            return None
         if ts.tzinfo is not None:
             ts = ts.tz_localize(None)
         return ts.date()
