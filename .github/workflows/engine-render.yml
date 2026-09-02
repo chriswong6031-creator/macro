@@ -543,6 +543,7 @@ jobs:
               brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
               brun news        "news suite (build_news)"                 scripts.build_news
               brun methodology "methodology page (build_methodology)"    scripts.build_methodology
+              brun reference   "market reference page (build_market_reference)" scripts.build_market_reference
             }
             cl_misc() {
               # NOTE: policy_intent_desk is DELIBERATELY omitted here. It is an LLM builder
@@ -669,6 +670,7 @@ jobs:
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
               run_py "methodology page (build_methodology)" scripts.build_methodology
+              run_py "market reference page (build_market_reference)" scripts.build_market_reference
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
@@ -686,6 +688,7 @@ jobs:
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
               run_py "methodology page (build_methodology)" scripts.build_methodology
+              run_py "market reference page (build_market_reference)" scripts.build_market_reference
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
