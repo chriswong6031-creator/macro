@@ -1,4 +1,4 @@
-"""CN-PR-3 — runtime board surface: wiring, feed floor, vocabulary, fail-closed."""
+"""CN live runtime surface: contextual chips only, never a page-level viewport strip."""
 from __future__ import annotations
 
 import re
@@ -28,10 +28,26 @@ def test_script_is_stocks_mode_only() -> None:
     assert 'id="cn-prophet-live"' in header
 
 
-def test_strip_is_wired_with_the_session_floor() -> None:
+def test_hidden_session_sentinel_is_wired_before_the_action_board() -> None:
     assert 'id="cn-prophet-live"' in TPL
     assert "data-cn-session=" in TPL
+    assert ".cnpl[hidden]{display:none!important}" in TPL
     assert TPL.index('id="cn-prophet-live"') < TPL.index("_china_act_now_board.html.j2")
+
+
+def test_runtime_can_never_reveal_the_page_level_intraday_strip() -> None:
+    """Viewport telemetry must stay contextual to cards, not become a top-level block."""
+    js = _nc(JS)
+    assert "function keepSentinelHidden" in js
+    assert "keepSentinelHidden();" in js
+    assert "sentinel.hidden = true" in js
+    assert "strip.hidden = false" not in js
+    assert "sentinel.hidden = false" not in js
+    assert "function paintStrip" not in js
+    assert "cnpl-phase" not in js
+    assert "cnpl-cov" not in js
+    assert "cnpl-asof" not in js
+    assert "cnpl-close" not in js
 
 
 def test_polls_the_gated_artifact_without_cache() -> None:
@@ -59,7 +75,7 @@ def test_401_and_stale_age_tear_the_live_layer_down() -> None:
 
 def test_glance_copy_is_bilingual_and_has_no_settled_fact_words() -> None:
     js = _nc(JS)
-    for table in ("STATE", "STATUS", "PHASE"):
+    for table in ("STATE", "STATUS"):
         assert "var %s =" % table in JS
     for word in BANNED:
         assert word not in js.lower() and word not in js
