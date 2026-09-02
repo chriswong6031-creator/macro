@@ -4394,6 +4394,14 @@ jobs:
         run: pip install pytest pandas numpy pyarrow
       - name: broad ETF flow proxy unit tests
         run: python -m pytest tests/test_broad_etf_flows.py -q
+      # Rides here because this is the sector/broad-ETF unit-test job with the
+      # exact minimal deps the suite needs (pandas/numpy only — the harness
+      # imports engine.validation, which needs nothing heavier). The suite is
+      # 20 pure-function tests (universe dating, Friday-anchor arithmetic,
+      # confirm rule, RS rank logic) for the S-MLC-3 phase-0 harness; it shipped
+      # unwired in #6766 and contract-delta correctly refused the ci-gate.
+      - name: S-MLC-3 weekly-wait-cost harness unit tests
+        run: python -m pytest tests/test_s_mlc_3_weekly_wait_cost.py -q
 
   qledger-cluster-honest-ci:
     if: ${{ false }}
