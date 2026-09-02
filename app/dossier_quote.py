@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 import os
 import threading
 import time
@@ -47,6 +46,11 @@ from typing import Any, Mapping
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app import edge_client
+from app.public_quote_projection import (
+    QuoteProjectionError,
+    finite_number as _shared_finite_number,
+    project_regular_quote,
+)
 from engine.company_intelligence.contracts import ContractError, safe_ticker
 
 router = APIRouter()
@@ -93,26 +97,10 @@ _STALE_MAX_AGE_SECONDS = 900.0
 # should be repainting from.
 _CLOSED_STALE_MAX_AGE_SECONDS = 5 * 24 * 3600.0
 
-# The bases that MAY be called realtime, verified against the deployed hub
-# (/opt/terminal/hub: snapshot.js stamps "REALTIME"; the crypto legs stamp
-# "LIVE").  This is an ALLOWLIST on purpose.  It was first written as a
-# denylist of delayed-looking substrings, which is fail-OPEN: `basis:"15M"` and
-# `basis:"IEX_ONLY"` both sailed through it and read as live, and any basis the
-# hub grows tomorrow would too.  An honesty screen cannot be blind to
-# vocabulary it has not met — an unrecognised basis is now "not proven
-# realtime", which is the truthful answer.
-_REALTIME_BASES = frozenset({"REALTIME", "LIVE"})
-
-# Session tags that would mean ``last`` is NOT a regular-session print.  Note
-# what is absent: "closed".  A closed regular session still has a settled
-# regular-session close, and that close is exactly what an overnight dossier
-# should show.
-_EXTENDED_SESSION_TAGS = frozenset({"pre", "premarket", "pre-market", "post", "after", "afterhours", "after-hours", "extended", "overnight"})
-
-# How far the hub's own percent may sit from the one implied by
-# last/prevClose before we stop trusting it.  Generous enough for float noise
-# and rounding, tight enough that a different session's percent never passes.
-_PCT_CONSISTENCY_EPSILON = 0.05
+# The realtime-basis allowlist, extended-session-tag set and percent-
+# consistency epsilon that used to live here moved with the projection logic
+# to app/public_quote_projection.py (see the block comment above
+# `_public_projection`) — this module no longer classifies a row itself.
 
 _RATE_LIMIT_REQUESTS = 120
 _PEER_RATE_LIMIT_REQUESTS = 1_200
@@ -246,154 +234,67 @@ def _read_hub_quotes(symbol: str) -> Mapping[str, Any]:
 
 
 # ── projection ──────────────────────────────────────────────────────────────
+#
+# The honesty-law arithmetic (freshness/session classification, percent-vs-
+# dollar derivation, anchor reconstruction, extended-field refusal) moved to
+# app/public_quote_projection.py (R1A-M, 2026-09) so the Intelligence Hub
+# batch route shares the SAME owner rather than re-implementing it. This
+# module keeps its own historical, deliberately tighter freshness bounds
+# (_LIVE_MAX_AGE_SECONDS etc. above) and its own response schema
+# (price/prev_close/change_abs/change_pct/freshness/session/as_of/
+# regular_session_date/display_only) — both preserved byte-for-semantic
+# identical to before the extraction; every test in this file exercises only
+# the public HTTP surface and is unchanged by this refactor.
+
 
 def _finite_number(value: Any) -> float | None:
     """Return a finite float, or None.  Booleans are rejected on purpose."""
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return None
-    result = float(value)
-    return result if math.isfinite(result) else None
-
-
-def _is_realtime_basis(basis: Any) -> bool:
-    """True only for a basis we have actually verified means realtime."""
-    if not isinstance(basis, str):
-        return False  # absent basis is never evidence of realtime
-    return basis.strip().upper() in _REALTIME_BASES
-
-
-def _session_of(row: Mapping[str, Any]) -> str:
-    """Map the hub's market session onto the four states the dossier renders."""
-    raw = row.get("marketSession")
-    token = raw.strip().lower() if isinstance(raw, str) else ""
-    if token in ("regular", "rth", "open"):
-        return "regular"
-    if token in ("pre", "premarket", "pre-market"):
-        return "pre"
-    if token in ("post", "after", "afterhours", "after-hours", "extended"):
-        return "post"
-    return "closed"
-
-
-def _freshness_of(row: Mapping[str, Any], *, session: str, now: float) -> str:
-    """Classify the FEED.  Every uncertain input resolves downward."""
-    stamped = _finite_number(row.get("ts"))
-    if stamped is None:
-        return "stale"  # no clock we can check == no freshness we can claim
-    age = now - stamped
-    if age < -_LIVE_MAX_AGE_SECONDS:
-        # A far-future stamp is a broken clock, not a fresh quote.
-        return "stale"
-    bound = _STALE_MAX_AGE_SECONDS if session == "regular" else _CLOSED_STALE_MAX_AGE_SECONDS
-    if age > bound:
-        return "stale"
-    # Two independent upstream assertions must agree before this is "live":
-    # the hub's own measured realtime flag AND a basis that is not a delayed
-    # tier.  The age gate is the third, because the hub keeps serving a row
-    # with a stalled socket until its idle sweep evicts it.
-    if row.get("live") is True and _is_realtime_basis(row.get("basis")) and age <= _LIVE_MAX_AGE_SECONDS:
-        return "live"
-    return "delayed"
+    return _shared_finite_number(value)
 
 
 def _public_projection(row: Mapping[str, Any], *, ticker: str, now: float) -> dict[str, Any]:
     """Build the allowlisted browser payload from the REGULAR-session fields.
 
-    ``last``/``close``/``prevClose``/``chg`` are the regular session.
-    ``extPrice``/``extChg``/``extTs`` are the extended session and are dropped
-    entirely — rendering an after-hours print as the day move would invert the
-    sign the reader acts on (measured 2026-08-27: regular +8.74%, ext -0.76%).
+    Thin adapter over ``project_regular_quote``: this module's own bounds
+    (tighter than the shared defaults — see the module docstring for why) are
+    passed explicitly, and the shared tuple is reshaped into the dossier's
+    historical field names. ``project_regular_quote`` raises
+    ``QuoteProjectionError`` (a ``ValueError``) on the same refusal cases this
+    function used to raise ``ValueError`` for directly, so the caller's
+    ``except ValueError`` -> 503 path is unchanged.
     """
-    # ``regularSession`` reports the STATE of the regular session — "rth" while
-    # it is open, "closed" once it is not.  It does NOT mean "the session this
-    # print came from", which is how it was first read here, and reading it that
-    # way refused every good row overnight: measured in production 2026-08-28,
-    # NVDA carried last=227.98 / prevClose=209.66 (the correct settled close for
-    # 2026-08-27) with regularSession "closed", and this raised, so every US
-    # dossier 503'd all night and fell back to its baked price.
-    #
-    # Only an explicitly EXTENDED tag is refusable, and even that is defence in
-    # depth: upstream already keeps extended prints out of ``last`` entirely
-    # (its ext feed rejects RTH-tagged prints, and non-RTH aggregates are routed
-    # to the ext namespace before the primary fields are touched), which is why
-    # the extended print lives in extPrice/extChg rather than here.
-    print_session = row.get("regularSession")
-    if isinstance(print_session, str) and print_session.strip().lower() in _EXTENDED_SESSION_TAGS:
-        raise ValueError(
-            f"quote hub row is an extended-session print: {print_session!r}"
+    try:
+        projected = project_regular_quote(
+            row,
+            ticker=ticker,
+            now=now,
+            published_at="",  # dossier schema does not surface published_at
+            live_max_age_seconds=_LIVE_MAX_AGE_SECONDS,
+            stale_max_age_seconds=_STALE_MAX_AGE_SECONDS,
+            closed_stale_max_age_seconds=_CLOSED_STALE_MAX_AGE_SECONDS,
         )
+    except QuoteProjectionError as exc:
+        raise ValueError(str(exc)) from exc
 
-    price = _finite_number(row.get("last"))
-    if price is None:
-        price = _finite_number(row.get("close"))
-    prev_close = _finite_number(row.get("prevClose"))
-    if price is None or price <= 0 or prev_close is None or prev_close <= 0:
-        raise ValueError("quote hub row carried no usable regular-session price")
-
-    # ── The anchor rolls forward; the price does not ──────────────────────────
-    # Upstream advances its anchor the moment a session settles, so whenever
-    # today's regular session is not in hand, `prevClose` becomes the LAST close
-    # and therefore equals `last`.  Deriving the move from that pair measures the
-    # close against itself: measured in production 2026-08-28 11:43Z, every US
-    # dossier served `change_abs 0.0, change_pct 0.0` over a price that had moved
-    # +8.74% to get there.  Self-consistent, and useless — the reader is shown a
-    # flat tape for the ~17.5 hours a day the regular session is not open.
-    #
-    # `prevSessionChg` is upstream's own signal for exactly this state: it
-    # carries the move that PRODUCED the published close, and it is deleted the
-    # instant today's session is in hand.  So when it is present, IT is the move
-    # that belongs beside this price, and the anchor is reconstructed from the
-    # pair we are about to publish — never forwarded from the rolled one, or the
-    # triple we hand the browser (227.98, from 227.98, up 8.74%) could not be
-    # reconciled by anyone reading it.
-    #
-    # Absent, unusable, or implying a non-positive anchor, we fall through to the
-    # ordinary derivation rather than divide.  `ratio > 0` is the single guard
-    # and it carries both jobs: at exactly -100% the ratio is 0 and the division
-    # would raise, and below -100% it is negative, which would hand back an
-    # anchor that is not a price.  It is deliberately the ONLY check.  A second,
-    # overlapping guard on the quotient reads as extra safety but is unreachable
-    # behind this one, so no test can prove it is still there — and an assertion
-    # nothing can falsify is not a safeguard, it is decoration.
-    prev_session_pct = _finite_number(row.get("prevSessionChg"))
-    if prev_session_pct is not None:
-        ratio = 1.0 + prev_session_pct / 100.0
-        if ratio > 0:
-            prev_close = price / ratio
-
-    # `chg` upstream is a PERCENT despite the name; the dollar move is derived
-    # from prevClose.  Those are two DIFFERENT sources — the hub selects its own
-    # anchor at runtime (it publishes `anchor_source` to say so) — so they can
-    # disagree, and a disagreement renders as a correct dollar move beside a
-    # percent from another session: "+$18.32 · -0.76%", green, both wrong
-    # together.  Cross-check them and, if they part company, derive BOTH from
-    # the price pair we can actually see.  One internally consistent pair beats
-    # a more authoritative number that contradicts its neighbour.
-    change_abs = price - prev_close
-    derived_pct = change_abs / prev_close * 100.0
-    change_pct = _finite_number(row.get("chg"))
-    if change_pct is None or abs(change_pct - derived_pct) > _PCT_CONSISTENCY_EPSILON:
-        change_pct = derived_pct
-
-    # Upstream can hand back the LAST COMPLETED session's move rather than
-    # today's before an RTH open (its ``usePreviousSession`` path).  We cannot
-    # tell those apart from the numbers, so ``regular_session_date`` is part of
-    # the contract and the client dates the move instead of assuming "today".
-    session_date = row.get("regularSessionDate")
-    stamped = _finite_number(row.get("ts"))
-    session = _session_of(row)
+    # prev_close is not part of the shared tuple; it is recovered losslessly
+    # from price - change_abs (exactly how it was derived upstream).
+    prev_close = projected.price - projected.change_abs
 
     return {
         "schema": SCHEMA,
         "ticker": ticker,
-        "price": price,
+        "price": projected.price,
         "prev_close": prev_close,
-        "change_abs": change_abs,
-        "change_pct": change_pct,
-        "freshness": _freshness_of(row, session=session, now=now),
-        "session": session,
-        "as_of": int(stamped) if stamped is not None else None,
-        "regular_session_date": session_date if isinstance(session_date, str) else None,
+        "change_abs": projected.change_abs,
+        "change_pct": projected.change_pct,
+        "freshness": projected.freshness,
+        "session": projected.session,
+        "as_of": (
+            int(_shared_finite_number(row.get("ts")))
+            if _shared_finite_number(row.get("ts")) is not None
+            else None
+        ),
+        "regular_session_date": projected.regular_session_date,
         "display_only": True,
     }
 

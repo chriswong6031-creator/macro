@@ -154,6 +154,22 @@ def test_freshness_uses_now_never_published_at():
 
 # ── regular-session semantics ───────────────────────────────────────────────
 
+def test_change_pct_is_read_from_chg_never_from_extChg():
+    """Discriminates the specific field read, not merely "is it derived".
+
+    `chg` sits just inside the consistency epsilon of the derived percent (so
+    it is kept as-is, not replaced); `extChg` sits far outside it (so reading
+    it instead would trigger the self-heal fallback and silently converge
+    back to the derived value). Reading the wrong field is therefore only
+    observable at tight precision — this pins that precision.
+    """
+    last, prev_close = 120.0, 100.0
+    derived_pct = (last - prev_close) / prev_close * 100.0  # 20.0
+    row = _row(last=last, prevClose=prev_close, chg=derived_pct + 0.01, extChg=derived_pct + 10.0)
+    q = project_regular_quote(row, ticker="NVDA", now=NOW, published_at=PUBLISHED)
+    assert q.change_pct == pytest.approx(derived_pct + 0.01, abs=1e-9)
+
+
 def test_change_abs_is_derived_not_read_from_the_percent_field():
     q = project_regular_quote(
         _row(last=120.0, prevClose=100.0, chg=20.0), ticker="NVDA", now=NOW, published_at=PUBLISHED,
