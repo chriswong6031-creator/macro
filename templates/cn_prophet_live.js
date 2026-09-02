@@ -1,7 +1,8 @@
 /* cn_prophet_live.js — CN Breathing Platform runtime board (CN-PR-3).
    Polls live/cn_prophet_live.json and paints only the reserved .pv-live chip on
-   each .pvcard[data-ticker]. The page-level #cn-prophet-live node is retained
-   solely as a hidden session-floor carrier; it must never consume viewport.
+   each .pvcard[data-ticker]. The page-level #cn-prophet-live node is a hidden
+   boot-time session carrier only: its date is cached, then the node is removed
+   from the DOM before the first live fetch so it cannot consume viewport.
 
    Fail-closed. A 401, a bad schema, a feed older than the page session, or an
    artifact older than 45 minutes tears the live layer down and leaves the SSR
@@ -55,6 +56,16 @@
     return _bakedSession;
   }
 
+  function detachSessionCarrier() {
+    var carrier = document.getElementById("cn-prophet-live");
+    if (!carrier) return;
+    carrier.hidden = true;
+    carrier.removeAttribute("class");
+    carrier.textContent = "";
+    carrier.setAttribute("aria-hidden", "true");
+    if (carrier.parentNode) carrier.parentNode.removeChild(carrier);
+  }
+
   function feedIsCurrent(d) {
     var floor = pageSession();
     if (!floor) return true;
@@ -89,17 +100,8 @@
     return false;
   }
 
-  function neutralizeSentinel() {
-    var sentinel = document.getElementById("cn-prophet-live");
-    if (!sentinel) return;
-    sentinel.hidden = true;
-    sentinel.removeAttribute("class");
-    sentinel.textContent = "";
-    sentinel.setAttribute("aria-hidden", "true");
-  }
-
   function tearDown() {
-    neutralizeSentinel();
+    detachSessionCarrier();
     if (!_painted) return;
     var slots = document.querySelectorAll(".pvcard[data-ticker] .pv-live");
     for (var i = 0; i < slots.length; i++) {
@@ -162,7 +164,7 @@
   }
 
   function apply(d) {
-    neutralizeSentinel();
+    detachSessionCarrier();
     paintCards(d.names || {});
   }
 
@@ -189,7 +191,8 @@
 
   function arm() {
     if (!document.getElementById("cn-prophet-live")) return;
-    neutralizeSentinel();
+    pageSession();
+    detachSessionCarrier();
     tick(true);
     if (_timer) clearInterval(_timer);
     _timer = setInterval(function () { tick(false); }, POLL);
