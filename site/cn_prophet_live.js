@@ -1,7 +1,7 @@
 /* cn_prophet_live.js — CN Breathing Platform runtime board (CN-PR-3).
    Polls live/cn_prophet_live.json and paints only the reserved .pv-live chip on
    each .pvcard[data-ticker]. The page-level #cn-prophet-live node is retained
-   solely as a hidden session-floor sentinel; it must never consume viewport.
+   solely as a hidden session-floor carrier; it must never consume viewport.
 
    Fail-closed. A 401, a bad schema, a feed older than the page session, or an
    artifact older than 45 minutes tears the live layer down and leaves the SSR
@@ -89,7 +89,17 @@
     return false;
   }
 
+  function neutralizeSentinel() {
+    var sentinel = document.getElementById("cn-prophet-live");
+    if (!sentinel) return;
+    sentinel.hidden = true;
+    sentinel.removeAttribute("class");
+    sentinel.textContent = "";
+    sentinel.setAttribute("aria-hidden", "true");
+  }
+
   function tearDown() {
+    neutralizeSentinel();
     if (!_painted) return;
     var slots = document.querySelectorAll(".pvcard[data-ticker] .pv-live");
     for (var i = 0; i < slots.length; i++) {
@@ -99,11 +109,6 @@
       el.innerHTML = "";
       el.removeAttribute("data-tip-en");
       el.removeAttribute("data-tip-zh");
-    }
-    var sentinel = document.getElementById("cn-prophet-live");
-    if (sentinel) {
-      sentinel.hidden = true;
-      sentinel.classList.remove("is-close");
     }
     _painted = false;
   }
@@ -156,15 +161,8 @@
     }
   }
 
-  function keepSentinelHidden() {
-    var sentinel = document.getElementById("cn-prophet-live");
-    if (!sentinel) return;
-    sentinel.hidden = true;
-    sentinel.classList.remove("is-close");
-  }
-
   function apply(d) {
-    keepSentinelHidden();
+    neutralizeSentinel();
     paintCards(d.names || {});
   }
 
@@ -191,7 +189,7 @@
 
   function arm() {
     if (!document.getElementById("cn-prophet-live")) return;
-    keepSentinelHidden();
+    neutralizeSentinel();
     tick(true);
     if (_timer) clearInterval(_timer);
     _timer = setInterval(function () { tick(false); }, POLL);
