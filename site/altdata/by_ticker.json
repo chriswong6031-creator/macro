@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-09-01",
-  "generated_utc": "2026-09-01T06:49:57.850870+00:00",
-  "n_tickers": 2642,
+  "generated_utc": "2026-09-01T22:37:01.039426+00:00",
+  "n_tickers": 2643,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -1416,12 +1416,11 @@
     "EQR": {
       "ticker": "EQR",
       "channels": [
-        "material_8k",
-        "special_situation"
+        "material_8k"
       ],
-      "weighted_score": 0.75,
+      "weighted_score": 0.55,
       "material_8k_30d": 4,
-      "convergence_score": 2,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -24043,6 +24042,16 @@
     },
     "GTLS": {
       "ticker": "GTLS",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "VMRK": {
+      "ticker": "VMRK",
       "channels": [
         "special_situation"
       ],

@@ -341,3 +341,47 @@ warning + artifacts restored). Ruling-10 completion: the sidecar diff must add e
 ONE epoch over origin/main (re-derive once over main's committed parquet with the final
 code; the two pass-1 intermediate epochs never belonged on main); the two content-equal
 issuer parquets restore their base bytes.
+
+### AMENDMENT §4 (2026-08-29) — same-id-refinement carve-out IMPLEMENTED
+
+The AMENDMENT §2 named follow-up is landed in
+`scripts/build_security_master.py::_prune_stale_aliases` (predicate:
+`_is_lawful_same_id_refinement`), with its own adversarial Opus review per §2's
+requirement. A committed OPEN-BOUNDED alias row is lawfully pruned — receipted in
+`vendor_alias_prunes` with `prune_class="same_id_refinement"` and its own
+`::warning title=security-master-vendor-alias-refinement-prune` (distinct from the
+tombstone class, now tagged `prune_class="superseded_tombstone"`) — when EVERY
+overlapping fresh row shares its `security_id`, the fresh same-id family is DATED
+(no fully-open row, no zero-width row) and exactly tiles the full time axis (one
+open start, one open end, consecutive bounds meeting exactly — gapless and
+overlap-free), and the family row covering the committed row's own START bound
+carries the committed row's `vendor_symbol` (start-anchored symbol continuity — the
+refinement may date the committed claim's END, never rewrite what the space called
+the security in the committed row's own era; adversarial-review repair of the weaker
+"symbol appears somewhere in the family" draft, which provably deleted a live
+mapping). Every open-ended committed row the family lawfully refines is pruned
+(plural), and each receipt entry carries the pruned row's `ingested_at`. Controls
+test-pinned in `tests/test_dataos_security_master.py` (`test_m5_*`): an UNDATED
+fresh replacement, a gapped family, a family missing the committed symbol at the
+committed row's start, a family naming a different `security_id`, and a fully DATED
+committed row all still raise `VendorAliasPruneConflict`. §2's "any future dated rename will fail closed" clause is
+therefore RETIRED for lawful refinements; ruling 9's dated `store` VMRK answer was
+separately resolved by §2's other option (one-time hand migration, 2026-08-28,
+`claude/eqr-vmrk-key-migration`) and the `store` space remains current-catalog.
+
+Deferred-escalation companion (DSC:NIGHTLY-SECMASTER-REFRESH-WEDGES-SILENTLY-ON-
+PRUNE-CONFLICT falsifier): `run_nightly_refresh` now keeps a refusal-streak sidecar
+(`data/reference/_nightly_prune_conflict_streak.json` — cleared on any successful
+pass, restarted when the conflict text changes, untouched by `_restore_artifacts`,
+type-validated on read so a corrupt or non-dict payload can never crash the
+handler, and carrying BOTH a same-conflict `consecutive` counter and a monotonic
+`refusals_since_last_success` counter so alternating conflict texts cannot hold the
+escalation at 1 forever); the 3rd+ prune-conflict refusal with no intervening
+successful refresh — on either counter — additionally emits
+`::error title=security-master-nightly-prune-conflict-stuck` naming how long the
+artifact set has been frozen. Persistence across nights rides
+the nightly data commit (same ride as `_receipt.json`; not a dataset-registry row):
+a lost sidecar only DELAYS the escalation, never suppresses the per-night
+`::warning` — fail-degraded, never fail-silent. The §3 seam invariant is UNCHANGED:
+the nightly still always returns 0, restores last-good artifacts, and the CLI path
+stays fail-closed.
