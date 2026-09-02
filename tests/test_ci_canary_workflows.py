@@ -535,7 +535,56 @@ def test_canary_compare_control_bundle_is_runtime_complete() -> None:
     assert "--hosted-fragment" in completed.stdout
 
 
-def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+# ── C3R-A: four-slot diagnostic interface ────────────────────────────────────
+# slots=4 is a DIAGNOSTIC identity only. It routes to the same existing ci-linux
+# label, keeps the independent render reservation, and must not swallow a red
+# pack — the previous gating named slots == '3' literally, so a four-slot run
+# would have uploaded its receipt and then exited green regardless of pack.rc.
+
+
+def test_canary_admits_exactly_the_one_three_and_four_slot_identities() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    raw = document.get("on", document.get(True, {}))
+    options = raw["workflow_dispatch"]["inputs"]["slots"]["options"]
+    assert options == ["1", "3", "4"]
+    assert "5" not in options and "6" not in options, "no hidden fifth CI slot"
+    assert raw["workflow_dispatch"]["inputs"]["slots"]["default"] == "1"
+
+
+def test_four_slot_run_routes_to_the_existing_ci_linux_label_only() -> None:
+    job = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]
+    runs_on = job["runs-on"]
+    assert runs_on == (
+        "${{ fromJSON(inputs.slots == '1' && "
+        "'[\"self-hosted\",\"ci-linux-canary\"]' || "
+        "'[\"self-hosted\",\"ci-linux\"]') }}"
+    )
+    assert "render-linux" not in runs_on, "CI and render labels stay disjoint"
+    assert job["strategy"]["max-parallel"] == "${{ fromJSON(inputs.slots) }}"
+    assert job["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+
+
+def test_hosted_control_fans_out_over_every_selected_pack() -> None:
+    """Four self-hosted packs need four hosted controls, or `compare` cannot
+    require strict parity for every pack a slots=4 run actually selected.
+    """
+    hosted = workflow("selfhosted-ci-canary.yml")["jobs"]["hosted-control"]
+    assert hosted["strategy"]["matrix"] == "${{ fromJSON(needs.plan.outputs.matrix) }}"
+    assert hosted["runs-on"] == "ubuntu-latest"
+
+
+def test_render_reservation_probe_is_preserved_at_three_and_four_slots() -> None:
+    probe = workflow("selfhosted-ci-canary.yml")["jobs"]["render-reservation-probe"]
+    assert probe["if"] == "inputs.slots != '1'"
+    assert probe["runs-on"] == ["self-hosted", "Linux", "X64", "render-linux"]
+    assert "ci-linux" not in probe["runs-on"]
+
+
+def test_multi_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+    """Regression: the gate previously read `inputs.slots == '3'`, so a slots=4
+    run preserved its receipt and then reported success no matter what pack.rc
+    held. Every multi-slot identity must surface the red.
+    """
     steps = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]["steps"]
     upload = next(
         index
@@ -546,9 +595,9 @@ def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
     gate = next(
         index
         for index, step in enumerate(steps)
-        if step.get("name") == "surface a red pack after preserving its three-slot receipt"
+        if str(step.get("name", "")).startswith("surface a red pack after preserving")
     )
-    assert upload < gate
-    assert steps[gate]["if"] == "inputs.slots == '3'"
+    assert upload < gate, "the receipt is preserved before the red is surfaced"
+    assert steps[gate]["if"] == "inputs.slots != '1'"
     assert 'cat "$RUNNER_TEMP/pack.rc"' in steps[gate]["run"]
     assert "-eq 0" in steps[gate]["run"]

@@ -2,68 +2,57 @@
 key: CAP-S1-SOURCE-ABSENT-W3A-COMPOSITION-REQUIRED
 claim: >
   At protected Mastermind 21a721427743fdae6d513eeb0f993ebd1c327a81,
-  CAP-S1 has no source implementation or GitHub carrier, while protected W3A
-  already owns accepted semantics in its shared Operator Harness and Codex
-  adapter paths and the current comparator still permits a duplicate same-name
+  CAP-S1 had no source implementation or GitHub carrier, while protected W3A
+  already owned accepted semantics in its shared Operator Harness and Codex
+  adapter paths and the comparator still permitted a duplicate same-name
   observation to be hidden by one matching row.
 falsifier: >
-  Re-read current protected Mastermind and its open/merged PR census, run
+  Re-read the pinned protected Mastermind and its then-current PR census, run
   `git -C Mastermind cat-file -e
-  <protected>:control_plane/executive_capability_packages.py`, inspect
-  `classify_observed_capabilities` in
+  21a721427743fdae6d513eeb0f993ebd1c327a81:control_plane/executive_capability_packages.py`,
+  inspect `classify_observed_capabilities` in
   `control_plane/operator_harness_contract.py`, and inspect the latest commits
-  for `control_plane/operator_harness_contract.py` and
-  `control_plane/codex_operator_adapter.py`. This discovery is false when a
-  protected CAP-S1 implementation exists, the exact-one comparator behavior is
-  already present, or W3A no longer supplies the accepted shared-seam law.
+  for the two W3A shared paths. This historical discovery is false if CAP-S1
+  source existed at that pin, the exact-one comparator was already present, or
+  W3A did not own the accepted shared-seam law.
 so_what: >
-  A future CAP-S1 receiver must begin from current protected source, preserve
-  W3A OperationId/effect, epoch/generation, Wake and ordinary text-turn
-  behavior, add the structured Skill path only as a closed V4-canary extension,
-  and repair the comparator to exactly one observed identity per required name;
-  it must not replay the older plan onto the shared files or revive historical
-  native attempts.
+  Preserve this as the historical pickup boundary only. Current sessions must
+  load DSC:CAP-S1-CURRENT-CARRIER-REQUIRES-SERIALIZED-RELEASE-CLOSURE and must
+  not use the older source-absent state to create a replacement CAP-S1 carrier.
 kind: architecture
 verified_at: 2026-09-01
 verified_by: >
   Mastermind protected branch read at
   21a721427743fdae6d513eeb0f993ebd1c327a81; PR #325 merge
-  484fb1d5b3660d69709767421c63aaa2fafb587a; compare from that merge to
-  protected master; current reads of
+  484fb1d5b3660d69709767421c63aaa2fafb587a; current reads of
   control_plane/operator_harness_contract.py and
   control_plane/codex_operator_adapter.py; W3A merge
-  fc407e1638a26932c8615c98c7732d7f3202b3b1; current open-PR changed-path
-  census; PR #325 reconciliation comment 5502570222.
+  fc407e1638a26932c8615c98c7732d7f3202b3b1; PR #325 comment 5502570222.
 scope:
   - WS:SOL-CAPABILITY-FABRIC
   - mastermind:control_plane/executive_capability_packages.py
   - mastermind:control_plane/operator_harness_contract.py
   - mastermind:control_plane/codex_operator_adapter.py
 confidence: verified
+superseded_by: DSC:CAP-S1-CURRENT-CARRIER-REQUIRES-SERIALIZED-RELEASE-CLOSURE
 ---
 
-# Evidence
+# Historical evidence
 
-SCF-PKG0 is protected source law in Mastermind PR #325. Current protected
-Mastermind still returns no file at
-`control_plane/executive_capability_packages.py`, and the current branch/PR
-census contains no CAP-S1 implementation carrier.
+At the verified pin, SCF-PKG0 was protected source law, the package
+implementation file did not exist, and no CAP-S1 implementation branch or PR
+was present. W3A had already changed the two shared paths and established
+accepted OperationId, epoch/generation, current-writer Wake and attention
+semantics that a later CAP-S1 implementation had to preserve.
 
-The protected movement after SCF-PKG0 is not an active-writer collision.
-W3A merge `fc407e1638a26932c8615c98c7732d7f3202b3b1` already changed the two
-shared paths and established accepted current-writer Wake and operation
-semantics. Those semantics must survive the later CAP-S1 vertical.
+The comparator used `any(...)` over same-name observations, so one exact match
+could satisfy a requirement while a second same-name observation remained.
+That defect was subsequently incorporated into the CAP-S1 implementation work.
 
-The current capability classifier groups observations by `(kind, name)` but
-uses `any(...)` to determine whether the required identity is proven. One
-matching Skill identity can therefore satisfy the requirement while a second
-same-name observation remains present. That is the exact duplicate-shadow
-defect frozen by CAP-S1 source law.
+# Supersession
 
-# Consequence
-
-CAP-S1 remains `NOT_BUILT / NOT_PROVEN / PRODUCTION_UNARMED`. The next lawful
-step is receiver placement and current-source SCOPE_MAP, not native proof,
-default-policy migration or a parser-only PR. Historical CAP-S1 preflight,
-broker and provider child operations terminated while their source predecessor
-was unprotected and are not reusable evidence.
+CAP-S1 now has one canonical started carrier, Mastermind PR #350. The current
+question is no longer whether source exists; it is whether that same carrier can
+close its security, release-closure, real-canary and cleanup obligations without
+racing the Capacity and Control Room owners. The superseding discovery records
+that current state.
