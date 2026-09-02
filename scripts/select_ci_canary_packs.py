@@ -63,7 +63,7 @@ def select(plan: dict[str, object], count: int) -> list[dict[str, object]]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--plan", type=Path, required=True)
-    parser.add_argument("--count", type=int, choices=(1, 3), required=True)
+    parser.add_argument("--count", type=int, choices=(1, 3, 4), required=True)
     parser.add_argument("--github-output", type=Path, required=True)
     args = parser.parse_args()
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
