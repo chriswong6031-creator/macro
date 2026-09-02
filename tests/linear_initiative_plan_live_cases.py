@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections import Counter
 from pathlib import Path
+
+import pytest
 
 from scripts import linear_initiative_plan as lip
 from scripts import linear_portfolio_plan as lpp
@@ -21,6 +24,11 @@ EXPECTED_GROUP_COUNTS = {
     "legendary-alpha-discovery-timing": 15,
     "personal-institutional-desk": 3,
     "trusted-production-customer-platform": 5,
+}
+EXPECTED_SOURCE_IDENTITY = {
+    "repository": "mastermindx-market-intelligence/Mastermind",
+    "path": "docs/superpowers/specs/2026-08-29-linear-initiative-portfolio-architecture-design.md",
+    "protected_revision": "d004f5bf7953e943281dff7efd8fe17a54b0cf6c",
 }
 
 
@@ -57,6 +65,13 @@ def test_current_repository_initiative_plan_is_deterministic_and_emits_ci_receip
     assert first["summary"]["group_counts"] == EXPECTED_GROUP_COUNTS
     assert receipt["initiative_plan_semantic_hash"] == first["semantic_hash"]
     assert receipt["project_plan_semantic_hash"] == project_plan["semantic_hash"]
+    assert receipt["strategy_provenance"]["source_identity"] == EXPECTED_SOURCE_IDENTITY
+    assert receipt["strategy_provenance"]["strategy_content_sha256"] == hashlib.sha256(
+        strategy_path.read_bytes()
+    ).hexdigest()
+    assert receipt["strategy_provenance"]["desired_memberships_sha256"] == hashlib.sha256(
+        lpp.canonical_bytes(first["desired_memberships"])
+    ).hexdigest()
 
     exceptions = {
         (row["identity_kind"], row["identity"], row["reason"])
@@ -77,6 +92,7 @@ def test_current_repository_initiative_plan_is_deterministic_and_emits_ci_receip
         "source_revision": os.environ.get("GITHUB_SHA", "local-checkout"),
         "strategy_path": STRATEGY_REL.as_posix(),
         "strategy_source_revision": receipt["strategy_source_revision"],
+        "strategy_provenance": receipt["strategy_provenance"],
         "project_plan_semantic_hash": project_plan["semantic_hash"],
         "initiative_plan_semantic_hash": first["semantic_hash"],
         "desired_counts": receipt["desired_counts"],
@@ -341,3 +357,160 @@ def test_conflicting_identity_evidence_is_input_order_invariant():
 
     assert first == second
     assert "initiative_id_ambiguous" in {row["code"] for row in first}
+
+
+def _strategy_project_plan(strategy: dict) -> dict:
+    keys = sorted(strategy["memberships"])
+    return {
+        "schema": lpp.PLAN_SCHEMA,
+        "semantic_hash": "strategy-project-plan-fixture",
+        "active_projects": [
+            {
+                "workstream_key": key,
+                "desired_project_name": key,
+                "desired_project_status_class": "started",
+                "canonical_status": "active",
+            }
+            for key in keys + ["WS:WATCHLIST-PORTFOLIO-CEO"]
+        ],
+        "review_candidates": [],
+        "excluded_projects": [],
+    }
+
+
+def _write_strategy(tmp_path: Path, strategy: dict, name: str) -> Path:
+    path = tmp_path / name
+    path.write_text(
+        json.dumps(strategy, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def test_snapshot_initiative_rows_fail_closed_with_collection_and_index():
+    desired_a, current_a = _initiative("init-a", "A", "a")
+    desired_b, current_b = _initiative("init-b", "B", "b")
+
+    for malformed in (None, "not-an-object", ["not-an-object"]):
+        for rows in ([current_a, malformed, current_b], [current_b, malformed, current_a]):
+            snapshot = {
+                "schema": lip.SNAPSHOT_SCHEMA,
+                "initiatives": rows,
+                "projects": [],
+            }
+            with pytest.raises(lip.InitiativePlanError) as exc:
+                lip.initiative_drift(snapshot, [desired_a, desired_b], [], [])
+            assert exc.value.failures == (
+                {
+                    "code": "initiative_snapshot_row_malformed",
+                    "collection": "initiatives",
+                    "row_index": 1,
+                },
+            )
+
+
+def test_snapshot_project_rows_fail_closed_with_collection_and_index():
+    desired, current = _initiative("init-a", "A", "a")
+    valid_project = _project(
+        "WS:A",
+        "project-a",
+        initiative_ids=["init-a"],
+        initiative_names=["A"],
+    )
+
+    for malformed in (None, "not-an-object", ["not-an-object"]):
+        for rows in ([valid_project, malformed], [malformed, valid_project]):
+            expected_index = 1 if rows[1] is malformed else 0
+            snapshot = {
+                "schema": lip.SNAPSHOT_SCHEMA,
+                "initiatives": [current],
+                "projects": rows,
+            }
+            with pytest.raises(lip.InitiativePlanError) as exc:
+                lip.initiative_drift(snapshot, [desired], [], [])
+            assert exc.value.failures == (
+                {
+                    "code": "initiative_snapshot_row_malformed",
+                    "collection": "projects",
+                    "row_index": expected_index,
+                },
+            )
+
+
+@pytest.mark.parametrize(
+    "source_design,bad_fields",
+    [
+        (None, ["path", "protected_revision", "repository"]),
+        ([], ["path", "protected_revision", "repository"]),
+        (
+            {**EXPECTED_SOURCE_IDENTITY, "repository": "wrong/repository"},
+            ["repository"],
+        ),
+        (
+            {**EXPECTED_SOURCE_IDENTITY, "path": "docs/wrong.md"},
+            ["path"],
+        ),
+        (
+            {**EXPECTED_SOURCE_IDENTITY, "protected_revision": "not-a-40-hex-revision"},
+            ["protected_revision"],
+        ),
+        (
+            {**EXPECTED_SOURCE_IDENTITY, "protected_revision": "0" * 40},
+            ["protected_revision"],
+        ),
+    ],
+)
+def test_strategy_source_design_is_closed_and_exact(source_design, bad_fields):
+    repo = Path(__file__).resolve().parents[1]
+    strategy = json.loads((repo / STRATEGY_REL).read_text(encoding="utf-8"))
+    strategy["source_design"] = source_design
+
+    with pytest.raises(lip.InitiativePlanError) as exc:
+        lip.validate_strategy(strategy, _strategy_project_plan(strategy))
+
+    assert exc.value.failures == (
+        {
+            "code": "strategy_source_design_invalid",
+            "fields": bad_fields,
+        },
+    )
+
+
+def test_strategy_receipt_binds_exact_source_bytes_and_membership_rows(tmp_path):
+    repo = Path(__file__).resolve().parents[1]
+    strategy_path = repo / STRATEGY_REL
+    strategy = json.loads(strategy_path.read_text(encoding="utf-8"))
+    project_plan = _strategy_project_plan(strategy)
+
+    plan, receipt = lip.compile_initiative_plan(
+        project_plan=project_plan,
+        strategy_path=strategy_path,
+    )
+    repeat_plan, repeat_receipt = lip.compile_initiative_plan(
+        project_plan=project_plan,
+        strategy_path=strategy_path,
+    )
+
+    assert repeat_plan == plan
+    assert repeat_receipt == receipt
+    provenance = receipt["strategy_provenance"]
+    assert provenance["source_identity"] == EXPECTED_SOURCE_IDENTITY
+    assert provenance["strategy_content_sha256"] == hashlib.sha256(
+        strategy_path.read_bytes()
+    ).hexdigest()
+    assert provenance["desired_memberships_sha256"] == hashlib.sha256(
+        lpp.canonical_bytes(plan["desired_memberships"])
+    ).hexdigest()
+
+    mutated = json.loads(json.dumps(strategy))
+    mutated["memberships"]["WS:MARKET-OS"] = "autonomous-ai-organization"
+    mutated_path = _write_strategy(tmp_path, mutated, "mutated-strategy.json")
+    mutated_plan, mutated_receipt = lip.compile_initiative_plan(
+        project_plan=_strategy_project_plan(mutated),
+        strategy_path=mutated_path,
+    )
+    assert len(mutated_plan["desired_memberships"]) == 52
+    assert (
+        mutated_receipt["strategy_provenance"]["desired_memberships_sha256"]
+        != provenance["desired_memberships_sha256"]
+    )
