@@ -146,11 +146,35 @@ refuted by 48/51 vs 0/55 matured on different horizons (3d vs 90d). Adjudication
   branch is unreachable on live data; plus an undeduped bare-append log. Come-back
   12-01 on the shock_reversible gate.
 
-## 6. Remaining lane (placeholder)
+## 6. s-mlc-3-weekly-wait-cost — harness built and run; Outcome A (COST-IS-REAL), floor clearance knife-edge and printed as such
 
-- s-mlc-3-weekly-wait-cost: pending builder run.
+The frozen prereg (`research/S_MLC_3_WEEKLY_WAIT_COST_PREREG.md`) finally got its
+harness (`scripts/s_mlc_3_weekly_wait_cost.py`, +20 pure-function tests) and ran on
+the full 1998→2026 SPDR history. Primary cell (δ=0, 21d, t+1-close fills, SPY-parked
+non-confirm): mean SPY-excess cost of the half-now/half-on-weekly-confirm
+construction vs full immediate entry = **+0.309% per event** (n=617 events / 238
+month clusters, HAC t 6.26, month-block sign-flip permutation p≈0.0000), era split
+mandatory and sign-stable (pre-2010 +0.223% t 2.15; post-2010 +0.344% t 6.02),
+split-half and episode-first-month blocks agree, BH-FDR primary cell survives,
+confirm-miss rate 46.5%, δ=0.01 sensitivity +0.339% (NON-PROMOTABLE, same
+direction). **Verdict per §3: Outcome A — COST-IS-REAL**, so a leaders-exception
+pre-reg is authorized (a separate document; no wiring — this study gates authority
+only and the display tier was never gated).
 
-## 3. Method note
+**Adjudicated ambiguity (verdict-affecting, printed not hidden):** §1.5's raw
+formula compares the confirm Friday to `close[s,t]` (event day), while BOTH frozen
+blocks (Ruling 3 at line 100, Ruling 4's miss branch at line 105) say "weekly close
+≥ **t+1 entry close**". The orchestrator adjudicated the FROZEN blocks as the law
+(the 07-16 freeze superseded the draft formula; the builder implemented the same
+reading independently). Under the superseded literal reading the cost is 0.296% —
+BELOW the 0.30% magnitude floor — so the A/B verdict is knife-edge on this textual
+choice and the floor margin is 3% relative. Both numbers ship in
+`data/mlc/s_mlc_3_weekly_wait_cost_results.json` (`confirm_reference_ambiguity`,
+`verdict_sensitive_to_choice: true`) and the report leads with the caution. The
+leaders-exception pre-reg, if drafted, MUST define the confirm reference explicitly
+and treat the floor clearance as marginal, not comfortable.
+
+## 7. Method note
 
 Same playbook as 08-03/08-26: lane workers re-derive state from artifacts only and
 propose; the orchestrating session adjudicates, spot-verifies lane numbers against
