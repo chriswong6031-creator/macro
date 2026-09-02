@@ -238,8 +238,8 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 .rf-ledger dd { margin:0; font-size:var(--fs-sm); color:var(--text); }
 .rf-lg-mark { font-size:var(--fs-micro); }
 /* Direction ink flips under 红涨绿跌 for free; the MARK and the WORD carry the
-   direction so hue is never alone (§5). The meaning text stays --text: reading a
-   move is not a goodness judgment. */
+   direction so hue is never alone (§5). The meaning text keeps the --text token
+   (color:var(--text) above) — reading a move is not a goodness judgment. */
 .rf-lg--up   dt { color:var(--ink-up,   var(--up)); }
 .rf-lg--down dt { color:var(--ink-down, var(--down)); }
 .rf-lg--flat dt { color:var(--muted); }
@@ -736,7 +736,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (risk-on / mixed / risk-off)</span><span class="l-zh">Categorical label (risk-on / mixed / risk-off)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (risk-on / mixed / risk-off)</span><span class="l-zh">分类标签（风险偏好／混合／避险）</span></span></p>
             
 
             
@@ -748,22 +748,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Risk-on — supportive backdrop; trend, breadth, and cross-asset signals broadly line up.
-</span><span class="l-zh">Risk-on — supportive backdrop; trend, breadth, and cross-asset signals broadly line up.
-</span></dd>
+</span><span class="l-zh">风险偏好——环境偏支持性；趋势、广度与跨资产信号总体一致。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Risk-off — stressed backdrop; tape under pressure and trend pointing lower.
-</span><span class="l-zh">Risk-off — stressed backdrop; tape under pressure and trend pointing lower.
-</span></dd>
+</span><span class="l-zh">避险——环境承压；盘面承压，趋势向下。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Mixed — signals disagree or the regime is in transition; treat with extra caution.
-</span><span class="l-zh">Mixed — signals disagree or the regime is in transition; treat with extra caution.
-</span></dd>
+</span><span class="l-zh">混合——信号不一致或市场状态处于转换期，应格外谨慎。</span></dd>
                 </div>
               </dl>
             </div>
@@ -848,7 +845,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 composite score</span><span class="l-zh">0-100 composite score</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 composite score</span><span class="l-zh">0-100综合评分</span></span></p>
             
 
             
@@ -860,22 +857,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Higher score — trend, breadth, and cross-asset signals broadly align supportive.
-</span><span class="l-zh">Higher score — trend, breadth, and cross-asset signals broadly align supportive.
-</span></dd>
+</span><span class="l-zh">评分较高——趋势、广度与跨资产信号总体呈支持性一致。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Lower score — tape under stress, trend pointing lower, signals aligned negative.
-</span><span class="l-zh">Lower score — tape under stress, trend pointing lower, signals aligned negative.
-</span></dd>
+</span><span class="l-zh">评分较低——盘面承压，趋势向下，信号呈负面一致。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Mid-range score — components disagree or the picture is transitional.
-</span><span class="l-zh">Mid-range score — components disagree or the picture is transitional.
-</span></dd>
+</span><span class="l-zh">评分处于中间区间——各分项不一致，或整体格局处于过渡阶段。</span></dd>
                 </div>
               </dl>
             </div>
@@ -960,7 +954,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical quadrant label with a stability qualifier</span><span class="l-zh">Categorical quadrant label with a stability qualifier</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical quadrant label with a stability qualifier</span><span class="l-zh">象限分类标签，附带稳定性说明</span></span></p>
             
 
             
@@ -972,22 +966,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Growth up / inflation down — historically the most supportive quadrant for equities.
-</span><span class="l-zh">Growth up / inflation down — historically the most supportive quadrant for equities.
-</span></dd>
+</span><span class="l-zh">增长上行／通胀下行——历史上对股票最为有利的象限。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Growth down / inflation up — historically the most defensive quadrant.
-</span><span class="l-zh">Growth down / inflation up — historically the most defensive quadrant.
-</span></dd>
+</span><span class="l-zh">增长下行／通胀上行——历史上最需防御的象限。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Growth and inflation both rising or both falling — a mixed backdrop for sector tilts.
-</span><span class="l-zh">Growth and inflation both rising or both falling — a mixed backdrop for sector tilts.
-</span></dd>
+</span><span class="l-zh">增长与通胀同向上行或同向下行——对板块配置而言属于混合环境。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1072,7 +1063,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -1083,17 +1074,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — risk-seeking assets outperforming defensive ones broadly.</span><span class="l-zh">High score — risk-seeking assets outperforming defensive ones broadly.</span></dd>
+                  <dd><span class="l-en">High score — risk-seeking assets outperforming defensive ones broadly.</span><span class="l-zh">评分较高——偏风险型资产整体跑赢防御型资产。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — defensive assets outperforming; a risk-off signature.</span><span class="l-zh">Low score — defensive assets outperforming; a risk-off signature.</span></dd>
+                  <dd><span class="l-en">Low score — defensive assets outperforming; a risk-off signature.</span><span class="l-zh">评分较低——防御型资产跑赢，呈现避险特征。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — cross-asset signals mixed or offsetting.</span><span class="l-zh">Mid score — cross-asset signals mixed or offsetting.</span></dd>
+                  <dd><span class="l-en">Mid score — cross-asset signals mixed or offsetting.</span><span class="l-zh">评分居中——跨资产信号不一致或相互抵消。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1178,7 +1169,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical band (calm / watch / caution / elevated / risk-off)</span><span class="l-zh">Categorical band (calm / watch / caution / elevated / risk-off)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical band (calm / watch / caution / elevated / risk-off)</span><span class="l-zh">分类区间（平静／观察／谨慎／偏高／避险）</span></span></p>
             
 
             
@@ -1190,22 +1181,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Elevated or risk-off — historically higher-than-normal odds of a near-term pullback; a de-risking sizing consideration, not an exit signal.
-</span><span class="l-zh">Elevated or risk-off — historically higher-than-normal odds of a near-term pullback; a de-risking sizing consideration, not an exit signal.
-</span></dd>
+</span><span class="l-zh">偏高或避险——历史上意味着近期回撤概率高于平常，属于降低仓位风险的参考，而非清仓信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Calm or watch — no unusual pullback pressure detected among the tracked scare types.
-</span><span class="l-zh">Calm or watch — no unusual pullback pressure detected among the tracked scare types.
-</span></dd>
+</span><span class="l-zh">平静或观察——所跟踪的各类&#34;惊吓&#34;情景中未检测到异常回撤压力。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Caution — some scare types are stirring; a reason to tighten risk controls, not to override a supportive market read.
-</span><span class="l-zh">Caution — some scare types are stirring; a reason to tighten risk controls, not to override a supportive market read.
-</span></dd>
+</span><span class="l-zh">谨慎——部分&#34;惊吓&#34;情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1290,7 +1278,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (stable / shifting / weakening / new regime)</span><span class="l-zh">Categorical label (stable / shifting / weakening / new regime)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (stable / shifting / weakening / new regime)</span><span class="l-zh">分类标签（稳定／转换中／走弱／刚切换）</span></span></p>
             
 
             
@@ -1304,8 +1292,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No directional up/down reading — this describes confidence in the current regime label, not a market direction.
-</span><span class="l-zh">No directional up/down reading — this describes confidence in the current regime label, not a market direction.
-</span></dd>
+</span><span class="l-zh">无上行／下行方向性判断——该指标描述的是对当前象限标签的可信度，而非市场方向。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1390,7 +1377,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -1401,17 +1388,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — trend broadly aligned bullish across timeframes.</span><span class="l-zh">High score — trend broadly aligned bullish across timeframes.</span></dd>
+                  <dd><span class="l-en">High score — trend broadly aligned bullish across timeframes.</span><span class="l-zh">评分较高——各周期趋势总体呈看涨一致。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — trend broadly aligned bearish across timeframes.</span><span class="l-zh">Low score — trend broadly aligned bearish across timeframes.</span></dd>
+                  <dd><span class="l-en">Low score — trend broadly aligned bearish across timeframes.</span><span class="l-zh">评分较低——各周期趋势总体呈看跌一致。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — short- and longer-term trends disagree.</span><span class="l-zh">Mid score — short- and longer-term trends disagree.</span></dd>
+                  <dd><span class="l-en">Mid score — short- and longer-term trends disagree.</span><span class="l-zh">评分居中——短期与长期趋势不一致。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1505,7 +1492,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -1516,17 +1503,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — liquidity and credit conditions supportive.</span><span class="l-zh">High score — liquidity and credit conditions supportive.</span></dd>
+                  <dd><span class="l-en">High score — liquidity and credit conditions supportive.</span><span class="l-zh">评分较高——流动性与信用状况偏支持性。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — liquidity and credit conditions tightening.</span><span class="l-zh">Low score — liquidity and credit conditions tightening.</span></dd>
+                  <dd><span class="l-en">Low score — liquidity and credit conditions tightening.</span><span class="l-zh">评分较低——流动性与信用状况趋紧。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — liquidity signals mixed or transitional.</span><span class="l-zh">Mid score — liquidity signals mixed or transitional.</span></dd>
+                  <dd><span class="l-en">Mid score — liquidity signals mixed or transitional.</span><span class="l-zh">评分居中——流动性信号不一致或处于过渡期。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1614,7 +1601,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (stress expansion / clean expansion / contraction / neutral)</span><span class="l-zh">Categorical label (stress expansion / clean expansion / contraction / neutral)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical label (stress expansion / clean expansion / contraction / neutral)</span><span class="l-zh">分类标签（压力型扩张／健康型扩张／收缩／中性）</span></span></p>
             
 
             
@@ -1626,22 +1613,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Clean expansion — liquidity growing without unusual stress signatures; generally supportive for risk assets.
-</span><span class="l-zh">Clean expansion — liquidity growing without unusual stress signatures; generally supportive for risk assets.
-</span></dd>
+</span><span class="l-zh">健康型扩张——流动性增长且未伴随异常压力特征，总体对风险资产有利。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Contraction — liquidity shrinking; historically a headwind for risk assets.
-</span><span class="l-zh">Contraction — liquidity shrinking; historically a headwind for risk assets.
-</span></dd>
+</span><span class="l-zh">收缩——流动性收缩，历史上对风险资产构成逆风。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Stress expansion or neutral — liquidity is growing but alongside stress signals, or showing no clear direction; read with the accompanying context.
-</span><span class="l-zh">Stress expansion or neutral — liquidity is growing but alongside stress signals, or showing no clear direction; read with the accompanying context.
-</span></dd>
+</span><span class="l-zh">压力型扩张或中性——流动性在增长但伴随压力信号，或方向不明朗，建议结合具体背景解读。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1738,7 +1722,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent decline from peak</span><span class="l-zh">Percent decline from peak</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent decline from peak</span><span class="l-zh">相对高点的百分比跌幅</span></span></p>
             
 
             
@@ -1752,8 +1736,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No single up/down reading — drawdown is a backward-looking measure of decline already observed, reported as a magnitude.
-</span><span class="l-zh">No single up/down reading — drawdown is a backward-looking measure of decline already observed, reported as a magnitude.
-</span></dd>
+</span><span class="l-zh">无单一上行／下行判断——回撤是对已发生跌幅的回顾性衡量，以幅度形式呈现。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1838,7 +1821,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -1849,17 +1832,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — no acute stress signatures detected.</span><span class="l-zh">High score — no acute stress signatures detected.</span></dd>
+                  <dd><span class="l-en">High score — no acute stress signatures detected.</span><span class="l-zh">评分较高——未检测到急性压力特征。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — acute stress signatures present; a defensive signal.</span><span class="l-zh">Low score — acute stress signatures present; a defensive signal.</span></dd>
+                  <dd><span class="l-en">Low score — acute stress signatures present; a defensive signal.</span><span class="l-zh">评分较低——出现急性压力特征，属于防御性信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — stress signals building but not yet acute.</span><span class="l-zh">Mid score — stress signals building but not yet acute.</span></dd>
+                  <dd><span class="l-en">Mid score — stress signals building but not yet acute.</span><span class="l-zh">评分居中——压力信号正在累积，但尚未达到急性程度。</span></dd>
                 </div>
               </dl>
             </div>
@@ -1944,7 +1927,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Index level (annualized implied volatility percentage)</span><span class="l-zh">Index level (annualized implied volatility percentage)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Index level (annualized implied volatility percentage)</span><span class="l-zh">指数点位（年化隐含波动率百分比）</span></span></p>
             
 
             
@@ -1956,20 +1939,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Rising VIX — rising expected volatility; often coincides with market stress.
-</span><span class="l-zh">Rising VIX — rising expected volatility; often coincides with market stress.
-</span></dd>
+</span><span class="l-zh">VIX上升——预期波动率上升，通常与市场压力同时出现。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Falling VIX — falling expected volatility; often coincides with calmer markets.
-</span><span class="l-zh">Falling VIX — falling expected volatility; often coincides with calmer markets.
-</span></dd>
+</span><span class="l-zh">VIX下降——预期波动率下降，通常与市场趋于平稳同时出现。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">VIX roughly stable over the period observed.</span><span class="l-zh">VIX roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">VIX roughly stable over the period observed.</span><span class="l-zh">观察期内VIX大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2057,7 +2038,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -2068,17 +2049,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — volatility low and orderly; supportive backdrop.</span><span class="l-zh">High score — volatility low and orderly; supportive backdrop.</span></dd>
+                  <dd><span class="l-en">High score — volatility low and orderly; supportive backdrop.</span><span class="l-zh">评分较高——波动率处于低位且运行有序，环境偏支持性。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — volatility elevated or term structure stressed.</span><span class="l-zh">Low score — volatility elevated or term structure stressed.</span></dd>
+                  <dd><span class="l-en">Low score — volatility elevated or term structure stressed.</span><span class="l-zh">评分较低——波动率偏高，或期限结构承压。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — volatility signals transitional or mixed.</span><span class="l-zh">Mid score — volatility signals transitional or mixed.</span></dd>
+                  <dd><span class="l-en">Mid score — volatility signals transitional or mixed.</span><span class="l-zh">评分居中——波动率信号处于过渡期或不一致。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2166,7 +2147,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical / relative comparison across option expirations</span><span class="l-zh">Categorical / relative comparison across option expirations</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical / relative comparison across option expirations</span><span class="l-zh">分类／不同到期期权之间的相对比较</span></span></p>
             
 
             
@@ -2178,20 +2159,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Elevated / inverted — near-term stress dominating; historically a caution signal.
-</span><span class="l-zh">Elevated / inverted — near-term stress dominating; historically a caution signal.
-</span></dd>
+</span><span class="l-zh">偏高／倒挂——近期压力主导，历史上属于谨慎信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Low / normal upward-sloping — calmer, more typical volatility conditions.
-</span><span class="l-zh">Low / normal upward-sloping — calmer, more typical volatility conditions.
-</span></dd>
+</span><span class="l-zh">偏低／正常向上倾斜——波动率环境更为平稳、典型。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Volatility term structure roughly flat or transitional.</span><span class="l-zh">Volatility term structure roughly flat or transitional.</span></dd>
+                  <dd><span class="l-en">Volatility term structure roughly flat or transitional.</span><span class="l-zh">波动率期限结构大致走平或处于过渡期。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2288,7 +2267,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (implied annual inflation rate)</span><span class="l-zh">Percent (implied annual inflation rate)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (implied annual inflation rate)</span><span class="l-zh">百分比（隐含年化通胀率）</span></span></p>
             
 
             
@@ -2299,17 +2278,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">Rising breakevens — market pricing in higher future inflation.</span><span class="l-zh">Rising breakevens — market pricing in higher future inflation.</span></dd>
+                  <dd><span class="l-en">Rising breakevens — market pricing in higher future inflation.</span><span class="l-zh">盈亏平衡通胀率上升——市场正在计入更高的未来通胀预期。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Falling breakevens — market pricing in lower future inflation.</span><span class="l-zh">Falling breakevens — market pricing in lower future inflation.</span></dd>
+                  <dd><span class="l-en">Falling breakevens — market pricing in lower future inflation.</span><span class="l-zh">盈亏平衡通胀率下降——市场正在计入更低的未来通胀预期。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Breakevens roughly stable over the period observed.</span><span class="l-zh">Breakevens roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">Breakevens roughly stable over the period observed.</span><span class="l-zh">观察期内盈亏平衡通胀率大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2397,7 +2376,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Change in spread between two maturities, in basis points</span><span class="l-zh">Change in spread between two maturities, in basis points</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Change in spread between two maturities, in basis points</span><span class="l-zh">两个期限之间利差的变化，以基点计</span></span></p>
             
 
             
@@ -2408,17 +2387,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">Steepening — the spread between long and short yields is widening.</span><span class="l-zh">Steepening — the spread between long and short yields is widening.</span></dd>
+                  <dd><span class="l-en">Steepening — the spread between long and short yields is widening.</span><span class="l-zh">陡峭化——长短端收益率利差正在扩大。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Flattening — the spread between long and short yields is narrowing.</span><span class="l-zh">Flattening — the spread between long and short yields is narrowing.</span></dd>
+                  <dd><span class="l-en">Flattening — the spread between long and short yields is narrowing.</span><span class="l-zh">平坦化——长短端收益率利差正在收窄。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Little change in the spread over the period observed.</span><span class="l-zh">Little change in the spread over the period observed.</span></dd>
+                  <dd><span class="l-en">Little change in the spread over the period observed.</span><span class="l-zh">观察期内利差变化不大。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2506,7 +2485,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (nominal yield minus breakeven inflation)</span><span class="l-zh">Percent (nominal yield minus breakeven inflation)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (nominal yield minus breakeven inflation)</span><span class="l-zh">百分比（名义收益率减去盈亏平衡通胀率）</span></span></p>
             
 
             
@@ -2518,20 +2497,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Rising real rates — higher opportunity cost for non-yielding/long-duration assets.
-</span><span class="l-zh">Rising real rates — higher opportunity cost for non-yielding/long-duration assets.
-</span></dd>
+</span><span class="l-zh">实际利率上升——无息资产及长久期资产的机会成本上升。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Falling real rates — lower opportunity cost; historically supportive for gold and long-duration assets.
-</span><span class="l-zh">Falling real rates — lower opportunity cost; historically supportive for gold and long-duration assets.
-</span></dd>
+</span><span class="l-zh">实际利率下降——机会成本降低，历史上对黄金及长久期资产构成支撑。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Real rates roughly flat over the period observed.</span><span class="l-zh">Real rates roughly flat over the period observed.</span></dd>
+                  <dd><span class="l-en">Real rates roughly flat over the period observed.</span><span class="l-zh">观察期内实际利率大致持平。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2619,7 +2596,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (estimated component of long-dated yields)</span><span class="l-zh">Percent (estimated component of long-dated yields)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent (estimated component of long-dated yields)</span><span class="l-zh">百分比（长端收益率中的估算组成部分）</span></span></p>
             
 
             
@@ -2631,20 +2608,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Rising term premium — investors demanding more compensation to hold long-dated debt.
-</span><span class="l-zh">Rising term premium — investors demanding more compensation to hold long-dated debt.
-</span></dd>
+</span><span class="l-zh">期限溢价上升——投资者要求更高补偿以持有长期债券。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Falling term premium — investors demanding less compensation for holding long-dated debt.
-</span><span class="l-zh">Falling term premium — investors demanding less compensation for holding long-dated debt.
-</span></dd>
+</span><span class="l-zh">期限溢价下降——投资者要求的持有长期债券补偿降低。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Term premium roughly stable over the period observed.</span><span class="l-zh">Term premium roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">Term premium roughly stable over the period observed.</span><span class="l-zh">观察期内期限溢价大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2732,7 +2707,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent yield by maturity; spread in basis points (e.g. 2s10s)</span><span class="l-zh">Percent yield by maturity; spread in basis points (e.g. 2s10s)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Percent yield by maturity; spread in basis points (e.g. 2s10s)</span><span class="l-zh">按期限计的收益率百分比；利差以基点计（如2年10年利差）</span></span></p>
             
 
             
@@ -2744,22 +2719,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Steepening / normalizing — curve reverting to its usual upward slope.
-</span><span class="l-zh">Steepening / normalizing — curve reverting to its usual upward slope.
-</span></dd>
+</span><span class="l-zh">陡峭化／正常化——曲线正回归通常的向上倾斜形态。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Inverting further — short-dated yields rising above long-dated yields.
-</span><span class="l-zh">Inverting further — short-dated yields rising above long-dated yields.
-</span></dd>
+</span><span class="l-zh">倒挂加深——短期收益率进一步升至长期收益率之上。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Flat curve — little difference between short- and long-dated yields.
-</span><span class="l-zh">Flat curve — little difference between short- and long-dated yields.
-</span></dd>
+</span><span class="l-zh">曲线走平——短期与长期收益率差距很小。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2856,7 +2828,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Basis points over a comparable government bond yield</span><span class="l-zh">Basis points over a comparable government bond yield</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Basis points over a comparable government bond yield</span><span class="l-zh">相对同期限政府债券收益率的基点利差</span></span></p>
             
 
             
@@ -2868,20 +2840,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Widening spread — rising perceived credit risk; historically a risk-off signal.
-</span><span class="l-zh">Widening spread — rising perceived credit risk; historically a risk-off signal.
-</span></dd>
+</span><span class="l-zh">利差走阔——市场感知的信用风险上升，历史上属于避险信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Narrowing spread — falling perceived credit risk; historically a risk-on signal.
-</span><span class="l-zh">Narrowing spread — falling perceived credit risk; historically a risk-on signal.
-</span></dd>
+</span><span class="l-zh">利差收窄——市场感知的信用风险下降，历史上属于风险偏好信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Spread roughly stable over the period observed.</span><span class="l-zh">Spread roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">Spread roughly stable over the period observed.</span><span class="l-zh">观察期内利差大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -2969,7 +2939,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Basis points over a comparable government bond yield</span><span class="l-zh">Basis points over a comparable government bond yield</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Basis points over a comparable government bond yield</span><span class="l-zh">相对同期限政府债券收益率的基点利差</span></span></p>
             
 
             
@@ -2981,20 +2951,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Widening spread — rising stress among lower-rated borrowers; a risk-off signal.
-</span><span class="l-zh">Widening spread — rising stress among lower-rated borrowers; a risk-off signal.
-</span></dd>
+</span><span class="l-zh">利差走阔——低评级发行人压力上升，属于避险信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Narrowing spread — improving conditions for lower-rated borrowers; a risk-on signal.
-</span><span class="l-zh">Narrowing spread — improving conditions for lower-rated borrowers; a risk-on signal.
-</span></dd>
+</span><span class="l-zh">利差收窄——低评级发行人状况改善，属于风险偏好信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Spread roughly stable over the period observed.</span><span class="l-zh">Spread roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">Spread roughly stable over the period observed.</span><span class="l-zh">观察期内利差大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3091,7 +3059,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)</span><span class="l-zh">0-100分项评分（0为完全避险，100为完全风险偏好）</span></span></p>
             
 
             
@@ -3102,17 +3070,17 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
-                  <dd><span class="l-en">High score — participation broad across stocks; a healthier move.</span><span class="l-zh">High score — participation broad across stocks; a healthier move.</span></dd>
+                  <dd><span class="l-en">High score — participation broad across stocks; a healthier move.</span><span class="l-zh">评分较高——个股参与广泛，行情较为健康。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
-                  <dd><span class="l-en">Low score — participation narrow; a warning on move durability.</span><span class="l-zh">Low score — participation narrow; a warning on move durability.</span></dd>
+                  <dd><span class="l-en">Low score — participation narrow; a warning on move durability.</span><span class="l-zh">评分较低——参与度狭窄，对行情持续性发出警示。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mid score — breadth improving or deteriorating, not yet decisive.</span><span class="l-zh">Mid score — breadth improving or deteriorating, not yet decisive.</span></dd>
+                  <dd><span class="l-en">Mid score — breadth improving or deteriorating, not yet decisive.</span><span class="l-zh">评分居中——广度正在改善或恶化，方向尚未明确。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3197,7 +3165,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / ratio-based (e.g. advancing vs declining issues)</span><span class="l-zh">Descriptive / ratio-based (e.g. advancing vs declining issues)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / ratio-based (e.g. advancing vs declining issues)</span><span class="l-zh">描述性／基于比率（如上涨与下跌家数对比）</span></span></p>
             
 
             
@@ -3209,20 +3177,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Broadening — more stocks participating in the move; historically a healthier signal.
-</span><span class="l-zh">Broadening — more stocks participating in the move; historically a healthier signal.
-</span></dd>
+</span><span class="l-zh">广度扩大——更多个股参与本轮行情，历史上属于更健康的信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Narrowing — fewer stocks participating; historically a warning sign.
-</span><span class="l-zh">Narrowing — fewer stocks participating; historically a warning sign.
-</span></dd>
+</span><span class="l-zh">广度收窄——参与行情的个股减少，历史上属于警示信号。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Breadth roughly stable over the period observed.</span><span class="l-zh">Breadth roughly stable over the period observed.</span></dd>
+                  <dd><span class="l-en">Breadth roughly stable over the period observed.</span><span class="l-zh">观察期内广度大致稳定。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3316,7 +3282,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / relative to historical positioning ranges</span><span class="l-zh">Descriptive / relative to historical positioning ranges</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / relative to historical positioning ranges</span><span class="l-zh">描述性／相对历史持仓区间</span></span></p>
             
 
             
@@ -3328,20 +3294,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Positioning stretched long — potentially more vulnerable to a downside reversal.
-</span><span class="l-zh">Positioning stretched long — potentially more vulnerable to a downside reversal.
-</span></dd>
+</span><span class="l-zh">持仓过度偏多——可能更容易出现下行反转。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Positioning stretched short — potentially more vulnerable to a squeeze higher.
-</span><span class="l-zh">Positioning stretched short — potentially more vulnerable to a squeeze higher.
-</span></dd>
+</span><span class="l-zh">持仓过度偏空——可能更容易出现逼空式上行反转。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Positioning roughly balanced relative to its own history.</span><span class="l-zh">Positioning roughly balanced relative to its own history.</span></dd>
+                  <dd><span class="l-en">Positioning roughly balanced relative to its own history.</span><span class="l-zh">持仓相对自身历史大致均衡。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3435,7 +3399,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Scheduled calendar entry with exact time and source</span><span class="l-zh">Scheduled calendar entry with exact time and source</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Scheduled calendar entry with exact time and source</span><span class="l-zh">附带具体时间与来源的日历事项</span></span></p>
             
 
             
@@ -3449,8 +3413,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No directional reading — this marks a scheduled event, not a market call.
-</span><span class="l-zh">No directional reading — this marks a scheduled event, not a market call.
-</span></dd>
+</span><span class="l-zh">无方向性判断——该标记的是既定日历事件，而非市场判断。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3538,7 +3501,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Calendar window (typically final trading days of a quarter)</span><span class="l-zh">Calendar window (typically final trading days of a quarter)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Calendar window (typically final trading days of a quarter)</span><span class="l-zh">日历窗口（通常为季度最后几个交易日）</span></span></p>
             
 
             
@@ -3552,8 +3515,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No directional reading — rebalance flow is a mechanical event, not a market signal.
-</span><span class="l-zh">No directional reading — rebalance flow is a mechanical event, not a market signal.
-</span></dd>
+</span><span class="l-zh">无方向性判断——再平衡资金流是机械性事件，而非市场信号。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3638,7 +3600,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical skew (cooler / inline / hotter)</span><span class="l-zh">Categorical skew (cooler / inline / hotter)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical skew (cooler / inline / hotter)</span><span class="l-zh">分类偏向（偏冷／符合预期／偏热）</span></span></p>
             
 
             
@@ -3650,22 +3612,19 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Hotter skew — leading indicators point above consensus; may pressure rate-sensitive assets if realized.
-</span><span class="l-zh">Hotter skew — leading indicators point above consensus; may pressure rate-sensitive assets if realized.
-</span></dd>
+</span><span class="l-zh">偏热——领先指标指向高于市场一致预期，若兑现可能对利率敏感资产构成压力。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Cooler skew — leading indicators point below consensus; may support rate-sensitive assets if realized.
-</span><span class="l-zh">Cooler skew — leading indicators point below consensus; may support rate-sensitive assets if realized.
-</span></dd>
+</span><span class="l-zh">偏冷——领先指标指向低于市场一致预期，若兑现可能对利率敏感资产形成支撑。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">Inline skew — leading indicators broadly agree with consensus.
-</span><span class="l-zh">Inline skew — leading indicators broadly agree with consensus.
-</span></dd>
+</span><span class="l-zh">符合预期——领先指标与市场一致预期总体相符。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3762,7 +3721,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical tier (high / medium / low)</span><span class="l-zh">Categorical tier (high / medium / low)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical tier (high / medium / low)</span><span class="l-zh">分类等级（高／中／低）</span></span></p>
             
 
             
@@ -3776,8 +3735,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No directional reading — this rates certainty of a read, not market direction.
-</span><span class="l-zh">No directional reading — this rates certainty of a read, not market direction.
-</span></dd>
+</span><span class="l-zh">无方向性判断——该指标衡量的是判断的确定性，而非市场方向。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3862,7 +3820,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical severity (note / tension)</span><span class="l-zh">Categorical severity (note / tension)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical severity (note / tension)</span><span class="l-zh">分类严重程度（提示／张力）</span></span></p>
             
 
             
@@ -3876,8 +3834,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No single up/down reading — divergence describes disagreement between signals, and its resolution can go either direction.
-</span><span class="l-zh">No single up/down reading — divergence describes disagreement between signals, and its resolution can go either direction.
-</span></dd>
+</span><span class="l-zh">无单一上行／下行判断——信号分歧描述的是信号之间的不一致，其最终解决方向可能是任一方向。</span></dd>
                 </div>
               </dl>
             </div>
@@ -3962,7 +3919,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical ladder (ignore / stand-aside / protect / act)</span><span class="l-zh">Categorical ladder (ignore / stand-aside / protect / act)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical ladder (ignore / stand-aside / protect / act)</span><span class="l-zh">分类等级（忽略／观望／保护／行动）</span></span></p>
             
 
             
@@ -3976,8 +3933,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No up/down reading — this is a vocabulary of posture, not a market direction.
-</span><span class="l-zh">No up/down reading — this is a vocabulary of posture, not a market direction.
-</span></dd>
+</span><span class="l-zh">无上行／下行判断——这是一套姿态用语，而非市场方向指标。</span></dd>
                 </div>
               </dl>
             </div>
@@ -4071,7 +4027,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Correlation coefficient or relative descriptor (high / normal / low)</span><span class="l-zh">Correlation coefficient or relative descriptor (high / normal / low)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Correlation coefficient or relative descriptor (high / normal / low)</span><span class="l-zh">相关系数或相对描述（高／正常／低）</span></span></p>
             
 
             
@@ -4083,20 +4039,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Rising correlation — assets moving more together; diversification benefit reduced.
-</span><span class="l-zh">Rising correlation — assets moving more together; diversification benefit reduced.
-</span></dd>
+</span><span class="l-zh">相关性上升——资产同向变动增多，分散配置效果减弱。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Falling correlation — assets moving more independently; diversification benefit improved.
-</span><span class="l-zh">Falling correlation — assets moving more independently; diversification benefit improved.
-</span></dd>
+</span><span class="l-zh">相关性下降——资产变动更趋独立，分散配置效果提升。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Correlation roughly typical for the period observed.</span><span class="l-zh">Correlation roughly typical for the period observed.</span></dd>
+                  <dd><span class="l-en">Correlation roughly typical for the period observed.</span><span class="l-zh">观察期内相关性大致处于常态水平。</span></dd>
                 </div>
               </dl>
             </div>
@@ -4181,7 +4135,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Index level (relative, no fixed unit)</span><span class="l-zh">Index level (relative, no fixed unit)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Index level (relative, no fixed unit)</span><span class="l-zh">指数点位（相对值，无固定单位）</span></span></p>
             
 
             
@@ -4193,20 +4147,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Rising — dollar strengthening; historically a headwind for commodities and EM assets.
-</span><span class="l-zh">Rising — dollar strengthening; historically a headwind for commodities and EM assets.
-</span></dd>
+</span><span class="l-zh">上升——美元走强，历史上对大宗商品及新兴市场资产构成逆风。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Falling — dollar weakening; historically supportive for commodities and EM assets.
-</span><span class="l-zh">Falling — dollar weakening; historically supportive for commodities and EM assets.
-</span></dd>
+</span><span class="l-zh">下降——美元走弱，历史上对大宗商品及新兴市场资产构成支撑。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Index roughly flat over the period observed.</span><span class="l-zh">Index roughly flat over the period observed.</span></dd>
+                  <dd><span class="l-en">Index roughly flat over the period observed.</span><span class="l-zh">观察期内指数大致持平。</span></dd>
                 </div>
               </dl>
             </div>
@@ -4294,7 +4246,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / observed cross-asset pattern</span><span class="l-zh">Descriptive / observed cross-asset pattern</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Descriptive / observed cross-asset pattern</span><span class="l-zh">描述性／观察到的跨资产模式</span></span></p>
             
 
             
@@ -4308,8 +4260,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
                   <dd><span class="l-en">No single up/down reading — this describes a pattern of capital movement, most relevant during risk-off episodes.
-</span><span class="l-zh">No single up/down reading — this describes a pattern of capital movement, most relevant during risk-off episodes.
-</span></dd>
+</span><span class="l-zh">无单一上行／下行判断——该指标描述的是资金流动模式，在避险时期最具参考意义。</span></dd>
                 </div>
               </dl>
             </div>
@@ -4394,7 +4345,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 
             
             
-            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical (risk-on / risk-off / mixed)</span><span class="l-zh">Categorical (risk-on / risk-off / mixed)</span></span></p>
+            <p class="rf-basis"><span class="eyebrow rf-eb"><span class="l-en">Basis</span><span class="l-zh">计量</span></span><span class="rf-basis-v tnum"><span class="l-en">Categorical (risk-on / risk-off / mixed)</span><span class="l-zh">分类（风险偏好／避险／混合）</span></span></p>
             
 
             
@@ -4406,20 +4357,18 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
                 <div class="rf-lg-row rf-lg--up">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▲</span><span class="l-en">Rises</span><span class="l-zh">上行</span></dt>
                   <dd><span class="l-en">Risk-on — riskier assets broadly outperforming safer ones.
-</span><span class="l-zh">Risk-on — riskier assets broadly outperforming safer ones.
-</span></dd>
+</span><span class="l-zh">风险偏好——风险资产整体跑赢避险资产。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--down">
                   <dt><span class="rf-lg-mark" aria-hidden="true">▼</span><span class="l-en">Falls</span><span class="l-zh">下行</span></dt>
                   <dd><span class="l-en">Risk-off — safer assets broadly outperforming riskier ones.
-</span><span class="l-zh">Risk-off — safer assets broadly outperforming riskier ones.
-</span></dd>
+</span><span class="l-zh">避险——避险资产整体跑赢风险资产。</span></dd>
                 </div>
                 
                 <div class="rf-lg-row rf-lg--flat">
                   <dt><span class="rf-lg-mark" aria-hidden="true">■</span><span class="l-en">Steady</span><span class="l-zh">持平</span></dt>
-                  <dd><span class="l-en">Mixed — no clear broad-based sentiment across asset classes.</span><span class="l-zh">Mixed — no clear broad-based sentiment across asset classes.</span></dd>
+                  <dd><span class="l-en">Mixed — no clear broad-based sentiment across asset classes.</span><span class="l-zh">混合——各类资产之间未呈现明确的整体情绪方向。</span></dd>
                 </div>
               </dl>
             </div>
@@ -4464,7 +4413,7 @@ html[data-theme="light"] .rf-e:target { background:var(--panel);
 <!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
 <footer class="rf-foot">
   <span class="l-en">Reference only — definitions, not calls. No live market values appear on this page.</span><span class="l-zh">仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。</span>
-  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-02 13:15 UTC</span>.
+  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-02 13:44 UTC</span>.
 </footer>
 
 <script>

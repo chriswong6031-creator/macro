@@ -30,12 +30,16 @@ entries:
     why_it_matters_zh: >
       在查看细节前先给出一个词的方向感，帮助判断当前环境是偏向承担风险还是偏向谨慎。
     unit_or_basis: Categorical label (risk-on / mixed / risk-off)
+    unit_or_basis_zh: '分类标签（风险偏好／混合／避险）'
     interpretation_up: >
       Risk-on — supportive backdrop; trend, breadth, and cross-asset signals broadly line up.
+    interpretation_up_zh: '风险偏好——环境偏支持性；趋势、广度与跨资产信号总体一致。'
     interpretation_down: >
       Risk-off — stressed backdrop; tape under pressure and trend pointing lower.
+    interpretation_down_zh: '避险——环境承压；盘面承压，趋势向下。'
     interpretation_neutral: >
       Mixed — signals disagree or the regime is in transition; treat with extra caution.
+    interpretation_neutral_zh: '混合——信号不一致或市场状态处于转换期，应格外谨慎。'
     caveats_en:
       - A confirmation-style read of current conditions, not a forecast of what happens next.
       - Can change quickly when underlying signals flip; check the update time before acting.
@@ -67,12 +71,16 @@ entries:
     why_it_matters_zh: >
       将六项市场输入合并为一个直观数字，方便逐日跟踪环境是在改善还是在恶化。
     unit_or_basis: 0-100 composite score
+    unit_or_basis_zh: '0-100综合评分'
     interpretation_up: >
       Higher score — trend, breadth, and cross-asset signals broadly align supportive.
+    interpretation_up_zh: '评分较高——趋势、广度与跨资产信号总体呈支持性一致。'
     interpretation_down: >
       Lower score — tape under stress, trend pointing lower, signals aligned negative.
+    interpretation_down_zh: '评分较低——盘面承压，趋势向下，信号呈负面一致。'
     interpretation_neutral: >
       Mid-range score — components disagree or the picture is transitional.
+    interpretation_neutral_zh: '评分处于中间区间——各分项不一致，或整体格局处于过渡阶段。'
     caveats_en:
       - A blended confirmation measure of current conditions, not a predictive score.
       - Individual component legs can pull the score in different directions; check the
@@ -105,12 +113,16 @@ entries:
     why_it_matters_zh: >
       不同象限历史上通常利好不同板块与风格因子，有助于判断当前环境更支持哪类资产。
     unit_or_basis: Categorical quadrant label with a stability qualifier
+    unit_or_basis_zh: '象限分类标签，附带稳定性说明'
     interpretation_up: >
       Growth up / inflation down — historically the most supportive quadrant for equities.
+    interpretation_up_zh: '增长上行／通胀下行——历史上对股票最为有利的象限。'
     interpretation_down: >
       Growth down / inflation up — historically the most defensive quadrant.
+    interpretation_down_zh: '增长下行／通胀上行——历史上最需防御的象限。'
     interpretation_neutral: >
       Growth and inflation both rising or both falling — a mixed backdrop for sector tilts.
+    interpretation_neutral_zh: '增长与通胀同向上行或同向下行——对板块配置而言属于混合环境。'
     caveats_en:
       - This is a coincident, market-derived read of the cycle, not an independent forecast
         of the real economy — it tends to move with price rather than ahead of it.
@@ -142,11 +154,13 @@ entries:
     why_it_matters_zh: >
       帮助判断当前象限判断的可信度：稳定状态可作为依据，转换中则应更谨慎地控制仓位。
     unit_or_basis: Categorical label (stable / shifting / weakening / new regime)
+    unit_or_basis_zh: '分类标签（稳定／转换中／走弱／刚切换）'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No directional up/down reading — this describes confidence in the current regime label,
       not a market direction.
+    interpretation_neutral_zh: '无上行／下行方向性判断——该指标描述的是对当前象限标签的可信度，而非市场方向。'
     caveats_en:
       - A stable label describes confirmation, not certainty — regimes can and do turn.
       - A "new regime" label reflects a just-confirmed change and may itself still be tested.
@@ -178,14 +192,18 @@ entries:
     why_it_matters_zh: >
       相比滞后性的回撤指标能更早提示风险上升，帮助在压力体现到价格之前调整仓位或对冲。
     unit_or_basis: Categorical band (calm / watch / caution / elevated / risk-off)
+    unit_or_basis_zh: '分类区间（平静／观察／谨慎／偏高／避险）'
     interpretation_up: >
       Elevated or risk-off — historically higher-than-normal odds of a near-term pullback;
       a de-risking sizing consideration, not an exit signal.
+    interpretation_up_zh: '偏高或避险——历史上意味着近期回撤概率高于平常，属于降低仓位风险的参考，而非清仓信号。'
     interpretation_down: >
       Calm or watch — no unusual pullback pressure detected among the tracked scare types.
+    interpretation_down_zh: '平静或观察——所跟踪的各类"惊吓"情景中未检测到异常回撤压力。'
     interpretation_neutral: >
       Caution — some scare types are stirring; a reason to tighten risk controls, not to
       override a supportive market read.
+    interpretation_neutral_zh: '谨慎——部分"惊吓"情景出现苗头，提示应收紧风险控制，但不足以推翻整体偏支持性的市场判断。'
     caveats_en:
       - This is a probability-of-pullback advisory, not a certainty or a timing call.
       - Elevated/caution bands describe sizing context; they do not by themselves override
@@ -217,14 +235,18 @@ entries:
     why_it_matters_zh: >
       流动性变化往往同步影响多数风险资产，了解当前状态有助于理解市场整体的顺风或逆风环境。
     unit_or_basis: Categorical label (stress expansion / clean expansion / contraction / neutral)
+    unit_or_basis_zh: '分类标签（压力型扩张／健康型扩张／收缩／中性）'
     interpretation_up: >
       Clean expansion — liquidity growing without unusual stress signatures; generally
       supportive for risk assets.
+    interpretation_up_zh: '健康型扩张——流动性增长且未伴随异常压力特征，总体对风险资产有利。'
     interpretation_down: >
       Contraction — liquidity shrinking; historically a headwind for risk assets.
+    interpretation_down_zh: '收缩——流动性收缩，历史上对风险资产构成逆风。'
     interpretation_neutral: >
       Stress expansion or neutral — liquidity is growing but alongside stress signals, or
       showing no clear direction; read with the accompanying context.
+    interpretation_neutral_zh: '压力型扩张或中性——流动性在增长但伴随压力信号，或方向不明朗，建议结合具体背景解读。'
     caveats_en:
       - Liquidity conditions shift gradually and lag some faster market-moving events.
       - '"Expansion" describes system liquidity, not a guarantee that every asset benefits equally or immediately.'
@@ -257,9 +279,13 @@ entries:
     why_it_matters_zh: >
       用于确认盘面自身走势是否支持整体市场判断，权重更偏向较长周期以体现持续性。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — trend broadly aligned bullish across timeframes.
+    interpretation_up_zh: '评分较高——各周期趋势总体呈看涨一致。'
     interpretation_down: Low score — trend broadly aligned bearish across timeframes.
+    interpretation_down_zh: '评分较低——各周期趋势总体呈看跌一致。'
     interpretation_neutral: Mid score — short- and longer-term trends disagree.
+    interpretation_neutral_zh: '评分居中——短期与长期趋势不一致。'
     caveats_en:
       - Weighted toward weekly and monthly timeframes; a strong daily move alone will not
         move this factor much.
@@ -291,9 +317,13 @@ entries:
     why_it_matters_zh: >
       用于确认风险偏好是否在各类资产间广泛存在，而不仅局限于股票市场。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — risk-seeking assets outperforming defensive ones broadly.
+    interpretation_up_zh: '评分较高——偏风险型资产整体跑赢防御型资产。'
     interpretation_down: Low score — defensive assets outperforming; a risk-off signature.
+    interpretation_down_zh: '评分较低——防御型资产跑赢，呈现避险特征。'
     interpretation_neutral: Mid score — cross-asset signals mixed or offsetting.
+    interpretation_neutral_zh: '评分居中——跨资产信号不一致或相互抵消。'
     caveats_en:
       - Reflects relative performance across assets, not any single asset's absolute level.
       - Can diverge from equity-only trend factors during narrow, index-led moves.
@@ -324,9 +354,13 @@ entries:
     why_it_matters_zh: >
       平稳有序的波动率环境历史上有利于承担风险；波动率飙升或期限结构倒挂通常是警示信号。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — volatility low and orderly; supportive backdrop.
+    interpretation_up_zh: '评分较高——波动率处于低位且运行有序，环境偏支持性。'
     interpretation_down: Low score — volatility elevated or term structure stressed.
+    interpretation_down_zh: '评分较低——波动率偏高，或期限结构承压。'
     interpretation_neutral: Mid score — volatility signals transitional or mixed.
+    interpretation_neutral_zh: '评分居中——波动率信号处于过渡期或不一致。'
     caveats_en:
       - A measured, current-state reading of volatility, not a forecast of a future spike.
       - Volatility can shift abruptly around scheduled events; check the calendar context.
@@ -358,9 +392,13 @@ entries:
     why_it_matters_zh: >
       指数上涨但广度偏弱是典型的警示信号，说明涨势较为集中，比表面看起来更脆弱。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — participation broad across stocks; a healthier move.
+    interpretation_up_zh: '评分较高——个股参与广泛，行情较为健康。'
     interpretation_down: Low score — participation narrow; a warning on move durability.
+    interpretation_down_zh: '评分较低——参与度狭窄，对行情持续性发出警示。'
     interpretation_neutral: Mid score — breadth improving or deteriorating, not yet decisive.
+    interpretation_neutral_zh: '评分居中——广度正在改善或恶化，方向尚未明确。'
     caveats_en:
       - A snapshot of current participation, not a guarantee that narrow breadth will
         resolve into a reversal.
@@ -392,9 +430,13 @@ entries:
     why_it_matters_zh: >
       资金面状况历史上会影响风险资产持续上涨的"燃料"是否充足，独立于价格趋势本身。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — liquidity and credit conditions supportive.
+    interpretation_up_zh: '评分较高——流动性与信用状况偏支持性。'
     interpretation_down: Low score — liquidity and credit conditions tightening.
+    interpretation_down_zh: '评分较低——流动性与信用状况趋紧。'
     interpretation_neutral: Mid score — liquidity signals mixed or transitional.
+    interpretation_neutral_zh: '评分居中——流动性信号不一致或处于过渡期。'
     caveats_en:
       - Liquidity conditions move gradually; large day-to-day swings in this factor are
         uncommon.
@@ -427,9 +469,13 @@ entries:
     why_it_matters_zh: >
       旨在快速捕捉急性压力状况，因此即便其他因子表现良好，该因子也可能拉低整体市场判断上限。
     unit_or_basis: 0-100 sub-score (0 = fully risk-off, 100 = fully risk-on)
+    unit_or_basis_zh: '0-100分项评分（0为完全避险，100为完全风险偏好）'
     interpretation_up: High score — no acute stress signatures detected.
+    interpretation_up_zh: '评分较高——未检测到急性压力特征。'
     interpretation_down: Low score — acute stress signatures present; a defensive signal.
+    interpretation_down_zh: '评分较低——出现急性压力特征，属于防御性信号。'
     interpretation_neutral: Mid score — stress signals building but not yet acute.
+    interpretation_neutral_zh: '评分居中——压力信号正在累积，但尚未达到急性程度。'
     caveats_en:
       - Designed to react quickly to acute stress; can move faster than the other five
         factors.
@@ -466,11 +512,13 @@ entries:
     why_it_matters_zh: >
       信号分歧提示应更谨慎：只依据其中一个信号而忽略相互矛盾的另一个，容易导致判断失误。
     unit_or_basis: Categorical severity (note / tension)
+    unit_or_basis_zh: '分类严重程度（提示／张力）'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No single up/down reading — divergence describes disagreement between signals, and its
       resolution can go either direction.
+    interpretation_neutral_zh: '无单一上行／下行判断——信号分歧描述的是信号之间的不一致，其最终解决方向可能是任一方向。'
     caveats_en:
       - Divergence does not by itself say which signal will prove correct.
       - A "tension" flag calls for more caution, not automatically a change in position.
@@ -501,10 +549,12 @@ entries:
     why_it_matters_zh: >
       提示应赋予该判断多大的权重——置信度较低时，行动前更需要独立核实。
     unit_or_basis: Categorical tier (high / medium / low)
+    unit_or_basis_zh: '分类等级（高／中／低）'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No directional reading — this rates certainty of a read, not market direction.
+    interpretation_neutral_zh: '无方向性判断——该指标衡量的是判断的确定性，而非市场方向。'
     caveats_en:
       - A high-confidence tier reflects signal agreement, not a guarantee of a correct call.
       - Confidence can change quickly as underlying signals move.
@@ -537,10 +587,12 @@ entries:
       提供统一、直白的分级标准，帮助判断某一判断的紧迫程度，使不同简报、不同日期之间具备
       可比性。
     unit_or_basis: Categorical ladder (ignore / stand-aside / protect / act)
+    unit_or_basis_zh: '分类等级（忽略／观望／保护／行动）'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No up/down reading — this is a vocabulary of posture, not a market direction.
+    interpretation_neutral_zh: '无上行／下行判断——这是一套姿态用语，而非市场方向指标。'
     caveats_en:
       - Describes posture and urgency only; it is never a specific instruction to buy or
         sell any security.
@@ -573,14 +625,18 @@ entries:
     why_it_matters_zh: >
       有助于在数据公布前设定预期，便于结合背景理解公布后的市场反应。
     unit_or_basis: Categorical skew (cooler / inline / hotter)
+    unit_or_basis_zh: '分类偏向（偏冷／符合预期／偏热）'
     interpretation_up: >
       Hotter skew — leading indicators point above consensus; may pressure rate-sensitive
       assets if realized.
+    interpretation_up_zh: '偏热——领先指标指向高于市场一致预期，若兑现可能对利率敏感资产构成压力。'
     interpretation_down: >
       Cooler skew — leading indicators point below consensus; may support rate-sensitive
       assets if realized.
+    interpretation_down_zh: '偏冷——领先指标指向低于市场一致预期，若兑现可能对利率敏感资产形成支撑。'
     interpretation_neutral: >
       Inline skew — leading indicators broadly agree with consensus.
+    interpretation_neutral_zh: '符合预期——领先指标与市场一致预期总体相符。'
     caveats_en:
       - A pre-release lean based on available indicators, not the actual release result.
       - Markets can still react unexpectedly even when the release matches the skew.
@@ -614,10 +670,12 @@ entries:
     why_it_matters_zh: >
       可能在季末前后暂时扭曲价格与成交量模式，与基本面或市场情绪无关。
     unit_or_basis: Calendar window (typically final trading days of a quarter)
+    unit_or_basis_zh: '日历窗口（通常为季度最后几个交易日）'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No directional reading — rebalance flow is a mechanical event, not a market signal.
+    interpretation_neutral_zh: '无方向性判断——再平衡资金流是机械性事件，而非市场信号。'
     caveats_en:
       - Flow direction depends on relative performance since the last rebalance, and is not
         published in advance with certainty.
@@ -650,10 +708,12 @@ entries:
     why_it_matters_zh: >
       可提前围绕已知催化事件做规划，避免在既定数据公布时被突发波动打乱节奏。
     unit_or_basis: Scheduled calendar entry with exact time and source
+    unit_or_basis_zh: '附带具体时间与来源的日历事项'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No directional reading — this marks a scheduled event, not a market call.
+    interpretation_neutral_zh: '无方向性判断——该标记的是既定日历事件，而非市场判断。'
     caveats_en:
       - Being on the calendar means the event is judged likely to matter; it does not
         predict the direction of any market reaction.
@@ -694,12 +754,16 @@ entries:
     why_it_matters_zh: >
       收益率曲线倒挂历史上曾出现在多次美国经济衰退之前，但领先时间长短不一，有时较长。
     unit_or_basis: Percent yield by maturity; spread in basis points (e.g. 2s10s)
+    unit_or_basis_zh: '按期限计的收益率百分比；利差以基点计（如2年10年利差）'
     interpretation_up: >
       Steepening / normalizing — curve reverting to its usual upward slope.
+    interpretation_up_zh: '陡峭化／正常化——曲线正回归通常的向上倾斜形态。'
     interpretation_down: >
       Inverting further — short-dated yields rising above long-dated yields.
+    interpretation_down_zh: '倒挂加深——短期收益率进一步升至长期收益率之上。'
     interpretation_neutral: >
       Flat curve — little difference between short- and long-dated yields.
+    interpretation_neutral_zh: '曲线走平——短期与长期收益率差距很小。'
     caveats_en:
       - An inversion is a historical statistical association with recessions, not a fixed
         rule, and the lead time before any downturn has varied widely.
@@ -737,9 +801,13 @@ entries:
       陡峭化／平坦化与利率上行／下行的不同组合，通常对应不同的经济含义，从对增长乐观到
       对衰退的担忧不等。
     unit_or_basis: Change in spread between two maturities, in basis points
+    unit_or_basis_zh: '两个期限之间利差的变化，以基点计'
     interpretation_up: Steepening — the spread between long and short yields is widening.
+    interpretation_up_zh: '陡峭化——长短端收益率利差正在扩大。'
     interpretation_down: Flattening — the spread between long and short yields is narrowing.
+    interpretation_down_zh: '平坦化——长短端收益率利差正在收窄。'
     interpretation_neutral: Little change in the spread over the period observed.
+    interpretation_neutral_zh: '观察期内利差变化不大。'
     caveats_en:
       - The same steepening or flattening move can carry opposite implications depending
         on whether short or long rates are driving it.
@@ -774,12 +842,16 @@ entries:
       实际利率上升会提高持有无息或长久期资产的机会成本，历史上通常对黄金及长久期成长股
       等板块构成压力。
     unit_or_basis: Percent (nominal yield minus breakeven inflation)
+    unit_or_basis_zh: '百分比（名义收益率减去盈亏平衡通胀率）'
     interpretation_up: >
       Rising real rates — higher opportunity cost for non-yielding/long-duration assets.
+    interpretation_up_zh: '实际利率上升——无息资产及长久期资产的机会成本上升。'
     interpretation_down: >
       Falling real rates — lower opportunity cost; historically supportive for gold and
       long-duration assets.
+    interpretation_down_zh: '实际利率下降——机会成本降低，历史上对黄金及长久期资产构成支撑。'
     interpretation_neutral: Real rates roughly flat over the period observed.
+    interpretation_neutral_zh: '观察期内实际利率大致持平。'
     caveats_en:
       - Derived from market-based inflation expectations, which can themselves be noisy
         or distorted by liquidity conditions.
@@ -814,9 +886,13 @@ entries:
     why_it_matters_zh: >
       提供基于市场定价的实时通胀预期读数，区别于调查或经济学家预测。
     unit_or_basis: Percent (implied annual inflation rate)
+    unit_or_basis_zh: '百分比（隐含年化通胀率）'
     interpretation_up: Rising breakevens — market pricing in higher future inflation.
+    interpretation_up_zh: '盈亏平衡通胀率上升——市场正在计入更高的未来通胀预期。'
     interpretation_down: Falling breakevens — market pricing in lower future inflation.
+    interpretation_down_zh: '盈亏平衡通胀率下降——市场正在计入更低的未来通胀预期。'
     interpretation_neutral: Breakevens roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内盈亏平衡通胀率大致稳定。'
     caveats_en:
       - Reflects market pricing, which can be distorted by liquidity or technical factors
         in the underlying bond markets, not only genuine inflation views.
@@ -853,12 +929,16 @@ entries:
       期限溢价上升可能在增长与通胀预期不变的情况下单独推高长端收益率，是值得区分开来看的
       独立驱动因素。
     unit_or_basis: Percent (estimated component of long-dated yields)
+    unit_or_basis_zh: '百分比（长端收益率中的估算组成部分）'
     interpretation_up: >
       Rising term premium — investors demanding more compensation to hold long-dated debt.
+    interpretation_up_zh: '期限溢价上升——投资者要求更高补偿以持有长期债券。'
     interpretation_down: >
       Falling term premium — investors demanding less compensation for holding long-dated
       debt.
+    interpretation_down_zh: '期限溢价下降——投资者要求的持有长期债券补偿降低。'
     interpretation_neutral: Term premium roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内期限溢价大致稳定。'
     caveats_en:
       - An estimated, model-derived quantity rather than a directly observable market
         price; different models can disagree.
@@ -892,11 +972,15 @@ entries:
     why_it_matters_zh: >
       利差走阔通常意味着市场感知的信用风险上升，往往与更广泛的市场避险情绪同时出现。
     unit_or_basis: Basis points over a comparable government bond yield
+    unit_or_basis_zh: '相对同期限政府债券收益率的基点利差'
     interpretation_up: >
       Widening spread — rising perceived credit risk; historically a risk-off signal.
+    interpretation_up_zh: '利差走阔——市场感知的信用风险上升，历史上属于避险信号。'
     interpretation_down: >
       Narrowing spread — falling perceived credit risk; historically a risk-on signal.
+    interpretation_down_zh: '利差收窄——市场感知的信用风险下降，历史上属于风险偏好信号。'
     interpretation_neutral: Spread roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内利差大致稳定。'
     caveats_en:
       - Spreads reflect perceived risk at a point in time and can move ahead of, or lag,
         actual default outcomes.
@@ -932,11 +1016,15 @@ entries:
       高收益债发行人通常最先感受到融资压力，因此该利差往往比投资级利差更早、更大幅度地
       走阔。
     unit_or_basis: Basis points over a comparable government bond yield
+    unit_or_basis_zh: '相对同期限政府债券收益率的基点利差'
     interpretation_up: >
       Widening spread — rising stress among lower-rated borrowers; a risk-off signal.
+    interpretation_up_zh: '利差走阔——低评级发行人压力上升，属于避险信号。'
     interpretation_down: >
       Narrowing spread — improving conditions for lower-rated borrowers; a risk-on signal.
+    interpretation_down_zh: '利差收窄——低评级发行人状况改善，属于风险偏好信号。'
     interpretation_neutral: Spread roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内利差大致稳定。'
     caveats_en:
       - Can be more volatile than investment-grade spreads and swing on liquidity as well
         as credit fundamentals.
@@ -970,11 +1058,15 @@ entries:
       美元走强通常会收紧全球金融条件，并对大宗商品及新兴市场构成压力；美元走弱则通常
       起到缓解作用。
     unit_or_basis: Index level (relative, no fixed unit)
+    unit_or_basis_zh: '指数点位（相对值，无固定单位）'
     interpretation_up: >
       Rising — dollar strengthening; historically a headwind for commodities and EM assets.
+    interpretation_up_zh: '上升——美元走强，历史上对大宗商品及新兴市场资产构成逆风。'
     interpretation_down: >
       Falling — dollar weakening; historically supportive for commodities and EM assets.
+    interpretation_down_zh: '下降——美元走弱，历史上对大宗商品及新兴市场资产构成支撑。'
     interpretation_neutral: Index roughly flat over the period observed.
+    interpretation_neutral_zh: '观察期内指数大致持平。'
     caveats_en:
       - The basket is weighted toward a handful of major currencies and does not capture
         every bilateral dollar relationship.
@@ -1008,11 +1100,15 @@ entries:
       VIX急剧飙升通常与突发性避险行情同时出现，而长期维持低位则通常对应较为平稳、趋势
       明确的市场。
     unit_or_basis: Index level (annualized implied volatility percentage)
+    unit_or_basis_zh: '指数点位（年化隐含波动率百分比）'
     interpretation_up: >
       Rising VIX — rising expected volatility; often coincides with market stress.
+    interpretation_up_zh: 'VIX上升——预期波动率上升，通常与市场压力同时出现。'
     interpretation_down: >
       Falling VIX — falling expected volatility; often coincides with calmer markets.
+    interpretation_down_zh: 'VIX下降——预期波动率下降，通常与市场趋于平稳同时出现。'
     interpretation_neutral: VIX roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内VIX大致稳定。'
     caveats_en:
       - Measures expected future volatility implied by options, not volatility that has
         already occurred.
@@ -1046,11 +1142,15 @@ entries:
       波动率期限结构倒挂（近月高于远月）通常意味着短期急性压力，而非波动率环境的持久性
       转变。
     unit_or_basis: Categorical / relative comparison across option expirations
+    unit_or_basis_zh: '分类／不同到期期权之间的相对比较'
     interpretation_up: >
       Elevated / inverted — near-term stress dominating; historically a caution signal.
+    interpretation_up_zh: '偏高／倒挂——近期压力主导，历史上属于谨慎信号。'
     interpretation_down: >
       Low / normal upward-sloping — calmer, more typical volatility conditions.
+    interpretation_down_zh: '偏低／正常向上倾斜——波动率环境更为平稳、典型。'
     interpretation_neutral: Volatility term structure roughly flat or transitional.
+    interpretation_neutral_zh: '波动率期限结构大致走平或处于过渡期。'
     caveats_en:
       - Term-structure inversions can resolve quickly once the triggering event passes.
       - Describes options-market pricing, not a forecast of realized future volatility.
@@ -1083,11 +1183,15 @@ entries:
     why_it_matters_zh: >
       识别当前主导的风险情绪，有助于理解为何看似无关的多类资产会在同一天同向变动。
     unit_or_basis: Categorical (risk-on / risk-off / mixed)
+    unit_or_basis_zh: '分类（风险偏好／避险／混合）'
     interpretation_up: >
       Risk-on — riskier assets broadly outperforming safer ones.
+    interpretation_up_zh: '风险偏好——风险资产整体跑赢避险资产。'
     interpretation_down: >
       Risk-off — safer assets broadly outperforming riskier ones.
+    interpretation_down_zh: '避险——避险资产整体跑赢风险资产。'
     interpretation_neutral: Mixed — no clear broad-based sentiment across asset classes.
+    interpretation_neutral_zh: '混合——各类资产之间未呈现明确的整体情绪方向。'
     caveats_en:
       - A descriptive label for observed cross-asset behaviour, not a predictive signal.
       - Individual assets can still diverge from the broad label for idiosyncratic reasons.
@@ -1119,11 +1223,13 @@ entries:
     why_it_matters_zh: >
       识别避险资金流有助于理解为何风险资产下跌的同时，传统避险资产往往同步上涨。
     unit_or_basis: Descriptive / observed cross-asset pattern
+    unit_or_basis_zh: '描述性／观察到的跨资产模式'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No single up/down reading — this describes a pattern of capital movement, most
       relevant during risk-off episodes.
+    interpretation_neutral_zh: '无单一上行／下行判断——该指标描述的是资金流动模式，在避险时期最具参考意义。'
     caveats_en:
       - Which assets act as "safe havens" can shift over time and across episodes.
       - A descriptive pattern, not a rule that safe havens always rise during stress.
@@ -1154,11 +1260,13 @@ entries:
     why_it_matters_zh: >
       回撤幅度是衡量本轮下跌相对历史严重程度的直观、可比较的方式。
     unit_or_basis: Percent decline from peak
+    unit_or_basis_zh: '相对高点的百分比跌幅'
     interpretation_up: null
     interpretation_down: null
     interpretation_neutral: >
       No single up/down reading — drawdown is a backward-looking measure of decline
       already observed, reported as a magnitude.
+    interpretation_neutral_zh: '无单一上行／下行判断——回撤是对已发生跌幅的回顾性衡量，以幅度形式呈现。'
     caveats_en:
       - Measures a decline that has already happened; it does not predict whether the
         decline will deepen or recover.
@@ -1191,12 +1299,16 @@ entries:
     why_it_matters_zh: >
       相关性上升会削弱分散配置的效果，因为压力时期更多资产往往同向变动。
     unit_or_basis: Correlation coefficient or relative descriptor (high / normal / low)
+    unit_or_basis_zh: '相关系数或相对描述（高／正常／低）'
     interpretation_up: >
       Rising correlation — assets moving more together; diversification benefit reduced.
+    interpretation_up_zh: '相关性上升——资产同向变动增多，分散配置效果减弱。'
     interpretation_down: >
       Falling correlation — assets moving more independently; diversification benefit
       improved.
+    interpretation_down_zh: '相关性下降——资产变动更趋独立，分散配置效果提升。'
     interpretation_neutral: Correlation roughly typical for the period observed.
+    interpretation_neutral_zh: '观察期内相关性大致处于常态水平。'
     caveats_en:
       - Correlation is measured over a historical window and can shift quickly around
         major market events.
@@ -1229,11 +1341,15 @@ entries:
     why_it_matters_zh: >
       指数上涨但广度狭窄是典型警示信号，说明涨势可能比指数表面表现更脆弱。
     unit_or_basis: Descriptive / ratio-based (e.g. advancing vs declining issues)
+    unit_or_basis_zh: '描述性／基于比率（如上涨与下跌家数对比）'
     interpretation_up: >
       Broadening — more stocks participating in the move; historically a healthier signal.
+    interpretation_up_zh: '广度扩大——更多个股参与本轮行情，历史上属于更健康的信号。'
     interpretation_down: >
       Narrowing — fewer stocks participating; historically a warning sign.
+    interpretation_down_zh: '广度收窄——参与行情的个股减少，历史上属于警示信号。'
     interpretation_neutral: Breadth roughly stable over the period observed.
+    interpretation_neutral_zh: '观察期内广度大致稳定。'
     caveats_en:
       - Narrow breadth does not by itself predict when or whether a reversal will occur.
       - Different breadth measures (advance-decline, new highs/lows, cap-weighted vs
@@ -1266,11 +1382,15 @@ entries:
     why_it_matters_zh: >
       持仓过度拥挤可能使市场在情绪转变时更容易出现剧烈反转，即便基本面并未发生变化。
     unit_or_basis: Descriptive / relative to historical positioning ranges
+    unit_or_basis_zh: '描述性／相对历史持仓区间'
     interpretation_up: >
       Positioning stretched long — potentially more vulnerable to a downside reversal.
+    interpretation_up_zh: '持仓过度偏多——可能更容易出现下行反转。'
     interpretation_down: >
       Positioning stretched short — potentially more vulnerable to a squeeze higher.
+    interpretation_down_zh: '持仓过度偏空——可能更容易出现逼空式上行反转。'
     interpretation_neutral: Positioning roughly balanced relative to its own history.
+    interpretation_neutral_zh: '持仓相对自身历史大致均衡。'
     caveats_en:
       - Publicly available positioning data is often reported with a lag and does not
         capture every market participant.

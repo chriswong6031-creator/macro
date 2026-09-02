@@ -195,6 +195,22 @@ def validate(raw: dict) -> list[dict]:
         if ("aliases_en" in e) != ("aliases_zh" in e):
             errors.append(f"{where}: aliases_en/aliases_zh must both be present when either is")
 
+        # ZH-required parity for the single-field (non `_en`-suffixed) freeform
+        # fields — MOR-1 shipped these English-only with a graceful t(en, zh='')
+        # render fallback; the MOR-1 ZH supplement then supplied real translations
+        # for every non-null value, so the fallback is now retired here in favour
+        # of a fail-closed rule: whenever the field is present, its `_zh` sibling
+        # must be present too. A null/absent value legitimately carries no `_zh`
+        # sibling (the 8 entries with no up/down directional reading stay null on
+        # both sides).
+        for base in ("unit_or_basis", "interpretation_up", "interpretation_down", "interpretation_neutral"):
+            en_val = e.get(base)
+            if en_val is None or (isinstance(en_val, str) and not en_val.strip()):
+                continue
+            zh_val = e.get(f"{base}_zh")
+            if not (zh_val and str(zh_val).strip()):
+                errors.append(f"{where}: {base} is present but {base}_zh is missing")
+
         # missing caveats on kind: indicator
         if e.get("kind") == "indicator":
             cav_en, cav_zh = e.get("caveats_en") or [], e.get("caveats_zh") or []
@@ -272,13 +288,14 @@ def _source_refs_for(urls: list[str]) -> list[dict]:
 
 def build_view_model(entries: list[dict]) -> tuple[list[dict], list[dict], list[str]]:
     """Turn validated registry entries into the view-model `templates/reference.html.j2`
-    consumes (design spec §2). Registry fields that are single-language freeform prose
-    (`unit_or_basis`, `interpretation_up/down/neutral`) are mapped straight into the
-    `_en` slot with `_zh` left unset — the template's own `t(en, zh='')` macro already
-    falls back to the `en` text for the zh span in that case (its documented behaviour
-    for a missing translation), so this renders correctly without fabricating Chinese
-    copy this build is not authorized to write. Logged in the MOR-1 build packet
-    DEVIATIONS."""
+    consumes (design spec §2). `unit_or_basis` / `interpretation_up/down/neutral` map
+    straight from the registry's `<field>` / `<field>_zh` pair into the template's
+    `<field>_en` / `<field>_zh` slots — real ZH copy from the MOR-1 ZH supplement,
+    validated present by `validate()` whenever the English value is present (the
+    original English-only build relied on the template's `t(en, zh='')` fallback for
+    these fields; that fallback is now unreachable in practice since validate() no
+    longer lets a non-null value through without its `_zh` sibling, but the template
+    macro is left as-is since it is harmless dead-code-safety, not a live path)."""
     by_id = {e["id"]: e for e in entries}
 
     def rank(e: dict) -> tuple[int, str]:
@@ -307,13 +324,13 @@ def build_view_model(entries: list[dict]) -> tuple[list[dict], list[dict], list[
         row["public_source_refs"] = _source_refs_for(e.get("public_source_refs"))
         row["related"] = related
         row["unit_or_basis_en"] = e.get("unit_or_basis")
-        row["unit_or_basis_zh"] = None
+        row["unit_or_basis_zh"] = e.get("unit_or_basis_zh")
         row["interpretation_up_en"] = e.get("interpretation_up")
-        row["interpretation_up_zh"] = None
+        row["interpretation_up_zh"] = e.get("interpretation_up_zh")
         row["interpretation_down_en"] = e.get("interpretation_down")
-        row["interpretation_down_zh"] = None
+        row["interpretation_down_zh"] = e.get("interpretation_down_zh")
         row["interpretation_neutral_en"] = e.get("interpretation_neutral")
-        row["interpretation_neutral_zh"] = None
+        row["interpretation_neutral_zh"] = e.get("interpretation_neutral_zh")
         row["superseded_by_label_en"] = superseded_label_en
         row["superseded_by_label_zh"] = superseded_label_zh
         vm.append(row)
