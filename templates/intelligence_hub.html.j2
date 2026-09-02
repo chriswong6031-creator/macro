@@ -158,7 +158,7 @@
     letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
   .eyebrow time{ font-family:var(--fig); letter-spacing:.04em; }
   .live{ width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative; flex:none; }
-  .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
+  .live::after{ content:""; position:absolute; inset:-4px; border-radius:var(--r-pill, 999px);
     border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
   @keyframes hp{ 0%{ transform:scale(.55); opacity:.55 } 100%{ transform:scale(1.75); opacity:0 } }
   .hh h1{ font-size:clamp(29px,3.7vw,41px); font-weight:800; letter-spacing:-.033em; line-height:1.03;
@@ -180,7 +180,7 @@
 
   /* ── desk rail: six links, one container, hairline cells ── */
   .rail{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:18px 0 2px;
-    border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+    border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); overflow:hidden; }
   .rl{ display:flex; align-items:center; gap:8px; min-width:0; padding:11px 13px;
     text-decoration:none; color:var(--text); font-size:12.5px; font-weight:600;
     border-left:1px solid var(--hair-soft); transition:background .16s ease, color .16s ease; }
@@ -224,13 +224,13 @@
      direction-color correct; no new token root, no literal palette, no
      runtime stylesheet. */
   .ihmp-bar{ display:flex; align-items:center; gap:9px; margin:14px 0 0; padding:9px 14px;
-    border:1px solid var(--hair); border-radius:var(--r); background:var(--card);
+    border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card);
     font-size:11.5px; color:var(--muted); }
-  .ihmp-dot{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--muted); }
+  .ihmp-dot{ width:6px; height:6px; border-radius:var(--r-pill, 999px); flex:none; background:var(--muted); }
   .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot{
     background:var(--ok); position:relative; }
   .ihmp-bar[data-ihmp-availability="available"][data-ihmp-freshness="live"][data-ihmp-session="regular"] .ihmp-dot::after{
-    content:""; position:absolute; inset:-4px; border-radius:50%;
+    content:""; position:absolute; inset:-4px; border-radius:var(--r-pill, 999px);
     border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
   .ihmp-bar[data-ihmp-freshness="delayed"] .ihmp-dot{ background:var(--warn); }
   /* --act, not --down — that one is a market-direction token that flips to GREEN
@@ -361,7 +361,7 @@
   @media(max-width:620px){ .band .legend{ display:none } }
 
   /* ── one card system ── */
-  .card{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); }
+  .card{ border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); }
   .empty{ font-size:12.5px; color:var(--muted); padding:11px 0; }
   /* Stance line — every signal band answers "so what do I do" ONCE, here, in plain
      words (DESIGN_DOCTRINE Law 1 + Law 4). This is what the stage-templated sentence
@@ -486,7 +486,7 @@
      move is still ahead — so scrolling the ledger shows the edge draining away.
      The bar is the shape; the mono figure beside the score keeps the precision.
      ─────────────────────────────────────────────────────────────────────────── */
-  .led{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .led{ border:1px solid var(--hair); border-radius:var(--r-ctl, var(--r)); background:var(--card); overflow:hidden; }
   .led-row{ display:grid; grid-template-columns:26px 150px 52px 55px minmax(0,1fr);
     align-items:center; gap:0 14px; padding:10px 15px 10px 0; min-height:58px; }
   .led > .led-row + .led-row{ border-top:1px solid var(--hair-soft); }
