@@ -5,9 +5,10 @@ claim: >
   demand or the context around it — Agent OS responsibilities/decisions/waits/dependencies,
   Executive lifecycle/blockers, RuntimeBinding continuity, Wake/Executive Inbox obligations,
   Capacity facts and Steward/Control Room read composition — but no current canonical owner found
-  during the 2026-08-30 cold-start performs portfolio-scale cognition allocation across those valid
-  demands. A flat needs_sol/needs_ceo/notification projection would therefore scale transport and
-  ownership visibility without solving scarce executive attention allocation.
+  during the 2026-08-30 cold-start or 2026-09-02 continuation performs portfolio-scale cognition
+  allocation across those valid demands. A flat needs_sol/needs_ceo/notification projection would
+  therefore scale transport and ownership visibility without solving scarce executive attention
+  allocation.
 falsifier: >
   Falsify this discovery by identifying a current protected canonical implementation/source law
   that already partitions authority independently from urgency, gates whether cognition is needed,
@@ -15,18 +16,23 @@ falsifier: >
   evidence, provides anti-starvation and produces a compact source-attributed Chairman/Sol attention
   frontier without owning lifecycle/queue/placement. A notification list, turn-owner classifier,
   Control Room view, Wake obligation ledger or model-generated ranking alone is insufficient.
+  The counterexample must identify its exact protected PR/source against the current architecture
+  baseline in Mastermind PR #275 and pass `python3 scripts/agentos.py validate` after the discovery
+  is superseded rather than silently rewritten.
 so_what: >
   Build EAF as a read-only allocation transform over existing owners rather than extending any one
-  owner into a universal scheduler. The first implementation should consume the corrected OCR-6
-  Steward seam plus bounded Agent OS attention context, remain report-only, and prove value on real
-  portfolio demand before changing the primary operating surface.
+  owner into a universal scheduler. The first implementation should consume the corrected protected
+  OCR-6 Steward seam plus bounded Agent OS attention context, remain report-only, and prove value on
+  real portfolio demand before changing the primary operating surface.
 kind: architecture
-verified_at: 2026-08-30
+verified_at: 2026-09-02
 verified_by: >
-  Protected Mastermind 8f0babf473e6e4e8efce697014bd48c594227d94; Macro main
-  ca31568272d06f2472f65946d2435517611f31dc; OCR-6 PR #228; current Agent OS schema/workstreams;
-  current Wake/turn-owner/Control Room source laws; Linear MAS-192, MAS-206 and MAS-218; exact
-  operation Slack carrier; searches for current attention-economics/prioritization implementations.
+  Protected Mastermind 9ed1a2020246348118a0c83e4207284c5bd51d60; F0G architecture protected by
+  Mastermind PR #275 at merge c544e837d8d704e81f1c7ddfe0ebada830abf3df; corrected pure Executive
+  Steward protected by PR #228 at merge dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c; Macro main
+  4fe6434d7bc2422f0cf3baceee0566faef72ac93 at continuation pickup; current Agent OS
+  schema/workstreams; current Wake/turn-owner/Control Room source laws; exact operation Slack
+  carrier; and current GitHub searches for attention-economics/prioritization implementations.
 scope:
   - WS:EXECUTIVE-ATTENTION-ECONOMICS
   - WS:CHAIRMAN-CONTROL-ROOM
@@ -42,7 +48,7 @@ confidence: verified
 - RuntimeBinding/session owners own exact reasoning/execution surfaces.
 - Wake/Executive Inbox own attention-obligation identity/delivery source semantics.
 - Capacity/Model Router own placement/eligibility, not executive priority.
-- OCR-6 Steward composes those sources read-only and is currently being correctness-repaired.
+- The corrected protected OCR-6 Steward composes caller-supplied source-attributed facts read-only.
 - Control Room composes operating views and explicitly must not become another truth store.
 
 These are complementary. None should be widened into a second company scheduler merely to solve
