@@ -322,9 +322,28 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  four-slot-preflight:
+    name: diagnostic-four-slot-parent-envelope-preflight
+    if: inputs.slots == '4'
+    needs: plan
+    runs-on: [self-hosted, ci-linux]
+    timeout-minutes: 5
+    steps:
+      # No checkout and no candidate code: the installed root-owned guard
+      # proves the fixed aggregate envelope before four-way diagnostic fanout.
+      - name: require the parent CI-slice envelope before four-way fanout
+        run: |
+          /usr/local/libexec/mastermind-ci-resource-guard \
+            --path "$RUNNER_TEMP" \
+            --require-slice \
+            --preflight-profile four-slot-canary
+
   selfhosted-pack:
     name: diagnostic-selfhosted-pack-${{ matrix.pack }}
-    needs: plan
+    needs: [plan, four-slot-preflight]
+    if: >-
+      always() && needs.plan.result == 'success' &&
+      (inputs.slots != '4' || needs.four-slot-preflight.result == 'success')
     runs-on: ${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' || '["self-hosted","ci-linux"]') }}
     timeout-minutes: 180
     strategy:

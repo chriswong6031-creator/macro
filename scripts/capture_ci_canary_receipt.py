@@ -7,6 +7,7 @@ import argparse
 import contextlib
 import datetime as _datetime
 import json
+import math
 import os
 import re
 from pathlib import Path
@@ -86,6 +87,23 @@ def metrics(path: Path | None) -> dict[str, object]:
 
 
 EXPECTED_CI_SLICE = "mastermind-ci.slice"
+EXPECTED_AGGREGATE_CGROUP = "/mastermind.slice/mastermind-ci.slice"
+EXPECTED_AGGREGATE_LIMITS = {
+    "cpu.max": "800000 100000",
+    "memory.high": "10737418240",
+    "memory.max": "12884901888",
+    "memory.swap.max": "2147483648",
+}
+REQUIRED_CUMULATIVE_FIELDS = {
+    "cpu": {"usage_usec", "nr_periods", "nr_throttled", "throttled_usec"},
+    "memory_events": {"high", "max", "oom", "oom_kill"},
+    "pids_events": {"max"},
+}
+REQUIRED_PRESSURE_KINDS = {
+    "cpu": {"some", "full"},
+    "memory": {"some", "full"},
+    "io": {"some", "full"},
+}
 # Worst-first. One sample outside the slice poisons the whole window: a candidate
 # that changed cgroups mid-run has no honest aggregate to report.
 _SLICE_STATUS_PRECEDENCE = ("refused", "unavailable", "degraded", "bound")
@@ -98,7 +116,13 @@ def _empty_slice_metrics(status: str, reason: str | None, **extra: object) -> di
         "reason": reason,
         "samples": 0,
         "cgroups": [],
+        "candidate_cgroups": [],
+        "aggregate_cgroup": EXPECTED_AGGREGATE_CGROUP,
+        "aggregate_metric_source": "parent_slice",
+        "candidate_identity": None,
+        "aggregate_identity": None,
         "cpu_max": None,
+        "effective_limits": None,
         "cpu_delta": None,
         "memory_events_delta": None,
         "pids_events_delta": None,
@@ -137,6 +161,105 @@ def _peak(values: list[Any]) -> int | None:
     return max(observed) if observed else None
 
 
+def _valid_identity(value: object) -> bool:
+    return (
+        isinstance(value, Mapping)
+        and set(value) == {"device", "inode"}
+        and all(
+            isinstance(value[key], int)
+            and not isinstance(value[key], bool)
+            and value[key] >= 0
+            for key in ("device", "inode")
+        )
+    )
+
+
+def _direct_candidate_cgroup(value: object) -> bool:
+    if not isinstance(value, str) or not value.startswith("/") or value.endswith("/") or "//" in value:
+        return False
+    components = [item for item in value.split("/") if item]
+    prefix = ["mastermind.slice", "mastermind-ci.slice"]
+    return (
+        len(components) == 3
+        and components[:2] == prefix
+        and len(components[2]) > len(".service")
+        and components[2].endswith(".service")
+        and components[2] not in {".", ".."}
+    )
+
+
+def _valid_cumulative_mapping(value: object, required: set[str]) -> bool:
+    return isinstance(value, Mapping) and required.issubset(value) and all(
+        isinstance(item, int) and not isinstance(item, bool) and item >= 0
+        for item in value.values()
+    )
+
+
+def _invalid_bound_observation(item: Mapping[str, Any]) -> str | None:
+    if item.get("expected_slice") != EXPECTED_CI_SLICE:
+        return "slice observation names the wrong expected slice"
+    if item.get("aggregate_metric_source") != "parent_slice":
+        return "aggregate metrics are not explicitly sourced from the parent slice"
+    if item.get("aggregate_cgroup") != EXPECTED_AGGREGATE_CGROUP:
+        return "aggregate cgroup is missing or not the fixed parent slice"
+    if item.get("cgroup") != item.get("candidate_cgroup") or not _direct_candidate_cgroup(item.get("candidate_cgroup")):
+        return "candidate cgroup is missing, mixed, or not an exact direct service"
+    if not _valid_identity(item.get("candidate_identity")):
+        return "candidate cgroup identity is missing or malformed"
+    if not _valid_identity(item.get("aggregate_identity")):
+        return "aggregate cgroup identity is missing or malformed"
+    if item.get("limits") != EXPECTED_AGGREGATE_LIMITS:
+        return "aggregate parent limits are missing, malformed, or drifted"
+    for field, required in REQUIRED_CUMULATIVE_FIELDS.items():
+        if not _valid_cumulative_mapping(item.get(field), required):
+            return f"{field} cumulative evidence is missing or malformed"
+    pressure = item.get("pressure")
+    if not isinstance(pressure, Mapping):
+        return "pressure cumulative evidence is missing or malformed"
+    for resource, required_kinds in REQUIRED_PRESSURE_KINDS.items():
+        kinds = pressure.get(resource)
+        if not isinstance(kinds, Mapping):
+            return "pressure cumulative evidence is malformed"
+        if not required_kinds.issubset(kinds):
+            return "pressure cumulative evidence is missing required kinds"
+        for kind in required_kinds:
+            values = kinds.get(kind)
+            if not isinstance(values, Mapping):
+                return "pressure cumulative evidence is malformed"
+            total = values.get("total")
+            if (
+                not isinstance(total, (int, float))
+                or isinstance(total, bool)
+                or not math.isfinite(total)
+                or total < 0
+            ):
+                return "pressure cumulative evidence is malformed"
+    return None
+
+
+def _counter_decreased(first: Mapping[str, Any], last: Mapping[str, Any]) -> bool:
+    for field in ("cpu", "memory_events", "pids_events"):
+        before, after = first.get(field), last.get(field)
+        if isinstance(before, Mapping) and isinstance(after, Mapping):
+            for key, value in after.items():
+                if isinstance(value, int) and isinstance(before.get(key), int) and value < before[key]:
+                    return True
+    before_pressure, after_pressure = first.get("pressure"), last.get("pressure")
+    if isinstance(before_pressure, Mapping) and isinstance(after_pressure, Mapping):
+        for resource, kinds in after_pressure.items():
+            base = before_pressure.get(resource)
+            if not isinstance(kinds, Mapping) or not isinstance(base, Mapping):
+                continue
+            for kind, values in kinds.items():
+                prior_values = base.get(kind)
+                if not isinstance(values, Mapping) or not isinstance(prior_values, Mapping):
+                    continue
+                current, previous = values.get("total"), prior_values.get("total")
+                if isinstance(current, (int, float)) and isinstance(previous, (int, float)) and current < previous:
+                    return True
+    return False
+
+
 def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
     """Reduce aggregate CI-slice samples into one bounded receipt section.
 
@@ -147,8 +270,12 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
     that did not actually come from the CI slice.
     """
 
+    if not samples:
+        return _empty_slice_metrics(
+            "absent", "no aggregate CI-slice evidence in this metrics stream"
+        )
     observations = [
-        sample["slice"]
+        sample.get("slice")
         for sample in samples
         if isinstance(sample, Mapping) and isinstance(sample.get("slice"), Mapping)
     ]
@@ -158,10 +285,30 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
         return _empty_slice_metrics(
             "absent", "no aggregate CI-slice evidence in this metrics stream"
         )
+    if len(observations) != len(samples):
+        return _empty_slice_metrics(
+            "refused",
+            "every host sample in a slice window must carry a slice mapping",
+            samples=len(observations),
+        )
+
+    sample_times = [sample.get("time") for sample in samples]
+    if any(
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or not math.isfinite(value)
+        for value in sample_times
+    ) or any(later <= earlier for earlier, later in zip(sample_times, sample_times[1:])):
+        return _empty_slice_metrics(
+            "refused", "aggregate samples are not strictly time ordered", samples=len(observations)
+        )
 
     statuses = {str(item.get("status")) for item in observations}
     cgroups = sorted(
         {str(item.get("cgroup")) for item in observations if item.get("cgroup")}
+    )
+    candidate_cgroups = sorted(
+        {str(item.get("candidate_cgroup")) for item in observations if item.get("candidate_cgroup")}
     )
     # Anything that is not exactly "bound" is non-bound. This scanned a fixed
     # whitelist first, so a sample carrying any other status string was invisible
@@ -198,6 +345,37 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
             worst, reason, samples=len(observations), cgroups=cgroups
         )
 
+    for item in observations:
+        invalid = _invalid_bound_observation(item)
+        if invalid is not None:
+            return _empty_slice_metrics(
+                "refused", invalid, samples=len(observations), cgroups=cgroups,
+                candidate_cgroups=candidate_cgroups,
+            )
+    candidate_identities = {json.dumps(item.get("candidate_identity"), sort_keys=True) for item in observations}
+    aggregate_identities = {json.dumps(item.get("aggregate_identity"), sort_keys=True) for item in observations}
+    aggregate_cgroups = {item.get("aggregate_cgroup") for item in observations}
+    limit_snapshots = {json.dumps(item.get("limits"), sort_keys=True) for item in observations}
+    if (
+        len(candidate_cgroups) != 1
+        or len(candidate_identities) != 1
+        or len(aggregate_identities) != 1
+        or aggregate_cgroups != {EXPECTED_AGGREGATE_CGROUP}
+        or len(limit_snapshots) != 1
+    ):
+        return _empty_slice_metrics(
+            "refused", "candidate, parent identity, or envelope changed within the window",
+            samples=len(observations), cgroups=cgroups, candidate_cgroups=candidate_cgroups,
+        )
+    if any(
+        _counter_decreased(previous, current)
+        for previous, current in zip(observations, observations[1:])
+    ):
+        return _empty_slice_metrics(
+            "refused", "aggregate cumulative counter decreased",
+            samples=len(observations), cgroups=cgroups,
+        )
+
     first, last = observations[0], observations[-1]
     pressure_delta: dict[str, dict[str, int]] = {}
     first_pressure = first.get("pressure") or {}
@@ -228,7 +406,13 @@ def slice_metrics(samples: list[Mapping[str, Any]]) -> dict:
         "reason": None,
         "samples": len(observations),
         "cgroups": cgroups,
+        "candidate_cgroups": candidate_cgroups,
+        "aggregate_cgroup": EXPECTED_AGGREGATE_CGROUP,
+        "aggregate_metric_source": "parent_slice",
+        "candidate_identity": last.get("candidate_identity"),
+        "aggregate_identity": last.get("aggregate_identity"),
         "cpu_max": last.get("cpu_max"),
+        "effective_limits": last.get("limits"),
         "cpu_delta": _keyed_delta(first.get("cpu"), last.get("cpu")),
         "memory_events_delta": _keyed_delta(
             first.get("memory_events"), last.get("memory_events")

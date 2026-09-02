@@ -173,10 +173,11 @@ and publishes nothing.
 
 ## Fourth slot and the aggregate CI resource envelope
 
-Capability state: **`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.**
+Capability state: **`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_PROVEN / RELEASE_BLOCKED`.**
 
-Read that literally. The repository now contains everything needed to run four PC
-CI candidates inside one enforced envelope, and **none** of it is installed. There
+Read that literally. The repaired source closes the known false-proof families,
+but current-head CI, independent exact-head approval, and the later privileged
+C3R-B real-host proof remain release gates. **None** of it is installed. There
 is no `pc-ci-4` registration, no `/opt/mastermind-ci/runner-4` on disk, no
 `mastermind-ci.slice` unit on the host, and no fourth listener. Live capacity is
 still exactly three slots, production trusted execution is still `max-parallel: 3`,
@@ -233,16 +234,23 @@ independently routable.
 ### Evidence, and what refuses
 
 `scripts/monitor_ci_host_resources.py` derives each candidate's own cgroup from
-`/proc/self/cgroup` and binds it to `/mastermind-ci.slice/<unit>.service` by exact
-path component. A candidate in `system.slice`, in a look-alike slice, or with
+`/proc/self/cgroup` and binds it to the exact direct-service hierarchy
+`/mastermind.slice/mastermind-ci.slice/<unit>.service`. The candidate node proves
+membership; aggregate counters and limits come only from the parent
+`/mastermind.slice/mastermind-ci.slice` node. Both nodes' device/inode identities
+are recorded and frozen across the window. A candidate in `system.slice`, in a
+look-alike or nested descendant, or with
 unreadable files yields `refused`/`degraded` **with no metric values at all**. It
 never substitutes host-global numbers for slice numbers, because a green produced
 from the wrong cgroup reads downstream as proof. `slice_metrics()` in
 `scripts/capture_ci_canary_receipt.py` reports aggregate numbers only when every
 sample in the window carried status exactly `bound` **and** every sample named the
-same cgroup — a candidate that moved mid-run has no honest aggregate, because
-first/last deltas would straddle two cgroups. Any other status, including an
-unrecognised one, is treated as non-bound.
+same direct candidate and parent identities plus the exact frozen limit tuple. A
+candidate or parent that moved or was recreated mid-run has no honest aggregate.
+Reversed/equal timestamps, missing endpoints, or any decrease in CPU,
+memory-event, pids-event, or PSI cumulative counters poison the window and clear
+every numeric acceptance field. Any other status, including an unrecognised one,
+is treated as non-bound.
 
 A field absent at the START of the window yields a `null` delta, never
 `last - 0`: presenting a cgroup lifetime total as a window delta would corrupt
@@ -258,16 +266,27 @@ Guard thresholds are versioned separately from the slice ceilings
 (`mastermind.ci_resource_guard_thresholds.v1`) so retuning a refusal threshold never
 reads as a change to the measured envelope. `--preflight-profile four-slot-canary`
 adds the stricter pre-diagnostic gate: `MemAvailable >= 20 GiB`, swap `<= 512 MiB`,
-memory/IO PSI `full avg10 < 0.10`. Steady state for `pc-ci-1..3` is unchanged.
+memory/IO PSI `full avg10 < 0.10`. Missing, malformed, non-finite, negative, or
+threshold-equal PSI refuses; unavailable is never observed zero. Steady state for
+`pc-ci-1..3` is unchanged because their current invocation does not pass
+`--require-slice`.
 
 Binding is not enforcement, and the guard says so. systemd **auto-creates an
 undefined slice**, so a unit carrying `Slice=mastermind-ci.slice` binds cleanly even
 when no slice file was ever installed — it simply inherits no limits, and `cpu.max`
 reads `max 100000`. A capacity diagnostic run against an unenforced envelope measures
-nothing while looking bound and green. `--preflight-profile four-slot-canary`
-therefore refuses an unlimited `cpu.max`. Steady state deliberately does **not** gate
-on it: `pc-ci-1..3` run today with no slice installed at all, and refusing them would
-strand every live slot.
+nothing while looking bound and green. `--require-slice` therefore refuses unless
+the parent exposes the complete exact tuple: `cpu.max = 800000 100000`,
+`memory.high = 10737418240`, `memory.max = 12884901888`, and
+`memory.swap.max = 2147483648`. Missing, malformed, unlimited, or drifted values
+refuse in every profile once that flag is set. This does not alter today's three
+live services because they do not opt into the flag.
+
+The `slots=4` workflow path now has one blocking, no-checkout
+`four-slot-preflight` job before matrix fanout. It executes only the installed
+root-owned guard with `--require-slice --preflight-profile four-slot-canary`;
+slots 1 and 3 retain their prior journey. This is a source gate, not host proof:
+it cannot pass lawfully until C3R-B installs and proves the envelope.
 
 The memory floor stays a **guest-wide** `MemAvailable` read on purpose: the renderer
 lives outside the slice, so a slice-local read would show a nearly idle cgroup while
@@ -362,6 +381,24 @@ review rather than a diagnostic-only one.
 
 `ops/runner-host/**` is the genuinely inert part: templates and helpers that no
 running host loads until a later carrier installs them.
+
+### Merged-substrate containment and repair provenance
+
+PR #6718 was merged as `b260d28a6efbfb4593dfcc453731f71703252ac0`
+while exact-head review `5084468618` remained `CHANGES_REQUESTED`. A staged
+real-host attempt then exposed the systemd hierarchy and parent-node defects. Only
+`pc-ci-1` entered the attempted migration; it refused for about 96 seconds and was
+rolled back to its exact prior bytes. `pc-ci-2` and `pc-ci-3` were never touched and
+continued serving. The host retained only a backward-compatible helper and an inert
+slice unit referenced by no service; that is not production acceptance.
+
+PR #6728 preserves the valid hierarchy and aggregate-parent corrections, then
+closes exact-direct membership, complete-envelope, strict-PSI, connected-preflight,
+invalid-window, canonical-root, and malformed-R14 false-proof families on the same
+branch. It remains DRAFT / HOLD-FOR-SOL with review `5085372259` untouched. No
+runner registration, label/group mutation, service restart, cgroup change,
+four-slot dispatch, render mutation, credential handling, or production-concurrency
+change is part of this repair.
 
 ## Rollback
 

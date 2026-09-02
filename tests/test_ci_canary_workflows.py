@@ -601,3 +601,19 @@ def test_multi_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
     assert steps[gate]["if"] == "inputs.slots != '1'"
     assert 'cat "$RUNNER_TEMP/pack.rc"' in steps[gate]["run"]
     assert "-eq 0" in steps[gate]["run"]
+
+
+def test_four_slot_preflight_is_a_blocking_no_checkout_parent_envelope_gate() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    preflight = document["jobs"]["four-slot-preflight"]
+    assert preflight["if"] == "inputs.slots == '4'"
+    assert preflight["needs"] == "plan"
+    assert preflight["runs-on"] == ["self-hosted", "ci-linux"]
+    steps = preflight["steps"]
+    assert all("checkout" not in str(step).lower() for step in steps)
+    command = "\n".join(str(step.get("run", "")) for step in steps)
+    assert "--require-slice" in command
+    assert "--preflight-profile four-slot-canary" in command
+    pack = document["jobs"]["selfhosted-pack"]
+    assert "four-slot-preflight" in pack["needs"]
+    assert "needs.four-slot-preflight.result == 'success'" in pack["if"]

@@ -72,6 +72,10 @@ TRUSTED_EXECUTOR_CALL = (
     "mastermindx-market-intelligence/macro/.github/workflows/"
     "trusted-ci-executor.yml@main"
 )
+FOUR_SLOT_PREFLIGHT_ROUTE = (
+    ".github/workflows/selfhosted-ci-canary.yml",
+    "four-slot-preflight",
+)
 SAME_REPO_PR = (
     "github.event.pull_request.head.repo.full_name == github.repository"
 )
@@ -460,6 +464,12 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
             Finding("R14", "pc-ci pending_carriers and pending_labels must be lists")
         )
         return findings
+    if not all(isinstance(carrier, str) for carrier in pending_carriers):
+        findings.append(Finding("R14", "pc-ci pending_carriers must contain strings"))
+        return findings
+    if not all(isinstance(label, str) for label in pending_labels):
+        findings.append(Finding("R14", "pc-ci pending_labels must contain strings"))
+        return findings
 
     # `type(...) is int` on purpose: bool is an int subclass, so `pending_slots:
     # true` would satisfy `== 1`, and a float silently skipped the cross-check.
@@ -499,13 +509,13 @@ def _pending_capacity_findings(registry: dict) -> list[Finding]:
 
     # Platform/architecture identity only. `ci-linux` here would make the fourth
     # slot routable on paper before any host receipt exists.
-    allowed_pending_labels = {"self-hosted", "Linux", "X64"}
-    stray = sorted(set(pending_labels) - allowed_pending_labels)
-    if stray:
+    expected_pending_labels = ["self-hosted", "Linux", "X64"]
+    if pending_labels != expected_pending_labels:
         findings.append(
             Finding(
                 "R14",
-                f"pc-ci pending_labels may carry platform identity only; refused {stray}",
+                f"pc-ci pending_labels must be exactly {expected_pending_labels}, "
+                f"not {pending_labels!r}",
             )
         )
 
@@ -673,6 +683,13 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
                         f"{workflow}:{job_id} leaked generic M1 production label(s): {sorted(leaked)}",
                     )
                 )
+
+    # The fourth-slot preflight is deliberately source-defined rather than a
+    # live topology declaration: adding it to runner-policy.yml would make the
+    # pending carrier look registered/routable before C3R-B. Admit only this
+    # exact diagnostic job to R6; its blocking, no-checkout and strict-envelope
+    # shape is pinned by tests/test_ci_canary_workflows.py.
+    allowed_custom.add(FOUR_SLOT_PREFLIGHT_ROUTE)
 
     trusted_route = registry.get("trusted_executor_route") or {}
     expected_trusted_route = {

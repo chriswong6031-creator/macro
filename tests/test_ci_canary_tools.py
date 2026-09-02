@@ -7,6 +7,7 @@ import os
 import stat
 import subprocess
 import sys
+from itertools import count
 from pathlib import Path
 
 import pytest
@@ -1332,6 +1333,9 @@ def _write_slice_tree(
             "nr_periods 400\nnr_throttled 20\nthrottled_usec 50000\n"
         ),
         "cpu.max": "800000 100000\n",
+        "memory.high": "10737418240\n",
+        "memory.max": "12884901888\n",
+        "memory.swap.max": "2147483648\n",
         "memory.current": "1073741824\n",
         "memory.peak": "2147483648\n",
         "memory.swap.current": "0\n",
@@ -1462,6 +1466,11 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
         "status": status,
         "expected_slice": "mastermind-ci.slice",
         "cgroup": CI_CGROUP,
+        "candidate_cgroup": CI_CGROUP,
+        "aggregate_cgroup": "/mastermind.slice/mastermind-ci.slice",
+        "candidate_identity": {"device": 1, "inode": 41},
+        "aggregate_identity": {"device": 1, "inode": 40},
+        "aggregate_metric_source": "parent_slice",
         "reason": None,
         "cpu": {
             "usage_usec": 1_000_000,
@@ -1470,6 +1479,12 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
             "throttled_usec": 50_000,
         },
         "cpu_max": "800000 100000",
+        "limits": {
+            "cpu.max": "800000 100000",
+            "memory.high": "10737418240",
+            "memory.max": "12884901888",
+            "memory.swap.max": "2147483648",
+        },
         "memory": {"current": 1 << 30, "peak": 2 << 30, "swap_current": 0},
         "memory_events": {"low": 0, "high": 3, "max": 0, "oom": 0, "oom_kill": 0},
         "pids": {"current": 42},
@@ -1484,9 +1499,12 @@ def _slice_sample(status: str = "bound", **overrides: object) -> dict:
     return sample
 
 
+_SAMPLE_TIMES = count(1)
+
+
 def _host_sample(slice_payload: dict) -> dict:
     return {
-        "time": 1.0,
+        "time": float(next(_SAMPLE_TIMES)),
         "cpu_percent": 10.0,
         "load": [1.0, 1.0, 1.0],
         "memory_available_bytes": 32 << 30,
@@ -1888,15 +1906,17 @@ def test_binding_alone_does_not_prove_the_envelope_is_enforced(tmp_path: Path) -
     assert any("unenforced" in reason or "cpu.max" in reason for reason in reasons)
     assert evidence["cpu_max"] == "max 100000"
 
-    # Steady state must NOT inherit this refusal: pc-ci-1..3 run today with no
-    # slice installed at all, and this carrier installs nothing.
+    # Steady state without --require-slice must NOT inherit this refusal:
+    # pc-ci-1..3 run today without that opt-in, and this carrier installs
+    # nothing. Once --require-slice is set, the exact parent envelope is
+    # deliberately mandatory for every profile.
     steady, _ = RESOURCE_GUARD.slice_reasons(
         cgroup_root=root,
         cgroup=CI_CGROUP,
         profile="steady",
         memory_available_bytes=32 * 1024**3,
         swap_used_bytes=0,
-        require_slice=True,
+        require_slice=False,
     )
     assert steady == [], "an unenforced slice must not wedge today's three slots"
 
@@ -1976,11 +1996,11 @@ def test_reducer_refuses_a_window_spanning_more_than_one_cgroup() -> None:
     assert result["cpu_delta"] is None
 
 
-def test_reducer_never_collapses_an_absent_first_sample_field_into_zero() -> None:
-    """REVIEW SHOULD-FIX 3, and the precise prohibition in plan Task 3 Step 1.
-    `last - first.get(key, 0)` presents a LIFETIME TOTAL as a window delta -- and
-    these are exactly the inputs to the acceptance rule
-    nr_throttled_delta / nr_periods_delta <= 0.25.
+def test_reducer_refuses_absent_required_first_sample_fields() -> None:
+    """A missing required endpoint is unknown, never zero or a partial green.
+
+    Exact review 5084468618 tightened the earlier per-key-null behavior: missing
+    required acceptance keys poison the entire numeric window.
     """
     first = _slice_sample(
         cpu={"usage_usec": 10},
@@ -1998,12 +2018,9 @@ def test_reducer_never_collapses_an_absent_first_sample_field_into_zero() -> Non
             "io": {"full": {"avg10": 0.0, "total": 900_000}},
         },
     )
-    result = CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
-    assert result["cpu_delta"]["usage_usec"] == 40
-    for key in ("nr_periods", "nr_throttled", "throttled_usec"):
-        assert result["cpu_delta"][key] is None, f"{key} was absent at t0; delta is unknown"
-    assert result["pressure_total_delta"]["memory"]["full"] == 20
-    assert result["pressure_total_delta"]["io"]["full"] is None
+    _assert_poisoned_window(
+        CAPTURE.slice_metrics([_host_sample(first), _host_sample(last)])
+    )
 
 
 def test_monitor_degrades_when_any_core_acceptance_file_is_missing(tmp_path: Path) -> None:
@@ -2301,3 +2318,218 @@ def test_guard_reads_the_envelope_from_the_slice_node(tmp_path: Path) -> None:
     )
     assert evidence["cpu_max"] == "800000 100000", "envelope read from the slice"
     assert reasons == [], "an enforced envelope must not be called unenforced"
+
+
+# C3R-A merged-substrate repair: every test below names a false-proof mutant.
+
+
+def test_guard_and_monitor_require_one_direct_service_below_the_real_slice() -> None:
+    for cgroup in (
+        "/mastermind.slice/mastermind-ci.slice/outer.service/inner.scope",
+        "/mastermind.slice/mastermind-ci.slice/nested/inner.service",
+        "/mastermind.slice/mastermind-ci.slice/.service",
+        "mastermind.slice/mastermind-ci.slice/runner.service",
+        "/mastermind.slice/mastermind-ci.slice/runner.service/",
+    ):
+        assert RESOURCE_GUARD.is_bound_to_ci_slice(cgroup) is False, cgroup
+        assert MONITOR._is_bound_to_ci_slice(cgroup) is False, cgroup
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("cpu.max", None),
+        ("cpu.max", "800001 100000\n"),
+        ("memory.high", "max\n"),
+        ("memory.max", "not-a-number\n"),
+        ("memory.swap.max", "2147483647\n"),
+    ],
+)
+def test_guard_refuses_every_missing_or_drifted_parent_limit(
+    tmp_path: Path, name: str, value: str | None
+) -> None:
+    root = tmp_path / "cgroup"
+    node = _write_slice_tree(root, CI_CGROUP)
+    path = node / name
+    if value is None:
+        path.unlink()
+    else:
+        path.write_text(value, encoding="utf-8")
+    reasons, evidence = RESOURCE_GUARD.slice_reasons(
+        root, CI_CGROUP, "four-slot-canary", 32 * 1024**3, 0, require_slice=True
+    )
+    assert any(name.split(".", 1)[0] in reason for reason in reasons)
+    assert evidence["effective_limits"][name] != RESOURCE_GUARD.EXPECTED_LIMITS[name]
+
+
+@pytest.mark.parametrize(
+    ("name", "content"),
+    [
+        ("memory.pressure", None),
+        ("io.pressure", "some avg10=0.00 total=1\n"),
+        ("memory.pressure", "full total=1\n"),
+        ("io.pressure", "full avg10=bad total=1\n"),
+        ("memory.pressure", "full avg10=nan total=1\n"),
+        ("io.pressure", "full avg10=inf total=1\n"),
+        ("memory.pressure", "full avg10=0.10 total=1\n"),
+    ],
+)
+def test_four_slot_preflight_requires_finite_strict_memory_and_io_psi(
+    tmp_path: Path, name: str, content: str | None
+) -> None:
+    root = tmp_path / "cgroup"
+    node = _write_slice_tree(root, CI_CGROUP)
+    path = node / name
+    if content is None:
+        path.unlink()
+    else:
+        path.write_text(content, encoding="utf-8")
+    reasons, _ = RESOURCE_GUARD.slice_reasons(
+        root, CI_CGROUP, "four-slot-canary", 32 * 1024**3, 0, require_slice=True
+    )
+    assert any(name.split(".", 1)[0] in reason for reason in reasons)
+
+
+def _assert_poisoned_window(result: dict) -> None:
+    assert result["status"] != "bound"
+    for key in (
+        "cpu_delta",
+        "memory_events_delta",
+        "pids_events_delta",
+        "pressure_total_delta",
+        "memory_current_peak_bytes",
+        "memory_swap_peak_bytes",
+        "memory_peak_bytes_cgroup_lifetime",
+        "pids_current_peak",
+    ):
+        assert result[key] is None, key
+
+
+@pytest.mark.parametrize("family", ["cpu", "memory", "pids", "pressure"])
+def test_reducer_refuses_each_cumulative_counter_decrease(family: str) -> None:
+    first_slice = _slice_sample()
+    last_slice = _slice_sample()
+    if family == "cpu":
+        last_slice["cpu"] = {**last_slice["cpu"], "usage_usec": 999_999}
+    elif family == "memory":
+        last_slice["memory_events"] = {**last_slice["memory_events"], "high": 2}
+    elif family == "pids":
+        first_slice["pids_events"] = {"max": 2}
+        last_slice["pids_events"] = {"max": 1}
+    else:
+        first_slice["pressure"]["memory"]["full"]["total"] = 12
+        last_slice["pressure"]["memory"]["full"]["total"] = 11
+    _assert_poisoned_window(
+        CAPTURE.slice_metrics([_host_sample(first_slice), _host_sample(last_slice)])
+    )
+
+
+def test_reducer_refuses_backward_time_and_candidate_or_parent_identity_swaps() -> None:
+    first = _host_sample(_slice_sample())
+    last = _host_sample(_slice_sample())
+    last["time"] = first["time"] - 1
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+    for field in ("candidate_identity", "aggregate_identity"):
+        left = _host_sample(_slice_sample())
+        right_payload = _slice_sample()
+        right_payload[field] = {"device": 9, "inode": 9}
+        _assert_poisoned_window(CAPTURE.slice_metrics([left, _host_sample(right_payload)]))
+
+
+def test_reducer_refuses_a_missing_middle_endpoint() -> None:
+    first = _host_sample(_slice_sample())
+    middle = {"time": first["time"] + 0.5}
+    last = _host_sample(_slice_sample())
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, middle, last]))
+
+
+@pytest.mark.parametrize(
+    "limits",
+    [
+        None,
+        {},
+        {"cpu.max": "max 100000"},
+        {
+            "cpu.max": "800000 100000",
+            "memory.high": "10737418240",
+            "memory.max": "12884901888",
+            "memory.swap.max": "2147483647",
+        },
+    ],
+)
+def test_reducer_refuses_missing_malformed_or_drifted_parent_limits(
+    limits: object,
+) -> None:
+    first = _host_sample(_slice_sample(limits=limits))
+    last = _host_sample(_slice_sample(limits=limits))
+    _assert_poisoned_window(CAPTURE.slice_metrics([first, last]))
+
+
+def test_monitor_receipts_freeze_candidate_and_parent_identity(tmp_path: Path) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP)
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["candidate_cgroup"] == CI_CGROUP
+    assert sample["aggregate_cgroup"] == "/mastermind.slice/mastermind-ci.slice"
+    assert sample["aggregate_metric_source"] == "parent_slice"
+    assert set(sample["candidate_identity"]) == {"device", "inode"}
+    assert set(sample["aggregate_identity"]) == {"device", "inode"}
+    assert sample["limits"] == {
+        "cpu.max": "800000 100000",
+        "memory.high": "10737418240",
+        "memory.max": "12884901888",
+        "memory.swap.max": "2147483648",
+    }
+
+
+@pytest.mark.parametrize(
+    ("name", "content"),
+    [
+        ("cpu.stat", "usage_usec 1000000\nnr_periods 400\n"),
+        ("memory.events", "high 0\nmax 0\n"),
+        ("pids.events", ""),
+        ("memory.pressure", "some avg10=0.00 total=1\n"),
+        ("io.pressure", "full avg10=0.00 total=1\n"),
+    ],
+)
+def test_monitor_degrades_when_required_acceptance_keys_are_missing(
+    tmp_path: Path, name: str, content: str
+) -> None:
+    root = tmp_path / "cgroup"
+    _write_slice_tree(root, CI_CGROUP, **{name: content})
+    sample = MONITOR.slice_sample(root, _proc_cgroup(tmp_path, CI_CGROUP))
+    assert sample["status"] == "degraded"
+    assert "required" in sample["reason"]
+
+
+def test_reducer_refuses_bound_samples_missing_required_acceptance_keys() -> None:
+    for field, malformed in (
+        ("cpu", {"usage_usec": 1}),
+        ("memory_events", {"high": 0}),
+        ("pids_events", {}),
+        ("pressure", {"memory": {"full": {"total": 1}}}),
+    ):
+        first_payload = _slice_sample()
+        last_payload = _slice_sample()
+        first_payload[field] = malformed
+        last_payload[field] = malformed
+        _assert_poisoned_window(
+            CAPTURE.slice_metrics(
+                [_host_sample(first_payload), _host_sample(last_payload)]
+            )
+        )
+
+
+def test_cleanup_refuses_symlinked_allowlisted_root_without_deleting(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    foreign = tmp_path / "foreign"
+    (foreign / "_work").mkdir(parents=True)
+    marker = foreign / "_work" / "must-stay"
+    marker.write_text("untouched", encoding="utf-8")
+    sealed = tmp_path / "runner-4"
+    sealed.symlink_to(foreign, target_is_directory=True)
+    monkeypatch.setattr(CLEANUP, "PC_CI_ROOTS", frozenset({sealed}))
+    with pytest.raises(RuntimeError, match="sealed PC CI allowlist"):
+        CLEANUP.scrub_pc_state(sealed, temporary_roots=())
+    assert marker.read_text(encoding="utf-8") == "untouched"
