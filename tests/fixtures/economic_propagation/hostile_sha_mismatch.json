@@ -30,7 +30,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "760b0dffac6d4f289df5eaefe48eae3b3f067dc4d6b8d6d5166c54fe14c4e8e1",
+  "content_sha256": "5d1994f4531c50f6819205e69ad852846d9bcea399af1c401247ebc195ffa783",
   "economic_share": null,
   "expiry": {
     "note": "tampered without rehash",
@@ -124,7 +124,7 @@
     "predicted_operating_direction": "improves",
     "state": "hypothesized"
   },
-  "record_id": "eph1:c3a05ed82cbec69c",
+  "record_id": "eph1:b0ba688bc1815738",
   "relationship_paths": [
     {
       "asof": "2026-08-20",

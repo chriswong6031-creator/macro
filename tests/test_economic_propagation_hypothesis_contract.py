@@ -32,6 +32,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -1356,3 +1357,152 @@ def test_r015_does_not_fire_when_source_identity_unresolved_is_honestly_abstaine
     record = _load_fixture("golden_typed_abstention_unresolved")
     assert record["source_event"]["source_identity"]["resolution_state"] != "RESOLVED"
     assert "K3D_R015" not in _codes(validate_hypothesis(record))
+
+
+# ---------------------------------------------------------------------------
+# Sol blocker #1 (reviews 5037469153 / 5037546510 / 5037637852 / 5045877775 /
+# 5045976713): canonical record identity must bind the RESOLVED issuer/security
+# grain, never the caller's raw alias text.
+#
+# target.requested_key is documented in the frozen schema as "The caller's raw
+# key (ticker, GMI node id, name). NEVER an identity by itself." K3D_R013 and
+# K3D_R014 already law the canonical grain: a RESOLVED target binds BOTH
+# issuer_id AND security_id, "not issuer_id alone". These tests hold identity
+# derivation to that same already-frozen grain, and pin fail-closed behaviour
+# for targets Data OS did not resolve.
+# ---------------------------------------------------------------------------
+
+
+def _resolved_record(requested_key="ACME", issuer="ISSUER-ACME", security="SEC-ACME",
+                     event_id="evt-ident-0001", asof=ASOF, compiled_at=COMPILED_AT):
+    """Lawful RESOLVED record; only the identity-bearing inputs vary."""
+    return compose_hypothesis(
+        source_event=_source_event(event_id=event_id),
+        target=_target(requested_key=requested_key,
+                       resolution=_identity(issuer=issuer, security=security)),
+        asof=asof, compiled_at=compiled_at,
+        generator_admissions=[_admission("gen_disclosed_customer_supplier", "graph_1",
+                                         "disclosed_customer_supplier")],
+        relationship_paths=[_g1_leg(leg_id="g1_ident")],
+        similarity_evidence=[], market_evidence=[],
+        mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+
+
+def _unresolved_record(requested_key="ACME", state="NOT_IN_MASTER",
+                       event_id="evt-ident-0001", asof=ASOF):
+    """Lawful typed abstention; mirrors _build_golden_typed_abstention_unresolved
+    by reusing the one unresolved identity for both target and source."""
+    unresolved = _identity(state=state, issuer=None, security=None)
+    return compose_hypothesis(
+        source_event=_source_event(event_id=event_id, resolution=unresolved),
+        target=_target(requested_key=requested_key, resolution=unresolved),
+        asof=asof, compiled_at=COMPILED_AT,
+        generator_admissions=[], relationship_paths=[], similarity_evidence=[],
+        market_evidence=[], mechanism_proposal=None,
+        alternatives=_ALTERNATIVES, falsifiers=_FALSIFIERS, expiry=_EXPIRY,
+    )
+
+
+def test_blocker1_alias_equivalence_same_canonical_target_yields_same_record_id():
+    # THE defect: two raw aliases that Data OS resolved to the exact same
+    # issuer/security, for the same event and cutoff, are ONE logical research
+    # object and must not fork into two K3-D identities.
+    a = _resolved_record(requested_key="ACME")
+    b = _resolved_record(requested_key="co:us:ACME")
+
+    assert a["target"]["requested_key"] != b["target"]["requested_key"]
+    assert a["target"]["resolution"]["issuer_id"] == b["target"]["resolution"]["issuer_id"]
+    assert a["target"]["resolution"]["security_id"] == b["target"]["resolution"]["security_id"]
+    assert a["record_id"] == b["record_id"], (
+        "alias text must not fork logical record identity: "
+        f"{a['record_id']} != {b['record_id']}"
+    )
+
+
+def test_blocker1_requested_key_survives_as_provenance_only():
+    # Provenance is retained (it is real evidence of what the caller asked for);
+    # it simply carries no identity authority.
+    record = _resolved_record(requested_key="co:us:ACME")
+    assert record["target"]["requested_key"] == "co:us:ACME"
+    assert validate_hypothesis(record) == []
+
+
+def test_blocker1_distinct_resolved_security_stays_distinct():
+    # Security grain is part of the frozen canonical tuple (K3D_R014), so two
+    # genuinely different securities must remain distinguishable even when the
+    # caller used one identical alias.
+    a = _resolved_record(requested_key="ACME", security="SEC-ACME")
+    b = _resolved_record(requested_key="ACME", security="SEC-ACME-B")
+    assert a["record_id"] != b["record_id"]
+
+
+def test_blocker1_distinct_resolved_issuer_stays_distinct():
+    a = _resolved_record(requested_key="ACME", issuer="ISSUER-ACME")
+    b = _resolved_record(requested_key="ACME", issuer="ISSUER-OTHER")
+    assert a["record_id"] != b["record_id"]
+
+
+def test_blocker1_unresolved_target_cannot_collide_with_a_resolved_identity():
+    # Fail-closed namespace separation. Under alias-derived identity these two
+    # records are indistinguishable, which is exactly the integrity defect: an
+    # abstention and a canonical resolved record would share one identity.
+    resolved = _resolved_record(requested_key="ACME")
+    unresolved = _unresolved_record(requested_key="ACME")
+    assert resolved["record_id"] != unresolved["record_id"]
+
+
+def test_blocker1_distinct_unresolved_requests_stay_distinct():
+    # Lawful control: fail-closed must not over-merge either. Two different
+    # unresolved counterparties on one event are two distinct research objects
+    # (the committed real receipts are exactly this shape).
+    a = _unresolved_record(requested_key="Bank of New York Mellon Trust Company")
+    b = _unresolved_record(requested_key="Some Other Counterparty LLC")
+    assert a["record_id"] != b["record_id"]
+
+
+def test_blocker1_conflicting_and_unresolved_states_are_not_merged():
+    # Two different fail-closed verdicts about the same alias are not the same
+    # record; silently merging them would launder one verdict into the other.
+    unresolved = _unresolved_record(requested_key="ACME", state="UNRESOLVED")
+    conflicting = _unresolved_record(requested_key="ACME", state="CONFLICTING")
+    assert unresolved["record_id"] != conflicting["record_id"]
+
+
+def test_blocker1_validator_rejects_alias_derived_record_id():
+    # Composer and validator must share ONE derivation. A record whose id was
+    # minted from the old alias formula must now be rejected by K3D_R082.
+    record = _resolved_record(requested_key="ACME")
+    legacy = hashlib.sha256(
+        f"{record['source_event']['event_id']}\n{record['target']['requested_key']}\n{record['asof']}"
+        .encode("utf-8")
+    ).hexdigest()[:16]
+    forged = copy.deepcopy(record)
+    forged["record_id"] = f"eph1:{legacy}"
+    forged = _rehash(forged)
+    assert "K3D_R082" in _codes(validate_hypothesis(forged))
+
+
+def test_blocker1_identity_is_deterministic_and_schema_shaped():
+    # Same canonical inputs -> byte-identical id, always; and the frozen
+    # record_id pattern is unchanged by this repair.
+    pattern = load_hypothesis_schema()["properties"]["record_id"]["pattern"]
+    for record in (_resolved_record(), _unresolved_record(),
+                   _unresolved_record(state="CONFLICTING")):
+        again = record["record_id"]
+        assert re.fullmatch(pattern, again), f"{again} violates frozen record_id pattern"
+    assert _resolved_record()["record_id"] == _resolved_record()["record_id"]
+    assert _unresolved_record()["record_id"] == _unresolved_record()["record_id"]
+
+
+def test_blocker1_event_and_asof_remain_identity_inputs():
+    # The repair narrows the TARGET component only; event and cutoff still
+    # separate distinct research objects.
+    base = _resolved_record(event_id="evt-ident-0001", asof=ASOF)
+    other_event = _resolved_record(event_id="evt-ident-0002", asof=ASOF)
+    # compiled_at must not precede its own cutoff (K3D_R062), so it moves with asof.
+    other_asof = _resolved_record(event_id="evt-ident-0001", asof="2026-08-21",
+                                  compiled_at="2026-08-21T04:00:00Z")
+    assert base["record_id"] != other_event["record_id"]
+    assert base["record_id"] != other_asof["record_id"]

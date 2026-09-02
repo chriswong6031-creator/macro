@@ -32,7 +32,7 @@
     "DNR:KILL-CAUSAL-DAG-ALPHA"
   ],
   "compiled_at": "2026-08-20T04:00:00Z",
-  "content_sha256": "605edb1ca5c0d8969b28fae4b69eefc1738810788c591d8c373b0f473f6af777",
+  "content_sha256": "faf46a76862f68acc0d1abbdbce416189a22bfd8ee5c5cd0d5320d2db88ae518",
   "economic_share": null,
   "expiry": {
     "note": "Review after next quarterly filing.",
@@ -76,7 +76,7 @@
     "predicted_operating_direction": null,
     "state": "abstained"
   },
-  "record_id": "eph1:e545400879b0570b",
+  "record_id": "eph1:585fa2ae1f6abead",
   "relationship_paths": [
     {
       "asof": "2026-08-20",

@@ -207,8 +207,71 @@ def content_sha256(record: dict) -> str:
     return hashlib.sha256(canonical_bytes(record)).hexdigest()
 
 
-def derive_record_id(event_id: str, requested_key: str, asof: str) -> str:
-    digest = hashlib.sha256(f"{event_id}\n{requested_key}\n{asof}".encode("utf-8")).hexdigest()
+# Domain tag for the identity pre-image. It is hashed with the payload, so an id
+# derived here can never coincide with one minted by the superseded alias-only
+# formula for the same event/target/cutoff.
+_RECORD_ID_DOMAIN = "k3d.record_id/v2"
+
+# Namespace tags. These are hashed, not emitted: the record_id wire format stays
+# the frozen "^eph1:[0-9a-f]{16}$". They keep canonical and fail-closed identity
+# in provably disjoint spaces.
+_ID_NS_RESOLVED = "resolved"
+_ID_NS_NOT_CANONICAL = "identity_not_canonical"
+
+
+def derive_target_identity_component(target: Any) -> list[str]:
+    """The identity-bearing component of a K3-D target.
+
+    A RESOLVED target is identified by the canonical Data OS / Stock Identity
+    grain this contract already enforces in K3D_R013/K3D_R014: issuer_id AND
+    security_id, "not issuer_id alone". ``target.requested_key`` is the caller's
+    raw lookup text -- the frozen schema calls it "NEVER an identity by itself"
+    -- so it is provenance only and never decides a resolved identity. Two
+    aliases Data OS resolved to the same issuer/security are therefore ONE
+    logical record.
+
+    Anything Data OS did not resolve fails CLOSED into a separate namespace.
+    Such a record still needs a deterministic id, but it must not be mintable in
+    -- or collidable with -- the canonical space, and it must not pretend the raw
+    alias is canonical. Inside that explicitly non-canonical namespace the
+    request text is the only thing that distinguishes one abstention from
+    another, so it discriminates (two different unresolved counterparties on one
+    event stay two records) while asserting nothing about identity. The
+    resolution state is included so two different fail-closed verdicts about the
+    same alias are never silently merged.
+
+    A target claiming RESOLVED without the full canonical grain also fails
+    closed here; K3D_R013/K3D_R014 report the underlying defect separately.
+    """
+    resolution = target.get("resolution") if isinstance(target, dict) else None
+    resolution = resolution if isinstance(resolution, dict) else {}
+    state = resolution.get("resolution_state")
+    issuer = resolution.get("issuer_id")
+    security = resolution.get("security_id")
+    if (
+        state == "RESOLVED"
+        and isinstance(issuer, str) and issuer
+        and isinstance(security, str) and security
+    ):
+        return [_ID_NS_RESOLVED, issuer, security]
+    requested_key = target.get("requested_key") if isinstance(target, dict) else None
+    return [_ID_NS_NOT_CANONICAL, str(state), str(requested_key)]
+
+
+def derive_record_id(event_id: str, target: Any, asof: str) -> str:
+    """Deterministic logical identity over (source event, canonical target, cutoff).
+
+    Composer and validator both call THIS function over the same record-shaped
+    target, so there is exactly one derivation and no parallel identity mapping.
+    The pre-image is canonical JSON -- the encoding canonical_bytes already uses
+    -- so no field value can forge a component boundary.
+    """
+    payload = json.dumps(
+        [_RECORD_ID_DOMAIN, str(event_id), *derive_target_identity_component(target), str(asof)],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
     return f"eph1:{digest[:16]}"
 
 
@@ -939,10 +1002,11 @@ def validate_hypothesis(record: Any) -> list[Finding]:
     # --- K3D_R08x: deterministic identity.
     source_event = record.get("source_event") if isinstance(record.get("source_event"), dict) else {}
     event_id = source_event.get("event_id")
-    requested_key = target.get("requested_key")
     asof = record.get("asof")
-    if isinstance(event_id, str) and isinstance(requested_key, str) and isinstance(asof, str):
-        expected_id = derive_record_id(event_id, requested_key, asof)
+    # Identity binds the canonical resolved grain, never target.requested_key
+    # (raw caller alias). Same helper the composer uses -- one derivation only.
+    if isinstance(event_id, str) and isinstance(asof, str):
+        expected_id = derive_record_id(event_id, target, asof)
         if record.get("record_id") != expected_id:
             findings.append(
                 _f("K3D_R082", "$.record_id", f"record_id {record.get('record_id')!r} != derived {expected_id!r}")
@@ -1119,15 +1183,19 @@ def compose_hypothesis(
     )
     hypothesis_state = "supported_hypothesis" if not reasons else "abstained"
 
+    # Derive identity from the exact target the record will carry, so composer
+    # and validator hash byte-identical inputs.
+    record_target = {"requested_key": target.get("requested_key"), "resolution": dict(resolution)}
+
     record = {
         "schema": SCHEMA_ID,
         "version": 1,
-        "record_id": derive_record_id(str(source_event.get("event_id")), str(target.get("requested_key")), asof),
+        "record_id": derive_record_id(str(source_event.get("event_id")), record_target, asof),
         "binding_kills": list(BINDING_KILLS),
         "asof": asof,
         "compiled_at": compiled_at,
         "source_event": dict(source_event),
-        "target": {"requested_key": target.get("requested_key"), "resolution": dict(resolution)},
+        "target": record_target,
         "generator_admissions": admissions,
         "relationship_paths": g1_legs,
         "similarity_evidence": g2_legs,
