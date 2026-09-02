@@ -1,4 +1,5 @@
 ---
+schema: agentos.workstream.v1
 key: EXECUTIVE-ATTENTION-ECONOMICS
 title: Executive Attention Economics — source-attributed cognition allocation frontier
 objective: >
@@ -19,27 +20,27 @@ ambiguity: scoped
 waves:
   - id: F0
     title: Executive Attention Frontier architecture/source-law freeze
-    status: in_progress
+    status: done
     next_action: >
-      Protect Mastermind PR #275 (F0 through controlling consolidated F0G contract) and this
-      Agent OS state after exact current-base/CI review. F0 is SPEC_ONLY / RECORDS_ONLY and
-      creates no live allocator, queue, Wake route, action authority, target transfer,
-      lifecycle transition or Control Room ranking. The current `program` parent is only the
-      existing project-infrastructure grouping used by Control Room/Agent OS; do not edit
-      config/mastermind_programs.yml here. Semantic System Map remains the owner of durable
-      program identity and may later remap this workstream without changing its key.
+      Terminal architecture boundary. Mastermind PR #275 is merged and protected at
+      c544e837d8d704e81f1c7ddfe0ebada830abf3df with F0 through controlling F0G. Macro PR #6690
+      is the sole durable Agent OS projection and must be protected after exact current-base CI
+      review. F0 remains SPEC_ONLY / RECORDS_ONLY and creates no live allocator, queue, Wake route,
+      action authority, target transfer, lifecycle transition or Control Room ranking.
   - id: A1
     title: Pure deterministic Executive Attention Frontier v1 engine
     status: todo
     depends_on: [F0]
     next_action: >
-      BLOCKED_ON_CORRECTED_STEWARD. After OCR-6 Executive Steward PR #228 is corrected,
-      accepted and protected, commission one bounded CTO Sol implementation wave against the
-      controlling F0G contract: explicit valid attention demand + corrected Steward/source-
-      attributed structured context -> deterministic authority x attention-pressure x
+      The source-law gates are clear: controlling F0G is protected through Mastermind PR #275 and
+      the corrected pure Executive Steward is protected through PR #228 at merge
+      dcce6f7ab6efad360f4854d748ad0d65dc9e0f7c. After Macro PR #6690 is protected, fresh-read
+      current protected Mastermind/Macro and commission exactly one bounded CAPACITY_SELECTABLE CTO
+      Sol implementation carrier: explicit valid attention demand plus caller-supplied corrected
+      Steward/source-attributed context -> deterministic authority x attention-pressure x
       serviceability result, exact bundles/projection receipts, genuine partial-order frontier,
-      fairness/concurrent-demand truth and point-in-time evidence semantics. Zero gather side
-      effects, zero mutable queue state, zero target transfer and no LLM priority authority.
+      fairness/concurrent-demand truth and point-in-time evidence semantics. No source effect or
+      QUEUED claim exists until the canonical Capacity/runtime owner binds a receiver.
   - id: A1R
     title: Independent adversarial semantics review
     status: todo
@@ -87,6 +88,12 @@ waves:
       suppression, zero semantic suppression, preserved waits, truthful unknowns, exact omission
       receipts, bounded starvation/fairness debt and materially reduced executive scanning/
       interruption with no harmful severe-decision latency regression before default promotion.
+next_action: >
+  Review, current-base join, validate and protect Macro PR #6690 as the sole ten-record Agent OS
+  projection of protected F0G. Then fresh-read current protected Mastermind/Macro and ask the
+  canonical Capacity/runtime owner to bind exactly one bounded A1 implementation carrier using the
+  frozen mission and non-goals above. Do not call A1 QUEUED, STARTED or in progress until that live
+  owner records the exact Job/Attempt/Worker/receiver binding.
 decisions:
   - DEC:EXECUTIVE-ATTENTION-FRONTIER-ARCHITECTURE
   - DEC:EXECUTIVE-ATTENTION-CONCURRENT-DEMAND-LAW
@@ -112,7 +119,7 @@ landmines:
   - "Authority class, attention pressure and action serviceability are orthogonal. An urgent-but-blocked demand remains urgent and visible; urgency never grants permission."
   - "Protected mastermind.sol_action_target.v1 is the exact Sol target owner when live evidence is available. Never fall back from a missing root target to workstream owner, seat default or sister Sol; EAF owns no target transfer."
   - "Do not create a persistent attention database, mutable priority queue, scheduler, cursor/age store, retry engine, provider router or second Wake/Inbox owner. EAF is a pure derived read transform."
-  - "OCR-6 PR #228 is the existing Steward implementation carrier with a known grouping-before-filtering correctness repair and a separate sole repair writer. A1 may not fork, bypass or collide with that repair."
+  - "The corrected Executive Steward from protected Mastermind PR #228 is the canonical federated read seam. A1 may consume its caller-supplied result but may not fork, bypass, gather inside, or copy its identity/conflict resolver."
   - "EAF admits explicit valid attention demand; do not parse next_action/Markdown prose to manufacture demand, authority, deadline, impact, wait or urgency."
   - "`needs_ceo` admits a question to CEO consideration; it does not set urgency, impact or Chairman authority. Free-form urgent/critical language has zero direct priority authority."
   - "Valid Agent OS waits are intentional state. A future review boundary suppresses false aging; overdue means due for review, not deletion of wait history."
@@ -140,42 +147,36 @@ do_not_redo:
 
 ## Current controlling architecture
 
-The controlling implementation contract is F0G:
+The controlling implementation contract is protected F0G at Mastermind merge
+`c544e837d8d704e81f1c7ddfe0ebada830abf3df`:
 
 `explicit valid demand -> authority requirement -> source-backed attention pressure -> independent serviceability -> exact root/projection relation -> genuine partial-order frontier -> local context/fairness service -> read-only Control Room / Chat-native projection`.
 
 V1 attention classes are `INTERRUPT_NOW`, `FOCUS_NOW`, `BATCH_NEXT`, `AUTONOMOUS_CONTINUE`,
-`VALID_WAIT`, and `NON_ACTIONABLE`. `RECONCILE_FIRST` is superseded as a mutually-exclusive canonical
+`VALID_WAIT`, and `NON_ACTIONABLE`. `RECONCILE_FIRST` is not a mutually-exclusive canonical
 attention class: reconciliation/target/effect problems are represented independently by
-`serviceability=BLOCKED|UNKNOWN` plus typed reasons, so urgent-but-blocked work remains in interrupt
-pressure. `COVERED_BY_BUNDLE` is a projection relation, not an attention class.
+`serviceability=BLOCKED|UNKNOWN` plus typed reasons, so urgent-but-blocked work remains visible.
+`COVERED_BY_BUNDLE` is a projection relation, not an attention class.
 
-Within an authority partition, grounded demand is compared by source-backed time/window pressure,
-actual impact, reversibility, exact dependency-unblock leverage, active resource burn, autonomy
-remaining, information/wait option, evidence/freshness, source-backed ready age, context affinity
-and conditional source-owned Cost of Delay. Unknown optional factors remain unknown; no global
-scalar or hidden total order is allowed.
+Within an authority partition, grounded demand is compared only with source-backed factors. Unknown
+optional factors remain unknown; missing load-bearing authority/identity/effect truth blocks or
+degrades serviceability. No global scalar or hidden total order is allowed.
 
-The compact frontier always exposes every independent interrupt root after exact fan-in.
-Non-emergency batching uses exact context/root relations plus a source-backed oldest-ready fairness
-sentinel. Multiple independent interrupts expose congestion; overload is proven only with actual
-window/service-capacity facts.
+## Current dependency and admission boundary
 
-## Current dependency
+Both architecture/source prerequisites are protected: F0G through Mastermind PR #275 and the
+corrected pure Executive Steward through PR #228. This clears the **source-law prerequisite** for
+A1; it does not admit execution, bind a receiver, or prove production. Macro PR #6690 must first be
+protected so a fresh session can recover the exact workstream, laws and handoff without this chat.
 
-Mastermind OCR-6 Executive Steward PR #228 remains `BUILT_NOT_PROVEN /
-KNOWN_CORRECTNESS_BLOCKER / PRODUCTION_INERT` at the latest accepted F0 reconciliation unless newer
-canonical GitHub proof supersedes it. A1 cannot consume that source seam until its grouping/filter
-integrity repair is reviewed, accepted and protected.
-
-Protected Mastermind `28d365c...` also contains `mastermind.sol_action_target.v1` Stage A as
-`BUILT_NOT_PROVEN / PRODUCTION_INERT`. EAF consumes its exact target contract when episode/live
-evidence is actually available but never treats code existence as a live action target or performs
-Stage-B transfer.
+A1 must consume existing owner-native immutable facts through the protected Steward composition. It
+may not gather, persist source state, invent demand from prose, copy Steward identity resolution, or
+create a second action/lifecycle/placement plane.
 
 ## Current placement state
 
-No implementation receiver is bound by this record. A1 is ordinary `CAPACITY_SELECTABLE` bounded
-work after its gates clear. Preferred avenue is `CTO Sol`; routine placement belongs to the current
-Capacity/runtime owner. This workstream must not ask the Chairman to choose a numbered account or
-broadcast an OPEN_PICKUP merely because placement is not yet available.
+No implementation receiver, Job, Attempt or Worker is bound by this record. A1 is ordinary
+`CAPACITY_SELECTABLE` bounded implementation after the durable F0 projection is protected. Preferred
+avenue is `CTO Sol`; routine placement belongs to the current Capacity/runtime owner. This workstream
+must not ask the Chairman to choose a numbered account or broadcast an OPEN_PICKUP merely because
+placement is not yet available.
