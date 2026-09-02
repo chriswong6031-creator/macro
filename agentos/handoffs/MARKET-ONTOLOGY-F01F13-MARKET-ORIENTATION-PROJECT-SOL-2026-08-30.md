@@ -89,25 +89,28 @@ unverified:
     what_would_verify: >
       MOR-3 content census, duplicate/alias/adversarial review, public rendering scan, and deployed EN/ZH browser proof.
 unresolved:
-  - "F00B #6609 must land durably before this child is commissioned under the accepted sequence."
+  - "RESOLVED 2026-09-02: F00B #6609 landed durably (MERGED 2026-08-30T20:56Z, commit 8c92f747); the commissioning precondition is satisfied."
   - "The exact lawful premarket schedule and minimum source-currentness set require Project-Sol archaeology."
-  - "No current exact Pro Project-Sol receiver is assigned; ordinary unbound state is WAITING_CAPACITY."
+  - "SUPERSEDED 2026-09-02: placement was consumed by Chairman DIRECT_TARGETED delivery of marketontology-premium-research-organism-fable-principal-20260902-sol-001 (Fable Account B principal; PICKUP_ACK/START on carrier C0BTG1BMY8K/1788318581.187819), whose Domain B owns MOR-1/MOR-2/MOR-3 execution under this unchanged freeze. The prepared CHAT_PRO_DEFAULT Project-Sol packet below is preserved as provenance; its placement clauses no longer await delivery."
   - "The GitHub Draft-to-Ready connector currently fails on Repository.fullDatabaseId for command and landing carriers; do not bypass or blind-retry."
   - "The first glossary batch size is not a parity claim; MO-DELTA-011 remains partial until 200+ reviewed production terms exist."
 next_actions:
   - >
-    Preserve this prepared operation as WAITING_CAPACITY while #6609 is nonterminal/unlanded. Do not post
-    a worker-facing OPEN_PICKUP, arm a receiver watcher, or ask the Chairman to choose a quota account.
+    CONSUMED 2026-09-02: #6609 merged 2026-08-30; the WAITING_CAPACITY hold ended when the Chairman
+    directly delivered the MOR execution role (see below) — no OPEN_PICKUP was posted and no quota
+    selection was requested of the Chairman.
   - >
-    After #6609 merges, Program CEO re-pins protected source and Macro main, proves the operation/path/open-PR
-    census, verifies an eligible Pro conversation inside the exact MastermindX project folder, deliberately
-    delivers this packet, and obtains ACK -> WATCH_ARMED|WATCH_UNAVAILABLE -> START.
+    CONSUMED 2026-09-02 (superseded form): placement did not go to a Pro conversation. Chairman
+    DIRECT_TARGETED delivery bound marketontology-premium-research-organism-fable-principal-20260902-sol-001
+    (Fable Account B), which completed PICKUP_ACK -> censuses -> WATCH_ARMED -> START on carrier
+    C0BTG1BMY8K/1788318581.187819 on 2026-09-02.
   - >
-    Project Sol performs the missing current workflow/source/owner archaeology, preserves the architecture
-    freeze, and returns three bounded child packets MOR-1, MOR-2, MOR-3 rather than implementing a mega-PR.
+    The premium-research-organism principal performs the missing current workflow/source/owner archaeology,
+    preserves this architecture freeze, and executes MOR-1, MOR-2, MOR-3 as bounded independently useful
+    waves rather than one mega-PR; production proof gates each row per the freeze.
   - >
-    Program CEO reviews the Project-Sol return, assigns bounded workers through least-scarce lawful avenues,
-    and preserves one operation/carrier/runtime per child through production proof and explicit STOP.
+    Program CEO / Sol retain review and acceptance authority over each MOR wave through the principal's
+    carrier; one operation/carrier/runtime per child through production proof and explicit STOP.
 do_not_redo:
   - "Do not create a second AI brief engine, LLM prompt family, model quota lane, brief JSON store, or general morning truth plane."
   - "Do not publish docs/site_semantics raw or expose internal repository paths, model/provider names, DNR labels, scoring keys, or operator instructions."
@@ -128,8 +131,8 @@ danger_areas:
   - "The prior-close LLM brief can be mistaken for live morning analysis unless visually and semantically separated."
   - "Project Sol can collapse into routine coding instead of producing coherent worker packets and adversarial review."
 prs:
-  - "macro#6609 OPEN/DRAFT — F00B durability prerequisite; exact current state must be re-read at action time."
-  - "macro#6680 OPEN/DRAFT — parent command carrier under HOLD-ON-TRANSITION."
+  - "macro#6609 MERGED 2026-08-30T20:56Z (commit 8c92f747) — F00B durability prerequisite SATISFIED (was OPEN/DRAFT at freeze; re-verified at reconciliation 2026-09-02)."
+  - "macro#6680 MERGED 2026-08-30T20:57Z — parent command carrier transition completed (was OPEN/DRAFT under HOLD-ON-TRANSITION at freeze)."
 decisions:
   - DEC:MARKET-ONTOLOGY-MARKET-ORIENTATION-PROJECTION-2026-08-30
   - DEC:MARKET-ONTOLOGY-GRANULAR-FULL-PARITY-BEYOND-PARITY-RATCHET
