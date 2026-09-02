@@ -34,7 +34,7 @@
     "record_id": {
       "type": "string",
       "pattern": "^eph1:[0-9a-f]{16}$",
-      "description": "Deterministic identity: sha256 over (source_event.event_id, target.requested_key, asof), first 16 hex chars. Same inputs -> same record_id, always."
+      "description": "Deterministic identity: sha256 over (domain tag, source_event.event_id, the canonical target identity component, asof), first 16 hex chars. For resolution_state=RESOLVED the target component is the canonical (issuer_id, security_id) tuple already required by K3D_R013/K3D_R014, so two aliases resolving to the same issuer/security yield the SAME record_id; target.requested_key is provenance and never determines a RESOLVED identity. Every other resolution_state falls closed into a separate noncanonical/request namespace discriminated by (resolution_state, requested_key). That discriminator separates abstention REQUESTS only: it is never canonical entity/security identity, a join key, an owner lookup, a promotion key, proof that two aliases are distinct entities, or a substitute for Data OS resolution, and the typed resolution state plus original provenance are preserved so a later lawful resolution supersedes rather than launders it. Same canonical inputs -> same record_id, always."
     },
     "binding_kills": {
       "const": [

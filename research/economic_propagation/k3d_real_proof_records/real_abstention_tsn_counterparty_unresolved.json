@@ -1,7 +1,7 @@
 {
   "schema": "economic_propagation.propagation_hypothesis/v1",
   "version": 1,
-  "record_id": "eph1:e9bad2ac4cbed771",
+  "record_id": "eph1:24bc62bffae5e3de",
   "binding_kills": [
     "DNR:KILL-PSS-SR2-PEER-DIFFUSION",
     "DNR:KILL-PSS-SR3-PARTICIPATION",
@@ -99,5 +99,5 @@
     ]
   },
   "economic_share": null,
-  "content_sha256": "ffe8b2c830dc00f059897ca5514969e2f84735b377aae53951e2c48b46d41941"
+  "content_sha256": "fe7b0871f9c4861b8dbdf8e37be37171ebd6f054f1d64ffa5aa97139d1f0f8cb"
 }

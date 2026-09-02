@@ -6,6 +6,27 @@
 **Carrier:** one implementation branch `claude/k3d-economic-propagation`; no other K3-D carrier exists (open-PR census run at pickup: none matched)
 **Authority of this document:** NONE. Dated freeze/adoption receipt. Canonical ownership stays in `config/mastermind_programs.yml`, WS records and DNR.
 
+> **SUPERSESSION NOTICE — 2026-09-02, record identity re-derivation (this freeze is corrected, not rewritten).**
+> Operation `alpha-k3d-alias-identity-repair-successor-20260902-sol-001` repaired the Sol blocker in which
+> canonical `record_id` was derived from `target.requested_key` (raw caller alias) rather than the resolved
+> identity grain. Identity now binds the canonical `(issuer_id, security_id)` tuple already required by
+> `K3D_R013`/`K3D_R014` for `resolution_state=RESOLVED`; non-RESOLVED typed abstentions fall closed into a
+> separate noncanonical/request namespace. The `^eph1:[0-9a-f]{16}$` wire format is unchanged.
+>
+> The two committed real proof records below were therefore **mechanically re-derived — identity and content
+> hash only**. Every evidentiary field (source event, clocks, owner refs, resolution state, requested_key
+> provenance, graph states, abstention reasons, alternatives) is byte-identical to the frozen originals, and
+> both still validate with zero findings. The original identifiers are retained here as superseded historical
+> evidence; they are NOT withdrawn and the receipts they described are the same receipts.
+>
+> | Proof record | superseded `record_id` | current `record_id` | superseded `content_sha256` | current `content_sha256` |
+> |---|---|---|---|---|
+> | `real_abstention_tsn_adm_no_graph1.json` | `eph1:00af09cb1ce455b9` | `eph1:c3850b80bd98711c` | `0a1db4f3…` | `f3cd0625…` |
+> | `real_abstention_tsn_counterparty_unresolved.json` | `eph1:e9bad2ac4cbed771` | `eph1:24bc62bffae5e3de` | `ffe8b2c8…` | `fe7b0871…` |
+>
+> Authorized by the Sol PATH ruling on carrier `C0BSBM78V1N/1788343687.738349` (durable copy: #6514 comment
+> `5508382053`), which required this supersession be history-preserving rather than a silent rewrite.
+
 ---
 
 ## 0. Acceptance gates (§0 per spawn-handoff law)
@@ -79,10 +100,10 @@ Reads executed against `origin/main` blobs (`git show origin/main:<path>`; spars
 - `data/theme_graph/edges.parquet`: 12,172 rows, types MEMBER_OF/EXPRESSES/TRACKS only — **zero Graph-1-type rows have ever been written**, re-confirming D0/c0 past its pin.
 
 **Proof record 1 — honest no-Graph-1 abstention (the flagship refusal):**
-`k3d_real_proof_records/real_abstention_tsn_adm_no_graph1.json` (`record_id eph1:00af09cb1ce455b9`, `content_sha256 0a1db4f3…`). Source event: real TSN 8-K `0001140361-26-034195` (filed 2026-08-24, items 1.01/2.03/8.01, `_first_seen 2026-08-25T00:02:11Z`). Target `co:us:ADM`, RESOLVED to `ISS:US-XNYS-ADM` (join `master_inception_exact`, asof 2026-08-18). Admitted by `gen_theme_membership` on the real shared edges `member_of:co:us:{TSN,ADM}->ltheme:finviz:agricultureprocessing@2026-06-27` (era=reconstruction, belief 2026-08-15). Result: `graph_states = {graph_1: unknown_unavailable, graph_2: present, graph_3: absent}`, `hypothesis_state=abstained`, reasons `[no_graph1_evidence]`, mechanism abstained-null. A naive system reads "same agriculture theme + an event" as read-through; the contract emits a complete research object that refuses the economic claim. Zero validator findings.
+`k3d_real_proof_records/real_abstention_tsn_adm_no_graph1.json` (`record_id eph1:c3850b80bd98711c`, `content_sha256 f3cd0625…` — superseding `eph1:00af09cb1ce455b9` / `0a1db4f3…`, see the supersession notice above). Source event: real TSN 8-K `0001140361-26-034195` (filed 2026-08-24, items 1.01/2.03/8.01, `_first_seen 2026-08-25T00:02:11Z`). Target `co:us:ADM`, RESOLVED to `ISS:US-XNYS-ADM` (join `master_inception_exact`, asof 2026-08-18). Admitted by `gen_theme_membership` on the real shared edges `member_of:co:us:{TSN,ADM}->ltheme:finviz:agricultureprocessing@2026-06-27` (era=reconstruction, belief 2026-08-15). Result: `graph_states = {graph_1: unknown_unavailable, graph_2: present, graph_3: absent}`, `hypothesis_state=abstained`, reasons `[no_graph1_evidence]`, mechanism abstained-null. A naive system reads "same agriculture theme + an event" as read-through; the contract emits a complete research object that refuses the economic claim. Zero validator findings.
 
 **Proof record 2 — identity abstention before inference (entity-grain corrected per review MINOR-2):**
-`k3d_real_proof_records/real_abstention_tsn_counterparty_unresolved.json` (`record_id eph1:e9bad2ac4cbed771`, `content_sha256 ffe8b2c8…`). Target = the filing's actual counterparty string "Bank of New York Mellon Trust Company". The listed parent node `co:us:BNY` **is RESOLVED** (`ISS:US-XNYS-BNY`) on the same surface — but no owner row binds this trust-company subsidiary **string** to that parent, and mapping the subsidiary string to the parent issuer (or its pre-2025 symbol BK) is an entity-grain guess the contract forbids. Verdict: `UNRESOLVED` → typed abstention `[unresolved_identity]` with zero evidence legs (a financing trustee is not a commercial counterparty anyway — recorded as the alternative explanation). Zero validator findings.
+`k3d_real_proof_records/real_abstention_tsn_counterparty_unresolved.json` (`record_id eph1:24bc62bffae5e3de`, `content_sha256 fe7b0871…` — superseding `eph1:e9bad2ac4cbed771` / `ffe8b2c8…`, see the supersession notice above). Target = the filing's actual counterparty string "Bank of New York Mellon Trust Company". The listed parent node `co:us:BNY` **is RESOLVED** (`ISS:US-XNYS-BNY`) on the same surface — but no owner row binds this trust-company subsidiary **string** to that parent, and mapping the subsidiary string to the parent issuer (or its pre-2025 symbol BK) is an entity-grain guess the contract forbids. Verdict: `UNRESOLVED` → typed abstention `[unresolved_identity]` with zero evidence legs (a financing trustee is not a commercial counterparty anyway — recorded as the alternative explanation). Zero validator findings.
 
 **Full positive composition:** honestly **unavailable on current real data** — the estate has no live role-specific firm-level Graph-1 row anywhere (receipts above). Per the commission ("do not widen scope to manufacture a full positive example"), the positive path is proven by the synthetic golden fixture in the test suite (`disclosed_customer_supplier` + `disclosed_role_specific` → `supported_hypothesis` with operating-direction mechanism), and the data gap is left visible: the first real positive requires GMI W4 / GR3b role-specific extraction / GovRev CATALYST_OF to land a role-specific owner row.
 

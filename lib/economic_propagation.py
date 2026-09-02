@@ -242,6 +242,16 @@ def derive_target_identity_component(target: Any) -> list[str]:
 
     A target claiming RESOLVED without the full canonical grain also fails
     closed here; K3D_R013/K3D_R014 report the underlying defect separately.
+
+    Sol ruling 2026-09-02 (carrier C0BSBM78V1N/1788343687.738349, #6514 comment
+    5508382053) binds the non-canonical branch: the (resolution_state,
+    requested_key) discriminator separates abstention REQUESTS only. It is never
+    canonical entity/security identity, a join key, an owner lookup, a promotion
+    key, proof that two aliases are distinct entities, or a substitute for Data
+    OS resolution. The typed resolution state and the original requested_key
+    provenance are both preserved on the record, so a later lawful resolution
+    SUPERSEDES this identity rather than laundering the alias into a canonical
+    one.
     """
     resolution = target.get("resolution") if isinstance(target, dict) else None
     resolution = resolution if isinstance(resolution, dict) else {}
