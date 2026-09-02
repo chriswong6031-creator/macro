@@ -73,9 +73,9 @@ Collision notes: #4729 (BOTTOM WATCH shelf) + #4735 (icon sweep) own `templates/
 6. **Signal-date family:** blast-radius report for the 3-grid reconciliation (absolute anchor + last-session label, both repos, ANCHOR_ERA bump per R-SQ3) per `SQ_BUCKET_LABEL_AS_DATE_FINDINGS_2026-08-07.md` §4; chart markers stop back-dating; golden contract becomes satisfiable. Cross-repo — its own program.
 7. **FRESH_TICKS admission and washout cohorts:** `DNR:KILL-FRESH-TICKS-WINDOW` closed *widening* on the general population; whether a washout-turn cohort behaves differently is exactly the "regime-store evidence + fresh prereg" its re-open clause names. Accrue the cohort via W1-D's ledger first; propose nothing until it has bodies.
 
-## §5 SESSION-CHAIN PROTOCOL
+## §5 WAVE PROTOCOL
 
-One wave per session; this doc is the durable state. Each session: read §0 gates → check ACTIVE_BUILD_MAP + open PRs for the act-board surface → build → update the wave table with PR numbers and measured outcomes → handoff. Do not grind an orchestrator past ~250k context; checkpoint here instead.
+This doc is the durable state; a session may take one wave or several (the one-wave-per-session boundary was repealed 2026-09-01, `DEC:SESSION-LENGTH-IS-NOT-A-COST-CONTROL`). Per wave: read §0 gates → check ACTIVE_BUILD_MAP + open PRs for the act-board surface → build → update the wave table with PR numbers and measured outcomes → append the handoff before the next wave. Keep the orchestrator's context small by delegating execution, not by cutting the session short; checkpoint here whenever context is genuinely heavy.
 
 ## §6 ANTICIPATION PROGRAM (operator command 2026-08-07; ruling recorded 2026-08-08)
 

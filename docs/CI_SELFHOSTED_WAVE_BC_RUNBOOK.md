@@ -20,6 +20,7 @@ truncated pack after `early EOF` / `invalid index-pack`.
 |---|---|---|---|
 | PC/WSL | `pc-ci-1` | `self-hosted,ci-linux-canary`; add `ci-linux` only after one-slot acceptance | initial CI canary |
 | PC/WSL | `pc-ci-2..3` | disabled/pending during one-slot; `self-hosted,ci-linux` after acceptance | bounded CI capacity |
+| PC/WSL | `pc-ci-4` | **not registered.** Code-pending only; see "Fourth slot" below | pending capacity |
 | PC/WSL | `pc-render-1` | `self-hosted,Linux,X64,render-linux` | render-reserved; never gets a CI label |
 | M1 Max | `m1-nightly-1` | `self-hosted,m1-nightly` | diagnostic-only in this wave |
 | M1 Max | `m1-nightly-2` | `self-hosted,m1-theta` | no-op M1 canary |
@@ -169,6 +170,198 @@ It reports only runner name, hostname, architecture, OS, CPU count, memory, disk
 runner root, disk-guard status, and the three exact service-to-root-to-registration
 mappings with distinct live listener PIDs. It performs no checkout, reads no secret,
 and publishes nothing.
+
+## Fourth slot and the aggregate CI resource envelope
+
+Capability state: **`FOURTH_SLOT_CODE_SUBSTRATE = BUILT_NOT_HOST_PROVEN`.**
+
+Read that literally. The repository now contains everything needed to run four PC
+CI candidates inside one enforced envelope, and **none** of it is installed. There
+is no `pc-ci-4` registration, no `/opt/mastermind-ci/runner-4` on disk, no
+`mastermind-ci.slice` unit on the host, and no fourth listener. Live capacity is
+still exactly three slots, production trusted execution is still `max-parallel: 3`,
+and `ci-linux` is still carried by exactly `pc-ci-1..3`.
+
+### What "pending" means in policy
+
+`.github/runner-policy.yml` splits live inventory from pending architecture:
+
+```yaml
+pool_topology:
+  pc-ci:
+    slots: 3                      # live and routable
+    pending_slots: 1              # architecture only
+    pending_carriers: [pc-ci-4]
+    pending_labels: [self-hosted, Linux, X64]
+```
+
+Rule **R14** in `scripts/check_runner_policy.py` enforces the split and fails CI on
+every way it could quietly collapse: a fifth slot, an invented carrier name, a
+pending block on any other pool, a pending label outside platform identity (so
+`ci-linux` cannot be pre-declared), and — the activation act itself — `pc-ci-4`
+appearing in any `carried_by` roster. `pending_labels` deliberately omits `ci-linux`
+so the fourth runner can be bootstrapped **online but unroutable**.
+
+### The envelope
+
+`ops/runner-host/pc/mastermind-ci.slice.template`:
+
+| Directive | Value | Meaning |
+|---|---|---|
+| `CPUQuota` | `800%` | eight vCPU-equivalents of the 16-vCPU guest |
+| `CPUQuotaPeriodSec` | `100ms` | enforcement granularity |
+| `MemoryHigh` | `10G` | reclaim/throttle threshold — shows up as PSI, not as a kill |
+| `MemoryMax` | `12G` | hard ceiling of the 44-GiB guest |
+| `MemorySwapMax` | `2G` | swap ceiling |
+
+`AllowedCPUs`, `CPUWeight`, `IOWeight` and `TasksMax` are deliberately unset in this
+wave; their counters are receipted so a later carrier can set them from evidence.
+**Changing any frozen value above requires a new measured carrier, not an edit.**
+The WSL guest allocation (16 CPU / 44 GiB / 8 GiB swap) is unchanged by this wave.
+
+### Render is outside the slice
+
+This is the property the whole design exists to preserve. `pc-render-1` and every
+remote render roster entry keep their own service, labels, cgroup and resource
+semantics. The slice sets no `KillMode`, so CI's `KillMode=control-group` cannot
+leak onto a render unit. `tests/test_ci_canary_tools.py` proves from source that
+`actions-runner-ci.service.template` is the *only* checked-in unit carrying
+`Slice=mastermind-ci.slice`, and the canary's `render-reservation-probe` runs for
+both `slots=3` and `slots=4` so a four-wide run must still show the renderer
+independently routable.
+
+### Evidence, and what refuses
+
+`scripts/monitor_ci_host_resources.py` derives each candidate's own cgroup from
+`/proc/self/cgroup` and binds it to `/mastermind-ci.slice/<unit>.service` by exact
+path component. A candidate in `system.slice`, in a look-alike slice, or with
+unreadable files yields `refused`/`degraded` **with no metric values at all**. It
+never substitutes host-global numbers for slice numbers, because a green produced
+from the wrong cgroup reads downstream as proof. `slice_metrics()` in
+`scripts/capture_ci_canary_receipt.py` reports aggregate numbers only when every
+sample in the window carried status exactly `bound` **and** every sample named the
+same cgroup — a candidate that moved mid-run has no honest aggregate, because
+first/last deltas would straddle two cgroups. Any other status, including an
+unrecognised one, is treated as non-bound.
+
+A field absent at the START of the window yields a `null` delta, never
+`last - 0`: presenting a cgroup lifetime total as a window delta would corrupt
+exactly the inputs the acceptance rule
+`nr_throttled_delta / nr_periods_delta <= 0.25` consumes. A sample missing any of
+`cpu.stat`, `memory.current` or `memory.events` is `degraded`, not `bound`, because
+those three are what every acceptance threshold is computed from — otherwise a check
+for "zero `memory.events` delta" reads a missing file as satisfied. `memory.peak` is
+reported as `memory_peak_bytes_cgroup_lifetime` because it is a cgroup-lifetime
+high-water mark, not a run-local peak.
+
+Guard thresholds are versioned separately from the slice ceilings
+(`mastermind.ci_resource_guard_thresholds.v1`) so retuning a refusal threshold never
+reads as a change to the measured envelope. `--preflight-profile four-slot-canary`
+adds the stricter pre-diagnostic gate: `MemAvailable >= 20 GiB`, swap `<= 512 MiB`,
+memory/IO PSI `full avg10 < 0.10`. Steady state for `pc-ci-1..3` is unchanged.
+
+Binding is not enforcement, and the guard says so. systemd **auto-creates an
+undefined slice**, so a unit carrying `Slice=mastermind-ci.slice` binds cleanly even
+when no slice file was ever installed — it simply inherits no limits, and `cpu.max`
+reads `max 100000`. A capacity diagnostic run against an unenforced envelope measures
+nothing while looking bound and green. `--preflight-profile four-slot-canary`
+therefore refuses an unlimited `cpu.max`. Steady state deliberately does **not** gate
+on it: `pc-ci-1..3` run today with no slice installed at all, and refusing them would
+strand every live slot.
+
+The memory floor stays a **guest-wide** `MemAvailable` read on purpose: the renderer
+lives outside the slice, so a slice-local read would show a nearly idle cgroup while
+the guest was starved, and would admit a CI job that then starves render.
+
+Note the cumulative-vs-delta distinction, which is a real trap. **`memory.events`
+gates nothing.** Every field in it is cumulative over the slice lifetime, and
+cgroup-v2 defines `high` as `MemoryHigh` reclaim, `max` as "usage was ABOUT TO go
+over max", and `oom` as "allocation was ABOUT TO fail" — none of them is a kill.
+`oom_kill` is a real kill but is cumulative too, so a prestart guard cannot tell one
+three weeks ago from one a second ago.
+
+Gating a start on any of them strands the slot permanently after a single transient
+event: with `Restart=always`, `RestartSec=5` and `StartLimitIntervalSec=0`, the unit
+enters an unbounded ~305s refuse loop that never reaches `failed`, so nothing alerts.
+The guard therefore receipts these counters and refuses on none of them. The plan's
+"zero `high`/`max`/`oom`/`oom_kill` **delta**" is a per-run acceptance criterion over
+one window, owned by the receipt reducer, which has both endpoints and can subtract.
+
+### Forward-compatible receipt identities
+
+The receipt carries five additive identity fields so the **existing** contract can
+express four-slot and elastic-capacity evidence later without a second receipt
+format or store:
+
+| Field | Meaning |
+|---|---|
+| `execution_profile_id` | stable identity of the reviewed persistent-PC execution profile |
+| `admission_policy_version` | identity of the guard's admission thresholds |
+| `workflow_job_queued_at` | optional; when the job entered the queue |
+| `runner_job_started_at` | optional; when a runner picked it up |
+| `queue_wait_seconds` | **derived**, never supplied |
+
+The schema stays `ci.selfhosted_canary_receipt.v2`. Every pre-existing key keeps its
+exact name and meaning, a historical P1/P2/P4 receipt simply lacks these keys, and the
+comparator's parity allowlist does not read them — so no migration is needed and
+hosted-vs-self-hosted comparison is untouched.
+
+`queue_wait_seconds` exists **only** when both timestamps are present, parseable and
+correctly ordered. Absent, unparseable, or out-of-order all yield `null` — never `0`,
+and never a negative duration. An observed `0.0` (picked up within the same second) is
+a real measurement and stays distinct from `null`. Queue wait measures time *before*
+the runner picked the job up, and is computed from nothing else, so it can never be
+folded into the checkout / dependency / test / wall execution timings.
+
+`admission_policy_version` is deliberately **separate from the slice ceilings**. Its
+digest is computed over the guard's threshold profiles alone; the envelope lives in
+`mastermind-ci.slice.template` and is not an input. Retuning a refusal threshold and
+changing the measured envelope are different decisions, and one identity for both
+would make the first look like the second.
+
+C3R-A populates none of this in production: it obtains no live GitHub job metadata.
+The requirement it satisfies is that the contract can carry the values truthfully when
+a later wave does.
+
+### The security-sensitive stop
+
+Installation is **not** in this carrier and must not be performed from an unmerged
+branch. The first security-sensitive act is the organization runner registration and
+group membership for `pc-ci-4`, which requires explicit Chairman/Sol confirmation.
+Never request, paste, print or store a registration token in a PR, issue, receipt,
+terminal transcript or chat; the operator performs any native authorization ceremony.
+
+The later host carrier installs `/etc/systemd/system/mastermind-ci.slice`, replaces
+the `pc-ci-1..3` units from their exact pre-change snapshot at a natural drain,
+creates the sealed `/opt/mastermind-ci/runner-4` root, and registers `pc-ci-4` with
+platform/architecture labels **only** — no `ci-linux` — so roster, service, PID, root
+and cgroup can be proved online but unroutable. Adding `ci-linux` and moving the live
+inventory to four is one separately audited activation act gated on GitHub reporting
+the exact runner online/idle. Only after that is accepted may a further carrier
+change trusted-executor `max-parallel` from 3 to 4.
+
+### Rollback for this code carrier
+
+No host state to roll back: this carrier installs nothing, registers nothing, and
+starts nothing. Reverting the commits restores the three-slot policy declaration,
+the `slots=1|3` canary input, the host-global-only monitor, and the three-root
+cleanup allowlist. `pc-ci-4` was never registered and the slice was never installed,
+so no runner, unit, cgroup, cache, credential or render lane is touched either.
+
+One coupling is worth stating plainly rather than implying it is absent.
+`trusted-ci-executor.yml` copies `select_ci_canary_packs.py`,
+`monitor_ci_host_resources.py` and `capture_ci_canary_receipt.py` into its
+trusted-control directory and runs them on **every production trusted pack** (lines
+182-184, 293, 406, 440). So while this carrier changes no capacity, two of the three
+scripts it edits do execute in production today. On `pc-ci-1..3`, whose cgroup is
+`system.slice`, the new slice sampler returns `refused` with no values and the
+reducer returns `refused`; the effect is additive JSON in the metrics file and the
+receipt, and the host-global `resources` block is byte-identical to before. That is
+also why the correctness of those two scripts was treated as a production concern in
+review rather than a diagnostic-only one.
+
+`ops/runner-host/**` is the genuinely inert part: templates and helpers that no
+running host loads until a later carrier installs them.
 
 ## Rollback
 
