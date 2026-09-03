@@ -1,0 +1,165 @@
+"""engine.flow_observatory.changes — state_log.jsonl (W1 minimal precursor) + change_summary.
+
+``data/flow_observatory/state_log.jsonl`` is the minimal precursor to W3's full
+append-only observations ledger (masterplan §5): one line per valid market session,
+carrying just enough per-theme state to derive rank_change / state_started /
+state_age_sessions / prior_state and the "what changed today" diff going forward, with
+honest "first tracked session" nulls until history accrues.
+
+Advance gate: ``engine.ledger_lane.asia_advance_enabled() or nightly_advance_enabled()``
+— house law, the group_pulse precedent (``engine/group_pulse.py``
+``advance_episode_ledger``): nightly/asia-close are the SOLE advancers of forward
+ledgers; intraday/manual lanes compute and discard. Idempotent per session: a rerun on
+the same session REPLACES that session's own line (never duplicates it); every other
+session's line is left byte-identical.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from engine.ledger_lane import asia_advance_enabled, nightly_advance_enabled
+
+log = logging.getLogger(__name__)
+
+STATE_LOG_REL = Path("flow_observatory") / "state_log.jsonl"
+
+
+def state_log_path(data_root: Path) -> Path:
+    return Path(data_root) / STATE_LOG_REL
+
+
+def advance_enabled() -> bool:
+    return bool(asia_advance_enabled() or nightly_advance_enabled())
+
+
+def read_state_log(data_root: Path) -> list[dict[str, Any]]:
+    """Every readable line, oldest-first. A corrupt line is skipped, never fatal — this
+    file is a derived accelerator for change/rank history, not the system of record."""
+    p = state_log_path(data_root)
+    if not p.exists():
+        return []
+    out: list[dict[str, Any]] = []
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError as e:
+        log.warning("flow_observatory: state_log unreadable (%s)", e)
+        return []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            log.warning("flow_observatory: skipping unparseable state_log line")
+    out.sort(key=lambda r: r.get("session") or "")
+    return out
+
+
+def previous_valid_entry(log_rows: list[dict[str, Any]],
+                         before_session: str | None = None) -> dict[str, Any] | None:
+    """The newest entry strictly before ``before_session`` (or overall newest when
+    ``before_session`` is None) — "the previous valid market session" record."""
+    rows = [r for r in log_rows if r.get("session")]
+    if before_session:
+        rows = [r for r in rows if r["session"] < before_session]
+    if not rows:
+        return None
+    return max(rows, key=lambda r: r["session"])
+
+
+def theme_state_history(theme_id: str, current_quadrant: str, log_rows: list[dict[str, Any]],
+                        current_session: str) -> dict[str, Any]:
+    """{state_started, state_age_sessions, prior_state, note} for one theme (spec §1.3).
+
+    ``state_log`` stores one point-in-time record per session, never a running age, so the
+    age/onset are DERIVED by walking backward from the session immediately before
+    ``current_session`` while the theme's quadrant stays unchanged. No prior line at all
+    (a fresh install, or a theme absent from every logged session) yields the honest
+    "first tracked session" null rather than a manufactured age of 0/1.
+    """
+    rows = sorted((r for r in log_rows if r.get("session") and r["session"] < current_session),
+                  key=lambda r: r["session"], reverse=True)   # newest-first, strictly prior
+    if not rows:
+        return {"state_started": None, "state_age_sessions": None, "prior_state": None,
+                "note": "first tracked session"}
+    prior_rec = (rows[0].get("themes") or {}).get(theme_id)
+    prior_state = prior_rec.get("quadrant") if isinstance(prior_rec, dict) else None
+    started, age = current_session, 1
+    for r in rows:
+        rec = (r.get("themes") or {}).get(theme_id)
+        if not isinstance(rec, dict) or rec.get("quadrant") != current_quadrant:
+            break
+        started, age = r["session"], age + 1
+    return {"state_started": started, "state_age_sessions": age, "prior_state": prior_state,
+            "note": None}
+
+
+def compute_changes(current: dict[str, Any], log_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """``change_summary`` (spec §1.6): transitions + rank movers vs the previous VALID
+    session only (never the most recent calendar day — a lane that skipped a session must
+    not manufacture a phantom transition across the gap it didn't log).
+
+    ``current`` = ``{"session": "...", "themes": {id: {"quadrant","state","vel","rank","abs"}}}``.
+    Missing log -> ALL-NULL + ``"no_previous_snapshot"`` reason; ``material_change`` is
+    ``None`` (unknown), never ``False`` — "no data" and "nothing changed" are different
+    claims and the field must not conflate them (spec §1.6 / §4 missing≠zero law).
+    """
+    session = current.get("session")
+    prev = previous_valid_entry(log_rows, before_session=session)
+    if prev is None:
+        return {"previous_valid_session": None, "material_change": None,
+                "transitions": [], "rank_movers": [], "source_revisions": [],
+                "reason": "no_previous_snapshot"}
+    cur_themes = current.get("themes") or {}
+    prev_themes = prev.get("themes") or {}
+    transitions: list[dict[str, Any]] = []
+    rank_movers: list[dict[str, Any]] = []
+    for tid, crec in cur_themes.items():
+        prec = prev_themes.get(tid)
+        if not isinstance(prec, dict):
+            continue
+        cq, pq = crec.get("quadrant"), prec.get("quadrant")
+        if cq is not None and pq is not None and cq != pq:
+            transitions.append({"id": tid, "from_quadrant": pq, "to_quadrant": cq})
+        cr, pr = crec.get("rank"), prec.get("rank")
+        if cr is not None and pr is not None and abs(cr - pr) >= 3:
+            rank_movers.append({"id": tid, "from_rank": pr, "to_rank": cr, "delta": cr - pr})
+    return {"previous_valid_session": prev.get("session"),
+            "material_change": bool(transitions or rank_movers),
+            "transitions": transitions, "rank_movers": rank_movers,
+            "source_revisions": [], "reason": None}
+
+
+def append_state_log(session: str, entry: dict[str, Any], data_root: Path,
+                     require_lane: bool = True, written_at: str | None = None) -> dict[str, Any]:
+    """Append (or idempotently REPLACE) this session's line.
+
+    Gated on the nightly/asia-close advance lanes — house law, nightly is the sole
+    advancer of forward ledgers (an intraday/manual lane computes and discards).
+    ``require_lane=False`` is the test/backfill seam only, mirroring
+    ``engine.group_pulse.advance_episode_ledger``'s ``require_nightly_lane`` seam.
+    """
+    if require_lane and not advance_enabled():
+        log.info("flow_observatory: state_log advance skipped (off nightly/asia-close lane)")
+        return {"written": False, "reason": "off_ledger_lane", "rows": 0}
+    if not session:
+        return {"written": False, "reason": "no_session", "rows": 0}
+    rows = read_state_log(data_root)
+    rows = [r for r in rows if r.get("session") != session]
+    stamp = written_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    new_row = {"session": session, "written_at": stamp,
+              "themes": entry.get("themes") or {}, "aggregate": entry.get("aggregate") or {},
+              "market_read": entry.get("market_read") or {}}
+    rows.append(new_row)
+    rows.sort(key=lambda r: r["session"])
+    p = state_log_path(data_root)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    text = "\n".join(json.dumps(r, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
+                     for r in rows) + "\n"
+    p.write_text(text, encoding="utf-8")
+    return {"written": True, "rows": len(rows), "path": str(p)}
