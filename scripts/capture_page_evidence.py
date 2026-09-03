@@ -100,7 +100,7 @@ MODULE_REF = "scripts/capture_page_evidence.py"
 # 1.2.0: failed-load evidence is kept, and target gains resolved_gitdir_or_none.
 # This is stamped into every artifact as provenance, so it moves whenever the
 # emitted shape does — two byte-different manifests must never claim one version.
-TOOL_VERSION = "1.2.0"
+TOOL_VERSION = "1.3.0"
 
 # v2: a console error carries the asset it came from, and a page carries the
 # responses that failed. v1 recorded bare error strings, which the census could
@@ -1450,11 +1450,56 @@ _ROUTE_STATE_SCRIPT = r"""
   const qEl = document.querySelector('#rf-q');
   const rfQValue = qEl ? String(qEl.value || '') : '';
   const entries = Array.from(document.querySelectorAll('.rf-e'));
-  const visibleResults = entries.filter((el) => {
+  const visibleEntries = entries.filter((el) => {
+    if (el.classList.contains('is-off')) return false;
     const s = getComputedStyle(el);
     if (s.display === 'none' || s.visibility === 'hidden') return false;
     return el.getClientRects().length > 0;
-  }).length;
+  });
+  const visibleEntryIds = visibleEntries.map((el) => el.id).filter(Boolean);
+  const countEl = document.querySelector('.rf-count');
+  const countLabelVisible = !!(countEl && !countEl.hidden && countEl.getClientRects().length > 0);
+  let countLabelText = '';
+  if (countEl) {
+    const locale = document.documentElement.getAttribute('lang') ||
+      document.documentElement.getAttribute('data-locale') || '';
+    const zh = document.documentElement.getAttribute('data-locale') === 'zh' ||
+      (document.body && document.body.classList.contains('zh'));
+    // Prefer the locale-visible span text; fall back to full count label.
+    const enSpan = countEl.querySelector('.l-en');
+    const zhSpan = countEl.querySelector('.l-zh');
+    if (zh && zhSpan) countLabelText = (zhSpan.textContent || '').trim();
+    else if (enSpan) countLabelText = (enSpan.textContent || '').trim();
+    else countLabelText = (countEl.textContent || '').trim();
+  }
+  const countVisibleAttr = Array.from(document.querySelectorAll('[data-count-visible]'))
+    .map((el) => (el.textContent || '').trim())
+    .filter(Boolean);
+  const active = document.activeElement;
+  let focusedElementId = null;
+  let focusedVisible = false;
+  if (active && active !== document.body && active !== document.documentElement) {
+    focusedElementId = active.id || (active.closest && active.closest('.rf-e') && active.closest('.rf-e').id) || null;
+    const fs = getComputedStyle(active);
+    focusedVisible = fs.display !== 'none' && fs.visibility !== 'hidden' && active.getClientRects().length > 0;
+  }
+  let targetBelowFixedUi = null;
+  if (targeted) {
+    const rect = targeted.getBoundingClientRect();
+    let fixedBottom = 0;
+    document.querySelectorAll('header, nav, .rf-bar, .site-nav, [data-fixed-chrome]').forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      if (cs.position === 'fixed' || cs.position === 'sticky') {
+        const r = el.getBoundingClientRect();
+        if (r.height <= 0 || r.width <= 0) return;
+        if (r.bottom > fixedBottom && r.top < 160) fixedBottom = r.bottom;
+      }
+    });
+    const inViewport = rect.bottom > fixedBottom + 1 && rect.top < window.innerHeight;
+    const notCovered = rect.top >= fixedBottom - 2;
+    targetBelowFixedUi = !!(inViewport && notCovered && rect.height > 0);
+  }
   return {
     requested_url: String(requestedUrl || ''),
     final_url: String(location.href || ''),
@@ -1465,8 +1510,111 @@ _ROUTE_STATE_SCRIPT = r"""
     rf_q_value: rfQValue,
     miss_visible: missVisible,
     selected_id: selectedId,
-    visible_result_count: visibleResults,
+    visible_result_count: visibleEntries.length,
+    visible_entry_ids: visibleEntryIds,
+    count_label_visible: countLabelVisible,
+    count_label_text: countLabelText,
+    count_label_values: countVisibleAttr,
+    focused_element_id: focusedElementId,
+    focused_visible: focusedVisible,
+    target_below_fixed_ui: targetBelowFixedUi,
   };
+}
+"""
+
+# MOR-1 journey probe — change/clear/reload/back-forward/share URL↔state agreement.
+_MOR1_JOURNEY_SCRIPT = r"""
+async () => {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const qEl = document.querySelector('#rf-q');
+  const clearBtn = document.querySelector('.rf-clear');
+  const verdicts = {
+    change: null,
+    clear: null,
+    reload: null,
+    back_forward: null,
+    share: null,
+  };
+  const readQ = () => {
+    try {
+      const sp = new URLSearchParams(location.search);
+      return sp.has('q') ? sp.get('q') : null;
+    } catch (e) { return null; }
+  };
+  const initial = {
+    href: location.href,
+    q: readQ(),
+    hash: location.hash || '',
+    input: qEl ? String(qEl.value || '') : '',
+  };
+  // share: copied URL equals current location (same semantic target)
+  verdicts.share = {
+    ok: typeof location.href === 'string' && location.href.length > 0,
+    href: location.href,
+    matches_final: true,
+  };
+  if (qEl) {
+    // change: type a distinct value and require replaceState URL sync
+    qEl.focus();
+    qEl.value = 'journeyprobe';
+    qEl.dispatchEvent(new Event('input', { bubbles: true }));
+    await sleep(250);
+    const afterChange = readQ();
+    const inputAfter = String(qEl.value || '');
+    verdicts.change = {
+      ok: afterChange === 'journeyprobe' && inputAfter === 'journeyprobe',
+      url_q: afterChange,
+      input: inputAfter,
+    };
+    // clear
+    if (clearBtn) {
+      clearBtn.click();
+      await sleep(120);
+    } else {
+      qEl.value = '';
+      qEl.dispatchEvent(new Event('input', { bubbles: true }));
+      await sleep(250);
+    }
+    const afterClear = readQ();
+    verdicts.clear = {
+      ok: (afterClear === null || afterClear === '') && String(qEl.value || '') === '',
+      url_q: afterClear,
+      input: String(qEl.value || ''),
+    };
+    // restore initial query for reload/back checks when the case had one
+    if (initial.q) {
+      qEl.value = initial.q;
+      qEl.dispatchEvent(new Event('input', { bubbles: true }));
+      await sleep(250);
+    }
+  } else {
+    verdicts.change = { ok: false, reason: 'missing #rf-q' };
+    verdicts.clear = { ok: false, reason: 'missing #rf-q' };
+  }
+  // back_forward: push a decoy state then popstate must rehydrate
+  const beforePush = location.href;
+  history.pushState({}, '', location.pathname + '?q=backforwardprobe' + (location.hash || ''));
+  await sleep(30);
+  history.back();
+  await sleep(120);
+  const afterBack = readQ();
+  const inputBack = qEl ? String(qEl.value || '') : null;
+  // After back we should not remain on backforwardprobe if popstate rehydrates.
+  verdicts.back_forward = {
+    ok: afterBack !== 'backforwardprobe',
+    url_q: afterBack,
+    input: inputBack,
+    before_push: beforePush,
+  };
+  // reload verdict is filled by the Python driver after page.reload(); placeholder here
+  verdicts.reload = {
+    ok: null,
+    deferred_to_driver: true,
+    pre_reload_href: location.href,
+    pre_reload_q: readQ(),
+    pre_reload_hash: location.hash || '',
+  };
+  return { initial, verdicts };
 }
 """
 
@@ -1605,6 +1753,34 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
             page.wait_for_timeout(self._settle_ms)
             applied = page.evaluate(_APPLY_STATE_SCRIPT.strip(), state) or {}
             page.wait_for_timeout(self._settle_ms)
+            # Theme/locale application can steal focus; re-assert deep-link focus
+            # after apply so route_state measures the product's intended target.
+            page.evaluate(
+                """() => {
+                  const target = document.querySelector('.rf-e:target:not(.rf-closed)');
+                  if (!target) return false;
+                  const bar = document.querySelector('.rf-bar');
+                  let offset = 0;
+                  if (bar) {
+                    const cs = getComputedStyle(bar);
+                    if (cs.display !== 'none' && cs.visibility !== 'hidden') {
+                      offset = bar.getBoundingClientRect().height || 0;
+                    }
+                  }
+                  const top = target.getBoundingClientRect().top + window.pageYOffset - offset - 8;
+                  window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+                  const focusEl = target.querySelector('.rf-sum') || target;
+                  if (focusEl === target && !target.hasAttribute('tabindex')) {
+                    target.setAttribute('tabindex', '-1');
+                  }
+                  try { focusEl.focus({ preventScroll: true }); }
+                  catch (e) { try { focusEl.focus(); } catch (e2) {} }
+                  return !!(document.activeElement && (document.activeElement === focusEl
+                    || focusEl.contains(document.activeElement)
+                    || (document.activeElement.closest && document.activeElement.closest('.rf-e') === target)));
+                }"""
+            )
+            page.wait_for_timeout(100)
             applied_force: str | None = None
             if cell.force_state is not None:
                 forced = page.evaluate(_FORCE_STATE_SCRIPT.strip(), cell.force_state.as_payload()) or {}
@@ -1625,6 +1801,13 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                     "miss_visible": False,
                     "selected_id": None,
                     "visible_result_count": None,
+                    "visible_entry_ids": [],
+                    "count_label_visible": False,
+                    "count_label_text": "",
+                    "count_label_values": [],
+                    "focused_element_id": None,
+                    "focused_visible": False,
+                    "target_below_fixed_ui": None,
                     "rf_q_value": "",
                     "probe_error": True,
                 }

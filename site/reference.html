@@ -178,7 +178,7 @@ html[data-theme="light"] .rf-grp-h { background:var(--panel2); border-bottom:0;
 html[data-lang="zh"] .rf-grp-h { letter-spacing:0; text-transform:none; }
 
 /* ── the index line ─────────────────────────────────────────────────────────── */
-.rf-e { position:relative; scroll-margin-top:84px; border-radius:var(--r-card,12px); }
+.rf-e { position:relative; scroll-margin-top:120px; border-radius:var(--r-card,12px); }
 .rf-e + .rf-e > .rf-sum { border-top:1px solid var(--line); }
 .rf-sum { display:grid; grid-template-columns:auto minmax(0,max-content) auto minmax(0,1fr);
   align-items:baseline; gap:var(--sp-2,8px); min-height:40px;
@@ -4379,7 +4379,7 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
 <!-- ══ L1 §3 · footer — the authority ceiling, in plain words, once ═══════════ -->
 <footer class="rf-foot">
   <span class="l-en">Reference only — definitions, not calls. No live market values appear on this page.</span><span class="l-zh">仅供参考 — 只有释义，不含判断。本页不显示任何实时行情数值。</span>
-  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-03 06:42 UTC</span>.
+  <span class="l-en">Updated</span><span class="l-zh">更新于</span> <span class="tnum">2026-09-03 07:49 UTC</span>.
 </footer>
 
 <script>
@@ -4698,7 +4698,28 @@ html[data-theme="light"] .rf-e.rf-closed { background:none; border:0; box-shadow
       target.classList.remove("rf-closed");
       if (missEl) missEl.hidden = true;
       window.requestAnimationFrame(function(){
-        target.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+        // Offset for the sticky mobile filter bar so the opened entry is not
+        // occluded after scroll-into-view (MOR-1 focus/visibility proof).
+        var bar = root.querySelector(".rf-bar");
+        var offset = 0;
+        if (bar){
+          var bcs = window.getComputedStyle(bar);
+          if (bcs.display !== "none" && bcs.visibility !== "hidden"){
+            offset = bar.getBoundingClientRect().height || 0;
+          }
+        }
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset - 8;
+        window.scrollTo({ top: Math.max(0, top), behavior: reduceMotion ? "auto" : "smooth" });
+        // MOR-1: scroll is not focus. Move keyboard focus to the existing
+        // summary (preferred) or a temporarily-focusable article so the
+        // opened term is the activeElement and not trapped in a loop.
+        var focusEl = target.querySelector(".rf-sum") || target;
+        if (focusEl === target && !target.hasAttribute("tabindex")) {
+          target.setAttribute("tabindex", "-1");
+        }
+        try { focusEl.focus({ preventScroll: true }); } catch (e) {
+          try { focusEl.focus(); } catch (e2) {}
+        }
       });
     } else {
       if (missEl){
