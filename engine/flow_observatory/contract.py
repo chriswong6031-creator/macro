@@ -12,6 +12,7 @@ single inflow-colored number (the live-page defect this program was commissioned
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 SCHEMA = "flow_observatory.v2"
@@ -209,20 +210,47 @@ _STATE_WORDS = {
     # {date} is substituted by the caller (build_sources) with the leg's own effective_date.
     "behind": ("behind — showing {date} data", "滞后 · 显示{date}数据"),
     "historical": ("historical only — ended {date}", "仅历史 · 止于{date}"),
+    "unavailable": ("unavailable", "不可用"),
 }
+
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _parse_date(value):
+    """Parse an ISO ``YYYY-MM-DD`` stamp, or None when it is not one.
+
+    A pure, module-level copy of ``lib.desk_guard._as_date`` (S8 repair): contract.py
+    is pure assembly/validation with no I/O and no cross-module private imports (masterplan
+    §4 module-layout freeze) — reaching into another module's underscore-prefixed helper
+    coupled this module to desk_guard's internals for a two-line date parse.
+    """
+    from datetime import date, datetime
+
+    if isinstance(value, date):
+        return value
+    if not value:
+        return None
+    try:
+        return datetime.strptime(str(value)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 def leg_ui_state(effective_date: str | None, newest_session: str | None, *,
                   status: str | None = None, expected_lag_days: int = 0) -> str:
-    """current | expected_lag | behind | historical — a leg's own effective_date vs the
-    desk's newest session (spec §2.2). ``expected_lag_days`` is the leg's OWN normal
-    cadence (hk_sb_holdings = 1, "expected T-1" is HEALTHY there, not degraded — §5)."""
+    """current | expected_lag | behind | historical | unavailable — a leg's own
+    effective_date vs the desk's newest session (spec §2.2). ``expected_lag_days`` is the
+    leg's OWN normal cadence (hk_sb_holdings = 1, "expected T-1" is HEALTHY there, not
+    degraded — §5). ``unavailable`` (S7) is a leg with no usable effective_date at all —
+    its panel did not build this run — distinct from ``behind`` (built, but past budget)."""
     if status == "HISTORICAL_ONLY":
         return "historical"
-    from lib.desk_guard import _as_date
-    ed, ns = _as_date(effective_date), _as_date(newest_session)
-    if ed is None or ns is None:
-        return "behind"
+    ed = _parse_date(effective_date)
+    if ed is None:
+        return "unavailable"
+    ns = _parse_date(newest_session)
+    if ns is None:
+        return "unavailable"
     gap = (ns - ed).days
     if gap <= 0:
         return "current"
@@ -266,58 +294,85 @@ def _source_leg(source_id: str, *, provider: str, market: str, effective_date: s
 
 def build_sources(snap: dict[str, Any], *, newest_session: str | None,
                   seats_as_of: str | None = None) -> list[dict[str, Any]]:
-    """One block per masterplan §3 leg the engine has a panel for (W1 = identity/dates/
-    coverage only; W2 adds the HEALTHY/DEGRADED/... status machine on top of ``status``,
-    which W1 leaves ``null`` except the HISTORICAL_ONLY northbound leg — never faked)."""
-    legs: list[dict[str, Any]] = []
+    """One block per masterplan §3 leg — ALWAYS all five W1 legs (S7 repair): a leg whose
+    panel did not build this run still gets its identity row so the trust strip shows
+    "unavailable — not zero flow" rather than a silent hole (masterplan §5 publication
+    law). ``sw_l1_sectors`` stays out of scope entirely (W4 — the engine has no panel for
+    it at all yet; see the SOURCE_META docstring above for why fabricating one would
+    itself violate the honesty gate this module exists to enforce).
+
+    W1 = identity/dates/coverage only; W2 adds the HEALTHY/DEGRADED/... status machine on
+    top of ``status``, which W1 leaves ``null`` except the HISTORICAL_ONLY northbound leg
+    (never faked).
+
+    HK-market legs (S8): ``sb_aggregate``/``hk_sb_holdings`` anchor their freshness gap
+    against the newest HK-family date (sb_aggregate's own effective_date) rather than the
+    CN ``market_session`` — the two calendars are not the same trading calendar, so
+    comparing an HK leg's date against a CN close date can manufacture a false gap/false
+    currency on days the two markets' sessions diverge. CN legs keep the CN anchor.
+    """
     agg = {c.get("key"): c for c in (snap.get("aggregate") or []) if isinstance(c, dict)}
     names = snap.get("ashare_names") or {}
     sectors = snap.get("ashare_sectors") or {}
-    names_asof = names.get("as_of") or sectors.get("as_of")
-    if names_asof:
-        n_obs = names.get("n")
-        n_unscored = names.get("n_unscored") or 0
-        total = (n_obs or 0) + n_unscored
-        pct = round(100.0 * n_obs / total, 1) if n_obs is not None and total else None
-        legs.append(_source_leg(
-            "cn_large_order_proxy", source_kind="large_order_size_proxy",
-            provider="Tushare moneyflow_dc", market="CN", effective_date=names_asof,
-            expected_availability="T+0 after CN close",
-            coverage={"n_observed": n_obs, "n_sized": None, "pct_names": pct},
-            newest_session=newest_session))
+    hk = snap.get("hk_names") or {}
+    seats = snap.get("seats_by_ticker") or {}
     sb = agg.get("southbound")
-    if sb and sb.get("live"):
-        legs.append(_source_leg(
-            "sb_aggregate", source_kind="official_connect_aggregate",
-            provider="Eastmoney RPT_MUTUAL_DEAL_HISTORY", market="HK",
-            effective_date=sb.get("as_of"), expected_availability="T+0 after HK close",
-            coverage={"n_observed": 1, "n_sized": None, "pct_names": None},
-            newest_session=newest_session))
+    sb_live = bool(sb and sb.get("live"))
     nb = agg.get("northbound")
-    if nb:
-        legs.append(_source_leg(
-            "nb_aggregate", source_kind="official_connect_aggregate",
-            provider="Eastmoney (discontinued disclosure)", market="CN",
-            effective_date=nb.get("frozen_since"),
-            expected_availability=f"discontinued {nb.get('frozen_since') or ''}".strip(),
-            coverage={"n_observed": None, "n_sized": None, "pct_names": None},
-            status="HISTORICAL_ONLY", newest_session=newest_session))
-    hk = snap.get("hk_names")
-    if hk:
-        legs.append(_source_leg(
-            "hk_sb_holdings", source_kind="official_connect_holdings",
-            provider="Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS", market="HK",
-            effective_date=hk.get("as_of"), expected_availability="expected T−1",
-            coverage={"n_observed": hk.get("n"), "n_sized": hk.get("n_sized"), "pct_names": None},
-            newest_session=newest_session, expected_lag_days=1))
-    seats = snap.get("seats_by_ticker")
-    if seats:
-        legs.append(_source_leg(
-            "lhb_inst_seats", source_kind="event_selected_institution_seat",
-            provider="Eastmoney 龙虎榜 机构专用", market="CN",
-            effective_date=seats_as_of, expected_availability="event-window",
-            coverage={"n_observed": len(seats), "n_sized": None, "pct_names": None},
-            newest_session=newest_session))
+
+    names_asof = names.get("as_of") or sectors.get("as_of")
+    # the HK anchor is sb_aggregate's own date when live, falling back to the holdings
+    # leg's own date, falling back to the CN session — never fabricated, just the least
+    # stale REAL HK-family date this build actually has.
+    hk_anchor = (sb.get("as_of") if sb_live else None) or hk.get("as_of") or newest_session
+
+    legs: list[dict[str, Any]] = []
+
+    n_obs = names.get("n")
+    n_unscored = names.get("n_unscored") or 0
+    total = (n_obs or 0) + n_unscored
+    pct = round(100.0 * n_obs / total, 1) if (names_asof and n_obs is not None and total) else None
+    legs.append(_source_leg(
+        "cn_large_order_proxy", source_kind="large_order_size_proxy",
+        provider="Tushare moneyflow_dc", market="CN", effective_date=names_asof,
+        expected_availability="T+0 after CN close",
+        coverage={"n_observed": n_obs if names_asof else None, "n_sized": None, "pct_names": pct},
+        newest_session=newest_session))
+
+    legs.append(_source_leg(
+        "sb_aggregate", source_kind="official_connect_aggregate",
+        provider="Eastmoney RPT_MUTUAL_DEAL_HISTORY", market="HK",
+        effective_date=sb.get("as_of") if sb_live else None,
+        expected_availability="T+0 after HK close",
+        coverage={"n_observed": 1, "n_sized": None, "pct_names": None} if sb_live
+                  else {"n_observed": None, "n_sized": None, "pct_names": None},
+        newest_session=hk_anchor))
+
+    legs.append(_source_leg(
+        "hk_sb_holdings", source_kind="official_connect_holdings",
+        provider="Eastmoney RPT_MUTUAL_STOCK_HOLDRANKS", market="HK",
+        effective_date=hk.get("as_of"), expected_availability="expected T−1",
+        coverage={"n_observed": hk.get("n"), "n_sized": hk.get("n_sized"), "pct_names": None}
+                  if hk else {"n_observed": None, "n_sized": None, "pct_names": None},
+        newest_session=hk_anchor, expected_lag_days=1))
+
+    legs.append(_source_leg(
+        "nb_aggregate", source_kind="official_connect_aggregate",
+        provider="Eastmoney (discontinued disclosure)", market="CN",
+        effective_date=nb.get("frozen_since") if nb else None,
+        expected_availability=(f"discontinued {nb.get('frozen_since')}" if nb and nb.get("frozen_since")
+                               else "discontinued"),
+        coverage={"n_observed": None, "n_sized": None, "pct_names": None},
+        status="HISTORICAL_ONLY" if nb else None, newest_session=newest_session))
+
+    legs.append(_source_leg(
+        "lhb_inst_seats", source_kind="event_selected_institution_seat",
+        provider="Eastmoney 龙虎榜 机构专用", market="CN",
+        effective_date=seats_as_of if seats else None, expected_availability="event-window",
+        coverage={"n_observed": len(seats), "n_sized": None, "pct_names": None}
+                  if seats else {"n_observed": None, "n_sized": None, "pct_names": None},
+        newest_session=newest_session))
+
     return legs
 
 
@@ -389,7 +444,13 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     # least-invention reading of a shape shown once but demanded twice (flagged in the PR
     # body as a judgment call, not a silent one).
     names = snap.get("ashare_names") or {}
-    themes_mr = market_read(enriched_rows, unscored=0) if enriched_rows else market_read([], 0)
+    # B3 repair: this used to hardcode unscored=0 for the theme lens while
+    # ashare_sectors.n_unscored (flow_velocity.ashare_sector_velocity) already carried the
+    # real drop count (themes with <3 members or an unscoreable kinetics read) — silently
+    # dropping them from market_read.themes' denominator, the exact "missing != zero" gap
+    # this program's contract law exists to close.
+    themes_unscored = (sectors or {}).get("n_unscored") or 0
+    themes_mr = market_read(enriched_rows, unscored=themes_unscored)
     names_mr = names.get("market_read") or market_read([], names.get("n_unscored") or 0)
     out["market_read"] = {"themes": themes_mr, "names": names_mr}
 
@@ -421,6 +482,19 @@ def validate(desk: dict[str, Any]) -> None:
     directly on fixtures. Checks (spec §1.7): missing denominators, quadrant inconsistent
     with its own abs/rel directions, absolute/relative fields disagreeing with their
     direction enums, and the top-level build instant imitating a leg's market date.
+
+    S6 repair: the leg-date check used to compare a leg's ``effective_date`` (always a
+    plain ``YYYY-MM-DD`` panel date) against ``generated_at`` verbatim (always a full ISO
+    build instant with a time component, e.g. ``"2026-09-01T12:00:00+00:00"``) — two
+    values that can never be string-equal regardless of any bug, so the check was dead
+    code, unreachable by construction and never exercised by any test. The real invariant
+    ("leg effective dates must come from panel-provided dates" — masterplan §5 "build time
+    != source time") is now enforced two ways: (1) every non-null effective_date must
+    actually BE a plain calendar date — a build instant substituted in for it is
+    recognizably NOT that shape (has a "T", wrong length) and is rejected on sight, with
+    zero false-positive risk against a real T+0 leg whose date legitimately coincides with
+    today's build date; (2) the original byte-identical comparison is kept as a
+    defense-in-depth belt-and-suspenders check.
     """
     mr = desk.get("market_read") or {}
     for lens_name, lens in mr.items():
@@ -453,10 +527,18 @@ def validate(desk: dict[str, Any]) -> None:
                 f"(expected {expected_q!r})")
 
     generated_at = desk.get("generated_at")
-    if generated_at:
-        for s in desk.get("sources") or []:
-            if s.get("effective_date") and s["effective_date"] == generated_at:
-                raise ContractError(
-                    f"generated_at (build instant) is byte-identical to source "
-                    f"{s.get('source_id')}'s effective_date {generated_at!r} — build time must "
-                    "never imitate source time (§5 law)")
+    for s in desk.get("sources") or []:
+        ed = s.get("effective_date")
+        if not ed:
+            continue
+        if not _ISO_DATE_RE.match(str(ed)):
+            raise ContractError(
+                f"source {s.get('source_id')}: effective_date {ed!r} is not a plain "
+                "calendar date — a build instant (or some other non-panel value) was "
+                "substituted for the panel's own as_of date (§5 law: build time must "
+                "never imitate source time)")
+        if generated_at and str(ed) == str(generated_at):
+            raise ContractError(
+                f"generated_at (build instant) is byte-identical to source "
+                f"{s.get('source_id')}'s effective_date {generated_at!r} — build time must "
+                "never imitate source time (§5 law)")
