@@ -53,8 +53,25 @@ _ACCEL_BUCKET: dict[str, str] = {
     "no data": NEUTRAL_OR_UNKNOWN,
 }
 
-# provisional (W5 calibrates) thresholds — spec §1.2
-REL_THRESH = 0.5                                  # ±0.5σ velocity
+# W5-calibrated thresholds — spec §1.2 (research/flow_observatory/W5_PREREG.md;
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+# DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION). REL_THRESH stays the shared default AND
+# southbound's post-W5 cutoff (R1's threshold re-sweep excluded every improving tau via the
+# <2% held-out-reach sanity bound — a current-regime degeneracy — so the incumbent 0.5
+# stayed numerically unchanged; R2 additionally reverted southbound's METHOD back to M0
+# after an independent review found the M1 adoption rested on a single unreplicated seeded
+# draw). THEMES is the only lens whose W5 threshold survived R2 review; it recalibrates per
+# the frozen §4 procedure. NAMES also reverted to the incumbent under R2 (the R1 tau=0.3
+# pick was computed on the breadth-tilt state series and misapplied to the per-name
+# surface, breaching the frozen 25% neutral floor) — there is no separate NAMES_REL_THRESH
+# constant; names callers use REL_THRESH like southbound (removed as a dead duplicate: it
+# was never read outside its own definition even in R1, since engine.flow_velocity's names
+# lens always passed its own module-level threshold explicitly).
+REL_THRESH = 0.5                                  # ±0.5σ velocity — southbound AND (as of
+                                                   # R2) names too
+THEMES_REL_THRESH = 0.75                          # themes: in the honest-neutral band, flip
+                                                   # strictly improves (not a tie)
+SOUTHBOUND_REL_THRESH = REL_THRESH                # explicit alias — see comment above
 ABS_DEMINIMIS: dict[str, float] = {"pct_rate": 0.1, "cny_b": 0.5}
 
 
@@ -116,18 +133,24 @@ def abs_field(value: float | None, *, period: str, unit: str) -> dict[str, Any]:
             "direction": direction_from_value(value, unit)}
 
 
-def rel_field(value: float | None, *, reference_window: int = 126) -> dict[str, Any]:
-    return {"value": value, "unit": "sigma", "direction": rel_direction(value),
+def rel_field(value: float | None, *, reference_window: int = 126,
+             thresh: float = REL_THRESH) -> dict[str, Any]:
+    return {"value": value, "unit": "sigma", "direction": rel_direction(value, thresh=thresh),
             "reference_window": reference_window}
 
 
 def enrich_group(abs_value: float | None, rel_value: float | None, *,
                   abs_unit: str = "pct_rate", abs_period: str = "20d",
-                  reference_window: int = 126) -> dict[str, Any]:
+                  reference_window: int = 126, rel_thresh: float = REL_THRESH) -> dict[str, Any]:
     """The additive ``{abs, rel, quadrant, quadrant_en, quadrant_zh}`` block for one
-    group/aggregate row — the anti-conflation device every W1 gate hinges on."""
+    group/aggregate row — the anti-conflation device every W1 gate hinges on.
+
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the only
+    W5-adjudicated override still live is ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION — R2 reverted names to the default)."""
     a = abs_field(abs_value, period=abs_period, unit=abs_unit)
-    r = rel_field(rel_value, reference_window=reference_window)
+    r = rel_field(rel_value, reference_window=reference_window, thresh=rel_thresh)
     q = quadrant(a["direction"], r["direction"])
     en, zh = quadrant_labels(q)
     return {"abs": a, "rel": r, "quadrant": q, "quadrant_en": en, "quadrant_zh": zh}
@@ -146,11 +169,18 @@ def assign_ranks(rows: list[dict[str, Any]]) -> None:
 # ── market_read (spec §1.4) — reusable for the theme lens AND the names lens ──────────
 def market_read(rows: list[dict[str, Any]], unscored: int = 0, *,
                  abs_key: str = "rate_4wk", rel_key: str = "vel", state_key: str = "state",
-                 abs_unit: str = "pct_rate") -> dict[str, dict[str, int]]:
+                 abs_unit: str = "pct_rate", rel_thresh: float = REL_THRESH) -> dict[str, dict[str, int]]:
     """absolute_breadth / relative_breadth / acceleration_breadth, each declaring its own
     denominator = scored + unscored (§4 law: every cross-sectional statistic declares
     denominator + coverage). ``unscored`` folds the previously-silent kin-None drops into
-    ``missing`` rather than letting them vanish from the count entirely."""
+    ``missing`` rather than letting them vanish from the count entirely.
+
+    ``rel_thresh`` defaults to the legacy/southbound/names ±0.5σ cutoff; the themes caller
+    in :func:`build_v2` passes its own W5-adjudicated ``THEMES_REL_THRESH``
+    (DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION-R2, superseding
+    DEC-FLOW-OBSERVATORY-V2-W5-METHOD-SELECTION) — ``engine.flow_velocity.
+    ashare_name_velocity`` passes its own module-level ``_NAMES_VIN``, which R2 reverted to
+    the same default value."""
     denom = len(rows) + unscored
     abs_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
     rel_c = {"positive": 0, "negative": 0, "neutral": 0, "missing": unscored, "denominator": denom}
@@ -159,7 +189,7 @@ def market_read(rows: list[dict[str, Any]], unscored: int = 0, *,
     for r in rows:
         ad = direction_from_value(r.get(abs_key), abs_unit)
         abs_c["missing" if ad == "unknown" else ad] += 1
-        rd = rel_direction(r.get(rel_key))
+        rd = rel_direction(r.get(rel_key), thresh=rel_thresh)
         rel_c["missing" if rd == "unknown" else rd] += 1
         accel_c[_ACCEL_BUCKET.get(r.get(state_key) or "no data", NEUTRAL_OR_UNKNOWN)] += 1
     return {"absolute_breadth": abs_c, "relative_breadth": rel_c, "acceleration_breadth": accel_c}
@@ -613,7 +643,8 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
         for row in sectors["rows"]:
             row = dict(row)
             row.update(enrich_group(row.get("rate_4wk"), row.get("vel"),
-                                    abs_unit="pct_rate", abs_period="20d", reference_window=126))
+                                    abs_unit="pct_rate", abs_period="20d", reference_window=126,
+                                    rel_thresh=THEMES_REL_THRESH))
             enriched_rows.append(row)
         assign_ranks(enriched_rows)
         prev_ranks = _previous_ranks(log_rows, market_session)
@@ -646,7 +677,8 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
             chan = dict(chan)
             if chan.get("key") == "southbound" and chan.get("live"):
                 chan.update(enrich_group(chan.get("flow_1m_b"), chan.get("vel_primary"),
-                                         abs_unit="cny_b", abs_period="1m", reference_window=126))
+                                         abs_unit="cny_b", abs_period="1m", reference_window=126,
+                                         rel_thresh=SOUTHBOUND_REL_THRESH))
             new_agg.append(chan)
         out["aggregate"] = new_agg
 
@@ -662,7 +694,7 @@ def build_v2(snap: dict[str, Any], *, log_rows: list[dict[str, Any]] | None = No
     # dropping them from market_read.themes' denominator, the exact "missing != zero" gap
     # this program's contract law exists to close.
     themes_unscored = (sectors or {}).get("n_unscored") or 0
-    themes_mr = market_read(enriched_rows, unscored=themes_unscored)
+    themes_mr = market_read(enriched_rows, unscored=themes_unscored, rel_thresh=THEMES_REL_THRESH)
     names_mr = names.get("market_read") or market_read([], names.get("n_unscored") or 0)
     out["market_read"] = {"themes": themes_mr, "names": names_mr}
 
@@ -715,11 +747,17 @@ def _previous_ranks(log_rows: list[dict[str, Any]], before_session: str | None) 
 COVERAGE_STATE_ENUM = {"ok", "insufficient_coverage"}
 
 
-def _validate_group_rows(lens: dict[str, Any], label: str) -> None:
+def _validate_group_rows(lens: dict[str, Any], label: str, *,
+                          rel_thresh: float = REL_THRESH) -> None:
     """Shared per-row check for a group lens (``{"rows": [...]}}``-shaped, curated
     OR official): abs/rel/quadrant axis-consistency (spec §1.7, previously
     ashare_sectors-only) plus the coverage_state enum (W4 M1 repair — previously
-    unchecked for BOTH lenses)."""
+    unchecked for BOTH lenses).
+
+    ``rel_thresh`` must match whatever threshold :func:`enrich_group` used to compute the
+    row's own ``rel.direction`` (themes rows are W5-recalibrated to ``THEMES_REL_THRESH``;
+    the official-sector lens is untouched by W5 and keeps the legacy default) — otherwise
+    this independent recomputation would flag a row that was built correctly."""
     for row in (lens or {}).get("rows") or []:
         cs = row.get("coverage_state")
         if cs is not None and cs not in COVERAGE_STATE_ENUM:
@@ -736,7 +774,7 @@ def _validate_group_rows(lens: dict[str, Any], label: str) -> None:
                 f"{label} row {row.get('id')}: abs.direction {ad!r} disagrees with abs.value "
                 f"{av!r} (expected {expected_ad!r})")
         rv, rd = r.get("value"), r.get("direction")
-        expected_rd = rel_direction(rv)
+        expected_rd = rel_direction(rv, thresh=rel_thresh)
         if expected_rd != rd:
             raise ContractError(
                 f"{label} row {row.get('id')}: rel.direction {rd!r} disagrees with rel.value "
@@ -794,7 +832,8 @@ def validate(desk: dict[str, Any]) -> None:
             if "denominator" not in (breadth or {}):
                 raise ContractError(f"market_read.{lens_name}.{breadth_name} missing denominator")
 
-    _validate_group_rows(desk.get("ashare_sectors") or {}, "ashare_sectors")
+    _validate_group_rows(desk.get("ashare_sectors") or {}, "ashare_sectors",
+                        rel_thresh=THEMES_REL_THRESH)
     # M1/W4 repair: official_sectors (the Shenwan L1 lens) never got its own
     # validate() coverage — contract.py was untouched in the W4 landing (its rows
     # reuse contract.enrich_group/assign_ranks, but nothing checked the RESULT).
